@@ -1658,3 +1658,31 @@ impl SerializedCollection for YkGd {
         transmog_bincode::Bincode::default()
     }
 }
+/// 每种 type 对应的所有 uda name 和 default value
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Uda{
+    pub reference_type : String,
+    pub data: Vec<(String,String)>,
+}
+
+impl Collection for Uda {
+    type PrimaryKey = String;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "uda")
+    }
+
+    fn define_views(schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for Uda {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+
+    fn format() -> Self::Format {
+        // The bincode options can be set on this type
+        transmog_bincode::Bincode::default()
+    }
+}
