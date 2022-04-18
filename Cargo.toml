@@ -1,0 +1,47 @@
+[package]
+name = "aios_core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bonsaidb = { version = "0.4.1", features = ["client-full","local-full"] }
+smol_str = { version = "0.1.22", features = ["serde"] }
+bevy = "0.7.0"
+bevy_egui = "0.13.0"
+bevy-inspector-egui = "0.10.0"
+glam = { version = "0.20.2", features = ["transform-types"] }
+id_tree = { version = "1.8.0", features = ["serde_support"] }
+dashmap = { version = "5.2.0", features = ["serde"] }
+hexasphere = "7.0.0"
+fixed = "1.12"
+anyhow = "1.0"
+lyon = "0.17.10"
+nalgebra = "0.26.2"
+nalgebra-glm = "0.12.0"
+ncollide3d = "0.32.0"
+approx = "0.5.1"
+memchr = {git = "https://github.com/BurntSushi/memchr.git"}
+nom = "6.1.2"
+nom-derive = "0.9.0"
+itertools = "0.10.1"
+
+transmog-bincode = "0.1"
+serde-name = "0.1.1"
+serde = { version = "1.0.133", features = ["derive"] }
+serde_derive = "1.0.133"
+serde_json = { version = "1.0" }
+hash32 = "0.2.1"
+hash32-derive = "0.1.1"
+prost = "0.8.0"
+
+truck-base = { version = "0.2.0", path = "../truck/truck-base" }
+truck-geotrait = { version = "0.1.0", path = "../truck/truck-geotrait" }
+truck-geometry = { version = "0.2.0", path = "../truck/truck-geometry" }
+truck-polymesh = { version = "0.3.0", path = "../truck/truck-polymesh" }
+truck-topology = { version = "0.3.0", path = "../truck/truck-topology" }
+truck-modeling = { version = "0.3.0", path = "../truck/truck-modeling" }
+truck-meshalgo = { version = "0.1.0", path = "../truck/truck-meshalgo" }
+truck-platform = { version = "0.3.0", path = "../truck/truck-platform" }
+truck-rendimpl = { version = "0.3.0", path = "../truck/truck-rendimpl" }

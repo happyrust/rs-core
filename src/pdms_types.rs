@@ -1,0 +1,1660 @@
+use serde::{Serialize,Deserialize};
+use std::collections::HashMap;
+use std::default::Default;
+use std::fmt;
+use std::fmt::{Debug, Formatter};
+use std::fs::File;
+use std::io::{Read, Write};
+use std::ops::{Deref, DerefMut};
+use std::result::Iter;
+use std::sync::Arc;
+use std::vec::IntoIter;
+use bevy_egui::egui;
+use bevy_inspector_egui::Inspectable;
+use bevy::ecs::component::Component;
+use bevy::prelude::Mesh;
+use bevy::render::primitives::Aabb;
+use bevy::reflect::Reflect;
+use bevy::ecs::reflect::ReflectComponent;
+use bonsaidb::core::Error;
+use bonsaidb::core::schema::{Collection, CollectionName, Qualified, Schematic, SerializedCollection};
+use dashmap::DashMap;
+use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
+use hash32::Hasher;
+use smol_str::SmolStr;
+use hash32_derive::Hash32;
+use id_tree::{NodeId, Tree};
+use transmog_bincode::bincode;
+use itertools::Itertools;
+use crate::BHashMap;
+use crate::consts::{ATT_CURD, UNSET_STR};
+use crate::pdms_types::AttrVal::*;
+use crate::prim_geo::ctorus::CTorus;
+use crate::prim_geo::cylinder::SCylinder;
+use crate::prim_geo::dish::Dish;
+use crate::prim_geo::pyramid::LPyramid;
+use crate::prim_geo::rtorus::RTorus;
+use crate::prim_geo::sbox::SBox;
+use crate::prim_geo::snout::LSnout;
+use crate::shape::pdms_shape::{BrepShapeTrait, PdmsMesh};
+use crate::tool::db_tool::{db1_dehash, db1_hash};
+
+pub const LEVEL_VISBLE: u32 = 6;
+
+///pdms的参考号
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
+pub struct RefI32Tuple(pub (i32, i32));
+
+impl Into<SmolStr> for RefI32Tuple {
+    fn into(self) -> SmolStr {
+        SmolStr::from(format!("{}/{}", self.get_0(), self.get_1()))
+    }
+}
+
+impl Into<String> for RefI32Tuple {
+    fn into(self) -> String {
+        format!("{}/{}", self.get_0(), self.get_1())
+    }
+}
+
+impl From<&[u8]> for RefI32Tuple {
+    fn from(input: &[u8]) -> Self {
+        Self::new(
+            i32::from_be_bytes(input[0..4].try_into().unwrap()),
+            i32::from_be_bytes(input[4..8].try_into().unwrap()),
+        )
+    }
+}
+
+impl From<&str> for RefI32Tuple {
+    fn from(s: &str) -> Self {
+        let x: Vec<i32> = s
+            .split('/')
+            .map(|x| x.parse::<i32>().unwrap_or_default())
+            .collect();
+        Self::new(x[0], x[1])
+    }
+}
+
+impl From<&RefU64> for RefI32Tuple {
+    fn from(n: &RefU64) -> Self {
+        let n = n.0.to_be_bytes();
+        Self((
+            i32::from_be_bytes(n[..4].try_into().unwrap()),
+            i32::from_be_bytes(n[4..].try_into().unwrap()),
+        ))
+    }
+}
+
+impl RefI32Tuple {
+    #[inline]
+    pub fn new(ref_0: i32, ref_1: i32) -> Self {
+        Self { 0: (ref_0, ref_1) }
+    }
+
+    #[inline]
+    pub fn get_0(&self) -> i32 {
+        self.0.0
+    }
+
+    #[inline]
+    pub fn get_1(&self) -> i32 {
+        self.0.1
+    }
+}
+
+//把Refno当作u64
+#[derive(Hash, Serialize, Deserialize, Clone, Copy, Default, Component, Eq, PartialEq, Hash32)]
+pub struct RefU64(pub u64);
+
+impl Deref for RefU64 {
+    type Target = u64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Debug for RefU64 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_refno_str().as_str())
+    }
+}
+
+impl From<u64> for RefU64 {
+    fn from(d: u64) -> Self {
+        Self(d)
+    }
+}
+
+impl From<&RefI32Tuple> for RefU64 {
+    fn from(n: &RefI32Tuple) -> Self {
+        let bytes: Vec<u8> = [n.get_0().to_be_bytes(), n.get_1().to_be_bytes()].concat();
+        let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
+        Self(v)
+    }
+}
+
+impl From<RefI32Tuple> for RefU64 {
+    fn from(n: RefI32Tuple) -> Self {
+        let bytes: Vec<u8> = [n.get_0().to_be_bytes(), n.get_1().to_be_bytes()].concat();
+        let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
+        Self(v)
+    }
+}
+
+impl From<&[u8]> for RefU64 {
+    fn from(input: &[u8]) -> Self {
+        Self(u64::from_be_bytes(input[0..8].try_into().unwrap()))
+    }
+}
+
+impl RefU64 {
+    #[inline]
+    pub fn get_0(&self) -> u32 {
+        let bytes = self.0.to_be_bytes();
+        u32::from_be_bytes(bytes[0..4].try_into().unwrap())
+    }
+
+    #[inline]
+    pub fn get_1(&self) -> u32 {
+        let bytes = self.0.to_be_bytes();
+        u32::from_be_bytes(bytes[4..8].try_into().unwrap())
+    }
+
+    #[inline]
+    pub fn get_u32_hash(&self) -> u32 {
+        use hash32::{FnvHasher, Hash, Hasher};
+        let mut fnv = FnvHasher::default();
+        self.hash(&mut fnv);
+        fnv.finish()
+    }
+
+    #[inline]
+    pub fn to_refno_str(&self) -> SmolStr {
+        let refno: RefI32Tuple = self.into();
+        refno.into()
+    }
+
+    #[inline]
+    pub fn from_two_nums(i: u32, j: u32) -> Self {
+        let bytes: Vec<u8> = [i.to_be_bytes(), j.to_be_bytes()].concat();
+        let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
+        Self(v)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
+pub struct RefU64Vec(pub Vec<RefU64>);
+
+impl Deref for RefU64Vec {
+    type Target = Vec<RefU64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for RefU64Vec {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl IntoIterator for RefU64Vec {
+    type Item = RefU64;
+    type IntoIter = IntoIter<RefU64>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+//存储children，也可以这么去存储
+impl Collection for RefU64Vec {
+    type PrimaryKey = u64;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "refnos")
+    }
+
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for RefU64Vec {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+
+    fn format() -> Self::Format {
+        // The bincode options can be set on this type
+        transmog_bincode::Bincode::default()
+    }
+}
+
+impl RefU64Vec {
+    #[inline]
+    pub fn push(&mut self, v: RefU64) {
+        self.0.push(v);
+    }
+}
+
+// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, PartialEq)]
+#[derive(
+Serialize,
+Deserialize,
+Clone,
+Debug,
+Default,
+Component,
+Reflect,
+// Inspectable,
+Eq,
+Hash,
+PartialEq,
+Ord,
+PartialOrd,
+)]
+#[reflect(Component)]
+pub struct NounHash(pub u32);
+
+impl Deref for NounHash {
+    type Target = u32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<&SmolStr> for NounHash {
+    fn from(s: &SmolStr) -> Self {
+        Self(db1_hash(s.as_str()))
+    }
+}
+
+impl From<SmolStr> for NounHash {
+    fn from(s: SmolStr) -> Self {
+        Self(db1_hash(s.as_str()))
+    }
+}
+
+impl From<u32> for NounHash {
+    fn from(n: u32) -> Self {
+        Self(n)
+    }
+}
+
+impl From<&str> for NounHash {
+    fn from(s: &str) -> Self {
+        Self(db1_hash(s))
+    }
+}
+
+///PDMS的属性数据Map
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Reflect)]
+#[reflect(Component)]
+pub struct AttrMap {
+    pub map: BHashMap<NounHash, AttrVal>,
+}
+
+impl Inspectable for AttrMap {
+    type Attributes = ();
+
+    fn ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        _options: Self::Attributes,
+        context: &mut bevy_inspector_egui::Context,
+    ) -> bool {
+        let mut changed = false;
+        ui.vertical_centered(|ui| {
+            egui::Grid::new(context.id()).show(ui, |ui| {
+                let sort_keys = self.map.keys().cloned().sorted_by_key(|x| db1_dehash(x.0));
+                //need sort
+                for sort_key in sort_keys {
+                    ui.label(db1_dehash(sort_key.0));
+                    let v = self.map.get_mut(&sort_key).unwrap();
+                    ui.vertical(|ui| {
+                        changed |= v.ui(ui, Default::default(), context);
+                    });
+                    ui.end_row();
+                }
+            });
+        });
+        changed
+    }
+}
+
+impl Deref for AttrMap {
+    type Target = BHashMap<NounHash, AttrVal>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.map
+    }
+}
+
+impl DerefMut for AttrMap {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.map
+    }
+}
+
+impl AttrMap {
+    #[inline]
+    pub fn insert(&mut self, k: NounHash, v: AttrVal) {
+        self.map.insert(k, v);
+    }
+
+    #[inline]
+    pub fn insert_by_att_name(&mut self, k: &str, v: AttrVal) {
+        self.map.insert(k.into(), v);
+    }
+
+    #[inline]
+    pub fn contains_attr_name(&self, name: &str) -> bool {
+        self.map.contains_key(&name.into())
+    }
+
+    #[inline]
+    pub fn contains_attr_hash(&self, hash: u32) -> bool {
+        self.map.contains_key(&(hash.into()))
+    }
+
+    pub fn to_string_hashmap(&self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        for (k, v) in &self.map {
+            map.insert(db1_dehash(k.0), format!("{:?}", v));
+        }
+        map
+    }
+
+    #[inline]
+    pub fn get_name_hash(&self) -> AiosStrHash {
+        if let Some(StringHashType(name_hash)) = self.get_val("NAME") {
+            *name_hash
+        } else {
+            0
+        }
+    }
+
+    //获取spref
+    #[inline]
+    pub fn get_foreign_refno(&self, key: &str) -> Option<RefU64> {
+        if let RefU64Type(d) = self.get_val(key)? {
+            return Some(*d);
+        }
+        None
+        // Err(anyhow!("Foreign refno is not correct".to_string()))
+    }
+
+    #[inline]
+    pub fn get_refno_as_string(&self) -> Option<SmolStr> {
+        self.get_as_string("REFNO")
+    }
+
+    pub fn get_obstruction(&self) -> Option<u32> {
+        self.get_u32("OBST")
+    }
+
+    pub fn get_level(&self) -> Option<[u32; 2]> {
+        let v = self.get_i32_vec("LEVE")?;
+        if v.len() >= 2 {
+            return Some([v[0] as u32, v[1] as u32]);
+        }
+        // Err(anyhow!("Level number is less than 2".to_string()))
+        None
+    }
+
+    ///判断构件是否可见
+    pub fn is_visible_by_level(&self, level: Option<u32>) -> Option<bool> {
+        let levels = self.get_level()?;
+        Some(levels[0] <= level.unwrap_or(LEVEL_VISBLE))
+    }
+
+    #[inline]
+    pub fn get_refno(&self) -> Option<RefU64> {
+        if let RefU64Type(d) = self.get_val("REFNO")? {
+            return Some(*d);
+        }
+        // return Err(anyhow!("Refno type not corrent".to_string()));
+        None
+    }
+
+    #[inline]
+    pub fn get_owner(&self) -> Option<RefU64> {
+        if let RefU64Type(d) = self.get_val("OWNER")? {
+            return Some(*d);
+        }
+        // return Err(anyhow!("Owner type not corrent".to_string()));
+        None
+    }
+
+    #[inline]
+    pub fn get_owner_as_string(&self) -> SmolStr {
+        self.get_as_string("OWNER").unwrap_or(UNSET_STR.into())
+    }
+
+    #[inline]
+    pub fn get_type(&self) -> &str {
+        self.get_string("TYPE").unwrap().as_str()
+    }
+
+    #[inline]
+    pub fn get_type_cloned(&self) -> SmolStr {
+        self.get_string("TYPE").unwrap().clone()
+    }
+
+    #[inline]
+    pub fn get_u32(&self, key: &str) -> Option<u32> {
+        self.get_i32(key).map(|s| s as u32)
+    }
+
+    #[inline]
+    pub fn get_i32(&self, key: &str) -> Option<i32> {
+        let v = self.get_val(key)?;
+        match v {
+            IntegerType(d) => {
+                Some(*d as i32)
+            }
+            _ => {
+                // Err(TypeNotCorrect(key.to_string(), "bool".to_string()).into())
+                None
+            }
+        }
+    }
+
+    #[inline]
+    pub fn get_string(&self, key: &str) -> Option<&SmolStr> {
+        let v = self.get_val(key)?;
+        match v {
+            StringType(s) | WordType(s) | ElementType(s) => {
+                Some(s)
+            }
+            _ => {
+                // Err(TypeNotCorrect(key.to_string(), "bool".to_string()).into())
+                None
+            }
+        }
+    }
+
+    #[inline]
+    pub fn get_main_db_in_mdb(&self) -> Option<RefU64> {
+        if let Some(v) = self.map.get(&NounHash(ATT_CURD)) {
+            match v {
+                AttrVal::IntArrayType(v) => {
+                    let refno = RefI32Tuple((v[0], v[1]));
+                    return Some(refno.into());
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    #[inline]
+    pub fn get_as_string(&self, key: &str) -> Option<SmolStr> {
+        let v = self.get_val(key)?;
+        let s = match v {
+            StringType(s) | WordType(s) | ElementType(s) => s.clone(),
+            IntegerType(d) => d.to_string().into(),
+            DoubleType(d) => d.to_string().into(),
+            BoolType(d) => d.to_string().into(),
+            DoubleArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            StringArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            IntArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            BoolArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            Vec3Type(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+
+            RefU64Type(d) => RefI32Tuple::from(d).into(),
+            StringHashType(d) => format!("{}",d).into(),
+
+            _ => UNSET_STR.into(),
+        };
+        Some(s)
+    }
+
+    // #[inline]
+    // pub fn get_as_vec_string(&self, key: &str) -> Vec<SmolStr> {
+    //     if let Some(v) = self.map.get(&key.into()) {
+    //         return match v {
+    //             StringArrayType(d) => d.clone(),
+    //             _ => {
+    //                 vec![]
+    //             }
+    //         };
+    //     }
+    //     vec![]
+    // }
+
+    // #[inline]
+    // pub fn get_as_vec_refnos(&self, key: &str) -> Vec<SmolStr> {
+    //     if let Some(v) = self.map.get(&key.into()) {
+    //         return match v {
+    //             IntArrayType(d) => d
+    //                 .chunks_exact(2)
+    //                 .map(|x| format!("{}/{}", x[0], x[1]).into())
+    //                 .collect(),
+    //             _ => {
+    //                 vec![]
+    //             }
+    //         };
+    //     }
+    //     vec![]
+    // }
+
+    #[inline]
+    pub fn get_bool(&self, key: &str) -> Option<bool> {
+        if let AttrVal::BoolType(d) = self.get_val(key)? {
+            return Some(*d);
+        }
+        None
+        // Err(TypeNotCorrect(key.to_string(), "bool".to_string()).into())
+    }
+
+    #[inline]
+    pub fn get_val(&self, key: &str) -> Option<&AttrVal> {
+        self.map.get(&db1_hash(key).into())
+            // .ok_or_else(||
+            // AttNotExist(format!("{:?}", self),
+            //             key.to_string()).into() )
+    }
+
+    #[inline]
+    pub fn get_f64(&self, key: &str) -> Option<f64> {
+        self.get_val(key)?.double_value() //.ok_or_else(|| TypeNotCorrect(key.to_string(), "double".to_string()).into() )
+    }
+
+    #[inline]
+    pub fn get_f32(&self, key: &str) -> Option<f32> {
+        self.get_f64(key).map(|x| x as f32)
+    }
+
+    #[inline]
+    pub fn get_position(&self) -> Option<Vec3> {
+        if let Some(pos) = self.get_f64_vec("POS") {
+            return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
+        } else {
+            //如果没有POS，就以POSS来尝试
+            self.get_poss()
+        }
+    }
+
+    #[inline]
+    pub fn get_posse_dist(&self) -> Option<f32> {
+        Some(self.get_pose()?.distance(self.get_poss()?))
+    }
+
+    #[inline]
+    pub fn get_poss(&self) -> Option<Vec3> {
+        let pos = self.get_f64_vec("POSS")?;
+        if pos.len() == 3 {
+            return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
+        }
+        // return Err(anyhow!("No start position".to_string()));
+        None
+    }
+
+    #[inline]
+    pub fn get_pose(&self) -> Option<Vec3> {
+        let pos =  self.get_f64_vec("POSE")?;
+        if pos.len() == 3 {
+            return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
+        }
+        // return Err(anyhow!("No end position".to_string()));
+        None
+    }
+
+    #[inline]
+    pub fn get_rotation(&self) -> Option<Quat> {
+        let ang = self.get_f64_vec("ORI")?;
+        let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
+            * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
+            * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
+        Some(Quat::from_mat3(&mat))
+    }
+
+    pub fn get_matrix(&self) -> Option<Affine3A> {
+        let mut affine = Affine3A::IDENTITY;
+        let pos = self.get_f64_vec("POS")?;
+        affine.translation = glam::f32::Vec3A::new(pos[0] as f32, pos[1] as f32, pos[2] as f32);
+        let ang = self.get_f64_vec("ORI")?;
+        affine.matrix3 = (glam::f32::Mat3A::from_rotation_z(ang[2].to_radians() as f32)
+            * glam::f32::Mat3A::from_rotation_y(ang[1].to_radians() as f32)
+            * glam::f32::Mat3A::from_rotation_x(ang[0].to_radians() as f32));
+        Some(affine)
+    }
+
+    #[inline]
+    pub fn get_mat4(&self) -> Option<Mat4> {
+        Some(Mat4::from(self.get_matrix()?))
+    }
+
+    pub fn get_f64_vec(&self, key: &str) -> Option<Vec<f64>> {
+        let val = self.get_val(key)?;
+        return match val {
+            AttrVal::DoubleArrayType(data) => {
+                Some(data.clone())
+            }
+            AttrVal::Vec3Type(data) => {
+                Some(data.to_vec())
+            }
+            _ => {
+                // Err(TypeNotCorrect(key.to_string(), "f64 vec".to_string()).into())
+                None
+            }
+        };
+    }
+
+    pub fn get_vec3(&self, key: &str) -> Option<Vec3> {
+        if let AttrVal::Vec3Type(d) = self.get_val(key)? {
+            return Some(Vec3::new(d[0] as f32, d[1] as f32, d[2] as f32));
+        }
+        // Err(TypeNotCorrect(key.to_string(), "Vec3Type".to_string()).into())
+        None
+    }
+
+    pub fn get_i32_vec(&self, key: &str) -> Option<Vec<i32>> {
+        if let AttrVal::IntArrayType(d) = self.get_val(key)? {
+            return Some(d.clone());
+        }
+        None
+        // Err(TypeNotCorrect(key.to_string(), "i32 vec".to_string()).into())
+    }
+
+    ///生成具有几何属性的element的shape
+    pub fn create_brep_shape(&self) -> Option<Box<dyn BrepShapeTrait>> {
+        let type_noun = self.get_type_cloned();
+        return match type_noun.as_str() {
+            "BOX" => Some(Box::new(SBox::from(self))),
+            "CYLI" => Some(Box::new(SCylinder::from(self))),
+            // "SPHE" => Some(Box::new(Sphere::from(self))),
+            "CONE" => Some(Box::new(LSnout::from(self))),
+            "DISH" => Some(Box::new(Dish::from(self))),
+            "CTOR" => Some(Box::new(CTorus::from(self))),
+            "RTOR" => Some(Box::new(RTorus::from(self))),
+            "PYRA" => Some(Box::new(LPyramid::from(self))),
+            _ => None,
+        };
+    }
+
+    pub fn get_attr_strings(&self, keys: &[&str]) -> Vec<SmolStr> {
+        let mut results = vec![];
+        for &attr_name in keys {
+            if let Some(result) = self.get_val(attr_name) {
+                match result {
+                    AttrVal::StringType(v) => {
+                        if v != "" {
+                            results.push(v.trim_matches('\0').to_owned().clone().into());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        results
+    }
+
+
+}
+
+impl Collection for AttrMap {
+    type PrimaryKey = u32;
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "attr")
+    }
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for AttrMap {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
+pub struct PdmsCachedAttrMap(pub HashMap<RefU64, AttrMap>);
+
+impl PdmsCachedAttrMap {
+    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
+        let mut file = File::create(format!("PdmsCachedAttrMap_{}.bin", db_code)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsCachedAttrMap_{}.bin", db_code))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+}
+
+impl PdmsTree {
+    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
+        let mut file = File::create(format!("PdmsTree_{}.bin", db_code)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsTree_{}.bin", db_code))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
+pub struct PdmsTree(pub Tree<EleNode>);
+
+impl Collection for PdmsTree {
+    type PrimaryKey = u64;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "tree")
+    }
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for PdmsTree {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+/// 一个参考号是有可能重复的，project信息可以不用存储，获取信息时必须要带上 db_no
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefnoInfo {
+    /// 参考号的ref0
+    pub ref_0: u32,
+    //只需要保存一个ref0的信息，就能知道这个数据在哪个位置
+    /// 项目hash
+    pub project_hash: u32,
+    /// 对应db number
+    pub db_no: u32,
+}
+
+impl Collection for RefnoInfo {
+    type PrimaryKey = u32;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "info")
+    }
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for RefnoInfo {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Component, Reflect)]
+#[reflect(Component)]
+pub enum AttrVal {
+    InvalidType,
+    IntegerType(i32),
+    StringType(SmolStr),
+    DoubleType(f64),
+    DoubleArrayType(Vec<f64>),
+    StringArrayType(Vec<SmolStr>),
+    BoolArrayType(Vec<bool>),
+    IntArrayType(Vec<i32>),
+    BoolType(bool),
+    Vec3Type([f64; 3]),
+    ElementType(SmolStr),
+    WordType(SmolStr),
+
+    RefU64Type(RefU64),
+    StringHashType(AiosStrHash),
+}
+
+impl Inspectable for AttrVal {
+    type Attributes = ();
+
+    fn ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        _options: Self::Attributes,
+        context: &mut bevy_inspector_egui::Context,
+    ) -> bool {
+        let mut changed = false;
+        match self {
+            StringType(s) | ElementType(s) | WordType(s) => {
+                s.as_str().ui(ui, Default::default(), context);
+            }
+            IntegerType(d) => {
+                d.ui(ui, Default::default(), context);
+            }
+            DoubleType(d) => {
+                d.ui(ui, Default::default(), context);
+            }
+            RefU64Type(r) => {
+                r.to_refno_str().as_str().ui(ui, Default::default(), context);
+            }
+            Vec3Type(r) => {
+                Vec3::new(r[0] as f32, r[1] as f32, r[2] as f32).ui(
+                    ui,
+                    Default::default(),
+                    context,
+                );
+            }
+            BoolType(b) => {
+                b.ui(ui, Default::default(), context);
+            }
+            BoolArrayType(bs) => {
+                for b in bs {
+                    b.ui(ui, Default::default(), context);
+                    ui.end_row();
+                }
+            }
+            DoubleArrayType(ds) => {
+                for b in ds {
+                    b.ui(ui, Default::default(), context);
+                    ui.end_row();
+                }
+            }
+            StringHashType(s) => {
+                s.ui(ui, Default::default(), context);
+            }
+            _ => {}
+        }
+        changed
+    }
+}
+
+impl Default for AttrVal {
+    fn default() -> Self {
+        Self::InvalidType
+    }
+}
+
+impl AttrVal {
+    #[inline]
+    pub fn i32_value(&self) -> i32 {
+        return match self {
+            IntegerType(v) => *v,
+            _ => 0,
+        };
+    }
+
+    #[inline]
+    pub fn i32_array_value(&self) -> Vec<i32> {
+        return match self {
+            IntArrayType(v) => v.to_vec(),
+            _ => vec![],
+        };
+    }
+
+    #[inline]
+    pub fn double_value(&self) -> Option<f64> {
+        return match self {
+            DoubleType(v) => Some(*v),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn f32_value(&self) -> Option<f32> {
+        return match self {
+            DoubleType(v) => Some(*v as f32),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn vec3_value(&self) -> Option<[f64;3]> {
+        return match self {
+            Vec3Type(v) => {
+                Some(*v)
+            }
+            _ => { None}
+        }
+    }
+
+    #[inline]
+    pub fn dvec_value(&self) -> Option<Vec<f64>> {
+        return match self {
+            DoubleArrayType(v) => Some(v.to_vec()),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn element_value(&self) -> Option<SmolStr> {
+        return match self {
+            ElementType(v) => Some(v.clone()),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn string_value(&self) -> SmolStr {
+        return match self {
+            StringType(v) => v.clone(),
+            _ => SmolStr::new(" "),
+        };
+    }
+
+    #[inline]
+    pub fn refno_value(&self) -> Option<RefU64> {
+        return match self {
+            RefU64Type(v) => Some(*v),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn get_val_as_string(&self) -> String {
+        return match self {
+            AttrVal::InvalidType => { "unset".to_string() }
+            IntegerType(v) => { v.to_string() }
+            StringType(v) => { v.to_string() }
+            DoubleType(v) => { v.to_string() }
+            DoubleArrayType(v) => { serde_json::to_string(v).unwrap() }
+            StringArrayType(v) => { serde_json::to_string(v).unwrap() }
+            BoolArrayType(v) => { serde_json::to_string(v).unwrap() }
+            IntArrayType(v) => { serde_json::to_string(v).unwrap() }
+            BoolType(v) => { v.to_string() }
+            Vec3Type(v) => { serde_json::to_string(v).unwrap() }
+            ElementType(v) => { v.to_string() }
+            WordType(v) => { v.to_string() }
+            RefU64Type(v) => { v.to_refno_str().to_string() }
+            StringHashType(v) => { v.to_string() }
+        };
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct PdmsDatabaseInfo {
+    pub db_names_map: DashMap<i32, String>,
+    // 第一个i32是refno ，第二个i32是type的hash
+    pub noun_attr_info_map: DashMap<i32, DashMap<i32, AttrInfo>>,
+}
+
+///可以缩放的类型
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum ScaledGeom {
+    Box(Vec3),
+    Cylinder(Vec3),
+    Sphere(f32),
+}
+
+//for json compatibility
+pub type PdmsMeshIdx = String;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[repr(C)]
+pub enum GeoType {
+    Box = 0,
+    Cylinder,
+    Dish,
+    Sphere,
+    Snout,
+    CTorus,
+    RTorus,
+    Pyramid,
+    Revo,
+    Extru,
+    Polyhedron,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct AiosMaterial {
+    pub color: Vec4,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum GeoData {
+    Primitive(PdmsMeshIdx), //索引的哪个mesh,和对应的拉伸值， 先从dish开始判断相似性
+    // Raw(Mesh),          //原生的Mesh
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct AiosAABB {
+    pub min: Vec3,
+    pub max: Vec3,
+}
+
+impl AiosAABB {
+    #[inline]
+    pub fn new(v1: Vec3, v2: Vec3) -> Self {
+        Self { min: v1, max: v2 }
+    }
+
+    #[inline]
+    pub fn scaled(&mut self, scale: &Vec3) {
+        self.min = Vec3::new(
+            self.min.x * scale.x,
+            self.min.y * scale.y,
+            self.min.z * scale.z,
+        );
+        self.max = Vec3::new(
+            self.max.x * scale.x,
+            self.max.y * scale.y,
+            self.max.z * scale.z,
+        );
+    }
+
+    #[inline]
+    pub fn get_half_extents(&self) -> Vec3 {
+        let center = (self.min + self.max) / 2.0;
+        self.max - center
+    }
+
+    #[inline]
+    pub fn get_center(&self) -> Vec3 {
+        let center = (self.min + self.max) / 2.0;
+        center
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PdmsMeshMgr {
+    pub inst_mgr: ShapeInstancesMgr,
+    pub cached_mesh_mgr: CachedMeshesMgr,
+    pub level_shape_mgr: HashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
+}
+
+impl PdmsMeshMgr {
+    #[inline]
+    pub fn get_instants_data(&self, refno: RefU64) -> HashMap<RefU64, &Vec<EleGeoInstData>> {
+        let mut results = HashMap::new();
+        let inst_map = &self.inst_mgr.inst_map;
+        if self.level_shape_mgr.contains_key(&refno) {
+            for v in self.level_shape_mgr[&refno].iter() {
+                if inst_map.contains_key(&v) {
+                    results.insert(v.clone(), inst_map.get(&v).unwrap());
+                }
+            }
+        } else {
+            if inst_map.contains_key(&refno) {
+                results.insert(refno.clone(), inst_map.get(&refno).unwrap());
+            }
+        }
+        results
+    }
+
+    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
+        let mut file = File::create(format!(r"D:\aios_workspace\bevy_editor_pls\target\debug\examples\PdmsMeshMgr_{}.bin", db_code)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", db_code))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+
+    pub fn serialize_to_json_file(&self) -> bool {
+        let mut file = File::create(format!("PdmsMeshMgr.json")).unwrap();
+        let serialized = serde_json::to_string(&self).unwrap();
+        file.write_all(serialized.as_bytes()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_json_file() -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr.json"))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = serde_json::from_slice::<Self>(&buf)?;
+        Ok(r)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ShapeInstancesMgr {
+    pub inst_map: HashMap<RefU64, Vec<EleGeoInstData>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct CachedMeshesMgr {
+    pub meshes: HashMap<String, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+}
+
+impl CachedMeshesMgr {
+    //获得对应的id的 EleGeoDatas
+    pub fn get_bevy_mesh(&self, mesh_hash: &str) -> Option<(Mesh, Aabb)> {
+        if let Some(cached_msh) = self.get_mesh(mesh_hash) {
+            let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
+            return Some(bevy_mesh);
+        }
+        None
+    }
+
+    pub fn get_mesh(&self, mesh_hash: &str) -> Option<&PdmsMesh> {
+        self.meshes.get(mesh_hash)
+    }
+
+    //get the mesh index, if not exist, try to create and insert, and return index
+    pub fn get_pdms_mesh_hash_key(&mut self, m: Box<dyn BrepShapeTrait>) -> String {
+        let hash = m.hash_mesh_params().to_string();
+        if !self.meshes.contains_key(&hash) {
+            let mesh = m.gen_unit_shape();
+            self.meshes.insert(hash.clone(), mesh);
+        }
+        hash
+    }
+
+    pub fn get_bbox(&self, hash: &String) -> Option<AiosAABB> {
+        if self.meshes.contains_key(hash) {
+            let mesh = self.meshes.get(hash).unwrap();
+            return Some(mesh.aabb.clone());
+        }
+        None
+    }
+
+    pub fn serialize_to_bin_file(&self) -> bool {
+        let mut file = File::create(format!("cached_meshes.bin")).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file() -> Self {
+        let mut file = File::open(format!("cached_meshes.bin")).unwrap();
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        bincode::deserialize(buf.as_slice()).unwrap()
+    }
+
+    pub fn serialize_to_json_file(&self) -> bool {
+        let mut file = File::create(format!("cached_meshes.json")).unwrap();
+        let serialized = serde_json::to_string(&self).unwrap();
+        file.write_all(serialized.as_bytes()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_json_file() -> Self {
+        let mut file = File::open(format!("cached_meshes.json")).unwrap();
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        serde_json::from_slice(&buf).unwrap()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EleGeoInstData {
+    pub geo_hash: String,
+    pub bbox: AiosAABB,
+    pub global_transform: (Quat, Vec3, Vec3),
+    //世界坐标系的变换, rot, translation, scale
+    pub visible: bool,
+    pub generic_type: SmolStr,
+    //所属一般类型，ROOM、STRU、PIPE等
+    pub zone_refno: RefU64,
+    // 暂时用这个
+    pub node_id: NodeId,
+}
+
+impl Collection for EleGeoInstData {
+    type PrimaryKey = u64;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "geoms")
+    }
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for EleGeoInstData {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+pub trait PdmsNodeTrait {
+    #[inline]
+    fn get_refno(&self) -> RefU64 {
+        RefU64::default()
+    }
+
+    #[inline]
+    fn get_name_hash(&self) -> u32 {
+        0
+    }
+
+    #[inline]
+    fn get_noun_hash(&self) -> u32 {
+        0
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleNode {
+    pub refno: RefU64,
+    pub owner: RefU64,
+    pub name_hash: AiosStrHash,
+    pub noun: u32,
+    pub version: u32,
+    // pub children_count: usize,
+    pub children_count: usize,
+}
+
+/// 每个dbno对应的version
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct DbnoVersion {
+    pub dbno: u32,
+    pub version: u32,
+}
+
+impl Collection for DbnoVersion {
+    type PrimaryKey = u32;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "vers")
+    }
+
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for DbnoVersion {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+impl PdmsNodeTrait for EleNode {
+    #[inline]
+    fn get_refno(&self) -> RefU64 {
+        self.refno
+    }
+
+    #[inline]
+    fn get_name_hash(&self) -> u32 {
+        self.name_hash
+    }
+
+    #[inline]
+    fn get_noun_hash(&self) -> u32 {
+        self.noun
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleNodeMongoDb {
+    pub file_name: SmolStr,
+    /// 序列化后的 tree
+    pub tree: Vec<u8>,
+}
+
+impl EleNodeMongoDb {
+    pub fn new(db_name: &str, tree: Tree<EleNode>) -> Self {
+        Self {
+            file_name: SmolStr::from(db_name),
+            tree: bincode::serialize(&tree).unwrap(),
+        }
+    }
+}
+
+impl EleNode {
+    // pub fn name(&self) -> &str {
+    //     self.name.as_str()
+    // }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PdmsMongoAttr {
+    pub refno: SmolStr,
+    pub attr: AttrMap,
+}
+
+#[test]
+fn test_dashmap() {
+    let mut dashmap_1 = DashMap::new();
+    dashmap_1.insert("1", "hello");
+    let mut dashmap_2 = DashMap::new();
+    dashmap_2.insert("2", "world");
+    let mut dashmap_3 = DashMap::new();
+    dashmap_1.iter().for_each(|m| {
+        dashmap_3.insert(m.key().clone(), m.value().clone());
+    });
+    dashmap_2.iter().for_each(|m| {
+        dashmap_3.insert(m.key().clone(), m.value().clone());
+    });
+    //dbg!(&dashmap_3);
+}
+
+#[test]
+fn test_refu64() {
+    let refno = RefU64::from(RefI32Tuple(((16477, 80))));
+    println!("refno={}", refno.0);
+}
+
+// #[test]
+// fn test_ref_i32_tuple(){
+//     let refno:Refi32Tuple = RefU64(65326452626828).into();
+//     println!("refno={:?}",refno);
+// }
+
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+pub enum DbAttributeType {
+    INTEGER = 1,
+    DOUBLE,
+    BOOL,
+    STRING,
+    ELEMENT,
+    WORD,
+    DIRECTION,
+    POSITION,
+    ORIENTATION,
+    DATETIME,
+    DOUBLEVEC,
+    INTVEC,
+    FLOATVEC,
+    TYPEX,
+    Vec3Type,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AttrInfo {
+    pub name: SmolStr,
+    pub hash: i32,
+    pub offset: u32,
+    pub default_val: AttrVal,
+    pub att_type: DbAttributeType,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct PDMSDBInfo {
+    pub name: String,
+    pub db_no: i32,
+    pub db_type: String,
+    pub version: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct PdmsRefno {
+    pub ref_no: String,
+    pub db: String,
+    pub type_name: String,
+}
+
+
+pub type AiosStrHash = u32;
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct AiosStr(pub SmolStr);
+
+impl AiosStr {
+    #[inline]
+    pub fn get_u32_hash(&self) -> u32 {
+        use hash32::{FnvHasher, Hash, Hasher};
+        let mut fnv = FnvHasher::default();
+        self.hash(&mut fnv);
+        fnv.finish()
+    }
+    pub fn take(mut self) -> SmolStr {
+        self.0
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl Deref for AiosStr {
+    type Target = SmolStr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl hash32::Hash for AiosStr {
+    fn hash<H>(&self, state: &mut H)
+        where
+            H: Hasher,
+    {
+        state.write(self.0.as_str().as_bytes());
+        state.write(&[0xff]);
+    }
+}
+
+impl Collection for AiosStr {
+    type PrimaryKey = u32;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "strings")
+    }
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for AiosStr {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+#[derive(Component, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct StringLookupTable {
+    pub lookup: Arc<DashMap<u32, AiosStr>>,
+}
+
+impl StringLookupTable {
+    pub fn new() -> Self {
+        Self {
+            lookup: Arc::new(DashMap::new()),
+        }
+    }
+
+    pub fn get_string(&self, hash: u32) -> Option<SmolStr> {
+        self.lookup.get(&hash).map(|x| x.0.clone())
+    }
+
+    pub fn add_str(&self, str_val: &str) -> u32 {
+        use hash32::{FnvHasher, Hash, Hasher};
+        let mut fnv = FnvHasher::default();
+        str_val.hash(&mut fnv);
+        let hash = fnv.finish();
+
+        self.lookup.entry(hash).or_insert(AiosStr(str_val.into()));
+        hash
+    }
+
+    pub fn merge(&mut self, other: &Self) -> bool {
+        for kv in &*other.lookup {
+            self.lookup.insert(kv.key().clone(), kv.value().clone());
+        }
+        true
+    }
+
+    pub fn serialize_to_default_json_file(&self) -> bool {
+        let mut file = File::create(format!("./AIOS_DBS/AIOS_name_lookup.json")).unwrap();
+        let serialized = serde_json::to_string(&self).unwrap();
+        file.write_all(serialized.as_bytes()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_default_json_file(_name: &str) -> Option<Self> {
+        if let Ok(mut file) = File::open(format!("./AIOS_DBS/AIOS_name_lookup.json")) {
+            let mut bytes = vec![];
+            file.read_to_end(&mut bytes);
+            return serde_json::from_slice::<Self>(bytes.as_slice()).ok();
+        }
+        None
+    }
+    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
+        let mut file = File::create(format!("StringLookupTable_{}.bin", db_code)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("StringLookupTable_{}.bin", db_code))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefnoNodeId {
+    pub refno: u64,
+    //  参考号对应的小版本
+    pub version: u32,
+    // 参考号在树中对应的nodeId
+    pub node_id: NodeId,
+}
+
+impl Collection for RefnoNodeId {
+    // 参考号
+    type PrimaryKey = u64;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "nodeids")
+    }
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for RefnoNodeId {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
+pub struct ProjectDbno {
+    pub mdb: u32,
+    pub main_db: u32,
+    // 每个模块（DESI,CATA .. ）对应得dbno
+    pub dbs: HashMap<String, Vec<u32>>,
+}
+
+impl Collection for ProjectDbno {
+    type PrimaryKey = u32;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "dbs")
+    }
+
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for ProjectDbno {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+
+    fn format() -> Self::Format {
+        // The bincode options can be set on this type
+        transmog_bincode::Bincode::default()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TxXt {
+    pub map: HashMap<String, String>,
+}
+
+impl Collection for TxXt {
+    type PrimaryKey = u64;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "txxt")
+    }
+
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for TxXt {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+
+    fn format() -> Self::Format {
+        // The bincode options can be set on this type
+        transmog_bincode::Bincode::default()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct YkGd {
+    pub map: HashMap<String, String>,
+}
+
+impl Collection for YkGd {
+    type PrimaryKey = u64;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "ykgd")
+    }
+
+    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for YkGd {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+
+    fn format() -> Self::Format {
+        // The bincode options can be set on this type
+        transmog_bincode::Bincode::default()
+    }
+}
