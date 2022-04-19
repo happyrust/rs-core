@@ -1,4 +1,8 @@
+use std::fmt::{Debug, Formatter};
+use bonsaidb::core::Error;
+use bonsaidb::core::schema::{Collection, CollectionName, Qualified, Schematic, SerializedCollection};
 use smol_str::SmolStr;
+use serde::{Serialize,Deserialize};
 use crate::pdms_types::{AttrMap, RefU64};
 
 
@@ -103,4 +107,49 @@ pub struct AxisParam {
     pub direction: SmolStr,
     pub pconnect: SmolStr,
     pub pbore: SmolStr,
+}
+
+#[derive(Debug,Serialize,Deserialize)]
+pub enum NewDataState {
+    Modify,
+    Increase,
+    Delete
+}
+
+#[derive(Serialize,Deserialize)]
+pub struct IncrementData {
+    pub refno: RefU64,
+    pub attr_data_map: AttrMap,
+    pub state: NewDataState,
+    pub version: u32,
+}
+
+impl Collection for IncrementData {
+    type PrimaryKey = u64;
+
+    fn collection_name() -> CollectionName {
+        CollectionName::new("aios", "inc")
+    }
+    fn define_views(schema: &mut Schematic) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+impl SerializedCollection for IncrementData {
+    type Contents = Self;
+    type Format = transmog_bincode::Bincode;
+    fn format() -> Self::Format {
+        transmog_bincode::Bincode::default()
+    }
+}
+
+impl Debug for IncrementData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("IncrementData")
+            .field("refno",&self.refno.to_refno_str())
+            .field("map",&self.attr_data_map.to_string_hashmap())
+            .field("state",&self.state)
+            .field("version",&self.version)
+            .finish()
+    }
 }
