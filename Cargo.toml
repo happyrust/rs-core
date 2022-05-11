@@ -8,9 +8,9 @@ edition = "2021"
 [dependencies]
 bonsaidb = { version = "0.4.1", features = ["client-full","local-full"] }
 smol_str = { version = "0.1.21", features = ["serde"] }
-bevy = "0.7.0"
-bevy_egui = "0.13.0"
-bevy-inspector-egui = "0.10.0"
+bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy_egui = {path = "../bevy_egui"}
+bevy-inspector-egui = { path = "../bevy-inspector-egui" }
 glam = { version = "0.20.2", features = ["transform-types"] }
 id_tree = { version = "1.8.0", features = ["serde_support"] }
 dashmap = { version = "5.2.0", features = ["serde"] }
