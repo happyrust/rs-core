@@ -78,6 +78,7 @@ pub struct GmParam {
     pub diameters: Vec<SmolStr>,
     /// 顺序 pdistance pbdistance ptdistance, 先bottom, 后top
     pub distances: Vec<SmolStr>,
+    pub shears: Vec<SmolStr>,
     pub phei: SmolStr,
     pub offset: SmolStr,
     /// 顺序 x y z
@@ -95,6 +96,7 @@ pub struct GmParam {
     pub paxises: Vec<SmolStr>,
     pub centre_line_flag: bool,
     pub visible_flag: bool,
+    pub prads: Vec<SmolStr>,
 }
 
 #[derive(Clone, Debug, Default)]

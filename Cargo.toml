@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 bonsaidb = { version = "0.4.1", features = ["client-full","local-full"] }
-smol_str = { version = "0.1.22", features = ["serde"] }
+smol_str = { version = "0.1.21", features = ["serde"] }
 bevy = "0.7.0"
 bevy_egui = "0.13.0"
 bevy-inspector-egui = "0.10.0"
@@ -26,6 +26,7 @@ memchr = {git = "https://github.com/BurntSushi/memchr.git"}
 nom = "6.1.2"
 nom-derive = "0.9.0"
 itertools = "0.10.1"
+skytable = "0.7.0"
 
 transmog-bincode = "0.1"
 serde-name = "0.1.1"

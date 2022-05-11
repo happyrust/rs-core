@@ -1,4 +1,4 @@
-use serde::{Serialize,Deserialize};
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::default::Default;
 use std::fmt;
@@ -26,6 +26,8 @@ use hash32_derive::Hash32;
 use id_tree::{NodeId, Tree};
 use transmog_bincode::bincode;
 use itertools::Itertools;
+use skytable::{Element, SkyResult};
+use skytable::types::{FromSkyhashBytes, IntoSkyhashBytes};
 use crate::BHashMap;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::pdms_types::AttrVal::*;
@@ -40,6 +42,17 @@ use crate::shape::pdms_shape::{BrepShapeTrait, PdmsMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 
 pub const LEVEL_VISBLE: u32 = 6;
+
+// 包装整数
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
+pub struct Integer(pub u32);
+
+impl IntoSkyhashBytes for &Integer {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
 
 ///pdms的参考号
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
@@ -149,7 +162,30 @@ impl From<&[u8]> for RefU64 {
     }
 }
 
+impl IntoSkyhashBytes for &RefU64 {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for RefU64 {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<RefU64>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
+    }
+}
+
 impl RefU64 {
+    #[inline]
+    pub fn is_valid(&self) -> bool { self.get_0() != 0 }
+
+    #[inline]
+    pub fn get_sled_key(&self) -> [u8; 8]{
+        self.0.to_be_bytes()
+    }
+
     #[inline]
     pub fn get_0(&self) -> u32 {
         let bytes = self.0.to_be_bytes();
@@ -239,6 +275,22 @@ impl RefU64Vec {
         self.0.push(v);
     }
 }
+
+impl IntoSkyhashBytes for &RefU64Vec {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for RefU64Vec {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<RefU64Vec>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
+    }
+}
+
 
 // #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, PartialEq)]
 #[derive(
@@ -340,6 +392,22 @@ impl DerefMut for AttrMap {
     }
 }
 
+impl IntoSkyhashBytes for &AttrMap {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for AttrMap {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<AttrMap>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
+    }
+}
+
+
 impl AttrMap {
     #[inline]
     pub fn insert(&mut self, k: NounHash, v: AttrVal) {
@@ -378,6 +446,20 @@ impl AttrMap {
         }
     }
 
+    #[inline]
+    pub fn get_main_db_in_mdb(&self) -> Option<RefU64> {
+        if let Some(v) = self.map.get(&NounHash(ATT_CURD)) {
+            match v {
+                AttrVal::IntArrayType(v) => {
+                    let refno = RefU64::from_two_nums(v[0] as u32, v[1] as u32);
+                    return Some(refno);
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
     //获取spref
     #[inline]
     pub fn get_foreign_refno(&self, key: &str) -> Option<RefU64> {
@@ -385,7 +467,6 @@ impl AttrMap {
             return Some(*d);
         }
         None
-        // Err(anyhow!("Foreign refno is not correct".to_string()))
     }
 
     #[inline]
@@ -409,7 +490,8 @@ impl AttrMap {
     ///判断构件是否可见
     pub fn is_visible_by_level(&self, level: Option<u32>) -> Option<bool> {
         let levels = self.get_level()?;
-        Some(levels[0] <= level.unwrap_or(LEVEL_VISBLE))
+        let l = level.unwrap_or(LEVEL_VISBLE);
+        Some(levels[0] <= l && l<=levels[1] )
     }
 
     #[inline]
@@ -441,8 +523,8 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_type_cloned(&self) -> SmolStr {
-        self.get_string("TYPE").unwrap().clone()
+    pub fn get_type_cloned(&self) -> Option<SmolStr> {
+        self.get_string("TYPE").map(|x| x.clone())
     }
 
     #[inline]
@@ -458,7 +540,6 @@ impl AttrMap {
                 Some(*d as i32)
             }
             _ => {
-                // Err(TypeNotCorrect(key.to_string(), "bool".to_string()).into())
                 None
             }
         }
@@ -472,24 +553,9 @@ impl AttrMap {
                 Some(s)
             }
             _ => {
-                // Err(TypeNotCorrect(key.to_string(), "bool".to_string()).into())
                 None
             }
         }
-    }
-
-    #[inline]
-    pub fn get_main_db_in_mdb(&self) -> Option<RefU64> {
-        if let Some(v) = self.map.get(&NounHash(ATT_CURD)) {
-            match v {
-                AttrVal::IntArrayType(v) => {
-                    let refno = RefI32Tuple((v[0], v[1]));
-                    return Some(refno.into());
-                }
-                _ => {}
-            }
-        }
-        None
     }
 
     #[inline]
@@ -527,7 +593,7 @@ impl AttrMap {
                 .into(),
 
             RefU64Type(d) => RefI32Tuple::from(d).into(),
-            StringHashType(d) => format!("{}",d).into(),
+            StringHashType(d) => format!("{d}").into(),
 
             _ => UNSET_STR.into(),
         };
@@ -575,9 +641,6 @@ impl AttrMap {
     #[inline]
     pub fn get_val(&self, key: &str) -> Option<&AttrVal> {
         self.map.get(&db1_hash(key).into())
-            // .ok_or_else(||
-            // AttNotExist(format!("{:?}", self),
-            //             key.to_string()).into() )
     }
 
     #[inline]
@@ -684,7 +747,7 @@ impl AttrMap {
 
     ///生成具有几何属性的element的shape
     pub fn create_brep_shape(&self) -> Option<Box<dyn BrepShapeTrait>> {
-        let type_noun = self.get_type_cloned();
+        let type_noun = self.get_type_cloned()?;
         return match type_noun.as_str() {
             "BOX" => Some(Box::new(SBox::from(self))),
             "CYLI" => Some(Box::new(SCylinder::from(self))),
@@ -698,7 +761,8 @@ impl AttrMap {
         };
     }
 
-    pub fn get_attr_strings(&self, keys: &[&str]) -> Vec<SmolStr> {
+    /// 获取string属性数组，忽略为空的值
+    pub fn get_attr_strings_without_default(&self, keys: &[&str]) -> Vec<SmolStr> {
         let mut results = vec![];
         for &attr_name in keys {
             if let Some(result) = self.get_val(attr_name) {
@@ -715,6 +779,20 @@ impl AttrMap {
         results
     }
 
+    pub fn get_attr_strings(&self, keys: &[&str]) -> Vec<SmolStr> {
+        let mut results = vec![];
+        for &attr_name in keys {
+            if let Some(result) = self.get_val(attr_name) {
+                match result {
+                    AttrVal::StringType(v) => {
+                        results.push(v.trim_matches('\0').to_owned().clone().into());
+                    }
+                    _ => {}
+                }
+            }
+        }
+        results
+    }
 
 }
 
@@ -765,8 +843,22 @@ impl PdmsTree {
         true
     }
 
+    pub fn serialize_to_bin_file_with_name(&self, name: &str, db_code: u32) -> bool {
+        let mut file = File::create(format!("{name}_{db_code}.bin")).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
     pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
         let mut file = File::open(format!("PdmsTree_{}.bin", db_code))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+    pub fn deserialize_from_bin_file_with_name(name: &str, db_code: u32) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("{name}_{db_code}.bin"))?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
         let r = bincode::deserialize(buf.as_slice())?;
@@ -794,6 +886,21 @@ impl SerializedCollection for PdmsTree {
     type Format = transmog_bincode::Bincode;
     fn format() -> Self::Format {
         transmog_bincode::Bincode::default()
+    }
+}
+
+impl IntoSkyhashBytes for &PdmsTree {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for PdmsTree {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<PdmsTree>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
     }
 }
 
@@ -825,6 +932,21 @@ impl SerializedCollection for RefnoInfo {
     type Format = transmog_bincode::Bincode;
     fn format() -> Self::Format {
         transmog_bincode::Bincode::default()
+    }
+}
+
+impl IntoSkyhashBytes for &RefnoInfo {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for RefnoInfo {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<RefnoInfo>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
     }
 }
 
@@ -943,13 +1065,13 @@ impl AttrVal {
     }
 
     #[inline]
-    pub fn vec3_value(&self) -> Option<[f64;3]> {
+    pub fn vec3_value(&self) -> Option<[f64; 3]> {
         return match self {
             Vec3Type(v) => {
                 Some(*v)
             }
-            _ => { None}
-        }
+            _ => { None }
+        };
     }
 
     #[inline]
@@ -985,6 +1107,14 @@ impl AttrVal {
     }
 
     #[inline]
+    pub fn string_hash_value(&self) -> Option<AiosStrHash> {
+        return match self {
+            StringHashType(v) => Some(v.clone()),
+            _ => None,
+        };
+    }
+
+    #[inline]
     pub fn get_val_as_string(&self) -> String {
         return match self {
             AttrVal::InvalidType => { "unset".to_string() }
@@ -1011,6 +1141,11 @@ pub struct PdmsDatabaseInfo {
     // 第一个i32是refno ，第二个i32是type的hash
     pub noun_attr_info_map: DashMap<i32, DashMap<i32, AttrInfo>>,
 }
+
+unsafe impl Send for PdmsDatabaseInfo {}
+
+unsafe impl Sync for PdmsDatabaseInfo {}
+
 
 ///可以缩放的类型
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1278,6 +1413,34 @@ pub struct EleNode {
     pub children_count: usize,
 }
 
+impl EleNode {
+    pub fn set_default_name(name_hash:AiosStrHash) -> EleNode {
+        EleNode {
+            name_hash,
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PdmsNodeId(pub NodeId);
+
+impl IntoSkyhashBytes for &PdmsNodeId {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for PdmsNodeId {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<PdmsNodeId>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
+    }
+}
+
+
 /// 每个dbno对应的version
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DbnoVersion {
@@ -1319,6 +1482,21 @@ impl PdmsNodeTrait for EleNode {
     #[inline]
     fn get_noun_hash(&self) -> u32 {
         self.noun
+    }
+}
+
+impl IntoSkyhashBytes for &EleNode {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for EleNode {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<EleNode>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
     }
 }
 
@@ -1479,6 +1657,21 @@ impl SerializedCollection for AiosStr {
     type Format = transmog_bincode::Bincode;
     fn format() -> Self::Format {
         transmog_bincode::Bincode::default()
+    }
+}
+
+impl IntoSkyhashBytes for &AiosStr {
+    fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+}
+
+impl FromSkyhashBytes for AiosStr {
+    fn from_element(element: Element) -> SkyResult<Self> {
+        if let Element::Binstr(v) = element {
+            return Ok(bincode::deserialize::<AiosStr>(&v).unwrap());
+        }
+        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
     }
 }
 
@@ -1658,11 +1851,12 @@ impl SerializedCollection for YkGd {
         transmog_bincode::Bincode::default()
     }
 }
+
 /// 每种 type 对应的所有 uda name 和 default value
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Uda{
-    pub reference_type : String,
-    pub data: Vec<(String,String)>,
+pub struct Uda {
+    pub reference_type: String,
+    pub data: Vec<(String, String)>,
 }
 
 impl Collection for Uda {
