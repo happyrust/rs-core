@@ -11,8 +11,7 @@ use std::sync::Arc;
 use std::vec::IntoIter;
 use bevy_egui::egui;
 use bevy_inspector_egui::Inspectable;
-use bevy::ecs::component::Component;
-use bevy::prelude::Mesh;
+use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
@@ -684,7 +683,6 @@ impl AttrMap {
         if pos.len() == 3 {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         }
-        // return Err(anyhow!("No end position".to_string()));
         None
     }
 
@@ -969,6 +967,7 @@ pub enum AttrVal {
 
     RefU64Type(RefU64),
     StringHashType(AiosStrHash),
+    RefU64Array(RefU64Vec),
 }
 
 impl Inspectable for AttrVal {
@@ -1131,6 +1130,7 @@ impl AttrVal {
             WordType(v) => { v.to_string() }
             RefU64Type(v) => { v.to_refno_str().to_string() }
             StringHashType(v) => { v.to_string() }
+            RefU64Array(v) => { serde_json::to_string(v).unwrap() }
         };
     }
 }
@@ -1231,55 +1231,6 @@ pub struct PdmsMeshMgr {
     pub level_shape_mgr: HashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
 }
 
-impl PdmsMeshMgr {
-    #[inline]
-    pub fn get_instants_data(&self, refno: RefU64) -> HashMap<RefU64, &Vec<EleGeoInstData>> {
-        let mut results = HashMap::new();
-        let inst_map = &self.inst_mgr.inst_map;
-        if self.level_shape_mgr.contains_key(&refno) {
-            for v in self.level_shape_mgr[&refno].iter() {
-                if inst_map.contains_key(&v) {
-                    results.insert(v.clone(), inst_map.get(&v).unwrap());
-                }
-            }
-        } else {
-            if inst_map.contains_key(&refno) {
-                results.insert(refno.clone(), inst_map.get(&refno).unwrap());
-            }
-        }
-        results
-    }
-
-    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
-        let mut file = File::create(format!(r"D:\aios_workspace\bevy_editor_pls\target\debug\examples\PdmsMeshMgr_{}.bin", db_code)).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
-        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", db_code))?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        let r = bincode::deserialize(buf.as_slice())?;
-        Ok(r)
-    }
-
-    pub fn serialize_to_json_file(&self) -> bool {
-        let mut file = File::create(format!("PdmsMeshMgr.json")).unwrap();
-        let serialized = serde_json::to_string(&self).unwrap();
-        file.write_all(serialized.as_bytes()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_json_file() -> anyhow::Result<Self> {
-        let mut file = File::open(format!("PdmsMeshMgr.json"))?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        let r = serde_json::from_slice::<Self>(&buf)?;
-        Ok(r)
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
@@ -1292,8 +1243,8 @@ pub struct CachedMeshesMgr {
 }
 
 impl CachedMeshesMgr {
-    //获得对应的id的 EleGeoDatas
-    pub fn get_bevy_mesh(&self, mesh_hash: &str) -> Option<(Mesh, Aabb)> {
+    /// 获得对应的bevy 三角模型和线框模型
+    pub fn get_bevy_mesh(&self, mesh_hash: &str) -> Option<(Mesh, Mesh, Aabb)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
             let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
             return Some(bevy_mesh);
@@ -1407,7 +1358,20 @@ pub struct EleNode {
     pub refno: RefU64,
     pub owner: RefU64,
     pub name_hash: AiosStrHash,
+    // pub name: AiosStr,
     pub noun: u32,
+    pub version: u32,
+    // pub children_count: usize,
+    pub children_count: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleNodeTIDB {
+    pub refno: RefU64,
+    pub owner: RefU64,
+    // pub name_hash: AiosStrHash,
+    pub name: AiosStr,
+    pub noun: AiosStr,
     pub version: u32,
     // pub children_count: usize,
     pub children_count: usize,
@@ -1574,6 +1538,8 @@ pub enum DbAttributeType {
     FLOATVEC,
     TYPEX,
     Vec3Type,
+
+    RefU64Vec,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

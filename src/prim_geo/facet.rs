@@ -119,15 +119,16 @@ impl BrepShapeTrait for Facet {
 
         let a = aabb.mins;
         let b = aabb.maxs;
+        //对于facet，可以绘制convex hull的线框
         return  PdmsMesh{
             indices,
             vertices,
             normals,
+            wf_indices: vec![],
+            wf_vertices: vec![],
             aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z))
         };
     }
-
-
 
 }
 

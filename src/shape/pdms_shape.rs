@@ -1,5 +1,8 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
+use std::fs::File;
 use std::hash::{Hash, Hasher};
+use std::io::{Read, Write};
 
 use bevy::prelude::{FromWorld, Mesh};
 use truck_modeling::{Curve, Shell};
@@ -11,7 +14,7 @@ use bevy::reflect::{Reflect, ReflectRef};
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::render::mesh::Indices;
 use bevy::render::primitives::Aabb;
-use bevy::render::render_resource::PrimitiveTopology::TriangleList;
+use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use fixed::types::I24F8;
 use glam::{TransformRT, TransformSRT, Vec3};
 use ncollide3d::bounding_volume::AABB;
@@ -21,7 +24,8 @@ use ncollide3d::na::Point3 as NPoint3;
 use ncollide3d::shape::TriMesh;
 use truck_base::bounding_box::BoundingBox;
 use serde::{Serialize,Deserialize};
-use crate::pdms_types::{AiosAABB, GeoData};
+use transmog_bincode::bincode;
+use crate::pdms_types::{AiosAABB, EleGeoInstData, GeoData, PdmsMeshMgr, RefU64};
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
 use crate::prim_geo::dish::Dish;
@@ -64,20 +68,15 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 
 #[derive(Serialize, Deserialize, Component, Debug, Clone, Default)]
 pub struct PdmsMesh {
-    // pub mesh: Mesh,
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
+    pub wf_indices: Vec<u32>,  //wireframe indices
+    pub wf_vertices: Vec<[f32; 3]>, //wireframe vertex
     pub aabb: AiosAABB,
 }
 
-
-
-//bevy's meshs
-
-
 impl PdmsMesh {
-
     pub fn get_tri_mesh(&self, trans: TransformSRT) -> TriMesh<f32> {
         let mut points: Vec<ncollide3d::na::Point3<f32>> = vec![];
         let mut indices: Vec<ncollide3d::na::Point3<usize>> = vec![];
@@ -102,14 +101,15 @@ impl PdmsMesh {
         mesh
     }
 
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Aabb){
+    ///返回三角模型和线框模型
+    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Aabb){
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
         let n = self.vertices.len();
         let mut uvs = vec![];
         for i in 0..n {
-           uvs.push([0.0f32, 0.0]);
+            uvs.push([0.0f32, 0.0]);
         }
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
         mesh.set_indices(Some(Indices::U32(
@@ -119,11 +119,69 @@ impl PdmsMesh {
             min,
             max,
         } = self.aabb;
-        // let aabb = AABB::new(NPoint3::new(min.x, min.y, min.z), NPoint3::new(max.x, max.y, max.z));
-        (mesh, Aabb::from_min_max(min, max))
+
+        let mut wire_mesh = Mesh::new(LineList);
+        wire_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.wf_vertices.clone());
+        wire_mesh.set_indices(Some(Indices::U32(
+            self.wf_indices.clone()
+        )));
+        (mesh, wire_mesh, Aabb::from_min_max(min, max))
     }
 }
 
+//bevy's meshs
+
+impl PdmsMeshMgr {
+    #[inline]
+    pub fn get_instants_data(&self, refno: RefU64) -> HashMap<RefU64, &Vec<EleGeoInstData>> {
+        let mut results = HashMap::new();
+        let inst_map = &self.inst_mgr.inst_map;
+        if self.level_shape_mgr.contains_key(&refno) {
+            for v in self.level_shape_mgr[&refno].iter() {
+                if inst_map.contains_key(&v) {
+                    results.insert(v.clone(), inst_map.get(&v).unwrap());
+                }
+            }
+        } else {
+            if inst_map.contains_key(&refno) {
+                results.insert(refno.clone(), inst_map.get(&refno).unwrap());
+            }
+        }
+        results
+    }
+
+    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
+        let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", db_code)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", db_code))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+
+    pub fn serialize_to_json_file(&self) -> bool {
+        let mut file = File::create(format!("PdmsMeshMgr.json")).unwrap();
+        let serialized = serde_json::to_string(&self).unwrap();
+        file.write_all(serialized.as_bytes()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_json_file() -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr.json"))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = serde_json::from_slice::<Self>(&buf)?;
+        Ok(r)
+    }
+
+
+}
 
 
 
@@ -179,6 +237,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug {
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
             if let Some(s) = brep.triangulation(tolerance) {
+
                 let polygon = s.to_polygon();
                 let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
                 let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
@@ -191,10 +250,32 @@ pub trait BrepShapeTrait: VerifiedShape + Debug {
                 }
                 let a = aabb.mins;
                 let b = aabb.maxs;
+
+                let curves = s
+                    .edge_iter()
+                    .map(|edge| edge.get_curve())
+                    .collect::<Vec<_>>();
+                let wf_vertices: Vec<[f32; 3]> = curves
+                    .iter()
+                    .flat_map(|poly| poly.iter())
+                    .map(|p| p.cast().unwrap().into())
+                    .collect();
+                let mut counter = 0;
+                let wf_indices: Vec<u32> = curves
+                    .iter()
+                    .flat_map(|poly| {
+                        let len = counter as u32;
+                        counter += poly.len();
+                        (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
+                    })
+                    .collect();
+
                 return PdmsMesh {
                     indices,
                     vertices,
                     normals,
+                    wf_indices,
+                    wf_vertices,
                     aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
                 };
             }
