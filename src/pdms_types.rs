@@ -1114,6 +1114,14 @@ impl AttrVal {
     }
 
     #[inline]
+    pub fn refu64_vec_value(&self) -> Option<RefU64Vec> {
+        return match self {
+            RefU64Array(v) => Some(v.clone()),
+            _ => None
+        }
+    }
+
+    #[inline]
     pub fn get_val_as_string(&self) -> String {
         return match self {
             AttrVal::InvalidType => { "unset".to_string() }
