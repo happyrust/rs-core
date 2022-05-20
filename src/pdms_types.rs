@@ -349,6 +349,41 @@ pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
 }
 
+
+impl AttrMap {
+
+    #[inline]
+    pub fn into_bincode_bytes(&self) -> Vec<u8>{
+        bincode::serialize(self).unwrap()
+    }
+
+    #[inline]
+    pub fn from_bincode_bytes(bytes: &[u8]) -> Option<Self>{
+        bincode::deserialize(bytes).ok()
+    }
+
+    #[inline]
+    pub fn into_compress_bytes(&self) -> Vec<u8>{
+        use flate2::Compression;
+        use flate2::write::DeflateEncoder;
+        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
+        e.write_all(&self.into_bincode_bytes());
+        e.finish().unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self>{
+        use flate2::write::DeflateDecoder;
+        let mut writer = Vec::new();
+        let mut deflater = DeflateDecoder::new(writer);
+        deflater.write_all(bytes).ok()?;
+        // writer = ;
+        bincode::deserialize(&deflater.finish().ok()?).ok()
+    }
+
+}
+
+
 impl Inspectable for AttrMap {
     type Attributes = ();
 

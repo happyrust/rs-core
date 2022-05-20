@@ -27,6 +27,7 @@ nom = "6.1.2"
 nom-derive = "0.9.0"
 itertools = "0.10.1"
 skytable = "0.7.0"
+flate2 = "1.0.23"
 
 transmog-bincode = "0.1"
 serde-name = "0.1.1"
