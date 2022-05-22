@@ -1,28 +1,8 @@
 use std::fmt::{Debug, Formatter};
-use bonsaidb::core::Error;
-use bonsaidb::core::schema::{Collection, CollectionName, Qualified, Schematic, SerializedCollection};
 use smol_str::SmolStr;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::{AttrMap, RefU64};
 
-
-//设计模块的信息
-// #[derive(Clone, Debug, Default)]
-// pub struct DesCompInfo {
-//     pub name: SmolStr,
-//     pub refno: SmolStr,
-//     pub owner: SmolStr,
-//     pub spre_name: SmolStr,
-//     pub type_name: SmolStr,
-//     pub gtype: SmolStr,
-//     pub scom_info: ::core::option::Option<ScomInfo>,
-//     pub ddangle: SmolStr,
-//     pub height: SmolStr,
-//     pub radius: SmolStr,
-//     pub world_matrix: Vec<f64>,
-//     pub world_position: Vec<f64>,
-//     pub desparams: Vec<f64>,
-// }
 
 #[derive(Clone, Debug)]
 pub struct ScomInfo {
@@ -54,14 +34,6 @@ pub struct DatasetParamStr {
     pub ruse: SmolStr,
     pub lhide: bool,
 }
-
-// pub struct SannData {
-//     pub xy: [f32; 2],
-//     pub ptaxis: Option<CateAxisParam>,
-//     pub pangle: f32,
-//     pub pradius: f32,
-//     pub pwidth: f32,
-// }
 
 //还是要用枚举，来列举各个情况
 //GMSE GMSS
@@ -126,24 +98,6 @@ pub struct IncrementData {
     pub version: u32,
 }
 
-impl Collection for IncrementData {
-    type PrimaryKey = u64;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "inc")
-    }
-    fn define_views(schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for IncrementData {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
-}
 
 impl Debug for IncrementData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

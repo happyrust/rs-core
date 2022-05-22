@@ -1,4 +1,8 @@
-//todo use LRU cache the mosted used variables
+use std::fs::File;
+use std::io::Read;
+use transmog_bincode::bincode;
+use memchr::memmem::{find, find_iter};
+use crate::pdms_types::PdmsDatabaseInfo;
 
 pub fn read_attr_info_config(config_path: &str) -> PdmsDatabaseInfo{
     let mut file = File::open(config_path).unwrap();
@@ -62,13 +66,7 @@ fn db1_dehash_test(){
     println!("{:#4X}",val);
 }
 
-use std::fs::File;
-use std::io::Read;
-use transmog_bincode::bincode;
-use memchr::memmem::{find, find_iter};
-use nom::char;
-use nom::character::complete::char;
-use crate::pdms_types::PdmsDatabaseInfo;
+
 
 fn convert_to_le_i32(table: &[u8], dw_offset: usize) -> i32 {
     i32::from_le_bytes(table[dw_offset * 4..dw_offset * 4 + 4].try_into().unwrap())

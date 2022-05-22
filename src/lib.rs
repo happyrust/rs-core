@@ -10,5 +10,6 @@ pub mod parsed_data;
 pub mod pdms_data;
 pub mod axis_param;
 pub mod bevy_types;
+pub mod helper;
 
 pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;

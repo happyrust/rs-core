@@ -15,8 +15,6 @@ use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use bonsaidb::core::Error;
-use bonsaidb::core::schema::{Collection, CollectionName, Qualified, Schematic, SerializedCollection};
 use dashmap::DashMap;
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use hash32::Hasher;
@@ -27,6 +25,7 @@ use transmog_bincode::bincode;
 use itertools::Itertools;
 use skytable::{Element, SkyResult};
 use skytable::types::{FromSkyhashBytes, IntoSkyhashBytes};
+use crate::consts::*;
 use crate::BHashMap;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::pdms_types::AttrVal::*;
@@ -181,7 +180,7 @@ impl RefU64 {
     pub fn is_valid(&self) -> bool { self.get_0() != 0 }
 
     #[inline]
-    pub fn get_sled_key(&self) -> [u8; 8]{
+    pub fn get_sled_key(&self) -> [u8; 8] {
         self.0.to_be_bytes()
     }
 
@@ -242,29 +241,6 @@ impl IntoIterator for RefU64Vec {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
-    }
-}
-
-//存储children，也可以这么去存储
-impl Collection for RefU64Vec {
-    type PrimaryKey = u64;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "refnos")
-    }
-
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for RefU64Vec {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-
-    fn format() -> Self::Format {
-        // The bincode options can be set on this type
-        transmog_bincode::Bincode::default()
     }
 }
 
@@ -351,19 +327,18 @@ pub struct AttrMap {
 
 
 impl AttrMap {
-
     #[inline]
-    pub fn into_bincode_bytes(&self) -> Vec<u8>{
+    pub fn into_bincode_bytes(&self) -> Vec<u8> {
         bincode::serialize(self).unwrap()
     }
 
     #[inline]
-    pub fn from_bincode_bytes(bytes: &[u8]) -> Option<Self>{
+    pub fn from_bincode_bytes(bytes: &[u8]) -> Option<Self> {
         bincode::deserialize(bytes).ok()
     }
 
     #[inline]
-    pub fn into_compress_bytes(&self) -> Vec<u8>{
+    pub fn into_compress_bytes(&self) -> Vec<u8> {
         use flate2::Compression;
         use flate2::write::DeflateEncoder;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
@@ -372,13 +347,29 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self>{
+    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
         use flate2::write::DeflateDecoder;
         let mut writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes).ok()?;
         // writer = ;
         bincode::deserialize(&deflater.finish().ok()?).ok()
+    }
+
+    // 返回 DESI 、 CATA .. 等模块值
+    pub fn get_db_stype(&self) -> Option<&'static str> {
+        let val = self.get(&NounHash(ATT_STYP as u32))?;
+        match val {
+            AttrVal::IntegerType(v) => {
+                Some(match *v {
+                    1 => "DESI",
+                    2 => "CATA",
+                    8 => "DICT",
+                    _ => "UNSET"
+                })
+            }
+            _ => None
+        }
     }
 
 }
@@ -525,7 +516,7 @@ impl AttrMap {
     pub fn is_visible_by_level(&self, level: Option<u32>) -> Option<bool> {
         let levels = self.get_level()?;
         let l = level.unwrap_or(LEVEL_VISBLE);
-        Some(levels[0] <= l && l<=levels[1] )
+        Some(levels[0] <= l && l <= levels[1])
     }
 
     #[inline]
@@ -714,7 +705,7 @@ impl AttrMap {
 
     #[inline]
     pub fn get_pose(&self) -> Option<Vec3> {
-        let pos =  self.get_f64_vec("POSE")?;
+        let pos = self.get_f64_vec("POSE")?;
         if pos.len() == 3 {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         }
@@ -826,25 +817,6 @@ impl AttrMap {
         }
         results
     }
-
-}
-
-impl Collection for AttrMap {
-    type PrimaryKey = u32;
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "attr")
-    }
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for AttrMap {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
 }
 
 
@@ -903,25 +875,6 @@ impl PdmsTree {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct PdmsTree(pub Tree<EleNode>);
 
-impl Collection for PdmsTree {
-    type PrimaryKey = u64;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "tree")
-    }
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for PdmsTree {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
-}
-
 impl IntoSkyhashBytes for &PdmsTree {
     fn as_bytes(&self) -> Vec<u8> {
         bincode::serialize(self).unwrap()
@@ -942,31 +895,10 @@ impl FromSkyhashBytes for PdmsTree {
 pub struct RefnoInfo {
     /// 参考号的ref0
     pub ref_0: u32,
-    //只需要保存一个ref0的信息，就能知道这个数据在哪个位置
-    /// 项目hash
-    pub project_hash: u32,
     /// 对应db number
     pub db_no: u32,
 }
 
-impl Collection for RefnoInfo {
-    type PrimaryKey = u32;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "info")
-    }
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for RefnoInfo {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
-}
 
 impl IntoSkyhashBytes for &RefnoInfo {
     fn as_bytes(&self) -> Vec<u8> {
@@ -1153,7 +1085,7 @@ impl AttrVal {
         return match self {
             RefU64Array(v) => Some(v.clone()),
             _ => None
-        }
+        };
     }
 
     #[inline]
@@ -1360,25 +1292,6 @@ pub struct EleGeoInstData {
     pub node_id: NodeId,
 }
 
-impl Collection for EleGeoInstData {
-    type PrimaryKey = u64;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "geoms")
-    }
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for EleGeoInstData {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
-}
-
 pub trait PdmsNodeTrait {
     #[inline]
     fn get_refno(&self) -> RefU64 {
@@ -1421,7 +1334,7 @@ pub struct EleNodeTIDB {
 }
 
 impl EleNode {
-    pub fn set_default_name(name_hash:AiosStrHash) -> EleNode {
+    pub fn set_default_name(name_hash: AiosStrHash) -> EleNode {
         EleNode {
             name_hash,
             ..Default::default()
@@ -1455,25 +1368,6 @@ pub struct DbnoVersion {
     pub version: u32,
 }
 
-impl Collection for DbnoVersion {
-    type PrimaryKey = u32;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "vers")
-    }
-
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for DbnoVersion {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
-}
 
 impl PdmsNodeTrait for EleNode {
     #[inline]
@@ -1523,11 +1417,6 @@ impl EleNodeMongoDb {
     }
 }
 
-impl EleNode {
-    // pub fn name(&self) -> &str {
-    //     self.name.as_str()
-    // }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PdmsMongoAttr {
@@ -1548,7 +1437,6 @@ fn test_dashmap() {
     dashmap_2.iter().for_each(|m| {
         dashmap_3.insert(m.key().clone(), m.value().clone());
     });
-    //dbg!(&dashmap_3);
 }
 
 #[test]
@@ -1556,13 +1444,6 @@ fn test_refu64() {
     let refno = RefU64::from(RefI32Tuple(((16477, 80))));
     println!("refno={}", refno.0);
 }
-
-// #[test]
-// fn test_ref_i32_tuple(){
-//     let refno:Refi32Tuple = RefU64(65326452626828).into();
-//     println!("refno={:?}",refno);
-// }
-
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub enum DbAttributeType {
@@ -1650,24 +1531,6 @@ impl hash32::Hash for AiosStr {
     }
 }
 
-impl Collection for AiosStr {
-    type PrimaryKey = u32;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "strings")
-    }
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for AiosStr {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
-}
 
 impl IntoSkyhashBytes for &AiosStr {
     fn as_bytes(&self) -> Vec<u8> {
@@ -1684,70 +1547,6 @@ impl FromSkyhashBytes for AiosStr {
     }
 }
 
-#[derive(Component, Debug, Default, Clone, Serialize, Deserialize)]
-pub struct StringLookupTable {
-    pub lookup: Arc<DashMap<u32, AiosStr>>,
-}
-
-impl StringLookupTable {
-    pub fn new() -> Self {
-        Self {
-            lookup: Arc::new(DashMap::new()),
-        }
-    }
-
-    pub fn get_string(&self, hash: u32) -> Option<SmolStr> {
-        self.lookup.get(&hash).map(|x| x.0.clone())
-    }
-
-    pub fn add_str(&self, str_val: &str) -> u32 {
-        use hash32::{FnvHasher, Hash, Hasher};
-        let mut fnv = FnvHasher::default();
-        str_val.hash(&mut fnv);
-        let hash = fnv.finish();
-
-        self.lookup.entry(hash).or_insert(AiosStr(str_val.into()));
-        hash
-    }
-
-    pub fn merge(&mut self, other: &Self) -> bool {
-        for kv in &*other.lookup {
-            self.lookup.insert(kv.key().clone(), kv.value().clone());
-        }
-        true
-    }
-
-    pub fn serialize_to_default_json_file(&self) -> bool {
-        let mut file = File::create(format!("./AIOS_DBS/AIOS_name_lookup.json")).unwrap();
-        let serialized = serde_json::to_string(&self).unwrap();
-        file.write_all(serialized.as_bytes()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_default_json_file(_name: &str) -> Option<Self> {
-        if let Ok(mut file) = File::open(format!("./AIOS_DBS/AIOS_name_lookup.json")) {
-            let mut bytes = vec![];
-            file.read_to_end(&mut bytes);
-            return serde_json::from_slice::<Self>(bytes.as_slice()).ok();
-        }
-        None
-    }
-    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
-        let mut file = File::create(format!("StringLookupTable_{}.bin", db_code)).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
-        let mut file = File::open(format!("StringLookupTable_{}.bin", db_code))?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        let r = bincode::deserialize(buf.as_slice())?;
-        Ok(r)
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefnoNodeId {
     pub refno: u64,
@@ -1757,25 +1556,6 @@ pub struct RefnoNodeId {
     pub node_id: NodeId,
 }
 
-impl Collection for RefnoNodeId {
-    // 参考号
-    type PrimaryKey = u64;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "nodeids")
-    }
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for RefnoNodeId {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-    fn format() -> Self::Format {
-        transmog_bincode::Bincode::default()
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct ProjectDbno {
@@ -1785,107 +1565,21 @@ pub struct ProjectDbno {
     pub dbs: HashMap<String, Vec<u32>>,
 }
 
-impl Collection for ProjectDbno {
-    type PrimaryKey = u32;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "dbs")
-    }
-
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for ProjectDbno {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-
-    fn format() -> Self::Format {
-        // The bincode options can be set on this type
-        transmog_bincode::Bincode::default()
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TxXt {
     pub map: HashMap<String, String>,
 }
 
-impl Collection for TxXt {
-    type PrimaryKey = u64;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "txxt")
-    }
-
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for TxXt {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-
-    fn format() -> Self::Format {
-        // The bincode options can be set on this type
-        transmog_bincode::Bincode::default()
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct YkGd {
     pub map: HashMap<String, String>,
 }
 
-impl Collection for YkGd {
-    type PrimaryKey = u64;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "ykgd")
-    }
-
-    fn define_views(_schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for YkGd {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-
-    fn format() -> Self::Format {
-        // The bincode options can be set on this type
-        transmog_bincode::Bincode::default()
-    }
-}
 
 /// 每种 type 对应的所有 uda name 和 default value
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Uda {
     pub reference_type: String,
     pub data: Vec<(String, String)>,
-}
-
-impl Collection for Uda {
-    type PrimaryKey = String;
-
-    fn collection_name() -> CollectionName {
-        CollectionName::new("aios", "uda")
-    }
-
-    fn define_views(schema: &mut Schematic) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
-impl SerializedCollection for Uda {
-    type Contents = Self;
-    type Format = transmog_bincode::Bincode;
-
-    fn format() -> Self::Format {
-        // The bincode options can be set on this type
-        transmog_bincode::Bincode::default()
-    }
 }

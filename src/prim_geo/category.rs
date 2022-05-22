@@ -36,14 +36,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let z_axis = Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32).normalize();
             //需要转换成CTorus
-            // let pheight = (d.dist_to_top - d.dist_to_btm) as f32;
             let pyramid = LPyramid {
-                //paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
-                // paax_dir: Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32).normalize(),
-                //pbax_pt: Vec3::new(pb.pt[0] as f32, pb.pt[1] as f32, pb.pt[2] as f32),
-                // pbax_dir: Vec3::new(pb.dir[0] as f32, pb.dir[1] as f32, pb.dir[2] as f32).normalize(),
-                //pcax_pt: Vec3::new(pc.pt[0] as f32, pc.pt[1] as f32, pc.pt[2] as f32),
-                // pcax_dir: Vec3::new(pc.dir[0] as f32, pc.dir[1] as f32, pc.dir[2] as f32).normalize(),
                 pbtp: d.x_top as f32,
                 pctp: d.y_top as f32,
                 pbbt: d.x_bottom as f32,
@@ -233,7 +226,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 phei,
                 pdia,
-                pdis: 0.0,  //-phei / 2.0
+                pdis: 0.0,
                 ..default()
             });
             return Some(CateBrepShape {
