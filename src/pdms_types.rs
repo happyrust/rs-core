@@ -41,6 +41,7 @@ use crate::tool::db_tool::{db1_dehash, db1_hash};
 
 pub const LEVEL_VISBLE: u32 = 6;
 
+
 // 包装整数
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct Integer(pub u32);
@@ -873,7 +874,22 @@ impl PdmsTree {
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
-pub struct PdmsTree(pub Tree<EleNode>);
+pub struct PdmsTree(pub Tree<EleTreeNode>);
+
+impl Deref for PdmsTree {
+    type Target = Tree<EleTreeNode>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for PdmsTree {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 
 impl IntoSkyhashBytes for &PdmsTree {
     fn as_bytes(&self) -> Vec<u8> {
@@ -1299,13 +1315,37 @@ pub trait PdmsNodeTrait {
     }
 
     #[inline]
-    fn get_name_hash(&self) -> u32 {
-        0
+    fn get_name(&self) -> &str {
+        ""
     }
 
     #[inline]
     fn get_noun_hash(&self) -> u32 {
         0
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleTreeNode {
+    pub refno: RefU64,
+    pub noun: NounHash,
+    pub name: String,
+}
+
+impl PdmsNodeTrait for EleTreeNode {
+    #[inline]
+    fn get_refno(&self) -> RefU64 {
+        self.refno
+    }
+
+    #[inline]
+    fn get_name(&self) -> &str {
+        self.name.as_str()
+    }
+
+    #[inline]
+    fn get_noun_hash(&self) -> u32 {
+        *self.noun
     }
 }
 
@@ -1369,22 +1409,7 @@ pub struct DbnoVersion {
 }
 
 
-impl PdmsNodeTrait for EleNode {
-    #[inline]
-    fn get_refno(&self) -> RefU64 {
-        self.refno
-    }
 
-    #[inline]
-    fn get_name_hash(&self) -> u32 {
-        self.name_hash
-    }
-
-    #[inline]
-    fn get_noun_hash(&self) -> u32 {
-        self.noun
-    }
-}
 
 impl IntoSkyhashBytes for &EleNode {
     fn as_bytes(&self) -> Vec<u8> {
