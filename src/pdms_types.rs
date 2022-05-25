@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
@@ -212,6 +212,12 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_refno_string(&self) -> String {
+        let refno: RefI32Tuple = self.into();
+        refno.into()
+    }
+
+    #[inline]
     pub fn from_two_nums(i: u32, j: u32) -> Self {
         let bytes: Vec<u8> = [i.to_be_bytes(), j.to_be_bytes()].concat();
         let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
@@ -269,21 +275,8 @@ impl FromSkyhashBytes for RefU64Vec {
 
 
 // #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, PartialEq)]
-#[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Component,
-Reflect,
-// Inspectable,
-Eq,
-Hash,
-PartialEq,
-Ord,
-PartialOrd,
-)]
+#[derive( Serialize, Deserialize, Clone, Debug, Default, Component, Reflect, Eq, Hash,
+            PartialEq, Ord, PartialOrd)]
 #[reflect(Component)]
 pub struct NounHash(pub u32);
 
@@ -455,8 +448,8 @@ impl AttrMap {
         self.map.contains_key(&(hash.into()))
     }
 
-    pub fn to_string_hashmap(&self) -> HashMap<String, String> {
-        let mut map = HashMap::new();
+    pub fn to_string_hashmap(&self) -> BTreeMap<String, String> {
+        let mut map = BTreeMap::new();
         for (k, v) in &self.map {
             map.insert(db1_dehash(k.0), format!("{:?}", v));
         }
@@ -1320,16 +1313,18 @@ pub trait PdmsNodeTrait {
     }
 
     #[inline]
-    fn get_noun_hash(&self) -> u32 {
-        0
-    }
+    fn get_noun_hash(&self) -> u32 { 0 }
+
+    #[inline]
+    fn get_type_name(&self) -> &str{ "" }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleTreeNode {
     pub refno: RefU64,
-    pub noun: NounHash,
+    pub noun: String,
     pub name: String,
+    pub owner: RefU64,
 }
 
 impl PdmsNodeTrait for EleTreeNode {
@@ -1345,7 +1340,12 @@ impl PdmsNodeTrait for EleTreeNode {
 
     #[inline]
     fn get_noun_hash(&self) -> u32 {
-        *self.noun
+        db1_hash(&self.noun.to_uppercase())
+    }
+
+    #[inline]
+    fn get_type_name(&self) -> &str {
+        self.noun.as_str()
     }
 }
 
@@ -1362,14 +1362,12 @@ pub struct EleNode {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct EleNodeTIDB {
-    pub refno: RefU64,
+pub struct PdmsElement {
+    pub refno: String,
     pub owner: RefU64,
-    // pub name_hash: AiosStrHash,
-    pub name: AiosStr,
-    pub noun: AiosStr,
+    pub name: String,
+    pub noun: String,
     pub version: u32,
-    // pub children_count: usize,
     pub children_count: usize,
 }
 

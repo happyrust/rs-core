@@ -150,15 +150,15 @@ impl PdmsMeshMgr {
         results
     }
 
-    pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
-        let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", db_code)).unwrap();
+    pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
+        let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", mdb)).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
         file.write_all(serialized.as_slice()).unwrap();
         true
     }
 
-    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
-        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", db_code))?;
+    pub fn deserialize_from_bin_file(mdb: &str) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", mdb))?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
         let r = bincode::deserialize(buf.as_slice())?;
