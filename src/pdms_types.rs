@@ -457,6 +457,15 @@ impl AttrMap {
     }
 
     #[inline]
+    pub fn get_name(&self) -> AiosStr {
+        return if let Some(StringType(v)) = self.get_val("NAME") {
+            AiosStr(v.clone())
+        } else {
+            AiosStr(SmolStr::new(""))
+        }
+    }
+
+    #[inline]
     pub fn get_name_hash(&self) -> AiosStrHash {
         if let Some(StringHashType(name_hash)) = self.get_val("NAME") {
             *name_hash
@@ -1066,10 +1075,10 @@ impl AttrVal {
     }
 
     #[inline]
-    pub fn string_value(&self) -> SmolStr {
+    pub fn string_value(&self) -> Option<SmolStr> {
         return match self {
-            StringType(v) => v.clone(),
-            _ => SmolStr::new(" "),
+            StringType(v) => Some(v.clone()),
+            _ => None,
         };
     }
 
@@ -1327,6 +1336,17 @@ pub struct EleTreeNode {
     pub owner: RefU64,
 }
 
+impl EleTreeNode {
+    pub fn new(refno:RefU64,noun:String,name:String,owner:RefU64) -> Self {
+        Self {
+            refno,
+            noun,
+            name,
+            owner,
+        }
+    }
+}
+
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]
     fn get_refno(&self) -> RefU64 {
@@ -1351,7 +1371,7 @@ impl PdmsNodeTrait for EleTreeNode {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleNode {
-    pub refno: RefU64,
+    pub refno: AiosStr,
     pub owner: RefU64,
     pub name_hash: AiosStrHash,
     // pub name: AiosStr,
