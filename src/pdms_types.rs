@@ -1369,6 +1369,16 @@ pub struct EleTreeNode {
     pub owner: RefU64,
 }
 
+impl EleTreeNode {
+    pub fn new(refno:RefU64,noun:String,name:String,owner:RefU64) -> Self {
+        Self {
+            refno,
+            noun,
+            name,
+            owner,
+        }
+    }
+}
 
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]
