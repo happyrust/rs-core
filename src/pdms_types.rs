@@ -1238,7 +1238,7 @@ impl AiosAABB {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PdmsMeshMgr {
     pub inst_mgr: ShapeInstancesMgr,
-    pub cached_mesh_mgr: Arc<CachedMeshesMgr>,
+    pub cached_mesh_mgr: CachedMeshesMgr,
     pub level_shape_mgr: DashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
 }
 
