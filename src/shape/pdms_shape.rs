@@ -15,6 +15,8 @@ use bevy::ecs::reflect::ReflectComponent;
 use bevy::render::mesh::Indices;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
+use dashmap::DashMap;
+use dashmap::mapref::one::Ref;
 use fixed::types::I24F8;
 use glam::{TransformRT, TransformSRT, Vec3};
 use ncollide3d::bounding_volume::AABB;
@@ -133,13 +135,13 @@ impl PdmsMesh {
 
 impl PdmsMeshMgr {
     #[inline]
-    pub fn get_instants_data(&self, refno: RefU64) -> HashMap<RefU64, &Vec<EleGeoInstData>> {
-        let mut results = HashMap::new();
+    pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, Vec<EleGeoInstData>>> {
+        let mut results = DashMap::new();
         let inst_map = &self.inst_mgr.inst_map;
         if self.level_shape_mgr.contains_key(&refno) {
-            for v in self.level_shape_mgr[&refno].iter() {
-                if inst_map.contains_key(&v) {
-                    results.insert(v.clone(), inst_map.get(&v).unwrap());
+            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter(){
+                if inst_map.contains_key(v) {
+                    results.insert(v.clone(), inst_map.get(v).unwrap());
                 }
             }
         } else {

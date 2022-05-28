@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
 use std::fmt;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Formatter, Pointer};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
@@ -16,6 +16,7 @@ use bevy::render::primitives::Aabb;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use dashmap::DashMap;
+use dashmap::mapref::one::Ref;
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use hash32::Hasher;
 use smol_str::SmolStr;
@@ -321,6 +322,12 @@ pub struct AttrMap {
 
 
 impl AttrMap {
+
+    #[inline]
+    pub fn is_null(&self) -> bool{
+        self.map.len() == 0
+    }
+
     #[inline]
     pub fn into_bincode_bytes(&self) -> Vec<u8> {
         bincode::serialize(self).unwrap()
@@ -538,12 +545,12 @@ impl AttrMap {
 
     #[inline]
     pub fn get_type(&self) -> &str {
-        self.get_string("TYPE").unwrap().as_str()
+        self.get_str("TYPE").unwrap_or("unset")
     }
 
     #[inline]
     pub fn get_type_cloned(&self) -> Option<SmolStr> {
-        self.get_string("TYPE").map(|x| x.clone())
+        self.get_smol_str("TYPE").map(|x| x.clone())
     }
 
     #[inline]
@@ -565,7 +572,20 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_string(&self, key: &str) -> Option<&SmolStr> {
+    pub fn get_str(&self, key: &str) -> Option<&str> {
+        let v = self.get_val(key)?;
+        match v {
+            StringType(s) | WordType(s) | ElementType(s) => {
+                Some(s.as_str())
+            }
+            _ => {
+                None
+            }
+        }
+    }
+
+    #[inline]
+    pub fn get_smol_str(&self, key: &str) -> Option<&SmolStr> {
         let v = self.get_val(key)?;
         match v {
             StringType(s) | WordType(s) | ElementType(s) => {
@@ -693,7 +713,6 @@ impl AttrMap {
         if pos.len() == 3 {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         }
-        // return Err(anyhow!("No start position".to_string()));
         None
     }
 
@@ -1066,10 +1085,18 @@ impl AttrVal {
     }
 
     #[inline]
-    pub fn string_value(&self) -> SmolStr {
+    pub fn string_value(&self) -> String {
+        return match self {
+            StringType(v) => v.to_string(),
+            _ => "unset".to_string(),
+        };
+    }
+
+    #[inline]
+    pub fn smol_str_value(&self) -> SmolStr {
         return match self {
             StringType(v) => v.clone(),
-            _ => SmolStr::new(" "),
+            _ => SmolStr::new("unset"),
         };
     }
 
@@ -1211,24 +1238,41 @@ impl AiosAABB {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PdmsMeshMgr {
     pub inst_mgr: ShapeInstancesMgr,
-    pub cached_mesh_mgr: CachedMeshesMgr,
-    pub level_shape_mgr: HashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
+    pub cached_mesh_mgr: Arc<CachedMeshesMgr>,
+    pub level_shape_mgr: DashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
 }
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
-    pub inst_map: HashMap<RefU64, Vec<EleGeoInstData>>,
+    pub inst_map: DashMap<RefU64, Vec<EleGeoInstData>>,
+}
+
+impl Deref for ShapeInstancesMgr {
+    type Target = DashMap<RefU64, Vec<EleGeoInstData>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inst_map
+    }
+}
+
+impl DerefMut for ShapeInstancesMgr {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inst_map
+    }
+}
+
+impl ShapeInstancesMgr {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CachedMeshesMgr {
-    pub meshes: HashMap<String, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+    pub meshes: DashMap<u64, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
 impl CachedMeshesMgr {
     /// 获得对应的bevy 三角模型和线框模型
-    pub fn get_bevy_mesh(&self, mesh_hash: &str) -> Option<(Mesh, Mesh, Aabb)> {
+    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Aabb)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
             let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
             return Some(bevy_mesh);
@@ -1236,21 +1280,21 @@ impl CachedMeshesMgr {
         None
     }
 
-    pub fn get_mesh(&self, mesh_hash: &str) -> Option<&PdmsMesh> {
+    pub fn get_mesh(&self, mesh_hash: &u64) -> Option<Ref<u64, PdmsMesh>> {
         self.meshes.get(mesh_hash)
     }
 
     //get the mesh index, if not exist, try to create and insert, and return index
-    pub fn get_pdms_mesh_hash_key(&mut self, m: Box<dyn BrepShapeTrait>) -> String {
-        let hash = m.hash_mesh_params().to_string();
+    pub fn get_pdms_mesh_hash_key(&self, m: Box<dyn BrepShapeTrait>) -> u64 {
+        let hash = m.hash_mesh_params();
         if !self.meshes.contains_key(&hash) {
             let mesh = m.gen_unit_shape();
-            self.meshes.insert(hash.clone(), mesh);
+            self.meshes.insert(hash, mesh);
         }
         hash
     }
 
-    pub fn get_bbox(&self, hash: &String) -> Option<AiosAABB> {
+    pub fn get_bbox(&self, hash: &u64) -> Option<AiosAABB> {
         if self.meshes.contains_key(hash) {
             let mesh = self.meshes.get(hash).unwrap();
             return Some(mesh.aabb.clone());
@@ -1289,16 +1333,14 @@ impl CachedMeshesMgr {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EleGeoInstData {
-    pub geo_hash: String,
+    pub geo_hash: u64,
     pub bbox: AiosAABB,
     pub global_transform: (Quat, Vec3, Vec3),
     //世界坐标系的变换, rot, translation, scale
     pub visible: bool,
-    pub generic_type: SmolStr,
+    pub generic_type: String,
     //所属一般类型，ROOM、STRU、PIPE等
     pub zone_refno: RefU64,
-    // 暂时用这个
-    pub node_id: NodeId,
 }
 
 pub trait PdmsNodeTrait {
@@ -1326,6 +1368,7 @@ pub struct EleTreeNode {
     pub name: String,
     pub owner: RefU64,
 }
+
 
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]
@@ -1468,7 +1511,7 @@ fn test_refu64() {
     println!("refno={}", refno.0);
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DbAttributeType {
     INTEGER = 1,
     DOUBLE,
