@@ -10,7 +10,7 @@ use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
 use bevy_egui::egui;
-use bevy_inspector_egui::Inspectable;
+// use bevy_inspector_egui::Inspectable;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::reflect::Reflect;
@@ -224,6 +224,12 @@ impl RefU64 {
         let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
         Self(v)
     }
+
+    #[inline]
+    pub fn to_url_refno(&self) -> String {
+        let refno: RefI32Tuple = self.into();
+        format!("{}_{}", refno.get_0(), refno.get_1())
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
@@ -276,8 +282,8 @@ impl FromSkyhashBytes for RefU64Vec {
 
 
 // #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, PartialEq)]
-#[derive( Serialize, Deserialize, Clone, Debug, Default, Component, Reflect, Eq, Hash,
-            PartialEq, Ord, PartialOrd)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Reflect, Eq, Hash,
+PartialEq, Ord, PartialOrd)]
 #[reflect(Component)]
 pub struct NounHash(pub u32);
 
@@ -372,37 +378,36 @@ impl AttrMap {
             _ => None
         }
     }
-
 }
 
 
-impl Inspectable for AttrMap {
-    type Attributes = ();
-
-    fn ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        _options: Self::Attributes,
-        context: &mut bevy_inspector_egui::Context,
-    ) -> bool {
-        let mut changed = false;
-        ui.vertical_centered(|ui| {
-            egui::Grid::new(context.id()).show(ui, |ui| {
-                let sort_keys = self.map.keys().cloned().sorted_by_key(|x| db1_dehash(x.0));
-                //need sort
-                for sort_key in sort_keys {
-                    ui.label(db1_dehash(sort_key.0));
-                    let v = self.map.get_mut(&sort_key).unwrap();
-                    ui.vertical(|ui| {
-                        changed |= v.ui(ui, Default::default(), context);
-                    });
-                    ui.end_row();
-                }
-            });
-        });
-        changed
-    }
-}
+// impl Inspectable for AttrMap {
+//     type Attributes = ();
+//
+//     fn ui(
+//         &mut self,
+//         ui: &mut egui::Ui,
+//         _options: Self::Attributes,
+//         context: &mut bevy_inspector_egui::Context,
+//     ) -> bool {
+//         let mut changed = false;
+//         ui.vertical_centered(|ui| {
+//             egui::Grid::new(context.id()).show(ui, |ui| {
+//                 let sort_keys = self.map.keys().cloned().sorted_by_key(|x| db1_dehash(x.0));
+//                 //need sort
+//                 for sort_key in sort_keys {
+//                     ui.label(db1_dehash(sort_key.0));
+//                     let v = self.map.get_mut(&sort_key).unwrap();
+//                     ui.vertical(|ui| {
+//                         changed |= v.ui(ui, Default::default(), context);
+//                     });
+//                     ui.end_row();
+//                 }
+//             });
+//         });
+//         changed
+//     }
+// }
 
 impl Deref for AttrMap {
     type Target = BHashMap<NounHash, AttrVal>;
@@ -465,11 +470,20 @@ impl AttrMap {
 
     #[inline]
     pub fn get_name_hash(&self) -> AiosStrHash {
-        if let Some(StringHashType(name_hash)) = self.get_val("NAME") {
+        return if let Some(StringHashType(name_hash)) = self.get_val("NAME") {
             *name_hash
         } else {
             0
-        }
+        };
+    }
+
+    #[inline]
+    pub fn get_name(&self) ->  AiosStr {
+        return if let Some(StringType(name)) = self.get_val("NAME") {
+            AiosStr(name.clone())
+        } else {
+            AiosStr(SmolStr::new(""))
+        };
     }
 
     #[inline]
@@ -965,59 +979,59 @@ pub enum AttrVal {
     RefU64Array(RefU64Vec),
 }
 
-impl Inspectable for AttrVal {
-    type Attributes = ();
-
-    fn ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        _options: Self::Attributes,
-        context: &mut bevy_inspector_egui::Context,
-    ) -> bool {
-        let mut changed = false;
-        match self {
-            StringType(s) | ElementType(s) | WordType(s) => {
-                s.as_str().ui(ui, Default::default(), context);
-            }
-            IntegerType(d) => {
-                d.ui(ui, Default::default(), context);
-            }
-            DoubleType(d) => {
-                d.ui(ui, Default::default(), context);
-            }
-            RefU64Type(r) => {
-                r.to_refno_str().as_str().ui(ui, Default::default(), context);
-            }
-            Vec3Type(r) => {
-                Vec3::new(r[0] as f32, r[1] as f32, r[2] as f32).ui(
-                    ui,
-                    Default::default(),
-                    context,
-                );
-            }
-            BoolType(b) => {
-                b.ui(ui, Default::default(), context);
-            }
-            BoolArrayType(bs) => {
-                for b in bs {
-                    b.ui(ui, Default::default(), context);
-                    ui.end_row();
-                }
-            }
-            DoubleArrayType(ds) => {
-                for b in ds {
-                    b.ui(ui, Default::default(), context);
-                    ui.end_row();
-                }
-            }
-            StringHashType(s) => {
-                s.ui(ui, Default::default(), context);
-            }
-            _ => {}
-        }
-        changed
-    }
-}
+// impl Inspectable for AttrVal {
+//     type Attributes = ();
+//
+//     fn ui(
+//         &mut self,
+//         ui: &mut egui::Ui,
+//         _options: Self::Attributes,
+//         context: &mut bevy_inspector_egui::Context,
+//     ) -> bool {
+//         let mut changed = false;
+//         match self {
+//             StringType(s) | ElementType(s) | WordType(s) => {
+//                 s.as_str().ui(ui, Default::default(), context);
+//             }
+//             IntegerType(d) => {
+//                 d.ui(ui, Default::default(), context);
+//             }
+//             DoubleType(d) => {
+//                 d.ui(ui, Default::default(), context);
+//             }
+//             RefU64Type(r) => {
+//                 r.to_refno_str().as_str().ui(ui, Default::default(), context);
+//             }
+//             Vec3Type(r) => {
+//                 Vec3::new(r[0] as f32, r[1] as f32, r[2] as f32).ui(
+//                     ui,
+//                     Default::default(),
+//                     context,
+//                 );
+//             }
+//             BoolType(b) => {
+//                 b.ui(ui, Default::default(), context);
+//             }
+//             BoolArrayType(bs) => {
+//                 for b in bs {
+//                     b.ui(ui, Default::default(), context);
+//                     ui.end_row();
+//                 }
+//             }
+//             DoubleArrayType(ds) => {
+//                 for b in ds {
+//                     b.ui(ui, Default::default(), context);
+//                     ui.end_row();
+//                 }
+//             }
+//             StringHashType(s) => {
+//                 s.ui(ui, Default::default(), context);
+//             }
+//             _ => {}
+//         }
+//         changed
+//     }
+// }
 
 impl Default for AttrVal {
     fn default() -> Self {
@@ -1358,7 +1372,10 @@ pub trait PdmsNodeTrait {
     fn get_noun_hash(&self) -> u32 { 0 }
 
     #[inline]
-    fn get_type_name(&self) -> &str{ "" }
+    fn get_type_name(&self) -> &str { "" }
+
+    #[inline]
+    fn get_children_count(&self) -> usize { 0 }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -1367,15 +1384,17 @@ pub struct EleTreeNode {
     pub noun: String,
     pub name: String,
     pub owner: RefU64,
+    pub children_count: usize,
 }
 
 impl EleTreeNode {
-    pub fn new(refno:RefU64,noun:String,name:String,owner:RefU64) -> Self {
+    pub fn new(refno: RefU64, noun: String, name: String, owner: RefU64, children_count: usize) -> Self {
         Self {
             refno,
             noun,
             name,
             owner,
+            children_count,
         }
     }
 }
@@ -1400,6 +1419,11 @@ impl PdmsNodeTrait for EleTreeNode {
     fn get_type_name(&self) -> &str {
         self.noun.as_str()
     }
+
+    #[inline]
+    fn get_children_count(&self) -> usize {
+        self.children_count
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -1412,6 +1436,13 @@ pub struct EleNode {
     pub version: u32,
     // pub children_count: usize,
     pub children_count: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ChildrenNode {
+    pub refno: RefU64,
+    pub name: String,
+    pub noun: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -1458,8 +1489,6 @@ pub struct DbnoVersion {
     pub dbno: u32,
     pub version: u32,
 }
-
-
 
 
 impl IntoSkyhashBytes for &EleNode {
