@@ -187,7 +187,7 @@ impl PdmsMeshMgr {
 
 
 
-pub trait BrepShapeTrait: VerifiedShape + Debug {
+pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
 
     fn gen_brep_shell(&self) -> Option<Shell>{
         return  None;

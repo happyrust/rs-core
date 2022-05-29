@@ -95,7 +95,6 @@ impl RotateInfo {
         //     rotate_info.angle = rotate_info.angle - 180.0;
         //     rotate_info.rot_axis = -rotate_info.rot_axis;
         // }
-        dbg!(&rotate_info);
         return Some(rotate_info);
     }
 }
