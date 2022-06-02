@@ -1707,7 +1707,7 @@ pub struct DataState {
 }
 
 /// 数据状态需要显示的pdms属性
-#[derive(Default, Clone,Serialize,Deserialize)]
+#[derive(Default, Clone,Debug,Serialize,Deserialize)]
 pub struct DataScope {
     pub refno: RefU64,
     pub att_type: String,
