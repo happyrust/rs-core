@@ -62,6 +62,7 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
                 }
                 Curve::NURBSCurve(curve) => curve.roughly_bounding_box(),
                 Curve::IntersectionCurve(_) => BoundingBox::new(),
+                _ => BoundingBox::new(),
             };
         });
     bdd_box

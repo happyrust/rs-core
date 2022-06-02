@@ -25,9 +25,14 @@ itertools = "0.10.1"
 skytable = "0.7.0"
 flate2 = "1.0.23"
 
-bevy = { path = "../new/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-bevy_egui = {path = "../new/bevy_egui"}
-bevy-inspector-egui = { path = "../new/bevy-inspector-egui" }
+#bevy = { path = "../new/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = [
+    "render",
+] }
+bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
+#bevy_mod_raycast = { git = "https://gitee.com/happydpc/bevy_mod_raycast" }
+#bevy_egui = {path = "../new/bevy_egui"}
+#bevy-inspector-egui = { path = "../new/bevy-inspector-egui" }
 
 transmog-bincode = "0.1"
 serde-name = "0.1.1"
@@ -38,12 +43,13 @@ hash32 = "0.2.1"
 hash32-derive = "0.1.1"
 prost = "0.8.0"
 
-truck-base = { version = "0.2.0", path = "../truck/truck-base" }
-truck-geotrait = { version = "0.1.0", path = "../truck/truck-geotrait" }
-truck-geometry = { version = "0.2.0", path = "../truck/truck-geometry" }
-truck-polymesh = { version = "0.3.0", path = "../truck/truck-polymesh" }
-truck-topology = { version = "0.3.0", path = "../truck/truck-topology" }
-truck-modeling = { version = "0.3.0", path = "../truck/truck-modeling" }
-truck-meshalgo = { version = "0.1.0", path = "../truck/truck-meshalgo" }
-truck-platform = { version = "0.3.0", path = "../truck/truck-platform" }
-truck-rendimpl = { version = "0.3.0", path = "../truck/truck-rendimpl" }
+truck-base = { version = "0.3.0",git = "https://gitee.com/happydpc/truck.git" }
+truck-geotrait = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git"}
+truck-geometry = { version = "0.3.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-polymesh = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-topology = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-modeling = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-meshalgo = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-platform = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-rendimpl = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+
