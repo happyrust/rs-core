@@ -226,6 +226,14 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn from_refno_string(refno:String) -> RefU64 {
+        let split_refno = refno.split('/').collect::<Vec<_>>();
+        let refno0:i32 = split_refno[0].parse().unwrap_or(0);
+        let refno1:i32 = split_refno[1].parse().unwrap_or(0);
+        RefI32Tuple((refno0,refno1)).into()
+    }
+
+    #[inline]
     pub fn to_url_refno(&self) -> String {
         let refno: RefI32Tuple = self.into();
         format!("{}_{}", refno.get_0(), refno.get_1())
@@ -1696,4 +1704,12 @@ pub struct DataState {
     pub att_type: String,
     pub name: String,
     pub state: String,
+}
+
+/// 数据状态需要显示的pdms属性
+#[derive(Default, Clone,Serialize,Deserialize)]
+pub struct DataScope {
+    pub refno: RefU64,
+    pub att_type: String,
+    pub name: String,
 }
