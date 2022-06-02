@@ -1688,3 +1688,12 @@ pub struct Uda {
     pub reference_type: String,
     pub data: Vec<(String, String)>,
 }
+
+/// 数据状态对应的数据结构
+#[derive(Default, Clone)]
+pub struct DataState {
+    pub refno: RefU64,
+    pub att_type: String,
+    pub name: String,
+    pub state: String,
+}
