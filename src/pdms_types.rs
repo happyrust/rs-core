@@ -9,8 +9,6 @@ use std::ops::{Deref, DerefMut};
 use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
-use bevy_egui::egui;
-// use bevy_inspector_egui::Inspectable;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::reflect::Reflect;
