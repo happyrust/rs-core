@@ -25,8 +25,8 @@ itertools = "0.10.1"
 skytable = "0.7.0"
 flate2 = "1.0.23"
 
-bevy = { path = "../new/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-bevy_egui = { path = "../new/bevy_egui" }
+bevy = { path = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy_egui = { path = "https://gitee.com/happydpc/bevy_egui" }
 #bevy_mod_raycast = { git = "https://gitee.com/happydpc/bevy_mod_raycast" }
 #bevy_egui = {path = "../new/bevy_egui"}
 #bevy-inspector-egui = { path = "../new/bevy-inspector-egui" }
