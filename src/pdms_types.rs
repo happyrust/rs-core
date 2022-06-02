@@ -1713,3 +1713,8 @@ pub struct DataScope {
     pub att_type: String,
     pub name: String,
 }
+
+#[derive(Default, Clone,Debug,Serialize,Deserialize,Component)]
+pub struct DataScopeVec {
+    pub data_scopes : Vec<DataScope>
+}
