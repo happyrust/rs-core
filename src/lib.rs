@@ -1,4 +1,7 @@
 #![feature(default_free_fn)]
+
+use std::collections::BTreeMap;
+
 #[allow(unused_mut)]
 
 pub mod pdms_types;
@@ -13,3 +16,4 @@ pub mod bevy_types;
 pub mod helper;
 
 pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
+// pub type BHashMap<K, V> = BTreeMap<K, V>;

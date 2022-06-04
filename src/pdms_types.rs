@@ -175,6 +175,13 @@ impl FromSkyhashBytes for RefU64 {
     }
 }
 
+impl ToString for RefU64{
+    fn to_string(&self) -> String{
+        let refno: RefI32Tuple = self.into();
+        refno.into()
+    }
+}
+
 impl RefU64 {
     #[inline]
     pub fn is_valid(&self) -> bool { self.get_0() != 0 }
@@ -206,12 +213,6 @@ impl RefU64 {
 
     #[inline]
     pub fn to_refno_str(&self) -> SmolStr {
-        let refno: RefI32Tuple = self.into();
-        refno.into()
-    }
-
-    #[inline]
-    pub fn to_refno_string(&self) -> String {
         let refno: RefI32Tuple = self.into();
         refno.into()
     }
@@ -318,14 +319,14 @@ impl From<&str> for NounHash {
 }
 
 ///PDMS的属性数据Map
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Reflect)]
-#[reflect(Component)]
+#[derive(Serialize, Deserialize, Deref, DerefMut, Clone, Debug, Default, Component)]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
 }
 
-
 impl AttrMap {
+
+
 
     #[inline]
     pub fn is_null(&self) -> bool{
@@ -407,19 +408,6 @@ impl AttrMap {
 //     }
 // }
 
-impl Deref for AttrMap {
-    type Target = BHashMap<NounHash, AttrVal>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.map
-    }
-}
-
-impl DerefMut for AttrMap {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.map
-    }
-}
 
 impl IntoSkyhashBytes for &AttrMap {
     fn as_bytes(&self) -> Vec<u8> {
@@ -434,6 +422,25 @@ impl FromSkyhashBytes for AttrMap {
         }
         Err(skytable::error::Error::ParseError("Bad element type".to_string()))
     }
+}
+
+pub const DEFAULT_NOUNS: [NounHash; 4]= [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
+impl AttrMap{
+
+    pub fn split_to_default_groups(&self) -> (AttrMap, AttrMap){
+        let mut default_att = AttrMap::default();
+        let mut comp_att = AttrMap::default();
+
+        for (k, v) in self.map.iter() {
+            if DEFAULT_NOUNS.contains(k) {
+                default_att.map.insert(k.clone(), v.clone());
+            }else{
+                comp_att.insert(k.clone(), v.clone());
+            }
+        }
+        (default_att, comp_att)
+    }
+
 }
 
 
@@ -939,25 +946,8 @@ pub struct RefnoInfo {
     pub db_no: u32,
 }
 
-
-impl IntoSkyhashBytes for &RefnoInfo {
-    fn as_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
-    }
-}
-
-impl FromSkyhashBytes for RefnoInfo {
-    fn from_element(element: Element) -> SkyResult<Self> {
-        if let Element::Binstr(v) = element {
-            return Ok(bincode::deserialize::<RefnoInfo>(&v).unwrap());
-        }
-        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
-    }
-}
-
 // #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[derive(Serialize, Deserialize, Clone, Debug, Component, Reflect)]
-#[reflect(Component)]
+#[derive(Serialize, Deserialize, Clone, Debug, Component)]
 pub enum AttrVal {
     InvalidType,
     IntegerType(i32),
@@ -977,59 +967,6 @@ pub enum AttrVal {
     RefU64Array(RefU64Vec),
 }
 
-// impl Inspectable for AttrVal {
-//     type Attributes = ();
-//
-//     fn ui(
-//         &mut self,
-//         ui: &mut egui::Ui,
-//         _options: Self::Attributes,
-//         context: &mut bevy_inspector_egui::Context,
-//     ) -> bool {
-//         let mut changed = false;
-//         match self {
-//             StringType(s) | ElementType(s) | WordType(s) => {
-//                 s.as_str().ui(ui, Default::default(), context);
-//             }
-//             IntegerType(d) => {
-//                 d.ui(ui, Default::default(), context);
-//             }
-//             DoubleType(d) => {
-//                 d.ui(ui, Default::default(), context);
-//             }
-//             RefU64Type(r) => {
-//                 r.to_refno_str().as_str().ui(ui, Default::default(), context);
-//             }
-//             Vec3Type(r) => {
-//                 Vec3::new(r[0] as f32, r[1] as f32, r[2] as f32).ui(
-//                     ui,
-//                     Default::default(),
-//                     context,
-//                 );
-//             }
-//             BoolType(b) => {
-//                 b.ui(ui, Default::default(), context);
-//             }
-//             BoolArrayType(bs) => {
-//                 for b in bs {
-//                     b.ui(ui, Default::default(), context);
-//                     ui.end_row();
-//                 }
-//             }
-//             DoubleArrayType(ds) => {
-//                 for b in ds {
-//                     b.ui(ui, Default::default(), context);
-//                     ui.end_row();
-//                 }
-//             }
-//             StringHashType(s) => {
-//                 s.ui(ui, Default::default(), context);
-//             }
-//             _ => {}
-//         }
-//         changed
-//     }
-// }
 
 impl Default for AttrVal {
     fn default() -> Self {
@@ -1133,6 +1070,26 @@ impl AttrVal {
         return match self {
             RefU64Array(v) => Some(v.clone()),
             _ => None
+        };
+    }
+
+    #[inline]
+    pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
+        return match self {
+            InvalidType => { Box::new("unset".to_string()) }
+            // IntegerType(v) => { Box::new(*v) }
+            StringType(v) | ElementType(v) | WordType(v) => { Box::new(v.to_string()) }
+            RefU64Type(v) => { Box::new(v.to_string()) }
+            BoolArrayType(v) => { Box::new(v.clone()) },
+            IntArrayType(v) => { Box::new(v.clone()) },
+            IntegerType(v) => { Box::new(*v) },
+            DoubleArrayType(v) => { Box::new(v.clone()) },
+            DoubleType(v) => { Box::new(*v) },
+            BoolType(v) => { Box::new(*v) },
+            StringHashType(v) => { Box::new(*v) },
+            StringArrayType(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>() ) }
+            Vec3Type(v) => { Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)) }
+            RefU64Array(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>() ) }
         };
     }
 
