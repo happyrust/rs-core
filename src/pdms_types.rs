@@ -226,11 +226,11 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn from_refno_string(refno:String) -> RefU64 {
+    pub fn from_refno_string(refno: String) -> RefU64 {
         let split_refno = refno.split('/').collect::<Vec<_>>();
-        let refno0:i32 = split_refno[0].parse().unwrap_or(0);
-        let refno1:i32 = split_refno[1].parse().unwrap_or(0);
-        RefI32Tuple((refno0,refno1)).into()
+        let refno0: i32 = split_refno[0].parse().unwrap_or(0);
+        let refno1: i32 = split_refno[1].parse().unwrap_or(0);
+        RefI32Tuple((refno0, refno1)).into()
     }
 
     #[inline]
@@ -336,9 +336,8 @@ pub struct AttrMap {
 
 
 impl AttrMap {
-
     #[inline]
-    pub fn is_null(&self) -> bool{
+    pub fn is_null(&self) -> bool {
         self.map.len() == 0
     }
 
@@ -486,7 +485,7 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_name(&self) ->  AiosStr {
+    pub fn get_name(&self) -> AiosStr {
         return if let Some(StringType(name)) = self.get_val("NAME") {
             AiosStr(name.clone())
         } else {
@@ -1284,8 +1283,7 @@ impl DerefMut for ShapeInstancesMgr {
     }
 }
 
-impl ShapeInstancesMgr {
-}
+impl ShapeInstancesMgr {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CachedMeshesMgr {
@@ -1698,7 +1696,7 @@ pub struct Uda {
 }
 
 /// 数据状态对应的数据结构
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
 pub struct DataState {
     pub refno: RefU64,
     pub att_type: String,
@@ -1706,15 +1704,20 @@ pub struct DataState {
     pub state: String,
 }
 
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataStateVec {
+    pub data_states: Vec<DataState>,
+}
+
 /// 数据状态需要显示的pdms属性
-#[derive(Default, Clone,Debug,Serialize,Deserialize,Component)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
 pub struct DataScope {
     pub refno: RefU64,
     pub att_type: String,
     pub name: String,
 }
 
-#[derive(Default, Clone,Debug,Serialize,Deserialize,Component)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
 pub struct DataScopeVec {
-    pub data_scopes : Vec<DataScope>
+    pub data_scopes: Vec<DataScope>,
 }
