@@ -56,13 +56,13 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
         .for_each(|edge| {
             let curve = edge.oriented_curve();
             bdd_box += match curve {
+                Curve::Line(line) => vec![line.0, line.1].into_iter().collect(),
                 Curve::BSplineCurve(curve) => {
                     let bdb = curve.roughly_bounding_box();
                     vec![*bdb.max(), *bdb.min()].into_iter().collect()
                 }
                 Curve::NURBSCurve(curve) => curve.roughly_bounding_box(),
                 Curve::IntersectionCurve(_) => BoundingBox::new(),
-                _ => BoundingBox::new(),
             };
         });
     bdd_box

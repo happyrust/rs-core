@@ -11,6 +11,13 @@ pub fn read_attr_info_config(config_path: &str) -> PdmsDatabaseInfo{
     bincode::deserialize(&attr_buf).unwrap()
 }
 
+pub fn read_attr_info_config_from_json(config_path: &str) -> PdmsDatabaseInfo{
+    let mut file = File::open(config_path).unwrap();
+    let mut attr_buf: Vec<u8> = Vec::new();
+    file.read_to_end(&mut attr_buf);
+    serde_json::from_slice(&attr_buf).unwrap()
+}
+
 #[inline]
 pub fn convert_to_hash(bytes: &[u8]) -> u32{
     i32::from_be_bytes(bytes.try_into().unwrap()).abs() as u32
