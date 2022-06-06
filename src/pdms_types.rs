@@ -4,7 +4,6 @@ use std::default::Default;
 use std::fmt;
 use std::fmt::{Debug, Formatter, Pointer};
 use std::fs::File;
-use std::intrinsics::fdiv_fast;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 use std::result::Iter;
