@@ -1,7 +1,12 @@
+use std::collections::BTreeSet;
 use std::fmt::{Debug, Formatter};
+use std::ops::Deref;
+use dashmap::{DashMap, DashSet};
+use dashmap::mapref::one::Ref;
 use smol_str::SmolStr;
 use serde::{Serialize,Deserialize};
-use crate::pdms_types::{AttrMap, RefU64};
+use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, RefU64};
+use crate::tool::db_tool::db1_dehash;
 
 
 #[derive(Clone, Debug)]
@@ -107,5 +112,71 @@ impl Debug for IncrementData {
             .field("state",&self.state)
             .field("version",&self.version)
             .finish()
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct AttInfoMap{
+    pub map: DashMap<i32, DashMap<i32, AttrInfo>>,
+    pub type_att_names_map: DashMap<String, BTreeSet<String>>,
+    pub att_name_type_map: DashMap<String, DbAttributeType>,
+    pub has_cat_ref_types: DashSet<String>,
+}
+
+impl Deref for AttInfoMap {
+    type Target = DashMap<i32, DashMap<i32, AttrInfo>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.map
+    }
+}
+
+impl AttInfoMap {
+    #[inline]
+    pub fn init_type_att_names_map(&mut self){
+        for k in &self.map {
+            let type_name = db1_dehash(*k.key() as u32);
+            for v in k.value() {
+                self.type_att_names_map.entry(type_name.clone())
+                    .or_insert(BTreeSet::new()).insert(v.name.to_string());
+                self.att_name_type_map.insert(v.name.to_string(), v.att_type);
+                if v.name.as_str() == "CATR" || v.name.as_str() == "SPRE" {
+                    self.has_cat_ref_types.insert(type_name.clone());
+                }
+            }
+        }
+    }
+
+    /// 有元件库的类型
+    #[inline]
+    pub fn get_has_cat_ref_types(&self) -> &DashSet<String> {
+        &self.has_cat_ref_types
+    }
+
+    #[inline]
+    pub fn get_names_map(&self) -> &DashMap<String, BTreeSet<String>> {
+        &self.type_att_names_map
+    }
+
+    #[inline]
+    pub fn get_names_of_type(&self, type_name: &str) -> Option<Ref<String, BTreeSet<String>>> {
+        self.type_att_names_map.get(type_name)
+    }
+
+    #[inline]
+    pub fn exist_att_by_name(&self, type_name: &str, att_name: &str) -> bool {
+        self.type_att_names_map.get(type_name).map(|x| x.contains(att_name)).unwrap_or(false)
+    }
+
+    /// 至少有一个 name 存在
+    #[inline]
+    pub fn exist_least_one_att_by_names(&self, type_name: &str, att_names: &Vec<&str>) -> bool {
+        self.type_att_names_map.get(type_name).map(|x|
+            att_names.iter().any(|v| x.value().contains(*v))).unwrap_or(false)
+    }
+
+    #[inline]
+    pub fn get_val_type_of_att(&self, att_name: &str) -> Option<Ref<String, DbAttributeType>> {
+        self.att_name_type_map.get(att_name)
     }
 }
