@@ -1643,3 +1643,30 @@ pub struct Uda {
     pub reference_type: String,
     pub data: Vec<(String, String)>,
 }
+
+/// 数据状态对应的数据结构
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataState {
+    pub refno: RefU64,
+    pub att_type: String,
+    pub name: String,
+    pub state: String,
+}
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataStateVec {
+    pub data_states: Vec<DataState>,
+}
+
+/// 数据状态需要显示的pdms属性
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataScope {
+    pub refno: RefU64,
+    pub att_type: String,
+    pub name: String,
+}
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataScopeVec {
+    pub data_scopes: Vec<DataScope>,
+}
