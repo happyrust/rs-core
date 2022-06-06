@@ -4,6 +4,7 @@ use std::default::Default;
 use std::fmt;
 use std::fmt::{Debug, Formatter, Pointer};
 use std::fs::File;
+use std::intrinsics::fdiv_fast;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 use std::result::Iter;
@@ -215,6 +216,13 @@ impl RefU64 {
     pub fn to_refno_str(&self) -> SmolStr {
         let refno: RefI32Tuple = self.into();
         refno.into()
+    }
+
+    #[inline]
+    pub fn to_refno_string(&self) -> String {
+        let refno: RefI32Tuple = self.into();
+        let refno_str:SmolStr = refno.into();
+        refno_str.to_string()
     }
 
     #[inline]
