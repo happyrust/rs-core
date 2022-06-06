@@ -99,7 +99,7 @@ pub enum NewDataState {
 pub struct IncrementData {
     pub refno: RefU64,
     pub attr_data_map: AttrMap,
-    pub state: NewDataState,
+    pub state: String,
     pub version: u32,
 }
 
