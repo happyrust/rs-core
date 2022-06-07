@@ -1677,3 +1677,6 @@ pub struct DataScope {
 pub struct DataScopeVec {
     pub data_scopes: Vec<DataScope>,
 }
+
+unsafe impl Send for DataScopeVec {}
+unsafe impl Sync for DataScopeVec {}
