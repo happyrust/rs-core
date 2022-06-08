@@ -4,13 +4,15 @@ use transmog_bincode::bincode;
 use memchr::memmem::{find, find_iter};
 use crate::pdms_types::PdmsDatabaseInfo;
 
-pub fn read_attr_info_config(config_path: &str) -> PdmsDatabaseInfo{
+/// 从bincode数据加载PdmsDatabaseInfo
+pub fn read_attr_info_config_from_bin(config_path: &str) -> PdmsDatabaseInfo{
     let mut file = File::open(config_path).unwrap();
     let mut attr_buf: Vec<u8> = Vec::new();
     file.read_to_end(&mut attr_buf);
     bincode::deserialize(&attr_buf).unwrap()
 }
 
+/// 从json数据加载PdmsDatabaseInfo
 pub fn read_attr_info_config_from_json(config_path: &str) -> PdmsDatabaseInfo{
     let mut file = File::open(config_path).unwrap();
     let mut attr_buf: Vec<u8> = Vec::new();
