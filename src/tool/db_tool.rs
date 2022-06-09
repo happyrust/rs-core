@@ -11,6 +11,20 @@ pub fn read_attr_info_config(config_path: &str) -> PdmsDatabaseInfo{
     bincode::deserialize(&attr_buf).unwrap()
 }
 
+pub fn read_attr_info_config_json(config_path:&str) -> PdmsDatabaseInfo {
+    let mut file = File::open(config_path).unwrap();
+    let mut attr_buf: Vec<u8> = Vec::new();
+    file.read_to_end(&mut attr_buf);
+    serde_json::from_slice(&attr_buf).unwrap()
+}
+
+
+#[test]
+fn test_read_attr_info_config_json() {
+    let r = read_attr_info_config_json("all_attr_info.json");
+    println!("r={:?}",r.noun_attr_info_map.len());
+}
+
 #[inline]
 pub fn convert_to_hash(bytes: &[u8]) -> u32{
     i32::from_be_bytes(bytes.try_into().unwrap()).abs() as u32
@@ -185,7 +199,7 @@ fn test_chinese_data() {
     let test_code = vec![0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26];
     let test_code = vec![0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26];
     let test_code = vec![0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26, 0x74, 0x65, 0x73, 0x74];
-    let table_data = include_bytes!("../encode_char_table.bin");
+    // let table_data = include_bytes!("../encode_char_table.bin");
 
     let name = decode_chars_data(&test_code);
     //dbg!(name);
