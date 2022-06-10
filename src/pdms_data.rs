@@ -93,6 +93,18 @@ pub enum NewDataState {
     Modify = 0,
     Increase = 1,
     Delete = 2,
+    Invalid,
+}
+
+impl From<i32> for NewDataState {
+    fn from(v: i32) -> Self {
+        match v {
+            0 => { Self::Modify }
+            1 => { Self::Increase }
+            2 => { Self::Delete }
+            _ => { Self::Invalid }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
