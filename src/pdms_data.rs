@@ -4,7 +4,7 @@ use std::ops::Deref;
 use dashmap::{DashMap, DashSet};
 use dashmap::mapref::one::Ref;
 use smol_str::SmolStr;
-use serde::{Serialize,Deserialize};
+use serde::{Serialize, Deserialize};
 use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, RefU64};
 use crate::tool::db_tool::db1_dehash;
 
@@ -88,18 +88,18 @@ pub struct AxisParam {
     pub pbore: SmolStr,
 }
 
-#[derive(Debug,Serialize,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum NewDataState {
-    Modify,
-    Increase,
-    Delete
+    Modify = 0,
+    Increase = 1,
+    Delete = 2,
 }
 
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct IncrementData {
     pub refno: RefU64,
     pub attr_data_map: AttrMap,
-    pub state: String,
+    pub state: NewDataState,
     pub version: u32,
 }
 
@@ -107,16 +107,16 @@ pub struct IncrementData {
 impl Debug for IncrementData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IncrementData")
-            .field("refno",&self.refno.to_refno_str())
-            .field("map",&self.attr_data_map.to_string_hashmap())
-            .field("state",&self.state)
-            .field("version",&self.version)
+            .field("refno", &self.refno.to_refno_str())
+            .field("map", &self.attr_data_map.to_string_hashmap())
+            .field("state", &self.state)
+            .field("version", &self.version)
             .finish()
     }
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct AttInfoMap{
+pub struct AttInfoMap {
     pub map: DashMap<i32, DashMap<i32, AttrInfo>>,
     pub type_att_names_map: DashMap<String, BTreeSet<String>>,
     pub att_name_type_map: DashMap<String, DbAttributeType>,
@@ -133,7 +133,7 @@ impl Deref for AttInfoMap {
 
 impl AttInfoMap {
     #[inline]
-    pub fn init_type_att_names_map(&mut self){
+    pub fn init_type_att_names_map(&mut self) {
         for k in &self.map {
             let type_name = db1_dehash(*k.key() as u32);
             for v in k.value() {
