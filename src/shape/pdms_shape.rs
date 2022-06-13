@@ -27,7 +27,7 @@ use ncollide3d::shape::TriMesh;
 use truck_base::bounding_box::BoundingBox;
 use serde::{Serialize,Deserialize};
 use transmog_bincode::bincode;
-use crate::pdms_types::{AiosAABB, EleGeoInstData, GeoData, PdmsMeshMgr, RefU64};
+use crate::pdms_types::*;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
 use crate::prim_geo::dish::Dish;
@@ -136,7 +136,7 @@ impl PdmsMesh {
 
 impl PdmsMeshMgr {
     #[inline]
-    pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, Vec<EleGeoInstData>>> {
+    pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, EleGeosInfo>> {
         let mut results = DashMap::new();
         let inst_map = &self.inst_mgr.inst_map;
         if self.level_shape_mgr.contains_key(&refno) {

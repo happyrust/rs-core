@@ -15,5 +15,5 @@ pub mod axis_param;
 pub mod bevy_types;
 pub mod helper;
 
-pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
-// pub type BHashMap<K, V> = BTreeMap<K, V>;
+// pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
+pub type BHashMap<K, V> = BTreeMap<K, V>;

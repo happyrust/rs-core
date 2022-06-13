@@ -1220,14 +1220,67 @@ pub struct PdmsMeshMgr {
     pub level_shape_mgr: DashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
 }
 
+impl PdmsMeshMgr{
+
+    ///插入instance 数据
+    #[inline]
+    pub fn insert_ele_geos(ele_geo: EleGeosInfo){
+
+    }
+
+    ///插入mesh 数据
+    #[inline]
+    pub fn insert_mesh(){
+
+    }
+}
+
+
+#[repr(C)]
+#[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
+pub enum PdmsGenericType{
+    UNKOWN = 0,
+    PIPE,
+    STRU,
+    EQUI,
+    ROOM,
+    CE,
+}
+
+impl Default for PdmsGenericType{
+    fn default() -> Self { PdmsGenericType::UNKOWN }
+}
+
+//todo important 压缩transform的数据，存储在一个数据集合里，去索引数据，精确到小数点4位数
+
+/// 存储一个Element 包含的所有几何信息
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleGeosInfo {
+    //索引的mesh instance
+    pub data: Vec<EleGeoInstance>,
+    //是否可见
+    pub visible: bool,
+    //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
+    pub generic_type: PdmsGenericType,
+}
+
+impl Deref for EleGeosInfo{
+    type Target = Vec<EleGeoInstance>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
-    pub inst_map: DashMap<RefU64, Vec<EleGeoInstData>>,
+    pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
+    //可以用类型的信息去遍历
 }
 
 impl Deref for ShapeInstancesMgr {
-    type Target = DashMap<RefU64, Vec<EleGeoInstData>>;
+    type Target = DashMap<RefU64, EleGeosInfo>;
 
     fn deref(&self) -> &Self::Target {
         &self.inst_map
@@ -1240,8 +1293,8 @@ impl DerefMut for ShapeInstancesMgr {
     }
 }
 
-impl ShapeInstancesMgr {
-}
+
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CachedMeshesMgr {
@@ -1310,15 +1363,12 @@ impl CachedMeshesMgr {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EleGeoInstData {
+pub struct EleGeoInstance {
     pub geo_hash: u64,
     pub bbox: AiosAABB,
-    pub global_transform: (Quat, Vec3, Vec3),
     //世界坐标系的变换, rot, translation, scale
+    pub global_transform: (Quat, Vec3, Vec3),
     pub visible: bool,
-    pub generic_type: String,
-    //所属一般类型，ROOM、STRU、PIPE等
-    pub zone_refno: RefU64,
 }
 
 pub trait PdmsNodeTrait {
