@@ -218,6 +218,13 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_refno_string(&self) -> String {
+        let refno: RefI32Tuple = self.into();
+        let refno_str:SmolStr = refno.into();
+        refno_str.to_string()
+    }
+
+    #[inline]
     pub fn from_two_nums(i: u32, j: u32) -> Self {
         let bytes: Vec<u8> = [i.to_be_bytes(), j.to_be_bytes()].concat();
         let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
@@ -1702,3 +1709,33 @@ pub struct Uda {
     pub reference_type: String,
     pub data: Vec<(String, String)>,
 }
+
+/// 数据状态对应的数据结构
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataState {
+    pub refno: RefU64,
+    pub att_type: String,
+    pub name: String,
+    pub state: String,
+}
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataStateVec {
+    pub data_states: Vec<DataState>,
+}
+
+/// 数据状态需要显示的pdms属性
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataScope {
+    pub refno: RefU64,
+    pub att_type: String,
+    pub name: String,
+}
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+pub struct DataScopeVec {
+    pub data_scopes: Vec<DataScope>,
+}
+
+unsafe impl Send for DataScopeVec {}
+unsafe impl Sync for DataScopeVec {}

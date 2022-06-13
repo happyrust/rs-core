@@ -7,6 +7,9 @@ use smol_str::SmolStr;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, RefU64};
 use crate::tool::db_tool::db1_dehash;
+use serde::{Serialize, Deserialize};
+use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, RefU64};
+use crate::tool::db_tool::db1_dehash;
 
 
 #[derive(Clone, Debug)]
@@ -88,14 +91,26 @@ pub struct AxisParam {
     pub pbore: SmolStr,
 }
 
-#[derive(Debug,Serialize,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum NewDataState {
-    Modify,
-    Increase,
-    Delete
+    Modify = 0,
+    Increase = 1,
+    Delete = 2,
+    Invalid,
 }
 
-#[derive(Serialize,Deserialize)]
+impl From<i32> for NewDataState {
+    fn from(v: i32) -> Self {
+        match v {
+            0 => { Self::Modify }
+            1 => { Self::Increase }
+            2 => { Self::Delete }
+            _ => { Self::Invalid }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct IncrementData {
     pub refno: RefU64,
     pub attr_data_map: AttrMap,
@@ -107,10 +122,10 @@ pub struct IncrementData {
 impl Debug for IncrementData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IncrementData")
-            .field("refno",&self.refno.to_refno_str())
-            .field("map",&self.attr_data_map.to_string_hashmap())
-            .field("state",&self.state)
-            .field("version",&self.version)
+            .field("refno", &self.refno.to_refno_str())
+            .field("map", &self.attr_data_map.to_string_hashmap())
+            .field("state", &self.state)
+            .field("version", &self.version)
             .finish()
     }
 }
