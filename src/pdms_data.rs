@@ -8,6 +8,8 @@ use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, RefU64};
 use crate::tool::db_tool::db1_dehash;
 use serde::{Serialize, Deserialize};
 use itertools::Itertools;
+use lazy_static::lazy_static;
+use crate::pdms_types::PdmsDatabaseInfo;
 
 
 #[derive(Clone, Debug)]
@@ -130,7 +132,7 @@ impl Debug for IncrementData {
 
 lazy_static! {
     static ref ATTR_INFO_MAP: AttInfoMap = {
-        let db_info: PdmsDatabaseInfo = serde_json::from_str(include_str!("all_attr_info.json")).unwrap();
+        let db_info: PdmsDatabaseInfo = serde_json::from_str(include_str!("../all_attr_info.json")).unwrap();
         //调用方法
         let mut att_info_map = AttInfoMap{
             map: db_info.noun_attr_info_map,
