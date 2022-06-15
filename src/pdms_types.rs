@@ -1300,9 +1300,6 @@ impl DerefMut for ShapeInstancesMgr {
     }
 }
 
-
-
-
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CachedMeshesMgr {
     pub meshes: DashMap<u64, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
