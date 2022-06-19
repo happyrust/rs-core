@@ -175,8 +175,8 @@ impl FromSkyhashBytes for RefU64 {
     }
 }
 
-impl ToString for RefU64{
-    fn to_string(&self) -> String{
+impl ToString for RefU64 {
+    fn to_string(&self) -> String {
         let refno: RefI32Tuple = self.into();
         refno.into()
     }
@@ -220,7 +220,7 @@ impl RefU64 {
     #[inline]
     pub fn to_refno_string(&self) -> String {
         let refno: RefI32Tuple = self.into();
-        let refno_str:SmolStr = refno.into();
+        let refno_str: SmolStr = refno.into();
         refno_str.to_string()
     }
 
@@ -243,6 +243,13 @@ impl RefU64 {
     pub fn to_url_refno(&self) -> String {
         let refno: RefI32Tuple = self.into();
         format!("{}_{}", refno.get_0(), refno.get_1())
+    }
+
+    #[inline]
+    pub fn from_url_refno(refno: String) -> Option<Self> {
+        let strs = refno.as_str().split('_').collect::<Vec<_>>();
+        if strs.len() < 2 { return None; }
+        Some(RefU64::from_two_nums(strs[0].parse().unwrap(), strs[1].parse().unwrap()))
     }
 }
 
@@ -340,9 +347,6 @@ pub struct AttrMap {
 }
 
 impl AttrMap {
-
-
-
     #[inline]
     pub fn is_null(&self) -> bool {
         self.map.len() == 0
@@ -439,23 +443,22 @@ impl FromSkyhashBytes for AttrMap {
     }
 }
 
-pub const DEFAULT_NOUNS: [NounHash; 4]= [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
-impl AttrMap{
+pub const DEFAULT_NOUNS: [NounHash; 4] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
 
-    pub fn split_to_default_groups(&self) -> (AttrMap, AttrMap){
+impl AttrMap {
+    pub fn split_to_default_groups(&self) -> (AttrMap, AttrMap) {
         let mut default_att = AttrMap::default();
         let mut comp_att = AttrMap::default();
 
         for (k, v) in self.map.iter() {
             if DEFAULT_NOUNS.contains(k) {
                 default_att.map.insert(k.clone(), v.clone());
-            }else{
+            } else {
                 comp_att.insert(k.clone(), v.clone());
             }
         }
         (default_att, comp_att)
     }
-
 }
 
 
@@ -498,7 +501,7 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_name(&self) ->  AiosStr {
+    pub fn get_name(&self) -> AiosStr {
         return if let Some(StringType(name)) = self.get_val("NAME") {
             AiosStr(name.clone())
         } else {
@@ -983,7 +986,6 @@ pub enum AttrVal {
 }
 
 
-
 impl Default for AttrVal {
     fn default() -> Self {
         Self::InvalidType
@@ -1096,16 +1098,16 @@ impl AttrVal {
             // IntegerType(v) => { Box::new(*v) }
             StringType(v) | ElementType(v) | WordType(v) => { Box::new(v.to_string()) }
             RefU64Type(v) => { Box::new(v.to_string()) }
-            BoolArrayType(v) => { Box::new(v.clone()) },
-            IntArrayType(v) => { Box::new(v.clone()) },
-            IntegerType(v) => { Box::new(*v) },
-            DoubleArrayType(v) => { Box::new(v.clone()) },
-            DoubleType(v) => { Box::new(*v) },
-            BoolType(v) => { Box::new(*v) },
-            StringHashType(v) => { Box::new(*v) },
-            StringArrayType(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>() ) }
+            BoolArrayType(v) => { Box::new(v.clone()) }
+            IntArrayType(v) => { Box::new(v.clone()) }
+            IntegerType(v) => { Box::new(*v) }
+            DoubleArrayType(v) => { Box::new(v.clone()) }
+            DoubleType(v) => { Box::new(*v) }
+            BoolType(v) => { Box::new(*v) }
+            StringHashType(v) => { Box::new(*v) }
+            StringArrayType(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
             Vec3Type(v) => { Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)) }
-            RefU64Array(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>() ) }
+            RefU64Array(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
         };
     }
 
@@ -1227,25 +1229,20 @@ pub struct PdmsMeshMgr {
     pub level_shape_mgr: DashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
 }
 
-impl PdmsMeshMgr{
-
+impl PdmsMeshMgr {
     ///插入instance 数据
     #[inline]
-    pub fn insert_ele_geos(ele_geo: EleGeosInfo){
-
-    }
+    pub fn insert_ele_geos(ele_geo: EleGeosInfo) {}
 
     ///插入mesh 数据
     #[inline]
-    pub fn insert_mesh(){
-
-    }
+    pub fn insert_mesh() {}
 }
 
 
 #[repr(C)]
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
-pub enum PdmsGenericType{
+pub enum PdmsGenericType {
     UNKOWN = 0,
     PIPE,
     STRU,
@@ -1254,7 +1251,7 @@ pub enum PdmsGenericType{
     CE,
 }
 
-impl Default for PdmsGenericType{
+impl Default for PdmsGenericType {
     fn default() -> Self { PdmsGenericType::UNKOWN }
 }
 
@@ -1271,7 +1268,7 @@ pub struct EleGeosInfo {
     pub generic_type: PdmsGenericType,
 }
 
-impl Deref for EleGeosInfo{
+impl Deref for EleGeosInfo {
     type Target = Vec<EleGeoInstance>;
 
     fn deref(&self) -> &Self::Target {
@@ -1735,4 +1732,5 @@ pub struct DataScopeVec {
 }
 
 unsafe impl Send for DataScopeVec {}
+
 unsafe impl Sync for DataScopeVec {}
