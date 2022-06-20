@@ -20,6 +20,7 @@ ncollide3d = "0.32.0"
 approx = "0.5.1"
 memchr = "2.5.0"
 nom = "7.1.1"
+lazy_static = "1.4.0"
 nom-derive = "0.10.0"
 itertools = "0.10.1"
 skytable = "0.7.0"
@@ -40,6 +41,7 @@ serde_json = { version = "1.0" }
 hash32 = "0.2.1"
 hash32-derive = "0.1.1"
 prost = "0.8.0"
+version-sync = "0.9.4"
 
 truck-base = { version = "0.3.0",git = "https://gitee.com/happydpc/truck.git" }
 truck-geotrait = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git"}
