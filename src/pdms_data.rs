@@ -131,7 +131,7 @@ impl Debug for IncrementData {
 }
 
 lazy_static! {
-    static ref ATTR_INFO_MAP: AttInfoMap = {
+    pub static ref ATTR_INFO_MAP: AttInfoMap = {
         let db_info: PdmsDatabaseInfo = serde_json::from_str(include_str!("../all_attr_info.json")).unwrap();
         //调用方法
         let mut att_info_map = AttInfoMap{
@@ -213,6 +213,13 @@ impl AttInfoMap {
     #[inline]
     pub fn get_names_of_type(&self, type_name: &str) -> Option<Ref<String, BTreeSet<String>>> {
         self.type_att_names_map.get(type_name)
+    }
+
+    #[inline]
+    pub fn get_names_vec_of_type(&self, type_name: &str) -> Vec<String> {
+        self.type_att_names_map.get(type_name)
+            .map(|x| x.value().iter().map(|x| x.clone()).sorted().collect_vec())
+            .unwrap_or_default()
     }
 
     #[inline]

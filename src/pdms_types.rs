@@ -6,6 +6,7 @@ use std::fmt::{Debug, Formatter, Pointer};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
+use std::panic::catch_unwind;
 use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
@@ -233,10 +234,18 @@ impl RefU64 {
 
     #[inline]
     pub fn from_refno_string(refno: String) -> RefU64 {
-        let split_refno = refno.split('/').collect::<Vec<_>>();
-        let refno0: i32 = split_refno[0].parse().unwrap_or(0);
-        let refno1: i32 = split_refno[1].parse().unwrap_or(0);
-        RefI32Tuple((refno0, refno1)).into()
+        Self::from_refno_str(refno.as_str())
+    }
+
+    #[inline]
+    pub fn from_refno_str(refno: &str) -> RefU64 {
+        let result = catch_unwind(||{
+            let split_refno = refno.split('/').collect::<Vec<_>>();
+            let refno0: i32 = split_refno[0].parse().unwrap_or(0);
+            let refno1: i32 = split_refno[1].parse().unwrap_or(0);
+            RefI32Tuple((refno0, refno1)).into()
+        });
+        result.unwrap_or(RefU64::default())
     }
 
     #[inline]
@@ -301,6 +310,12 @@ PartialEq, Ord, PartialOrd)]
 #[reflect(Component)]
 pub struct NounHash(pub u32);
 
+impl ToString for NounHash{
+    fn to_string(&self) -> String{
+        db1_dehash(self.0)
+    }
+}
+
 impl Deref for NounHash {
     type Target = u32;
 
@@ -334,14 +349,19 @@ impl From<&str> for NounHash {
 }
 
 ///PDMS的属性数据Map
-#[derive(Serialize, Deserialize, Deref, DerefMut, Clone, Debug, Default, Component)]
+#[derive(Serialize, Deserialize, Deref, DerefMut, Clone, Default, Component)]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
 }
 
+impl Debug for AttrMap{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = self.to_string_hashmap();
+        s.fmt(f)
+    }
+}
+
 impl AttrMap {
-
-
 
     #[inline]
     pub fn is_null(&self) -> bool {
@@ -531,7 +551,7 @@ impl AttrMap {
 
     #[inline]
     pub fn get_refno_as_string(&self) -> Option<SmolStr> {
-        self.get_as_string("REFNO")
+        self.get_as_smol_str("REFNO")
     }
 
     pub fn get_obstruction(&self) -> Option<u32> {
@@ -573,7 +593,7 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_owner_as_string(&self) -> SmolStr {
+    pub fn get_owner_as_string(&self) -> String {
         self.get_as_string("OWNER").unwrap_or(UNSET_STR.into())
     }
 
@@ -632,7 +652,49 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_as_string(&self, key: &str) -> Option<SmolStr> {
+    pub fn get_as_string(&self, key: &str) -> Option<String> {
+        let v = self.get_val(key)?;
+        let s = match v {
+            StringType(s) | WordType(s) | ElementType(s) => s.to_string(),
+            IntegerType(d) => d.to_string().into(),
+            DoubleType(d) => d.to_string().into(),
+            BoolType(d) => d.to_string().into(),
+            DoubleArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            StringArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            IntArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            BoolArrayType(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+            Vec3Type(d) => d
+                .iter()
+                .map(|i| format!(" {}", i))
+                .collect::<String>()
+                .into(),
+
+            RefU64Type(d) => RefI32Tuple::from(d).into(),
+            StringHashType(d) => format!("{d}").into(),
+
+            _ => UNSET_STR.into(),
+        };
+        Some(s)
+    }
+
+    #[inline]
+    pub fn get_as_smol_str(&self, key: &str) -> Option<SmolStr> {
         let v = self.get_val(key)?;
         let s = match v {
             StringType(s) | WordType(s) | ElementType(s) => s.clone(),
