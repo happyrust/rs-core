@@ -10,6 +10,7 @@ use std::panic::catch_unwind;
 use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
+use anyhow::anyhow;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::reflect::Reflect;
@@ -233,19 +234,19 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn from_refno_string(refno: String) -> RefU64 {
+    pub fn from_refno_string(refno: String) -> anyhow::Result<RefU64> {
         Self::from_refno_str(refno.as_str())
     }
 
     #[inline]
-    pub fn from_refno_str(refno: &str) -> RefU64 {
-        let result = catch_unwind(||{
-            let split_refno = refno.split('/').collect::<Vec<_>>();
-            let refno0: i32 = split_refno[0].parse().unwrap_or(0);
-            let refno1: i32 = split_refno[1].parse().unwrap_or(0);
-            RefI32Tuple((refno0, refno1)).into()
-        });
-        result.unwrap_or(RefU64::default())
+    pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
+        let split_refno = refno.split('/').collect::<Vec<_>>();
+        if split_refno.len() != 2 {
+            return Err(anyhow!("参考号错误!".to_string()));
+        }
+        let refno0: i32 = split_refno[0].parse::<i32>()?;
+        let refno1: i32 = split_refno[1].parse::<i32>()?;
+        Ok(RefI32Tuple((refno0, refno1)).into())
     }
 
     #[inline]
