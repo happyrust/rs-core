@@ -20,15 +20,14 @@ ncollide3d = "0.32.0"
 approx = "0.5.1"
 memchr = "2.5.0"
 nom = "7.1.1"
-lazy_static = "1.4.0"
 nom-derive = "0.10.0"
 itertools = "0.10.1"
 skytable = "0.7.0"
 flate2 = "1.0.23"
 lazy_static = "1.4.0"
 
-bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-bevy_egui = { path = "../bevy_egui" }
+bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
 #bevy_mod_raycast = { git = "https://gitee.com/happydpc/bevy_mod_raycast" }
 #bevy_egui = {path = "../new/bevy_egui"}
 #bevy-inspector-egui = { path = "../new/bevy-inspector-egui" }
