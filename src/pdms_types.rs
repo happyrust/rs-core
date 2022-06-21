@@ -238,11 +238,12 @@ impl RefU64 {
         Self::from_refno_str(refno.as_str())
     }
 
+    // abcd/2333
     #[inline]
     pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
         let split_refno = refno.split('/').collect::<Vec<_>>();
         if split_refno.len() != 2 {
-            return Err(anyhow!("参考号错误!".to_string()));
+            return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
         }
         let refno0: i32 = split_refno[0].parse::<i32>()?;
         let refno1: i32 = split_refno[1].parse::<i32>()?;
@@ -1648,9 +1649,25 @@ pub enum DbAttributeType {
     FLOATVEC,
     TYPEX,
     Vec3Type,
-
     RefU64Vec,
 }
+
+impl DbAttributeType{
+    #[inline]
+    pub fn to_sql_str(&self) -> &str{
+        match self {
+            Self::INTEGER => "INT",
+            Self::BOOL => "TINYINT(1)",
+            Self::DOUBLE => "DOUBLE",
+            Self::INTEGER => "INT",
+            Self::ELEMENT | Self::WORD => "BIGINT",
+            Self::FLOATVEC | Self::DOUBLEVEC => "BLOB",
+            _ => { "VARCHAR" }
+        }
+    }
+}
+
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AttrInfo {
