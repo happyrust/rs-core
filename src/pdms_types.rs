@@ -40,6 +40,7 @@ use crate::prim_geo::snout::LSnout;
 use crate::shape::pdms_shape::{BrepShapeTrait, PdmsMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 
+
 pub const LEVEL_VISBLE: u32 = 6;
 
 
@@ -116,9 +117,43 @@ impl RefI32Tuple {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Jsgf {
+    #[serde(with = "string")]
+    u: u64,
+    #[serde(with = "string")]
+    i: i64,
+}
+
+pub mod string {
+    use std::fmt::Display;
+    use std::str::FromStr;
+
+    use serde::{de, Serializer, Deserialize, Deserializer};
+
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+        where T: Display,
+              S: Serializer
+    {
+        serializer.collect_str(value)
+    }
+
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+        where T: FromStr,
+              T::Err: Display,
+              D: Deserializer<'de>
+    {
+        String::deserialize(deserializer)?.parse().map_err(de::Error::custom)
+    }
+}
+
+
 //把Refno当作u64
 #[derive(Hash, Serialize, Deserialize, Clone, Copy, Default, Component, Eq, PartialEq, Hash32)]
-pub struct RefU64(pub u64);
+pub struct RefU64(
+    #[serde(with = "string")]
+    pub u64
+);
 
 impl Deref for RefU64 {
     type Target = u64;
@@ -1323,6 +1358,8 @@ impl Default for PdmsGenericType {
 }
 
 //todo important 压缩transform的数据，存储在一个数据集合里，去索引数据，精确到小数点4位数
+
+//todo 需要插入这一层的变换矩阵
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
