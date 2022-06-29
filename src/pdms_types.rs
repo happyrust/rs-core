@@ -151,7 +151,7 @@ pub mod string {
 //把Refno当作u64
 #[derive(Hash, Serialize, Deserialize, Clone, Copy, Default, Component, Eq, PartialEq, Hash32)]
 pub struct RefU64(
-    #[serde(with = "string")]
+    // #[serde(with = "string")]
     pub u64
 );
 

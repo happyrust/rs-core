@@ -26,6 +26,11 @@ pub fn convert_to_hash(bytes: &[u8]) -> u32{
 }
 
 #[inline]
+pub fn is_uda(hash: u32) -> bool{
+    hash > 0x171FAD39
+}
+
+#[inline]
 pub fn db1_dehash(hash: u32) -> String{
     let mut result = String::new();
     if hash > 0x171FAD39 { // UDA的情况
