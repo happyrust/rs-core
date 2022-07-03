@@ -33,7 +33,7 @@ use crate::pdms_types::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;
-use crate::prim_geo::pyramid::LPyramid;
+use crate::prim_geo::pyramid::{ Pyramid};
 use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
@@ -932,7 +932,7 @@ impl AttrMap {
             "DISH" => Some(Box::new(Dish::from(self))),
             "CTOR" => Some(Box::new(CTorus::from(self))),
             "RTOR" => Some(Box::new(RTorus::from(self))),
-            "PYRA" => Some(Box::new(LPyramid::from(self))),
+            "PYRA" => Some(Box::new(Pyramid::from(self))),
             _ => None,
         };
     }

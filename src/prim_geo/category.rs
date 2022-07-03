@@ -5,7 +5,7 @@ use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;
 use crate::prim_geo::extrusion::Extrusion;
-use crate::prim_geo::pyramid::LPyramid;
+use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::revolution::Revolution;
 use crate::prim_geo::rtorus::{RTorus, SRTorus};
 use crate::prim_geo::sbox::SBox;
@@ -15,6 +15,7 @@ use std::f32::consts::PI;
 use std::ops::Range;
 use std::default::default;
 use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::prim_geo::lpyramid::LPyramid;
 use crate::shape::pdms_shape::BrepShapeTrait;
 
 #[derive(Debug)]
@@ -37,6 +38,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let z_axis = Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32).normalize();
             //需要转换成CTorus
             let pyramid = LPyramid {
+                pbax_pt: Vec3::new(pb.pt[0] as f32, pb.pt[1] as f32, pb.pt[2] as f32),
+                pbax_dir: Vec3::new(pb.dir[0] as f32, pb.dir[1] as f32, pb.dir[2] as f32).normalize(),
+                pcax_pt: Vec3::new(pc.pt[0] as f32, pc.pt[1] as f32, pc.pt[2] as f32),
+                pcax_dir: Vec3::new(pc.dir[0] as f32, pc.dir[1] as f32, pc.dir[2] as f32).normalize(),
+                paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
+                paax_dir: Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32).normalize(),
+
                 pbtp: d.x_top as f32,
                 pctp: d.y_top as f32,
                 pbbt: d.x_bottom as f32,
@@ -45,15 +53,15 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbdi: d.dist_to_btm as f32,
                 pbof: d.x_offset as f32,
                 pcof: d.y_offset as f32,
-                ..default()
             };
-            let translation = z_axis * (d.dist_to_btm + d.dist_to_top) as f32 / 2.0 + Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32);
+            // let translation = -z_axis * (d.dist_to_top) as f32 +  Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32);
+            // let translation = z_axis * (d.dist_to_btm) as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 brep_shape,
                 transform: TransformSRT {
-                    rotation: Quat::from_rotation_arc(Vec3::Z, z_axis.normalize()),
-                    translation,
+                    // rotation: Quat::from_rotation_arc(Vec3::Z, z_axis.normalize()),
+                    // translation,
                     ..default()
                 },
                 visible: d.tube_flag,

@@ -33,7 +33,7 @@ use crate::prim_geo::cylinder::{LCylinder, SCylinder};
 use crate::prim_geo::dish::Dish;
 use crate::prim_geo::extrusion::Extrusion;
 use crate::prim_geo::facet::Facet;
-use crate::prim_geo::pyramid::LPyramid;
+use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
@@ -155,6 +155,13 @@ impl PdmsMeshMgr {
 
     pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
         let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", mdb)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
         file.write_all(serialized.as_slice()).unwrap();
         true
@@ -349,7 +356,7 @@ pub enum PdmsPrimShape {
     SRTorusShape(SRTorus),
     LSnoutShape(LSnout),
     // TubiShape(Tubi),
-    PyramidShape(LPyramid),
+    PyramidShape(Pyramid),
     ExtruShape(Extrusion),
 }
 

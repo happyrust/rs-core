@@ -9,6 +9,7 @@ pub mod ctorus;
 pub mod extrusion;
 pub mod revolution;
 pub mod pyramid;
+pub mod lpyramid;
 pub mod rtorus;
 pub mod facet;
 pub mod loft;
