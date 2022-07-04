@@ -18,11 +18,9 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, Verified
 #[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
 pub struct SCTorus {
-    pub paax_expr: String,
     pub paax_pt: Vec3,   //A Axis point
     pub paax_dir: Vec3,   //A Axis Direction
 
-    pub pbax_expr: String,
     pub pbax_pt: Vec3,   //B Axis point
     pub pbax_dir: Vec3,   //B Axis Direction
 
@@ -59,11 +57,9 @@ impl SCTorus {
 impl Default for SCTorus {
     fn default() -> Self {
         SCTorus {
-            paax_expr: "X".to_string(),
             paax_pt: Vec3::new(5.0, 0.0, 0.0),
             paax_dir: Vec3::new(1.0,0.0,0.0),//Down
 
-            pbax_expr: "Y".to_string(),
             pbax_pt: Vec3::new(0.0, 5.0, 0.0),
             pbax_dir: Vec3::new(0.0,1.0,0.0), //UP
             pdia: 2.0,

@@ -33,7 +33,7 @@ pub struct Extrusion {
     pub pbax_pt: Vec3,
     pub pbax_dir: Vec3,   //B Axis Direction
 
-    // pub origin_pt: Vec3,
+    pub origin_pt: Vec3,
 
     pub verts: Vec<Vec3>,
     pub fradius_vec: Vec<f32>,
@@ -211,11 +211,11 @@ impl Default for Extrusion {
     fn default() -> Self {
         Self {
             paax_pt: Default::default(),
-            paax_dir: Vec3::X,
+            paax_dir: Vec3::Y,
             pbax_pt: Default::default(),
-            pbax_dir: Vec3::Y,
+            pbax_dir: Vec3::X,
 
-            // origin_pt: Default::default(),
+            origin_pt: Default::default(),
             verts: vec![],
             fradius_vec: vec![],
             height: 100.0,
@@ -237,9 +237,9 @@ impl BrepShapeTrait for Extrusion {
             return None;
         }
         let mut new_verts = self.verts.iter().map(|v| {
-            Vec3::new(v.x, v.y, 0.0)
-            // self.paax_dir * v.x + self.pbax_dir * v.y + self.origin_pt
+            self.paax_dir * v.x + self.pbax_dir * v.y + self.origin_pt
         }).collect::<Vec<_>>();
+        dbg!(&new_verts);
         let mut pre_hash = 0;
         if get_vec3_hash(&new_verts[0]) == get_vec3_hash(new_verts.last().unwrap()) {
             new_verts.remove(new_verts.len() - 1);
@@ -264,10 +264,9 @@ impl BrepShapeTrait for Extrusion {
 
         if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = face.get_surface() {
-                // let extrude_dir = self.paax_dir.normalize().vector3()
-                //     .cross(self.pbax_dir.normalize().vector3()).normalize();
-                // dbg!(&extrude_dir);
-                let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
+                let extrude_dir = self.paax_dir.normalize().vector3()
+                    .cross(self.pbax_dir.normalize().vector3()).normalize();
+                dbg!(&extrude_dir);
                 if plane.normal().dot(extrude_dir) < 0.0 {
                     face = face.inverse();
                 }
@@ -290,16 +289,16 @@ impl BrepShapeTrait for Extrusion {
             hash_f32::<DefaultHasher>(v, &mut hasher);
         });
 
-        // hash_vec3::<DefaultHasher>(&self.pbax_dir, &mut hasher);
-        // hash_vec3::<DefaultHasher>(&self.paax_dir, &mut hasher);
+        hash_vec3::<DefaultHasher>(&self.pbax_dir, &mut hasher);
+        hash_vec3::<DefaultHasher>(&self.paax_dir, &mut hasher);
 
         hasher.finish()
     }
 
     fn gen_unit_shape(&self) -> PdmsMesh {
         let unit = Self {
-            // paax_dir: self.paax_dir,
-            // pbax_dir: self.pbax_dir,
+            paax_dir: self.paax_dir,
+            pbax_dir: self.pbax_dir,
             verts: self.verts.clone(),
             height: 100.0,   //开放一点大小，不然三角化出来的不对
             fradius_vec: self.fradius_vec.clone(),

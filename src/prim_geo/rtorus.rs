@@ -106,7 +106,8 @@ impl BrepShapeTrait for SRTorus {
             let e = builder::tsweep(&v, y_axis * h as f64);
             let f = builder::tsweep(&e, x_axis * d as f64);
             let center = torus_info.center.point3();
-            let mut solid = builder::rsweep(&f, center, -y_axis, Rad(torus_info.angle.to_radians() as f64)).into_boundaries();
+            let mut solid = builder::rsweep(&f, center, -y_axis,
+                                            Rad(torus_info.angle.to_radians() as f64)).into_boundaries();
             return solid.pop();
         }
         None

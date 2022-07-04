@@ -35,6 +35,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let pb = d.pb.as_ref().unwrap();
             let pc = d.pc.as_ref().unwrap();
 
+            // dbg!(pc);
+
             let z_axis = Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32).normalize();
             //需要转换成CTorus
             let pyramid = LPyramid {
@@ -55,13 +57,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pcof: d.y_offset as f32,
             };
             // let translation = -z_axis * (d.dist_to_top) as f32 +  Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32);
-            // let translation = z_axis * (d.dist_to_btm) as f32;
+            let translation = z_axis * (d.dist_to_btm) as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 brep_shape,
                 transform: TransformSRT {
                     // rotation: Quat::from_rotation_arc(Vec3::Z, z_axis.normalize()),
-                    // translation,
+                    translation,
                     ..default()
                 },
                 visible: d.tube_flag,
@@ -72,10 +74,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
             let sc_torus = SCTorus {
-                paax_expr: "PAAX".to_string(),
                 paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
                 paax_dir: Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32),
-                pbax_expr: "PBAX".to_string(),
                 pbax_pt: Vec3::new(pb.pt[0] as f32, pb.pt[1] as f32, pb.pt[2] as f32),
                 pbax_dir: Vec3::new(pb.dir[0] as f32, pb.dir[1] as f32, pb.dir[2] as f32),
                 pdia: d.diameter as f32,
@@ -252,6 +252,42 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref().unwrap();
             let transform = TransformSRT {
                 translation: Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32),
+                ..default()
+            };
+            return Some(CateBrepShape {
+                brep_shape,
+                transform,
+                visible: d.tube_flag,
+                is_tubing: false,
+            });
+        }
+        CateGeoParam::Extrusion(d) => {
+            let pa = d.pa.as_ref().unwrap();
+            let pb = d.pb.as_ref().unwrap();
+            let paax_dir = Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32);
+            let pbax_dir = Vec3::new(pb.dir[0] as f32, pb.dir[1] as f32, pb.dir[2] as f32);
+            // dbg!(&d);
+            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
+                paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
+                paax_dir,
+                pbax_pt: Vec3::new(pb.pt[0] as f32, pb.pt[1] as f32, pb.pt[2] as f32),
+                pbax_dir,
+                verts: d.verts.iter().map(|x| Vec3::new(x[0], x[1], 0.0)).collect::<Vec<_>>(),
+                fradius_vec: d.prads.clone(),
+                height: d.height,
+                ..default()
+            });
+            let extrude_dir = paax_dir.normalize()
+                .cross(pbax_dir.normalize()).normalize();
+            let rotation = Quat::from_mat3(&Mat3::from_cols(
+                paax_dir,
+                pbax_dir,
+                extrude_dir,
+            ));
+            let translation = rotation * Vec3::new(d.x, d.y, d.z);
+            let transform = TransformSRT {
+                rotation,
+                translation,
                 ..default()
             };
             return Some(CateBrepShape {
