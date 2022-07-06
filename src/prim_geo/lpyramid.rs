@@ -8,15 +8,13 @@ use bevy::prelude::*;
 use bevy::reflect::Reflect;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
-use transmog_bincode::bincode;
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
 use truck_modeling::builder::try_attach_plane;
-
+use crate::tool::hash_tool::*;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
-use crate::tool::hash_tool::{hash_f32, hash_vec3};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]

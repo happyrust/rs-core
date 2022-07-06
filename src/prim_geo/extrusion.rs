@@ -8,11 +8,10 @@ use approx::abs_diff_eq;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
-use fixed::types::I24F8;
 use nalgebra_glm::sin;
-// use bevy_inspector_egui::Inspectable;
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
+
 
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
@@ -264,9 +263,6 @@ impl BrepShapeTrait for Extrusion {
 
         if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = face.get_surface() {
-                // let extrude_dir = self.paax_dir.normalize().vector3()
-                //     .cross(self.pbax_dir.normalize().vector3()).normalize();
-                // dbg!(&extrude_dir);
                 let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
                 if plane.normal().dot(extrude_dir) < 0.0 {
                     face = face.inverse();

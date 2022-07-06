@@ -1,3 +1,4 @@
+use std::default::default;
 use std::ops::Neg;
 use glam::{Vec3, Vec3A};
 use crate::parsed_data::CateAxisParam;
@@ -7,10 +8,8 @@ impl Neg for CateAxisParam {
 
     fn neg(self) -> Self::Output {
         Self {
-            pt: self.pt.clone(),
-            dir: vec![-self.dir[0].clone(), -self.dir[1].clone(), -self.dir[2].clone()],
-            pconnect: self.pconnect.clone(),
-            pbore: self.pbore.clone()
+            dir: [-self.dir[0].clone(), -self.dir[1].clone(), -self.dir[2].clone()],
+            ..self.clone()
         }
     }
 }
@@ -18,37 +17,37 @@ impl Neg for CateAxisParam {
 impl CateAxisParam {
     pub fn zero() -> Self {
         Self {
-            pt: vec![0.0; 3],
-            dir: vec![0.0; 3],
+            pt: [0.0; 3],
+            dir: [0.0; 3],
             pconnect: "".to_string(),
-            pbore: 0.0
+            ..default()
         }
     }
 
     pub fn x() -> Self {
         Self {
-            pt: vec![0.0; 3],
-            dir: vec![1.0, 0.0, 0.0],
+            pt: [0.0; 3],
+            dir: [1.0, 0.0, 0.0],
             pconnect: "".to_string(),
-            pbore: 0.0
+            ..default()
         }
     }
 
     pub fn y() -> Self {
         Self {
-            pt: vec![0.0; 3],
-            dir: vec![0.0, 1.0, 0.0],
+            pt: [0.0; 3],
+            dir: [0.0, 1.0, 0.0],
             pconnect: "".to_string(),
-            pbore: 0.0
+            ..default()
         }
     }
 
     pub fn z() -> Self {
         Self {
-            pt: vec![0.0; 3],
-            dir: vec![0.0, 0.0, 1.0],
+            pt: [0.0; 3],
+            dir: [0.0, 0.0, 1.0],
             pconnect: "".to_string(),
-            pbore: 0.0
+            ..default()
         }
     }
 

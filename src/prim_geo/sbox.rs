@@ -4,7 +4,6 @@ use truck_base::cgmath64::Vector3;
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{builder, Shell, Solid};
 use truck_polymesh::stl::IntoSTLIterator;
-// use bevy_inspector_egui::Inspectable;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use serde::{Serialize,Deserialize};
@@ -12,8 +11,7 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::quad_indices;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[derive(Component, Debug, /*Inspectable, Reflect,*/ Clone, Serialize, Deserialize)]
-// #[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub struct SBox {
     pub center: Vec3,
     pub size: Vec3,

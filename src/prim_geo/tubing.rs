@@ -24,6 +24,7 @@ impl PdmsTubing{
         };
 
         CateBrepShape{
+            refno: Default::default(),
             brep_shape: Box::new(cylinder),
             transform: TransformSRT{
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
@@ -31,7 +32,8 @@ impl PdmsTubing{
                 scale: Vec3::ONE,
             },
             visible: true,
-            is_tubing: true,
+            is_tubi: true,
+            pts: Default::default()
         }
     }
 }

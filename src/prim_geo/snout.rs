@@ -5,15 +5,13 @@ use truck_meshalgo::prelude::*;
 use truck_modeling::Shell;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use fixed::types::I24F8;
 use std::hash::Hash;
 use glam::TransformSRT;
-use transmog_bincode::bincode;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
 use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
-use crate::tool::hash_tool::hash_vec3;
+use crate::tool::hash_tool::*;
 
 #[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
@@ -72,8 +70,6 @@ impl BrepShapeTrait for LSnout {
         let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
         let p2 = b_dir * rt + p1;
         let p3 = b_dir * rb + p0;
-        // let _v0 = builder::vertex(p0.point3());
-        // let _v1 = builder::vertex(p1.point3());
         let v2 = builder::vertex(p2.point3());
         let v3 = builder::vertex(p3.point3());
 
@@ -104,14 +100,9 @@ impl BrepShapeTrait for LSnout {
         let mut hasher = DefaultHasher::new();
         //对于有偏移的，直接不复用，后面看情况再考虑复用
         if self.poff >= f32::EPSILON {
-            //当有偏移的时候，需要特殊处理，pa 和 pb的方向也考虑其中
-            // hash_vec3(&self.paax_dir, &mut hasher);
-            // hash_vec3(&self.pbax_dir, &mut hasher);
-            // offset.hash(&mut hasher);
             let bytes = bincode::serialize(self).unwrap();
             let mut hasher = DefaultHasher::default();
             bytes.hash(&mut hasher);
-            //dbg!("offset here");
             return hasher.finish();
         }
         let pheight = self.ptdi - self.pbdi;
@@ -121,11 +112,8 @@ impl BrepShapeTrait for LSnout {
             0.0
         };
         let beta = self.poff / pheight;
-        let alpha = I24F8::from_num(alpha);   //上下圆比例
-        let beta = I24F8::from_num(beta);   //形状要相似  offset / h
-        // let offset = I24F8::from_num(self.poff);
-        alpha.hash(&mut hasher);
-        beta.hash(&mut hasher);
+        hash_f32(&alpha, &mut hasher);
+        hash_f32(&beta, &mut hasher);
         hasher.finish()
     }
 

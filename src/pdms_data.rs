@@ -81,7 +81,9 @@ pub struct GmParam {
 
 #[derive(Clone, Debug, Default)]
 pub struct AxisParam {
-    pub attr_map: AttrMap,
+    pub refno: RefU64,
+    pub type_name: SmolStr,
+    pub number: i32,
     pub x: SmolStr,
     pub y: SmolStr,
     pub z: SmolStr,
@@ -89,6 +91,7 @@ pub struct AxisParam {
     pub direction: SmolStr,
     pub pconnect: SmolStr,
     pub pbore: SmolStr,
+    pub pnt_index_str: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

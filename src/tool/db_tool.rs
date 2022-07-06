@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::Read;
-use transmog_bincode::bincode;
+
 use memchr::memmem::{find, find_iter};
 use crate::pdms_types::PdmsDatabaseInfo;
 

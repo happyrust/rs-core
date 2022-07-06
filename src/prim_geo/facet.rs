@@ -11,10 +11,9 @@ use ncollide3d::na;
 use truck_meshalgo::prelude::*;
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
-use transmog_bincode::bincode;
+use crate::tool::hash_tool::{hash_f32, hash_vec3};
 use crate::pdms_types::AiosAABB;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
-use crate::tool::hash_tool::hash_vec3;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
 pub struct Facet {

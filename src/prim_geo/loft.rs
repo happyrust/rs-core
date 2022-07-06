@@ -7,15 +7,14 @@ use truck_modeling::{builder, Face, Shell, Surface, Wire};
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use fixed::types::I24F8;
 use glam::{TransformRT, TransformSRT, Vec3};
-use transmog_bincode::bincode;
+
 
 use truck_modeling::builder::try_attach_plane;
 use crate::parsed_data::CateProfileParam;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
-use crate::tool::hash_tool::{hash_f32, hash_vec3};
+use crate::tool::hash_tool::hash_vec3;
 
 #[derive(Component, Debug, Clone)]
 pub struct SctnSolid {

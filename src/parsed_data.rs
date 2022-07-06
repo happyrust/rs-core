@@ -8,51 +8,50 @@ use crate::pdms_types::RefU64;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignPipeRequest {
-    // pub name: ::prost::alloc::string::String,
+    // pub name: String,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignComponentRequest {
     
-    pub name: ::prost::alloc::string::String,
+    pub name: String,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignBranRequest {
     
-    pub name: ::prost::alloc::string::String,
+    pub name: String,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct RefnosRequest {
     
-    pub name: ::prost::alloc::string::String,
+    pub name: String,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct Refnos {
     
-    pub refnos: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    pub refnos: Vec<String>,
 }
 #[derive(Clone, Debug, Default)]
 pub struct DesignPipe {
-    pub name: ::prost::alloc::string::String,
-    pub refno: ::prost::alloc::string::String,
-    pub brans: ::prost::alloc::vec::Vec<DesignBran>,
+    pub name: String,
+    pub refno: String,
+    pub brans: Vec<DesignBran>,
 }
 #[derive(Clone, Debug, Default)]
 pub struct DesignBran {
-    pub name: ::prost::alloc::string::String,
-    pub refno: ::prost::alloc::string::String,
-    pub components: ::prost::alloc::vec::Vec<GeomsInfo>,
+    pub name: String,
+    pub refno: String,
+    pub components: Vec<GeomsInfo>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct GeomsInfo {
     pub geometries: Vec<CateGeoParam>,
     pub axis_map: BTreeMap<i32, CateAxisParam>,
-    pub tubi_bore: Option<f32>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Dataset {
-    pub self_type: ::prost::alloc::string::String,
+    pub self_type: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -93,12 +92,14 @@ pub struct GmseParamData {
 
 
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateAxisParam {
-    pub pt: ::prost::alloc::vec::Vec<f64>,
-    pub dir: ::prost::alloc::vec::Vec<f64>,
-    pub pconnect: ::prost::alloc::string::String,
-    pub pbore: f64,
+    pub refno: RefU64,
+    pub number: i32,
+    pub pt: [f32; 3],
+    pub dir: [f32; 3],
+    pub pbore: f32,
+    pub pconnect: String,
 }
 
 
@@ -334,9 +335,9 @@ pub struct CateTorusParam {
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CateTubeImpliedParam {
     
-    pub center_position: ::prost::alloc::vec::Vec<f64>,
+    pub center_position: Vec<f64>,
     
-    pub direction: ::prost::alloc::vec::Vec<f64>,
+    pub direction: Vec<f64>,
     
     pub diameter: f64,
     

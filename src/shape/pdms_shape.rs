@@ -17,7 +17,6 @@ use bevy::render::primitives::Aabb;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
-use fixed::types::I24F8;
 use glam::{TransformRT, TransformSRT, Vec3};
 use ncollide3d::bounding_volume::AABB;
 use ncollide3d::math::{Point, Vector};
@@ -26,7 +25,7 @@ use ncollide3d::na::Point3 as NPoint3;
 use ncollide3d::shape::TriMesh;
 use truck_base::bounding_box::BoundingBox;
 use serde::{Serialize,Deserialize};
-use transmog_bincode::bincode;
+
 use crate::pdms_types::*;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};

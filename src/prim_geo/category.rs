@@ -14,16 +14,20 @@ use crate::prim_geo::sphere::Sphere;
 use std::f32::consts::PI;
 use std::ops::Range;
 use std::default::default;
+use smallvec::SmallVec;
 use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::pdms_types::RefU64;
 use crate::prim_geo::lpyramid::LPyramid;
 use crate::shape::pdms_shape::BrepShapeTrait;
 
 #[derive(Debug)]
 pub struct CateBrepShape {
+    pub refno: RefU64,
     pub brep_shape: Box<dyn BrepShapeTrait>,
     pub transform: TransformSRT,
     pub visible: bool,
-    pub is_tubing: bool,
+    pub is_tubi: bool,
+    pub pts: SmallVec<[i32; 3]>,  //点集信息
     // pub level: Range<u32>,
 }
 
@@ -34,32 +38,35 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
             let pc = d.pc.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(pa.number);
+            pts.push(pb.number);
+            pts.push(pc.number);
 
-            // dbg!(pc);
-
-            let z_axis = Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32).normalize();
+            let z_axis = Vec3::new(pa.dir[0], pa.dir[1], pa.dir[2]).normalize();
             //需要转换成CTorus
             let pyramid = LPyramid {
-                pbax_pt: Vec3::new(pb.pt[0] as f32, pb.pt[1] as f32, pb.pt[2] as f32),
-                pbax_dir: Vec3::new(pb.dir[0] as f32, pb.dir[1] as f32, pb.dir[2] as f32).normalize(),
-                pcax_pt: Vec3::new(pc.pt[0] as f32, pc.pt[1] as f32, pc.pt[2] as f32),
-                pcax_dir: Vec3::new(pc.dir[0] as f32, pc.dir[1] as f32, pc.dir[2] as f32).normalize(),
-                paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
-                paax_dir: Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32).normalize(),
+                pbax_pt: Vec3::from(pb.pt),
+                pbax_dir: Vec3::from(pb.dir).normalize(),
+                pcax_pt: Vec3::from(pc.pt),
+                pcax_dir: Vec3::from(pc.dir).normalize(),
+                paax_pt: Vec3::from(pa.pt),
+                paax_dir: Vec3::from(pa.dir).normalize(),
 
-                pbtp: d.x_top as f32,
-                pctp: d.y_top as f32,
-                pbbt: d.x_bottom as f32,
-                pcbt: d.y_bottom as f32,
-                ptdi: d.dist_to_top as f32,
-                pbdi: d.dist_to_btm as f32,
-                pbof: d.x_offset as f32,
-                pcof: d.y_offset as f32,
+                pbtp: d.x_top,
+                pctp: d.y_top,
+                pbbt: d.x_bottom,
+                pcbt: d.y_bottom,
+                ptdi: d.dist_to_top,
+                pbdi: d.dist_to_btm,
+                pbof: d.x_offset,
+                pcof: d.y_offset,
             };
             // let translation = -z_axis * (d.dist_to_top) as f32 +  Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32);
             let translation = z_axis * (d.dist_to_btm) as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform: TransformSRT {
                     // rotation: Quat::from_rotation_arc(Vec3::Z, z_axis.normalize()),
@@ -67,32 +74,41 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     ..default()
                 },
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts,
             });
         }
         CateGeoParam::Torus(d) => {
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(pa.number);
+            pts.push(pb.number);
             let sc_torus = SCTorus {
-                paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
-                paax_dir: Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32),
-                pbax_pt: Vec3::new(pb.pt[0] as f32, pb.pt[1] as f32, pb.pt[2] as f32),
-                pbax_dir: Vec3::new(pb.dir[0] as f32, pb.dir[1] as f32, pb.dir[2] as f32),
+                paax_pt: Vec3::from(pa.pt),
+                paax_dir: Vec3::from(pa.dir).normalize(),
+                pbax_pt: Vec3::from(pb.pt),
+                pbax_dir: Vec3::from(pb.dir).normalize(),
                 pdia: d.diameter as f32,
             };
             if let Some((torus, transform)) = sc_torus.convert_to_ctorus() {
                 let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
                 return Some(CateBrepShape {
+                    refno: Default::default(),
                     brep_shape,
                     transform,
                     visible: d.tube_flag,
-                    is_tubing: false,
+                    is_tubi: false,
+                    pts,
                 });
             }
         }
         CateGeoParam::RectTorus(d) => {
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(pa.number);
+            pts.push(pb.number);
             let sr_torus = SRTorus {
                 paax_expr: "PAAX".to_string(),
                 paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
@@ -106,10 +122,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if let Some((torus, transform)) = sr_torus.convert_to_rtorus() {
                 let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
                 return Some(CateBrepShape {
+                    refno: Default::default(),
                     brep_shape,
                     transform,
                     visible: d.tube_flag,
-                    is_tubing: false,
+                    is_tubi: false,
+                    pts,
                 });
             }
         }
@@ -123,14 +141,18 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts: Default::default()
             });
         }
         CateGeoParam::Dish(d) => {
             let axis = d.axis.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(axis.number);
             let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
             let translation = dir * (d.dist_to_btm as f32) + Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
             let transform = TransformSRT {
@@ -147,16 +169,22 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts,
             });
         }
         CateGeoParam::Snout(d) => {
-            //todo snout 考虑复用
+            // 统计复用个数
             let z = d.pa.as_ref().unwrap();
             let x = d.pb.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(z.number);
+            pts.push(x.number);
+
             let z_axis = Vec3::new(z.dir[0] as f32, z.dir[1] as f32, z.dir[2] as f32).normalize();
             let x_axis = Vec3::new(x.dir[0] as f32, x.dir[1] as f32, x.dir[2] as f32).normalize();
 
@@ -185,14 +213,18 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             });
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts
             });
         }
         CateGeoParam::SCylinder(d) => {
             let axis = d.axis.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(axis.number);
             let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
@@ -212,14 +244,18 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts
             });
         }
         CateGeoParam::LCylinder(d) => {
             let axis = d.axis.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(axis.number);
             let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
             let phei = (d.dist_to_top - d.dist_to_btm) as f32;
             let pdia = d.diameter as f32;
@@ -238,10 +274,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts
             });
         }
         CateGeoParam::Sphere(d) => {
@@ -250,27 +288,34 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             let axis = d.axis.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(axis.number);
             let transform = TransformSRT {
                 translation: Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32),
                 ..default()
             };
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts
             });
         }
         CateGeoParam::Extrusion(d) => {
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
-            let paax_dir = Vec3::new(pa.dir[0] as f32, pa.dir[1] as f32, pa.dir[2] as f32);
-            let pbax_dir = Vec3::new(pb.dir[0] as f32, pb.dir[1] as f32, pb.dir[2] as f32);
+            let mut pts =  SmallVec::default();
+            pts.push(pa.number);
+            pts.push(pb.number);
+            let paax_dir = Vec3::from(pa.dir);
+            let pbax_dir = Vec3::from(pb.dir);
             // dbg!(&d);
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
-                paax_pt: Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32),
+                paax_pt: Vec3::from(pa.pt),
                 paax_dir,
-                pbax_pt: Vec3::new(pb.pt[0] as f32, pb.pt[1] as f32, pb.pt[2] as f32),
+                pbax_pt: Vec3::from(pb.pt),
                 pbax_dir,
                 verts: d.verts.iter().map(|x| Vec3::new(x[0], x[1], 0.0)).collect::<Vec<_>>(),
                 fradius_vec: d.prads.clone(),
@@ -291,10 +336,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
+                refno: Default::default(),
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
-                is_tubing: false,
+                is_tubi: false,
+                pts
             });
         }
         _ => {}

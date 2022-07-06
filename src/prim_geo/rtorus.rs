@@ -4,11 +4,10 @@ use std::hash::Hasher;
 use std::hash::Hash;
 use bevy::prelude::*;
 use truck_modeling::{builder, Shell};
-// use bevy_inspector_egui::Inspectable;
+use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use fixed::types::I24F8;
 use crate::pdms_types::AttrMap;
 
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
@@ -150,10 +149,12 @@ impl BrepShapeTrait for RTorus {
 
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
-        let rins = I24F8::from_num(self.rins / self.rout);
-        let beta = I24F8::from_num(self.angle);
-        rins.hash(&mut hasher);
-        beta.hash(&mut hasher);
+        // let rins = I24F8::from_num(self.rins / self.rout);
+        // let beta = I24F8::from_num(self.angle);
+        // rins.hash(&mut hasher);
+        // beta.hash(&mut hasher);
+        hash_f32(&(self.rins / self.rout), &mut hasher);
+        hash_f32(&self.angle, &mut hasher);
         hasher.finish()
     }
 

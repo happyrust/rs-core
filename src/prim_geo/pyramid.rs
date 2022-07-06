@@ -4,20 +4,17 @@ use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use bevy::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
-// use bevy_inspector_egui::Inspectable;
+use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use fixed::types::I24F8;
 use glam::Vec3;
 
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize,Deserialize};
-use transmog_bincode::bincode;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
-use crate::tool::hash_tool::{hash_f32, hash_vec3};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]

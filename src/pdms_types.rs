@@ -1,4 +1,3 @@
-use serde::{Serialize, Deserialize};
 use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
 use std::fmt;
@@ -10,36 +9,40 @@ use std::panic::catch_unwind;
 use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
+
 use anyhow::anyhow;
-use bevy::prelude::*;
-use bevy::render::primitives::Aabb;
-use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
+use bevy::prelude::*;
+use bevy::reflect::Reflect;
+use bevy::render::primitives::Aabb;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use hash32::Hasher;
-use smol_str::SmolStr;
 use hash32_derive::Hash32;
 use id_tree::{NodeId, Tree};
-use transmog_bincode::bincode;
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 use skytable::{Element, SkyResult};
 use skytable::types::{FromSkyhashBytes, IntoSkyhashBytes};
-use crate::consts::*;
+use smallvec::SmallVec;
+use smol_str::SmolStr;
+
 use crate::BHashMap;
+use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
+use crate::parsed_data::CateAxisParam;
+use crate::pdms_data::AxisParam;
 use crate::pdms_types::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;
-use crate::prim_geo::pyramid::{ Pyramid};
+use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::shape::pdms_shape::{BrepShapeTrait, PdmsMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
-
 
 pub const LEVEL_VISBLE: u32 = 6;
 
@@ -129,7 +132,7 @@ pub mod string {
     use std::fmt::Display;
     use std::str::FromStr;
 
-    use serde::{de, Serializer, Deserialize, Deserializer};
+    use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
         where T: Display,
@@ -354,8 +357,8 @@ PartialEq, Ord, PartialOrd)]
 #[reflect(Component)]
 pub struct NounHash(pub u32);
 
-impl ToString for NounHash{
-    fn to_string(&self) -> String{
+impl ToString for NounHash {
+    fn to_string(&self) -> String {
         db1_dehash(self.0)
     }
 }
@@ -398,7 +401,7 @@ pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
 }
 
-impl Debug for AttrMap{
+impl Debug for AttrMap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = self.to_string_hashmap();
         s.fmt(f)
@@ -406,7 +409,6 @@ impl Debug for AttrMap{
 }
 
 impl AttrMap {
-
     #[inline]
     pub fn is_null(&self) -> bool {
         self.map.len() == 0
@@ -1370,6 +1372,11 @@ pub struct EleGeosInfo {
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
     pub generic_type: PdmsGenericType,
+
+    //相对世界坐标系下的变换矩阵 rot, translation, scale
+    pub world_transform: (Quat, Vec3, Vec3),
+
+    pub ptset_map: BTreeMap<i32, CateAxisParam>,
 }
 
 impl Deref for EleGeosInfo {
@@ -1385,6 +1392,13 @@ impl Deref for EleGeosInfo {
 pub struct ShapeInstancesMgr {
     pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
     //可以用类型的信息去遍历
+}
+
+impl ShapeInstancesMgr{
+    #[inline]
+    pub fn get_translation(&self, refno: RefU64) -> Option<Vec3>{
+        self.inst_map.get(&refno).map(|x| x.world_transform.1)
+    }
 }
 
 impl Deref for ShapeInstancesMgr {
@@ -1470,10 +1484,14 @@ impl CachedMeshesMgr {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EleGeoInstance {
     pub geo_hash: u64,
+    //对应参考号
+    pub refno: RefU64,
+    pub pts: SmallVec<[i32; 3]>,
     pub bbox: AiosAABB,
-    //世界坐标系的变换, rot, translation, scale
-    pub global_transform: (Quat, Vec3, Vec3),
+    //相对owner坐标系的变换, rot, translation, scale
+    pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
+    pub is_tubi: bool,
 }
 
 pub trait PdmsNodeTrait {
@@ -1689,9 +1707,9 @@ pub enum DbAttributeType {
     RefU64Vec,
 }
 
-impl DbAttributeType{
+impl DbAttributeType {
     #[inline]
-    pub fn to_sql_str(&self) -> &str{
+    pub fn to_sql_str(&self) -> &str {
         match self {
             Self::INTEGER => "INT",
             Self::BOOL => "TINYINT(1)",
@@ -1703,7 +1721,6 @@ impl DbAttributeType{
         }
     }
 }
-
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -7,8 +7,7 @@ use truck_modeling::{builder, Shell};
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use fixed::types::I24F8;
-
+use crate::tool::hash_tool::*;
 use nalgebra_glm::normalize;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
@@ -150,12 +149,14 @@ impl BrepShapeTrait for CTorus {
 
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
-        let rins = I24F8::from_num(self.rins / self.rout);
-        let angle = I24F8::from_num(self.angle);
-        // let rout = I24F8::from_num(self.rout);
-        rins.hash(&mut hasher);
-        angle.hash(&mut hasher);
-        // rout.hash(&mut hasher);
+        // let rins = I24F8::from_num(self.rins / self.rout);
+        // let angle = I24F8::from_num(self.angle);
+        // rins.hash(&mut hasher);
+        // angle.hash(&mut hasher);
+
+        hash_f32(&(self.rins / self.rout), &mut hasher);
+        hash_f32(&self.angle, &mut hasher);
+
         hasher.finish()
     }
 
