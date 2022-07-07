@@ -119,8 +119,7 @@ impl PdmsMesh {
         )));
         let AiosAABB{
             min,
-            max,
-        } = self.aabb;
+            max, } = self.aabb;
 
         let mut wire_mesh = Mesh::new(LineList);
         wire_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.wf_vertices.clone());

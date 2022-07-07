@@ -224,7 +224,7 @@ impl ToString for RefU64 {
 
 impl RefU64 {
     #[inline]
-    pub fn is_valid(&self) -> bool { self.get_0() != 0 }
+    pub fn is_valid(&self) -> bool { self.get_0() > 0 && self.get_1() > 0 }
 
     #[inline]
     pub fn get_sled_key(&self) -> [u8; 8] {
@@ -1415,9 +1415,12 @@ impl DerefMut for ShapeInstancesMgr {
     }
 }
 
+
+pub type GeoHash = u64;
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CachedMeshesMgr {
-    pub meshes: DashMap<u64, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+    pub meshes: DashMap<GeoHash, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
 impl CachedMeshesMgr {
