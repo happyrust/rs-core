@@ -36,6 +36,7 @@ serde-name = "0.1.1"
 serde = { version = "1.0.133", features = ["derive"] }
 serde_derive = "1.0.133"
 serde_json = { version = "1.0" }
+sled = "0.34.7"
 hash32 = "0.2.1"
 hash32-derive = "0.1.1"
 prost = "0.8.0"

@@ -8,7 +8,7 @@ use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
-use crate::prim_geo::helper::quad_indices;
+// use crate::prim_geo::helper::quad_indices;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
