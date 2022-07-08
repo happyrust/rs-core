@@ -96,7 +96,7 @@ impl PdmsMesh {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
-        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
         mesh.set_indices(Some(Indices::U32(
             self.indices.clone()
         )));
