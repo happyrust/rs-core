@@ -62,14 +62,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbof: d.x_offset,
                 pcof: d.y_offset,
             };
-            // let translation = -z_axis * (d.dist_to_top) as f32 +  Vec3::new(pa.pt[0] as f32, pa.pt[1] as f32, pa.pt[2] as f32);
             let translation = z_axis * (d.dist_to_btm) as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 refno: Default::default(),
                 brep_shape,
                 transform: TransformSRT {
-                    // rotation: Quat::from_rotation_arc(Vec3::Z, z_axis.normalize()),
                     translation,
                     ..default()
                 },

@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
-
+use std::default::default;
 use bevy::prelude::{FromWorld, Mesh};
 use truck_modeling::{Curve, Shell};
 // use bevy_inspector_egui::Inspectable;
@@ -96,7 +96,7 @@ impl PdmsMesh {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
-        // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
         mesh.set_indices(Some(Indices::U32(
             self.indices.clone()
         )));
@@ -114,6 +114,7 @@ impl PdmsMesh {
             uvs.push([0.0f32, 0.0]);
         }
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        //todo 是否需要优化索引
         mesh.set_indices(Some(Indices::U32(
             self.indices.clone()
         )));
@@ -282,8 +283,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
                     indices,
                     vertices,
                     normals,
-                    wf_indices,
-                    wf_vertices,
+                    wf_indices /*: default()*/,
+                    wf_vertices/*: default()*/,
                     aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
                 };
             }

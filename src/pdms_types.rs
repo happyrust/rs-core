@@ -25,6 +25,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use skytable::{Element, SkyResult};
 use skytable::types::{FromSkyhashBytes, IntoSkyhashBytes};
+use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 
@@ -200,20 +201,40 @@ impl From<&[u8]> for RefU64 {
     }
 }
 
-impl IntoSkyhashBytes for &RefU64 {
-    fn as_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+impl Into<Vec<u8>> for RefU64 {
+    fn into(self) -> Vec<u8> {
+        bincode::serialize(&self).unwrap()
     }
 }
 
-impl FromSkyhashBytes for RefU64 {
-    fn from_element(element: Element) -> SkyResult<Self> {
-        if let Element::Binstr(v) = element {
-            return Ok(bincode::deserialize::<RefU64>(&v).unwrap());
-        }
-        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
+impl Into<sled::IVec> for RefU64 {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(&self).unwrap().into()
     }
 }
+
+impl Into<sled::IVec> for &RefU64 {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(self).unwrap().into()
+    }
+}
+
+impl From<sled::IVec> for RefU64{
+    fn from(d: sled::IVec) -> Self{
+        Self(bincode::deserialize(&d).unwrap())
+    }
+}
+
+//IVec
+
+// impl FromSkyhashBytes for RefU64 {
+//     fn from_element(element: Element) -> SkyResult<Self> {
+//         if let Element::Binstr(v) = element {
+//             return Ok(bincode::deserialize::<RefU64>(&v).unwrap());
+//         }
+//         Err(skytable::error::Error::ParseError("Bad element type".to_string()))
+//     }
+// }
 
 impl ToString for RefU64 {
     fn to_string(&self) -> String {
@@ -405,6 +426,24 @@ impl Debug for AttrMap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = self.to_string_hashmap();
         s.fmt(f)
+    }
+}
+
+impl Into<IVec> for AttrMap{
+    fn into(self) -> IVec{
+        bincode::serialize(&self).unwrap().into()
+    }
+}
+
+impl Into<IVec> for &AttrMap{
+    fn into(self) -> IVec{
+        bincode::serialize(self).unwrap().into()
+    }
+}
+
+impl From<IVec> for AttrMap{
+    fn from(d: IVec) -> Self{
+        bincode::deserialize(&d).unwrap()
     }
 }
 
@@ -1326,11 +1365,26 @@ impl AiosAABB {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
+pub struct LevelShapeMgr {
+    pub level_mgr: DashMap<RefU64, RefU64Vec>,
+}
+
+impl LevelShapeMgr{
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+}
+
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PdmsMeshMgr {
     pub inst_mgr: ShapeInstancesMgr,
     pub cached_mesh_mgr: CachedMeshesMgr,
-    pub level_shape_mgr: DashMap<RefU64, RefU64Vec>,   //每个非叶子节点都知道自己的所有shape refno
+    pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 }
 
 impl PdmsMeshMgr {
@@ -1399,6 +1453,13 @@ impl ShapeInstancesMgr{
     pub fn get_translation(&self, refno: RefU64) -> Option<Vec3>{
         self.inst_map.get(&refno).map(|x| x.world_transform.1)
     }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
 }
 
 impl Deref for ShapeInstancesMgr {
@@ -1453,6 +1514,13 @@ impl CachedMeshesMgr {
             return Some(mesh.aabb.clone());
         }
         None
+    }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
     }
 
     pub fn serialize_to_bin_file(&self) -> bool {
@@ -1593,6 +1661,43 @@ pub struct PdmsElement {
     pub noun: String,
     pub version: u32,
     pub children_count: usize,
+}
+
+impl Into<sled::IVec> for PdmsElement {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(&self).unwrap().into()
+    }
+}
+impl Into<sled::IVec> for &PdmsElement {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(self).unwrap().into()
+    }
+}
+
+impl From<sled::IVec> for PdmsElement{
+    fn from(d: sled::IVec) -> Self{
+        bincode::deserialize(&d).unwrap()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
+pub struct PdmsElementVec(pub Vec<PdmsElement>);
+
+impl Into<sled::IVec> for PdmsElementVec {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(&self).unwrap().into()
+    }
+}
+impl Into<sled::IVec> for &PdmsElementVec {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(self).unwrap().into()
+    }
+}
+
+impl From<sled::IVec> for PdmsElementVec{
+    fn from(d: sled::IVec) -> Self{
+        bincode::deserialize(&d).unwrap()
+    }
 }
 
 impl EleNode {
