@@ -13,7 +13,7 @@ use bevy::prelude::shape::Icosphere;
 use lyon::math::size;
 use hexasphere::shapes::IcoSphere;
 use serde::{Serialize,Deserialize};
-use crate::prim_geo::helper::quad_indices;
+// use crate::prim_geo::helper::quad_indices;
 use crate::pdms_types::AiosAABB;
 
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
