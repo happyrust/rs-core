@@ -1372,6 +1372,7 @@ pub struct LevelShapeMgr {
 
 impl LevelShapeMgr{
     pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        std::fs::create_dir_all(file_path).unwrap();
         let mut file = File::create(file_path).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
         file.write_all(serialized.as_slice()).unwrap();
@@ -1381,21 +1382,12 @@ impl LevelShapeMgr{
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct PdmsMeshMgr {
+pub struct PdmsMeshInstancehMgr {
+    // pub cached_mesh_mgr: CachedMeshesMgr,
     pub inst_mgr: ShapeInstancesMgr,
-    pub cached_mesh_mgr: CachedMeshesMgr,
     pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 }
 
-impl PdmsMeshMgr {
-    ///插入instance 数据
-    #[inline]
-    pub fn insert_ele_geos(ele_geo: EleGeosInfo) {}
-
-    ///插入mesh 数据
-    #[inline]
-    pub fn insert_mesh() {}
-}
 
 
 #[repr(C)]
@@ -1455,6 +1447,7 @@ impl ShapeInstancesMgr{
     }
 
     pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        std::fs::create_dir_all(file_path).unwrap();
         let mut file = File::create(file_path).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
         file.write_all(serialized.as_slice()).unwrap();
@@ -1517,6 +1510,7 @@ impl CachedMeshesMgr {
     }
 
     pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        std::fs::create_dir_all(file_path).unwrap();
         let mut file = File::create(file_path).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
         file.write_all(serialized.as_slice()).unwrap();
