@@ -12,7 +12,7 @@ use serde::{Serialize,Deserialize};
 
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 
 //可不可以用来表达 sphere
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
@@ -106,7 +106,7 @@ impl BrepShapeTrait for Dish {
             pdia: 1.0,
             ..Default::default()
         };
-        unit.gen_mesh(Some(0.002))
+        unit.gen_mesh(Some(TRI_TOL))
     }
 
     fn get_scaled_vec3(&self) -> Vec3 {

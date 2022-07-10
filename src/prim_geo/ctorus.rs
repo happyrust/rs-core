@@ -12,7 +12,7 @@ use nalgebra_glm::normalize;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 
 #[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
@@ -167,7 +167,7 @@ impl BrepShapeTrait for CTorus {
             rout: 1.0,
             angle: self.angle
         };
-        unit.gen_mesh(Some(0.001))
+        unit.gen_mesh(Some(TRI_TOL))
     }
 
     #[inline]

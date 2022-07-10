@@ -192,7 +192,7 @@ impl PdmsMeshMgr {
 
 }
 
-
+pub const TRI_TOL: f32 = 0.01;
 
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
 

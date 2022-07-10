@@ -170,7 +170,7 @@ impl BrepShapeTrait for SCylinder {
 
 
     fn gen_unit_shape(&self) -> PdmsMesh{
-        SCylinder::default().gen_mesh(Some(0.001))
+        SCylinder::default().gen_mesh(Some(0.01))
     }
 
     #[inline]

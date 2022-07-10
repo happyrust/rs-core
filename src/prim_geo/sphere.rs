@@ -69,8 +69,6 @@ impl BrepShapeTrait for Sphere {
             .map(Into::into)
             .collect::<Vec<[f32; 3]>>();
 
-        // let uvs = generated.raw_data().to_owned();
-
         let mut indices = Vec::with_capacity(generated.indices_per_main_triangle() * 20);
         for i in 0..20 {
             generated.get_indices(i, &mut indices);
@@ -91,7 +89,7 @@ impl BrepShapeTrait for Sphere {
     }
 
     fn hash_mesh_params(&self) -> u64{
-        3u64            //代表BOX
+        3u64            //代表SPHERE
     }
 
     fn gen_unit_shape(&self) -> PdmsMesh{
