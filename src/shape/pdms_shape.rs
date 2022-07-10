@@ -133,7 +133,7 @@ impl PdmsMesh {
 
 //bevy's meshs
 
-impl PdmsMeshInstancehMgr {
+impl PdmsMeshInstanceMgr {
     #[inline]
     pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, EleGeosInfo>> {
         let mut results = DashMap::new();
