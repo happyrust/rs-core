@@ -3,7 +3,6 @@ pub mod sbox;
 pub mod sphere;
 pub mod cylinder;
 pub mod snout;
-pub mod cone;
 pub mod dish;
 pub mod ctorus;
 pub mod extrusion;

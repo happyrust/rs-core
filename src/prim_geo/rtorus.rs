@@ -11,7 +11,7 @@ use bevy::ecs::reflect::ReflectComponent;
 use crate::pdms_types::AttrMap;
 
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 
 #[derive(Component, Debug, Clone,  Reflect)]
 #[reflect(Component)]
@@ -166,7 +166,7 @@ impl BrepShapeTrait for RTorus {
             height: 1.0,
             angle: self.angle
         };
-        unit.gen_mesh(Some(0.002))
+        unit.gen_mesh(Some(TRI_TOL))
     }
 
     #[inline]

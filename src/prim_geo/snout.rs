@@ -9,7 +9,7 @@ use std::hash::Hash;
 use glam::TransformSRT;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
-use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh};
+use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh, TRI_TOL};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::hash_tool::*;
 
@@ -121,7 +121,7 @@ impl BrepShapeTrait for LSnout {
     fn gen_unit_shape(&self) -> PdmsMesh{
         let ptdm = self.ptdm / self.pbdm;
        if self.poff > f32::EPSILON {
-            self.gen_mesh(None)
+            self.gen_mesh(Some(TRI_TOL))
         }else{
             Self{
                 ptdi: 0.5 ,
@@ -130,7 +130,7 @@ impl BrepShapeTrait for LSnout {
                 pbdm: 1.0,
                 poff: self.poff,
                 ..Default::default()
-            }.gen_mesh(Some(0.002))
+            }.gen_mesh(Some(TRI_TOL))
         }
 
     }
