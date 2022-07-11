@@ -25,6 +25,7 @@ skytable = "0.7.0"
 flate2 = "1.0.23"
 lazy_static = "1.4.0"
 smallvec = "1.8.0"
+derive_more = "0.99.17"
 
 bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
 bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
