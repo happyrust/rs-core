@@ -141,7 +141,8 @@ impl BrepShapeTrait for CTorus {
             Rad(7.0),
         );
         if let Ok(disk) = builder::try_attach_plane(&vec![w]) {
-            let mut solid = builder::rsweep(&disk, Point3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
+            let mut solid = builder::rsweep(&disk, Point3::new(0.0, 0.0, 0.0),
+                                            Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
             return solid.pop()
         }
         None
@@ -149,11 +150,6 @@ impl BrepShapeTrait for CTorus {
 
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
-        // let rins = I24F8::from_num(self.rins / self.rout);
-        // let angle = I24F8::from_num(self.angle);
-        // rins.hash(&mut hasher);
-        // angle.hash(&mut hasher);
-
         hash_f32(&(self.rins / self.rout), &mut hasher);
         hash_f32(&self.angle, &mut hasher);
 

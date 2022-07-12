@@ -206,10 +206,16 @@ pub struct SannData {
     pub dwid: f32,
 }
 
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+pub struct SProfileData {
+    pub verts: Vec<[f32; 2]>,
+    pub normal_axis: Vec3,
+}
+
 //截面的处理，还需要旋转自身的平面
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub enum CateProfileParam{
-    SPRO(Vec<[f32; 2]>),
+    SPRO(SProfileData),
     SANN(SannData),
     None,
 }

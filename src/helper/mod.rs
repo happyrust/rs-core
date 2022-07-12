@@ -1,3 +1,4 @@
+use glam::Vec3;
 use smol_str::SmolStr;
 use crate::tool::db_tool::db1_dehash;
 
@@ -59,3 +60,46 @@ pub fn parse_to_f32_arr(input: &[u8]) -> [f64; 3] {
     }
     data
 }
+
+
+#[inline]
+pub fn vec3_round_3(v: Vec3) -> Vec3 {
+    Vec3::new(f32_round_3(v.x), f32_round_3(v.y), f32_round_3(v.z))
+}
+
+#[inline]
+pub fn vec3_round_2(v: Vec3) -> Vec3 {
+    Vec3::new(f32_round_2(v.x), f32_round_2(v.y), f32_round_2(v.z))
+}
+
+#[inline]
+pub fn f32_round_3(v: f32) -> f32 {
+    ((v as f64 * 1000.0).round() / 1000.0f64) as f32    //以防止溢出
+}
+
+#[inline]
+pub fn f32_round_2(v: f32) -> f32 {
+    ((v as f64 * 100.0).round() / 100.0f64) as f32    //以防止溢出
+}
+
+#[inline]
+pub fn f32_round_1(v: f32) -> f32 {
+    ((v as f64 * 10.0).round() / 10.0f64) as f32    //以防止溢出
+}
+
+
+#[inline]
+pub fn f64_round_3(v: f64) -> f64 {
+    (v * 1000.0).round() / 1000.0f64    //以防止溢出
+}
+
+#[inline]
+pub fn f64_round_2(v: f64) -> f64 {
+    (v * 100.0).round() / 100.0f64    //以防止溢出
+}
+
+#[inline]
+pub fn f64_round_1(v: f64) -> f64 {
+    (v * 10.0).round() / 10.0f64    //以防止溢出
+}
+
