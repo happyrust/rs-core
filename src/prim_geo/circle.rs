@@ -1,7 +1,7 @@
 use glam::{Vec2, Vec3};
 use crate::helper::f32_round_3;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Circle2D {
     pub center: Vec2,
     pub r: f32,

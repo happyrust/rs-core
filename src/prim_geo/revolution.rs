@@ -93,7 +93,8 @@ impl BrepShapeTrait for Revolution {
 
     //暂时不做可拉伸
     fn gen_unit_shape(&self) -> PdmsMesh{
-        self.gen_mesh(Some(TRI_TOL/10.0))
+        self.gen_mesh(Some(TRI_TOL))
+        // self.gen_mesh(Some(0.002))
     }
     fn get_scaled_vec3(&self) -> Vec3{
         Vec3::ONE
