@@ -26,9 +26,8 @@ pub struct SctnSolid {
 }
 
 impl SctnSolid {
-
     //is_btm 是否是底部的face
-    fn cal_sann_face(&self, is_btm: bool, start_dir: Vec3, angle: f32, r1: f32, r2: f32) -> Option<Face>{
+    fn cal_sann_face(&self, is_btm: bool, start_dir: Vec3, angle: f32, r1: f32, r2: f32) -> Option<Face> {
         use truck_base::cgmath64::*;
         let mut n = if is_btm { self.drns.normalize() } else { self.drne.normalize() };
         //dbg!(&n);
@@ -80,15 +79,19 @@ impl SctnSolid {
         try_attach_plane(&[wire.inverse()]).ok()
     }
 
-    fn cal_spro_face(&self, is_btm: bool, verts: &Vec<[f32; 2]>) -> Option<Face>{
+    fn cal_spro_face(&self, is_btm: bool, verts: &Vec<[f32; 2]>) -> Option<Face> {
+        if verts.len() == 0 {
+            dbg!(&self);
+            return None;
+        }
         let n = if is_btm { self.drns } else { self.drne };
         let h = if is_btm { 0.0 } else { self.height };
         let len = verts.len();
-        let mut v0 = builder::vertex(Point3::new(verts[0][0] as f64, verts[0][1] as f64,h as f64));
+        let mut v0 = builder::vertex(Point3::new(verts[0][0] as f64, verts[0][1] as f64, h as f64));
         let mut prev_v0 = v0.clone();
         let mut edges = vec![];
         for i in 1..len {
-            let next_v = builder::vertex(Point3::new(verts[i][0] as f64, verts[i][1] as f64,h as f64));
+            let next_v = builder::vertex(Point3::new(verts[i][0] as f64, verts[i][1] as f64, h as f64));
             edges.push(builder::line(&prev_v0, &next_v));
             prev_v0 = next_v.clone();
         }
@@ -98,7 +101,6 @@ impl SctnSolid {
         let wire = edges.into();
         try_attach_plane(&[wire]).ok()
     }
-
 }
 
 impl Default for SctnSolid {
@@ -109,7 +111,7 @@ impl Default for SctnSolid {
             drne: Default::default(),
             // axis_dir: Default::default(),
             height: 0.0,
-            arc_path: None
+            arc_path: None,
         }
     }
 }
@@ -128,7 +130,7 @@ impl BrepShapeTrait for SctnSolid {
         let mut face_e = None;
         match &self.profile {
             //需要用切面去切出相交的face
-            CateProfileParam::SANN(p) =>{
+            CateProfileParam::SANN(p) => {
                 let w = p.pwidth;
                 let r = p.pradius;
                 let r1 = r - w;
@@ -143,14 +145,14 @@ impl BrepShapeTrait for SctnSolid {
                 let r2 = r;
                 face_e = self.cal_sann_face(false, dir, angle, r1, r2).map(|x| x.inverse());
             }
-            CateProfileParam::SPRO(p) =>{
+            CateProfileParam::SPRO(p) => {
                 face_s = self.cal_spro_face(true, p);
                 face_e = self.cal_spro_face(false, p).map(|x| x.inverse());
             }
             _ => {}
         }
 
-        if let Some(face_s) = face_s{
+        if let Some(face_s) = face_s {
             if let Some(face_e) = face_e {
                 let mut faces = vec![];
                 return if let Some((p1, p2, c)) = self.arc_path {
@@ -167,7 +169,7 @@ impl BrepShapeTrait for SctnSolid {
                     faces.push(face_s);
                     faces.push(face_e);
                     Some(faces.into())
-                }
+                };
             }
         }
         None
