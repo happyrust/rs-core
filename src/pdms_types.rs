@@ -1381,21 +1381,11 @@ impl LevelShapeMgr{
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct PdmsMeshMgr {
+pub struct PdmsMeshInstanceMgr {
     pub inst_mgr: ShapeInstancesMgr,
-    pub cached_mesh_mgr: CachedMeshesMgr,
     pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 }
 
-impl PdmsMeshMgr {
-    ///插入instance 数据
-    #[inline]
-    pub fn insert_ele_geos(ele_geo: EleGeosInfo) {}
-
-    ///插入mesh 数据
-    #[inline]
-    pub fn insert_mesh() {}
-}
 
 
 #[repr(C)]

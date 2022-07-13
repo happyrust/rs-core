@@ -12,7 +12,7 @@ use nalgebra_glm::normalize;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 
 #[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
@@ -141,7 +141,8 @@ impl BrepShapeTrait for CTorus {
             Rad(7.0),
         );
         if let Ok(disk) = builder::try_attach_plane(&vec![w]) {
-            let mut solid = builder::rsweep(&disk, Point3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
+            let mut solid = builder::rsweep(&disk, Point3::new(0.0, 0.0, 0.0),
+                                            Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
             return solid.pop()
         }
         None
@@ -149,11 +150,6 @@ impl BrepShapeTrait for CTorus {
 
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
-        // let rins = I24F8::from_num(self.rins / self.rout);
-        // let angle = I24F8::from_num(self.angle);
-        // rins.hash(&mut hasher);
-        // angle.hash(&mut hasher);
-
         hash_f32(&(self.rins / self.rout), &mut hasher);
         hash_f32(&self.angle, &mut hasher);
 
@@ -167,7 +163,7 @@ impl BrepShapeTrait for CTorus {
             rout: 1.0,
             angle: self.angle
         };
-        unit.gen_mesh(Some(0.001))
+        unit.gen_mesh(Some(TRI_TOL))
     }
 
     #[inline]

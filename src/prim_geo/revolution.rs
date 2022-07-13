@@ -12,7 +12,7 @@ use glam::Vec3;
 use crate::pdms_types::AttrMap;
 
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 
 #[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect)]
 #[reflect(Component)]
@@ -93,7 +93,8 @@ impl BrepShapeTrait for Revolution {
 
     //暂时不做可拉伸
     fn gen_unit_shape(&self) -> PdmsMesh{
-        self.gen_mesh(Some(0.002))
+        self.gen_mesh(Some(TRI_TOL))
+        // self.gen_mesh(Some(0.002))
     }
     fn get_scaled_vec3(&self) -> Vec3{
         Vec3::ONE

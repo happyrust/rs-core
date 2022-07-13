@@ -22,12 +22,16 @@ nom = "7.1.1"
 nom-derive = "0.10.0"
 itertools = "0.10.1"
 skytable = "0.7.0"
-flate2 = "1.0.23"
+flate2 = "1.0.24"
 lazy_static = "1.4.0"
 smallvec = "1.8.0"
+sled = "0.34.7"
+derive_more = "0.99.17"
 
 bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
 bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
+#bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+#bevy_egui = { path = "../bevy_egui" }
 #bevy_mod_raycast = { git = "https://gitee.com/happydpc/bevy_mod_raycast" }
 #bevy_egui = {path = "../new/bevy_egui"}
 #bevy-inspector-egui = { path = "../new/bevy-inspector-egui" }
@@ -36,7 +40,6 @@ serde-name = "0.1.1"
 serde = { version = "1.0.133", features = ["derive"] }
 serde_derive = "1.0.133"
 serde_json = { version = "1.0" }
-sled = "0.34.7"
 hash32 = "0.2.1"
 hash32-derive = "0.1.1"
 prost = "0.8.0"

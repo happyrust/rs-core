@@ -133,7 +133,7 @@ impl PdmsMesh {
 
 //bevy's meshs
 
-impl PdmsMeshMgr {
+impl PdmsMeshInstanceMgr {
     #[inline]
     pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, EleGeosInfo>> {
         let mut results = DashMap::new();
@@ -192,7 +192,7 @@ impl PdmsMeshMgr {
 
 }
 
-
+pub const TRI_TOL: f32 = 0.01;
 
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
 

@@ -15,7 +15,7 @@ use truck_modeling::{builder, Shell, Surface, Wire};
 
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
-use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::hash_tool::{hash_f32, hash_vec3};
 
 #[derive(Component, Debug, Clone)]
@@ -261,9 +261,11 @@ impl BrepShapeTrait for Extrusion {
             wire = self.gen_wire(new_verts).ok()?;
         };
 
+        // dbg!(&wire);
         if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
             if let Surface::Plane(plane) = face.get_surface() {
                 let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
+                // dbg!(&plane.normal());
                 if plane.normal().dot(extrude_dir) < 0.0 {
                     face = face.inverse();
                 }
@@ -285,24 +287,18 @@ impl BrepShapeTrait for Extrusion {
         self.fradius_vec.iter().for_each(|v| {
             hash_f32::<DefaultHasher>(v, &mut hasher);
         });
-
-        // hash_vec3::<DefaultHasher>(&self.pbax_dir, &mut hasher);
-        // hash_vec3::<DefaultHasher>(&self.paax_dir, &mut hasher);
-
         hasher.finish()
     }
 
     fn gen_unit_shape(&self) -> PdmsMesh {
         let unit = Self {
-            // paax_dir: self.paax_dir,
-            // pbax_dir: self.pbax_dir,
             verts: self.verts.clone(),
             height: 100.0,   //开放一点大小，不然三角化出来的不对
             fradius_vec: self.fradius_vec.clone(),
             cur_type: self.cur_type.clone(),
             ..default()
         };
-        unit.gen_mesh(Some(0.0005))
+        unit.gen_mesh(Some(TRI_TOL))
     }
 
 
