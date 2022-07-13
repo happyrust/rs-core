@@ -3,6 +3,7 @@ use std::fs::File;
 use serde::{Serialize, Deserialize};
 use std::io::Write;
 use derive_more::*;
+use itertools::Itertools;
 use crate::pdms_types::RefU64;
 
 #[derive(Clone, Debug, Default, Deref, DerefMut, Serialize, Deserialize)]
@@ -42,6 +43,19 @@ impl DbNumMgr{
         }
         None
     }
+
+    #[inline]
+    pub fn get_all_dbnos(&self) -> Vec<u32> {
+        let mut v = HashSet::new();
+        for kv in &self.ref0_dbnos_map {
+            v.union(kv.1);
+        }
+
+        v.into_iter().sorted().collect_vec()
+    }
+
+
+
     //
     // #[inline]
     // pub fn is_loaded(&self, dbno: u32) -> bool{

@@ -14,6 +14,7 @@ use crate::prim_geo::sphere::Sphere;
 use std::f32::consts::PI;
 use std::ops::Range;
 use std::default::default;
+use std::f32::EPSILON;
 use smallvec::SmallVec;
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::pdms_types::RefU64;
@@ -309,6 +310,25 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             let paax_dir = Vec3::from(pa.dir);
             let pbax_dir = Vec3::from(pb.dir);
+
+            let mut verts = vec![];
+            if d.verts.len() > 2 {
+                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0);
+                verts.push(prev);
+                for vert in &d.verts {
+                    let p = Vec3::new(vert[0], vert[1], 0.0);
+                    if p.distance(prev) > EPSILON{
+                        verts.push(p);
+                    }
+                }
+                if verts.last().unwrap().distance(*verts.first().unwrap()) > EPSILON {
+                    verts.remove(verts.len() - 1);
+                }
+            }else{
+                return None;
+            }
+
+
             // dbg!(&d);
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
                 paax_pt: Vec3::from(pa.pt),
