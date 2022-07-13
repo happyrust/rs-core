@@ -9,6 +9,7 @@ use std::panic::catch_unwind;
 use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
+use bitflags::bitflags;
 
 use anyhow::anyhow;
 use bevy::ecs::reflect::ReflectComponent;
@@ -1388,6 +1389,19 @@ pub struct PdmsMeshInstanceMgr {
 
 
 
+bitflags! {
+    struct PdmsGenericTypeFlag: u32 {
+        const UNKOWN = 0x1 << 30;
+        const GENRIC = 0x1 << 1;
+        const PIPE = 0x1 << 2;
+        const STRU = 0x1 << 3;
+        const EQUI = 0x1 << 4;
+        const ROOM = 0x1 << 5;
+        const WALL = 0x1 << 6;
+        // const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
+    }
+}
+
 #[repr(C)]
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
 pub enum PdmsGenericType {
@@ -1520,11 +1534,11 @@ impl CachedMeshesMgr {
         true
     }
 
-    pub fn deserialize_from_bin_file() -> Self {
-        let mut file = File::open(format!("cached_meshes.bin")).unwrap();
+    pub fn deserialize_from_bin_file(file_path: &str) -> Option<Self> {
+        let mut file = File::open(file_path).ok()?;
         let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        bincode::deserialize(buf.as_slice()).unwrap()
+        file.read_to_end(&mut buf).ok()?;
+        bincode::deserialize(buf.as_slice()).ok()
     }
 
     pub fn serialize_to_json_file(&self) -> bool {
