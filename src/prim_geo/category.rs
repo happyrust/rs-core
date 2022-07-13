@@ -335,7 +335,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 paax_dir,
                 pbax_pt: Vec3::from(pb.pt),
                 pbax_dir,
-                verts: d.verts.iter().map(|x| Vec3::new(x[0], x[1], 0.0)).collect::<Vec<_>>(),
+                verts,
                 fradius_vec: d.prads.clone(),
                 height: d.height,
                 ..default()
