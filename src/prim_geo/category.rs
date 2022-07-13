@@ -315,13 +315,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if d.verts.len() > 2 {
                 let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0);
                 verts.push(prev);
-                for vert in &d.verts {
+                for vert in &d.verts[1..] {
                     let p = Vec3::new(vert[0], vert[1], 0.0);
                     if p.distance(prev) > EPSILON{
                         verts.push(p);
                     }
                 }
-                if verts.last().unwrap().distance(*verts.first().unwrap()) > EPSILON {
+                if verts.last().unwrap().distance(*verts.first().unwrap()) < EPSILON {
                     verts.remove(verts.len() - 1);
                 }
             }else{
