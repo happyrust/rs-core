@@ -1398,7 +1398,6 @@ bitflags! {
         const EQUI = 0x1 << 4;
         const ROOM = 0x1 << 5;
         const WALL = 0x1 << 6;
-        const GWALL = 0x1 << 7;
         // const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
     }
 }
@@ -1411,7 +1410,35 @@ pub enum PdmsGenericType {
     STRU,
     EQUI,
     ROOM,
+    SCTN,
+    GENSEC,
+    HANG,
+    HANDRA,
     PANE,
+    CFLOOR,
+    CWBRAN,
+    CTWALL,
+    AREADEF,
+    DEMOPA,
+    INSURQ,
+    STRLNG,
+    HVAC,
+    ATTA,
+    GRIDPL,
+    GRIDCYL,
+    DIMGRO,
+    AIDGRO,
+    CPLATE,
+    CSTIFF,
+    CCURVE,
+    CSEAM,
+    HCOMPT,
+    HIBRA,
+    HIDOU,
+    HICPLA,
+    MPLATE,
+    MPROF,
+    HICSTI,
     CE,
 }
 
