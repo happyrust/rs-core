@@ -1398,6 +1398,7 @@ bitflags! {
         const EQUI = 0x1 << 4;
         const ROOM = 0x1 << 5;
         const WALL = 0x1 << 6;
+        const GWALL = 0x1 << 7;
         // const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
     }
 }
@@ -1410,6 +1411,7 @@ pub enum PdmsGenericType {
     STRU,
     EQUI,
     ROOM,
+    PANE,
     CE,
 }
 

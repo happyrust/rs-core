@@ -68,7 +68,8 @@ pub const fn db1_hash(hash_str: &str) -> u32{
         val = val*27 + (chars[i as usize] as i64 - 64);
         i -= 1;
     }
-    0x81BF1 + val as u32
+    val.saturating_add_unsigned(0x81BF1) as u32
+    // 0x81BF1 + val as u32
 }
 
 #[test]

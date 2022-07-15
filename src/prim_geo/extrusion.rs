@@ -154,7 +154,6 @@ impl Extrusion {
                 if b_len - pa_dist.min(pb_dist) > 0.01 {
                     let cur_vert = if i != ll { builder::vertex(cur_pt.point3()) } else { origin_vert.clone() };
                     wire.push_back(builder::line(&pre_vert, &cur_vert));
-                    // dbg!(format!("Line from {:?} to {:?}", pre_vert, cur_vert));
                     pre_vert = cur_vert.clone();
                     continue;
                 }

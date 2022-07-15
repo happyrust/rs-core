@@ -1,4 +1,5 @@
 #![feature(default_free_fn)]
+#![feature(mixed_integer_ops)]
 
 use std::collections::BTreeMap;
 
