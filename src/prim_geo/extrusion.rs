@@ -17,14 +17,15 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
 use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::hash_tool::{hash_f32, hash_vec3};
+use serde::{Serialize, Deserialize};
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub enum CurveType {
     Fill,
     Spline(f32),  //thick
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub struct Extrusion {
     pub paax_pt: Vec3,
     pub paax_dir: Vec3,   //A Axis Direction
@@ -236,7 +237,6 @@ impl BrepShapeTrait for Extrusion {
         }
         let mut new_verts = self.verts.iter().map(|v| {
             Vec3::new(v.x, v.y, 0.0)
-            // self.paax_dir * v.x + self.pbax_dir * v.y + self.origin_pt
         }).collect::<Vec<_>>();
         let mut pre_hash = 0;
         if get_vec3_hash(&new_verts[0]) == get_vec3_hash(new_verts.last().unwrap()) {

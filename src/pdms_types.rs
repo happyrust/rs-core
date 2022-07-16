@@ -327,6 +327,25 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
+
+impl Into<IVec> for RefU64Vec{
+    fn into(self) -> IVec{
+        bincode::serialize(&self).unwrap().into()
+    }
+}
+
+impl Into<IVec> for &RefU64Vec{
+    fn into(self) -> IVec{
+        bincode::serialize(self).unwrap().into()
+    }
+}
+
+impl From<IVec> for RefU64Vec{
+    fn from(d: IVec) -> Self{
+        bincode::deserialize(&d).unwrap()
+    }
+}
+
 impl Deref for RefU64Vec {
     type Target = Vec<RefU64>;
 
@@ -354,21 +373,6 @@ impl RefU64Vec {
     #[inline]
     pub fn push(&mut self, v: RefU64) {
         self.0.push(v);
-    }
-}
-
-impl IntoSkyhashBytes for &RefU64Vec {
-    fn as_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
-    }
-}
-
-impl FromSkyhashBytes for RefU64Vec {
-    fn from_element(element: Element) -> SkyResult<Self> {
-        if let Element::Binstr(v) = element {
-            return Ok(bincode::deserialize::<RefU64Vec>(&v).unwrap());
-        }
-        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
     }
 }
 
