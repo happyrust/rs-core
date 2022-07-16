@@ -2,23 +2,22 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
-use bevy::prelude::*;
-use truck_modeling::{builder, Face, Shell, Surface, Wire};
-use truck_meshalgo::prelude::*;
-use bevy::reflect::Reflect;
+
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::pbr::LightEntity::Point;
+use bevy::prelude::*;
+use bevy::reflect::Reflect;
 use glam::{TransformRT, TransformSRT, Vec3};
-
-
+use serde::{Deserialize, Serialize};
+use truck_meshalgo::prelude::*;
+use truck_modeling::{builder, Face, Shell, Surface, Wire};
 use truck_modeling::builder::try_attach_plane;
+
 use crate::parsed_data::{CateProfileParam, SProfileData};
 use crate::prim_geo::circle::Circle2D;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::hash_tool::hash_vec3;
-use serde::{Serialize, Deserialize};
-
 
 //todo 针对确实只是extrusion的处理，可以转换成extrusion去处理，而不是占用
 
@@ -34,10 +33,8 @@ pub struct SctnSolid {
 }
 
 impl SctnSolid {
-
-    fn cal_sann_face(&self, is_btm: bool, dir: Vec3, angle: f32, r1: f32, r2: f32, circle: Option<Circle2D>) -> Option<Face>{
-
-        return  None;
+    fn cal_sann_face(&self, is_btm: bool, dir: Vec3, angle: f32, r1: f32, r2: f32, circle: Option<Circle2D>) -> Option<Face> {
+        return None;
         // let rot = Quat::from_rotation_arc(Vec3::X, dir);
         let a = angle;
         let c = circle.unwrap_or_default().r;
@@ -66,7 +63,7 @@ impl SctnSolid {
                                             &v4, &v1, z_axis.vector3(), Rad(-a as f64)),
         ]);
 
-        if let Ok(mut f) = try_attach_plane(&[wire]){
+        if let Ok(mut f) = try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = f.get_surface() {
                 if plane.normal().dot(self.plane_normal.vector3()) < 0.0 {
                     f = f.inverse();
@@ -79,7 +76,7 @@ impl SctnSolid {
     }
 
     //is_btm 是否是底部的face
-    fn cal_sann_face_1(&self, is_btm: bool, dir: Vec3, angle: f32, r1: f32, r2: f32) -> Option<Face>{
+    fn cal_sann_face_1(&self, is_btm: bool, dir: Vec3, angle: f32, r1: f32, r2: f32) -> Option<Face> {
         use truck_base::cgmath64::*;
         let mut n = if is_btm { self.drns.normalize() } else { self.drne.normalize() };
         //dbg!(&n);
@@ -119,7 +116,7 @@ impl SctnSolid {
         let mat2 = Matrix4::from_angle_z(Rad(z_angle as f64));
         let mat3 = Matrix4::from_translation(center_pt.to_vec());
 
-        if let Ok(mut f) = try_attach_plane(&[wire]){
+        if let Ok(mut f) = try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = f.get_surface() {
                 if plane.normal().dot(self.plane_normal.vector3()) < 0.0 {
                     f = f.inverse();
@@ -131,7 +128,7 @@ impl SctnSolid {
         None
     }
 
-    fn cal_spro_face(&self, is_btm: bool, profile: &SProfileData, circle: Option<Circle2D>) -> Option<Face>{
+    fn cal_spro_face(&self, is_btm: bool, profile: &SProfileData, circle: Option<Circle2D>) -> Option<Face> {
         let n = if is_btm { self.drns } else { self.drne };
         let h = if is_btm { 0.0 } else { self.height };
         let verts = &profile.verts;
@@ -158,7 +155,7 @@ impl SctnSolid {
             // }
             // let last_v = edges.last().unwrap().back();
             // edges.push(builder::line(last_v, &v0));
-        }else{
+        } else {
             rot = Quat::IDENTITY;
         }
         // else{
@@ -174,14 +171,13 @@ impl SctnSolid {
         // }
 
 
-
-        let p0 = rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1],h) + offset_pt);
+        let p0 = rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1], h) + offset_pt);
 
         let mut v0 = builder::vertex(p0.point3());
         let mut prev_v0 = v0.clone();
 
         for i in 1..len {
-            let p = rot.mul_vec3(Vec3::new(verts[i][0], verts[i][1],h)+ offset_pt);
+            let p = rot.mul_vec3(Vec3::new(verts[i][0], verts[i][1], h) + offset_pt);
             let next_v = builder::vertex(p.point3());
             edges.push(builder::line(&prev_v0, &next_v));
             prev_v0 = next_v.clone();
@@ -193,7 +189,7 @@ impl SctnSolid {
         // dbg!(&extrude);
         // dbg!(&wire);
         // dbg!(extrude);
-        if let Ok(mut f) = try_attach_plane(&[wire]){
+        if let Ok(mut f) = try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = f.get_surface() {
                 // dbg!(plane.normal());
                 if self.arc_path.is_none() {
@@ -201,14 +197,12 @@ impl SctnSolid {
                         f = f.inverse();
                     }
                 }
-
             }
             return Some(f);
         }
 
         None
     }
-
 }
 
 impl Default for SctnSolid {
@@ -221,13 +215,13 @@ impl Default for SctnSolid {
             plane_normal: Vec3::Z,
             extrude_dir: Vec3::Z,
             height: 0.0,
-            arc_path: None
+            arc_path: None,
         }
     }
 }
 
 impl VerifiedShape for SctnSolid {
-    fn check_valid(&self) -> bool { /*self.height > f32::EPSILON*/ !self.extrude_dir.is_nan() &&  self.extrude_dir.length() >0.0 }
+    fn check_valid(&self) -> bool { /*self.height > f32::EPSILON*/ !self.extrude_dir.is_nan() && self.extrude_dir.length() > 0.0 }
 }
 
 
@@ -240,14 +234,14 @@ impl BrepShapeTrait for SctnSolid {
         // let mut face_e = None;
         let mut circle = None;
         if let Some((p1, p2, p3)) = self.arc_path {
-            let c = Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y), );
+            let c = Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y));
             circle = Some(c);
         }
         // dbg!(&circle);
         let mut is_sann = false;
         match &self.profile {
             //需要用切面去切出相交的face
-            CateProfileParam::SANN(p) =>{
+            CateProfileParam::SANN(p) => {
 
                 // dbg!(&p);
                 let w = p.pwidth;
@@ -265,7 +259,7 @@ impl BrepShapeTrait for SctnSolid {
                 // face_e = self.cal_sann_face(false, dir, angle, r1, r2).map(|x| x.inverse());
                 is_sann = true;
             }
-            CateProfileParam::SPRO(p) =>{
+            CateProfileParam::SPRO(p) => {
                 face_s = self.cal_spro_face(true, p, circle.clone());
                 // if self.arc_path.is_none() {
                 //     face_e = self.cal_spro_face(false, p).map(|x| x.inverse());
@@ -274,8 +268,8 @@ impl BrepShapeTrait for SctnSolid {
             _ => {}
         }
 
-        if let Some(face_s) = face_s{
-             {
+        if let Some(face_s) = face_s {
+            {
                 // let mut faces = vec![];
                 return if let Some((p1, p2, p3)) = self.arc_path {
                     let c = circle.unwrap_or_default();
@@ -290,7 +284,7 @@ impl BrepShapeTrait for SctnSolid {
                     }
                     if angle < 0.0 {
                         // rot_z = -Vec3::Z;
-                        angle = TAU + angle;
+                        angle = angle.abs();
                     }
                     // dbg!(angle.to_degrees());
                     let solid = builder::rsweep(&face_s, Point3::new(c.center.x as f64, c.center.y as f64, 0.0),
@@ -299,28 +293,24 @@ impl BrepShapeTrait for SctnSolid {
                 } else {
 
                     //self.plane_normal.vector3()
-
-
-                        let solid = builder::tsweep(&face_s,  Vec3::Z.vector3() * self.height as f64);
-                        Some(solid.into_boundaries().remove(0))
-                        // if let Some(face_e) = face_e {
-                        //     let edges_cnt = face_s.boundaries()[0].len();
-                        //
-                        //     //need to check if need inverse
-                        //     for i in 0..edges_cnt {
-                        //         let c1 = &face_s.boundaries()[0][i];
-                        //         let c2 = &face_e.boundaries()[0][edges_cnt - i - 1];
-                        //         faces.push(builder::homotopy(&c1.inverse(), c2));
-                        //     }
-                        //     faces.push(face_s);
-                        //     faces.push(face_e);
-                        //     Some(faces.into())
-                        // }else{
-                        //     None
-                        // }
-
-
-                }
+                    let solid = builder::tsweep(&face_s, Vec3::Z.vector3() * self.height as f64);
+                    Some(solid.into_boundaries().remove(0))
+                    // if let Some(face_e) = face_e {
+                    //     let edges_cnt = face_s.boundaries()[0].len();
+                    //
+                    //     //need to check if need inverse
+                    //     for i in 0..edges_cnt {
+                    //         let c1 = &face_s.boundaries()[0][i];
+                    //         let c2 = &face_e.boundaries()[0][edges_cnt - i - 1];
+                    //         faces.push(builder::homotopy(&c1.inverse(), c2));
+                    //     }
+                    //     faces.push(face_s);
+                    //     faces.push(face_e);
+                    //     Some(faces.into())
+                    // }else{
+                    //     None
+                    // }
+                };
             }
         }
         None
@@ -353,14 +343,14 @@ impl BrepShapeTrait for SctnSolid {
             unit.extrude_dir = Vec3::Z;
             unit.height = 1.0;
         }
-        unit.gen_mesh(Some(TRI_TOL/2.0))
+        unit.gen_mesh(Some(TRI_TOL / 2.0))
     }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         if self.arc_path.is_some() {
             Vec3::ONE
-        }else{
+        } else {
             // Vec3::ONE
             Vec3::new(1.0, 1.0, self.height)
         }
@@ -384,12 +374,12 @@ impl BrepShapeTrait for SctnSolid {
             }
             CateProfileParam::SPRO(_) => {
                 if self.arc_path.is_some() {
-                    return TransformSRT{
+                    return TransformSRT {
                         rotation: Quat::IDENTITY,
                         translation: self.get_scaled_vec3(),
-                        scale: Vec3::ONE
+                        scale: Vec3::ONE,
                     };
-                }else{
+                } else {
                     return TransformSRT {
                         // rotation: Quat::from_rotation_arc(Vec3::Z,  self.plane_normal),
 

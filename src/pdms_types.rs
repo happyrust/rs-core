@@ -1403,7 +1403,7 @@ bitflags! {
 }
 
 #[repr(C)]
-#[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
+#[derive(Component, Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
 pub enum PdmsGenericType {
     UNKOWN = 0,
     PIPE,

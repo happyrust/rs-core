@@ -11,8 +11,6 @@ pub struct DbNumMgr{
     #[deref]
     #[deref_mut]
     pub ref0_dbnos_map: BTreeMap<u32, HashSet<u32>>,  //先看看有没有多个的情况
-    // instance_loaded: HashSet<u32>, //已经加载了模型的dbno
-    // ref1_dbno_map: BTreeMap<i32, i32>,
 }
 
 impl DbNumMgr{
@@ -29,13 +27,6 @@ impl DbNumMgr{
         true
     }
 
-    // #[inline]
-    // pub fn set_mesh_loaded(&mut self, refno: RefU64){
-    //     if let Some(k) = self.ref0_dbnos_map.get(&refno.get_0()) {
-    //         self.instance_loaded.union(&k);
-    //     }
-    // }
-    //
     #[inline]
     pub fn get_dbno(&self, refno: RefU64) -> Option<u32> {
         if let Some(k) = self.ref0_dbnos_map.get(&refno.get_0()) {
@@ -50,18 +41,8 @@ impl DbNumMgr{
         for kv in &self.ref0_dbnos_map {
             v.union(kv.1);
         }
-
         v.into_iter().sorted().collect_vec()
     }
-
-
-
-    //
-    // #[inline]
-    // pub fn is_loaded(&self, dbno: u32) -> bool{
-    //     self.instance_loaded.contains(&dbno)
-    // }
-
 }
 
 
