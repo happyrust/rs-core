@@ -343,7 +343,7 @@ impl BrepShapeTrait for SctnSolid {
             unit.extrude_dir = Vec3::Z;
             unit.height = 1.0;
         }
-        unit.gen_mesh(Some(TRI_TOL / 2.0))
+        unit.gen_mesh(Some(TRI_TOL / 10.0))
     }
 
     #[inline]
