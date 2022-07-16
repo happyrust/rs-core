@@ -349,7 +349,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbax_dir,
                 extrude_dir,
             ));
-            let translation = rotation * Vec3::new(d.x, d.y, d.z);
+            let translation = rotation * Vec3::new(d.x, d.y, -d.z);
             let transform = TransformSRT {
                 rotation,
                 translation,
