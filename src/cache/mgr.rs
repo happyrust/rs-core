@@ -2,7 +2,7 @@ use dashmap::DashMap;
 use lazy_static::lazy_static;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use sled::IVec;
+use sled::{Db, IVec};
 use crate::pdms_types::RefU64;
 use crate::pdms_types::AttrMap;
 use crate::cache::refno::CachedRefBasic;
@@ -10,24 +10,16 @@ use crate::pdms_types::PdmsElementVec;
 use dashmap::mapref::one::Ref;
 use crate::pdms_types::RefU64Vec;
 
-pub const CACHE_SLED_NAME: &'static str = "cache.db";
 
-lazy_static! {
-    pub static ref CACHE_DB: sled::Db  = {
-       sled::open(CACHE_SLED_NAME).unwrap()
-    };
-    pub static ref PDMS_ATT_MAP_CACHE: CacheMgr< AttrMap>  = CacheMgr::new("ATTR_MAP_CACHE", false);
-    pub static ref PDMS_ANCESTOR_CACHE: CacheMgr<RefU64Vec>  = CacheMgr::new("ANCESTOR_CACHE", false);
-    pub static ref CACHED_REFNO_BASIC_MAP: CacheMgr< CachedRefBasic>  = CacheMgr::new("REFNO_BASIC_CACHE", false);
-    pub static ref CACHED_MDB_SITE_MAP: CacheMgr< PdmsElementVec>  = CacheMgr::new("MDB_SITE_CACHE", true);
-}
+
+pub const CACHE_SLED_NAME: &'static str = "cache.db";
 
 
 #[derive(Clone)]
 pub struct CacheMgr<
     T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> {
     name: String,
-    tree: sled::Tree,
+    db: Option<sled::Db>,
     map: DashMap<RefU64, T>,
     use_sled: bool,
 }
@@ -35,10 +27,15 @@ pub struct CacheMgr<
 impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr<T>
 {
     pub fn new(name: &str, save_to_sled: bool) -> Self {
-        let tree = CACHE_DB.open_tree(name).unwrap();
         Self {
             name: name.to_string(),
-            tree,
+            db: if save_to_sled{
+                sled::open(name).ok()
+                    // .open_tree(name).ok()
+                // CACHE_DB.open_tree(name)
+            }else{
+                None
+            },
             map: Default::default(),
             use_sled: save_to_sled,
         }
@@ -56,7 +53,7 @@ impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr
     #[inline]
     pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {
         if self.use_sled && !self.map.contains_key(k) {
-            if let Ok(Some(bytes)) = self.tree.get::<IVec>(k.into()) {
+            if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get::<IVec>(k.into()) {
                 self.map.insert((*k).into(), bytes.into());
             }
         }
@@ -65,13 +62,13 @@ impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr
 
     #[inline]
     pub fn load_all(&self) {
-        if self.use_sled {
-            for k in self.tree.iter() {
-                if let Ok((key, value)) = k {
-                    self.map.insert(key.into(), value.into());
-                }
-            }
-        }
+        // if self.use_sled {
+        //     for k in self.db.iter() {
+        //         if let Ok((key, value)) = k {
+        //             self.map.insert(key.into(), value.into());
+        //         }
+        //     }
+        // }
     }
 
     #[inline]
@@ -79,7 +76,7 @@ impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr
         self.map.insert(k, value.clone());
         let bytes: IVec = k.into();
         if self.use_sled {
-            self.tree.insert(bytes, value)?;
+            self.db.as_ref().unwrap().insert(bytes, value)?;
         }
         Ok(())
     }
