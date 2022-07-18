@@ -17,15 +17,15 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL,
 #[derive(Component, Debug,  Clone,  Reflect)]
 #[reflect(Component)]
 pub struct Revolution {
-    pub paax_expr: String,
-    pub paax_pt: Vec3,   //A Axis point
-    pub paax_dir: Vec3,   //A Axis Direction
+    // pub paax_expr: String,
+    // pub paax_pt: Vec3,   //A Axis point
+    // pub paax_dir: Vec3,   //A Axis Direction
+    //
+    // pub pbax_expr: String,
+    // pub pbax_pt: Vec3,   //B Axis point
+    // pub pbax_dir: Vec3,   //B Axis Direction, with paax make the plane to draft
 
-    pub pbax_expr: String,
-    pub pbax_pt: Vec3,   //B Axis point
-    pub pbax_dir: Vec3,   //B Axis Direction, with paax make the plane to draft
-
-    pub loop_verts: Vec<Vec3>, //loop vertex
+    pub verts: Vec<Vec3>, //loop vertex
     pub angle: f32,
     pub rot_dir: Vec3,
     pub rot_pt: Vec3,
@@ -35,15 +35,15 @@ pub struct Revolution {
 impl Default for Revolution {
     fn default() -> Self {
         Self {
-            paax_expr: "X".to_string(),
-            paax_pt: Default::default(),
-            paax_dir: Vec3::X,
+            // paax_expr: "X".to_string(),
+            // paax_pt: Default::default(),
+            // paax_dir: Vec3::X,
+            //
+            // pbax_expr: "Y".to_string(),
+            // pbax_pt: Default::default(),
+            // pbax_dir: Vec3::Y,
 
-            pbax_expr: "Y".to_string(),
-            pbax_pt: Default::default(),
-            pbax_dir: Vec3::Y,
-
-            loop_verts: vec![Vec3::ZERO, Vec3::new(2.0, 0.0, 0.0), Vec3::new(2.0, 1.0, 0.0),
+            verts: vec![Vec3::ZERO, Vec3::new(2.0, 0.0, 0.0), Vec3::new(2.0, 1.0, 0.0),
                              Vec3::new(1.0, 1.0, 0.0), Vec3::new(1.0, 2.0, 0.0), Vec3::new(0.0, 2.0, 0.0)],
             angle: 90.0,
             rot_dir: Vec3::X,   //默认绕Z轴旋转
@@ -63,8 +63,8 @@ impl BrepShapeTrait for Revolution {
         if !self.check_valid() { return None; }
 
         let mut wire = Wire::new();
-        let ll = self.loop_verts.len();
-        let mut verts: Vec<_> = self.loop_verts.iter().map(|x| builder::vertex(x.point3())).collect();
+        let ll = self.verts.len();
+        let mut verts: Vec<_> = self.verts.iter().map(|x| builder::vertex(x.point3())).collect();
         for i in 0..ll {
             let cur_v = &verts[i];
             let next_v = &verts[(i+1)%ll];
@@ -85,24 +85,16 @@ impl BrepShapeTrait for Revolution {
 
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
-        self.loop_verts.iter().for_each(|v|  {
+        self.verts.iter().for_each(|v|  {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
         });
         hasher.finish()
     }
 
-    //暂时不做可拉伸
     fn gen_unit_shape(&self) -> PdmsMesh{
         self.gen_mesh(Some(TRI_TOL/10.0))
-        // self.gen_mesh(Some(0.002))
     }
     fn get_scaled_vec3(&self) -> Vec3{
         Vec3::ONE
-    }
-}
-
-impl From<AttrMap> for Revolution {
-    fn from(m: AttrMap) -> Self {
-        Default::default()
     }
 }

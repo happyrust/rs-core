@@ -281,6 +281,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pts
             });
         }
+
+
+
         CateGeoParam::Sphere(d) => {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Sphere {
                 radius: d.diameter as f32 / 2.0,
@@ -302,7 +305,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pts
             });
         }
-        CateGeoParam::Extrusion(d) => {
+
+
+        CateGeoParam::Revolution(d) => {
+
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
             let mut pts =  SmallVec::default();
@@ -310,8 +316,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             let paax_dir = Vec3::from(pa.dir);
             let pbax_dir = Vec3::from(pb.dir);
-
-            // dbg!(&d.verts);
 
             let mut verts = vec![];
             if d.verts.len() > 2 {
@@ -323,25 +327,73 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                         verts.push(p);
                     }
                 }
-                // if verts.last().unwrap().distance(*verts.first().unwrap()) < EPSILON {
-                //     verts.remove(verts.len() - 1);
-                // }
             }else{
                 return None;
             }
 
-            // dbg!(&d);
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
-                paax_pt: Vec3::from(pa.pt),
+            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
+                verts,
+                angle: d.angle,
+                ..default()
+            });
+            let extrude_dir = paax_dir.normalize()
+                .cross(pbax_dir.normalize()).normalize();
+            let rotation = Quat::from_mat3(&Mat3::from_cols(
                 paax_dir,
-                pbax_pt: Vec3::from(pb.pt),
                 pbax_dir,
+                extrude_dir,
+            ));
+            let translation = rotation * Vec3::new(d.x, d.y, d.z) + Vec3::from(pa.pt);
+            let transform = TransformSRT {
+                rotation,
+                translation,
+                ..default()
+            };
+            return Some(CateBrepShape {
+                refno: Default::default(),
+                brep_shape,
+                transform,
+                visible: d.tube_flag,
+                is_tubi: false,
+                pts
+            });
+
+
+        }
+
+        CateGeoParam::Extrusion(d) => {
+            let pa = d.pa.as_ref().unwrap();
+            let pb = d.pb.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(pa.number);
+            pts.push(pb.number);
+            let paax_dir = Vec3::from(pa.dir);
+            let pbax_dir = Vec3::from(pb.dir);
+
+            let mut verts = vec![];
+            if d.verts.len() > 2 {
+                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0);
+                verts.push(prev);
+                for vert in &d.verts[1..] {
+                    let p = Vec3::new(vert[0], vert[1], 0.0);
+                    if p.distance(prev) > EPSILON{
+                        verts.push(p);
+                    }
+                }
+            }else{
+                return None;
+            }
+
+            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
+                // paax_pt: Vec3::from(pa.pt),
+                // paax_dir,
+                // pbax_pt: Vec3::from(pb.pt),
+                // pbax_dir,
                 verts,
                 fradius_vec: d.prads.clone(),
                 height: d.height,
                 ..default()
             });
-            // dbg!(&brep_shape);
             let extrude_dir = paax_dir.normalize()
                 .cross(pbax_dir.normalize()).normalize();
             let rotation = Quat::from_mat3(&Mat3::from_cols(

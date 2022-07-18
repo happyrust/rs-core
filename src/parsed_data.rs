@@ -276,7 +276,8 @@ pub struct CateRectTorusParam {
 pub struct CateRevolutionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
-    pub angel: f32,
+    pub angle: f32,
+    pub verts: Vec<[f32; 2]>,  //2D points
     pub x: f32,
     pub y: f32,
     pub z: f32,

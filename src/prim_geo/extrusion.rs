@@ -27,11 +27,11 @@ pub enum CurveType {
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub struct Extrusion {
-    pub paax_pt: Vec3,
-    pub paax_dir: Vec3,   //A Axis Direction
-
-    pub pbax_pt: Vec3,
-    pub pbax_dir: Vec3,   //B Axis Direction
+    // pub paax_pt: Vec3,
+    // pub paax_dir: Vec3,   //A Axis Direction
+    //
+    // pub pbax_pt: Vec3,
+    // pub pbax_dir: Vec3,   //B Axis Direction
 
     // pub origin_pt: Vec3,
 
@@ -209,10 +209,10 @@ fn get_vec3_hash(v: &Vec3) -> u64 {
 impl Default for Extrusion {
     fn default() -> Self {
         Self {
-            paax_pt: Default::default(),
-            paax_dir: Vec3::X,
-            pbax_pt: Default::default(),
-            pbax_dir: Vec3::Y,
+            // paax_pt: Default::default(),
+            // paax_dir: Vec3::X,
+            // pbax_pt: Default::default(),
+            // pbax_dir: Vec3::Y,
 
             // origin_pt: Default::default(),
             verts: vec![],
