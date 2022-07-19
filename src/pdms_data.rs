@@ -67,7 +67,7 @@ pub struct GmParam {
 
     // pub profile:
     //profile  SPVE   SANN(PX, PY)
-    pub verts: Vec<[SmolStr; 2]>,
+    pub verts: Vec<[SmolStr; 3]>,
     //SANN: dx dy dradius dwidth
     pub dxy: Vec<[SmolStr; 2]>,
     pub drad: SmolStr,
