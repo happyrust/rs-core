@@ -27,14 +27,6 @@ pub enum CurveType {
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub struct Extrusion {
-    // pub paax_pt: Vec3,
-    // pub paax_dir: Vec3,   //A Axis Direction
-    //
-    // pub pbax_pt: Vec3,
-    // pub pbax_dir: Vec3,   //B Axis Direction
-
-    // pub origin_pt: Vec3,
-
     pub verts: Vec<Vec3>,
     pub fradius_vec: Vec<f32>,
     pub height: f32,

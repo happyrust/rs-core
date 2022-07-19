@@ -385,10 +385,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
-                // paax_pt: Vec3::from(pa.pt),
-                // paax_dir,
-                // pbax_pt: Vec3::from(pb.pt),
-                // pbax_dir,
                 verts,
                 fradius_vec: d.prads.clone(),
                 height: d.height,
