@@ -309,6 +309,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
         CateGeoParam::Revolution(d) => {
 
+            return None;
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
             let mut pts =  SmallVec::default();
@@ -341,8 +342,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if verts.len() <= 2{
                 return None;
             }
-
-            dbg!(&verts);
+            // dbg!(&verts);
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
                 verts,
