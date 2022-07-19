@@ -1468,9 +1468,7 @@ pub struct EleGeosInfo {
     pub world_transform: (Quat, Vec3, Vec3),
 
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
-
-    // pub arrive: Option<i32>,
-    // pub leave: Option<i32>,
+    pub flow_pt_indexs: Vec<Option<i32>>,
 
 }
 
