@@ -334,7 +334,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
                 verts,
-                angle: d.angle.to_degrees(),
+                angle: d.angle,
+                rot_pt: pa.pt,
                 ..default()
             });
             let extrude_dir = paax_dir.normalize()
@@ -346,7 +347,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             );
             dbg!(&mat3);
             let rotation = Quat::from_mat3(&mat3);
-            let translation = rotation * Vec3::new(d.x, d.y, d.z) + Vec3::from(pa.pt);
+            let translation = rotation * Vec3::new(d.x, d.y, d.z);
             let transform = TransformSRT {
                 rotation,
                 translation,
