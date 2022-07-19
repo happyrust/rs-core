@@ -74,7 +74,7 @@ pub struct GmseParamData {
     pub phei: f32,
     pub offset: f32,
     /// 顶点集合
-    pub verts: Vec<[f32; 2]>,
+    pub verts: Vec<[f32; 3]>,
     pub dxy: Vec<[f32; 2]>,
     pub drad: f32,
     pub dwid: f32,
@@ -186,7 +186,7 @@ pub struct CateExtrusionParam {
     pub x: f32,
     pub y: f32,
     pub z: f32,
-    pub verts: Vec<[f32; 2]>,  //2D points
+    pub verts: Vec<[f32; 3]>,  //2D points
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     pub refno: RefU64,
@@ -208,7 +208,7 @@ pub struct SannData {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct SProfileData {
-    pub verts: Vec<[f32; 2]>,
+    pub verts: Vec<[f32; 3]>,
     pub normal_axis: Vec3,
 }
 
@@ -277,7 +277,7 @@ pub struct CateRevolutionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
     pub angle: f32,
-    pub verts: Vec<[f32; 2]>,  //2D points
+    pub verts: Vec<[f32; 3]>,
     pub x: f32,
     pub y: f32,
     pub z: f32,

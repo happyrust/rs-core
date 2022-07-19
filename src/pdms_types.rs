@@ -1469,6 +1469,9 @@ pub struct EleGeosInfo {
 
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
 
+    // pub arrive: Option<i32>,
+    // pub leave: Option<i32>,
+
 }
 
 impl Deref for EleGeosInfo {
