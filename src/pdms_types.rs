@@ -1468,6 +1468,7 @@ pub struct EleGeosInfo {
     pub world_transform: (Quat, Vec3, Vec3),
 
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
+
 }
 
 impl Deref for EleGeosInfo {
