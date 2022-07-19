@@ -120,7 +120,7 @@ pub mod geo_params_data {
         Pyramid(super::CatePyramidParam),
         RectTorus(super::CateRectTorusParam),
         Revolution(super::CateRevolutionParam),
-        Sline(super::CateSlineParam),
+        Sline(super::CateSplineParam),
         SlopeBottomCylinder(super::CateSlopeBottomCylinderParam),
         Snout(super::CateSnoutParam),
         Sphere(super::CateSphereParam),
@@ -286,7 +286,7 @@ pub struct CateRevolutionParam {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-pub struct CateSlineParam {
+pub struct CateSplineParam {
     pub start_pt: Vec<f32>,
     pub end_pt: Vec<f32>,
     pub diameter: f32,

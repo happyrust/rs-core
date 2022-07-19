@@ -17,14 +17,6 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL,
 #[derive(Component, Debug,  Clone,  Reflect)]
 #[reflect(Component)]
 pub struct Revolution {
-    // pub paax_expr: String,
-    // pub paax_pt: Vec3,   //A Axis point
-    // pub paax_dir: Vec3,   //A Axis Direction
-    //
-    // pub pbax_expr: String,
-    // pub pbax_pt: Vec3,   //B Axis point
-    // pub pbax_dir: Vec3,   //B Axis Direction, with paax make the plane to draft
-
     pub verts: Vec<Vec3>, //loop vertex
     pub angle: f32,
     pub rot_dir: Vec3,
@@ -35,14 +27,6 @@ pub struct Revolution {
 impl Default for Revolution {
     fn default() -> Self {
         Self {
-            // paax_expr: "X".to_string(),
-            // paax_pt: Default::default(),
-            // paax_dir: Vec3::X,
-            //
-            // pbax_expr: "Y".to_string(),
-            // pbax_pt: Default::default(),
-            // pbax_dir: Vec3::Y,
-
             verts: vec![Vec3::ZERO, Vec3::new(2.0, 0.0, 0.0), Vec3::new(2.0, 1.0, 0.0),
                              Vec3::new(1.0, 1.0, 0.0), Vec3::new(1.0, 2.0, 0.0), Vec3::new(0.0, 2.0, 0.0)],
             angle: 90.0,

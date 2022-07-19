@@ -203,7 +203,7 @@ fn test_chinese_data() {
     // let table_data = include_bytes!("../encode_char_table.bin");
 
     let name = decode_chars_data(&test_code);
-    //dbg!(name);
+    dbg!(name);
 }
 
 
