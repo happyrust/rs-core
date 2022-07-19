@@ -320,10 +320,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut verts = vec![];
             let origin_pt = Vec3::from(pa.pt);
             if d.verts.len() > 2 {
-                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0) + origin_pt;
+                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0) - origin_pt;
                 verts.push(prev);
                 for vert in &d.verts[1..] {
-                    let p = Vec3::new(vert[0], vert[1], 0.0) + origin_pt;
+                    let p = Vec3::new(vert[0], vert[1], 0.0) - origin_pt;
                     if p.distance(prev) > EPSILON{
                         verts.push(p);
                     }
