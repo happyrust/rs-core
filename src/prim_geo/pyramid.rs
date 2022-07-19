@@ -19,21 +19,14 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, Verified
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
 pub struct Pyramid {
-    // pub pbax_expr: String,
     pub pbax_pt: Vec3,
-    //B Axis point
     pub pbax_dir: Vec3,   //B Axis Direction
 
-    // pub pcax_expr: String,
     pub pcax_pt: Vec3,
-    //B Axis point
     pub pcax_dir: Vec3,   //C Axis Direction
 
-    // pub paax_expr: String,
     pub paax_pt: Vec3,
-    //A Axis point
     pub paax_dir: Vec3,   //A Axis Direction
-
 
     pub pbtp: f32,
     //x top

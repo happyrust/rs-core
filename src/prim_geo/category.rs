@@ -334,7 +334,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
                 verts,
-                angle: d.angle,
+                angle: d.angle.to_degrees(),
                 ..default()
             });
             let extrude_dir = paax_dir.normalize()

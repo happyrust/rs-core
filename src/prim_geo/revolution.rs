@@ -18,7 +18,7 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL,
 #[reflect(Component)]
 pub struct Revolution {
     pub verts: Vec<Vec3>, //loop vertex
-    pub angle: f32,
+    pub angle: f32,     //degrees
     pub rot_dir: Vec3,
     pub rot_pt: Vec3,
 }
