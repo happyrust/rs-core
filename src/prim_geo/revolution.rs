@@ -9,6 +9,7 @@ use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
+use hash32::Hash;
 use crate::pdms_types::AttrMap;
 
 use crate::prim_geo::helper::cal_ref_axis;
@@ -81,6 +82,8 @@ impl BrepShapeTrait for Revolution {
         self.verts.iter().for_each(|v|  {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
         });
+        "Revolution".hash(&mut hasher);
+        hash_f32(&self.angle, &mut hasher);
         hasher.finish()
     }
 
