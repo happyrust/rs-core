@@ -38,12 +38,12 @@ impl Default for Revolution {
 
 impl VerifiedShape for Revolution {
     fn check_valid(&self) -> bool{
-        self.angle > std::f32::EPSILON
+        self.angle.abs() > std::f32::EPSILON
     }
 }
 
 impl BrepShapeTrait for Revolution {
-    fn gen_brep_shell(& self) -> Option<Shell> {
+    fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
 
         let mut wire = Wire::new();
@@ -61,8 +61,13 @@ impl BrepShapeTrait for Revolution {
                 let angle = self.angle.to_radians() as f64;
                 let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle)).into_boundaries();
                 let shell = s.pop();
+                if shell.is_none() {
+                    dbg!(&self);
+                }
                 return shell;
             }
+        }else{
+            dbg!(&self);
         }
         None
     }
