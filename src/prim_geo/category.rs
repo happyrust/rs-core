@@ -309,7 +309,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
         CateGeoParam::Revolution(d) => {
 
-            return None;
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
             let mut pts =  SmallVec::default();
@@ -330,10 +329,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let offset_pt = Vec3::new(d.x, d.y, d.z);
             let origin_pt = Vec3::from(pa.pt);
             if d.verts.len() > 2 {
-                let mut prev = rotation.mul_vec3(Vec3::new(d.verts[0][0], d.verts[0][1], d.verts[0][2]) + offset_pt );
+                let mut prev = (Vec3::new(d.verts[0][0], d.verts[0][1], d.verts[0][2]) + offset_pt) -  origin_pt;
                 verts.push(prev);
                 for vert in &d.verts[1..] {
-                    let p = rotation.mul_vec3(Vec3::new(vert[0], vert[1], vert[2]) + offset_pt );
+                    let p = Vec3::new(vert[0], vert[1], vert[2]) + offset_pt  - origin_pt;
                     if p.distance(prev) > EPSILON{
                         verts.push(p);
                     }
@@ -347,30 +346,27 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
                 verts,
                 angle: d.angle,
-                rot_dir: Vec3::from(pa.dir),
-                rot_pt: Vec3::from(pa.pt),
+                // rot_dir: Vec3::from(pa.dir),
+                // rot_pt: Vec3::from(pa.pt),
                 ..default()
             });
 
             // dbg!(&mat3);
 
-            // let translation = rotation * Vec3::new(d.x, d.y, d.z) + ;
-            // dbg!(&translation);
-            // let transform = TransformSRT {
-            //     // rotation,
-            //     translation,
-            //     ..default()
-            // };
+            let translation =  origin_pt;
+            let transform = TransformSRT {
+                rotation,
+                translation,
+                ..default()
+            };
             return Some(CateBrepShape {
                 refno: Default::default(),
                 brep_shape,
-                // transform,
+                transform,
                 visible: d.tube_flag,
                 is_tubi: false,
                 pts,
-                transform: default(),
             });
-
 
         }
 

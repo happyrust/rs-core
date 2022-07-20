@@ -83,8 +83,8 @@ impl BrepShapeTrait for Revolution {
         });
         "Revolution".hash(&mut hasher);
         hash_f32(&self.angle, &mut hasher);
-        hash_vec3::<DefaultHasher>(&self.rot_dir, &mut hasher);
-        hash_vec3::<DefaultHasher>(&self.rot_pt, &mut hasher);
+        // hash_vec3::<DefaultHasher>(&self.rot_dir, &mut hasher);
+        // hash_vec3::<DefaultHasher>(&self.rot_pt, &mut hasher);
         hasher.finish()
     }
 
