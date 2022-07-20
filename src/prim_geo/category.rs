@@ -66,7 +66,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let translation = z_axis * (d.dist_to_btm) as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform: TransformSRT {
                     translation,
@@ -93,7 +93,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if let Some((torus, transform)) = sc_torus.convert_to_ctorus() {
                 let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
                 return Some(CateBrepShape {
-                    refno: Default::default(),
+                    refno: d.refno,
                     brep_shape,
                     transform,
                     visible: d.tube_flag,
@@ -121,7 +121,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if let Some((torus, transform)) = sr_torus.convert_to_rtorus() {
                 let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
                 return Some(CateBrepShape {
-                    refno: Default::default(),
+                    refno: d.refno,
                     brep_shape,
                     transform,
                     visible: d.tube_flag,
@@ -140,7 +140,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -168,7 +168,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -212,7 +212,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -243,7 +243,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -259,7 +259,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let phei = (d.dist_to_top - d.dist_to_btm) as f32;
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation = dir * (d.dist_to_btm as f32 + phei / 2.0 as f32) + Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
+            let translation = dir * (d.dist_to_btm as f32 + phei / 2.0 as f32) +
+                Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
             let transform = TransformSRT {
                 rotation,
                 translation,
@@ -273,7 +274,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -297,7 +298,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -360,7 +361,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -413,7 +414,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,

@@ -145,6 +145,7 @@ pub struct CateBoxParam {
     pub offset: Vec<f32>,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -154,10 +155,12 @@ pub struct CateConeParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CateSCylinderParam {
+    pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
     pub height: f32,
@@ -230,6 +233,7 @@ pub struct CateDishParam {
     pub radius: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize,Debug)]
@@ -244,9 +248,11 @@ pub struct CateLineParam {
     pub centre_line_flag: bool,
     
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CatePyramidParam {
+    pub refno: RefU64,
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
     pub pc: Option<CateAxisParam>,
@@ -270,6 +276,7 @@ pub struct CateRectTorusParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -283,6 +290,7 @@ pub struct CateRevolutionParam {
     pub z: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -292,6 +300,7 @@ pub struct CateSplineParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -306,6 +315,7 @@ pub struct CateSlopeBottomCylinderParam {
     pub alt_y_shear: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 /// 圆台 或 管嘴
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -319,6 +329,7 @@ pub struct CateSnoutParam {
     pub offset: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 /// 球
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -328,6 +339,7 @@ pub struct CateSphereParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 ///元件库里的torus参数
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -337,6 +349,7 @@ pub struct CateTorusParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
