@@ -65,11 +65,11 @@ impl BrepShapeTrait for Revolution {
                 let mut angle = self.angle.to_radians() as f64;
                 if angle < 0.0 {
                     angle = angle.abs();
-                    rot_dir -= rot_dir;
+                    rot_dir = -rot_dir;
                 }
 
-                dbg!(angle);
-                dbg!(rot_dir);
+                // dbg!(angle);
+                // dbg!(rot_dir);
 
                 let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle)).into_boundaries();
                 let shell = s.pop();

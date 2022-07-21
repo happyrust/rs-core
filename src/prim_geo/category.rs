@@ -328,9 +328,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let mut verts = vec![];
             let offset_pt = Vec3::new(d.x, d.y, d.z);
-            dbg!(offset_pt);
+            // dbg!(offset_pt);
             let origin_pt = Vec3::from(pa.pt);
-            dbg!(origin_pt);
+            // dbg!(origin_pt);
             if d.verts.len() > 2 {
                 let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0) + offset_pt;
                 verts.push(prev);
