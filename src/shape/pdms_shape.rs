@@ -241,10 +241,13 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
                 Point::<f32>::new(c[0] as f32, c[1] as f32, c[2] as f32),
                 Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
             );
+            dbg!(&aabb);
+            dbg!(size);
             if size <= f64::EPSILON {
                 return PdmsMesh::default();
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
+            dbg!(tolerance);
             if let Some(s) = brep.triangulation(tolerance) {
 
                 let polygon = s.to_polygon();

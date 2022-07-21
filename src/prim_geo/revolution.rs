@@ -68,6 +68,9 @@ impl BrepShapeTrait for Revolution {
                     rot_dir -= rot_dir;
                 }
 
+                dbg!(angle);
+                dbg!(rot_dir);
+
                 let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle)).into_boundaries();
                 let shell = s.pop();
                 if shell.is_none() {
@@ -94,7 +97,7 @@ impl BrepShapeTrait for Revolution {
     }
 
     fn gen_unit_shape(&self) -> PdmsMesh{
-        self.gen_mesh(Some(TRI_TOL/10.0))
+        self.gen_mesh(None)
     }
     fn get_scaled_vec3(&self) -> Vec3{
         Vec3::ONE
