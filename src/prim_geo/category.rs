@@ -328,12 +328,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let mut verts = vec![];
             let offset_pt = Vec3::new(d.x, d.y, d.z);
+            dbg!(offset_pt);
             let origin_pt = Vec3::from(pa.pt);
+            dbg!(origin_pt);
             if d.verts.len() > 2 {
-                let mut prev = (Vec3::new(d.verts[0][0], d.verts[0][1], d.verts[0][2]) + offset_pt) -  origin_pt;
+                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0) + offset_pt -  origin_pt;
                 verts.push(prev);
                 for vert in &d.verts[1..] {
-                    let p = Vec3::new(vert[0], vert[1], vert[2]) + offset_pt  - origin_pt;
+                    let p = Vec3::new(vert[0], vert[1], 0.0) + offset_pt  - origin_pt;
                     if p.distance(prev) > EPSILON{
                         verts.push(p);
                     }
@@ -354,7 +356,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             // dbg!(&mat3);
 
-            let translation =  origin_pt;
+            let translation =  rotation * Vec3::new(d.x, d.y, d.z) + origin_pt;
             let transform = TransformSRT {
                 rotation,
                 translation,
