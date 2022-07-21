@@ -328,9 +328,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let mut verts = vec![];
             let offset_pt = Vec3::new(d.x, d.y, d.z);
-            // dbg!(offset_pt);
             let origin_pt = Vec3::from(pa.pt);
-            // dbg!(origin_pt);
             if d.verts.len() > 2 {
                 let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0) + offset_pt;
                 verts.push(prev);
@@ -344,17 +342,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if verts.len() <= 2{
                 return None;
             }
-            // dbg!(&verts);
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
                 verts,
                 angle: d.angle,
-                // rot_dir: Vec3::from(pa.dir),
-                // rot_pt: Vec3::from(pa.pt),
                 ..default()
             });
-
-            // dbg!(&mat3);
 
             let translation =  rotation * Vec3::new(d.x, d.y, d.z) + origin_pt;
             let transform = TransformSRT {

@@ -49,7 +49,6 @@ impl BrepShapeTrait for Revolution {
         let mut wire = Wire::new();
         let ll = self.verts.len();
         let mut verts: Vec<_> = self.verts.iter().map(|x| builder::vertex(x.point3())).collect();
-        // dbg!(&verts);
         for i in 0..ll {
             let cur_v = &verts[i];
             let next_v = &verts[(i+1)%ll];
@@ -59,18 +58,11 @@ impl BrepShapeTrait for Revolution {
             if let Surface::Plane(plane) = face.get_surface(){
                 let mut rot_dir = self.rot_dir.normalize().vector3();
                 let rot_pt = self.rot_pt.point3();
-                // dbg!(self.angle);
-                // dbg!(self.rot_dir);
-                // dbg!(self.rot_pt);
                 let mut angle = self.angle.to_radians() as f64;
                 if angle < 0.0 {
                     angle = angle.abs();
                     rot_dir = -rot_dir;
                 }
-
-                // dbg!(angle);
-                // dbg!(rot_dir);
-
                 let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle)).into_boundaries();
                 let shell = s.pop();
                 if shell.is_none() {
@@ -91,8 +83,6 @@ impl BrepShapeTrait for Revolution {
         });
         "Revolution".hash(&mut hasher);
         hash_f32(&self.angle, &mut hasher);
-        // hash_vec3::<DefaultHasher>(&self.rot_dir, &mut hasher);
-        // hash_vec3::<DefaultHasher>(&self.rot_pt, &mut hasher);
         hasher.finish()
     }
 
