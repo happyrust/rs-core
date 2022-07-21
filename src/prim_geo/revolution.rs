@@ -57,12 +57,17 @@ impl BrepShapeTrait for Revolution {
         }
         if let Ok(mut face) = builder::try_attach_plane(&[wire]){
             if let Surface::Plane(plane) = face.get_surface(){
-                let rot_dir = self.rot_dir.normalize().vector3();
+                let mut rot_dir = self.rot_dir.normalize().vector3();
                 let rot_pt = self.rot_pt.point3();
                 // dbg!(self.angle);
                 // dbg!(self.rot_dir);
                 // dbg!(self.rot_pt);
-                let angle = self.angle.to_radians() as f64;
+                let mut angle = self.angle.to_radians() as f64;
+                if angle < 0.0 {
+                    angle = angle.abs();
+                    rot_dir -= rot_dir;
+                }
+
                 let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle)).into_boundaries();
                 let shell = s.pop();
                 if shell.is_none() {
