@@ -34,9 +34,6 @@ bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, feat
 bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
 #bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
 #bevy_egui = { path = "../bevy_egui" }
-#bevy_mod_raycast = { git = "https://gitee.com/happydpc/bevy_mod_raycast" }
-#bevy_egui = {path = "../new/bevy_egui"}
-#bevy-inspector-egui = { path = "../new/bevy-inspector-egui" }
 
 serde-name = "0.1.1"
 serde = { version = "1.0.133", features = ["derive"] }

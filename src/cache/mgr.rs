@@ -61,17 +61,6 @@ impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr
     }
 
     #[inline]
-    pub fn load_all(&self) {
-        // if self.use_sled {
-        //     for k in self.db.iter() {
-        //         if let Ok((key, value)) = k {
-        //             self.map.insert(key.into(), value.into());
-        //         }
-        //     }
-        // }
-    }
-
-    #[inline]
     pub fn insert(&self, k: RefU64, value: T) -> anyhow::Result<()> {
         self.map.insert(k, value.clone());
         let bytes: IVec = k.into();
