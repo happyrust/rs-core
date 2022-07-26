@@ -25,16 +25,16 @@ pub fn parse_to_u32(input: &[u8]) -> u32 {
 
 #[inline]
 pub fn parse_to_f32(input: &[u8]) -> f32 {
-    (f32::from_be_bytes(input.try_into().unwrap()) * 100.0).round() / 100.0
+    f32_round_3((f32::from_be_bytes(input.try_into().unwrap())))
 }
 
 #[inline]
 pub fn parse_to_f64(input: &[u8]) -> f64 {
-    if let [a, b, c, d, e, f, g, h] = input[..8] {
-        return (f64::from_be_bytes([e, f, g, h, a, b, c, d]) * 100.0).round() / 100.0;
+    return if let [a, b, c, d, e, f, g, h] = input[..8] {
+        f64_round_3(f64::from_be_bytes([e, f, g, h, a, b, c, d]))
     } else {
-        return 0.0;
-    }
+        0.0
+    };
 }
 
 
