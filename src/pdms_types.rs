@@ -9,6 +9,7 @@ use std::panic::catch_unwind;
 use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
+use bitflags::bitflags;
 
 use anyhow::anyhow;
 use bevy::ecs::reflect::ReflectComponent;
@@ -326,6 +327,25 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
+
+impl Into<IVec> for RefU64Vec{
+    fn into(self) -> IVec{
+        bincode::serialize(&self).unwrap().into()
+    }
+}
+
+impl Into<IVec> for &RefU64Vec{
+    fn into(self) -> IVec{
+        bincode::serialize(self).unwrap().into()
+    }
+}
+
+impl From<IVec> for RefU64Vec{
+    fn from(d: IVec) -> Self{
+        bincode::deserialize(&d).unwrap()
+    }
+}
+
 impl Deref for RefU64Vec {
     type Target = Vec<RefU64>;
 
@@ -353,21 +373,6 @@ impl RefU64Vec {
     #[inline]
     pub fn push(&mut self, v: RefU64) {
         self.0.push(v);
-    }
-}
-
-impl IntoSkyhashBytes for &RefU64Vec {
-    fn as_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
-    }
-}
-
-impl FromSkyhashBytes for RefU64Vec {
-    fn from_element(element: Element) -> SkyResult<Self> {
-        if let Element::Binstr(v) = element {
-            return Ok(bincode::deserialize::<RefU64Vec>(&v).unwrap());
-        }
-        Err(skytable::error::Error::ParseError("Bad element type".to_string()))
     }
 }
 
@@ -1388,14 +1393,56 @@ pub struct PdmsMeshInstanceMgr {
 
 
 
+bitflags! {
+    struct PdmsGenericTypeFlag: u32 {
+        const UNKOWN = 0x1 << 30;
+        const GENRIC = 0x1 << 1;
+        const PIPE = 0x1 << 2;
+        const STRU = 0x1 << 3;
+        const EQUI = 0x1 << 4;
+        const ROOM = 0x1 << 5;
+        const WALL = 0x1 << 6;
+        // const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
+    }
+}
+
 #[repr(C)]
-#[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
+#[derive(Component, Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
 pub enum PdmsGenericType {
     UNKOWN = 0,
     PIPE,
     STRU,
     EQUI,
     ROOM,
+    SCTN,
+    GENSEC,
+    HANG,
+    HANDRA,
+    PANE,
+    CFLOOR,
+    CWBRAN,
+    CTWALL,
+    AREADEF,
+    DEMOPA,
+    INSURQ,
+    STRLNG,
+    HVAC,
+    ATTA,
+    GRIDPL,
+    GRIDCYL,
+    DIMGRO,
+    AIDGRO,
+    CPLATE,
+    CSTIFF,
+    CCURVE,
+    CSEAM,
+    HCOMPT,
+    HIBRA,
+    HIDOU,
+    HICPLA,
+    MPLATE,
+    MPROF,
+    HICSTI,
     CE,
 }
 
@@ -1421,6 +1468,8 @@ pub struct EleGeosInfo {
     pub world_transform: (Quat, Vec3, Vec3),
 
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
+    pub flow_pt_indexs: Vec<Option<i32>>,
+
 }
 
 impl Deref for EleGeosInfo {
@@ -1520,11 +1569,11 @@ impl CachedMeshesMgr {
         true
     }
 
-    pub fn deserialize_from_bin_file() -> Self {
-        let mut file = File::open(format!("cached_meshes.bin")).unwrap();
+    pub fn deserialize_from_bin_file(file_path: &str) -> Option<Self> {
+        let mut file = File::open(file_path).ok()?;
         let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        bincode::deserialize(buf.as_slice()).unwrap()
+        file.read_to_end(&mut buf).ok()?;
+        bincode::deserialize(buf.as_slice()).ok()
     }
 
     pub fn serialize_to_json_file(&self) -> bool {

@@ -1,4 +1,5 @@
 use std::collections::hash_map::DefaultHasher;
+use std::f32::EPSILON;
 use std::hash::Hasher;
 use bevy::prelude::*;
 use truck_meshalgo::prelude::*;
@@ -54,16 +55,16 @@ impl Default for LSnout {
 impl VerifiedShape for LSnout {
     #[inline]
     fn check_valid(&self) -> bool {
-        self.ptdm > f32::EPSILON && self.pbdm > f32::EPSILON && (self.ptdi - self.pbdi).abs() > f32::EPSILON
+        self.ptdm >= 0.0 && self.pbdm >= 0.0  && (self.ptdi - self.pbdi).abs() > f32::EPSILON
     }
 }
 
 impl BrepShapeTrait for LSnout {
     //todo 需要支持Cone 的情况
-    fn gen_brep_shell(& self) -> Option<Shell> {
+    fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
-        let rt = self.ptdm/2.0;
-        let rb = self.pbdm/2.0;
+        let rt = (self.ptdm/2.0).max(0.01);
+        let rb = (self.pbdm/2.0).max(0.01);
         let a_dir = self.paax_dir.normalize();
         let b_dir = self.pbax_dir.normalize();
         let p0 = a_dir * self.pbdi + self.paax_pt;
@@ -74,6 +75,13 @@ impl BrepShapeTrait for LSnout {
         let v3 = builder::vertex(p3.point3());
 
         //todo 表达cone的情况
+        let mut is_cone = false;
+        if self.ptdm * self.pbdm < EPSILON {
+            is_cone = true;
+            dbg!(is_cone);
+        }
+
+        //let cone = builder::cone(&wire, Vector3::unit_y(), Rad(2.0 * PI));
         let rot_axis = a_dir.vector3();
         let mut circle1 = builder::rsweep(&v3, p0.point3(), rot_axis, Rad(7.0));
         let c1 = circle1.clone();

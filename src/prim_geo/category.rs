@@ -14,6 +14,7 @@ use crate::prim_geo::sphere::Sphere;
 use std::f32::consts::PI;
 use std::ops::Range;
 use std::default::default;
+use std::f32::EPSILON;
 use smallvec::SmallVec;
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::pdms_types::RefU64;
@@ -65,7 +66,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let translation = z_axis * (d.dist_to_btm) as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform: TransformSRT {
                     translation,
@@ -92,7 +93,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if let Some((torus, transform)) = sc_torus.convert_to_ctorus() {
                 let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
                 return Some(CateBrepShape {
-                    refno: Default::default(),
+                    refno: d.refno,
                     brep_shape,
                     transform,
                     visible: d.tube_flag,
@@ -120,7 +121,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if let Some((torus, transform)) = sr_torus.convert_to_rtorus() {
                 let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
                 return Some(CateBrepShape {
-                    refno: Default::default(),
+                    refno: d.refno,
                     brep_shape,
                     transform,
                     visible: d.tube_flag,
@@ -139,7 +140,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -167,7 +168,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -211,7 +212,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -242,7 +243,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -258,7 +259,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let phei = (d.dist_to_top - d.dist_to_btm) as f32;
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation = dir * (d.dist_to_btm as f32 + phei / 2.0 as f32) + Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
+            let translation = dir * (d.dist_to_btm as f32 + phei / 2.0 as f32) +
+                Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
             let transform = TransformSRT {
                 rotation,
                 translation,
@@ -272,7 +274,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -280,6 +282,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pts
             });
         }
+
+
+
         CateGeoParam::Sphere(d) => {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Sphere {
                 radius: d.diameter as f32 / 2.0,
@@ -293,7 +298,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,
@@ -301,6 +306,66 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pts
             });
         }
+
+
+        CateGeoParam::Revolution(d) => {
+
+            let pa = d.pa.as_ref().unwrap();
+            let pb = d.pb.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(pa.number);
+            pts.push(pb.number);
+            let paax_dir = Vec3::from(pa.dir);
+            let pbax_dir = Vec3::from(pb.dir);
+            let extrude_dir = paax_dir.normalize()
+                .cross(pbax_dir.normalize()).normalize();
+            let mat3 = Mat3::from_cols(
+                paax_dir,
+                pbax_dir,
+                extrude_dir,
+            );
+            let rotation = Quat::from_mat3(&mat3);
+
+            let mut verts = vec![];
+            let offset_pt = Vec3::new(d.x, d.y, d.z);
+            let origin_pt = Vec3::from(pa.pt);
+            if d.verts.len() > 2 {
+                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0) + offset_pt;
+                verts.push(prev);
+                for vert in &d.verts[1..] {
+                    let p = Vec3::new(vert[0], vert[1], 0.0) + offset_pt;
+                    if p.distance(prev) > EPSILON{
+                        verts.push(p);
+                    }
+                }
+            }
+            if verts.len() <= 2{
+                return None;
+            }
+
+            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
+                verts,
+                angle: d.angle,
+                ..default()
+            });
+
+            let translation =  rotation * Vec3::new(d.x, d.y, d.z) + origin_pt;
+            let transform = TransformSRT {
+                rotation,
+                translation,
+                ..default()
+            };
+            return Some(CateBrepShape {
+                refno: d.refno,
+                brep_shape,
+                transform,
+                visible: d.tube_flag,
+                is_tubi: false,
+                pts,
+            });
+
+        }
+
         CateGeoParam::Extrusion(d) => {
             let pa = d.pa.as_ref().unwrap();
             let pb = d.pb.as_ref().unwrap();
@@ -309,13 +374,23 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             let paax_dir = Vec3::from(pa.dir);
             let pbax_dir = Vec3::from(pb.dir);
-            // dbg!(&d);
+
+            let mut verts = vec![];
+            if d.verts.len() > 2 {
+                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0);
+                verts.push(prev);
+                for vert in &d.verts[1..] {
+                    let p = Vec3::new(vert[0], vert[1], 0.0);
+                    if p.distance(prev) > EPSILON{
+                        verts.push(p);
+                    }
+                }
+            }else{
+                return None;
+            }
+
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
-                paax_pt: Vec3::from(pa.pt),
-                paax_dir,
-                pbax_pt: Vec3::from(pb.pt),
-                pbax_dir,
-                verts: d.verts.iter().map(|x| Vec3::new(x[0], x[1], 0.0)).collect::<Vec<_>>(),
+                verts,
                 fradius_vec: d.prads.clone(),
                 height: d.height,
                 ..default()
@@ -327,14 +402,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbax_dir,
                 extrude_dir,
             ));
-            let translation = rotation * Vec3::new(d.x, d.y, d.z);
+            let translation = rotation * Vec3::new(d.x, d.y, d.z) + Vec3::from(pa.pt);
             let transform = TransformSRT {
                 rotation,
                 translation,
                 ..default()
             };
             return Some(CateBrepShape {
-                refno: Default::default(),
+                refno: d.refno,
                 brep_shape,
                 transform,
                 visible: d.tube_flag,

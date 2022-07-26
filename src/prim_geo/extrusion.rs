@@ -17,23 +17,16 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
 use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::hash_tool::{hash_f32, hash_vec3};
+use serde::{Serialize, Deserialize};
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub enum CurveType {
     Fill,
     Spline(f32),  //thick
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub struct Extrusion {
-    pub paax_pt: Vec3,
-    pub paax_dir: Vec3,   //A Axis Direction
-
-    pub pbax_pt: Vec3,
-    pub pbax_dir: Vec3,   //B Axis Direction
-
-    // pub origin_pt: Vec3,
-
     pub verts: Vec<Vec3>,
     pub fradius_vec: Vec<f32>,
     pub height: f32,
@@ -154,7 +147,6 @@ impl Extrusion {
                 if b_len - pa_dist.min(pb_dist) > 0.01 {
                     let cur_vert = if i != ll { builder::vertex(cur_pt.point3()) } else { origin_vert.clone() };
                     wire.push_back(builder::line(&pre_vert, &cur_vert));
-                    // dbg!(format!("Line from {:?} to {:?}", pre_vert, cur_vert));
                     pre_vert = cur_vert.clone();
                     continue;
                 }
@@ -209,10 +201,10 @@ fn get_vec3_hash(v: &Vec3) -> u64 {
 impl Default for Extrusion {
     fn default() -> Self {
         Self {
-            paax_pt: Default::default(),
-            paax_dir: Vec3::X,
-            pbax_pt: Default::default(),
-            pbax_dir: Vec3::Y,
+            // paax_pt: Default::default(),
+            // paax_dir: Vec3::X,
+            // pbax_pt: Default::default(),
+            // pbax_dir: Vec3::Y,
 
             // origin_pt: Default::default(),
             verts: vec![],
@@ -237,7 +229,6 @@ impl BrepShapeTrait for Extrusion {
         }
         let mut new_verts = self.verts.iter().map(|v| {
             Vec3::new(v.x, v.y, 0.0)
-            // self.paax_dir * v.x + self.pbax_dir * v.y + self.origin_pt
         }).collect::<Vec<_>>();
         let mut pre_hash = 0;
         if get_vec3_hash(&new_verts[0]) == get_vec3_hash(new_verts.last().unwrap()) {

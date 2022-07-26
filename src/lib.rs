@@ -1,4 +1,5 @@
 #![feature(default_free_fn)]
+#![feature(mixed_integer_ops)]
 
 use std::collections::BTreeMap;
 
@@ -15,6 +16,7 @@ pub mod axis_param;
 pub mod bevy_types;
 pub mod helper;
 pub mod db_number;
+pub mod cache;
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;

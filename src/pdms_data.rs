@@ -67,7 +67,7 @@ pub struct GmParam {
 
     // pub profile:
     //profile  SPVE   SANN(PX, PY)
-    pub verts: Vec<[SmolStr; 2]>,
+    pub verts: Vec<[SmolStr; 3]>,
     //SANN: dx dy dradius dwidth
     pub dxy: Vec<[SmolStr; 2]>,
     pub drad: SmolStr,
@@ -199,13 +199,11 @@ impl AttInfoMap {
         self.get_has_cat_ref_types_set().iter().map(|x| x.clone()).collect::<Vec<_>>()
     }
 
-    /// 获取有catref的类型
     #[inline]
     pub fn get_type_implicit_att_names(&self, type_name: &str) -> Vec<String> {
         self.type_explicit_att_names_map.get(type_name).map(|v|{
             v.value().iter().cloned().collect_vec()
         }).unwrap_or_default()
-        // self.type_explicit_att_names_map.iter().map(|x| x.clone()).collect::<Vec<_>>()
     }
 
     #[inline]

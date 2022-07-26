@@ -74,7 +74,7 @@ pub struct GmseParamData {
     pub phei: f32,
     pub offset: f32,
     /// 顶点集合
-    pub verts: Vec<[f32; 2]>,
+    pub verts: Vec<[f32; 3]>,
     pub dxy: Vec<[f32; 2]>,
     pub drad: f32,
     pub dwid: f32,
@@ -120,7 +120,7 @@ pub mod geo_params_data {
         Pyramid(super::CatePyramidParam),
         RectTorus(super::CateRectTorusParam),
         Revolution(super::CateRevolutionParam),
-        Sline(super::CateSlineParam),
+        Sline(super::CateSplineParam),
         SlopeBottomCylinder(super::CateSlopeBottomCylinderParam),
         Snout(super::CateSnoutParam),
         Sphere(super::CateSphereParam),
@@ -145,6 +145,7 @@ pub struct CateBoxParam {
     pub offset: Vec<f32>,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -154,10 +155,12 @@ pub struct CateConeParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CateSCylinderParam {
+    pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
     pub height: f32,
@@ -186,7 +189,7 @@ pub struct CateExtrusionParam {
     pub x: f32,
     pub y: f32,
     pub z: f32,
-    pub verts: Vec<[f32; 2]>,  //2D points
+    pub verts: Vec<[f32; 3]>,  //2D points
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     pub refno: RefU64,
@@ -208,7 +211,7 @@ pub struct SannData {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct SProfileData {
-    pub verts: Vec<[f32; 2]>,
+    pub verts: Vec<[f32; 3]>,
     pub normal_axis: Vec3,
 }
 
@@ -230,6 +233,7 @@ pub struct CateDishParam {
     pub radius: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize,Debug)]
@@ -244,9 +248,11 @@ pub struct CateLineParam {
     pub centre_line_flag: bool,
     
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CatePyramidParam {
+    pub refno: RefU64,
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
     pub pc: Option<CateAxisParam>,
@@ -270,27 +276,31 @@ pub struct CateRectTorusParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CateRevolutionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
-    pub angel: f32,
+    pub angle: f32,
+    pub verts: Vec<[f32; 3]>,
     pub x: f32,
     pub y: f32,
     pub z: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-pub struct CateSlineParam {
+pub struct CateSplineParam {
     pub start_pt: Vec<f32>,
     pub end_pt: Vec<f32>,
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -305,6 +315,7 @@ pub struct CateSlopeBottomCylinderParam {
     pub alt_y_shear: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 /// 圆台 或 管嘴
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -318,6 +329,7 @@ pub struct CateSnoutParam {
     pub offset: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 /// 球
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -327,6 +339,7 @@ pub struct CateSphereParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 ///元件库里的torus参数
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -336,6 +349,7 @@ pub struct CateTorusParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    pub refno: RefU64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
