@@ -258,7 +258,6 @@ impl BrepShapeTrait for Extrusion {
                 return s.pop();
             }
         } else {
-            // dbg!(&wire);
             dbg!(self);
         }
         None

@@ -77,7 +77,7 @@ fn db1_dehash_test(){
     let name=db1_dehash(0x95B0C);
     println!("name={:?}",name);
 
-    let val = db1_hash("DB");
+    let val = db1_hash("SCTN");
     println!("{:#4X}",val);
 }
 
