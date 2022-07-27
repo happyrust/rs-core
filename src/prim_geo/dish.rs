@@ -94,7 +94,7 @@ impl BrepShapeTrait for Dish {
 
         hash_f32(&theta, &mut hasher);
         hash_f32(&beta, &mut hasher);
-
+        "dish".hash(&mut hasher);
         hasher.finish()
     }
 

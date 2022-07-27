@@ -201,12 +201,6 @@ fn get_vec3_hash(v: &Vec3) -> u64 {
 impl Default for Extrusion {
     fn default() -> Self {
         Self {
-            // paax_pt: Default::default(),
-            // paax_dir: Vec3::X,
-            // pbax_pt: Default::default(),
-            // pbax_dir: Vec3::Y,
-
-            // origin_pt: Default::default(),
             verts: vec![],
             fradius_vec: vec![],
             height: 100.0,
@@ -279,6 +273,7 @@ impl BrepShapeTrait for Extrusion {
         self.fradius_vec.iter().for_each(|v| {
             hash_f32::<DefaultHasher>(v, &mut hasher);
         });
+        "Extrusion".hash(&mut hasher);
         hasher.finish()
     }
 

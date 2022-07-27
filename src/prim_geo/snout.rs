@@ -122,6 +122,7 @@ impl BrepShapeTrait for LSnout {
         let beta = self.poff / pheight;
         hash_f32(&alpha, &mut hasher);
         hash_f32(&beta, &mut hasher);
+        "snout".hash(&mut hasher);
         hasher.finish()
     }
 

@@ -149,12 +149,9 @@ impl BrepShapeTrait for RTorus {
 
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
-        // let rins = I24F8::from_num(self.rins / self.rout);
-        // let beta = I24F8::from_num(self.angle);
-        // rins.hash(&mut hasher);
-        // beta.hash(&mut hasher);
         hash_f32(&(self.rins / self.rout), &mut hasher);
         hash_f32(&self.angle, &mut hasher);
+        "rtorus".hash(&mut hasher);
         hasher.finish()
     }
 

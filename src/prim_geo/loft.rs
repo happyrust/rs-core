@@ -320,7 +320,6 @@ impl BrepShapeTrait for SctnSolid {
         //截面暂时用这个最省力的方法
         let mut hasher = DefaultHasher::default();
         let bytes = bincode::serialize(&self.profile).unwrap();
-        // let bytes = bincode::serialize(&self/*.profile*/).unwrap();
         bytes.hash(&mut hasher);
 
         hash_vec3::<DefaultHasher>(&self.drns, &mut hasher);
@@ -331,6 +330,7 @@ impl BrepShapeTrait for SctnSolid {
             hash_vec3::<DefaultHasher>(&p2, &mut hasher);
             hash_vec3::<DefaultHasher>(&p3, &mut hasher);
         }
+        "loft".hash(&mut hasher);
 
         hasher.finish()
     }

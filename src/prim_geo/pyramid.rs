@@ -77,6 +77,7 @@ impl BrepShapeTrait for Pyramid {
         let bytes = bincode::serialize(self).unwrap();
         let mut hasher = DefaultHasher::default();
         bytes.hash(&mut hasher);
+        "Pyramid".hash(&mut hasher);
         hasher.finish()
     }
 

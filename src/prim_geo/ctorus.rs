@@ -152,7 +152,7 @@ impl BrepShapeTrait for CTorus {
         let mut hasher = DefaultHasher::new();
         hash_f32(&(self.rins / self.rout), &mut hasher);
         hash_f32(&self.angle, &mut hasher);
-
+        "ctorus".hash(&mut hasher);
         hasher.finish()
     }
 
