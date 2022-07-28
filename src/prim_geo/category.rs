@@ -192,7 +192,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let height = (d.dist_to_top - d.dist_to_btm) as f32;
             let mut poff = d.offset as f32;
             if height < 0.0 {
-                poff = -poff;
+                poff = 0.0;
             }
             let rotation = Quat::from_mat3(&Mat3::from_cols(
                 x_axis, y_axis, z_axis,

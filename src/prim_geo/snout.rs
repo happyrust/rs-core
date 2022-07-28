@@ -100,8 +100,14 @@ impl BrepShapeTrait for LSnout {
         let new_wire_1 = circle1.split_off((0.5 * circle1.len() as f32) as usize);
         let new_wire_2 = circle2.split_off((0.5 * circle2.len() as f32) as usize);
 
-        let face1 = builder::homotopy(new_wire_1.front().unwrap(), &new_wire_2.front().unwrap());
-        let face2 = builder::homotopy(circle1.front().unwrap(), &circle2.front().unwrap());
+        let mut face1 = builder::homotopy(new_wire_1.front().unwrap(), &new_wire_2.front().unwrap());
+        if !pheight {
+            face1 = face1.inverse();
+        }
+        let mut face2 = builder::homotopy(circle1.front().unwrap(), &circle2.front().unwrap());
+        if !pheight {
+            face2 = face2.inverse();
+        }
 
         if let Ok(disk1) = builder::try_attach_plane(&vec![c1.inverse()]){
             if let Ok(disk2) = builder::try_attach_plane(&vec![c2]){
@@ -136,28 +142,28 @@ impl BrepShapeTrait for LSnout {
     //参考圆点在中心位置
     fn gen_unit_shape(&self) -> PdmsMesh{
         let ptdm = self.ptdm / self.pbdm;
-       if self.poff.abs() > f32::EPSILON {
+       // if self.poff.abs() > f32::EPSILON {
             self.gen_mesh(Some(TRI_TOL))
-        }else{
-            Self{
-                ptdi: 0.5 ,
-                pbdi: -0.5,
-                ptdm,
-                pbdm: 1.0,
-                ..Default::default()
-            }.gen_mesh(Some(TRI_TOL))
-        }
+        // }else{
+        //     Self{
+        //         ptdi: 0.5 ,
+        //         pbdi: -0.5,
+        //         ptdm,
+        //         pbdm: 1.0,
+        //         ..Default::default()
+        //     }.gen_mesh(Some(TRI_TOL))
+        // }
 
     }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3{
         let pheight = (self.ptdi - self.pbdi).abs();
-        if self.poff.abs() > f32::EPSILON {
+        // if self.poff.abs() > f32::EPSILON {
             Vec3::ONE
-        }else{
-            Vec3::new(self.pbdm, self.pbdm, pheight)
-        }
+        // }else{
+        //     Vec3::new(self.pbdm, self.pbdm, pheight)
+        // }
 
     }
 }
