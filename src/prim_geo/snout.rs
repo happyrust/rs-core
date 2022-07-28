@@ -101,9 +101,9 @@ impl BrepShapeTrait for LSnout {
         if let Ok(disk1) = builder::try_attach_plane(&vec![c1.inverse()]){
             if let Ok(disk2) = builder::try_attach_plane(&vec![c2]){
                 let mut shell = Shell::from(vec![face1, face2, disk1, disk2]);
-                if !pheight {
-                    shell = shell.inverse().into();
-                }
+                // if !pheight {
+                //     shell = shell.inverse().into();
+                // }
                 return Some(shell)
             }
         }

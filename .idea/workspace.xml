@@ -18,7 +18,6 @@
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="snout poff with neg height">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -145,14 +144,7 @@
       <workItem from="1658422420912" duration="6135000" />
       <workItem from="1658737037751" duration="1814000" />
       <workItem from="1658900316105" duration="9859000" />
-      <workItem from="1659001719034" duration="5273000" />
-    </task>
-    <task id="LOCAL-00043" summary="Update">
-      <created>1657886321358</created>
-      <option name="number" value="00043" />
-      <option name="presentableId" value="LOCAL-00043" />
-      <option name="project" value="LOCAL" />
-      <updated>1657886321358</updated>
+      <workItem from="1659001719034" duration="5440000" />
     </task>
     <task id="LOCAL-00044" summary="Update">
       <created>1657886487538</created>
@@ -490,7 +482,14 @@
       <option name="project" value="LOCAL" />
       <updated>1659011711619</updated>
     </task>
-    <option name="localTasksCounter" value="92" />
+    <task id="LOCAL-00092" summary="snout poff with neg height">
+      <created>1659012963210</created>
+      <option name="number" value="00092" />
+      <option name="presentableId" value="LOCAL-00092" />
+      <option name="project" value="LOCAL" />
+      <updated>1659012963210</updated>
+    </task>
+    <option name="localTasksCounter" value="93" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
