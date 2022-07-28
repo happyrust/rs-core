@@ -52,7 +52,7 @@ impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr
 
     #[inline]
     pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {
-        if self.use_sled && !self.map.contains_key(k) {
+        if self.use_sled && !self.map.contains_key(k) && self.db.is_some(){
             if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get::<IVec>(k.into()) {
                 self.map.insert((*k).into(), bytes.into());
             }

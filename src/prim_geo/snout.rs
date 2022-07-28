@@ -84,13 +84,18 @@ impl BrepShapeTrait for LSnout {
             dbg!(is_cone);
         }
 
-        //let cone = builder::cone(&wire, Vector3::unit_y(), Rad(2.0 * PI));
         let rot_axis = a_dir.vector3();
         let mut circle1 = builder::rsweep(&v3, p0.point3(), rot_axis, Rad(7.0));
-        let c1 = circle1.clone();
+        let mut c1 = circle1.clone();
+        if !pheight {
+            c1 = c1.inverse();
+        }
 
         let mut circle2 = builder::rsweep(&v2, p1.point3(), rot_axis, Rad(7.0));
-        let c2 = circle2.clone();
+        let mut c2 = circle2.clone();
+        if !pheight {
+            c2 = c2.inverse();
+        }
 
         let new_wire_1 = circle1.split_off((0.5 * circle1.len() as f32) as usize);
         let new_wire_2 = circle2.split_off((0.5 * circle2.len() as f32) as usize);
@@ -101,9 +106,6 @@ impl BrepShapeTrait for LSnout {
         if let Ok(disk1) = builder::try_attach_plane(&vec![c1.inverse()]){
             if let Ok(disk2) = builder::try_attach_plane(&vec![c2]){
                 let mut shell = Shell::from(vec![face1, face2, disk1, disk2]);
-                // if !pheight {
-                //     shell = shell.inverse().into();
-                // }
                 return Some(shell)
             }
         }

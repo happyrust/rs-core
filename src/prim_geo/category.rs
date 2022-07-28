@@ -191,10 +191,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let origin = Vec3::new(z.pt[0] as f32, z.pt[1] as f32, z.pt[2] as f32);
             let height = (d.dist_to_top - d.dist_to_btm) as f32;
             let mut poff = d.offset as f32;
-            let rotation = bevy::prelude::Quat::from_mat3(&bevy::prelude::Mat3::from_cols(
+            if height < 0.0 {
+                poff = 0.0;
+            }
+            let rotation = Quat::from_mat3(&Mat3::from_cols(
                 x_axis, y_axis, z_axis,
             ));
-            // dbg!()
             let translation = origin + z_axis * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
             let transform = glam::TransformSRT {
                 rotation,
