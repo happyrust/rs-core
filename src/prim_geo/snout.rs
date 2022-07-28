@@ -147,7 +147,7 @@ impl BrepShapeTrait for LSnout {
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3{
         let pheight = (self.ptdi - self.pbdi).abs();
-        if self.poff > f32::EPSILON {
+        if self.poff.abs() > f32::EPSILON {
             Vec3::ONE
         }else{
             Vec3::new(self.pbdm, self.pbdm, pheight)
