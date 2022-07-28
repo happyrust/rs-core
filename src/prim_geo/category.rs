@@ -211,7 +211,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbdi: -height.abs() / 2.0,   //为了能够实现复用
                 ptdm: d.top_diameter as f32,
                 pbdm: d.btm_diameter as f32,
-                poff: d.offset as f32,
+                poff,
                 ..Default::default()
             });
             return Some(CateBrepShape {
