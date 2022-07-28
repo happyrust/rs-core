@@ -198,8 +198,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if height < 0.0 {
                 z_axis = -z_axis;
                 height = -height;
-                ptdm = d.btm_diameter as f32;
-                pbdm = d.top_diameter as f32;
+                // ptdm = d.btm_diameter as f32;
+                // pbdm = d.top_diameter as f32;
             }
 
             let y_axis = z_axis.cross(x_axis).normalize();
