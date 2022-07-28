@@ -15,7 +15,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="snout poff with neg height">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="debug">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
@@ -146,14 +146,8 @@
       <workItem from="1658737037751" duration="1814000" />
       <workItem from="1658900316105" duration="9859000" />
       <workItem from="1659001719034" duration="5440000" />
-      <workItem from="1659013527827" duration="2768000" />
-    </task>
-    <task id="LOCAL-00048" summary="Update">
-      <created>1657998886195</created>
-      <option name="number" value="00048" />
-      <option name="presentableId" value="LOCAL-00048" />
-      <option name="project" value="LOCAL" />
-      <updated>1657998886195</updated>
+      <workItem from="1659013527827" duration="3788000" />
+      <workItem from="1659017898335" duration="62000" />
     </task>
     <task id="LOCAL-00049" summary="Update">
       <created>1658033082714</created>
@@ -491,7 +485,14 @@
       <option name="project" value="LOCAL" />
       <updated>1659016382334</updated>
     </task>
-    <option name="localTasksCounter" value="97" />
+    <task id="LOCAL-00097" summary="debug">
+      <created>1659016931610</created>
+      <option name="number" value="00097" />
+      <option name="presentableId" value="LOCAL-00097" />
+      <option name="project" value="LOCAL" />
+      <updated>1659016931610</updated>
+    </task>
+    <option name="localTasksCounter" value="98" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -539,6 +540,7 @@
     <MESSAGE value="Refactor" />
     <MESSAGE value="snout rotate by y axis" />
     <MESSAGE value="snout poff with neg height" />
-    <option name="LAST_COMMIT_MESSAGE" value="snout poff with neg height" />
+    <MESSAGE value="debug" />
+    <option name="LAST_COMMIT_MESSAGE" value="debug" />
   </component>
 </project>

@@ -184,16 +184,18 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(z.number);
             pts.push(x.number);
 
-            let z_axis = Vec3::new(z.dir[0] as f32, z.dir[1] as f32, z.dir[2] as f32).normalize();
+            let mut z_axis = Vec3::new(z.dir[0] as f32, z.dir[1] as f32, z.dir[2] as f32).normalize();
             let x_axis = Vec3::new(x.dir[0] as f32, x.dir[1] as f32, x.dir[2] as f32).normalize();
+            let mut height = (d.dist_to_top - d.dist_to_btm) as f32;
+            let mut poff = d.offset as f32;
+            if height < 0.0 {
+                z_axis = -z_axis;
+                height = -height;
+            }
 
             let y_axis = z_axis.cross(x_axis).normalize();
             let origin = Vec3::new(z.pt[0] as f32, z.pt[1] as f32, z.pt[2] as f32);
-            let height = (d.dist_to_top - d.dist_to_btm) as f32;
-            let mut poff = d.offset as f32;
-            if height < 0.0 {
-                poff = 0.0;
-            }
+
             let rotation = Quat::from_mat3(&Mat3::from_cols(
                 x_axis, y_axis, z_axis,
             ));

@@ -56,26 +56,25 @@ impl Default for LSnout {
 impl VerifiedShape for LSnout {
     #[inline]
     fn check_valid(&self) -> bool {
-        self.ptdm >= 0.0 && self.pbdm >= 0.0  && (self.ptdi - self.pbdi).abs() > f32::EPSILON
+        //height 必须 >0， 小于0 的情况直接用变换矩阵
+        self.ptdm >= 0.0 && self.pbdm >= 0.0  && (self.ptdi - self.pbdi) > f32::EPSILON
     }
 }
 
 impl BrepShapeTrait for LSnout {
-    //todo 需要支持Cone 的情况
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let rt = (self.ptdm/2.0).max(0.01);
         let rb = (self.pbdm/2.0).max(0.01);
+
         let a_dir = self.paax_dir.normalize();
-        let b_dir = self.pbax_dir.normalize();
+        let mut b_dir = self.pbax_dir.normalize();
         let p0 = a_dir * self.pbdi + self.paax_pt;
         let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
         let p2 = b_dir * rt + p1;
         let p3 = b_dir * rb + p0;
         let v2 = builder::vertex(p2.point3());
         let v3 = builder::vertex(p3.point3());
-
-        let pheight = (self.ptdi - self.pbdi) > 0.0;
 
         //todo 表达cone的情况
         let mut is_cone = false;
@@ -87,27 +86,16 @@ impl BrepShapeTrait for LSnout {
         let rot_axis = a_dir.vector3();
         let mut circle1 = builder::rsweep(&v3, p0.point3(), rot_axis, Rad(7.0));
         let mut c1 = circle1.clone();
-        if !pheight {
-            c1 = c1.inverse();
-        }
+
 
         let mut circle2 = builder::rsweep(&v2, p1.point3(), rot_axis, Rad(7.0));
         let mut c2 = circle2.clone();
-        if !pheight {
-            c2 = c2.inverse();
-        }
+
 
         let new_wire_1 = circle1.split_off((0.5 * circle1.len() as f32) as usize);
         let new_wire_2 = circle2.split_off((0.5 * circle2.len() as f32) as usize);
-
         let mut face1 = builder::homotopy(new_wire_1.front().unwrap(), &new_wire_2.front().unwrap());
-        if !pheight {
-            face1 = face1.inverse();
-        }
         let mut face2 = builder::homotopy(circle1.front().unwrap(), &circle2.front().unwrap());
-        if !pheight {
-            face2 = face2.inverse();
-        }
 
         if let Ok(disk1) = builder::try_attach_plane(&vec![c1.inverse()]){
             if let Ok(disk2) = builder::try_attach_plane(&vec![c2]){
