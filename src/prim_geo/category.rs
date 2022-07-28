@@ -204,8 +204,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LSnout {
-                ptdi: height / 2.0,
-                pbdi: -height / 2.0,
+                ptdi: height.abs() / 2.0,
+                pbdi: -height.abs() / 2.0,
                 ptdm: d.top_diameter as f32,
                 pbdm: d.btm_diameter as f32,
                 poff,
