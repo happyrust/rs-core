@@ -164,7 +164,7 @@ impl BrepShapeTrait for CTorus {
             rout: 1.0,
             angle: self.angle
         };
-        unit.gen_mesh(Some(TRI_TOL))
+        unit.gen_mesh(Some(TRI_TOL/5.0))
     }
 
     #[inline]

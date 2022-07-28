@@ -63,13 +63,4 @@ pub fn parse_to_f32_arr(input: &[u8]) -> [f64; 3] {
 }
 
 
-#[inline]
-pub fn vec3_round_3(v: Vec3) -> Vec3 {
-    Vec3::new(f32_round_3(v.x), f32_round_3(v.y), f32_round_3(v.z))
-}
-
-#[inline]
-pub fn vec3_round_2(v: Vec3) -> Vec3 {
-    Vec3::new(f32_round_2(v.x), f32_round_2(v.y), f32_round_2(v.z))
-}
 

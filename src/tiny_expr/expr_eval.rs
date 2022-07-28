@@ -200,10 +200,10 @@ fn atan(a: f64, _: f64) -> f64 {
     a.atan().to_degrees()
 }
 fn atan2(a: f64, b: f64) -> f64 {
-    a.atan2(b)
+    a.atan2(b).to_degrees()
 }
 fn atant(a: f64, b: f64) -> f64 {
-    (a/b).atan()
+    (a/b).atan().to_degrees()
 }
 fn ceil(a: f64, _: f64) -> f64 {
     a.ceil()
