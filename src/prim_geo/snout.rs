@@ -31,6 +31,8 @@ pub struct LSnout {
     pub ptdm: f32,      //top diameter
     pub pbdm: f32,      //bottom diameter
     pub poff: f32,      //offset
+
+    pub btm_on_top: bool,
 }
 
 impl Default for LSnout {
@@ -49,6 +51,7 @@ impl Default for LSnout {
             ptdm: 1.0,
             pbdm: 1.0,
             poff: 0.0,
+            btm_on_top: false,
         }
     }
 }
@@ -67,7 +70,10 @@ impl BrepShapeTrait for LSnout {
         let rt = (self.ptdm/2.0).max(0.01);
         let rb = (self.pbdm/2.0).max(0.01);
 
-        let a_dir = self.paax_dir.normalize();
+        let mut a_dir = self.paax_dir.normalize();
+        if !self.btm_on_top {
+            a_dir = -a_dir;
+        }
         let mut b_dir = self.pbax_dir.normalize();
         let p0 = a_dir * self.pbdi + self.paax_pt;
         let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
@@ -86,6 +92,7 @@ impl BrepShapeTrait for LSnout {
         let rot_axis = a_dir.vector3();
         let mut circle1 = builder::rsweep(&v3, p0.point3(), rot_axis, Rad(7.0));
         let mut c1 = circle1.clone();
+        if self.btm_on_top { }
 
 
         let mut circle2 = builder::rsweep(&v2, p1.point3(), rot_axis, Rad(7.0));

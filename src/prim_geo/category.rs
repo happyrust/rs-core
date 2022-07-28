@@ -184,6 +184,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(z.number);
             pts.push(x.number);
 
+            let mut btm_on_top = false;
             let mut z_axis = Vec3::new(z.dir[0] as f32, z.dir[1] as f32, z.dir[2] as f32).normalize();
             let origin = Vec3::new(z.pt[0] as f32, z.pt[1] as f32, z.pt[2] as f32);
             let x_axis = Vec3::new(x.dir[0] as f32, x.dir[1] as f32, x.dir[2] as f32).normalize();
@@ -196,7 +197,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pbdm =  d.btm_diameter as f32;
 
             if height < 0.0 {
-                z_axis = -z_axis;
+                btm_on_top = true;
                 height = -height;
                 // ptdm = d.btm_diameter as f32;
                 // pbdm = d.top_diameter as f32;
@@ -220,6 +221,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ptdm,
                 pbdm,
                 poff,
+                btm_on_top,
                 ..Default::default()
             });
             return Some(CateBrepShape {
