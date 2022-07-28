@@ -4,6 +4,7 @@
 use std::collections::BTreeMap;
 
 extern crate bitflags;
+extern crate phf;
 
 pub mod pdms_types;
 pub mod consts;

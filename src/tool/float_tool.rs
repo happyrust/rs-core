@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 use glam::Vec3;
-use fixed::types::I24F8;
+// use fixed::types::I24F8;
 use ordered_float::*;
 
 #[inline]
