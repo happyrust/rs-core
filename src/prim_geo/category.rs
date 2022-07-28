@@ -190,7 +190,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let y_axis = z_axis.cross(x_axis).normalize();
             let origin = Vec3::new(z.pt[0] as f32, z.pt[1] as f32, z.pt[2] as f32);
             let height = (d.dist_to_top - d.dist_to_btm) as f32;
+            let mut poff = d.offset as f32;
             let flip_rot = if height < 0.0 {
+                poff = -poff;
                 Quat::from_rotation_y(PI)
             } else {
                 Quat::IDENTITY
