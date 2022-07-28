@@ -16,8 +16,8 @@ use truck_modeling::{builder, Shell, Surface, Wire};
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
 use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
-use crate::tool::hash_tool::{hash_f32, hash_vec3};
 use serde::{Serialize, Deserialize};
+use crate::tool::float_tool::{hash_f32, hash_vec3};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub enum CurveType {
@@ -270,7 +270,7 @@ impl BrepShapeTrait for Extrusion {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
         });
         self.fradius_vec.iter().for_each(|v| {
-            hash_f32::<DefaultHasher>(v, &mut hasher);
+            hash_f32::<DefaultHasher>(*v, &mut hasher);
         });
         "Extrusion".hash(&mut hasher);
         hasher.finish()

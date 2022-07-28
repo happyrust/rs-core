@@ -11,7 +11,7 @@ use ncollide3d::na;
 use truck_meshalgo::prelude::*;
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
-use crate::tool::hash_tool::{hash_f32, hash_vec3};
+
 use crate::pdms_types::AiosAABB;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 

@@ -12,6 +12,7 @@ use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
 use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh, TRI_TOL};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
+use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
 
 #[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect, Serialize, Deserialize)]
@@ -120,8 +121,8 @@ impl BrepShapeTrait for LSnout {
             0.0
         };
         let beta = self.poff / pheight;
-        hash_f32(&alpha, &mut hasher);
-        hash_f32(&beta, &mut hasher);
+        hash_f32(alpha, &mut hasher);
+        hash_f32(beta, &mut hasher);
         "snout".hash(&mut hasher);
         hasher.finish()
     }
@@ -146,7 +147,7 @@ impl BrepShapeTrait for LSnout {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3{
-        let pheight = self.ptdi - self.pbdi;
+        let pheight = (self.ptdi - self.pbdi).abs();
         if self.poff > f32::EPSILON {
             Vec3::ONE
         }else{

@@ -13,6 +13,7 @@ use crate::pdms_types::AttrMap;
 
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::tool::float_tool::{hash_f32, hash_vec3};
 
 #[derive(Component, Debug,  Clone,  Reflect)]
 #[reflect(Component)]
@@ -82,7 +83,7 @@ impl BrepShapeTrait for Revolution {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
         });
         "Revolution".hash(&mut hasher);
-        hash_f32(&self.angle, &mut hasher);
+        hash_f32(self.angle, &mut hasher);
         hasher.finish()
     }
 

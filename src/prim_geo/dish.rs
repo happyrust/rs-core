@@ -13,6 +13,7 @@ use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::tool::float_tool::hash_f32;
 
 //可不可以用来表达 sphere
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
@@ -92,8 +93,8 @@ impl BrepShapeTrait for Dish {
         }
         let mut hasher = DefaultHasher::new();
 
-        hash_f32(&theta, &mut hasher);
-        hash_f32(&beta, &mut hasher);
+        hash_f32(theta, &mut hasher);
+        hash_f32(beta, &mut hasher);
         "dish".hash(&mut hasher);
         hasher.finish()
     }

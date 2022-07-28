@@ -12,6 +12,7 @@ use crate::pdms_types::AttrMap;
 
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::tool::float_tool::hash_f32;
 
 #[derive(Component, Debug, Clone,  Reflect)]
 #[reflect(Component)]
@@ -149,8 +150,8 @@ impl BrepShapeTrait for RTorus {
 
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
-        hash_f32(&(self.rins / self.rout), &mut hasher);
-        hash_f32(&self.angle, &mut hasher);
+        hash_f32((self.rins / self.rout), &mut hasher);
+        hash_f32(self.angle, &mut hasher);
         "rtorus".hash(&mut hasher);
         hasher.finish()
     }

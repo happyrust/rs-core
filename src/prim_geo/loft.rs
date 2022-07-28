@@ -17,7 +17,7 @@ use crate::parsed_data::{CateProfileParam, SProfileData};
 use crate::prim_geo::circle::Circle2D;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
-use crate::tool::hash_tool::hash_vec3;
+use crate::tool::float_tool::hash_vec3;
 
 //todo 针对确实只是extrusion的处理，可以转换成extrusion去处理，而不是占用
 
