@@ -192,7 +192,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let height = (d.dist_to_top - d.dist_to_btm) as f32;
             let mut poff = d.offset as f32;
             if height < 0.0 {
-                poff = 0.0;
+                poff = -poff;
             }
             let rotation = Quat::from_mat3(&Mat3::from_cols(
                 x_axis, y_axis, z_axis,
@@ -204,8 +204,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LSnout {
-                ptdi: height.abs() / 2.0,
-                pbdi: -height.abs() / 2.0,
+                ptdi: height / 2.0,
+                pbdi: -height / 2.0,
                 ptdm: d.top_diameter as f32,
                 pbdm: d.btm_diameter as f32,
                 poff,
