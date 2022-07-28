@@ -108,21 +108,20 @@ impl BrepShapeTrait for LSnout {
     fn hash_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
         //对于有偏移的，直接不复用，后面看情况再考虑复用
-        if self.poff >= f32::EPSILON {
+        if self.poff.abs() > f32::EPSILON {
             let bytes = bincode::serialize(self).unwrap();
             let mut hasher = DefaultHasher::default();
             bytes.hash(&mut hasher);
             return hasher.finish();
         }
-        let pheight = self.ptdi - self.pbdi;
+        // let pheight = self.ptdi - self.pbdi;
         let alpha = if self.pbdm != 0.0 {
             self.ptdm / self.pbdm
         }else{
             0.0
         };
-        let beta = self.poff / pheight;
         hash_f32(alpha, &mut hasher);
-        hash_f32(beta, &mut hasher);
+        // hash_f32(pheight, &mut hasher);
         "snout".hash(&mut hasher);
         hasher.finish()
     }
@@ -130,7 +129,7 @@ impl BrepShapeTrait for LSnout {
     //参考圆点在中心位置
     fn gen_unit_shape(&self) -> PdmsMesh{
         let ptdm = self.ptdm / self.pbdm;
-       if self.poff > f32::EPSILON {
+       if self.poff.abs() > f32::EPSILON {
             self.gen_mesh(Some(TRI_TOL))
         }else{
             Self{
@@ -138,7 +137,7 @@ impl BrepShapeTrait for LSnout {
                 pbdi: -0.5,
                 ptdm,
                 pbdm: 1.0,
-                poff: self.poff,
+                poff: 0.0,
                 ..Default::default()
             }.gen_mesh(Some(TRI_TOL))
         }
@@ -165,7 +164,6 @@ impl From<&AttrMap> for LSnout {
             pbdi: -h / 2.0,
             ptdm: m.get_val("DTOP").unwrap().double_value().unwrap() as f32 ,
             pbdm: m.get_val("DBOT").unwrap().double_value().unwrap() as f32 ,
-            poff: 0.0,
             ..Default::default()
         }
     }
