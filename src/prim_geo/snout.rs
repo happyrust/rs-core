@@ -137,7 +137,6 @@ impl BrepShapeTrait for LSnout {
                 pbdi: -0.5,
                 ptdm,
                 pbdm: 1.0,
-                poff: 0.0,
                 ..Default::default()
             }.gen_mesh(Some(TRI_TOL))
         }
