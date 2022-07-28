@@ -190,17 +190,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let y_axis = z_axis.cross(x_axis).normalize();
             let origin = Vec3::new(z.pt[0] as f32, z.pt[1] as f32, z.pt[2] as f32);
             let height = (d.dist_to_top - d.dist_to_btm) as f32;
-            let mut poff = d.offset /2.0 as f32;
-            let flip_rot = if height < 0.0 {
-                poff = -poff;
-                Quat::from_rotation_y(PI)
-            } else {
-                Quat::IDENTITY
-            };
-            let rotation = flip_rot * bevy::prelude::Quat::from_mat3(&bevy::prelude::Mat3::from_cols(
+            let mut poff = d.offset as f32;
+            let rotation = bevy::prelude::Quat::from_mat3(&bevy::prelude::Mat3::from_cols(
                 x_axis, y_axis, z_axis,
             ));
-
+            // dbg!()
             let translation = origin + z_axis * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
             let transform = glam::TransformSRT {
                 rotation,
@@ -208,8 +202,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             };
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LSnout {
-                ptdi: height.abs() / 2.0,
-                pbdi: -height.abs() / 2.0,   //为了能够实现复用
+                ptdi: height / 2.0,
+                pbdi: -height / 2.0,
                 ptdm: d.top_diameter as f32,
                 pbdm: d.btm_diameter as f32,
                 poff,

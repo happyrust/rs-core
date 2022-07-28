@@ -75,6 +75,8 @@ impl BrepShapeTrait for LSnout {
         let v2 = builder::vertex(p2.point3());
         let v3 = builder::vertex(p3.point3());
 
+        let pheight = (self.ptdi - self.pbdi) > 0.0;
+
         //todo 表达cone的情况
         let mut is_cone = false;
         if self.ptdm * self.pbdm < EPSILON {
@@ -98,7 +100,10 @@ impl BrepShapeTrait for LSnout {
 
         if let Ok(disk1) = builder::try_attach_plane(&vec![c1.inverse()]){
             if let Ok(disk2) = builder::try_attach_plane(&vec![c2]){
-                let shell = Shell::from(vec![face1, face2, disk1, disk2]);
+                let mut shell = Shell::from(vec![face1, face2, disk1, disk2]);
+                if !pheight {
+                    shell = shell.inverse().into();
+                }
                 return Some(shell)
             }
         }
@@ -114,14 +119,14 @@ impl BrepShapeTrait for LSnout {
             bytes.hash(&mut hasher);
             return hasher.finish();
         }
-        // let pheight = self.ptdi - self.pbdi;
+        let pheight = (self.ptdi - self.pbdi) > 0.0;
         let alpha = if self.pbdm != 0.0 {
             self.ptdm / self.pbdm
         }else{
             0.0
         };
         hash_f32(alpha, &mut hasher);
-        // hash_f32(pheight, &mut hasher);
+        pheight.hash(&mut hasher);
         "snout".hash(&mut hasher);
         hasher.finish()
     }
