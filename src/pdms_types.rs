@@ -1228,7 +1228,7 @@ impl AttrVal {
     }
 
     #[inline]
-    pub fn bool_vale(&self) -> Option<bool> {
+    pub fn bool_value(&self) -> Option<bool> {
         return match self {
             BoolType(v) => Some(*v),
             _ => None
