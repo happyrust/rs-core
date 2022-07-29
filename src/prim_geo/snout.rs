@@ -135,29 +135,29 @@ impl BrepShapeTrait for LSnout {
     //参考圆点在中心位置
     fn gen_unit_shape(&self) -> PdmsMesh{
         let ptdm = self.ptdm / self.pbdm;
-       // if self.poff.abs() > f32::EPSILON {
+       if self.poff.abs() > f32::EPSILON {
             self.gen_mesh(Some(TRI_TOL))
-        // }else{
-        //     Self{
-        //         ptdi: 0.5 ,
-        //         pbdi: -0.5,
-        //         ptdm,
-        //         pbdm: 1.0,
-        //         ..Default::default()
-        //     }.gen_mesh(Some(TRI_TOL))
-        // }
+        }else{
+            Self{
+                ptdi: 0.5 ,
+                pbdi: -0.5,
+                ptdm,
+                pbdm: 1.0,
+                ..Default::default()
+            }.gen_mesh(Some(TRI_TOL))
+        }
 
     }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3{
         let pheight = (self.ptdi - self.pbdi).abs();
-        // if self.poff.abs() > f32::EPSILON {
+        //有偏心的时候，不缩放
+        if self.poff.abs() > f32::EPSILON {
             Vec3::ONE
-        // }else{
-        //     Vec3::new(self.pbdm, self.pbdm, pheight)
-        // }
-
+        }else{
+            Vec3::new(self.pbdm, self.pbdm, pheight)
+        }
     }
 }
 
