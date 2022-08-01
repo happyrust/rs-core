@@ -386,7 +386,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pa.number);
             pts.push(pb.number);
             let paax_dir = Vec3::from(pa.dir);
-            let pbax_dir = Vec3::from(pb.dir);
+            let mut pbax_dir = Vec3::from(pb.dir);
 
             let mut verts = vec![];
             if d.verts.len() > 2 {
@@ -410,13 +410,15 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
             let extrude_dir = paax_dir.normalize()
                 .cross(pbax_dir.normalize()).normalize();
+            let pbax_dir = extrude_dir.cross(paax_dir.normalize()).normalize();
             dbg!(extrude_dir);
-            // let rotation = Quat::from_mat3(&Mat3::from_cols(
-            //     paax_dir,
-            //     pbax_dir,
-            //     extrude_dir,
-            // ));
-            let rotation = Quat::from_rotation_arc(Vec3::Z, extrude_dir);
+            dbg!(&pbax_dir);
+            let rotation = Quat::from_mat3(&Mat3::from_cols(
+                paax_dir,
+                pbax_dir,
+                extrude_dir,
+            ));
+            // let rotation = Quat::from_rotation_arc(Vec3::Z, extrude_dir);
             let translation = rotation * Vec3::new(d.x, d.y, d.z) + Vec3::from(pa.pt);
             let transform = TransformSRT {
                 rotation,
