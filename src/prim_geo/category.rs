@@ -410,11 +410,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
             let extrude_dir = paax_dir.normalize()
                 .cross(pbax_dir.normalize()).normalize();
-            let rotation = Quat::from_mat3(&Mat3::from_cols(
-                paax_dir,
-                pbax_dir,
-                extrude_dir,
-            ));
+            dbg!(extrude_dir);
+            // let rotation = Quat::from_mat3(&Mat3::from_cols(
+            //     paax_dir,
+            //     pbax_dir,
+            //     extrude_dir,
+            // ));
+            let rotation = Quat::from_rotation_arc(Vec3::Z, extrude_dir);
             let translation = rotation * Vec3::new(d.x, d.y, d.z) + Vec3::from(pa.pt);
             let transform = TransformSRT {
                 rotation,

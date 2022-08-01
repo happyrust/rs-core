@@ -290,11 +290,6 @@ impl BrepShapeTrait for Extrusion {
 
     //沿着指定方向拉伸 pbax_dir
     fn get_scaled_vec3(&self) -> Vec3 {
-        // let e = self.paax_dir.normalize()
-        //     .cross(self.pbax_dir.normalize()).normalize();
-        // let new_dir = Vec3::new(e.x.abs(), e.y.abs(), e.z.abs());
-        // //(self.height as f32 / 100.0) * new_dir
-        // Vec3::new(1.0, (self.height as f32 / 100.0), 1.0)
         Vec3::new(1.0, 1.0, (self.height as f32 / 100.0))
     }
 }
