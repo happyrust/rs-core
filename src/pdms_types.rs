@@ -52,8 +52,6 @@ pub const LEVEL_VISBLE: u32 = 6;
 pub struct Integer(pub u32);
 
 
-
-
 ///pdms的参考号
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct RefI32Tuple(pub (i32, i32));
@@ -215,8 +213,8 @@ impl Into<sled::IVec> for &RefU64 {
     }
 }
 
-impl From<sled::IVec> for RefU64{
-    fn from(d: sled::IVec) -> Self{
+impl From<sled::IVec> for RefU64 {
+    fn from(d: sled::IVec) -> Self {
         // bincode::deserialize(&d).unwrap()
         Self::from(d.as_ref())
     }
@@ -324,20 +322,20 @@ impl RefU64 {
 pub struct RefU64Vec(pub Vec<RefU64>);
 
 
-impl Into<IVec> for RefU64Vec{
-    fn into(self) -> IVec{
+impl Into<IVec> for RefU64Vec {
+    fn into(self) -> IVec {
         bincode::serialize(&self).unwrap().into()
     }
 }
 
-impl Into<IVec> for &RefU64Vec{
-    fn into(self) -> IVec{
+impl Into<IVec> for &RefU64Vec {
+    fn into(self) -> IVec {
         bincode::serialize(self).unwrap().into()
     }
 }
 
-impl From<IVec> for RefU64Vec{
-    fn from(d: IVec) -> Self{
+impl From<IVec> for RefU64Vec {
+    fn from(d: IVec) -> Self {
         bincode::deserialize(&d).unwrap()
     }
 }
@@ -430,20 +428,20 @@ impl Debug for AttrMap {
     }
 }
 
-impl Into<IVec> for AttrMap{
-    fn into(self) -> IVec{
+impl Into<IVec> for AttrMap {
+    fn into(self) -> IVec {
         bincode::serialize(&self).unwrap().into()
     }
 }
 
-impl Into<IVec> for &AttrMap{
-    fn into(self) -> IVec{
+impl Into<IVec> for &AttrMap {
+    fn into(self) -> IVec {
         bincode::serialize(self).unwrap().into()
     }
 }
 
-impl From<IVec> for AttrMap{
-    fn from(d: IVec) -> Self{
+impl From<IVec> for AttrMap {
+    fn from(d: IVec) -> Self {
         bincode::deserialize(&d).unwrap()
     }
 }
@@ -1093,7 +1091,6 @@ impl DerefMut for PdmsTree {
 }
 
 
-
 /// 一个参考号是有可能重复的，project信息可以不用存储，获取信息时必须要带上 db_no
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefnoInfo {
@@ -1226,6 +1223,14 @@ impl AttrVal {
     pub fn refu64_vec_value(&self) -> Option<RefU64Vec> {
         return match self {
             RefU64Array(v) => Some(v.clone()),
+            _ => None
+        };
+    }
+
+    #[inline]
+    pub fn bool_value(&self) -> Option<bool> {
+        return match self {
+            BoolType(v) => Some(*v),
             _ => None
         };
     }
@@ -1366,7 +1371,7 @@ pub struct LevelShapeMgr {
     pub level_mgr: DashMap<RefU64, RefU64Vec>,
 }
 
-impl LevelShapeMgr{
+impl LevelShapeMgr {
     pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
         let mut file = File::create(file_path).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
@@ -1478,9 +1483,9 @@ pub struct ShapeInstancesMgr {
     //可以用类型的信息去遍历
 }
 
-impl ShapeInstancesMgr{
+impl ShapeInstancesMgr {
     #[inline]
-    pub fn get_translation(&self, refno: RefU64) -> Option<Vec3>{
+    pub fn get_translation(&self, refno: RefU64) -> Option<Vec3> {
         self.inst_map.get(&refno).map(|x| x.world_transform.1)
     }
 
@@ -1698,14 +1703,15 @@ impl Into<sled::IVec> for PdmsElement {
         bincode::serialize(&self).unwrap().into()
     }
 }
+
 impl Into<sled::IVec> for &PdmsElement {
     fn into(self) -> sled::IVec {
         bincode::serialize(self).unwrap().into()
     }
 }
 
-impl From<sled::IVec> for PdmsElement{
-    fn from(d: sled::IVec) -> Self{
+impl From<sled::IVec> for PdmsElement {
+    fn from(d: sled::IVec) -> Self {
         bincode::deserialize(&d).unwrap()
     }
 }
@@ -1718,14 +1724,15 @@ impl Into<sled::IVec> for PdmsElementVec {
         bincode::serialize(&self).unwrap().into()
     }
 }
+
 impl Into<sled::IVec> for &PdmsElementVec {
     fn into(self) -> sled::IVec {
         bincode::serialize(self).unwrap().into()
     }
 }
 
-impl From<sled::IVec> for PdmsElementVec{
-    fn from(d: sled::IVec) -> Self{
+impl From<sled::IVec> for PdmsElementVec {
+    fn from(d: sled::IVec) -> Self {
         bincode::deserialize(&d).unwrap()
     }
 }
@@ -1743,16 +1750,12 @@ impl EleNode {
 pub struct PdmsNodeId(pub NodeId);
 
 
-
-
 /// 每个dbno对应的version
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DbnoVersion {
     pub dbno: u32,
     pub version: u32,
 }
-
-
 
 
 #[test]
@@ -1876,8 +1879,6 @@ impl hash32::Hash for AiosStr {
         state.write(&[0xff]);
     }
 }
-
-
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
