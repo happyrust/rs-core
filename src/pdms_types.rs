@@ -281,6 +281,11 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_refno_normal_string(&self) -> String {
+        self.to_refno_string().replace("/", "_")
+    }
+
+    #[inline]
     pub fn from_two_nums(i: u32, j: u32) -> Self {
         let bytes: Vec<u8> = [i.to_be_bytes(), j.to_be_bytes()].concat();
         let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
