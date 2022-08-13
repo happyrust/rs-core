@@ -1458,6 +1458,8 @@ impl Default for PdmsGenericType {
 /// 存储一个Element 包含的所有几何信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleGeosInfo {
+    // 该 GeosInfo 的参考号
+    pub _key: RefU64,
     //索引的mesh instance
     pub data: Vec<EleGeoInstance>,
     //是否可见
