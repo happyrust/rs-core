@@ -1392,6 +1392,11 @@ pub struct PdmsMeshInstanceMgr {
     pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PdmsMeshInstanceMgrOld {
+    pub inst_mgr: ShapeInstancesMgrOld,
+    pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
+}
 
 
 bitflags! {
@@ -1475,11 +1480,62 @@ pub struct EleGeosInfo {
 
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleGeosInfoOld {
+    //索引的mesh instance
+    pub data: Vec<EleGeoInstance>,
+    //是否可见
+    pub visible: bool,
+    //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
+    pub generic_type: PdmsGenericType,
+
+    //相对世界坐标系下的变换矩阵 rot, translation, scale
+    pub world_transform: (Quat, Vec3, Vec3),
+
+    pub ptset_map: BTreeMap<i32, CateAxisParam>,
+    pub flow_pt_indexs: Vec<Option<i32>>,
+
+}
+
 impl Deref for EleGeosInfo {
     type Target = Vec<EleGeoInstance>;
 
     fn deref(&self) -> &Self::Target {
         &self.data
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ShapeInstancesMgrOld {
+    pub inst_map: DashMap<RefU64, EleGeosInfoOld>,   //todo replace with EleGeosInfo
+    //可以用类型的信息去遍历
+}
+
+impl ShapeInstancesMgrOld {
+    #[inline]
+    pub fn get_translation(&self, refno: RefU64) -> Option<Vec3> {
+        self.inst_map.get(&refno).map(|x| x.world_transform.1)
+    }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+}
+
+impl Deref for ShapeInstancesMgrOld {
+    type Target = DashMap<RefU64, EleGeosInfoOld>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inst_map
+    }
+}
+
+impl DerefMut for ShapeInstancesMgrOld {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inst_map
     }
 }
 
@@ -1489,6 +1545,7 @@ pub struct ShapeInstancesMgr {
     pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
     //可以用类型的信息去遍历
 }
+
 
 impl ShapeInstancesMgr {
     #[inline]
