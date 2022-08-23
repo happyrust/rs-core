@@ -1398,6 +1398,65 @@ pub struct PdmsMeshInstanceMgrOld {
     pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 }
 
+impl PdmsMeshInstanceMgrOld {
+    #[inline]
+    pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, EleGeosInfoOld>> {
+        let mut results = DashMap::new();
+        let inst_map = &self.inst_mgr.inst_map;
+        if self.level_shape_mgr.contains_key(&refno) {
+            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter(){
+                if inst_map.contains_key(v) {
+                    results.insert(v.clone(), inst_map.get(v).unwrap());
+                }
+            }
+        } else {
+            if inst_map.contains_key(&refno) {
+                results.insert(refno.clone(), inst_map.get(&refno).unwrap());
+            }
+        }
+        results
+    }
+
+    pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
+        let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", mdb)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(mdb: &str) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", mdb))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+
+    pub fn serialize_to_json_file(&self) -> bool {
+        let mut file = File::create(format!("PdmsMeshMgr.json")).unwrap();
+        let serialized = serde_json::to_string(&self).unwrap();
+        file.write_all(serialized.as_bytes()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_json_file() -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr.json"))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = serde_json::from_slice::<Self>(&buf)?;
+        Ok(r)
+    }
+
+
+}
+
 
 bitflags! {
     struct PdmsGenericTypeFlag: u32 {
@@ -1464,7 +1523,7 @@ impl Default for PdmsGenericType {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleGeosInfo {
     // 该 GeosInfo 的参考号 转换为 0_0样式
-    #[serde(skip_serializing)]
+    // #[serde(skip_serializing)]
     pub _key: String,
     //索引的mesh instance
     pub data: Vec<EleGeoInstance>,
