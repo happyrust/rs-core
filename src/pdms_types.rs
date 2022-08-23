@@ -1464,6 +1464,7 @@ impl Default for PdmsGenericType {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleGeosInfo {
     // 该 GeosInfo 的参考号 转换为 0_0样式
+    #[serde(skip_serializing)]
     pub _key: String,
     //索引的mesh instance
     pub data: Vec<EleGeoInstance>,
@@ -1543,6 +1544,7 @@ impl DerefMut for ShapeInstancesMgrOld {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
     pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
+    // pub inst_map: DashMap<RefU64, EleGeosInfoOld>,   //todo replace with EleGeosInfo
     //可以用类型的信息去遍历
 }
 
