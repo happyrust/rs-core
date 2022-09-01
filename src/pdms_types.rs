@@ -1196,6 +1196,7 @@ impl AttrVal {
     pub fn string_value(&self) -> String {
         return match self {
             StringType(v) => v.to_string(),
+            WordType(v) => v.to_string(),
             _ => "unset".to_string(),
         };
     }
@@ -1404,7 +1405,7 @@ impl PdmsMeshInstanceMgrOld {
         let mut results = DashMap::new();
         let inst_map = &self.inst_mgr.inst_map;
         if self.level_shape_mgr.contains_key(&refno) {
-            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter(){
+            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter() {
                 if inst_map.contains_key(v) {
                     results.insert(v.clone(), inst_map.get(v).unwrap());
                 }
@@ -1453,8 +1454,6 @@ impl PdmsMeshInstanceMgrOld {
         let r = serde_json::from_slice::<Self>(&buf)?;
         Ok(r)
     }
-
-
 }
 
 
