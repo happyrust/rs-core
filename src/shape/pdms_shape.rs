@@ -18,6 +18,7 @@ use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{TransformRT, TransformSRT, Vec3};
+use lyon::path::polygon;
 use ncollide3d::bounding_volume::AABB;
 use ncollide3d::math::{Point, Vector};
 use ncollide3d::na;
@@ -76,6 +77,7 @@ pub struct PdmsMesh {
     pub wf_indices: Vec<u32>,  //wireframe indices
     pub wf_vertices: Vec<[f32; 3]>, //wireframe vertex
     pub aabb: AiosAABB,
+    pub shape: Shell,   //放到这里，mesh后面弄成lod的模式
 }
 
 impl PdmsMesh {
@@ -248,9 +250,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
             // dbg!(tolerance);
-            if let Some(s) = brep.triangulation(tolerance) {
+            //if let Some(s) = brep.triangulation(tolerance)
+            let polygon = brep.triangulation(tolerance).to_polygon();
+            {
 
-                let polygon = s.to_polygon();
+                // let polygon = s.to_polygon();
                 let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
                 let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
                 let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
@@ -263,32 +267,33 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
                 let a = aabb.mins;
                 let b = aabb.maxs;
 
-                let curves = s
+                let curves = brep
                     .edge_iter()
                     .map(|edge| edge.get_curve())
                     .collect::<Vec<_>>();
-                let wf_vertices: Vec<[f32; 3]> = curves
-                    .iter()
-                    .flat_map(|poly| poly.iter())
-                    .map(|p| p.cast().unwrap().into())
-                    .collect();
+                // let wf_vertices: Vec<[f32; 3]> = curves
+                //     .iter()
+                //     .flat_map(|poly| poly.iter())
+                //     .map(|p| p.cast().unwrap().into())
+                //     .collect();
                 let mut counter = 0;
-                let wf_indices: Vec<u32> = curves
-                    .iter()
-                    .flat_map(|poly| {
-                        let len = counter as u32;
-                        counter += poly.len();
-                        (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
-                    })
-                    .collect();
+                // let wf_indices: Vec<u32> = curves
+                //     .iter()
+                //     .flat_map(|poly| {
+                //         let len = counter as u32;
+                //         counter += poly.len();
+                //         (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
+                //     })
+                //     .collect();
 
                 return PdmsMesh {
                     indices,
                     vertices,
                     normals,
-                    wf_indices /*: default()*/,
-                    wf_vertices/*: default()*/,
+                    wf_indices : default(),
+                    wf_vertices: default(),
                     aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
+                    shape: brep,
                 };
             }
         }

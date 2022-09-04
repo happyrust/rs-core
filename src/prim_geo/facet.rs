@@ -125,7 +125,8 @@ impl BrepShapeTrait for Facet {
             normals,
             wf_indices: vec![],
             wf_vertices: vec![],
-            aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z))
+            aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
+            shape: Default::default()
         };
     }
 

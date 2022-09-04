@@ -84,7 +84,8 @@ impl BrepShapeTrait for Sphere {
             aabb: AiosAABB{
                 min: -Vec3::ONE,
                 max: Vec3::ONE,
-            }
+            },
+            shape: Default::default()
         }
     }
 
