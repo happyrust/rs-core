@@ -237,7 +237,7 @@ impl BrepShapeTrait for SctnSolid {
             let c = Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y));
             circle = Some(c);
         }
-        // dbg!(&circle);
+        dbg!(&circle);
         let mut is_sann = false;
         match &self.profile {
             //需要用切面去切出相交的face
