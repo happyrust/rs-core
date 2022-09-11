@@ -43,9 +43,14 @@ impl VerifiedShape for Sphere {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for Sphere {
 
-    fn gen_mesh(&self, tol: Option<f32>) -> PdmsMesh {
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
         let generated = IcoSphere::new(32, |point| {
             let inclination = point.y.acos();
             let azimuth = point.z.atan2(point.x);
@@ -75,7 +80,7 @@ impl BrepShapeTrait for Sphere {
         }
 
         //球也需要提供wireframe的绘制
-        return PdmsMesh{
+        return Some(PdmsMesh{
             indices,
             vertices: points,
             normals,
@@ -85,15 +90,20 @@ impl BrepShapeTrait for Sphere {
                 min: -Vec3::ONE,
                 max: Vec3::ONE,
             },
-            shape: Default::default()
-        }
+            unit_shape: Default::default(),
+            shape_data: self.gen_unit_shape(),
+        });
     }
 
-    fn hash_mesh_params(&self) -> u64{
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(Self::default())
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64{
         3u64            //代表SPHERE
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh{
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
         Sphere::default().gen_mesh(None)
     }
 

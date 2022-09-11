@@ -33,7 +33,13 @@ impl VerifiedShape for SBox {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for SBox {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
     fn gen_brep_shell(& self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         let v = builder::vertex((self.center - self.size / 2.0).point3());
@@ -43,11 +49,15 @@ impl BrepShapeTrait for SBox {
         s.pop()
     }
 
-    fn hash_mesh_params(&self) -> u64{
+    fn hash_unit_mesh_params(&self) -> u64{
         1u64            //代表BOX
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh{
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(Self::default())
+    }
+
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
         SBox::default().gen_mesh(None)
     }
 

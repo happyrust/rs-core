@@ -38,16 +38,21 @@ impl VerifiedShape for Facet {
     fn check_valid(&self) -> bool { true }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for Facet {
 
-    fn hash_mesh_params(&self) -> u64{
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64{
         let bytes = bincode::serialize(self).unwrap();
         let mut hasher = DefaultHasher::default();
         bytes.hash(&mut hasher);
         hasher.finish()
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh{
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
         self.gen_mesh(None)
     }
 
@@ -61,7 +66,7 @@ impl BrepShapeTrait for Facet {
         None
     }
 
-    fn gen_mesh(&self, tol: Option<f32>) -> PdmsMesh{
+    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh>{
         let mut vertices = vec![];
         let mut normals = vec![];
         let mut indices = vec![];
@@ -119,17 +124,21 @@ impl BrepShapeTrait for Facet {
         let a = aabb.mins;
         let b = aabb.maxs;
         //对于facet，可以绘制convex hull的线框
-        return  PdmsMesh{
+        return  Some(PdmsMesh{
             indices,
             vertices,
             normals,
             wf_indices: vec![],
             wf_vertices: vec![],
             aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
-            shape: Default::default()
-        };
+            unit_shape: Default::default(),
+            shape_data: self.gen_unit_shape(),
+        });
     }
 
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
 }
 
 impl Facet {

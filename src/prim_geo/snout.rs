@@ -64,7 +64,13 @@ impl VerifiedShape for LSnout {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for LSnout {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let rt = (self.ptdm/2.0).max(0.01);
@@ -111,7 +117,7 @@ impl BrepShapeTrait for LSnout {
         None
     }
 
-    fn hash_mesh_params(&self) -> u64{
+    fn hash_unit_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
         //对于有偏移的，直接不复用，后面看情况再考虑复用
         if self.poff.abs() > f32::EPSILON {
@@ -132,21 +138,24 @@ impl BrepShapeTrait for LSnout {
         hasher.finish()
     }
 
-    //参考圆点在中心位置
-    fn gen_unit_shape(&self) -> PdmsMesh{
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let ptdm = self.ptdm / self.pbdm;
-       if self.poff.abs() > f32::EPSILON {
-            self.gen_mesh(Some(TRI_TOL))
+        if self.poff.abs() > f32::EPSILON {
+            Box::new(self.clone())
         }else{
-            Self{
+            Box::new(Self{
                 ptdi: 0.5 ,
                 pbdi: -0.5,
                 ptdm,
                 pbdm: 1.0,
                 ..Default::default()
-            }.gen_mesh(Some(TRI_TOL))
+            })
         }
+    }
 
+    //参考圆点在中心位置
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
+       self.gen_unit_shape().gen_mesh(Some(TRI_TOL))
     }
 
     #[inline]
