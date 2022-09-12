@@ -29,7 +29,6 @@ pub struct CateBrepShape {
     pub visible: bool,
     pub is_tubi: bool,
     pub pts: SmallVec<[i32; 3]>,  //点集信息
-    // pub level: Range<u32>,
 }
 
 

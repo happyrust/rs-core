@@ -1,31 +1,37 @@
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::default::default;
 use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
-use std::default::default;
-use bevy::prelude::{FromWorld, Mesh};
-use truck_modeling::{Curve, Shell};
+
 // use bevy_inspector_egui::Inspectable;
 use bevy::ecs::component::Component;
-use truck_base::cgmath64::{Point3, Vector3};
-use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
-use bevy::reflect::{Reflect, ReflectRef};
 use bevy::ecs::reflect::ReflectComponent;
+use bevy::prelude::{FromWorld, Mesh};
+use bevy::reflect::{erased_serde, Reflect, ReflectRef};
+use bevy::reflect::erased_serde::serialize_trait_object;
 use bevy::render::mesh::Indices;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
-use glam::{TransformRT, TransformSRT, Vec3};
+use glam::{TransformRT, TransformSRT, Vec3, Vec4};
+use lyon::path::polygon;
 use ncollide3d::bounding_volume::AABB;
 use ncollide3d::math::{Point, Vector};
 use ncollide3d::na;
 use ncollide3d::na::Point3 as NPoint3;
 use ncollide3d::shape::TriMesh;
+use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use truck_base::bounding_box::BoundingBox;
-use serde::{Serialize,Deserialize};
+use truck_base::cgmath64::{Point3, Vector3, Vector4};
+use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
+use truck_modeling::{Curve, Shell};
 
+use dyn_clone::DynClone;
 use crate::pdms_types::*;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
@@ -68,14 +74,18 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
     // let (size, center) = (bdd_box.size(), bdd_box.center());
 }
 
-#[derive(Serialize, Deserialize, Component, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Component, Debug)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
-    pub wf_indices: Vec<u32>,  //wireframe indices
-    pub wf_vertices: Vec<[f32; 3]>, //wireframe vertex
+    pub wf_indices: Vec<u32>,
+    //wireframe indices
+    pub wf_vertices: Vec<[f32; 3]>,
+    //wireframe vertex
     pub aabb: AiosAABB,
+    pub unit_shape: Shell,
+    pub shape_data: Box<dyn BrepShapeTrait>,
 }
 
 impl PdmsMesh {
@@ -92,7 +102,7 @@ impl PdmsMesh {
         TriMesh::new(points, indices, None)
     }
 
-    pub fn gen_bevy_mesh(&self) -> Mesh{
+    pub fn gen_bevy_mesh(&self) -> Mesh {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
@@ -104,7 +114,7 @@ impl PdmsMesh {
     }
 
     ///返回三角模型和线框模型
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Aabb){
+    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Aabb) {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
@@ -118,7 +128,7 @@ impl PdmsMesh {
         mesh.set_indices(Some(Indices::U32(
             self.indices.clone()
         )));
-        let AiosAABB{
+        let AiosAABB {
             min,
             max, } = self.aabb;
 
@@ -139,7 +149,7 @@ impl PdmsMeshInstanceMgr {
         let mut results = DashMap::new();
         let inst_map = &self.inst_mgr.inst_map;
         if self.level_shape_mgr.contains_key(&refno) {
-            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter(){
+            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter() {
                 if inst_map.contains_key(v) {
                     results.insert(v.clone(), inst_map.get(v).unwrap());
                 }
@@ -188,27 +198,40 @@ impl PdmsMeshInstanceMgr {
         let r = serde_json::from_slice::<Self>(&buf)?;
         Ok(r)
     }
-
-
 }
 
 pub const TRI_TOL: f32 = 0.01;
 
-pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
+// serialize_trait_object!(BrepShapeTrait);
+dyn_clone::clone_trait_object!(BrepShapeTrait);
 
-    fn gen_brep_shell(&self) -> Option<Shell>{
-        return  None;
+#[typetag::serde(tag = "type")]
+pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
+
+    fn gen_brep_shell(&self) -> Option<Shell> {
+        return None;
     }
 
-    //todo 实现模型的hash，主要是看比列
-    //通过比例缩放可以更大的共享几何信息
-    fn hash_mesh_params(&self) -> u64 {
+    //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
+    fn hash_unit_mesh_params(&self) -> u64 {
         0
     }
 
+    //计算原始的hash值
+    // fn hash_mesh_params(&self) -> u64 {
+    //     let bytes = bincode::serialize(self).unwrap();
+    //     let mut hasher = DefaultHasher::default();
+    //     bytes.hash(&mut hasher);
+    //     hasher.finish()
+    // }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait>;
+
     //生成对应的单位长度的模型，比如Dish，就是以R为1的情况生成模型
-    fn gen_unit_shape(&self) -> PdmsMesh {
-        PdmsMesh::default()
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+       None
     }
 
     #[inline]
@@ -218,20 +241,14 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
 
     #[inline]
     fn get_trans(&self) -> TransformSRT {
-        TransformSRT{
+        TransformSRT {
             rotation: Default::default(),
             translation: Default::default(),
             scale: self.get_scaled_vec3(),
         }
     }
 
-    //直接使用基本体的快速生成
-    fn quick_gen_mesh(&self) -> Option<PdmsMesh> {
-        None
-    }
-
-
-    fn gen_mesh(&self, tol: Option<f32>) -> PdmsMesh {
+    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
         let mut aabb = AABB::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -244,13 +261,12 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
             // dbg!(&aabb);
             // dbg!(size);
             if size <= f64::EPSILON {
-                return PdmsMesh::default();
+                return None;
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
-            // dbg!(tolerance);
-            if let Some(s) = brep.triangulation(tolerance) {
 
-                let polygon = s.to_polygon();
+            let polygon = brep.triangulation(tolerance).to_polygon();
+            if !polygon.positions().is_empty() {
                 let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
                 let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
                 let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
@@ -263,42 +279,47 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync{
                 let a = aabb.mins;
                 let b = aabb.maxs;
 
-                let curves = s
+                let curves = brep
                     .edge_iter()
                     .map(|edge| edge.get_curve())
                     .collect::<Vec<_>>();
-                let wf_vertices: Vec<[f32; 3]> = curves
-                    .iter()
-                    .flat_map(|poly| poly.iter())
-                    .map(|p| p.cast().unwrap().into())
-                    .collect();
+                // let wf_vertices: Vec<[f32; 3]> = curves
+                //     .iter()
+                //     .flat_map(|poly| poly.iter())
+                //     .map(|p| p.cast().unwrap().into())
+                //     .collect();
                 let mut counter = 0;
-                let wf_indices: Vec<u32> = curves
-                    .iter()
-                    .flat_map(|poly| {
-                        let len = counter as u32;
-                        counter += poly.len();
-                        (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
-                    })
-                    .collect();
+                // let wf_indices: Vec<u32> = curves
+                //     .iter()
+                //     .flat_map(|poly| {
+                //         let len = counter as u32;
+                //         counter += poly.len();
+                //         (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
+                //     })
+                //     .collect();
 
-                return PdmsMesh {
+                let shape_data : Box<dyn BrepShapeTrait> = self.clone_dyn();
+                // let shape_data : Box<dyn BrepShapeTrait> = self.__clone_box();
+                return Some(PdmsMesh {
                     indices,
                     vertices,
                     normals,
-                    wf_indices /*: default()*/,
-                    wf_vertices/*: default()*/,
+                    wf_indices: default(),
+                    wf_vertices: default(),
                     aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
-                };
+                    unit_shape: brep,
+                    shape_data
+                });
             }
         }
-        PdmsMesh::default()
+        None
     }
 }
 
 
 pub trait BrepMathTrait {
     fn vector3(&self) -> Vector3;
+    fn vector4(&self) -> Vector4;
     fn point3(&self) -> Point3;
 }
 
@@ -306,6 +327,28 @@ impl BrepMathTrait for Vec3 {
     #[inline]
     fn vector3(&self) -> Vector3 {
         Vector3::new(self[0] as f64, self[1] as f64, self[2] as f64)
+    }
+
+    #[inline]
+    fn vector4(&self) -> Vector4 {
+        Vector4::new(self[0] as f64, self[1] as f64, self[2] as f64, 0.0f64)
+    }
+
+    #[inline]
+    fn point3(&self) -> Point3 {
+        Point3::new(self[0] as f64, self[1] as f64, self[2] as f64)
+    }
+}
+
+impl BrepMathTrait for Vec4 {
+    #[inline]
+    fn vector3(&self) -> Vector3 {
+        Vector3::new(self[0] as f64, self[1] as f64, self[2] as f64)
+    }
+
+    #[inline]
+    fn vector4(&self) -> Vector4 {
+        Vector4::new(self[0] as f64, self[1] as f64, self[2] as f64, self[3] as f64)
     }
 
     #[inline]

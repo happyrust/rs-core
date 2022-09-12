@@ -225,7 +225,13 @@ impl VerifiedShape for SctnSolid {
 }
 
 
+#[typetag::serde]
 impl BrepShapeTrait for SctnSolid {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
@@ -316,7 +322,7 @@ impl BrepShapeTrait for SctnSolid {
         None
     }
 
-    fn hash_mesh_params(&self) -> u64 {
+    fn hash_unit_mesh_params(&self) -> u64 {
         //截面暂时用这个最省力的方法
         let mut hasher = DefaultHasher::default();
         let bytes = bincode::serialize(&self.profile).unwrap();
@@ -335,15 +341,19 @@ impl BrepShapeTrait for SctnSolid {
         hasher.finish()
     }
 
-
-    //拉伸为height方向
-    fn gen_unit_shape(&self) -> PdmsMesh {
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let mut unit = self.clone();
         if unit.arc_path.is_none() {
             unit.extrude_dir = Vec3::Z;
             unit.height = 1.0;
         }
-        unit.gen_mesh(Some(TRI_TOL / 10.0))
+        Box::new(unit)
+    }
+
+
+    //拉伸为height方向
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 10.0))
     }
 
     #[inline]

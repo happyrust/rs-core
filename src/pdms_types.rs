@@ -27,6 +27,7 @@ use serde::{Deserialize, Serialize};
 use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
+use truck_modeling::Shell;
 
 use crate::BHashMap;
 use crate::consts::*;
@@ -1196,6 +1197,7 @@ impl AttrVal {
     pub fn string_value(&self) -> String {
         return match self {
             StringType(v) => v.to_string(),
+            WordType(v) => v.to_string(),
             _ => "unset".to_string(),
         };
     }
@@ -1392,6 +1394,68 @@ pub struct PdmsMeshInstanceMgr {
     pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PdmsMeshInstanceMgrOld {
+    pub inst_mgr: ShapeInstancesMgrOld,
+    pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
+}
+
+impl PdmsMeshInstanceMgrOld {
+    #[inline]
+    pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, EleGeosInfoOld>> {
+        let mut results = DashMap::new();
+        let inst_map = &self.inst_mgr.inst_map;
+        if self.level_shape_mgr.contains_key(&refno) {
+            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter() {
+                if inst_map.contains_key(v) {
+                    results.insert(v.clone(), inst_map.get(v).unwrap());
+                }
+            }
+        } else {
+            if inst_map.contains_key(&refno) {
+                results.insert(refno.clone(), inst_map.get(&refno).unwrap());
+            }
+        }
+        results
+    }
+
+    pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
+        let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", mdb)).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(mdb: &str) -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", mdb))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = bincode::deserialize(buf.as_slice())?;
+        Ok(r)
+    }
+
+    pub fn serialize_to_json_file(&self) -> bool {
+        let mut file = File::create(format!("PdmsMeshMgr.json")).unwrap();
+        let serialized = serde_json::to_string(&self).unwrap();
+        file.write_all(serialized.as_bytes()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_json_file() -> anyhow::Result<Self> {
+        let mut file = File::open(format!("PdmsMeshMgr.json"))?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        let r = serde_json::from_slice::<Self>(&buf)?;
+        Ok(r)
+    }
+}
 
 
 bitflags! {
@@ -1458,6 +1522,26 @@ impl Default for PdmsGenericType {
 /// 存储一个Element 包含的所有几何信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleGeosInfo {
+    // 该 GeosInfo 的参考号 转换为 0_0样式
+    // #[serde(skip_serializing)]
+    pub _key: String,
+    //索引的mesh instance
+    pub data: Vec<EleGeoInstance>,
+    //是否可见
+    pub visible: bool,
+    //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
+    pub generic_type: PdmsGenericType,
+
+    //相对世界坐标系下的变换矩阵 rot, translation, scale
+    pub world_transform: (Quat, Vec3, Vec3),
+
+    pub ptset_map: BTreeMap<i32, CateAxisParam>,
+    pub flow_pt_indexs: Vec<Option<i32>>,
+
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleGeosInfoOld {
     //索引的mesh instance
     pub data: Vec<EleGeoInstance>,
     //是否可见
@@ -1481,12 +1565,48 @@ impl Deref for EleGeosInfo {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ShapeInstancesMgrOld {
+    pub inst_map: DashMap<RefU64, EleGeosInfoOld>,   //todo replace with EleGeosInfo
+    //可以用类型的信息去遍历
+}
+
+impl ShapeInstancesMgrOld {
+    #[inline]
+    pub fn get_translation(&self, refno: RefU64) -> Option<Vec3> {
+        self.inst_map.get(&refno).map(|x| x.world_transform.1)
+    }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+}
+
+impl Deref for ShapeInstancesMgrOld {
+    type Target = DashMap<RefU64, EleGeosInfoOld>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inst_map
+    }
+}
+
+impl DerefMut for ShapeInstancesMgrOld {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inst_map
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
     pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
+    // pub inst_map: DashMap<RefU64, EleGeosInfoOld>,   //todo replace with EleGeosInfo
     //可以用类型的信息去遍历
 }
+
 
 impl ShapeInstancesMgr {
     #[inline]
@@ -1519,12 +1639,20 @@ impl DerefMut for ShapeInstancesMgr {
 
 pub type GeoHash = u64;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct CachedMeshesMgr {
     pub meshes: DashMap<GeoHash, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
 impl CachedMeshesMgr {
+
+    pub fn get_shell(&self, mesh_hash: &u64) -> Option<Shell> {
+        if let Some(cached_msh) = self.get_mesh(mesh_hash) {
+            return Some(cached_msh.unit_shape.clone());
+        }
+        None
+    }
+
     /// 获得对应的bevy 三角模型和线框模型
     pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Aabb)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
@@ -1540,10 +1668,11 @@ impl CachedMeshesMgr {
 
     //get the mesh index, if not exist, try to create and insert, and return index
     pub fn get_pdms_mesh_hash_key(&self, m: Box<dyn BrepShapeTrait>) -> u64 {
-        let hash = m.hash_mesh_params();
+        let hash = m.hash_unit_mesh_params();
         if !self.meshes.contains_key(&hash) {
-            let mesh = m.gen_unit_shape();
-            self.meshes.insert(hash, mesh);
+            if let Some(mesh) = m.gen_unit_mesh(){
+                self.meshes.insert(hash, mesh);
+            }
         }
         hash
     }

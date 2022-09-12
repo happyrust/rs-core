@@ -172,7 +172,7 @@ pub fn decode_chars_data(input: &[u8]) -> (String, bool){
     let mut res = vec![];
     let mut prev_pos = 0;
     for p in start_iter {
-        if input.len() > p && prev_pos <= p { // todo 这个地方也需要调整
+        if input.len() > p /*&& prev_pos < p*/ { // todo 这个地方也需要调整
             res.extend_from_slice(&input[prev_pos..p]);
             if let Some(len) = find(&input[p..], &[0x20, 0x26]) {
                 // dbg!(&input[p..p + len]);
@@ -200,6 +200,7 @@ fn test_chinese_data() {
     let test_code = vec![0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26];
     let test_code = vec![0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26];
     let test_code = vec![0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26, 0x74, 0x65, 0x73, 0x74];
+    let test_code = vec![0x2F, 0x31, 0x30, 0x30, 0x2D, 0x42, 0x2D, 0x31];
     // let table_data = include_bytes!("../encode_char_table.bin");
 
     let name = decode_chars_data(&test_code);

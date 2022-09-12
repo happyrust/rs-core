@@ -1,19 +1,20 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::f32::EPSILON;
-use std::hash::{Hasher, Hash};
-use bevy::prelude::*;
-use truck_modeling::{builder, Shell};
-use crate::tool::hash_tool::*;
-use truck_meshalgo::prelude::*;
-use bevy::reflect::Reflect;
+use std::hash::{Hash, Hasher};
+
 use bevy::ecs::reflect::ReflectComponent;
-use serde::{Serialize,Deserialize};
+use bevy::prelude::*;
+use bevy::reflect::Reflect;
+use serde::{Deserialize, Serialize};
+use truck_meshalgo::prelude::*;
+use truck_modeling::{builder, Shell};
 
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
+use crate::tool::hash_tool::*;
 
 //可不可以用来表达 sphere
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
@@ -48,7 +49,11 @@ impl VerifiedShape for Dish {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for Dish {
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let r = self.pdia / 2.0;
@@ -79,7 +84,8 @@ impl BrepShapeTrait for Dish {
         Some(s)
     }
 
-    fn hash_mesh_params(&self) -> u64 {
+
+    fn hash_unit_mesh_params(&self) -> u64 {
         let r = self.pdia / 2.0;
         let h = self.pheig;
         let radius = (r * r + h * h) / (2.0f32 * h);
@@ -99,15 +105,18 @@ impl BrepShapeTrait for Dish {
         hasher.finish()
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh {
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let r = self.pdia;
         let h = self.pheig / r;
-        let unit = Dish {
+        Box::new(Self {
             pheig: h,
             pdia: 1.0,
             ..Default::default()
-        };
-        unit.gen_mesh(Some(TRI_TOL))
+        })
+    }
+
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+        self.gen_unit_shape().gen_mesh(Some(TRI_TOL))
     }
 
     fn get_scaled_vec3(&self) -> Vec3 {

@@ -15,9 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="keep shape data in pdms_mesh">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/tool/db_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/db_tool.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -49,7 +48,7 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Project.color&quot;: &quot;4b565d&quot;,
+    &quot;Project.color&quot;: &quot;011c4a&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
@@ -71,7 +70,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Cargo.Test tool::db_tool::test_chinese_data">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build --release" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -89,6 +88,28 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test tool::db_tool::test_chinese_data" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib tool::db_tool::test_chinese_data -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <envs />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cargo.Test tool::db_tool::test_chinese_data" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
@@ -153,17 +174,12 @@
       <workItem from="1659378086031" duration="598000" />
       <workItem from="1659410081926" duration="2039000" />
       <workItem from="1659496893337" duration="142000" />
-      <workItem from="1659595970308" duration="1319000" />
-      <workItem from="1663012689884" duration="236000" />
-      <workItem from="1663013245023" duration="462000" />
-      <workItem from="1663015906555" duration="413000" />
-    </task>
-    <task id="LOCAL-00062" summary="Update">
-      <created>1658241434000</created>
-      <option name="number" value="00062" />
-      <option name="presentableId" value="LOCAL-00062" />
-      <option name="project" value="LOCAL" />
-      <updated>1658241434000</updated>
+      <workItem from="1662204873718" duration="2691000" />
+      <workItem from="1662288696990" duration="2684000" />
+      <workItem from="1662298138186" duration="1194000" />
+      <workItem from="1662362760901" duration="3250000" />
+      <workItem from="1662805470556" duration="18487000" />
+      <workItem from="1663010981565" duration="1000" />
     </task>
     <task id="LOCAL-00063" summary="Update">
       <created>1658241797239</created>
@@ -494,14 +510,21 @@
       <option name="project" value="LOCAL" />
       <updated>1659357333687</updated>
     </task>
-    <task id="LOCAL-00110" summary="fix">
-      <created>1659595990060</created>
+    <task id="LOCAL-00110" summary="add step export">
+      <created>1662289317094</created>
       <option name="number" value="00110" />
       <option name="presentableId" value="LOCAL-00110" />
       <option name="project" value="LOCAL" />
-      <updated>1659595990060</updated>
+      <updated>1662289317094</updated>
     </task>
-    <option name="localTasksCounter" value="111" />
+    <task id="LOCAL-00111" summary="keep shape data in pdms_mesh">
+      <created>1662905482417</created>
+      <option name="number" value="00111" />
+      <option name="presentableId" value="LOCAL-00111" />
+      <option name="project" value="LOCAL" />
+      <updated>1662905482418</updated>
+    </task>
+    <option name="localTasksCounter" value="112" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -552,6 +575,8 @@
     <MESSAGE value="debug" />
     <MESSAGE value="refactored" />
     <MESSAGE value="fix" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix" />
+    <MESSAGE value="add step export" />
+    <MESSAGE value="keep shape data in pdms_mesh" />
+    <option name="LAST_COMMIT_MESSAGE" value="keep shape data in pdms_mesh" />
   </component>
 </project>

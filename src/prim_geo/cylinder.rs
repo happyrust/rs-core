@@ -46,11 +46,11 @@ impl VerifiedShape for LCylinder {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for LCylinder {
 
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi))
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
     }
 
     fn gen_brep_shell(& self) -> Option<Shell> {
@@ -74,6 +74,15 @@ impl BrepShapeTrait for LCylinder {
         let f = builder::try_attach_plane(&[w]).unwrap();
         let mut s = builder::tsweep(&f, ext_dir * ext_len as f64).into_boundaries();
         s.pop()
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(Self::default())
+    }
+
+    #[inline]
+    fn get_scaled_vec3(&self) -> Vec3 {
+        Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi))
     }
 }
 
@@ -135,7 +144,13 @@ impl VerifiedShape for SCylinder {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for SCylinder {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>{
+        Box::new(self.clone())
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let dir = self.paxi_dir.normalize();
@@ -160,7 +175,7 @@ impl BrepShapeTrait for SCylinder {
         None
     }
 
-    fn hash_mesh_params(&self) -> u64{
+    fn hash_unit_mesh_params(&self) -> u64{
         if self.phei < 0.0 {
             102u64
         }else{
@@ -168,8 +183,11 @@ impl BrepShapeTrait for SCylinder {
         }
     }
 
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(Self::default())
+    }
 
-    fn gen_unit_shape(&self) -> PdmsMesh{
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
         SCylinder::default().gen_mesh(Some(0.01))
     }
 
