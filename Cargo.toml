@@ -21,7 +21,6 @@ memchr = "2.5.0"
 nom = "7.1.1"
 nom-derive = "0.10.0"
 itertools = "0.10.1"
-skytable = "0.7.0"
 flate2 = "1.0.24"
 lazy_static = "1.4.0"
 smallvec = "1.8.0"
@@ -33,10 +32,10 @@ phf = { version = "0.10.1", features = ["macros"] }
 derivative = "2.2.0"
 
 
-bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
-#bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-#bevy_egui = { path = "../bevy_egui" }
+#bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+#bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
+bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy_egui = { path = "../bevy_egui" }
 
 serde-name = "0.1.1"
 serde = { version = "1.0.133", features = ["derive"] }
@@ -55,6 +54,5 @@ truck-polymesh = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.gi
 truck-topology = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
 truck-modeling = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
 truck-meshalgo = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-platform = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-rendimpl = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+
 
