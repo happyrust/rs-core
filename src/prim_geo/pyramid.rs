@@ -44,6 +44,7 @@ pub struct Pyramid {
     pub pcof: f32,  // y offset
 }
 
+
 impl Default for Pyramid {
     fn default() -> Self {
         Self {
@@ -72,8 +73,14 @@ impl VerifiedShape for Pyramid {
     fn check_valid(&self) -> bool { true }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for Pyramid {
-    fn hash_mesh_params(&self) -> u64 {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64 {
         let bytes = bincode::serialize(self).unwrap();
         let mut hasher = DefaultHasher::default();
         bytes.hash(&mut hasher);
@@ -82,7 +89,7 @@ impl BrepShapeTrait for Pyramid {
     }
 
     //暂时不做可拉伸
-    fn gen_unit_shape(&self) -> PdmsMesh {
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
         self.gen_mesh(None)
     }
 
@@ -146,6 +153,10 @@ impl BrepShapeTrait for Pyramid {
         shell.push(builder::homotopy(&ebs[2], &ets[2]));
         shell.push(builder::homotopy(&ebs[3], &ets[3]));
         Some(shell)
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
     }
 }
 

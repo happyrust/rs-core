@@ -215,7 +215,11 @@ impl VerifiedShape for Extrusion {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for Extrusion {
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         if self.verts.len() < 3 {
@@ -264,7 +268,7 @@ impl BrepShapeTrait for Extrusion {
     }
 
 
-    fn hash_mesh_params(&self) -> u64 {
+    fn hash_unit_mesh_params(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
         self.verts.iter().for_each(|v| {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
@@ -276,7 +280,7 @@ impl BrepShapeTrait for Extrusion {
         hasher.finish()
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh {
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let unit = Self {
             verts: self.verts.clone(),
             height: 100.0,   //开放一点大小，不然三角化出来的不对
@@ -284,7 +288,11 @@ impl BrepShapeTrait for Extrusion {
             cur_type: self.cur_type.clone(),
             ..default()
         };
-        unit.gen_mesh(Some(TRI_TOL))
+        Box::new(unit)
+    }
+
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+        self.gen_unit_shape().gen_mesh(Some(TRI_TOL/10.0))
     }
 
 

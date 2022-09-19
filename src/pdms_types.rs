@@ -27,6 +27,7 @@ use serde::{Deserialize, Serialize};
 use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
+use truck_modeling::Shell;
 
 use crate::BHashMap;
 use crate::consts::*;
@@ -1638,12 +1639,20 @@ impl DerefMut for ShapeInstancesMgr {
 
 pub type GeoHash = u64;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct CachedMeshesMgr {
     pub meshes: DashMap<GeoHash, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
 impl CachedMeshesMgr {
+
+    pub fn get_shell(&self, mesh_hash: &u64) -> Option<Shell> {
+        if let Some(cached_msh) = self.get_mesh(mesh_hash) {
+            return Some(cached_msh.unit_shape.clone());
+        }
+        None
+    }
+
     /// 获得对应的bevy 三角模型和线框模型
     pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Aabb)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
@@ -1659,10 +1668,11 @@ impl CachedMeshesMgr {
 
     //get the mesh index, if not exist, try to create and insert, and return index
     pub fn get_pdms_mesh_hash_key(&self, m: Box<dyn BrepShapeTrait>) -> u64 {
-        let hash = m.hash_mesh_params();
+        let hash = m.hash_unit_mesh_params();
         if !self.meshes.contains_key(&hash) {
-            let mesh = m.gen_unit_shape();
-            self.meshes.insert(hash, mesh);
+            if let Some(mesh) = m.gen_unit_mesh(){
+                self.meshes.insert(hash, mesh);
+            }
         }
         hash
     }

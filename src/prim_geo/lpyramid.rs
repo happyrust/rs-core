@@ -41,6 +41,7 @@ pub struct LPyramid {
     pub pcof: f32,  // y offset
 }
 
+
 impl Default for LPyramid {
     fn default() -> Self {
         Self {
@@ -66,22 +67,11 @@ impl VerifiedShape for LPyramid {
     fn check_valid(&self) -> bool { true }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for LPyramid {
-    fn hash_mesh_params(&self) -> u64 {
-        let bytes = bincode::serialize(self).unwrap();
-        let mut hasher = DefaultHasher::default();
-        bytes.hash(&mut hasher);
-        "LPyramid".hash(&mut hasher);
-        hasher.finish()
-    }
 
-    //暂时不做可拉伸
-    fn gen_unit_shape(&self) -> PdmsMesh {
-        self.gen_mesh(None)
-    }
-
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::ONE
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
     }
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
@@ -181,6 +171,28 @@ impl BrepShapeTrait for LPyramid {
         }
 
         Some(shell)
+    }
+
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        let bytes = bincode::serialize(self).unwrap();
+        let mut hasher = DefaultHasher::default();
+        bytes.hash(&mut hasher);
+        "LPyramid".hash(&mut hasher);
+        hasher.finish()
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    //暂时不做可拉伸
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+        self.gen_mesh(None)
+    }
+
+    fn get_scaled_vec3(&self) -> Vec3 {
+        Vec3::ONE
     }
 }
 

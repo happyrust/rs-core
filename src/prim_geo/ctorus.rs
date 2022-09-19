@@ -7,6 +7,7 @@ use truck_modeling::{builder, Shell};
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
+use bevy::reflect::erased_serde::{Error, Serializer};
 use crate::tool::hash_tool::*;
 use nalgebra_glm::normalize;
 use serde::{Serialize,Deserialize};
@@ -73,7 +74,12 @@ impl VerifiedShape for SCTorus {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for SCTorus {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
 
     fn gen_brep_shell(& self) -> Option<Shell> {
         use truck_modeling::*;
@@ -96,6 +102,10 @@ impl BrepShapeTrait for SCTorus {
         }
         None
     }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
 }
 
 impl From<AttrMap> for SCTorus {
@@ -104,7 +114,7 @@ impl From<AttrMap> for SCTorus {
     }
 }
 
-#[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect)]
+#[derive(Component, Debug, Clone,  Reflect, Serialize, Deserialize)]
 pub struct CTorus {
     pub rins: f32,   //内圆半径
     pub rout: f32,  //外圆半径
@@ -127,8 +137,14 @@ impl VerifiedShape for CTorus {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for CTorus {
-    fn gen_brep_shell(& self) -> Option<Shell> {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>{
+        Box::new(self.clone())
+    }
+
+    fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let radius = ((self.rout - self.rins) /2.0) as f64;
         if radius <= 0.0 { return None; }
@@ -148,7 +164,8 @@ impl BrepShapeTrait for CTorus {
         None
     }
 
-    fn hash_mesh_params(&self) -> u64{
+
+    fn hash_unit_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
         hash_f32((self.rins / self.rout), &mut hasher);
         hash_f32(self.angle, &mut hasher);
@@ -156,14 +173,18 @@ impl BrepShapeTrait for CTorus {
         hasher.finish()
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh{
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let rins = self.rins / self.rout;
         let unit = Self{
             rins,
             rout: 1.0,
             angle: self.angle
         };
-        unit.gen_mesh(Some(TRI_TOL/5.0))
+        Box::new(unit)
+    }
+
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
+       self.gen_unit_shape().gen_mesh(Some(TRI_TOL/5.0))
     }
 
     #[inline]

@@ -9,12 +9,13 @@ use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use crate::pdms_types::AttrMap;
+use serde::{Serialize, Deserialize};
 
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
-#[derive(Component, Debug, Clone,  Reflect)]
+#[derive(Component, Debug, Clone,  Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
 pub struct SRTorus {
     pub paax_expr: String,
@@ -90,7 +91,12 @@ impl VerifiedShape for SRTorus {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for SRTorus {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
 
     fn gen_brep_shell(& self) -> Option<Shell> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt){
@@ -112,6 +118,10 @@ impl BrepShapeTrait for SRTorus {
         }
         None
     }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
 }
 
 impl From<AttrMap> for SRTorus {
@@ -120,7 +130,7 @@ impl From<AttrMap> for SRTorus {
     }
 }
 
-#[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect)]
+#[derive(Component, Debug, Clone,  Reflect, Serialize, Deserialize)]
 pub struct RTorus {
     pub rins: f32,   //内圆半径
     pub rout: f32,  //外圆半径
@@ -146,9 +156,14 @@ impl VerifiedShape for RTorus {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for RTorus {
 
-    fn hash_mesh_params(&self) -> u64{
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
         hash_f32((self.rins / self.rout), &mut hasher);
         hash_f32(self.angle, &mut hasher);
@@ -156,15 +171,8 @@ impl BrepShapeTrait for RTorus {
         hasher.finish()
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh{
-        let rins = self.rins / self.rout;
-        let unit = Self{
-            rins,
-            rout: 1.0,
-            height: 1.0,
-            angle: self.angle
-        };
-        unit.gen_mesh(Some(TRI_TOL))
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
+        self.gen_unit_shape().gen_mesh(Some(TRI_TOL))
     }
 
     #[inline]
@@ -185,6 +193,17 @@ impl BrepShapeTrait for RTorus {
         let mut solid = builder::rsweep(&f, Point3::new(0.0, 0.0, 0.0),
                                         Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
         return solid.pop();
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        let rins = self.rins / self.rout;
+        let unit = Self{
+            rins,
+            rout: 1.0,
+            height: 1.0,
+            angle: self.angle
+        };
+        Box::new(unit)
     }
 }
 

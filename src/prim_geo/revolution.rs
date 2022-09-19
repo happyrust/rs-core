@@ -10,12 +10,13 @@ use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
 use crate::pdms_types::AttrMap;
+use serde::{Serialize, Deserialize};
 
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
-#[derive(Component, Debug,  Clone,  Reflect)]
+#[derive(Component, Debug,  Clone,  Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
 pub struct Revolution {
     pub verts: Vec<Vec3>, //loop vertex
@@ -43,7 +44,13 @@ impl VerifiedShape for Revolution {
     }
 }
 
+#[typetag::serde]
 impl BrepShapeTrait for Revolution {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
 
@@ -77,7 +84,7 @@ impl BrepShapeTrait for Revolution {
         None
     }
 
-    fn hash_mesh_params(&self) -> u64{
+    fn hash_unit_mesh_params(&self) -> u64{
         let mut hasher = DefaultHasher::new();
         self.verts.iter().for_each(|v|  {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
@@ -87,7 +94,11 @@ impl BrepShapeTrait for Revolution {
         hasher.finish()
     }
 
-    fn gen_unit_shape(&self) -> PdmsMesh{
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
         self.gen_mesh(None)
     }
     fn get_scaled_vec3(&self) -> Vec3{
