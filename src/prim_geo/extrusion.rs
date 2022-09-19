@@ -117,20 +117,24 @@ impl Extrusion {
         };
         let mut pre_vert = origin_vert.clone();
         //从下一个点开始
-        for i in 1..=ll {
-            let cur_pt = &new_verts[i % ll];
-            //如果点重合了，需要跳过
-            if pre_vert.get_point().vec3().distance(*cur_pt) <= 0.01 {
-                continue;
-            }
+        let mut i =1;
+        while i <= ll {
             let fradius = self.fradius_vec[i % ll];
+
             if abs_diff_eq!(fradius, 0.0) {
+                let cur_pt = &new_verts[i % ll];
                 let cur_vert = if i != ll { builder::vertex(cur_pt.point3()) } else { origin_vert.clone() };
+                i += 1;
+                //如果点重合了，需要跳过
+                if pre_vert.get_point().vec3().distance(*cur_pt) <= 0.01 {
+                    continue;
+                }
                 if pre_vert.get_point().distance(cur_vert.get_point()) > 0.01 {
                     wire.push_back(builder::line(&pre_vert, &cur_vert));
                     pre_vert = cur_vert.clone();
                 }
             } else {
+                // dbg!(i);
                 let r = fradius;
                 let pre_i = i - 1;
                 let n_i = (i + 1) % ll;
@@ -143,47 +147,38 @@ impl Extrusion {
                 let b_dir = (next_pt - cur_pt).normalize();
                 let angle = a_dir.angle_between(b_dir) / 2.0;
                 let b_len = r / angle.tan();
-
-                if b_len - pa_dist.min(pb_dist) > 0.01 {
-                    let cur_vert = if i != ll { builder::vertex(cur_pt.point3()) } else { origin_vert.clone() };
-                    wire.push_back(builder::line(&pre_vert, &cur_vert));
-                    pre_vert = cur_vert.clone();
-                    continue;
-                }
-                let paax_pt = cur_pt + a_dir * b_len;
-                let pbax_pt = cur_pt + b_dir * b_len;
-
-                let mut t_va = pre_vert.clone();
-                let mut va = builder::vertex(paax_pt.point3());
-                let mut t_vb = builder::vertex(pbax_pt.point3());
-
-                if paax_pt.distance(pre_vert.get_point().vec3()) >= 0.01 {
-                    t_va = va.clone();
-                    wire.push_back(builder::line(&pre_vert, &t_va));
-                }
-
-                let origin_dist = pbax_pt.distance(origin_vert.get_point().vec3());
-                if origin_dist < 0.01 {
-                    t_vb = origin_vert.clone();
-                }
+                // dbg!(b_len);
+                // dbg!(r);
 
                 let h = r * angle.sin();
                 let d = r - h;
-                let mid_pt = (pbax_pt + paax_pt) / 2.0;
+                let p0 = cur_pt  + a_dir * b_len;
+                let p1 = cur_pt  + b_dir * b_len;
+                let mid_pt = (p0 + p1) / 2.0;
                 let mid_dir = (cur_pt - mid_pt).normalize();
                 let transit_pt = mid_pt + mid_dir * d;
+                let transit_vert = builder::vertex(transit_pt.point3());
 
-                wire.push_back(builder::circle_arc(&t_va, &t_vb, transit_pt.point3()));
-                //提前结束
-                if origin_dist < 0.01 {
-                    break;
+                let mut v_prev_to_cur = pre_vert.clone();
+                if pa_dist - b_len > 0.01 {
+
+                    v_prev_to_cur = builder::vertex(p0.point3());
+                    wire.push_back(builder::line(&pre_vert, &v_prev_to_cur));
+                    // dbg!(p0);
                 }
-                if i == ll {
-                    if origin_dist >= 0.01 {
-                        wire.push_back(builder::line(&t_vb, &origin_vert));
-                    }
+
+                let next_vert = builder::vertex(next_pt.point3());
+                let mut v_cur_to_next = next_vert.clone();
+                if pb_dist - b_len > 0.01 {
+                    v_cur_to_next = builder::vertex(p1.point3());
+                    wire.push_back(builder::line(&v_cur_to_next, &next_vert));
+                    // dbg!(p1);
                 }
-                pre_vert = t_vb.clone();
+
+                wire.push_back(builder::circle_arc(&v_prev_to_cur, &v_cur_to_next, transit_pt.point3()));
+
+                pre_vert = next_vert.clone();
+                i += 2;
             }
         }
 
