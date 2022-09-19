@@ -2,6 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
+use approx::abs_diff_eq;
 
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::pbr::LightEntity::Point;
@@ -52,8 +53,6 @@ impl SctnSolid {
         let v4 = builder::vertex(p4.point3());
 
         let mut z_axis = self.plane_normal;
-        //try to make it as ellipse wire
-
         let mut wire = Wire::from(vec![
             builder::line(&v1, &v2),
             builder::circle_arc_with_center(center_pt,
@@ -111,7 +110,6 @@ impl SctnSolid {
         ]).inverse();
 
         let mat0 = Matrix4::from_translation(-center_pt.to_vec());
-        // y_axis_scale = 5.0;
         let mat1 = Matrix4::from_nonuniform_scale(1.0, y_axis_scale, 1.0);
         let mat2 = Matrix4::from_angle_z(Rad(z_angle as f64));
         let mat3 = Matrix4::from_translation(center_pt.to_vec());
@@ -128,7 +126,9 @@ impl SctnSolid {
         None
     }
 
-    fn cal_spro_face(&self, is_btm: bool, profile: &SProfileData, circle: Option<Circle2D>) -> Option<Face> {
+    ///计算SPRO的face
+    /// start_vec 为起始方向
+    fn cal_spro_face(&self, is_btm: bool, profile: &SProfileData, start_vec: Vec3, circle: Option<Circle2D>) -> Option<Face> {
         let n = if is_btm { self.drns } else { self.drne };
         let h = if is_btm { 0.0 } else { self.height };
         let verts = &profile.verts;
@@ -137,47 +137,38 @@ impl SctnSolid {
         let mut edges = vec![];
         let mut extrude = Vec3::Z;
         let mut offset_pt = Vec3::ZERO;
-        let mut rot = Quat::from_rotation_arc(Vec3::Z, self.plane_normal);
+        let mut rot = Quat::IDENTITY;
+        let mut local_rot = Quat::IDENTITY;
+        let mut angle = 0.0f32;
         if circle.is_some() {
-            offset_pt.x = circle.unwrap().r;
+            let circle = circle.as_ref().unwrap();
+            let mut delta_vec = Vec2::new(verts[1][0], verts[1][1]) - Vec2::new(verts[0][0], verts[0][1]);
+            if abs_diff_eq!(delta_vec.dot(Vec2::X), 0.0) {
+                delta_vec = Vec2::new(verts[2][0], verts[2][1]) - Vec2::new(verts[1][0], verts[1][1])
+            }
+            dbg!(circle.clock_wise);
+            if circle.clock_wise {
+                offset_pt.x = circle.r - profile.plin_pos.x;
+            }else{
+                offset_pt.x = circle.r - delta_vec.length() + profile.plin_pos.x;
+            }
+            angle = start_vec.angle_between(Vec3::X);
+            // dbg!(angle);
             extrude = self.plane_normal;
-            // let rot = Quat::from_rotation_arc(Vec3::Z, self.plane_normal);
-            // let p0 = rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1],h) + offset_pt);
-            // extrude = self.plane_normal;
-            // let mut v0 = builder::vertex(p0.point3());
-            // let mut prev_v0 = v0.clone();
-            //
-            // for i in 1..len {
-            //     let p = rot.mul_vec3(Vec3::new(verts[i][0], verts[i][1],h) + offset_pt);
-            //     let next_v = builder::vertex(p.point3());
-            //     edges.push(builder::line(&prev_v0, &next_v));
-            //     prev_v0 = next_v.clone();
-            // }
-            // let last_v = edges.last().unwrap().back();
-            // edges.push(builder::line(last_v, &v0));
-        } else {
-            rot = Quat::IDENTITY;
+            rot = Quat::from_rotation_arc(self.plane_normal, Vec3::Z);
+            local_rot = Quat::from_rotation_z(angle);
+        }else{
+            offset_pt.x = profile.plin_pos.x;
         }
-        // else{
-        //     let mut v0 = builder::vertex(Point3::new(verts[0][0] as f64, verts[0][1] as f64,h as f64));
-        //     let mut prev_v0 = v0.clone();
-        //     for i in 1..len {
-        //         let next_v = builder::vertex(Point3::new(verts[i][0] as f64, verts[i][1] as f64,h as f64));
-        //         edges.push(builder::line(&prev_v0, &next_v));
-        //         prev_v0 = next_v.clone();
-        //     }
-        //     let last_v = edges.last().unwrap().back();
-        //     edges.push(builder::line(last_v, &v0));
-        // }
-
-
-        let p0 = rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1], h) + offset_pt);
+        offset_pt.y = profile.plin_pos.y;
+        dbg!(&offset_pt);
+        let p0 = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1], h) + offset_pt));
 
         let mut v0 = builder::vertex(p0.point3());
         let mut prev_v0 = v0.clone();
 
         for i in 1..len {
-            let p = rot.mul_vec3(Vec3::new(verts[i][0], verts[i][1], h) + offset_pt);
+            let p = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[i][0], verts[i][1], h) + offset_pt));
             let next_v = builder::vertex(p.point3());
             edges.push(builder::line(&prev_v0, &next_v));
             prev_v0 = next_v.clone();
@@ -186,7 +177,6 @@ impl SctnSolid {
         edges.push(builder::line(last_v, &v0));
 
         let wire = edges.into();
-        // dbg!(&extrude);
         // dbg!(&wire);
         // dbg!(extrude);
         if let Ok(mut f) = try_attach_plane(&[wire]) {
@@ -196,6 +186,10 @@ impl SctnSolid {
                     if plane.normal().dot(extrude.vector3()) < 0.0 {
                         f = f.inverse();
                     }
+                } else {
+                    // if plane.normal().dot(extrude.vector3()) > 0.0  {
+                    f = f.inverse();
+                    // }
                 }
             }
             return Some(f);
@@ -227,7 +221,6 @@ impl VerifiedShape for SctnSolid {
 
 #[typetag::serde]
 impl BrepShapeTrait for SctnSolid {
-
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -239,17 +232,20 @@ impl BrepShapeTrait for SctnSolid {
         let mut face_s = None;
         // let mut face_e = None;
         let mut circle = None;
+        let mut start_vec = Vec3::X;
+        // dbg!(&self.arc_path);
         if let Some((p1, p2, p3)) = self.arc_path {
             let c = Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y));
             circle = Some(c);
+            if p1.length() > EPSILON {
+                start_vec = p1.normalize();
+            }
         }
         // dbg!(&circle);
         let mut is_sann = false;
         match &self.profile {
             //需要用切面去切出相交的face
             CateProfileParam::SANN(p) => {
-
-                // dbg!(&p);
                 let w = p.pwidth;
                 let r = p.pradius;
                 let r1 = r - w;
@@ -266,7 +262,7 @@ impl BrepShapeTrait for SctnSolid {
                 is_sann = true;
             }
             CateProfileParam::SPRO(p) => {
-                face_s = self.cal_spro_face(true, p, circle.clone());
+                face_s = self.cal_spro_face(true, p, start_vec, circle.clone());
                 // if self.arc_path.is_none() {
                 //     face_e = self.cal_spro_face(false, p).map(|x| x.inverse());
                 // }
@@ -275,49 +271,45 @@ impl BrepShapeTrait for SctnSolid {
         }
 
         if let Some(face_s) = face_s {
-            {
-                // let mut faces = vec![];
-                return if let Some((p1, p2, p3)) = self.arc_path {
-                    let c = circle.unwrap_or_default();
-                    // dbg!(&c);
-                    let v1 = Vec2::new(p1.x, p1.y) - c.center;
-                    let v3 = Vec2::new(p3.x, p3.y) - c.center;
-                    let mut angle = v3.angle_between(v1);
-                    let mut rot_z = Vec3::Z;
-                    let tmp_axis = Vec3::new(v1.x, v1.y, 0.0).cross(Vec3::new(v3.x, v3.y, 0.0));
-                    if tmp_axis.dot(rot_z) > 0.0 {
-                        rot_z = Vec3::Z;
-                    }
-                    if angle < 0.0 {
-                        // rot_z = -Vec3::Z;
-                        angle = angle.abs();
-                    }
-                    // dbg!(angle.to_degrees());
-                    let solid = builder::rsweep(&face_s, Point3::new(c.center.x as f64, c.center.y as f64, 0.0),
-                                                rot_z.vector3(), Rad(angle as f64));
-                    Some(solid.into_boundaries().remove(0))
-                } else {
-
-                    //self.plane_normal.vector3()
-                    let solid = builder::tsweep(&face_s, Vec3::Z.vector3() * self.height as f64);
-                    Some(solid.into_boundaries().remove(0))
-                    // if let Some(face_e) = face_e {
-                    //     let edges_cnt = face_s.boundaries()[0].len();
-                    //
-                    //     //need to check if need inverse
-                    //     for i in 0..edges_cnt {
-                    //         let c1 = &face_s.boundaries()[0][i];
-                    //         let c2 = &face_e.boundaries()[0][edges_cnt - i - 1];
-                    //         faces.push(builder::homotopy(&c1.inverse(), c2));
-                    //     }
-                    //     faces.push(face_s);
-                    //     faces.push(face_e);
-                    //     Some(faces.into())
-                    // }else{
-                    //     None
-                    // }
-                };
-            }
+            return if let Some((p1, p2, p3)) = self.arc_path {
+                let c = circle.unwrap_or_default();
+                // dbg!(&c);
+                let v1 = Vec2::new(p1.x, p1.y) - c.center;
+                let v3 = Vec2::new(p3.x, p3.y) - c.center;
+                let mut angle = v3.angle_between(v1);
+                let mut rot_z = Vec3::Z;
+                let tmp_axis = Vec3::new(v1.x, v1.y, 0.0).cross(Vec3::new(v3.x, v3.y, 0.0));
+                if tmp_axis.dot(rot_z) > 0.0 {
+                    rot_z = Vec3::Z;
+                }
+                if angle < 0.0 {
+                    // rot_z = -Vec3::Z;
+                    angle = angle.abs();
+                }
+                // dbg!(&face_s);
+                // dbg!(rot_z);
+                let solid = builder::rsweep(&face_s, Point3::new(c.center.x as f64, c.center.y as f64, 0.0),
+                                            rot_z.vector3(), Rad(angle as f64));
+                Some(solid.into_boundaries().remove(0))
+            } else {
+                let solid = builder::tsweep(&face_s, Vec3::Z.vector3() * self.height as f64);
+                Some(solid.into_boundaries().remove(0))
+                // if let Some(face_e) = face_e {
+                //     let edges_cnt = face_s.boundaries()[0].len();
+                //
+                //     //need to check if need inverse
+                //     for i in 0..edges_cnt {
+                //         let c1 = &face_s.boundaries()[0][i];
+                //         let c2 = &face_e.boundaries()[0][edges_cnt - i - 1];
+                //         faces.push(builder::homotopy(&c1.inverse(), c2));
+                //     }
+                //     faces.push(face_s);
+                //     faces.push(face_e);
+                //     Some(faces.into())
+                // }else{
+                //     None
+                // }
+            };
         }
         None
     }
@@ -391,9 +383,6 @@ impl BrepShapeTrait for SctnSolid {
                     };
                 } else {
                     return TransformSRT {
-                        // rotation: Quat::from_rotation_arc(Vec3::Z,  self.plane_normal),
-
-                        // rotation: Quat::from_rotation_arc(Vec3::X, self.extrude_dir),
                         rotation: Quat::IDENTITY,
                         scale: self.get_scaled_vec3(),
                         translation: Vec3::ZERO,

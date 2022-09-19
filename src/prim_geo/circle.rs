@@ -5,6 +5,7 @@ use crate::tool::float_tool::f32_round_3;
 pub struct Circle2D {
     pub center: Vec2,
     pub r: f32,
+    pub clock_wise: bool,
 }
 
 impl Circle2D {
@@ -31,7 +32,20 @@ impl Circle2D {
         let y = -c / (2. * a);
         let r = ((b * b + c * c - 4. * a * d) / (4. * a * a)).sqrt();
 
-        Circle2D { center: Vec2::new(f32_round_3(x), f32_round_3(y)), r: f32_round_3(r) }
+
+        let kj = (*k - *j).normalize_or_zero();
+        let lj = (*l - *j).normalize_or_zero();
+        // dbg!(kj);
+        // dbg!(lj);
+        let v1 = Vec3::new(kj.x, kj.y, 0.0);
+        let v2 = Vec3::new(lj.x, lj.y, 0.0);
+        let v = v1.cross(v2).normalize_or_zero();
+        // dbg!(v);
+
+        let clock_wise =  v.dot(Vec3::Z) < 0.0;
+
+
+        Circle2D { center: Vec2::new(f32_round_3(x), f32_round_3(y)), r: f32_round_3(r), clock_wise }
     }
 
     /// Returns a Circle based on two points (segment is diameter)
@@ -39,6 +53,6 @@ impl Circle2D {
         let x = (j.x - k.x) / 2. + k.x;
         let y = (j.y - k.y) / 2. + k.y;
         let r = ((j.x - k.x) * (j.x - k.x) + (j.y - k.y) * (j.y - k.y)).sqrt() / 2.;
-        Circle2D { center: Vec2::new(f32_round_3(x), f32_round_3(y)), r: f32_round_3(r) }
+        Circle2D { center: Vec2::new(f32_round_3(x), f32_round_3(y)), r: f32_round_3(r), clock_wise: false }
     }
 }
