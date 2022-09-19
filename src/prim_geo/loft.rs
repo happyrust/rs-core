@@ -239,6 +239,7 @@ impl BrepShapeTrait for SctnSolid {
         let mut face_s = None;
         // let mut face_e = None;
         let mut circle = None;
+        dbg!(&self.arc_path);
         if let Some((p1, p2, p3)) = self.arc_path {
             let c = Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y));
             circle = Some(c);

@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, HashMap};
+use std::collections::hash_map::DefaultHasher;
 use std::default::Default;
 use std::fmt;
 use std::fmt::{Debug, Formatter, Pointer};
@@ -19,7 +20,7 @@ use bevy::render::primitives::Aabb;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
-use hash32::Hasher;
+use hash32::{Hash, Hasher};
 use hash32_derive::Hash32;
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
@@ -321,6 +322,14 @@ impl RefU64 {
         let strs = refno.as_str().split('_').collect::<Vec<_>>();
         if strs.len() < 2 { return None; }
         Some(RefU64::from_two_nums(strs[0].parse().unwrap(), strs[1].parse().unwrap()))
+    }
+
+    #[inline]
+    pub fn hash_with_another_refno(&self, another_refno: RefU64) -> u64 {
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        std::hash::Hash::hash(&self.0,&mut hash);
+        std::hash::Hash::hash(&another_refno.0,&mut hash);
+        std::hash::Hasher::finish(&hash)
     }
 }
 
@@ -1822,7 +1831,7 @@ pub struct ChildrenNode {
     pub noun: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq)]
 pub struct PdmsElement {
     pub refno: String,
     pub owner: RefU64,
