@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use dashmap::{DashMap, DashSet};
@@ -21,6 +21,14 @@ pub struct ScomInfo {
     pub axis_params: Vec<AxisParam>,
     pub params: SmolStr,
     pub axis_param_numbers: Vec<i32>,
+    pub plin_map: HashMap<String, PlinParam>,
+}
+
+#[derive(Clone, Debug)]
+pub struct PlinParam{
+    pub vxy: [String; 2],
+    pub dxy: [String; 2],
+    pub plax: String,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -65,10 +73,9 @@ pub struct GmParam {
     pub box_lengths: Vec<SmolStr>,
     pub xyz: Vec<SmolStr>,
 
-    // pub profile:
-    //profile  SPVE   SANN(PX, PY)
+    /// profile  SPVE   SANN(PX, PY)
     pub verts: Vec<[SmolStr; 3]>,
-    //SANN: dx dy dradius dwidth
+    /// SANN: dx dy dradius dwidth
     pub dxy: Vec<[SmolStr; 2]>,
     pub drad: SmolStr,
     pub dwid: SmolStr,

@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use bevy::utils::HashMap;
 use dashmap::DashMap;
 use glam::{Vec2, Vec3};
 use serde_derive::{Deserialize, Serialize};
@@ -88,6 +89,10 @@ pub struct GmseParamData {
     /// SLOO里的点的Fillet radius
     pub prads: Vec<f32>,
     pub prad: f32,
+
+    /// plin 数据
+    pub plin_verts: Vec2,
+    pub plin_plax: Vec3,
 }
 
 
@@ -96,8 +101,8 @@ pub struct GmseParamData {
 pub struct CateAxisParam {
     pub refno: RefU64,
     pub number: i32,
-    pub pt: [f32; 3],
-    pub dir: [f32; 3],
+    pub pt: Vec3,
+    pub dir: Vec3,
     pub pbore: f32,
     pub pconnect: String,
 }
@@ -213,6 +218,8 @@ pub struct SannData {
 pub struct SProfileData {
     pub verts: Vec<[f32; 3]>,
     pub normal_axis: Vec3,
+    pub plin_pos: Vec2,
+    pub plin_axis: Vec3,
 }
 
 //截面的处理，还需要旋转自身的平面
