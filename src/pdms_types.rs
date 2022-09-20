@@ -29,6 +29,7 @@ use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use truck_modeling::Shell;
+use derive_more::{Deref,DerefMut};
 
 use crate::BHashMap;
 use crate::consts::*;
