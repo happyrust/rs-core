@@ -12,7 +12,7 @@ use lazy_static::lazy_static;
 use crate::pdms_types::PdmsDatabaseInfo;
 
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ScomInfo {
     pub attr_map: AttrMap,
     pub gtype: SmolStr,
@@ -24,14 +24,32 @@ pub struct ScomInfo {
     pub plin_map: HashMap<String, PlinParam>,
 }
 
-#[derive(Clone, Debug)]
+impl Into<sled::IVec> for ScomInfo {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(&self).unwrap().into()
+    }
+}
+
+impl Into<sled::IVec> for &ScomInfo {
+    fn into(self) -> sled::IVec {
+        bincode::serialize(self).unwrap().into()
+    }
+}
+
+impl From<sled::IVec> for ScomInfo {
+    fn from(d: sled::IVec) -> Self {
+        bincode::deserialize(&d).unwrap()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PlinParam{
     pub vxy: [String; 2],
     pub dxy: [String; 2],
     pub plax: String,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DatasetParamStr {
     pub refno: SmolStr,
     pub name: SmolStr,
@@ -53,7 +71,7 @@ pub struct DatasetParamStr {
 
 //还是要用枚举，来列举各个情况
 //GMSE GMSS
-#[derive(Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct GmParam {
     pub refno: RefU64,
     /// SCYL  LSNO  SCTO  SDSH  SBOX
@@ -83,10 +101,10 @@ pub struct GmParam {
     pub paxises: Vec<SmolStr>,
     pub centre_line_flag: bool,
     pub visible_flag: bool,
-    pub prads: Vec<SmolStr>,
+    pub frads: Vec<SmolStr>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AxisParam {
     pub refno: RefU64,
     pub type_name: SmolStr,

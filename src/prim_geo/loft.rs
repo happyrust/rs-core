@@ -17,6 +17,7 @@ use truck_modeling::builder::try_attach_plane;
 use crate::parsed_data::{CateProfileParam, SProfileData};
 use crate::prim_geo::circle::Circle2D;
 use crate::prim_geo::helper::cal_ref_axis;
+use crate::prim_geo::wire;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_vec3;
 
@@ -129,12 +130,12 @@ impl SctnSolid {
     ///计算SPRO的face
     /// start_vec 为起始方向
     fn cal_spro_face(&self, is_btm: bool, profile: &SProfileData, start_vec: Vec3, circle: Option<Circle2D>) -> Option<Face> {
+        // dbg!(profile);
         let n = if is_btm { self.drns } else { self.drne };
         let h = if is_btm { 0.0 } else { self.height };
         let verts = &profile.verts;
         let len = verts.len();
 
-        let mut edges = vec![];
         let mut extrude = Vec3::Z;
         let mut offset_pt = Vec3::ZERO;
         let mut rot = Quat::IDENTITY;
@@ -142,6 +143,7 @@ impl SctnSolid {
         let mut angle = 0.0f32;
         if circle.is_some() {
             let circle = circle.as_ref().unwrap();
+            //todo 需要确定哪个边是x轴的
             let mut delta_vec = Vec2::new(verts[1][0], verts[1][1]) - Vec2::new(verts[0][0], verts[0][1]);
             if abs_diff_eq!(delta_vec.dot(Vec2::X), 0.0) {
                 delta_vec = Vec2::new(verts[2][0], verts[2][1]) - Vec2::new(verts[1][0], verts[1][1])
@@ -149,7 +151,7 @@ impl SctnSolid {
             dbg!(circle.clock_wise);
             if circle.clock_wise {
                 offset_pt.x = circle.r - profile.plin_pos.x;
-            }else{
+            } else {
                 offset_pt.x = circle.r - delta_vec.length() + profile.plin_pos.x;
             }
             angle = start_vec.angle_between(Vec3::X);
@@ -157,38 +159,42 @@ impl SctnSolid {
             extrude = self.plane_normal;
             rot = Quat::from_rotation_arc(self.plane_normal, Vec3::Z);
             local_rot = Quat::from_rotation_z(angle);
-        }else{
-            offset_pt.x = profile.plin_pos.x;
+        } else {
+            offset_pt.x = -profile.plin_pos.x;
         }
-        offset_pt.y = profile.plin_pos.y;
-        dbg!(&offset_pt);
-        let p0 = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1], h) + offset_pt));
+        offset_pt.y = -profile.plin_pos.y;
+        // dbg!(&offset_pt);
+        // let p0 = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1], h) + offset_pt));
 
-        let mut v0 = builder::vertex(p0.point3());
-        let mut prev_v0 = v0.clone();
+        // let mut v0 = builder::vertex(p0.point3());
+        // let mut prev_v0 = v0.clone();
+        let mut points = vec![];
 
-        for i in 1..len {
+        for i in 0..len {
             let p = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[i][0], verts[i][1], h) + offset_pt));
-            let next_v = builder::vertex(p.point3());
-            edges.push(builder::line(&prev_v0, &next_v));
-            prev_v0 = next_v.clone();
+            points.push(p);
+            // let next_v = builder::vertex(p.point3());
+            // edges.push(builder::line(&prev_v0, &next_v));
+            // prev_v0 = next_v.clone();
         }
-        let last_v = edges.last().unwrap().back();
-        edges.push(builder::line(last_v, &v0));
+        // let last_v = edges.last().unwrap().back();
+        // edges.push(builder::line(last_v, &v0));
 
-        let wire = edges.into();
+        let wire = wire::gen_wire(&points, &profile.frads).unwrap();
         // dbg!(&wire);
         // dbg!(extrude);
         if let Ok(mut f) = try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = f.get_surface() {
                 // dbg!(plane.normal());
                 if self.arc_path.is_none() {
-                    if plane.normal().dot(extrude.vector3()) < 0.0 {
+                    //默认底边，应该将法向量朝向Z的负方向
+                    if plane.normal().dot(extrude.vector3()) > 0.0 {
                         f = f.inverse();
                     }
                 } else {
+                    //如果是旋转边，就需要和旋转轴挂钩
                     // if plane.normal().dot(extrude.vector3()) > 0.0  {
-                    f = f.inverse();
+                        f = f.inverse();
                     // }
                 }
             }
@@ -270,7 +276,7 @@ impl BrepShapeTrait for SctnSolid {
             _ => {}
         }
 
-        if let Some(face_s) = face_s {
+        if let Some(mut face_s) = face_s {
             return if let Some((p1, p2, p3)) = self.arc_path {
                 let c = circle.unwrap_or_default();
                 // dbg!(&c);
@@ -292,23 +298,58 @@ impl BrepShapeTrait for SctnSolid {
                                             rot_z.vector3(), Rad(angle as f64));
                 Some(solid.into_boundaries().remove(0))
             } else {
-                let solid = builder::tsweep(&face_s, Vec3::Z.vector3() * self.height as f64);
-                Some(solid.into_boundaries().remove(0))
-                // if let Some(face_e) = face_e {
-                //     let edges_cnt = face_s.boundaries()[0].len();
-                //
-                //     //need to check if need inverse
-                //     for i in 0..edges_cnt {
-                //         let c1 = &face_s.boundaries()[0][i];
-                //         let c2 = &face_e.boundaries()[0][edges_cnt - i - 1];
-                //         faces.push(builder::homotopy(&c1.inverse(), c2));
+                let mut faces = vec![];
+                //face_s 旋转
+                dbg!(&self.drns);
+                if abs_diff_eq!(self.drns.length(), 0.0) &&  abs_diff_eq!(self.drne.length(), 0.0){
+
+                }else{
+
+                }
+
+                //先对face，按照drns、drne做偏移
+                // let s_angle = self.drns.angle_between(-Vec3::Z) as f64;
+                // //判断角度
+                // dbg!(s_angle.to_degrees());
+                // let s_angle = 0.0f64;
+                // let new_face_s = {
+                //     let wire = &face_s.boundaries()[0];
+                //     let mut new_v = vec![];
+                //     let mut new_wire = vec![];
+                //     for v in wire.vertex_iter() {
+                //         let p = v.get_point();
+                //         new_v.push(builder::vertex(Point3::new(p.x, p.y, p.y * s_angle.tan())));
                 //     }
-                //     faces.push(face_s);
-                //     faces.push(face_e);
-                //     Some(faces.into())
-                // }else{
-                //     None
-                // }
+                //     dbg!(&new_v);
+                //     let ll = new_v.len();
+                //     for i  in 0..ll {
+                //         new_wire.push(builder::line(&new_v[i], &new_v[(i+1)%ll] ));
+                //     }
+                //     try_attach_plane(&[new_wire.into()]).unwrap()
+                // };
+                    // face_s.mapped(
+                    //     move |p| {
+                    //         dbg!(p);
+                    //         // Vector3::new(p.x, p.y, p.y * s_angle.tan())
+                    //         Point3::new(p.x, p.y + 20.0, 0.0)
+                    //     },
+                    //     move |c| { c.clone() },
+                    //     move |s| { s.clone() },
+                    // );
+
+                let mut new_face_s = face_s.clone();
+                let mut new_face_e = builder::translated(&new_face_s, Vector3::new(0.0 as f64, 0.0 as f64, self.height as f64));
+                new_face_e = new_face_e.inverse();
+
+                let edges_cnt = new_face_s.boundaries()[0].len();
+                for i in 0..edges_cnt {
+                    let c1 = &new_face_s.boundaries()[0][i];
+                    let c2 = &new_face_e.boundaries()[0][edges_cnt - i - 1];
+                    faces.push(builder::homotopy(&c1.inverse(), c2));
+                }
+                faces.push(new_face_s);
+                faces.push(new_face_e);
+                Some(faces.into())
             };
         }
         None

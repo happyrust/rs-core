@@ -31,8 +31,6 @@ impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr
             name: name.to_string(),
             db: if save_to_sled{
                 sled::open(name).ok()
-                    // .open_tree(name).ok()
-                // CACHE_DB.open_tree(name)
             }else{
                 None
             },

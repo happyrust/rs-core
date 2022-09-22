@@ -403,7 +403,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
                 verts,
-                fradius_vec: d.prads.clone(),
+                fradius_vec: d.frads.clone(),
                 height: d.height,
                 ..default()
             });

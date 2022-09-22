@@ -954,7 +954,6 @@ impl AttrMap {
                 Some(data.to_vec())
             }
             _ => {
-                // Err(TypeNotCorrect(key.to_string(), "f64 vec".to_string()).into())
                 None
             }
         };
@@ -964,7 +963,6 @@ impl AttrMap {
         if let AttrVal::Vec3Type(d) = self.get_val(key)? {
             return Some(Vec3::new(d[0] as f32, d[1] as f32, d[2] as f32));
         }
-        // Err(TypeNotCorrect(key.to_string(), "Vec3Type".to_string()).into())
         None
     }
 
@@ -973,7 +971,6 @@ impl AttrMap {
             return Some(d.clone());
         }
         None
-        // Err(TypeNotCorrect(key.to_string(), "i32 vec".to_string()).into())
     }
 
     ///生成具有几何属性的element的shape

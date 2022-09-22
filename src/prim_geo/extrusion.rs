@@ -9,21 +9,15 @@ use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
 use nalgebra_glm::sin;
+use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
 
-
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
-use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
-use serde::{Serialize, Deserialize};
+use crate::prim_geo::wire::*;
+use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{hash_f32, hash_vec3};
-
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
-pub enum CurveType {
-    Fill,
-    Spline(f32),  //thick
-}
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub struct Extrusion {
@@ -31,166 +25,6 @@ pub struct Extrusion {
     pub fradius_vec: Vec<f32>,
     pub height: f32,
     pub cur_type: CurveType,
-}
-
-fn circus_center(pt0: Point3, pt1: Point3, pt2: Point3) -> Point3 {
-    let vec0 = pt1 - pt0;
-    let vec1 = pt2 - pt0;
-    let a2 = vec0.dot(vec0);
-    let ab = vec0.dot(vec1);
-    let b2 = vec1.dot(vec1);
-    let det = a2 * b2 - ab * ab;
-    let u = (b2 * a2 - ab * b2) / (2.0 * det);
-    let v = (-ab * a2 + b2 * a2) / (2.0 * det);
-    pt0 + u * vec0 + v * vec1
-}
-
-impl Extrusion {
-    //todo 实现Justline
-    pub fn gen_spline_wire(&self, mut new_verts: Vec<Vec3>, thick: f32) -> anyhow::Result<Wire> {
-        if new_verts.len() != 3 {
-            return Err(anyhow!("SPINE number is not 3".to_string()));   //先假定必须有三个
-        }
-
-        let pt0 = new_verts[0].point3();
-        let transit = new_verts[1].point3();
-        let pt1 = new_verts[2].point3();
-
-        let vec0 = (pt0 - transit).normalize();
-        let vec1 = (pt1 - transit).normalize();
-        let origin = circus_center(pt0, pt1, transit);
-        let mut angle = Rad(PI as f64) - vec0.angle(vec1);
-        let mut rot_axis = Vec3::Z;
-        if (vec0.cross(vec1)).dot(Vector3::unit_z()) > 0.0 {
-            rot_axis = -Vec3::Z;
-        }
-        let radius = origin.distance(pt0);
-
-        let v0 = (pt0 - origin).normalize();
-        let v1 = (pt1 - origin).normalize();
-
-        let half_thick = thick as f64 / 2.0;
-        let p0 = pt0 - v0 * half_thick;
-        let p1 = pt1 - v1 * half_thick;
-        let p2 = pt1 + v1 * half_thick;
-        let p3 = pt0 + v0 * half_thick;
-
-        let ver0 = builder::vertex(p0);
-        let ver1 = builder::vertex(p1);
-        let ver2 = builder::vertex(p2);
-        let ver3 = builder::vertex(p3);
-
-        let t_v = (transit - origin).normalize();
-        let t0 = transit - (half_thick * t_v);
-        let t1 = transit + (half_thick * t_v);
-
-        let wire = Wire::from([
-            builder::circle_arc(&ver0, &ver1, t0),
-            // builder::circle_arc_with_center(origin, &ver0, &ver1, rot_axis.vector3(), angle),
-            builder::line(&ver1, &ver2),
-            // builder::circle_arc_with_center(origin, &ver2, &ver3, -rot_axis.vector3(), angle),
-            builder::circle_arc(&ver2, &ver3, t1),
-            builder::line(&ver3, &ver0),
-        ]);
-
-        Ok(wire)
-    }
-
-    pub fn gen_wire(&self, mut new_verts: Vec<Vec3>) -> anyhow::Result<Wire> {
-        let mut wire = Wire::new();
-        let ll = new_verts.len();
-        let mut pre_radius = 0.0;
-        let mut i = 1;
-        let r = self.fradius_vec[0];
-        let origin_vert = if abs_diff_eq!(r, 0.0) {
-            builder::vertex(new_verts[0].point3())
-        } else {
-            let v = &new_verts;
-            let b_dir = (v[1] - v[0]).normalize();
-            let a_dir = (v[ll - 1] - v[0]).normalize();
-            let angle = a_dir.angle_between(b_dir) / 2.0;
-            if abs_diff_eq!(angle, 0.0) { return Err(anyhow!("fill的两个方向角度不能为0".to_string())); }
-            let b_len = r / angle.tan();
-            //dbg!(b_len);
-            let pbax_pt = v[0] + b_dir * b_len;
-            builder::vertex(pbax_pt.point3())
-        };
-        let mut pre_vert = origin_vert.clone();
-        //从下一个点开始
-        let mut i =1;
-        while i <= ll {
-            let fradius = self.fradius_vec[i % ll];
-
-            if abs_diff_eq!(fradius, 0.0) {
-                let cur_pt = &new_verts[i % ll];
-                let cur_vert = if i != ll { builder::vertex(cur_pt.point3()) } else { origin_vert.clone() };
-                i += 1;
-                //如果点重合了，需要跳过
-                if pre_vert.get_point().vec3().distance(*cur_pt) <= 0.01 {
-                    continue;
-                }
-                if pre_vert.get_point().distance(cur_vert.get_point()) > 0.01 {
-                    wire.push_back(builder::line(&pre_vert, &cur_vert));
-                    pre_vert = cur_vert.clone();
-                }
-            } else {
-                // dbg!(i);
-                let r = fradius;
-                let pre_i = i - 1;
-                let n_i = (i + 1) % ll;
-                let pre_pt = new_verts[pre_i];
-                let cur_pt = new_verts[i % ll];
-                let next_pt = new_verts[n_i];
-                let pa_dist = pre_pt.distance(cur_pt);
-                let pb_dist = next_pt.distance(cur_pt);
-                let a_dir = (pre_pt - cur_pt).normalize();
-                let b_dir = (next_pt - cur_pt).normalize();
-                let angle = a_dir.angle_between(b_dir) / 2.0;
-                let b_len = r / angle.tan();
-                // dbg!(b_len);
-                // dbg!(r);
-
-                let h = r * angle.sin();
-                let d = r - h;
-                let p0 = cur_pt  + a_dir * b_len;
-                let p1 = cur_pt  + b_dir * b_len;
-                let mid_pt = (p0 + p1) / 2.0;
-                let mid_dir = (cur_pt - mid_pt).normalize();
-                let transit_pt = mid_pt + mid_dir * d;
-                let transit_vert = builder::vertex(transit_pt.point3());
-
-                let mut v_prev_to_cur = pre_vert.clone();
-                if pa_dist - b_len > 0.01 {
-
-                    v_prev_to_cur = builder::vertex(p0.point3());
-                    wire.push_back(builder::line(&pre_vert, &v_prev_to_cur));
-                    // dbg!(p0);
-                }
-
-                let next_vert = builder::vertex(next_pt.point3());
-                let mut v_cur_to_next = next_vert.clone();
-                if pb_dist - b_len > 0.01 {
-                    v_cur_to_next = builder::vertex(p1.point3());
-                    wire.push_back(builder::line(&v_cur_to_next, &next_vert));
-                    // dbg!(p1);
-                }
-
-                wire.push_back(builder::circle_arc(&v_prev_to_cur, &v_cur_to_next, transit_pt.point3()));
-
-                pre_vert = next_vert.clone();
-                i += 2;
-            }
-        }
-
-        Ok(wire)
-    }
-}
-
-
-fn get_vec3_hash(v: &Vec3) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    hash_vec3::<DefaultHasher>(v, &mut hasher);
-    hasher.finish()
 }
 
 impl Default for Extrusion {
@@ -220,36 +54,15 @@ impl BrepShapeTrait for Extrusion {
         if self.verts.len() < 3 {
             return None;
         }
-        let mut new_verts = self.verts.iter().map(|v| {
-            Vec3::new(v.x, v.y, 0.0)
-        }).collect::<Vec<_>>();
-        let mut pre_hash = 0;
-        if get_vec3_hash(&new_verts[0]) == get_vec3_hash(new_verts.last().unwrap()) {
-            new_verts.remove(new_verts.len() - 1);
-        }
-        new_verts.retain(|x| {
-            let hash = get_vec3_hash(x);
-            let retain = pre_hash != hash;
-            pre_hash = hash;
-            retain
-        });
-        let ll = new_verts.len();
-        if ll < 3 {
-            return None;
-        }
-
         let mut wire = Wire::new();
         if let CurveType::Spline(thick) = self.cur_type {
-            wire = self.gen_spline_wire(new_verts, thick).ok()?;
+            wire = gen_spline_wire(&self.verts, thick).ok()?;
         } else {
-            wire = self.gen_wire(new_verts).ok()?;
+            wire = gen_wire(&self.verts, &self.fradius_vec).ok()?;
         };
-
-        // dbg!(&wire);
         if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
             if let Surface::Plane(plane) = face.get_surface() {
                 let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
-                // dbg!(&plane.normal());
                 if plane.normal().dot(extrude_dir) < 0.0 {
                     face = face.inverse();
                 }
@@ -287,7 +100,7 @@ impl BrepShapeTrait for Extrusion {
     }
 
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL/10.0))
+        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 10.0))
     }
 
 

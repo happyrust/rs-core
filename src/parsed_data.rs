@@ -86,8 +86,8 @@ pub struct GmseParamData {
     pub paxises: Vec<CateAxisParam>,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    /// SLOO里的点的Fillet radius
-    pub prads: Vec<f32>,
+    /// Fillet radius
+    pub frads: Vec<f32>,
     pub prad: f32,
 
     /// plin 数据
@@ -198,7 +198,7 @@ pub struct CateExtrusionParam {
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     pub refno: RefU64,
-    pub prads: Vec<f32>,
+    pub frads: Vec<f32>,
 }
 
 //structural annulus
@@ -217,6 +217,7 @@ pub struct SannData {
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct SProfileData {
     pub verts: Vec<[f32; 3]>,
+    pub frads: Vec<f32>,
     pub normal_axis: Vec3,
     pub plin_pos: Vec2,
     pub plin_axis: Vec3,
