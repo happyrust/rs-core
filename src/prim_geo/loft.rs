@@ -163,7 +163,7 @@ impl SctnSolid {
             offset_pt.x = -profile.plin_pos.x;
         }
         offset_pt.y = -profile.plin_pos.y;
-        // dbg!(&offset_pt);
+        dbg!(&offset_pt);
         // let p0 = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1], h) + offset_pt));
 
         // let mut v0 = builder::vertex(p0.point3());

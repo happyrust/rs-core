@@ -338,30 +338,31 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             );
             let rotation = Quat::from_mat3(&mat3);
 
-            let mut verts = vec![];
-            let offset_pt = Vec3::new(d.x, d.y, d.z);
+            // let mut verts = vec![];
+            let xyz_pt = Vec3::new(d.x, d.y, d.z);
+            dbg!(xyz_pt);
             let origin_pt = Vec3::from(pa.pt);
-            if d.verts.len() > 2 {
-                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0) + offset_pt;
-                verts.push(prev);
-                for vert in &d.verts[1..] {
-                    let p = Vec3::new(vert[0], vert[1], 0.0) + offset_pt;
-                    if p.distance(prev) > EPSILON{
-                        verts.push(p);
-                    }
-                }
-            }
-            if verts.len() <= 2{
+            dbg!(origin_pt);
+            // if d.verts.len() > 2 {
+            //     let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0);
+            //     verts.push(prev);
+            //     for vert in &d.verts[1..] {
+            //         let p = ;
+            //             verts.push(Vec3::new(vert[0], vert[1], 0.0));
+            //     }
+            // }
+            if d.verts.len() <= 2{
                 return None;
             }
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
-                verts,
+                verts: d.verts.clone(),
+                fradius_vec: d.frads.clone(),
                 angle: d.angle,
                 ..default()
             });
 
-            let translation =  rotation * Vec3::new(d.x, d.y, d.z) + origin_pt;
+            let translation = origin_pt + xyz_pt;
             let transform = TransformSRT {
                 rotation,
                 translation,

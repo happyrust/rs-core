@@ -176,23 +176,23 @@ impl PdmsMeshInstanceMgr {
         true
     }
 
-    pub fn deserialize_from_bin_file(mdb: &str) -> anyhow::Result<Self> {
-        let mut file = File::open(format!("PdmsMeshMgr_{}.bin", mdb))?;
+    pub fn deserialize_from_bin_file(file_path: &str) -> anyhow::Result<Self> {
+        let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
         let r = bincode::deserialize(buf.as_slice())?;
         Ok(r)
     }
 
-    pub fn serialize_to_json_file(&self) -> bool {
-        let mut file = File::create(format!("PdmsMeshMgr.json")).unwrap();
+    pub fn serialize_to_json_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
         let serialized = serde_json::to_string(&self).unwrap();
         file.write_all(serialized.as_bytes()).unwrap();
         true
     }
 
-    pub fn deserialize_from_json_file() -> anyhow::Result<Self> {
-        let mut file = File::open(format!("PdmsMeshMgr.json"))?;
+    pub fn deserialize_from_json_file(file_path: &str) -> anyhow::Result<Self> {
+        let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
         let r = serde_json::from_slice::<Self>(&buf)?;
@@ -279,10 +279,10 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 let a = aabb.mins;
                 let b = aabb.maxs;
 
-                let curves = brep
-                    .edge_iter()
-                    .map(|edge| edge.get_curve())
-                    .collect::<Vec<_>>();
+                // let curves = brep
+                //     .edge_iter()
+                //     .map(|edge| edge.get_curve())
+                //     .collect::<Vec<_>>();
                 // let wf_vertices: Vec<[f32; 3]> = curves
                 //     .iter()
                 //     .flat_map(|poly| poly.iter())
