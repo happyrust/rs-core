@@ -74,6 +74,11 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
     // let (size, center) = (bdd_box.size(), bdd_box.center());
 }
 
+//方便还原出未缩放的参数
+pub enum PdmsShapeData{
+
+}
+
 #[derive(Serialize, Deserialize, Component, Debug)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
@@ -85,7 +90,7 @@ pub struct PdmsMesh {
     //wireframe vertex
     pub aabb: AiosAABB,
     pub unit_shape: Shell,
-    pub shape_data: Box<dyn BrepShapeTrait>,
+    // pub shape_data: Box<dyn BrepShapeTrait>,
 }
 
 impl PdmsMesh {
@@ -308,7 +313,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     wf_vertices: default(),
                     aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
                     unit_shape: brep,
-                    shape_data
+                    // shape_data
                 });
             }
         }

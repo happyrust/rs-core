@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 use std::f32::EPSILON;
 use bevy::prelude::*;
 use truck_base::cgmath64::Vector3;
@@ -50,6 +50,16 @@ impl BrepShapeTrait for Sphere {
         Box::new(self.clone())
     }
 
+    //由于geom kernel还不支持fixed point ，暂时不用这个shell去生成mesh
+    fn gen_brep_shell(&self) -> Option<Shell> {
+        use truck_base::cgmath64::{Point3, Vector3, Rad};
+        use truck_modeling::*;
+        let vertex = builder::vertex(Point3::new(0.0, 0.0, 1.0));
+        let wire = builder::rsweep(&vertex, Point3::origin(), Vector3::unit_y(), Rad(PI));
+        let shell = builder::rsweep(&wire, Point3::origin(), Vector3::unit_z(), Rad(PI * 2.0));
+        Some(shell)
+    }
+
     fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
         let generated = IcoSphere::new(32, |point| {
             let inclination = point.y.acos();
@@ -91,12 +101,13 @@ impl BrepShapeTrait for Sphere {
                 max: Vec3::ONE,
             },
             unit_shape: Default::default(),
-            shape_data: self.gen_unit_shape(),
+            // shape_data: self.gen_unit_shape(),
         });
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(Self::default())
+
+        Box::new(Sphere::default().gen_brep_shell())
     }
 
     fn hash_unit_mesh_params(&self) -> u64{

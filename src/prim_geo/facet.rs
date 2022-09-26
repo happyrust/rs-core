@@ -132,7 +132,7 @@ impl BrepShapeTrait for Facet {
             wf_vertices: vec![],
             aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
             unit_shape: Default::default(),
-            shape_data: self.gen_unit_shape(),
+            // shape_data: self.gen_unit_shape(),
         });
     }
 

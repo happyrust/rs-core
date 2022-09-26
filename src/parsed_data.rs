@@ -317,7 +317,7 @@ pub struct CateSlopeBottomCylinderParam {
     pub axis: Option<CateAxisParam>,
     pub height: f32,
     pub diameter: f32,
-    pub distance: f32,
+    pub dist_to_btm: f32,
     pub x_shear: f32,
     pub y_shear: f32,
     pub alt_x_shear: f32,

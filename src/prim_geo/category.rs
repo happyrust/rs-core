@@ -15,6 +15,7 @@ use std::f32::consts::PI;
 use std::ops::Range;
 use std::default::default;
 use std::f32::EPSILON;
+use bevy::app::RunMode::Loop;
 use smallvec::SmallVec;
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::pdms_types::RefU64;
@@ -295,7 +296,43 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
         }
 
-
+        CateGeoParam::SlopeBottomCylinder(d) =>{
+            let axis = d.axis.as_ref().unwrap();
+            let mut pts =  SmallVec::default();
+            pts.push(axis.number);
+            let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
+            let phei = d.height as f32;
+            let pdia = d.diameter as f32;
+            let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+            let translation = dir * (d.dist_to_btm as f32 + phei / 2.0) +
+                Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
+            let transform = TransformSRT {
+                rotation,
+                translation,
+                ..default()
+            };
+            // 是以中心为原点，所以需要移动到中心位置
+            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
+                phei,
+                pdia,
+                pdis: 0.0,
+                ..default()
+            });
+            // let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LoftSolid{
+            //     phei,
+            //     pdia,
+            //     pdis: 0.0,  //-phei / 2.0
+            //     ..default()
+            // });
+            return Some(CateBrepShape {
+                refno: d.refno,
+                brep_shape,
+                transform,
+                visible: d.tube_flag,
+                is_tubi: false,
+                pts
+            });
+        }
 
         CateGeoParam::Sphere(d) => {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Sphere {

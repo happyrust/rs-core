@@ -24,7 +24,7 @@ use crate::tool::float_tool::hash_vec3;
 //todo 针对确实只是extrusion的处理，可以转换成extrusion去处理，而不是占用
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
-pub struct SctnSolid {
+pub struct LoftSolid {
     pub profile: CateProfileParam,
     pub drns: Vec3,
     pub drne: Vec3,
@@ -34,7 +34,7 @@ pub struct SctnSolid {
     pub arc_path: Option<(Vec3, Vec3, Vec3)>,  //p1, p2, p3  弧形的路径
 }
 
-impl SctnSolid {
+impl LoftSolid {
     fn cal_sann_face(&self, is_btm: bool, dir: Vec3, angle: f32, r1: f32, r2: f32, circle: Option<Circle2D>) -> Option<Face> {
         return None;
         // let rot = Quat::from_rotation_arc(Vec3::X, dir);
@@ -205,7 +205,7 @@ impl SctnSolid {
     }
 }
 
-impl Default for SctnSolid {
+impl Default for LoftSolid {
     fn default() -> Self {
         Self {
             profile: CateProfileParam::None,
@@ -220,13 +220,13 @@ impl Default for SctnSolid {
     }
 }
 
-impl VerifiedShape for SctnSolid {
+impl VerifiedShape for LoftSolid {
     fn check_valid(&self) -> bool { /*self.height > f32::EPSILON*/ !self.extrude_dir.is_nan() && self.extrude_dir.length() > 0.0 }
 }
 
 
 #[typetag::serde]
-impl BrepShapeTrait for SctnSolid {
+impl BrepShapeTrait for LoftSolid {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }

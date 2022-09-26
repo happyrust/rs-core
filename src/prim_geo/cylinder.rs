@@ -5,7 +5,9 @@ use truck_modeling::{builder, Shell};
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
+use nom::Parser;
 use serde::{Serialize,Deserialize};
+use truck_topology::Face;
 use crate::pdms_types::AttrMap;
 
 use crate::prim_geo::helper::cal_ref_axis;
@@ -120,6 +122,8 @@ pub struct SCylinder {
     pub pdis: f32, //dist to bottom
     pub phei: f32, // height
     pub pdia: f32, //diameter
+    pub x_shear_angles: [f32; 2],  // x shear
+    pub y_shear_angles: [f32; 2],  // y shear
     pub negative: bool,
 }
 
@@ -132,6 +136,8 @@ impl Default for SCylinder {
             pdis: -0.5,
             phei: 1.0,
             pdia: 1.0,
+            x_shear_angles: [0.0f32; 2],
+            y_shear_angles: [0.0f32; 2],
             negative: false,
         }
     }
@@ -159,18 +165,46 @@ impl BrepShapeTrait for SCylinder {
         let center = c_pt.point3();
         let ref_axis = cal_ref_axis(&dir);
         let pt0 = c_pt + ref_axis * r;
-        let mut ext_len = self.phei;
+        let mut ext_len = self.phei as f64;
         let mut ext_dir = dir.vector3();
         let mut  reverse_dir = false;
         if ext_len < 0.0 {
             reverse_dir = true;
         }
+        dbg!(ext_len);
         let v = builder::vertex(pt0.point3());
         let w = builder::rsweep(&v, center, ext_dir, Rad(7.0));
         if  let Ok(mut f) = builder::try_attach_plane(&[w]){
             if reverse_dir { f = f.inverse(); }
-            let mut s = builder::tsweep(&f, ext_dir * ext_len as f64).into_boundaries();
-            return s.pop()
+            let f_e = builder::translated(&f, Vector3::new(0.0, 0.0, ext_len));
+            let mut wire0 = f.absolute_boundaries()[0].clone();
+            let mut wire1 = f_e.absolute_boundaries()[0].clone();
+            let h_wire0  = wire0.split_off(wire0.len()/2);
+            let h_wire1  = wire1.split_off(wire1.len()/2);
+            let mut face1 = builder::homotopy(wire0.front().unwrap(), &wire1.front().unwrap());
+            let mut face2 = builder::homotopy(h_wire0.front().unwrap(), &h_wire1.front().unwrap());
+            // let curve0 = wire0.front_edge().unwrap().get_curve();
+            // let curve1 = wire1.front_edge().unwrap().inverse().get_curve();
+            // match (curve0, curve1) {
+            //     (Curve::NURBSCurve(curve0), Curve::NURBSCurve(curve1)) =>{
+            //         let surface = Surface::NURBSSurface(NURBSSurface::new(BSplineSurface::homotopy(
+            //             curve0.non_rationalized().clone(),
+            //             curve1.non_rationalized().clone(),
+            //         )));
+            //         let side_face = Face::new(vec![wire0, wire1], surface);
+            //         // let mut s = builder::homotopy(f.absolute_boundaries()[0].front_edge().unwrap(),
+            //         //                               &f_e.absolute_boundaries()[0].front_edge().unwrap().inverse());
+            //         // let mut shell: Shell = vec![f, f_e, side_face].into();
+            //         // let mut s = builder::tsweep(&f, ext_dir * ext_len as f64).into_boundaries();
+            //         // return s.pop();
+            //         return Some(shell);
+            //     }
+            //     _ => {}
+            // }
+            let mut shell = vec![f.inverse(), f_e, face1, face2].into();
+
+            return Some(shell);
+
         }
         None
     }
@@ -208,6 +242,8 @@ impl From<&AttrMap> for SCylinder {
             pdis: -phei / 2.0,
             phei,
             pdia,
+            x_shear_angles: [0.0; 2],
+            y_shear_angles: [0.0; 2],
             negative: false,
         }
     }
