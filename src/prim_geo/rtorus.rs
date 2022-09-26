@@ -91,7 +91,7 @@ impl VerifiedShape for SRTorus {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for SRTorus {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -156,7 +156,7 @@ impl VerifiedShape for RTorus {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for RTorus {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {

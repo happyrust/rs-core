@@ -44,7 +44,7 @@ impl VerifiedShape for Extrusion {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for Extrusion {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())

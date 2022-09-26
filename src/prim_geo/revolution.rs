@@ -48,7 +48,7 @@ impl VerifiedShape for Revolution {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for Revolution {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {

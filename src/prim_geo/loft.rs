@@ -225,7 +225,7 @@ impl VerifiedShape for LoftSolid {
 }
 
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for LoftSolid {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())

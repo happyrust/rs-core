@@ -49,7 +49,7 @@ impl VerifiedShape for Dish {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for Dish {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())

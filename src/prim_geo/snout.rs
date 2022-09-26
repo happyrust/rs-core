@@ -64,7 +64,7 @@ impl VerifiedShape for LSnout {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for LSnout {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {

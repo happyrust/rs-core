@@ -67,7 +67,7 @@ impl VerifiedShape for LPyramid {
     fn check_valid(&self) -> bool { true }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for LPyramid {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {

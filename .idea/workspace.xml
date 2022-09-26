@@ -15,14 +15,21 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="修改wasm编译">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/dish.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/dish.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/facet.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/facet.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/loft.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/loft.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
@@ -190,13 +197,7 @@
       <workItem from="1663181396819" duration="10000" />
       <workItem from="1663593186242" duration="735000" />
       <workItem from="1663855813210" duration="2430000" />
-    </task>
-    <task id="LOCAL-00070" summary="Update">
-      <created>1658321456945</created>
-      <option name="number" value="00070" />
-      <option name="presentableId" value="LOCAL-00070" />
-      <option name="project" value="LOCAL" />
-      <updated>1658321456945</updated>
+      <workItem from="1664174690136" duration="542000" />
     </task>
     <task id="LOCAL-00071" summary="Update">
       <created>1658413766202</created>
@@ -534,7 +535,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664016637020</updated>
     </task>
-    <option name="localTasksCounter" value="119" />
+    <task id="LOCAL-00119" summary="修改wasm编译">
+      <created>1664174732155</created>
+      <option name="number" value="00119" />
+      <option name="presentableId" value="LOCAL-00119" />
+      <option name="project" value="LOCAL" />
+      <updated>1664174732155</updated>
+    </task>
+    <option name="localTasksCounter" value="120" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -564,7 +572,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Add EleTreeNode" />
     <MESSAGE value="Add consts" />
     <MESSAGE value="Change consts and defines" />
     <MESSAGE value="Fix" />
@@ -589,6 +596,7 @@
     <MESSAGE value="解决土建大部分问题" />
     <MESSAGE value="tmp" />
     <MESSAGE value="update" />
-    <option name="LAST_COMMIT_MESSAGE" value="update" />
+    <MESSAGE value="修改wasm编译" />
+    <option name="LAST_COMMIT_MESSAGE" value="修改wasm编译" />
   </component>
 </project>

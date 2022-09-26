@@ -48,7 +48,7 @@ impl VerifiedShape for LCylinder {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for LCylinder {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -150,7 +150,7 @@ impl VerifiedShape for SCylinder {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for SCylinder {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>{

@@ -43,7 +43,7 @@ impl VerifiedShape for Sphere {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for Sphere {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -100,14 +100,14 @@ impl BrepShapeTrait for Sphere {
                 min: -Vec3::ONE,
                 max: Vec3::ONE,
             },
-            unit_shape: Default::default(),
+            unit_shape: Sphere::default().gen_brep_shell().unwrap(),
             // shape_data: self.gen_unit_shape(),
         });
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
 
-        Box::new(Sphere::default().gen_brep_shell())
+        Box::new(Sphere::default())
     }
 
     fn hash_unit_mesh_params(&self) -> u64{

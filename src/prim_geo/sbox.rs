@@ -33,7 +33,7 @@ impl VerifiedShape for SBox {
     }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for SBox {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {

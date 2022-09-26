@@ -73,7 +73,7 @@ impl VerifiedShape for Pyramid {
     fn check_valid(&self) -> bool { true }
 }
 
-#[typetag::serde]
+//#[typetag::serde]
 impl BrepShapeTrait for Pyramid {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {

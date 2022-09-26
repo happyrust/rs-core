@@ -210,7 +210,7 @@ pub const TRI_TOL: f32 = 0.01;
 // serialize_trait_object!(BrepShapeTrait);
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
-#[typetag::serde(tag = "type")]
+// #[typetag::serde(tag = "type")]
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
