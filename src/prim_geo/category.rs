@@ -241,7 +241,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation = dir * (d.dist_to_btm as f32 + phei / 2.0) +
+            let translation = dir * (d.dist_to_btm as f32) +
                 Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
             let transform = TransformSRT {
                 rotation,
@@ -300,11 +300,35 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref().unwrap();
             let mut pts =  SmallVec::default();
             pts.push(axis.number);
-            let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
+            let z_dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32).normalize();
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
-            let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation = dir * (d.dist_to_btm as f32 + phei / 2.0) +
+
+            let mut x_dir = Vec3::Y.cross(z_dir).normalize();
+            // dbg!(x_dir);
+            let mat3 = if x_dir.x > 0.0{
+                Mat3::from_cols(
+                    x_dir,
+                    Vec3::Y,
+                    z_dir,
+                )
+            } else{
+                Mat3::from_cols(
+                    -x_dir,
+                    -Vec3::Y,
+                    z_dir,
+                )
+            };
+            // dbg!(z_dir);
+            // let angle_flag = if z_dir.z < 0.0 {
+            //     -1.0
+            // }else{
+            //     1.0
+            // };
+            // dbg!(&angle_flag);
+            let angle_flag = -1.0;
+            let rotation = Quat::from_mat3(&mat3);
+            let translation = z_dir * (d.dist_to_btm as f32 ) +
                 Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
             let transform = TransformSRT {
                 rotation,
@@ -316,14 +340,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 phei,
                 pdia,
                 pdis: 0.0,
+                btm_shear_angles: [d.alt_x_shear * angle_flag, d.alt_y_shear * angle_flag],
+                top_shear_angles: [d.x_shear * angle_flag, d.y_shear * angle_flag],
                 ..default()
             });
-            // let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LoftSolid{
-            //     phei,
-            //     pdia,
-            //     pdis: 0.0,  //-phei / 2.0
-            //     ..default()
-            // });
             return Some(CateBrepShape {
                 refno: d.refno,
                 brep_shape,

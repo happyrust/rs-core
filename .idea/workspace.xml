@@ -15,8 +15,13 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="修改wasm编译">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="remove typetag crate, not support wasm">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -182,14 +187,7 @@
       <workItem from="1663181396819" duration="10000" />
       <workItem from="1663593186242" duration="735000" />
       <workItem from="1663855813210" duration="2430000" />
-      <workItem from="1664174690136" duration="741000" />
-    </task>
-    <task id="LOCAL-00072" summary="Update">
-      <created>1658413973365</created>
-      <option name="number" value="00072" />
-      <option name="presentableId" value="LOCAL-00072" />
-      <option name="project" value="LOCAL" />
-      <updated>1658413973365</updated>
+      <workItem from="1664174690136" duration="1792000" />
     </task>
     <task id="LOCAL-00073" summary="Update">
       <created>1658414667828</created>
@@ -527,7 +525,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664175411416</updated>
     </task>
-    <option name="localTasksCounter" value="121" />
+    <task id="LOCAL-00121" summary="remove typetag crate, not support wasm">
+      <created>1664175455345</created>
+      <option name="number" value="00121" />
+      <option name="presentableId" value="LOCAL-00121" />
+      <option name="project" value="LOCAL" />
+      <updated>1664175455345</updated>
+    </task>
+    <option name="localTasksCounter" value="122" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -557,7 +562,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Add consts" />
     <MESSAGE value="Change consts and defines" />
     <MESSAGE value="Fix" />
     <MESSAGE value="use gitee" />
@@ -582,6 +586,7 @@
     <MESSAGE value="tmp" />
     <MESSAGE value="update" />
     <MESSAGE value="修改wasm编译" />
-    <option name="LAST_COMMIT_MESSAGE" value="修改wasm编译" />
+    <MESSAGE value="remove typetag crate, not support wasm" />
+    <option name="LAST_COMMIT_MESSAGE" value="remove typetag crate, not support wasm" />
   </component>
 </project>

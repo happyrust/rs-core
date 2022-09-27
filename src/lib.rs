@@ -1,5 +1,8 @@
 #![feature(default_free_fn)]
 #![feature(mixed_integer_ops)]
+#![feature(drain_filter)]
+#![feature(let_chains)]
+
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
 
