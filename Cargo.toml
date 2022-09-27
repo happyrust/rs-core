@@ -35,10 +35,10 @@ erased-serde = "0.3.22"
 dyn-clone = "1.0.9"
 
 
-bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
-#bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-#bevy_egui = { path = "../bevy_egui" }
+#bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+#bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
+bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy_egui = { path = "../bevy_egui" }
 
 serde-name = "0.1.1"
 serde = { version = "1.0.133", features = ["derive"] }
@@ -50,20 +50,20 @@ prost = "0.8.0"
 version-sync = "0.9.4"
 bincode = "1.3.3"
 
-truck-base = { version = "0.3.0",git = "https://gitee.com/happydpc/truck.git" }
-truck-geotrait = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git"}
-truck-geometry = { version = "0.3.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-polymesh = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-topology = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-modeling = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-meshalgo = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-stepio = { version = "0.1.0", git = "https://gitee.com/happydpc/truck.git" }
+#truck-base = { version = "0.3.0",git = "https://gitee.com/happydpc/truck.git" }
+#truck-geotrait = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git"}
+#truck-geometry = { version = "0.3.0", git = "https://gitee.com/happydpc/truck.git" }
+#truck-polymesh = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+#truck-topology = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+#truck-modeling = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+#truck-meshalgo = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
+#truck-stepio = { version = "0.1.0", git = "https://gitee.com/happydpc/truck.git" }
 
-#truck-base = { version = "0.3.0", path = "../truck/truck-base" }
-#truck-geotrait = { version = "0.2.0", path = "../truck/truck-geotrait", features = ["derive"] }
-#truck-geometry = { version = "0.3.0", path = "../truck/truck-geometry" }
-#truck-polymesh = { version = "0.4.0", path = "../truck/truck-polymesh" }
-#truck-topology = { version = "0.4.0", path = "../truck/truck-topology" }
-#truck-modeling = { version = "0.4.0", path = "../truck/truck-modeling" }
-#truck-meshalgo = { version = "0.2.0", path = "../truck/truck-meshalgo" }
-#truck-stepio = { version = "0.1.0", path = "../truck/truck-stepio" }
+truck-base = { version = "0.3.0", path = "../truck/truck-base" }
+truck-geotrait = { version = "0.2.0", path = "../truck/truck-geotrait", features = ["derive"] }
+truck-geometry = { version = "0.3.0", path = "../truck/truck-geometry" }
+truck-polymesh = { version = "0.4.0", path = "../truck/truck-polymesh" }
+truck-topology = { version = "0.4.0", path = "../truck/truck-topology" }
+truck-modeling = { version = "0.4.0", path = "../truck/truck-modeling" }
+truck-meshalgo = { version = "0.2.0", path = "../truck/truck-meshalgo" }
+truck-stepio = { version = "0.1.0", path = "../truck/truck-stepio" }
