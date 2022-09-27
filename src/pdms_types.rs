@@ -29,7 +29,7 @@ use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use truck_modeling::Shell;
-use derive_more::{Deref,DerefMut};
+use derive_more::{Deref, DerefMut};
 
 use crate::BHashMap;
 use crate::consts::*;
@@ -328,8 +328,8 @@ impl RefU64 {
     #[inline]
     pub fn hash_with_another_refno(&self, another_refno: RefU64) -> u64 {
         let mut hash = std::collections::hash_map::DefaultHasher::new();
-        std::hash::Hash::hash(&self.0,&mut hash);
-        std::hash::Hash::hash(&another_refno.0,&mut hash);
+        std::hash::Hash::hash(&self.0, &mut hash);
+        std::hash::Hash::hash(&another_refno.0, &mut hash);
         std::hash::Hasher::finish(&hash)
     }
 }
@@ -1294,7 +1294,7 @@ impl AttrVal {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PdmsDatabaseInfo {
     pub db_names_map: DashMap<i32, String>,
-    // 第一个i32是refno ，第二个i32是type的hash
+    // 第一个i32是type_hash ，第二个i32是属性的hash
     pub noun_attr_info_map: DashMap<i32, DashMap<i32, AttrInfo>>,
 }
 
@@ -1652,7 +1652,6 @@ pub struct CachedMeshesMgr {
 }
 
 impl CachedMeshesMgr {
-
     pub fn get_shell(&self, mesh_hash: &u64) -> Option<Shell> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
             return Some(cached_msh.unit_shape.clone());
@@ -1677,7 +1676,7 @@ impl CachedMeshesMgr {
     pub fn get_pdms_mesh_hash_key(&self, m: Box<dyn BrepShapeTrait>) -> u64 {
         let hash = m.hash_unit_mesh_params();
         if !self.meshes.contains_key(&hash) {
-            if let Some(mesh) = m.gen_unit_mesh(){
+            if let Some(mesh) = m.gen_unit_mesh() {
                 self.meshes.insert(hash, mesh);
             }
         }
