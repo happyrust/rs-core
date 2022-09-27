@@ -15,8 +15,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="修改SCYL，保证SSLC能够正确的旋转端面">
-      <change afterPath="$PROJECT_DIR$/Cargo_back.toml" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="tmp">
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -183,14 +182,7 @@
       <workItem from="1663181396819" duration="10000" />
       <workItem from="1663593186242" duration="735000" />
       <workItem from="1663855813210" duration="2430000" />
-      <workItem from="1664174690136" duration="1888000" />
-    </task>
-    <task id="LOCAL-00074" summary="Update">
-      <created>1658414818601</created>
-      <option name="number" value="00074" />
-      <option name="presentableId" value="LOCAL-00074" />
-      <option name="project" value="LOCAL" />
-      <updated>1658414818602</updated>
+      <workItem from="1664174690136" duration="1998000" />
     </task>
     <task id="LOCAL-00075" summary="Update">
       <created>1658415212130</created>
@@ -528,7 +520,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664292436557</updated>
     </task>
-    <option name="localTasksCounter" value="123" />
+    <task id="LOCAL-00123" summary="tmp">
+      <created>1664292501310</created>
+      <option name="number" value="00123" />
+      <option name="presentableId" value="LOCAL-00123" />
+      <option name="project" value="LOCAL" />
+      <updated>1664292501310</updated>
+    </task>
+    <option name="localTasksCounter" value="124" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -578,11 +577,11 @@
     <MESSAGE value="fix" />
     <MESSAGE value="fix fillet floor" />
     <MESSAGE value="解决土建大部分问题" />
-    <MESSAGE value="tmp" />
     <MESSAGE value="update" />
     <MESSAGE value="修改wasm编译" />
     <MESSAGE value="remove typetag crate, not support wasm" />
     <MESSAGE value="修改SCYL，保证SSLC能够正确的旋转端面" />
-    <option name="LAST_COMMIT_MESSAGE" value="修改SCYL，保证SSLC能够正确的旋转端面" />
+    <MESSAGE value="tmp" />
+    <option name="LAST_COMMIT_MESSAGE" value="tmp" />
   </component>
 </project>
