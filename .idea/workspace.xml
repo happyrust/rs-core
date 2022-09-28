@@ -15,8 +15,16 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="tmp">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Fix cargo">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo-gitee.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo-gitee.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo-local.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo-local.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/loft.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/loft.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/tubing.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/tubing.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -182,14 +190,7 @@
       <workItem from="1663181396819" duration="10000" />
       <workItem from="1663593186242" duration="735000" />
       <workItem from="1663855813210" duration="2430000" />
-      <workItem from="1664174690136" duration="1998000" />
-    </task>
-    <task id="LOCAL-00075" summary="Update">
-      <created>1658415212130</created>
-      <option name="number" value="00075" />
-      <option name="presentableId" value="LOCAL-00075" />
-      <option name="project" value="LOCAL" />
-      <updated>1658415212130</updated>
+      <workItem from="1664174690136" duration="3311000" />
     </task>
     <task id="LOCAL-00076" summary="Update">
       <created>1658415272936</created>
@@ -527,7 +528,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664292501310</updated>
     </task>
-    <option name="localTasksCounter" value="124" />
+    <task id="LOCAL-00124" summary="Fix cargo">
+      <created>1664292615193</created>
+      <option name="number" value="00124" />
+      <option name="presentableId" value="LOCAL-00124" />
+      <option name="project" value="LOCAL" />
+      <updated>1664292615193</updated>
+    </task>
+    <option name="localTasksCounter" value="125" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -557,7 +565,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fix" />
     <MESSAGE value="use gitee" />
     <MESSAGE value="Update toml" />
     <MESSAGE value="Merge" />
@@ -582,6 +589,7 @@
     <MESSAGE value="remove typetag crate, not support wasm" />
     <MESSAGE value="修改SCYL，保证SSLC能够正确的旋转端面" />
     <MESSAGE value="tmp" />
-    <option name="LAST_COMMIT_MESSAGE" value="tmp" />
+    <MESSAGE value="Fix cargo" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix cargo" />
   </component>
 </project>

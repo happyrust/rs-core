@@ -128,7 +128,7 @@ pub struct SCylinder {
     //A Axis point
     pub paxi_dir: Vec3,   //A Axis Direction
 
-    pub pdis: f32,
+    // pub pdis: f32,
     //dist to bottom
     pub phei: f32,
     // height
@@ -147,7 +147,6 @@ impl Default for SCylinder {
             paxi_expr: "Z".to_string(),
             paxi_dir: Vec3::Z,
             paxi_pt: Default::default(),
-            pdis: -0.5,
             phei: 1.0,
             pdia: 1.0,
             btm_shear_angles: [0.0f32; 2],
@@ -180,6 +179,15 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
+    #[inline]
+    fn get_trans(&self) -> glam::TransformSRT {
+        glam::TransformSRT {
+            rotation: Default::default(),
+            translation: Vec3::new(0.0, 0.0, -self.phei/2.0),
+            scale: self.get_scaled_vec3(),
+        }
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let dir = self.paxi_dir.normalize();
@@ -204,7 +212,6 @@ impl BrepShapeTrait for SCylinder {
         // dbg!(&self.top_shear_angles);
         let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
         let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
-        // dbg!((scale_x, scale_y));
         let transform_btm = Matrix4::from_angle_y(Rad(self.btm_shear_angles[0].to_radians() as f64))
             * Matrix4::from_angle_y(Rad(self.btm_shear_angles[1].to_radians() as f64))
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
@@ -274,7 +281,6 @@ impl BrepShapeTrait for SCylinder {
                 paxi_expr: "Z".to_string(),
                 paxi_pt: Default::default(),
                 paxi_dir: Vec3::Z,
-                pdis: -self.phei/2.0,
                 phei: self.phei,
                 pdia: self.pdia,
                 btm_shear_angles: self.btm_shear_angles.clone(),
@@ -310,7 +316,6 @@ impl From<&AttrMap> for SCylinder {
             paxi_expr: "Z".to_string(),
             paxi_pt: Default::default(),
             paxi_dir: Vec3::Z,
-            pdis: -phei / 2.0,
             phei,
             pdia,
             btm_shear_angles: [0.0; 2],
