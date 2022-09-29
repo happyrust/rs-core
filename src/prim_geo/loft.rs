@@ -187,27 +187,6 @@ impl LoftSolid {
         // edges.push(builder::line(last_v, &v0));
 
         wire::gen_wire(&points, &profile.frads).ok()
-        // dbg!(&wire);
-        // dbg!(extrude);
-        // if let Ok(mut f) = try_attach_plane(&[wire]) {
-        //     if let Surface::Plane(plane) = f.get_surface() {
-        //         // dbg!(plane.normal());
-        //         if self.arc_path.is_none() {
-        //             //默认底边，应该将法向量朝向Z的负方向
-        //             if plane.normal().dot(extrude.vector3()) > 0.0 {
-        //                 f = f.inverse();
-        //             }
-        //         } else {
-        //             //如果是旋转边，就需要和旋转轴挂钩
-        //             // if plane.normal().dot(extrude.vector3()) > 0.0  {
-        //                 f = f.inverse();
-        //             // }
-        //         }
-        //     }
-        //     return Some(f);
-        // }
-
-        // None
     }
 }
 
@@ -283,50 +262,14 @@ impl BrepShapeTrait for LoftSolid {
             //先生成start 和 end face
             let mut drns = self.drns;
             let mut drne = self.drne;
+            dbg!(self.plane_normal);
+            dbg!(&drns);
+            dbg!(&drne);
             let mut transform_btm = Matrix4::one();
             let mut transform_top = Matrix4::one();
-            // dbg!(self.is_sloped());
-            if self.is_sloped() {
-                let a = Vec3::X.angle_between(self.drns);
-                let b = Vec3::Y.angle_between(self.drns);
-                // dbg!((a, b));
-                //slope对应的斜面必须要缩放
-                let scale_mat = if a.is_nan() {
-                    Matrix4::one()
-                } else {
-                    let mut scale_x = 1.0 / a.sin().abs() as f64;
-                    // if scale_x.is_infinite() { scale_x = 1.0; }
-                    let mut scale_y = 1.0 / b.sin().abs() as f64;
-                    // dbg!((scale_x, scale_y));
-                    Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0)
-                };
-                let m = Mat3::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns));
-                transform_btm = Matrix4::from_cols(
-                    m.x_axis.vector4(),
-                    m.y_axis.vector4(),
-                    m.z_axis.vector4(),
-                    Vector4::new(0.0, 0.0, 0.0, 1.0),
-                ) * scale_mat;
-                let a = Vec3::X.angle_between(self.drns);
-                let b = Vec3::Y.angle_between(self.drns);
-                // dbg!((a, b));
-                let scale_mat = if a.is_nan() {
-                    Matrix4::one()
-                } else {
-                    let scale_x = 1.0 / a.sin().abs() as f64;
-                    let scale_y = 1.0 / b.sin().abs() as f64;
-                    // dbg!((scale_x, scale_y));
-                    Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0)
-                };
+            let mut rotation = Matrix4::one();
+            let mut scale_mat = Matrix4::one();
 
-                let m = Mat3::from_quat(glam::Quat::from_rotation_arc(-Vec3::Z, self.drne));
-                transform_top = transform_top * Matrix4::from_cols(
-                    m.x_axis.vector4(),
-                    m.y_axis.vector4(),
-                    m.z_axis.vector4(),
-                    Vector4::new(0.0, 0.0, 0.0, 1.0),
-                ) * scale_mat;
-            }
 
             if let Some((p1, p2, p3)) = self.arc_path {
                 let c = circle.unwrap_or_default();
@@ -337,11 +280,79 @@ impl BrepShapeTrait for LoftSolid {
                 if c.clock_wise {
                     rot_z = -Vec3::Z;
                 }
+                if self.is_sloped() {
+                    let a = Vec3::X.angle_between(self.drns);
+                    let b = Vec3::Z.angle_between(self.drns);
+                    dbg!((a, b));
+                    //slope对应的斜面必须要缩放
+                    if abs_diff_ne!(drns.y, 0.0) {
+                        if !a.is_nan() {
+                            let mut scale_x = 1.0 / a.sin().abs() as f64;
+                            let mut found_err = false;
+                            if scale_x > 100.0 {
+                                scale_x = 1.0;
+                                found_err = true;
+                            }
+                            let mut scale_z = 1.0 / b.sin().abs() as f64;
+                            if scale_z > 100.0 {
+                                scale_z = 1.0;
+                                found_err = true;
+                            }
+                            dbg!((scale_x, scale_z));
+                            if found_err {
+                                println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_z));
+                            }
+                            // scale_mat = Matrix4::from_nonuniform_scale(scale_x, 1.0, scale_z);
+                            // let m = Mat3::from_quat(glam::Quat::from_rotation_arc(Vec3::Y, drns));
+                            // rotation = Matrix4::from_cols(
+                            //     m.x_axis.vector4(),
+                            //     m.y_axis.vector4(),
+                            //     m.z_axis.vector4(),
+                            //     Vector4::new(0.0, 0.0, 0.0, 1.0),
+                            // );
+                        }
+                    }
+                    transform_btm = rotation * scale_mat;
+                    let a = Vec3::X.angle_between(drne);
+                    let b = Vec3::Z.angle_between(drne);
+                    dbg!((a, b));
+                    if abs_diff_ne!(drne.y, 0.0) {
+                        if !a.is_nan() {
+                            let mut scale_x = 1.0 / a.sin().abs() as f64;
+                            let mut found_err = false;
+                            if scale_x > 100.0 {
+                                scale_x = 1.0;
+                                found_err = true;
+                            }
+                            let mut scale_z = 1.0 / b.sin().abs() as f64;
+                            if scale_z > 100.0 {
+                                scale_z = 1.0;
+                                found_err = true;
+                            }
+                            dbg!((scale_x, scale_z));
+                            if found_err {
+                                println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_z));
+                            }
+                            // scale_mat = Matrix4::from_nonuniform_scale(scale_x, 1.0, scale_z);
+                            // let m = Mat3::from_quat(glam::Quat::from_rotation_arc(-Vec3::Y, self.drne));
+                            // rotation = Matrix4::from_cols(
+                            //     m.x_axis.vector4(),
+                            //     m.y_axis.vector4(),
+                            //     m.z_axis.vector4(),
+                            //     Vector4::new(0.0, 0.0, 0.0, 1.0),
+                            // );
+                        }
+                    }
+
+                    transform_top = transform_top * rotation * scale_mat;
+                }
+                // dbg!(c.clock_wise);
                 // dbg!(rot_z);
                 // dbg!(angle);
+                // dbg!(self.plane_normal);
                 let mut faces = vec![];
-                let rad_angle = Rad(angle as f64);
-                let rot = Matrix4::from_angle_z(rad_angle);
+                let start_angle = Vec2::X.angle_between(v1);
+                let rot = Matrix4::from_angle_z(Rad(angle as f64));
                 let wire_s = builder::transformed(&wire, transform_btm);
                 let wire_e = builder::transformed(&wire, rot * transform_top);
                 let edges_cnt = wire_s.len();
@@ -349,9 +360,9 @@ impl BrepShapeTrait for LoftSolid {
                     let edge0 = &wire_s[i];
                     let edge1 = &wire_e[i];
                     let arc_0 = builder::circle_arc_with_center(Point3::new(0.0, 0.0, 0.0),
-                                                                edge0.back(), edge1.back(), rot_z.vector3(), rad_angle);
+                                                                edge0.back(), edge1.back(), rot_z.vector3(), Rad(angle.abs() as f64));
                     let arc_1 = builder::circle_arc_with_center(Point3::new(0.0, 0.0, 0.0),
-                                                        edge0.front(), edge1.front(), rot_z.vector3(), rad_angle);
+                                                                edge0.front(), edge1.front(), rot_z.vector3(), Rad(angle.abs() as f64));
 
                     let curve0 = arc_0.oriented_curve().lift_up();
                     let curve1 = arc_1.oriented_curve().lift_up();
@@ -377,7 +388,9 @@ impl BrepShapeTrait for LoftSolid {
 
                 if let Surface::Plane(plane) = face_s.get_surface() {
                     dbg!(plane.normal());
-                    if plane.normal().z > 0.0 {
+                    let is_neg = start_angle.abs() >= PI;
+                    let is_rev_face = (plane.normal().dot(self.plane_normal.vector3())) * rot_z.z as f64 > 0.0;
+                    if is_neg ^ is_rev_face {
                         dbg!("invert");
                         for mut f in &mut faces {
                             f.invert();
@@ -387,6 +400,74 @@ impl BrepShapeTrait for LoftSolid {
 
                 return Some(faces.into());
             } else {
+
+                if self.is_sloped() {
+                    let a = Vec3::X.angle_between(self.drns);
+                    let b = Vec3::Y.angle_between(self.drns);
+                    // dbg!((a, b));
+                    //slope对应的斜面必须要缩放
+                    if abs_diff_ne!(drns.z, 0.0) {
+                        if !a.is_nan() {
+                            let mut scale_x = 1.0 / a.sin().abs() as f64;
+                            let mut found_err = false;
+                            if scale_x > 100.0 {
+                                scale_x = 1.0;
+                                found_err = true;
+                            }
+                            let mut scale_y = 1.0 / b.sin().abs() as f64;
+                            if scale_y > 100.0 {
+                                scale_y = 1.0;
+                                found_err = true;
+                            }
+                            dbg!((scale_x, scale_y));
+                            if found_err {
+                                println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
+                            }
+                            scale_mat = Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
+                            let m = Mat3::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, drns));
+                            rotation = Matrix4::from_cols(
+                                m.x_axis.vector4(),
+                                m.y_axis.vector4(),
+                                m.z_axis.vector4(),
+                                Vector4::new(0.0, 0.0, 0.0, 1.0),
+                            );
+                        }
+                    }
+                    transform_btm = rotation * scale_mat;
+                    let a = Vec3::X.angle_between(drne);
+                    let b = Vec3::Y.angle_between(drne);
+                    // dbg!((a, b));
+                    if abs_diff_ne!(drne.z, 0.0) {
+                        if !a.is_nan() {
+                            let mut scale_x = 1.0 / a.sin().abs() as f64;
+                            let mut found_err = false;
+                            if scale_x > 100.0 {
+                                scale_x = 1.0;
+                                found_err = true;
+                            }
+                            let mut scale_y = 1.0 / b.sin().abs() as f64;
+                            if scale_y > 100.0 {
+                                scale_y = 1.0;
+                                found_err = true;
+                            }
+                            dbg!((scale_x, scale_y));
+                            if found_err {
+                                println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
+                            }
+                            scale_mat = Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
+                            let m = Mat3::from_quat(glam::Quat::from_rotation_arc(-Vec3::Z, self.drne));
+                            rotation = Matrix4::from_cols(
+                                m.x_axis.vector4(),
+                                m.y_axis.vector4(),
+                                m.z_axis.vector4(),
+                                Vector4::new(0.0, 0.0, 0.0, 1.0),
+                            );
+                        }
+                    }
+
+                    transform_top = transform_top * rotation * scale_mat;
+                }
+
                 let mut faces = vec![];
                 let translation = Matrix4::from_translation(Vector3::new(0.0 as f64, 0.0 as f64, self.height as f64));
                 let wire_s = builder::transformed(&wire, transform_btm);
@@ -406,7 +487,7 @@ impl BrepShapeTrait for LoftSolid {
                 if let Surface::Plane(plane) = face_s.get_surface() {
                     dbg!(plane.normal());
                     if plane.normal().z > 0.0 {
-                        // dbg!("invert");
+                        dbg!("invert");
                         for mut f in &mut faces {
                             f.invert();
                         }
