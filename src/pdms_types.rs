@@ -1672,10 +1672,11 @@ impl CachedMeshesMgr {
         self.meshes.get(mesh_hash)
     }
 
-    //get the mesh index, if not exist, try to create and insert, and return index
-    pub fn get_pdms_mesh_hash_key(&self, m: Box<dyn BrepShapeTrait>) -> u64 {
+    ///gen the mesh return the hash key, if not exist, try to create and insert, and return index
+    pub fn gen_pdms_mesh(&self, m: Box<dyn BrepShapeTrait>, replace: bool) -> u64 {
         let hash = m.hash_unit_mesh_params();
-        if !self.meshes.contains_key(&hash) {
+        //如果是重新生成，会去覆盖模型
+        if replace || !self.meshes.contains_key(&hash) {
             if let Some(mesh) = m.gen_unit_mesh() {
                 self.meshes.insert(hash, mesh);
             }

@@ -101,7 +101,6 @@ impl BrepShapeTrait for Sphere {
                 max: Vec3::ONE,
             },
             unit_shape: Sphere::default().gen_brep_shell().unwrap(),
-            // shape_data: self.gen_unit_shape(),
         });
     }
 

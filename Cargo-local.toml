@@ -24,9 +24,10 @@ nom-derive = "0.10.0"
 itertools = "0.10.1"
 skytable = "0.7.0"
 flate2 = "1.0.23"
+lazy_static = "1.4.0"
 
-#bevy = { path = "../new/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-#bevy_egui = { path = "../new/bevy_egui" }
+bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy_egui = { path = "../bevy_egui" }
 #bevy_mod_raycast = { git = "https://gitee.com/happydpc/bevy_mod_raycast" }
 #bevy_egui = {path = "../new/bevy_egui"}
 #bevy-inspector-egui = { path = "../new/bevy-inspector-egui" }
@@ -39,14 +40,15 @@ serde_json = { version = "1.0" }
 hash32 = "0.2.1"
 hash32-derive = "0.1.1"
 prost = "0.8.0"
+version-sync = "0.9.4"
 
-truck-base = { path = "../../truck/truck/truck-base" }
-truck-geotrait = { path = "../../truck/truck/truck-geotrait" }
-truck-geometry = { path = "../../truck/truck/truck-geometry" }
-truck-polymesh = { path = "../../truck/truck/truck-polymesh" }
-truck-topology = { path = "../../truck/truck/truck-topology" }
-truck-modeling = { path = "../../truck/truck/truck-modeling" }
-truck-meshalgo = { path = "../../truck/truck/truck-meshalgo" }
-truck-platform = { path = "../../truck/truck/truck-platform" }
-truck-rendimpl = { path = "../../truck/truck/truck-rendimpl" }
+truck-base = { version = "0.3.0",git = "https://gitee.com/happydpc/truck.git" }
+truck-geotrait = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git"}
+truck-geometry = { version = "0.3.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-polymesh = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-topology = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-modeling = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-meshalgo = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-platform = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
+truck-rendimpl = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
 
