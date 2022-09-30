@@ -285,7 +285,7 @@ impl BrepShapeTrait for LoftSolid {
                     let b = Vec3::Z.angle_between(self.drns);
                     dbg!((a, b));
                     //slope对应的斜面必须要缩放
-                    if abs_diff_ne!(drns.y, 0.0) {
+                    if abs_diff_ne!(drns.y, 0.0, epsilon = 0.001) {
                         if !a.is_nan() {
                             let mut scale_x = 1.0 / a.sin().abs() as f64;
                             let mut found_err = false;
@@ -316,7 +316,7 @@ impl BrepShapeTrait for LoftSolid {
                     let a = Vec3::X.angle_between(drne);
                     let b = Vec3::Z.angle_between(drne);
                     dbg!((a, b));
-                    if abs_diff_ne!(drne.y, 0.0) {
+                    if abs_diff_ne!(drne.y, 0.0, epsilon = 0.001) {
                         if !a.is_nan() {
                             let mut scale_x = 1.0 / a.sin().abs() as f64;
                             let mut found_err = false;
@@ -406,7 +406,8 @@ impl BrepShapeTrait for LoftSolid {
                     let b = Vec3::Y.angle_between(self.drns);
                     // dbg!((a, b));
                     //slope对应的斜面必须要缩放
-                    if abs_diff_ne!(drns.z, 0.0) {
+                    dbg!(abs_diff_ne!(drns.z,  0.0, epsilon = 0.001));
+                    if abs_diff_ne!(drns.z,  0.0, epsilon = 0.001) {
                         if !a.is_nan() {
                             let mut scale_x = 1.0 / a.sin().abs() as f64;
                             let mut found_err = false;
@@ -415,11 +416,11 @@ impl BrepShapeTrait for LoftSolid {
                                 found_err = true;
                             }
                             let mut scale_y = 1.0 / b.sin().abs() as f64;
+                            dbg!((scale_x, scale_y));
                             if scale_y > 100.0 {
                                 scale_y = 1.0;
                                 found_err = true;
                             }
-                            dbg!((scale_x, scale_y));
                             if found_err {
                                 println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
                             }
@@ -437,7 +438,8 @@ impl BrepShapeTrait for LoftSolid {
                     let a = Vec3::X.angle_between(drne);
                     let b = Vec3::Y.angle_between(drne);
                     // dbg!((a, b));
-                    if abs_diff_ne!(drne.z, 0.0) {
+                    dbg!(abs_diff_ne!(drne.z, 0.0, epsilon = 0.001));
+                    if abs_diff_ne!(drne.z, 0.0, epsilon = 0.001) {
                         if !a.is_nan() {
                             let mut scale_x = 1.0 / a.sin().abs() as f64;
                             let mut found_err = false;
@@ -446,11 +448,11 @@ impl BrepShapeTrait for LoftSolid {
                                 found_err = true;
                             }
                             let mut scale_y = 1.0 / b.sin().abs() as f64;
+                            dbg!((scale_x, scale_y));
                             if scale_y > 100.0 {
                                 scale_y = 1.0;
                                 found_err = true;
                             }
-                            dbg!((scale_x, scale_y));
                             if found_err {
                                 println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
                             }

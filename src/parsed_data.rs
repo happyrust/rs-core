@@ -363,17 +363,9 @@ pub struct CateTorusParam {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CateTubeImpliedParam {
-    
-    pub center_position: Vec<f64>,
-    
-    pub direction: Vec<f64>,
-    
-    pub diameter: f64,
-    
-    pub height: f64,
-    
+    pub axis: Option<CateAxisParam>,
+    pub diameter: f32,
     pub centre_line_flag: bool,
-    
     pub tube_flag: bool,
 }
 

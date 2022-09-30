@@ -356,6 +356,13 @@ impl From<IVec> for RefU64Vec {
     }
 }
 
+impl From<Vec<RefU64>> for RefU64Vec {
+    fn from(d: Vec<RefU64>) -> Self {
+        RefU64Vec(d)
+    }
+}
+
+
 impl Deref for RefU64Vec {
     type Target = Vec<RefU64>;
 

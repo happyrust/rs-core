@@ -22,6 +22,7 @@ use crate::prim_geo::rtorus::{RTorus, SRTorus};
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
+use crate::prim_geo::tubing::PdmsTubing;
 use crate::shape::pdms_shape::BrepShapeTrait;
 
 #[derive(Debug)]
