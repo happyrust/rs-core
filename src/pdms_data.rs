@@ -119,15 +119,16 @@ pub struct AxisParam {
     pub pnt_index_str: Option<String>,
 }
 
+/// 增量更新的数据操作
 #[derive(Debug, Serialize, Deserialize)]
-pub enum NewDataState {
+pub enum NewDataOperate {
     Modify = 0,
     Increase = 1,
     Delete = 2,
     Invalid,
 }
 
-impl From<i32> for NewDataState {
+impl From<i32> for NewDataOperate {
     fn from(v: i32) -> Self {
         match v {
             0 => { Self::Modify }
@@ -142,7 +143,7 @@ impl From<i32> for NewDataState {
 pub struct IncrementData {
     pub refno: RefU64,
     pub attr_data_map: AttrMap,
-    pub state: NewDataState,
+    pub state: NewDataOperate,
     pub version: u32,
 }
 
