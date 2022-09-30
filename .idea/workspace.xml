@@ -15,16 +15,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Fix cargo">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Fix bore parameter">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo-gitee.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo-gitee.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo-local.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo-local.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/loft.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/loft.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/tubing.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/tubing.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo-backup.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo-backup.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,25 +45,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Project.color": "4b565d",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "last_opened_file_path": "/Users/dongpengcheng/rust-projects/new/aios_core",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Project.color&quot;: &quot;4b565d&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/dongpengcheng/rust-projects/new/aios_core&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
@@ -190,35 +183,9 @@
       <workItem from="1663181396819" duration="10000" />
       <workItem from="1663593186242" duration="735000" />
       <workItem from="1663855813210" duration="2430000" />
-      <workItem from="1664174690136" duration="3311000" />
-    </task>
-    <task id="LOCAL-00076" summary="Update">
-      <created>1658415272936</created>
-      <option name="number" value="00076" />
-      <option name="presentableId" value="LOCAL-00076" />
-      <option name="project" value="LOCAL" />
-      <updated>1658415272936</updated>
-    </task>
-    <task id="LOCAL-00077" summary="Update">
-      <created>1658415646796</created>
-      <option name="number" value="00077" />
-      <option name="presentableId" value="LOCAL-00077" />
-      <option name="project" value="LOCAL" />
-      <updated>1658415646796</updated>
-    </task>
-    <task id="LOCAL-00078" summary="Update">
-      <created>1658493629579</created>
-      <option name="number" value="00078" />
-      <option name="presentableId" value="LOCAL-00078" />
-      <option name="project" value="LOCAL" />
-      <updated>1658493629579</updated>
-    </task>
-    <task id="LOCAL-00079" summary="Update">
-      <created>1658737045914</created>
-      <option name="number" value="00079" />
-      <option name="presentableId" value="LOCAL-00079" />
-      <option name="project" value="LOCAL" />
-      <updated>1658737045914</updated>
+      <workItem from="1664174690136" duration="5838000" />
+      <workItem from="1664511800785" duration="31000" />
+      <workItem from="1664557583446" duration="146000" />
     </task>
     <task id="LOCAL-00080" summary="Update">
       <created>1658913997107</created>
@@ -535,7 +502,35 @@
       <option name="project" value="LOCAL" />
       <updated>1664292615193</updated>
     </task>
-    <option name="localTasksCounter" value="125" />
+    <task id="LOCAL-00125" summary="Fix slope face">
+      <created>1664393324939</created>
+      <option name="number" value="00125" />
+      <option name="presentableId" value="LOCAL-00125" />
+      <option name="project" value="LOCAL" />
+      <updated>1664393324940</updated>
+    </task>
+    <task id="LOCAL-00126" summary="解决弧形墙的面也有sloped的情况">
+      <created>1664442398650</created>
+      <option name="number" value="00126" />
+      <option name="presentableId" value="LOCAL-00126" />
+      <option name="project" value="LOCAL" />
+      <updated>1664442398650</updated>
+    </task>
+    <task id="LOCAL-00127" summary="Fix wall WIP">
+      <created>1664464249924</created>
+      <option name="number" value="00127" />
+      <option name="presentableId" value="LOCAL-00127" />
+      <option name="project" value="LOCAL" />
+      <updated>1664464249924</updated>
+    </task>
+    <task id="LOCAL-00128" summary="Fix bore parameter">
+      <created>1664557598319</created>
+      <option name="number" value="00128" />
+      <option name="presentableId" value="LOCAL-00128" />
+      <option name="project" value="LOCAL" />
+      <updated>1664557598320</updated>
+    </task>
+    <option name="localTasksCounter" value="129" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -565,10 +560,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="use gitee" />
-    <MESSAGE value="Update toml" />
-    <MESSAGE value="Merge" />
-    <MESSAGE value="Fix 64 bit as json string" />
     <MESSAGE value="Revert 64bit serde string&#10;Add check uda" />
     <MESSAGE value="Change default triangulate tol" />
     <MESSAGE value="wasm dont use sled" />
@@ -590,6 +581,10 @@
     <MESSAGE value="修改SCYL，保证SSLC能够正确的旋转端面" />
     <MESSAGE value="tmp" />
     <MESSAGE value="Fix cargo" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix cargo" />
+    <MESSAGE value="Fix slope face" />
+    <MESSAGE value="解决弧形墙的面也有sloped的情况" />
+    <MESSAGE value="Fix wall WIP" />
+    <MESSAGE value="Fix bore parameter" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix bore parameter" />
   </component>
 </project>
