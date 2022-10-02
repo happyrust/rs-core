@@ -240,8 +240,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref().unwrap();
             let mut pts = SmallVec::default();
             pts.push(axis.number);
-            let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
-            let phei = d.height as f32;
+            let mut dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
+            let mut phei = d.height as f32;
+            if phei < 0.0 {
+                phei = -phei;
+                dir = -dir;
+            }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
             let translation = dir * (d.dist_to_btm) + Vec3::new(axis.pt[0], axis.pt[1], axis.pt[2]);
@@ -269,8 +273,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref().unwrap();
             let mut pts = SmallVec::default();
             pts.push(axis.number);
-            let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
-            let phei = (d.dist_to_top - d.dist_to_btm) as f32;
+            let mut dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
+            let mut phei = (d.dist_to_top - d.dist_to_btm) as f32;
+            if phei < 0.0 {
+                phei = -phei;
+                dir = -dir;
+            }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
             let translation = dir * (d.dist_to_btm) + Vec3::new(axis.pt[0], axis.pt[1], axis.pt[2]);
@@ -283,6 +291,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 phei,
                 pdia,
+                // center_in_mid: true,
                 ..default()
             });
             return Some(CateBrepShape {

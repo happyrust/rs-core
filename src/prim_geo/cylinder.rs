@@ -139,6 +139,8 @@ pub struct SCylinder {
     pub top_shear_angles: [f32; 2],
     // y shear
     pub negative: bool,
+
+    pub center_in_mid: bool,
 }
 
 impl Default for SCylinder {
@@ -152,6 +154,7 @@ impl Default for SCylinder {
             btm_shear_angles: [0.0f32; 2],
             top_shear_angles: [0.0f32; 2],
             negative: false,
+            center_in_mid: false,
         }
     }
 }
@@ -183,7 +186,11 @@ impl BrepShapeTrait for SCylinder {
     fn get_trans(&self) -> glam::TransformSRT {
         glam::TransformSRT {
             rotation: Default::default(),
-            translation: Vec3::new(0.0, 0.0, -self.phei/2.0),
+            translation: if self.center_in_mid {
+                Vec3::new(0.0, 0.0, -self.phei / 2.0)
+            } else {
+                Vec3::ZERO
+            },
             scale: self.get_scaled_vec3(),
         }
     }
@@ -274,10 +281,8 @@ impl BrepShapeTrait for SCylinder {
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        if self.is_sscl(){
-            // let mut s = self.clone();
-            // s.phei = 1.0;
-            let mut s =  SCylinder {
+        if self.is_sscl() {
+            let mut s = SCylinder {
                 paxi_expr: "Z".to_string(),
                 paxi_pt: Default::default(),
                 paxi_dir: Vec3::Z,
@@ -286,8 +291,8 @@ impl BrepShapeTrait for SCylinder {
                 btm_shear_angles: self.btm_shear_angles.clone(),
                 top_shear_angles: self.top_shear_angles.clone(),
                 negative: false,
+                center_in_mid: self.center_in_mid,
             };
-            dbg!(&s);
             return Box::new(s);
         }
         Box::new(Self::default())
@@ -299,7 +304,7 @@ impl BrepShapeTrait for SCylinder {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        if self.is_sscl(){
+        if self.is_sscl() {
             // Vec3::new(1.0, 1.0, self.phei.abs())
             Vec3::new(1.0, 1.0, 1.0)
         } else {
@@ -321,6 +326,7 @@ impl From<&AttrMap> for SCylinder {
             btm_shear_angles: [0.0; 2],
             top_shear_angles: [0.0; 2],
             negative: false,
+            center_in_mid: true,
         }
     }
 }

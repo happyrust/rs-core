@@ -19,6 +19,7 @@ impl PdmsTubing{
         let mut cylinder = SCylinder{
             phei: self.start_pt.distance(self.end_pt),
             pdia: self.bore,
+            center_in_mid: false,
             ..default()
         };
 

@@ -91,7 +91,7 @@ pub struct GmseParamData {
     pub prad: f32,
 
     /// plin 数据
-    pub plin_verts: Vec2,
+    pub plin_pos: Vec2,
     pub plin_plax: Vec3,
 }
 
@@ -204,14 +204,17 @@ pub struct CateExtrusionParam {
 //structural annulus
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct SannData {
-    pub xy: [f32; 2],
-    pub dxy: [f32; 2],
-    pub ptaxis: Option<CateAxisParam>,
+    pub xy: Vec2,
+    pub dxy: Vec2,
+    pub paxis: Option<CateAxisParam>,
     pub pangle: f32,
     pub pradius: f32,
     pub pwidth: f32,
     pub drad: f32,
     pub dwid: f32,
+
+    pub plin_pos: Vec2,
+    pub plin_axis: Vec3,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]

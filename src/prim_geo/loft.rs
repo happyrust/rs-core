@@ -28,10 +28,11 @@ pub struct LoftSolid {
     pub profile: CateProfileParam,
     pub drns: Vec3,
     pub drne: Vec3,
+    pub bangle: f32,
     pub plane_normal: Vec3,
     pub extrude_dir: Vec3,
     pub height: f32,
-    pub arc_path: Option<(Vec3, Vec3, Vec3)>,  //p1, p2, p3  弧形的路径
+    pub arc_path: Option<(Vec3, Vec3, Vec3, bool)>,  //p1, p2, p3  弧形的路径
 }
 
 impl LoftSolid {
@@ -42,111 +43,82 @@ impl LoftSolid {
         (abs_diff_ne!(self.drns.length(), 0.0) || abs_diff_ne!(self.drne.length(), 0.0))
     }
 
-    fn cal_sann_face(&self, is_btm: bool, dir: Vec3, angle: f32, r1: f32, r2: f32, circle: Option<Circle2D>) -> Option<Face> {
-        return None;
-        // let rot = Quat::from_rotation_arc(Vec3::X, dir);
-        let a = angle;
-        let c = circle.unwrap_or_default().r;
-        let c = 0.0;
-        let center_pt = Point3::new(0.0 - c as f64, 0.0, 0.0 as f64);
-        let mut rot = Quat::from_rotation_arc(Vec3::Z, self.plane_normal);
-        let p1 = rot.mul_vec3(Vec3::new(r1 - c, 0.0, 0.0));
-        let p2 = rot.mul_vec3(Vec3::new(r2 - c, 0.0, 0.0));
-        let p3 = rot.mul_vec3(Vec3::new(r2 * a.cos() - c, r2 * a.sin(), 0.0));
-        let p4 = rot.mul_vec3(Vec3::new(r1 * a.cos() - c, r1 * a.sin(), 0.0));
-
-        let v1 = builder::vertex(p1.point3());
-        let v2 = builder::vertex(p2.point3());
-        let v3 = builder::vertex(p3.point3());
-        let v4 = builder::vertex(p4.point3());
-
-        let mut z_axis = self.plane_normal;
-        let mut wire = Wire::from(vec![
-            builder::line(&v1, &v2),
-            builder::circle_arc_with_center(center_pt,
-                                            &v2, &v3, z_axis.vector3(), Rad(a as f64)),
-            builder::line(&v3, &v4),
-            builder::circle_arc_with_center(center_pt,
-                                            &v4, &v1, z_axis.vector3(), Rad(-a as f64)),
-        ]);
-
-        if let Ok(mut f) = try_attach_plane(&[wire]) {
-            if let Surface::Plane(plane) = f.get_surface() {
-                if plane.normal().dot(self.plane_normal.vector3()) < 0.0 {
-                    f = f.inverse();
-                }
-            }
-            return Some(f);
-        }
-
-        None
-    }
-
-    //is_btm 是否是底部的face
-    fn cal_sann_face_1(&self, is_btm: bool, dir: Vec3, angle: f32, r1: f32, r2: f32) -> Option<Face> {
+    fn gen_sann_wire(&self, origin: Vec2, angle: f32, r1: f32, r2: f32, plin_pos: Vec2, circle: Option<Circle2D>) -> Option<Wire> {
         use truck_base::cgmath64::*;
-        let mut n = if is_btm { self.drns.normalize() } else { self.drne.normalize() };
-        //dbg!(&n);
-        let h = if is_btm { 0.0 } else { self.height };
-        let extrude_dir = self.extrude_dir.normalize();
-        let a = angle;
+        // let extrude_dir = self.extrude_dir.normalize();
         let mut z_axis = Vec3::Z;
-        let z_angle: f32 = z_axis.angle_between(n);
-        if z_angle == FRAC_PI_2 { return None; }
-        let mut y_axis_scale = (1.0 / z_angle.cos()) as f64;
-        let mut rot_face = Quat::from_rotation_arc(Vec3::Z, n.normalize());
-        let rot = Quat::from_rotation_arc(Vec3::X, dir);
-
-        let p1 = rot.mul_vec3(Vec3::new(r1, 0.0, h));
-        let p2 = rot.mul_vec3(Vec3::new(r2, 0.0, h));
-        let p3 = rot.mul_vec3(Vec3::new(r2 * a.cos(), r2 * a.sin(), h));
-        let p4 = rot.mul_vec3(Vec3::new(r1 * a.cos(), r1 * a.sin(), h));
-
-        let v1 = builder::vertex(p1.point3());
-        let v2 = builder::vertex(p2.point3());
-        let v3 = builder::vertex(p3.point3());
-        let v4 = builder::vertex(p4.point3());
-        //try to make it as ellipse wire
-        let center_pt = Point3::new(0.0, 0.0, h as f64);
-        let mut wire = Wire::from(vec![
-            builder::line(&v1, &v2),
-            builder::circle_arc_with_center(center_pt,
-                                            &v2, &v3, z_axis.vector3(), Rad(a as f64)),
-            builder::line(&v3, &v4),
-            builder::circle_arc_with_center(center_pt,
-                                            &v4, &v1, z_axis.vector3(), Rad(-a as f64)),
-        ]).inverse();
-
-        let mat0 = Matrix4::from_translation(-center_pt.to_vec());
-        let mat1 = Matrix4::from_nonuniform_scale(1.0, y_axis_scale, 1.0);
-        let mat2 = Matrix4::from_angle_z(Rad(z_angle as f64));
-        let mat3 = Matrix4::from_translation(center_pt.to_vec());
-
-        if let Ok(mut f) = try_attach_plane(&[wire]) {
-            if let Surface::Plane(plane) = f.get_surface() {
-                if plane.normal().dot(self.plane_normal.vector3()) < 0.0 {
-                    f = f.inverse();
-                }
-            }
-            return Some(f);
-        }
-
-        None
-    }
-
-    ///计算SPRO的face
-    /// start_vec 为起始方向
-    fn cal_spro_wire(&self, is_btm: bool, profile: &SProfileData, start_vec: Vec3, circle: Option<Circle2D>) -> Option<Wire> {
-        let n = if is_btm { self.drns } else { self.drne };
-        let h = if is_btm { 0.0 } else { self.height };
-        let verts = &profile.verts;
-        let len = verts.len();
-
-        let mut extrude = Vec3::Z;
+        let mut a = angle.abs();
+        // if a < 0.0 {
+        //     a = -a;
+        //     z_axis = -z_axis;
+        // }
         let mut offset_pt = Vec3::ZERO;
         let mut rot = Quat::IDENTITY;
         let mut local_rot = Quat::IDENTITY;
         let mut angle = 0.0f32;
+        if circle.is_some() {
+            let circle = circle.as_ref().unwrap();
+            dbg!(circle.clock_wise);
+            if circle.clock_wise {
+                offset_pt.x = circle.r; //- plin_pos.x;
+            } else {
+                offset_pt.x = circle.r - r2 + plin_pos.x;
+            }
+            //暂时应该都是从x轴旋转开始
+            // angle = start_dir.angle_between(Vec3::X);
+            dbg!(angle);
+            rot = Quat::from_rotation_arc(self.plane_normal, Vec3::Z);
+            // dbg!(rot);
+            // local_rot = Quat::from_rotation_z(angle);
+        } else {
+            rot = Quat::from_rotation_arc(self.plane_normal, Vec3::Y);
+            offset_pt.x = -plin_pos.x;
+        }
+        // offset_pt.y = -plin_pos.y;
+
+        let p1 = (Vec3::new(r1, 0.0, 0.0));
+        let p2 = (Vec3::new(r2, 0.0, 0.0));
+        let p3 = (Vec3::new(r2 * a.cos(), r2 * a.sin(), 0.0));
+        let p4 = (Vec3::new(r1 * a.cos(), r1 * a.sin(), 0.0));
+
+        let v1 = builder::vertex(p1.point3());
+        let v2 = builder::vertex(p2.point3());
+        let v3 = builder::vertex(p3.point3());
+        let v4 = builder::vertex(p4.point3());
+        let center_pt = Point3::new(0.0, 0.0, 0.0);
+        let mut wire = Wire::from(vec![
+            builder::line(&v1, &v2),
+            builder::circle_arc_with_center(center_pt,
+                                            &v2, &v3, z_axis.vector3(), Rad(a as f64)),
+            builder::line(&v3, &v4),
+            builder::circle_arc_with_center(center_pt,
+                                            &v4, &v1, -z_axis.vector3(), Rad(a as f64)),
+        ]);
+        let offset = offset_pt + Vec3::new(origin.x, origin.y, 0.0);
+        let b_rot = Quat::from_axis_angle(self.plane_normal, self.bangle.to_radians());
+        //todo fixed how to rotation bangle
+        let m = Mat3::from_quat(/*b_rot **/ /*local_rot * */rot );
+        let translation = Matrix4::from_translation(offset.vector3());
+        let rotation = Matrix4::from_cols(
+            m.x_axis.vector4(),
+            m.y_axis.vector4(),
+            m.z_axis.vector4(),
+            Vector4::new(0.0, 0.0, 0.0, 1.0),
+        );
+        Some(builder::transformed(&wire, translation * rotation))
+    }
+
+    ///计算SPRO的face
+    /// start_vec 为起始方向
+    fn cal_spro_wire(&self, profile: &SProfileData, start_dir: Vec3, circle: Option<Circle2D>) -> Option<Wire> {
+        let verts = &profile.verts;
+        let len = verts.len();
+
+        let mut offset_pt = Vec3::ZERO;
+        let mut rot = Quat::IDENTITY;
+        let mut local_rot = Quat::IDENTITY;
+        let mut angle = 0.0f32;
+        let mut beta_rot = Quat::IDENTITY;
         if circle.is_some() {
             let circle = circle.as_ref().unwrap();
             //todo 需要确定哪个边是x轴的
@@ -160,33 +132,34 @@ impl LoftSolid {
             } else {
                 offset_pt.x = circle.r - delta_vec.length() + profile.plin_pos.x;
             }
-            angle = start_vec.angle_between(Vec3::X);
+            // angle = start_dir.angle_between(Vec3::X);
             // dbg!(angle);
-            extrude = self.plane_normal;
             rot = Quat::from_rotation_arc(self.plane_normal, Vec3::Z);
-            local_rot = Quat::from_rotation_z(angle);
+            beta_rot = Quat::from_axis_angle(self.plane_normal, self.bangle.to_radians());
         } else {
             offset_pt.x = -profile.plin_pos.x;
         }
         offset_pt.y = -profile.plin_pos.y;
-        dbg!(&offset_pt);
-        // let p0 = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[0][0], verts[0][1], h) + offset_pt));
-
-        // let mut v0 = builder::vertex(p0.point3());
-        // let mut prev_v0 = v0.clone();
+        // dbg!(&offset_pt);
         let mut points = vec![];
-
         for i in 0..len {
-            let p = local_rot.mul_vec3(rot.mul_vec3(Vec3::new(verts[i][0], verts[i][1], h) + offset_pt));
+            let p = Vec3::new(verts[i][0], verts[i][1], 0.0);
             points.push(p);
-            // let next_v = builder::vertex(p.point3());
-            // edges.push(builder::line(&prev_v0, &next_v));
-            // prev_v0 = next_v.clone();
         }
-        // let last_v = edges.last().unwrap().back();
-        // edges.push(builder::line(last_v, &v0));
-
-        wire::gen_wire(&points, &profile.frads).ok()
+        let mut wire = wire::gen_wire(&points, &profile.frads).ok()?;
+        // dbg!(bangle);
+        dbg!(self.bangle);
+        // let b_rot = Quat::from_axis_angle(beta_axis, self.bangle.to_radians());
+        // let b_rot = Quat::from_axis_angle(beta_axis, PI/4.0);
+        let m = Mat3::from_quat(  beta_rot * rot);  //
+        let translation = Matrix4::from_translation(offset_pt.vector3());
+        let rotation = Matrix4::from_cols(
+            m.x_axis.vector4(),
+            m.y_axis.vector4(),
+            m.z_axis.vector4(),
+            Vector4::new(0.0, 0.0, 0.0, 1.0),
+        );
+        Some(builder::transformed(&wire, translation * rotation))
     }
 }
 
@@ -197,6 +170,7 @@ impl Default for LoftSolid {
             drns: Default::default(),
             drne: Default::default(),
             // axis_dir: Default::default(),
+            bangle: 0.0,
             plane_normal: Vec3::Z,
             extrude_dir: Vec3::Z,
             height: 0.0,
@@ -210,11 +184,15 @@ impl VerifiedShape for LoftSolid {
 }
 
 
+
+
 //#[typetag::serde]
 impl BrepShapeTrait for LoftSolid {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
+
+
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -223,15 +201,21 @@ impl BrepShapeTrait for LoftSolid {
         let mut profile_wire = None;
         // let mut face_e = None;
         let mut circle = None;
-        let mut start_vec = Vec3::X;
+        let mut start_dir = Vec3::X;
         // dbg!(&self.arc_path);
-        if let Some((p1, p2, p3)) = self.arc_path {
-            let c = Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y));
+        if let Some((p1, p2, p3, is_center)) = self.arc_path {
+            let c =
+                Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y), is_center);
             circle = Some(c);
             if p1.length() > EPSILON {
-                start_vec = p1.normalize();
+                start_dir = Vec3::new(p1.x, p1.y, 0.0).normalize();
             }
         }
+        let start_angle = start_dir.angle_between(Vec3::X);
+        dbg!(start_angle.to_degrees());
+        // let whole_rot = Quat::from_rotation_z(start_angle);
+        let whole_rot = Matrix4::from_angle_z(Rad(start_angle as f64));
+        // let whole_rot = Matrix4::one();
         // dbg!(&circle);
         let mut is_sann = false;
         match &self.profile {
@@ -241,19 +225,20 @@ impl BrepShapeTrait for LoftSolid {
                 let r = p.pradius;
                 let r1 = r - w;
                 let r2 = r;
-                let d = &p.ptaxis.as_ref().unwrap().dir;
-                let dir = Vec3::new(d[0] as f32, d[1] as f32, d[2] as f32).normalize();
-                let angle = p.pangle.to_radians();
-                // face_s = self.cal_sann_face(true, dir, angle, r1, r2, circle.clone());
-                // let w = p.pwidth + p.dwid;
-                // let r = p.pradius + p.drad;
-                // let r1 = r - w;
-                // let r2 = r;
-                // face_e = self.cal_sann_face(false, dir, angle, r1, r2).map(|x| x.inverse());
+                let d = p.paxis.as_ref().unwrap().dir.normalize();
+                // let dir = Vec3::new(d[0] as f32, d[1] as f32, d[2] as f32).normalize();
+                let mut angle = p.pangle.to_radians();
+                let origin = p.xy + p.dxy;
+                // if Vec3::X.cross(d).z < 0.0 {
+                //     angle = -angle;
+                // }
+                // dbg!(angle);
+                profile_wire = self.gen_sann_wire( origin, angle, r1, r2, p.plin_pos, circle.clone());
+                // dbg!(&profile_wire);
                 is_sann = true;
             }
             CateProfileParam::SPRO(p) => {
-                profile_wire = self.cal_spro_wire(true, p, start_vec, circle.clone());
+                profile_wire = self.cal_spro_wire(p, start_dir, circle.clone());
             }
             _ => {}
         }
@@ -262,30 +247,31 @@ impl BrepShapeTrait for LoftSolid {
             //先生成start 和 end face
             let mut drns = self.drns;
             let mut drne = self.drne;
-            dbg!(self.plane_normal);
-            dbg!(&drns);
-            dbg!(&drne);
+            // dbg!(self.plane_normal);
+            // dbg!(&drns);
+            // dbg!(&drne);
             let mut transform_btm = Matrix4::one();
             let mut transform_top = Matrix4::one();
             let mut rotation = Matrix4::one();
             let mut scale_mat = Matrix4::one();
 
 
-            if let Some((p1, p2, p3)) = self.arc_path {
+            if self.arc_path.is_some() {
                 let c = circle.unwrap_or_default();
-                let v1 = Vec2::new(p1.x, p1.y) - c.center;
-                let v3 = Vec2::new(p3.x, p3.y) - c.center;
-                let mut angle = v1.angle_between(v3);
+                // let v1 = Vec2::new(p1.x, p1.y) - c.center;
+                // let v3 = Vec2::new(p3.x, p3.y) - c.center;
+                // let mut angle = v1.angle_between(v3);
+                let mut angle = c.angle;
+                dbg!(&c);
                 let mut rot_z = Vec3::Z;
                 if c.clock_wise {
                     rot_z = -Vec3::Z;
                 }
                 if self.is_sloped() {
-                    let a = Vec3::X.angle_between(self.drns);
-                    let b = Vec3::Z.angle_between(self.drns);
-                    dbg!((a, b));
                     //slope对应的斜面必须要缩放
                     if abs_diff_ne!(drns.y, 0.0, epsilon = 0.001) {
+                        let a = Vec3::X.angle_between(self.drns);
+                        let b = Vec3::Z.angle_between(self.drns);
                         if !a.is_nan() {
                             let mut scale_x = 1.0 / a.sin().abs() as f64;
                             let mut found_err = false;
@@ -298,7 +284,7 @@ impl BrepShapeTrait for LoftSolid {
                                 scale_z = 1.0;
                                 found_err = true;
                             }
-                            dbg!((scale_x, scale_z));
+                            // dbg!((scale_x, scale_z));
                             if found_err {
                                 println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_z));
                             }
@@ -312,11 +298,10 @@ impl BrepShapeTrait for LoftSolid {
                             // );
                         }
                     }
-                    transform_btm = rotation * scale_mat;
-                    let a = Vec3::X.angle_between(drne);
-                    let b = Vec3::Z.angle_between(drne);
-                    dbg!((a, b));
+                    // transform_btm = rotation * scale_mat;
                     if abs_diff_ne!(drne.y, 0.0, epsilon = 0.001) {
+                        let a = Vec3::X.angle_between(drne);
+                        let b = Vec3::Z.angle_between(drne);
                         if !a.is_nan() {
                             let mut scale_x = 1.0 / a.sin().abs() as f64;
                             let mut found_err = false;
@@ -344,18 +329,34 @@ impl BrepShapeTrait for LoftSolid {
                         }
                     }
 
-                    transform_top = transform_top * rotation * scale_mat;
+                    // transform_top = transform_top * rotation * scale_mat;
                 }
                 // dbg!(c.clock_wise);
                 // dbg!(rot_z);
                 // dbg!(angle);
                 // dbg!(self.plane_normal);
                 let mut faces = vec![];
-                let start_angle = Vec2::X.angle_between(v1);
+                // let start_angle = Vec2::X.angle_between(v1);
                 let rot = Matrix4::from_angle_z(Rad(angle as f64));
                 let wire_s = builder::transformed(&wire, transform_btm);
                 let wire_e = builder::transformed(&wire, rot * transform_top);
                 let edges_cnt = wire_s.len();
+                //先暂时简化
+                if is_sann {
+                    let mut face_s = builder::try_attach_plane(&[wire_s]).unwrap();
+                    if let Surface::Plane(plane) = face_s.get_surface() {
+                        // let is_neg = start_angle.abs() >= PI;
+                        let is_rev_face = (plane.normal().y * rot_z.z as f64) < 0.0;
+                        // if is_neg ^
+                        if is_rev_face {
+                            // dbg!("invert");
+                            face_s.invert();
+                        }
+                    }
+                    let solid = builder::rsweep(&face_s, Point3::origin(), rot_z.vector3(), Rad(angle.abs() as f64));
+                    let shell: Shell = solid.into_boundaries().pop()?;
+                    return Some(builder::transformed(&shell, whole_rot));
+                }
                 for i in 0..edges_cnt {
                     let edge0 = &wire_s[i];
                     let edge1 = &wire_e[i];
@@ -366,17 +367,22 @@ impl BrepShapeTrait for LoftSolid {
 
                     let curve0 = arc_0.oriented_curve().lift_up();
                     let curve1 = arc_1.oriented_curve().lift_up();
-                    let surface = BSplineSurface::homotopy(curve0, curve1);
-
-                    let wire: Wire = vec![
+                    let w: Wire = vec![
                         edge0.clone(),
                         arc_0,
                         edge1.inverse(),
                         arc_1.inverse(),
                     ].into();
+                    let surface = BSplineSurface::homotopy(curve0, curve1);
+                    // let surface = BSplineSurface::by_boundary(
+                    //     w[0].get_curve(),
+                    //     w[1].get_curve(),
+                    //     w[2].get_curve(),
+                    //     w[3].get_curve(),
+                    // );
 
                     faces.push(Face::new(
-                        vec![wire],
+                        vec![w],
                         Surface::NURBSSurface(NURBSSurface::new(surface)),
                     ).inverse());
                 }
@@ -387,17 +393,16 @@ impl BrepShapeTrait for LoftSolid {
                 faces.push(face_e.inverse());
 
                 if let Surface::Plane(plane) = face_s.get_surface() {
-                    dbg!(plane.normal());
-                    let is_neg = start_angle.abs() >= PI;
-                    let is_rev_face = (plane.normal().dot(self.plane_normal.vector3())) * rot_z.z as f64 > 0.0;
-                    if is_neg ^ is_rev_face {
-                        dbg!("invert");
+                    // dbg!(plane.normal());
+                    // let is_neg = start_angle.abs() >= PI;
+                    let is_rev_face = plane.normal().y * rot_z.z as f64 > 0.0;
+                    if is_rev_face {
+                        // dbg!("invert");
                         for mut f in &mut faces {
                             f.invert();
                         }
                     }
                 }
-
                 return Some(faces.into());
             } else {
 
@@ -496,7 +501,9 @@ impl BrepShapeTrait for LoftSolid {
                     }
                 }
 
-                return Some(faces.into());
+                let shell: Shell = faces.into();
+
+                return Some(builder::transformed(&shell, whole_rot));
             };
         }
         None
@@ -514,10 +521,14 @@ impl BrepShapeTrait for LoftSolid {
             hash_f32(self.height, &mut hasher);
         }
 
-        if let Some((p1, p2, p3)) = self.arc_path {
+        if let Some((p1, p2, p3, is_center)) = self.arc_path {
             hash_vec3::<DefaultHasher>(&p1, &mut hasher);
             hash_vec3::<DefaultHasher>(&p2, &mut hasher);
             hash_vec3::<DefaultHasher>(&p3, &mut hasher);
+
+            is_center.hash(&mut hasher);
+            //旋转的情况下，有bangle没法复用
+            hash_f32(self.bangle, &mut hasher);
         }
         "loft".hash(&mut hasher);
 
@@ -531,6 +542,7 @@ impl BrepShapeTrait for LoftSolid {
             unit.extrude_dir = Vec3::Z;
             unit.height = 1.0;
         }
+        dbg!(&unit);
         Box::new(unit)
     }
 
@@ -555,14 +567,23 @@ impl BrepShapeTrait for LoftSolid {
 
         match &self.profile {
             CateProfileParam::SANN(p) => {
-                // if let Some(s) = &p.ptaxis {
-                //     vec = Vec3::new(s.dir[0] as f32, s.dir[1] as f32, s.dir[2] as f32);
-                // }
+                let mut translation = Vec3::ZERO;
+                if let Some((p1, p2, p3, is_center)) = self.arc_path {
+                    //todo 是否考虑是个三维的圆
+                    if is_center {
+                        translation = p2;
+                    }else{
+                        let c = Circle2D::from_three_points(&Vec2::new(p1.x, p1.y), &Vec2::new(p2.x, p2.y), &Vec2::new(p3.x, p3.y), is_center);
+                        translation.x = c.center.x;
+                        translation.y = c.center.y;
+                        translation.z = p1.z;
+                    }
+                    dbg!(translation);
+                }
                 return TransformSRT {
-                    rotation: Quat::IDENTITY,//Quat::from_rotation_arc(Vec3::Y, vec),
+                    rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),
-                    translation: Vec3::ZERO,
-                    // translation: Vec3::new(p.xy[0] + p.dxy[0], p.xy[1] + p.dxy[1], 0.0),
+                    translation,
                 };
             }
             CateProfileParam::SPRO(_) => {
