@@ -159,6 +159,7 @@ impl Debug for IncrementData {
     }
 }
 
+
 lazy_static! {
     pub static ref ATTR_INFO_MAP: AttInfoMap = {
         let db_info: PdmsDatabaseInfo = serde_json::from_str(include_str!("../all_attr_info.json")).unwrap();

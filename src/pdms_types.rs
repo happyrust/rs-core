@@ -50,6 +50,7 @@ use crate::tool::db_tool::{db1_dehash, db1_hash};
 pub const LEVEL_VISBLE: u32 = 6;
 
 
+
 // 包装整数
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct Integer(pub u32);
@@ -520,6 +521,61 @@ impl AttrMap {
     }
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct WholeAttMap {
+    pub implicit_attmap: AttrMap,
+    pub explicit_attmap: AttrMap,
+    pub uda_attmap: AttrMap,
+}
+
+impl WholeAttMap {
+    pub fn refine(mut self, info_map: &DashMap<i32, AttrInfo>) -> Self {
+        for (k, v) in self.explicit_attmap.clone().map {
+            let noun_hash = k.0;
+            if let Some(info) = info_map.get(&(noun_hash as i32)) {
+                if info.offset > 0 && EXPR_ATT_SET.contains(&(noun_hash as i32)) {
+                    let v = self.explicit_attmap.remove(&NounHash(noun_hash)).unwrap();
+                    self.implicit_attmap.insert(NounHash(noun_hash), v);
+                }
+            }
+        }
+        self
+    }
+
+    #[inline]
+    pub fn into_bincode_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+
+    #[inline]
+    pub fn into_compress_bytes(&self) -> Vec<u8> {
+        use flate2::Compression;
+        use flate2::write::DeflateEncoder;
+        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
+        e.write_all(&self.into_bincode_bytes());
+        e.finish().unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+        use flate2::write::DeflateDecoder;
+        let mut writer = Vec::new();
+        let mut deflater = DeflateDecoder::new(writer);
+        deflater.write_all(bytes).ok()?;
+        // writer = ;
+        bincode::deserialize(&deflater.finish().ok()?).ok()
+    }
+
+    /// 将隐式属性和显示属性放到一个attrmap中
+    #[inline]
+    pub fn change_implicit_explicit_into_attr(self) -> AttrMap {
+        let mut map = self.implicit_attmap;
+        for (k, v) in self.explicit_attmap.map {
+            map.insert(k, v);
+        }
+        map
+    }
+}
 
 // impl Inspectable for AttrMap {
 //     type Attributes = ();
