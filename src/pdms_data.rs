@@ -143,7 +143,7 @@ impl NewDataOperate {
     pub fn into_str(self) -> String {
         match self {
             NewDataOperate::Modify => { "修改".to_string() }
-            NewDataOperate::Increase => { "增量".to_string() }
+            NewDataOperate::Increase => { "新增".to_string() }
             NewDataOperate::Delete => { "删除".to_string() }
             NewDataOperate::Invalid => { "未定义".to_string() }
         }
