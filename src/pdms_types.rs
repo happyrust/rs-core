@@ -50,7 +50,6 @@ use crate::tool::db_tool::{db1_dehash, db1_hash};
 pub const LEVEL_VISBLE: u32 = 6;
 
 
-
 // 包装整数
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct Integer(pub u32);
@@ -2153,6 +2152,7 @@ unsafe impl Send for DataScopeVec {}
 
 unsafe impl Sync for DataScopeVec {}
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct IncrementDataSql {
     pub id: String,
     pub refno: RefU64,
