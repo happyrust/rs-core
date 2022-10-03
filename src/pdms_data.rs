@@ -120,7 +120,7 @@ pub struct AxisParam {
 }
 
 /// 增量更新的数据操作
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub enum NewDataOperate {
     Modify = 0,
     Increase = 1,
