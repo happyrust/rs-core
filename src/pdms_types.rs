@@ -35,7 +35,7 @@ use crate::BHashMap;
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
-use crate::pdms_data::AxisParam;
+use crate::pdms_data::{AxisParam, NewDataOperate};
 use crate::pdms_types::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::SCylinder;
@@ -2152,3 +2152,14 @@ pub struct DataScopeVec {
 unsafe impl Send for DataScopeVec {}
 
 unsafe impl Sync for DataScopeVec {}
+
+pub struct IncrementDataSql {
+    pub id: String,
+    pub refno: RefU64,
+    pub operate: NewDataOperate,
+    pub version: u32,
+    pub user: String,
+    pub old_data: WholeAttMap,
+    pub new_data: WholeAttMap,
+    pub time: String,
+}
