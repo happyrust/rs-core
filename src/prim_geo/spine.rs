@@ -142,11 +142,6 @@ impl Spine3D {
                 transform.rotation = Quat::from_mat3(&glam::f32::Mat3::from_cols(
                     p_axis, y_axis, extru_dir
                 ));
-                // let z_axis = Vec3::Z;
-                // let y_axis = z_axis.cross(x_axis).normalize();
-                // dbg!((x_axis, y_axis, z_axis));
-                // transform.rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
-                // transform.rotation = Quat::from_rotation_arc(Vec3::Z, dir);
                 paths.push(SweepPath3D::Line(Line3D{
                     start: Default::default(),
                     end: Vec3::Z * extru.length(),
@@ -157,64 +152,4 @@ impl Spine3D {
         }
         (paths, transform)
     }
-
-    pub fn get_coord_transform(&self) -> TransformSRT {
-        TransformSRT::IDENTITY
-    }
-
-    // #[inline]
-    // pub fn from_three_points(j: Vec3, k: Vec3, l: Vec3, center: Option<Vec3>) -> Spine3D {
-    //     let (center, r) = if let Some(c) = center {
-    //         let cc = Vec2::new(c.x, c.y);
-    //         (cc, j.distance(cc))
-    //     }else{
-    //         let a = j.x * (k.y - l.y) -
-    //             j.y * (k.x - l.x) +
-    //             k.x * l.y -
-    //             l.x * k.y;
-    //
-    //         let b = (j.x * j.x + j.y * j.y) * (l.y - k.y) +
-    //             (k.x * k.x + k.y * k.y) * (j.y - l.y) +
-    //             (l.x * l.x + l.y * l.y) * (k.y - j.y);
-    //
-    //         let c = (j.x * j.x + j.y * j.y) * (k.x - l.x) +
-    //             (k.x * k.x + k.y * k.y) * (l.x - j.x) +
-    //             (l.x * l.x + l.y * l.y) * (j.x - k.x);
-    //
-    //         let d = (j.x * j.x + j.y * j.y) * (l.x * k.y - k.x * l.y) +
-    //             (k.x * k.x + k.y * k.y) * (j.x * l.y - l.x * j.y) +
-    //             (l.x * l.x + l.y * l.y) * (k.x * j.y - j.x * k.y);
-    //
-    //         let x = -b / (2. * a);
-    //         let y = -c / (2. * a);
-    //         let r = ((b * b + c * c - 4. * a * d) / (4. * a * a)).sqrt();
-    //         let center = Vec2::new(f32_round_3(x), f32_round_3(y));
-    //
-    //         (center, r)
-    //     };
-    //
-    //     let v1 = *j - center;
-    //     let v2 = *l - center;
-    //     let angle = v1.angle_between(v2);
-    //
-    //     let kj = (*j - center).normalize_or_zero();
-    //     let lj = (*k - *j).normalize_or_zero();
-    //     let v1 = Vec3::new(kj.x, kj.y, 0.0);
-    //     let v2 = Vec3::new(lj.x, lj.y, 0.0);
-    //     let v = v1.cross(v2).normalize_or_zero();
-    //     // n=(B-A)x(C-B)
-    //     //if (n.z<0.0) dir=CW else dir=CCW;
-    //
-    //     let clock_wise =  v.z < 0.0;
-    //
-    //     Spine3D { center, r: f32_round_3(r), clock_wise, angle}
-    // }
-
-    // Returns a Circle based on two points (segment is diameter)
-    // pub fn from_two_points(j: &Vec2, k: &Vec2) -> Spine3D {
-    //     let x = (j.x - k.x) / 2. + k.x;
-    //     let y = (j.y - k.y) / 2. + k.y;
-    //     let r = ((j.x - k.x) * (j.x - k.x) + (j.y - k.y) * (j.y - k.y)).sqrt() / 2.;
-    //     Spine3D { center: Vec2::new(f32_round_3(x), f32_round_3(y)), r: f32_round_3(r), clock_wise: false, angle: 0.0 }
-    // }
 }

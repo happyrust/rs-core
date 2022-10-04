@@ -15,7 +15,7 @@ use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Face, Shell, Surface, Wire};
 use truck_modeling::builder::try_attach_plane;
 
-use crate::parsed_data::{CateProfileParam, SProfileData};
+use crate::parsed_data::{CateProfileParam, SannData, SProfileData};
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::prim_geo::spine::*;
 use crate::prim_geo::wire;
@@ -44,16 +44,20 @@ impl SweepSolid {
         (abs_diff_ne!(self.drns.length(), 0.0) || abs_diff_ne!(self.drne.length(), 0.0))
     }
 
-    fn gen_sann_wire(&self, origin: Vec2, angle: f32, r1: f32, r2: f32, plin_pos: Vec2) -> Option<Wire> {
+    fn gen_sann_wire(&self, origin: Vec2, sann: &SannData, is_btm: bool, r1: f32, r2: f32) -> Option<Wire> {
+        let (r1, r2) = if is_btm {
+            (r1, r2)
+        }else { (r2 + sann.drad - sann.dwid - sann.pwidth,  r2 + sann.drad)};
+        // dbg!((r1, r2));
         use truck_base::cgmath64::*;
         let mut z_axis = Vec3::Z;
-        let mut a = angle.abs();
+        let mut a = sann.pangle.abs();
         let mut offset_pt = Vec3::ZERO;
         let mut rot_mat = Mat3::IDENTITY;
         let mut beta_rot = Quat::IDENTITY;
         let mut r_translation = Vector3::new(0.0, 0.0, 0.0);
-        offset_pt.x = -plin_pos.x;
-        offset_pt.y = -plin_pos.y;
+        offset_pt.x = -sann.plin_pos.x;
+        offset_pt.y = -sann.plin_pos.y;
         match &self.path {
             SweepPath3D::SpineArc(d) => {
                 let mut y_axis = d.pref_axis;
@@ -249,6 +253,7 @@ impl BrepShapeTrait for SweepSolid {
         use truck_modeling::*;
         use truck_base::cgmath64::{Point3, Vector3};
         let mut profile_wire = None;
+        let mut top_profile_wire = None;
         let mut is_sann = false;
         match &self.profile {
             CateProfileParam::SANN(p) => {
@@ -259,15 +264,17 @@ impl BrepShapeTrait for SweepSolid {
                 let d = p.paxis.as_ref().unwrap().dir.normalize();
                 let mut angle = p.pangle.to_radians();
                 let origin = p.xy + p.dxy;
-                profile_wire = self.gen_sann_wire(origin, angle, r1, r2, p.plin_pos);
+                profile_wire = self.gen_sann_wire(origin, p, true, r1, r2);
+                top_profile_wire = self.gen_sann_wire(origin, p,false, r1, r2);
                 is_sann = true;
             }
             CateProfileParam::SPRO(p) => {
                 profile_wire = self.cal_spro_wire(p);
+                top_profile_wire = self.cal_spro_wire(p);
             }
             _ => {}
         }
-        if let Some(mut wire) = profile_wire {
+        if let Some(mut wire) = profile_wire  && let Some(mut top_wire) = top_profile_wire{
             //先生成start 和 end face
             let mut drns = self.drns;
             let mut drne = self.drne;
@@ -306,7 +313,7 @@ impl BrepShapeTrait for SweepSolid {
                     let mut faces = vec![];
                     let translation = Matrix4::from_translation(Vector3::new(0.0 as f64, 0.0 as f64, l.len() as f64));
                     let wire_s = builder::transformed(&wire, transform_btm);
-                    let wire_e = builder::transformed(&wire, translation * transform_top);
+                    let wire_e = builder::transformed(&top_wire, translation * transform_top);
                     let edges_cnt = wire_s.len();
                     for i in 0..edges_cnt {
                         let c1 = &wire_s[i];
