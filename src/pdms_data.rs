@@ -43,7 +43,7 @@ impl From<sled::IVec> for ScomInfo {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct PlinParam{
+pub struct PlinParam {
     pub vxy: [String; 2],
     pub dxy: [String; 2],
     pub plax: String,
@@ -120,7 +120,7 @@ pub struct AxisParam {
 }
 
 /// 增量更新的数据操作
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NewDataOperate {
     Modify = 0,
     Increase = 1,
@@ -135,6 +135,17 @@ impl From<i32> for NewDataOperate {
             1 => { Self::Increase }
             2 => { Self::Delete }
             _ => { Self::Invalid }
+        }
+    }
+}
+
+impl NewDataOperate {
+    pub fn into_str(self) -> String {
+        match self {
+            NewDataOperate::Modify => { "修改".to_string() }
+            NewDataOperate::Increase => { "新增".to_string() }
+            NewDataOperate::Delete => { "删除".to_string() }
+            NewDataOperate::Invalid => { "未定义".to_string() }
         }
     }
 }
@@ -159,6 +170,7 @@ impl Debug for IncrementData {
     }
 }
 
+
 lazy_static! {
     pub static ref ATTR_INFO_MAP: AttInfoMap = {
         let db_info: PdmsDatabaseInfo = serde_json::from_str(include_str!("../all_attr_info.json")).unwrap();
@@ -177,7 +189,7 @@ lazy_static! {
 
 
 #[derive(Default, Debug, Clone)]
-pub struct AttInfoMap{
+pub struct AttInfoMap {
     pub map: DashMap<i32, DashMap<i32, AttrInfo>>,
     pub type_att_names_map: DashMap<String, BTreeSet<String>>,
     pub type_explicit_att_names_map: DashMap<String, BTreeSet<String>>,
@@ -195,7 +207,7 @@ impl Deref for AttInfoMap {
 
 impl AttInfoMap {
     #[inline]
-    pub fn init_type_att_names_map(&mut self){
+    pub fn init_type_att_names_map(&mut self) {
         for k in &self.map {
             let type_name = db1_dehash(*k.key() as u32);
             for v in k.value() {
@@ -227,7 +239,7 @@ impl AttInfoMap {
 
     #[inline]
     pub fn get_type_implicit_att_names(&self, type_name: &str) -> Vec<String> {
-        self.type_explicit_att_names_map.get(type_name).map(|v|{
+        self.type_explicit_att_names_map.get(type_name).map(|v| {
             v.value().iter().cloned().collect_vec()
         }).unwrap_or_default()
     }
