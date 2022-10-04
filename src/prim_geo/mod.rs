@@ -15,7 +15,7 @@ pub mod loft;
 pub mod tubing;
 
 pub mod category;
-pub mod circle;
+pub mod spine;
 
 pub mod wire;
 
