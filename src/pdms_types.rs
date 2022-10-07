@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, HashMap};
-use std::collections::hash_map::DefaultHasher;
 use std::default::Default;
 use std::fmt;
 use std::fmt::{Debug, Formatter, Pointer};
@@ -574,6 +573,43 @@ impl WholeAttMap {
         }
         map
     }
+
+    pub fn check_two_attr_difference(old_attr: WholeAttMap, new_attr: WholeAttMap) -> Vec<DifferenceValue> {
+        let implicit_difference = get_two_attr_map_difference(old_attr.implicit_attmap, new_attr.implicit_attmap);
+        let explicit_difference = get_two_attr_map_difference(old_attr.explicit_attmap, new_attr.explicit_attmap);
+        [implicit_difference, explicit_difference].concat()
+    }
+}
+
+fn get_two_attr_map_difference(old_map: AttrMap, mut new_map: AttrMap) -> Vec<DifferenceValue> {
+    let mut result = vec![];
+    for (k, v) in old_map.map.into_iter() {
+        let new_value = new_map.map.remove(&k);
+        result.push(DifferenceValue {
+            noun: k,
+            old_value: Some(v.clone()),
+            new_value,
+        });
+        continue;
+    }
+    if !new_map.map.is_empty() {
+        for (k, v) in new_map.map.into_iter() {
+            result.push(DifferenceValue {
+                noun: k,
+                old_value: None,
+                new_value: Some(v),
+            })
+        }
+    }
+    result
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DifferenceValue {
+    pub noun: NounHash,
+    pub old_value: Option<AttrVal>,
+    // 新增 old_value 为 none
+    pub new_value: Option<AttrVal>, // 删除 new_value 为 none
 }
 
 // impl Inspectable for AttrMap {
