@@ -150,22 +150,22 @@ impl SweepSolid {
             SweepPath3D::Line(d) => {
                 rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Y));
                 if d.is_spine {
-                    dbg!(self.bangle.to_radians());
+                    // dbg!(self.bangle.to_radians());
                     beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
                 }
             }
         }
 
-        dbg!(&offset_pt);
+        // dbg!(&offset_pt);
         let mut points = vec![];
         for i in 0..len {
             let p = Vec3::new(verts[i][0], verts[i][1], 0.0);
             points.push(p);
         }
         let mut wire = wire::gen_wire(&points, &profile.frads).ok()?;
-        dbg!(self.bangle);
+        // dbg!(self.bangle);
         let translation = Matrix4::from_translation(offset_pt.vector3());
-        dbg!(r_translation);
+        // dbg!(r_translation);
         let r_trans_mat = Matrix4::from_translation(r_translation);
         let m = &rot_mat;
         let local_mat = Matrix4::from_cols(
@@ -204,8 +204,13 @@ impl VerifiedShape for SweepSolid {
 }
 
 //获得斜切面的变换矩阵
-pub fn get_sloped_transform(drn_axis: Vec3, ref_axis: Vec3) -> Matrix4 {
+pub fn get_sloped_transform(drn_axis: Vec3, axis: Vec3) -> Matrix4 {
     let mut mat = Matrix4::one();
+    let axis = if drn_axis.z * axis.z < 0.0{
+        -axis
+    }else{
+        axis
+    };
     if abs_diff_ne!(drn_axis.z, 0.0, epsilon = 0.001) {
         let a = Vec3::X.angle_between(drn_axis);
         let b = Vec3::Y.angle_between(drn_axis);
@@ -218,7 +223,7 @@ pub fn get_sloped_transform(drn_axis: Vec3, ref_axis: Vec3) -> Matrix4 {
                 found_err = true;
             }
             let mut scale_y = 1.0 / b.sin().abs() as f64;
-            dbg!((scale_x, scale_y));
+            // dbg!((scale_x, scale_y));
             if scale_y > 100.0 {
                 scale_y = 1.0;
                 found_err = true;
@@ -227,7 +232,8 @@ pub fn get_sloped_transform(drn_axis: Vec3, ref_axis: Vec3) -> Matrix4 {
                 println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
             }
             let scale_mat = Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-            let m = Mat3::from_quat(glam::Quat::from_rotation_arc(ref_axis, drn_axis));
+            // dbg!(&axis);
+            let m = Mat3::from_quat(glam::Quat::from_rotation_arc(axis, drn_axis));
             let rotation = Matrix4::from_cols(
                 m.x_axis.vector4(),
                 m.y_axis.vector4(),
@@ -307,8 +313,8 @@ impl BrepShapeTrait for SweepSolid {
                 }
                 SweepPath3D::Line(l) => {
                     if self.is_sloped() {
-                        // transform_btm = get_sloped_transform(drns, Vec3::Z);
-                        // transform_top = get_sloped_transform(drne, -Vec3::Z);
+                        transform_btm = get_sloped_transform(drns, Vec3::Z);
+                        transform_top = get_sloped_transform(drne, -Vec3::Z);
                     }
                     let mut faces = vec![];
                     let translation = Matrix4::from_translation(Vector3::new(0.0 as f64, 0.0 as f64, l.len() as f64));
@@ -327,9 +333,9 @@ impl BrepShapeTrait for SweepSolid {
                     faces.push(face_e.inverse());
 
                     if let Surface::Plane(plane) = face_s.get_surface() {
-                        dbg!(plane.normal());
+                        // dbg!(plane.normal());
                         if plane.normal().z > 0.0 {
-                            dbg!("invert");
+                            // dbg!("invert");
                             for mut f in &mut faces {
                                 f.invert();
                             }
@@ -340,304 +346,9 @@ impl BrepShapeTrait for SweepSolid {
                 }
             }
         }
-
         None
     }
 
-    //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
-    // fn gen_brep_shell(&self) -> Option<Shell> {
-    //     use truck_modeling::*;
-    //     use truck_base::cgmath64::{Point3, Vector3};
-    //     let mut profile_wire = None;
-    //     if let Some((p1, p2, p3, center)) = self.arc_path {
-    //         let c =
-    //             Spine3D::from_three_points(&p1, &p2, &p3, center);
-    //         circle = Some(c);
-    //         if p1.length() > EPSILON {
-    //             start_dir = Vec3::new(p1.x, p1.y, 0.0).normalize();
-    //         }
-    //     }
-    //     let start_angle = Vec3::X.angle_between(start_dir);
-    //     dbg!(start_angle.to_degrees());
-    //     // let whole_rot = Quat::from_rotation_z(start_angle);
-    //     let whole_rot = Matrix4::from_angle_z(Rad(start_angle as f64));
-    //     // let whole_rot = Matrix4::one();
-    //     // dbg!(&circle);
-    //     let mut is_sann = false;
-    //     match &self.profile {
-    //         //需要用切面去切出相交的face
-    //         CateProfileParam::SANN(p) => {
-    //             let w = p.pwidth;
-    //             let r = p.pradius;
-    //             let r1 = r - w;
-    //             let r2 = r;
-    //             let d = p.paxis.as_ref().unwrap().dir.normalize();
-    //             // let dir = Vec3::new(d[0] as f32, d[1] as f32, d[2] as f32).normalize();
-    //             let mut angle = p.pangle.to_radians();
-    //             let origin = p.xy + p.dxy;
-    //             // if Vec3::X.cross(d).z < 0.0 {
-    //             //     angle = -angle;
-    //             // }
-    //             // dbg!(angle);
-    //             profile_wire = self.gen_sann_wire( origin, angle, r1, r2, p.plin_pos, circle.clone());
-    //             // dbg!(&profile_wire);
-    //             is_sann = true;
-    //         }
-    //         CateProfileParam::SPRO(p) => {
-    //             profile_wire = self.cal_spro_wire(p, start_dir, circle.clone());
-    //         }
-    //         _ => {}
-    //     }
-    //
-    //     if let Some(mut wire) = profile_wire {
-    //         //先生成start 和 end face
-    //         let mut drns = self.drns;
-    //         let mut drne = self.drne;
-    //         let mut transform_btm = Matrix4::one();
-    //         let mut transform_top = Matrix4::one();
-    //         let mut rotation = Matrix4::one();
-    //         let mut scale_mat = Matrix4::one();
-    //
-    //
-    //         if self.arc_path.is_some() {
-    //             let c = circle.unwrap_or_default();
-    //             // let v1 = Vec2::new(p1.x, p1.y) - c.center;
-    //             // let v3 = Vec2::new(p3.x, p3.y) - c.center;
-    //             // let mut angle = v1.angle_between(v3);
-    //             let mut rot_angle = c.angle.abs();
-    //             dbg!(&c);
-    //             let mut rot_z = Vec3::Z;
-    //             if c.clock_wise {
-    //                 rot_z = -Vec3::Z;
-    //             }
-    //             dbg!(rot_angle);
-    //             if self.is_sloped() {
-    //                 //slope对应的斜面必须要缩放
-    //                 if abs_diff_ne!(drns.y, 0.0, epsilon = 0.001) {
-    //                     let a = Vec3::X.angle_between(self.drns);
-    //                     let b = Vec3::Z.angle_between(self.drns);
-    //                     if !a.is_nan() {
-    //                         let mut scale_x = 1.0 / a.sin().abs() as f64;
-    //                         let mut found_err = false;
-    //                         if scale_x > 100.0 {
-    //                             scale_x = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         let mut scale_z = 1.0 / b.sin().abs() as f64;
-    //                         if scale_z > 100.0 {
-    //                             scale_z = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         // dbg!((scale_x, scale_z));
-    //                         if found_err {
-    //                             println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_z));
-    //                         }
-    //                         // scale_mat = Matrix4::from_nonuniform_scale(scale_x, 1.0, scale_z);
-    //                         // let m = Mat3::from_quat(glam::Quat::from_rotation_arc(Vec3::Y, drns));
-    //                         // rotation = Matrix4::from_cols(
-    //                         //     m.x_axis.vector4(),
-    //                         //     m.y_axis.vector4(),
-    //                         //     m.z_axis.vector4(),
-    //                         //     Vector4::new(0.0, 0.0, 0.0, 1.0),
-    //                         // );
-    //                     }
-    //                 }
-    //                 // transform_btm = rotation * scale_mat;
-    //                 if abs_diff_ne!(drne.y, 0.0, epsilon = 0.001) {
-    //                     let a = Vec3::X.angle_between(drne);
-    //                     let b = Vec3::Z.angle_between(drne);
-    //                     if !a.is_nan() {
-    //                         let mut scale_x = 1.0 / a.sin().abs() as f64;
-    //                         let mut found_err = false;
-    //                         if scale_x > 100.0 {
-    //                             scale_x = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         let mut scale_z = 1.0 / b.sin().abs() as f64;
-    //                         if scale_z > 100.0 {
-    //                             scale_z = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         dbg!((scale_x, scale_z));
-    //                         if found_err {
-    //                             println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_z));
-    //                         }
-    //                         // scale_mat = Matrix4::from_nonuniform_scale(scale_x, 1.0, scale_z);
-    //                         // let m = Mat3::from_quat(glam::Quat::from_rotation_arc(-Vec3::Y, self.drne));
-    //                         // rotation = Matrix4::from_cols(
-    //                         //     m.x_axis.vector4(),
-    //                         //     m.y_axis.vector4(),
-    //                         //     m.z_axis.vector4(),
-    //                         //     Vector4::new(0.0, 0.0, 0.0, 1.0),
-    //                         // );
-    //                     }
-    //                 }
-    //
-    //                 // transform_top = transform_top * rotation * scale_mat;
-    //             }
-    //             let rot = Matrix4::from_angle_z(Rad(rot_angle as f64));
-    //             let wire_s = builder::transformed(&wire, transform_btm);
-    //             let wire_e = builder::transformed(&wire, rot * transform_top);
-    //             let edges_cnt = wire_s.len();
-    //             //先暂时简化
-    //             // if is_sann {
-    //                 let mut face_s = builder::try_attach_plane(&[wire_s]).unwrap();
-    //                 if let Surface::Plane(plane) = face_s.get_surface() {
-    //                     let is_rev_face = (plane.normal().y * rot_z.z as f64) < 0.0;
-    //                     if is_rev_face {
-    //                         face_s.invert();
-    //                     }
-    //                 }
-    //                 builder::circle_arc();
-    //                 let solid = builder::rsweep(&face_s, Point3::origin(), rot_z.vector3(), Rad(rot_angle.abs() as f64));
-    //                 let shell: Shell = solid.into_boundaries().pop()?;
-    //                 return Some(builder::transformed(&shell, whole_rot));
-    //             // }
-    //             // for i in 0..edges_cnt {
-    //             //     let edge0 = &wire_s[i];
-    //             //     let edge1 = &wire_e[i];
-    //             //     let arc_0 = builder::circle_arc_with_center(Point3::new(0.0, 0.0, 0.0),
-    //             //                                                 edge0.back(), edge1.back(), rot_z.vector3(), Rad(rot_angle as f64));
-    //             //     let arc_1 = builder::circle_arc_with_center(Point3::new(0.0, 0.0, 0.0),
-    //             //                                                 edge0.front(), edge1.front(), rot_z.vector3(), Rad(rot_angle as f64));
-    //             //
-    //             //     let curve0 = arc_0.oriented_curve().lift_up();
-    //             //     let curve1 = arc_1.oriented_curve().lift_up();
-    //             //     let w: Wire = vec![
-    //             //         edge0.clone(),
-    //             //         arc_0,
-    //             //         edge1.inverse(),
-    //             //         arc_1.inverse(),
-    //             //     ].into();
-    //             //     let surface = BSplineSurface::homotopy(curve0, curve1);
-    //             //     faces.push(Face::new(
-    //             //         vec![w],
-    //             //         Surface::NURBSSurface(NURBSSurface::new(surface)),
-    //             //     ).inverse());
-    //             // }
-    //             // let mut face_s = builder::try_attach_plane(&[wire_s]).unwrap();
-    //             // //需要判断faces_s的方向，来决定是否需要inverse
-    //             // let mut face_e = builder::try_attach_plane(&[wire_e]).unwrap();
-    //             // faces.push(face_s.clone());
-    //             // faces.push(face_e.inverse());
-    //             //
-    //             // if let Surface::Plane(plane) = face_s.get_surface() {
-    //             //     // dbg!(plane.normal());
-    //             //     // let is_neg = start_angle.abs() >= PI;
-    //             //     let is_rev_face = plane.normal().y * rot_z.z as f64 > 0.0;
-    //             //     if is_rev_face {
-    //             //         // dbg!("invert");
-    //             //         for mut f in &mut faces {
-    //             //             f.invert();
-    //             //         }
-    //             //     }
-    //             // }
-    //             // let shell: Shell = faces.into();
-    //             // dbg!(start_angle.to_degrees());
-    //             // return Some(builder::transformed(&shell, whole_rot));
-    //         } else {
-    //
-    //             if self.is_sloped() {
-    //                 let a = Vec3::X.angle_between(self.drns);
-    //                 let b = Vec3::Y.angle_between(self.drns);
-    //                 // dbg!((a, b));
-    //                 //slope对应的斜面必须要缩放
-    //                 dbg!(abs_diff_ne!(drns.z,  0.0, epsilon = 0.001));
-    //                 if abs_diff_ne!(drns.z,  0.0, epsilon = 0.001) {
-    //                     if !a.is_nan() {
-    //                         let mut scale_x = 1.0 / a.sin().abs() as f64;
-    //                         let mut found_err = false;
-    //                         if scale_x > 100.0 {
-    //                             scale_x = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         let mut scale_y = 1.0 / b.sin().abs() as f64;
-    //                         dbg!((scale_x, scale_y));
-    //                         if scale_y > 100.0 {
-    //                             scale_y = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         if found_err {
-    //                             println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
-    //                         }
-    //                         scale_mat = Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-    //                         let m = Mat3::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, drns));
-    //                         rotation = Matrix4::from_cols(
-    //                             m.x_axis.vector4(),
-    //                             m.y_axis.vector4(),
-    //                             m.z_axis.vector4(),
-    //                             Vector4::new(0.0, 0.0, 0.0, 1.0),
-    //                         );
-    //                     }
-    //                 }
-    //                 transform_btm = rotation * scale_mat;
-    //                 let a = Vec3::X.angle_between(drne);
-    //                 let b = Vec3::Y.angle_between(drne);
-    //                 // dbg!((a, b));
-    //                 dbg!(abs_diff_ne!(drne.z, 0.0, epsilon = 0.001));
-    //                 if abs_diff_ne!(drne.z, 0.0, epsilon = 0.001) {
-    //                     if !a.is_nan() {
-    //                         let mut scale_x = 1.0 / a.sin().abs() as f64;
-    //                         let mut found_err = false;
-    //                         if scale_x > 100.0 {
-    //                             scale_x = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         let mut scale_y = 1.0 / b.sin().abs() as f64;
-    //                         dbg!((scale_x, scale_y));
-    //                         if scale_y > 100.0 {
-    //                             scale_y = 1.0;
-    //                             found_err = true;
-    //                         }
-    //                         if found_err {
-    //                             println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
-    //                         }
-    //                         scale_mat = Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-    //                         let m = Mat3::from_quat(glam::Quat::from_rotation_arc(-Vec3::Z, self.drne));
-    //                         rotation = Matrix4::from_cols(
-    //                             m.x_axis.vector4(),
-    //                             m.y_axis.vector4(),
-    //                             m.z_axis.vector4(),
-    //                             Vector4::new(0.0, 0.0, 0.0, 1.0),
-    //                         );
-    //                     }
-    //                 }
-    //
-    //                 transform_top = transform_top * rotation * scale_mat;
-    //             }
-    //
-    //             let mut faces = vec![];
-    //             let translation = Matrix4::from_translation(Vector3::new(0.0 as f64, 0.0 as f64, self.height as f64));
-    //             let wire_s = builder::transformed(&wire, transform_btm);
-    //             let wire_e = builder::transformed(&wire, translation * transform_top);
-    //             let edges_cnt = wire_s.len();
-    //             for i in 0..edges_cnt {
-    //                 let c1 = &wire_s[i];
-    //                 let c2 = &wire_e[i];
-    //                 faces.push(builder::homotopy(c1, c2).inverse());
-    //             }
-    //             let mut face_s = builder::try_attach_plane(&[wire_s]).unwrap();
-    //             //需要判断faces_s的方向，来决定是否需要inverse
-    //             let mut face_e = builder::try_attach_plane(&[wire_e]).unwrap();
-    //             faces.push(face_s.clone());
-    //             faces.push(face_e.inverse());
-    //
-    //             if let Surface::Plane(plane) = face_s.get_surface() {
-    //                 dbg!(plane.normal());
-    //                 if plane.normal().z > 0.0 {
-    //                     dbg!("invert");
-    //                     for mut f in &mut faces {
-    //                         f.invert();
-    //                     }
-    //                 }
-    //             }
-    //
-    //             let shell: Shell = faces.into();
-    //             return Some(builder::transformed(&shell, whole_rot));
-    //         };
-    //     }
-    //     None
-    // }
 
     fn hash_unit_mesh_params(&self) -> u64 {
         //截面暂时用这个最省力的方法
@@ -662,7 +373,7 @@ impl BrepShapeTrait for SweepSolid {
             unit.extrude_dir = Vec3::Z;
             unit.path = SweepPath3D::Line(Line3D::default());
         }
-        dbg!(&unit);
+        // dbg!(&unit);
         Box::new(unit)
     }
 
