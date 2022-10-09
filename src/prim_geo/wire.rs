@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
 use glam::Vec3;
-use truck_modeling::{builder, Wire};
+use truck_modeling::{builder, Vertex, Wire};
 use std::f32::consts::PI;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
@@ -77,7 +77,9 @@ pub fn gen_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire> {
     Ok(wire)
 }
 
+/// 根据顶点信息和fradius半径，生成wire
 pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+    //todo 需要返回带变换矩阵的wire
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
@@ -91,8 +93,22 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
     let mut circle_indexs = vec![];
     for i in 0..ll {
         let fradius = fradius_vec[i];
+        let pt = pts[i].point3_without_z();
+        //跳过相同的点
+        if let Some(last_pt) = verts.last().map(|x: &Vertex| x.get_point()) {
+            if abs_diff_eq!(pt.distance(last_pt), 0.0, epsilon=0.01) {
+                // dbg!(pt);
+                continue;
+            }
+            if i == ll - 1{
+                if abs_diff_eq!(pt.distance(verts[0].get_point()), 0.0, epsilon=0.01) {
+                    // dbg!(pt);
+                    continue;
+                }
+            }
+        }
         if abs_diff_eq!(fradius, 0.0) {
-            verts.push(builder::vertex(pts[i].point3()));
+            verts.push(builder::vertex(pt));
             pre_pt = pts[i];
         } else {
             let r = fradius;
@@ -116,14 +132,14 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
             let mid_dir = (cur_pt - mid_pt).normalize();
             let transit_pt = mid_pt + mid_dir * d;
             if pa_dist - b_len > 0.01 {
-                verts.push(builder::vertex(p0.point3()));
+                verts.push(builder::vertex(p0.point3_without_z()));
             }
 
-            verts.push(builder::vertex(transit_pt.point3()));
+            verts.push(builder::vertex(transit_pt.point3_without_z()));
             circle_indexs.push(verts.len() - 1);
 
             if pb_dist - b_len > 0.01 {
-                verts.push(builder::vertex(p1.point3()));
+                verts.push(builder::vertex(p1.point3_without_z()));
             }
         }
     }

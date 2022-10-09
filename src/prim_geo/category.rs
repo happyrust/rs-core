@@ -26,12 +26,20 @@ use crate::prim_geo::tubing::PdmsTubing;
 use crate::shape::pdms_shape::BrepShapeTrait;
 
 #[derive(Debug)]
+pub enum ShapeErr{
+    //tubi的方向不一致
+    TubiDirErr,
+    Unknown,
+}
+
+#[derive(Debug)]
 pub struct CateBrepShape {
     pub refno: RefU64,
     pub brep_shape: Box<dyn BrepShapeTrait>,
     pub transform: TransformSRT,
     pub visible: bool,
     pub is_tubi: bool,
+    pub shape_err: Option<ShapeErr>,  //有可能shape有问题
     pub pts: SmallVec<[i32; 3]>,  //点集信息
 }
 
@@ -77,6 +85,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 },
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -101,6 +110,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     transform,
                     visible: d.tube_flag,
                     is_tubi: false,
+                    shape_err: None,
                     pts,
                 });
             }
@@ -129,6 +139,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     transform,
                     visible: d.tube_flag,
                     is_tubi: false,
+                    shape_err: None,
                     pts,
                 });
             }
@@ -148,6 +159,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts: Default::default(),
             });
         }
@@ -176,6 +188,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -233,6 +246,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -242,13 +256,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(axis.number);
             let mut dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
             let mut phei = d.height as f32;
+            let translation = dir * (d.dist_to_btm) + Vec3::new(axis.pt[0], axis.pt[1], axis.pt[2]);
             if phei < 0.0 {
                 phei = -phei;
                 dir = -dir;
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation = dir * (d.dist_to_btm) + Vec3::new(axis.pt[0], axis.pt[1], axis.pt[2]);
             let transform = TransformSRT {
                 rotation,
                 translation,
@@ -266,6 +280,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -275,13 +290,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(axis.number);
             let mut dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
             let mut phei = (d.dist_to_top - d.dist_to_btm) as f32;
+            let translation = dir * (d.dist_to_btm) + Vec3::new(axis.pt[0], axis.pt[1], axis.pt[2]);
             if phei < 0.0 {
                 phei = -phei;
                 dir = -dir;
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation = dir * (d.dist_to_btm) + Vec3::new(axis.pt[0], axis.pt[1], axis.pt[2]);
             let transform = TransformSRT {
                 rotation,
                 translation,
@@ -291,7 +306,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 phei,
                 pdia,
-                // center_in_mid: true,
                 ..default()
             });
             return Some(CateBrepShape {
@@ -300,6 +314,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -350,6 +365,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -372,6 +388,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -392,20 +409,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 extrude_dir,
             );
             let rotation = Quat::from_mat3(&mat3);
-
-            // let mut verts = vec![];
             let xyz_pt = Vec3::new(d.x, d.y, d.z);
-            dbg!(xyz_pt);
             let origin_pt = Vec3::from(pa.pt);
-            dbg!(origin_pt);
-            // if d.verts.len() > 2 {
-            //     let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0);
-            //     verts.push(prev);
-            //     for vert in &d.verts[1..] {
-            //         let p = ;
-            //             verts.push(Vec3::new(vert[0], vert[1], 0.0));
-            //     }
-            // }
             if d.verts.len() <= 2 {
                 return None;
             }
@@ -429,6 +434,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }
@@ -465,14 +471,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let extrude_dir = paax_dir.normalize()
                 .cross(pbax_dir.normalize()).normalize();
             let pbax_dir = extrude_dir.cross(paax_dir.normalize()).normalize();
-            // dbg!(extrude_dir);
-            // dbg!(&pbax_dir);
             let rotation = Quat::from_mat3(&Mat3::from_cols(
                 paax_dir,
                 pbax_dir,
                 extrude_dir,
             ));
-            // let rotation = Quat::from_rotation_arc(Vec3::Z, extrude_dir);
             let translation = rotation * Vec3::new(d.x, d.y, d.z) + Vec3::from(pa.pt);
             let transform = TransformSRT {
                 rotation,
@@ -485,6 +488,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
+                shape_err: None,
                 pts,
             });
         }

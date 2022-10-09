@@ -51,6 +51,10 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
             return format!("{y_str} {angle} {x_str}");
         }
 
+        if angle > 45.0 {
+            let angle = 90.0 - angle;
+            return format!("{y_str} {angle} {x_str}");
+        }
         return format!("{x_str} {angle} {y_str}");
     }
 

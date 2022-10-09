@@ -213,10 +213,8 @@ impl BrepShapeTrait for SCylinder {
         // dbg!(ext_len);
         let v = builder::vertex(pt0.point3());
         let origin_w = builder::rsweep(&v, center, ext_dir, Rad(7.0));
-        // dbg!(&self.btm_shear_angles);
 
         //还是要和extrude 区分出来
-        // dbg!(&self.top_shear_angles);
         let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
         let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
         let transform_btm = Matrix4::from_angle_y(Rad(self.btm_shear_angles[0].to_radians() as f64))
@@ -229,13 +227,7 @@ impl BrepShapeTrait for SCylinder {
             * Matrix4::from_angle_y(Rad(self.top_shear_angles[0].to_radians() as f64))
             * Matrix4::from_angle_y(Rad(self.top_shear_angles[1].to_radians() as f64))
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-        // let angle = Rad(PI/16.0);
-        // let transform_btm = Matrix4::from_angle_y(Rad(PI/16.0));
-        // let transform_top =  Matrix4::from_translation(Vector3::new(0.0, 0.0, ext_len as f64))
-        //     * Matrix4::from_angle_y(Rad(-PI/16.0));
-        //
-        // let transform_btm = Matrix4::identity() * Matrix4::from_angle_y(angle);
-        // let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64) * Matrix4::from_angle_y(-angle);
+
         let mut w_s = builder::transformed(&origin_w, transform_btm);
         let mut w_e = builder::transformed(&origin_w, transform_top);
         if let Ok(mut f) = builder::try_attach_plane(&[w_s.clone()])
@@ -251,8 +243,6 @@ impl BrepShapeTrait for SCylinder {
             let mut face2 = builder::homotopy(h_w_s.front().unwrap(), &h_w_e.front().unwrap());
             let mut shell = vec![f, f_e, face1, face2].into();
             return Some(shell);
-            // let mut s = builder::tsweep(&f, ext_dir * ext_len as f64).into_boundaries();
-            // return s.pop();
         }
         None
     }
@@ -260,16 +250,9 @@ impl BrepShapeTrait for SCylinder {
     fn hash_unit_mesh_params(&self) -> u64 {
         if self.is_sscl() {
             let mut hasher = DefaultHasher::new();
-            hash_f32(self.btm_shear_angles[0], &mut hasher);
-            "btm_x".hash(&mut hasher);
-            hash_f32(self.btm_shear_angles[1], &mut hasher);
-            "btm_y".hash(&mut hasher);
-            hash_f32(self.top_shear_angles[0], &mut hasher);
-            "top_x".hash(&mut hasher);
-            hash_f32(self.top_shear_angles[1], &mut hasher);
-            "top_y".hash(&mut hasher);
-            hash_f32(self.pdia, &mut hasher);
-            "sslc".hash(&mut hasher);
+            let bytes = bincode::serialize(self).unwrap();
+            bytes.hash(&mut hasher);
+            "SSCL".hash(&mut hasher);
             hasher.finish()
         } else {
             if self.phei < 0.0 {

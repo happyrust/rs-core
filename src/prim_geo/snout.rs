@@ -92,7 +92,7 @@ impl BrepShapeTrait for LSnout {
         let mut is_cone = false;
         if self.ptdm * self.pbdm < EPSILON {
             is_cone = true;
-            dbg!(is_cone);
+            // dbg!(is_cone);
         }
 
         let rot_axis = a_dir.vector3();

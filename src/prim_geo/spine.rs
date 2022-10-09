@@ -66,6 +66,11 @@ impl Line3D {
     pub fn len(&self) -> f32{
         self.start.distance(self.end)
     }
+
+    #[inline]
+    pub fn dir(&self) -> Vec3{
+        (self.end - self.start).normalize_or_zero()
+    }
 }
 
 impl Default for Line3D {

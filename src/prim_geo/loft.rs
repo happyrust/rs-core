@@ -36,9 +36,11 @@ pub struct SweepSolid {
     pub path: SweepPath3D,
 }
 
+// pub fn is_sloped()
+
 impl SweepSolid {
     pub fn is_sloped(&self) -> bool {
-        if abs_diff_eq!(self.drns.z, 1.0, epsilon = 0.01) && abs_diff_eq!(self.drne.z, -1.0, epsilon = 0.01) {
+        if abs_diff_eq!(self.drns.z.abs(), 1.0, epsilon = 0.01) && abs_diff_eq!(self.drne.z.abs(), 1.0, epsilon = 0.01) {
             return false;
         }
         (abs_diff_ne!(self.drns.length(), 0.0) || abs_diff_ne!(self.drne.length(), 0.0))
@@ -312,12 +314,13 @@ impl BrepShapeTrait for SweepSolid {
                     return Some(shell);
                 }
                 SweepPath3D::Line(l) => {
+                    // dbg!(self.is_sloped());
                     if self.is_sloped() {
                         transform_btm = get_sloped_transform(drns, Vec3::Z);
-                        transform_top = get_sloped_transform(drne, -Vec3::Z);
+                        transform_top = get_sloped_transform(drne, Vec3::Z);
                     }
                     let mut faces = vec![];
-                    let translation = Matrix4::from_translation(Vector3::new(0.0 as f64, 0.0 as f64, l.len() as f64));
+                    let translation = Matrix4::from_translation(Vector3::new(0.0, 0.0, l.len() as f64));
                     let wire_s = builder::transformed(&wire, transform_btm);
                     let wire_e = builder::transformed(&top_wire, translation * transform_top);
                     let edges_cnt = wire_s.len();
@@ -327,20 +330,25 @@ impl BrepShapeTrait for SweepSolid {
                         faces.push(builder::homotopy(c1, c2).inverse());
                     }
                     let mut face_s = builder::try_attach_plane(&[wire_s]).unwrap();
-                    //需要判断faces_s的方向，来决定是否需要inverse
                     let mut face_e = builder::try_attach_plane(&[wire_e]).unwrap();
                     faces.push(face_s.clone());
                     faces.push(face_e.inverse());
 
                     if let Surface::Plane(plane) = face_s.get_surface() {
                         // dbg!(plane.normal());
-                        if plane.normal().z > 0.0 {
+                        // dbg!(&l);
+                        // dbg!(self.extrude_dir);
+                        let s = self.plane_normal.y as f64;
+                        // let dir = l.dir().vector3();
+                        // dbg!(&dir);
+                        if plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
                             // dbg!("invert");
                             for mut f in &mut faces {
                                 f.invert();
                             }
                         }
                     }
+
                     let shell: Shell = faces.into();
                     return Some(shell);
                 }
@@ -384,7 +392,6 @@ impl BrepShapeTrait for SweepSolid {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        // dbg!(self.is_sloped());
         if self.is_sloped() { return Vec3::ONE; }
         match &self.path {
             SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, self.height),
@@ -399,15 +406,6 @@ impl BrepShapeTrait for SweepSolid {
         match &self.profile {
             CateProfileParam::SANN(p) => {
                 let mut translation = Vec3::ZERO;
-                // match &self.path {
-                //     SweepPath3D::Arc(d) => {
-                //         translation = d.center;
-                //     }
-                //     SweepPath3D::Line(d) => {
-                //         translation = d.start;
-                //     }
-                // }
-
                 return TransformSRT {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),

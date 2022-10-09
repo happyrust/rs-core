@@ -326,6 +326,7 @@ pub trait BrepMathTrait {
     fn vector3(&self) -> Vector3;
     fn vector4(&self) -> Vector4;
     fn point3(&self) -> Point3;
+    fn point3_without_z(&self) -> Point3;
 }
 
 impl BrepMathTrait for Vec3 {
@@ -343,6 +344,11 @@ impl BrepMathTrait for Vec3 {
     fn point3(&self) -> Point3 {
         Point3::new(self[0] as f64, self[1] as f64, self[2] as f64)
     }
+    //point3_without_z
+    #[inline]
+    fn point3_without_z(&self) -> Point3 {
+        Point3::new(self[0] as f64, self[1] as f64, 0.0 as f64)
+    }
 }
 
 impl BrepMathTrait for Vec4 {
@@ -359,6 +365,11 @@ impl BrepMathTrait for Vec4 {
     #[inline]
     fn point3(&self) -> Point3 {
         Point3::new(self[0] as f64, self[1] as f64, self[2] as f64)
+    }
+
+    #[inline]
+    fn point3_without_z(&self) -> Point3 {
+        Point3::new(self[0] as f64, self[1] as f64, 0.0 as f64)
     }
 }
 
