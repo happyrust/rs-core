@@ -5,8 +5,9 @@ use std::default::default;
 use approx::abs_diff_eq;
 use crate::pdms_types::RefU64;
 use crate::prim_geo::category::CateBrepShape;
+use serde::{Serialize, Deserialize};
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct PdmsTubing {
     pub start_pt: Vec3,
     pub end_pt: Vec3,
