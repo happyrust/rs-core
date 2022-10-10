@@ -3,6 +3,7 @@ use crate::prim_geo::cylinder::SCylinder;
 use bevy::math::Quat;
 use std::default::default;
 use approx::abs_diff_eq;
+use crate::pdms_types::RefU64;
 use crate::prim_geo::category::CateBrepShape;
 
 #[derive(Default, Debug, Clone)]
@@ -11,6 +12,8 @@ pub struct PdmsTubing{
     pub end_pt: Vec3,
     pub desire_leave_dir: Vec3,
     pub desire_arrive_dir: Vec3,
+    pub from: RefU64,
+    pub to: RefU64,
     pub bore: f32,
     pub finished: bool,  //完整的一个tubing信息
 }
