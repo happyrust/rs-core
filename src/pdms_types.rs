@@ -5,8 +5,6 @@ use std::fmt::{Debug, Formatter, Pointer};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
-use std::panic::catch_unwind;
-use std::result::Iter;
 use std::sync::Arc;
 use std::vec::IntoIter;
 use bitflags::bitflags;
