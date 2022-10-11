@@ -96,13 +96,13 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
         let pt = pts[i].point3_without_z();
         //跳过相同的点
         if let Some(last_pt) = verts.last().map(|x: &Vertex| x.get_point()) {
-            if abs_diff_eq!(pt.distance(last_pt), 0.0, epsilon=0.01) {
-                // dbg!(pt);
+            if abs_diff_eq!(pt.distance(last_pt), 0.0) {
+                dbg!(pt);
                 continue;
             }
             if i == ll - 1{
-                if abs_diff_eq!(pt.distance(verts[0].get_point()), 0.0, epsilon=0.01) {
-                    // dbg!(pt);
+                if abs_diff_eq!(pt.distance(verts[0].get_point()), 0.0) {
+                    dbg!(pt);
                     continue;
                 }
             }
