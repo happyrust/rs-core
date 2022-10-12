@@ -1666,8 +1666,8 @@ impl EleGeosInfo {
             flow_pt_indexs: self.flow_pt_indexs,
         }
     }
-    pub fn from_json_type(json: String) -> Self {
-        let json: EleGeosInfoJson = serde_json::from_str(&json).unwrap_or_default();
+    pub fn from_json_type(json: EleGeosInfoJson) -> Self {
+        // let json: EleGeosInfoJson = serde_json::from_str(&json).unwrap_or_default();
         let data = json.data;
         let mut origin_data = vec![];
         for a in data {
