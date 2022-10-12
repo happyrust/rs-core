@@ -70,6 +70,7 @@ impl BrepShapeTrait for Extrusion {
                 return s.pop();
             }
         } else {
+            // dbg!(&wire);
             dbg!(self);
         }
         None
@@ -91,7 +92,7 @@ impl BrepShapeTrait for Extrusion {
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let unit = Self {
             verts: self.verts.clone(),
-            height: 100.0,   //开放一点大小，不然三角化出来的不对
+            height: 100.0,   //开放一点大小,不然三角化出来的不对
             fradius_vec: self.fradius_vec.clone(),
             cur_type: self.cur_type.clone(),
             ..default()
@@ -108,4 +109,28 @@ impl BrepShapeTrait for Extrusion {
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::new(1.0, 1.0, (self.height as f32 / 100.0))
     }
+}
+
+
+#[test]
+fn test_circle_fradius() {
+    let ext = Extrusion {
+        verts: vec![
+            Vec3::new(
+                125.0, 125.0, 227.0,
+            ),
+            Vec3::new(
+                125.0, -125.0,227.0, ),
+            Vec3::new(
+                -125.0, -125.0, 227.0, ),
+            Vec3::new(
+                -125.0,125.0, 227.0,
+            ),
+        ],
+        fradius_vec: vec![125.0; 4],
+        height: 100.0,
+        ..default()
+    };
+    let r = ext.gen_brep_shell();
+    dbg!(r);
 }

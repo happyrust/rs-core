@@ -133,7 +133,7 @@ impl Default for CTorus {
 
 impl VerifiedShape for CTorus {
     fn check_valid(&self) -> bool {
-        self.rout > 0.0 && self.rins > 0.0 && self.angle.abs() > 0.0 && (self.rout - self.rins) > f32::EPSILON
+        self.rout > 0.0 && self.rins >= 0.0 && self.angle.abs() > 0.0 && (self.rout - self.rins) > f32::EPSILON
     }
 }
 
