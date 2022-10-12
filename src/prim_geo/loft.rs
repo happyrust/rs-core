@@ -216,8 +216,14 @@ pub fn get_sloped_transform(drn_axis: Vec3, axis: Vec3) -> Matrix4 {
     if abs_diff_ne!(drn_axis.z, 0.0, epsilon = 0.001) {
         let a = Vec3::X.angle_between(drn_axis);
         let b = Vec3::Y.angle_between(drn_axis);
-        // dbg!((a, b));
         if !a.is_nan() {
+            let m = Mat3::from_quat(glam::Quat::from_rotation_arc(axis, drn_axis));
+            let mut rotation = Matrix4::from_cols(
+                m.x_axis.vector4(),
+                m.y_axis.vector4(),
+                m.z_axis.vector4(),
+                Vector4::new(0.0, 0.0, 0.0, 1.0),
+            );
             let mut scale_x = 1.0 / a.sin().abs() as f64;
             let mut found_err = false;
             if scale_x > 100.0 {
@@ -225,23 +231,15 @@ pub fn get_sloped_transform(drn_axis: Vec3, axis: Vec3) -> Matrix4 {
                 found_err = true;
             }
             let mut scale_y = 1.0 / b.sin().abs() as f64;
-            // dbg!((scale_x, scale_y));
             if scale_y > 100.0 {
                 scale_y = 1.0;
                 found_err = true;
             }
             if found_err {
+                rotation = Matrix4::identity();
                 println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
             }
             let scale_mat = Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-            // dbg!(&axis);
-            let m = Mat3::from_quat(glam::Quat::from_rotation_arc(axis, drn_axis));
-            let rotation = Matrix4::from_cols(
-                m.x_axis.vector4(),
-                m.y_axis.vector4(),
-                m.z_axis.vector4(),
-                Vector4::new(0.0, 0.0, 0.0, 1.0),
-            );
             mat = rotation * scale_mat;
         }
     }
