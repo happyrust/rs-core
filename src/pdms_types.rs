@@ -1643,7 +1643,7 @@ pub struct EleGeosInfo {
 }
 
 impl EleGeosInfo {
-    pub fn to_json(self) -> String {
+    pub fn to_json_type(self) -> EleGeosInfoJson {
         let mut data = vec![];
         for d in self.data {
             data.push(EleGeoInstanceJson {
@@ -1656,7 +1656,7 @@ impl EleGeosInfo {
                 is_tubi: d.is_tubi,
             });
         }
-        let json = EleGeosInfoJson {
+        EleGeosInfoJson {
             _key: self._key,
             data,
             visible: self.visible,
@@ -1664,10 +1664,9 @@ impl EleGeosInfo {
             world_transform: self.world_transform,
             ptset_map: self.ptset_map,
             flow_pt_indexs: self.flow_pt_indexs,
-        };
-        serde_json::to_string(&json).unwrap_or("".to_string())
+        }
     }
-    pub fn from_json(json: String) -> Self {
+    pub fn from_json_type(json: String) -> Self {
         let json: EleGeosInfoJson = serde_json::from_str(&json).unwrap_or_default();
         let data = json.data;
         let mut origin_data = vec![];
