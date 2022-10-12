@@ -1640,6 +1640,77 @@ pub struct EleGeosInfo {
 
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
     pub flow_pt_indexs: Vec<Option<i32>>,
+}
+
+impl EleGeosInfo {
+    pub fn to_json(self) -> String {
+        let mut data = vec![];
+        for d in self.data {
+            data.push(EleGeoInstanceJson {
+                geo_hash: d.geo_hash.to_string(),
+                refno: d.refno,
+                pts: d.pts,
+                bbox: d.bbox,
+                transform: d.transform,
+                visible: d.visible,
+                is_tubi: d.is_tubi,
+            });
+        }
+        let json = EleGeosInfoJson {
+            _key: self._key,
+            data,
+            visible: self.visible,
+            generic_type: self.generic_type,
+            world_transform: self.world_transform,
+            ptset_map: self.ptset_map,
+            flow_pt_indexs: self.flow_pt_indexs,
+        };
+        serde_json::to_string(&json).unwrap_or("".to_string())
+    }
+    pub fn from_json(json: String) -> Self {
+        let json: EleGeosInfoJson = serde_json::from_str(&json).unwrap_or_default();
+        let data = json.data;
+        let mut origin_data = vec![];
+        for a in data {
+            origin_data.push(EleGeoInstance {
+                geo_hash: a.geo_hash.parse().unwrap_or(0),
+                refno: a.refno,
+                pts: a.pts,
+                bbox: a.bbox,
+                transform: a.transform,
+                visible: a.visible,
+                is_tubi: a.is_tubi,
+            });
+        }
+        Self {
+            _key: json._key,
+            data: origin_data,
+            visible: json.visible,
+            generic_type: json.generic_type,
+            world_transform: json.world_transform,
+            ptset_map: json.ptset_map,
+            flow_pt_indexs: json.flow_pt_indexs,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EleGeosInfoJson {
+    // 该 GeosInfo 的参考号 转换为 0_0样式
+    // #[serde(skip_serializing)]
+    pub _key: String,
+    //索引的mesh instance
+    pub data: Vec<EleGeoInstanceJson>,
+    //是否可见
+    pub visible: bool,
+    //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
+    pub generic_type: PdmsGenericType,
+
+    //相对世界坐标系下的变换矩阵 rot, translation, scale
+    pub world_transform: (Quat, Vec3, Vec3),
+
+    pub ptset_map: BTreeMap<i32, CateAxisParam>,
+    pub flow_pt_indexs: Vec<Option<i32>>,
 
 }
 
@@ -1827,6 +1898,19 @@ impl CachedMeshesMgr {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EleGeoInstance {
     pub geo_hash: u64,
+    //对应参考号
+    pub refno: RefU64,
+    pub pts: SmallVec<[i32; 3]>,
+    pub bbox: AiosAABB,
+    //相对owner坐标系的变换, rot, translation, scale
+    pub transform: (Quat, Vec3, Vec3),
+    pub visible: bool,
+    pub is_tubi: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EleGeoInstanceJson {
+    pub geo_hash: String,
     //对应参考号
     pub refno: RefU64,
     pub pts: SmallVec<[i32; 3]>,
