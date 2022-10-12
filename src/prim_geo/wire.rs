@@ -143,25 +143,37 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
             }
         }
     }
-    let v_len = verts.len();
-    let mut pre_vert = verts[0].clone();
-    let mut i = 1;
-    while i <= v_len {
-        let cur_vert = &verts[i % v_len];
-        if pre_vert.get_point().distance(cur_vert.get_point()) > 1.0 {
-            if circle_indexs.len() > 0 && i == circle_indexs[0] {
-                let next_vert = &verts[(i + 1) % v_len];
-                wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.get_point()));
-                pre_vert = next_vert.clone();
-                circle_indexs.remove(0);
-                i += 1;
-            } else {
-                wire.push_back(builder::line(&pre_vert, cur_vert));
-                pre_vert = cur_vert.clone();
-                // dbg!(i);
-            }
+    if !verts.is_empty() {
+        let s_vert = verts.first().unwrap();
+        let e_vert = verts.last().unwrap();
+        let l = s_vert.get_point().distance(e_vert.get_point());
+        if l < 0.001 {
+            let s = verts.pop();
+            // dbg!(&s);
         }
-        i += 1;
+        let v_len = verts.len();
+        let mut pre_vert = verts[0].clone();
+        let mut i = 1;
+        // dbg!(&verts);
+        // dbg!(&circle_indexs);
+        while i <= v_len {
+            let cur_vert = &verts[i % v_len];
+            if pre_vert.get_point().distance(cur_vert.get_point()) > 1.0 {
+                if circle_indexs.len() > 0 && i == circle_indexs[0] {
+                    let next_vert = &verts[(i + 1) % v_len];
+                    wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.get_point()));
+                    pre_vert = next_vert.clone();
+                    circle_indexs.remove(0);
+                    i += 1;
+                } else {
+                    wire.push_back(builder::line(&pre_vert, cur_vert));
+                    pre_vert = cur_vert.clone();
+                    // dbg!(i);
+                }
+            }
+            i += 1;
+        }
     }
+
     Ok(wire)
 }
