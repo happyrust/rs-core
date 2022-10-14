@@ -144,6 +144,24 @@ impl PdmsMesh {
         )));
         (mesh, wire_mesh, Aabb::from_min_max(min, max))
     }
+
+    #[inline]
+    pub fn into_compress_bytes(&self) -> Vec<u8> {
+        use flate2::Compression;
+        use flate2::write::DeflateEncoder;
+        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
+        e.write_all(&bincode::serialize(&self).unwrap());
+        e.finish().unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+        use flate2::write::DeflateDecoder;
+        let mut writer = Vec::new();
+        let mut deflater = DeflateDecoder::new(writer);
+        deflater.write_all(bytes).ok()?;
+        bincode::deserialize(&deflater.finish().ok()?).ok()
+    }
 }
 
 //bevy's meshs
