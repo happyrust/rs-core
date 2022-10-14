@@ -75,8 +75,12 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 }
 
 //方便还原出未缩放的参数
-pub enum PdmsShapeData{
+pub enum PdmsShapeData {}
 
+#[derive(Serialize, Deserialize, Component, Debug)]
+pub struct PdmsInstanceMeshMap {
+    pub refno_map: DashMap<RefU64, GeoHash>,
+    pub mesh_map: DashMap<GeoHash, PdmsMesh>,
 }
 
 #[derive(Serialize, Deserialize, Component, Debug)]
@@ -230,7 +234,6 @@ dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 // #[typetag::serde(tag = "type")]
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
-
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -254,7 +257,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     //生成对应的单位长度的模型，比如Dish，就是以R为1的情况生成模型
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-       None
+        None
     }
 
     #[inline]
@@ -321,7 +324,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 //     })
                 //     .collect();
 
-                let shape_data : Box<dyn BrepShapeTrait> = self.clone_dyn();
+                let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
                 // let shape_data : Box<dyn BrepShapeTrait> = self.__clone_box();
                 return Some(PdmsMesh {
                     indices,
