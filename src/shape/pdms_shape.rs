@@ -79,7 +79,7 @@ pub enum PdmsShapeData {}
 
 #[derive(Serialize, Deserialize, Component, Debug)]
 pub struct PdmsInstanceMeshMap {
-    pub refno_map: DashMap<RefU64, GeoHash>,
+    pub refno_map: DashMap<RefU64, Vec<GeoHash>>,
     pub mesh_map: DashMap<GeoHash, PdmsMesh>,
 }
 
