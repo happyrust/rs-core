@@ -19,6 +19,19 @@ pub struct PdmsTubing {
     pub finished: bool,  //完整的一个tubing信息
 }
 
+// 存放在图数据库的 tubi 的数据
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct TubiEdgeAql {
+    pub _key: String,
+    pub _from: String,
+    pub _to: String,
+    pub start_pt: Vec3,
+    pub end_pt: Vec3,
+    pub att_type: String,
+    pub extra_type: String,
+    pub bore: f32,
+}
+
 
 impl PdmsTubing {
     #[inline]
