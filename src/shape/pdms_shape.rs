@@ -83,7 +83,7 @@ pub struct PdmsInstanceMeshMap {
     pub mesh_map: DashMap<GeoHash, PdmsMesh>,
 }
 
-#[derive(Serialize, Deserialize, Component, Debug)]
+#[derive(Serialize, Deserialize, Component, Debug,Default)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,

@@ -13,8 +13,8 @@ pub struct PdmsTubing {
     pub end_pt: Vec3,
     pub desire_leave_dir: Vec3,
     pub desire_arrive_dir: Vec3,
-    pub _from: RefU64,
-    pub _to: RefU64,
+    pub _from: String,
+    pub _to: String,
     pub bore: f32,
     pub finished: bool,  //完整的一个tubing信息
 }
