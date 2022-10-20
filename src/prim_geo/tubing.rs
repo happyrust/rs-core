@@ -32,6 +32,10 @@ pub struct TubiEdgeAql {
     pub bore: f32,
 }
 
+unsafe impl Send for TubiEdgeAql {}
+
+unsafe impl Sync for TubiEdgeAql {}
+
 
 impl PdmsTubing {
     #[inline]
