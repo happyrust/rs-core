@@ -5,10 +5,8 @@ use std::hash::{Hash, Hasher};
 
 use approx::{abs_diff_eq, abs_diff_ne};
 use bevy::ecs::reflect::ReflectComponent;
-use bevy::pbr::LightEntity::Point;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
-use bevy_egui::egui::Shape::Vec;
 use glam::{TransformRT, TransformSRT, Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;

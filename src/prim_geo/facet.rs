@@ -6,9 +6,8 @@ use glam::Vec3;
 use lyon::path::builder::PathBuilder;
 use lyon::path::Path;
 use lyon::tessellation::*;
-use ncollide3d::bounding_volume::AABB;
-use ncollide3d::na;
-use truck_meshalgo::prelude::*;
+use parry3d::bounding_volume::AABB;
+use parry3d::math::{Point, Vector};
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
 
@@ -85,7 +84,7 @@ impl BrepShapeTrait for Facet {
                 if c.vertices.len() >= 3{
                     for i in 0..c.vertices.len(){
                         let v = c.vertices[i];
-                        aabb.take_point(na::Point3::new(v[0] , v[1] , v[2] ));
+                        aabb.take_point(Point::new(v[0], v[1] , v[2] ));
                         vertices.push(v);
                         normals.push(c.normals[i]);
                         uvs.push([0.0, 0.0]);

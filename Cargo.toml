@@ -12,10 +12,10 @@ id_tree = { version = "1.8.0", features = ["serde_support"] }
 dashmap = { version = "5.2.0", features = ["serde"] }
 hexasphere = "7.0.0"
 anyhow = "1.0.57"
-lyon = "0.17.10"
-nalgebra = "0.26.2"
-nalgebra-glm = "0.12.0"
-ncollide3d = "0.32.0"
+lyon = "1.0.0"
+nalgebra = "0.31.2"
+nalgebra-glm = "0.17.0"
+parry3d = "0.9.0"
 approx = "0.5.1"
 memchr = "2.5.0"
 nom = "7.1.1"
@@ -34,9 +34,11 @@ erased-serde = "0.3.22"
 #typetag = "0.2.3"
 dyn-clone = "1.0.9"
 
+rstar = "0.9.3"
 
-bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
+
+bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render"]}
+#bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
 #bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
 #bevy_egui = { path = "../bevy_egui" }
 

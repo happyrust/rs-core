@@ -22,6 +22,7 @@ pub mod helper;
 pub mod db_number;
 pub mod cache;
 pub mod tiny_expr;
+pub mod accel_tree;
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;

@@ -8,7 +8,6 @@ use truck_polymesh::stl::IntoSTLIterator;
 use crate::tool::hash_tool::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::shape::Icosphere;
 
 use lyon::math::size;
 use hexasphere::shapes::IcoSphere;
@@ -124,22 +123,6 @@ impl BrepShapeTrait for Sphere {
 }
 
 
-// impl From<&AttrMap> for Sphere {
-//     fn from(m: &AttrMap) -> Self {
-//         Sphere {
-//             center: Default::default(),
-//             size: Vec3::new(m.get_f32("XLEN").unwrap_or_default(),
-//                             m.get_f32("YLEN").unwrap_or_default(),
-//                             m.get_f32("ZLEN").unwrap_or_default(),),
-//         }
-//     }
-// }
-
-// impl From<AttrMap> for Sphere {
-//     fn from(m: AttrMap) -> Self {
-//         (&m).into()
-//     }
-// }
 
 
 

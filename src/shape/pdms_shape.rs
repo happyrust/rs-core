@@ -19,11 +19,6 @@ use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{TransformRT, TransformSRT, Vec3, Vec4};
 use lyon::path::polygon;
-use ncollide3d::bounding_volume::AABB;
-use ncollide3d::math::{Point, Vector};
-use ncollide3d::na;
-use ncollide3d::na::Point3 as NPoint3;
-use ncollide3d::shape::TriMesh;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use truck_base::bounding_box::BoundingBox;
@@ -31,6 +26,8 @@ use truck_base::cgmath64::{Point3, Vector3, Vector4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
 
+use parry3d::bounding_volume::AABB;
+use parry3d::math::{Point, Vector};
 use dyn_clone::DynClone;
 use crate::pdms_types::*;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
@@ -94,18 +91,18 @@ pub struct PdmsMesh {
 }
 
 impl PdmsMesh {
-    pub fn get_tri_mesh(&self, trans: TransformSRT) -> TriMesh<f32> {
-        let mut points: Vec<ncollide3d::na::Point3<f32>> = vec![];
-        let mut indices: Vec<ncollide3d::na::Point3<usize>> = vec![];
-        self.vertices.iter().for_each(|p| {
-            let mew_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
-            points.push(ncollide3d::na::Point3::<f32>::new(mew_pt[0], mew_pt[1], mew_pt[2]))
-        });
-        self.indices.chunks(3).for_each(|i| {
-            indices.push(ncollide3d::na::Point3::<usize>::new(i[0] as usize, i[1] as usize, i[2] as usize));
-        });
-        TriMesh::new(points, indices, None)
-    }
+    // pub fn get_tri_mesh(&self, trans: TransformSRT) -> TriMesh<f32> {
+    //     let mut points: Vec<ncollide3d::na::Point3<f32>> = vec![];
+    //     let mut indices: Vec<ncollide3d::na::Point3<usize>> = vec![];
+    //     self.vertices.iter().for_each(|p| {
+    //         let mew_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
+    //         points.push(ncollide3d::na::Point3::<f32>::new(mew_pt[0], mew_pt[1], mew_pt[2]))
+    //     });
+    //     self.indices.chunks(3).for_each(|i| {
+    //         indices.push(ncollide3d::na::Point3::<usize>::new(i[0] as usize, i[1] as usize, i[2] as usize));
+    //     });
+    //     TriMesh::new(points, indices, None)
+    // }
 
     pub fn gen_bevy_mesh(&self) -> Mesh {
         let mut mesh = Mesh::new(TriangleList);
