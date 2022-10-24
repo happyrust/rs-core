@@ -325,22 +325,13 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
-
-impl Into<IVec> for RefU64Vec {
-    fn into(self) -> IVec {
+impl BytesTrait for RefU64Vec {
+    fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()
     }
-}
 
-impl Into<IVec> for &RefU64Vec {
-    fn into(self) -> IVec {
-        bincode::serialize(self).unwrap().into()
-    }
-}
-
-impl From<IVec> for RefU64Vec {
-    fn from(d: IVec) -> Self {
-        bincode::deserialize(&d).unwrap()
+    fn from_bytes(bytes: &[u8]) -> Self {
+        bincode::deserialize(bytes).unwrap()
     }
 }
 
@@ -439,21 +430,13 @@ impl Debug for AttrMap {
     }
 }
 
-impl Into<IVec> for AttrMap {
-    fn into(self) -> IVec {
+impl BytesTrait for AttrMap {
+    fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()
     }
-}
 
-impl Into<IVec> for &AttrMap {
-    fn into(self) -> IVec {
-        bincode::serialize(self).unwrap().into()
-    }
-}
-
-impl From<IVec> for AttrMap {
-    fn from(d: IVec) -> Self {
-        bincode::deserialize(&d).unwrap()
+    fn from_bytes(bytes: &[u8]) -> Self {
+        bincode::deserialize(bytes).unwrap()
     }
 }
 
