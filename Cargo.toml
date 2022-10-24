@@ -13,9 +13,9 @@ dashmap = { version = "5.2.0", features = ["serde"] }
 hexasphere = "7.0.0"
 anyhow = "1.0.57"
 lyon = "1.0.0"
-nalgebra = "0.31.2"
+nalgebra = { version = "0.31.2", features = ["serde"] }
 nalgebra-glm = "0.17.0"
-parry3d = "0.9.0"
+parry3d = { version = "0.10.0", features = ["serde-serialize"] }
 approx = "0.5.1"
 memchr = "2.5.0"
 nom = "7.1.1"

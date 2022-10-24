@@ -11,10 +11,10 @@ use bevy::ecs::reflect::ReflectComponent;
 
 use lyon::math::size;
 use hexasphere::shapes::IcoSphere;
+use nalgebra::Point3;
+use parry3d::bounding_volume::AABB;
+use parry3d::math::{Point, Vector};
 use serde::{Serialize,Deserialize};
-// use crate::prim_geo::helper::quad_indices;
-use crate::pdms_types::AiosAABB;
-
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
 #[derive(Component, Debug, /*Inspectable, Reflect,*/ Clone, Serialize, Deserialize)]
@@ -95,10 +95,11 @@ impl BrepShapeTrait for Sphere {
             normals,
             wf_indices: vec![],
             wf_vertices: vec![],
-            aabb: AiosAABB{
-                min: -Vec3::ONE,
-                max: Vec3::ONE,
-            },
+            aabb: AABB::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0)),
+            // AiosAABB{
+            //     min: -Vec3::ONE,
+            //     max: Vec3::ONE,
+            // },
             unit_shape: Sphere::default().gen_brep_shell().unwrap(),
         });
     }

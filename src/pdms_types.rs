@@ -28,6 +28,7 @@ use smol_str::SmolStr;
 use truck_modeling::Shell;
 use derive_more::{Deref, DerefMut};
 
+use parry3d::bounding_volume::AABB;
 use crate::BHashMap;
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
@@ -1437,45 +1438,6 @@ pub enum GeoData {
     // Raw(Mesh),          //原生的Mesh
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct AiosAABB {
-    pub min: Vec3,
-    pub max: Vec3,
-}
-
-impl AiosAABB {
-    #[inline]
-    pub fn new(v1: Vec3, v2: Vec3) -> Self {
-        Self { min: v1, max: v2 }
-    }
-
-    #[inline]
-    pub fn scaled(&mut self, scale: &Vec3) {
-        self.min = Vec3::new(
-            self.min.x * scale.x,
-            self.min.y * scale.y,
-            self.min.z * scale.z,
-        );
-        self.max = Vec3::new(
-            self.max.x * scale.x,
-            self.max.y * scale.y,
-            self.max.z * scale.z,
-        );
-    }
-
-    #[inline]
-    pub fn get_half_extents(&self) -> Vec3 {
-        let center = (self.min + self.max) / 2.0;
-        self.max - center
-    }
-
-    #[inline]
-    pub fn get_center(&self) -> Vec3 {
-        let center = (self.min + self.max) / 2.0;
-        center
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct LevelShapeMgr {
     pub level_mgr: DashMap<RefU64, RefU64Vec>,
@@ -1756,7 +1718,7 @@ impl CachedMeshesMgr {
     }
 
     /// 获得对应的bevy 三角模型和线框模型
-    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Aabb)> {
+    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, AABB)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
             let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
             return Some(bevy_mesh);
@@ -1780,7 +1742,7 @@ impl CachedMeshesMgr {
         hash
     }
 
-    pub fn get_bbox(&self, hash: &u64) -> Option<AiosAABB> {
+    pub fn get_bbox(&self, hash: &u64) -> Option<AABB> {
         if self.meshes.contains_key(hash) {
             let mesh = self.meshes.get(hash).unwrap();
             return Some(mesh.aabb.clone());
@@ -1830,7 +1792,8 @@ pub struct EleGeoInstance {
     //对应参考号
     pub refno: RefU64,
     pub pts: SmallVec<[i32; 3]>,
-    pub bbox: AiosAABB,
+    // pub bbox: AiosAABB,
+    pub aabb: AABB,
     //相对owner坐标系的变换, rot, translation, scale
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,

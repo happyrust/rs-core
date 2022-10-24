@@ -10,8 +10,6 @@ use parry3d::bounding_volume::AABB;
 use parry3d::math::{Point, Vector};
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
-
-use crate::pdms_types::AiosAABB;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
@@ -119,9 +117,6 @@ impl BrepShapeTrait for Facet {
             }
         }
 
-
-        let a = aabb.mins;
-        let b = aabb.maxs;
         //对于facet，可以绘制convex hull的线框
         return  Some(PdmsMesh{
             indices,
@@ -129,7 +124,7 @@ impl BrepShapeTrait for Facet {
             normals,
             wf_indices: vec![],
             wf_vertices: vec![],
-            aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
+            aabb,
             unit_shape: Default::default(),
             // shape_data: self.gen_unit_shape(),
         });
@@ -165,7 +160,6 @@ impl Facet {
             y_n = coord_sys[2];
         }
 
-        // //dbg!(&y_n);
         for idx in 0..pts.len() {
             let to_p = Vec3::from_slice(&pts[idx]) - v0;
             polygon2d.push(lyon::math::Point::new(to_p.dot(x_n) as f32, to_p.dot(y_n) as f32));

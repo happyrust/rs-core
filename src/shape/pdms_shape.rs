@@ -85,7 +85,8 @@ pub struct PdmsMesh {
     //wireframe indices
     pub wf_vertices: Vec<[f32; 3]>,
     //wireframe vertex
-    pub aabb: AiosAABB,
+    // pub aabb: AiosAABB,
+    pub aabb: AABB,
     pub unit_shape: Shell,
     // pub shape_data: Box<dyn BrepShapeTrait>,
 }
@@ -104,6 +105,7 @@ impl PdmsMesh {
     //     TriMesh::new(points, indices, None)
     // }
 
+    ///todo 后面需要把uv使用上
     pub fn gen_bevy_mesh(&self) -> Mesh {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
@@ -115,8 +117,8 @@ impl PdmsMesh {
         mesh
     }
 
-    ///返回三角模型和线框模型
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Aabb) {
+    ///返回三角模型和线框模型 （tri_mesh, line_mesh, AABB）
+    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, AABB) {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
@@ -130,16 +132,13 @@ impl PdmsMesh {
         mesh.set_indices(Some(Indices::U32(
             self.indices.clone()
         )));
-        let AiosAABB {
-            min,
-            max, } = self.aabb;
 
         let mut wire_mesh = Mesh::new(LineList);
         wire_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.wf_vertices.clone());
         wire_mesh.set_indices(Some(Indices::U32(
             self.wf_indices.clone()
         )));
-        (mesh, wire_mesh, Aabb::from_min_max(min, max))
+        (mesh, wire_mesh, self.aabb.clone())
     }
 }
 
@@ -278,8 +277,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     indices.push(i[1].pos as u32);
                     indices.push(i[2].pos as u32);
                 }
-                let a = aabb.mins;
-                let b = aabb.maxs;
+
 
                 // let curves = brep
                 //     .edge_iter()
@@ -308,7 +306,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     normals,
                     wf_indices: default(),
                     wf_vertices: default(),
-                    aabb: AiosAABB::new(Vec3::new(a.x, a.y, a.z), Vec3::new(b.x, b.y, b.z)),
+                    aabb,
                     unit_shape: brep,
                     // shape_data
                 });
