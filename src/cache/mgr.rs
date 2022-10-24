@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use dashmap::DashMap;
 use lazy_static::lazy_static;
 use serde::de::DeserializeOwned;
@@ -9,38 +10,51 @@ use crate::cache::refno::CachedRefBasic;
 use crate::pdms_types::PdmsElementVec;
 use dashmap::mapref::one::Ref;
 use crate::pdms_types::RefU64Vec;
+use redb::{
+    Builder, Database, Durability, Error, MultimapTableDefinition, ReadableTable, TableDefinition,
+    WriteStrategy
+};
+use redb::types::*;
+
+pub const CACHE_SLED_NAME: &'static str = "cache.rdb";
+const TABLE: TableDefinition<u64, [u8]> = TableDefinition::new("my_data");
 
 
-
-pub const CACHE_SLED_NAME: &'static str = "cache.db";
-
+pub trait BytesTrait{
+    fn to_bytes(&self) -> Vec<u8>;
+    fn from_bytes(bytes: &[u8]) -> Self;
+}
 
 #[derive(Clone)]
 pub struct CacheMgr<
-    T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> {
+    T: BytesTrait + Clone + Serialize + DeserializeOwned> {
     name: String,
-    db: Option<sled::Db>,
+    db: Option<Arc<Database>>,
     map: DashMap<RefU64, T>,
-    use_sled: bool,
+    use_redb: bool,
+    // use_redb: bool,
 }
 
-impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr<T>
+impl<T: BytesTrait +  Clone + Serialize + DeserializeOwned> CacheMgr<T>
 {
-    pub fn new(name: &str, save_to_sled: bool) -> Self {
+    pub fn new(name: &str, save_to_redb: bool) -> Self {
         Self {
             name: name.to_string(),
-            db: if save_to_sled{
-                sled::open(name).ok()
+            db: if save_to_redb {
+                // sled::open(name).ok()
+                let db_size = 10 * 1024 * 1024 * 1024;
+                unsafe { Database::create(name, db_size).map(|x| Arc::new(x)).ok() }
             }else{
                 None
             },
             map: Default::default(),
-            use_sled: save_to_sled,
+            use_redb: save_to_redb,
+            // use_redb: false
         }
     }
 
-    pub fn use_sled(&self) -> bool {
-        self.use_sled
+    pub fn use_redb(&self) -> bool {
+        self.use_redb
     }
 
     #[inline]
@@ -50,20 +64,37 @@ impl<T: Into<IVec> + From<IVec> + Clone + Serialize + DeserializeOwned> CacheMgr
 
     #[inline]
     pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {
-        if self.use_sled && !self.map.contains_key(k) && self.db.is_some(){
-            if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get::<IVec>(k.into()) {
-                self.map.insert((*k).into(), bytes.into());
+        if self.use_redb && !self.map.contains_key(k) && self.db.is_some(){
+            // if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get(k.into()) {
+            //     self.map.insert((*k).into(), bytes.into());
+            // }
+
+            if let Some(db) = &self.db {
+                let read_txn = db.begin_read().ok()?;
+                let table = read_txn.open_table(TABLE).ok()?;
+                if let Ok(Some(bytes)) = table.get(&**k) {
+                    self.map.insert((*k).into(), T::from_bytes(bytes));
+                }
             }
+
+
         }
         self.map.get(k)
     }
 
     #[inline]
-    pub fn insert(&self, k: RefU64, value: T) -> anyhow::Result<()> {
+    pub fn insert(&self, k: RefU64, value: &T) -> anyhow::Result<()> {
         self.map.insert(k, value.clone());
-        let bytes: IVec = k.into();
-        if self.use_sled {
-            self.db.as_ref().unwrap().insert(bytes, value)?;
+        if self.use_redb {
+            if let Some(db) = &self.db {
+                let write_txn = db.begin_write()?;
+                {
+                    //todo use on file
+                    let mut table = write_txn.open_table(TABLE)?;
+                    table.insert(&*k, &value.to_bytes())?;
+                }
+                write_txn.commit()?;
+            }
         }
         Ok(())
     }

@@ -16,13 +16,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="replace ncollide3d to parry3d">
-      <change afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_2d_tree.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/accel_tree/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cache/mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cache/mgr.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/facet.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/facet.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -200,14 +197,7 @@
       <workItem from="1665480657350" duration="4213000" />
       <workItem from="1665995677217" duration="598000" />
       <workItem from="1666371469790" duration="7809000" />
-      <workItem from="1666598266405" duration="493000" />
-    </task>
-    <task id="LOCAL-00093" summary="snout poff with neg height">
-      <created>1659013533374</created>
-      <option name="number" value="00093" />
-      <option name="presentableId" value="LOCAL-00093" />
-      <option name="project" value="LOCAL" />
-      <updated>1659013533374</updated>
+      <workItem from="1666598266405" duration="5252000" />
     </task>
     <task id="LOCAL-00094" summary="snout poff with neg height">
       <created>1659014819208</created>
@@ -545,7 +535,14 @@
       <option name="project" value="LOCAL" />
       <updated>1666539067405</updated>
     </task>
-    <option name="localTasksCounter" value="142" />
+    <task id="LOCAL-00142" summary="replace ncollide3d to parry3d">
+      <created>1666598867789</created>
+      <option name="number" value="00142" />
+      <option name="presentableId" value="LOCAL-00142" />
+      <option name="project" value="LOCAL" />
+      <updated>1666598867789</updated>
+    </task>
+    <option name="localTasksCounter" value="143" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

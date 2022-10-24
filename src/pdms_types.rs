@@ -201,25 +201,6 @@ impl Into<Vec<u8>> for RefU64 {
     }
 }
 
-impl Into<sled::IVec> for RefU64 {
-    fn into(self) -> sled::IVec {
-        self.0.to_be_bytes().to_vec().into()
-    }
-}
-
-impl Into<sled::IVec> for &RefU64 {
-    fn into(self) -> sled::IVec {
-        // bincode::serialize(self).unwrap().into()
-        self.0.to_be_bytes().to_vec().into()
-    }
-}
-
-impl From<sled::IVec> for RefU64 {
-    fn from(d: sled::IVec) -> Self {
-        // bincode::deserialize(&d).unwrap()
-        Self::from(d.as_ref())
-    }
-}
 
 //IVec
 
@@ -1612,7 +1593,7 @@ impl EleGeosInfo {
                 geo_hash: d.geo_hash.to_string(),
                 refno: d.refno,
                 pts: d.pts,
-                bbox: d.bbox,
+                aabb: d.aabb,
                 transform: d.transform,
                 visible: d.visible,
                 is_tubi: d.is_tubi,
@@ -1637,7 +1618,7 @@ impl EleGeosInfo {
                 geo_hash: a.geo_hash.parse().unwrap_or(0),
                 refno: a.refno,
                 pts: a.pts,
-                bbox: a.bbox,
+                aabb: a.aabb,
                 transform: a.transform,
                 visible: a.visible,
                 is_tubi: a.is_tubi,
@@ -1878,7 +1859,7 @@ pub struct EleGeoInstanceJson {
     //对应参考号
     pub refno: RefU64,
     pub pts: SmallVec<[i32; 3]>,
-    pub bbox: AiosAABB,
+    pub aabb: AABB,
     //相对owner坐标系的变换, rot, translation, scale
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
