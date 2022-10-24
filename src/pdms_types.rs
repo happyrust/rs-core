@@ -31,6 +31,7 @@ use derive_more::{Deref, DerefMut};
 use parry3d::bounding_volume::AABB;
 use crate::BHashMap;
 use crate::cache::mgr::BytesTrait;
+use crate::cache::refno::CachedRefBasic;
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
@@ -1977,21 +1978,13 @@ impl From<sled::IVec> for PdmsElement {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
 
-impl Into<sled::IVec> for PdmsElementVec {
-    fn into(self) -> sled::IVec {
+impl BytesTrait for PdmsElementVec {
+    fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()
     }
-}
 
-impl Into<sled::IVec> for &PdmsElementVec {
-    fn into(self) -> sled::IVec {
-        bincode::serialize(self).unwrap().into()
-    }
-}
-
-impl From<sled::IVec> for PdmsElementVec {
-    fn from(d: sled::IVec) -> Self {
-        bincode::deserialize(&d).unwrap()
+    fn from_bytes(bytes: &[u8]) -> Self {
+        bincode::deserialize(bytes).unwrap()
     }
 }
 

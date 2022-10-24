@@ -4,11 +4,12 @@ use std::ops::Deref;
 use dashmap::{DashMap, DashSet};
 use dashmap::mapref::one::Ref;
 use smol_str::SmolStr;
-use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, RefU64};
+use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, PdmsElementVec, RefU64};
 use crate::tool::db_tool::db1_dehash;
 use serde::{Serialize, Deserialize};
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use crate::cache::mgr::BytesTrait;
 use crate::pdms_types::PdmsDatabaseInfo;
 
 
@@ -24,21 +25,13 @@ pub struct ScomInfo {
     pub plin_map: HashMap<String, PlinParam>,
 }
 
-impl Into<sled::IVec> for ScomInfo {
-    fn into(self) -> sled::IVec {
+impl BytesTrait for ScomInfo {
+    fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()
     }
-}
 
-impl Into<sled::IVec> for &ScomInfo {
-    fn into(self) -> sled::IVec {
-        bincode::serialize(self).unwrap().into()
-    }
-}
-
-impl From<sled::IVec> for ScomInfo {
-    fn from(d: sled::IVec) -> Self {
-        bincode::deserialize(&d).unwrap()
+    fn from_bytes(bytes: &[u8]) -> Self {
+        bincode::deserialize(bytes).unwrap()
     }
 }
 
