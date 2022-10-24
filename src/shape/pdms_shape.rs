@@ -89,7 +89,6 @@ pub struct PdmsMesh {
     //wireframe indices
     pub wf_vertices: Vec<[f32; 3]>,
     //wireframe vertex
-    // pub aabb: AiosAABB,
     pub aabb: AABB,
     pub unit_shape: Shell,
     // pub shape_data: Box<dyn BrepShapeTrait>,
