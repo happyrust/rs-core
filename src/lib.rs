@@ -23,6 +23,7 @@ pub mod db_number;
 pub mod cache;
 pub mod tiny_expr;
 pub mod accel_tree;
+pub mod plot_struct; // 全自动出图所需的结构体
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;

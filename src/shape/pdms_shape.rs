@@ -72,11 +72,15 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 }
 
 //方便还原出未缩放的参数
-pub enum PdmsShapeData{
-
-}
+pub enum PdmsShapeData {}
 
 #[derive(Serialize, Deserialize, Component, Debug)]
+pub struct PdmsInstanceMeshMap {
+    pub refno_map: DashMap<RefU64, Vec<GeoHash>>,
+    pub mesh_map: DashMap<GeoHash, PdmsMesh>,
+}
+
+#[derive(Serialize, Deserialize, Component, Debug,Default)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
@@ -139,6 +143,24 @@ impl PdmsMesh {
             self.wf_indices.clone()
         )));
         (mesh, wire_mesh, self.aabb.clone())
+    }
+
+    #[inline]
+    pub fn into_compress_bytes(&self) -> Vec<u8> {
+        use flate2::Compression;
+        use flate2::write::DeflateEncoder;
+        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
+        e.write_all(&bincode::serialize(&self).unwrap());
+        e.finish().unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+        use flate2::write::DeflateDecoder;
+        let mut writer = Vec::new();
+        let mut deflater = DeflateDecoder::new(writer);
+        deflater.write_all(bytes).ok()?;
+        bincode::deserialize(&deflater.finish().ok()?).ok()
     }
 }
 
@@ -208,7 +230,6 @@ dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 // #[typetag::serde(tag = "type")]
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
-
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -232,7 +253,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     //生成对应的单位长度的模型，比如Dish，就是以R为1的情况生成模型
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-       None
+        None
     }
 
     #[inline]
@@ -298,7 +319,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 //     })
                 //     .collect();
 
-                let shape_data : Box<dyn BrepShapeTrait> = self.clone_dyn();
+                let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
                 // let shape_data : Box<dyn BrepShapeTrait> = self.__clone_box();
                 return Some(PdmsMesh {
                     indices,

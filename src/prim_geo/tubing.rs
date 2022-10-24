@@ -13,11 +13,28 @@ pub struct PdmsTubing {
     pub end_pt: Vec3,
     pub desire_leave_dir: Vec3,
     pub desire_arrive_dir: Vec3,
-    pub _from: RefU64,
-    pub _to: RefU64,
+    pub _from: String,
+    pub _to: String,
     pub bore: f32,
     pub finished: bool,  //完整的一个tubing信息
 }
+
+// 存放在图数据库的 tubi 的数据
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct TubiEdgeAql {
+    pub _key: String,
+    pub _from: String,
+    pub _to: String,
+    pub start_pt: Vec3,
+    pub end_pt: Vec3,
+    pub att_type: String,
+    pub extra_type: String,
+    pub bore: f32,
+}
+
+unsafe impl Send for TubiEdgeAql {}
+
+unsafe impl Sync for TubiEdgeAql {}
 
 
 impl PdmsTubing {
