@@ -95,6 +95,15 @@ pub struct PdmsMesh {
     // pub shape_data: Box<dyn BrepShapeTrait>,
 }
 
+impl Default for PdmsMesh {
+    fn default() -> Self {
+        Self{
+            aabb: AABB::new_invalid(),
+            ..default()
+        }
+    }
+}
+
 impl PdmsMesh {
     // pub fn get_tri_mesh(&self, trans: TransformSRT) -> TriMesh<f32> {
     //     let mut points: Vec<ncollide3d::na::Point3<f32>> = vec![];
