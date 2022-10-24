@@ -15,12 +15,11 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="replace ncollide3d to parry3d">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="use redb">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cache/mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cache/mgr.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -197,14 +196,7 @@
       <workItem from="1665480657350" duration="4213000" />
       <workItem from="1665995677217" duration="598000" />
       <workItem from="1666371469790" duration="7809000" />
-      <workItem from="1666598266405" duration="5252000" />
-    </task>
-    <task id="LOCAL-00094" summary="snout poff with neg height">
-      <created>1659014819208</created>
-      <option name="number" value="00094" />
-      <option name="presentableId" value="LOCAL-00094" />
-      <option name="project" value="LOCAL" />
-      <updated>1659014819208</updated>
+      <workItem from="1666598266405" duration="5745000" />
     </task>
     <task id="LOCAL-00095" summary="snout poff with neg height">
       <created>1659016014584</created>
@@ -542,7 +534,14 @@
       <option name="project" value="LOCAL" />
       <updated>1666598867789</updated>
     </task>
-    <option name="localTasksCounter" value="143" />
+    <task id="LOCAL-00143" summary="use redb">
+      <created>1666618196817</created>
+      <option name="number" value="00143" />
+      <option name="presentableId" value="LOCAL-00143" />
+      <option name="project" value="LOCAL" />
+      <updated>1666618196817</updated>
+    </task>
+    <option name="localTasksCounter" value="144" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -572,7 +571,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Change default triangulate tol" />
     <MESSAGE value="wasm dont use sled" />
     <MESSAGE value="SExtrusion need consider paax pt translation" />
     <MESSAGE value="Update" />
@@ -597,6 +595,7 @@
     <MESSAGE value="tmp" />
     <MESSAGE value="update" />
     <MESSAGE value="replace ncollide3d to parry3d" />
-    <option name="LAST_COMMIT_MESSAGE" value="replace ncollide3d to parry3d" />
+    <MESSAGE value="use redb" />
+    <option name="LAST_COMMIT_MESSAGE" value="use redb" />
   </component>
 </project>

@@ -30,6 +30,7 @@ use derive_more::{Deref, DerefMut};
 
 use parry3d::bounding_volume::AABB;
 use crate::BHashMap;
+use crate::cache::mgr::BytesTrait;
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
@@ -201,8 +202,16 @@ impl Into<Vec<u8>> for RefU64 {
     }
 }
 
+impl BytesTrait for RefU64 {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.0.to_be_bytes().to_vec().into()
+    }
 
-//IVec
+    fn from_bytes(bytes: &[u8]) -> Self {
+        Self(u64::from_be_bytes(bytes[..8].try_into().unwrap()))
+    }
+}
+
 
 // impl FromSkyhashBytes for RefU64 {
 //     fn from_element(element: Element) -> SkyResult<Self> {

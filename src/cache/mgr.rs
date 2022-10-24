@@ -14,7 +14,6 @@ use redb::{
     Builder, Database, Durability, Error, MultimapTableDefinition, ReadableTable, TableDefinition,
     WriteStrategy
 };
-use redb::types::*;
 
 pub const CACHE_SLED_NAME: &'static str = "cache.rdb";
 const TABLE: TableDefinition<u64, [u8]> = TableDefinition::new("my_data");
