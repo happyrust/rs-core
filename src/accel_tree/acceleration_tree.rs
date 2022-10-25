@@ -1,7 +1,11 @@
+use std::fs::File;
+use std::io::Write;
 use glam::{Mat4, Vec3};
 use parry3d::bounding_volume::AABB;
+use serde_derive::{Deserialize, Serialize};
 use crate::pdms_types::RefU64;
 
+#[derive(Serialize, Deserialize)]
 pub struct RStarBoundingBox {
     aabb: rstar::AABB<[f32; 3]>,
     refno: RefU64,
@@ -58,7 +62,7 @@ impl rstar::PointDistance for RStarBoundingBox {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct AccelerationTree {
     tree: rstar::RTree<RStarBoundingBox>,
 }
@@ -91,6 +95,13 @@ impl AccelerationTree {
             .locate_in_envelope_intersecting(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                                                                         [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
             .map(|bb| bb.refno)
+    }
+
+    pub fn serialize_to_bin_file(&self) -> bool {
+        let mut file = File::create(format!(r"accel_tree.bin{}", "")).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
     }
 
     // pub fn keys_intersecting_bounds(&self, bounds: AABB) -> Vec<StrokeKey> {

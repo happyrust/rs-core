@@ -35,7 +35,7 @@ erased-serde = "0.3.22"
 dyn-clone = "1.0.9"
 redb = "0.8.0"
 
-rstar = "0.9.3"
+rstar = { version = "0.9.3", features = ["serde"] }
 
 
 bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render"]}
