@@ -5,7 +5,7 @@ use parry3d::bounding_volume::AABB;
 use serde_derive::{Deserialize, Serialize};
 use crate::pdms_types::RefU64;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RStarBoundingBox {
     aabb: rstar::AABB<[f32; 3]>,
     refno: RefU64,
@@ -62,12 +62,17 @@ impl rstar::PointDistance for RStarBoundingBox {
     }
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct AccelerationTree {
     tree: rstar::RTree<RStarBoundingBox>,
 }
 
 impl AccelerationTree {
+
+    #[inline]
+    pub fn size(&self) -> usize{
+        self.tree.size()
+    }
 
     #[inline]
     pub fn is_empty(&self) -> bool{

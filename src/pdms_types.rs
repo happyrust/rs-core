@@ -308,8 +308,8 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn from_url_refno(refno: String) -> Option<Self> {
-        let strs = refno.as_str().split('_').collect::<Vec<_>>();
+    pub fn from_url_refno(refno: &str) -> Option<Self> {
+        let strs = refno.split('_').collect::<Vec<_>>();
         if strs.len() < 2 { return None; }
         Some(RefU64::from_two_nums(strs[0].parse().unwrap(), strs[1].parse().unwrap()))
     }
