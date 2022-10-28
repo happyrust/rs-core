@@ -102,6 +102,13 @@ impl AccelerationTree {
             .map(|bb| bb.refno)
     }
 
+    pub fn locate_contain_bounds<'a>(&'a self, bounds: &AABB) -> impl Iterator<Item = RefU64> + 'a {
+        self.tree
+            .locate_in_envelope(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
+                                                                        [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
+            .map(|bb| bb.refno)
+    }
+
     pub fn serialize_to_bin_file(&self) -> bool {
         let mut file = File::create(format!(r"accel_tree.bin{}", "")).unwrap();
         let serialized = bincode::serialize(&self).unwrap();

@@ -14,6 +14,7 @@ use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::render::primitives::Aabb;
+use bevy::utils::tracing::log::kv::Source;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
@@ -29,6 +30,7 @@ use truck_modeling::Shell;
 use derive_more::{Deref, DerefMut};
 
 use parry3d::bounding_volume::AABB;
+use parry3d::shape::ConvexPolyhedron;
 use crate::BHashMap;
 use crate::cache::mgr::BytesTrait;
 use crate::cache::refno::CachedRefBasic;
@@ -1652,7 +1654,30 @@ impl DerefMut for ShapeInstancesMgr {
 
 pub type GeoHash = u64;
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+//凸面体的数据缓存，同时也是需要lod的
+#[derive(Serialize, Deserialize, Debug, Default, Deref, DerefMut)]
+pub struct CachedConvexPolyheronMgr {
+    pub convex_shapes_map: DashMap<GeoHash, ConvexPolyhedron>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+}
+
+impl CachedConvexPolyheronMgr {
+    pub fn serialize_to_bin_file(&self) -> bool {
+        let mut file = File::create(format!("convex.poly")).unwrap();
+        let serialized = bincode::serialize(&self).unwrap();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(file_path: &str) -> Option<Self> {
+        let mut file = File::open(file_path).ok()?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok()?;
+        bincode::deserialize(buf.as_slice()).ok()
+    }
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Default, Deref, DerefMut)]
 pub struct CachedMeshesMgr {
     pub meshes: DashMap<GeoHash, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
