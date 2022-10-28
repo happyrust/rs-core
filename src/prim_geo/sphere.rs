@@ -95,7 +95,7 @@ impl BrepShapeTrait for Sphere {
             normals,
             wf_indices: vec![],
             wf_vertices: vec![],
-            aabb: AABB::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0)),
+            aabb: Some(AABB::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))),
             // AiosAABB{
             //     min: -Vec3::ONE,
             //     max: Vec3::ONE,

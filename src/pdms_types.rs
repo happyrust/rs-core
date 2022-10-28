@@ -14,7 +14,6 @@ use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::render::primitives::Aabb;
-use bevy::utils::tracing::log::kv::Source;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
@@ -1657,7 +1656,7 @@ pub type GeoHash = u64;
 //凸面体的数据缓存，同时也是需要lod的
 #[derive(Serialize, Deserialize, Debug, Default, Deref, DerefMut)]
 pub struct CachedConvexPolyheronMgr {
-    pub convex_shapes_map: DashMap<GeoHash, ConvexPolyhedron>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+    pub convex_shapes_map: DashMap<GeoHash, Vec<ConvexPolyhedron>>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
 impl CachedConvexPolyheronMgr {
@@ -1691,7 +1690,7 @@ impl CachedMeshesMgr {
     }
 
     /// 获得对应的bevy 三角模型和线框模型
-    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, AABB)> {
+    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Option<AABB>)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
             let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
             return Some(bevy_mesh);
@@ -1718,7 +1717,7 @@ impl CachedMeshesMgr {
     pub fn get_bbox(&self, hash: &u64) -> Option<AABB> {
         if self.meshes.contains_key(hash) {
             let mesh = self.meshes.get(hash).unwrap();
-            return Some(mesh.aabb.clone());
+            return mesh.aabb.clone();
         }
         None
     }

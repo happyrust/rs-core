@@ -124,7 +124,7 @@ impl BrepShapeTrait for Facet {
             normals,
             wf_indices: vec![],
             wf_vertices: vec![],
-            aabb,
+            aabb: Some(aabb),
             unit_shape: Default::default(),
             // shape_data: self.gen_unit_shape(),
         });

@@ -80,7 +80,7 @@ pub struct PdmsInstanceMeshMap {
     pub mesh_map: DashMap<GeoHash, PdmsMesh>,
 }
 
-#[derive(Serialize, Deserialize, Component, Debug)]
+#[derive(Serialize, Deserialize, Component, Debug, Default)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
@@ -89,19 +89,11 @@ pub struct PdmsMesh {
     //wireframe indices
     pub wf_vertices: Vec<[f32; 3]>,
     //wireframe vertex
-    pub aabb: AABB,
+    pub aabb: Option<AABB>,
     pub unit_shape: Shell,
     // pub shape_data: Box<dyn BrepShapeTrait>,
 }
 
-impl Default for PdmsMesh {
-    fn default() -> Self {
-        Self{
-            aabb: AABB::new_invalid(),
-            ..default()
-        }
-    }
-}
 
 impl PdmsMesh {
     // pub fn get_tri_mesh(&self, trans: TransformSRT) -> TriMesh<f32> {
@@ -130,7 +122,7 @@ impl PdmsMesh {
     }
 
     ///返回三角模型和线框模型 （tri_mesh, line_mesh, AABB）
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, AABB) {
+    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Option<AABB>) {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
@@ -335,7 +327,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     normals,
                     wf_indices: default(),
                     wf_vertices: default(),
-                    aabb,
+                    aabb: Some(aabb),
                     unit_shape: brep,
                     // shape_data
                 });
