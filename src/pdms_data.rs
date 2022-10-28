@@ -9,6 +9,7 @@ use crate::tool::db_tool::db1_dehash;
 use serde::{Serialize, Deserialize};
 use itertools::Itertools;
 use lazy_static::lazy_static;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
 use crate::pdms_types::PdmsDatabaseInfo;
 
@@ -24,7 +25,7 @@ pub struct ScomInfo {
     pub axis_param_numbers: Vec<i32>,
     pub plin_map: HashMap<String, PlinParam>,
 }
-
+#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for ScomInfo {
     fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()

@@ -10,20 +10,24 @@ use crate::cache::refno::CachedRefBasic;
 use crate::pdms_types::PdmsElementVec;
 use dashmap::mapref::one::Ref;
 use crate::pdms_types::RefU64Vec;
+#[cfg(not(target_arch = "wasm32"))]
 use redb::{
     Builder, Database, Durability, Error, MultimapTableDefinition, ReadableTable, TableDefinition,
-    WriteStrategy
+    WriteStrategy,
 };
 
+
 pub const CACHE_SLED_NAME: &'static str = "cache.rdb";
+#[cfg(not(target_arch = "wasm32"))]
 const TABLE: TableDefinition<u64, [u8]> = TableDefinition::new("my_data");
 
 
-pub trait BytesTrait{
+pub trait BytesTrait {
     fn to_bytes(&self) -> Vec<u8>;
     fn from_bytes(bytes: &[u8]) -> Self;
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Clone)]
 pub struct CacheMgr<
     T: BytesTrait + Clone + Serialize + DeserializeOwned> {
@@ -31,25 +35,39 @@ pub struct CacheMgr<
     db: Option<Arc<Database>>,
     map: DashMap<RefU64, T>,
     use_redb: bool,
-    // use_redb: bool,
+// use_redb: bool,
 }
 
-impl<T: BytesTrait +  Clone + Serialize + DeserializeOwned> CacheMgr<T>
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone)]
+pub struct CacheMgr<
+    T: Clone + Serialize + DeserializeOwned> {
+    name: String,
+    map: DashMap<RefU64, T>,
+    use_redb: bool,
+// use_redb: bool,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
 {
     pub fn new(name: &str, save_to_redb: bool) -> Self {
         Self {
             name: name.to_string(),
+
             db: if save_to_redb {
                 // sled::open(name).ok()
                 let db_size = 10 * 1024 * 1024 * 1024;
                 unsafe { Database::create(name, db_size).map(|x| Arc::new(x)).ok() }
-            }else{
+            } else {
                 None
             },
+
             map: Default::default(),
             use_redb: save_to_redb,
             // use_redb: false
         }
+
     }
 
     pub fn use_redb(&self) -> bool {
@@ -63,20 +81,20 @@ impl<T: BytesTrait +  Clone + Serialize + DeserializeOwned> CacheMgr<T>
 
     #[inline]
     pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {
-        if self.use_redb && !self.map.contains_key(k) && self.db.is_some(){
-            // if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get(k.into()) {
-            //     self.map.insert((*k).into(), bytes.into());
-            // }
-
-            if let Some(db) = &self.db {
-                let read_txn = db.begin_read().ok()?;
-                let table = read_txn.open_table(TABLE).ok()?;
-                if let Ok(Some(bytes)) = table.get(&**k) {
-                    self.map.insert((*k).into(), T::from_bytes(bytes));
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if self.use_redb && !self.map.contains_key(k) && self.db.is_some() {
+                // if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get(k.into()) {
+                //     self.map.insert((*k).into(), bytes.into());
+                // }
+                if let Some(db) = &self.db {
+                    let read_txn = db.begin_read().ok()?;
+                    let table = read_txn.open_table(TABLE).ok()?;
+                    if let Ok(Some(bytes)) = table.get(&**k) {
+                        self.map.insert((*k).into(), T::from_bytes(bytes));
+                    }
                 }
             }
-
-
         }
         self.map.get(k)
     }
@@ -85,14 +103,85 @@ impl<T: BytesTrait +  Clone + Serialize + DeserializeOwned> CacheMgr<T>
     pub fn insert(&self, k: RefU64, value: &T) -> anyhow::Result<()> {
         self.map.insert(k, value.clone());
         if self.use_redb {
-            if let Some(db) = &self.db {
-                let write_txn = db.begin_write()?;
-                {
-                    //todo use on file
-                    let mut table = write_txn.open_table(TABLE)?;
-                    table.insert(&*k, &value.to_bytes())?;
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                if let Some(db) = &self.db {
+                    let write_txn = db.begin_write()?;
+                    {
+                        //todo use on file
+                        let mut table = write_txn.open_table(TABLE)?;
+                        table.insert(&*k, &value.to_bytes())?;
+                    }
+                    write_txn.commit()?;
                 }
-                write_txn.commit()?;
+            }
+        }
+        Ok(())
+    }
+
+    #[inline]
+    pub fn contains_key(&self, k: &RefU64) -> bool {
+        self.map.contains_key(k)
+    }
+}
+
+
+#[cfg(target_arch = "wasm32")]
+impl<T: Clone + Serialize + DeserializeOwned> CacheMgr<T>
+{
+    pub fn new(name: &str, save_to_redb: bool) -> Self {
+        Self {
+            name: name.to_string(),
+            map: Default::default(),
+            use_redb: save_to_redb,
+        }
+
+    }
+
+    pub fn use_redb(&self) -> bool {
+        self.use_redb
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
+    #[inline]
+    pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if self.use_redb && !self.map.contains_key(k) && self.db.is_some() {
+                // if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get(k.into()) {
+                //     self.map.insert((*k).into(), bytes.into());
+                // }
+                if let Some(db) = &self.db {
+                    let read_txn = db.begin_read().ok()?;
+                    let table = read_txn.open_table(TABLE).ok()?;
+                    if let Ok(Some(bytes)) = table.get(&**k) {
+                        self.map.insert((*k).into(), T::from_bytes(bytes));
+                    }
+                }
+            }
+        }
+        self.map.get(k)
+    }
+
+    #[inline]
+    pub fn insert(&self, k: RefU64, value: &T) -> anyhow::Result<()> {
+        self.map.insert(k, value.clone());
+        if self.use_redb {
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                if let Some(db) = &self.db {
+                    let write_txn = db.begin_write()?;
+                    {
+                        //todo use on file
+                        let mut table = write_txn.open_table(TABLE)?;
+                        table.insert(&*k, &value.to_bytes())?;
+                    }
+                    write_txn.commit()?;
+                }
             }
         }
         Ok(())

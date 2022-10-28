@@ -14,7 +14,6 @@ use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::render::primitives::Aabb;
-use bevy::utils::tracing::log::kv::Source;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
@@ -32,8 +31,11 @@ use derive_more::{Deref, DerefMut};
 use parry3d::bounding_volume::AABB;
 use parry3d::shape::ConvexPolyhedron;
 use crate::BHashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::cache::refno::CachedRefBasic;
+
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
@@ -205,6 +207,7 @@ impl Into<Vec<u8>> for RefU64 {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for RefU64 {
     fn to_bytes(&self) -> Vec<u8> {
         self.0.to_be_bytes().to_vec().into()
@@ -328,6 +331,7 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
+#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for RefU64Vec {
     fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()
@@ -433,6 +437,7 @@ impl Debug for AttrMap {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for AttrMap {
     fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()
@@ -1907,6 +1912,7 @@ impl From<sled::IVec> for PdmsElement {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
 
+#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for PdmsElementVec {
     fn to_bytes(&self) -> Vec<u8> {
         bincode::serialize(&self).unwrap().into()
