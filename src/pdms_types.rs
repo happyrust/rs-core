@@ -1455,8 +1455,9 @@ bitflags! {
 }
 
 #[repr(C)]
-#[derive(Component, Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
+#[derive(Component, Serialize, Deserialize, Default, Clone, Debug, Copy, Eq, PartialEq, Hash)]
 pub enum PdmsGenericType {
+    #[default]
     UNKOWN = 0,
     PIPE,
     STRU,
@@ -1494,16 +1495,12 @@ pub enum PdmsGenericType {
     CE,
 }
 
-impl Default for PdmsGenericType {
-    fn default() -> Self { PdmsGenericType::UNKOWN }
-}
-
 //todo important 压缩transform的数据，存储在一个数据集合里，去索引数据，精确到小数点4位数
 
 //todo 需要插入这一层的变换矩阵
 
 /// 存储一个Element 包含的所有几何信息
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleGeosInfo {
     pub _key: String,
     pub data: Vec<EleGeoInstance>,
@@ -1511,21 +1508,14 @@ pub struct EleGeosInfo {
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
     pub generic_type: PdmsGenericType,
-    pub aabb: AABB,
+    pub aabb: Option<AABB>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: (Quat, Vec3, Vec3),
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
     pub flow_pt_indexs: Vec<Option<i32>>,
 }
 
-impl Default for EleGeosInfo {
-    fn default() -> Self {
-       Self{
-           aabb: AABB::new_invalid(),
-           ..default()
-       }
-    }
-}
+
 
 impl EleGeosInfo {
     pub fn to_json_type(self) -> EleGeosInfoJson {
@@ -1580,7 +1570,7 @@ impl EleGeosInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleGeosInfoJson {
     // 该 GeosInfo 的参考号 转换为 0_0样式
     // #[serde(skip_serializing)]
@@ -1591,21 +1581,12 @@ pub struct EleGeosInfoJson {
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
     pub generic_type: PdmsGenericType,
-    pub aabb: AABB,
+    pub aabb: Option<AABB>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: (Quat, Vec3, Vec3),
 
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
     pub flow_pt_indexs: Vec<Option<i32>>,
-}
-
-impl Default for EleGeosInfoJson  {
-    fn default() -> Self {
-        Self{
-            aabb: AABB::new_invalid(),
-            ..default()
-        }
-    }
 }
 
 
@@ -1772,7 +1753,6 @@ pub struct EleGeoInstance {
     //对应参考号
     pub refno: RefU64,
     pub pts: SmallVec<[i32; 3]>,
-    // pub bbox: AiosAABB,
     pub aabb: AABB,
     //相对owner坐标系的变换, rot, translation, scale
     pub transform: (Quat, Vec3, Vec3),
