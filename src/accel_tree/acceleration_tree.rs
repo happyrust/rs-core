@@ -8,8 +8,8 @@ use crate::pdms_types::RefU64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RStarBoundingBox {
-    aabb: rstar::AABB<[f32; 3]>,
-    refno: RefU64,
+    pub aabb: rstar::AABB<[f32; 3]>,
+    pub refno: RefU64,
 }
 
 impl RStarBoundingBox {
@@ -64,7 +64,7 @@ impl rstar::PointDistance for RStarBoundingBox {
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct AccelerationTree {
-    tree: rstar::RTree<RStarBoundingBox>,
+    pub tree: rstar::RTree<RStarBoundingBox>,
 }
 
 impl Deref for AccelerationTree {
