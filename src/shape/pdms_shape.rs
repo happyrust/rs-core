@@ -28,6 +28,7 @@ use truck_modeling::{Curve, Shell};
 
 use parry3d::bounding_volume::AABB;
 use parry3d::math::{Point, Vector};
+use parry3d::shape::TriMesh;
 use dyn_clone::DynClone;
 use crate::pdms_types::*;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
@@ -80,6 +81,7 @@ pub struct PdmsInstanceMeshMap {
     pub mesh_map: DashMap<GeoHash, PdmsMesh>,
 }
 
+//todo 增加LOD的实现
 #[derive(Serialize, Deserialize, Component, Debug, Default)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
@@ -96,18 +98,23 @@ pub struct PdmsMesh {
 
 
 impl PdmsMesh {
-    // pub fn get_tri_mesh(&self, trans: TransformSRT) -> TriMesh<f32> {
-    //     let mut points: Vec<ncollide3d::na::Point3<f32>> = vec![];
-    //     let mut indices: Vec<ncollide3d::na::Point3<usize>> = vec![];
-    //     self.vertices.iter().for_each(|p| {
-    //         let mew_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
-    //         points.push(ncollide3d::na::Point3::<f32>::new(mew_pt[0], mew_pt[1], mew_pt[2]))
-    //     });
-    //     self.indices.chunks(3).for_each(|i| {
-    //         indices.push(ncollide3d::na::Point3::<usize>::new(i[0] as usize, i[1] as usize, i[2] as usize));
-    //     });
-    //     TriMesh::new(points, indices, None)
-    // }
+
+    //集成lod的功能
+    #[inline]
+    pub fn get_tri_mesh(&self) -> TriMesh {
+        let mut points: Vec<Point<f32>> = vec![];
+        let mut indices: Vec<[u32; 3]> = vec![];
+        //如果 数量太大，需要使用LOD的模型去做碰撞检测
+
+        self.vertices.iter().for_each(|p| {
+            // let mew_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
+            points.push(Point::new(p[0], p[1], p[2]))
+        });
+        self.indices.chunks(3).for_each(|i| {
+            indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
+        });
+        TriMesh::new(points, indices)
+    }
 
     ///todo 后面需要把uv使用上
     pub fn gen_bevy_mesh(&self) -> Mesh {
@@ -164,7 +171,6 @@ impl PdmsMesh {
     }
 }
 
-//bevy's meshs
 
 impl PdmsMeshInstanceMgr {
     #[inline]

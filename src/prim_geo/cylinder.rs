@@ -15,6 +15,7 @@ use truck_modeling::{builder, Shell};
 use truck_topology::Face;
 
 use crate::pdms_types::AttrMap;
+use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
@@ -255,11 +256,12 @@ impl BrepShapeTrait for SCylinder {
             "SSCL".hash(&mut hasher);
             hasher.finish()
         } else {
-            if self.phei < 0.0 {
-                102u64
-            } else {
-                2u64 //代表cylinder
-            }
+            CYLINDER_GEO_HASH
+            // if self.phei < 0.0 {
+            //     102u64
+            // } else {
+            //     2u64 //代表cylinder
+            // }
         }
     }
 

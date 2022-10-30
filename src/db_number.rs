@@ -1,15 +1,13 @@
 use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
 use serde::{Serialize, Deserialize};
-use std::io::Write;
+use std::io::{Read, Write};
 use derive_more::*;
 use itertools::Itertools;
 use crate::pdms_types::RefU64;
 
 #[derive(Clone, Debug, Default, Deref, DerefMut, Serialize, Deserialize)]
 pub struct DbNumMgr{
-    #[deref]
-    #[deref_mut]
     pub ref0_dbnos_map: BTreeMap<u32, HashSet<u32>>,  //先看看有没有多个的情况
 }
 
@@ -25,6 +23,13 @@ impl DbNumMgr{
         let serialized = bincode::serialize(&self).unwrap();
         file.write_all(serialized.as_slice()).unwrap();
         true
+    }
+
+    pub fn load_file(file_path: &str) -> Option<Self> {
+        let mut file = File::open(file_path).ok()?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok()?;
+        bincode::deserialize(buf.as_slice()).ok()
     }
 
     #[inline]

@@ -29,7 +29,7 @@ use truck_modeling::Shell;
 use derive_more::{Deref, DerefMut};
 
 use parry3d::bounding_volume::AABB;
-use parry3d::shape::ConvexPolyhedron;
+use parry3d::shape::{ConvexPolyhedron, SharedShape};
 use crate::BHashMap;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
@@ -1641,14 +1641,14 @@ impl DerefMut for ShapeInstancesMgr {
 pub type GeoHash = u64;
 
 //凸面体的数据缓存，同时也是需要lod的
-#[derive(Serialize, Deserialize, Debug, Default, Deref, DerefMut)]
-pub struct CachedConvexPolyheronMgr {
-    pub convex_shapes_map: DashMap<GeoHash, Vec<ConvexPolyhedron>>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+#[derive(Serialize, Deserialize, Default, Deref, DerefMut)]
+pub struct CachedColliderShapeMgr {
+    pub convex_shapes_map: DashMap<GeoHash, SharedShape>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
-impl CachedConvexPolyheronMgr {
+impl CachedColliderShapeMgr {
     pub fn serialize_to_bin_file(&self) -> bool {
-        let mut file = File::create(format!("convex.poly")).unwrap();
+        let mut file = File::create(format!("collider.shapes")).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
         file.write_all(serialized.as_slice()).unwrap();
         true

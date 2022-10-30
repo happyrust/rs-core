@@ -19,10 +19,6 @@ pub mod spine;
 
 pub mod wire;
 
-
-
-
-
-
-//pub mod hash mesh 表
-//是这个Mehs的 Scaled 表达， 特别是Extrude是需要这个 extrude的，不然模型会非常大
+pub const CUBE_GEO_HASH: u64 = 1u64;
+pub const CYLINDER_GEO_HASH: u64 = 2u64;
+pub const SPHERE_GEO_HASH: u64 = 3u64;

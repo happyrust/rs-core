@@ -7,7 +7,9 @@ use truck_polymesh::stl::IntoSTLIterator;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use serde::{Serialize,Deserialize};
+use crate::consts::BOX_HASH;
 use crate::pdms_types::AttrMap;
+use crate::prim_geo::CUBE_GEO_HASH;
 // use crate::prim_geo::helper::quad_indices;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
@@ -50,7 +52,7 @@ impl BrepShapeTrait for SBox {
     }
 
     fn hash_unit_mesh_params(&self) -> u64{
-        1u64            //代表BOX
+        CUBE_GEO_HASH
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {

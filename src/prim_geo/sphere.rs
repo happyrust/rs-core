@@ -15,6 +15,7 @@ use nalgebra::Point3;
 use parry3d::bounding_volume::AABB;
 use parry3d::math::{Point, Vector};
 use serde::{Serialize,Deserialize};
+use crate::prim_geo::SPHERE_GEO_HASH;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
 #[derive(Component, Debug, /*Inspectable, Reflect,*/ Clone, Serialize, Deserialize)]
@@ -110,7 +111,7 @@ impl BrepShapeTrait for Sphere {
     }
 
     fn hash_unit_mesh_params(&self) -> u64{
-        3u64            //代表SPHERE
+        SPHERE_GEO_HASH            //代表SPHERE
     }
 
     fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
