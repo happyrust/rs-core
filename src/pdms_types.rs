@@ -24,7 +24,7 @@ use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Quaternion, UnitQuaternion};
 use parry3d::bounding_volume::AABB;
-use parry3d::math::{Isometry, Vector};
+use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
 use serde::{Deserialize, Serialize};
 use sled::IVec;
@@ -1661,13 +1661,13 @@ impl CachedColliderShapeMgr {
                 let s = t.scale;
                 let shape = match geo.geo_hash {
                     prim_geo::CUBE_GEO_HASH => {
-                        SharedShape::cuboid(s.x, s.y, s.z)
+                        SharedShape::cuboid(s.x/2.0, s.y/2.0, s.z/2.0)
                     }
                     prim_geo::SPHERE_GEO_HASH => {
                         SharedShape::ball(s.x)
                     }
                     prim_geo::CYLINDER_GEO_HASH => {
-                        SharedShape::cylinder(s.x, s.z)
+                        SharedShape::cylinder(s.z/2.0, s.x/2.0)
                     }
                     _ => {
                         let m = mesh_mgr.get_mesh(&geo.geo_hash).unwrap();
@@ -1681,7 +1681,6 @@ impl CachedColliderShapeMgr {
                         translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
                     }, shape));
                 }else{
-                    // SharedShape::compound(colliders)
                     target_colliders.push(shape);
                 }
             }
@@ -1691,6 +1690,43 @@ impl CachedColliderShapeMgr {
         }
         target_colliders
     }
+
+    // pub fn get_collide_points(&self, refno: RefU64, inst_mgr: &PdmsMeshInstanceMgr, mesh_mgr: &CachedMeshesMgr) -> Vec<Point> {
+    //     let mut target_points = vec![];
+    //     let ele_geos_info_map = inst_mgr.get_instants_data(refno);
+    //     let mut colliders = vec![];
+    //     for ele_geos_info in &ele_geos_info_map {
+    //         let tr = &ele_geos_info.world_transform;
+    //         let ele_trans = Transform {
+    //             translation: tr.1,
+    //             rotation: tr.0,
+    //             scale: tr.2,
+    //         };
+    //         for geo in &ele_geos_info.data {
+    //             let cur_tr = &geo.transform;
+    //             let t = if geo.is_tubi {
+    //                 Transform {
+    //                     translation: cur_tr.1,
+    //                     rotation: cur_tr.0,
+    //                     scale: cur_tr.2,
+    //                 }
+    //             } else {
+    //                 ele_trans * Transform {
+    //                     translation: cur_tr.1,
+    //                     rotation: cur_tr.0,
+    //                     scale: cur_tr.2,
+    //                 }
+    //             };
+    //             let matrix = t.compute_matrix();
+    //             for pt in geo.pts {
+    //                 target_points.push(matrix.transform_point3());
+    //             }
+    //         }
+    //
+    //     }
+    //     target_points
+    // }
+
 
 
     pub fn serialize_to_bin_file(&self) -> bool {

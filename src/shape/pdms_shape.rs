@@ -28,7 +28,7 @@ use truck_modeling::{Curve, Shell};
 
 use parry3d::bounding_volume::AABB;
 use parry3d::math::{Matrix, Point, Vector};
-use parry3d::shape::TriMesh;
+use parry3d::shape::{TriMesh, TriMeshFlags};
 use dyn_clone::DynClone;
 use nalgebra::Matrix4;
 use crate::pdms_types::*;
@@ -114,7 +114,7 @@ impl PdmsMesh {
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        TriMesh::new(points, indices)
+        TriMesh::with_flags(points, indices, TriMeshFlags::ORIENTED)
     }
 
     ///todo 后面需要把uv使用上
