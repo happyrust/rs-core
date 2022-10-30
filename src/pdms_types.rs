@@ -7,35 +7,36 @@ use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::vec::IntoIter;
-use bitflags::bitflags;
 
 use anyhow::anyhow;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::render::primitives::Aabb;
+use bitflags::bitflags;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
+use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use hash32::{Hash, Hasher};
 use hash32_derive::Hash32;
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
+use nalgebra::{Quaternion, UnitQuaternion};
+use parry3d::bounding_volume::AABB;
+use parry3d::math::{Isometry, Vector};
+use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
 use serde::{Deserialize, Serialize};
 use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use truck_modeling::Shell;
-use derive_more::{Deref, DerefMut};
 
-use parry3d::bounding_volume::AABB;
-use parry3d::shape::{ConvexPolyhedron, SharedShape};
-use crate::BHashMap;
+use crate::{BHashMap, prim_geo};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::cache::refno::CachedRefBasic;
-
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
@@ -48,7 +49,7 @@ use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
-use crate::shape::pdms_shape::{BrepShapeTrait, PdmsMesh};
+use crate::shape::pdms_shape::{BrepShapeTrait, PdmsInstanceMeshMap, PdmsMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 
 pub const LEVEL_VISBLE: u32 = 6;
@@ -328,7 +329,7 @@ impl RefU64 {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Deref, DerefMut)]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -349,20 +350,6 @@ impl From<Vec<RefU64>> for RefU64Vec {
 }
 
 
-impl Deref for RefU64Vec {
-    type Target = Vec<RefU64>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for RefU64Vec {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 impl IntoIterator for RefU64Vec {
     type Item = RefU64;
     type IntoIter = IntoIter<RefU64>;
@@ -375,12 +362,12 @@ impl IntoIterator for RefU64Vec {
 impl RefU64Vec {
     #[inline]
     pub fn push(&mut self, v: RefU64) {
-        self.0.push(v);
+        if !self.0.contains(&v) {
+            self.0.push(v);
+        }
     }
 }
 
-
-// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, PartialEq)]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Reflect, Eq, Hash,
 PartialEq, Ord, PartialOrd)]
 #[reflect(Component)]
@@ -1516,7 +1503,6 @@ pub struct EleGeosInfo {
 }
 
 
-
 impl EleGeosInfo {
     pub fn to_json_type(self) -> EleGeosInfoJson {
         let mut data = vec![];
@@ -1590,7 +1576,6 @@ pub struct EleGeosInfoJson {
 }
 
 
-
 impl Deref for EleGeosInfo {
     type Target = Vec<EleGeoInstance>;
 
@@ -1600,12 +1585,9 @@ impl Deref for EleGeosInfo {
 }
 
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
     pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
-    // pub inst_map: DashMap<RefU64, EleGeosInfoOld>,   //todo replace with EleGeosInfo
-    //可以用类型的信息去遍历
 }
 
 
@@ -1643,10 +1625,74 @@ pub type GeoHash = u64;
 //凸面体的数据缓存，同时也是需要lod的
 #[derive(Serialize, Deserialize, Default, Deref, DerefMut)]
 pub struct CachedColliderShapeMgr {
-    pub convex_shapes_map: DashMap<GeoHash, SharedShape>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+    pub shapes_map: DashMap<RefU64, SharedShape>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
 impl CachedColliderShapeMgr {
+    pub fn get_collider(&self, refno: RefU64, inst_mgr: &PdmsMeshInstanceMgr, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
+        // if shapes_map.contains_key {
+        //
+        // }
+        let mut target_colliders = vec![];
+        let ele_geos_info_map = inst_mgr.get_instants_data(refno);
+        let mut colliders = vec![];
+        for ele_geos_info in &ele_geos_info_map {
+            let tr = &ele_geos_info.world_transform;
+            let ele_trans = Transform {
+                translation: tr.1,
+                rotation: tr.0,
+                scale: tr.2,
+            };
+            for geo in &ele_geos_info.data {
+                let cur_tr = &geo.transform;
+                let t = if geo.is_tubi {
+                    Transform {
+                        translation: cur_tr.1,
+                        rotation: cur_tr.0,
+                        scale: cur_tr.2,
+                    }
+                } else {
+                    ele_trans * Transform {
+                        translation: cur_tr.1,
+                        rotation: cur_tr.0,
+                        scale: cur_tr.2,
+                    }
+                };
+                let s = t.scale;
+                let shape = match geo.geo_hash {
+                    prim_geo::CUBE_GEO_HASH => {
+                        SharedShape::cuboid(s.x, s.y, s.z)
+                    }
+                    prim_geo::SPHERE_GEO_HASH => {
+                        SharedShape::ball(s.x)
+                    }
+                    prim_geo::CYLINDER_GEO_HASH => {
+                        SharedShape::cylinder(s.x, s.z)
+                    }
+                    _ => {
+                        let m = mesh_mgr.get_mesh(&geo.geo_hash).unwrap();
+                        SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
+                    }
+                };
+                if shape.as_composite_shape().is_none() {
+                    colliders.push((Isometry {
+                        rotation: UnitQuaternion::from_quaternion(Quaternion::new(t.rotation.w,
+                                                                                  t.rotation.x, t.rotation.y, t.rotation.z)),
+                        translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
+                    }, shape));
+                }else{
+                    // SharedShape::compound(colliders)
+                    target_colliders.push(shape);
+                }
+            }
+        }
+        if !colliders.is_empty() {
+            target_colliders.push(SharedShape::compound(colliders));
+        }
+        target_colliders
+    }
+
+
     pub fn serialize_to_bin_file(&self) -> bool {
         let mut file = File::create(format!("collider.shapes")).unwrap();
         let serialized = bincode::serialize(&self).unwrap();
@@ -1743,8 +1789,6 @@ impl CachedMeshesMgr {
         file.read_to_end(&mut buf).ok();
         serde_json::from_slice(&buf).unwrap()
     }
-
-
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1980,7 +2024,6 @@ impl DbAttributeType {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AttrInfo {
     pub name: SmolStr,
@@ -2045,7 +2088,6 @@ impl hash32::Hash for AiosStr {
         state.write(&[0xff]);
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefnoNodeId {

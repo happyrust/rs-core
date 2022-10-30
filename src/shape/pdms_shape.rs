@@ -9,7 +9,7 @@ use std::io::{Read, Write};
 // use bevy_inspector_egui::Inspectable;
 use bevy::ecs::component::Component;
 use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::{FromWorld, Mesh};
+use bevy::prelude::{FromWorld, Mesh, Transform};
 use bevy::reflect::{erased_serde, Reflect, ReflectRef};
 use bevy::reflect::erased_serde::serialize_trait_object;
 use bevy::render::mesh::Indices;
@@ -17,7 +17,7 @@ use bevy::render::primitives::Aabb;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
-use glam::{TransformRT, TransformSRT, Vec3, Vec4};
+use glam::{Mat4, TransformRT, TransformSRT, Vec3, Vec4};
 use lyon::path::polygon;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
@@ -27,9 +27,10 @@ use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
 
 use parry3d::bounding_volume::AABB;
-use parry3d::math::{Point, Vector};
+use parry3d::math::{Matrix, Point, Vector};
 use parry3d::shape::TriMesh;
 use dyn_clone::DynClone;
+use nalgebra::Matrix4;
 use crate::pdms_types::*;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
@@ -101,14 +102,14 @@ impl PdmsMesh {
 
     //集成lod的功能
     #[inline]
-    pub fn get_tri_mesh(&self) -> TriMesh {
+    pub fn get_tri_mesh(&self, trans: Mat4 ) -> TriMesh {
         let mut points: Vec<Point<f32>> = vec![];
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
 
         self.vertices.iter().for_each(|p| {
-            // let mew_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
-            points.push(Point::new(p[0], p[1], p[2]))
+            let new_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
+            points.push(Point::new(new_pt[0], new_pt[1], new_pt[2]))
         });
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
