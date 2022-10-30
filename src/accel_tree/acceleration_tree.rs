@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Write;
+use std::ops::{Deref, DerefMut};
 use glam::{Mat4, Vec3};
 use parry3d::bounding_volume::AABB;
 use serde_derive::{Deserialize, Serialize};
@@ -7,8 +8,8 @@ use crate::pdms_types::RefU64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RStarBoundingBox {
-    aabb: rstar::AABB<[f32; 3]>,
-    refno: RefU64,
+    pub aabb: rstar::AABB<[f32; 3]>,
+    pub refno: RefU64,
 }
 
 impl RStarBoundingBox {
@@ -22,7 +23,7 @@ impl RStarBoundingBox {
 
     pub fn new(min: Vec3, max: Vec3, transform: Mat4, refno: RefU64) -> Self {
         let min = transform.transform_point3(min);
-        let max = transform.transform_point3( max);
+        let max = transform.transform_point3(max);
 
         Self {
             aabb: rstar::AABB::from_corners(min.into(), max.into()),
@@ -32,7 +33,13 @@ impl RStarBoundingBox {
     }
 }
 
-
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RStarBoundingBoxAql{
+    pub _key: String,
+    pub refno: RefU64,
+    pub aabb: rstar::AABB<[f32; 3]>,
+    pub target_refnos: Vec<RefU64>
+}
 
 // impl rstar::SelectionFunction<RStarBoundingBox> for &Ray {
 //     fn should_unpack_parent(&self, envelope: &rstar::AABB<[f32; 3]>) -> bool {
@@ -64,23 +71,36 @@ impl rstar::PointDistance for RStarBoundingBox {
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct AccelerationTree {
-    tree: rstar::RTree<RStarBoundingBox>,
+    pub tree: rstar::RTree<RStarBoundingBox>,
+}
+
+impl Deref for AccelerationTree {
+    type Target = rstar::RTree<RStarBoundingBox>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tree
+    }
+}
+
+impl DerefMut for AccelerationTree {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.tree
+    }
 }
 
 impl AccelerationTree {
-
     #[inline]
-    pub fn size(&self) -> usize{
+    pub fn size(&self) -> usize {
         self.tree.size()
     }
 
     #[inline]
-    pub fn is_empty(&self) -> bool{
+    pub fn is_empty(&self) -> bool {
         self.tree.size() == 0
     }
 
-    pub fn load(bounding_boxes: Vec<RStarBoundingBox>) -> Self{
-        Self{
+    pub fn load(bounding_boxes: Vec<RStarBoundingBox>) -> Self {
+        Self {
             tree: rstar::RTree::bulk_load(bounding_boxes)
         }
     }
@@ -89,23 +109,23 @@ impl AccelerationTree {
         self.tree = rstar::RTree::bulk_load(bounding_boxes);
     }
 
-    pub fn locate_withing_distance<'a>(&'a self, loc: Vec3, distance: f32) -> impl Iterator<Item = RefU64> + 'a {
+    pub fn locate_withing_distance<'a>(&'a self, loc: Vec3, distance: f32) -> impl Iterator<Item=RefU64> + 'a {
         self.tree
             .locate_within_distance([loc.x, loc.y, loc.z], distance.powi(2))
             .map(|bb| bb.refno)
     }
 
-    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &AABB) -> impl Iterator<Item = RefU64> + 'a {
+    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &AABB) -> impl Iterator<Item=RefU64> + 'a {
         self.tree
             .locate_in_envelope_intersecting(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                                                                         [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
             .map(|bb| bb.refno)
     }
 
-    pub fn locate_contain_bounds<'a>(&'a self, bounds: &AABB) -> impl Iterator<Item = RefU64> + 'a {
+    pub fn locate_contain_bounds<'a>(&'a self, bounds: &AABB) -> impl Iterator<Item=RefU64> + 'a {
         self.tree
             .locate_in_envelope(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
-                                                                        [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
+                                                           [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
             .map(|bb| bb.refno)
     }
 
