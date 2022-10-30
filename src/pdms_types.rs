@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
+use std::f32::consts::PI;
 use std::fmt;
 use std::fmt::{Debug, Formatter, Pointer};
 use std::fs::File;
@@ -1659,6 +1660,7 @@ impl CachedColliderShapeMgr {
                     }
                 };
                 let s = t.scale;
+                let mut local_rot = glam::Quat::IDENTITY;
                 let shape = match geo.geo_hash {
                     prim_geo::CUBE_GEO_HASH => {
                         SharedShape::cuboid(s.x/2.0, s.y/2.0, s.z/2.0)
@@ -1667,6 +1669,7 @@ impl CachedColliderShapeMgr {
                         SharedShape::ball(s.x)
                     }
                     prim_geo::CYLINDER_GEO_HASH => {
+                        local_rot = glam::Quat::from_rotation_x(PI/2.0);
                         SharedShape::cylinder(s.z/2.0, s.x/2.0)
                     }
                     _ => {
@@ -1674,10 +1677,10 @@ impl CachedColliderShapeMgr {
                         SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
                     }
                 };
+                let rot = t.rotation * local_rot;
                 if shape.as_composite_shape().is_none() {
                     colliders.push((Isometry {
-                        rotation: UnitQuaternion::from_quaternion(Quaternion::new(t.rotation.w,
-                                                                                  t.rotation.x, t.rotation.y, t.rotation.z)),
+                        rotation: UnitQuaternion::from_quaternion(Quaternion::new(rot.w, rot.x, rot.y, rot.z)),
                         translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
                     }, shape));
                 }else{

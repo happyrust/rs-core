@@ -115,6 +115,7 @@ impl PdmsMesh {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
         TriMesh::with_flags(points, indices, TriMeshFlags::ORIENTED)
+        // TriMesh::new(points, indices)
     }
 
     ///todo 后面需要把uv使用上
