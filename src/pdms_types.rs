@@ -1505,6 +1505,40 @@ pub struct EleGeosInfo {
 
 
 impl EleGeosInfo {
+
+    #[inline]
+    pub fn get_transform(&self) -> Transform {
+        Transform {
+            translation: self.world_transform.1,
+            rotation: self.world_transform.0,
+            scale: self.world_transform.2,
+        }
+    }
+
+    #[inline]
+    pub fn get_geo_transform(&self, geo: &EleGeoInstance) -> Transform {
+        let ele_trans = Transform {
+            translation: self.world_transform.1,
+            rotation: self.world_transform.0,
+            scale: self.world_transform.2,
+        };
+        let cur_tr = &geo.transform;
+        let t = if geo.is_tubi {
+            Transform {
+                translation: cur_tr.1,
+                rotation: cur_tr.0,
+                scale: cur_tr.2,
+            }
+        } else {
+            ele_trans * Transform {
+                translation: cur_tr.1,
+                rotation: cur_tr.0,
+                scale: cur_tr.2,
+            }
+        };
+        return t;
+    }
+
     pub fn to_json_type(self) -> EleGeosInfoJson {
         let mut data = vec![];
         for d in self.data {
@@ -1663,14 +1697,14 @@ impl CachedColliderShapeMgr {
                 let mut local_rot = glam::Quat::IDENTITY;
                 let shape = match geo.geo_hash {
                     prim_geo::CUBE_GEO_HASH => {
-                        SharedShape::cuboid(s.x/2.0, s.y/2.0, s.z/2.0)
+                        SharedShape::cuboid(s.x / 2.0, s.y / 2.0, s.z / 2.0)
                     }
                     prim_geo::SPHERE_GEO_HASH => {
                         SharedShape::ball(s.x)
                     }
                     prim_geo::CYLINDER_GEO_HASH => {
-                        local_rot = glam::Quat::from_rotation_x(PI/2.0);
-                        SharedShape::cylinder(s.z/2.0, s.x/2.0)
+                        local_rot = glam::Quat::from_rotation_x(PI / 2.0);
+                        SharedShape::cylinder(s.z / 2.0, s.x / 2.0)
                     }
                     _ => {
                         let m = mesh_mgr.get_mesh(&geo.geo_hash).unwrap();
@@ -1683,7 +1717,7 @@ impl CachedColliderShapeMgr {
                         rotation: UnitQuaternion::from_quaternion(Quaternion::new(rot.w, rot.x, rot.y, rot.z)),
                         translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
                     }, shape));
-                }else{
+                } else {
                     target_colliders.push(shape);
                 }
             }
@@ -1729,7 +1763,6 @@ impl CachedColliderShapeMgr {
     //     }
     //     target_points
     // }
-
 
 
     pub fn serialize_to_bin_file(&self) -> bool {
