@@ -573,14 +573,17 @@ fn base(s: &mut State) -> Result<Expr> {
 fn power(s: &mut State) -> Result<Expr> {
     let mut sign = 1;
 
-    while s.s_type == Flags::TOK_INFIX {
-        match s.function_type {
-            FunctionType::Add => sign = 1,
-            FunctionType::Sub => sign = -1,
-            _ => continue,
-        }
+    if s.function_type == FunctionType::Add ||
+        s.function_type == FunctionType::Sub {
+        while s.s_type == Flags::TOK_INFIX {
+            match s.function_type {
+                FunctionType::Add => sign = 1,
+                FunctionType::Sub => sign = -1,
+                _ => continue,
+            }
 
-        next_token(s).unwrap();
+            next_token(s).unwrap();
+        }
     }
 
     let mut ret: Expr;
