@@ -30,6 +30,7 @@ pub struct TubiEdgeAql {
     pub att_type: String,
     pub extra_type: String,
     pub bore: f32,
+    pub bran_name: String,
 }
 
 unsafe impl Send for TubiEdgeAql {}

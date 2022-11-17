@@ -33,13 +33,6 @@ impl RStarBoundingBox {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RStarBoundingBoxAql{
-    pub _key: String,
-    pub refno: RefU64,
-    pub aabb: rstar::AABB<[f32; 3]>,
-    pub target_refnos: Vec<RefU64>
-}
 
 // impl rstar::SelectionFunction<RStarBoundingBox> for &Ray {
 //     fn should_unpack_parent(&self, envelope: &rstar::AABB<[f32; 3]>) -> bool {
