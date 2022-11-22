@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use glam::{Mat4, Vec3};
-use parry3d::bounding_volume::AABB;
+use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use crate::pdms_types::RefU64;
 
@@ -13,7 +13,7 @@ pub struct RStarBoundingBox {
 }
 
 impl RStarBoundingBox {
-    pub fn from_aabb(bounds: &AABB, refno: RefU64) -> Self {
+    pub fn from_aabb(bounds: &Aabb, refno: RefU64) -> Self {
         Self {
             aabb: rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                                             [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]),
@@ -108,14 +108,14 @@ impl AccelerationTree {
             .map(|bb| bb.refno)
     }
 
-    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &AABB) -> impl Iterator<Item=RefU64> + 'a {
+    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=RefU64> + 'a {
         self.tree
             .locate_in_envelope_intersecting(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                                                                         [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
             .map(|bb| bb.refno)
     }
 
-    pub fn locate_contain_bounds<'a>(&'a self, bounds: &AABB) -> impl Iterator<Item=RefU64> + 'a {
+    pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=RefU64> + 'a {
         self.tree
             .locate_in_envelope(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                                                            [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))

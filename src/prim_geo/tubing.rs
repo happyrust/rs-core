@@ -1,8 +1,9 @@
-use glam::{TransformSRT, Vec3};
+use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
 use bevy::math::Quat;
 use std::default::default;
 use approx::abs_diff_eq;
+use bevy::prelude::Transform;
 use crate::pdms_types::RefU64;
 use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
@@ -64,7 +65,7 @@ impl PdmsTubing {
         CateBrepShape {
             refno: Default::default(),
             brep_shape: Box::new(cylinder),
-            transform: TransformSRT {
+            transform: Transform {
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
                 translation: self.start_pt,
                 scale: Vec3::ONE,

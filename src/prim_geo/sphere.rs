@@ -12,7 +12,7 @@ use bevy::ecs::reflect::ReflectComponent;
 use lyon::math::size;
 use hexasphere::shapes::IcoSphere;
 use nalgebra::Point3;
-use parry3d::bounding_volume::AABB;
+use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use serde::{Serialize,Deserialize};
 use crate::prim_geo::SPHERE_GEO_HASH;
@@ -96,7 +96,7 @@ impl BrepShapeTrait for Sphere {
             normals,
             wf_indices: vec![],
             wf_vertices: vec![],
-            aabb: Some(AABB::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))),
+            aabb: Some(Aabb::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))),
             // AiosAABB{
             //     min: -Vec3::ONE,
             //     max: Vec3::ONE,

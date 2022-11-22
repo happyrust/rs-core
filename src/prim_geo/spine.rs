@@ -1,10 +1,10 @@
 use bevy::ecs::component::Component;
 use glam::{Mat3, Quat, Vec2, Vec3};
-use glam::TransformSRT;
 use nalgebra::center;
 use serde::{Deserialize, Serialize};
 use truck_modeling::{Shell, Wire};
 use std::f32::consts::PI;
+use bevy::prelude::*;
 use crate::tool::float_tool::f32_round_3;
 
 #[derive(Component, Debug, Default, Clone, Serialize, Deserialize)]
@@ -96,9 +96,9 @@ pub fn circum_center(pt0: Vec3, pt1: Vec3, pt2: Vec3) -> Vec3 {
 }
 
 impl Spine3D {
-    pub fn generate_paths(&self) -> (Vec<SweepPath3D>, TransformSRT) {
+    pub fn generate_paths(&self) -> (Vec<SweepPath3D>, Transform) {
         let mut paths = vec![];
-        let mut transform = TransformSRT::IDENTITY;
+        let mut transform = Transform::IDENTITY;
         let pref_axis = self.preferred_dir.normalize();
         // let pref_axis = Vec3::new(1.0, 0.0, 1.0).normalize();
         match self.curve_type {

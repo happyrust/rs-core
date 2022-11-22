@@ -13,18 +13,15 @@ use anyhow::anyhow;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
-use bevy::render::primitives::Aabb;
 use bitflags::bitflags;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
-use hash32::{Hash, Hasher};
-use hash32_derive::Hash32;
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Quaternion, UnitQuaternion};
-use parry3d::bounding_volume::AABB;
+use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
 use serde::{Deserialize, Serialize};
@@ -155,7 +152,7 @@ pub mod string {
 
 
 //把Refno当作u64
-#[derive(Hash, Serialize, Deserialize, Clone, Copy, Default, Component, Eq, PartialEq, Hash32)]
+#[derive(Hash, Serialize, Deserialize, Clone, Copy, Default, Component, Eq, PartialEq)]
 pub struct RefU64(
     // #[serde(with = "string")]
     pub u64
@@ -260,10 +257,11 @@ impl RefU64 {
 
     #[inline]
     pub fn get_u32_hash(&self) -> u32 {
-        use hash32::{FnvHasher, Hash, Hasher};
+        use hash32::{FnvHasher, Hasher};
+        use std::hash::Hash;
         let mut fnv = FnvHasher::default();
         self.hash(&mut fnv);
-        fnv.finish()
+        fnv.finish32()
     }
 
     #[inline]
@@ -1496,7 +1494,7 @@ pub struct EleGeosInfo {
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
     pub generic_type: PdmsGenericType,
-    pub aabb: Option<AABB>,
+    pub aabb: Option<Aabb>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: (Quat, Vec3, Vec3),
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
@@ -1602,7 +1600,7 @@ pub struct EleGeosInfoJson {
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
     pub generic_type: PdmsGenericType,
-    pub aabb: Option<AABB>,
+    pub aabb: Option<Aabb>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: (Quat, Vec3, Vec3),
 
@@ -1795,7 +1793,7 @@ impl CachedMeshesMgr {
     }
 
     /// 获得对应的bevy 三角模型和线框模型
-    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Option<AABB>)> {
+    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Option<Aabb>)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
             let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
             return Some(bevy_mesh);
@@ -1819,7 +1817,7 @@ impl CachedMeshesMgr {
         hash
     }
 
-    pub fn get_bbox(&self, hash: &u64) -> Option<AABB> {
+    pub fn get_bbox(&self, hash: &u64) -> Option<Aabb> {
         if self.meshes.contains_key(hash) {
             let mesh = self.meshes.get(hash).unwrap();
             return mesh.aabb.clone();
@@ -1869,7 +1867,7 @@ pub struct EleGeoInstance {
     //对应参考号
     pub refno: RefU64,
     pub pts: SmallVec<[i32; 3]>,
-    pub aabb: AABB,
+    pub aabb: Aabb,
     //相对owner坐标系的变换, rot, translation, scale
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
@@ -1882,7 +1880,7 @@ pub struct EleGeoInstanceJson {
     //对应参考号
     pub refno: RefU64,
     pub pts: SmallVec<[i32; 3]>,
-    pub aabb: AABB,
+    pub aabb: Aabb,
     //相对owner坐标系的变换, rot, translation, scale
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
@@ -2129,10 +2127,11 @@ pub struct AiosStr(pub SmolStr);
 impl AiosStr {
     #[inline]
     pub fn get_u32_hash(&self) -> u32 {
-        use hash32::{FnvHasher, Hash, Hasher};
+        use hash32::{FnvHasher, Hasher};
+        use std::hash::Hash;
         let mut fnv = FnvHasher::default();
         self.hash(&mut fnv);
-        fnv.finish()
+        fnv.finish32()
     }
     pub fn take(mut self) -> SmolStr {
         self.0
@@ -2151,15 +2150,15 @@ impl Deref for AiosStr {
     }
 }
 
-impl hash32::Hash for AiosStr {
-    fn hash<H>(&self, state: &mut H)
-        where
-            H: Hasher,
-    {
-        state.write(self.0.as_str().as_bytes());
-        state.write(&[0xff]);
-    }
-}
+// impl hash32::Hash for AiosStr {
+//     fn hash<H>(&self, state: &mut H)
+//         where
+//             H: Hasher,
+//     {
+//         state.write(self.0.as_str().as_bytes());
+//         state.write(&[0xff]);
+//     }
+// }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefnoNodeId {

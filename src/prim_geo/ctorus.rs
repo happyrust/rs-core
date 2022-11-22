@@ -4,7 +4,6 @@ use std::hash::Hasher;
 use std::hash::Hash;
 use bevy::prelude::*;
 use truck_modeling::{builder, Shell};
-use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::reflect::erased_serde::{Error, Serializer};
@@ -31,7 +30,7 @@ pub struct SCTorus {
 
 
 impl SCTorus {
-    pub fn convert_to_ctorus(&self) -> Option<(CTorus, glam::TransformSRT)>{
+    pub fn convert_to_ctorus(&self) -> Option<(CTorus, Transform)>{
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt){
             let mut ctorus = CTorus::default();
             ctorus.angle = torus_info.angle;
@@ -40,7 +39,7 @@ impl SCTorus {
             let z_axis = -torus_info.rot_axis.normalize();
             let x_axis = (self.pbax_pt - torus_info.center).normalize();
             let y_axis = z_axis.cross(x_axis).normalize();
-            let mat = glam::TransformSRT{
+            let mat = Transform{
                 rotation: bevy::prelude::Quat::from_mat3(&bevy::prelude::Mat3::from_cols(
                     x_axis, y_axis, z_axis
                 )),

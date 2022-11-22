@@ -5,7 +5,6 @@ use std::hash::Hash;
 use bevy::prelude::*;
 use truck_modeling::{builder, Shell};
 use crate::tool::hash_tool::*;
-use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use crate::pdms_types::AttrMap;
@@ -60,7 +59,7 @@ struct TorusInfo{
 
 impl SRTorus {
 
-    pub fn convert_to_rtorus(&self) -> Option<(RTorus, glam::TransformSRT)>{
+    pub fn convert_to_rtorus(&self) -> Option<(RTorus, Transform)>{
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt){
             let mut rtorus = RTorus::default();
             rtorus.angle = torus_info.angle;
@@ -71,7 +70,7 @@ impl SRTorus {
             let x_axis = (self.pbax_pt - torus_info.center).normalize();
             let y_axis = z_axis.cross(x_axis).normalize();
             let translation = torus_info.center;
-            let mat = glam::TransformSRT{
+            let mat = Transform{
                 rotation: bevy::prelude::Quat::from_mat3(&bevy::prelude::Mat3::from_cols(
                     x_axis, y_axis, z_axis
                 )),
