@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
+use bevy::prelude::Resource;
 use glam::{Mat4, Vec3};
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
@@ -62,7 +63,7 @@ impl rstar::PointDistance for RStarBoundingBox {
     }
 }
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, Resource)]
 pub struct AccelerationTree {
     pub tree: rstar::RTree<RStarBoundingBox>,
 }

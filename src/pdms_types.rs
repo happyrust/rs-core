@@ -1779,7 +1779,7 @@ impl CachedColliderShapeMgr {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Default, Deref, DerefMut)]
+#[derive(Serialize, Deserialize, Debug, Default, Deref, DerefMut, Resource)]
 pub struct CachedMeshesMgr {
     pub meshes: DashMap<GeoHash, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
