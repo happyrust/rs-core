@@ -10,8 +10,6 @@ use bevy::prelude::*;
 use bevy::reflect::Reflect;
 use nom::Parser;
 use serde::{Deserialize, Serialize};
-use truck_meshalgo::prelude::*;
-use truck_modeling::{builder, Shell};
 use truck_topology::Face;
 
 use crate::pdms_types::AttrMap;
@@ -64,7 +62,7 @@ impl BrepShapeTrait for LCylinder {
         Box::new(self.clone())
     }
 
-    fn gen_brep_shell(&self) -> Option<Shell> {
+    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
         if !self.check_valid() { return None; }
 
@@ -184,8 +182,8 @@ impl BrepShapeTrait for SCylinder {
     }
 
     #[inline]
-    fn get_trans(&self) -> glam::TransformSRT {
-        glam::TransformSRT {
+    fn get_trans(&self) -> Transform {
+        Transform {
             rotation: Default::default(),
             translation: if self.center_in_mid {
                 Vec3::new(0.0, 0.0, -self.phei / 2.0)
@@ -196,7 +194,7 @@ impl BrepShapeTrait for SCylinder {
         }
     }
 
-    fn gen_brep_shell(&self) -> Option<Shell> {
+    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
         let dir = self.paxi_dir.normalize();
         let r = self.pdia / 2.0;

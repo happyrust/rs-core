@@ -2,11 +2,12 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
 use serde::{Serialize, Deserialize};
 use std::io::{Read, Write};
+use bevy::prelude::Resource;
 use derive_more::*;
 use itertools::Itertools;
 use crate::pdms_types::RefU64;
 
-#[derive(Clone, Debug, Default, Deref, DerefMut, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Deref, DerefMut, Serialize, Deserialize, Resource)]
 pub struct DbNumMgr{
     pub ref0_dbnos_map: BTreeMap<u32, HashSet<u32>>,  //先看看有没有多个的情况
 }

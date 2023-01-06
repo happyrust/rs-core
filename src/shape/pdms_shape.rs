@@ -13,11 +13,10 @@ use bevy::prelude::{FromWorld, Mesh, Transform};
 use bevy::reflect::{erased_serde, Reflect, ReflectRef};
 use bevy::reflect::erased_serde::serialize_trait_object;
 use bevy::render::mesh::Indices;
-use bevy::render::primitives::Aabb;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
-use glam::{Mat4, TransformRT, TransformSRT, Vec3, Vec4};
+use glam::{Mat4, Vec3, Vec4};
 use lyon::path::polygon;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
@@ -26,7 +25,7 @@ use truck_base::cgmath64::{Point3, Vector3, Vector4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
 
-use parry3d::bounding_volume::AABB;
+use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Matrix, Point, Vector};
 use parry3d::shape::{TriMesh, TriMeshFlags};
 use dyn_clone::DynClone;
@@ -92,7 +91,7 @@ pub struct PdmsMesh {
     //wireframe indices
     pub wf_vertices: Vec<[f32; 3]>,
     //wireframe vertex
-    pub aabb: Option<AABB>,
+    pub aabb: Option<Aabb>,
     pub unit_shape: Shell,
     // pub shape_data: Box<dyn BrepShapeTrait>,
 }
@@ -131,7 +130,7 @@ impl PdmsMesh {
     }
 
     ///返回三角模型和线框模型 （tri_mesh, line_mesh, AABB）
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Option<AABB>) {
+    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Option<Aabb>) {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
@@ -270,8 +269,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     #[inline]
-    fn get_trans(&self) -> TransformSRT {
-        TransformSRT {
+    fn get_trans(&self) -> Transform {
+        Transform {
             rotation: Default::default(),
             translation: Default::default(),
             scale: self.get_scaled_vec3(),
@@ -279,12 +278,12 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
-        let mut aabb = AABB::new_invalid();
+        let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
             let (size, c) = (brep_bbox.diameter(), brep_bbox.center());
             let d = brep_bbox.diagonal() / 2.0;
-            aabb = AABB::from_half_extents(
+            aabb = Aabb::from_half_extents(
                 Point::<f32>::new(c[0] as f32, c[1] as f32, c[2] as f32),
                 Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
             );

@@ -57,8 +57,7 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
 
             db: if save_to_redb {
                 // sled::open(name).ok()
-                let db_size = 10 * 1024 * 1024 * 1024;
-                unsafe { Database::create(name, db_size).map(|x| Arc::new(x)).ok() }
+                unsafe { Database::create(name).map(|x| Arc::new(x)).ok() }
             } else {
                 None
             },

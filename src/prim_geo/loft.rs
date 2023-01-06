@@ -7,9 +7,8 @@ use approx::{abs_diff_eq, abs_diff_ne};
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
-use glam::{TransformRT, TransformSRT, Vec3};
+use glam::{Vec3};
 use serde::{Deserialize, Serialize};
-use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Face, Shell, Surface, Wire};
 use truck_modeling::builder::try_attach_plane;
 
@@ -19,6 +18,8 @@ use crate::prim_geo::spine::*;
 use crate::prim_geo::wire;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
+// use truck_meshalgo::prelude::{Matrix4, Vector4};
+use truck_base::cgmath64::*;
 
 //todo 针对确实只是extrusion的处理，可以转换成extrusion去处理，而不是占用
 
@@ -122,6 +123,7 @@ impl SweepSolid {
     ///计算SPRO的face
     /// start_vec 为起始方向
     fn cal_spro_wire(&self, profile: &SProfileData) -> Option<Wire> {
+        use truck_meshalgo::prelude::*;
         let verts = &profile.verts;
         let len = verts.len();
 
@@ -396,20 +398,20 @@ impl BrepShapeTrait for SweepSolid {
     }
 
     #[inline]
-    fn get_trans(&self) -> TransformSRT {
+    fn get_trans(&self) -> bevy::prelude::Transform {
         let mut vec = self.extrude_dir.normalize();
         // dbg!(self.get_scaled_vec3());
         match &self.profile {
             CateProfileParam::SANN(p) => {
                 let mut translation = Vec3::ZERO;
-                return TransformSRT {
+                return bevy::prelude::Transform {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),
                     translation,
                 };
             }
             CateProfileParam::SPRO(_) => {
-                return TransformSRT {
+                return bevy::prelude::Transform {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),
                     translation: Vec3::ZERO,
@@ -418,6 +420,6 @@ impl BrepShapeTrait for SweepSolid {
             _ => {}
         }
 
-        TransformSRT::IDENTITY
+        bevy::prelude::Transform::IDENTITY
     }
 }

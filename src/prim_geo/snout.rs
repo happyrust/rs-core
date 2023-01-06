@@ -7,7 +7,6 @@ use truck_modeling::Shell;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use std::hash::Hash;
-use glam::TransformSRT;
 use serde::{Serialize,Deserialize};
 use crate::pdms_types::AttrMap;
 use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh, TRI_TOL};

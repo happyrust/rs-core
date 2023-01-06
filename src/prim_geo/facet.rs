@@ -6,7 +6,7 @@ use glam::Vec3;
 use lyon::path::builder::PathBuilder;
 use lyon::path::Path;
 use lyon::tessellation::*;
-use parry3d::bounding_volume::AABB;
+use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
@@ -69,7 +69,7 @@ impl BrepShapeTrait for Facet {
         let mut indices = vec![];
         let mut uvs = vec![];
         let delta = 0.001;
-        let mut aabb = AABB::new_invalid();
+        let mut aabb = Aabb::new_invalid();
         for p in self.polygons.iter(){
             if p.contours.len() == 0{ continue; }
             let mut path = Path::builder();
