@@ -41,7 +41,7 @@ rstar = { version = "0.9.3", features = ["serde"] }
 
 #bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render"]}
 #bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
-bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
+bevy = { path = "../bevy", default-features = false, features = ["filesystem_watcher"] }
 bevy_egui = { path = "../bevy_egui" }
 
 serde-name = "0.2.1"
@@ -64,7 +64,7 @@ truck-meshalgo = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.gi
 truck-stepio = { version = "0.1.0", git = "https://gitee.com/happydpc/truck.git" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-redb = "0.8.0"
+redb = "0.11.0"
 
 #truck-base = { version = "0.3.0", path = "../truck/truck-base" }
 #truck-geotrait = { version = "0.2.0", path = "../truck/truck-geotrait", features = ["derive"] }
