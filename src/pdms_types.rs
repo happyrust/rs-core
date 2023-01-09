@@ -326,6 +326,14 @@ impl RefU64 {
         std::hash::Hash::hash(&another_refno.0, &mut hash);
         std::hash::Hasher::finish(&hash)
     }
+
+    #[inline]
+    pub fn from_arangodb_refno_str(refno_str:&str) -> Option<Self> {
+        let mut refno_str = refno_str.split("/").collect::<Vec<_>>();
+        if refno_str.len() <= 1 { return None }
+        let refno_url = refno_str.remove(1);
+        RefU64::from_url_refno(refno_url)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Deref, DerefMut)]

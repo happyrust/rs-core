@@ -19,7 +19,7 @@ use redb::{
 
 pub const CACHE_SLED_NAME: &'static str = "cache.rdb";
 #[cfg(not(target_arch = "wasm32"))]
-const TABLE: TableDefinition<u64, [u8]> = TableDefinition::new("my_data");
+const TABLE: TableDefinition<u64, &[u8]> = TableDefinition::new("my_data");
 
 
 pub trait BytesTrait {
@@ -90,8 +90,8 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
                     let read_txn = db.begin_read().ok()?;
                     let table = read_txn.open_table(TABLE).ok()?;
                     if let Ok(Some(bytes)) = table.get(&**k) {
-                        self.map.insert((*k).into(), T::from_bytes(bytes));
-                    }
+                        self.map.insert((*k).into(), T::from_bytes(bytes.value()));
+                    };
                 }
             }
         }
