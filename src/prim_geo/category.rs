@@ -5,7 +5,7 @@ use std::ops::Range;
 
 use bevy::app::RunMode::Loop;
 use bevy::math::*;
-use bevy::prelude::Transform;
+use bevy::math::TransformSRT;
 use id_tree::NodeId;
 use smallvec::SmallVec;
 
@@ -36,7 +36,7 @@ pub enum ShapeErr{
 pub struct CateBrepShape {
     pub refno: RefU64,
     pub brep_shape: Box<dyn BrepShapeTrait>,
-    pub transform: Transform,
+    pub transform: TransformSRT,
     pub visible: bool,
     pub is_tubi: bool,
     pub shape_err: Option<ShapeErr>,  //有可能shape有问题
@@ -79,7 +79,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             return Some(CateBrepShape {
                 refno: d.refno,
                 brep_shape,
-                transform: Transform {
+                transform: TransformSRT {
                     translation,
                     ..default()
                 },
@@ -149,7 +149,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 size: Vec3::new(d.size[0] as f32, d.size[1] as f32, d.size[2] as f32),
                 ..default()
             });
-            let transform = Transform {
+            let transform = TransformSRT {
                 translation: Vec3::new(d.offset[0] as f32, d.offset[1] as f32, d.offset[2] as f32),
                 ..default()
             };
@@ -169,7 +169,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(axis.number);
             let dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
             let translation = dir * (d.dist_to_btm as f32) + Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
-            let transform = Transform {
+            let transform = TransformSRT {
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
                 translation,
                 ..default()
@@ -226,7 +226,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 x_axis, y_axis, z_axis,
             ));
 
-            let transform = Transform {
+            let transform = glam::TransformSRT {
                 rotation,
                 translation,
                 ..default()
@@ -263,7 +263,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let transform = Transform {
+            let transform = TransformSRT {
                 rotation,
                 translation,
                 ..default()
@@ -297,7 +297,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let transform = Transform {
+            let transform = TransformSRT {
                 rotation,
                 translation,
                 ..default()
@@ -346,7 +346,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let rotation = Quat::from_mat3(&mat3);
             let translation = z_dir * (d.dist_to_btm as f32) +
                 Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
-            let transform = Transform {
+            let transform = TransformSRT {
                 rotation,
                 translation,
                 ..default()
@@ -378,7 +378,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref().unwrap();
             let mut pts = SmallVec::default();
             pts.push(axis.number);
-            let transform = Transform {
+            let transform = TransformSRT {
                 translation: Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32),
                 ..default()
             };
@@ -423,7 +423,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
 
             let translation = origin_pt + xyz_pt;
-            let transform = Transform {
+            let transform = TransformSRT {
                 rotation,
                 translation,
                 ..default()
@@ -477,7 +477,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 extrude_dir,
             ));
             let translation = rotation * Vec3::new(d.x, d.y, d.z) + Vec3::from(pa.pt);
-            let transform = Transform {
+            let transform = TransformSRT {
                 rotation,
                 translation,
                 ..default()

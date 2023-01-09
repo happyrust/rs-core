@@ -116,7 +116,7 @@ impl Spine3D {
                 } else { Vec3::Z };
                 let y_axis = ref_axis.cross(x_axis).normalize();
                 let z_axis = x_axis.cross(y_axis).normalize();
-                dbg!((x_axis, y_axis, z_axis));
+                // dbg!((x_axis, y_axis, z_axis));
                 transform.rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
                 let arc = Arc3D{
                     center,
@@ -126,7 +126,7 @@ impl Spine3D {
                     axis,
                     pref_axis: pref_axis,
                 };
-                dbg!(&arc);
+                // dbg!(&arc);
                 transform.translation = center;
 
                 paths.push(SweepPath3D::SpineArc(arc));
@@ -143,7 +143,7 @@ impl Spine3D {
 
                 let p_axis = ref_axis.cross(extru_dir).normalize();
                 let y_axis = extru_dir.cross(p_axis).normalize();
-                dbg!((p_axis, y_axis, extru_dir));
+                // dbg!((p_axis, y_axis, extru_dir));
                 transform.rotation = Quat::from_mat3(&glam::f32::Mat3::from_cols(
                     p_axis, y_axis, extru_dir
                 ));
