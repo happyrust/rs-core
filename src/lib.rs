@@ -24,6 +24,6 @@ pub mod tiny_expr;
 pub mod accel_tree;
 pub mod plot_struct; // 全自动出图所需的结构体
 pub mod pdms_user;
-
+pub mod metadata_manager;
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;
