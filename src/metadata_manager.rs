@@ -51,6 +51,7 @@ impl From<sled::IVec> for MetadataManagerTreeNode {
     }
 }
 
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MetadataManagerTableData {
     pub id: u64,
     pub code: String,
