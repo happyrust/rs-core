@@ -15,11 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="增加Refu64::from_arangodb_refno_str api">
-      <change afterPath="$PROJECT_DIR$/src/structs.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="增加获取ATTA的结构体">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -281,14 +278,7 @@
       <workItem from="1673487564893" duration="1175000" />
       <workItem from="1673492102752" duration="889000" />
       <workItem from="1674042667343" duration="2114000" />
-      <workItem from="1674105827631" duration="2975000" />
-    </task>
-    <task id="LOCAL-00111" summary="keep shape data in pdms_mesh">
-      <created>1662905482417</created>
-      <option name="number" value="00111" />
-      <option name="presentableId" value="LOCAL-00111" />
-      <option name="project" value="LOCAL" />
-      <updated>1662905482418</updated>
+      <workItem from="1674105827631" duration="3629000" />
     </task>
     <task id="LOCAL-00112" summary="fix">
       <created>1663593253060</created>
@@ -626,7 +616,14 @@
       <option name="project" value="LOCAL" />
       <updated>1672818303774</updated>
     </task>
-    <option name="localTasksCounter" value="160" />
+    <task id="LOCAL-00160" summary="增加获取ATTA的结构体">
+      <created>1674114864451</created>
+      <option name="number" value="00160" />
+      <option name="presentableId" value="LOCAL-00160" />
+      <option name="project" value="LOCAL" />
+      <updated>1674114864451</updated>
+    </task>
+    <option name="localTasksCounter" value="161" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -656,7 +653,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Refactor" />
     <MESSAGE value="snout rotate by y axis" />
     <MESSAGE value="snout poff with neg height" />
     <MESSAGE value="debug" />
@@ -681,7 +677,8 @@
     <MESSAGE value="upgrade to new bevy" />
     <MESSAGE value="新版本" />
     <MESSAGE value="增加Refu64::from_arangodb_refno_str api" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加Refu64::from_arangodb_refno_str api" />
+    <MESSAGE value="增加获取ATTA的结构体" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加获取ATTA的结构体" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

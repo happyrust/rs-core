@@ -7,7 +7,6 @@ pub struct ATTAPos {
     pub pos: Vec<Vec3>,
 
 }
-
 #[derive(Default, Clone, Debug,Serialize, Deserialize)]
 pub struct ATTAPosVec {
     pub data: Vec<ATTAPos>,
