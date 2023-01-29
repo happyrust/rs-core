@@ -17,6 +17,7 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="增加获取ATTA的结构体">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/structs.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/structs.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,6 +44,7 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitToolBoxStore">
+    <option name="projectConfigVersion" value="5" />
     <option name="recentBranches">
       <RecentBranches>
         <option name="branchesForRepo">
@@ -279,13 +281,10 @@
       <workItem from="1673492102752" duration="889000" />
       <workItem from="1674042667343" duration="2114000" />
       <workItem from="1674105827631" duration="3629000" />
-    </task>
-    <task id="LOCAL-00112" summary="fix">
-      <created>1663593253060</created>
-      <option name="number" value="00112" />
-      <option name="presentableId" value="LOCAL-00112" />
-      <option name="project" value="LOCAL" />
-      <updated>1663593253060</updated>
+      <workItem from="1674877997161" duration="2066000" />
+      <workItem from="1674890756789" duration="1811000" />
+      <workItem from="1674955499852" duration="955000" />
+      <workItem from="1674964730073" duration="657000" />
     </task>
     <task id="LOCAL-00113" summary="fix fillet floor">
       <created>1663603811162</created>
@@ -623,7 +622,14 @@
       <option name="project" value="LOCAL" />
       <updated>1674114864451</updated>
     </task>
-    <option name="localTasksCounter" value="161" />
+    <task id="LOCAL-00161" summary="增加获取ATTA的结构体">
+      <created>1674878051065</created>
+      <option name="number" value="00161" />
+      <option name="presentableId" value="LOCAL-00161" />
+      <option name="project" value="LOCAL" />
+      <updated>1674878051065</updated>
+    </task>
+    <option name="localTasksCounter" value="162" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
