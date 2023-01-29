@@ -26,7 +26,7 @@ pub mod accel_tree;
 pub mod plot_struct; // 全自动出图所需的结构体
 pub mod pdms_user;
 pub mod metadata_manager;
-pub mod structs;
+pub mod create_attas_structs;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
