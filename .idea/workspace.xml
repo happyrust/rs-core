@@ -15,9 +15,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="增加获取ATTA的结构体">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="增加虚拟孔洞的结构体">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/structs.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/structs.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/metadata_manager.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/metadata_manager.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -284,14 +284,9 @@
       <workItem from="1674877997161" duration="2066000" />
       <workItem from="1674890756789" duration="1811000" />
       <workItem from="1674955499852" duration="955000" />
-      <workItem from="1674964730073" duration="657000" />
-    </task>
-    <task id="LOCAL-00113" summary="fix fillet floor">
-      <created>1663603811162</created>
-      <option name="number" value="00113" />
-      <option name="presentableId" value="LOCAL-00113" />
-      <option name="project" value="LOCAL" />
-      <updated>1663603811162</updated>
+      <workItem from="1674964730073" duration="6973000" />
+      <workItem from="1675415305984" duration="637000" />
+      <workItem from="1675513945256" duration="362000" />
     </task>
     <task id="LOCAL-00114" summary="解决土建大部分问题">
       <created>1663855941194</created>
@@ -629,7 +624,14 @@
       <option name="project" value="LOCAL" />
       <updated>1674878051065</updated>
     </task>
-    <option name="localTasksCounter" value="162" />
+    <task id="LOCAL-00162" summary="增加虚拟孔洞的结构体">
+      <created>1674965877579</created>
+      <option name="number" value="00162" />
+      <option name="presentableId" value="LOCAL-00162" />
+      <option name="project" value="LOCAL" />
+      <updated>1674965877579</updated>
+    </task>
+    <option name="localTasksCounter" value="163" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -659,7 +661,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="snout rotate by y axis" />
     <MESSAGE value="snout poff with neg height" />
     <MESSAGE value="debug" />
     <MESSAGE value="refactored" />
@@ -684,7 +685,8 @@
     <MESSAGE value="新版本" />
     <MESSAGE value="增加Refu64::from_arangodb_refno_str api" />
     <MESSAGE value="增加获取ATTA的结构体" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加获取ATTA的结构体" />
+    <MESSAGE value="增加虚拟孔洞的结构体" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加虚拟孔洞的结构体" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

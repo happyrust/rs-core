@@ -1,3 +1,4 @@
+use bevy::prelude::World;
 use serde_derive::{Deserialize, Serialize};
 use crate::pdms_types::{PdmsElement, PdmsNodeTrait, RefU64};
 
@@ -51,6 +52,7 @@ impl From<sled::IVec> for MetadataManagerTreeNode {
     }
 }
 
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MetadataManagerTableData {
     pub id: u64,
@@ -98,5 +100,46 @@ impl MetadataManagerTableData {
             4 => { "mm".to_string() }
             _ => "".to_string()
         }
+    }
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct ShowMetadataManagerTableData {
+    pub id: u64,
+    pub old_code: String,
+    pub new_code:String,
+    pub name: String,
+    pub b_null: String,
+    pub data_type: String,
+    pub unit: String,
+    pub desc: String,
+    pub scope: String,
+    pub change: bool,
+    pub data_type_back: u8,
+    pub unit_back: u8,
+
+}
+
+
+impl ShowMetadataManagerTableData {
+    pub fn init(table_data: MetadataManagerTableData) -> ShowMetadataManagerTableData {
+        let mut data = ShowMetadataManagerTableData::default();
+        data.id = table_data.id;
+        data.old_code = table_data.code.clone();
+        data.new_code = table_data.code;
+        data.name = table_data.name;
+        if table_data.b_null {
+            data.b_null = "是".to_string();
+        } else {
+            data.b_null = "否".to_string();
+        }
+        data.data_type = MetadataManagerTableData::get_data_type_type_from_u8(table_data.data_type);
+        data.unit = MetadataManagerTableData::get_unit_from_u8(table_data.unit);
+        data.desc = table_data.desc;
+        data.scope = table_data.scope;
+        data.change = false;
+        data.data_type_back = table_data.data_type;
+        data.unit_back = table_data.unit;
+        data
     }
 }
