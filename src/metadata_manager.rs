@@ -104,6 +104,11 @@ impl MetadataManagerTableData {
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct FileBytes{
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ShowMetadataManagerTableData {
     pub id: u64,
     pub old_code: String,
@@ -117,7 +122,6 @@ pub struct ShowMetadataManagerTableData {
     pub change: bool,
     pub data_type_back: u8,
     pub unit_back: u8,
-
 }
 
 

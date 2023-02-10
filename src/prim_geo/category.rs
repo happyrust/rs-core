@@ -25,14 +25,14 @@ use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::tubing::PdmsTubing;
 use crate::shape::pdms_shape::BrepShapeTrait;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum ShapeErr{
     //tubi的方向不一致
     TubiDirErr,
     Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct CateBrepShape {
     pub refno: RefU64,
     pub brep_shape: Box<dyn BrepShapeTrait>,
