@@ -59,52 +59,15 @@ pub struct MetadataManagerTableData {
     pub code: String,
     pub name: String,
     pub b_null: bool,
-    pub data_type: u8,
-    pub unit: u8,
+    pub data_type: String,
+    pub unit: String,
     pub desc: String,
     pub scope: String,
 }
 
-impl MetadataManagerTableData {
-    pub fn convert_str_to_data_type(input: &str) -> u8 {
-        match input.trim().to_lowercase().as_str() {
-            "string" => { 1 }
-            "float" => { 2 }
-            &_ => { 0 }
-        }
-    }
-
-    pub fn get_data_type_type_from_u8(input: u8) -> String {
-        match input {
-            1 => "String".to_string(),
-            2 => "float".to_string(),
-            _ => "".to_string()
-        }
-    }
-
-    pub fn convert_str_to_unit(input: &str) -> u8 {
-        match input.trim().to_lowercase().as_str() {
-            "m" => { 1 }
-            "dm" => { 2 }
-            "cm" => { 3 }
-            "mm" => { 4 }
-            _ => 0
-        }
-    }
-
-    pub fn get_unit_from_u8(input: u8) -> String {
-        match input {
-            1 => { "m".to_string() }
-            2 => { "dm".to_string() }
-            3 => { "cm".to_string() }
-            4 => { "mm".to_string() }
-            _ => "".to_string()
-        }
-    }
-}
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct FileBytes{
+pub struct FileBytes {
     pub data: Vec<u8>,
 }
 
@@ -112,7 +75,7 @@ pub struct FileBytes{
 pub struct ShowMetadataManagerTableData {
     pub id: u64,
     pub old_code: String,
-    pub new_code:String,
+    pub new_code: String,
     pub name: String,
     pub b_null: String,
     pub data_type: String,
@@ -120,8 +83,6 @@ pub struct ShowMetadataManagerTableData {
     pub desc: String,
     pub scope: String,
     pub change: bool,
-    pub data_type_back: u8,
-    pub unit_back: u8,
 }
 
 
@@ -137,13 +98,11 @@ impl ShowMetadataManagerTableData {
         } else {
             data.b_null = "否".to_string();
         }
-        data.data_type = MetadataManagerTableData::get_data_type_type_from_u8(table_data.data_type);
-        data.unit = MetadataManagerTableData::get_unit_from_u8(table_data.unit);
+        data.data_type = table_data.data_type;
+        data.unit = table_data.unit;
         data.desc = table_data.desc;
         data.scope = table_data.scope;
         data.change = false;
-        data.data_type_back = table_data.data_type;
-        data.unit_back = table_data.unit;
         data
     }
 }
