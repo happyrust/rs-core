@@ -27,6 +27,7 @@ pub mod plot_struct; // 全自动出图所需的结构体
 pub mod pdms_user;
 pub mod metadata_manager;
 pub mod create_attas_structs;
+pub mod three_dimensional_review;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
