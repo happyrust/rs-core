@@ -328,9 +328,9 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn from_arangodb_refno_str(refno_str:&str) -> Option<Self> {
+    pub fn from_arangodb_refno_str(refno_str: &str) -> Option<Self> {
         let mut refno_str = refno_str.split("/").collect::<Vec<_>>();
-        if refno_str.len() <= 1 { return None }
+        if refno_str.len() <= 1 { return None; }
         let refno_url = refno_str.remove(1);
         RefU64::from_url_refno(refno_url)
     }
@@ -1511,7 +1511,6 @@ pub struct EleGeosInfo {
 
 
 impl EleGeosInfo {
-
     #[inline]
     pub fn get_transform(&self) -> Transform {
         Transform {
@@ -2246,4 +2245,59 @@ pub struct IncrementDataSql {
     pub old_data: WholeAttMap,
     pub new_data: WholeAttMap,
     pub time: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum UdaMajorType {
+    /// 工艺
+    T,
+    /// 通风
+    V,
+    /// 电气
+    E,
+    /// 仪控
+    I,
+    /// 核岛水工
+    W,
+    /// BOP-暖通
+    N,
+    /// BOP-水工
+    Z,
+    /// 通信
+    K,
+    /// 设备
+    S,
+    Unknown,
+}
+
+impl UdaMajorType {
+    pub fn from_str(input: &str) -> Self {
+        match input.to_uppercase().as_str() {
+            "T" => { Self::T }
+            "V" => { Self::V }
+            "E" => { Self::E }
+            "I" => { Self::I }
+            "W" => { Self::W }
+            "N" => { Self::N }
+            "Z" => { Self::Z }
+            "K" => { Self::K }
+            "S" => { Self::S }
+            _ => { Self::Unknown }
+        }
+    }
+
+    pub fn to_major_str(&self) -> String {
+        match self {
+            UdaMajorType::T => { "T".to_string() }
+            UdaMajorType::V => { "V".to_string() }
+            UdaMajorType::E => { "E".to_string() }
+            UdaMajorType::I => { "I".to_string() }
+            UdaMajorType::W => { "W".to_string() }
+            UdaMajorType::N => { "N".to_string() }
+            UdaMajorType::Z => { "Z".to_string() }
+            UdaMajorType::K => { "K".to_string() }
+            UdaMajorType::S => { "S".to_string() }
+            UdaMajorType::Unknown => { "Unknown".to_string() }
+        }
+    }
 }
