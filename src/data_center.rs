@@ -55,7 +55,7 @@ pub struct DataCenterAttr {
     // pub value: T,
 }
 
-#[derive(Serialize,Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum AttrValue {
     AttrString(String),
@@ -64,7 +64,10 @@ pub enum AttrValue {
     AttrBool(bool),
     AttrStrArray(Vec<String>),
     AttrIntArray(Vec<i32>),
-    AttrMap(HashMap<String,Vec<String>>),
+    AttrFloatArray(Vec<f32>),
+    AttrMap(HashMap<String, Vec<String>>),
+    AttrMapFloatArray(HashMap<String, Vec<f32>>),
+    AttrItemArray(Vec<ItemValue>),
 }
 
 impl Default for AttrValue {
@@ -73,10 +76,43 @@ impl Default for AttrValue {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum ItemValue {
+    String(String),
+    Int(i32),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum HoleType {
+    // 孔洞类
+    STUCJ,
+    // 钢制套管类
+    STUCG,
+    // 纤维水泥电缆导管类
+    STUCH,
+    // 槽类
+    STUCK,
+    // 地坑类
+    STUCL,
+    // 地漏类
+    STUCM,
+    Unknown,
+}
+
 #[test]
 fn test_attr_json() {
-    let data = AttrStrArray(vec!["hello".to_string(),"world".to_string()]);
+    let data = AttrStrArray(vec!["hello".to_string(), "world".to_string()]);
     let data = AttrFloat(1.0);
     let json = serde_json::to_string(&data).unwrap();
     dbg!(&json);
+}
+
+#[test]
+fn test_item_value() {
+    let item_1 = ItemValue::String("hello".to_string());
+    let item_2 = ItemValue::Int(1);
+    let r = vec![item_1,item_2];
+    let data = serde_json::to_string(&r).unwrap();
+    dbg!(&data);
 }
