@@ -1,10 +1,10 @@
 use crate::shape::pdms_shape::PdmsMesh;
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct NegativeEles {
     pub _key: String,
-    pub mesh: PdmsMesh,
+    pub mesh: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
