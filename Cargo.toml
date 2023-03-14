@@ -41,6 +41,7 @@ rstar = { version = "0.9.3", features = ["serde"] }
 #bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
 bevy = { path = "../bevy", default-features = false, features = ["filesystem_watcher"] }
 bevy_egui = { path = "../bevy_egui" }
+csg = { path = "../csgrs/csg" }
 
 serde-name = "0.2.1"
 serde = { version = "1.0.133", features = ["derive"] }

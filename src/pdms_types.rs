@@ -316,7 +316,10 @@ impl RefU64 {
     pub fn from_url_refno(refno: &str) -> Option<Self> {
         let strs = refno.split('_').collect::<Vec<_>>();
         if strs.len() < 2 { return None; }
-        Some(RefU64::from_two_nums(strs[0].parse().unwrap(), strs[1].parse().unwrap()))
+        let ref0 = strs[0].parse::<u32>();
+        let ref1 = strs[1].parse::<u32>();
+        if ref0.is_err() || ref1.is_err() { return None; }
+        Some(RefU64::from_two_nums(ref0.unwrap(), ref1.unwrap()))
     }
 
     #[inline]
@@ -1067,6 +1070,7 @@ impl AttrMap {
             "CTOR" => Some(Box::new(CTorus::from(self))),
             "RTOR" => Some(Box::new(RTorus::from(self))),
             "PYRA" => Some(Box::new(Pyramid::from(self))),
+            "NCYL" => Some(Box::new(SCylinder::from(self))),
             _ => None,
         };
     }
@@ -2267,7 +2271,29 @@ pub enum UdaMajorType {
     K,
     /// 设备
     S,
-    Unknown,
+    /// 照明
+    L,
+    /// 辐射安全
+    F,
+    /// 反应堆热工水力
+    H,
+    /// 辐射监测
+    R,
+    /// 建筑
+    A,
+    /// 结构
+    J,
+    /// NPIC管道
+    P,
+    /// NPIC设备
+    B,
+    /// NPIC电气
+    C,
+    /// NPIC仪表
+    Y,
+    /// 多专业
+    X,
+    NULL,
 }
 
 impl UdaMajorType {
@@ -2282,7 +2308,7 @@ impl UdaMajorType {
             "Z" => { Self::Z }
             "K" => { Self::K }
             "S" => { Self::S }
-            _ => { Self::Unknown }
+            _ => { Self::NULL }
         }
     }
 
@@ -2297,7 +2323,42 @@ impl UdaMajorType {
             UdaMajorType::Z => { "Z".to_string() }
             UdaMajorType::K => { "K".to_string() }
             UdaMajorType::S => { "S".to_string() }
-            UdaMajorType::Unknown => { "Unknown".to_string() }
+            UdaMajorType::L => { "L".to_string() }
+            UdaMajorType::F => { "F".to_string() }
+            UdaMajorType::H => { "H".to_string() }
+            UdaMajorType::R => { "R".to_string() }
+            UdaMajorType::A => { "A".to_string() }
+            UdaMajorType::J => { "J".to_string() }
+            UdaMajorType::P => { "P".to_string() }
+            UdaMajorType::B => { "B".to_string() }
+            UdaMajorType::C => { "C".to_string() }
+            UdaMajorType::Y => { "Y".to_string() }
+            UdaMajorType::X => { "X".to_string() }
+            UdaMajorType::NULL => { "NULL".to_string() }
+        }
+    }
+
+    pub fn from_chinese_description(input: &str) -> Self {
+        match input {
+            "管道" => Self::T,
+            "电气" => Self::E,
+            "设备" => Self::S,
+            "通风" => Self::V,
+            "仪控" => Self::I,
+            "照明" => Self::L,
+            "通信" => Self::K,
+            "给排水" => Self::W,
+            "暖通" => Self::N,
+            "辐射安全" => Self::F,
+            "反应堆热工水力" => Self::H,
+            "辐射监测" => Self::R,
+            "建筑" => Self::A,
+            "结构" => Self::J,
+            "NPIC管道" => Self::P,
+            "NPIC设备" => Self::B,
+            "NPIC仪表" => Self::Y,
+            "多专业" => Self::X,
+            _ => Self::NULL,
         }
     }
 }

@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NegativeEles {
     pub _key: String,
-    pub mesh: Vec<u8>,
+    pub mesh: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

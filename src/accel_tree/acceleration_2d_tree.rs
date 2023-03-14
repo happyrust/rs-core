@@ -15,11 +15,7 @@ impl RStarBoundingBox2D {
             refno,
         }
     }
-
 }
-
-
-
 
 impl rstar::RTreeObject for RStarBoundingBox2D {
     type Envelope = rstar::AABB<[f32; 2]>;

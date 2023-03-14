@@ -24,6 +24,7 @@ use truck_base::bounding_box::BoundingBox;
 use truck_base::cgmath64::{Point3, Vector3, Vector4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
+use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
 
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Matrix, Point, Vector};
@@ -82,7 +83,7 @@ pub struct PdmsInstanceMeshMap {
 }
 
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Default)]
+#[derive(Serialize, Deserialize, Component, Debug, Default,Clone)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
@@ -95,7 +96,6 @@ pub struct PdmsMesh {
     pub unit_shape: Shell,
     // pub shape_data: Box<dyn BrepShapeTrait>,
 }
-
 
 impl PdmsMesh {
 
@@ -169,6 +169,73 @@ impl PdmsMesh {
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes).ok()?;
         bincode::deserialize(&deflater.finish().ok()?).ok()
+    }
+
+    pub fn into_csg_mesh(&self,transform:&Transform) -> CsgMesh {
+        let mut triangles = Vec::new();
+        for chuck in self.indices.chunks(3) {
+            // let c = chuck.collect::<Vec<_>>();
+            let vertices_a: Option<&[f32; 3]> = self.vertices.get(chuck[0] as usize);
+            let vertices_b: Option<&[f32; 3]> = self.vertices.get(chuck[1] as usize);
+            let vertices_c: Option<&[f32; 3]> = self.vertices.get(chuck[2] as usize);
+            if vertices_a.is_none() || vertices_b.is_none() || vertices_c.is_none() { continue; }
+
+            let vertices_a = Vec3::from_array(*vertices_a.unwrap());
+            let vertices_b = Vec3::from_array(*vertices_b.unwrap());
+            let vertices_c = Vec3::from_array(*vertices_c.unwrap());
+
+            let pt_a = transform.transform_point(vertices_a);
+            let pt_b = transform.transform_point(vertices_b);
+            let pt_c = transform.transform_point(vertices_c);
+
+            triangles.push(csg::Triangle {
+                a: CsgPt3 { x: pt_a[0] as f64, y: pt_a[1] as f64, z: pt_a[2] as f64 },
+                b: CsgPt3 { x: pt_b[0] as f64, y: pt_b[1] as f64, z: pt_b[2] as f64 },
+                c: CsgPt3 { x: pt_c[0] as f64, y: pt_c[1] as f64, z: pt_c[2] as f64 },
+            })
+        }
+        csg::Mesh {
+            triangles,
+        }
+    }
+
+    pub fn from_scg_mesh(&self,csg_mesh:&CsgMesh,world_transform:&Transform) -> Self {
+        let rev_mat = world_transform.compute_matrix().inverse();
+        let mut mesh = PdmsMesh {
+            wf_indices: self.wf_indices.clone(),
+            wf_vertices: self.wf_vertices.clone(),
+            aabb: self.aabb.clone(),
+            unit_shape: self.unit_shape.clone(),
+            ..default()
+        };
+        let mut i = 0;
+        for tri in &csg_mesh.triangles {
+            mesh.indices.push(i);
+            mesh.indices.push(i + 1);
+            mesh.indices.push(i + 2);
+            let normal = tri.normal();
+            let normal = Vec3::from_array([normal.x as f32, normal.y as f32, normal.z as f32]);
+            let local_normal = rev_mat.transform_vector3(normal);
+            let normal = [local_normal.x,local_normal.y,local_normal.z];
+            mesh.normals.push(normal);
+            mesh.normals.push(normal);
+            mesh.normals.push(normal);
+
+            let pta = Vec3::from_array([tri.a.x as f32, tri.a.y as f32, tri.a.z as f32]);
+            let pta = rev_mat.transform_point3(pta);
+
+            let ptb = Vec3::from_array([tri.b.x as f32, tri.b.y as f32, tri.b.z as f32]);
+            let ptb = rev_mat.transform_point3(ptb);
+
+            let ptc = Vec3::from_array([tri.c.x as f32, tri.c.y as f32, tri.c.z as f32]);
+            let ptc = rev_mat.transform_point3(ptc);
+
+            mesh.vertices.push(pta.into());
+            mesh.vertices.push(ptb.into());
+            mesh.vertices.push(ptc.into());
+            i += 3;
+        }
+        mesh
     }
 }
 
