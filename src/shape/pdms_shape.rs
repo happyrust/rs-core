@@ -16,7 +16,7 @@ use bevy::render::mesh::Indices;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
-use glam::{Mat4, Vec3, Vec4};
+use glam::{Mat4, Vec3, vec3, Vec4};
 use lyon::path::polygon;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
@@ -83,7 +83,7 @@ pub struct PdmsInstanceMeshMap {
 }
 
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Default,Clone)]
+#[derive(Serialize, Deserialize, Component, Debug, Default, Clone)]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
@@ -97,11 +97,44 @@ pub struct PdmsMesh {
     // pub shape_data: Box<dyn BrepShapeTrait>,
 }
 
+
+
+#[test]
+fn test_project_to_plane() {
+    // Define a triangle's vertices in 3D space
+    let v1 = vec3(0.0, 0.0, 0.0);
+    let v2 = vec3(1.0, 0.0, 0.0);
+    let v3 = vec3(0.0, 1.0, 0.0);
+
+    // Define a projection plane in 3D space
+    let plane_origin = vec3(0.0, 0.0, 1.0);
+    let plane_normal = vec3(0.0, 0.0, 1.0); // the plane normal faces in the positive Z direction
+    let projection_matrix = Mat4::from_scale_rotation_translation(Vec3::ONE, glam::Quat::from_rotation_z(0.0),
+                                                                  -plane_origin);
+
+    // Project the triangle onto the 2D plane
+    let projected_v1 = projection_matrix.transform_point3(v1);
+    let projected_v2 = projection_matrix.transform_point3(v2);
+    let projected_v3 = projection_matrix.transform_point3(v3);
+
+    // Check if the triangle is valid, i.e., if its area is positive
+    let edge1 = projected_v2 - projected_v1;
+    let edge2 = projected_v3 - projected_v1;
+    let triangle_area = edge1.cross(edge2).length() * 0.5;
+    assert!(triangle_area > 0.0);
+}
+
+#[inline]
+fn project_point_onto_plane(point: Vec3, plane_normal: Vec3) -> Vec3 {
+    let proj = point.dot(plane_normal) / plane_normal.dot(plane_normal);
+    point - proj * plane_normal
+}
+
 impl PdmsMesh {
 
     //集成lod的功能
     #[inline]
-    pub fn get_tri_mesh(&self, trans: Mat4 ) -> TriMesh {
+    pub fn get_tri_mesh(&self, trans: Mat4) -> TriMesh {
         let mut points: Vec<Point<f32>> = vec![];
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
@@ -171,7 +204,7 @@ impl PdmsMesh {
         bincode::deserialize(&deflater.finish().ok()?).ok()
     }
 
-    pub fn into_csg_mesh(&self,transform:&Transform) -> CsgMesh {
+    pub fn into_csg_mesh(&self, transform: &Transform) -> CsgMesh {
         let mut triangles = Vec::new();
         for chuck in self.indices.chunks(3) {
             // let c = chuck.collect::<Vec<_>>();
@@ -199,7 +232,7 @@ impl PdmsMesh {
         }
     }
 
-    pub fn from_scg_mesh(&self,csg_mesh:&CsgMesh,world_transform:&Transform) -> Self {
+    pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
         let rev_mat = world_transform.compute_matrix().inverse();
         let mut mesh = PdmsMesh {
             wf_indices: self.wf_indices.clone(),
@@ -216,7 +249,7 @@ impl PdmsMesh {
             let normal = tri.normal();
             let normal = Vec3::from_array([normal.x as f32, normal.y as f32, normal.z as f32]);
             let local_normal = rev_mat.transform_vector3(normal);
-            let normal = [local_normal.x,local_normal.y,local_normal.z];
+            let normal = [local_normal.x, local_normal.y, local_normal.z];
             mesh.normals.push(normal);
             mesh.normals.push(normal);
             mesh.normals.push(normal);
@@ -361,7 +394,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
 
-            let polygon = brep.triangulation(tolerance).to_polygon();
+            let meshed_shape = brep.triangulation(tolerance);
+            let polygon = meshed_shape.to_polygon();
             if !polygon.positions().is_empty() {
                 let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
                 let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
@@ -372,26 +406,24 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     indices.push(i[1].pos as u32);
                     indices.push(i[2].pos as u32);
                 }
-
-
-                // let curves = brep
-                //     .edge_iter()
-                //     .map(|edge| edge.get_curve())
-                //     .collect::<Vec<_>>();
-                // let wf_vertices: Vec<[f32; 3]> = curves
-                //     .iter()
-                //     .flat_map(|poly| poly.iter())
-                //     .map(|p| p.cast().unwrap().into())
-                //     .collect();
+                let curves = meshed_shape
+                    .edge_iter()
+                    .map(|edge| edge.get_curve())
+                    .collect::<Vec<_>>();
+                let positions: Vec<[f32; 3]> = curves
+                    .iter()
+                    .flat_map(|poly| poly.iter())
+                    .map(|p| p.cast().unwrap().into())
+                    .collect();
                 let mut counter = 0;
-                // let wf_indices: Vec<u32> = curves
-                //     .iter()
-                //     .flat_map(|poly| {
-                //         let len = counter as u32;
-                //         counter += poly.len();
-                //         (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
-                //     })
-                //     .collect();
+                let strips: Vec<u32> = curves
+                    .iter()
+                    .flat_map(|poly| {
+                        let len = counter as u32;
+                        counter += poly.len();
+                        (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
+                    })
+                    .collect();
 
                 let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
                 // let shape_data : Box<dyn BrepShapeTrait> = self.__clone_box();
@@ -399,8 +431,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     indices,
                     vertices,
                     normals,
-                    wf_indices: default(),
-                    wf_vertices: default(),
+                    wf_indices: strips,
+                    wf_vertices: positions,
                     aabb: Some(aabb),
                     unit_shape: brep,
                     // shape_data

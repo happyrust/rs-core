@@ -13,6 +13,7 @@ use anyhow::anyhow;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
+use bevy::render::primitives::Plane;
 use bitflags::bitflags;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
@@ -1493,9 +1494,6 @@ pub enum PdmsGenericType {
     CE,
 }
 
-//todo important 压缩transform的数据，存储在一个数据集合里，去索引数据，精确到小数点4位数
-
-//todo 需要插入这一层的变换矩阵
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -1674,9 +1672,6 @@ pub struct CachedColliderShapeMgr {
 
 impl CachedColliderShapeMgr {
     pub fn get_collider(&self, refno: RefU64, inst_mgr: &PdmsMeshInstanceMgr, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
-        // if shapes_map.contains_key {
-        //
-        // }
         let mut target_colliders = vec![];
         let ele_geos_info_map = inst_mgr.get_instants_data(refno);
         let mut colliders = vec![];
@@ -1815,6 +1810,7 @@ impl CachedMeshesMgr {
     pub fn get_mesh(&self, mesh_hash: &u64) -> Option<Ref<u64, PdmsMesh>> {
         self.meshes.get(mesh_hash)
     }
+
 
     ///gen the mesh return the hash key, if not exist, try to create and insert, and return index
     pub fn gen_pdms_mesh(&self, m: Box<dyn BrepShapeTrait>, replace: bool) -> u64 {
@@ -2293,6 +2289,7 @@ pub enum UdaMajorType {
     Y,
     /// 多专业
     X,
+
     NULL,
 }
 
