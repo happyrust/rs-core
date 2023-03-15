@@ -1,23 +1,40 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize, Serializer};
 use serde::de::DeserializeOwned;
+use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProject {
+    #[serde(rename = "packageCode")]
+    pub package_code: String,
     #[serde(rename = "projectCode")]
     pub project_code: String,
     pub owner: String,
     pub instances: Vec<DataCenterInstance>,
 }
 
+impl DataCenterProject {
+    pub fn convert_package_code() -> String {
+        Uuid::new_v4().to_string()
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProjectWithRelations {
+    #[serde(rename = "packageCode")]
+    pub package_code: String,
     #[serde(rename = "projectCode")]
     pub project_code: String,
     pub owner: String,
     pub instances: Vec<DataCenterInstance>,
     pub relations: Vec<DataCenterRelations>,
+}
+
+impl DataCenterProjectWithRelations {
+    pub fn convert_package_code() -> String {
+        Uuid::new_v4().to_string()
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
