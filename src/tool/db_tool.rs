@@ -208,6 +208,15 @@ fn test_chinese_data() {
     dbg!(name);
 }
 
+#[test]
+fn test_db1_dehash() {
+    let hash = db1_dehash(688051936);
+    assert_eq!(":CNPEspco".to_string(),hash);
+    let hash = db1_dehash(3832756588);
+    assert_eq!(":3D_SJZT".to_string(),hash);
+    let hash = db1_dehash(642951949);
+    assert_eq!(":3D_SJRY".to_string(),hash);
+}
 
 
 
