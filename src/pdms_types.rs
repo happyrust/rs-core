@@ -2337,7 +2337,7 @@ impl UdaMajorType {
 
     pub fn from_chinese_description(input: &str) -> Self {
         match input {
-            "管道" => Self::T,
+            "管道" | "工艺" => Self::T,
             "电气" => Self::E,
             "设备" => Self::S,
             "通风" => Self::V,
@@ -2351,6 +2351,8 @@ impl UdaMajorType {
             "辐射监测" => Self::R,
             "建筑" => Self::A,
             "结构" => Self::J,
+            "BOP水" => Self::Z,
+            "BOP暖" => Self::N,
             "NPIC管道" => Self::P,
             "NPIC设备" => Self::B,
             "NPIC仪表" => Self::Y,

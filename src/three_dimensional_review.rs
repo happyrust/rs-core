@@ -11,5 +11,5 @@ pub struct ModelDataCrate {
     pub model_data: Vec<Vec<(String, String)>>,
     pub flow_data: (String, String),
     pub view_data: (String, String),
-    pub key_value: (String, String),
+    pub key_value:String,
 }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use glam::Vec3;
 use serde::{Serialize, Deserialize, Serializer};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
@@ -11,7 +12,7 @@ pub struct DataCenterProject {
     #[serde(rename = "projectCode")]
     pub project_code: String,
     pub owner: String,
-    pub instances: Vec<DataCenterInstance>,
+    pub instances: DataCenterInstance,
 }
 
 impl DataCenterProject {
@@ -41,8 +42,11 @@ impl DataCenterProjectWithRelations {
 pub struct DataCenterInstance {
     #[serde(rename = "objectModelCode")]
     pub object_model_code: String,
+    #[serde(rename = "projectCode")]
+    pub project_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
+    pub version: String,
     pub attributes: Vec<DataCenterAttr>,
 }
 
@@ -68,7 +72,7 @@ pub struct DataCenterRelations {
 pub struct DataCenterAttr {
     #[serde(rename = "attributeModelCode")]
     pub attribute_model_code: String,
-    pub value: AttrValue,
+    pub value: String,
     // pub value: T,
 }
 
@@ -82,6 +86,7 @@ pub enum AttrValue {
     AttrStrArray(Vec<String>),
     AttrIntArray(Vec<i32>),
     AttrFloatArray(Vec<f32>),
+    AttrVec3Array(Vec<Vec3>),
     AttrMap(HashMap<String, Vec<String>>),
     AttrMapFloatArray(HashMap<String, Vec<f32>>),
     AttrItemArray(Vec<ItemValue>),
@@ -90,6 +95,46 @@ pub enum AttrValue {
 impl Default for AttrValue {
     fn default() -> Self {
         AttrString("".to_string())
+    }
+}
+
+impl Into<String> for AttrValue {
+    fn into(self) -> String {
+        match self {
+            AttrString(a) => {
+                a
+            }
+            AttrFloat(a) => {
+                a.to_string()
+            }
+            AttrValue::AttrInt(a) => {
+                a.to_string()
+            }
+            AttrValue::AttrBool(a) => {
+                if a { "Y".to_string() } else { "N".to_string() }
+            }
+            AttrStrArray(a) => {
+                serde_json::to_string(&a).unwrap_or("[]".to_string())
+            }
+            AttrValue::AttrIntArray(a) => {
+                serde_json::to_string(&a).unwrap_or("[]".to_string())
+            }
+            AttrValue::AttrFloatArray(a) => {
+                serde_json::to_string(&a).unwrap_or("[]".to_string())
+            }
+            AttrValue::AttrVec3Array(a) => {
+                serde_json::to_string(&a).unwrap_or("[]".to_string())
+            }
+            AttrValue::AttrMap(a) => {
+                serde_json::to_string(&a).unwrap_or("{}".to_string())
+            }
+            AttrValue::AttrMapFloatArray(a) => {
+                serde_json::to_string(&a).unwrap_or("{}".to_string())
+            }
+            AttrValue::AttrItemArray(a) => {
+                serde_json::to_string(&a).unwrap_or("[]".to_string())
+            }
+        }
     }
 }
 
