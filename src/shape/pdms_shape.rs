@@ -330,12 +330,9 @@ impl PdmsMeshInstanceMgr {
     }
 }
 
-pub const TRI_TOL: f32 = 0.01;
-
-// serialize_trait_object!(BrepShapeTrait);
+pub const TRI_TOL: f32 = 0.03;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
-// #[typetag::serde(tag = "type")]
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
@@ -426,7 +423,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     .collect();
 
                 let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
-                // let shape_data : Box<dyn BrepShapeTrait> = self.__clone_box();
                 return Some(PdmsMesh {
                     indices,
                     vertices,

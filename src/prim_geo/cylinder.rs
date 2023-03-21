@@ -288,7 +288,6 @@ impl BrepShapeTrait for SCylinder {
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         if self.is_sscl() {
-            // Vec3::new(1.0, 1.0, self.phei.abs())
             Vec3::new(1.0, 1.0, 1.0)
         } else {
             Vec3::new(self.pdia, self.pdia, self.phei.abs())
