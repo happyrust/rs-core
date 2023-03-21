@@ -12,7 +12,7 @@ pub struct DataCenterProject {
     #[serde(rename = "projectCode")]
     pub project_code: String,
     pub owner: String,
-    pub instances: DataCenterInstance,
+    pub instances: Vec<DataCenterInstance>,
 }
 
 impl DataCenterProject {

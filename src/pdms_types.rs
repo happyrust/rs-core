@@ -332,6 +332,14 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn hash_with_str(&self, input: &str) -> u64 {
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        std::hash::Hash::hash(&self.0, &mut hash);
+        std::hash::Hash::hash(&input, &mut hash);
+        std::hash::Hasher::finish(&hash)
+    }
+
+    #[inline]
     pub fn from_arangodb_refno_str(refno_str: &str) -> Option<Self> {
         let mut refno_str = refno_str.split("/").collect::<Vec<_>>();
         if refno_str.len() <= 1 { return None; }
@@ -1071,7 +1079,7 @@ impl AttrMap {
             "CTOR" => Some(Box::new(CTorus::from(self))),
             "RTOR" => Some(Box::new(RTorus::from(self))),
             "PYRA" => Some(Box::new(Pyramid::from(self))),
-            "NCYL" => Some(Box::new(SCylinder::from(self))),
+            "NCYL" | "NSCY" => Some(Box::new(SCylinder::from(self))),
             _ => None,
         };
     }
@@ -1932,6 +1940,19 @@ impl EleTreeNode {
             name,
             owner,
             children_count,
+        }
+    }
+}
+
+impl Into<PdmsElement> for EleTreeNode {
+    fn into(self) -> PdmsElement {
+        PdmsElement {
+            refno: self.refno.to_refno_string(),
+            owner: self.owner,
+            name: self.name,
+            noun: self.noun,
+            version: 0,
+            children_count: self.children_count,
         }
     }
 }
