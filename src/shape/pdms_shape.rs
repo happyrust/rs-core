@@ -227,10 +227,7 @@ impl PdmsMesh {
                 c: CsgPt3 { x: pt_c[0] as f64, y: pt_c[1] as f64, z: pt_c[2] as f64 },
             })
         }
-        csg::Mesh {
-            triangles,
-            indices: vec![],
-        }
+        csg::Mesh::from_triangles(triangles)
     }
 
     pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {

@@ -1,6 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use axum_login::AuthUser;
 use axum_login::secrecy::SecretVec;
+use bevy::prelude::Resource;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Role {
@@ -8,7 +9,7 @@ pub enum Role {
     Proofreader,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize,Resource)]
 pub struct PdmsUser {
     pub user_name: String,
     pub user_major: String,
