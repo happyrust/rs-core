@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, World};
+use bevy::prelude::{Component, Resource, World};
 use serde_derive::{Deserialize, Serialize};
 use crate::pdms_types::{PdmsElement, PdmsNodeTrait, RefU64};
 
@@ -121,7 +121,7 @@ pub struct FileBytes {
     pub data: Vec<u8>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Resource,Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ShowMetadataManagerTableData {
     pub id: u64,
     pub old_code: String,

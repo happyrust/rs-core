@@ -229,6 +229,7 @@ impl PdmsMesh {
         }
         csg::Mesh {
             triangles,
+            indices: vec![],
         }
     }
 
