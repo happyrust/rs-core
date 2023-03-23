@@ -2003,7 +2003,7 @@ pub struct ChildrenNode {
     pub noun: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component)]
 pub struct PdmsElement {
     pub refno: String,
     pub owner: RefU64,
@@ -2030,6 +2030,34 @@ impl From<sled::IVec> for PdmsElement {
         bincode::deserialize(&d).unwrap()
     }
 }
+
+impl PdmsNodeTrait for PdmsElement {
+    #[inline]
+    fn get_refno(&self) -> RefU64 {
+        RefU64::from_refno_str(&self.refno).unwrap_or(RefU64(0))
+    }
+
+    #[inline]
+    fn get_name(&self) -> &str {
+        self.name.as_str()
+    }
+
+    #[inline]
+    fn get_noun_hash(&self) -> u32 {
+        db1_hash(&self.noun.to_uppercase())
+    }
+
+    #[inline]
+    fn get_type_name(&self) -> &str {
+        self.noun.as_str()
+    }
+
+    #[inline]
+    fn get_children_count(&self) -> usize {
+        self.children_count
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
