@@ -24,8 +24,8 @@ use truck_base::bounding_box::BoundingBox;
 use truck_base::cgmath64::{Point3, Vector3, Vector4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
+#[cfg(not(target_arch = "wasm32"))]
 use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
-
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Matrix, Point, Vector};
 use parry3d::shape::{TriMesh, TriMeshFlags};
@@ -204,6 +204,7 @@ impl PdmsMesh {
         bincode::deserialize(&deflater.finish().ok()?).ok()
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn into_csg_mesh(&self, transform: &Transform) -> CsgMesh {
         let mut triangles = Vec::new();
         for chuck in self.indices.chunks(3) {
@@ -230,6 +231,7 @@ impl PdmsMesh {
         csg::Mesh::from_triangles(triangles)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
         let rev_mat = world_transform.compute_matrix().inverse();
         let mut mesh = PdmsMesh {
@@ -328,12 +330,9 @@ impl PdmsMeshInstanceMgr {
     }
 }
 
-pub const TRI_TOL: f32 = 0.01;
-
-// serialize_trait_object!(BrepShapeTrait);
+pub const TRI_TOL: f32 = 0.03;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
-// #[typetag::serde(tag = "type")]
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
@@ -424,7 +423,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     .collect();
 
                 let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
-                // let shape_data : Box<dyn BrepShapeTrait> = self.__clone_box();
                 return Some(PdmsMesh {
                     indices,
                     vertices,

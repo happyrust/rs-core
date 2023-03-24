@@ -1,6 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
-use axum_login::AuthUser;
-use axum_login::secrecy::SecretVec;
+// use axum_login::AuthUser;
+// use axum_login::secrecy::SecretVec;
 use bevy::prelude::Resource;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -43,8 +43,8 @@ impl PdmsUser {
     }
 }
 
-impl AuthUser<Role> for PdmsUser {
-    fn get_id(&self) -> String { self.user_name.clone() }
-
-    fn get_password_hash(&self) -> SecretVec<u8> { SecretVec::new(vec![]) }
-}
+// impl AuthUser<Role> for PdmsUser {
+//     fn get_id(&self) -> String { self.user_name.clone() }
+//
+//     fn get_password_hash(&self) -> SecretVec<u8> { SecretVec::new(vec![]) }
+// }
