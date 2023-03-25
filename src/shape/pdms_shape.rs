@@ -162,8 +162,8 @@ impl PdmsMesh {
         mesh
     }
 
-    ///返回三角模型和线框模型 （tri_mesh, line_mesh, AABB）
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Mesh, Option<Aabb>) {
+    ///返回三角模型 （tri_mesh, AABB）
+    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Option<Aabb>) {
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
@@ -178,12 +178,12 @@ impl PdmsMesh {
             self.indices.clone()
         )));
 
-        let mut wire_mesh = Mesh::new(LineList);
-        wire_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.wf_vertices.clone());
-        wire_mesh.set_indices(Some(Indices::U32(
-            self.wf_indices.clone()
-        )));
-        (mesh, wire_mesh, self.aabb.clone())
+        // let mut wire_mesh = Mesh::new(LineList);
+        // wire_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.wf_vertices.clone());
+        // wire_mesh.set_indices(Some(Indices::U32(
+        //     self.wf_indices.clone()
+        // )));
+        (mesh, self.aabb.clone())
     }
 
     #[inline]

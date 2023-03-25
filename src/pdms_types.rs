@@ -1807,7 +1807,7 @@ impl CachedMeshesMgr {
     }
 
     /// 获得对应的bevy 三角模型和线框模型
-    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Mesh, Option<Aabb>)> {
+    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Option<Aabb>)> {
         if let Some(cached_msh) = self.get_mesh(mesh_hash) {
             let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
             return Some(bevy_mesh);

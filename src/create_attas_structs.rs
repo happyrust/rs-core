@@ -1,4 +1,5 @@
 use glam::Vec3;
+use bevy::ecs::system::Resource;
 use serde_derive::{Deserialize, Serialize};
 
 //显示需创建ATTA的refno及name
@@ -12,7 +13,7 @@ pub struct ATTAPosVec {
     pub data: Vec<ATTAPos>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Resource)]
 pub struct VirtualHoleGraphNode {
     pub _key: String, // node identifier
     pub intelld: i32, // node type
