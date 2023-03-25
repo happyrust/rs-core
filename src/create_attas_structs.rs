@@ -1,5 +1,5 @@
+use bevy::prelude::Resource;
 use glam::Vec3;
-use bevy::ecs::system::Resource;
 use serde_derive::{Deserialize, Serialize};
 
 //显示需创建ATTA的refno及name
@@ -13,7 +13,7 @@ pub struct ATTAPosVec {
     pub data: Vec<ATTAPos>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Resource)]
+#[derive(Resource,Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualHoleGraphNode {
     pub _key: String, // node identifier
     pub intelld: i32, // node type
@@ -55,7 +55,7 @@ pub struct VirtualHoleGraphNode {
 // intelld, code, and relyitem fields. The key is used to store
 // the node in the graph and to search for the node in the graph.
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Resource,Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualEmbedGraphNode {
     pub _key: String, // the name of the node
     pub intelld: i32, // the intelligence of the node
