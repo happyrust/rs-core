@@ -292,7 +292,7 @@ impl BrepShapeTrait for SweepSolid {
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
                     let mut face_s = builder::try_attach_plane(&[wire]).unwrap();
-                    if let Surface::Plane(plane) = face_s.get_surface() {
+                    if let Surface::Plane(plane) = face_s.surface() {
                         let is_rev_face = (plane.normal().y * arc.axis.z as f64) < 0.0;
                         if is_rev_face {
                             dbg!("Face inveted");
@@ -332,7 +332,7 @@ impl BrepShapeTrait for SweepSolid {
                     faces.push(face_s.clone());
                     faces.push(face_e.inverse());
 
-                    if let Surface::Plane(plane) = face_s.get_surface() {
+                    if let Surface::Plane(plane) = face_s.surface() {
                         // dbg!(plane.normal());
                         // dbg!(&l);
                         // dbg!(self.extrude_dir);

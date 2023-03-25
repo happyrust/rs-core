@@ -95,13 +95,13 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
         let fradius = fradius_vec[i];
         let pt = pts[i].point3_without_z();
         //跳过相同的点
-        if let Some(last_pt) = verts.last().map(|x: &Vertex| x.get_point()) {
+        if let Some(last_pt) = verts.last().map(|x: &Vertex| x.point()) {
             if abs_diff_eq!(pt.distance(last_pt), 0.0) {
                 // dbg!(pt);
                 continue;
             }
             if i == ll - 1{
-                if abs_diff_eq!(pt.distance(verts[0].get_point()), 0.0) {
+                if abs_diff_eq!(pt.distance(verts[0].point()), 0.0) {
                     // dbg!(pt);
                     continue;
                 }
@@ -146,7 +146,7 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
     if !verts.is_empty() {
         let s_vert = verts.first().unwrap();
         let e_vert = verts.last().unwrap();
-        let l = s_vert.get_point().distance(e_vert.get_point());
+        let l = s_vert.point().distance(e_vert.point());
         if l < 0.001 {
             let s = verts.pop();
             // dbg!(&s);
@@ -158,10 +158,10 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
         // dbg!(&circle_indexs);
         while i <= v_len {
             let cur_vert = &verts[i % v_len];
-            if pre_vert.get_point().distance(cur_vert.get_point()) > 1.0 {
+            if pre_vert.point().distance(cur_vert.point()) > 1.0 {
                 if circle_indexs.len() > 0 && i == circle_indexs[0] {
                     let next_vert = &verts[(i + 1) % v_len];
-                    wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.get_point()));
+                    wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.point()));
                     pre_vert = next_vert.clone();
                     circle_indexs.remove(0);
                     i += 1;

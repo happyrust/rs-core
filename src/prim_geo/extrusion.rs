@@ -61,7 +61,7 @@ impl BrepShapeTrait for Extrusion {
             wire = gen_wire(&self.verts, &self.fradius_vec).ok()?;
         };
         if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
-            if let Surface::Plane(plane) = face.get_surface() {
+            if let Surface::Plane(plane) = face.surface() {
                 let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
                 if plane.normal().dot(extrude_dir) < 0.0 {
                     face = face.inverse();

@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use truck_base::cgmath64::Vector3;
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{builder, Shell, Solid};
-use truck_polymesh::stl::IntoSTLIterator;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use serde::{Serialize,Deserialize};

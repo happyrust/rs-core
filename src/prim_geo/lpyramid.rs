@@ -133,7 +133,7 @@ impl BrepShapeTrait for LPyramid {
         let n = h_vector.normalize();
         // dbg!(&n);
         if let Ok(f) = try_attach_plane(&[Wire::from_iter(&ets)]) {
-            if let Surface::Plane(plane) = f.get_surface() {
+            if let Surface::Plane(plane) = f.surface() {
                 // dbg!(&plane.normal());
                 if plane.normal().dot(h_vector.normalize()) < 0.0 {
                     need_inverse = true;

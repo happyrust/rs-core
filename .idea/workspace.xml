@@ -17,6 +17,14 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/loft.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/loft.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -312,13 +320,7 @@
       <workItem from="1678800614822" duration="7506000" />
       <workItem from="1679370873749" duration="1257000" />
       <workItem from="1679557117859" duration="61000" />
-    </task>
-    <task id="LOCAL-00117" summary="update">
-      <created>1664016549560</created>
-      <option name="number" value="00117" />
-      <option name="presentableId" value="LOCAL-00117" />
-      <option name="project" value="LOCAL" />
-      <updated>1664016549560</updated>
+      <workItem from="1679724762901" duration="1527000" />
     </task>
     <task id="LOCAL-00118" summary="update">
       <created>1664016637019</created>
@@ -656,7 +658,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679370877931</updated>
     </task>
-    <option name="localTasksCounter" value="166" />
+    <task id="LOCAL-00166" summary="update">
+      <created>1679724766769</created>
+      <option name="number" value="00166" />
+      <option name="presentableId" value="LOCAL-00166" />
+      <option name="project" value="LOCAL" />
+      <updated>1679724766770</updated>
+    </task>
+    <option name="localTasksCounter" value="167" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

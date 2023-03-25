@@ -65,7 +65,7 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
                     let bdb = curve.roughly_bounding_box();
                     vec![*bdb.max(), *bdb.min()].into_iter().collect()
                 }
-                Curve::NURBSCurve(curve) => curve.roughly_bounding_box(),
+                Curve::NurbsCurve(curve) => curve.roughly_bounding_box(),
                 Curve::IntersectionCurve(_) => BoundingBox::new(),
             };
         });
@@ -405,7 +405,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 }
                 let curves = meshed_shape
                     .edge_iter()
-                    .map(|edge| edge.get_curve())
+                    .map(|edge| edge.curve())
                     .collect::<Vec<_>>();
                 let positions: Vec<[f32; 3]> = curves
                     .iter()

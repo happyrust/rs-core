@@ -60,7 +60,7 @@ impl BrepShapeTrait for Revolution {
 
         let wire = gen_wire( &self.verts, &self.fradius_vec).unwrap();
         if let Ok(mut face) = builder::try_attach_plane(&[wire]){
-            if let Surface::Plane(plane) = face.get_surface(){
+            if let Surface::Plane(plane) = face.surface(){
                 let mut rot_dir = self.rot_dir.normalize().vector3();
                 let rot_pt = self.rot_pt.point3();
                 let mut angle = self.angle.to_radians() as f64;
