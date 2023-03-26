@@ -93,6 +93,7 @@ impl BrepShapeTrait for Sphere {
             indices,
             vertices: points,
             normals,
+            wire_vertices: vec![],
             wf_indices: vec![],
             wf_vertices: vec![],
             aabb: Some(Aabb::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))),

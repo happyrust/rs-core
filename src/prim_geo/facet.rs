@@ -122,6 +122,7 @@ impl BrepShapeTrait for Facet {
             indices,
             vertices,
             normals,
+            wire_vertices: vec![],
             wf_indices: vec![],
             wf_vertices: vec![],
             aabb: Some(aabb),

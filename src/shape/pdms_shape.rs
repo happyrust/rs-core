@@ -88,6 +88,8 @@ pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
+
+    pub wire_vertices: Vec<Vec<[f32; 3]>>,
     pub wf_indices: Vec<u32>,
     //wireframe indices
     pub wf_vertices: Vec<[f32; 3]>,
@@ -96,7 +98,6 @@ pub struct PdmsMesh {
     pub unit_shape: Shell,
     // pub shape_data: Box<dyn BrepShapeTrait>,
 }
-
 
 
 #[test]
@@ -131,7 +132,6 @@ fn project_point_onto_plane(point: Vec3, plane_normal: Vec3) -> Vec3 {
 }
 
 impl PdmsMesh {
-
     //集成lod的功能
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> TriMesh {
@@ -330,7 +330,7 @@ impl PdmsMeshInstanceMgr {
     }
 }
 
-pub const TRI_TOL: f32 = 0.03;
+pub const TRI_TOL: f32 = 0.01;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
@@ -393,47 +393,47 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
-            if !polygon.positions().is_empty() {
-                let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
-                let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
-                let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
-                let mut indices = vec![];
-                for i in polygon.tri_faces() {
-                    indices.push(i[0].pos as u32);
-                    indices.push(i[1].pos as u32);
-                    indices.push(i[2].pos as u32);
-                }
-                let curves = meshed_shape
-                    .edge_iter()
-                    .map(|edge| edge.curve())
-                    .collect::<Vec<_>>();
-                let positions: Vec<[f32; 3]> = curves
-                    .iter()
-                    .flat_map(|poly| poly.iter())
-                    .map(|p| p.cast().unwrap().into())
-                    .collect();
-                let mut counter = 0;
-                let strips: Vec<u32> = curves
-                    .iter()
-                    .flat_map(|poly| {
-                        let len = counter as u32;
-                        counter += poly.len();
-                        (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
-                    })
-                    .collect();
-
-                let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
-                return Some(PdmsMesh {
-                    indices,
-                    vertices,
-                    normals,
-                    wf_indices: strips,
-                    wf_vertices: positions,
-                    aabb: Some(aabb),
-                    unit_shape: brep,
-                    // shape_data
-                });
+            if polygon.positions().is_empty() { return None; }
+            let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
+            let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
+            let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
+            let mut indices = vec![];
+            for i in polygon.tri_faces() {
+                indices.push(i[0].pos as u32);
+                indices.push(i[1].pos as u32);
+                indices.push(i[2].pos as u32);
             }
+            let curves = meshed_shape
+                .edge_iter()
+                .map(|edge| edge.curve())
+                .collect::<Vec<_>>();
+            let wire_vertices: Vec<Vec<[f32; 3]>> = curves
+                .iter()
+                .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
+                // .map(|p| p.cast().unwrap().into())
+                .collect();
+            // let mut counter = 0;
+            // let strips: Vec<u32> = curves
+            //     .iter()
+            //     .flat_map(|poly| {
+            //         let len = counter as u32;
+            //         counter += poly.len();
+            //         (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
+            //     })
+            //     .collect();
+
+            // let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
+            return Some(PdmsMesh {
+                indices,
+                vertices,
+                normals,
+                wire_vertices: vec![],
+                wf_indices: vec![],
+                wf_vertices: vec![],
+                aabb: Some(aabb),
+                unit_shape: brep,
+                // shape_data
+            });
         }
         None
     }
