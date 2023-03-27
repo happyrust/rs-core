@@ -4,7 +4,7 @@ use std::ops::Deref;
 use dashmap::{DashMap, DashSet};
 use dashmap::mapref::one::Ref;
 use smol_str::SmolStr;
-use crate::pdms_types::{AttrInfo, AttrMap, DbAttributeType, PdmsElementVec, RefU64};
+use crate::pdms_types::{AttrInfo, AttrMap, CachedMeshesMgr, DbAttributeType, PdmsElementVec, RefU64, ShapeInstancesMgr};
 use crate::tool::db_tool::db1_dehash;
 use serde::{Serialize, Deserialize};
 use itertools::Itertools;
@@ -271,4 +271,10 @@ impl AttInfoMap {
     pub fn get_val_type_of_att(&self, att_name: &str) -> Option<Ref<String, DbAttributeType>> {
         self.att_name_type_map.get(att_name)
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct PdmsInstanceMeshMgr {
+    pub inst_mgr: ShapeInstancesMgr,
+    pub mesh_mgr: CachedMeshesMgr,
 }
