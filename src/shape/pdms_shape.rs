@@ -391,6 +391,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
 
+            // dbg!(brep.edge_iter().count());
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
@@ -412,6 +413,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
                 // .map(|p| p.cast().unwrap().into())
                 .collect();
+            // dbg!(curves.len());
+            dbg!(wire_vertices.len());
             // let mut counter = 0;
             // let strips: Vec<u32> = curves
             //     .iter()
@@ -427,7 +430,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 indices,
                 vertices,
                 normals,
-                wire_vertices: vec![],
+                wire_vertices,
                 wf_indices: vec![],
                 wf_vertices: vec![],
                 aabb: Some(aabb),
