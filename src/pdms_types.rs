@@ -1441,8 +1441,8 @@ impl LevelShapeMgr {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct PdmsMeshInstanceMgr {
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Resource )]
+pub struct CachedInstanceMgr {
     pub inst_mgr: ShapeInstancesMgr,
     pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 }
@@ -1679,7 +1679,7 @@ pub struct CachedColliderShapeMgr {
 }
 
 impl CachedColliderShapeMgr {
-    pub fn get_collider(&self, refno: RefU64, inst_mgr: &PdmsMeshInstanceMgr, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
+    pub fn get_collider(&self, refno: RefU64, inst_mgr: &CachedInstanceMgr, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
         let mut target_colliders = vec![];
         let ele_geos_info_map = inst_mgr.get_instants_data(refno);
         let mut colliders = vec![];

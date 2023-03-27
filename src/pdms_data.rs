@@ -4,7 +4,7 @@ use std::ops::Deref;
 use dashmap::{DashMap, DashSet};
 use dashmap::mapref::one::Ref;
 use smol_str::SmolStr;
-use crate::pdms_types::{AttrInfo, AttrMap, CachedMeshesMgr, DbAttributeType, PdmsElementVec, RefU64, ShapeInstancesMgr};
+use crate::pdms_types::*;
 use crate::tool::db_tool::db1_dehash;
 use serde::{Serialize, Deserialize};
 use itertools::Itertools;

@@ -17,6 +17,8 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="add wire vertices">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -317,14 +319,8 @@
       <workItem from="1679835847831" duration="372000" />
       <workItem from="1679842824376" duration="238000" />
       <workItem from="1679843234404" duration="1345000" />
-      <workItem from="1679883220011" duration="3000" />
-    </task>
-    <task id="LOCAL-00120" summary="修改wasm编译">
-      <created>1664175411416</created>
-      <option name="number" value="00120" />
-      <option name="presentableId" value="LOCAL-00120" />
-      <option name="project" value="LOCAL" />
-      <updated>1664175411416</updated>
+      <workItem from="1679883220011" duration="645000" />
+      <workItem from="1679922156790" duration="2246000" />
     </task>
     <task id="LOCAL-00121" summary="remove typetag crate, not support wasm">
       <created>1664175455345</created>
@@ -662,7 +658,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679842876095</updated>
     </task>
-    <option name="localTasksCounter" value="169" />
+    <task id="LOCAL-00169" summary="add wire vertices">
+      <created>1679883246870</created>
+      <option name="number" value="00169" />
+      <option name="presentableId" value="LOCAL-00169" />
+      <option name="project" value="LOCAL" />
+      <updated>1679883246871</updated>
+    </task>
+    <option name="localTasksCounter" value="170" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
