@@ -7,6 +7,8 @@ use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use serde::{Serialize,Deserialize};
 use crate::consts::BOX_HASH;
+use crate::parsed_data::CateBoxParam;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
 // use crate::prim_geo::helper::quad_indices;
@@ -66,6 +68,11 @@ impl BrepShapeTrait for SBox {
     fn get_scaled_vec3(&self) -> Vec3 {
         self.size
     }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(PdmsGeoParam::PrimBox(self.clone()))
+    }
+
 }
 
 

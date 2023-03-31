@@ -14,6 +14,7 @@ use nalgebra::Point3;
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use serde::{Serialize,Deserialize};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
@@ -121,6 +122,12 @@ impl BrepShapeTrait for Sphere {
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::splat(self.radius)
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimSphere(self.clone())
+        )
     }
 }
 

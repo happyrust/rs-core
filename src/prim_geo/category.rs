@@ -9,7 +9,7 @@ use bevy::prelude::Transform;
 use id_tree::NodeId;
 use smallvec::SmallVec;
 
-use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
 use crate::pdms_types::RefU64;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::SCylinder;
@@ -25,22 +25,23 @@ use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::tubing::PdmsTubing;
 use crate::shape::pdms_shape::BrepShapeTrait;
 
-#[derive(Debug,Clone)]
-pub enum ShapeErr{
+#[derive(Debug, Clone)]
+pub enum ShapeErr {
     //tubi的方向不一致
     TubiDirErr,
     Unknown,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct CateBrepShape {
     pub refno: RefU64,
     pub brep_shape: Box<dyn BrepShapeTrait>,
     pub transform: Transform,
     pub visible: bool,
     pub is_tubi: bool,
-    pub shape_err: Option<ShapeErr>,  //有可能shape有问题
-    pub pts: SmallVec<[i32; 3]>,  //点集信息
+    pub shape_err: Option<ShapeErr>,
+    //点集信息
+    pub pts: SmallVec<[i32; 3]>,
 }
 
 
@@ -87,6 +88,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
         CateGeoParam::Torus(d) => {
@@ -112,6 +114,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     is_tubi: false,
                     shape_err: None,
                     pts,
+
                 });
             }
         }
@@ -141,6 +144,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     is_tubi: false,
                     shape_err: None,
                     pts,
+
                 });
             }
         }
@@ -161,6 +165,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts: Default::default(),
+
             });
         }
         CateGeoParam::Dish(d) => {
@@ -190,6 +195,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
         CateGeoParam::Snout(d) => {
@@ -248,6 +254,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
         CateGeoParam::SCylinder(d) => {
@@ -282,6 +289,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
         CateGeoParam::LCylinder(d) => {
@@ -316,6 +324,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
 
@@ -367,6 +376,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
 
@@ -390,6 +400,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
 
@@ -436,6 +447,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
 
@@ -490,6 +502,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
+
             });
         }
         _ => {}

@@ -11,6 +11,7 @@ use bevy::reflect::Reflect;
 use nom::Parser;
 use serde::{Deserialize, Serialize};
 use truck_topology::Face;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CYLINDER_GEO_HASH;
@@ -18,7 +19,8 @@ use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
-#[derive(Component, Debug, /*Inspectable,*/ Clone, Reflect, Serialize, Deserialize)]
+
+#[derive(Component, Debug,  Clone, Reflect, Serialize, Deserialize)]
 // #[reflect(Component)]
 pub struct LCylinder {
     pub paxi_expr: String,
@@ -34,6 +36,7 @@ pub struct LCylinder {
     //diameter
     pub negative: bool,
 }
+
 
 
 impl Default for LCylinder {
@@ -93,6 +96,7 @@ impl BrepShapeTrait for LCylinder {
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi))
     }
+
 }
 
 impl From<&AttrMap> for LCylinder {
@@ -255,11 +259,6 @@ impl BrepShapeTrait for SCylinder {
             hasher.finish()
         } else {
             CYLINDER_GEO_HASH
-            // if self.phei < 0.0 {
-            //     102u64
-            // } else {
-            //     2u64 //代表cylinder
-            // }
         }
     }
 
@@ -292,6 +291,12 @@ impl BrepShapeTrait for SCylinder {
         } else {
             Vec3::new(self.pdia, self.pdia, self.phei.abs())
         }
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimSCylinder(self.clone())
+        )
     }
 }
 

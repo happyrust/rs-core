@@ -32,6 +32,7 @@ use parry3d::shape::{TriMesh, TriMeshFlags};
 use dyn_clone::DynClone;
 use nalgebra::Matrix4;
 use crate::pdms_types::*;
+use crate::prim_geo::category::CateBrepShape;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
 use crate::prim_geo::dish::Dish;
@@ -41,6 +42,8 @@ use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
+
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -275,21 +278,9 @@ impl PdmsMesh {
 
 impl CachedInstanceMgr {
     #[inline]
-    pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, EleGeosInfo>> {
-        let mut results = DashMap::new();
+    pub fn get_inst_data(&self, refno: RefU64) -> Ref<RefU64, EleGeosInfo> {
         let inst_map = &self.inst_mgr.inst_map;
-        if self.level_shape_mgr.contains_key(&refno) {
-            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter() {
-                if inst_map.contains_key(v) {
-                    results.insert(v.clone(), inst_map.get(v).unwrap());
-                }
-            }
-        } else {
-            if inst_map.contains_key(&refno) {
-                results.insert(refno.clone(), inst_map.get(&refno).unwrap());
-            }
-        }
-        results
+        inst_map.get(&refno).unwrap()
     }
 
     pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
@@ -333,9 +324,12 @@ impl CachedInstanceMgr {
 pub const TRI_TOL: f32 = 0.01;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
+///brep形状trait
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
+    //拷贝函数
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
+    ///生成shell
     fn gen_brep_shell(&self) -> Option<Shell> {
         return None;
     }
@@ -345,26 +339,24 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         0
     }
 
-    //计算原始的hash值
-    // fn hash_mesh_params(&self) -> u64 {
-    //     let bytes = bincode::serialize(self).unwrap();
-    //     let mut hasher = DefaultHasher::default();
-    //     bytes.hash(&mut hasher);
-    //     hasher.finish()
-    // }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait>;
 
-    //生成对应的单位长度的模型，比如Dish，就是以R为1的情况生成模型
+    ///生成对应的单位长度的模型，比如Dish，就是以R为1的情况生成模型
+    /// box
+    /// cylinder
+    /// sphere
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
         None
     }
 
+    ///获得缩放向量
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::ONE
     }
 
+    ///获得变换矩阵
     #[inline]
     fn get_trans(&self) -> Transform {
         Transform {
@@ -374,6 +366,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         }
     }
 
+    ///生成mesh
     fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
@@ -411,21 +404,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             let wire_vertices: Vec<Vec<[f32; 3]>> = curves
                 .iter()
                 .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
-                // .map(|p| p.cast().unwrap().into())
                 .collect();
-            // dbg!(curves.len());
-            dbg!(wire_vertices.len());
-            // let mut counter = 0;
-            // let strips: Vec<u32> = curves
-            //     .iter()
-            //     .flat_map(|poly| {
-            //         let len = counter as u32;
-            //         counter += poly.len();
-            //         (1..poly.len()).flat_map(move |i| vec![len + i as u32 - 1, len + i as u32])
-            //     })
-            //     .collect();
-
-            // let shape_data: Box<dyn BrepShapeTrait> = self.clone_dyn();
             return Some(PdmsMesh {
                 indices,
                 vertices,
@@ -435,9 +414,12 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 wf_vertices: vec![],
                 aabb: Some(aabb),
                 unit_shape: brep,
-                // shape_data
             });
         }
+        None
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         None
     }
 }

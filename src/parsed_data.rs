@@ -5,39 +5,41 @@ use dashmap::DashMap;
 use glam::{Vec2, Vec3};
 use serde_derive::{Deserialize, Serialize};
 use smol_str::SmolStr;
-use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
 use crate::pdms_types::RefU64;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignPipeRequest {
     // pub name: String,
 }
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignComponentRequest {
-    
     pub name: String,
 }
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignBranRequest {
-    
     pub name: String,
 }
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct RefnosRequest {
-    
     pub name: String,
 }
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Refnos {
-    
     pub refnos: Vec<String>,
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct DesignPipe {
     pub name: String,
     pub refno: String,
     pub brans: Vec<DesignBran>,
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct DesignBran {
     pub name: String,
@@ -61,12 +63,15 @@ pub struct GmseParamData {
     pub refno: RefU64,
     /// SCYL  LSNO  SCTO  SDSH  SBOX
     pub type_name: SmolStr,
-    pub radius: f32, //desi 里的radius
-    pub angle: f32, //desi 里的angle
+    pub radius: f32,
+    //desi 里的radius
+    pub angle: f32,
+    //desi 里的angle
     ///desi 里的height
     pub height: f32,
     pub pwid: f32,
-    pub pang: f32,  //元件库里的angle
+    pub pang: f32,
+    //元件库里的angle
     /// 顺序 pdiameter pbdiameter ptdiameter, 先bottom, 后top
     pub diameters: Vec<f32>,
     /// 顺序 pdistance pbdistance ptdistance, 先bottom, 后top
@@ -97,7 +102,6 @@ pub struct GmseParamData {
 }
 
 
-
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateAxisParam {
     pub refno: RefU64,
@@ -111,14 +115,29 @@ pub struct CateAxisParam {
 
 pub mod geo_params_data {
     use serde_derive::{Deserialize, Serialize};
-    #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+    use crate::prim_geo::ctorus::CTorus;
+    use crate::prim_geo::cylinder::*;
+    use crate::prim_geo::dish::Dish;
+    use crate::prim_geo::extrusion::Extrusion;
+    use crate::prim_geo::lpyramid::LPyramid;
+    use crate::prim_geo::pyramid::Pyramid;
+    use crate::prim_geo::revolution::Revolution;
+    use crate::prim_geo::rtorus::RTorus;
+    use crate::prim_geo::sbox::SBox;
+    use crate::prim_geo::snout::LSnout;
+    use crate::prim_geo::sphere::Sphere;
+
+
+    #[derive(Clone, Serialize, Deserialize, Debug, Default)]
     pub enum CateGeoParam {
+        #[default]
+        Unknown,
+        //元件库的几何体几何存储
         Boxi(super::CateBoxImpliedParam),
         Box(super::CateBoxParam),
         Cone(super::CateConeParam),
         LCylinder(super::CateLCylinderParam),
         SCylinder(super::CateSCylinderParam),
-
         Dish(super::CateDishParam),
         Extrusion(super::CateExtrusionParam),
         Profile(super::CateProfileParam),
@@ -133,11 +152,29 @@ pub mod geo_params_data {
         Torus(super::CateTorusParam),
         TubeImplied(super::CateTubeImpliedParam),
         SVER(super::CateSverParam),
+    }
+
+    #[derive(Clone, Serialize, Deserialize, Debug, Default)]
+    pub enum PdmsGeoParam {
+        #[default]
         Unknown,
+        //基本体的几何体存储
+        PrimBox(SBox),
+        PrimLSnout(LSnout),
+        PrimDish(Dish),
+        PrimSphere(Sphere),
+        PrimCTorus(CTorus),
+        PrimRTorus(RTorus),
+        PrimPyramid(Pyramid),
+        PrimSCylinder(SCylinder),
+        PrimLCylinder(LCylinder),
+        PrimRevolution(Revolution),
+        PrimExtrusion(Extrusion),
+
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize,  Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateBoxImpliedParam {
     pub axis: Option<CateAxisParam>,
     pub x_length: f32,
@@ -146,7 +183,7 @@ pub struct CateBoxImpliedParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateBoxParam {
     pub size: Vec<f32>,
     pub offset: Vec<f32>,
@@ -155,7 +192,7 @@ pub struct CateBoxParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateConeParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
@@ -165,7 +202,7 @@ pub struct CateConeParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateSCylinderParam {
     pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
@@ -176,7 +213,7 @@ pub struct CateSCylinderParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize,Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateLCylinderParam {
     pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
@@ -188,7 +225,7 @@ pub struct CateLCylinderParam {
 }
 
 ///拉伸的基本体
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateExtrusionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -196,7 +233,8 @@ pub struct CateExtrusionParam {
     pub x: f32,
     pub y: f32,
     pub z: f32,
-    pub verts: Vec<Vec3>,  //2D points
+    pub verts: Vec<Vec3>,
+    //2D points
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     pub refno: RefU64,
@@ -204,7 +242,7 @@ pub struct CateExtrusionParam {
 }
 
 //structural annulus
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct SannData {
     pub xy: Vec2,
     pub dxy: Vec2,
@@ -219,7 +257,7 @@ pub struct SannData {
     pub plin_axis: Vec3,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct SProfileData {
     pub verts: Vec<Vec3>,
     pub frads: Vec<f32>,
@@ -229,15 +267,16 @@ pub struct SProfileData {
 }
 
 //截面的处理，还需要旋转自身的平面
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-pub enum CateProfileParam{
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+pub enum CateProfileParam {
+    #[default]
+    None,
     SPRO(SProfileData),
     SANN(SannData),
-    None,
 }
 
 
-#[derive(Clone, PartialEq, Serialize, Deserialize,Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateDishParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
@@ -249,21 +288,21 @@ pub struct CateDishParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize,Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateLineParam {
-    
     pub pa: ::core::option::Option<CateAxisParam>,
-    
+
     pub pb: ::core::option::Option<CateAxisParam>,
-    
+
     pub diameter: f64,
-    
+
     pub centre_line_flag: bool,
-    
+
     pub tube_flag: bool,
     pub refno: RefU64,
 }
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CatePyramidParam {
     pub refno: RefU64,
     pub pa: Option<CateAxisParam>,
@@ -280,8 +319,9 @@ pub struct CatePyramidParam {
     pub centre_line_flag: bool,
     pub tube_flag: bool,
 }
+
 /// 截面为矩形的弯管
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateRectTorusParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -292,7 +332,7 @@ pub struct CateRectTorusParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateRevolutionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -307,7 +347,7 @@ pub struct CateRevolutionParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateSplineParam {
     pub start_pt: Vec<f32>,
     pub end_pt: Vec<f32>,
@@ -317,7 +357,7 @@ pub struct CateSplineParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateSlopeBottomCylinderParam {
     pub axis: Option<CateAxisParam>,
     pub height: f32,
@@ -331,8 +371,9 @@ pub struct CateSlopeBottomCylinderParam {
     pub tube_flag: bool,
     pub refno: RefU64,
 }
+
 /// 圆台 或 管嘴
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateSnoutParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -345,8 +386,9 @@ pub struct CateSnoutParam {
     pub tube_flag: bool,
     pub refno: RefU64,
 }
+
 /// 球
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateSphereParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_center: f32,
@@ -355,8 +397,9 @@ pub struct CateSphereParam {
     pub tube_flag: bool,
     pub refno: RefU64,
 }
+
 ///元件库里的torus参数
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateTorusParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -366,7 +409,7 @@ pub struct CateTorusParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateTubeImpliedParam {
     pub axis: Option<CateAxisParam>,
     pub diameter: f32,
@@ -374,14 +417,13 @@ pub struct CateTubeImpliedParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-pub struct CateSverParam{
-    
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+pub struct CateSverParam {
     pub x: f64,
-    
+
     pub y: f64,
-    
-    pub radius:f64,
+
+    pub radius: f64,
 }
 
 

@@ -274,7 +274,7 @@ impl AttInfoMap {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-pub struct PdmsInstanceMeshMgr {
+pub struct PdmsInstanceMeshData {
     pub inst_mgr: ShapeInstancesMgr,
     pub mesh_mgr: CachedMeshesMgr,
 }

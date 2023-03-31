@@ -30,6 +30,7 @@ use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use truck_modeling::Shell;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::{BHashMap, prim_geo};
 #[cfg(not(target_arch = "wasm32"))]
@@ -155,7 +156,6 @@ pub mod string {
 //把Refno当作u64
 #[derive(Hash, Serialize, Deserialize, Clone, Copy, Default, Component, Eq, PartialEq)]
 pub struct RefU64(
-    // #[serde(with = "string")]
     pub u64
 );
 
@@ -278,6 +278,7 @@ impl RefU64 {
         refno_str.to_string()
     }
 
+    ///转换成数据库允许的字符串
     #[inline]
     pub fn to_refno_normal_string(&self) -> String {
         self.to_refno_string().replace("/", "_")
@@ -1441,7 +1442,7 @@ impl LevelShapeMgr {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Resource )]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Resource)]
 pub struct CachedInstanceMgr {
     pub inst_mgr: ShapeInstancesMgr,
     pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
@@ -1565,6 +1566,7 @@ impl EleGeosInfo {
                 transform: d.transform,
                 visible: d.visible,
                 is_tubi: d.is_tubi,
+                geo_param: d.geo_param,
             });
         }
         EleGeosInfoJson {
@@ -1578,8 +1580,8 @@ impl EleGeosInfo {
             flow_pt_indexs: self.flow_pt_indexs,
         }
     }
+
     pub fn from_json_type(json: EleGeosInfoJson) -> Self {
-        // let json: EleGeosInfoJson = serde_json::from_str(&json).unwrap_or_default();
         let data = json.data;
         let mut origin_data = vec![];
         for a in data {
@@ -1589,6 +1591,7 @@ impl EleGeosInfo {
                 pts: a.pts,
                 aabb: a.aabb,
                 transform: a.transform,
+                geo_param: a.geo_param,
                 visible: a.visible,
                 is_tubi: a.is_tubi,
             });
@@ -1635,9 +1638,11 @@ impl Deref for EleGeosInfo {
 }
 
 
+/// instane数据集合管理
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
-    pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
+    /// 保存所有的instance数据
+    pub inst_map: DashMap<RefU64, EleGeosInfo>,
 }
 
 
@@ -1681,57 +1686,55 @@ pub struct CachedColliderShapeMgr {
 impl CachedColliderShapeMgr {
     pub fn get_collider(&self, refno: RefU64, inst_mgr: &CachedInstanceMgr, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
         let mut target_colliders = vec![];
-        let ele_geos_info_map = inst_mgr.get_instants_data(refno);
+        let ele_geos_info = inst_mgr.get_inst_data(refno);
         let mut colliders = vec![];
-        for ele_geos_info in &ele_geos_info_map {
-            let tr = &ele_geos_info.world_transform;
-            let ele_trans = Transform {
-                translation: tr.1,
-                rotation: tr.0,
-                scale: tr.2,
-            };
-            for geo in &ele_geos_info.data {
-                let cur_tr = &geo.transform;
-                let t = if geo.is_tubi {
-                    Transform {
-                        translation: cur_tr.1,
-                        rotation: cur_tr.0,
-                        scale: cur_tr.2,
-                    }
-                } else {
-                    ele_trans * Transform {
-                        translation: cur_tr.1,
-                        rotation: cur_tr.0,
-                        scale: cur_tr.2,
-                    }
-                };
-                let s = t.scale;
-                let mut local_rot = glam::Quat::IDENTITY;
-                let shape = match geo.geo_hash {
-                    prim_geo::CUBE_GEO_HASH => {
-                        SharedShape::cuboid(s.x / 2.0, s.y / 2.0, s.z / 2.0)
-                    }
-                    prim_geo::SPHERE_GEO_HASH => {
-                        SharedShape::ball(s.x)
-                    }
-                    prim_geo::CYLINDER_GEO_HASH => {
-                        local_rot = glam::Quat::from_rotation_x(PI / 2.0);
-                        SharedShape::cylinder(s.z / 2.0, s.x / 2.0)
-                    }
-                    _ => {
-                        let m = mesh_mgr.get_mesh(&geo.geo_hash).unwrap();
-                        SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
-                    }
-                };
-                let rot = t.rotation * local_rot;
-                if shape.as_composite_shape().is_none() {
-                    colliders.push((Isometry {
-                        rotation: UnitQuaternion::from_quaternion(Quaternion::new(rot.w, rot.x, rot.y, rot.z)),
-                        translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
-                    }, shape));
-                } else {
-                    target_colliders.push(shape);
+        let tr = &ele_geos_info.world_transform;
+        let ele_trans = Transform {
+            translation: tr.1,
+            rotation: tr.0,
+            scale: tr.2,
+        };
+        for geo in &ele_geos_info.data {
+            let cur_tr = &geo.transform;
+            let t = if geo.is_tubi {
+                Transform {
+                    translation: cur_tr.1,
+                    rotation: cur_tr.0,
+                    scale: cur_tr.2,
                 }
+            } else {
+                ele_trans * Transform {
+                    translation: cur_tr.1,
+                    rotation: cur_tr.0,
+                    scale: cur_tr.2,
+                }
+            };
+            let s = t.scale;
+            let mut local_rot = glam::Quat::IDENTITY;
+            let shape = match geo.geo_hash {
+                prim_geo::CUBE_GEO_HASH => {
+                    SharedShape::cuboid(s.x / 2.0, s.y / 2.0, s.z / 2.0)
+                }
+                prim_geo::SPHERE_GEO_HASH => {
+                    SharedShape::ball(s.x)
+                }
+                prim_geo::CYLINDER_GEO_HASH => {
+                    local_rot = glam::Quat::from_rotation_x(PI / 2.0);
+                    SharedShape::cylinder(s.z / 2.0, s.x / 2.0)
+                }
+                _ => {
+                    let m = mesh_mgr.get_mesh(&geo.geo_hash).unwrap();
+                    SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
+                }
+            };
+            let rot = t.rotation * local_rot;
+            if shape.as_composite_shape().is_none() {
+                colliders.push((Isometry {
+                    rotation: UnitQuaternion::from_quaternion(Quaternion::new(rot.w, rot.x, rot.y, rot.z)),
+                    translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
+                }, shape));
+            } else {
+                target_colliders.push(shape);
             }
         }
         if !colliders.is_empty() {
@@ -1887,6 +1890,7 @@ pub struct EleGeoInstance {
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
     pub is_tubi: bool,
+    pub geo_param: PdmsGeoParam,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1900,6 +1904,7 @@ pub struct EleGeoInstanceJson {
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
     pub is_tubi: bool,
+    pub geo_param: PdmsGeoParam,
 }
 
 pub trait PdmsNodeTrait {

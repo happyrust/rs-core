@@ -7,9 +7,12 @@ use bevy::prelude::Transform;
 use crate::pdms_types::RefU64;
 use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
+use crate::parsed_data::CateSCylinderParam;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct PdmsTubing {
+    pub refno: RefU64,
     pub start_pt: Vec3,
     pub end_pt: Vec3,
     pub desire_leave_dir: Vec3,
@@ -63,8 +66,8 @@ impl PdmsTubing {
         };
 
         CateBrepShape {
-            refno: Default::default(),
-            brep_shape: Box::new(cylinder),
+            refno: self.refno,
+            brep_shape: Box::new(cylinder.clone()),
             transform: Transform {
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
                 translation: self.start_pt,

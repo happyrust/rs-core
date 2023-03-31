@@ -17,7 +17,7 @@ pub mod parsed_data;
 pub mod pdms_data;
 pub mod axis_param;
 pub mod bevy_types;
-pub mod rvm_types;
+pub mod geom_types;
 pub mod helper;
 pub mod db_number;
 pub mod cache;

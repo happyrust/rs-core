@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
 use truck_modeling::builder::try_attach_plane;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::hash_tool::*;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
@@ -194,6 +195,7 @@ impl BrepShapeTrait for LPyramid {
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::ONE
     }
+
 }
 
 
