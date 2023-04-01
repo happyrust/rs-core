@@ -30,6 +30,7 @@ pub mod create_attas_structs;
 pub mod three_dimensional_review;
 pub mod data_center;
 pub mod negative_mesh_type;
+pub mod rvm_types;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
