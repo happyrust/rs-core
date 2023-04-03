@@ -15,31 +15,32 @@ pub struct DesignPipeRequest {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignComponentRequest {
+    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignBranRequest {
+    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct RefnosRequest {
+    
     pub name: String,
 }
-
 #[derive(Clone, PartialEq, Debug)]
 pub struct Refnos {
+    
     pub refnos: Vec<String>,
 }
-
 #[derive(Clone, Debug, Default)]
 pub struct DesignPipe {
     pub name: String,
     pub refno: String,
     pub brans: Vec<DesignBran>,
 }
-
 #[derive(Clone, Debug, Default)]
 pub struct DesignBran {
     pub name: String,
@@ -102,6 +103,7 @@ pub struct GmseParamData {
 }
 
 
+
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateAxisParam {
     pub refno: RefU64,
@@ -126,6 +128,7 @@ pub mod geo_params_data {
     use crate::prim_geo::sbox::SBox;
     use crate::prim_geo::snout::LSnout;
     use crate::prim_geo::sphere::Sphere;
+    use crate::rvm_types::RvmShapeTypeData;
 
 
     #[derive(Clone, Serialize, Deserialize, Debug, Default)]
@@ -138,6 +141,7 @@ pub mod geo_params_data {
         Cone(super::CateConeParam),
         LCylinder(super::CateLCylinderParam),
         SCylinder(super::CateSCylinderParam),
+
         Dish(super::CateDishParam),
         Extrusion(super::CateExtrusionParam),
         Profile(super::CateProfileParam),
@@ -170,7 +174,73 @@ pub mod geo_params_data {
         PrimLCylinder(LCylinder),
         PrimRevolution(Revolution),
         PrimExtrusion(Extrusion),
+    }
 
+    impl PdmsGeoParam {
+        pub fn into_rvm_pri_num(&self) -> Option<u8> {
+            match self {
+                PdmsGeoParam::Unknown => { None }
+                PdmsGeoParam::PrimBox(_) => { Some(2) }
+                PdmsGeoParam::PrimLSnout(_) => { Some(7) }
+                PdmsGeoParam::PrimDish(_) => { Some(6) }
+                PdmsGeoParam::PrimSphere(_) => { Some(9) }
+                PdmsGeoParam::PrimCTorus(_) => { Some(4) }
+                PdmsGeoParam::PrimRTorus(_) => { Some(3) }
+                PdmsGeoParam::PrimPyramid(_) => { Some(1) }
+                PdmsGeoParam::PrimSCylinder(_) => { Some(8) }
+                PdmsGeoParam::PrimLCylinder(_) => { Some(8) }
+                PdmsGeoParam::PrimRevolution(_) => { Some(11) }
+                PdmsGeoParam::PrimExtrusion(_) => { Some(11) }
+            }
+        }
+
+        pub fn convert_rvm_pri_data(&self) -> Vec<u8> {
+            match &self {
+                PdmsGeoParam::PrimBox(data) => {
+                    RvmShapeTypeData::Box([data.size.x, data.size.y, data.size.z]).convert_shape_type_to_bytes()
+                }
+                PdmsGeoParam::PrimLSnout(data) => {
+                    let height = (data.ptdi - data.pbdi).abs();
+                    let bottom_radius = data.pbdm / 2.0;
+                    let top_radius = data.ptdm / 2.0;
+                    let offset = data.poff;
+                    RvmShapeTypeData::Snout([bottom_radius, top_radius, height, offset, 0.0, 0.0, 0.0, 0.0, 0.0]).convert_shape_type_to_bytes()
+                }
+                PdmsGeoParam::PrimDish(data) => {
+                    let radius = data.pdia / 2.0;
+                    let height = data.pheig;
+                    RvmShapeTypeData::SphericalDish([radius, height]).convert_shape_type_to_bytes()
+                }
+                PdmsGeoParam::PrimCTorus(data) => {
+                    let out_torus = data.rout;
+                    let in_torus = (data.rout - data.rins) / 2.0;
+                    let angle = (data.angle / 180.0) * std::f32::consts::PI;
+                    RvmShapeTypeData::CircularTorus([out_torus, in_torus, angle]).convert_shape_type_to_bytes()
+                }
+                PdmsGeoParam::PrimRTorus(data) => {
+                    let out_torus = data.rout;
+                    let len = data.rout - data.rins;
+                    let height = data.height;
+                    let angle = (data.angle / 180.0) * std::f32::consts::PI;
+                    RvmShapeTypeData::RectangularTorus([out_torus, len, height, angle]).convert_shape_type_to_bytes()
+                }
+                PdmsGeoParam::PrimPyramid(data) => {
+                    let bottom_width = data.pbtp;
+                    let bottom_length = data.pbbt;
+                    let top_width = data.pctp;
+                    let top_length = data.pcbt;
+                    let x_offset = data.pbof;
+                    let y_offset = data.pcof;
+                    let height = (data.pbdi - data.ptdi).abs();
+                    RvmShapeTypeData::Pyramid([bottom_width, bottom_length, top_width, top_length, x_offset, y_offset, height]).convert_shape_type_to_bytes()
+                }
+                PdmsGeoParam::PrimSCylinder(data) => {
+                    let radius = data.pdia / 2.0;
+                    RvmShapeTypeData::Cylinder([radius, data.phei]).convert_shape_type_to_bytes()
+                }
+                _ => { vec![] }
+            }
+        }
     }
 }
 
@@ -273,6 +343,7 @@ pub enum CateProfileParam {
     None,
     SPRO(SProfileData),
     SANN(SannData),
+    None,
 }
 
 
@@ -290,6 +361,7 @@ pub struct CateDishParam {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateLineParam {
+    
     pub pa: ::core::option::Option<CateAxisParam>,
 
     pub pb: ::core::option::Option<CateAxisParam>,
@@ -319,7 +391,6 @@ pub struct CatePyramidParam {
     pub centre_line_flag: bool,
     pub tube_flag: bool,
 }
-
 /// 截面为矩形的弯管
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateRectTorusParam {
@@ -397,7 +468,6 @@ pub struct CateSphereParam {
     pub tube_flag: bool,
     pub refno: RefU64,
 }
-
 ///元件库里的torus参数
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateTorusParam {

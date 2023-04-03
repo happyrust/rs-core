@@ -278,21 +278,9 @@ impl PdmsMesh {
 
 impl CachedInstanceMgr {
     #[inline]
-    pub fn get_instants_data(&self, refno: RefU64) -> DashMap<RefU64, Ref<RefU64, EleGeosInfo>> {
-        let mut results = DashMap::new();
+    pub fn get_inst_data(&self, refno: RefU64) -> Ref<RefU64, EleGeosInfo> {
         let inst_map = &self.inst_mgr.inst_map;
-        if self.level_shape_mgr.contains_key(&refno) {
-            for v in (*self.level_shape_mgr.get(&refno).unwrap()).iter() {
-                if inst_map.contains_key(v) {
-                    results.insert(v.clone(), inst_map.get(v).unwrap());
-                }
-            }
-        } else {
-            if inst_map.contains_key(&refno) {
-                results.insert(refno.clone(), inst_map.get(&refno).unwrap());
-            }
-        }
-        results
+        inst_map.get(&refno).unwrap()
     }
 
     pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
@@ -338,7 +326,6 @@ dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 ///brep形状trait
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
-
     //拷贝函数
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
@@ -432,7 +419,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         None
     }
 
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam>{
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         None
     }
 }
