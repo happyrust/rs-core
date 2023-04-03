@@ -30,6 +30,7 @@ use sled::IVec;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use truck_modeling::Shell;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::{BHashMap, prim_geo};
 #[cfg(not(target_arch = "wasm32"))]
@@ -1565,6 +1566,7 @@ impl EleGeosInfo {
                 transform: d.transform,
                 visible: d.visible,
                 is_tubi: d.is_tubi,
+                geo_param: d.geo_param,
             });
         }
         EleGeosInfoJson {
@@ -1578,8 +1580,8 @@ impl EleGeosInfo {
             flow_pt_indexs: self.flow_pt_indexs,
         }
     }
+
     pub fn from_json_type(json: EleGeosInfoJson) -> Self {
-        // let json: EleGeosInfoJson = serde_json::from_str(&json).unwrap_or_default();
         let data = json.data;
         let mut origin_data = vec![];
         for a in data {
@@ -1589,6 +1591,7 @@ impl EleGeosInfo {
                 pts: a.pts,
                 aabb: a.aabb,
                 transform: a.transform,
+                geo_param: a.geo_param,
                 visible: a.visible,
                 is_tubi: a.is_tubi,
             });
@@ -1635,9 +1638,11 @@ impl Deref for EleGeosInfo {
 }
 
 
+/// instane数据集合管理
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
-    pub inst_map: DashMap<RefU64, EleGeosInfo>,   //todo replace with EleGeosInfo
+    /// 保存所有的instance数据
+    pub inst_map: DashMap<RefU64, EleGeosInfo>,
 }
 
 
@@ -1887,6 +1892,7 @@ pub struct EleGeoInstance {
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
     pub is_tubi: bool,
+    pub geo_param: PdmsGeoParam,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1900,6 +1906,7 @@ pub struct EleGeoInstanceJson {
     pub transform: (Quat, Vec3, Vec3),
     pub visible: bool,
     pub is_tubi: bool,
+    pub geo_param: PdmsGeoParam,
 }
 
 pub trait PdmsNodeTrait {

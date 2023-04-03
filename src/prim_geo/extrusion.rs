@@ -12,6 +12,7 @@ use nalgebra_glm::sin;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
@@ -108,6 +109,12 @@ impl BrepShapeTrait for Extrusion {
     //沿着指定方向拉伸 pbax_dir
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::new(1.0, 1.0, (self.height as f32 / 100.0))
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimExtrusion(self.clone())
+        )
     }
 }
 

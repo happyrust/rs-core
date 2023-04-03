@@ -12,6 +12,7 @@ use glam::Vec3;
 
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize,Deserialize};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
@@ -157,6 +158,12 @@ impl BrepShapeTrait for Pyramid {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimPyramid(self.clone())
+        )
     }
 }
 

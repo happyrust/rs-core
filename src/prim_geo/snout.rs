@@ -8,6 +8,7 @@ use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use std::hash::Hash;
 use serde::{Serialize,Deserialize};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh, TRI_TOL};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
@@ -166,6 +167,12 @@ impl BrepShapeTrait for LSnout {
         }else{
             Vec3::new(self.pbdm, self.pbdm, pheight)
         }
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimLSnout(self.clone())
+        )
     }
 }
 

@@ -9,6 +9,7 @@ use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
@@ -204,6 +205,13 @@ impl BrepShapeTrait for RTorus {
         };
         Box::new(unit)
     }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimRTorus(self.clone())
+        )
+    }
+
 }
 
 impl From<&AttrMap> for RTorus {

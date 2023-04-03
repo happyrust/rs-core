@@ -12,6 +12,7 @@ use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::extrusion::Extrusion;
 use crate::prim_geo::wire::*;
 use crate::prim_geo::helper::cal_ref_axis;
@@ -118,5 +119,11 @@ impl BrepShapeTrait for Revolution {
     }
     fn get_scaled_vec3(&self) -> Vec3{
         Vec3::ONE
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimRevolution(self.clone())
+        )
     }
 }
