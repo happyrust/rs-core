@@ -109,7 +109,7 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
                     {
                         //todo use on file
                         let mut table = write_txn.open_table(TABLE)?;
-                        table.insert(&*k, &value.to_bytes())?;
+                        table.insert(&*k, &*value.to_bytes())?;
                     }
                     write_txn.commit()?;
                 }
