@@ -1467,6 +1467,7 @@ bitflags! {
 pub enum PdmsGenericType {
     #[default]
     UNKOWN = 0,
+    CE,
     PIPE,
     STRU,
     EQUI,
@@ -1500,7 +1501,6 @@ pub enum PdmsGenericType {
     MPLATE,
     MPROF,
     HICSTI,
-    CE,
 }
 
 
