@@ -69,5 +69,5 @@ itoa = "1.0.6"
 #truck-stepio = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-redb = "0.11.0"
+redb = "0.14.0"
 csg = { path = "../csgrs/csg" }
