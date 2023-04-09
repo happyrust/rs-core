@@ -173,7 +173,7 @@ pub fn decode_chars_data(input: &[u8]) -> (String, bool) {
     let mut res = vec![];
     let mut prev_pos = 0;
     for p in start_iter {
-        if input.len() > p /*&& prev_pos < p*/ { // todo 这个地方也需要调整
+        if input.len() > p && prev_pos < p { // todo 这个地方也需要调整
             res.extend_from_slice(&input[prev_pos..p]);
             if let Some(len) = find(&input[p..], &[0x20, 0x26]) {
                 // dbg!(&input[p..p + len]);
