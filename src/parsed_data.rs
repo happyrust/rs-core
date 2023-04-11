@@ -343,7 +343,7 @@ pub enum CateProfileParam {
     None,
     SPRO(SProfileData),
     SANN(SannData),
-    None,
+
 }
 
 
