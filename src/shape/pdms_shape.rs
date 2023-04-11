@@ -391,12 +391,19 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
             let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
             let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
-            let mut indices = vec![];
-            for i in polygon.tri_faces() {
-                indices.push(i[0].pos as u32);
-                indices.push(i[1].pos as u32);
-                indices.push(i[2].pos as u32);
-            }
+            // let mut indices = vec![];
+            // for i in polygon.tri_faces() {
+            //     indices.push(i[0].pos as u32);
+            //     indices.push(i[1].pos as u32);
+            //     indices.push(i[2].pos as u32);
+            // }
+            let indices = polygon
+                .faces()
+                .triangle_iter()
+                .flatten()
+                .map(|x| x.pos as u32)
+                .collect::<Vec<_>>();
+
             let curves = meshed_shape
                 .edge_iter()
                 .map(|edge| edge.curve())

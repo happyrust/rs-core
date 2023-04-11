@@ -35,7 +35,6 @@ pub struct CacheMgr<
     db: Option<Arc<Database>>,
     map: DashMap<RefU64, T>,
     use_redb: bool,
-// use_redb: bool,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -45,7 +44,6 @@ pub struct CacheMgr<
     name: String,
     map: DashMap<RefU64, T>,
     use_redb: bool,
-// use_redb: bool,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -83,9 +81,6 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
         #[cfg(not(target_arch = "wasm32"))]
         {
             if self.use_redb && !self.map.contains_key(k) && self.db.is_some() {
-                // if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get(k.into()) {
-                //     self.map.insert((*k).into(), bytes.into());
-                // }
                 if let Some(db) = &self.db {
                     let read_txn = db.begin_read().ok()?;
                     let table = read_txn.open_table(TABLE).ok()?;
@@ -107,9 +102,8 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
                 if let Some(db) = &self.db {
                     let write_txn = db.begin_write()?;
                     {
-                        //todo use on file
                         let mut table = write_txn.open_table(TABLE)?;
-                        table.insert(&*k, &value.to_bytes())?;
+                        table.insert(&*k, &*value.to_bytes())?;
                     }
                     write_txn.commit()?;
                 }

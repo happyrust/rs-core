@@ -77,11 +77,24 @@ impl BrepShapeTrait for Dish {
         let v1 = builder::vertex(p0.point3());
         let v2 = builder::vertex(p1.point3());
 
-        let axis = ref_axis.cross(rot_axis);
-        let curve = builder::circle_arc_with_center(center.point3(), &v2, &v1, axis.vector3(), Rad(theta as f64));
-        let wire: Wire = vec![builder::line(&v0, &v2), curve /*builder::line(&v1, &v0)*/].into();
+        let axis = -ref_axis.cross(rot_axis);
+        let curve = builder::circle_arc_with_center(center.point3(), &v1, &v2, axis.vector3(), Rad(theta as f64));
+        let wire: Wire = vec![curve, builder::line(&v2, &v0),/* builder::line(&v0, &v1)*/].into();
         let up_axis = rot_axis.vector3();
-        let s = builder::cone(&wire, -up_axis, Rad(PI as f64 * 2.0));
+        let mut s = builder::cone(&wire, up_axis, Rad(7.0));
+        let btm = builder::rsweep(
+            &v2,
+            c,
+            -up_axis,
+            Rad(7.0),
+        );
+        if let Ok(disk) = builder::try_attach_plane(&vec![btm]) {
+            // dbg!(&disk);
+            s.push(disk);
+        }
+
+        // let json = serde_json::to_vec_pretty(&Solid::new(vec![s.clone()])).unwrap();
+        // std::fs::write("/Users/dongpengcheng/Documents/week-work/crates/truck/cone.json", json).unwrap();
         Some(s)
     }
 

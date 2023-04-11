@@ -212,10 +212,10 @@ pub mod geo_params_data {
                     RvmShapeTypeData::SphericalDish([radius, height]).convert_shape_type_to_bytes()
                 }
                 PdmsGeoParam::PrimCTorus(data) => {
-                    let out_torus = data.rout;
-                    let in_torus = (data.rout - data.rins) / 2.0;
+                    let radius = (data.rout + data.rins) / 2.0;;
+                    let r1 = (data.rout - data.rins) / 2.0;
                     let angle = (data.angle / 180.0) * std::f32::consts::PI;
-                    RvmShapeTypeData::CircularTorus([out_torus, in_torus, angle]).convert_shape_type_to_bytes()
+                    RvmShapeTypeData::CircularTorus([radius, r1, angle]).convert_shape_type_to_bytes()
                 }
                 PdmsGeoParam::PrimRTorus(data) => {
                     let out_torus = data.rout;
