@@ -56,7 +56,7 @@ truck-polymesh = { version = "0.5.0", path = "../truck/truck-polymesh" }
 truck-topology = { version = "0.5.0", path = "../truck/truck-topology" }
 truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo" }
-truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio" }
+#truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio" }
 itoa = "1.0.6"
 
 #truck-base = { version = "0.4.0",git = "https://gitee.com/happydpc/truck.git" }

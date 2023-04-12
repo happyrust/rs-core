@@ -57,7 +57,7 @@ truck-polymesh = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.gi
 truck-topology = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
 truck-modeling = { version = "0.4.0", git = "https://gitee.com/happydpc/truck.git" }
 truck-meshalgo = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
-truck-stepio = { version = "0.1.0", git = "https://gitee.com/happydpc/truck.git" }
+#truck-stepio = { version = "0.1.0", git = "https://gitee.com/happydpc/truck.git" }
 
 #truck-base = { version = "0.3.0", path = "../truck/truck-base" }
 #truck-geotrait = { version = "0.2.0", path = "../truck/truck-geotrait", features = ["derive"] }

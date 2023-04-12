@@ -15,29 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="rename">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="更新三维编校审结构体">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/dish.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/dish.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/tubing.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/tubing.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rvm_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -360,20 +339,17 @@
       <workItem from="1679922156790" duration="2864000" />
       <workItem from="1680096311717" duration="1415000" />
       <workItem from="1680098742506" duration="7695000" />
-    </task>
-    <task id="LOCAL-00122" summary="修改SCYL，保证SSLC能够正确的旋转端面">
-      <created>1664292436556</created>
-      <option name="number" value="00122" />
-      <option name="presentableId" value="LOCAL-00122" />
-      <option name="project" value="LOCAL" />
-      <updated>1664292436557</updated>
-    </task>
-    <task id="LOCAL-00123" summary="tmp">
-      <created>1664292501310</created>
-      <option name="number" value="00123" />
-      <option name="presentableId" value="LOCAL-00123" />
-      <option name="project" value="LOCAL" />
-      <updated>1664292501310</updated>
+      <workItem from="1680488218504" duration="1446000" />
+      <workItem from="1680749401182" duration="2487000" />
+      <workItem from="1680788554823" duration="1398000" />
+      <workItem from="1680833278326" duration="2755000" />
+      <workItem from="1680854698610" duration="1953000" />
+      <workItem from="1680877687181" duration="1212000" />
+      <workItem from="1680927338932" duration="821000" />
+      <workItem from="1681048792729" duration="1808000" />
+      <workItem from="1681205938705" duration="1322000" />
+      <workItem from="1681220061233" duration="952000" />
+      <workItem from="1681264502619" duration="831000" />
     </task>
     <task id="LOCAL-00124" summary="Fix cargo">
       <created>1664292615193</created>
@@ -704,7 +680,21 @@
       <option name="project" value="LOCAL" />
       <updated>1679939086863</updated>
     </task>
-    <option name="localTasksCounter" value="171" />
+    <task id="LOCAL-00171" summary="rename">
+      <created>1680488245181</created>
+      <option name="number" value="00171" />
+      <option name="presentableId" value="LOCAL-00171" />
+      <option name="project" value="LOCAL" />
+      <updated>1680488245181</updated>
+    </task>
+    <task id="LOCAL-00172" summary="更新三维编校审结构体">
+      <created>1681205988825</created>
+      <option name="number" value="00172" />
+      <option name="presentableId" value="LOCAL-00172" />
+      <option name="project" value="LOCAL" />
+      <updated>1681205988825</updated>
+    </task>
+    <option name="localTasksCounter" value="173" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -734,7 +724,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="keep shape data in pdms_mesh" />
     <MESSAGE value="fix" />
     <MESSAGE value="fix fillet floor" />
     <MESSAGE value="解决土建大部分问题" />
@@ -759,7 +748,8 @@
     <MESSAGE value="update truck" />
     <MESSAGE value="add wire vertices" />
     <MESSAGE value="rename" />
-    <option name="LAST_COMMIT_MESSAGE" value="rename" />
+    <MESSAGE value="更新三维编校审结构体" />
+    <option name="LAST_COMMIT_MESSAGE" value="更新三维编校审结构体" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
