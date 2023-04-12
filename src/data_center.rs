@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize, Serializer};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
+use crate::pdms_types::RefU64;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProject {
@@ -160,6 +161,13 @@ pub enum HoleType {
     // 地漏类
     STUCM,
     Unknown,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TubiData{
+    pub pre_refno:RefU64,
+    pub lstu_name:String,
+    pub length:f32,
 }
 
 #[test]
