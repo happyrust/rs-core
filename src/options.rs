@@ -33,6 +33,8 @@ pub struct DbOption {
     pub debug_db_num: Option<u32>,
     #[clap(skip)]
     pub manual_db_nums: Option<Vec<i32>>,
+    #[clap(long)]
+    pub reset_mdb_project: Option<bool>,
 
     #[clap(long)]
     pub debug_print_world_transform: bool,
