@@ -13,7 +13,6 @@ use crate::pdms_types::RefU64Vec;
 #[cfg(not(target_arch = "wasm32"))]
 use redb::{
     Builder, Database, Durability, Error, MultimapTableDefinition, ReadableTable, TableDefinition,
-    WriteStrategy,
 };
 
 
