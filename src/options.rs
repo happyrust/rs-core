@@ -37,13 +37,13 @@ pub struct DbOption {
     #[clap(long)]
     pub debug_print_world_transform: bool,
     #[clap(skip)]
-    pub debug_root_refno: Option<Vec<String>>,
+    pub debug_root_refnos: Vec<String>,
     #[clap(skip)]
     pub debug_branch_refno: Option<String>,
     #[clap(skip)]
     pub debug_desi_refno: Option<String>,
     #[clap(skip)]
-    pub debug_refno_type: Option<String>,
+    pub debug_refno_types: Vec<String>,
     #[clap(long)]
     pub replace_mesh: bool,
     #[clap(long)]
