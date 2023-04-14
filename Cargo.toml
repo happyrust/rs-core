@@ -57,7 +57,6 @@ truck-topology = { version = "0.5.0", path = "../truck/truck-topology" }
 truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo" }
 truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio" }
-itoa = "1.0.6"
 
 #truck-base = { version = "0.4.0",git = "https://gitee.com/happydpc/truck.git" }
 #truck-geotrait = { version = "0.3.0", git = "https://gitee.com/happydpc/truck.git"}
@@ -69,5 +68,5 @@ itoa = "1.0.6"
 #truck-stepio = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-redb = "0.14.0"
+redb = "0.15.0"
 csg = { path = "../csgrs/csg" }
