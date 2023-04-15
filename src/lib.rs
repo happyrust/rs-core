@@ -4,6 +4,7 @@
 #![feature(let_chains)]
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
+use crate::pdms_types::PdmsDatabaseInfo;
 
 extern crate bitflags;
 extern crate phf;
@@ -36,3 +37,7 @@ pub mod options;
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;
+
+pub fn get_default_pdms_db_info() -> PdmsDatabaseInfo{
+    serde_json::from_str::<PdmsDatabaseInfo>(&include_str!("../all_attr_info.json")).unwrap()
+}
