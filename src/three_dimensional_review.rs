@@ -1,4 +1,5 @@
 use bevy::prelude::Resource;
+use bevy::utils::HashMap;
 use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
 
@@ -18,7 +19,7 @@ pub struct ThreeDimensionalModelDataCrate {
     #[serde(rename = "UserRole")]
     pub user_role: String,
     #[serde(rename = "ModelData")]
-    pub model_data: (Vec<(RefU64, String)>, Vec<Vec<(String, String)>>),
+    pub model_data: ModelData,
     #[serde(rename = "FlowPicData")]
     pub flow_pic_data: ThreeDimensionalReviewComment,
 }
@@ -39,7 +40,7 @@ pub struct ThreeDimensionalModelDataToArango {
     #[serde(rename = "UserRole")]
     pub user_role: String,
     #[serde(rename = "ModelData")]
-    pub model_data:(Vec<(RefU64, String)>, Vec<Vec<(String, String)>>),
+    pub model_data:  ModelData,
     #[serde(rename = "FlowPicData")]
     pub flow_pic_data: ThreeDimensionalReviewComment,
 }
@@ -63,3 +64,12 @@ pub struct ThreeDimensionalReviewData {
     pub viewpoint: String,
     pub image: String,
 }
+
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
+pub struct ModelData {
+    pub index: Vec<(RefU64, String)>,
+    pub data:Vec<HashMap<String,String>>,
+}
+
+
