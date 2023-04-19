@@ -66,4 +66,4 @@ truck-polymesh = { version = "0.4.0", path = "../truck/truck-polymesh" }
 truck-topology = { version = "0.4.0", path = "../truck/truck-topology" }
 truck-modeling = { version = "0.4.0", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.2.0", path = "../truck/truck-meshalgo" }
-truck-stepio = { version = "0.1.0", path = "../truck/truck-stepio" }
+#truck-stepio = { version = "0.1.0", path = "../truck/truck-stepio" }

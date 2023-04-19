@@ -15,31 +15,32 @@ pub struct DesignPipeRequest {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignComponentRequest {
+    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignBranRequest {
+    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct RefnosRequest {
+    
     pub name: String,
 }
-
 #[derive(Clone, PartialEq, Debug)]
 pub struct Refnos {
+    
     pub refnos: Vec<String>,
 }
-
 #[derive(Clone, Debug, Default)]
 pub struct DesignPipe {
     pub name: String,
     pub refno: String,
     pub brans: Vec<DesignBran>,
 }
-
 #[derive(Clone, Debug, Default)]
 pub struct DesignBran {
     pub name: String,
@@ -102,6 +103,7 @@ pub struct GmseParamData {
 }
 
 
+
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateAxisParam {
     pub refno: RefU64,
@@ -139,6 +141,7 @@ pub mod geo_params_data {
         Cone(super::CateConeParam),
         LCylinder(super::CateLCylinderParam),
         SCylinder(super::CateSCylinderParam),
+
         Dish(super::CateDishParam),
         Extrusion(super::CateExtrusionParam),
         Profile(super::CateProfileParam),
@@ -340,6 +343,7 @@ pub enum CateProfileParam {
     None,
     SPRO(SProfileData),
     SANN(SannData),
+
 }
 
 
@@ -357,6 +361,7 @@ pub struct CateDishParam {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateLineParam {
+    
     pub pa: ::core::option::Option<CateAxisParam>,
 
     pub pb: ::core::option::Option<CateAxisParam>,
@@ -386,7 +391,6 @@ pub struct CatePyramidParam {
     pub centre_line_flag: bool,
     pub tube_flag: bool,
 }
-
 /// 截面为矩形的弯管
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateRectTorusParam {
@@ -464,7 +468,6 @@ pub struct CateSphereParam {
     pub tube_flag: bool,
     pub refno: RefU64,
 }
-
 ///元件库里的torus参数
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
 pub struct CateTorusParam {
