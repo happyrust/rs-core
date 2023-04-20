@@ -44,6 +44,7 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::tool::float_tool::f32_round_2;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -457,7 +458,7 @@ impl BrepMathTrait for Vec3 {
     //point3_without_z
     #[inline]
     fn point3_without_z(&self) -> Point3 {
-        Point3::new(self[0] as f64, self[1] as f64, 0.0 as f64)
+        Point3::new(f32_round_2(self[0]) as f64, f32_round_2(self[1]) as f64, 0.0 as f64)
     }
 }
 

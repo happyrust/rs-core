@@ -68,7 +68,6 @@ impl BrepShapeTrait for Revolution {
                 // dbg!(angle);
                 if plane.normal().dot(Vector3::new(0.0, 0.0, 1.0)) < 0.0 {
                     face = face.inverse();
-                    dbg!("Revolution face inverted");
                 }
                 if angle < 0.0 {
                     angle = -angle;

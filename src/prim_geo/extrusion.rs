@@ -71,8 +71,8 @@ impl BrepShapeTrait for Extrusion {
                 return s.pop();
             }
         } else {
-            // dbg!(&wire);
             dbg!(self);
+            error!("生成的wire有问题，数据：{:?}", self);
         }
         None
     }

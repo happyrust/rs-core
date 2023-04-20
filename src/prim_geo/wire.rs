@@ -96,12 +96,12 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
         let pt = pts[i].point3_without_z();
         //跳过相同的点
         if let Some(last_pt) = verts.last().map(|x: &Vertex| x.point()) {
-            if abs_diff_eq!(pt.distance(last_pt), 0.0) {
+            if pt.distance(last_pt) < 0.1 {
                 // dbg!(pt);
                 continue;
             }
-            if i == ll - 1{
-                if abs_diff_eq!(pt.distance(verts[0].point()), 0.0) {
+            if i == ll - 1 {
+                if pt.distance(verts[0].point()) < 0.1 {
                     // dbg!(pt);
                     continue;
                 }
@@ -119,6 +119,9 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
             let next_pt = pts[n_i];
             let pa_dist = pre_pt.distance(cur_pt);
             let pb_dist = next_pt.distance(cur_pt);
+            // dbg!((pre_pt, cur_pt, next_pt));
+            // dbg!(pb_dist);
+            // dbg!(pb_dist);
             let a_dir = (pre_pt - cur_pt).normalize();
             let b_dir = (next_pt - cur_pt).normalize();
             let angle = a_dir.angle_between(b_dir) / 2.0;
@@ -143,37 +146,39 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
             }
         }
     }
+    let mut j = 0;
     if !verts.is_empty() {
         let s_vert = verts.first().unwrap();
         let e_vert = verts.last().unwrap();
         let l = s_vert.point().distance(e_vert.point());
-        if l < 0.001 {
+        if l < 0.1 {
             let s = verts.pop();
             // dbg!(&s);
         }
         let v_len = verts.len();
         let mut pre_vert = verts[0].clone();
-        let mut i = 1;
+        j = 1;
         // dbg!(&verts);
         // dbg!(&circle_indexs);
-        while i <= v_len {
-            let cur_vert = &verts[i % v_len];
+        while j <= v_len {
+            let cur_vert = &verts[j % v_len];
             if pre_vert.point().distance(cur_vert.point()) > 1.0 {
-                if circle_indexs.len() > 0 && i == circle_indexs[0] {
-                    let next_vert = &verts[(i + 1) % v_len];
+                if circle_indexs.len() > 0 && j == circle_indexs[0] {
+                    let next_vert = &verts[(j + 1) % v_len];
                     wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.point()));
                     pre_vert = next_vert.clone();
                     circle_indexs.remove(0);
-                    i += 1;
+                    j += 1;
                 } else {
                     wire.push_back(builder::line(&pre_vert, cur_vert));
                     pre_vert = cur_vert.clone();
                     // dbg!(i);
                 }
             }
-            i += 1;
+            j += 1;
         }
     }
+    // dbg!(&wire);
 
     Ok(wire)
 }
