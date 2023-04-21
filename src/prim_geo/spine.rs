@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use truck_modeling::{Shell, Wire};
 use std::f32::consts::PI;
 use bevy::prelude::*;
-use crate::tool::float_tool::f32_round_3;
+use crate::tool::float_tool::{f32_round_1, f32_round_3, vec3_round_1, vec3_round_3};
 
 #[derive(Component, Debug, Default, Clone, Serialize, Deserialize)]
 pub enum SpineCurveType {
@@ -100,7 +100,6 @@ impl Spine3D {
         let mut paths = vec![];
         let mut transform = Transform::IDENTITY;
         let pref_axis = self.preferred_dir.normalize();
-        // let pref_axis = Vec3::new(1.0, 0.0, 1.0).normalize();
         match self.curve_type {
             SpineCurveType::THRU => {
                 let center = circum_center(self.pt0, self.pt1, self.thru_pt);
@@ -116,17 +115,17 @@ impl Spine3D {
                 } else { Vec3::Z };
                 let y_axis = ref_axis.cross(x_axis).normalize();
                 let z_axis = x_axis.cross(y_axis).normalize();
-                dbg!((x_axis, y_axis, z_axis));
+                // dbg!((x_axis, y_axis, z_axis));
                 transform.rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
                 let arc = Arc3D{
-                    center,
-                    radius: center.distance(self.pt0),
+                    center: vec3_round_1(center),
+                    radius: f32_round_1(center.distance(self.pt0)),
                     angle,
                     clock_wise: axis.z < 0.0,
                     axis,
-                    pref_axis: pref_axis,
+                    pref_axis,
                 };
-                dbg!(&arc);
+                // dbg!(&arc);
                 transform.translation = center;
 
                 paths.push(SweepPath3D::SpineArc(arc));

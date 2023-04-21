@@ -11,7 +11,8 @@ use crate::parsed_data::CateBoxParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
-// use crate::prim_geo::helper::quad_indices;
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
@@ -43,6 +44,11 @@ impl BrepShapeTrait for SBox {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
+    }
+
     fn gen_brep_shell(& self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         let v = builder::vertex((self.center - self.size / 2.0).point3());
@@ -62,6 +68,11 @@ impl BrepShapeTrait for SBox {
 
     fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
         SBox::default().gen_mesh(None)
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_unit_occ_mesh(&self) -> Option<PdmsMesh>{
+        SBox::default().gen_occ_mesh(None)
     }
 
     #[inline]

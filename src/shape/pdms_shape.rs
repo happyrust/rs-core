@@ -5,8 +5,9 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
-
-// use bevy_inspector_egui::Inspectable;
+use anyhow::anyhow;
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 use bevy::ecs::component::Component;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::{FromWorld, Mesh, Transform};
@@ -129,11 +130,6 @@ fn test_project_to_plane() {
     assert!(triangle_area > 0.0);
 }
 
-#[inline]
-fn project_point_onto_plane(point: Vec3, plane_normal: Vec3) -> Vec3 {
-    let proj = point.dot(plane_normal) / plane_normal.dot(plane_normal);
-    point - proj * plane_normal
-}
 
 impl PdmsMesh {
     //集成lod的功能
@@ -335,6 +331,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         return None;
     }
 
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        return Err(anyhow!("不存在该occ shape"));
+    }
+
     //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
     fn hash_unit_mesh_params(&self) -> u64 {
         0
@@ -348,6 +349,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// cylinder
     /// sphere
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+        None
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_unit_occ_mesh(&self) -> Option<PdmsMesh> {
         None
     }
 
@@ -365,6 +371,14 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             translation: Default::default(),
             scale: self.get_scaled_vec3(),
         }
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh>{
+        if let Ok(shape) = self.gen_occ_shape() {
+
+        }
+        None
     }
 
     ///生成mesh

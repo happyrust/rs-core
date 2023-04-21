@@ -27,6 +27,11 @@ pub fn vec3_round_2(v: Vec3) -> Vec3 {
 }
 
 #[inline]
+pub fn vec3_round_1(v: Vec3) -> Vec3 {
+    Vec3::new(f32_round_1(v.x), f32_round_1(v.y), f32_round_1(v.z))
+}
+
+#[inline]
 pub fn f32_round_3(v: f32) -> f32 {
     ((v as f64 * 1000.0).round() / 1000.0f64) as f32    //以防止溢出
 }

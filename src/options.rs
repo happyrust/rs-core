@@ -6,6 +6,10 @@ pub struct DbOption {
     #[clap(long)]
     pub total_sync: bool,
     #[clap(long)]
+    pub sync_graph_db: Option<bool>,
+    #[clap(long)]
+    pub sync_tidb: Option<bool>,
+    #[clap(long)]
     pub incr_sync: bool,
     #[clap(long)]
     pub replace_dbs: bool,

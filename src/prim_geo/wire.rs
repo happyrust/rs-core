@@ -152,10 +152,14 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire>
         let e_vert = verts.last().unwrap();
         let l = s_vert.point().distance(e_vert.point());
         if l < 0.1 {
-            let s = verts.pop();
-            // dbg!(&s);
+            verts.pop();
         }
         let v_len = verts.len();
+        if v_len == 0 {
+            dbg!(pts);
+            dbg!(fradius_vec);
+            return Err(anyhow!(" verts are empty"));
+        }
         let mut pre_vert = verts[0].clone();
         j = 1;
         // dbg!(&verts);
