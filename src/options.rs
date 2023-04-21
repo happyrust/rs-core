@@ -92,4 +92,6 @@ pub struct DbOption {
     pub multi_threads: bool,
     #[clap(short)]
     pub only_sync_sys: bool,
+    #[clap(long)]
+    pub plat_url:String,
 }

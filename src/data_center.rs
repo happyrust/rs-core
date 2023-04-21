@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize, Serializer};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
+use crate::metadata_manager::FileBytes;
 use crate::pdms_types::RefU64;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -163,11 +164,106 @@ pub enum HoleType {
     Unknown,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+pub struct ThreeDDatacenterRequest{
+    pub title:String,
+    pub refnos:Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+pub struct ThreeDDatacenterResponse {
+    #[serde(rename ="Success")]
+    pub success: bool,
+    #[serde(rename ="Result")]
+    pub result: String,
+    #[serde(rename ="KeyValue")]
+    pub key_value: String,
+    #[serde(rename ="LoginUrl")]
+    pub login_url: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TubiData{
     pub pre_refno:RefU64,
     pub lstu_name:String,
     pub length:f32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+pub struct SendHoleData {
+    #[serde(rename="KeyValue")]
+    pub key_value: String,
+    #[serde(rename="formdata")]
+    pub form_data: SendHoleDataFormData,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+pub struct SendHoleDataFormData {
+    #[serde(rename="ProjCode")]
+    pub project_code: String,
+    #[serde(rename="HumanCode")]
+    pub human_code: String,
+    #[serde(rename="Title")]
+    pub title: String,
+    #[serde(rename="Major")]
+    pub major:String,
+    #[serde(rename="WXType")]
+    pub wx_type:String,
+    #[serde(rename="JD_Name")]
+    pub jd_name: String,
+    #[serde(rename="SH_Name")]
+    pub sh_name: String,
+    #[serde(rename="SD_Name")]
+    pub sd_name: String,
+    #[serde(rename="SZ_Name")]
+    pub sz_name: String,
+    #[serde(rename="Memo")]
+    pub memo: String,
+    #[serde(rename="databody")]
+    pub data_body: Vec<DataCenterProject>,
+    #[serde(rename="modelbody")]
+    pub model_body: HashMap<String,String>,
+    #[serde(rename="Detail")]
+    pub detail: Vec<DataCenterDetail>,
+    #[serde(rename="files")]
+    pub files: Vec<DataCenterFile>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+pub struct DataCenterFile{
+    #[serde(rename="filename")]
+    pub file_name: String,
+    #[serde(rename="filestream")]
+    pub file_stream: String,
+}
+
+impl DataCenterFile {
+    pub fn from_file_bytes(file_bytes:FileBytes) -> Self {
+        Self {
+            file_name: file_bytes.file_name,
+            file_stream: base64::encode(&file_bytes.data),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+pub struct DataCenterDetail {
+    #[serde(rename="Code")]
+    pub code: String,
+    #[serde(rename="Type")]
+    pub detail_type: String,
+    #[serde(rename="Major")]
+    pub major: String,
+    #[serde(rename="ActExplain")]
+    pub act_explain: String,
+    #[serde(rename="Posi")]
+    pub position: String,
+    #[serde(rename="Memo")]
+    pub memo: String,
+    #[serde(rename="Upddate")]
+    pub update: String,
+    #[serde(rename="ActHum")]
+    pub act_hum: String,
 }
 
 #[test]
