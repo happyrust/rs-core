@@ -49,11 +49,15 @@ impl VerifiedShape for Revolution {
     }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for Revolution {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        return Err(anyhow!("不存在该occ shape"));
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -65,10 +69,16 @@ impl BrepShapeTrait for Revolution {
                 let mut rot_dir = self.rot_dir.normalize().vector3();
                 let rot_pt = self.rot_pt.point3();
                 let mut angle = self.angle.to_radians() as f64;
-                // dbg!(angle);
-                if plane.normal().dot(Vector3::new(0.0, 0.0, 1.0)) < 0.0 {
+                dbg!(plane.normal());
+                dbg!(rot_dir);
+                let normal_flag = plane.normal().dot(Vector3::new(0.0, 0.0, 1.0)) < 0.0;
+                let angle_flag = angle > 0.0;
+                let reverse_flag = !(normal_flag ^ angle_flag);  //如果两者一致，就不需要reverse
+                dbg!(reverse_flag);
+                if reverse_flag {
                     face = face.inverse();
                 }
+
                 if angle < 0.0 {
                     angle = -angle;
                     rot_dir = -rot_dir;
