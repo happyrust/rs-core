@@ -1,9 +1,15 @@
 use std::fs::File;
 use std::io::Read;
+use dashmap::DashMap;
+use lazy_static::lazy_static;
 
 use memchr::memmem::{find, find_iter};
 
 use crate::pdms_types::PdmsDatabaseInfo;
+
+lazy_static! {
+    pub static ref GLOBAL_UDA_NAME_MAP: DashMap<u32, String> = DashMap::new();
+}
 
 /// 从bincode数据加载PdmsDatabaseInfo
 pub fn read_attr_info_config_from_bin(config_path: &str) -> PdmsDatabaseInfo {
@@ -34,6 +40,9 @@ pub fn is_uda(hash: u32) -> bool {
 #[inline]
 pub fn db1_dehash(hash: u32) -> String {
     let mut result = String::new();
+    if GLOBAL_UDA_NAME_MAP.contains_key(&hash) {
+        return GLOBAL_UDA_NAME_MAP.get(&hash).unwrap().to_string();
+    }
     if hash > 0x171FAD39 { // UDA的情况
         let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
         result.push(':');
