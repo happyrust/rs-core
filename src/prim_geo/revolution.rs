@@ -69,12 +69,12 @@ impl BrepShapeTrait for Revolution {
                 let mut rot_dir = self.rot_dir.normalize().vector3();
                 let rot_pt = self.rot_pt.point3();
                 let mut angle = self.angle.to_radians() as f64;
-                dbg!(plane.normal());
-                dbg!(rot_dir);
+                // dbg!(plane.normal());
+                // dbg!(rot_dir);
                 let normal_flag = plane.normal().dot(Vector3::new(0.0, 0.0, 1.0)) < 0.0;
                 let angle_flag = angle > 0.0;
                 let reverse_flag = !(normal_flag ^ angle_flag);  //如果两者一致，就不需要reverse
-                dbg!(reverse_flag);
+                // dbg!(reverse_flag);
                 if reverse_flag {
                     face = face.inverse();
                 }

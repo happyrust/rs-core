@@ -17,7 +17,7 @@ use bevy::render::mesh::Indices;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
-use glam::{Mat4, Vec3, vec3, Vec4};
+use glam::{DVec3, Mat4, Vec3, vec3, Vec4};
 use lyon::path::polygon;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
@@ -386,6 +386,14 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
+            let d = brep_bbox.diagonal();
+            if d.x < 0.01 || d.y < 0.01 || d.z < 0.01 {
+                return None;
+            }
+            let vv = DVec3::new(d.x, d.y, d.z);
+            if vv.max_element() / vv.min_element() > 10000.0 {
+                return None;
+            }
             let (size, c) = (brep_bbox.diameter(), brep_bbox.center());
             let d = brep_bbox.diagonal() / 2.0;
             aabb = Aabb::from_half_extents(
