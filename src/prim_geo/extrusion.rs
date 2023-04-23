@@ -71,7 +71,7 @@ impl BrepShapeTrait for Extrusion {
                 return s.pop();
             }
         } else {
-            dbg!(self);
+            // dbg!(self);
             error!("生成的wire有问题，数据：{:?}", self);
         }
         None
@@ -102,7 +102,7 @@ impl BrepShapeTrait for Extrusion {
     }
 
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 10.0))
+        self.gen_unit_shape().gen_mesh(Some(TRI_TOL))
     }
 
 

@@ -398,20 +398,12 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 return None;
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
-
-            // dbg!(brep.edge_iter().count());
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
             let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
             let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
             let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
-            // let mut indices = vec![];
-            // for i in polygon.tri_faces() {
-            //     indices.push(i[0].pos as u32);
-            //     indices.push(i[1].pos as u32);
-            //     indices.push(i[2].pos as u32);
-            // }
             let indices = polygon
                 .faces()
                 .triangle_iter()

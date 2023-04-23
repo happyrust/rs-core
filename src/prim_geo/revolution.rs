@@ -104,7 +104,7 @@ impl BrepShapeTrait for Revolution {
 
             }
         }else{
-            dbg!(&self);
+            // dbg!(&self);
         }
         None
     }
