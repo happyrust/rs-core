@@ -17,6 +17,8 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="更新三维编校审结构体">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/three_dimensional_review.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/three_dimensional_review.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -350,20 +352,19 @@
       <workItem from="1681205938705" duration="1322000" />
       <workItem from="1681220061233" duration="952000" />
       <workItem from="1681264502619" duration="831000" />
-    </task>
-    <task id="LOCAL-00124" summary="Fix cargo">
-      <created>1664292615193</created>
-      <option name="number" value="00124" />
-      <option name="presentableId" value="LOCAL-00124" />
-      <option name="project" value="LOCAL" />
-      <updated>1664292615193</updated>
-    </task>
-    <task id="LOCAL-00125" summary="Fix slope face">
-      <created>1664393324939</created>
-      <option name="number" value="00125" />
-      <option name="presentableId" value="LOCAL-00125" />
-      <option name="project" value="LOCAL" />
-      <updated>1664393324940</updated>
+      <workItem from="1681269683233" duration="4277000" />
+      <workItem from="1681385553983" duration="1275000" />
+      <workItem from="1681525221690" duration="1638000" />
+      <workItem from="1681545899290" duration="1904000" />
+      <workItem from="1681626491906" duration="173000" />
+      <workItem from="1681638942291" duration="812000" />
+      <workItem from="1681702860307" duration="3386000" />
+      <workItem from="1681738345149" duration="748000" />
+      <workItem from="1681784543087" duration="621000" />
+      <workItem from="1681811195678" duration="689000" />
+      <workItem from="1681823955722" duration="12000" />
+      <workItem from="1681892721597" duration="33000" />
+      <workItem from="1682342349672" duration="3877000" />
     </task>
     <task id="LOCAL-00126" summary="解决弧形墙的面也有sloped的情况">
       <created>1664442398650</created>
@@ -694,7 +695,21 @@
       <option name="project" value="LOCAL" />
       <updated>1681205988825</updated>
     </task>
-    <option name="localTasksCounter" value="173" />
+    <task id="LOCAL-00173" summary="更新三维编校审结构体">
+      <created>1681269767797</created>
+      <option name="number" value="00173" />
+      <option name="presentableId" value="LOCAL-00173" />
+      <option name="project" value="LOCAL" />
+      <updated>1681269767797</updated>
+    </task>
+    <task id="LOCAL-00174" summary="更新三维编校审结构体">
+      <created>1681738440879</created>
+      <option name="number" value="00174" />
+      <option name="presentableId" value="LOCAL-00174" />
+      <option name="project" value="LOCAL" />
+      <updated>1681738440879</updated>
+    </task>
+    <option name="localTasksCounter" value="175" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -711,7 +726,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="origin/plat" />
+                        <option value="plat" />
                       </list>
                     </value>
                   </entry>
