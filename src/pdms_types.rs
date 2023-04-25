@@ -1640,14 +1640,12 @@ impl Deref for EleGeosInfo {
     }
 }
 
-
 /// instane数据集合管理
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShapeInstancesMgr {
     /// 保存所有的instance数据
     pub inst_map: DashMap<RefU64, EleGeosInfo>,
 }
-
 
 impl ShapeInstancesMgr {
     #[inline]
