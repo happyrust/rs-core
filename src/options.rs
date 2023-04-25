@@ -6,6 +6,10 @@ pub struct DbOption {
     #[clap(long)]
     pub total_sync: bool,
     #[clap(long)]
+    pub sync_graph_db: Option<bool>,
+    #[clap(long)]
+    pub sync_tidb: Option<bool>,
+    #[clap(long)]
     pub incr_sync: bool,
     #[clap(long)]
     pub replace_dbs: bool,
@@ -39,7 +43,7 @@ pub struct DbOption {
     #[clap(long)]
     pub debug_print_world_transform: bool,
     #[clap(skip)]
-    pub debug_root_refnos: Vec<String>,
+    pub debug_root_refnos: Option<Vec<String>>,
     #[clap(skip)]
     pub debug_branch_refno: Option<String>,
     #[clap(skip)]
@@ -48,6 +52,8 @@ pub struct DbOption {
     pub debug_refno_types: Vec<String>,
     #[clap(long)]
     pub replace_mesh: bool,
+    #[clap(long)]
+    pub need_sync_refno_basic: bool,
     #[clap(long)]
     pub only_update_dbinfo: bool,
     #[clap(long)]
@@ -86,4 +92,6 @@ pub struct DbOption {
     pub multi_threads: bool,
     #[clap(short)]
     pub only_sync_sys: bool,
+    #[clap(long)]
+    pub plat_url:String,
 }

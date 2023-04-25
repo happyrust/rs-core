@@ -18,6 +18,8 @@ use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 
 
 #[derive(Component, Debug,  Clone, Reflect, Serialize, Deserialize)]
@@ -63,6 +65,14 @@ impl VerifiedShape for LCylinder {
 impl BrepShapeTrait for LCylinder {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    //OCC 的生成
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        let r = self.pdia as f64 / 2.0 ;
+        let h = (self.ptdi - self.pbdi) as f64;
+        Ok(OCCShape::cylinder(r, h)?)
     }
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
@@ -184,6 +194,13 @@ impl BrepShapeTrait for SCylinder {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
+
+    //OCC 的生成
+    // fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    //     let r = self.pdia as f64 / 2.0 ;
+    //     let h = (self.ptdi - self.pbdi) as f64;
+    //     Ok(OCCShape::cylinder(r, h)?)
+    // }
 
     #[inline]
     fn get_trans(&self) -> Transform {

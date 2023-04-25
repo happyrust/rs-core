@@ -1,3 +1,4 @@
+use std::io::{Read, Write};
 use std::sync::Arc;
 use dashmap::DashMap;
 use lazy_static::lazy_static;
@@ -10,6 +11,7 @@ use crate::cache::refno::CachedRefBasic;
 use crate::pdms_types::PdmsElementVec;
 use dashmap::mapref::one::Ref;
 use crate::pdms_types::RefU64Vec;
+use serde::Deserialize;
 #[cfg(not(target_arch = "wasm32"))]
 use redb::{
     Builder, Database, Durability, Error, MultimapTableDefinition, ReadableTable, TableDefinition,
@@ -27,10 +29,10 @@ pub trait BytesTrait {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-#[derive(Clone)]
-pub struct CacheMgr<
-    T: BytesTrait + Clone + Serialize + DeserializeOwned> {
+#[derive(Clone, Debug)]
+pub struct CacheMgr<T: BytesTrait + Clone + Serialize + DeserializeOwned> {
     name: String,
+    // #[serde(skip_serializing)]
     db: Option<Arc<Database>>,
     map: DashMap<RefU64, T>,
     use_redb: bool,
@@ -46,24 +48,37 @@ pub struct CacheMgr<
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
-{
+impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
     pub fn new(name: &str, save_to_redb: bool) -> Self {
         Self {
             name: name.to_string(),
-
             db: if save_to_redb {
-                // sled::open(name).ok()
                 unsafe { Database::create(name).map(|x| Arc::new(x)).ok() }
             } else {
                 None
             },
-
             map: Default::default(),
             use_redb: save_to_redb,
-            // use_redb: false
         }
 
+    }
+
+    pub fn save_to_file(&self, path: &str) -> anyhow::Result<bool>{
+        let bytes = bincode::serialize(&self.map)?;
+        let mut file = std::fs::File::create(path)?;
+        file.write_all(&bytes);
+        Ok(true)
+    }
+
+    pub fn load_map_from_file(&self, path: &str) -> anyhow::Result<bool>{
+        let mut file = std::fs::File::open(path)?;
+        let mut bytes = vec![];
+        file.read_to_end(&mut bytes)?;
+        let mut map = bincode::deserialize::<DashMap<RefU64, T>>(&bytes)?;
+        for (k, v) in map.into_iter() {
+            self.map.insert(k, v);
+        }
+        Ok(true)
     }
 
     pub fn use_redb(&self) -> bool {
@@ -74,6 +89,14 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T>
     pub fn is_empty(&self) -> bool {
         self.map.is_empty()
     }
+
+    // pub fn len(&self) -> usize {
+    //     if self.use_redb {
+    //         self.db.map(|d| d.)
+    //     }else{
+    //         self.map.len()
+    //     }
+    // }
 
     #[inline]
     pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {

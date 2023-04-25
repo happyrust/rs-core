@@ -39,7 +39,7 @@ impl Default for Dish {
             paax_dir: Vec3::Z,
             pdis: 0.0,
             pheig: 1.0,
-            pdia: 1.0,
+            pdia: 2.0,
         }
     }
 }

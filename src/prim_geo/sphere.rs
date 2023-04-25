@@ -17,6 +17,8 @@ use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 
 #[derive(Component, Debug, /*Inspectable, Reflect,*/ Clone, Serialize, Deserialize)]
 // #[reflect(Component)]
@@ -48,6 +50,12 @@ impl BrepShapeTrait for Sphere {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    //OCC 的生成
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        Ok(OCCShape::sphere(self.radius as f64)?)
     }
 
     //由于geom kernel还不支持fixed point ，暂时不用这个shell去生成mesh
@@ -98,10 +106,6 @@ impl BrepShapeTrait for Sphere {
             wf_indices: vec![],
             wf_vertices: vec![],
             aabb: Some(Aabb::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))),
-            // AiosAABB{
-            //     min: -Vec3::ONE,
-            //     max: Vec3::ONE,
-            // },
             unit_shape: Sphere::default().gen_brep_shell().unwrap(),
         });
     }

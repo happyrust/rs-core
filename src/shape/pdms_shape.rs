@@ -5,8 +5,9 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
-
-// use bevy_inspector_egui::Inspectable;
+use anyhow::anyhow;
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 use bevy::ecs::component::Component;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::{FromWorld, Mesh, Transform};
@@ -16,7 +17,7 @@ use bevy::render::mesh::Indices;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
-use glam::{Mat4, Vec3, vec3, Vec4};
+use glam::{DVec3, Mat4, Vec3, vec3, Vec4};
 use lyon::path::polygon;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
@@ -44,6 +45,7 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::tool::float_tool::f32_round_2;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -128,11 +130,6 @@ fn test_project_to_plane() {
     assert!(triangle_area > 0.0);
 }
 
-#[inline]
-fn project_point_onto_plane(point: Vec3, plane_normal: Vec3) -> Vec3 {
-    let proj = point.dot(plane_normal) / plane_normal.dot(plane_normal);
-    point - proj * plane_normal
-}
 
 impl PdmsMesh {
     //集成lod的功能
@@ -334,6 +331,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         return None;
     }
 
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        return Err(anyhow!("不存在该occ shape"));
+    }
+
     //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
     fn hash_unit_mesh_params(&self) -> u64 {
         0
@@ -347,6 +349,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// cylinder
     /// sphere
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+        None
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_unit_occ_mesh(&self) -> Option<PdmsMesh> {
         None
     }
 
@@ -366,11 +373,27 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         }
     }
 
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh>{
+        if let Ok(shape) = self.gen_occ_shape() {
+
+        }
+        None
+    }
+
     ///生成mesh
     fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
+            let d = brep_bbox.diagonal();
+            if d.x < 0.01 || d.y < 0.01 || d.z < 0.01 {
+                return None;
+            }
+            let vv = DVec3::new(d.x, d.y, d.z);
+            if vv.max_element() / vv.min_element() > 10000.0 {
+                return None;
+            }
             let (size, c) = (brep_bbox.diameter(), brep_bbox.center());
             let d = brep_bbox.diagonal() / 2.0;
             aabb = Aabb::from_half_extents(
@@ -383,20 +406,12 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 return None;
             }
             let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
-
-            // dbg!(brep.edge_iter().count());
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
             let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
             let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
             let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
-            // let mut indices = vec![];
-            // for i in polygon.tri_faces() {
-            //     indices.push(i[0].pos as u32);
-            //     indices.push(i[1].pos as u32);
-            //     indices.push(i[2].pos as u32);
-            // }
             let indices = polygon
                 .faces()
                 .triangle_iter()
@@ -457,7 +472,7 @@ impl BrepMathTrait for Vec3 {
     //point3_without_z
     #[inline]
     fn point3_without_z(&self) -> Point3 {
-        Point3::new(self[0] as f64, self[1] as f64, 0.0 as f64)
+        Point3::new(f32_round_2(self[0]) as f64, f32_round_2(self[1]) as f64, 0.0 as f64)
     }
 }
 

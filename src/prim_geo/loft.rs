@@ -39,7 +39,9 @@ pub struct SweepSolid {
 
 impl SweepSolid {
     pub fn is_sloped(&self) -> bool {
-        if abs_diff_eq!(self.drns.z.abs(), 1.0, epsilon = 0.01) && abs_diff_eq!(self.drne.z.abs(), 1.0, epsilon = 0.01) {
+        let dot_s = self.drns.dot(self.extrude_dir);
+        let dot_e = self.drne.dot(self.extrude_dir);
+        if abs_diff_eq!(dot_s.abs(), 1.0, epsilon = 0.01) && abs_diff_eq!(dot_e.abs(), 1.0, epsilon = 0.01) {
             return false;
         }
         (abs_diff_ne!(self.drns.length(), 0.0) || abs_diff_ne!(self.drne.length(), 0.0))
@@ -205,48 +207,6 @@ impl VerifiedShape for SweepSolid {
     fn check_valid(&self) -> bool { !self.extrude_dir.is_nan() && self.extrude_dir.length() > 0.0 }
 }
 
-//获得斜切面的变换矩阵
-pub fn get_sloped_transform(drn_axis: Vec3, axis: Vec3) -> Matrix4 {
-    let mut mat = Matrix4::one();
-    let axis = if drn_axis.z * axis.z < 0.0{
-        -axis
-    }else{
-        axis
-    };
-    if abs_diff_ne!(drn_axis.z, 0.0, epsilon = 0.001) {
-        let a = Vec3::X.angle_between(drn_axis);
-        let b = Vec3::Y.angle_between(drn_axis);
-        if !a.is_nan() {
-            let m = Mat3::from_quat(glam::Quat::from_rotation_arc(axis, drn_axis));
-            let mut rotation = Matrix4::from_cols(
-                m.x_axis.vector4(),
-                m.y_axis.vector4(),
-                m.z_axis.vector4(),
-                Vector4::new(0.0, 0.0, 0.0, 1.0),
-            );
-            let mut scale_x = 1.0 / a.sin().abs() as f64;
-            let mut found_err = false;
-            if scale_x > 100.0 {
-                scale_x = 1.0;
-                found_err = true;
-            }
-            let mut scale_y = 1.0 / b.sin().abs() as f64;
-            if scale_y > 100.0 {
-                scale_y = 1.0;
-                found_err = true;
-            }
-            if found_err {
-                rotation = Matrix4::identity();
-                println!("Sloped ele wrong caculate scale: {:?}", (scale_x, scale_y));
-            }
-            let scale_mat = Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-            mat = rotation * scale_mat;
-        }
-    }
-
-    mat
-}
-
 
 //#[typetag::serde]
 impl BrepShapeTrait for SweepSolid {
@@ -312,10 +272,25 @@ impl BrepShapeTrait for SweepSolid {
                     return Some(shell);
                 }
                 SweepPath3D::Line(l) => {
-                    // dbg!(self.is_sloped());
+                    info!("is sloped: {}",self.is_sloped());
                     if self.is_sloped() {
-                        transform_btm = get_sloped_transform(drns, Vec3::Z);
-                        transform_top = get_sloped_transform(drne, Vec3::Z);
+                        let m = Mat3::from_quat(glam::Quat::from_rotation_arc(drns, Vec3::Z));
+                        transform_btm = Matrix4::from_cols(
+                            m.x_axis.vector4(),
+                            m.y_axis.vector4(),
+                            m.z_axis.vector4(),
+                            Vector4::new(0.0, 0.0, 0.0, 1.0),
+                        );
+                        let m = Mat3::from_quat(glam::Quat::from_rotation_arc(-drne, Vec3::Z));
+                        transform_top = Matrix4::from_cols(
+                            m.x_axis.vector4(),
+                            m.y_axis.vector4(),
+                            m.z_axis.vector4(),
+                            Vector4::new(0.0, 0.0, 0.0, 1.0),
+                        );
+
+                        // transform_btm = get_sloped_transform(drns, Vec3::Z);
+                        // transform_top = get_sloped_transform(-drne, Vec3::Z);
                     }
                     let mut faces = vec![];
                     let translation = Matrix4::from_translation(Vector3::new(0.0, 0.0, l.len() as f64));

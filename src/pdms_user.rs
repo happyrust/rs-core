@@ -2,6 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 // use axum_login::AuthUser;
 // use axum_login::secrecy::SecretVec;
 use bevy::prelude::Resource;
+use crate::pdms_types::{PdmsElement, RefU64};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Role {
@@ -48,3 +49,28 @@ impl PdmsUser {
 //
 //     fn get_password_hash(&self) -> SecretVec<u8> { SecretVec::new(vec![]) }
 // }
+
+#[derive(Debug, Clone, PartialEq,Serialize,Deserialize)]
+pub struct PdmsElementWithUser {
+    pub refno: String,
+    pub owner: RefU64,
+    pub name: String,
+    pub noun: String,
+    pub version: u32,
+    pub children_count: usize, 
+    pub user: String,
+}
+
+impl PdmsElementWithUser {
+    pub fn from_pdms_element(pdms_element:PdmsElement,user:&str) -> Self {
+        Self {
+            refno: pdms_element.refno,
+            owner: pdms_element.owner,
+            name: pdms_element.name,
+            noun: pdms_element.noun,
+            version: pdms_element.version,
+            children_count: pdms_element.children_count,
+            user: user.to_string(),
+        }
+    }
+}
