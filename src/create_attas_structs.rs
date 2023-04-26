@@ -1,3 +1,4 @@
+use std::io::SeekFrom;
 use bevy::prelude::Resource;
 use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
@@ -16,7 +17,7 @@ pub struct ATTAPosVec {
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualHoleGraphNode {
     // node identifier
-    #[serde(rename = "Code")]
+    // #[serde(rename = "Code")]
     pub _key: String,
     // node link
     #[serde(rename = "RelyItem")]
@@ -61,7 +62,7 @@ pub struct VirtualHoleGraphNode {
     pub plug_type: String,
     // node height
     #[serde(rename = "SizeHeight")]
-    pub size_heigh: f32,
+    pub size_height: f32,
     // node width
     #[serde(rename = "SizeWidth")]
     pub size_width: f32,
@@ -103,7 +104,7 @@ pub struct VirtualHoleGraphNode {
     pub extent_length2: f32,
     // node second
     #[serde(rename = "Second")]
-    pub second: i32,
+    pub second: bool,
     // node rehole
     #[serde(rename = "ReHole")]
     pub re_hole: i32,
@@ -111,7 +112,7 @@ pub struct VirtualHoleGraphNode {
     #[serde(rename = "Note")]
     pub note: String,
     #[serde(rename = "SizeThrowWall")]
-    size_throw_wall: String,
+    size_throw_wall: f32,
     #[serde(rename = "HoleBPID")]
     hole_bpid: String,
     #[serde(rename = "HoleBPVER")]
@@ -140,87 +141,86 @@ pub struct VirtualHoleGraphNode {
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualEmbedGraphNode {
     // the intelligence of the node
-    #[serde(rename = "Code")]
     pub _key: String,
     #[serde(rename = "RelyItem")]
     // 关联零件名称
-    rely_item: String,
+    pub rely_item: String,
     #[serde(rename = "RelyItemRef")]
     // 关联零件标识
-    rely_item_ref: String,
+    pub rely_item_ref: String,
     #[serde(rename = "MainItem")]
     // 主零件名称
-    main_item: String,
+    pub main_item: String,
     #[serde(rename = "Speciality")]
     // 专业
-    speciality: String,
+    pub speciality: String,
     #[serde(rename = "Position")]
     // 位置
-    position: String,
+    pub position: String,
     #[serde(rename = "Ori")]
     // 方向
-    ori: String,
+    pub ori: String,
     #[serde(rename = "Work")]
     // 操作人
-    work: String,
+    pub work: String,
     #[serde(rename = "WorkBy")]
     // 工作单位
-    work_by: String,
+    pub work_by: String,
     #[serde(rename = "Time")]
     // 时间
-    time: String,
+    pub time: String,
     #[serde(rename = "StanderType")]
     // 规格型号
-    stander_type: String,
+    pub stander_type: String,
     #[serde(rename = "OpenItem")]
     // 开口部位
-    open_item: String,
-    #[serde(rename = "SizeLenth")]
+    pub open_item: String,
+    #[serde(rename = "SizeLength")]
     // 尺寸-长度
-    size_length: String,
+    pub size_length: f32,
     #[serde(rename = "SizeWidth")]
     // 尺寸-宽度
-    size_width: String,
+    pub size_width: f32,
     #[serde(rename = "SizeThickness")]
     // 尺寸-厚度
-    size_thickness: String,
+    pub size_thickness: f32,
     #[serde(rename = "MinThickness")]
     // 最小厚度
-    min_thickness: String,
+    pub min_thickness: f32,
     #[serde(rename = "Load")]
     // 荷载
-    load: String,
+    pub load: String,
     #[serde(rename = "MinDistance")]
     // 最小距离
-    min_distance: String,
+    pub min_distance: f32,
     #[serde(rename = "SubsMaterial")]
     // 补强材料
-    subs_material: String,
+    pub subs_material: String,
     #[serde(rename = "FittID")]
     // 配件标识
-    fitt_id: String,
+    pub fitt_id: String,
     #[serde(rename = "REF")]
     // 参照标准
-    ref_standard: String,
+    pub ref_standard: String,
     #[serde(rename = "Shape")]
     // 形状
-    shape: String,
+    pub shape: String,
     #[serde(rename = "Note")]
     // 备注
-    note: String,
+    pub note: String,
     #[serde(rename = "EmbedBPID")]
     // 嵌入零件标识
-    embed_bpid: String,
+    pub embed_bpid: String,
     #[serde(rename = "EmbedBPVER")]
     // 嵌入零件版本
-    embed_bpver: String,
+    pub embed_bpver: String,
     #[serde(rename = "RelyItemBPID")]
     // 关联零件标识
-    rely_item_bpid: String,
+    pub rely_item_bpid: String,
     #[serde(rename = "RelyItemBPVER")]
     // 关联零件版本
-    rely_item_bpver: String,
+    pub rely_item_bpver: String,
     #[serde(rename = "Form")]
     // 形式
-    form: String,
+    pub form: String,
 }
