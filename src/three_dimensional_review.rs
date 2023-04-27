@@ -2,7 +2,7 @@ use bevy::prelude::Resource;
 use bevy::utils::HashMap;
 use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
-
+use bevy::transform::components::Transform;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ThreeDimensionalModelDataCrate {
@@ -61,7 +61,8 @@ pub struct ThreeDimensionalReviewData {
     pub reply: String,
     pub associatedElement: Vec<RefU64>,
     pub cloudLine: String,
-    pub viewpoint: String,
+    #[serde(rename = "viewpoint")]
+    pub camera_transform: Transform,
     pub image: String,
 }
 
