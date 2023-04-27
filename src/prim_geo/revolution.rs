@@ -2,6 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::{PI, TAU};
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
+use anyhow::anyhow;
 use approx::abs_diff_eq;
 use bevy::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
@@ -10,6 +11,8 @@ use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
