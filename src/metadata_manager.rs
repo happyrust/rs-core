@@ -59,23 +59,7 @@ impl PdmsNodeTrait for MetadataManagerTreeNode {
     fn get_children_count(&self) -> usize { 1 }
 }
 
-impl Into<sled::IVec> for MetadataManagerTreeNode {
-    fn into(self) -> sled::IVec {
-        bincode::serialize(&self).unwrap().into()
-    }
-}
 
-impl Into<sled::IVec> for &MetadataManagerTreeNode {
-    fn into(self) -> sled::IVec {
-        bincode::serialize(self).unwrap().into()
-    }
-}
-
-impl From<sled::IVec> for MetadataManagerTreeNode {
-    fn from(d: sled::IVec) -> Self {
-        bincode::deserialize(&d).unwrap()
-    }
-}
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MetadataManagerTableDataExcelIndex {

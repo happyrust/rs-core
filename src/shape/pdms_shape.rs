@@ -376,7 +376,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     #[cfg(feature = "opencascade")]
     fn gen_occ_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh>{
         if let Ok(shape) = self.gen_occ_shape() {
-
+            let mesh = shape.mesh().ok()?;
         }
         None
     }

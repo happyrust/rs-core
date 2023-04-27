@@ -4,7 +4,6 @@ use dashmap::DashMap;
 use lazy_static::lazy_static;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use sled::{Db, IVec};
 use crate::pdms_types::RefU64;
 use crate::pdms_types::AttrMap;
 use crate::cache::refno::CachedRefBasic;

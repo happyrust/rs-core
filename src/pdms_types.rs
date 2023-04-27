@@ -25,8 +25,8 @@ use nalgebra::{Quaternion, UnitQuaternion};
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
-use serde::{Deserialize, Serialize};
-use sled::IVec;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::ser::SerializeStruct;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use truck_modeling::Shell;
@@ -1880,7 +1880,7 @@ impl CachedMeshesMgr {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct EleGeoInstance {
     pub geo_hash: u64,
     //对应参考号
@@ -1893,6 +1893,50 @@ pub struct EleGeoInstance {
     pub is_tubi: bool,
     pub geo_param: PdmsGeoParam,
 }
+
+//
+// impl Serialize for Person {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//         where
+//             S: Serializer,
+//     {
+//         let mut s = serializer.serialize_struct("Person", 3)?;
+//         s.serialize_field("name", &self.name)?;
+//         s.serialize_field("age", &self.age)?;
+//         s.serialize_field("phones", &self.phones)?;
+//         s.end()
+//     }
+// }
+
+
+//Serialize, Deserialize, 
+impl Serialize for EleGeoInstance {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("EleGeoInstance", 8)?;
+        s.serialize_field("geo_hash", &self.geo_hash.to_string())?;
+        s.serialize_field("refno", &self.refno.to_string())?;
+        s.serialize_field("pts", &self.pts)?;
+        s.serialize_field("aabb", &self.aabb)?;
+        s.serialize_field("transform", &self.transform)?;
+        s.serialize_field("visible", &self.visible)?;
+        s.serialize_field("is_tubi", &self.is_tubi)?;
+        s.serialize_field("geo_param", &self.geo_param)?;
+        s.end()
+    }
+}
+
+
+// impl<'de> Deserialize<'de> for EleGeoInstance {
+//     fn deserialize<D>(d: D) -> Result<Self, D::Error>
+//         where
+//             D: Deserializer<'de>,
+//     {
+//         Ok(d.deserialize_struct("Cells", &["DataArray"; 3], CellsVisitor)?)
+//     }
+// }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EleGeoInstanceJson {
@@ -2019,23 +2063,6 @@ pub struct PdmsElement {
     pub children_count: usize,
 }
 
-impl Into<sled::IVec> for PdmsElement {
-    fn into(self) -> sled::IVec {
-        bincode::serialize(&self).unwrap().into()
-    }
-}
-
-impl Into<sled::IVec> for &PdmsElement {
-    fn into(self) -> sled::IVec {
-        bincode::serialize(self).unwrap().into()
-    }
-}
-
-impl From<sled::IVec> for PdmsElement {
-    fn from(d: sled::IVec) -> Self {
-        bincode::deserialize(&d).unwrap()
-    }
-}
 
 impl PdmsNodeTrait for PdmsElement {
     #[inline]
