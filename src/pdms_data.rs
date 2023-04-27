@@ -173,6 +173,7 @@ lazy_static! {
             map: db_info.noun_attr_info_map,
             type_att_names_map: Default::default(),
             type_implicit_att_names_map: Default::default(),
+            type_explicit_att_names_map: Default::default(),
             att_name_type_map: Default::default(),
             has_cat_ref_types_set: Default::default(),
         };

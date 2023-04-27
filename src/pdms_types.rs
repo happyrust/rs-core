@@ -25,7 +25,8 @@ use nalgebra::{Quaternion, UnitQuaternion};
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::{MapAccess, SeqAccess, Unexpected, Visitor};
 use serde::ser::SerializeStruct;
 use smallvec::SmallVec;
 use smol_str::SmolStr;
@@ -1894,20 +1895,14 @@ pub struct EleGeoInstance {
     pub geo_param: PdmsGeoParam,
 }
 
-//
-// impl Serialize for Person {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//         where
-//             S: Serializer,
-//     {
-//         let mut s = serializer.serialize_struct("Person", 3)?;
-//         s.serialize_field("name", &self.name)?;
-//         s.serialize_field("age", &self.age)?;
-//         s.serialize_field("phones", &self.phones)?;
-//         s.end()
-//     }
-// }
-
+impl Default for EleGeoInstance {
+    fn default() -> Self {
+        Self {
+            aabb: Aabb::new_invalid(),
+            ..default()
+        }
+    }
+}
 
 //Serialize, Deserialize, 
 impl Serialize for EleGeoInstance {
@@ -1917,7 +1912,7 @@ impl Serialize for EleGeoInstance {
     {
         let mut s = serializer.serialize_struct("EleGeoInstance", 8)?;
         s.serialize_field("geo_hash", &self.geo_hash.to_string())?;
-        s.serialize_field("refno", &self.refno.to_string())?;
+        s.serialize_field("refno", &self.refno.to_refno_string())?;
         s.serialize_field("pts", &self.pts)?;
         s.serialize_field("aabb", &self.aabb)?;
         s.serialize_field("transform", &self.transform)?;
@@ -1928,15 +1923,176 @@ impl Serialize for EleGeoInstance {
     }
 }
 
+impl<'de> Deserialize<'de> for EleGeoInstance {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        const FIELDS: &[&str] = &["geo_hash", "refno", "pts", "aabb", "transform", "visible", "is_tubi", "geo_param"];
+        deserializer.deserialize_struct("EleGeoInstance", FIELDS, EleGeoInstanceVisitor)
+    }
+}
 
-// impl<'de> Deserialize<'de> for EleGeoInstance {
-//     fn deserialize<D>(d: D) -> Result<Self, D::Error>
-//         where
-//             D: Deserializer<'de>,
-//     {
-//         Ok(d.deserialize_struct("Cells", &["DataArray"; 3], CellsVisitor)?)
-//     }
-// }
+struct EleGeoInstanceVisitor;
+
+impl<'de> Visitor<'de> for EleGeoInstanceVisitor {
+    type Value = EleGeoInstance;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("struct EleGeoInstance")
+    }
+
+    // fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    //     where
+    //         E: serde::de::Error,
+    // {
+    //     match v {
+    //         "geo_hash" => Ok(v.parse::<u64>().unwrap()),
+    //         _ => self.0.visit_str(v),
+    //     }
+    // }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+        where
+            A: MapAccess<'de>,
+    {
+        let mut geo_hash: Option<u64> = None;
+        let mut refno: Option<RefU64> = None;
+        let mut pts: Option<SmallVec<[i32; 3]>> = None;
+        let mut aabb: Option<Aabb> = None;
+        let mut transform: Option<(Quat, Vec3, Vec3)> = None;
+        let mut visible: Option<bool> = None;
+        let mut is_tubi: Option<bool> = None;
+        let mut geo_param: Option<PdmsGeoParam> = None;
+
+        while let Some(key) = map.next_key()? {
+            match key {
+                "geo_hash" => {
+                    if geo_hash.is_some() {
+                        return Err(de::Error::duplicate_field("geo_hash"));
+                    }
+                    let value: String = map.next_value()?;
+                    geo_hash = Some(value.parse::<u64>().map_err(de::Error::custom)?);
+                }
+                "refno" => {
+                    if refno.is_some() {
+                        return Err(de::Error::duplicate_field("refno"));
+                    }
+                    let value: String = map.next_value()?;
+                    refno = Some(RefU64::from_refno_str(&value).map_err(de::Error::custom)?);
+                }
+                "pts" => {
+                    if pts.is_some() {
+                        return Err(de::Error::duplicate_field("pts"));
+                    }
+                    pts = Some(map.next_value()?);
+                }
+                "aabb" => {
+                    if aabb.is_some() {
+                        return Err(de::Error::duplicate_field("aabb"));
+                    }
+                    aabb = Some(map.next_value()?);
+                }
+                "transform" => {
+                    if transform.is_some() {
+                        return Err(de::Error::duplicate_field("transform"));
+                    }
+                    transform = Some(map.next_value()?);
+                }
+                "visible" => {
+                    if visible.is_some() {
+                        return Err(de::Error::duplicate_field("visible"));
+                    }
+                    visible = Some(map.next_value()?);
+                }
+                "is_tubi" => {
+                    if is_tubi.is_some() {
+                        return Err(de::Error::duplicate_field("is_tubi"));
+                    }
+                    is_tubi = Some(map.next_value()?);
+                }
+                "geo_param" => {
+                    if geo_param.is_some() {
+                        return Err(de::Error::duplicate_field("geo_param"));
+                    }
+                    geo_param = Some(map.next_value()?);
+                }
+                _ => {
+                    map.next_value()?;
+                }
+            }
+        }
+
+        let geo_hash = geo_hash.ok_or_else(|| de::Error::missing_field("geo_hash"))?;
+        let refno = refno.ok_or_else(|| de::Error::missing_field("refno"))?;
+        let pts = pts.ok_or_else(|| de::Error::missing_field("pts"))?;
+        let aabb = aabb.ok_or_else(|| de::Error::missing_field("aabb"))?;
+        let transform = transform.ok_or_else(|| de::Error::missing_field("transform"))?;
+        let visible = visible.ok_or_else(|| de::Error::missing_field("visible"))?;
+        let is_tubi = is_tubi.ok_or_else(|| de::Error::missing_field("is_tubi"))?;
+        let geo_param = geo_param.ok_or_else(|| de::Error::missing_field("geo_param"))?;
+
+        Ok(EleGeoInstance {
+            geo_hash,
+            refno,
+            pts,
+            aabb,
+            transform,
+            visible,
+            is_tubi,
+            geo_param,
+        })
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where A: SeqAccess<'de>
+    {
+        let geo_hash = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+        let refno = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+        let pts = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(2, &self))?;
+        let aabb = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(3, &self))?;
+        let transform = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(4, &self))?;
+        let visible = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(5, &self))?;
+        let is_tubi = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(6, &self))?;
+        let geo_param = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(7, &self))?;
+
+        Ok(EleGeoInstance {
+            geo_hash,
+            refno,
+            pts,
+            aabb,
+            transform,
+            visible,
+            is_tubi,
+            geo_param,
+        })
+    }
+}
+
+#[test]
+fn test_ele_geo_instance_serialize_deserialize() {
+    let data = EleGeoInstance {
+        geo_hash: 1,
+        refno: RefU64(56882546920359),
+        pts: SmallVec::new(),
+        aabb: Aabb::new_invalid(),
+        transform: (Default::default(), Default::default(), Default::default()),
+        visible: false,
+        is_tubi: false,
+        geo_param: Default::default(),
+    };
+    let json = serde_json::to_string(&data).unwrap();
+    dbg!(&json);
+    let data: EleGeoInstance = serde_json::from_str(&json).unwrap();
+    dbg!(&data);
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EleGeoInstanceJson {
