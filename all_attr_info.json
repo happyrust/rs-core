@@ -1830,6 +1830,15 @@
 				},
 				"att_type": "ELEMENT"
 			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
 			"857539": {
 				"name": "SHOP",
 				"hash": 857539,
@@ -9635,6 +9644,25 @@
 				},
 				"att_type": "ELEMENT"
 			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
 			"642053": {
 				"name": "TSPE",
 				"hash": 642053,
@@ -10203,6 +10231,15 @@
 			"700362": {
 				"name": "ISOHIDDEN",
 				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
 				"offset": 0,
 				"default_val": {
 					"BoolType": false
@@ -18680,6 +18717,24 @@
 				},
 				"att_type": "WORD"
 			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
 			"835922": {
 				"name": "BRLO",
 				"hash": 835922,
@@ -19103,6 +19158,24 @@
 					"WordType": "unset"
 				},
 				"att_type": "WORD"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
 			},
 			"750558": {
 				"name": "LOCK",
@@ -21393,6 +21466,24 @@
 					"StringType": ""
 				},
 				"att_type": "STRING"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
 			},
 			"269807127": {
 				"name": "OUPRTR",
@@ -24897,6 +24988,24 @@
 			"750558": {
 				"name": "LOCK",
 				"hash": 750558,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
 				"offset": 0,
 				"default_val": {
 					"BoolType": false
@@ -30129,6 +30238,15 @@
 			"700362": {
 				"name": "ISOHIDDEN",
 				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
 				"offset": 0,
 				"default_val": {
 					"BoolType": false
@@ -39055,6 +39173,24 @@
 				},
 				"att_type": "WORD"
 			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
 			"860671": {
 				"name": "SPSP",
 				"hash": 860671,
@@ -43093,6 +43229,24 @@
 					"StringType": ""
 				},
 				"att_type": "STRING"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
 			},
 			"663162": {
 				"name": "ORRF",
@@ -48352,6 +48506,24 @@
 				},
 				"att_type": "INTEGER"
 			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"916770": {
+				"name": "LOOS",
+				"hash": 916770,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
 			"860671": {
 				"name": "SPSP",
 				"hash": 860671,
@@ -52495,6 +52667,15 @@
 					"DoubleType": 0.0
 				},
 				"att_type": "DOUBLE"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
 			},
 			"642215": {
 				"name": "TYPE",
