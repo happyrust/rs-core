@@ -1881,7 +1881,7 @@ impl CachedMeshesMgr {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug,Serialize,Deserialize)]
 pub struct EleGeoInstance {
     pub geo_hash: u64,
     //对应参考号
@@ -1905,32 +1905,32 @@ impl Default for EleGeoInstance {
 }
 
 //Serialize, Deserialize, 
-impl Serialize for EleGeoInstance {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-    {
-        let mut s = serializer.serialize_struct("EleGeoInstance", 8)?;
-        s.serialize_field("geo_hash", &self.geo_hash.to_string())?;
-        s.serialize_field("refno", &self.refno.to_refno_string())?;
-        s.serialize_field("pts", &self.pts)?;
-        s.serialize_field("aabb", &self.aabb)?;
-        s.serialize_field("transform", &self.transform)?;
-        s.serialize_field("visible", &self.visible)?;
-        s.serialize_field("is_tubi", &self.is_tubi)?;
-        s.serialize_field("geo_param", &self.geo_param)?;
-        s.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for EleGeoInstance {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
-    {
-        const FIELDS: &[&str] = &["geo_hash", "refno", "pts", "aabb", "transform", "visible", "is_tubi", "geo_param"];
-        deserializer.deserialize_struct("EleGeoInstance", FIELDS, EleGeoInstanceVisitor)
-    }
-}
+// impl Serialize for EleGeoInstance {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//         where
+//             S: Serializer,
+//     {
+//         let mut s = serializer.serialize_struct("EleGeoInstance", 8)?;
+//         s.serialize_field("geo_hash", &self.geo_hash.to_string())?;
+//         s.serialize_field("refno", &self.refno.to_refno_string())?;
+//         s.serialize_field("pts", &self.pts)?;
+//         s.serialize_field("aabb", &self.aabb)?;
+//         s.serialize_field("transform", &self.transform)?;
+//         s.serialize_field("visible", &self.visible)?;
+//         s.serialize_field("is_tubi", &self.is_tubi)?;
+//         s.serialize_field("geo_param", &self.geo_param)?;
+//         s.end()
+//     }
+// }
+//
+// impl<'de> Deserialize<'de> for EleGeoInstance {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//         where D: Deserializer<'de>
+//     {
+//         const FIELDS: &[&str] = &["geo_hash", "refno", "pts", "aabb", "transform", "visible", "is_tubi", "geo_param"];
+//         deserializer.deserialize_struct("EleGeoInstance", FIELDS, EleGeoInstanceVisitor)
+//     }
+// }
 
 struct EleGeoInstanceVisitor;
 
@@ -1940,16 +1940,6 @@ impl<'de> Visitor<'de> for EleGeoInstanceVisitor {
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("struct EleGeoInstance")
     }
-
-    // fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    //     where
-    //         E: serde::de::Error,
-    // {
-    //     match v {
-    //         "geo_hash" => Ok(v.parse::<u64>().unwrap()),
-    //         _ => self.0.visit_str(v),
-    //     }
-    // }
 
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
         where
@@ -2016,6 +2006,7 @@ impl<'de> Visitor<'de> for EleGeoInstanceVisitor {
                     }
                     geo_param = Some(map.next_value()?);
                 }
+
                 _ => {
                     map.next_value()?;
                 }
