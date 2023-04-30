@@ -1,53 +1,136 @@
+use std::io::SeekFrom;
 use bevy::prelude::Resource;
 use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 
 //显示需创建ATTA的refno及name
-#[derive(Default, Clone, Debug,Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct ATTAPos {
     pub pos: Vec<Vec3>,
 }
 
-#[derive(Default, Clone, Debug,Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct ATTAPosVec {
     pub data: Vec<ATTAPos>,
 }
 
-#[derive(Resource,Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualHoleGraphNode {
-    pub _key: String, // node identifier
-    pub intelld: i32, // node type
-    pub code: String, // node code
-    pub relyitem: String, // node link
-    pub mainitem: String, // node main item
-    pub speciality: String, // node speciality
-    pub position: String, // node position
-    pub holework: String, // node work
-    pub workby: String, // node work by
-    pub time: String, // node time
-    pub shape: String, // node shape
-    pub ori: String, // node orientation
-    pub itemref: String, // node item reference
-    pub mainitemref: String, // node main item reference
-    pub openitem: String, // node open item
-    pub plugtype: String, // node plug type
-    pub sizeheigh: f32, // node height
-    pub sizewidth: f32, // node width
-    pub bankwidth: f32, // node bank width
-    pub bankheight: f32, // node bank height
-    pub hotdis: String, // node hot distance
-    pub heatthick: f32, // node heat thickness
-    pub refno: String, // node reference number
-    pub fittrefno: String, // node fitting reference number
-    pub subsmeterial: String, // node subsurface material
-    pub substhickness: f32, // node subsurface thickness
-    pub icreate: i32, // node create
-    pub substype: String, // node subsurface type
-    pub extentlength1: f32, // node extent length 1
-    pub extentlength2: f32, // node extent length 2
-    pub second: i32, // node second
-    pub rehole: i32, // node rehole
-    pub note: String, // node note
+    // node identifier
+    // #[serde(rename = "Code")]
+    pub _key: String,
+    // node link
+    #[serde(rename = "RelyItem")]
+    pub rely_item: String,
+    // node main item
+    #[serde(rename = "MainItem")]
+    pub main_item: String,
+    // node speciality
+    #[serde(rename = "Speciality")]
+    pub speciality: String,
+    // node position
+    #[serde(rename = "Position")]
+    pub position: String,
+    // node work
+    #[serde(rename = "HoleWork")]
+    pub hole_work: String,
+    // node work by
+    #[serde(rename = "WorkBy")]
+    pub work_by: String,
+    // node time
+    #[serde(rename = "Time")]
+    pub time: String,
+    // node shape
+    #[serde(rename = "Shape")]
+    pub shape: String,
+    // node orientation
+    #[serde(rename = "Ori")]
+    pub ori: String,
+    // node item reference
+    #[serde(rename = "ItemREF")]
+    pub item_ref: String,
+    #[serde(rename = "RelyItemREF")]
+    pub rely_item_ref: String,
+    // node main item reference
+    #[serde(rename = "MainItemREF")]
+    pub main_item_ref: String,
+    // node open item
+    #[serde(rename = "OpenItem")]
+    pub open_item: String,
+    // node plug type
+    #[serde(rename = "PlugType")]
+    pub plug_type: String,
+    // node height
+    #[serde(rename = "SizeHeight")]
+    pub size_height: f32,
+    // node width
+    #[serde(rename = "SizeWidth")]
+    pub size_width: f32,
+    // node bank width
+    #[serde(rename = "BankWidth")]
+    pub bank_width: f32,
+    // node bank height
+    #[serde(rename = "BankHeight")]
+    pub bank_height: f32,
+    // node hot distance
+    #[serde(rename = "HotDis")]
+    pub hot_dis: String,
+    // node heat thickness
+    #[serde(rename = "HeatThick")]
+    pub heat_thick: f32,
+    // node reference number
+    #[serde(rename = "refNo")]
+    pub refno: String,
+    // node fitting reference number
+    #[serde(rename = "FittRefNo")]
+    pub fitt_refno: String,
+    // node subsurface material
+    #[serde(rename = "SubsMaterial")]
+    pub subs_material: String,
+    // node subsurface thickness
+    #[serde(rename = "SubsThickness")]
+    pub subs_thickness: f32,
+    // node create
+    #[serde(rename = "iCreate")]
+    pub i_create: i32,
+    // node subsurface type
+    #[serde(rename = "SubsType")]
+    pub subs_type: String,
+    // node extent length 1
+    #[serde(rename = "ExtentLength1")]
+    pub extent_length1: f32,
+    // node extent length 2
+    #[serde(rename = "ExtentLength2")]
+    pub extent_length2: f32,
+    // node second
+    #[serde(rename = "Second")]
+    pub second: bool,
+    // node rehole
+    #[serde(rename = "ReHole")]
+    pub re_hole: i32,
+    // node note
+    #[serde(rename = "Note")]
+    pub note: String,
+    #[serde(rename = "SizeThrowWall")]
+    size_throw_wall: f32,
+    #[serde(rename = "HoleBPID")]
+    hole_bpid: String,
+    #[serde(rename = "HoleBPVER")]
+    hole_bpver: String,
+    #[serde(rename = "RelyItemBPID")]
+    rely_item_bpid: String,
+    #[serde(rename = "RelyItemBPVER")]
+    rely_item_bpver: String,
+    #[serde(rename = "MainPipeline")]
+    main_pipeline: String,
+    #[serde(rename = "iFlowState")]
+    i_flow_state: String,
+    #[serde(rename = "hType")]
+    h_type: String,
+    #[serde(rename = "MainItems")]
+    main_items: String,
+    #[serde(rename = "MainItemRefs")]
+    main_item_refs: String,
 }
 
 
@@ -55,32 +138,89 @@ pub struct VirtualHoleGraphNode {
 // intelld, code, and relyitem fields. The key is used to store
 // the node in the graph and to search for the node in the graph.
 
-#[derive(Resource,Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualEmbedGraphNode {
-    pub _key: String, // the name of the node
-    pub intelld: i32, // the intelligence of the node
-    pub code: String, // the code of the node
-    pub relyitem: String, // the item that the node relies on
-    pub relyitemref: String, // the reference of the item that the node relies on
-    pub mainitem: String, // the main item
-    pub speciality: String, // the specialty of the node
-    pub position: String, // the position of the node
-    pub ori: String, // the orientation of the node
-    pub work: String, // the work of the node
-    pub workby: String, // the worker of the node
-    pub time: String, // the time of the node
-    pub standertype: String, // the standard type of the node
-    pub openitem: String, // the open item of the node
-    pub holework: String, // the hole work of the node
-    pub sizelength: f32, // the length of the node
-    pub sizewidth: f32, // the width of the node
-    pub sizethickness: f32, // the thickness of the node
-    pub minthickness: f32, // the minimum thickness of the node
-    pub load: f32, // the load of the node
-    pub mindistance: f32, // the minimum distance of the node
-    pub subsmeterial: String, // the subsurface meterial of the node
-    pub fittid: String, // the fitting ID of the node
-    pub _ref: String, // the reference of the node
-    pub shape: String, // the shape of the node
-    pub note: String, // the note of the node
+    // the intelligence of the node
+    pub _key: String,
+    #[serde(rename = "RelyItem")]
+    // 关联零件名称
+    pub rely_item: String,
+    #[serde(rename = "RelyItemRef")]
+    // 关联零件标识
+    pub rely_item_ref: String,
+    #[serde(rename = "MainItem")]
+    // 主零件名称
+    pub main_item: String,
+    #[serde(rename = "Speciality")]
+    // 专业
+    pub speciality: String,
+    #[serde(rename = "Position")]
+    // 位置
+    pub position: String,
+    #[serde(rename = "Ori")]
+    // 方向
+    pub ori: String,
+    #[serde(rename = "Work")]
+    // 操作人
+    pub work: String,
+    #[serde(rename = "WorkBy")]
+    // 工作单位
+    pub work_by: String,
+    #[serde(rename = "Time")]
+    // 时间
+    pub time: String,
+    #[serde(rename = "StanderType")]
+    // 规格型号
+    pub stander_type: String,
+    #[serde(rename = "OpenItem")]
+    // 开口部位
+    pub open_item: String,
+    #[serde(rename = "SizeLength")]
+    // 尺寸-长度
+    pub size_length: f32,
+    #[serde(rename = "SizeWidth")]
+    // 尺寸-宽度
+    pub size_width: f32,
+    #[serde(rename = "SizeThickness")]
+    // 尺寸-厚度
+    pub size_thickness: f32,
+    #[serde(rename = "MinThickness")]
+    // 最小厚度
+    pub min_thickness: f32,
+    #[serde(rename = "Load")]
+    // 荷载
+    pub load: String,
+    #[serde(rename = "MinDistance")]
+    // 最小距离
+    pub min_distance: f32,
+    #[serde(rename = "SubsMaterial")]
+    // 补强材料
+    pub subs_material: String,
+    #[serde(rename = "FittID")]
+    // 配件标识
+    pub fitt_id: String,
+    #[serde(rename = "REF")]
+    // 参照标准
+    pub ref_standard: String,
+    #[serde(rename = "Shape")]
+    // 形状
+    pub shape: String,
+    #[serde(rename = "Note")]
+    // 备注
+    pub note: String,
+    #[serde(rename = "EmbedBPID")]
+    // 嵌入零件标识
+    pub embed_bpid: String,
+    #[serde(rename = "EmbedBPVER")]
+    // 嵌入零件版本
+    pub embed_bpver: String,
+    #[serde(rename = "RelyItemBPID")]
+    // 关联零件标识
+    pub rely_item_bpid: String,
+    #[serde(rename = "RelyItemBPVER")]
+    // 关联零件版本
+    pub rely_item_bpver: String,
+    #[serde(rename = "Form")]
+    // 形式
+    pub form: String,
 }

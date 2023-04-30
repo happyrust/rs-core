@@ -172,6 +172,7 @@ lazy_static! {
         let mut att_info_map = AttInfoMap{
             map: db_info.noun_attr_info_map,
             type_att_names_map: Default::default(),
+            type_implicit_att_names_map: Default::default(),
             type_explicit_att_names_map: Default::default(),
             att_name_type_map: Default::default(),
             has_cat_ref_types_set: Default::default(),
@@ -186,7 +187,8 @@ lazy_static! {
 pub struct AttInfoMap {
     pub map: DashMap<i32, DashMap<i32, AttrInfo>>,
     pub type_att_names_map: DashMap<String, BTreeSet<String>>,
-    pub type_explicit_att_names_map: DashMap<String, BTreeSet<String>>,
+    pub type_implicit_att_names_map: DashMap<String, BTreeSet<String>>,
+    pub type_explicit_att_names_map: DashMap<String,BTreeSet<String>>,
     pub att_name_type_map: DashMap<String, DbAttributeType>,
     pub has_cat_ref_types_set: DashSet<String>,
 }
@@ -208,6 +210,9 @@ impl AttInfoMap {
                 self.type_att_names_map.entry(type_name.clone())
                     .or_insert(BTreeSet::new()).insert(v.name.to_string());
                 if v.offset > 0 {
+                    self.type_implicit_att_names_map.entry(type_name.clone())
+                        .or_insert(BTreeSet::new()).insert(v.name.to_string());
+                } else {
                     self.type_explicit_att_names_map.entry(type_name.clone())
                         .or_insert(BTreeSet::new()).insert(v.name.to_string());
                 }
@@ -233,6 +238,13 @@ impl AttInfoMap {
 
     #[inline]
     pub fn get_type_implicit_att_names(&self, type_name: &str) -> Vec<String> {
+        self.type_implicit_att_names_map.get(type_name).map(|v| {
+            v.value().iter().cloned().collect_vec()
+        }).unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn get_type_explicit_att_names(&self, type_name: &str) -> Vec<String> {
         self.type_explicit_att_names_map.get(type_name).map(|v| {
             v.value().iter().cloned().collect_vec()
         }).unwrap_or_default()
