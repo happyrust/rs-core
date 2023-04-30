@@ -5,22 +5,22 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = []
-#opencascade = ["dep:opencascade"]
-opencascade = []
+default = ["truck"]
+opencascade = ["dep:opencascade"]
+truck = []
 
 [dependencies]
 smol_str = { version = "0.2.0", features = ["serde"] }
-glam = { version = "0.23.0"}
+glam = { version = "0.23.0", features = ["serde", "rkyv"]}
 id_tree = { version = "1.8.0", features = ["serde_support"] }
 dashmap = { version = "5.2.0", features = ["serde"] }
 hexasphere = "7.0.0"
 anyhow = "1.0.57"
 lyon = "1.0.0"
-nalgebra = { version = "0.32.2", features = ["serde"] }
+nalgebra = { version = "0.32.2", features = ["serde", "rkyv"] }
 nalgebra-glm = "0.18.0"
-parry3d = { version = "0.13.3", features = ["serde-serialize"] }
-parry2d = { version = "0.13.3", features = ["serde-serialize"] }
+parry3d = { version = "0.13.3", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
+parry2d = { version = "0.13.3", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 approx = "0.5.1"
 memchr = "2.5.0"
 nom = "7.1.1"
@@ -57,9 +57,12 @@ truck-polymesh = { version = "0.5.0", path = "../truck/truck-polymesh" }
 truck-topology = { version = "0.5.0", path = "../truck/truck-topology" }
 truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo" }
+rkyv = { version = "0.7.41", features=["hashbrown"] }
 #truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio" }
+
+#arangors_lite = { path = "../arangors-lite"}
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 redb = "0.15.0"
 csg = { path = "../csgrs/csg" }
-#opencascade = { path = "../../dslcad/crates/opencascade", optional = true }
+opencascade = { path = "../../dslcad/crates/opencascade", optional = true }

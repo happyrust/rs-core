@@ -7,7 +7,7 @@ use std::f32::consts::PI;
 use bevy::prelude::*;
 use crate::tool::float_tool::{f32_round_1, f32_round_3, vec3_round_1, vec3_round_3};
 
-#[derive(Component, Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Component, Default, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub enum SpineCurveType {
     #[default]
     UNKNOWN,
@@ -17,7 +17,7 @@ pub enum SpineCurveType {
 
 }
 
-#[derive(Component, Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Default, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Spine3D {
     pub pt0: Vec3,
     pub pt1: Vec3,
@@ -31,7 +31,7 @@ pub struct Spine3D {
 }
 
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub enum SweepPath3D {
     Line(Line3D),
     SpineArc(Arc3D),
@@ -44,7 +44,7 @@ impl Default for SweepPath3D {
 }
 
 
-#[derive(Component, Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Default, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Arc3D {
     pub center: Vec3,
     pub radius: f32,
@@ -54,7 +54,7 @@ pub struct Arc3D {
     pub pref_axis: Vec3,
 }
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Line3D {
     pub start: Vec3,
     pub end: Vec3,

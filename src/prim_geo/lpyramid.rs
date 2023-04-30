@@ -17,7 +17,7 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 #[reflect(Component)]
 pub struct LPyramid {
 

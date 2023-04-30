@@ -12,18 +12,18 @@ use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
+#[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Facet {
     pub polygons: Vec<Polygon>,
 }
 
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
+#[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Polygon {
     pub contours: Vec<Contour>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
+#[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Contour {
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
@@ -123,11 +123,9 @@ impl BrepShapeTrait for Facet {
             vertices,
             normals,
             wire_vertices: vec![],
-            wf_indices: vec![],
-            wf_vertices: vec![],
             aabb: Some(aabb),
-            unit_shape: Default::default(),
-            // shape_data: self.gen_unit_shape(),
+            #[cfg(feature = "opencascade")]
+            occ_shape: None,
         });
     }
 

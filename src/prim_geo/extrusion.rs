@@ -8,6 +8,7 @@ use approx::abs_diff_eq;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
+use glam::DVec3;
 use nalgebra_glm::sin;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
@@ -20,7 +21,7 @@ use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct Extrusion {
     pub verts: Vec<Vec3>,
     pub fradius_vec: Vec<f32>,
@@ -50,6 +51,20 @@ impl BrepShapeTrait for Extrusion {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
+
+
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+        if !self.check_valid() || self.verts.len() < 3 { return Err(anyhow!("Extrusion params not valid.")); }
+        let mut wire = if let CurveType::Spline(thick) = self.cur_type {
+            gen_occ_spline_wire(&self.verts, thick)?
+        } else {
+            gen_occ_wire(&self.verts, &self.fradius_vec)?
+        };
+        // Ok(opencascade::OCCShape::extrude(&mut wire, 0.0, 0.0, self.height as _)?)
+        wire.extrude(DVec3::new(0., 0.0, self.height as _))
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         if self.verts.len() < 3 {
@@ -102,7 +117,7 @@ impl BrepShapeTrait for Extrusion {
     }
 
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL/10.0))
+        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 10.0))
     }
 
 
@@ -127,11 +142,11 @@ fn test_circle_fradius() {
                 125.0, 125.0, 227.0,
             ),
             Vec3::new(
-                125.0, -125.0,227.0, ),
+                125.0, -125.0, 227.0, ),
             Vec3::new(
                 -125.0, -125.0, 227.0, ),
             Vec3::new(
-                -125.0,125.0, 227.0,
+                -125.0, 125.0, 227.0,
             ),
         ],
         fradius_vec: vec![125.0; 4],

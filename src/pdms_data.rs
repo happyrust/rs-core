@@ -4,14 +4,13 @@ use std::ops::Deref;
 use dashmap::{DashMap, DashSet};
 use dashmap::mapref::one::Ref;
 use smol_str::SmolStr;
-use crate::pdms_types::*;
 use crate::tool::db_tool::db1_dehash;
 use serde::{Serialize, Deserialize};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
-use crate::pdms_types::PdmsDatabaseInfo;
+use crate::pdms_types::*;
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -285,8 +284,3 @@ impl AttInfoMap {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct PdmsInstanceMeshData {
-    pub inst_mgr: ShapeInstancesMgr,
-    pub mesh_mgr: CachedMeshesMgr,
-}

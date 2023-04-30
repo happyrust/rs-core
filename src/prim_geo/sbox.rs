@@ -15,7 +15,7 @@ use crate::prim_geo::CUBE_GEO_HASH;
 use opencascade::OCCShape;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct SBox {
     pub center: Vec3,
     pub size: Vec3,
@@ -70,10 +70,6 @@ impl BrepShapeTrait for SBox {
         SBox::default().gen_mesh(None)
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_unit_occ_mesh(&self) -> Option<PdmsMesh>{
-        SBox::default().gen_occ_mesh(None)
-    }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {

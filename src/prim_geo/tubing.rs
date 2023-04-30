@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::CateSCylinderParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct PdmsTubing {
     pub refno: RefU64,
     pub start_pt: Vec3,

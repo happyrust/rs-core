@@ -22,7 +22,7 @@ use crate::tool::float_tool::hash_f32;
 use opencascade::OCCShape;
 
 
-#[derive(Component, Debug,  Clone, Reflect, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 // #[reflect(Component)]
 pub struct LCylinder {
     pub paxi_expr: String,
@@ -133,7 +133,7 @@ impl From<AttrMap> for LCylinder {
 }
 
 
-#[derive(Component, Debug, /*Inspectable,*/ Reflect, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 // #[reflect(Component)]
 pub struct SCylinder {
     pub paxi_expr: String,
@@ -195,12 +195,13 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "opencascade")]
     //OCC 的生成
-    // fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-    //     let r = self.pdia as f64 / 2.0 ;
-    //     let h = (self.ptdi - self.pbdi) as f64;
-    //     Ok(OCCShape::cylinder(r, h)?)
-    // }
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        let r = self.pdia as f64 / 2.0 ;
+        let h = self.phei as f64;
+        Ok(OCCShape::cylinder(r, h)?)
+    }
 
     #[inline]
     fn get_trans(&self) -> Transform {

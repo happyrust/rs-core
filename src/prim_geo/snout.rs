@@ -15,7 +15,7 @@ use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
 
-#[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 #[reflect(Component)]
 pub struct LSnout {
     pub paax_expr: String,

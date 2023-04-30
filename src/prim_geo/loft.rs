@@ -23,7 +23,7 @@ use truck_base::cgmath64::*;
 
 //todo 针对确实只是extrusion的处理，可以转换成extrusion去处理，而不是占用
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct SweepSolid {
     pub profile: CateProfileParam,
     pub drns: Vec3,
@@ -38,13 +38,22 @@ pub struct SweepSolid {
 // pub fn is_sloped()
 
 impl SweepSolid {
+
+    #[inline]
     pub fn is_sloped(&self) -> bool {
+        self.is_drns_sloped() || self.is_drne_sloped()
+    }
+
+    #[inline]
+    pub fn is_drns_sloped(&self) -> bool {
         let dot_s = self.drns.dot(self.extrude_dir);
+        abs_diff_ne!(dot_s.abs(), 1.0, epsilon = 0.01) && abs_diff_ne!(dot_s.abs(), 0.0, epsilon = 0.01)
+    }
+
+    #[inline]
+    pub fn is_drne_sloped(&self) -> bool {
         let dot_e = self.drne.dot(self.extrude_dir);
-        if abs_diff_eq!(dot_s.abs(), 1.0, epsilon = 0.01) && abs_diff_eq!(dot_e.abs(), 1.0, epsilon = 0.01) {
-            return false;
-        }
-        (abs_diff_ne!(self.drns.length(), 0.0) || abs_diff_ne!(self.drne.length(), 0.0))
+        abs_diff_ne!(dot_e.abs(), 1.0, epsilon = 0.01) && abs_diff_ne!(dot_e.abs(), 0.0, epsilon = 0.01)
     }
 
     fn gen_sann_wire(&self, origin: Vec2, sann: &SannData, is_btm: bool, r1: f32, r2: f32) -> Option<Wire> {
@@ -272,26 +281,27 @@ impl BrepShapeTrait for SweepSolid {
                     return Some(shell);
                 }
                 SweepPath3D::Line(l) => {
-                    info!("is sloped: {}",self.is_sloped());
-                    if self.is_sloped() {
-                        let m = Mat3::from_quat(glam::Quat::from_rotation_arc(drns, Vec3::Z));
+                    if self.is_drns_sloped() {
+                        println!("drns {:?}  is sloped", self.drns);
+                        let m = Mat3::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, drns));
                         transform_btm = Matrix4::from_cols(
                             m.x_axis.vector4(),
                             m.y_axis.vector4(),
                             m.z_axis.vector4(),
                             Vector4::new(0.0, 0.0, 0.0, 1.0),
                         );
-                        let m = Mat3::from_quat(glam::Quat::from_rotation_arc(-drne, Vec3::Z));
+                    }
+                    if self.is_drne_sloped() {
+                        println!("drne {:?}  is sloped", self.drne);
+                        let m = Mat3::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -drne));
                         transform_top = Matrix4::from_cols(
                             m.x_axis.vector4(),
                             m.y_axis.vector4(),
                             m.z_axis.vector4(),
                             Vector4::new(0.0, 0.0, 0.0, 1.0),
                         );
-
-                        // transform_btm = get_sloped_transform(drns, Vec3::Z);
-                        // transform_top = get_sloped_transform(-drne, Vec3::Z);
                     }
+
                     let mut faces = vec![];
                     let translation = Matrix4::from_translation(Vector3::new(0.0, 0.0, l.len() as f64));
                     let wire_s = builder::transformed(&wire, transform_btm);
@@ -334,7 +344,7 @@ impl BrepShapeTrait for SweepSolid {
     fn hash_unit_mesh_params(&self) -> u64 {
         //截面暂时用这个最省力的方法
         let mut hasher = DefaultHasher::default();
-        let bytes = if self.is_sloped() {
+        let bytes = if self.is_drns_sloped() || self.is_drne_sloped() {
             bincode::serialize(&self).unwrap()
         } else if let SweepPath3D::SpineArc(_) = self.path {
             bincode::serialize(&self).unwrap()
