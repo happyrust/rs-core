@@ -1,8 +1,8 @@
 use bevy::prelude::Resource;
-use bevy::utils::HashMap;
 use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
 use bevy::transform::components::Transform;
+use bevy::utils::HashMap;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ThreeDimensionalModelDataCrate {
@@ -73,4 +73,20 @@ pub struct ModelData {
     pub data:Vec<HashMap<String,String>>,
 }
 
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub enum VagueSearchCondition {
+    #[default]
+    And,
+    Or,
+    Not,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct VagueSearchRequest {
+    // 暂时必须包含 name
+    pub name: String,
+    pub filter_refnos: Vec<RefU64>,
+    // key : 过滤的类型 name , type 等  value: 0 : 过滤条件 and or not  1 : 过滤的值
+    pub filter_condition: std::collections::HashMap<String, (VagueSearchCondition, String)>,
+}
 
