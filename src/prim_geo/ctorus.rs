@@ -2,6 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::EPSILON;
 use std::hash::Hasher;
 use std::hash::Hash;
+use anyhow::anyhow;
 use bevy::prelude::*;
 use truck_modeling::{builder, Shell};
 use bevy::reflect::Reflect;
@@ -15,6 +16,9 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
+
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
@@ -77,8 +81,29 @@ impl VerifiedShape for SCTorus {
 
 //#[typetag::serde]
 impl BrepShapeTrait for SCTorus {
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    fn tol(&self) -> f32 {
+        let t = if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+            torus_info.radius
+        }else{
+            1.0
+        };
+        0.01 * t
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+        if let Some(t) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+            let o = self.paax_pt;
+            let circle = Wire::circle(t.radius, o, -self.paax_dir)?;
+            let axis = Axis::new(t.center, t.rot_axis);
+            return Ok(circle.extrude_rotate(&axis, t.angle)?);
+        }
+        Err(anyhow!("SCTorus参数错误，无法生成Shape"))
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -191,9 +216,10 @@ impl BrepShapeTrait for CTorus {
         Box::new(unit)
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 5.0))
+    fn tol(&self) -> f32 {
+        0.01 * self.rout.max(self.rins)
     }
+
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {

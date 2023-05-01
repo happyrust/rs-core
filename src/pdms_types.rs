@@ -68,8 +68,8 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 18] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA",
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 19] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
     "NCYL", "NBOX", "NCON", "NSNO", "NPYR", "NDIS",  "NCTO", "NRTO", "NSLC", "NSCY",
 ];
 
@@ -1130,14 +1130,13 @@ impl AttrMap {
         let type_noun = self.get_type_cloned()?;
         return match type_noun.as_str() {
             "BOX" | "NBOX" => Some(Box::new(SBox::from(self))),
-            "CYLI" | "NCYL" => Some(Box::new(SCylinder::from(self))),
+            "CYLI" | "NCYL" | "NSCY" => Some(Box::new(SCylinder::from(self))),
             "SPHE" => Some(Box::new(Sphere::from(self))),
-            "CONE" | "NCON" => Some(Box::new(LSnout::from(self))),
+            "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
             "DISH" | "NDIS"  => Some(Box::new(Dish::from(self))),
             "CTOR" | "NCTO" => Some(Box::new(CTorus::from(self))),
             "RTOR" | "NRTO" => Some(Box::new(RTorus::from(self))),
             "PYRA" | "NPYR" => Some(Box::new(Pyramid::from(self))),
-            // "NCYL" | "NSCY" => Some(Box::new(SCylinder::from(self))),
             _ => None,
         };
     }
@@ -1575,7 +1574,7 @@ pub struct EleGeosInfo {
     pub generic_type: PdmsGenericType,
     pub aabb: Option<Aabb>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
-    pub world_transform: (Quat, Vec3, Vec3),
+    pub world_transform: Transform,
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
     pub flow_pt_indexs: Vec<Option<i32>>,
 
@@ -1584,6 +1583,11 @@ pub struct EleGeosInfo {
 
 
 impl EleGeosInfo {
+
+    #[inline]
+    pub fn get_inst(&self, geo_hash: u64) -> Option<&EleGeoInstance>{
+        self.data.iter().filter(|&x| x.geo_hash == geo_hash).next()
+    }
 
     ///获得所有的geo hashes
     #[inline]
@@ -1606,11 +1610,7 @@ impl EleGeosInfo {
     ///获得正实体的geo hashes
     #[inline]
     pub fn get_transform_by_hash(&self, hash: u64) -> Option<Transform>{
-        self.data.iter().filter(|&x| x.geo_hash == hash).map(|x| Transform{
-            translation: x.transform.1,
-            rotation: x.transform.0,
-            scale: x.transform.2,
-        }).next()
+        self.data.iter().filter(|&x| x.geo_hash == hash).map(|x| x.transform).next()
     }
 
     #[inline]
@@ -1619,36 +1619,18 @@ impl EleGeosInfo {
     }
 
     #[inline]
-    pub fn get_transform(&self) -> Transform {
-        Transform {
-            translation: self.world_transform.1,
-            rotation: self.world_transform.0,
-            scale: self.world_transform.2,
-        }
+    pub fn get_ele_world_transform(&self) -> Transform {
+        self.world_transform
     }
 
     #[inline]
-    pub fn get_geo_transform(&self, geo: &EleGeoInstance) -> Transform {
-        let ele_trans = Transform {
-            translation: self.world_transform.1,
-            rotation: self.world_transform.0,
-            scale: self.world_transform.2,
-        };
-        let cur_tr = &geo.transform;
-        let t = if geo.is_tubi {
-            Transform {
-                translation: cur_tr.1,
-                rotation: cur_tr.0,
-                scale: cur_tr.2,
-            }
+    pub fn get_geo_world_transform(&self, geo: &EleGeoInstance) -> Transform {
+        let ele_trans = self.get_ele_world_transform();
+        if geo.is_tubi {
+            geo.transform
         } else {
-            ele_trans * Transform {
-                translation: cur_tr.1,
-                rotation: cur_tr.0,
-                scale: cur_tr.2,
-            }
-        };
-        return t;
+            ele_trans * geo.transform
+        }
     }
 }
 
@@ -1727,27 +1709,9 @@ impl CachedColliderShapeMgr {
         let mut target_colliders = vec![];
         let ele_geos_info = inst_mgr.get_inst_data(refno);
         let mut colliders = vec![];
-        let tr = &ele_geos_info.world_transform;
-        let ele_trans = Transform {
-            translation: tr.1,
-            rotation: tr.0,
-            scale: tr.2,
-        };
+        let ele_trans = ele_geos_info.world_transform;
         for geo in &ele_geos_info.data {
-            let cur_tr = &geo.transform;
-            let t = if geo.is_tubi {
-                Transform {
-                    translation: cur_tr.1,
-                    rotation: cur_tr.0,
-                    scale: cur_tr.2,
-                }
-            } else {
-                ele_trans * Transform {
-                    translation: cur_tr.1,
-                    rotation: cur_tr.0,
-                    scale: cur_tr.2,
-                }
-            };
+            let t = ele_geos_info.get_geo_world_transform(geo);
             let s = t.scale;
             let mut local_rot = glam::Quat::IDENTITY;
             let shape = match geo.geo_hash {
@@ -1825,7 +1789,7 @@ impl CachedMeshesMgr {
     }
 
 
-    ///gen the mesh return the hash key, if not exist, try to create and insert, and return index
+    ///生成mesh的hash值，并且保存mesh
     pub fn gen_pdms_mesh(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> u64 {
         let hash = m.hash_unit_mesh_params();
         //如果是重新生成，会去覆盖模型
@@ -1876,8 +1840,8 @@ pub struct EleGeoInstance {
     pub geo_param: PdmsGeoParam,
     pub pts: Vec<i32>,
     pub aabb: Option<Aabb>,
-    //相对owner坐标系的变换, rot, translation, scale
-    pub transform: (Quat, Vec3, Vec3),
+    //相对于自身的坐标系变换
+    pub transform: Transform,
     pub visible: bool,
     pub is_tubi: bool,
     pub is_neg: bool,
@@ -1920,7 +1884,7 @@ fn test_ele_geo_instance_serialize_deserialize() {
         pts: Vec::new(),
         // aabb: Some(Aabb::new(Point3::new(1.0, 0.0, 0.0), Point3::new(2.0, 2.0, 0.0))),
         aabb: None,
-        transform: (Default::default(), Default::default(), Default::default()),
+        transform: Default::default(),
         visible: false,
         is_tubi: false,
         is_neg: false,

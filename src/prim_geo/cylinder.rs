@@ -195,6 +195,10 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
+    fn tol(&self) -> f32 {
+        0.01 * self.phei.max(self.pdia)
+    }
+
     #[cfg(feature = "opencascade")]
     //OCC 的生成
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
@@ -243,7 +247,6 @@ impl BrepShapeTrait for SCylinder {
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
         let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
         let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
-        // dbg!((scale_x, scale_y));
         let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64)
             * Matrix4::from_angle_y(Rad(self.top_shear_angles[0].to_radians() as f64))
             * Matrix4::from_angle_y(Rad(self.top_shear_angles[1].to_radians() as f64))
@@ -298,9 +301,6 @@ impl BrepShapeTrait for SCylinder {
         Box::new(Self::default())
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 10.0))
-    }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {

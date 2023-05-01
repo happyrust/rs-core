@@ -11,5 +11,5 @@ pub struct RvmGeoInfo {
     pub aabb: Option<Aabb>,
     pub data: Vec<EleGeoInstance>,
     // 相对世界坐标系下的变换矩阵 rot, translation, scale
-    pub world_transform: (Quat, Vec3, Vec3),
+    pub world_transform: Transform,
 }

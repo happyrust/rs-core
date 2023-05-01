@@ -102,49 +102,88 @@ pub struct PdmsMesh {
 unsafe impl Sync for PdmsMesh {}
 unsafe impl Send for PdmsMesh {}
 
+
 #[cfg(feature = "opencascade")]
 impl From<OCCMesh> for PdmsMesh {
     fn from(o: OCCMesh) -> Self {
-        let len = o.vertices.len();
-        let mut mesh = Self {
-            indices: vec![],
-            vertices: o.vertices.iter().map(|v| [v.x, v.y, v.z]).collect(),
-            normals: vec![[0.; 3]; len],
-            wire_vertices: vec![],
-            aabb: None,
-            occ_shape: None,
-        };
+        let vertex_count = o.triangles.len() * 3;
         let mut aabb = Aabb::new_invalid();
         o.vertices.iter().for_each(|v| {
             aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
         });
-        // dbg!(&aabb);
-        mesh.aabb = Some(aabb);
 
-        let mut normal_cnt_vec = vec![0; len];
-        let mut normals = vec![Vec3::ZERO; len];
-        for (t, normal) in o.triangles_with_normals() {
-            mesh.indices.push(t[0] as _);
-            mesh.indices.push(t[1] as _);
-            mesh.indices.push(t[2] as _);
+        let mut vertices = Vec::with_capacity(vertex_count);
+        let mut normals = Vec::with_capacity(vertex_count);
+        let mut indices = Vec::with_capacity(vertex_count);
 
-            normals[t[0]] += normal;
-            normal_cnt_vec[t[0]] += 1;
-            normals[t[1]] += normal;
-            normal_cnt_vec[t[1]] += 1;
-            normals[t[2]] += normal;
-            normal_cnt_vec[t[2]] += 1;
+        for (i, (t, normal)) in o.triangles_with_normals().enumerate() {
+            //顶点重排，保证normal是正确的
+            vertices.push(o.vertices[t[0]].into());
+            vertices.push(o.vertices[t[1]].into());
+            vertices.push(o.vertices[t[2]].into());
+            indices.push((i * 3) as u32);
+            indices.push((i * 3 + 1) as u32);
+            indices.push((i * 3 + 2) as u32);
+            normals.push(normal.into());
+            normals.push(normal.into());
+            normals.push(normal.into());
         }
-        //将法向量平均化
-        if len != 0 {
-            for i in 0..len {
-                mesh.normals[i] = (normals[i] / normal_cnt_vec[i] as f32).into();
-            }
+
+        Self{
+            indices,
+            vertices,
+            normals,
+            wire_vertices: vec![],
+            aabb: Some(aabb),
+            occ_shape: None,
         }
-        mesh
     }
 }
 
+
+// #[cfg(feature = "opencascade")]
+// impl From<OCCMesh> for PdmsMesh {
+//     fn from(o: OCCMesh) -> Self {
+//         let len = o.vertices.len();
+//         let mut mesh = Self {
+//             indices: vec![],
+//             vertices: o.vertices.iter().map(|v| [v.x, v.y, v.z]).collect(),
+//             normals: vec![[0.; 3]; len],
+//             wire_vertices: vec![],
+//             aabb: None,
+//             occ_shape: None,
+//         };
+//         let mut aabb = Aabb::new_invalid();
+//         o.vertices.iter().for_each(|v| {
+//             aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
+//         });
+//         // dbg!(&aabb);
+//         mesh.aabb = Some(aabb);
+//
+//         let mut normal_cnt_vec = vec![0; len];
+//         let mut normals = vec![Vec3::ZERO; len];
+//         for (t, normal) in o.triangles_with_normals() {
+//             mesh.indices.push(t[0] as _);
+//             mesh.indices.push(t[1] as _);
+//             mesh.indices.push(t[2] as _);
+//
+//             normals[t[0]] += normal;
+//             normal_cnt_vec[t[0]] += 1;
+//             normals[t[1]] += normal;
+//             normal_cnt_vec[t[1]] += 1;
+//             normals[t[2]] += normal;
+//             normal_cnt_vec[t[2]] += 1;
+//         }
+//         //将法向量平均化
+//         if len != 0 {
+//             for i in 0..len {
+//                 mesh.normals[i] = (normals[i] / normal_cnt_vec[i] as f32).into();
+//             }
+//         }
+//         mesh
+//     }
+// }
+//
 
 #[test]
 fn test_project_to_plane() {
@@ -343,7 +382,7 @@ impl ShapeInstancesMgr {
     }
 }
 
-pub const TRI_TOL: f32 = 0.01;
+pub const TRI_TOL: f32 = 0.05;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 ///brep形状trait
@@ -374,12 +413,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// cylinder
     /// sphere
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        None
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_unit_occ_mesh(&self) -> Option<PdmsMesh> {
-        None
+        self.gen_unit_shape().gen_mesh()
     }
 
     ///获得缩放向量
@@ -398,10 +432,15 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         }
     }
 
+    #[inline]
+    fn tol(&self) -> f32{
+        TRI_TOL
+    }
+
     #[cfg(feature = "opencascade")]
-    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
+    fn gen_mesh(&self) -> Option<PdmsMesh> {
         if let Ok(shape) = self.gen_occ_shape() {
-            let mut mesh: PdmsMesh = shape.mesh().ok()?.into();
+            let mut mesh: PdmsMesh = shape.mesh(self.tol() as f64).ok()?.into();
             mesh.occ_shape = Some(shape);
             return Some(mesh);
         }

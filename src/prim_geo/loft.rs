@@ -368,10 +368,6 @@ impl BrepShapeTrait for SweepSolid {
         Box::new(unit)
     }
 
-    //拉伸为height方向
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 10.0))
-    }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {

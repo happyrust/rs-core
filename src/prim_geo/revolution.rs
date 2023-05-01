@@ -11,6 +11,7 @@ use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
+use opencascade::Axis;
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
 use crate::pdms_types::AttrMap;
@@ -60,7 +61,10 @@ impl BrepShapeTrait for Revolution {
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        return Err(anyhow!("不存在该occ shape"));
+
+        let wire = gen_occ_wire( &self.verts, &self.fradius_vec)?;
+        let axis = Axis::new(self.rot_pt, self.rot_dir);
+        Ok(wire.extrude_rotate(&axis, self.angle)?)
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -72,8 +76,6 @@ impl BrepShapeTrait for Revolution {
                 let mut rot_dir = self.rot_dir.normalize().vector3();
                 let rot_pt = self.rot_pt.point3();
                 let mut angle = self.angle.to_radians() as f64;
-                // dbg!(plane.normal());
-                // dbg!(rot_dir);
                 let normal_flag = plane.normal().dot(Vector3::new(0.0, 0.0, 1.0)) < 0.0;
                 let angle_flag = angle > 0.0;
                 let reverse_flag = !(normal_flag ^ angle_flag);  //如果两者一致，就不需要reverse
@@ -126,12 +128,6 @@ impl BrepShapeTrait for Revolution {
         Box::new(self.clone())
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
-        self.gen_mesh(Some(TRI_TOL/10.0))
-    }
-    fn get_scaled_vec3(&self) -> Vec3{
-        Vec3::ONE
-    }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(

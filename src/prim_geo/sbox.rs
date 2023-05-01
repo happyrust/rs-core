@@ -66,11 +66,6 @@ impl BrepShapeTrait for SBox {
         Box::new(Self::default())
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
-        SBox::default().gen_mesh(None)
-    }
-
-
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         self.size

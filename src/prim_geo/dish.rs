@@ -136,9 +136,6 @@ impl BrepShapeTrait for Dish {
         })
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL))
-    }
 
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::new(self.pdia, self.pdia, self.pdia)

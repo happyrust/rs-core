@@ -69,7 +69,7 @@ impl BrepShapeTrait for Sphere {
     }
 
     #[cfg(feature = "truck")]
-    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
+    fn gen_mesh(&self) -> Option<PdmsMesh> {
         let generated = IcoSphere::new(32, |point| {
             let inclination = point.y.acos();
             let azimuth = point.z.atan2(point.x);
@@ -117,10 +117,6 @@ impl BrepShapeTrait for Sphere {
 
     fn hash_unit_mesh_params(&self) -> u64{
         SPHERE_GEO_HASH            //代表SPHERE
-    }
-
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
-        Sphere::default().gen_mesh(None)
     }
 
     #[inline]

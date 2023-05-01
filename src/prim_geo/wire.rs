@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
 use glam::{DVec3, Vec3};
-use truck_modeling::{builder, Vertex, Wire};
+
 use std::f32::consts::PI;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
@@ -12,7 +12,7 @@ use crate::tool::float_tool::hash_vec3;
 use approx::abs_diff_eq;
 
 #[cfg(feature = "opencascade")]
-use opencascade::{OCCWire, OCCShape, OCCEdge};
+use opencascade::{OCCShape, Wire, Edge, Vertex};
 
 #[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub enum CurveType {
@@ -46,7 +46,7 @@ pub fn circus_center(pt0: Point3, pt1: Point3, pt2: Point3) -> Point3 {
 
 #[cfg(feature = "opencascade")]
 ///生成occ的wire
-pub fn gen_occ_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<OCCWire> {
+pub fn gen_occ_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire> {
     if verts.len() != 3 {
         return Err(anyhow!("SPINE number is not 3".to_string()));   //先假定必须有三个
     }
@@ -69,27 +69,28 @@ pub fn gen_occ_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<OCCW
     let v1 = (pt1 - origin).normalize();
 
     let half_thick = thick / 2.0;
-    let p0 = (pt0 - v0 * half_thick).as_dvec3();
-    let p1 = (pt1 - v1 * half_thick).as_dvec3();
-    let p2 = (pt1 + v1 * half_thick).as_dvec3();
-    let p3 = (pt0 + v0 * half_thick).as_dvec3();
+    let p0 = (pt0 - v0 * half_thick).into();
+    let p1 = (pt1 - v1 * half_thick).into();
+    let p2 = (pt1 + v1 * half_thick).into();
+    let p3 = (pt0 + v0 * half_thick).into();
 
     let t_v = (transit - origin).normalize();
-    let t0 = (transit - (half_thick * t_v)).as_dvec3();
-    let t1 = (transit + (half_thick * t_v)).as_dvec3();
+    let t0 = (transit - (half_thick * t_v)).into();
+    let t1 = (transit + (half_thick * t_v)).into();
 
     let mut edges = vec![
-        OCCEdge::arc(p0, p1, t0),
-        OCCEdge::segment(p1, p2),
-        OCCEdge::arc(p2, p3, t1),
-        OCCEdge::segment(p3, p0),
+        Edge::new_arc(&p0, &p1, &t0)?,
+        Edge::new_line(&p1, &p2)?,
+        Edge::new_arc(&p2, &p3, &t1)?,
+        Edge::new_line(&p3, &p0)?,
     ];
 
-    Ok(OCCWire::from_edges(&edges))
+    Ok(Wire::from_edges(&edges)?)
 }
 
 ///生成truck的wire
-pub fn gen_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire> {
+pub fn gen_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<truck_modeling::Wire> {
+    use truck_modeling::{builder, Vertex, Wire};
     if verts.len() != 3 {
         return Err(anyhow!("SPINE number is not 3".to_string()));   //先假定必须有三个
     }
@@ -139,12 +140,16 @@ pub fn gen_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire> {
 
 
 
+
 #[cfg(feature = "opencascade")]
-pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<OCCWire> {
-    //todo 需要返回带变换矩阵的wire
+///生成occ的wire
+pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
+    // let pts = pts.iter().rev().cloned().collect::<Vec<_>>();
+    // let fradius_vec = fradius_vec.iter().rev().cloned().collect::<Vec<_>>();
+    // dbg!(&fradius_vec);
     let ll = pts.len();
     let mut pre_radius = 0.0;
     let mut i = 1;
@@ -179,13 +184,16 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<O
             let next_pt = pts[n_i];
             let pa_dist = pre_pt.distance(cur_pt);
             let pb_dist = next_pt.distance(cur_pt);
+            // dbg!((pa_dist, pb_dist));
             let a_dir = (pre_pt - cur_pt).normalize();
             let b_dir = (next_pt - cur_pt).normalize();
             let angle = a_dir.angle_between(b_dir) / 2.0;
+            // dbg!((r, angle));
             let b_len = r / angle.tan();
 
             let h = r * angle.sin();
             let d = r - h;
+            // dbg!(d);
             let p0 = cur_pt + a_dir * b_len;
             let p1 = cur_pt + b_dir * b_len;
             let mid_pt = (p0 + p1) / 2.0;
@@ -223,27 +231,26 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<O
             if pre_vert.distance(cur_vert) > 1.0 {
                 if circle_indexs.len() > 0 && j == circle_indexs[0] {
                     let next_vert = verts[(j + 1) % v_len];
-                    // wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.point()));
-                    edges.push(OCCEdge::arc(pre_vert.as_dvec3(), next_vert.as_dvec3(), cur_vert.as_dvec3()));
+                    edges.push(Edge::new_arc(&pre_vert.into(), &cur_vert.into(), &next_vert.into())?);
                     pre_vert = next_vert;
                     circle_indexs.remove(0);
                     j += 1;
                 } else {
-                    edges.push(OCCEdge::segment(pre_vert.as_dvec3(), cur_vert.as_dvec3()));
+                    edges.push(Edge::new_line(&pre_vert.into(), &cur_vert.into())?);
                     pre_vert = cur_vert.clone();
                 }
             }
             j += 1;
         }
     }
-    Ok(OCCWire::from_edges(&edges))
+    Ok(Wire::from_edges(&edges)?)
 }
 
 
 
 /// 根据顶点信息和fradius半径，生成wire
-pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
-    //todo 需要返回带变换矩阵的wire
+pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck_modeling::Wire> {
+    use truck_modeling::{builder, Vertex, Wire};
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
