@@ -40,7 +40,7 @@ pub struct ThreeDimensionalModelDataToArango {
     #[serde(rename = "UserRole")]
     pub user_role: String,
     #[serde(rename = "ModelData")]
-    pub model_data:  ModelData,
+    pub model_data: ModelData,
     #[serde(rename = "FlowPicData")]
     pub flow_pic_data: ThreeDimensionalReviewComment,
 }
@@ -70,7 +70,7 @@ pub struct ThreeDimensionalReviewData {
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ModelData {
     pub index: Vec<(RefU64, String)>,
-    pub data:Vec<HashMap<String,String>>,
+    pub data: Vec<HashMap<String, String>>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -79,6 +79,16 @@ pub enum VagueSearchCondition {
     And,
     Or,
     Not,
+}
+
+impl Into<String> for VagueSearchCondition {
+    fn into(self) -> String {
+        match self {
+            VagueSearchCondition::And => { "并且".to_string() }
+            VagueSearchCondition::Or => { "或者".to_string() }
+            VagueSearchCondition::Not => { "不含".to_string() }
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
