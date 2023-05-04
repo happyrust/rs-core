@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
 use std::f32::consts::PI;
 use std::{fmt, hash};
-use std::fmt::{Debug, Formatter, Pointer};
+use std::fmt::{Debug, Display, Formatter, Pointer};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
@@ -10,6 +10,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::vec::IntoIter;
 use rkyv::with::Skip;
+use serde_with::{DisplayFromStr, serde_as};
 
 use anyhow::anyhow;
 // use arangors_lite::Cursor;
@@ -26,6 +27,8 @@ use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Point3, Quaternion, UnitQuaternion};
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
@@ -68,22 +71,36 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 19] = [
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
-    "NCYL", "NBOX", "NCON", "NSNO", "NPYR", "NDIS",  "NCTO", "NRTO", "NSLC", "NSCY",
+    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
 //"NXTR", "NREV"
 
 ///负实体基本体的种类
-pub const GENRAL_NEGATIVE_NOUN_NAMES: [&'static str; 12] = [
-    "NCYL", "NBOX", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 12] = [
+    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 21] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
+    "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+];
+
+
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 33] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
+    "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+];
+
+
+
 ///元件库的种类
-pub const CATA_ATT_TYPES: [&'static str; 25] = [
+pub const CATA_ATT_TYPES: [&'static str; 26] = [
     "BRAN", "HANG", "ELCONN",
-    "CMPF", "WALL", "STWALL", "GWALL",  "FIXING",
+    "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
     "PJOI", "PFIT", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "NOZZ", "PALJ",
     "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "SCTN", "FITT",
 ];
@@ -186,12 +203,28 @@ pub mod string {
     }
 }
 
-
+#[derive(Debug, PartialEq, Eq, derive_more::Display)]
+pub struct ParseRefU64Error;
 //把Refno当作u64
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Hash, Serialize, Deserialize, Clone, Copy, Default, Component, Eq, PartialEq)]
 pub struct RefU64(
     pub u64
 );
+
+
+
+impl std::str::FromStr for RefU64 {
+    type Err = ParseRefU64Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.contains('_') {
+            Self::from_url_refno(s).ok_or(ParseRefU64Error)
+        }else if s.contains('/') {
+            Self::from_refno_str(s).map_err(|_| ParseRefU64Error)
+        }else{
+            Err(ParseRefU64Error)
+        }
+    }
+}
 
 impl hash::Hash for ArchivedRefU64 {
     #[inline]
@@ -279,12 +312,19 @@ impl BytesTrait for RefU64 {
 //     }
 // }
 
-impl ToString for RefU64 {
-    fn to_string(&self) -> String {
+impl Display for RefU64 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let refno: RefI32Tuple = self.into();
-        refno.into()
+        write!(f, "{}/{}", refno.get_0(), refno.get_1())
     }
 }
+
+// impl ToString for RefU64 {
+//     fn to_string(&self) -> String {
+//         let refno: RefI32Tuple = self.into();
+//         refno.into()
+//     }
+// }
 
 impl RefU64 {
     #[inline]
@@ -510,7 +550,12 @@ impl AttrMap {
 
     #[inline]
     pub fn is_neg(&self) -> bool {
-        GENRAL_NEGATIVE_NOUN_NAMES.contains(&self.get_type())
+        GENRAL_NEG_NOUN_NAMES.contains(&self.get_type())
+    }
+
+    #[inline]
+    pub fn is_pos(&self) -> bool {
+        GENRAL_POS_NOUN_NAMES.contains(&self.get_type())
     }
 
     #[inline]
@@ -1567,7 +1612,7 @@ pub enum PdmsGenericType {
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default, Resource)]
 pub struct EleGeosInfo {
     pub _key: String,
-    pub data: Vec<EleGeoInstance>,
+    pub geo_insts: Vec<EleGeoInstance>,
     //是否可见
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
@@ -1576,7 +1621,7 @@ pub struct EleGeosInfo {
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: Transform,
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
-    pub flow_pt_indexs: Vec<Option<i32>>,
+    pub flow_pt_indexs: Vec<i32>,
 
     pub has_neg: bool,
 }
@@ -1586,36 +1631,36 @@ impl EleGeosInfo {
 
     #[inline]
     pub fn get_inst(&self, geo_hash: u64) -> Option<&EleGeoInstance>{
-        self.data.iter().filter(|&x| x.geo_hash == geo_hash).next()
+        self.geo_insts.iter().filter(|&x| x.geo_hash == geo_hash).next()
     }
 
     ///获得所有的geo hashes
     #[inline]
     pub fn get_all_geo_hashes(&self) -> Vec<u64>{
-        self.data.iter().map(|x| x.geo_hash).collect()
+        self.geo_insts.iter().map(|x| x.geo_hash).collect()
     }
 
     ///获得正实体的geo hashes
     #[inline]
     pub fn get_pos_geo_hashes(&self) -> Vec<u64>{
-        self.data.iter().filter(|&x| !x.is_neg).map(|x| x.geo_hash).collect()
+        self.geo_insts.iter().filter(|&x| !x.is_neg).map(|x| x.geo_hash).collect()
     }
 
     ///获得负实体的geo hashes
     #[inline]
     pub fn get_neg_geo_hashes(&self) -> Vec<u64>{
-        self.data.iter().filter(|&x| x.is_neg).map(|x| x.geo_hash).collect()
+        self.geo_insts.iter().filter(|&x| x.is_neg).map(|x| x.geo_hash).collect()
     }
 
     ///获得正实体的geo hashes
     #[inline]
     pub fn get_transform_by_hash(&self, hash: u64) -> Option<Transform>{
-        self.data.iter().filter(|&x| x.geo_hash == hash).map(|x| x.transform).next()
+        self.geo_insts.iter().filter(|&x| x.geo_hash == hash).map(|x| x.transform).next()
     }
 
     #[inline]
     pub fn has_neg(&self) -> bool{
-        self.data.iter().any(|x| x.is_neg)
+        self.geo_insts.iter().any(|x| x.is_neg)
     }
 
     #[inline]
@@ -1638,7 +1683,7 @@ impl Deref for EleGeosInfo {
     type Target = Vec<EleGeoInstance>;
 
     fn deref(&self) -> &Self::Target {
-        &self.data
+        &self.geo_insts
     }
 }
 
@@ -1710,7 +1755,7 @@ impl CachedColliderShapeMgr {
         let ele_geos_info = inst_mgr.get_inst_data(refno);
         let mut colliders = vec![];
         let ele_trans = ele_geos_info.world_transform;
-        for geo in &ele_geos_info.data {
+        for geo in &ele_geos_info.geo_insts {
             let t = ele_geos_info.get_geo_world_transform(geo);
             let s = t.scale;
             let mut local_rot = glam::Quat::IDENTITY;
@@ -1726,7 +1771,7 @@ impl CachedColliderShapeMgr {
                     SharedShape::cylinder(s.z / 2.0, s.x / 2.0)
                 }
                 _ => {
-                    let m = mesh_mgr.get_mesh(&geo.geo_hash).unwrap();
+                    let m = mesh_mgr.get_mesh(geo.geo_hash).unwrap();
                     SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
                 }
             };
@@ -1777,17 +1822,21 @@ impl CachedMeshesMgr {
 
     /// 获得对应的bevy 三角模型和线框模型
     pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Option<Aabb>)> {
-        if let Some(cached_msh) = self.get_mesh(mesh_hash) {
+        if let Some(cached_msh) = self.get_mesh(*mesh_hash) {
             let bevy_mesh = cached_msh.gen_bevy_mesh_with_aabb();
             return Some(bevy_mesh);
         }
         None
     }
 
-    pub fn get_mesh(&self, mesh_hash: &u64) -> Option<&PdmsMesh> {
-        self.meshes.get(mesh_hash)
+    pub fn get_mesh(&self, geo_hash: u64) -> Option<&PdmsMesh> {
+        self.meshes.get(&geo_hash)
     }
 
+    #[cfg(feature = "opencascade")]
+    pub fn get_occ_shape(&self, geo_hash: u64) -> Option<&OCCShape> {
+        self.get_mesh(geo_hash).map(|x| x.occ_shape.as_ref().unwrap())
+    }
 
     ///生成mesh的hash值，并且保存mesh
     pub fn gen_pdms_mesh(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> u64 {
@@ -2055,7 +2104,7 @@ impl EleTreeNode {
 impl Into<PdmsElement> for EleTreeNode {
     fn into(self) -> PdmsElement {
         PdmsElement {
-            refno: self.refno.to_refno_string(),
+            refno: self.refno,
             owner: self.owner,
             name: self.name,
             noun: self.noun,
@@ -2111,9 +2160,18 @@ pub struct ChildrenNode {
     pub noun: String,
 }
 
+
+// #[serde_as]
+// #[derive(Debug, Serialize, Deserialize, Default)]
+// pub struct RefnoHasNegPosInfoTuple(
+//     #[serde_as(as = "DisplayFromStr")]
+
+#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component)]
 pub struct PdmsElement {
-    pub refno: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    #[serde_as(as = "DisplayFromStr")]
     pub owner: RefU64,
     pub name: String,
     pub noun: String,
@@ -2125,7 +2183,7 @@ pub struct PdmsElement {
 impl PdmsNodeTrait for PdmsElement {
     #[inline]
     fn get_refno(&self) -> RefU64 {
-        RefU64::from_refno_str(&self.refno).unwrap_or(RefU64(0))
+        self.refno
     }
 
     #[inline]

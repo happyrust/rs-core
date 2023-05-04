@@ -120,7 +120,7 @@ impl BrepShapeTrait for Extrusion {
     fn tol(&self) -> f32{
         use parry2d::bounding_volume::Aabb;
         let pts = self.verts.iter().map(|x|
-            nalgebra::Point2::from_coordinates(nalgebra::Vector2::from(x.truncate()))
+            nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
         ).collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
         0.01 * profile_aabb.bounding_sphere().radius

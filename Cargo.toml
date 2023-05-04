@@ -17,7 +17,7 @@ dashmap = { version = "5.2.0", features = ["serde"] }
 hexasphere = "7.0.0"
 anyhow = "1.0.57"
 lyon = "1.0.0"
-nalgebra = { version = "0.32.2", features = ["serde", "rkyv"] }
+nalgebra = { version = "0.32.2", features = ["serde", "rkyv", "glam023"] }
 nalgebra-glm = "0.18.0"
 parry3d = { version = "0.13.3", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 parry2d = { version = "0.13.3", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
@@ -58,7 +58,8 @@ truck-topology = { version = "0.5.0", path = "../truck/truck-topology" }
 truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo" }
 rkyv = { version = "0.7.41", features=["hashbrown"] }
-geo = "0.24.1"
+serde_with = "3.0.0"
+#geo = "0.24.1"
 #truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio" }
 
 #arangors_lite = { path = "../arangors-lite"}

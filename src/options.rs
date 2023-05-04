@@ -4,6 +4,8 @@ use clap::Parser;
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
     #[clap(long)]
+    pub enable_log: bool,
+    #[clap(long)]
     pub total_sync: bool,
     #[clap(long)]
     pub sync_graph_db: Option<bool>,

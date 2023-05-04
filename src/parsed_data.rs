@@ -3,6 +3,7 @@ use std::future::Future;
 use bevy::utils::HashMap;
 use dashmap::DashMap;
 use glam::{Vec2, Vec3};
+use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
@@ -15,41 +16,41 @@ pub struct DesignPipeRequest {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignComponentRequest {
-    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignBranRequest {
-    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct RefnosRequest {
-    
     pub name: String,
 }
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Refnos {
-    
     pub refnos: Vec<String>,
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct DesignPipe {
     pub name: String,
     pub refno: String,
     pub brans: Vec<DesignBran>,
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct DesignBran {
     pub name: String,
     pub refno: String,
-    pub components: Vec<GeomsInfo>,
+    pub components: Vec<CateGeomsInfo>,
 }
 
+///元件库的集合信息
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct GeomsInfo {
+pub struct CateGeomsInfo {
     pub geometries: Vec<CateGeoParam>,
     pub axis_map: BTreeMap<i32, CateAxisParam>,
 }
@@ -101,7 +102,6 @@ pub struct GmseParamData {
     pub plin_pos: Vec2,
     pub plin_plax: Vec3,
 }
-
 
 
 #[derive(Clone, PartialEq, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default)]
@@ -158,6 +158,7 @@ pub mod geo_params_data {
         SVER(super::CateSverParam),
     }
 
+
     #[derive(Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default)]
     pub enum PdmsGeoParam {
         #[default]
@@ -174,12 +175,14 @@ pub mod geo_params_data {
         PrimLCylinder(LCylinder),
         PrimRevolution(Revolution),
         PrimExtrusion(Extrusion),
+        CompoundShape,
     }
 
     impl PdmsGeoParam {
         pub fn into_rvm_pri_num(&self) -> Option<u8> {
             match self {
                 PdmsGeoParam::Unknown => { None }
+                PdmsGeoParam::CompoundShape => { None }
                 PdmsGeoParam::PrimBox(_) => { Some(2) }
                 PdmsGeoParam::PrimLSnout(_) => { Some(7) }
                 PdmsGeoParam::PrimDish(_) => { Some(6) }
@@ -255,8 +258,8 @@ pub struct CateBoxImpliedParam {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateBoxParam {
-    pub size: Vec<f32>,
-    pub offset: Vec<f32>,
+    pub size: Vec3,
+    pub offset: Vec3,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     pub refno: RefU64,
@@ -340,10 +343,27 @@ pub struct SProfileData {
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub enum CateProfileParam {
     #[default]
-    None,
+    UNKOWN,
     SPRO(SProfileData),
     SANN(SannData),
+}
 
+impl CateProfileParam {
+    pub fn get_bbox(&self) -> Option<Aabb> {
+        match self {
+            Self::UNKOWN => None,
+            Self::SANN(s) => {
+                Some(Aabb::new(nalgebra::Vector2::from(s.xy + s.dxy - Vec2::ONE * s.drad).into(),
+                               nalgebra::Vector2::from(s.xy + s.dxy + Vec2::ONE * s.drad).into()))
+            }
+            Self::SPRO(s) => {
+                let pts = s.verts.iter().map(|x|
+                    nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
+                ).collect::<Vec<_>>();
+                Some(Aabb::from_points(&pts))
+            }
+        }
+    }
 }
 
 
@@ -361,7 +381,6 @@ pub struct CateDishParam {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateLineParam {
-    
     pub pa: ::core::option::Option<CateAxisParam>,
 
     pub pb: ::core::option::Option<CateAxisParam>,
@@ -391,6 +410,7 @@ pub struct CatePyramidParam {
     pub centre_line_flag: bool,
     pub tube_flag: bool,
 }
+
 /// 截面为矩形的弯管
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateRectTorusParam {
@@ -468,6 +488,7 @@ pub struct CateSphereParam {
     pub tube_flag: bool,
     pub refno: RefU64,
 }
+
 ///元件库里的torus参数
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateTorusParam {

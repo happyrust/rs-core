@@ -2,6 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
+use approx::abs_diff_eq;
 
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
@@ -78,12 +79,26 @@ impl BrepShapeTrait for LPyramid {
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
 
-        let x_dir = self.pbax_dir.normalize();
+        let mut x_dir = self.pbax_dir.normalize();
+        let mut y_dir = self.pcax_dir.normalize();
+        let mut z_dir = self.paax_dir.normalize();
+
+        // dbg!(z_dir);
+        // dbg!(x_dir);
+        //容错处理
+        let ref_dir = z_dir.cross(x_dir).normalize();
+        //如果和预期的方向垂直了，也就是和x方向共线了，需要重置
+        // dbg!(ref_dir.dot(y_dir));
+        if abs_diff_eq!(ref_dir.dot(y_dir), 0.0, epsilon=0.01)  {
+            y_dir = ref_dir;
+            x_dir = ref_dir.cross(z_dir).normalize();
+        }
+        // dbg!(y_dir);
+        // dbg!(x_dir);
+
         let x_pt = self.pbax_pt;
-        let y_dir = self.pcax_dir.normalize();
         let y_pt = self.pcax_pt;
-        let z_dir = self.paax_dir.normalize();
-        let z_pt = self.paax_pt;
+        let c_pt = self.paax_pt;
 
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp / 2.0);
@@ -93,15 +108,17 @@ impl BrepShapeTrait for LPyramid {
         let ox = 0.5 * self.pbof;
         let oy = 0.5 * self.pcof;
 
-        let h_vector = z_dir * (self.ptdi - self.pbdi);
+        let h_vector = z_dir * (self.ptdi - self.pbdi) / 2.0;
 
-        let t_pt = z_pt + x_dir * ox + y_dir * oy + h_vector;
-        let b_pt = z_pt ;
+        let t_pt = c_pt + x_dir * ox + y_dir * oy + h_vector;
+        // dbg!(t_pt);
+        let b_pt = c_pt - x_dir * ox - y_dir * oy - h_vector;
+        // dbg!(b_pt);
 
         let mut polys = vec![];
         let mut verts = vec![];
 
-        let pts = vec![
+        let t_pts = vec![
             t_pt - tx * x_dir - ty * y_dir,
             t_pt + tx * x_dir - ty * y_dir,
             t_pt + tx * x_dir + ty * y_dir,
@@ -110,10 +127,11 @@ impl BrepShapeTrait for LPyramid {
         if tx * ty < f32::EPSILON {
             verts.push(Vertex::new(t_pt));
         } else {
-            polys.push(Wire::from_points(&pts)?);
+            // dbg!(&t_pts);
+            polys.push(Wire::from_points(&t_pts)?);
         }
 
-        let pts = vec![
+        let b_pts = vec![
             b_pt - bx * x_dir - by * y_dir,
             b_pt + bx * x_dir - by * y_dir,
             b_pt + bx * x_dir + by * y_dir,
@@ -122,7 +140,8 @@ impl BrepShapeTrait for LPyramid {
         if bx * by < f32::EPSILON {
             verts.push(Vertex::new(b_pt));
         } else {
-            polys.push(Wire::from_points(&pts)?);
+            // dbg!(&b_pts);
+            polys.push(Wire::from_points(&b_pts)?);
         }
 
         Ok(OCCShape::loft(polys.iter(), verts.iter())?)
@@ -234,10 +253,6 @@ impl BrepShapeTrait for LPyramid {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
-    }
-
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::ONE
     }
 
 }

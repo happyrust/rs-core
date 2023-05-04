@@ -75,7 +75,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbof: d.x_offset,
                 pcof: d.y_offset,
             };
-            let translation = z_axis * (d.dist_to_btm) as f32;
+            ///需要偏移到 btm
+            let translation = z_axis * (d.dist_to_btm + d.dist_to_top ) / 2.0;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -150,11 +151,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
         CateGeoParam::Box(d) => {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SBox {
-                size: Vec3::new(d.size[0] as f32, d.size[1] as f32, d.size[2] as f32),
+                size: d.size,
                 ..default()
             });
             let transform = Transform {
-                translation: Vec3::new(d.offset[0] as f32, d.offset[1] as f32, d.offset[2] as f32),
+                translation: d.offset,
                 ..default()
             };
             return Some(CateBrepShape {
@@ -261,9 +262,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref().unwrap();
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = Vec3::new(axis.dir[0] as f32, axis.dir[1] as f32, axis.dir[2] as f32);
+            let mut dir = axis.dir.normalize();
+            // dbg!(dir);
             let mut phei = d.height as f32;
-            let translation = dir * (d.dist_to_btm) + Vec3::new(axis.pt[0], axis.pt[1], axis.pt[2]);
+            let translation = dir * d.dist_to_btm + axis.pt;
             if phei < 0.0 {
                 phei = -phei;
                 dir = -dir;

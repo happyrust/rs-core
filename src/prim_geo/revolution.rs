@@ -5,15 +5,13 @@ use std::hash::{Hash, Hasher};
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use bevy::prelude::*;
-use truck_modeling::{builder, Shell, Surface, Wire};
 use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
-use opencascade::Axis;
 #[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+use opencascade::{ OCCShape, Wire, Axis};
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -67,7 +65,9 @@ impl BrepShapeTrait for Revolution {
         Ok(wire.extrude_rotate(&axis, self.angle)?)
     }
 
-    fn gen_brep_shell(&self) -> Option<Shell> {
+    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
+        use truck_modeling::{builder, Shell, Surface, Wire};
+
         if !self.check_valid() { return None; }
 
         let wire = gen_wire( &self.verts, &self.fradius_vec).unwrap();

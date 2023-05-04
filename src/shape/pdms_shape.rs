@@ -449,7 +449,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     #[cfg(not(feature = "opencascade"))]
     ///生成mesh
-    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
+    fn gen_mesh(&self) -> Option<PdmsMesh> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -472,7 +472,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if size <= f64::EPSILON {
                 return None;
             }
-            let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
+            let tolerance = self.tol() as f64 * size;
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
