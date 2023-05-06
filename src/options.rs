@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use clap::Parser;
+use crate::pdms_types::RefU64;
 
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
@@ -35,8 +36,6 @@ pub struct DbOption {
     pub module: String,
     #[clap(long)]
     pub project_name: String,
-    #[clap(short)]
-    pub debug_db_num: Option<u32>,
     #[clap(skip)]
     pub manual_db_nums: Option<Vec<i32>>,
     #[clap(long)]
@@ -97,3 +96,4 @@ pub struct DbOption {
     #[clap(long)]
     pub plat_url:String,
 }
+

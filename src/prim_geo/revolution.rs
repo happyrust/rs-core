@@ -59,10 +59,24 @@ impl BrepShapeTrait for Revolution {
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-
         let wire = gen_occ_wire( &self.verts, &self.fradius_vec)?;
         let axis = Axis::new(self.rot_pt, self.rot_dir);
-        Ok(wire.extrude_rotate(&axis, self.angle)?)
+        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon=1.0) {
+            core::f64::consts::TAU
+        }else{
+            self.angle.to_radians() as _
+        };
+        Ok(wire.extrude_rotate(&axis, angle)?)
+    }
+
+    #[inline]
+    fn tol(&self) -> f32{
+        use parry2d::bounding_volume::Aabb;
+        let pts = self.verts.iter().map(|x|
+            nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
+        ).collect::<Vec<_>>();
+        let profile_aabb = Aabb::from_points(&pts);
+        0.005 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {

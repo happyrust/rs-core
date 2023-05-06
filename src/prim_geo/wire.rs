@@ -147,9 +147,6 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
-    // let pts = pts.iter().rev().cloned().collect::<Vec<_>>();
-    // let fradius_vec = fradius_vec.iter().rev().cloned().collect::<Vec<_>>();
-    // dbg!(&fradius_vec);
     let ll = pts.len();
     let mut pre_radius = 0.0;
     let mut i = 1;
@@ -158,6 +155,7 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
     let mut pre_pt = pts[0];
     let mut circle_indexs = vec![];
     let mut edges = vec![];
+    let mut all_on_line = false;
     for i in 0..ll {
         let fradius = fradius_vec[i];
         let pt: Vec3 = pts[i].truncate().extend(0.0);
@@ -172,7 +170,19 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                 }
             }
         }
-        if abs_diff_eq!(fradius, 0.0) {
+        if abs_diff_eq!(fradius.abs(), 0.0) {
+            let cl = verts.len();
+            if cl >= 2 {
+                let v1 = (verts[cl-2] - verts[cl-1]).normalize();
+                let v2= (pt - verts[cl-1]).normalize();
+                let dot = v1.dot(v2);
+                // dbg!(dot);
+                //共线的点不要
+                if all_on_line && approx::abs_diff_ne!(dot.abs(), 1.0, epsilon=0.01) {
+                    // dbg!("发现共线的点");
+                    all_on_line = false;
+                }
+            }
             verts.push(pt);
             pre_pt = pts[i];
         } else {
@@ -212,8 +222,15 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             }
         }
     }
+
+    // dbg!(all_on_line);
+    // dbg!(&circle_indexs);
+    if all_on_line {
+        return Err(anyhow!("线圈全部共线"));
+    }
+
     let mut j = 0;
-    if !verts.is_empty() {
+    if verts.len() >= 3 {
         let s_vert = *verts.first().unwrap();
         let e_vert = *verts.last().unwrap();
         let l = s_vert.distance(e_vert);
@@ -242,6 +259,8 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             }
             j += 1;
         }
+    }else{
+        return Err(anyhow!("线圈的点数<3"));
     }
     Ok(Wire::from_edges(&edges)?)
 }
@@ -276,7 +295,7 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck
                 }
             }
         }
-        if abs_diff_eq!(fradius, 0.0) {
+        if abs_diff_eq!(fradius.abs(), 0.0) {
             verts.push(builder::vertex(pt));
             pre_pt = pts[i];
         } else {

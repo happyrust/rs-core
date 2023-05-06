@@ -196,7 +196,7 @@ impl BrepShapeTrait for SCylinder {
     }
 
     fn tol(&self) -> f32 {
-        0.01 * self.phei.max(self.pdia)
+        0.01 * self.phei.max(self.pdia).max(1.0)
     }
 
     #[cfg(feature = "opencascade")]

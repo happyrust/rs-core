@@ -100,6 +100,11 @@ impl BrepShapeTrait for SRTorus {
         Box::new(self.clone())
     }
 
+    #[inline]
+    fn tol(&self) -> f32{
+        0.01 * self.pdia.min(self.pheig).max(1.0)
+    }
+
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
@@ -123,7 +128,7 @@ impl BrepShapeTrait for SRTorus {
             // dbg!(center);
             // dbg!(-y_axis);
             let axis = Axis::new(center, -y_axis);
-            return Ok(wire.extrude_rotate(&axis, torus_info.angle)?);
+            return Ok(wire.extrude_rotate(&axis, torus_info.angle.to_radians() as _)?);
         }
 
         Err(anyhow::anyhow!("Rect torus 参数有问题。"))
@@ -210,19 +215,26 @@ impl BrepShapeTrait for RTorus {
 
     #[inline]
     fn tol(&self) -> f32{
-        let d = self.rins.max(self.rout).max(self.height) ;
+        let d = ((self.rout - self.rins)/2.0 + self.height)/2.0;
         dbg!(d);
-        0.01 * d
+        0.01 * d.max(1.0)
     }
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
         let h = self.height;
         let d = (self.rout - self.rins);
-        let p1 = Vec3::new(self.rins - d / 2.0, 0.0, -h / 2.0).into();
-        let p2 = Vec3::new(self.rins - d / 2.0, 0.0, h / 2.0).into();
-        let p3 = Vec3::new(self.rins + d / 2.0, 0.0, h / 2.0).into();
-        let p4 = Vec3::new(self.rins + d / 2.0, 0.0, -h / 2.0).into();
+        // dbg!(d);
+        let c = (self.rins + self.rout) / 2.0;
+        // dbg!(Vec3::new(c - d / 2.0, 0.0, -h / 2.0));
+        // dbg!(Vec3::new(c - d / 2.0, 0.0, h / 2.0));
+        // dbg!(Vec3::new(c + d / 2.0, 0.0, h / 2.0));
+        // dbg!(Vec3::new(c + d / 2.0, 0.0, -h / 2.0));
+
+        let p1 = Vec3::new(c - d / 2.0, 0.0, -h / 2.0).into();
+        let p2 = Vec3::new(c - d / 2.0, 0.0, h / 2.0).into();
+        let p3 = Vec3::new(c + d / 2.0, 0.0, h / 2.0).into();
+        let p4 = Vec3::new(c + d / 2.0, 0.0, -h / 2.0).into();
         //创建四边形
         let top = Edge::new_line(&p1, &p2)?;
         let right = Edge::new_line(&p2, &p3)?;
@@ -231,7 +243,7 @@ impl BrepShapeTrait for RTorus {
 
         let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
         let axis = Axis::new(Vec3::ZERO, Vec3::Z);
-        return Ok(wire.extrude_rotate(&axis, self.angle)?);
+        return Ok(wire.extrude_rotate(&axis, self.angle.to_radians() as _)?);
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

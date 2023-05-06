@@ -73,7 +73,8 @@ impl BrepShapeTrait for LSnout {
 
     #[inline]
     fn tol(&self) -> f32{
-        0.01 * self.pbdm.max(self.ptdm)
+        //以最小的圆精度为准
+        0.005 * (( self.pbdm + self.ptdm) / 2.0).max(1.0)
     }
 
     #[cfg(feature = "opencascade")]

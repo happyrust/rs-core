@@ -87,12 +87,12 @@ impl BrepShapeTrait for SCTorus {
     }
 
     fn tol(&self) -> f32 {
-        let t = if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
-            torus_info.radius
-        }else{
-            1.0
-        };
-        0.01 * t
+        // let t = if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+        //     torus_info.radius
+        // }else{
+        //     1.0
+        // };
+        0.01 * self.pdia.max(1.0)
     }
 
     #[cfg(feature = "opencascade")]
@@ -101,7 +101,7 @@ impl BrepShapeTrait for SCTorus {
             let o = self.paax_pt;
             let circle = Wire::circle(t.radius, o, -self.paax_dir)?;
             let axis = Axis::new(t.center, t.rot_axis);
-            return Ok(circle.extrude_rotate(&axis, t.angle)?);
+            return Ok(circle.extrude_rotate(&axis, t.angle.to_radians() as _)?);
         }
         Err(anyhow!("SCTorus参数错误，无法生成Shape"))
     }
@@ -217,7 +217,7 @@ impl BrepShapeTrait for CTorus {
     }
 
     fn tol(&self) -> f32 {
-        0.01 * self.rout.max(self.rins)
+        0.01 * (self.rout -self.rins).abs().max(1.0)
     }
 
 

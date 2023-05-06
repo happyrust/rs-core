@@ -266,6 +266,30 @@ impl PdmsMesh {
         (mesh, self.aabb.clone())
     }
 
+    // ///变成压缩的模型数据
+    // #[inline]
+    // pub fn into_compress_bytes(&self) -> Vec<u8> {
+    //     use flate2::Compression;
+    //     use flate2::write::DeflateEncoder;
+    //     let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
+    //     let serialized = rkyv::to_bytes::<_, 2048>(self).unwrap().to_vec();
+    //     e.write_all(&serialized);
+    //     e.finish().unwrap_or_default()
+    // }
+
+    // ///根据反序列化的数据还原成mesh
+    // #[inline]
+    // pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+    //     use flate2::write::DeflateDecoder;
+    //     let mut writer = Vec::new();
+    //     let mut deflater = DeflateDecoder::new(writer);
+    //     deflater.write_all(bytes).ok()?;
+    //     let buf = deflater.finish().ok()?;
+    //     use rkyv::{archived_root, Deserialize};
+    //     let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
+    //     archived.deserialize(&mut rkyv::Infallible).ok()
+    // }
+
     #[inline]
     pub fn into_compress_bytes(&self) -> Vec<u8> {
         use flate2::Compression;
@@ -284,6 +308,7 @@ impl PdmsMesh {
         bincode::deserialize(&deflater.finish().ok()?).ok()
     }
 
+    ///转变成csg模型
     #[cfg(not(target_arch = "wasm32"))]
     pub fn into_csg_mesh(&self, transform: &Transform) -> CsgMesh {
         let mut triangles = Vec::new();
@@ -350,18 +375,12 @@ impl PdmsMesh {
 }
 
 
+/// shape instances 的管理方法
 impl ShapeInstancesMgr {
     #[inline]
     pub fn get_inst_data(&self, refno: RefU64) -> &EleGeosInfo {
         let inst_map = &self.inst_map;
         inst_map.get(&refno).unwrap()
-    }
-
-    pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
-        let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", mdb)).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
     }
 
     pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
@@ -440,7 +459,9 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     #[cfg(feature = "opencascade")]
     fn gen_mesh(&self) -> Option<PdmsMesh> {
         if let Ok(shape) = self.gen_occ_shape() {
+            // dbg!(self.tol() as f64);
             let mut mesh: PdmsMesh = shape.mesh(self.tol() as f64).ok()?.into();
+            // dbg!("generate mesh");
             mesh.occ_shape = Some(shape);
             return Some(mesh);
         }

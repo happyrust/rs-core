@@ -71,26 +71,29 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO",
+    "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-//"NXTR", "NREV"
+///有loop的几何体
+pub const GNERAL_LOOP_NOUN_NAMES: [&'static str; 2] = ["PLOO", "LOOP"];
+
 
 ///负实体基本体的种类
-pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 12] = [
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
+    "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-pub const GENRAL_POS_NOUN_NAMES: [&'static str; 21] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 23] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
     "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
 ];
 
 
-pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 33] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 35] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
     "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
     "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
@@ -98,7 +101,7 @@ pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 33] = [
 
 
 ///元件库的种类
-pub const CATA_ATT_TYPES: [&'static str; 26] = [
+pub const CATA_GEO_NAMES: [&'static str; 26] = [
     "BRAN", "HANG", "ELCONN",
     "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
     "PJOI", "PFIT", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "NOZZ", "PALJ",
@@ -872,6 +875,11 @@ impl AttrMap {
     }
 
     #[inline]
+    pub fn is_type(&self, type_name: &str) -> bool {
+        self.get_type() == type_name
+    }
+
+    #[inline]
     pub fn get_type_cloned(&self) -> Option<SmolStr> {
         self.get_smol_str("TYPE").map(|x| x.clone())
     }
@@ -1559,7 +1567,6 @@ bitflags! {
         const EQUI = 0x1 << 4;
         const ROOM = 0x1 << 5;
         const WALL = 0x1 << 6;
-        // const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
     }
 }
 
@@ -1609,9 +1616,12 @@ pub enum PdmsGenericType {
 
 
 /// 存储一个Element 包含的所有几何信息
-#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default, Resource)]
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default, Resource)]
 pub struct EleGeosInfo {
-    pub _key: String,
+    #[serde(serialize_with = "ser_refno_as_key_str")]
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(rename = "_key")]
+    pub refno: RefU64,
     pub geo_insts: Vec<EleGeoInstance>,
     //是否可见
     pub visible: bool,
@@ -1620,12 +1630,23 @@ pub struct EleGeosInfo {
     pub aabb: Option<Aabb>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: Transform,
+    #[serde(default)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
     pub flow_pt_indexs: Vec<i32>,
 
     pub has_neg: bool,
 }
 
+fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
+    where D: Deserializer<'de> {
+    let s = String::deserialize(deserializer)?;
+    Ok(RefU64::from_url_refno(&s).unwrap_or_default())
+}
+fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer, {
+    s.serialize_str(refno.to_url_refno().as_str())
+}
 
 impl EleGeosInfo {
 
@@ -1877,7 +1898,7 @@ impl CachedMeshesMgr {
     }
 }
 
-#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default, Resource)]
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default, Resource)]
 pub struct EleGeoInstance {
     #[serde(deserialize_with = "de_from_str")]
     #[serde(serialize_with = "ser_u64_as_str")]
@@ -1894,7 +1915,6 @@ pub struct EleGeoInstance {
     pub visible: bool,
     pub is_tubi: bool,
     pub is_neg: bool,
-
 }
 
 
@@ -1933,7 +1953,7 @@ fn test_ele_geo_instance_serialize_deserialize() {
         pts: Vec::new(),
         // aabb: Some(Aabb::new(Point3::new(1.0, 0.0, 0.0), Point3::new(2.0, 2.0, 0.0))),
         aabb: None,
-        transform: Default::default(),
+        transform: Transform::IDENTITY,
         visible: false,
         is_tubi: false,
         is_neg: false,

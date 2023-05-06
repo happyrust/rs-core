@@ -388,7 +388,7 @@ impl BrepShapeTrait for SweepSolid {
 
     fn tol(&self) -> f32 {
         if let Some(aabb) = self.profile.get_bbox() {
-            return 0.01 * aabb.bounding_sphere().radius;
+            return 0.01 * aabb.bounding_sphere().radius.max(1.0);
         }
         0.01
     }

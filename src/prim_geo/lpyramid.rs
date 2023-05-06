@@ -89,7 +89,7 @@ impl BrepShapeTrait for LPyramid {
         let ref_dir = z_dir.cross(x_dir).normalize();
         //如果和预期的方向垂直了，也就是和x方向共线了，需要重置
         // dbg!(ref_dir.dot(y_dir));
-        if abs_diff_eq!(ref_dir.dot(y_dir), 0.0, epsilon=0.01)  {
+        if abs_diff_eq!(ref_dir.dot(y_dir).abs(), 0.0, epsilon=0.01)  {
             y_dir = ref_dir;
             x_dir = ref_dir.cross(z_dir).normalize();
         }
