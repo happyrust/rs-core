@@ -87,11 +87,6 @@ impl BrepShapeTrait for SCTorus {
     }
 
     fn tol(&self) -> f32 {
-        // let t = if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
-        //     torus_info.radius
-        // }else{
-        //     1.0
-        // };
         0.01 * self.pdia.max(1.0)
     }
 
@@ -170,6 +165,7 @@ impl BrepShapeTrait for CTorus {
         Box::new(self.clone())
     }
 
+
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
         let r1 = (self.rins + self.rout) / 2.0;
@@ -216,6 +212,25 @@ impl BrepShapeTrait for CTorus {
         Box::new(unit)
     }
 
+    // fn hash_unit_mesh_params(&self) -> u64 {
+    //     let mut hasher = DefaultHasher::new();
+    //     hash_f32((self.rins), &mut hasher);
+    //     hash_f32((self.rout), &mut hasher);
+    //     hash_f32(self.angle, &mut hasher);
+    //     "ctorus".hash(&mut hasher);
+    //     hasher.finish()
+    // }
+    //
+    // fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+    //     // let rins = self.rins / self.rout;
+    //     let unit = Self {
+    //         rins: self.rins,
+    //         rout: self.rout,
+    //         angle: self.angle,
+    //     };
+    //     Box::new(unit)
+    // }
+
     fn tol(&self) -> f32 {
         0.01 * (self.rout -self.rins).abs().max(1.0)
     }
@@ -224,6 +239,7 @@ impl BrepShapeTrait for CTorus {
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::splat(self.rout)
+        // Vec3::ONE
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

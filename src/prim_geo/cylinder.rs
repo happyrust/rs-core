@@ -320,7 +320,10 @@ impl BrepShapeTrait for SCylinder {
 
 impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
-        let phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
+        let mut phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
+        if m.get_type() == "NCYL" {
+            phei = phei.max(10_000.0);  //负实体限制高度，有可能会被人为填很大的数字，限制高度
+        }
         let pdia = m.get_val("DIAM").unwrap().double_value().unwrap_or_default() as f32;
         SCylinder {
             paxi_expr: "Z".to_string(),

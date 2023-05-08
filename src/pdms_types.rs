@@ -1183,7 +1183,7 @@ impl AttrMap {
         let type_noun = self.get_type_cloned()?;
         return match type_noun.as_str() {
             "BOX" | "NBOX" => Some(Box::new(SBox::from(self))),
-            "CYLI" | "NCYL" | "NSCY" => Some(Box::new(SCylinder::from(self))),
+            "CYLI" | "NCYL" => Some(Box::new(SCylinder::from(self))),
             "SPHE" => Some(Box::new(Sphere::from(self))),
             "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
             "DISH" | "NDIS"  => Some(Box::new(Dish::from(self))),
@@ -1856,7 +1856,7 @@ impl CachedMeshesMgr {
 
     #[cfg(feature = "opencascade")]
     pub fn get_occ_shape(&self, geo_hash: u64) -> Option<&OCCShape> {
-        self.get_mesh(geo_hash).map(|x| x.occ_shape.as_ref().unwrap())
+        self.get_mesh(geo_hash).and_then(|x| x.occ_shape.as_ref())
     }
 
     ///生成mesh的hash值，并且保存mesh

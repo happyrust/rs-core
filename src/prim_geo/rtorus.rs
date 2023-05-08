@@ -216,7 +216,6 @@ impl BrepShapeTrait for RTorus {
     #[inline]
     fn tol(&self) -> f32{
         let d = ((self.rout - self.rins)/2.0 + self.height)/2.0;
-        dbg!(d);
         0.01 * d.max(1.0)
     }
 
