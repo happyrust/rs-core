@@ -52,6 +52,11 @@ impl BrepShapeTrait for Extrusion {
         Box::new(self.clone())
     }
 
+    ///限制参数大小，主要是对负实体的不合理进行限制
+    fn apply_limit_by_size(&mut self, l: f32) {
+        self.height = self.height.min(l);
+        dbg!(&self.height);
+    }
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
@@ -108,7 +113,7 @@ impl BrepShapeTrait for Extrusion {
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let unit = Self {
             verts: self.verts.clone(),
-            height: 100.0,   //开放一点大小,不然三角化出来的不对
+            height: 1000.0,   //开放一点大小,不然三角化出来的不对
             fradius_vec: self.fradius_vec.clone(),
             cur_type: self.cur_type.clone(),
             ..default()
@@ -117,7 +122,7 @@ impl BrepShapeTrait for Extrusion {
     }
 
     #[inline]
-    fn tol(&self) -> f32{
+    fn tol(&self) -> f32 {
         use parry2d::bounding_volume::Aabb;
         let pts = self.verts.iter().map(|x|
             nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
@@ -128,7 +133,7 @@ impl BrepShapeTrait for Extrusion {
 
     //沿着指定方向拉伸 pbax_dir
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(1.0, 1.0, (self.height as f32 / 100.0))
+        Vec3::new(1.0, 1.0, (self.height as f32 / 1000.0))
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

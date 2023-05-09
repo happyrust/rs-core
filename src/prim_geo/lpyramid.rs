@@ -76,6 +76,8 @@ impl BrepShapeTrait for LPyramid {
         Box::new(self.clone())
     }
 
+
+
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
 

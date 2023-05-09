@@ -5,7 +5,7 @@ use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{builder, Shell, Solid};
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
-use serde::{Serialize,Deserialize};
+use serde::{Serialize, Deserialize};
 use crate::consts::BOX_HASH;
 use crate::parsed_data::CateBoxParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -15,7 +15,7 @@ use crate::prim_geo::CUBE_GEO_HASH;
 use opencascade::OCCShape;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SBox {
     pub center: Vec3,
     pub size: Vec3,
@@ -33,15 +33,20 @@ impl Default for SBox {
 impl VerifiedShape for SBox {
     #[inline]
     fn check_valid(&self) -> bool {
-       self.size.x > f32::EPSILON &&  self.size.y > f32::EPSILON && self.size.z > f32::EPSILON
+        self.size.x > f32::EPSILON && self.size.y > f32::EPSILON && self.size.z > f32::EPSILON
     }
 }
 
 //#[typetag::serde]
 impl BrepShapeTrait for SBox {
-
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    fn apply_limit_by_size(&mut self, l: f32) {
+        self.size.x = self.size.x.min(l);
+        self.size.y = self.size.y.min(l);
+        self.size.z = self.size.z.min(l);
     }
 
     #[cfg(feature = "opencascade")]
@@ -49,7 +54,7 @@ impl BrepShapeTrait for SBox {
         Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
     }
 
-    fn gen_brep_shell(& self) -> Option<Shell> {
+    fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         let v = builder::vertex((self.center - self.size / 2.0).point3());
         let e = builder::tsweep(&v, Vector3::unit_x() * self.size.x as f64);
@@ -58,7 +63,7 @@ impl BrepShapeTrait for SBox {
         s.pop()
     }
 
-    fn hash_unit_mesh_params(&self) -> u64{
+    fn hash_unit_mesh_params(&self) -> u64 {
         CUBE_GEO_HASH
     }
 
@@ -74,7 +79,6 @@ impl BrepShapeTrait for SBox {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimBox(self.clone()))
     }
-
 }
 
 
@@ -84,7 +88,7 @@ impl From<&AttrMap> for SBox {
             center: Default::default(),
             size: Vec3::new(m.get_f32("XLEN").unwrap_or_default(),
                             m.get_f32("YLEN").unwrap_or_default(),
-                            m.get_f32("ZLEN").unwrap_or_default(),),
+                            m.get_f32("ZLEN").unwrap_or_default(), ),
         }
     }
 }

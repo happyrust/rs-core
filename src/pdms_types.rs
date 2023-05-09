@@ -1179,10 +1179,12 @@ impl AttrMap {
     }
 
     ///生成具有几何属性的element的shape
-    pub fn create_brep_shape(&self) -> Option<Box<dyn BrepShapeTrait>> {
+    pub fn create_brep_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
         let type_noun = self.get_type_cloned()?;
-        return match type_noun.as_str() {
-            "BOX" | "NBOX" => Some(Box::new(SBox::from(self))),
+        let mut r : Option<Box<dyn BrepShapeTrait>> =  match type_noun.as_str() {
+            "BOX" | "NBOX" => {
+                Some(Box::new(SBox::from(self)))
+            },
             "CYLI" | "NCYL" => Some(Box::new(SCylinder::from(self))),
             "SPHE" => Some(Box::new(Sphere::from(self))),
             "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
@@ -1192,6 +1194,10 @@ impl AttrMap {
             "PYRA" | "NPYR" => Some(Box::new(Pyramid::from(self))),
             _ => None,
         };
+        if r.is_some() && limit_size.is_some() {
+            r.as_mut().unwrap().apply_limit_by_size(limit_size.unwrap());
+        }
+        r
     }
 
     /// 获取string属性数组，忽略为空的值

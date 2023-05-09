@@ -9,12 +9,12 @@ use anyhow::anyhow;
 use crate::prim_geo::extrusion::Extrusion;
 use crate::shape::pdms_shape::BrepMathTrait;
 use crate::tool::float_tool::hash_vec3;
-use approx::abs_diff_eq;
+use approx::{abs_diff_eq, abs_diff_ne};
 
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Wire, Edge, Vertex};
 
-#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub enum CurveType {
     Fill,
     Spline(f32),  //thick
@@ -138,9 +138,6 @@ pub fn gen_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<truck_mo
 }
 
 
-
-
-
 #[cfg(feature = "opencascade")]
 ///生成occ的wire
 pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
@@ -155,7 +152,7 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
     let mut pre_pt = pts[0];
     let mut circle_indexs = vec![];
     let mut edges = vec![];
-    let mut all_on_line = false;
+    let mut all_on_line = true;
     for i in 0..ll {
         let fradius = fradius_vec[i];
         let pt: Vec3 = pts[i].truncate().extend(0.0);
@@ -173,12 +170,13 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
         if abs_diff_eq!(fradius.abs(), 0.0) {
             let cl = verts.len();
             if cl >= 2 {
-                let v1 = (verts[cl-2] - verts[cl-1]).normalize();
-                let v2= (pt - verts[cl-1]).normalize();
-                let dot = v1.dot(v2);
+                let v1 = (verts[cl - 2] - verts[cl - 1]).normalize();
+                let v2 = (pt - verts[cl - 1]).normalize();
                 // dbg!(dot);
+                let v = v1.cross(v2);
+                // dbg!(v);
                 //共线的点不要
-                if all_on_line && approx::abs_diff_ne!(dot.abs(), 1.0, epsilon=0.01) {
+                if all_on_line && abs_diff_ne!(v.length(), 0.0, epsilon=0.001) {
                     // dbg!("发现共线的点");
                     all_on_line = false;
                 }
@@ -259,12 +257,11 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             }
             j += 1;
         }
-    }else{
+    } else {
         return Err(anyhow!("线圈的点数<3"));
     }
     Ok(Wire::from_edges(&edges)?)
 }
-
 
 
 /// 根据顶点信息和fradius半径，生成wire
