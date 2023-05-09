@@ -27,7 +27,7 @@ use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{MapAccess, SeqAccess, Unexpected, Visitor};
-use serde::ser::SerializeStruct;
+use serde::ser::{SerializeMap, SerializeStruct};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use truck_modeling::Shell;
@@ -590,6 +590,11 @@ fn get_two_attr_map_difference(old_map: AttrMap, mut new_map: AttrMap) -> Vec<Di
         }
     }
     result
+}
+
+#[derive(Debug, Clone, Default,Deref, DerefMut, Serialize, Deserialize)]
+pub struct NameAttrMap {
+    pub map: BHashMap<String, AttrVal>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1228,6 +1233,28 @@ impl Default for AttrVal {
     }
 }
 
+impl From<AttrValAql> for AttrVal {
+    fn from(value: AttrValAql) -> Self {
+        match value {
+            AttrValAql::InvalidType => { InvalidType }
+            AttrValAql::IntegerType(i) => { IntegerType(i) }
+            AttrValAql::StringType(d) => { StringType(d) }
+            AttrValAql::DoubleType(d) => { DoubleType(d) }
+            AttrValAql::DoubleArrayType(d) => { DoubleArrayType(d) }
+            AttrValAql::StringArrayType(d) => { StringArrayType(d) }
+            AttrValAql::BoolArrayType(d) => { BoolArrayType(d) }
+            AttrValAql::IntArrayType(d) => { IntArrayType(d) }
+            AttrValAql::BoolType(d) => { BoolType(d) }
+            AttrValAql::Vec3Type(d) => { Vec3Type(d) }
+            AttrValAql::ElementType(d) => { ElementType(d) }
+            AttrValAql::WordType(d) => { WordType(d) }
+            // AttrValAql::RefU64Type(d) => { RefU64Type(d) }
+            AttrValAql::StringHashType(d) => { StringHashType(d) }
+            AttrValAql::RefU64Array(d) => { RefU64Array(d) }
+        }
+    }
+}
+
 impl AttrVal {
     #[inline]
     pub fn i32_value(&self) -> i32 {
@@ -1375,6 +1402,48 @@ impl AttrVal {
             StringHashType(v) => { v.to_string() }
             RefU64Array(v) => { serde_json::to_string(v).unwrap() }
         };
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Component)]
+#[serde(untagged)]
+pub enum AttrValAql {
+    InvalidType,
+    IntegerType(i32),
+    StringType(SmolStr),
+    DoubleType(f64),
+    DoubleArrayType(Vec<f64>),
+    StringArrayType(Vec<SmolStr>),
+    BoolArrayType(Vec<bool>),
+    IntArrayType(Vec<i32>),
+    BoolType(bool),
+    Vec3Type([f64; 3]),
+    ElementType(SmolStr),
+    WordType(SmolStr),
+    // RefU64Type(RefU64),
+    StringHashType(AiosStrHash),
+    RefU64Array(RefU64Vec),
+}
+
+impl From<AttrVal> for AttrValAql {
+    fn from(value: AttrVal) -> Self {
+        match value {
+            InvalidType => { AttrValAql::InvalidType }
+            IntegerType(i) => { AttrValAql::IntegerType(i) }
+            StringType(d) => { AttrValAql::StringType(d) }
+            DoubleType(d) => { AttrValAql::DoubleType(d) }
+            DoubleArrayType(d) => { AttrValAql::DoubleArrayType(d) }
+            StringArrayType(d) => { AttrValAql::StringArrayType(d) }
+            BoolArrayType(d) => { AttrValAql::BoolArrayType(d) }
+            IntArrayType(d) => { AttrValAql::IntArrayType(d) }
+            BoolType(d) => { AttrValAql::BoolType(d) }
+            Vec3Type(d) => { AttrValAql::Vec3Type(d) }
+            ElementType(d) => { AttrValAql::ElementType(d) }
+            WordType(d) => { AttrValAql::WordType(d) }
+            RefU64Type(d) => { AttrValAql::StringType(d.to_url_refno().into()) }
+            StringHashType(d) => { AttrValAql::StringHashType(d) }
+            RefU64Array(d) => { AttrValAql::RefU64Array(d) }
+        }
     }
 }
 
@@ -1881,7 +1950,7 @@ impl CachedMeshesMgr {
     }
 }
 
-#[derive(Clone, Debug,Serialize,Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EleGeoInstance {
     pub geo_hash: u64,
     //对应参考号
@@ -2589,4 +2658,11 @@ impl UdaMajorType {
             _ => Self::NULL,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PdmsAttrArangodb {
+    pub _key: String,
+    #[serde(flatten)]
+    pub map: HashMap<String, AttrValAql>,
 }

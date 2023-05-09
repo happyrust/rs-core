@@ -40,7 +40,7 @@ pub struct ThreeDimensionalModelDataToArango {
     #[serde(rename = "UserRole")]
     pub user_role: String,
     #[serde(rename = "ModelData")]
-    pub model_data:  ModelData,
+    pub model_data: ModelData,
     #[serde(rename = "FlowPicData")]
     pub flow_pic_data: ThreeDimensionalReviewComment,
 }
@@ -70,10 +70,10 @@ pub struct ThreeDimensionalReviewData {
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ModelData {
     pub index: Vec<(RefU64, String)>,
-    pub data:Vec<HashMap<String,String>>,
+    pub data: Vec<HashMap<String, String>>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize,PartialEq)]
 pub enum VagueSearchCondition {
     #[default]
     And,
@@ -81,12 +81,21 @@ pub enum VagueSearchCondition {
     Not,
 }
 
+impl Into<String> for VagueSearchCondition {
+    fn into(self) -> String {
+        match self {
+            VagueSearchCondition::And => { "并且".to_string() }
+            VagueSearchCondition::Or => { "或者".to_string() }
+            VagueSearchCondition::Not => { "不含".to_string() }
+        }
+    }
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct VagueSearchRequest {
-    // 暂时必须包含 name
-    pub name: String,
+    // pub name: String,
     pub filter_refnos: Vec<RefU64>,
     // key : 过滤的类型 name , type 等  value: 0 : 过滤条件 and or not  1 : 过滤的值
-    pub filter_condition: std::collections::HashMap<String, (VagueSearchCondition, String)>,
+    pub filter_condition: Vec<(String, (VagueSearchCondition, String))>,
 }
 

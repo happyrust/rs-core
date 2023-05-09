@@ -213,6 +213,7 @@ impl AttInfoMap {
                     self.type_implicit_att_names_map.entry(type_name.clone())
                         .or_insert(BTreeSet::new()).insert(v.name.to_string());
                 } else {
+                    if ["ID","REFNO","TYPE","OWNER"].contains(&v.name.as_str()) { continue; }
                     self.type_explicit_att_names_map.entry(type_name.clone())
                         .or_insert(BTreeSet::new()).insert(v.name.to_string());
                 }
