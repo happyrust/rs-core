@@ -365,13 +365,11 @@
       <workItem from="1681892721597" duration="33000" />
       <workItem from="1682342349672" duration="3877000" />
       <workItem from="1682391266516" duration="2695000" />
-    </task>
-    <task id="LOCAL-00127" summary="Fix wall WIP">
-      <created>1664464249924</created>
-      <option name="number" value="00127" />
-      <option name="presentableId" value="LOCAL-00127" />
-      <option name="project" value="LOCAL" />
-      <updated>1664464249924</updated>
+      <workItem from="1682851116779" duration="956000" />
+      <workItem from="1683037927753" duration="615000" />
+      <workItem from="1683179673938" duration="328000" />
+      <workItem from="1683344307898" duration="2251000" />
+      <workItem from="1683624685756" duration="347000" />
     </task>
     <task id="LOCAL-00128" summary="Fix bore parameter">
       <created>1664557598319</created>
@@ -709,7 +707,14 @@
       <option name="project" value="LOCAL" />
       <updated>1682391292491</updated>
     </task>
-    <option name="localTasksCounter" value="176" />
+    <task id="LOCAL-00176" summary="更新三维编校审结构体">
+      <created>1682851150892</created>
+      <option name="number" value="00176" />
+      <option name="presentableId" value="LOCAL-00176" />
+      <option name="project" value="LOCAL" />
+      <updated>1682851150893</updated>
+    </task>
+    <option name="localTasksCounter" value="177" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
