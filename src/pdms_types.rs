@@ -31,7 +31,7 @@ use nalgebra::{Point3, Quaternion, UnitQuaternion};
 use opencascade::OCCShape;
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
-use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape};
+use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape, TriMesh};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{MapAccess, SeqAccess, Unexpected, Visitor};
 use serde::ser::SerializeStruct;
@@ -1628,6 +1628,7 @@ pub struct EleGeosInfo {
     #[serde(deserialize_with = "de_refno_from_key_str")]
     #[serde(rename = "_key")]
     pub refno: RefU64,
+    #[serde(default)]
     pub geo_insts: Vec<EleGeoInstance>,
     //是否可见
     pub visible: bool,
@@ -1643,12 +1644,12 @@ pub struct EleGeosInfo {
     pub has_neg: bool,
 }
 
-fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
+pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
     where D: Deserializer<'de> {
     let s = String::deserialize(deserializer)?;
     Ok(RefU64::from_url_refno(&s).unwrap_or_default())
 }
-fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
+pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer, {
     s.serialize_str(refno.to_url_refno().as_str())
@@ -1772,14 +1773,15 @@ pub type GeoHash = u64;
 
 //凸面体的数据缓存，同时也是需要lod的
 #[derive(Serialize, Deserialize, Default, Deref, DerefMut)]
-pub struct CachedColliderShapeMgr {
-    pub shapes_map: DashMap<RefU64, SharedShape>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+pub struct ColliderShapeMgr {
+    pub shapes_map: DashMap<RefU64, SharedShape>,
 }
 
-impl CachedColliderShapeMgr {
-    pub fn get_collider(&self, refno: RefU64, inst_mgr: &ShapeInstancesMgr, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
+impl ColliderShapeMgr {
+
+
+    pub fn get_collider(ele_geos_info: &EleGeosInfo, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
         let mut target_colliders = vec![];
-        let ele_geos_info = inst_mgr.get_inst_data(refno);
         let mut colliders = vec![];
         let ele_trans = ele_geos_info.world_transform;
         for geo in &ele_geos_info.geo_insts {
@@ -1917,6 +1919,7 @@ pub struct EleGeoInstance {
     pub pts: Vec<i32>,
     pub aabb: Option<Aabb>,
     //相对于自身的坐标系变换
+    #[serde(default)]
     pub transform: Transform,
     pub visible: bool,
     pub is_tubi: bool,

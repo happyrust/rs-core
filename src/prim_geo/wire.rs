@@ -175,6 +175,7 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                 // dbg!(dot);
                 let v = v1.cross(v2);
                 // dbg!(v);
+                // dbg!(fradius);
                 //共线的点不要
                 if all_on_line && abs_diff_ne!(v.length(), 0.0, epsilon=0.001) {
                     // dbg!("发现共线的点");
@@ -184,6 +185,7 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             verts.push(pt);
             pre_pt = pts[i];
         } else {
+            all_on_line = false;
             let r = fradius;
             let pre_i = (ll + i - 1) % ll;
             let n_i = (i + 1) % ll;

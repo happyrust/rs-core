@@ -28,7 +28,6 @@ impl RStarBoundingBox {
 
         Self {
             aabb: rstar::AABB::from_corners(min.into(), max.into()),
-            // entity,
             refno,
         }
     }

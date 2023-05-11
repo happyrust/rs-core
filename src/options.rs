@@ -46,6 +46,8 @@ pub struct DbOption {
     #[clap(skip)]
     pub debug_root_refnos: Option<Vec<String>>,
     #[clap(skip)]
+    pub room_root_refnos: Option<Vec<String>>,
+    #[clap(skip)]
     pub debug_branch_refno: Option<String>,
     #[clap(skip)]
     pub debug_desi_refno: Option<String>,

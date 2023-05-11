@@ -141,49 +141,6 @@ impl From<OCCMesh> for PdmsMesh {
 }
 
 
-// #[cfg(feature = "opencascade")]
-// impl From<OCCMesh> for PdmsMesh {
-//     fn from(o: OCCMesh) -> Self {
-//         let len = o.vertices.len();
-//         let mut mesh = Self {
-//             indices: vec![],
-//             vertices: o.vertices.iter().map(|v| [v.x, v.y, v.z]).collect(),
-//             normals: vec![[0.; 3]; len],
-//             wire_vertices: vec![],
-//             aabb: None,
-//             occ_shape: None,
-//         };
-//         let mut aabb = Aabb::new_invalid();
-//         o.vertices.iter().for_each(|v| {
-//             aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
-//         });
-//         // dbg!(&aabb);
-//         mesh.aabb = Some(aabb);
-//
-//         let mut normal_cnt_vec = vec![0; len];
-//         let mut normals = vec![Vec3::ZERO; len];
-//         for (t, normal) in o.triangles_with_normals() {
-//             mesh.indices.push(t[0] as _);
-//             mesh.indices.push(t[1] as _);
-//             mesh.indices.push(t[2] as _);
-//
-//             normals[t[0]] += normal;
-//             normal_cnt_vec[t[0]] += 1;
-//             normals[t[1]] += normal;
-//             normal_cnt_vec[t[1]] += 1;
-//             normals[t[2]] += normal;
-//             normal_cnt_vec[t[2]] += 1;
-//         }
-//         //将法向量平均化
-//         if len != 0 {
-//             for i in 0..len {
-//                 mesh.normals[i] = (normals[i] / normal_cnt_vec[i] as f32).into();
-//             }
-//         }
-//         mesh
-//     }
-// }
-//
 
 #[test]
 fn test_project_to_plane() {
@@ -218,7 +175,6 @@ impl PdmsMesh {
         let mut points: Vec<Point<f32>> = vec![];
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
-
         self.vertices.iter().for_each(|p| {
             let new_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
             points.push(Point::new(new_pt[0], new_pt[1], new_pt[2]))
@@ -226,8 +182,8 @@ impl PdmsMesh {
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        TriMesh::with_flags(points, indices, TriMeshFlags::ORIENTED)
-        // TriMesh::new(points, indices)
+        // TriMesh::with_flags(points, indices, TriMeshFlags::ORIENTED)
+        TriMesh::new(points, indices)
     }
 
     ///todo 后面需要把uv使用上
