@@ -9,6 +9,7 @@ use crate::pdms_types::PdmsDatabaseInfo;
 extern crate bitflags;
 extern crate phf;
 
+pub mod aql_types;
 pub mod pdms_types;
 pub mod consts;
 pub mod prim_geo;
@@ -26,6 +27,7 @@ pub mod tiny_expr;
 pub mod accel_tree;
 pub mod plot_struct; // 全自动出图所需的结构体
 pub mod pdms_user;
+pub mod plat_user;
 pub mod metadata_manager;
 pub mod create_attas_structs;
 pub mod three_dimensional_review;
