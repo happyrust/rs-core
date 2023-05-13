@@ -1976,7 +1976,7 @@ impl CachedMeshesMgr {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default, Resource)]
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Default, Resource)]
 pub struct EleGeoInstance {
     #[serde(deserialize_with = "de_from_str")]
     #[serde(serialize_with = "ser_u64_as_str")]

@@ -2,6 +2,8 @@
 #![feature(mixed_integer_ops)]
 #![feature(drain_filter)]
 #![feature(let_chains)]
+#![feature(trivial_bounds)]
+
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
 use crate::pdms_types::PdmsDatabaseInfo;
