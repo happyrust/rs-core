@@ -18,7 +18,7 @@ use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
 
 //可不可以用来表达 sphere
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 #[reflect(Component)]
 pub struct Dish {
     pub paax_expr: String,
@@ -50,11 +50,18 @@ impl VerifiedShape for Dish {
     }
 }
 
-//#[typetag::serde]
+/// dish的实现 shape trait
 impl BrepShapeTrait for Dish {
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+        Ok(opencascade::OCCShape::dish(self.pdis as f64 / 2.0, self.pheig as f64)?)
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let r = self.pdia / 2.0;
@@ -129,9 +136,6 @@ impl BrepShapeTrait for Dish {
         })
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL))
-    }
 
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::new(self.pdia, self.pdia, self.pdia)

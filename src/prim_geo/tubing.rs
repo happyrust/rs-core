@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::CateSCylinderParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct PdmsTubing {
     pub refno: RefU64,
     pub start_pt: Vec3,
@@ -25,7 +25,7 @@ pub struct PdmsTubing {
 
 // 存放在图数据库的 tubi 的数据
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct TubiEdgeAql {
+pub struct TubiEdge {
     pub _key: String,
     pub _from: String,
     pub _to: String,
@@ -37,9 +37,13 @@ pub struct TubiEdgeAql {
     pub bran_name: String,
 }
 
-unsafe impl Send for TubiEdgeAql {}
-
-unsafe impl Sync for TubiEdgeAql {}
+impl TubiEdge {
+    pub fn new_from_edge() -> Self{
+        Self{
+            ..default()
+        }
+    }
+}
 
 
 impl PdmsTubing {
@@ -53,7 +57,7 @@ impl PdmsTubing {
         let a = self.desire_leave_dir.normalize_or_zero();
         let b = -self.desire_arrive_dir.normalize_or_zero();
         let c = self.get_dir();
-        abs_diff_eq!(a.dot(c), 1.0, epsilon=0.01) && abs_diff_eq!(b.dot(c), 1.0, epsilon=0.01)
+        abs_diff_eq!(a.dot(c).abs(), 1.0, epsilon=0.01) && abs_diff_eq!(b.dot(c).abs(), 1.0, epsilon=0.01)
     }
 
     pub fn convert_to_shape(&self) -> CateBrepShape {

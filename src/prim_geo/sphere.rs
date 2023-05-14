@@ -19,8 +19,9 @@ use crate::prim_geo::SPHERE_GEO_HASH;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
+use crate::pdms_types::AttrMap;
 
-#[derive(Component, Debug, /*Inspectable, Reflect,*/ Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 // #[reflect(Component)]
 pub struct Sphere {
     pub center: Vec3,
@@ -45,7 +46,6 @@ impl VerifiedShape for Sphere {
     }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for Sphere {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -68,7 +68,8 @@ impl BrepShapeTrait for Sphere {
         Some(shell)
     }
 
-    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
+    #[cfg(feature = "truck")]
+    fn gen_mesh(&self) -> Option<PdmsMesh> {
         let generated = IcoSphere::new(32, |point| {
             let inclination = point.y.acos();
             let azimuth = point.z.atan2(point.x);
@@ -103,10 +104,9 @@ impl BrepShapeTrait for Sphere {
             vertices: points,
             normals,
             wire_vertices: vec![],
-            wf_indices: vec![],
-            wf_vertices: vec![],
-            aabb: Some(Aabb::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))),
-            unit_shape: Sphere::default().gen_brep_shell().unwrap(),
+            aabb: None,
+            #[cfg(feature = "opencascade")]
+            occ_shape: None,
         });
     }
 
@@ -119,10 +119,6 @@ impl BrepShapeTrait for Sphere {
         SPHERE_GEO_HASH            //代表SPHERE
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
-        Sphere::default().gen_mesh(None)
-    }
-
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::splat(self.radius)
@@ -132,6 +128,19 @@ impl BrepShapeTrait for Sphere {
         Some(
             PdmsGeoParam::PrimSphere(self.clone())
         )
+    }
+}
+
+impl From<&AttrMap> for Sphere {
+    fn from(m: &AttrMap) -> Self {
+        Self {
+            center: Default::default(),
+            
+            // size: Vec3::new(m.get_f32("XLEN").unwrap_or_default(),
+            //                 m.get_f32("YLEN").unwrap_or_default(),
+            //                 m.get_f32("ZLEN").unwrap_or_default(),),
+            radius: m.get_f32("RADI").unwrap_or_default(),
+        }
     }
 }
 

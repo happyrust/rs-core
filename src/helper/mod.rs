@@ -3,6 +3,9 @@ use smol_str::SmolStr;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::float_tool::{f32_round_2, f32_round_3, f64_round_3};
 
+pub mod table;
+pub use table::*;
+
 #[inline]
 pub fn parse_to_u16(input: &[u8]) -> u16 {
     u16::from_be_bytes(input.try_into().unwrap())

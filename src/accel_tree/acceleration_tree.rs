@@ -28,7 +28,6 @@ impl RStarBoundingBox {
 
         Self {
             aabb: rstar::AABB::from_corners(min.into(), max.into()),
-            // entity,
             refno,
         }
     }
@@ -103,7 +102,7 @@ impl AccelerationTree {
         self.tree = rstar::RTree::bulk_load(bounding_boxes);
     }
 
-    pub fn locate_withing_distance<'a>(&'a self, loc: Vec3, distance: f32) -> impl Iterator<Item=RefU64> + 'a {
+    pub fn query_within_distance<'a>(&'a self, loc: Vec3, distance: f32) -> impl Iterator<Item=RefU64> + 'a {
         self.tree
             .locate_within_distance([loc.x, loc.y, loc.z], distance.powi(2))
             .map(|bb| bb.refno)

@@ -3,6 +3,7 @@ use std::future::Future;
 use bevy::utils::HashMap;
 use dashmap::DashMap;
 use glam::{Vec2, Vec3};
+use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
@@ -15,41 +16,41 @@ pub struct DesignPipeRequest {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignComponentRequest {
-    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignBranRequest {
-    
     pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct RefnosRequest {
-    
     pub name: String,
 }
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Refnos {
-    
     pub refnos: Vec<String>,
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct DesignPipe {
     pub name: String,
     pub refno: String,
     pub brans: Vec<DesignBran>,
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct DesignBran {
     pub name: String,
     pub refno: String,
-    pub components: Vec<GeomsInfo>,
+    pub components: Vec<CateGeomsInfo>,
 }
 
+///元件库的集合信息
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct GeomsInfo {
+pub struct CateGeomsInfo {
     pub geometries: Vec<CateGeoParam>,
     pub axis_map: BTreeMap<i32, CateAxisParam>,
 }
@@ -103,8 +104,7 @@ pub struct GmseParamData {
 }
 
 
-
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default)]
 pub struct CateAxisParam {
     pub refno: RefU64,
     pub number: i32,
@@ -158,7 +158,8 @@ pub mod geo_params_data {
         SVER(super::CateSverParam),
     }
 
-    #[derive(Clone, Serialize, Deserialize, Debug, Default)]
+
+    #[derive(Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default)]
     pub enum PdmsGeoParam {
         #[default]
         Unknown,
@@ -174,12 +175,14 @@ pub mod geo_params_data {
         PrimLCylinder(LCylinder),
         PrimRevolution(Revolution),
         PrimExtrusion(Extrusion),
+        CompoundShape,
     }
 
     impl PdmsGeoParam {
         pub fn into_rvm_pri_num(&self) -> Option<u8> {
             match self {
                 PdmsGeoParam::Unknown => { None }
+                PdmsGeoParam::CompoundShape => { None }
                 PdmsGeoParam::PrimBox(_) => { Some(2) }
                 PdmsGeoParam::PrimLSnout(_) => { Some(7) }
                 PdmsGeoParam::PrimDish(_) => { Some(6) }
@@ -244,7 +247,7 @@ pub mod geo_params_data {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateBoxImpliedParam {
     pub axis: Option<CateAxisParam>,
     pub x_length: f32,
@@ -253,16 +256,16 @@ pub struct CateBoxImpliedParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateBoxParam {
-    pub size: Vec<f32>,
-    pub offset: Vec<f32>,
+    pub size: Vec3,
+    pub offset: Vec3,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateConeParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
@@ -272,7 +275,7 @@ pub struct CateConeParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateSCylinderParam {
     pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
@@ -283,7 +286,7 @@ pub struct CateSCylinderParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateLCylinderParam {
     pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
@@ -295,7 +298,7 @@ pub struct CateLCylinderParam {
 }
 
 ///拉伸的基本体
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateExtrusionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -312,7 +315,7 @@ pub struct CateExtrusionParam {
 }
 
 //structural annulus
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct SannData {
     pub xy: Vec2,
     pub dxy: Vec2,
@@ -327,7 +330,7 @@ pub struct SannData {
     pub plin_axis: Vec3,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct SProfileData {
     pub verts: Vec<Vec3>,
     pub frads: Vec<f32>,
@@ -337,17 +340,34 @@ pub struct SProfileData {
 }
 
 //截面的处理，还需要旋转自身的平面
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub enum CateProfileParam {
     #[default]
-    None,
+    UNKOWN,
     SPRO(SProfileData),
     SANN(SannData),
+}
 
+impl CateProfileParam {
+    pub fn get_bbox(&self) -> Option<Aabb> {
+        match self {
+            Self::UNKOWN => None,
+            Self::SANN(s) => {
+                Some(Aabb::new(nalgebra::Vector2::from(s.xy + s.dxy - Vec2::ONE * s.drad).into(),
+                               nalgebra::Vector2::from(s.xy + s.dxy + Vec2::ONE * s.drad).into()))
+            }
+            Self::SPRO(s) => {
+                let pts = s.verts.iter().map(|x|
+                    nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
+                ).collect::<Vec<_>>();
+                Some(Aabb::from_points(&pts))
+            }
+        }
+    }
 }
 
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateDishParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
@@ -359,9 +379,8 @@ pub struct CateDishParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateLineParam {
-    
     pub pa: ::core::option::Option<CateAxisParam>,
 
     pub pb: ::core::option::Option<CateAxisParam>,
@@ -374,7 +393,7 @@ pub struct CateLineParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CatePyramidParam {
     pub refno: RefU64,
     pub pa: Option<CateAxisParam>,
@@ -391,8 +410,9 @@ pub struct CatePyramidParam {
     pub centre_line_flag: bool,
     pub tube_flag: bool,
 }
+
 /// 截面为矩形的弯管
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateRectTorusParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -403,7 +423,7 @@ pub struct CateRectTorusParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateRevolutionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -418,7 +438,7 @@ pub struct CateRevolutionParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateSplineParam {
     pub start_pt: Vec<f32>,
     pub end_pt: Vec<f32>,
@@ -428,7 +448,7 @@ pub struct CateSplineParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateSlopeBottomCylinderParam {
     pub axis: Option<CateAxisParam>,
     pub height: f32,
@@ -444,7 +464,7 @@ pub struct CateSlopeBottomCylinderParam {
 }
 
 /// 圆台 或 管嘴
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateSnoutParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -459,7 +479,7 @@ pub struct CateSnoutParam {
 }
 
 /// 球
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateSphereParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_center: f32,
@@ -468,8 +488,9 @@ pub struct CateSphereParam {
     pub tube_flag: bool,
     pub refno: RefU64,
 }
+
 ///元件库里的torus参数
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateTorusParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -479,7 +500,7 @@ pub struct CateTorusParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateTubeImpliedParam {
     pub axis: Option<CateAxisParam>,
     pub diameter: f32,
@@ -487,7 +508,7 @@ pub struct CateTubeImpliedParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateSverParam {
     pub x: f64,
 

@@ -4,6 +4,7 @@ use crate::cache::mgr::BytesTrait;
 use crate::pdms_types::{AttrMap, RefU64};
 use crate::pdms_types::NounHash;
 use crate::tool::db_tool::db1_hash;
+use crate::helper::table::restore_type_name;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CachedRefBasic {
@@ -26,11 +27,7 @@ impl CachedRefBasic{
 
     #[inline]
     pub fn get_type(&self) -> &str{
-        if self.table.ends_with("_") {
-            &self.table[..self.table.len()-1]
-        }else{
-            self.table.as_str()
-        }
+        restore_type_name(&self.table)
     }
 
     #[inline]

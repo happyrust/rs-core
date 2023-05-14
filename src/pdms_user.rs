@@ -39,7 +39,7 @@ pub struct PdmsElementWithUser {
 impl PdmsElementWithUser {
     pub fn from_pdms_element(pdms_element:PdmsElement,user:&str) -> Self {
         Self {
-            refno: pdms_element.refno,
+            refno: pdms_element.refno.to_string(),
             owner: pdms_element.owner,
             name: pdms_element.name,
             noun: pdms_element.noun,

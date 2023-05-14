@@ -4,19 +4,19 @@ use std::hash::Hasher;
 use bevy::prelude::*;
 use truck_meshalgo::prelude::*;
 use truck_modeling::Shell;
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
 use std::hash::Hash;
 use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
-use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh, TRI_TOL};
+use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
 
-#[derive(Component, Debug, /*Inspectable,*/ Clone,  Reflect, Serialize, Deserialize)]
-#[reflect(Component)]
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct LSnout {
     pub paax_expr: String,
     pub paax_pt: Vec3,   //A Axis point
@@ -71,15 +71,45 @@ impl BrepShapeTrait for LSnout {
         Box::new(self.clone())
     }
 
+    #[inline]
+    fn tol(&self) -> f32{
+        //以最小的圆精度为准
+        0.005 * (( self.pbdm + self.ptdm) / 2.0).max(1.0)
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        let rt = (self.ptdm/2.0);
+        let rb = (self.pbdm/2.0);
+
+        let mut a_dir = self.paax_dir.normalize();
+        let mut b_dir = self.pbax_dir.normalize();
+        let p0 = a_dir * self.pbdi + self.paax_pt;
+        let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
+
+        let mut circles = vec![];
+        let mut verts = vec![];
+        if self.pbdm < f32::EPSILON {
+            verts.push(Vertex::new(p0));
+        }else{
+            circles.push(Wire::circle(rb, p0, a_dir)?);
+        }
+
+        if self.ptdm < f32::EPSILON {
+            verts.push(Vertex::new(p1));
+        }else{
+            circles.push(Wire::circle(rt, p1, a_dir)?);
+        }
+
+        Ok(OCCShape::loft(circles.iter(), verts.iter())?)
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let rt = (self.ptdm/2.0).max(0.01);
         let rb = (self.pbdm/2.0).max(0.01);
 
         let mut a_dir = self.paax_dir.normalize();
-        // if self.btm_on_top {
-        //     a_dir = -a_dir;
-        // }
         let mut b_dir = self.pbax_dir.normalize();
         let p0 = a_dir * self.pbdi + self.paax_pt;
         let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
@@ -92,7 +122,6 @@ impl BrepShapeTrait for LSnout {
         let mut is_cone = false;
         if self.ptdm * self.pbdm < EPSILON {
             is_cone = true;
-            // dbg!(is_cone);
         }
 
         let rot_axis = a_dir.vector3();
@@ -153,10 +182,6 @@ impl BrepShapeTrait for LSnout {
         }
     }
 
-    //参考圆点在中心位置
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
-       self.gen_unit_shape().gen_mesh(Some(TRI_TOL))
-    }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3{

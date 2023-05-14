@@ -3,7 +3,6 @@ use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use bevy::prelude::*;
-use truck_modeling::{builder, Shell, Surface, Wire};
 use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
@@ -11,13 +10,16 @@ use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
 
 use truck_modeling::builder::try_attach_plane;
-use serde::{Serialize,Deserialize};
+use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize)]
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
 pub struct Pyramid {
     pub pbax_pt: Vec3,
@@ -41,7 +43,8 @@ pub struct Pyramid {
     //dist to top
     pub pbdi: f32,  //dist to bottom
 
-    pub pbof: f32,  // x offset
+    pub pbof: f32,
+    // x offset
     pub pcof: f32,  // y offset
 }
 
@@ -49,15 +52,15 @@ pub struct Pyramid {
 impl Default for Pyramid {
     fn default() -> Self {
         Self {
-            // pbax_expr: "X".to_string(),  //todo 方位都想方法设法还原到原点坐标系
             pbax_pt: Default::default(),
             pbax_dir: Vec3::X,
-            // pcax_expr: "Y".to_string(),
+
             pcax_pt: Default::default(),
             pcax_dir: Vec3::Y,
-            // paax_expr: "Z".to_string(),
+
             paax_pt: Default::default(),
             paax_dir: Vec3::Z,
+
             pbtp: 1.0,
             pctp: 1.0,
             pbbt: 1.0,
@@ -76,7 +79,6 @@ impl VerifiedShape for Pyramid {
 
 //#[typetag::serde]
 impl BrepShapeTrait for Pyramid {
-
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -89,21 +91,54 @@ impl BrepShapeTrait for Pyramid {
         hasher.finish()
     }
 
-    //暂时不做可拉伸
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_mesh(None)
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+
+        let z_pt = self.paax_pt;
+        //todo 以防止出现有单个点的情况，暂时用这个模拟
+        let tx = (self.pbtp / 2.0);
+        let ty = (self.pctp / 2.0);
+        let bx = (self.pbbt / 2.0);
+        let by = (self.pcbt / 2.0);
+        let ox = 0.5 * self.pbof;
+        let oy = 0.5 * self.pcof;
+        let h2 = 0.5 * (self.ptdi - self.pbdi);
+
+        let mut polys = vec![];
+        let mut verts = vec![];
+
+        let pts = vec![
+            Vec3::new(-tx + ox, -ty + oy, h2),
+            Vec3::new(tx + ox, -ty + oy, h2),
+            Vec3::new(tx + ox, ty + oy, h2),
+            Vec3::new(-tx + ox, ty + oy, h2),
+        ];
+        if tx * ty < f32::EPSILON {
+            verts.push(Vertex::new(Vec3::new(ox, oy, h2)));
+        } else {
+            polys.push(Wire::from_points(&pts)?);
+        }
+
+        let pts = vec![
+            Vec3::new(-bx - ox, -by - oy, -h2),
+            Vec3::new(bx - ox, -by - oy, -h2),
+            Vec3::new(bx - ox, by - oy, -h2),
+            Vec3::new(-bx - ox, by - oy, -h2),
+        ];
+        if bx * by < f32::EPSILON {
+            verts.push(Vertex::new(Vec3::new(-ox, -oy, -h2)));
+        } else {
+            polys.push(Wire::from_points(&pts)?);
+        }
+
+        Ok(OCCShape::loft(polys.iter(), verts.iter())?)
     }
 
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::ONE
-    }
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
-    fn gen_brep_shell(&self) -> Option<Shell> {
+    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
-        let x_dir = self.pbax_dir.normalize().vector3();
-        let y_dir = self.pcax_dir.normalize().vector3();
-        let z_dir = self.paax_dir.normalize().vector3();
+
         let z_pt = self.paax_pt.point3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp as f64 / 2.0).max(0.001);
@@ -117,27 +152,27 @@ impl BrepShapeTrait for Pyramid {
         let pts = vec![
             builder::vertex(Point3::new(-tx + ox, -ty + oy, h2)),
             builder::vertex(Point3::new(tx + ox, -ty + oy, h2)),
-            builder::vertex(Point3::new(tx + ox,  ty + oy, h2)),
-            builder::vertex(Point3::new(-tx + ox,  ty + oy, h2)),
+            builder::vertex(Point3::new(tx + ox, ty + oy, h2)),
+            builder::vertex(Point3::new(-tx + ox, ty + oy, h2)),
         ];
         let mut ets = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),
-            builder::line(&pts[3], &pts[0])
+            builder::line(&pts[3], &pts[0]),
         ];
 
         let pts = vec![
             builder::vertex(Point3::new(-bx - ox, -by - oy, -h2)),
             builder::vertex(Point3::new(bx - ox, -by - oy, -h2)),
-            builder::vertex(Point3::new(bx - ox,  by - oy, -h2)),
-            builder::vertex(Point3::new(-bx - ox,  by - oy, -h2))
+            builder::vertex(Point3::new(bx - ox, by - oy, -h2)),
+            builder::vertex(Point3::new(-bx - ox, by - oy, -h2)),
         ];
         let mut ebs = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),
-            builder::line(&pts[3], &pts[0])
+            builder::line(&pts[3], &pts[0]),
         ];
 
 

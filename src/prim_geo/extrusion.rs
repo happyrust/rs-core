@@ -8,6 +8,7 @@ use approx::abs_diff_eq;
 use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
 use bevy::reflect::Reflect;
+use glam::DVec3;
 use nalgebra_glm::sin;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
@@ -20,7 +21,7 @@ use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct Extrusion {
     pub verts: Vec<Vec3>,
     pub fradius_vec: Vec<f32>,
@@ -50,6 +51,25 @@ impl BrepShapeTrait for Extrusion {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
+
+    ///限制参数大小，主要是对负实体的不合理进行限制
+    fn apply_limit_by_size(&mut self, l: f32) {
+        self.height = self.height.min(l);
+        dbg!(&self.height);
+    }
+
+    #[cfg(feature = "opencascade")]
+    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+        if !self.check_valid() || self.verts.len() < 3 { return Err(anyhow!("Extrusion params not valid.")); }
+        let mut wire = if let CurveType::Spline(thick) = self.cur_type {
+            gen_occ_spline_wire(&self.verts, thick)?
+        } else {
+            gen_occ_wire(&self.verts, &self.fradius_vec)?
+        };
+        // dbg!(self);
+        Ok(wire.extrude(DVec3::new(0., 0.0, self.height as _))?)
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         if self.verts.len() < 3 {
@@ -93,7 +113,7 @@ impl BrepShapeTrait for Extrusion {
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let unit = Self {
             verts: self.verts.clone(),
-            height: 100.0,   //开放一点大小,不然三角化出来的不对
+            height: 1000.0,   //开放一点大小,不然三角化出来的不对
             fradius_vec: self.fradius_vec.clone(),
             cur_type: self.cur_type.clone(),
             ..default()
@@ -101,14 +121,19 @@ impl BrepShapeTrait for Extrusion {
         Box::new(unit)
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL/10.0))
+    #[inline]
+    fn tol(&self) -> f32 {
+        use parry2d::bounding_volume::Aabb;
+        let pts = self.verts.iter().map(|x|
+            nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
+        ).collect::<Vec<_>>();
+        let profile_aabb = Aabb::from_points(&pts);
+        0.003 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
-
 
     //沿着指定方向拉伸 pbax_dir
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(1.0, 1.0, (self.height as f32 / 100.0))
+        Vec3::new(1.0, 1.0, (self.height as f32 / 1000.0))
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
@@ -127,11 +152,11 @@ fn test_circle_fradius() {
                 125.0, 125.0, 227.0,
             ),
             Vec3::new(
-                125.0, -125.0,227.0, ),
+                125.0, -125.0, 227.0, ),
             Vec3::new(
                 -125.0, -125.0, 227.0, ),
             Vec3::new(
-                -125.0,125.0, 227.0,
+                -125.0, 125.0, 227.0,
             ),
         ],
         fradius_vec: vec![125.0; 4],

@@ -22,7 +22,7 @@ use crate::tool::float_tool::hash_f32;
 use opencascade::OCCShape;
 
 
-#[derive(Component, Debug,  Clone, Reflect, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 // #[reflect(Component)]
 pub struct LCylinder {
     pub paxi_expr: String,
@@ -38,7 +38,6 @@ pub struct LCylinder {
     //diameter
     pub negative: bool,
 }
-
 
 
 impl Default for LCylinder {
@@ -70,7 +69,7 @@ impl BrepShapeTrait for LCylinder {
     //OCC 的生成
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let r = self.pdia as f64 / 2.0 ;
+        let r = self.pdia as f64 / 2.0;
         let h = (self.ptdi - self.pbdi) as f64;
         Ok(OCCShape::cylinder(r, h)?)
     }
@@ -106,7 +105,6 @@ impl BrepShapeTrait for LCylinder {
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi))
     }
-
 }
 
 impl From<&AttrMap> for LCylinder {
@@ -133,7 +131,7 @@ impl From<AttrMap> for LCylinder {
 }
 
 
-#[derive(Component, Debug, /*Inspectable,*/ Reflect, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 // #[reflect(Component)]
 pub struct SCylinder {
     pub paxi_expr: String,
@@ -195,12 +193,24 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
+    fn tol(&self) -> f32 {
+        0.01 * self.pdia.max(1.0)
+    }
+
+    ///引用限制大小
+    fn apply_limit_by_size(&mut self, l: f32) {
+        self.phei = self.phei.min(l);
+        self.pdia = self.pdia.min(l);
+        // dbg!(&self.phei);
+    }
+
+    #[cfg(feature = "opencascade")]
     //OCC 的生成
-    // fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-    //     let r = self.pdia as f64 / 2.0 ;
-    //     let h = (self.ptdi - self.pbdi) as f64;
-    //     Ok(OCCShape::cylinder(r, h)?)
-    // }
+    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+        let r = self.pdia as f64 / 2.0;
+        let h = self.phei as f64;
+        Ok(OCCShape::cylinder(r, h)?)
+    }
 
     #[inline]
     fn get_trans(&self) -> Transform {
@@ -242,7 +252,6 @@ impl BrepShapeTrait for SCylinder {
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
         let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
         let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
-        // dbg!((scale_x, scale_y));
         let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64)
             * Matrix4::from_angle_y(Rad(self.top_shear_angles[0].to_radians() as f64))
             * Matrix4::from_angle_y(Rad(self.top_shear_angles[1].to_radians() as f64))
@@ -297,9 +306,6 @@ impl BrepShapeTrait for SCylinder {
         Box::new(Self::default())
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        self.gen_unit_shape().gen_mesh(Some(TRI_TOL / 10.0))
-    }
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
@@ -319,7 +325,11 @@ impl BrepShapeTrait for SCylinder {
 
 impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
-        let phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
+        let mut phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
+        // if m.get_type() == "NCYL" {
+        //     //get parent bbox, 限制它的大小
+        //     phei = phei.max(10_000.0);  //负实体限制高度，有可能会被人为填很大的数字，限制高度
+        // }
         let pdia = m.get_val("DIAM").unwrap().double_value().unwrap_or_default() as f32;
         SCylinder {
             paxi_expr: "Z".to_string(),

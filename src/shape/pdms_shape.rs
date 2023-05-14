@@ -5,16 +5,15 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use anyhow::anyhow;
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
 use bevy::ecs::component::Component;
-use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::{FromWorld, Mesh, Transform};
-use bevy::reflect::{erased_serde, Reflect, ReflectRef};
-use bevy::reflect::erased_serde::serialize_trait_object;
 use bevy::render::mesh::Indices;
 use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
+use bevy::utils::HashSet;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{DVec3, Mat4, Vec3, vec3, Vec4};
@@ -44,8 +43,13 @@ use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 
+use rkyv::with::Skip;
+
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_2;
+
+#[cfg(feature = "opencascade")]
+use opencascade::OCCMesh;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -75,34 +79,67 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
             };
         });
     bdd_box
-    // let (size, center) = (bdd_box.size(), bdd_box.center());
 }
 
-//方便还原出未缩放的参数
-pub enum PdmsShapeData {}
-
-#[derive(Serialize, Deserialize, Component, Debug)]
-pub struct PdmsInstanceMeshMap {
-    pub refno_map: DashMap<RefU64, Vec<GeoHash>>,
-    pub mesh_map: DashMap<GeoHash, PdmsMesh>,
-}
 
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Component, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct PdmsMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
 
     pub wire_vertices: Vec<Vec<[f32; 3]>>,
-    pub wf_indices: Vec<u32>,
-    //wireframe indices
-    pub wf_vertices: Vec<[f32; 3]>,
-    //wireframe vertex
     pub aabb: Option<Aabb>,
-    pub unit_shape: Shell,
-    // pub shape_data: Box<dyn BrepShapeTrait>,
+
+    //最好能反序列化，看看怎么实现
+    #[cfg(feature = "opencascade")]
+    #[serde(skip)]
+    #[with(Skip)]
+    pub occ_shape: Option<opencascade::OCCShape>,
 }
+
+unsafe impl Sync for PdmsMesh {}
+unsafe impl Send for PdmsMesh {}
+
+
+#[cfg(feature = "opencascade")]
+impl From<OCCMesh> for PdmsMesh {
+    fn from(o: OCCMesh) -> Self {
+        let vertex_count = o.triangles.len() * 3;
+        let mut aabb = Aabb::new_invalid();
+        o.vertices.iter().for_each(|v| {
+            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
+        });
+
+        let mut vertices = Vec::with_capacity(vertex_count);
+        let mut normals = Vec::with_capacity(vertex_count);
+        let mut indices = Vec::with_capacity(vertex_count);
+
+        for (i, (t, normal)) in o.triangles_with_normals().enumerate() {
+            //顶点重排，保证normal是正确的
+            vertices.push(o.vertices[t[0]].into());
+            vertices.push(o.vertices[t[1]].into());
+            vertices.push(o.vertices[t[2]].into());
+            indices.push((i * 3) as u32);
+            indices.push((i * 3 + 1) as u32);
+            indices.push((i * 3 + 2) as u32);
+            normals.push(normal.into());
+            normals.push(normal.into());
+            normals.push(normal.into());
+        }
+
+        Self{
+            indices,
+            vertices,
+            normals,
+            wire_vertices: vec![],
+            aabb: Some(aabb),
+            occ_shape: None,
+        }
+    }
+}
+
 
 
 #[test]
@@ -138,7 +175,6 @@ impl PdmsMesh {
         let mut points: Vec<Point<f32>> = vec![];
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
-
         self.vertices.iter().for_each(|p| {
             let new_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
             points.push(Point::new(new_pt[0], new_pt[1], new_pt[2]))
@@ -146,8 +182,8 @@ impl PdmsMesh {
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        TriMesh::with_flags(points, indices, TriMeshFlags::ORIENTED)
-        // TriMesh::new(points, indices)
+        // TriMesh::with_flags(points, indices, TriMeshFlags::ORIENTED)
+        TriMesh::new(points, indices)
     }
 
     ///todo 后面需要把uv使用上
@@ -186,6 +222,30 @@ impl PdmsMesh {
         (mesh, self.aabb.clone())
     }
 
+    // ///变成压缩的模型数据
+    // #[inline]
+    // pub fn into_compress_bytes(&self) -> Vec<u8> {
+    //     use flate2::Compression;
+    //     use flate2::write::DeflateEncoder;
+    //     let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
+    //     let serialized = rkyv::to_bytes::<_, 2048>(self).unwrap().to_vec();
+    //     e.write_all(&serialized);
+    //     e.finish().unwrap_or_default()
+    // }
+
+    // ///根据反序列化的数据还原成mesh
+    // #[inline]
+    // pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+    //     use flate2::write::DeflateDecoder;
+    //     let mut writer = Vec::new();
+    //     let mut deflater = DeflateDecoder::new(writer);
+    //     deflater.write_all(bytes).ok()?;
+    //     let buf = deflater.finish().ok()?;
+    //     use rkyv::{archived_root, Deserialize};
+    //     let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
+    //     archived.deserialize(&mut rkyv::Infallible).ok()
+    // }
+
     #[inline]
     pub fn into_compress_bytes(&self) -> Vec<u8> {
         use flate2::Compression;
@@ -204,6 +264,7 @@ impl PdmsMesh {
         bincode::deserialize(&deflater.finish().ok()?).ok()
     }
 
+    ///转变成csg模型
     #[cfg(not(target_arch = "wasm32"))]
     pub fn into_csg_mesh(&self, transform: &Transform) -> CsgMesh {
         let mut triangles = Vec::new();
@@ -235,10 +296,7 @@ impl PdmsMesh {
     pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
         let rev_mat = world_transform.compute_matrix().inverse();
         let mut mesh = PdmsMesh {
-            wf_indices: self.wf_indices.clone(),
-            wf_vertices: self.wf_vertices.clone(),
             aabb: self.aabb.clone(),
-            unit_shape: self.unit_shape.clone(),
             ..default()
         };
         let mut i = 0;
@@ -273,52 +331,33 @@ impl PdmsMesh {
 }
 
 
-impl CachedInstanceMgr {
+/// shape instances 的管理方法
+impl ShapeInstancesMgr {
     #[inline]
-    pub fn get_inst_data(&self, refno: RefU64) -> Ref<RefU64, EleGeosInfo> {
-        let inst_map = &self.inst_mgr.inst_map;
+    pub fn get_inst_data(&self, refno: RefU64) -> &EleGeosInfo {
+        let inst_map = &self.inst_map;
         inst_map.get(&refno).unwrap()
-    }
-
-    pub fn serialize_to_bin_file(&self, mdb: &str) -> bool {
-        let mut file = File::create(format!(r"PdmsMeshMgr_{}.bin", mdb)).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
     }
 
     pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
         let mut file = File::create(file_path).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
+        let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
         file.write_all(serialized.as_slice()).unwrap();
         true
     }
 
-    pub fn deserialize_from_bin_file(file_path: &str) -> anyhow::Result<Self> {
+    pub fn deserialize_from_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        let r = bincode::deserialize(buf.as_slice())?;
-        Ok(r)
-    }
-
-    pub fn serialize_to_json_file(&self, file_path: &str) -> bool {
-        let mut file = File::create(file_path).unwrap();
-        let serialized = serde_json::to_string(&self).unwrap();
-        file.write_all(serialized.as_bytes()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_json_file(file_path: &str) -> anyhow::Result<Self> {
-        let mut file = File::open(file_path)?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        let r = serde_json::from_slice::<Self>(&buf)?;
+        use rkyv::{archived_root, Deserialize};
+        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
+        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
     }
 }
 
-pub const TRI_TOL: f32 = 0.01;
+pub const TRI_TOL: f32 = 0.05;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 ///brep形状trait
@@ -329,6 +368,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     ///生成shell
     fn gen_brep_shell(&self) -> Option<Shell> {
         return None;
+    }
+
+    ///限制参数大小，主要是对负实体的不合理进行限制
+    fn apply_limit_by_size(&mut self, limit_size: f32){
+
     }
 
     #[cfg(feature = "opencascade")]
@@ -349,12 +393,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// cylinder
     /// sphere
     fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
-        None
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_unit_occ_mesh(&self) -> Option<PdmsMesh> {
-        None
+        self.gen_unit_shape().gen_mesh()
     }
 
     ///获得缩放向量
@@ -373,16 +412,26 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         }
     }
 
+    #[inline]
+    fn tol(&self) -> f32{
+        TRI_TOL
+    }
+
     #[cfg(feature = "opencascade")]
-    fn gen_occ_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh>{
+    fn gen_mesh(&self) -> Option<PdmsMesh> {
         if let Ok(shape) = self.gen_occ_shape() {
-            let mesh = shape.mesh().ok()?;
+            // dbg!(self.tol() as f64);
+            let mut mesh: PdmsMesh = shape.mesh(self.tol() as f64).ok()?.into();
+            // dbg!("generate mesh");
+            mesh.occ_shape = Some(shape);
+            return Some(mesh);
         }
         None
     }
 
+    #[cfg(not(feature = "opencascade"))]
     ///生成mesh
-    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh> {
+    fn gen_mesh(&self) -> Option<PdmsMesh> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -405,7 +454,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if size <= f64::EPSILON {
                 return None;
             }
-            let tolerance = (tol.unwrap_or((TRIANGLE_TOL) as f32)) as f64 * size;
+            let tolerance = self.tol() as f64 * size;
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
@@ -432,10 +481,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 vertices,
                 normals,
                 wire_vertices,
-                wf_indices: vec![],
-                wf_vertices: vec![],
                 aabb: Some(aabb),
-                unit_shape: brep,
             });
         }
         None

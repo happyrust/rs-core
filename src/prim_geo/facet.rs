@@ -12,18 +12,18 @@ use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
+#[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Facet {
     pub polygons: Vec<Polygon>,
 }
 
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
+#[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Polygon {
     pub contours: Vec<Contour>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
+#[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Contour {
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
@@ -49,10 +49,6 @@ impl BrepShapeTrait for Facet {
         hasher.finish()
     }
 
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh>{
-        self.gen_mesh(None)
-    }
-
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
@@ -63,72 +59,71 @@ impl BrepShapeTrait for Facet {
         None
     }
 
-    fn gen_mesh(&self, tol: Option<f32>) -> Option<PdmsMesh>{
-        let mut vertices = vec![];
-        let mut normals = vec![];
-        let mut indices = vec![];
-        let mut uvs = vec![];
-        let delta = 0.001;
-        let mut aabb = Aabb::new_invalid();
-        for p in self.polygons.iter(){
-            if p.contours.len() == 0{ continue; }
-            let mut path = Path::builder();
-            let mut tess = FillTessellator::new();
-            let mut outbuf: VertexBuffers<usize, u16> = VertexBuffers::new();
-            let vert_cnt = vertices.len();
-            let mut coord_sys = [Vec3::ZERO; 3];
-            for c in p.contours.iter() {
-                let tmp_vert_cnt = vertices.len();
-                if c.vertices.len() >= 3{
-                    for i in 0..c.vertices.len(){
-                        let v = c.vertices[i];
-                        aabb.take_point(Point::new(v[0], v[1] , v[2] ));
-                        vertices.push(v);
-                        normals.push(c.normals[i]);
-                        uvs.push([0.0, 0.0]);
-                    }
-                    let pt_2d = Self::to2d(&vertices[tmp_vert_cnt..], normals[tmp_vert_cnt], &mut coord_sys);
-                    path.add_polygon(lyon::path::Polygon{
-                        points: &pt_2d,
-                        closed: true
-                    });
-                }else{
-                    // //dbg!(&d);   //暂时不考虑直线的情况
-                }
-            }
-            let path = path.build();
-            tess.tessellate_with_ids(
-                path.id_iter(),
-                &path,
-                None,
-                &FillOptions::default()/*.with_tolerance(0.5)*/.with_intersections(true),
-                &mut BuffersBuilder::new(&mut outbuf,
-                                         |vertex: FillVertex| {
-                                             if let Some(id) = vertex.as_endpoint_id(){
-                                                 return id.to_usize();
-                                             }
-                                             return 0usize;
-                                         },
-                ),
-            ).ok();
-            for index in outbuf.indices {
-                let endpoint_id = outbuf.vertices[index as usize];
-                indices.push((endpoint_id as usize + vert_cnt) as u32);
-            }
-        }
-
-        //对于facet，可以绘制convex hull的线框
-        return  Some(PdmsMesh{
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            wf_indices: vec![],
-            wf_vertices: vec![],
-            aabb: Some(aabb),
-            unit_shape: Default::default(),
-            // shape_data: self.gen_unit_shape(),
-        });
+    fn gen_mesh(&self) -> Option<PdmsMesh>{
+        // let mut vertices = vec![];
+        // let mut normals = vec![];
+        // let mut indices = vec![];
+        // let mut uvs = vec![];
+        // let delta = 0.001;
+        // let mut aabb = Aabb::new_invalid();
+        // for p in self.polygons.iter(){
+        //     if p.contours.len() == 0{ continue; }
+        //     let mut path = Path::builder();
+        //     let mut tess = FillTessellator::new();
+        //     let mut outbuf: VertexBuffers<usize, u16> = VertexBuffers::new();
+        //     let vert_cnt = vertices.len();
+        //     let mut coord_sys = [Vec3::ZERO; 3];
+        //     for c in p.contours.iter() {
+        //         let tmp_vert_cnt = vertices.len();
+        //         if c.vertices.len() >= 3{
+        //             for i in 0..c.vertices.len(){
+        //                 let v = c.vertices[i];
+        //                 aabb.take_point(Point::new(v[0], v[1] , v[2] ));
+        //                 vertices.push(v);
+        //                 normals.push(c.normals[i]);
+        //                 uvs.push([0.0, 0.0]);
+        //             }
+        //             let pt_2d = Self::to2d(&vertices[tmp_vert_cnt..], normals[tmp_vert_cnt], &mut coord_sys);
+        //             path.add_polygon(lyon::path::Polygon{
+        //                 points: &pt_2d,
+        //                 closed: true
+        //             });
+        //         }else{
+        //             // //dbg!(&d);   //暂时不考虑直线的情况
+        //         }
+        //     }
+        //     let path = path.build();
+        //     tess.tessellate_with_ids(
+        //         path.id_iter(),
+        //         &path,
+        //         None,
+        //         &FillOptions::default()/*.with_tolerance(0.5)*/.with_intersections(true),
+        //         &mut BuffersBuilder::new(&mut outbuf,
+        //                                  |vertex: FillVertex| {
+        //                                      if let Some(id) = vertex.as_endpoint_id(){
+        //                                          return id.to_usize();
+        //                                      }
+        //                                      return 0usize;
+        //                                  },
+        //         ),
+        //     ).ok();
+        //     for index in outbuf.indices {
+        //         let endpoint_id = outbuf.vertices[index as usize];
+        //         indices.push((endpoint_id as usize + vert_cnt) as u32);
+        //     }
+        // }
+        //
+        // //对于facet，可以绘制convex hull的线框
+        // return  Some(PdmsMesh{
+        //     indices,
+        //     vertices,
+        //     normals,
+        //     wire_vertices: vec![],
+        //     aabb: Some(aabb),
+        //     #[cfg(feature = "opencascade")]
+        //     occ_shape: None,
+        // });
+        None
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
