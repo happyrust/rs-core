@@ -18,8 +18,8 @@ use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+// #[cfg(feature = "opencascade")]
+// use opencascade::OCCShape;
 
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]

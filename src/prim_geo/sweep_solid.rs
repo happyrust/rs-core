@@ -18,8 +18,8 @@ use crate::prim_geo::wire;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Wire, Axis, Edge, Point, DsShape};
+// #[cfg(feature = "ope/*ncascade")]
+// use opencascade::{OCCShape, Wire, Axis, Edge, Point, DsShape};
 
 
 ///含有两边方向的，扫描体
