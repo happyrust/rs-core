@@ -7,8 +7,8 @@ use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use anyhow::anyhow;
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+// #[cfg(feature = "opencascade")]
+// use opencascade::OCCShape;
 use bevy::ecs::component::Component;
 use bevy::prelude::{FromWorld, Mesh, Transform};
 use bevy::render::mesh::Indices;
@@ -48,8 +48,8 @@ use rkyv::with::Skip;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_2;
 
-#[cfg(feature = "opencascade")]
-use opencascade::OCCMesh;
+// #[cfg(feature = "opencascade")]
+// use opencascade::OCCMesh;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 

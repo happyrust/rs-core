@@ -11,8 +11,8 @@ use crate::shape::pdms_shape::BrepMathTrait;
 use crate::tool::float_tool::hash_vec3;
 use approx::{abs_diff_eq, abs_diff_ne};
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Wire, Edge, Vertex};
+// #[cfg(feature = "opencascade")]
+// use opencascade::{OCCShape, Wire, Edge, Vertex};
 
 #[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub enum CurveType {

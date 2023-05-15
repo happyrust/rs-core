@@ -27,8 +27,8 @@ use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Point3, Quaternion, UnitQuaternion};
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+// #[cfg(feature = "opencascade")]
+// use opencascade::OCCShape;
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape, TriMesh};
@@ -1975,8 +1975,8 @@ impl CachedMeshesMgr {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Default, Resource)]
+#[derive( Serialize, Deserialize)]
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,  Clone, Debug, Default, Resource)]
 pub struct EleGeoInstance {
     #[serde(deserialize_with = "de_from_str")]
     #[serde(serialize_with = "ser_u64_as_str")]

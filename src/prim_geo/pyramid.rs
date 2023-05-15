@@ -16,8 +16,8 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+// #[cfg(feature = "opencascade")]
+// use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]

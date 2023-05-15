@@ -23,7 +23,6 @@ pub struct ThreeDimensionalModelDataCrate {
     #[serde(rename = "FlowPicData")]
     pub flow_pic_data: ThreeDimensionalReviewComment,
 }
-
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ThreeDimensionalModelDataToArango {
     // #[serde(rename = "KeyValue")]
