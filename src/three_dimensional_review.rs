@@ -53,7 +53,6 @@ pub struct ThreeDimensionalReviewComment {
     pub endorsement: Vec<ThreeDimensionalReviewData>,
 }
 
-
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ThreeDimensionalReviewData {
     pub comment: Vec<String>,

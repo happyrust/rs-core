@@ -220,7 +220,7 @@ pub struct SendHoleDataFormData {
     #[serde(rename="Memo")]
     pub memo: String,
     #[serde(rename="databody")]
-    pub data_body: Vec<DataCenterProject>,
+    pub data_body: DataCenterProject,
     #[serde(rename="modelbody")]
     pub model_body: HashMap<String,String>,
     #[serde(rename="Detail")]
