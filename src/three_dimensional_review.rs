@@ -56,12 +56,13 @@ pub struct ThreeDimensionalReviewComment {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ThreeDimensionalReviewData {
     pub comment: Vec<String>,
-    pub reply: String,
+    pub reply:  Vec<String>,
     pub associatedElement: Vec<RefU64>,
     pub cloudLine: String,
     #[serde(rename = "viewpoint")]
     pub camera_transform: Transform,
     pub image: String,
+    pub status:bool,
 }
 
 
