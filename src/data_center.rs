@@ -220,13 +220,27 @@ pub struct SendHoleDataFormData {
     #[serde(rename="Memo")]
     pub memo: String,
     #[serde(rename="databody")]
-    pub data_body: Vec<DataCenterProject>,
+    pub data_body: DataCenterProject,
     #[serde(rename="modelbody")]
-    pub model_body: HashMap<String,String>,
+    pub model_body: Vec<HoleDataModelBody>,
     #[serde(rename="Detail")]
     pub detail: Vec<DataCenterDetail>,
     #[serde(rename="files")]
     pub files: Vec<DataCenterFile>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+pub struct HoleDataModelBody {
+    pub code: String,
+    pub status: bool,
+    #[serde(rename="JD")]
+    pub jd: Vec<String>,
+    #[serde(rename="SH")]
+    pub sh: Vec<String>,
+    #[serde(rename="SD")]
+    pub sd: Vec<String>,
+    #[serde(rename="SZ")]
+    pub sz: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug,Default)]
