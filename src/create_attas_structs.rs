@@ -132,7 +132,7 @@ pub struct VirtualHoleGraphNode {
     #[serde(rename = "MainItemRefs")]
     main_item_refs: String,
 
-    pub intelld: String,
+    // pub intelld: String,
 }
 
 

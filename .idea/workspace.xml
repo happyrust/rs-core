@@ -17,7 +17,7 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="更新三维编校审结构体">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/three_dimensional_review.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/three_dimensional_review.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/create_attas_structs.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/create_attas_structs.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -374,13 +374,7 @@
       <workItem from="1684058601995" duration="2062000" />
       <workItem from="1684154694334" duration="1466000" />
       <workItem from="1684202915855" duration="2206000" />
-    </task>
-    <task id="LOCAL-00130" summary="update">
-      <created>1664692852273</created>
-      <option name="number" value="00130" />
-      <option name="presentableId" value="LOCAL-00130" />
-      <option name="project" value="LOCAL" />
-      <updated>1664692852276</updated>
+      <workItem from="1684213764472" duration="753000" />
     </task>
     <task id="LOCAL-00131" summary="update">
       <created>1664897301992</created>
@@ -718,7 +712,14 @@
       <option name="project" value="LOCAL" />
       <updated>1684040501457</updated>
     </task>
-    <option name="localTasksCounter" value="179" />
+    <task id="LOCAL-00179" summary="更新三维编校审结构体">
+      <created>1684213820800</created>
+      <option name="number" value="00179" />
+      <option name="presentableId" value="LOCAL-00179" />
+      <option name="project" value="LOCAL" />
+      <updated>1684213820800</updated>
+    </task>
+    <option name="localTasksCounter" value="180" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
