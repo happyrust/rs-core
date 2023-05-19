@@ -37,6 +37,7 @@ pub mod data_center;
 pub mod negative_mesh_type;
 pub mod rvm_types;
 pub mod options;
+pub mod virtual_hole;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;

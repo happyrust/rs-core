@@ -10,8 +10,6 @@ use truck_meshalgo::prelude::*;
 use bevy::reflect::Reflect;
 use bevy::ecs::reflect::ReflectComponent;
 use glam::Vec3;
-// #[cfg(feature = "opencascade")]
-// use opencascade::{ OCCShape, Wire, Axis};
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
