@@ -15,11 +15,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="更新三维编校审结构体">
-      <change afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="人员信息struct">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/virtual_hole.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -440,14 +438,8 @@
       <workItem from="1684251323315" duration="622000" />
       <workItem from="1684334195861" duration="1000" />
       <workItem from="1684394156114" duration="1274000" />
-      <workItem from="1684463619765" duration="1052000" />
-    </task>
-    <task id="LOCAL-00141" summary="replace ncollide3d to parry3d">
-      <created>1666539067404</created>
-      <option name="number" value="00141" />
-      <option name="presentableId" value="LOCAL-00141" />
-      <option name="project" value="LOCAL" />
-      <updated>1666539067405</updated>
+      <workItem from="1684463619765" duration="2389000" />
+      <workItem from="1684740061799" duration="649000" />
     </task>
     <task id="LOCAL-00142" summary="replace ncollide3d to parry3d">
       <created>1666598867789</created>
@@ -785,7 +777,14 @@
       <option name="project" value="LOCAL" />
       <updated>1684223538519</updated>
     </task>
-    <option name="localTasksCounter" value="190" />
+    <task id="LOCAL-00190" summary="人员信息struct">
+      <created>1684466172112</created>
+      <option name="number" value="00190" />
+      <option name="presentableId" value="LOCAL-00190" />
+      <option name="project" value="LOCAL" />
+      <updated>1684466172112</updated>
+    </task>
+    <option name="localTasksCounter" value="191" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -815,7 +814,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="use redb" />
     <MESSAGE value="upgrade to new bevy" />
     <MESSAGE value="新版本" />
     <MESSAGE value="增加Refu64::from_arangodb_refno_str api" />
@@ -840,7 +838,8 @@
     <MESSAGE value="修改模糊查询功能" />
     <MESSAGE value="增加用户信息结构体" />
     <MESSAGE value="修改孔洞接口" />
-    <option name="LAST_COMMIT_MESSAGE" value="修改孔洞接口" />
+    <MESSAGE value="人员信息struct" />
+    <option name="LAST_COMMIT_MESSAGE" value="人员信息struct" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
