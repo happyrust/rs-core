@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use bevy::prelude::Resource;
 use glam::Vec3;
 use serde::{Serialize, Deserialize, Serializer};
 use serde::de::DeserializeOwned;
@@ -189,12 +190,28 @@ pub struct TubiData{
     pub length:f32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+#[derive(Resource,Serialize, Deserialize, Clone, Debug,Default)]
+pub struct SendHoleDataToArango {
+    #[serde(rename="KeyValue")]
+    pub _key: String,
+    #[serde(rename="formdata")]
+    pub form_data: SendHoleDataFormData,
+}
+
+#[derive(Resource,Serialize, Deserialize, Clone, Debug,Default)]
 pub struct SendHoleData {
     #[serde(rename="KeyValue")]
     pub key_value: String,
     #[serde(rename="formdata")]
     pub form_data: SendHoleDataFormData,
+}
+impl SendHoleData {
+    pub fn to_arango_struct(self) -> SendHoleDataToArango {
+        SendHoleDataToArango {
+            _key: self.key_value,
+            form_data: self.form_data,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug,Default)]
