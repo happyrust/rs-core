@@ -7,6 +7,7 @@ resolver = "2"
 [features]
 default = ["truck"]
 #opencascade = ["dep:opencascade"]
+opencascade = []
 truck = []
 
 [dependencies]
