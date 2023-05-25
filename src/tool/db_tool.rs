@@ -85,7 +85,79 @@ pub const fn db1_hash(hash_str: &str) -> u32 {
 
 #[test]
 fn db1_dehash_test() {
+
+    //USER
+    //0xd943a
+    let name = db1_dehash(0xd943a);
+    println!("name={:?}", name);
+
     let name = db1_dehash(0x95B0C);
+    println!("name={:?}", name);
+
+    let name = db1_dehash(0x743f49);
+    println!("name={:?}", name);
+
+    //0x107684ca
+    let name = db1_dehash(0x107684ca);
+    println!("name={:?}", name);
+
+    //0xd53c73e
+    let name = db1_dehash(0xd53c73e);
+    println!("name={:?}", name);
+
+    // 0xd943a
+    let name = db1_dehash(0xd943a);
+    println!("name={:?}", name);
+
+    //0x10767608
+    let name = db1_dehash(0x10767608);
+    println!("name={:?}", name);
+
+    //0xe578d83
+    let name = db1_dehash(0xe578d83);
+    println!("name={:?}", name);
+
+    // 0x743f49
+    let name = db1_dehash(0x743f49);
+    println!("name={:?}", name);
+
+    //0x16e27bf9
+    let name = db1_dehash(0x16e27bf9);
+    println!("name={:?}", name);
+
+    //10cd4f90
+    let name = db1_dehash(0x10cd4f90);
+    println!("0x10cd4f90 name={:?}", name);
+
+    //0x10769b0c
+    let name = db1_dehash(0x10769b0c);
+    println!("name={:?}", name);
+
+    //0x10ceccbb
+    let name = db1_dehash(0x10ceccbb);
+    println!("name={:?}", name);
+
+    let name = db1_dehash(0xcc6b3F);
+    println!("0xcc6b3F={:?}", name);
+
+    //0x107684ca
+    let name = db1_dehash(0x107684ca);
+    println!("name={:?}", name);
+
+    //10767607
+    let name = db1_dehash(0x10767607);
+    println!("name={:?}", name);
+
+    //0x77fff4
+    let name = db1_dehash(0x77fff4);
+    println!("name={:?}", name);
+
+    //0xc80b935
+    let name = db1_dehash(0xc80b935);
+    println!("name={:?}", name);
+
+    //0xc9d2755
+    let name = db1_dehash(0xc9d2755);
     println!("name={:?}", name);
 
     let val = db1_hash("SCTN");
