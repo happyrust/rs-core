@@ -15,10 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="孔洞提资struct">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="人员信息">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data_center.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/data_center.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/virtual_hole.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -442,14 +440,8 @@
       <workItem from="1684463619765" duration="2389000" />
       <workItem from="1684740061799" duration="2090000" />
       <workItem from="1684762806787" duration="1317000" />
-      <workItem from="1684820159352" duration="1369000" />
-    </task>
-    <task id="LOCAL-00143" summary="use redb">
-      <created>1666618196817</created>
-      <option name="number" value="00143" />
-      <option name="presentableId" value="LOCAL-00143" />
-      <option name="project" value="LOCAL" />
-      <updated>1666618196817</updated>
+      <workItem from="1684820159352" duration="3449000" />
+      <workItem from="1684911248708" duration="1443000" />
     </task>
     <task id="LOCAL-00144" summary="update">
       <created>1666618436180</created>
@@ -787,7 +779,14 @@
       <option name="project" value="LOCAL" />
       <updated>1684742093070</updated>
     </task>
-    <option name="localTasksCounter" value="192" />
+    <task id="LOCAL-00192" summary="人员信息">
+      <created>1684830703483</created>
+      <option name="number" value="00192" />
+      <option name="presentableId" value="LOCAL-00192" />
+      <option name="project" value="LOCAL" />
+      <updated>1684830703483</updated>
+    </task>
+    <option name="localTasksCounter" value="193" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -817,7 +816,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="新版本" />
     <MESSAGE value="增加Refu64::from_arangodb_refno_str api" />
     <MESSAGE value="增加获取ATTA的结构体" />
     <MESSAGE value="增加虚拟孔洞的结构体" />
@@ -842,7 +840,8 @@
     <MESSAGE value="修改孔洞接口" />
     <MESSAGE value="人员信息struct" />
     <MESSAGE value="孔洞提资struct" />
-    <option name="LAST_COMMIT_MESSAGE" value="孔洞提资struct" />
+    <MESSAGE value="人员信息" />
+    <option name="LAST_COMMIT_MESSAGE" value="人员信息" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
