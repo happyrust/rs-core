@@ -24,6 +24,21 @@ pub struct ThreeDimensionalModelDataCrate {
     pub flow_pic_data: ThreeDimensionalReviewComment,
 }
 
+impl ThreeDimensionalModelDataCrate {
+    pub fn to_arango_struct(self) -> ThreeDimensionalModelDataToArango {
+        ThreeDimensionalModelDataToArango {
+            _key: self.key_value,
+            proj_code: self.proj_code,
+            user_code: self.user_code,
+            site_code: self.site_code,
+            site_name: self.site_name,
+            user_role: self.user_role,
+            model_data: self.model_data,
+            flow_pic_data: self.flow_pic_data,
+        }
+    }
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ThreeDimensionalModelDataToArango {
     // #[serde(rename = "KeyValue")]
@@ -54,16 +69,16 @@ pub struct ThreeDimensionalReviewComment {
     pub endorsement: Vec<ThreeDimensionalReviewData>,
 }
 
-
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ThreeDimensionalReviewData {
     pub comment: Vec<String>,
-    pub reply: String,
+    pub reply: Vec<String>,
     pub associatedElement: Vec<RefU64>,
     pub cloudLine: String,
     #[serde(rename = "viewpoint")]
     pub camera_transform: Transform,
     pub image: String,
+    pub status: bool,
 }
 
 
@@ -73,7 +88,7 @@ pub struct ModelData {
     pub data: Vec<HashMap<String, String>>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize,PartialEq)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
 pub enum VagueSearchCondition {
     #[default]
     And,

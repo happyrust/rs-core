@@ -112,27 +112,25 @@ pub struct VirtualHoleGraphNode {
     #[serde(rename = "Note")]
     pub note: String,
     #[serde(rename = "SizeThrowWall")]
-    size_throw_wall: f32,
+    pub size_throw_wall: f32,
     #[serde(rename = "HoleBPID")]
-    hole_bpid: String,
+    pub hole_bpid: String,
     #[serde(rename = "HoleBPVER")]
-    hole_bpver: String,
+    pub hole_bpver: String,
     #[serde(rename = "RelyItemBPID")]
-    rely_item_bpid: String,
+    pub rely_item_bpid: String,
     #[serde(rename = "RelyItemBPVER")]
-    rely_item_bpver: String,
+    pub rely_item_bpver: String,
     #[serde(rename = "MainPipeline")]
-    main_pipeline: String,
+    pub main_pipeline: String,
     #[serde(rename = "iFlowState")]
-    i_flow_state: String,
+    pub i_flow_state: String,
     #[serde(rename = "hType")]
-    h_type: String,
+    pub h_type: String,
     #[serde(rename = "MainItems")]
-    main_items: String,
+    pub main_items: String,
     #[serde(rename = "MainItemRefs")]
-    main_item_refs: String,
-
-    pub intelld: String,
+    pub main_item_refs: String,
 }
 
 
