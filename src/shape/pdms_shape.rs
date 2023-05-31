@@ -266,10 +266,9 @@ impl PdmsMesh {
 
     ///转变成csg模型
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn into_csg_mesh(&self, transform: &Transform) -> CsgMesh {
+    pub fn into_csg_mesh(&self, transform: &Mat4) -> CsgMesh {
         let mut triangles = Vec::new();
         for chuck in self.indices.chunks(3) {
-            // let c = chuck.collect::<Vec<_>>();
             let vertices_a: Option<&[f32; 3]> = self.vertices.get(chuck[0] as usize);
             let vertices_b: Option<&[f32; 3]> = self.vertices.get(chuck[1] as usize);
             let vertices_c: Option<&[f32; 3]> = self.vertices.get(chuck[2] as usize);
@@ -279,9 +278,9 @@ impl PdmsMesh {
             let vertices_b = Vec3::from_array(*vertices_b.unwrap());
             let vertices_c = Vec3::from_array(*vertices_c.unwrap());
 
-            let pt_a = transform.transform_point(vertices_a);
-            let pt_b = transform.transform_point(vertices_b);
-            let pt_c = transform.transform_point(vertices_c);
+            let pt_a = transform.transform_point3(vertices_a);
+            let pt_b = transform.transform_point3(vertices_b);
+            let pt_c = transform.transform_point3(vertices_c);
 
             triangles.push(csg::Triangle {
                 a: CsgPt3 { x: pt_a[0] as f64, y: pt_a[1] as f64, z: pt_a[2] as f64 },
@@ -292,41 +291,84 @@ impl PdmsMesh {
         csg::Mesh::from_triangles(triangles)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
-        let rev_mat = world_transform.compute_matrix().inverse();
-        let mut mesh = PdmsMesh {
-            aabb: self.aabb.clone(),
-            ..default()
-        };
-        let mut i = 0;
-        for tri in &csg_mesh.triangles {
-            mesh.indices.push(i);
-            mesh.indices.push(i + 1);
-            mesh.indices.push(i + 2);
-            let normal = tri.normal();
-            let normal = Vec3::from_array([normal.x as f32, normal.y as f32, normal.z as f32]);
-            let local_normal = rev_mat.transform_vector3(normal);
-            let normal = [local_normal.x, local_normal.y, local_normal.z];
-            mesh.normals.push(normal);
-            mesh.normals.push(normal);
-            mesh.normals.push(normal);
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
+    //     let rev_mat = world_transform.compute_matrix().inverse();
+    //     let mut mesh = PdmsMesh {
+    //         aabb: self.aabb.clone(),
+    //         ..default()
+    //     };
+    //     let mut i = 0;
+    //     for tri in &csg_mesh.triangles {
+    //         mesh.indices.push(i);
+    //         mesh.indices.push(i + 1);
+    //         mesh.indices.push(i + 2);
+    //         let normal = tri.normal();
+    //         let normal = Vec3::from_array([normal.x as f32, normal.y as f32, normal.z as f32]);
+    //         let local_normal = rev_mat.transform_vector3(normal);
+    //         let normal = [local_normal.x, local_normal.y, local_normal.z];
+    //         mesh.normals.push(normal);
+    //         mesh.normals.push(normal);
+    //         mesh.normals.push(normal);
+    // 
+    //         let pta = Vec3::from_array([tri.a.x as f32, tri.a.y as f32, tri.a.z as f32]);
+    //         let pta = rev_mat.transform_point3(pta);
+    // 
+    //         let ptb = Vec3::from_array([tri.b.x as f32, tri.b.y as f32, tri.b.z as f32]);
+    //         let ptb = rev_mat.transform_point3(ptb);
+    // 
+    //         let ptc = Vec3::from_array([tri.c.x as f32, tri.c.y as f32, tri.c.z as f32]);
+    //         let ptc = rev_mat.transform_point3(ptc);
+    // 
+    //         mesh.vertices.push(pta.into());
+    //         mesh.vertices.push(ptb.into());
+    //         mesh.vertices.push(ptc.into());
+    //         i += 3;
+    //     }
+    //     mesh
+    // }
+}
 
-            let pta = Vec3::from_array([tri.a.x as f32, tri.a.y as f32, tri.a.z as f32]);
-            let pta = rev_mat.transform_point3(pta);
+impl From<CsgMesh> for PdmsMesh {
+    fn from(o: CsgMesh) -> Self {
+        let vertex_count = o.triangles.len() * 3;
+        let mut aabb = Aabb::new_invalid();
+        // o.triangles.iter().for_each(|v| {
+        //     aabb.take_point(nalgebra::Point3::new(v.a.x as _, v.a.y as _, v.a.z as _));
+        //     aabb.take_point(nalgebra::Point3::new(v.b.x as _, v.b.y as _, v.b.z as _));
+        //     aabb.take_point(nalgebra::Point3::new(v.c.x as _, v.c.y as _, v.c.z as _));
+        // });
 
-            let ptb = Vec3::from_array([tri.b.x as f32, tri.b.y as f32, tri.b.z as f32]);
-            let ptb = rev_mat.transform_point3(ptb);
+        let mut vertices = Vec::with_capacity(vertex_count);
+        let mut normals = Vec::with_capacity(vertex_count);
+        let mut indices = Vec::with_capacity(vertex_count);
 
-            let ptc = Vec3::from_array([tri.c.x as f32, tri.c.y as f32, tri.c.z as f32]);
-            let ptc = rev_mat.transform_point3(ptc);
+        for (i, t) in o.triangles.iter().enumerate() {
+            //顶点重排，保证normal是正确的
+            aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
+            // aabb.take_point(t.b.into());
+            // aabb.take_point(t.c.into());
 
-            mesh.vertices.push(pta.into());
-            mesh.vertices.push(ptb.into());
-            mesh.vertices.push(ptc.into());
-            i += 3;
+            vertices.push(t.a.into());
+            vertices.push(t.b.into());
+            vertices.push(t.c.into());
+            indices.push((i * 3) as u32);
+            indices.push((i * 3 + 1) as u32);
+            indices.push((i * 3 + 2) as u32);
+            normals.push(t.normal().into());
+            normals.push(t.normal().into());
+            normals.push(t.normal().into());
         }
-        mesh
+
+        Self{
+            indices,
+            vertices,
+            normals,
+            wire_vertices: vec![],
+            aabb: Some(aabb),
+            #[cfg(feature = "opencascade")]
+            occ_shape: None,
+        }
     }
 }
 
@@ -420,7 +462,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     #[cfg(feature = "opencascade")]
     fn gen_mesh(&self) -> Option<PdmsMesh> {
         if let Ok(shape) = self.gen_occ_shape() {
-            // dbg!(self.tol() as f64);
             let mut mesh: PdmsMesh = shape.mesh(self.tol() as f64).ok()?.into();
             // dbg!("generate mesh");
             mesh.occ_shape = Some(shape);

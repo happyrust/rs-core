@@ -59,7 +59,7 @@ impl BrepShapeTrait for Dish {
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        Ok(opencascade::OCCShape::dish(self.pdis as f64 / 2.0, self.pheig as f64)?)
+        Ok(opencascade::OCCShape::dish(self.pdia as f64 / 2.0, self.pheig as f64)?)
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

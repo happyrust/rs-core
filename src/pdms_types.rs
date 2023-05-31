@@ -86,15 +86,20 @@ pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-pub const GENRAL_POS_NOUN_NAMES: [&'static str; 23] = [
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 24] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
-    "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
 ];
 
 
-pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 35] = [
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 36] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
-    "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+];
+
+pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 26] = [
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO",
     "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 

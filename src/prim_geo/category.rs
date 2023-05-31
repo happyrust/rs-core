@@ -389,6 +389,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
 
         CateGeoParam::Sphere(d) => {
+            // dbg!(d);
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Sphere {
                 radius: d.diameter as f32 / 2.0,
                 ..default()
