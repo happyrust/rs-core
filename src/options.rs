@@ -96,6 +96,12 @@ pub struct DbOption {
     #[clap(short)]
     pub only_sync_sys: bool,
     #[clap(long)]
-    pub plat_url:String,
+    pub plat_url: String,
+    #[clap(long)]
+    pub puhua_database_user: String,
+    #[clap(long)]
+    pub puhua_database_password: String,
+    #[clap(long)]
+    pub puhua_database_ip: String,
 }
 

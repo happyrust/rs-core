@@ -54,7 +54,7 @@ pub fn parse_ori_str_to_quat(ori_str: &str) -> anyhow::Result<Quat> {
         _ => {}
     }
 
-    dbg!(&mat);
+    // dbg!(&mat);
 
     Ok(Quat::from_mat3(&mat))
 }
