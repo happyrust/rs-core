@@ -36,6 +36,8 @@ pub struct DbOption {
     pub module: String,
     #[clap(long)]
     pub project_name: String,
+    #[clap(long)]
+    pub project_code: String,
     #[clap(skip)]
     pub manual_db_nums: Option<Vec<i32>>,
     #[clap(long)]
