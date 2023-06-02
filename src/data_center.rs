@@ -89,6 +89,7 @@ pub enum AttrValue {
     AttrStrArray(Vec<String>),
     AttrIntArray(Vec<i32>),
     AttrFloatArray(Vec<f32>),
+    AttrVec3(Vec3),
     AttrVec3Array(Vec<Vec3>),
     AttrMap(HashMap<String, Vec<String>>),
     AttrMapFloatArray(HashMap<String, Vec<f32>>),
@@ -123,6 +124,9 @@ impl Into<String> for AttrValue {
                 serde_json::to_string(&a).unwrap_or("[]".to_string())
             }
             AttrValue::AttrFloatArray(a) => {
+                serde_json::to_string(&a).unwrap_or("[]".to_string())
+            }
+            AttrValue::AttrVec3(a) => {
                 serde_json::to_string(&a).unwrap_or("[]".to_string())
             }
             AttrValue::AttrVec3Array(a) => {
