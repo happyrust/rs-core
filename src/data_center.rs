@@ -312,6 +312,7 @@ pub struct DataCenterDetail {
     #[serde(rename = "ActHum")]
     pub act_hum: String,
     pub is_hole:bool,
+    pub key:String
 }
 
 #[test]

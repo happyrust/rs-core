@@ -15,12 +15,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="人员信息">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="虚拟孔洞">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/data_center.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/data_center.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/dir_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/dir_tool.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/virtual_hole.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -429,13 +426,10 @@
       <workItem from="1684819585854" duration="1708000" />
       <workItem from="1685086411114" duration="1267000" />
       <workItem from="1685430883851" duration="36000" />
-    </task>
-    <task id="LOCAL-00137" summary="update">
-      <created>1665568329389</created>
-      <option name="number" value="00137" />
-      <option name="presentableId" value="LOCAL-00137" />
-      <option name="project" value="LOCAL" />
-      <updated>1665568329389</updated>
+      <workItem from="1685516068486" duration="740000" />
+      <workItem from="1685584823765" duration="1844000" />
+      <workItem from="1685671173194" duration="2167000" />
+      <workItem from="1685930338750" duration="646000" />
     </task>
     <task id="LOCAL-00138" summary="update">
       <created>1665586258377</created>
@@ -773,7 +767,14 @@
       <option name="project" value="LOCAL" />
       <updated>1685009933268</updated>
     </task>
-    <option name="localTasksCounter" value="186" />
+    <task id="LOCAL-00186" summary="虚拟孔洞">
+      <created>1685516089778</created>
+      <option name="number" value="00186" />
+      <option name="presentableId" value="LOCAL-00186" />
+      <option name="project" value="LOCAL" />
+      <updated>1685516089778</updated>
+    </task>
+    <option name="localTasksCounter" value="187" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -803,7 +804,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fix cargo" />
     <MESSAGE value="Fix slope face" />
     <MESSAGE value="解决弧形墙的面也有sloped的情况" />
     <MESSAGE value="Fix wall WIP" />
@@ -828,7 +828,8 @@
     <MESSAGE value="Fix lines colinear" />
     <MESSAGE value="Update" />
     <MESSAGE value="添加方位字符串的解析还原，得到Quat" />
-    <option name="LAST_COMMIT_MESSAGE" value="添加方位字符串的解析还原，得到Quat" />
+    <MESSAGE value="虚拟孔洞" />
+    <option name="LAST_COMMIT_MESSAGE" value="虚拟孔洞" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
