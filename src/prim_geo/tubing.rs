@@ -54,7 +54,7 @@ impl PdmsTubing {
 
     #[inline]
     pub fn is_dir_ok(&self) -> bool {
-        return true;
+        // return true;
         let a = self.desire_leave_dir.normalize_or_zero();
         let b = -self.desire_arrive_dir.normalize_or_zero();
         let c = self.get_dir();
