@@ -90,7 +90,7 @@ impl SRTorus {
 
 impl VerifiedShape for SRTorus {
     fn check_valid(&self) -> bool {
-        true
+        self.pheig > 0.0 && self.pdia > 0.0
     }
 }
 

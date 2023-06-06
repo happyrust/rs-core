@@ -16,7 +16,7 @@ use parry3d::math::{Point, Vector};
 use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
 use crate::pdms_types::AttrMap;
@@ -69,7 +69,7 @@ impl BrepShapeTrait for Sphere {
     }
 
     // #[cfg(feature = "truck")]
-    // fn gen_mesh(&self) -> Option<PdmsMesh> {
+    // fn gen_mesh(&self) -> Option<PlantMesh> {
     //     let generated = IcoSphere::new(32, |point| {
     //         let inclination = point.y.acos();
     //         let azimuth = point.z.atan2(point.x);
@@ -99,7 +99,7 @@ impl BrepShapeTrait for Sphere {
     //     }
     //
     //     //球也需要提供wireframe的绘制
-    //     return Some(PdmsMesh{
+    //     return Some(PlantMesh{
     //         indices,
     //         vertices: points,
     //         normals,

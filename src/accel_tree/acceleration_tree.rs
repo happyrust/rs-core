@@ -3,7 +3,9 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use bevy::prelude::Resource;
 use glam::{Mat4, Vec3};
+use nalgebra::Point3;
 use parry3d::bounding_volume::Aabb;
+use rstar::Envelope;
 use serde_derive::{Deserialize, Serialize};
 use crate::pdms_types::RefU64;
 
@@ -108,11 +110,11 @@ impl AccelerationTree {
             .map(|bb| bb.refno)
     }
 
-    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=RefU64> + 'a {
+    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=(RefU64, [f32; 3])> + 'a {
         self.tree
             .locate_in_envelope_intersecting(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                                                                         [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
-            .map(|bb| bb.refno)
+            .map(|bb| (bb.refno, bb.aabb.center()))
     }
 
     pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=RefU64> + 'a {

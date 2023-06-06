@@ -8,7 +8,7 @@ use std::hash::Hash;
 use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
-use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh};
+use crate::shape::pdms_shape::{BrepMathTrait, PlantMesh};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;

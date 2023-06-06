@@ -1,4 +1,4 @@
-use crate::shape::pdms_shape::PdmsMesh;
+use crate::shape::pdms_shape::PlantMesh;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -16,7 +16,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
@@ -56,7 +56,7 @@ impl Default for LCylinder {
 
 impl VerifiedShape for LCylinder {
     fn check_valid(&self) -> bool {
-        true
+       self.pdia > f32::EPSILON && (self.pbdi - self.ptdi).abs() > f32::EPSILON
     }
 }
 

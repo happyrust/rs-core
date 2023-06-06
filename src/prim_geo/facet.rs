@@ -10,7 +10,7 @@ use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 
 #[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Facet {
@@ -59,7 +59,7 @@ impl BrepShapeTrait for Facet {
         None
     }
 
-    fn gen_mesh(&self) -> Option<PdmsMesh>{
+    fn gen_mesh(&self) -> Option<PlantMesh>{
         // let mut vertices = vec![];
         // let mut normals = vec![];
         // let mut indices = vec![];
@@ -114,7 +114,7 @@ impl BrepShapeTrait for Facet {
         // }
         //
         // //对于facet，可以绘制convex hull的线框
-        // return  Some(PdmsMesh{
+        // return  Some(PlantMesh{
         //     indices,
         //     vertices,
         //     normals,

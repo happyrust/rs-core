@@ -15,7 +15,7 @@ use crate::parsed_data::{CateProfileParam, SannData, SProfileData};
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::prim_geo::spine::*;
 use crate::prim_geo::wire;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
 #[cfg(feature = "opencascade")]

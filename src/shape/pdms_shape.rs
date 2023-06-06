@@ -84,7 +84,7 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 
 //todo 增加LOD的实现
 #[derive(Serialize, Deserialize, Component, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-pub struct PdmsMesh {
+pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
@@ -99,12 +99,12 @@ pub struct PdmsMesh {
     pub occ_shape: Option<opencascade::OCCShape>,
 }
 
-unsafe impl Sync for PdmsMesh {}
-unsafe impl Send for PdmsMesh {}
+unsafe impl Sync for PlantMesh {}
+unsafe impl Send for PlantMesh {}
 
 
 #[cfg(feature = "opencascade")]
-impl From<OCCMesh> for PdmsMesh {
+impl From<OCCMesh> for PlantMesh {
     fn from(o: OCCMesh) -> Self {
         let vertex_count = o.triangles.len() * 3;
         let mut aabb = Aabb::new_invalid();
@@ -168,7 +168,7 @@ fn test_project_to_plane() {
 }
 
 
-impl PdmsMesh {
+impl PlantMesh {
     //集成lod的功能
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> TriMesh {
@@ -294,7 +294,7 @@ impl PdmsMesh {
     // #[cfg(not(target_arch = "wasm32"))]
     // pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
     //     let rev_mat = world_transform.compute_matrix().inverse();
-    //     let mut mesh = PdmsMesh {
+    //     let mut mesh = PlantMesh {
     //         aabb: self.aabb.clone(),
     //         ..default()
     //     };
@@ -329,15 +329,11 @@ impl PdmsMesh {
     // }
 }
 
-impl From<CsgMesh> for PdmsMesh {
+#[cfg(not(target_arch = "wasm32"))]
+impl From<CsgMesh> for PlantMesh {
     fn from(o: CsgMesh) -> Self {
         let vertex_count = o.triangles.len() * 3;
         let mut aabb = Aabb::new_invalid();
-        // o.triangles.iter().for_each(|v| {
-        //     aabb.take_point(nalgebra::Point3::new(v.a.x as _, v.a.y as _, v.a.z as _));
-        //     aabb.take_point(nalgebra::Point3::new(v.b.x as _, v.b.y as _, v.b.z as _));
-        //     aabb.take_point(nalgebra::Point3::new(v.c.x as _, v.c.y as _, v.c.z as _));
-        // });
 
         let mut vertices = Vec::with_capacity(vertex_count);
         let mut normals = Vec::with_capacity(vertex_count);
@@ -346,9 +342,6 @@ impl From<CsgMesh> for PdmsMesh {
         for (i, t) in o.triangles.iter().enumerate() {
             //顶点重排，保证normal是正确的
             aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
-            // aabb.take_point(t.b.into());
-            // aabb.take_point(t.c.into());
-
             vertices.push(t.a.into());
             vertices.push(t.b.into());
             vertices.push(t.c.into());
@@ -373,31 +366,7 @@ impl From<CsgMesh> for PdmsMesh {
 }
 
 
-/// shape instances 的管理方法
-impl ShapeInstancesMgr {
-    #[inline]
-    pub fn get_inst_data(&self, refno: RefU64) -> &EleGeosInfo {
-        let inst_map = &self.inst_map;
-        inst_map.get(&refno).unwrap()
-    }
 
-    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
-        let mut file = File::create(file_path).unwrap();
-        let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
-        let mut file = File::open(file_path)?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        use rkyv::{archived_root, Deserialize};
-        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
-        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
-        Ok(r)
-    }
-}
 
 pub const TRI_TOL: f32 = 0.05;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
@@ -434,7 +403,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// box
     /// cylinder
     /// sphere
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+    fn gen_unit_mesh(&self) -> Option<PlantMesh> {
         self.gen_unit_shape().gen_mesh()
     }
 
@@ -460,9 +429,9 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     #[cfg(feature = "opencascade")]
-    fn gen_mesh(&self) -> Option<PdmsMesh> {
+    fn gen_mesh(&self) -> Option<PlantMesh> {
         if let Ok(shape) = self.gen_occ_shape() {
-            let mut mesh: PdmsMesh = shape.mesh(self.tol() as f64).ok()?.into();
+            let mut mesh: PlantMesh = shape.mesh(self.tol() as f64).ok()?.into();
             // dbg!("generate mesh");
             mesh.occ_shape = Some(shape);
             return Some(mesh);
@@ -472,7 +441,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     #[cfg(not(feature = "opencascade"))]
     ///生成mesh
-    fn gen_mesh(&self) -> Option<PdmsMesh> {
+    fn gen_mesh(&self) -> Option<PlantMesh> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -517,7 +486,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 .iter()
                 .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
                 .collect();
-            return Some(PdmsMesh {
+            return Some(PlantMesh {
                 indices,
                 vertices,
                 normals,

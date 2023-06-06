@@ -13,7 +13,7 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SBox {

@@ -14,7 +14,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::hash_tool::*;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
@@ -66,7 +66,9 @@ impl Default for LPyramid {
 }
 
 impl VerifiedShape for LPyramid {
-    fn check_valid(&self) -> bool { true }
+    fn check_valid(&self) -> bool {
+        (self.pbtp + self.pctp) > f32::EPSILON || (self.pbbt + self.pcbt) > f32::EPSILON
+    }
 }
 
 //#[typetag::serde]
