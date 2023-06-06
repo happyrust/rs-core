@@ -2,6 +2,8 @@
 #![feature(mixed_integer_ops)]
 #![feature(drain_filter)]
 #![feature(let_chains)]
+#![feature(trivial_bounds)]
+
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
 use crate::pdms_types::PdmsDatabaseInfo;
@@ -35,6 +37,7 @@ pub mod data_center;
 pub mod negative_mesh_type;
 pub mod rvm_types;
 pub mod options;
+pub mod virtual_hole;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
