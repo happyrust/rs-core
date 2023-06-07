@@ -52,6 +52,7 @@ use crate::pdms_data::{AxisParam, NewDataOperate};
 use crate::pdms_types::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::SCylinder;
+use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::dish::Dish;
 use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::RTorus;
@@ -107,11 +108,14 @@ pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 26] = [
 
 
 ///元件库的种类
-pub const CATA_GEO_NAMES: [&'static str; 26] = [
-    "BRAN", "HANG", "ELCONN",
-    "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
+pub const CATA_GEO_NAMES: [&'static str; 24] = [
+     "ELCONN", "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
     "PJOI", "PFIT", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "NOZZ", "PALJ",
     "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "SCTN", "FITT",
+];
+
+pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = [
+    "BRAN", "HANG",
 ];
 
 
@@ -446,6 +450,7 @@ impl RefU64 {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Deref, DerefMut)]
 pub struct RefU64Vec(pub Vec<RefU64>);
+
 
 #[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for RefU64Vec {
@@ -1776,10 +1781,6 @@ pub struct EleGeosInfo {
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: Transform,
 
-    #[serde(default)]
-    pub ptset_map: BTreeMap<i32, CateAxisParam>,
-    #[serde(default)]
-    pub flow_pt_indexs: Vec<i32>,
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
@@ -1843,14 +1844,54 @@ impl EleGeosInfo {
 /// instane数据集合管理
 #[derive(Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Resource)]
 pub struct ShapeInstancesData {
-    /// 保存所有的instance数据
+    /// 保存instance信息数据
     pub inst_info_map: std::collections::HashMap<RefU64, EleGeosInfo>,
-    ///保存所有的instance几何数据
+    ///保存所有用到的的tubi数据
+    pub inst_tubi_map: std::collections::HashMap<RefU64, EleGeosInfo>,
+    ///保存instance几何数据
     pub inst_geos_map: std::collections::HashMap<u64, EleInstGeosData>,
+
 }
 
 /// shape instances 的管理方法
 impl ShapeInstancesData {
+
+    #[inline]
+    pub fn clear(&mut self){
+        self.inst_info_map.clear();
+        self.inst_geos_map.clear();
+        self.inst_tubi_map.clear();
+    }
+
+    pub fn merge_ref(&mut self, o: &Self){
+
+        for (k, v) in o.inst_info_map.clone(){
+            self.insert_info(k, v);
+        }
+        for (k, v) in o.inst_geos_map.clone(){
+            self.insert_geos_data(k, v);
+        }
+        for (k, v) in o.inst_tubi_map.clone(){
+            self.insert_tubi(k, v);
+        }
+    }
+
+    pub fn merge(&mut self, other: Self){
+        let Self{
+            inst_info_map,
+            inst_tubi_map,
+            inst_geos_map
+        } = other;
+        for (k, v) in inst_info_map{
+            self.insert_info(k, v);
+        }
+        for (k, v) in inst_geos_map{
+            self.insert_geos_data(k, v);
+        }
+        for (k, v) in inst_tubi_map{
+            self.insert_tubi(k, v);
+        }
+    }
 
     ///获得所有的geo hash值
     #[inline]
@@ -1871,6 +1912,17 @@ impl ShapeInstancesData {
     }
 
     #[inline]
+    pub fn get_inst_geos_data(&self, info: &EleGeosInfo) -> Option<&EleInstGeosData>{
+        let k = info.get_inst_key();
+        self.inst_geos_map.get(&k)
+    }
+
+    #[inline]
+    pub fn get_inst_tubi(&self, refno: RefU64) -> Option<&EleGeosInfo>{
+        self.inst_tubi_map.get(&refno)
+    }
+
+    #[inline]
     pub fn get_inst_info(&self, refno: RefU64) -> Option<&EleGeosInfo>{
         self.inst_info_map.get(&refno)
     }
@@ -1883,6 +1935,11 @@ impl ShapeInstancesData {
     #[inline]
     pub fn insert_geos_data(&mut self, hash: u64, geo: EleInstGeosData) {
         self.inst_geos_map.insert(hash, geo);
+    }
+
+    #[inline]
+    pub fn insert_tubi(&mut self, refno: RefU64, info: EleGeosInfo) {
+        self.inst_tubi_map.insert(refno, info);
     }
 
     pub fn get_info(&self, refno: &RefU64) -> Option<&EleGeosInfo>{
@@ -2093,7 +2150,15 @@ pub struct EleInstGeosData {
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
-    pub insts: Vec<EleInstGeo>
+    pub insts: Vec<EleInstGeo>,
+
+    pub aabb: Option<Aabb>,
+    pub type_name: String,
+
+    #[serde(default)]
+    pub ptset_map: BTreeMap<i32, CateAxisParam>,
+    #[serde(default)]
+    pub flow_pt_indexs: Vec<i32>,
 }
 
 ///分拆的基本体信息, 应该是不需要复用的
@@ -2382,21 +2447,31 @@ pub struct ChildrenNode {
 }
 
 
-// #[serde_as]
-// #[derive(Debug, Serialize, Deserialize, Default)]
-// pub struct RefnoHasNegPosInfoTuple(
-//     #[serde_as(as = "DisplayFromStr")]
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug, Default,  Component)]
+pub struct CataHashRefnoKV {
+    // #[serde(deserialize_with = "de_from_str")]
+    // #[serde(serialize_with = "ser_u64_as_str")]
+    pub cata_hash: u64,
+    // #[serde_as(as = "DisplayFromStr")]
+    pub exist_geo: Option<EleInstGeosData>,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    pub group_refnos: Vec<RefU64>,
+}
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component)]
 pub struct PdmsElement {
     #[serde_as(as = "DisplayFromStr")]
+    #[serde(rename = "_key")]
     pub refno: RefU64,
     #[serde_as(as = "DisplayFromStr")]
     pub owner: RefU64,
     pub name: String,
     pub noun: String,
+    #[serde(default)]
     pub version: u32,
+    #[serde(default)]
     pub children_count: usize,
 }
 

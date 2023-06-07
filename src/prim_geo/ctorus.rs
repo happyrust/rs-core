@@ -17,8 +17,8 @@ use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
-// #[cfg(feature = "opencascade")]
-// use opencascade::{OCCShape, Edge, Wire, Axis};
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]

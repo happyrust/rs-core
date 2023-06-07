@@ -165,46 +165,47 @@ pub enum HoleType {
     Unknown,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
-pub struct ThreeDDatacenterRequest{
-    pub title:String,
-    pub refnos:Vec<String>,
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ThreeDDatacenterRequest {
+    pub title: String,
+    pub refnos: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ThreeDDatacenterResponse {
-    #[serde(rename ="Success")]
+    #[serde(rename = "Success")]
     pub success: bool,
-    #[serde(rename ="Result")]
+    #[serde(rename = "Result")]
     pub result: String,
-    #[serde(rename ="KeyValue")]
+    #[serde(rename = "KeyValue")]
     pub key_value: String,
-    #[serde(rename ="LoginUrl")]
+    #[serde(rename = "LoginUrl")]
     pub login_url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TubiData{
-    pub pre_refno:RefU64,
-    pub lstu_name:String,
-    pub length:f32,
+pub struct TubiData {
+    pub pre_refno: RefU64,
+    pub lstu_name: String,
+    pub length: f32,
 }
 
-#[derive(Resource,Serialize, Deserialize, Clone, Debug,Default)]
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SendHoleDataToArango {
-    #[serde(rename="KeyValue")]
+    #[serde(rename = "KeyValue")]
     pub _key: String,
-    #[serde(rename="formdata")]
+    #[serde(rename = "formdata")]
     pub form_data: SendHoleDataFormData,
 }
 
-#[derive(Resource,Serialize, Deserialize, Clone, Debug,Default)]
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SendHoleData {
-    #[serde(rename="KeyValue")]
+    #[serde(rename = "KeyValue")]
     pub key_value: String,
-    #[serde(rename="formdata")]
+    #[serde(rename = "formdata")]
     pub form_data: SendHoleDataFormData,
 }
+
 impl SendHoleData {
     pub fn to_arango_struct(self) -> SendHoleDataToArango {
         SendHoleDataToArango {
@@ -214,62 +215,62 @@ impl SendHoleData {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SendHoleDataFormData {
-    #[serde(rename="ProjCode")]
+    #[serde(rename = "ProjCode")]
     pub project_code: String,
-    #[serde(rename="HumanCode")]
+    #[serde(rename = "HumanCode")]
     pub human_code: String,
-    #[serde(rename="Title")]
+    #[serde(rename = "Title")]
     pub title: String,
-    #[serde(rename="Major")]
-    pub major:String,
-    #[serde(rename="WXType")]
-    pub wx_type:String,
-    #[serde(rename="JD_Name")]
+    #[serde(rename = "Major")]
+    pub major: String,
+    #[serde(rename = "WXType")]
+    pub wx_type: String,
+    #[serde(rename = "JD_Name")]
     pub jd_name: String,
-    #[serde(rename="SH_Name")]
+    #[serde(rename = "SH_Name")]
     pub sh_name: String,
-    #[serde(rename="SD_Name")]
+    #[serde(rename = "SD_Name")]
     pub sd_name: String,
-    #[serde(rename="SZ_Name")]
+    #[serde(rename = "SZ_Name")]
     pub sz_name: String,
-    #[serde(rename="Memo")]
+    #[serde(rename = "Memo")]
     pub memo: String,
-    #[serde(rename="databody")]
+    #[serde(rename = "databody")]
     pub data_body: DataCenterProject,
-    #[serde(rename="modelbody")]
+    #[serde(rename = "modelbody")]
     pub model_body: Vec<HoleDataModelBody>,
-    #[serde(rename="Detail")]
+    #[serde(rename = "Detail")]
     pub detail: Vec<DataCenterDetail>,
-    #[serde(rename="files")]
-    pub files: Vec<DataCenterFile>
+    #[serde(rename = "files")]
+    pub files: Vec<DataCenterFile>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HoleDataModelBody {
     pub code: String,
     pub status: bool,
-    #[serde(rename="JD")]
+    #[serde(rename = "JD")]
     pub jd: Vec<String>,
-    #[serde(rename="SH")]
+    #[serde(rename = "SH")]
     pub sh: Vec<String>,
-    #[serde(rename="SD")]
+    #[serde(rename = "SD")]
     pub sd: Vec<String>,
-    #[serde(rename="SZ")]
+    #[serde(rename = "SZ")]
     pub sz: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
-pub struct DataCenterFile{
-    #[serde(rename="filename")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct DataCenterFile {
+    #[serde(rename = "filename")]
     pub file_name: String,
-    #[serde(rename="filestream")]
+    #[serde(rename = "filestream")]
     pub file_stream: String,
 }
 
 impl DataCenterFile {
-    pub fn from_file_bytes(file_bytes:FileBytes) -> Self {
+    pub fn from_file_bytes(file_bytes: FileBytes) -> Self {
         Self {
             file_name: file_bytes.file_name,
             file_stream: base64::encode(&file_bytes.data),
@@ -277,24 +278,26 @@ impl DataCenterFile {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterDetail {
-    #[serde(rename="Code")]
+    #[serde(rename = "Code")]
     pub code: String,
-    #[serde(rename="Type")]
+    #[serde(rename = "Type")]
     pub detail_type: String,
-    #[serde(rename="Major")]
+    #[serde(rename = "Major")]
     pub major: String,
-    #[serde(rename="ActExplain")]
+    #[serde(rename = "ActExplain")]
     pub act_explain: String,
-    #[serde(rename="Posi")]
+    #[serde(rename = "Posi")]
     pub position: String,
-    #[serde(rename="Memo")]
+    #[serde(rename = "Memo")]
     pub memo: String,
-    #[serde(rename="Upddate")]
+    #[serde(rename = "Upddate")]
     pub update: String,
-    #[serde(rename="ActHum")]
+    #[serde(rename = "ActHum")]
     pub act_hum: String,
+    pub is_hole: bool,
+    pub key: String,
 }
 
 #[test]
@@ -309,7 +312,7 @@ fn test_attr_json() {
 fn test_item_value() {
     let item_1 = ItemValue::String("hello".to_string());
     let item_2 = ItemValue::Int(1);
-    let r = vec![item_1,item_2];
+    let r = vec![item_1, item_2];
     let data = serde_json::to_string(&r).unwrap();
     dbg!(&data);
 }

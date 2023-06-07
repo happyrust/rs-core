@@ -18,8 +18,8 @@ use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
-// #[cfg(feature = "opencascade")]
-// use opencascade::OCCShape;
+#[cfg(feature = "opencascade")]
+use opencascade::OCCShape;
 
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -326,10 +326,6 @@ impl BrepShapeTrait for SCylinder {
 impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
         let mut phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
-        // if m.get_type() == "NCYL" {
-        //     //get parent bbox, 限制它的大小
-        //     phei = phei.max(10_000.0);  //负实体限制高度，有可能会被人为填很大的数字，限制高度
-        // }
         let pdia = m.get_val("DIAM").unwrap().double_value().unwrap_or_default() as f32;
         SCylinder {
             paxi_expr: "Z".to_string(),

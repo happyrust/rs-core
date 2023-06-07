@@ -18,8 +18,8 @@ use crate::prim_geo::wire;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
-// #[cfg(feature = "ope/*ncascade")]
-// use opencascade::{OCCShape, Wire, Axis, Edge, Point, DsShape};
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Wire, Axis, Edge, Point, DsShape};
 
 
 ///含有两边方向的，扫描体
@@ -425,8 +425,11 @@ impl BrepShapeTrait for SweepSolid {
 
         if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
             //先生成start 和 end face
-            let mut drns = self.drns;
-            let mut drne = self.drne;
+            let mut drns = self.drns.normalize_or_zero();
+            let mut drne = self.drne.normalize_or_zero();
+            if drns.length() < f32::EPSILON || drne.length() < f32::EPSILON {
+                return Err(anyhow!("drns or drne is wrong"));
+            }
             let mut transform_btm = Mat4::IDENTITY;
             let mut transform_top = Mat4::IDENTITY;
             let mut rotation = Mat4::IDENTITY;

@@ -19,6 +19,9 @@ use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis};
+
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 #[reflect(Component)]
 pub struct Revolution {
@@ -56,7 +59,7 @@ impl BrepShapeTrait for Revolution {
     }
 
     #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
         let wire = gen_occ_wire( &self.verts, &self.fradius_vec)?;
         let axis = Axis::new(self.rot_pt, self.rot_dir);
         let angle = if abs_diff_eq!(self.angle, 360.0, epsilon=1.0) {

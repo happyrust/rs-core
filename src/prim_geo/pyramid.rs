@@ -16,8 +16,8 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 
-// #[cfg(feature = "opencascade")]
-// use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
@@ -92,7 +92,7 @@ impl BrepShapeTrait for Pyramid {
     }
 
     #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
 
         let z_pt = self.paax_pt;
         //todo 以防止出现有单个点的情况，暂时用这个模拟

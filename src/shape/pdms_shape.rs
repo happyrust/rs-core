@@ -48,8 +48,8 @@ use rkyv::with::Skip;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_2;
 
-// #[cfg(feature = "opencascade")]
-// use opencascade::OCCMesh;
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCMesh, OCCShape};
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
