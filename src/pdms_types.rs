@@ -2462,7 +2462,8 @@ pub struct ChildrenNode {
 pub struct CataHashRefnoKV {
     // #[serde(deserialize_with = "de_from_str")]
     // #[serde(serialize_with = "ser_u64_as_str")]
-    pub cata_hash: u64,
+    #[serde(default)]
+    pub cata_hash: Option<u64>,
     // #[serde_as(as = "DisplayFromStr")]
     #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,

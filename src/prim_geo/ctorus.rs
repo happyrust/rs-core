@@ -52,6 +52,9 @@ impl SCTorus {
                 translation: torus_info.center,
                 ..default()
             };
+            if mat.is_nan() {
+                return None;
+            }
             return Some((ctorus, mat));
         }
         None
