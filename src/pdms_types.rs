@@ -424,6 +424,11 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn from_url_refno_default(refno: &str) -> Self{
+        Self::from_url_refno(refno).unwrap_or_default()
+    }
+
+    #[inline]
     pub fn hash_with_another_refno(&self, another_refno: RefU64) -> u64 {
         let mut hash = std::collections::hash_map::DefaultHasher::new();
         std::hash::Hash::hash(&self.0, &mut hash);
@@ -1923,6 +1928,11 @@ impl ShapeInstancesData {
     }
 
     #[inline]
+    pub fn contains(&self, refno: &RefU64) -> bool{
+        self.inst_info_map.contains_key(refno)
+    }
+
+    #[inline]
     pub fn get_inst_info(&self, refno: RefU64) -> Option<&EleGeosInfo>{
         self.inst_info_map.get(&refno)
     }
@@ -2454,8 +2464,10 @@ pub struct CataHashRefnoKV {
     // #[serde(serialize_with = "ser_u64_as_str")]
     pub cata_hash: u64,
     // #[serde_as(as = "DisplayFromStr")]
+    #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,
     #[serde_as(as = "Vec<DisplayFromStr>")]
+    #[serde(default)]
     pub group_refnos: Vec<RefU64>,
 }
 
