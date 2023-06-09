@@ -89,6 +89,7 @@ pub enum AttrValue {
     AttrStrArray(Vec<String>),
     AttrIntArray(Vec<i32>),
     AttrFloatArray(Vec<f32>),
+    AttrVec3(Vec3),
     AttrVec3Array(Vec<Vec3>),
     AttrMap(HashMap<String, Vec<String>>),
     AttrMapFloatArray(HashMap<String, Vec<f32>>),
@@ -123,6 +124,9 @@ impl Into<String> for AttrValue {
                 serde_json::to_string(&a).unwrap_or("[]".to_string())
             }
             AttrValue::AttrFloatArray(a) => {
+                serde_json::to_string(&a).unwrap_or("[]".to_string())
+            }
+            AttrValue::AttrVec3(a) => {
                 serde_json::to_string(&a).unwrap_or("[]".to_string())
             }
             AttrValue::AttrVec3Array(a) => {
@@ -192,8 +196,9 @@ pub struct TubiData {
 
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SendHoleDataToArango {
-    #[serde(rename = "KeyValue")]
     pub _key: String,
+    #[serde(rename = "KeyValue")]
+    pub key_value: String,
     #[serde(rename = "formdata")]
     pub form_data: SendHoleDataFormData,
 }
@@ -209,7 +214,17 @@ pub struct SendHoleData {
 impl SendHoleData {
     pub fn to_arango_struct(self) -> SendHoleDataToArango {
         SendHoleDataToArango {
-            _key: self.key_value,
+            _key: self.key_value.clone(),
+            key_value:self.key_value,
+            form_data: self.form_data,
+        }
+    }
+}
+
+impl SendHoleDataToArango {
+    pub fn to_ui_struct(self) -> SendHoleData {
+        SendHoleData {
+            key_value: self.key_value,
             form_data: self.form_data,
         }
     }
@@ -296,8 +311,8 @@ pub struct DataCenterDetail {
     pub update: String,
     #[serde(rename = "ActHum")]
     pub act_hum: String,
-    pub is_hole: bool,
-    pub key: String,
+    pub is_hole:bool,
+    pub key:String
 }
 
 #[test]
