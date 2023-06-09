@@ -573,7 +573,7 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn is_null(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.map.len() == 0
     }
 
@@ -1786,6 +1786,8 @@ pub struct EleGeosInfo {
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: Transform,
 
+    #[serde(default)]
+    pub flow_pt_indexs: Vec<i32>,
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
@@ -2167,8 +2169,6 @@ pub struct EleInstGeosData {
 
     #[serde(default)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
-    #[serde(default)]
-    pub flow_pt_indexs: Vec<i32>,
 }
 
 ///分拆的基本体信息, 应该是不需要复用的

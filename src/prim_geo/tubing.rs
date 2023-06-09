@@ -9,18 +9,22 @@ use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::CateSCylinderParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
 
+#[serde_as]
 #[derive(Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct PdmsTubing {
+    #[serde(rename="_key")]
+    #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
+    #[serde_as(as = "DisplayFromStr")]
+    pub next_refno: RefU64,
     pub start_pt: Vec3,
     pub end_pt: Vec3,
     pub desire_leave_dir: Vec3,
     pub desire_arrive_dir: Vec3,
-    pub _from: String,
-    pub _to: String,
     pub bore: f32,
-    pub finished: bool,  //完整的一个tubing信息
 }
 
 // 存放在图数据库的 tubi 的数据

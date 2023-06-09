@@ -55,6 +55,7 @@ impl SCTorus {
             if mat.is_nan() {
                 return None;
             }
+            // dbg!(torus_info.radius);
             return Some((ctorus, mat));
         }
         None
