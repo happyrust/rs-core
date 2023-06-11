@@ -242,12 +242,13 @@ impl SweepSolid {
             SweepPath3D::SpineArc(d) => {
                 let mut y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
+                // dbg!(z_axis);
                 r_translation.x = d.radius;
                 if d.clock_wise {
                     z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
-                dbg!((x_axis, y_axis, z_axis));
+                // dbg!((x_axis, y_axis, z_axis));
                 //旋转到期望的平面
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
@@ -266,29 +267,12 @@ impl SweepSolid {
             points.push(p);
         }
         let mut wire = wire::gen_occ_wire(&points, &profile.frads)?;
-        // let translation = Matrix4::from_translation(offset_pt.vector3());
         let trans_mat = Mat4::from_translation(offset_pt);
-        // let r_trans_mat = Matrix4::from_translation(r_translation);
         let r_trans_mat = Mat4::from_translation(r_translation);
-        // let m = &rot_mat;
-        // let local_mat = Matrix4::from_cols(
-        //     m.x_axis.vector4(),
-        //     m.y_axis.vector4(),
-        //     m.z_axis.vector4(),
-        //     Vector4::new(0.0, 0.0, 0.0, 1.0),
-        // );
         let local_mat = Mat4::from_mat3(Mat3::from_quat(beta_rot) * rot_mat);
         let final_mat = r_trans_mat * local_mat * trans_mat;
 
         Ok(wire.g_transform(&final_mat.as_dmat4())?)
-        // let m = Mat3::from_quat(beta_rot);
-        // let beta_mat = Matrix4::from_cols(
-        //     m.x_axis.vector4(),
-        //     m.y_axis.vector4(),
-        //     m.z_axis.vector4(),
-        //     Vector4::new(0.0, 0.0, 0.0, 1.0),
-        // );
-        // Some(builder::transformed(&wire, r_trans_mat * local_mat * trans_mat))
     }
 
 
@@ -411,9 +395,8 @@ impl BrepShapeTrait for SweepSolid {
                 (wire_btm, wire_top)
             }
             CateProfileParam::SPRO(p) => {
-                let wire_btm = self.gen_occ_spro_wire(p).ok();
-                let wire_top = self.gen_occ_spro_wire(p).ok();
-                (wire_btm, wire_top)
+                let wire = self.gen_occ_spro_wire(p).ok();
+                (wire, None)
             }
             _ => {
                 (None, None)
@@ -423,13 +406,12 @@ impl BrepShapeTrait for SweepSolid {
         let mut wires = vec![];
         // let mut verts = vec![];
 
-        if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
+        if let Some(mut wire) = profile_wire {
             //先生成start 和 end face
-            let mut drns = self.drns.normalize_or_zero();
-            let mut drne = self.drne.normalize_or_zero();
-            if drns.length() < f32::EPSILON || drne.length() < f32::EPSILON {
-                return Err(anyhow!("drns or drne is wrong"));
+            if self.drns.is_nan() || self.drne.is_nan() {
+                return Err(anyhow!("drns or drne is nan"));
             }
+
             let mut transform_btm = Mat4::IDENTITY;
             let mut transform_top = Mat4::IDENTITY;
             let mut rotation = Mat4::IDENTITY;
@@ -445,37 +427,41 @@ impl BrepShapeTrait for SweepSolid {
                     //         face_s.invert();
                     //     }
                     // }
-                    // let rot_angle = arc.angle;
+                    let rot_angle = arc.angle;
                     // dbg!(rot_angle);
-                    // let rot_axis = if arc.clock_wise {
-                    //     -Vec3::Z
-                    // } else {
-                    //     Vec3::Z
-                    // };
+                    let rot_axis = if arc.clock_wise {
+                        -Vec3::Z
+                    } else {
+                        Vec3::Z
+                    };
                     // let solid = builder::rsweep(&face_s, Point3::origin(),
                     //                             rot_axis.vector3(), Rad(rot_angle as f64));
                     // let shell: Shell = solid.into_boundaries().pop()?;
                     // return Some(shell);
-                    return Err(anyhow!("Spine arc not support"));
+                    // let r = OCCShape::extrude_rotate(wire, )?;
+                    let axis = Axis::new(Vec3::ZERO, rot_axis);
+                    let r = wire.extrude_rotate(&axis, rot_angle as _)?;
+                    return Ok(r);
+                    // return Err(anyhow!("Spine arc not support"));
                 }
                 SweepPath3D::Line(l) => {
-                    if self.is_drns_sloped() {
+                    if self.drns.is_normalized() && self.is_drns_sloped() {
                         println!("drns {:?}  is sloped", self.drns);
-                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, drns));
+                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns));
                     }
-                    if self.is_drne_sloped() {
+                    if self.drne.is_normalized() &&  self.is_drne_sloped() {
                         println!("drne {:?}  is sloped", self.drne);
-                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -drne));
+                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne));
                     }
                     transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.len())) * transform_top;
-                    // wires.push(wire.g_transform(&transform_btm.as_dmat4())?);
                     wires.push(wire.g_transform(&transform_btm.as_dmat4())?);
-                    // wires.push(top_wire.g_transform(&transform_top.as_dmat4())?);
-                    wires.push(top_wire.g_transform(&transform_top.as_dmat4())?);
-
+                    if let Some(mut top_wire) = top_profile_wire{
+                        wires.push(top_wire.g_transform(&transform_top.as_dmat4())?);
+                    }else{
+                        wires.push(wire.g_transform(&transform_top.as_dmat4())?);
+                    }
 
                     return Ok(OCCShape::loft(wires.iter(), [].iter())?);
-                    // Ok(OCCShape::loft(wires.iter(), verts.iter())?)
                 }
             }
         }
