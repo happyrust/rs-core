@@ -15,9 +15,7 @@ use serde_with::{DisplayFromStr, serde_as};
 use anyhow::anyhow;
 // use arangors_lite::Cursor;
 // use arangors_lite::response::Response;
-use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
-use bevy::reflect::Reflect;
 use bevy::render::primitives::Plane;
 use bitflags::bitflags;
 use dashmap::DashMap;
@@ -108,15 +106,30 @@ pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 26] = [
 
 
 ///元件库的种类
-pub const CATA_GEO_NAMES: [&'static str; 24] = [
-     "ELCONN", "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
+pub const CATA_GEO_NAMES: [&'static str; 26] = [
+    "BRAN", "HANG", "ELCONN", "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
     "PJOI", "PFIT", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "NOZZ", "PALJ",
     "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "SCTN", "FITT",
 ];
 
+///有tubi的类型
 pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = [
     "BRAN", "HANG",
 ];
+
+///可以重用的类型
+pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 5] = [
+    "SCTN", "FITT", "PFIT", "FIXING", "NOZZ"
+];
+
+pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 19] = [
+    "ELCONN", "CMPF", "WALL", "STWALL", "GWALL", "SJOI",
+    "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ",
+    "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI"
+];
+
+
+
 
 
 ///pdms的参考号
@@ -604,13 +617,19 @@ impl AttrMap {
             if spref.starts_with('0') {
                 return None;
             }
+            let type_name = self.get_type();
+            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
+                return Some(*self.get_refno().unwrap_or_default());
+            }
             let mut hash = std::collections::hash_map::DefaultHasher::new();
             std::hash::Hash::hash(&spref, &mut hash);
             if let Some(des_para) = self.get_f64_vec("DESP") {
                 hash_f64_slice(&des_para, &mut hash);
             }
-            let key_strs = self.get_as_strings(&["ANGL", "HEIG", "RADI"]);
-            for key_str in key_strs {
+            let ref_strs = ["ANGL", "HEIG", "RADI", "ZDIS"];
+            let key_strs = self.get_as_strings(&ref_strs);
+            for (ref_str, key_str) in ref_strs.iter().zip(key_strs) {
+                std::hash::Hash::hash(*ref_str, &mut hash);
                 std::hash::Hash::hash(&key_str, &mut hash);
             }
             return Some(std::hash::Hasher::finish(&hash));
@@ -1011,7 +1030,7 @@ impl AttrMap {
             BoolType(d) => d.to_string().into(),
             DoubleArrayType(d) => d
                 .iter()
-                .map(|i| format!(" {}", i))
+                .map(|i| format!(" {:.3}", i))
                 .collect::<String>()
                 .into(),
             StringArrayType(d) => d
@@ -1031,7 +1050,7 @@ impl AttrMap {
                 .into(),
             Vec3Type(d) => d
                 .iter()
-                .map(|i| format!(" {:.2}", i))
+                .map(|i| format!(" {:.3}", i))
                 .collect::<String>()
                 .into(),
 
