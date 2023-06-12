@@ -48,8 +48,6 @@ use rkyv::with::Skip;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_2;
 
-// #[cfg(feature = "opencascade")]
-// use opencascade::OCCMesh;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -84,61 +82,16 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 
 //todo 增加LOD的实现
 #[derive(Serialize, Deserialize, Component, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-pub struct PdmsMesh {
+pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
 
     pub wire_vertices: Vec<Vec<[f32; 3]>>,
     pub aabb: Option<Aabb>,
-
-    //最好能反序列化，看看怎么实现
-    #[cfg(feature = "opencascade")]
-    #[serde(skip)]
-    #[with(Skip)]
-    pub occ_shape: Option<opencascade::OCCShape>,
 }
-
-unsafe impl Sync for PdmsMesh {}
-unsafe impl Send for PdmsMesh {}
-
-
-#[cfg(feature = "opencascade")]
-impl From<OCCMesh> for PdmsMesh {
-    fn from(o: OCCMesh) -> Self {
-        let vertex_count = o.triangles.len() * 3;
-        let mut aabb = Aabb::new_invalid();
-        o.vertices.iter().for_each(|v| {
-            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
-        });
-
-        let mut vertices = Vec::with_capacity(vertex_count);
-        let mut normals = Vec::with_capacity(vertex_count);
-        let mut indices = Vec::with_capacity(vertex_count);
-
-        for (i, (t, normal)) in o.triangles_with_normals().enumerate() {
-            //顶点重排，保证normal是正确的
-            vertices.push(o.vertices[t[0]].into());
-            vertices.push(o.vertices[t[1]].into());
-            vertices.push(o.vertices[t[2]].into());
-            indices.push((i * 3) as u32);
-            indices.push((i * 3 + 1) as u32);
-            indices.push((i * 3 + 2) as u32);
-            normals.push(normal.into());
-            normals.push(normal.into());
-            normals.push(normal.into());
-        }
-
-        Self{
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-            occ_shape: None,
-        }
-    }
-}
+unsafe impl Sync for PlantMesh {}
+unsafe impl Send for PlantMesh {}
 
 
 
@@ -168,7 +121,7 @@ fn test_project_to_plane() {
 }
 
 
-impl PdmsMesh {
+impl PlantMesh {
     //集成lod的功能
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> TriMesh {
@@ -266,10 +219,9 @@ impl PdmsMesh {
 
     ///转变成csg模型
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn into_csg_mesh(&self, transform: &Transform) -> CsgMesh {
+    pub fn into_csg_mesh(&self, transform: &Mat4) -> CsgMesh {
         let mut triangles = Vec::new();
         for chuck in self.indices.chunks(3) {
-            // let c = chuck.collect::<Vec<_>>();
             let vertices_a: Option<&[f32; 3]> = self.vertices.get(chuck[0] as usize);
             let vertices_b: Option<&[f32; 3]> = self.vertices.get(chuck[1] as usize);
             let vertices_c: Option<&[f32; 3]> = self.vertices.get(chuck[2] as usize);
@@ -279,9 +231,9 @@ impl PdmsMesh {
             let vertices_b = Vec3::from_array(*vertices_b.unwrap());
             let vertices_c = Vec3::from_array(*vertices_c.unwrap());
 
-            let pt_a = transform.transform_point(vertices_a);
-            let pt_b = transform.transform_point(vertices_b);
-            let pt_c = transform.transform_point(vertices_c);
+            let pt_a = transform.transform_point3(vertices_a);
+            let pt_b = transform.transform_point3(vertices_b);
+            let pt_c = transform.transform_point3(vertices_c);
 
             triangles.push(csg::Triangle {
                 a: CsgPt3 { x: pt_a[0] as f64, y: pt_a[1] as f64, z: pt_a[2] as f64 },
@@ -292,70 +244,80 @@ impl PdmsMesh {
         csg::Mesh::from_triangles(triangles)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
-        let rev_mat = world_transform.compute_matrix().inverse();
-        let mut mesh = PdmsMesh {
-            aabb: self.aabb.clone(),
-            ..default()
-        };
-        let mut i = 0;
-        for tri in &csg_mesh.triangles {
-            mesh.indices.push(i);
-            mesh.indices.push(i + 1);
-            mesh.indices.push(i + 2);
-            let normal = tri.normal();
-            let normal = Vec3::from_array([normal.x as f32, normal.y as f32, normal.z as f32]);
-            let local_normal = rev_mat.transform_vector3(normal);
-            let normal = [local_normal.x, local_normal.y, local_normal.z];
-            mesh.normals.push(normal);
-            mesh.normals.push(normal);
-            mesh.normals.push(normal);
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
+    //     let rev_mat = world_transform.compute_matrix().inverse();
+    //     let mut mesh = PlantMesh {
+    //         aabb: self.aabb.clone(),
+    //         ..default()
+    //     };
+    //     let mut i = 0;
+    //     for tri in &csg_mesh.triangles {
+    //         mesh.indices.push(i);
+    //         mesh.indices.push(i + 1);
+    //         mesh.indices.push(i + 2);
+    //         let normal = tri.normal();
+    //         let normal = Vec3::from_array([normal.x as f32, normal.y as f32, normal.z as f32]);
+    //         let local_normal = rev_mat.transform_vector3(normal);
+    //         let normal = [local_normal.x, local_normal.y, local_normal.z];
+    //         mesh.normals.push(normal);
+    //         mesh.normals.push(normal);
+    //         mesh.normals.push(normal);
+    // 
+    //         let pta = Vec3::from_array([tri.a.x as f32, tri.a.y as f32, tri.a.z as f32]);
+    //         let pta = rev_mat.transform_point3(pta);
+    // 
+    //         let ptb = Vec3::from_array([tri.b.x as f32, tri.b.y as f32, tri.b.z as f32]);
+    //         let ptb = rev_mat.transform_point3(ptb);
+    // 
+    //         let ptc = Vec3::from_array([tri.c.x as f32, tri.c.y as f32, tri.c.z as f32]);
+    //         let ptc = rev_mat.transform_point3(ptc);
+    // 
+    //         mesh.vertices.push(pta.into());
+    //         mesh.vertices.push(ptb.into());
+    //         mesh.vertices.push(ptc.into());
+    //         i += 3;
+    //     }
+    //     mesh
+    // }
+}
 
-            let pta = Vec3::from_array([tri.a.x as f32, tri.a.y as f32, tri.a.z as f32]);
-            let pta = rev_mat.transform_point3(pta);
+#[cfg(not(target_arch = "wasm32"))]
+impl From<CsgMesh> for PlantMesh {
+    fn from(o: CsgMesh) -> Self {
+        let vertex_count = o.triangles.len() * 3;
+        let mut aabb = Aabb::new_invalid();
 
-            let ptb = Vec3::from_array([tri.b.x as f32, tri.b.y as f32, tri.b.z as f32]);
-            let ptb = rev_mat.transform_point3(ptb);
+        let mut vertices = Vec::with_capacity(vertex_count);
+        let mut normals = Vec::with_capacity(vertex_count);
+        let mut indices = Vec::with_capacity(vertex_count);
 
-            let ptc = Vec3::from_array([tri.c.x as f32, tri.c.y as f32, tri.c.z as f32]);
-            let ptc = rev_mat.transform_point3(ptc);
-
-            mesh.vertices.push(pta.into());
-            mesh.vertices.push(ptb.into());
-            mesh.vertices.push(ptc.into());
-            i += 3;
+        for (i, t) in o.triangles.iter().enumerate() {
+            //顶点重排，保证normal是正确的
+            aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
+            vertices.push(t.a.into());
+            vertices.push(t.b.into());
+            vertices.push(t.c.into());
+            indices.push((i * 3) as u32);
+            indices.push((i * 3 + 1) as u32);
+            indices.push((i * 3 + 2) as u32);
+            normals.push(t.normal().into());
+            normals.push(t.normal().into());
+            normals.push(t.normal().into());
         }
-        mesh
+
+        Self{
+            indices,
+            vertices,
+            normals,
+            wire_vertices: vec![],
+            aabb: Some(aabb),
+        }
     }
 }
 
 
-/// shape instances 的管理方法
-impl ShapeInstancesMgr {
-    #[inline]
-    pub fn get_inst_data(&self, refno: RefU64) -> &EleGeosInfo {
-        let inst_map = &self.inst_map;
-        inst_map.get(&refno).unwrap()
-    }
 
-    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
-        let mut file = File::create(file_path).unwrap();
-        let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
-        let mut file = File::open(file_path)?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        use rkyv::{archived_root, Deserialize};
-        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
-        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
-        Ok(r)
-    }
-}
 
 pub const TRI_TOL: f32 = 0.05;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
@@ -375,10 +337,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        return Err(anyhow!("不存在该occ shape"));
-    }
 
     //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
     fn hash_unit_mesh_params(&self) -> u64 {
@@ -392,7 +350,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// box
     /// cylinder
     /// sphere
-    fn gen_unit_mesh(&self) -> Option<PdmsMesh> {
+    fn gen_unit_mesh(&self) -> Option<PlantMesh> {
         self.gen_unit_shape().gen_mesh()
     }
 
@@ -417,21 +375,10 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         TRI_TOL
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_mesh(&self) -> Option<PdmsMesh> {
-        if let Ok(shape) = self.gen_occ_shape() {
-            // dbg!(self.tol() as f64);
-            let mut mesh: PdmsMesh = shape.mesh(self.tol() as f64).ok()?.into();
-            // dbg!("generate mesh");
-            mesh.occ_shape = Some(shape);
-            return Some(mesh);
-        }
-        None
-    }
 
     #[cfg(not(feature = "opencascade"))]
     ///生成mesh
-    fn gen_mesh(&self) -> Option<PdmsMesh> {
+    fn gen_mesh(&self) -> Option<PlantMesh> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -476,7 +423,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 .iter()
                 .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
                 .collect();
-            return Some(PdmsMesh {
+            return Some(PlantMesh {
                 indices,
                 vertices,
                 normals,

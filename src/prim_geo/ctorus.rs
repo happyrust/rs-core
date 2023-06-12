@@ -14,11 +14,10 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
-// #[cfg(feature = "opencascade")]
-// use opencascade::{OCCShape, Edge, Wire, Axis};
+
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
@@ -52,6 +51,10 @@ impl SCTorus {
                 translation: torus_info.center,
                 ..default()
             };
+            if mat.is_nan() {
+                return None;
+            }
+            // dbg!(torus_info.radius);
             return Some((ctorus, mat));
         }
         None
@@ -88,17 +91,6 @@ impl BrepShapeTrait for SCTorus {
 
     fn tol(&self) -> f32 {
         0.01 * self.pdia.max(1.0)
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        if let Some(t) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
-            let o = self.paax_pt;
-            let circle = Wire::circle(t.radius, o, -self.paax_dir)?;
-            let axis = Axis::new(t.center, t.rot_axis);
-            return Ok(circle.extrude_rotate(&axis, t.angle.to_radians() as _)?);
-        }
-        Err(anyhow!("SCTorus参数错误，无法生成Shape"))
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -163,14 +155,6 @@ impl VerifiedShape for CTorus {
 impl BrepShapeTrait for CTorus {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
-    }
-
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        let r1 = (self.rins + self.rout) / 2.0;
-        let r2 = (self.rout - self.rins) / 2.0;
-        Ok(opencascade::OCCShape::ctorus(r1 as _, r2 as _, self.angle.to_radians() as _)?)
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

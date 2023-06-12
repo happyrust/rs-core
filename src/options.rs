@@ -21,6 +21,8 @@ pub struct DbOption {
     #[clap(long)]
     pub gen_model_mesh: bool,
     #[clap(long)]
+    pub apply_boolean_operation: bool,
+    #[clap(long)]
     pub save_model_mesh_to_graph_db: bool,
     #[clap(long)]
     pub gen_spatial_tree: bool,
@@ -51,8 +53,6 @@ pub struct DbOption {
     pub room_root_refnos: Option<Vec<String>>,
     #[clap(skip)]
     pub debug_branch_refno: Option<String>,
-    #[clap(skip)]
-    pub debug_desi_refno: Option<String>,
     #[clap(skip)]
     pub debug_refno_types: Vec<String>,
     #[clap(long)]

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::default::Default;
 use std::f32::consts::PI;
 use std::{fmt, hash};
@@ -15,9 +15,7 @@ use serde_with::{DisplayFromStr, serde_as};
 use anyhow::anyhow;
 // use arangors_lite::Cursor;
 // use arangors_lite::response::Response;
-use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
-use bevy::reflect::Reflect;
 use bevy::render::primitives::Plane;
 use bitflags::bitflags;
 use dashmap::DashMap;
@@ -27,8 +25,7 @@ use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Point3, Quaternion, UnitQuaternion};
-// #[cfg(feature = "opencascade")]
-// use opencascade::OCCShape;
+
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape, TriMesh};
@@ -52,14 +49,16 @@ use crate::pdms_data::{AxisParam, NewDataOperate};
 use crate::pdms_types::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::SCylinder;
+use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::dish::Dish;
 use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::shape::pdms_shape::{BrepShapeTrait, PdmsMesh};
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
+use crate::tool::float_tool::hash_f64_slice;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -71,10 +70,9 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 20] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
-    "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO",
-    "NRTO", "NSLC", "NREV", "NSCY",
+    "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSLC", "NSCY",
 ];
 
 ///有loop的几何体
@@ -86,15 +84,21 @@ pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-pub const GENRAL_POS_NOUN_NAMES: [&'static str; 23] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
-    "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+//"PLOO", "LOOP",
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 24] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
 ];
 
 
-pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 35] = [
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 36] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
-    "SBOX", "SCYL", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+];
+
+pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 26] = [
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO",
     "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
@@ -102,16 +106,30 @@ pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 35] = [
 
 ///元件库的种类
 pub const CATA_GEO_NAMES: [&'static str; 26] = [
-    "BRAN", "HANG", "ELCONN",
-    "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
+    "BRAN", "HANG", "ELCONN", "CMPF", "WALL", "STWALL", "GWALL",  "FIXING", "SJOI",
     "PJOI", "PFIT", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "NOZZ", "PALJ",
     "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "SCTN", "FITT",
 ];
 
+///有tubi的类型
+pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = [
+    "BRAN", "HANG",
+];
 
-// 包装整数
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
-pub struct Integer(pub u32);
+///可以重用的类型
+/// todo 实现 "FIXING"类型的计算
+pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 5] = [
+    "SCTN", "FITT", "PFIT",  "NOZZ", "FIT"
+];
+
+pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 19] = [
+    "ELCONN", "CMPF", "WALL", "STWALL", "GWALL", "SJOI",
+    "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ",
+    "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI"
+];
+
+
+
 
 
 ///pdms的参考号
@@ -419,6 +437,11 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn from_url_refno_default(refno: &str) -> Self{
+        Self::from_url_refno(refno).unwrap_or_default()
+    }
+
+    #[inline]
     pub fn hash_with_another_refno(&self, another_refno: RefU64) -> u64 {
         let mut hash = std::collections::hash_map::DefaultHasher::new();
         std::hash::Hash::hash(&self.0, &mut hash);
@@ -445,6 +468,7 @@ impl RefU64 {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Deref, DerefMut)]
 pub struct RefU64Vec(pub Vec<RefU64>);
+
 
 #[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for RefU64Vec {
@@ -562,7 +586,7 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn is_null(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.map.len() == 0
     }
 
@@ -583,6 +607,42 @@ impl AttrMap {
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
         e.write_all(&self.into_bincode_bytes());
         e.finish().unwrap_or_default()
+    }
+
+    //todo 需要更多的完善
+    //计算使用元件库的design 元件 hash
+    pub fn cal_cata_hash(&self) -> Option<u64>{
+        //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
+        if let Some(spref) = self.get_as_string("SPRE")  {
+            if spref.starts_with('0') {
+                return None;
+            }
+            let type_name = self.get_type();
+            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
+                return Some(*self.get_refno().unwrap_or_default());
+            }
+            let mut hash = std::collections::hash_map::DefaultHasher::new();
+            std::hash::Hash::hash(&spref, &mut hash);
+            if let Some(des_para) = self.get_f64_vec("DESP") {
+                hash_f64_slice(&des_para, &mut hash);
+            }
+            let ref_strs = ["ANGL", "HEIG", "RADI"];
+            let key_strs = self.get_as_strings(&ref_strs);
+            for (ref_str, key_str) in ref_strs.iter().zip(key_strs) {
+                std::hash::Hash::hash(*ref_str, &mut hash);
+                std::hash::Hash::hash(&key_str, &mut hash);
+            }
+
+            //如果是土建模型 "DRNS", "DRNE"
+            if let Some(drns) = self.get_as_string("DRNS") &&
+                let Some(drne) = self.get_as_string("DRNE") {
+                std::hash::Hash::hash(&drns, &mut hash);
+                std::hash::Hash::hash(&drne, &mut hash);
+            }
+
+            return Some(std::hash::Hasher::finish(&hash));
+        }
+        return None
     }
 
     #[inline]
@@ -960,6 +1020,15 @@ impl AttrMap {
     }
 
     #[inline]
+    pub fn get_as_strings(&self, keys: &[&str]) -> Vec<String> {
+        let mut result = vec![];
+        for key in keys {
+            result.push(self.get_as_string(*key).unwrap_or(UNSET_STR.to_string()));
+        }
+        result
+    }
+
+    #[inline]
     pub fn get_as_string(&self, key: &str) -> Option<String> {
         let v = self.get_val(key)?;
         let s = match v {
@@ -969,7 +1038,7 @@ impl AttrMap {
             BoolType(d) => d.to_string().into(),
             DoubleArrayType(d) => d
                 .iter()
-                .map(|i| format!(" {}", i))
+                .map(|i| format!(" {:.3}", i))
                 .collect::<String>()
                 .into(),
             StringArrayType(d) => d
@@ -989,7 +1058,7 @@ impl AttrMap {
                 .into(),
             Vec3Type(d) => d
                 .iter()
-                .map(|i| format!(" {}", i))
+                .map(|i| format!(" {:.3}", i))
                 .collect::<String>()
                 .into(),
 
@@ -1043,42 +1112,12 @@ impl AttrMap {
         Some(s)
     }
 
-    // #[inline]
-    // pub fn get_as_vec_string(&self, key: &str) -> Vec<SmolStr> {
-    //     if let Some(v) = self.map.get(&key.into()) {
-    //         return match v {
-    //             StringArrayType(d) => d.clone(),
-    //             _ => {
-    //                 vec![]
-    //             }
-    //         };
-    //     }
-    //     vec![]
-    // }
-
-    // #[inline]
-    // pub fn get_as_vec_refnos(&self, key: &str) -> Vec<SmolStr> {
-    //     if let Some(v) = self.map.get(&key.into()) {
-    //         return match v {
-    //             IntArrayType(d) => d
-    //                 .chunks_exact(2)
-    //                 .map(|x| format!("{}/{}", x[0], x[1]).into())
-    //                 .collect(),
-    //             _ => {
-    //                 vec![]
-    //             }
-    //         };
-    //     }
-    //     vec![]
-    // }
-
     #[inline]
     pub fn get_bool(&self, key: &str) -> Option<bool> {
         if let AttrVal::BoolType(d) = self.get_val(key)? {
             return Some(*d);
         }
         None
-        // Err(TypeNotCorrect(key.to_string(), "bool".to_string()).into())
     }
 
     #[inline]
@@ -1168,6 +1207,7 @@ impl AttrMap {
             }
         };
     }
+
 
     pub fn get_vec3(&self, key: &str) -> Option<Vec3> {
         if let AttrVal::Vec3Type(d) = self.get_val(key)? {
@@ -1319,7 +1359,6 @@ pub struct RefnoInfo {
     pub db_no: u32,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[derive(Serialize, Deserialize, Clone, Debug, Component)]
 pub enum AttrVal {
     InvalidType,
@@ -1628,7 +1667,7 @@ impl LevelShapeMgr {
 
 // #[derive(Serialize, Deserialize, Clone, Debug, Default, Resource, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 // pub struct CachedInstanceMgr {
-//     pub inst_mgr: ShapeInstancesMgr,
+//     pub inst_data: ShapeInstancesData,
 //     // pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
 // }
 
@@ -1689,6 +1728,70 @@ pub enum PdmsGenericType {
     HICSTI,
 }
 
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, PartialEq, Debug, Clone, Default, Resource)]
+pub enum GeoBasicType{
+    #[default]
+    Pos,
+    Neg,
+    Compound, //混合运算过了
+    // CataNode,
+}
+
+//元件库里的模型，需要两级来完成这个边，有一个代表的refno
+//指向典型的例子
+
+
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default, Resource)]
+pub struct GeoEdge {
+    //元件的参考号
+    #[serde(serialize_with = "ser_inst_info_edge_as_key_str")]
+    // #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(rename = "_from")]
+    pub refno: RefU64,
+    #[serde(serialize_with = "ser_inst_geo_edge_as_key_str")]
+    #[serde(rename = "_to")]
+    pub geo_hash: u64,
+    pub geo_type: GeoBasicType,
+    pub cata_hash: Option<u64>,
+}
+
+// fn de_geo_edge_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
+//     where D: Deserializer<'de> {
+//     let s = String::deserialize(deserializer)?;
+//     Ok(RefU64::from_url_refno(&s).unwrap_or_default())
+// }
+#[inline]
+fn ser_inst_info_edge_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer, {
+    s.serialize_str(format!("pdms_inst_infos/{}", refno.to_url_refno()).as_str())
+}
+
+#[inline]
+fn ser_inst_geo_edge_as_key_str<S>(k: &u64, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer, {
+    s.serialize_str(format!("pdms_inst_geos/{}", *k).as_str())
+}
+
+
+impl GeoEdge {
+    #[inline]
+    pub fn get_hash(&self) -> u64{
+        self.geo_hash
+    }
+
+    #[inline]
+    pub fn is_pos(&self) -> bool{
+        self.geo_type == GeoBasicType::Pos
+    }
+
+    #[inline]
+    pub fn is_neg(&self) -> bool{
+        self.geo_type == GeoBasicType::Neg
+    }
+
+}
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default, Resource)]
@@ -1697,8 +1800,11 @@ pub struct EleGeosInfo {
     #[serde(deserialize_with = "de_refno_from_key_str")]
     #[serde(rename = "_key")]
     pub refno: RefU64,
-    #[serde(default)]
-    pub geo_insts: Vec<EleGeoInstance>,
+    //todo 这里的数据是重复的，需要复用
+    //有哪一些 geo insts 组成
+    //也可以通过edge 来组合
+    // pub geo_basics: Vec<GeoBasic>,
+    pub cata_hash: Option<u64>,
     //是否可见
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
@@ -1706,11 +1812,9 @@ pub struct EleGeosInfo {
     pub aabb: Option<Aabb>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
     pub world_transform: Transform,
-    #[serde(default)]
-    pub ptset_map: BTreeMap<i32, CateAxisParam>,
-    pub flow_pt_indexs: Vec<i32>,
 
-    pub has_neg: bool,
+    #[serde(default)]
+    pub flow_pt_indexs: Vec<i32>,
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
@@ -1727,38 +1831,32 @@ pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 impl EleGeosInfo {
 
     #[inline]
-    pub fn get_inst(&self, geo_hash: u64) -> Option<&EleGeoInstance>{
-        self.geo_insts.iter().filter(|&x| x.geo_hash == geo_hash).next()
+    pub fn get_inst_key(&self) -> u64{
+        self.cata_hash.unwrap_or(*self.refno)
     }
 
     ///获得所有的geo hashes
-    #[inline]
-    pub fn get_all_geo_hashes(&self) -> Vec<u64>{
-        self.geo_insts.iter().map(|x| x.geo_hash).collect()
-    }
+    // #[inline]
+    // pub fn get_all_geo_hashes(&self) -> Vec<u64>{
+    //     self.geo_basics.iter().map(|x| x.get_hash()).collect()
+    // }
+    //
+    // ///获得正实体的geo hashes
+    // #[inline]
+    // pub fn get_pos_geo_hashes(&self) -> Vec<u64>{
+    //     self.geo_basics.iter().filter(|&x| x.is_pos()).map(|x| x.get_hash()).collect()
+    // }
+    //
+    // ///获得负实体的geo hashes
+    // #[inline]
+    // pub fn get_neg_geo_hashes(&self) -> Vec<u64>{
+    //     self.geo_basics.iter().filter(|&x| x.is_neg()).map(|x| x.get_hash()).collect()
+    // }
 
-    ///获得正实体的geo hashes
-    #[inline]
-    pub fn get_pos_geo_hashes(&self) -> Vec<u64>{
-        self.geo_insts.iter().filter(|&x| !x.is_neg).map(|x| x.geo_hash).collect()
-    }
-
-    ///获得负实体的geo hashes
-    #[inline]
-    pub fn get_neg_geo_hashes(&self) -> Vec<u64>{
-        self.geo_insts.iter().filter(|&x| x.is_neg).map(|x| x.geo_hash).collect()
-    }
-
-    ///获得正实体的geo hashes
-    #[inline]
-    pub fn get_transform_by_hash(&self, hash: u64) -> Option<Transform>{
-        self.geo_insts.iter().filter(|&x| x.geo_hash == hash).map(|x| x.transform).next()
-    }
-
-    #[inline]
-    pub fn has_neg(&self) -> bool{
-        self.geo_insts.iter().any(|x| x.is_neg)
-    }
+    // #[inline]
+    // pub fn has_neg(&self) -> bool{
+    //     self.geo_basics.iter().any(|x| x.is_neg())
+    // }
 
     #[inline]
     pub fn get_ele_world_transform(&self) -> Transform {
@@ -1766,7 +1864,7 @@ impl EleGeosInfo {
     }
 
     #[inline]
-    pub fn get_geo_world_transform(&self, geo: &EleGeoInstance) -> Transform {
+    pub fn get_geo_world_transform(&self, geo: &EleInstGeo) -> Transform {
         let ele_trans = self.get_ele_world_transform();
         if geo.is_tubi {
             geo.transform
@@ -1776,40 +1874,147 @@ impl EleGeosInfo {
     }
 }
 
-impl Deref for EleGeosInfo {
-    type Target = Vec<EleGeoInstance>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.geo_insts
-    }
-}
 
 /// instane数据集合管理
 #[derive(Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Resource)]
-pub struct ShapeInstancesMgr {
-    /// 保存所有的instance数据
-    pub inst_map: std::collections::HashMap<RefU64, EleGeosInfo>,
+pub struct ShapeInstancesData {
+    /// 保存instance信息数据
+    pub inst_info_map: std::collections::HashMap<RefU64, EleGeosInfo>,
+    ///保存所有用到的的tubi数据
+    pub inst_tubi_map: std::collections::HashMap<RefU64, EleGeosInfo>,
+    ///保存instance几何数据
+    pub inst_geos_map: std::collections::HashMap<u64, EleInstGeosData>,
+
 }
 
+/// shape instances 的管理方法
+impl ShapeInstancesData {
 
-impl Deref for ShapeInstancesMgr {
-    type Target = HashMap<RefU64, EleGeosInfo>;
+    #[inline]
+    pub fn clear(&mut self){
+        self.inst_info_map.clear();
+        self.inst_geos_map.clear();
+        self.inst_tubi_map.clear();
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.inst_map
+    pub fn merge_ref(&mut self, o: &Self){
+
+        for (k, v) in o.inst_info_map.clone(){
+            self.insert_info(k, v);
+        }
+        for (k, v) in o.inst_geos_map.clone(){
+            self.insert_geos_data(k, v);
+        }
+        for (k, v) in o.inst_tubi_map.clone(){
+            self.insert_tubi(k, v);
+        }
+    }
+
+    pub fn merge(&mut self, other: Self){
+        let Self{
+            inst_info_map,
+            inst_tubi_map,
+            inst_geos_map
+        } = other;
+        for (k, v) in inst_info_map{
+            self.insert_info(k, v);
+        }
+        for (k, v) in inst_geos_map{
+            self.insert_geos_data(k, v);
+        }
+        for (k, v) in inst_tubi_map{
+            self.insert_tubi(k, v);
+        }
+    }
+
+    ///获得所有的geo hash值
+    #[inline]
+    pub fn get_geo_hashs(&self) -> BTreeSet<u64>{
+        let mut geo_hashes = BTreeSet::new();
+        for g in self.inst_geos_map.values() {
+            for inst in &g.insts {
+                geo_hashes.insert(inst.geo_hash);
+            }
+        }
+        geo_hashes
+    }
+
+    #[inline]
+    pub fn get_inst_geos(&self, info: &EleGeosInfo) -> Option<&Vec<EleInstGeo>>{
+        let k = info.get_inst_key();
+        self.inst_geos_map.get(&k).map(|x| &x.insts)
+    }
+
+    #[inline]
+    pub fn get_inst_geos_data(&self, info: &EleGeosInfo) -> Option<&EleInstGeosData>{
+        let k = info.get_inst_key();
+        self.inst_geos_map.get(&k)
+    }
+
+    #[inline]
+    pub fn get_inst_tubi(&self, refno: RefU64) -> Option<&EleGeosInfo>{
+        self.inst_tubi_map.get(&refno)
+    }
+
+    #[inline]
+    pub fn contains(&self, refno: &RefU64) -> bool{
+        self.inst_info_map.contains_key(refno)
+    }
+
+    #[inline]
+    pub fn get_inst_info(&self, refno: RefU64) -> Option<&EleGeosInfo>{
+        self.inst_info_map.get(&refno)
+    }
+
+    #[inline]
+    pub fn insert_info(&mut self, refno: RefU64, info: EleGeosInfo) {
+        self.inst_info_map.insert(refno, info);
+    }
+
+    #[inline]
+    pub fn insert_geos_data(&mut self, hash: u64, geo: EleInstGeosData) {
+        self.inst_geos_map.insert(hash, geo);
+    }
+
+    #[inline]
+    pub fn insert_tubi(&mut self, refno: RefU64, info: EleGeosInfo) {
+        self.inst_tubi_map.insert(refno, info);
+    }
+
+    pub fn get_info(&self, refno: &RefU64) -> Option<&EleGeosInfo>{
+        self.inst_info_map.get(refno)
+    }
+
+    //serialize_to_bytes
+    pub fn serialize_to_bytes(&self) -> Vec<u8> {
+        let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
+        serialized
+    }
+
+    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
+        let mut file = File::open(file_path)?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        use rkyv::{archived_root, Deserialize};
+        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
+        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        Ok(r)
     }
 }
 
-impl DerefMut for ShapeInstancesMgr {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inst_map
-    }
-}
 
+//todo mesh 增量传输
 #[derive(Serialize, Deserialize,  Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct PdmsInstanceMeshData {
-    pub inst_mgr: ShapeInstancesMgr,
-    pub mesh_mgr: CachedMeshesMgr,
+    pub shape_insts: ShapeInstancesData,
+    pub meshes_data: MeshesData,
 }
 
 impl PdmsInstanceMeshData {
@@ -1848,46 +2053,46 @@ pub struct ColliderShapeMgr {
 
 impl ColliderShapeMgr {
 
-
-    pub fn get_collider(ele_geos_info: &EleGeosInfo, mesh_mgr: &CachedMeshesMgr) -> Vec<SharedShape> {
-        let mut target_colliders = vec![];
-        let mut colliders = vec![];
-        let ele_trans = ele_geos_info.world_transform;
-        for geo in &ele_geos_info.geo_insts {
-            let t = ele_geos_info.get_geo_world_transform(geo);
-            let s = t.scale;
-            let mut local_rot = glam::Quat::IDENTITY;
-            let shape = match geo.geo_hash {
-                prim_geo::CUBE_GEO_HASH => {
-                    SharedShape::cuboid(s.x / 2.0, s.y / 2.0, s.z / 2.0)
-                }
-                prim_geo::SPHERE_GEO_HASH => {
-                    SharedShape::ball(s.x)
-                }
-                prim_geo::CYLINDER_GEO_HASH => {
-                    local_rot = glam::Quat::from_rotation_x(PI / 2.0);
-                    SharedShape::cylinder(s.z / 2.0, s.x / 2.0)
-                }
-                _ => {
-                    let m = mesh_mgr.get_mesh(geo.geo_hash).unwrap();
-                    SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
-                }
-            };
-            let rot = t.rotation * local_rot;
-            if shape.as_composite_shape().is_none() {
-                colliders.push((Isometry {
-                    rotation: UnitQuaternion::from_quaternion(Quaternion::new(rot.w, rot.x, rot.y, rot.z)),
-                    translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
-                }, shape));
-            } else {
-                target_colliders.push(shape);
-            }
-        }
-        if !colliders.is_empty() {
-            target_colliders.push(SharedShape::compound(colliders));
-        }
-        target_colliders
-    }
+    //
+    // pub fn get_collider(ele_geos_info: &EleGeosInfo, mesh_mgr: &MeshesData) -> Vec<SharedShape> {
+    //     let mut target_colliders = vec![];
+    //     let mut colliders = vec![];
+    //     let ele_trans = ele_geos_info.world_transform;
+    //     for geo in &ele_geos_info.geo_insts {
+    //         let t = ele_geos_info.get_geo_world_transform(geo);
+    //         let s = t.scale;
+    //         let mut local_rot = glam::Quat::IDENTITY;
+    //         let shape = match geo.geo_hash {
+    //             prim_geo::CUBE_GEO_HASH => {
+    //                 SharedShape::cuboid(s.x / 2.0, s.y / 2.0, s.z / 2.0)
+    //             }
+    //             prim_geo::SPHERE_GEO_HASH => {
+    //                 SharedShape::ball(s.x)
+    //             }
+    //             prim_geo::CYLINDER_GEO_HASH => {
+    //                 local_rot = glam::Quat::from_rotation_x(PI / 2.0);
+    //                 SharedShape::cylinder(s.z / 2.0, s.x / 2.0)
+    //             }
+    //             _ => {
+    //                 let m = mesh_mgr.get_mesh(geo.geo_hash).unwrap();
+    //                 SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
+    //             }
+    //         };
+    //         let rot = t.rotation * local_rot;
+    //         if shape.as_composite_shape().is_none() {
+    //             colliders.push((Isometry {
+    //                 rotation: UnitQuaternion::from_quaternion(Quaternion::new(rot.w, rot.x, rot.y, rot.z)),
+    //                 translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
+    //             }, shape));
+    //         } else {
+    //             target_colliders.push(shape);
+    //         }
+    //     }
+    //     if !colliders.is_empty() {
+    //         target_colliders.push(SharedShape::compound(colliders));
+    //     }
+    //     target_colliders
+    // }
 
 
     pub fn serialize_to_bin_file(&self) -> bool {
@@ -1907,11 +2112,11 @@ impl ColliderShapeMgr {
 
 
 #[derive(Serialize, Deserialize, Debug, Default, Deref, DerefMut, Resource,  rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
-pub struct CachedMeshesMgr {
-    pub meshes: HashMap<GeoHash, PdmsMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+pub struct MeshesData {
+    pub meshes: HashMap<GeoHash, PlantMesh>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
 }
 
-impl CachedMeshesMgr {
+impl MeshesData {
 
     #[inline]
     pub fn serialize_to_bytes(&self) -> Vec<u8> {
@@ -1927,25 +2132,24 @@ impl CachedMeshesMgr {
         None
     }
 
-    pub fn get_mesh(&self, geo_hash: u64) -> Option<&PdmsMesh> {
+    pub fn get_mesh(&self, geo_hash: u64) -> Option<&PlantMesh> {
         self.meshes.get(&geo_hash)
     }
 
-    #[cfg(feature = "opencascade")]
-    pub fn get_occ_shape(&self, geo_hash: u64) -> Option<&OCCShape> {
-        self.get_mesh(geo_hash).and_then(|x| x.occ_shape.as_ref())
-    }
+
 
     ///生成mesh的hash值，并且保存mesh
-    pub fn gen_pdms_mesh(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> u64 {
+    pub fn gen_pdms_mesh(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> Option<u64> {
         let hash = m.hash_unit_mesh_params();
         //如果是重新生成，会去覆盖模型
         if replace || !self.meshes.contains_key(&hash) {
             if let Some(mesh) = m.gen_unit_mesh() {
                 self.meshes.insert(hash, mesh);
+            }else {
+                return None;
             }
         }
-        hash
+        Some(hash)
     }
 
     pub fn get_bbox(&self, hash: &u64) -> Option<Aabb> {
@@ -1975,9 +2179,27 @@ impl CachedMeshesMgr {
     }
 }
 
-#[derive( Serialize, Deserialize)]
-#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,  Clone, Debug, Default, Resource)]
-pub struct EleGeoInstance {
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default, Resource)]
+pub struct EleInstGeosData {
+    #[serde(rename = "_key")]
+    #[serde(deserialize_with = "de_from_str")]
+    #[serde(serialize_with = "ser_u64_as_str")]
+    pub inst_key: u64,
+    #[serde(deserialize_with = "de_refno_from_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub refno: RefU64,
+    pub insts: Vec<EleInstGeo>,
+
+    pub aabb: Option<Aabb>,
+    pub type_name: String,
+
+    #[serde(default)]
+    pub ptset_map: BTreeMap<i32, CateAxisParam>,
+}
+
+///分拆的基本体信息, 应该是不需要复用的
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default, Resource)]
+pub struct EleInstGeo {
     #[serde(deserialize_with = "de_from_str")]
     #[serde(serialize_with = "ser_u64_as_str")]
     pub geo_hash: u64,
@@ -1993,7 +2215,8 @@ pub struct EleGeoInstance {
     pub transform: Transform,
     pub visible: bool,
     pub is_tubi: bool,
-    pub is_neg: bool,
+    #[serde(default)]
+    pub geo_type: GeoBasicType,
 }
 
 
@@ -2026,7 +2249,7 @@ pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 
 #[test]
 fn test_ele_geo_instance_serialize_deserialize() {
-    let data = EleGeoInstance {
+    let data = EleInstGeo {
         geo_hash: 1,
         refno: RefU64(56882546920359),
         pts: Vec::new(),
@@ -2035,8 +2258,8 @@ fn test_ele_geo_instance_serialize_deserialize() {
         transform: Transform::IDENTITY,
         visible: false,
         is_tubi: false,
-        is_neg: false,
         geo_param: Default::default(),
+        geo_type: Default::default(),
     };
     // let json = serde_json::to_string(&data).unwrap();
     // dbg!(&json);
@@ -2260,21 +2483,34 @@ pub struct ChildrenNode {
 }
 
 
-// #[serde_as]
-// #[derive(Debug, Serialize, Deserialize, Default)]
-// pub struct RefnoHasNegPosInfoTuple(
-//     #[serde_as(as = "DisplayFromStr")]
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug, Default,  Component)]
+pub struct CataHashRefnoKV {
+    // #[serde(deserialize_with = "de_from_str")]
+    // #[serde(serialize_with = "ser_u64_as_str")]
+    #[serde(default)]
+    pub cata_hash: Option<u64>,
+    // #[serde_as(as = "DisplayFromStr")]
+    #[serde(default)]
+    pub exist_geo: Option<EleInstGeosData>,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    #[serde(default)]
+    pub group_refnos: Vec<RefU64>,
+}
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component)]
 pub struct PdmsElement {
     #[serde_as(as = "DisplayFromStr")]
+    #[serde(rename = "_key")]
     pub refno: RefU64,
     #[serde_as(as = "DisplayFromStr")]
     pub owner: RefU64,
     pub name: String,
     pub noun: String,
+    #[serde(default)]
     pub version: u32,
+    #[serde(default)]
     pub children_count: usize,
 }
 

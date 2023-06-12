@@ -16,8 +16,10 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::extrusion::Extrusion;
 use crate::prim_geo::wire::*;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
+
+
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 #[reflect(Component)]
@@ -55,17 +57,6 @@ impl BrepShapeTrait for Revolution {
         Box::new(self.clone())
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let wire = gen_occ_wire( &self.verts, &self.fradius_vec)?;
-        let axis = Axis::new(self.rot_pt, self.rot_dir);
-        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon=1.0) {
-            core::f64::consts::TAU
-        }else{
-            self.angle.to_radians() as _
-        };
-        Ok(wire.extrude_rotate(&axis, angle)?)
-    }
 
     #[inline]
     fn tol(&self) -> f32{
