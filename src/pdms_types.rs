@@ -71,10 +71,9 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 20] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
-    "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO",
-    "NRTO", "NSLC", "NREV", "NSCY",
+    "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSLC", "NSCY",
 ];
 
 ///有loop的几何体
@@ -86,8 +85,9 @@ pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
+//"PLOO", "LOOP",
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 24] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
 ];
 
@@ -118,8 +118,9 @@ pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = [
 ];
 
 ///可以重用的类型
+/// todo 实现 "FIXING"类型的计算
 pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 5] = [
-    "SCTN", "FITT", "PFIT", "FIXING", "NOZZ"
+    "SCTN", "FITT", "PFIT",  "NOZZ", "FIT"
 ];
 
 pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 19] = [
@@ -626,12 +627,20 @@ impl AttrMap {
             if let Some(des_para) = self.get_f64_vec("DESP") {
                 hash_f64_slice(&des_para, &mut hash);
             }
-            let ref_strs = ["ANGL", "HEIG", "RADI", "ZDIS"];
+            let ref_strs = ["ANGL", "HEIG", "RADI"];
             let key_strs = self.get_as_strings(&ref_strs);
             for (ref_str, key_str) in ref_strs.iter().zip(key_strs) {
                 std::hash::Hash::hash(*ref_str, &mut hash);
                 std::hash::Hash::hash(&key_str, &mut hash);
             }
+
+            //如果是土建模型 "DRNS", "DRNE"
+            if let Some(drns) = self.get_as_string("DRNS") &&
+                let Some(drne) = self.get_as_string("DRNE") {
+                std::hash::Hash::hash(&drns, &mut hash);
+                std::hash::Hash::hash(&drne, &mut hash);
+            }
+
             return Some(std::hash::Hasher::finish(&hash));
         }
         return None
@@ -2134,15 +2143,17 @@ impl MeshesData {
     }
 
     ///生成mesh的hash值，并且保存mesh
-    pub fn gen_pdms_mesh(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> u64 {
+    pub fn gen_pdms_mesh(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> Option<u64> {
         let hash = m.hash_unit_mesh_params();
         //如果是重新生成，会去覆盖模型
         if replace || !self.meshes.contains_key(&hash) {
             if let Some(mesh) = m.gen_unit_mesh() {
                 self.meshes.insert(hash, mesh);
+            }else {
+                return None;
             }
         }
-        hash
+        Some(hash)
     }
 
     pub fn get_bbox(&self, hash: &u64) -> Option<Aabb> {
