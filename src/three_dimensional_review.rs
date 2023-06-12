@@ -77,14 +77,20 @@ pub struct ThreeDimensionalReviewData {
     pub cloudLine: String,
     #[serde(rename = "viewpoint")]
     pub camera_transform: Transform,
-    pub image: String,
+    pub image: Vec<u8>,
     pub status: bool,
+}
+
+#[derive(Debug, Default, Clone, Eq, PartialEq,Serialize, Deserialize)]
+pub struct ModelDataIndex {
+    pub refno: RefU64,
+    pub name: String,
 }
 
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ModelData {
-    pub index: Vec<(RefU64, String)>,
+    pub index: Vec<ModelDataIndex>,
     pub data: Vec<HashMap<String, String>>,
 }
 
