@@ -54,6 +54,8 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
         if angle > 45.0 {
             let angle = 90.0 - angle;
             return format!("{y_str} {angle} {x_str}");
+        }else if angle.abs() < f32::EPSILON {
+            return x_str.to_string();
         }
         return format!("{x_str} {angle} {y_str}");
     }

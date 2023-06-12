@@ -16,10 +16,9 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
-// #[cfg(feature = "opencascade")]
-// use opencascade::OCCShape;
+
 
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -56,7 +55,7 @@ impl Default for LCylinder {
 
 impl VerifiedShape for LCylinder {
     fn check_valid(&self) -> bool {
-        true
+       self.pdia > f32::EPSILON && (self.pbdi - self.ptdi).abs() > f32::EPSILON
     }
 }
 
@@ -64,14 +63,6 @@ impl VerifiedShape for LCylinder {
 impl BrepShapeTrait for LCylinder {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
-    }
-
-    //OCC 的生成
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let r = self.pdia as f64 / 2.0;
-        let h = (self.ptdi - self.pbdi) as f64;
-        Ok(OCCShape::cylinder(r, h)?)
     }
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
@@ -204,14 +195,6 @@ impl BrepShapeTrait for SCylinder {
         // dbg!(&self.phei);
     }
 
-    #[cfg(feature = "opencascade")]
-    //OCC 的生成
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let r = self.pdia as f64 / 2.0;
-        let h = self.phei as f64;
-        Ok(OCCShape::cylinder(r, h)?)
-    }
-
     #[inline]
     fn get_trans(&self) -> Transform {
         Transform {
@@ -326,10 +309,6 @@ impl BrepShapeTrait for SCylinder {
 impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
         let mut phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
-        // if m.get_type() == "NCYL" {
-        //     //get parent bbox, 限制它的大小
-        //     phei = phei.max(10_000.0);  //负实体限制高度，有可能会被人为填很大的数字，限制高度
-        // }
         let pdia = m.get_val("DIAM").unwrap().double_value().unwrap_or_default() as f32;
         SCylinder {
             paxi_expr: "Z".to_string(),

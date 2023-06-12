@@ -14,10 +14,8 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 
-// #[cfg(feature = "opencascade")]
-// use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
@@ -89,49 +87,6 @@ impl BrepShapeTrait for Pyramid {
         bytes.hash(&mut hasher);
         "Pyramid".hash(&mut hasher);
         hasher.finish()
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-
-        let z_pt = self.paax_pt;
-        //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0);
-        let ty = (self.pctp / 2.0);
-        let bx = (self.pbbt / 2.0);
-        let by = (self.pcbt / 2.0);
-        let ox = 0.5 * self.pbof;
-        let oy = 0.5 * self.pcof;
-        let h2 = 0.5 * (self.ptdi - self.pbdi);
-
-        let mut polys = vec![];
-        let mut verts = vec![];
-
-        let pts = vec![
-            Vec3::new(-tx + ox, -ty + oy, h2),
-            Vec3::new(tx + ox, -ty + oy, h2),
-            Vec3::new(tx + ox, ty + oy, h2),
-            Vec3::new(-tx + ox, ty + oy, h2),
-        ];
-        if tx * ty < f32::EPSILON {
-            verts.push(Vertex::new(Vec3::new(ox, oy, h2)));
-        } else {
-            polys.push(Wire::from_points(&pts)?);
-        }
-
-        let pts = vec![
-            Vec3::new(-bx - ox, -by - oy, -h2),
-            Vec3::new(bx - ox, -by - oy, -h2),
-            Vec3::new(bx - ox, by - oy, -h2),
-            Vec3::new(-bx - ox, by - oy, -h2),
-        ];
-        if bx * by < f32::EPSILON {
-            verts.push(Vertex::new(Vec3::new(-ox, -oy, -h2)));
-        } else {
-            polys.push(Wire::from_points(&pts)?);
-        }
-
-        Ok(OCCShape::loft(polys.iter(), verts.iter())?)
     }
 
 

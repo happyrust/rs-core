@@ -51,6 +51,8 @@ pub struct DesignBran {
 ///元件库的集合信息
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct CateGeomsInfo {
+    //catref
+    pub refno: RefU64,
     pub geometries: Vec<CateGeoParam>,
     pub axis_map: BTreeMap<i32, CateAxisParam>,
 }
@@ -91,7 +93,7 @@ pub struct GmseParamData {
     /// 顺序 x y z
     pub xyz: Vec<f32>,
     /// 顺序 paxis pa_axis pb_axis pc_axis
-    pub paxises: Vec<CateAxisParam>,
+    pub paxises: Vec<Option<CateAxisParam>>,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     /// Fillet radius

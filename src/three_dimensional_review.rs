@@ -27,7 +27,7 @@ pub struct ThreeDimensionalModelDataCrate {
 impl ThreeDimensionalModelDataCrate {
     pub fn to_arango_struct(self) -> ThreeDimensionalModelDataToArango {
         ThreeDimensionalModelDataToArango {
-            _key: self.key_value,
+            key_value: self.key_value,
             proj_code: self.proj_code,
             user_code: self.user_code,
             site_code: self.site_code,
@@ -41,9 +41,8 @@ impl ThreeDimensionalModelDataCrate {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ThreeDimensionalModelDataToArango {
-    // #[serde(rename = "KeyValue")]
-    pub _key: String,
-    // pub key_value: String,
+    #[serde(rename = "_key")]
+    pub key_value: String,
     #[serde(rename = "ProjCode")]
     pub proj_code: String,
     #[serde(rename = "UserCode")]

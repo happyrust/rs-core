@@ -8,13 +8,12 @@ use std::hash::Hash;
 use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
-use crate::shape::pdms_shape::{BrepMathTrait, PdmsMesh};
+use crate::shape::pdms_shape::{BrepMathTrait, PlantMesh};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
 
-// #[cfg(feature = "opencascade")]
-// use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct LSnout {
@@ -75,33 +74,6 @@ impl BrepShapeTrait for LSnout {
     fn tol(&self) -> f32{
         //以最小的圆精度为准
         0.005 * (( self.pbdm + self.ptdm) / 2.0).max(1.0)
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let rt = (self.ptdm/2.0);
-        let rb = (self.pbdm/2.0);
-
-        let mut a_dir = self.paax_dir.normalize();
-        let mut b_dir = self.pbax_dir.normalize();
-        let p0 = a_dir * self.pbdi + self.paax_pt;
-        let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
-
-        let mut circles = vec![];
-        let mut verts = vec![];
-        if self.pbdm < f32::EPSILON {
-            verts.push(Vertex::new(p0));
-        }else{
-            circles.push(Wire::circle(rb, p0, a_dir)?);
-        }
-
-        if self.ptdm < f32::EPSILON {
-            verts.push(Vertex::new(p1));
-        }else{
-            circles.push(Wire::circle(rt, p1, a_dir)?);
-        }
-
-        Ok(OCCShape::loft(circles.iter(), verts.iter())?)
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

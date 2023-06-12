@@ -13,7 +13,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PdmsMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
 
@@ -57,10 +57,6 @@ impl BrepShapeTrait for Dish {
         Box::new(self.clone())
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        Ok(opencascade::OCCShape::dish(self.pdis as f64 / 2.0, self.pheig as f64)?)
-    }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
