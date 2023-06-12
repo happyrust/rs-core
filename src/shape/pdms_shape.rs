@@ -48,8 +48,6 @@ use rkyv::with::Skip;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_2;
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCMesh, OCCShape};
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -91,54 +89,9 @@ pub struct PlantMesh {
 
     pub wire_vertices: Vec<Vec<[f32; 3]>>,
     pub aabb: Option<Aabb>,
-
-    //最好能反序列化，看看怎么实现
-    #[cfg(feature = "opencascade")]
-    #[serde(skip)]
-    #[with(Skip)]
-    pub occ_shape: Option<opencascade::OCCShape>,
 }
-
 unsafe impl Sync for PlantMesh {}
 unsafe impl Send for PlantMesh {}
-
-
-#[cfg(feature = "opencascade")]
-impl From<OCCMesh> for PlantMesh {
-    fn from(o: OCCMesh) -> Self {
-        let vertex_count = o.triangles.len() * 3;
-        let mut aabb = Aabb::new_invalid();
-        o.vertices.iter().for_each(|v| {
-            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
-        });
-
-        let mut vertices = Vec::with_capacity(vertex_count);
-        let mut normals = Vec::with_capacity(vertex_count);
-        let mut indices = Vec::with_capacity(vertex_count);
-
-        for (i, (t, normal)) in o.triangles_with_normals().enumerate() {
-            //顶点重排，保证normal是正确的
-            vertices.push(o.vertices[t[0]].into());
-            vertices.push(o.vertices[t[1]].into());
-            vertices.push(o.vertices[t[2]].into());
-            indices.push((i * 3) as u32);
-            indices.push((i * 3 + 1) as u32);
-            indices.push((i * 3 + 2) as u32);
-            normals.push(normal.into());
-            normals.push(normal.into());
-            normals.push(normal.into());
-        }
-
-        Self{
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-            occ_shape: None,
-        }
-    }
-}
 
 
 
@@ -359,8 +312,6 @@ impl From<CsgMesh> for PlantMesh {
             normals,
             wire_vertices: vec![],
             aabb: Some(aabb),
-            #[cfg(feature = "opencascade")]
-            occ_shape: None,
         }
     }
 }
@@ -386,10 +337,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        return Err(anyhow!("不存在该occ shape"));
-    }
 
     //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
     fn hash_unit_mesh_params(&self) -> u64 {
@@ -428,16 +375,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         TRI_TOL
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_mesh(&self) -> Option<PlantMesh> {
-        if let Ok(shape) = self.gen_occ_shape() {
-            let mut mesh: PlantMesh = shape.mesh(self.tol() as f64).ok()?.into();
-            // dbg!("generate mesh");
-            mesh.occ_shape = Some(shape);
-            return Some(mesh);
-        }
-        None
-    }
 
     #[cfg(not(feature = "opencascade"))]
     ///生成mesh

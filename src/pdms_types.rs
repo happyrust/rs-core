@@ -25,8 +25,7 @@ use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Point3, Quaternion, UnitQuaternion};
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape, TriMesh};
@@ -2137,10 +2136,7 @@ impl MeshesData {
         self.meshes.get(&geo_hash)
     }
 
-    #[cfg(feature = "opencascade")]
-    pub fn get_occ_shape(&self, geo_hash: u64) -> Option<&OCCShape> {
-        self.get_mesh(geo_hash).and_then(|x| x.occ_shape.as_ref())
-    }
+
 
     ///生成mesh的hash值，并且保存mesh
     pub fn gen_pdms_mesh(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> Option<u64> {

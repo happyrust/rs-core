@@ -11,8 +11,7 @@ use crate::parsed_data::CateBoxParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -47,11 +46,6 @@ impl BrepShapeTrait for SBox {
         self.size.x = self.size.x.min(l);
         self.size.y = self.size.y.min(l);
         self.size.z = self.size.z.min(l);
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

@@ -15,8 +15,6 @@ use crate::tool::hash_tool::*;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 #[reflect(Component)]
@@ -79,77 +77,6 @@ impl BrepShapeTrait for LPyramid {
     }
 
 
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-
-        let mut x_dir = self.pbax_dir.normalize();
-        let mut y_dir = self.pcax_dir.normalize();
-        let mut z_dir = self.paax_dir.normalize();
-
-        // dbg!(z_dir);
-        // dbg!(x_dir);
-        //容错处理
-        let ref_dir = z_dir.cross(x_dir).normalize();
-        //如果和预期的方向垂直了，也就是和x方向共线了，需要重置
-        // dbg!(ref_dir.dot(y_dir));
-        if abs_diff_eq!(ref_dir.dot(y_dir).abs(), 0.0, epsilon=0.01)  {
-            y_dir = ref_dir;
-            x_dir = ref_dir.cross(z_dir).normalize();
-        }
-        // dbg!(y_dir);
-        // dbg!(x_dir);
-
-        let x_pt = self.pbax_pt;
-        let y_pt = self.pcax_pt;
-        let c_pt = self.paax_pt;
-
-        //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0);
-        let ty = (self.pctp / 2.0);
-        let bx = (self.pbbt / 2.0);
-        let by = (self.pcbt / 2.0);
-        let ox = 0.5 * self.pbof;
-        let oy = 0.5 * self.pcof;
-
-        let h_vector = z_dir * (self.ptdi - self.pbdi) / 2.0;
-
-        let t_pt = c_pt + x_dir * ox + y_dir * oy + h_vector;
-        // dbg!(t_pt);
-        let b_pt = c_pt - x_dir * ox - y_dir * oy - h_vector;
-        // dbg!(b_pt);
-
-        let mut polys = vec![];
-        let mut verts = vec![];
-
-        let t_pts = vec![
-            t_pt - tx * x_dir - ty * y_dir,
-            t_pt + tx * x_dir - ty * y_dir,
-            t_pt + tx * x_dir + ty * y_dir,
-            t_pt - tx * x_dir + ty * y_dir,
-        ];
-        if tx * ty < f32::EPSILON {
-            verts.push(Vertex::new(t_pt));
-        } else {
-            // dbg!(&t_pts);
-            polys.push(Wire::from_points(&t_pts)?);
-        }
-
-        let b_pts = vec![
-            b_pt - bx * x_dir - by * y_dir,
-            b_pt + bx * x_dir - by * y_dir,
-            b_pt + bx * x_dir + by * y_dir,
-            b_pt - bx * x_dir + by * y_dir,
-        ];
-        if bx * by < f32::EPSILON {
-            verts.push(Vertex::new(b_pt));
-        } else {
-            // dbg!(&b_pts);
-            polys.push(Wire::from_points(&b_pts)?);
-        }
-
-        Ok(OCCShape::loft(polys.iter(), verts.iter())?)
-    }
 
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况

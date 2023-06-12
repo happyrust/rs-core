@@ -16,8 +16,6 @@ use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
@@ -105,34 +103,6 @@ impl BrepShapeTrait for SRTorus {
         0.01 * self.pdia.min(self.pheig).max(1.0)
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
-            let z_axis = self.paax_dir.normalize();
-            let y_axis = torus_info.rot_axis;
-            let x_axis = z_axis.cross(y_axis);
-            let h = self.pheig;
-            let d = self.pdia;
-            let p1 = (self.paax_pt - y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p2 = (self.paax_pt + y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p3 = (self.paax_pt + y_axis * h / 2.0 + x_axis * d / 2.0).into();
-            let p4 = (self.paax_pt - y_axis * h / 2.0 + x_axis * d / 2.0).into();
-            //创建四边形
-            let top = Edge::new_line(&p1, &p2)?;
-            let right = Edge::new_line(&p2, &p3)?;
-            let bottom = Edge::new_line(&p3, &p4)?;
-            let left = Edge::new_line(&p4, &p1)?;
-
-            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
-            let center = torus_info.center;
-            // dbg!(center);
-            // dbg!(-y_axis);
-            let axis = Axis::new(center, -y_axis);
-            return Ok(wire.extrude_rotate(&axis, torus_info.angle.to_radians() as _)?);
-        }
-
-        Err(anyhow::anyhow!("Rect torus 参数有问题。"))
-    }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
@@ -219,31 +189,6 @@ impl BrepShapeTrait for RTorus {
         0.01 * d.max(1.0)
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let h = self.height;
-        let d = (self.rout - self.rins);
-        // dbg!(d);
-        let c = (self.rins + self.rout) / 2.0;
-        // dbg!(Vec3::new(c - d / 2.0, 0.0, -h / 2.0));
-        // dbg!(Vec3::new(c - d / 2.0, 0.0, h / 2.0));
-        // dbg!(Vec3::new(c + d / 2.0, 0.0, h / 2.0));
-        // dbg!(Vec3::new(c + d / 2.0, 0.0, -h / 2.0));
-
-        let p1 = Vec3::new(c - d / 2.0, 0.0, -h / 2.0).into();
-        let p2 = Vec3::new(c - d / 2.0, 0.0, h / 2.0).into();
-        let p3 = Vec3::new(c + d / 2.0, 0.0, h / 2.0).into();
-        let p4 = Vec3::new(c + d / 2.0, 0.0, -h / 2.0).into();
-        //创建四边形
-        let top = Edge::new_line(&p1, &p2)?;
-        let right = Edge::new_line(&p2, &p3)?;
-        let bottom = Edge::new_line(&p3, &p4)?;
-        let left = Edge::new_line(&p4, &p1)?;
-
-        let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
-        let axis = Axis::new(Vec3::ZERO, Vec3::Z);
-        return Ok(wire.extrude_rotate(&axis, self.angle.to_radians() as _)?);
-    }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;

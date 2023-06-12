@@ -58,17 +58,6 @@ impl BrepShapeTrait for Extrusion {
         dbg!(&self.height);
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        if !self.check_valid() || self.verts.len() < 3 { return Err(anyhow!("Extrusion params not valid.")); }
-        let mut wire = if let CurveType::Spline(thick) = self.cur_type {
-            gen_occ_spline_wire(&self.verts, thick)?
-        } else {
-            gen_occ_wire(&self.verts, &self.fradius_vec)?
-        };
-        // dbg!(self);
-        Ok(wire.extrude(DVec3::new(0., 0.0, self.height as _))?)
-    }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
