@@ -214,8 +214,6 @@ pub struct RefU64(
     pub u64
 );
 
-
-
 impl std::str::FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -412,10 +410,10 @@ impl RefU64 {
     pub fn from_url_refno(refno: &str) -> Option<Self> {
         let strs = refno.split('_').collect::<Vec<_>>();
         if strs.len() < 2 { return None; }
-        let ref0 = strs[0].parse::<u32>();
-        let ref1 = strs[1].parse::<u32>();
+        let ref0 = strs[0].parse::<i32>();
+        let ref1 = strs[1].parse::<i32>();
         if ref0.is_err() || ref1.is_err() { return None; }
-        Some(RefU64::from_two_nums(ref0.unwrap(), ref1.unwrap()))
+        Some(RefI32Tuple((ref0.unwrap(), ref1.unwrap())).into())
     }
 
     #[inline]
@@ -2341,27 +2339,6 @@ pub struct DbnoVersion {
     pub version: u32,
 }
 
-
-#[test]
-fn test_dashmap() {
-    let mut dashmap_1 = DashMap::new();
-    dashmap_1.insert("1", "hello");
-    let mut dashmap_2 = DashMap::new();
-    dashmap_2.insert("2", "world");
-    let mut dashmap_3 = DashMap::new();
-    dashmap_1.iter().for_each(|m| {
-        dashmap_3.insert(m.key().clone(), m.value().clone());
-    });
-    dashmap_2.iter().for_each(|m| {
-        dashmap_3.insert(m.key().clone(), m.value().clone());
-    });
-}
-
-#[test]
-fn test_refu64() {
-    let refno = RefU64::from(RefI32Tuple(((16477, 80))));
-    println!("refno={}", refno.0);
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DbAttributeType {
