@@ -5,9 +5,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 use approx::{abs_diff_eq, abs_diff_ne};
-use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
-use bevy::reflect::Reflect;
 use nom::Parser;
 use serde::{Deserialize, Serialize};
 use truck_topology::Face;
@@ -18,8 +16,9 @@ use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
+
 #[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+use opencascade::{OCCShape, Edge, Wire, Axis, Vertex, DsShape};
 
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -56,7 +55,7 @@ impl Default for LCylinder {
 
 impl VerifiedShape for LCylinder {
     fn check_valid(&self) -> bool {
-       self.pdia > f32::EPSILON && (self.pbdi - self.ptdi).abs() > f32::EPSILON
+        self.pdia > f32::EPSILON && (self.pbdi - self.ptdi).abs() > f32::EPSILON
     }
 }
 
@@ -173,10 +172,10 @@ impl Default for SCylinder {
 impl SCylinder {
     #[inline]
     pub fn is_sscl(&self) -> bool {
-        abs_diff_ne!(self.btm_shear_angles[0],  0.0) ||
-            abs_diff_ne!(self.btm_shear_angles[1],  0.0) ||
-            abs_diff_ne!(self.top_shear_angles[0],  0.0) ||
-            abs_diff_ne!(self.top_shear_angles[1],  0.0)
+        self.btm_shear_angles[0].abs() > f32::EPSILON ||
+            self.btm_shear_angles[1].abs() > f32::EPSILON ||
+            self.top_shear_angles[0].abs() > f32::EPSILON ||
+            self.top_shear_angles[1].abs() > f32::EPSILON
     }
 }
 
@@ -201,15 +200,39 @@ impl BrepShapeTrait for SCylinder {
     fn apply_limit_by_size(&mut self, l: f32) {
         self.phei = self.phei.min(l);
         self.pdia = self.pdia.min(l);
-        // dbg!(&self.phei);
     }
 
     #[cfg(feature = "opencascade")]
-    //OCC 的生成
+    ///OCC 的生成
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let r = self.pdia as f64 / 2.0;
-        let h = self.phei as f64;
-        Ok(OCCShape::cylinder(r, h)?)
+        if self.is_sscl() {
+            let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos();
+            let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos();
+
+            let transform_btm = Mat4::from_axis_angle(Vec3::Y,self.btm_shear_angles[0].to_radians())
+                * Mat4::from_axis_angle(Vec3::Y, self.btm_shear_angles[1].to_radians())
+                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
+            let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos();
+            let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos();
+            let ext_dir = self.paxi_dir.normalize();
+            let ext_len = self.phei;
+            let transform_top = Mat4::from_translation(ext_dir * ext_len)
+                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[0].to_radians())
+                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
+                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
+            let mut circle = Wire::circle(self.pdia/2.0, Vec3::ZERO, ext_dir)?;
+            let mut btm_circe = circle.g_transform(&transform_btm.as_dmat4())?;
+            let mut top_circle = circle.g_transform(&transform_top.as_dmat4())?;
+
+            Ok(OCCShape::loft([btm_circe, top_circle].iter(), [].iter())?)
+
+        } else {
+            let r = self.pdia as f64 / 2.0;
+            let h = self.phei as f64;
+            Ok(OCCShape::cylinder(r, h)?)
+        }
+
+
     }
 
     #[inline]

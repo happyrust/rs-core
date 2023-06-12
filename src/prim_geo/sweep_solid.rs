@@ -597,8 +597,11 @@ impl BrepShapeTrait for SweepSolid {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let mut unit = self.clone();
-        //sloped 不允许拉伸
-        if let SweepPath3D::Line(_) = unit.path && !self.is_sloped() {
+        // if let SweepPath3D::Line(_) = unit.path && !self.is_sloped() {
+        //     unit.extrude_dir = Vec3::Z;
+        //     unit.path = SweepPath3D::Line(Line3D::default());
+        // }
+        if let SweepPath3D::Line(_) = unit.path {
             unit.extrude_dir = Vec3::Z;
             unit.path = SweepPath3D::Line(Line3D::default());
         }
@@ -608,7 +611,7 @@ impl BrepShapeTrait for SweepSolid {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        if self.is_sloped() { return Vec3::ONE; }
+        // if self.is_sloped() { return Vec3::ONE; }
         match &self.path {
             SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, self.height),
             _ => Vec3::ONE,

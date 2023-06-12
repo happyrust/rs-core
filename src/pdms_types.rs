@@ -120,7 +120,7 @@ pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = [
 ///可以重用的类型
 /// todo 实现 "FIXING"类型的计算
 pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 5] = [
-    "SCTN", "FITT", "PFIT",  "NOZZ", "FIT"
+    "SCTN", "FITT", "PFIT",  "NOZZ", "FITT"
 ];
 
 pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 19] = [
@@ -1816,6 +1816,9 @@ pub struct EleGeosInfo {
 
     #[serde(default)]
     pub flow_pt_indexs: Vec<i32>,
+
+    #[serde(default)]
+    pub geo_type: GeoBasicType,
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
@@ -2211,6 +2214,7 @@ pub struct EleInstGeo {
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
+    #[serde(default)]
     pub geo_param: PdmsGeoParam,
     pub pts: Vec<i32>,
     pub aabb: Option<Aabb>,
