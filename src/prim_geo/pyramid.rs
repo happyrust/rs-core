@@ -74,7 +74,9 @@ impl Default for Pyramid {
 }
 
 impl VerifiedShape for Pyramid {
-    fn check_valid(&self) -> bool { true }
+    fn check_valid(&self) -> bool {
+        (self.pbtp + self.pctp) > f32::EPSILON || (self.pbbt + self.pcbt) > f32::EPSILON
+    }
 }
 
 //#[typetag::serde]

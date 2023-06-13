@@ -90,21 +90,14 @@ pub struct PlantMesh {
     pub normals: Vec<[f32; 3]>,
 
     pub wire_vertices: Vec<Vec<[f32; 3]>>,
-    pub aabb: Option<Aabb>,
 
-    //最好能反序列化，看看怎么实现
-    #[cfg(feature = "opencascade")]
-    #[serde(skip)]
-    #[with(Skip)]
-    pub occ_shape: Option<opencascade::OCCShape>,
 }
 
-unsafe impl Sync for PlantMesh {}
-unsafe impl Send for PlantMesh {}
+
 
 
 #[cfg(feature = "opencascade")]
-impl From<OCCMesh> for PlantMesh {
+impl From<OCCMesh> for PlantGeoData {
     fn from(o: OCCMesh) -> Self {
         let vertex_count = o.triangles.len() * 3;
         let mut aabb = Aabb::new_invalid();
@@ -130,10 +123,13 @@ impl From<OCCMesh> for PlantMesh {
         }
 
         Self{
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
+            geo_hash: 0,
+            mesh: Some(PlantMesh{
+                indices,
+                vertices,
+                normals,
+                wire_vertices: vec![],
+            }),
             aabb: Some(aabb),
             occ_shape: None,
         }
@@ -198,29 +194,7 @@ impl PlantMesh {
         mesh
     }
 
-    ///返回三角模型 （tri_mesh, AABB）
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Option<Aabb>) {
-        let mut mesh = Mesh::new(TriangleList);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
-        let n = self.vertices.len();
-        let mut uvs = vec![];
-        for i in 0..n {
-            uvs.push([0.0f32, 0.0]);
-        }
-        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-        //todo 是否需要优化索引
-        mesh.set_indices(Some(Indices::U32(
-            self.indices.clone()
-        )));
 
-        // let mut wire_mesh = Mesh::new(LineList);
-        // wire_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.wf_vertices.clone());
-        // wire_mesh.set_indices(Some(Indices::U32(
-        //     self.wf_indices.clone()
-        // )));
-        (mesh, self.aabb.clone())
-    }
 
     // ///变成压缩的模型数据
     // #[inline]
@@ -330,7 +304,7 @@ impl PlantMesh {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl From<CsgMesh> for PlantMesh {
+impl From<CsgMesh> for PlantGeoData {
     fn from(o: CsgMesh) -> Self {
         let vertex_count = o.triangles.len() * 3;
         let mut aabb = Aabb::new_invalid();
@@ -354,14 +328,27 @@ impl From<CsgMesh> for PlantMesh {
         }
 
         Self{
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
+            geo_hash: 0,
+            mesh: Some(PlantMesh{
+                indices,
+                vertices,
+                normals,
+                wire_vertices: vec![],
+            }),
             aabb: Some(aabb),
             #[cfg(feature = "opencascade")]
             occ_shape: None,
         }
+
+        // Self{
+        //     indices,
+        //     vertices,
+        //     normals,
+        //     wire_vertices: vec![],
+        //     aabb: Some(aabb),
+        //     #[cfg(feature = "opencascade")]
+        //     occ_shape: None,
+        // }
     }
 }
 
@@ -373,6 +360,11 @@ dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 ///brep形状trait
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
+
+    fn is_reuse_unit(&self) -> bool{
+        false
+    }
+
     //拷贝函数
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
@@ -383,7 +375,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, limit_size: f32){
-
     }
 
     #[cfg(feature = "opencascade")]
@@ -403,8 +394,9 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// box
     /// cylinder
     /// sphere
-    fn gen_unit_mesh(&self) -> Option<PlantMesh> {
-        self.gen_unit_shape().gen_mesh()
+    #[cfg(feature = "opencascade")]
+    fn gen_unit(&self) -> Option<PlantGeoData> {
+        self.gen_unit_shape().gen_plant_geo_data()
     }
 
     ///获得缩放向量
@@ -429,12 +421,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     #[cfg(feature = "opencascade")]
-    fn gen_mesh(&self) -> Option<PlantMesh> {
+    fn gen_plant_geo_data(&self) -> Option<PlantGeoData> {
         if let Ok(shape) = self.gen_occ_shape() {
-            let mut mesh: PlantMesh = shape.mesh(self.tol() as f64).ok()?.into();
-            // dbg!("generate mesh");
-            mesh.occ_shape = Some(shape);
-            return Some(mesh);
+            let mut data: PlantGeoData = shape.mesh(self.tol() as f64).ok()?.into();
+            data.occ_shape = Some(shape);
+            return Some(data);
         }
         None
     }
@@ -491,7 +482,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 vertices,
                 normals,
                 wire_vertices,
-                aabb: Some(aabb),
             });
         }
         None

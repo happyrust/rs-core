@@ -99,9 +99,6 @@ impl BrepShapeTrait for Dish {
             // dbg!(&disk);
             s.push(disk);
         }
-
-        // let json = serde_json::to_vec_pretty(&Solid::new(vec![s.clone()])).unwrap();
-        // std::fs::write("/Users/dongpengcheng/Documents/week-work/crates/truck/cone.json", json).unwrap();
         Some(s)
     }
 
