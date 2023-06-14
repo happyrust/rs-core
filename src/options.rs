@@ -13,7 +13,7 @@ pub struct DbOption {
     #[clap(long)]
     pub sync_tidb: Option<bool>,
     #[clap(long)]
-    pub sync_redb: Option<bool>,
+    pub sync_localdb: Option<bool>,
     #[clap(long)]
     pub incr_sync: bool,
     #[clap(long)]
