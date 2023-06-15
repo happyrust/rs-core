@@ -2,6 +2,7 @@ use std::io::SeekFrom;
 use bevy::prelude::Resource;
 use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 //显示需创建ATTA的refno及name
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
@@ -131,6 +132,9 @@ pub struct VirtualHoleGraphNode {
     pub main_items: String,
     #[serde(rename = "MainItemRefs")]
     pub main_item_refs: String,
+    // 只用于存储和查询的数据，不涉及任何业务
+    #[serde(flatten)]
+    pub map: HashMap<String, String>,
 }
 
 
@@ -223,4 +227,7 @@ pub struct VirtualEmbedGraphNode {
     #[serde(rename = "Form")]
     // 形式
     pub form: String,
+    // 只用于存储和查询的数据，不涉及任何业务
+    #[serde(flatten)]
+    pub map: HashMap<String, String>,
 }

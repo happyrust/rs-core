@@ -16,3 +16,23 @@ pub struct PersonnelInfo {
 pub struct PersonnelInfoVec {
     pub data: Vec<PersonnelInfo>,
 }
+
+
+#[derive(PartialEq, Resource, Debug, Serialize, Deserialize)]
+pub enum HoleSize {
+    Circle(CircleHoleSize),
+    Rect(RectHoleSize)
+}
+
+/// 圆形孔洞尺寸（不含高度）
+#[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
+pub struct CircleHoleSize{
+    pub radius: f32,
+}
+
+/// 方形孔洞尺寸（不含高度）
+#[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
+pub struct RectHoleSize {
+    pub length: f32,
+    pub width: f32,
+}
