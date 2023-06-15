@@ -2215,7 +2215,7 @@ impl PlantMeshesData {
     }
 
     ///生成mesh的hash值，并且保存mesh
-    #[cfg(feature = "opencascade")]
+    // #[cfg(feature = "opencascade")]
     pub fn gen_plant_data(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool) -> Option<u64> {
         let hash = m.hash_unit_mesh_params();
         //如果是重新生成，会去覆盖模型

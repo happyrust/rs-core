@@ -394,7 +394,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// box
     /// cylinder
     /// sphere
-    #[cfg(feature = "opencascade")]
     fn gen_unit(&self) -> Option<PlantGeoData> {
         self.gen_unit_shape().gen_plant_geo_data()
     }
@@ -430,9 +429,10 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         None
     }
 
-    #[cfg(not(feature = "opencascade"))]
+    // #[cfg(not(feature = "opencascade"))]
     ///生成mesh
-    fn gen_mesh(&self) -> Option<PlantMesh> {
+    #[cfg(feature = "truck")]
+    fn gen_plant_geo_data(&self) -> Option<PlantGeoData> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -455,7 +455,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if size <= f64::EPSILON {
                 return None;
             }
-            let tolerance = self.tol() as f64 * size;
+            let tolerance = self.tol() as f64;
+            // dbg!(tolerance);
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
@@ -477,12 +478,20 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 .iter()
                 .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
                 .collect();
-            return Some(PlantMesh {
-                indices,
-                vertices,
-                normals,
-                wire_vertices,
+
+            return Some(PlantGeoData {
+                geo_hash: 0,
+                mesh: Some(PlantMesh {
+                    indices,
+                    vertices,
+                    normals,
+                    wire_vertices,
+                }),
+                aabb: Some(aabb),
+                // occ_shape: None,
             });
+            // return
+
         }
         None
     }

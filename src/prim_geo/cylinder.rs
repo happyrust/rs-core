@@ -193,7 +193,8 @@ impl BrepShapeTrait for SCylinder {
     }
 
     fn tol(&self) -> f32 {
-        0.01 * self.pdia.max(1.0)
+        // dbg!(self);
+        (self.pdia.max(1.0))/100.0
     }
 
     ///引用限制大小
@@ -252,7 +253,6 @@ impl BrepShapeTrait for SCylinder {
         use truck_modeling::*;
         let dir = self.paxi_dir.normalize();
         let r = self.pdia / 2.0;
-        // let c_pt = dir * self.pdis + self.paxi_pt;
         let c_pt = Vec3::ZERO;
         let center = c_pt.point3();
         let ref_axis = cal_ref_axis(&dir);
@@ -280,11 +280,13 @@ impl BrepShapeTrait for SCylinder {
             * Matrix4::from_angle_y(Rad(self.top_shear_angles[1].to_radians() as f64))
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
 
+
         let mut w_s = builder::transformed(&origin_w, transform_btm);
         let mut w_e = builder::transformed(&origin_w, transform_top);
         if let Ok(mut f) = builder::try_attach_plane(&[w_s.clone()])
         {
             let mut f_e = builder::try_attach_plane(&[w_e.clone()]).unwrap().inverse();
+            // dbg!(reverse_dir);
             if !reverse_dir {
                 f = f.inverse();
                 f_e = f_e.inverse();
