@@ -193,8 +193,7 @@ impl BrepShapeTrait for SCylinder {
     }
 
     fn tol(&self) -> f32 {
-        // dbg!(self);
-        (self.pdia.max(1.0))/100.0
+       0.01 * (self.pdia.max(1.0))
     }
 
     ///引用限制大小
@@ -350,8 +349,9 @@ impl BrepShapeTrait for SCylinder {
 
 impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
-        let mut phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
-        let pdia = m.get_val("DIAM").unwrap().double_value().unwrap_or_default() as f32;
+        let mut phei = m.get_f64("HEIG").unwrap_or_default() as f32;
+        let pdia = m.get_f64("DIAM").unwrap_or_default() as f32;
+        // dbg!(m);
         SCylinder {
             paxi_expr: "Z".to_string(),
             paxi_pt: Default::default(),

@@ -216,24 +216,6 @@ impl BrepShapeTrait for CTorus {
         Box::new(unit)
     }
 
-    // fn hash_unit_mesh_params(&self) -> u64 {
-    //     let mut hasher = DefaultHasher::new();
-    //     hash_f32((self.rins), &mut hasher);
-    //     hash_f32((self.rout), &mut hasher);
-    //     hash_f32(self.angle, &mut hasher);
-    //     "ctorus".hash(&mut hasher);
-    //     hasher.finish()
-    // }
-    //
-    // fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-    //     // let rins = self.rins / self.rout;
-    //     let unit = Self {
-    //         rins: self.rins,
-    //         rout: self.rout,
-    //         angle: self.angle,
-    //     };
-    //     Box::new(unit)
-    // }
 
     fn tol(&self) -> f32 {
         0.01 * (self.rout -self.rins).abs().max(1.0)
@@ -255,9 +237,9 @@ impl BrepShapeTrait for CTorus {
 
 impl From<&AttrMap> for CTorus {
     fn from(m: &AttrMap) -> Self {
-        let r_i = m.get_val("RINS").unwrap().double_value().unwrap() as f32;
-        let r_o = m.get_val("ROUT").unwrap().double_value().unwrap() as f32;
-        let angle = m.get_val("ANGL").unwrap().double_value().unwrap() as f32;
+        let r_i = m.get_f64("RINS").unwrap_or_default() as f32;
+        let r_o = m.get_f64("ROUT").unwrap_or_default() as f32;
+        let angle = m.get_f64("ANGL").unwrap_or_default() as f32;
         CTorus {
             rins: r_i,
             rout: r_o,

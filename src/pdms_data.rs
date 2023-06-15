@@ -24,15 +24,8 @@ pub struct ScomInfo {
     pub axis_param_numbers: Vec<i32>,
     pub plin_map: HashMap<String, PlinParam>,
 }
-#[cfg(not(target_arch = "wasm32"))]
-impl BytesTrait for ScomInfo {
-    fn to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(&self).unwrap().into()
-    }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
-        bincode::deserialize(bytes).unwrap()
-    }
+impl BytesTrait for ScomInfo {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

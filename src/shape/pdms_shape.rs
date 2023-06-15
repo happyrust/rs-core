@@ -21,7 +21,7 @@ use lyon::path::polygon;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use truck_base::bounding_box::BoundingBox;
-use truck_base::cgmath64::{Point3, Vector3, Vector4};
+use truck_base::cgmath64::{Point3, Vector3, Vector4, Matrix4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
 #[cfg(not(target_arch = "wasm32"))]
@@ -30,7 +30,6 @@ use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Matrix, Point, Vector};
 use parry3d::shape::{TriMesh, TriMeshFlags};
 use dyn_clone::DynClone;
-use nalgebra::Matrix4;
 use crate::pdms_types::*;
 use crate::prim_geo::category::CateBrepShape;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
@@ -94,8 +93,6 @@ pub struct PlantMesh {
 }
 
 
-
-
 #[cfg(feature = "opencascade")]
 impl From<OCCMesh> for PlantGeoData {
     fn from(o: OCCMesh) -> Self {
@@ -122,9 +119,9 @@ impl From<OCCMesh> for PlantGeoData {
             normals.push(normal.into());
         }
 
-        Self{
+        Self {
             geo_hash: 0,
-            mesh: Some(PlantMesh{
+            mesh: Some(PlantMesh {
                 indices,
                 vertices,
                 normals,
@@ -135,7 +132,6 @@ impl From<OCCMesh> for PlantGeoData {
         }
     }
 }
-
 
 
 #[test]
@@ -193,7 +189,6 @@ impl PlantMesh {
         )));
         mesh
     }
-
 
 
     // ///变成压缩的模型数据
@@ -327,9 +322,9 @@ impl From<CsgMesh> for PlantGeoData {
             normals.push(t.normal().into());
         }
 
-        Self{
+        Self {
             geo_hash: 0,
-            mesh: Some(PlantMesh{
+            mesh: Some(PlantMesh {
                 indices,
                 vertices,
                 normals,
@@ -353,15 +348,12 @@ impl From<CsgMesh> for PlantGeoData {
 }
 
 
-
-
 pub const TRI_TOL: f32 = 0.05;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 ///brep形状trait
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
-
-    fn is_reuse_unit(&self) -> bool{
+    fn is_reuse_unit(&self) -> bool {
         false
     }
 
@@ -374,8 +366,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     ///限制参数大小，主要是对负实体的不合理进行限制
-    fn apply_limit_by_size(&mut self, limit_size: f32){
-    }
+    fn apply_limit_by_size(&mut self, limit_size: f32) {}
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
@@ -415,7 +406,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     #[inline]
-    fn tol(&self) -> f32{
+    fn tol(&self) -> f32 {
         TRI_TOL
     }
 
@@ -455,7 +446,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if size <= f64::EPSILON {
                 return None;
             }
-            let tolerance = self.tol() as f64;
+            let tolerance = self.tol() as f64 * 2.0;
             // dbg!(tolerance);
             let meshed_shape = brep.triangulation(tolerance);
             let polygon = meshed_shape.to_polygon();
@@ -491,7 +482,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 // occ_shape: None,
             });
             // return
-
         }
         None
     }
@@ -508,6 +498,7 @@ pub trait BrepMathTrait {
     fn point3(&self) -> Point3;
     fn point3_without_z(&self) -> Point3;
 }
+
 
 impl BrepMathTrait for Vec3 {
     #[inline]
@@ -581,3 +572,9 @@ impl BevyMathTrait for Point3 {
         [self[0] as f32, self[1] as f32, self[2] as f32]
     }
 }
+
+#[inline]
+pub fn convert_to_cg_matrix4(m: &Mat4) -> Matrix4 {
+    Matrix4::from_cols(m.x_axis.vector4(), m.y_axis.vector4(), m.z_axis.vector4(), m.w_axis.vector4())
+}
+

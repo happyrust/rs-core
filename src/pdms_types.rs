@@ -312,14 +312,13 @@ impl Into<Vec<u8>> for RefU64 {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for RefU64 {
-    fn to_bytes(&self) -> Vec<u8> {
-        self.0.to_be_bytes().to_vec().into()
+    fn to_bytes(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(self.0.to_be_bytes().to_vec().into())
     }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
-        Self(u64::from_be_bytes(bytes[..8].try_into().unwrap()))
+    fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+        Ok(Self(u64::from_be_bytes(bytes[..8].try_into()?)))
     }
 }
 
@@ -470,15 +469,7 @@ impl RefU64 {
 pub struct RefU64Vec(pub Vec<RefU64>);
 
 
-#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for RefU64Vec {
-    fn to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(&self).unwrap().into()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Self {
-        bincode::deserialize(bytes).unwrap()
-    }
 }
 
 impl From<Vec<RefU64>> for RefU64Vec {
@@ -567,13 +558,6 @@ impl Debug for AttrMap {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for AttrMap {
-    fn to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(&self).unwrap().into()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Self {
-        bincode::deserialize(bytes).unwrap()
-    }
 }
 
 
@@ -606,16 +590,34 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn into_bytes(&self) -> Vec<u8> {
+    pub fn into_rkyv_bytes(&self) -> Vec<u8> {
         rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec()
     }
 
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+    pub fn into_rkyv_compress_bytes(&self) -> Vec<u8> {
+        use flate2::Compression;
+        use flate2::write::DeflateEncoder;
+        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
+        e.write_all(&self.into_rkyv_bytes());
+        e.finish().unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn from_rkyv_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         use rkyv::{archived_root, Deserialize};
         let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
+    }
+
+    #[inline]
+    pub fn from_rkvy_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+        use flate2::write::DeflateDecoder;
+        let mut writer = Vec::new();
+        let mut deflater = DeflateDecoder::new(writer);
+        deflater.write_all(bytes)?;
+        Self::from_rkyv_bytes(&deflater.finish()?)
     }
 
 
@@ -626,6 +628,15 @@ impl AttrMap {
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
         e.write_all(&self.into_bincode_bytes());
         e.finish().unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+        use flate2::write::DeflateDecoder;
+        let mut writer = Vec::new();
+        let mut deflater = DeflateDecoder::new(writer);
+        deflater.write_all(bytes).ok()?;
+        bincode::deserialize(&deflater.finish().ok()?).ok()
     }
 
     //todo 需要更多的完善
@@ -669,14 +680,7 @@ impl AttrMap {
         return None
     }
 
-    #[inline]
-    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
-        use flate2::write::DeflateDecoder;
-        let mut writer = Vec::new();
-        let mut deflater = DeflateDecoder::new(writer);
-        deflater.write_all(bytes).ok()?;
-        bincode::deserialize(&deflater.finish().ok()?).ok()
-    }
+
 
     // 返回 DESI 、 CATA .. 等模块值
     pub fn get_db_stype(&self) -> Option<&'static str> {
@@ -1138,7 +1142,7 @@ impl AttrMap {
 
     #[inline]
     pub fn get_f64(&self, key: &str) -> Option<f64> {
-        self.get_val(key)?.double_value() //.ok_or_else(|| TypeNotCorrect(key.to_string(), "double".to_string()).into() )
+        self.get_val(key)?.double_value()
     }
 
     #[inline]
@@ -2629,15 +2633,7 @@ impl PdmsNodeTrait for PdmsElement {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
 
-#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for PdmsElementVec {
-    fn to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(&self).unwrap().into()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Self {
-        bincode::deserialize(bytes).unwrap()
-    }
 }
 
 impl EleNode {

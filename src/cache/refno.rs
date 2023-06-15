@@ -12,15 +12,7 @@ pub struct CachedRefBasic {
     pub table: String, //提前处理好成了table name，有关键字冲突的地方，删除最后的
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for CachedRefBasic {
-    fn to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(&self).unwrap().into()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Self {
-        bincode::deserialize(bytes).unwrap()
-    }
 }
 
 impl CachedRefBasic{
