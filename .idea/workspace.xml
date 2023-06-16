@@ -15,15 +15,12 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update truck impl">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="adjust tol">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cache/mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cache/mgr.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cache/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cache/refno.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -441,14 +438,7 @@
       <workItem from="1686823309513" duration="207000" />
       <workItem from="1686824655322" duration="364000" />
       <workItem from="1686826142164" duration="88000" />
-      <workItem from="1686826933792" duration="598000" />
-    </task>
-    <task id="LOCAL-00154" summary="update">
-      <created>1667123696801</created>
-      <option name="number" value="00154" />
-      <option name="presentableId" value="LOCAL-00154" />
-      <option name="project" value="LOCAL" />
-      <updated>1667123696802</updated>
+      <workItem from="1686826933792" duration="1651000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -786,7 +776,14 @@
       <option name="project" value="LOCAL" />
       <updated>1686807561213</updated>
     </task>
-    <option name="localTasksCounter" value="203" />
+    <task id="LOCAL-00203" summary="adjust tol">
+      <created>1686848923737</created>
+      <option name="number" value="00203" />
+      <option name="presentableId" value="LOCAL-00203" />
+      <option name="project" value="LOCAL" />
+      <updated>1686848923737</updated>
+    </task>
+    <option name="localTasksCounter" value="204" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -827,7 +824,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="upgrade to new bevy" />
     <MESSAGE value="新版本" />
     <MESSAGE value="增加Refu64::from_arangodb_refno_str api" />
     <MESSAGE value="增加获取ATTA的结构体" />
@@ -852,7 +848,8 @@
     <MESSAGE value="update" />
     <MESSAGE value="refactor" />
     <MESSAGE value="update truck impl" />
-    <option name="LAST_COMMIT_MESSAGE" value="update truck impl" />
+    <MESSAGE value="adjust tol" />
+    <option name="LAST_COMMIT_MESSAGE" value="adjust tol" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

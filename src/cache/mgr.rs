@@ -9,6 +9,7 @@ use crate::pdms_types::AttrMap;
 use crate::cache::refno::CachedRefBasic;
 use crate::pdms_types::PdmsElementVec;
 use dashmap::mapref::one::Ref;
+use parry3d::bounding_volume::Aabb;
 use crate::pdms_types::RefU64Vec;
 use serde::Deserialize;
 #[cfg(not(target_arch = "wasm32"))]
@@ -29,6 +30,10 @@ pub trait BytesTrait: Sized + Serialize + DeserializeOwned {
     fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self>{
         Ok(bincode::deserialize(bytes)?)
     }
+}
+
+impl BytesTrait for Aabb{
+
 }
 
 #[cfg(not(target_arch = "wasm32"))]

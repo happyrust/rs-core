@@ -82,7 +82,7 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 
 
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(Serialize, Deserialize, Component, Debug, Default, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
@@ -225,12 +225,12 @@ impl PlantMesh {
     }
 
     #[inline]
-    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+    pub fn from_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         use flate2::write::DeflateDecoder;
         let mut writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
-        deflater.write_all(bytes).ok()?;
-        bincode::deserialize(&deflater.finish().ok()?).ok()
+        deflater.write_all(bytes)?;
+        Ok(bincode::deserialize(&deflater.finish()?)?)
     }
 
     ///转变成csg模型
@@ -385,8 +385,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// box
     /// cylinder
     /// sphere
-    fn gen_unit(&self) -> Option<PlantGeoData> {
-        self.gen_unit_shape().gen_plant_geo_data()
+    fn gen_unit(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
+        self.gen_unit_shape().gen_plant_geo_data(tol_ratio)
     }
 
     ///获得缩放向量
@@ -423,7 +423,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     // #[cfg(not(feature = "opencascade"))]
     ///生成mesh
     #[cfg(feature = "truck")]
-    fn gen_plant_geo_data(&self) -> Option<PlantGeoData> {
+    fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
         let mut aabb = Aabb::new_invalid();
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -446,9 +446,10 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if size <= f64::EPSILON {
                 return None;
             }
-            let tolerance = self.tol() as f64 * 2.0;
+            let tolerance = self.tol()  * tol_ratio.unwrap_or(2.0);
+            // dbg!(self.tol());
             // dbg!(tolerance);
-            let meshed_shape = brep.triangulation(tolerance);
+            let meshed_shape = brep.triangulation(tolerance as f64);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
             let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();

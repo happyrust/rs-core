@@ -23,6 +23,8 @@ pub struct DbOption {
     #[clap(long)]
     pub gen_model: bool,
     #[clap(long)]
+    pub mesh_tol_ratio: Option<f32>,
+    #[clap(long)]
     pub apply_boolean_operation: bool,
     #[clap(long)]
     pub save_model_mesh_to_graph_db: bool,
