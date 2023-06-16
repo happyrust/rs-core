@@ -39,6 +39,7 @@ pub mod rvm_types;
 pub mod options;
 pub mod virtual_hole;
 pub mod ssc_setting;
+pub mod version_control;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;

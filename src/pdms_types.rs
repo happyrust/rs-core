@@ -2878,3 +2878,21 @@ pub struct PdmsAttrArangodb {
     #[serde(flatten)]
     pub map: HashMap<String, AttrValAql>,
 }
+
+/// 参考号属于哪个房间
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PdmsNodeBelongRoomName {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    pub room_name: String,
+}
+
+/// 房间下的所有节点
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RoomNodes {
+    #[serde_as(as = "DisplayFromStr")]
+    pub room_name: String,
+    pub nodes: Vec<String>,
+}
