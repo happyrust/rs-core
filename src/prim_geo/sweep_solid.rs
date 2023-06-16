@@ -275,7 +275,7 @@ impl SweepSolid {
                     z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
-                dbg!((x_axis, y_axis, z_axis));
+                // dbg!((x_axis, y_axis, z_axis));
                 //旋转到期望的平面
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
@@ -485,7 +485,7 @@ impl BrepShapeTrait for SweepSolid {
                         }
                     }
                     let rot_angle = arc.angle;
-                    dbg!(rot_angle);
+                    // dbg!(rot_angle);
                     let rot_axis = if arc.clock_wise {
                         -Vec3::Z
                     } else {

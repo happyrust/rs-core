@@ -62,6 +62,10 @@ impl BrepShapeTrait for Dish {
         Ok(opencascade::OCCShape::dish(self.pdia as f64 / 2.0, self.pheig as f64)?)
     }
 
+    fn tol(&self) -> f32 {
+        0.001 * self.pdia.max(1.0)
+    }
+
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let r = self.pdia / 2.0;
