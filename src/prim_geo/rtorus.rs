@@ -16,8 +16,7 @@ use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
@@ -94,72 +93,6 @@ impl VerifiedShape for SRTorus {
     }
 }
 
-//#[typetag::serde]
-impl BrepShapeTrait for SRTorus {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    #[inline]
-    fn tol(&self) -> f32{
-        0.01 * self.pdia.min(self.pheig).max(1.0)
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
-            let z_axis = self.paax_dir.normalize();
-            let y_axis = torus_info.rot_axis;
-            let x_axis = z_axis.cross(y_axis);
-            let h = self.pheig;
-            let d = self.pdia;
-            let p1 = (self.paax_pt - y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p2 = (self.paax_pt + y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p3 = (self.paax_pt + y_axis * h / 2.0 + x_axis * d / 2.0).into();
-            let p4 = (self.paax_pt - y_axis * h / 2.0 + x_axis * d / 2.0).into();
-            //创建四边形
-            let top = Edge::new_line(&p1, &p2)?;
-            let right = Edge::new_line(&p2, &p3)?;
-            let bottom = Edge::new_line(&p3, &p4)?;
-            let left = Edge::new_line(&p4, &p1)?;
-
-            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
-            let center = torus_info.center;
-            // dbg!(center);
-            // dbg!(-y_axis);
-            let axis = Axis::new(center, -y_axis);
-            return Ok(wire.extrude_rotate(&axis, torus_info.angle.to_radians() as _)?);
-        }
-
-        Err(anyhow::anyhow!("Rect torus 参数有问题。"))
-    }
-
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
-            use truck_modeling::*;
-            let circle_origin = self.paax_pt.point3();
-            let z_axis = self.paax_dir.normalize().vector3();
-            let y_axis = torus_info.rot_axis.vector3();
-            let x_axis = z_axis.cross(y_axis);
-            let h = self.pheig as f64;
-            let d = self.pdia as f64;
-            let p0 = self.paax_pt.point3() - y_axis * h / 2.0 - x_axis * d / 2.0;
-            let v = builder::vertex(p0);
-            let e = builder::tsweep(&v, y_axis * h as f64);
-            let f = builder::tsweep(&e, x_axis * d as f64);
-            let center = torus_info.center.point3();
-            let mut solid = builder::rsweep(&f, center, -y_axis,
-                                            Rad(torus_info.angle.to_radians() as f64)).into_boundaries();
-            return solid.pop();
-        }
-        None
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-}
-
 impl From<AttrMap> for SRTorus {
     fn from(_: AttrMap) -> Self {
         Default::default()
@@ -191,90 +124,6 @@ impl VerifiedShape for RTorus {
     #[inline]
     fn check_valid(&self) -> bool {
         self.rout > 0.0 && self.angle.abs() > 0.0 && (self.rout - self.rins) > f32::EPSILON && self.height > f32::EPSILON
-    }
-}
-
-//#[typetag::serde]
-impl BrepShapeTrait for RTorus {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        hash_f32((self.rins / self.rout), &mut hasher);
-        hash_f32(self.angle, &mut hasher);
-        "rtorus".hash(&mut hasher);
-        hasher.finish()
-    }
-
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(self.rout, self.rout, self.height)
-    }
-
-    #[inline]
-    fn tol(&self) -> f32{
-        let d = ((self.rout - self.rins)/2.0 + self.height)/2.0;
-        0.01 * d.max(1.0)
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let h = self.height;
-        let d = (self.rout - self.rins);
-        // dbg!(d);
-        let c = (self.rins + self.rout) / 2.0;
-        // dbg!(Vec3::new(c - d / 2.0, 0.0, -h / 2.0));
-        // dbg!(Vec3::new(c - d / 2.0, 0.0, h / 2.0));
-        // dbg!(Vec3::new(c + d / 2.0, 0.0, h / 2.0));
-        // dbg!(Vec3::new(c + d / 2.0, 0.0, -h / 2.0));
-
-        let p1 = Vec3::new(c - d / 2.0, 0.0, -h / 2.0).into();
-        let p2 = Vec3::new(c - d / 2.0, 0.0, h / 2.0).into();
-        let p3 = Vec3::new(c + d / 2.0, 0.0, h / 2.0).into();
-        let p4 = Vec3::new(c + d / 2.0, 0.0, -h / 2.0).into();
-        //创建四边形
-        let top = Edge::new_line(&p1, &p2)?;
-        let right = Edge::new_line(&p2, &p3)?;
-        let bottom = Edge::new_line(&p3, &p4)?;
-        let left = Edge::new_line(&p4, &p1)?;
-
-        let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
-        let axis = Axis::new(Vec3::ZERO, Vec3::Z);
-        return Ok(wire.extrude_rotate(&axis, self.angle.to_radians() as _)?);
-    }
-
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
-        //旋转圆心在中间
-        let h = self.height as f64;
-        let d = (self.rout - self.rins) as f64;
-        let p0 = Point3::new(self.rins as f64, 0.0, -h / 2.0);
-        let v = builder::vertex(p0);
-        let e = builder::tsweep(&v, Vector3::new(0.0, 0.0, h));
-        let f = builder::tsweep(&e, Vector3::new(d, 0.0, 0.0));
-
-        let mut solid = builder::rsweep(&f, Point3::new(0.0, 0.0, 0.0),
-                                        Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
-        return solid.pop();
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        let rins = self.rins / self.rout;
-        let unit = Self {
-            rins,
-            rout: 1.0,
-            height: 1.0,
-            angle: self.angle,
-        };
-        Box::new(unit)
-    }
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimRTorus(self.clone())
-        )
     }
 }
 

@@ -13,7 +13,7 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, VerifiedShape};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SBox {
@@ -37,51 +37,6 @@ impl VerifiedShape for SBox {
     }
 }
 
-//#[typetag::serde]
-impl BrepShapeTrait for SBox {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn apply_limit_by_size(&mut self, l: f32) {
-        self.size.x = self.size.x.min(l);
-        self.size.y = self.size.y.min(l);
-        self.size.z = self.size.z.min(l);
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
-    }
-
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        if !self.check_valid() { return None; }
-        let v = builder::vertex((self.center - self.size / 2.0).point3());
-        let e = builder::tsweep(&v, Vector3::unit_x() * self.size.x as f64);
-        let f = builder::tsweep(&e, Vector3::unit_y() * self.size.y as f64);
-        let mut s = builder::tsweep(&f, Vector3::unit_z() * self.size.z as f64).into_boundaries();
-        s.pop()
-    }
-
-    fn hash_unit_mesh_params(&self) -> u64 {
-        CUBE_GEO_HASH
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(Self::default())
-    }
-
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        self.size
-    }
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(PdmsGeoParam::PrimBox(self.clone()))
-    }
-}
-
-
 impl From<&AttrMap> for SBox {
     fn from(m: &AttrMap) -> Self {
         SBox {
@@ -90,12 +45,6 @@ impl From<&AttrMap> for SBox {
                             m.get_f32("YLEN").unwrap_or_default(),
                             m.get_f32("ZLEN").unwrap_or_default(), ),
         }
-    }
-}
-
-impl From<AttrMap> for SBox {
-    fn from(m: AttrMap) -> Self {
-        (&m).into()
     }
 }
 

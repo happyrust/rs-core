@@ -16,11 +16,9 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::extrusion::Extrusion;
 use crate::prim_geo::wire::*;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 #[reflect(Component)]
@@ -49,104 +47,5 @@ impl Default for Revolution {
 impl VerifiedShape for Revolution {
     fn check_valid(&self) -> bool{
         self.angle.abs() > std::f32::EPSILON
-    }
-}
-
-impl BrepShapeTrait for Revolution {
-
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        let wire = gen_occ_wire( &self.verts, &self.fradius_vec)?;
-        let axis = Axis::new(self.rot_pt, self.rot_dir);
-        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon=1.0) {
-            core::f64::consts::TAU
-        }else{
-            self.angle.to_radians() as _
-        };
-        Ok(wire.extrude_rotate(&axis, angle)?)
-    }
-
-    #[inline]
-    fn tol(&self) -> f32{
-        use parry2d::bounding_volume::Aabb;
-        let pts = self.verts.iter().map(|x|
-            nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
-        ).collect::<Vec<_>>();
-        let profile_aabb = Aabb::from_points(&pts);
-        0.005 * profile_aabb.bounding_sphere().radius.max(1.0)
-    }
-
-    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::{builder, Shell, Surface, Wire};
-
-        if !self.check_valid() { return None; }
-
-        let wire = gen_wire( &self.verts, &self.fradius_vec).unwrap();
-        if let Ok(mut face) = builder::try_attach_plane(&[wire]){
-            if let Surface::Plane(plane) = face.surface(){
-                let mut rot_dir = self.rot_dir.normalize().vector3();
-                let rot_pt = self.rot_pt.point3();
-                let mut angle = self.angle.to_radians() as f64;
-                let normal_flag = plane.normal().dot(Vector3::new(0.0, 0.0, 1.0)) < 0.0;
-                let angle_flag = angle > 0.0;
-                let reverse_flag = !(normal_flag ^ angle_flag);  //如果两者一致，就不需要reverse
-                // dbg!(reverse_flag);
-                if reverse_flag {
-                    face = face.inverse();
-                }
-
-                if angle < 0.0 {
-                    angle = -angle;
-                    rot_dir = -rot_dir;
-                }
-                if abs_diff_eq!(angle as f32, TAU) {
-                    let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle/2.0)).into_boundaries();
-                    let mut shell = s.pop();
-                    if shell.is_none() {
-                        dbg!(&self);
-                    }
-                    let face = face.inverse();
-                    let mut s = builder::rsweep(&face, rot_pt, -rot_dir, Rad(angle/2.0)).into_boundaries();
-                    shell.as_mut().unwrap().append(&mut s[0]);
-                    return shell;
-                }else{
-                    let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle)).into_boundaries();
-                    let shell = s.pop();
-                    if shell.is_none() {
-                        dbg!(&self);
-                    }
-                    return shell;
-                }
-
-            }
-        }else{
-            // dbg!(&self);
-        }
-        None
-    }
-
-    fn hash_unit_mesh_params(&self) -> u64{
-        let mut hasher = DefaultHasher::new();
-        self.verts.iter().for_each(|v|  {
-            hash_vec3::<DefaultHasher>(v, &mut hasher);
-        });
-        "Revolution".hash(&mut hasher);
-        hash_f32(self.angle, &mut hasher);
-        hasher.finish()
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimRevolution(self.clone())
-        )
     }
 }
