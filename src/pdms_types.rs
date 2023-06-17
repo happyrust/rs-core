@@ -634,11 +634,16 @@ impl AttrMap {
     //计算使用元件库的design 元件 hash
     pub fn cal_cata_hash(&self) -> Option<u64> {
         //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
-        if let Some(spref) = self.get_as_string("SPRE") {
+        let type_name = self.get_type();
+        let ref_name = if type_name == "NOZZ" {
+            "CATR"
+        }else {
+            "SPRE"
+        };
+        if let Some(spref) = self.get_as_string(ref_name) {
             if spref.starts_with('0') {
                 return None;
             }
-            let type_name = self.get_type();
             if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
                 return Some(*self.get_refno().unwrap_or_default());
             }
