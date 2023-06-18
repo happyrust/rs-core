@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::default::Default;
 use std::f32::consts::PI;
 use std::{fmt, hash};
@@ -1901,6 +1901,13 @@ impl ShapeInstancesData {
         self.inst_tubi_map.clear();
     }
 
+    #[inline]
+    pub fn get_show_refnos(&self) -> Vec<RefU64>{
+        let mut ready_refnos: Vec<RefU64> = self.inst_info_map.keys().cloned().collect();
+        ready_refnos.extend(self.inst_tubi_map.keys().cloned());
+        ready_refnos
+    }
+
     pub fn merge_ref(&mut self, o: &Self) {
         for (k, v) in o.inst_info_map.clone() {
             self.insert_info(k, v);
@@ -1961,7 +1968,7 @@ impl ShapeInstancesData {
 
     #[inline]
     pub fn contains(&self, refno: &RefU64) -> bool {
-        self.inst_info_map.contains_key(refno)
+        self.inst_info_map.contains_key(refno) || self.inst_tubi_map.contains_key(refno)
     }
 
     #[inline]
@@ -2975,4 +2982,22 @@ pub struct PdmsAttrArangodb {
     pub _key: String,
     #[serde(flatten)]
     pub map: HashMap<String, AttrValAql>,
+}
+
+/// 参考号属于哪个房间
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PdmsNodeBelongRoomName {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    pub room_name: String,
+}
+
+/// 房间下的所有节点
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RoomNodes {
+    #[serde_as(as = "DisplayFromStr")]
+    pub room_name: String,
+    pub nodes: Vec<String>,
 }
