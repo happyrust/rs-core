@@ -218,7 +218,7 @@ impl BrepShapeTrait for CTorus {
 
 
     fn tol(&self) -> f32 {
-        0.01 * (self.rout -self.rins).abs().max(1.0)
+        0.003 * (self.rout -self.rins).abs().max(1.0)
     }
 
 
