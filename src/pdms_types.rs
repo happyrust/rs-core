@@ -38,7 +38,6 @@ use truck_modeling::Shell;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::{BHashMap, prim_geo};
-#[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::cache::refno::CachedRefBasic;
@@ -463,7 +462,7 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Deref, DerefMut, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
-
+#[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for RefU64Vec {}
 
 impl From<Vec<RefU64>> for RefU64Vec {
