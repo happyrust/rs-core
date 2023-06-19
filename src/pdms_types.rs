@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::default::Default;
 use std::f32::consts::PI;
 use std::{fmt, hash};
@@ -55,7 +55,7 @@ use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::shape::pdms_shape::{ PlantMesh};
+use crate::shape::pdms_shape::{PlantMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use bevy::render::render_resource::PrimitiveTopology::TriangleList;
@@ -1878,6 +1878,13 @@ impl ShapeInstancesData {
         self.inst_tubi_map.clear();
     }
 
+    #[inline]
+    pub fn get_show_refnos(&self) -> Vec<RefU64>{
+        let mut ready_refnos: Vec<RefU64> = self.inst_info_map.keys().cloned().collect();
+        ready_refnos.extend(self.inst_tubi_map.keys().cloned());
+        ready_refnos
+    }
+
     pub fn merge_ref(&mut self, o: &Self) {
         for (k, v) in o.inst_info_map.clone() {
             self.insert_info(k, v);
@@ -1938,7 +1945,7 @@ impl ShapeInstancesData {
 
     #[inline]
     pub fn contains(&self, refno: &RefU64) -> bool {
-        self.inst_info_map.contains_key(refno)
+        self.inst_info_map.contains_key(refno) || self.inst_tubi_map.contains_key(refno)
     }
 
     #[inline]
@@ -2189,6 +2196,12 @@ impl PlantMeshesData {
         self.meshes.get(&geo_hash).and_then(|x| x.aabb)
     }
 
+    #[cfg(feature = "opencascade")]
+    pub fn get_occ_shape(&self, geo_hash: u64) -> Option<&OCCShape> {
+        self.meshes.get(&geo_hash).and_then(|x| x.occ_shape.as_ref())
+    }
+
+
     pub fn get_bbox(&self, hash: &u64) -> Option<Aabb> {
         if self.meshes.contains_key(hash) {
             let mesh = self.meshes.get(hash).unwrap();
@@ -2196,6 +2209,7 @@ impl PlantMeshesData {
         }
         None
     }
+
 
     pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
         let mut file = File::create(file_path).unwrap();
