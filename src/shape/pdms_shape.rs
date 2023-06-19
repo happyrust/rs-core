@@ -7,8 +7,6 @@ use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use anyhow::anyhow;
-// #[cfg(feature = "opencascade")]
-// use opencascade::OCCShape;
 use bevy::ecs::component::Component;
 use bevy::prelude::{FromWorld, Mesh, Transform};
 use bevy::render::mesh::Indices;
@@ -21,7 +19,7 @@ use lyon::path::polygon;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use truck_base::bounding_box::BoundingBox;
-use truck_base::cgmath64::{Point3, Vector3, Vector4};
+use truck_base::cgmath64::{Point3, Vector3, Vector4, Matrix4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
 #[cfg(not(target_arch = "wasm32"))]
@@ -30,9 +28,7 @@ use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Matrix, Point, Vector};
 use parry3d::shape::{TriMesh, TriMeshFlags};
 use dyn_clone::DynClone;
-use nalgebra::Matrix4;
 use crate::pdms_types::*;
-use crate::prim_geo::category::CateBrepShape;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
 use crate::prim_geo::dish::Dish;
@@ -81,19 +77,15 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 
 
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(Serialize, Deserialize, Component, Debug, Default, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
 
     pub wire_vertices: Vec<Vec<[f32; 3]>>,
-    pub aabb: Option<Aabb>,
+
 }
-unsafe impl Sync for PlantMesh {}
-unsafe impl Send for PlantMesh {}
-
-
 
 #[test]
 fn test_project_to_plane() {
@@ -151,29 +143,6 @@ impl PlantMesh {
         mesh
     }
 
-    ///返回三角模型 （tri_mesh, AABB）
-    pub fn gen_bevy_mesh_with_aabb(&self) -> (Mesh, Option<Aabb>) {
-        let mut mesh = Mesh::new(TriangleList);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
-        let n = self.vertices.len();
-        let mut uvs = vec![];
-        for i in 0..n {
-            uvs.push([0.0f32, 0.0]);
-        }
-        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-        //todo 是否需要优化索引
-        mesh.set_indices(Some(Indices::U32(
-            self.indices.clone()
-        )));
-
-        // let mut wire_mesh = Mesh::new(LineList);
-        // wire_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.wf_vertices.clone());
-        // wire_mesh.set_indices(Some(Indices::U32(
-        //     self.wf_indices.clone()
-        // )));
-        (mesh, self.aabb.clone())
-    }
 
     // ///变成压缩的模型数据
     // #[inline]
@@ -209,12 +178,12 @@ impl PlantMesh {
     }
 
     #[inline]
-    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
+    pub fn from_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         use flate2::write::DeflateDecoder;
         let mut writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
-        deflater.write_all(bytes).ok()?;
-        bincode::deserialize(&deflater.finish().ok()?).ok()
+        deflater.write_all(bytes)?;
+        Ok(bincode::deserialize(&deflater.finish()?)?)
     }
 
     ///转变成csg模型
@@ -283,7 +252,7 @@ impl PlantMesh {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl From<CsgMesh> for PlantMesh {
+impl From<CsgMesh> for PlantGeoData {
     fn from(o: CsgMesh) -> Self {
         let vertex_count = o.triangles.len() * 3;
         let mut aabb = Aabb::new_invalid();
@@ -306,138 +275,31 @@ impl From<CsgMesh> for PlantMesh {
             normals.push(t.normal().into());
         }
 
-        Self{
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        }
-    }
-}
-
-
-
-
-pub const TRI_TOL: f32 = 0.05;
-dyn_clone::clone_trait_object!(BrepShapeTrait);
-
-///brep形状trait
-pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
-    //拷贝函数
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
-
-    ///生成shell
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        return None;
-    }
-
-    ///限制参数大小，主要是对负实体的不合理进行限制
-    fn apply_limit_by_size(&mut self, limit_size: f32){
-
-    }
-
-
-    //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
-    fn hash_unit_mesh_params(&self) -> u64 {
-        0
-    }
-
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait>;
-
-    ///生成对应的单位长度的模型，比如Dish，就是以R为1的情况生成模型
-    /// box
-    /// cylinder
-    /// sphere
-    fn gen_unit_mesh(&self) -> Option<PlantMesh> {
-        self.gen_unit_shape().gen_mesh()
-    }
-
-    ///获得缩放向量
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::ONE
-    }
-
-    ///获得变换矩阵
-    #[inline]
-    fn get_trans(&self) -> Transform {
-        Transform {
-            rotation: Default::default(),
-            translation: Default::default(),
-            scale: self.get_scaled_vec3(),
-        }
-    }
-
-    #[inline]
-    fn tol(&self) -> f32{
-        TRI_TOL
-    }
-
-
-    #[cfg(not(feature = "opencascade"))]
-    ///生成mesh
-    fn gen_mesh(&self) -> Option<PlantMesh> {
-        let mut aabb = Aabb::new_invalid();
-        if let Some(brep) = self.gen_brep_shell() {
-            let brep_bbox = gen_bounding_box(&brep);
-            let d = brep_bbox.diagonal();
-            if d.x < 0.01 || d.y < 0.01 || d.z < 0.01 {
-                return None;
-            }
-            let vv = DVec3::new(d.x, d.y, d.z);
-            if vv.max_element() / vv.min_element() > 10000.0 {
-                return None;
-            }
-            let (size, c) = (brep_bbox.diameter(), brep_bbox.center());
-            let d = brep_bbox.diagonal() / 2.0;
-            aabb = Aabb::from_half_extents(
-                Point::<f32>::new(c[0] as f32, c[1] as f32, c[2] as f32),
-                Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
-            );
-            // dbg!(&aabb);
-            // dbg!(size);
-            if size <= f64::EPSILON {
-                return None;
-            }
-            let tolerance = self.tol() as f64 * size;
-            let meshed_shape = brep.triangulation(tolerance);
-            let polygon = meshed_shape.to_polygon();
-            if polygon.positions().is_empty() { return None; }
-            let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
-            let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
-            let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
-            let indices = polygon
-                .faces()
-                .triangle_iter()
-                .flatten()
-                .map(|x| x.pos as u32)
-                .collect::<Vec<_>>();
-
-            let curves = meshed_shape
-                .edge_iter()
-                .map(|edge| edge.curve())
-                .collect::<Vec<_>>();
-            let wire_vertices: Vec<Vec<[f32; 3]>> = curves
-                .iter()
-                .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
-                .collect();
-            return Some(PlantMesh {
+        Self {
+            geo_hash: 0,
+            mesh: Some(PlantMesh {
                 indices,
                 vertices,
                 normals,
-                wire_vertices,
-                aabb: Some(aabb),
-            });
+                wire_vertices: vec![],
+            }),
+            aabb: Some(aabb),
         }
-        None
-    }
 
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        None
+        // Self{
+        //     indices,
+        //     vertices,
+        //     normals,
+        //     wire_vertices: vec![],
+        //     aabb: Some(aabb),
+        //     #[cfg(feature = "opencascade")]
+        //     occ_shape: None,
+        // }
     }
 }
+
+
+pub const TRI_TOL: f32 = 0.05;
 
 
 pub trait BrepMathTrait {
@@ -446,6 +308,7 @@ pub trait BrepMathTrait {
     fn point3(&self) -> Point3;
     fn point3_without_z(&self) -> Point3;
 }
+
 
 impl BrepMathTrait for Vec3 {
     #[inline]
@@ -519,3 +382,9 @@ impl BevyMathTrait for Point3 {
         [self[0] as f32, self[1] as f32, self[2] as f32]
     }
 }
+
+#[inline]
+pub fn convert_to_cg_matrix4(m: &Mat4) -> Matrix4 {
+    Matrix4::from_cols(m.x_axis.vector4(), m.y_axis.vector4(), m.z_axis.vector4(), m.w_axis.vector4())
+}
+

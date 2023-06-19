@@ -14,8 +14,10 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, VerifiedShape};
 
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 #[reflect(Component)]
@@ -72,103 +74,23 @@ impl Default for Pyramid {
 }
 
 impl VerifiedShape for Pyramid {
-    fn check_valid(&self) -> bool { true }
-}
-
-//#[typetag::serde]
-impl BrepShapeTrait for Pyramid {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let bytes = bincode::serialize(self).unwrap();
-        let mut hasher = DefaultHasher::default();
-        bytes.hash(&mut hasher);
-        "Pyramid".hash(&mut hasher);
-        hasher.finish()
-    }
-
-
-    //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
-    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
-
-        let z_pt = self.paax_pt.point3();
-        //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp as f64 / 2.0).max(0.001);
-        let ty = (self.pctp as f64 / 2.0).max(0.001);
-        let bx = (self.pbbt as f64 / 2.0).max(0.001);
-        let by = (self.pcbt as f64 / 2.0).max(0.001);
-        let ox = 0.5 * self.pbof as f64;
-        let oy = 0.5 * self.pcof as f64;
-        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
-
-        let pts = vec![
-            builder::vertex(Point3::new(-tx + ox, -ty + oy, h2)),
-            builder::vertex(Point3::new(tx + ox, -ty + oy, h2)),
-            builder::vertex(Point3::new(tx + ox, ty + oy, h2)),
-            builder::vertex(Point3::new(-tx + ox, ty + oy, h2)),
-        ];
-        let mut ets = vec![
-            builder::line(&pts[0], &pts[1]),
-            builder::line(&pts[1], &pts[2]),
-            builder::line(&pts[2], &pts[3]),
-            builder::line(&pts[3], &pts[0]),
-        ];
-
-        let pts = vec![
-            builder::vertex(Point3::new(-bx - ox, -by - oy, -h2)),
-            builder::vertex(Point3::new(bx - ox, -by - oy, -h2)),
-            builder::vertex(Point3::new(bx - ox, by - oy, -h2)),
-            builder::vertex(Point3::new(-bx - ox, by - oy, -h2)),
-        ];
-        let mut ebs = vec![
-            builder::line(&pts[0], &pts[1]),
-            builder::line(&pts[1], &pts[2]),
-            builder::line(&pts[2], &pts[3]),
-            builder::line(&pts[3], &pts[0]),
-        ];
-
-
-        let mut faces = vec![];
-        if let Ok(f) = try_attach_plane(&[Wire::from_iter(&ebs)]) {
-            faces.push(f.inverse());
-        }
-        if let Ok(f) = try_attach_plane(&[Wire::from_iter(&ets)]) {
-            faces.push(f);
-        }
-        let mut shell: Shell = Shell::from(faces);
-        shell.push(builder::homotopy(&ebs[0], &ets[0]));
-        shell.push(builder::homotopy(&ebs[1], &ets[1]));
-        shell.push(builder::homotopy(&ebs[2], &ets[2]));
-        shell.push(builder::homotopy(&ebs[3], &ets[3]));
-        Some(shell)
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimPyramid(self.clone())
-        )
+    fn check_valid(&self) -> bool {
+        (self.pbtp + self.pctp) > f32::EPSILON || (self.pbbt + self.pcbt) > f32::EPSILON
     }
 }
 
 impl From<&AttrMap> for Pyramid {
     fn from(m: &AttrMap) -> Self {
-        let xbot = m.get_val("XBOT").unwrap().f32_value().unwrap_or_default();
-        let ybot = m.get_val("YBOT").unwrap().f32_value().unwrap_or_default();
+        let xbot = m.get_f32("XBOT").unwrap_or_default();
+        let ybot = m.get_f32("YBOT").unwrap_or_default();
 
-        let xtop = m.get_val("XTOP").unwrap().f32_value().unwrap_or_default();
-        let ytop = m.get_val("YTOP").unwrap().f32_value().unwrap_or_default();
+        let xtop = m.get_f32("XTOP").unwrap_or_default();
+        let ytop = m.get_f32("YTOP").unwrap_or_default();
 
-        let xoff = m.get_val("XOFF").unwrap().f32_value().unwrap_or_default();
-        let yoff = m.get_val("YOFF").unwrap().f32_value().unwrap_or_default();
+        let xoff = m.get_f32("XOFF").unwrap_or_default();
+        let yoff = m.get_f32("YOFF").unwrap_or_default();
 
-        let height = m.get_val("HEIG").unwrap().f32_value().unwrap_or_default();
+        let height = m.get_f32("HEIG").unwrap_or_default();
 
 
         Pyramid {

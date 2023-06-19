@@ -5,7 +5,6 @@ use dashmap::DashMap;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
-use smol_str::SmolStr;
 use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
 use crate::pdms_types::RefU64;
 
@@ -66,7 +65,7 @@ pub struct Dataset {
 pub struct GmseParamData {
     pub refno: RefU64,
     /// SCYL  LSNO  SCTO  SDSH  SBOX
-    pub type_name: SmolStr,
+    pub type_name: String,
     pub radius: f32,
     //desi 里的radius
     pub angle: f32,

@@ -1,5 +1,4 @@
 use aios_core::prim_geo::sbox::SBox;
-use aios_core::shape::pdms_shape::BrepShapeTrait;
 
 fn main() {
     // println!("Hello, world!");
@@ -10,5 +9,4 @@ fn main() {
     // //生成的数据格式，要用editor能直接打开才好
     // let shape = box1.gen_occ_shape().unwrap();
     // shape.project();
-
 }

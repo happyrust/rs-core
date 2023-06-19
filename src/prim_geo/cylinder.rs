@@ -5,9 +5,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 use approx::{abs_diff_eq, abs_diff_ne};
-use bevy::ecs::reflect::ReflectComponent;
 use bevy::prelude::*;
-use bevy::reflect::Reflect;
 use nom::Parser;
 use serde::{Deserialize, Serialize};
 use truck_topology::Face;
@@ -16,9 +14,11 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
+#[cfg(feature = "opencascade")]
+use opencascade::{OCCShape, Edge, Wire, Axis, Vertex, DsShape};
 
 
 #[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -55,48 +55,10 @@ impl Default for LCylinder {
 
 impl VerifiedShape for LCylinder {
     fn check_valid(&self) -> bool {
-       self.pdia > f32::EPSILON && (self.pbdi - self.ptdi).abs() > f32::EPSILON
+        self.pdia > f32::EPSILON && (self.pbdi - self.ptdi).abs() > f32::EPSILON
     }
 }
 
-//#[typetag::serde]
-impl BrepShapeTrait for LCylinder {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
-        if !self.check_valid() { return None; }
-
-        let dir = self.paxi_dir.normalize();
-        let r = self.pdia / 2.0;
-        let c_pt = dir * self.pbdi + self.paxi_pt;
-        let center = c_pt.point3();
-        let ref_axis = cal_ref_axis(&dir);
-        let pt0 = c_pt + ref_axis * r;
-        let mut ext_len = self.ptdi - self.pbdi;
-        let mut ext_dir = dir.vector3();
-        if ext_len < 0.0 {
-            ext_dir = -ext_dir;
-            ext_len = -ext_len;
-        }
-        let v = builder::vertex(pt0.point3());
-        let w = builder::rsweep(&v, center, ext_dir, Rad(7.0));
-        let f = builder::try_attach_plane(&[w]).unwrap();
-        let mut s = builder::tsweep(&f, ext_dir * ext_len as f64).into_boundaries();
-        s.pop()
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(Self::default())
-    }
-
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi))
-    }
-}
 
 impl From<&AttrMap> for LCylinder {
     fn from(m: &AttrMap) -> Self {
@@ -164,10 +126,10 @@ impl Default for SCylinder {
 impl SCylinder {
     #[inline]
     pub fn is_sscl(&self) -> bool {
-        abs_diff_ne!(self.btm_shear_angles[0],  0.0) ||
-            abs_diff_ne!(self.btm_shear_angles[1],  0.0) ||
-            abs_diff_ne!(self.top_shear_angles[0],  0.0) ||
-            abs_diff_ne!(self.top_shear_angles[1],  0.0)
+        self.btm_shear_angles[0].abs() > f32::EPSILON ||
+            self.btm_shear_angles[1].abs() > f32::EPSILON ||
+            self.top_shear_angles[0].abs() > f32::EPSILON ||
+            self.top_shear_angles[1].abs() > f32::EPSILON
     }
 }
 
@@ -178,138 +140,12 @@ impl VerifiedShape for SCylinder {
     }
 }
 
-//#[typetag::serde]
-impl BrepShapeTrait for SCylinder {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn tol(&self) -> f32 {
-        0.01 * self.pdia.max(1.0)
-    }
-
-    ///引用限制大小
-    fn apply_limit_by_size(&mut self, l: f32) {
-        self.phei = self.phei.min(l);
-        self.pdia = self.pdia.min(l);
-        // dbg!(&self.phei);
-    }
-
-    #[inline]
-    fn get_trans(&self) -> Transform {
-        Transform {
-            rotation: Default::default(),
-            translation: if self.center_in_mid {
-                Vec3::new(0.0, 0.0, -self.phei / 2.0)
-            } else {
-                Vec3::ZERO
-            },
-            scale: self.get_scaled_vec3(),
-        }
-    }
-
-    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
-        let dir = self.paxi_dir.normalize();
-        let r = self.pdia / 2.0;
-        // let c_pt = dir * self.pdis + self.paxi_pt;
-        let c_pt = Vec3::ZERO;
-        let center = c_pt.point3();
-        let ref_axis = cal_ref_axis(&dir);
-        let pt0 = c_pt + ref_axis * r;
-        let mut ext_len = self.phei as f64;
-        let mut ext_dir = dir.vector3();
-        let mut reverse_dir = false;
-        if ext_len < 0.0 {
-            reverse_dir = true;
-        }
-        // dbg!(ext_len);
-        let v = builder::vertex(pt0.point3());
-        let origin_w = builder::rsweep(&v, center, ext_dir, Rad(7.0));
-
-        //还是要和extrude 区分出来
-        let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
-        let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
-        let transform_btm = Matrix4::from_angle_y(Rad(self.btm_shear_angles[0].to_radians() as f64))
-            * Matrix4::from_angle_y(Rad(self.btm_shear_angles[1].to_radians() as f64))
-            * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-        let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
-        let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
-        let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64)
-            * Matrix4::from_angle_y(Rad(self.top_shear_angles[0].to_radians() as f64))
-            * Matrix4::from_angle_y(Rad(self.top_shear_angles[1].to_radians() as f64))
-            * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-
-        let mut w_s = builder::transformed(&origin_w, transform_btm);
-        let mut w_e = builder::transformed(&origin_w, transform_top);
-        if let Ok(mut f) = builder::try_attach_plane(&[w_s.clone()])
-        {
-            let mut f_e = builder::try_attach_plane(&[w_e.clone()]).unwrap().inverse();
-            if !reverse_dir {
-                f = f.inverse();
-                f_e = f_e.inverse();
-            }
-            let h_w_s = w_s.split_off(w_s.len() / 2);
-            let h_w_e = w_e.split_off(w_e.len() / 2);
-            let mut face1 = builder::homotopy(w_s.front().unwrap(), &w_e.front().unwrap());
-            let mut face2 = builder::homotopy(h_w_s.front().unwrap(), &h_w_e.front().unwrap());
-            let mut shell = vec![f, f_e, face1, face2].into();
-            return Some(shell);
-        }
-        None
-    }
-
-    fn hash_unit_mesh_params(&self) -> u64 {
-        if self.is_sscl() {
-            let mut hasher = DefaultHasher::new();
-            let bytes = bincode::serialize(self).unwrap();
-            bytes.hash(&mut hasher);
-            "SSCL".hash(&mut hasher);
-            hasher.finish()
-        } else {
-            CYLINDER_GEO_HASH
-        }
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        if self.is_sscl() {
-            let mut s = SCylinder {
-                paxi_expr: "Z".to_string(),
-                paxi_pt: Default::default(),
-                paxi_dir: Vec3::Z,
-                phei: self.phei,
-                pdia: self.pdia,
-                btm_shear_angles: self.btm_shear_angles.clone(),
-                top_shear_angles: self.top_shear_angles.clone(),
-                negative: false,
-                center_in_mid: self.center_in_mid,
-            };
-            return Box::new(s);
-        }
-        Box::new(Self::default())
-    }
-
-
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        if self.is_sscl() {
-            Vec3::new(1.0, 1.0, 1.0)
-        } else {
-            Vec3::new(self.pdia, self.pdia, self.phei.abs())
-        }
-    }
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimSCylinder(self.clone())
-        )
-    }
-}
 
 impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
-        let mut phei = m.get_val("HEIG").unwrap().double_value().unwrap_or_default() as f32;
-        let pdia = m.get_val("DIAM").unwrap().double_value().unwrap_or_default() as f32;
+        let mut phei = m.get_f64("HEIG").unwrap_or_default() as f32;
+        let pdia = m.get_f64("DIAM").unwrap_or_default() as f32;
+        // dbg!(m);
         SCylinder {
             paxi_expr: "Z".to_string(),
             paxi_pt: Default::default(),

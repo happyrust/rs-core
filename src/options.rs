@@ -13,13 +13,17 @@ pub struct DbOption {
     #[clap(long)]
     pub sync_tidb: Option<bool>,
     #[clap(long)]
+    pub sync_localdb: Option<bool>,
+    #[clap(long)]
     pub incr_sync: bool,
     #[clap(long)]
     pub replace_dbs: bool,
     #[clap(skip)]
     pub replace_types: Option<Vec<String>>,
     #[clap(long)]
-    pub gen_model_mesh: bool,
+    pub gen_model: bool,
+    #[clap(long)]
+    pub mesh_tol_ratio: Option<f32>,
     #[clap(long)]
     pub apply_boolean_operation: bool,
     #[clap(long)]

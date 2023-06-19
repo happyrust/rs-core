@@ -3,36 +3,28 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use dashmap::{DashMap, DashSet};
 use dashmap::mapref::one::Ref;
-use smol_str::SmolStr;
 use crate::tool::db_tool::db1_dehash;
 use serde::{Serialize, Deserialize};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-#[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
 use crate::pdms_types::*;
+use glam::Vec3;
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ScomInfo {
     pub attr_map: AttrMap,
-    pub gtype: SmolStr,
+    pub gtype: String,
     pub dtse_params: Vec<DatasetParamStr>,
     pub gm_params: Vec<GmParam>,
     pub axis_params: Vec<AxisParam>,
-    pub params: SmolStr,
+    pub params: String,
     pub axis_param_numbers: Vec<i32>,
     pub plin_map: HashMap<String, PlinParam>,
 }
-#[cfg(not(target_arch = "wasm32"))]
-impl BytesTrait for ScomInfo {
-    fn to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(&self).unwrap().into()
-    }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
-        bincode::deserialize(bytes).unwrap()
-    }
+impl BytesTrait for ScomInfo {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -43,22 +35,28 @@ pub struct PlinParam {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PlinParamData {
+    pub pt: Vec3,
+    pub plax: Vec3,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DatasetParamStr {
-    pub refno: SmolStr,
-    pub name: SmolStr,
-    pub self_type: SmolStr,
+    pub refno: String,
+    pub name: String,
+    pub self_type: String,
     pub lock: bool,
-    pub owner: SmolStr,
-    pub description: SmolStr,
-    pub dkey: SmolStr,
-    pub ptype: SmolStr,
-    pub pproperty: SmolStr,
-    pub dproperty: SmolStr,
-    pub purpose: SmolStr,
+    pub owner: String,
+    pub description: String,
+    pub dkey: String,
+    pub ptype: String,
+    pub pproperty: String,
+    pub dproperty: String,
+    pub purpose: String,
     pub number: i32,
-    pub dtitle: SmolStr,
-    pub punits: SmolStr,
-    pub ruse: SmolStr,
+    pub dtitle: String,
+    pub punits: String,
+    pub ruse: String,
     pub lhide: bool,
 }
 
@@ -68,47 +66,47 @@ pub struct DatasetParamStr {
 pub struct GmParam {
     pub refno: RefU64,
     /// SCYL  LSNO  SCTO  SDSH  SBOX
-    pub gm_type: SmolStr,  //SCYL  LSNO  SCTO  SDSH  SBOX  SANN  SPRO
+    pub gm_type: String,  //SCYL  LSNO  SCTO  SDSH  SBOX  SANN  SPRO
 
-    pub prad: SmolStr,
-    pub pang: SmolStr,
-    pub pwid: SmolStr,
+    pub prad: String,
+    pub pang: String,
+    pub pwid: String,
     /// 顺序 pdiameter pbdiameter ptdiameter, 先bottom, 后top
-    pub diameters: Vec<SmolStr>,
+    pub diameters: Vec<String>,
     /// 顺序 pdistance pbdistance ptdistance, 先bottom, 后top
-    pub distances: Vec<SmolStr>,
-    pub shears: Vec<SmolStr>,
-    pub phei: SmolStr,
-    pub offset: SmolStr,
+    pub distances: Vec<String>,
+    pub shears: Vec<String>,
+    pub phei: String,
+    pub offset: String,
     /// 顺序 x y z
-    pub box_lengths: Vec<SmolStr>,
-    pub xyz: Vec<SmolStr>,
+    pub box_lengths: Vec<String>,
+    pub xyz: Vec<String>,
 
     /// profile  SPVE   SANN(PX, PY)
-    pub verts: Vec<[SmolStr; 3]>,
+    pub verts: Vec<[String; 3]>,
     /// SANN: dx dy dradius dwidth
-    pub dxy: Vec<[SmolStr; 2]>,
-    pub drad: SmolStr,
-    pub dwid: SmolStr,
+    pub dxy: Vec<[String; 2]>,
+    pub drad: String,
+    pub dwid: String,
     /// 顺序 paxis pa_axis pb_axis pc_axis
-    pub paxises: Vec<SmolStr>,
+    pub paxises: Vec<String>,
     pub centre_line_flag: bool,
     pub visible_flag: bool,
-    pub frads: Vec<SmolStr>,
+    pub frads: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AxisParam {
     pub refno: RefU64,
-    pub type_name: SmolStr,
+    pub type_name: String,
     pub number: i32,
-    pub x: SmolStr,
-    pub y: SmolStr,
-    pub z: SmolStr,
-    pub distance: SmolStr,
-    pub direction: SmolStr,
-    pub pconnect: SmolStr,
-    pub pbore: SmolStr,
+    pub x: String,
+    pub y: String,
+    pub z: String,
+    pub distance: String,
+    pub direction: String,
+    pub pconnect: String,
+    pub pbore: String,
     pub pnt_index_str: Option<String>,
 }
 

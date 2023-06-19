@@ -9,6 +9,7 @@ use crate::pdms_types::AttrMap;
 use crate::cache::refno::CachedRefBasic;
 use crate::pdms_types::PdmsElementVec;
 use dashmap::mapref::one::Ref;
+use parry3d::bounding_volume::Aabb;
 use crate::pdms_types::RefU64Vec;
 use serde::Deserialize;
 #[cfg(not(target_arch = "wasm32"))]
@@ -22,9 +23,17 @@ pub const CACHE_SLED_NAME: &'static str = "cache.rdb";
 const TABLE: TableDefinition<u64, &[u8]> = TableDefinition::new("my_data");
 
 
-pub trait BytesTrait {
-    fn to_bytes(&self) -> Vec<u8>;
-    fn from_bytes(bytes: &[u8]) -> Self;
+pub trait BytesTrait: Sized + Serialize + DeserializeOwned {
+    fn to_bytes(&self) -> anyhow::Result<Vec<u8>>{
+        Ok(bincode::serialize(&self)?.into())
+    }
+    fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self>{
+        Ok(bincode::deserialize(bytes)?)
+    }
+}
+
+impl BytesTrait for Aabb{
+
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -105,8 +114,9 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
                 if let Some(db) = &self.db {
                     let read_txn = db.begin_read().ok()?;
                     let table = read_txn.open_table(TABLE).ok()?;
-                    if let Ok(Some(bytes)) = table.get(&**k) {
-                        self.map.insert((*k).into(), T::from_bytes(bytes.value()));
+                    if let Ok(Some(bytes)) = table.get(&**k) &&
+                        let Ok(v) = T::from_bytes(bytes.value()){
+                        self.map.insert((*k).into(), v);
                     };
                 }
             }
@@ -124,7 +134,7 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
                     let write_txn = db.begin_write()?;
                     {
                         let mut table = write_txn.open_table(TABLE)?;
-                        table.insert(&*k, &*value.to_bytes())?;
+                        table.insert(&*k, &*value.to_bytes()?)?;
                     }
                     write_txn.commit()?;
                 }
