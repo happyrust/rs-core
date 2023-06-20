@@ -1,6 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use bevy::prelude::Resource;
 use crate::pdms_types::{PdmsElement, RefU64};
+use serde_with::{DisplayFromStr, serde_as};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Role {
@@ -48,4 +49,24 @@ impl PdmsElementWithUser {
             user: user.to_string(),
         }
     }
+}
+
+#[serde_as]
+#[derive(Debug, Clone, PartialEq,Serialize,Deserialize)]
+pub struct PdmsElementWithMajor {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    #[serde_as(as = "DisplayFromStr")]
+    pub owner: RefU64,
+    pub name: String,
+    pub noun: String,
+    pub major: String,
+}
+
+#[serde_as]
+#[derive(Debug, Clone, PartialEq,Serialize,Deserialize)]
+pub struct RefnoMajor{
+    pub refno:String,
+    pub major: String,
+    pub major_classify: String,
 }

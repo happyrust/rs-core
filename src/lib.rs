@@ -38,6 +38,7 @@ pub mod data_center;
 pub mod negative_mesh_type;
 pub mod rvm_types;
 pub mod options;
+pub mod datacenter_options;
 pub mod virtual_hole;
 pub mod ssc_setting;
 pub mod version_control;
