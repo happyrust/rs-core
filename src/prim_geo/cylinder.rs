@@ -193,7 +193,11 @@ impl BrepShapeTrait for SCylinder {
     }
 
     fn tol(&self) -> f32 {
-       0.01 * (self.pdia.max(1.0))
+        if self.is_sscl() {
+            0.001 * (self.pdia.max(1.0))
+        }else{
+            0.001
+        }
     }
 
     ///引用限制大小

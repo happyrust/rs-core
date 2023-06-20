@@ -128,7 +128,7 @@ impl BrepShapeTrait for Extrusion {
             nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
         ).collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
-        0.002 * profile_aabb.bounding_sphere().radius.max(1.0)
+        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     //沿着指定方向拉伸 pbax_dir
