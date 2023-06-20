@@ -1676,6 +1676,7 @@ pub enum PdmsGenericType {
     EQUI,
     ROOM,
     SCTN,
+    WALL,
     GENSEC,
     HANG,
     HANDRA,
