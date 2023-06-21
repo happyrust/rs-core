@@ -85,11 +85,9 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 #[derive(Serialize, Deserialize, Component, Debug, Default, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
-    pub vertices: Vec<[f32; 3]>,
-    pub normals: Vec<[f32; 3]>,
-
-    pub wire_vertices: Vec<Vec<[f32; 3]>>,
-
+    pub vertices: Vec<Vec3>,
+    pub normals: Vec<Vec3>,
+    pub wire_vertices: Vec<Vec<Vec3>>,
 }
 
 
@@ -168,8 +166,8 @@ impl PlantMesh {
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
         self.vertices.iter().for_each(|p| {
-            let new_pt = trans.transform_point3(Vec3::new(p[0], p[1], p[2]));
-            points.push(Point::new(new_pt[0], new_pt[1], new_pt[2]))
+            let new_pt = trans.transform_point3(*p);
+            points.push(new_pt.into())
         });
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
@@ -188,6 +186,22 @@ impl PlantMesh {
             self.indices.clone()
         )));
         mesh
+    }
+
+    pub fn transform_by(&self, t: &Mat4) -> Self{
+        let mut vertices = Vec::with_capacity(self.vertices.len());
+        let mut normals = Vec::with_capacity(self.vertices.len());
+        let len = self.vertices.len();
+        for i in 0..len {
+            vertices.push(t.transform_point3(self.vertices[i]));
+            normals.push(t.transform_vector3(self.normals[i]).normalize());
+        }
+        Self{
+            indices: self.indices.clone(),
+            vertices,
+            normals,
+            wire_vertices: vec![],
+        }
     }
 
 
@@ -235,26 +249,22 @@ impl PlantMesh {
 
     ///转变成csg模型
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn into_csg_mesh(&self, transform: &Mat4) -> CsgMesh {
+    pub fn into_csg_mesh(&self, transform: Option<&Mat4>) -> CsgMesh {
         let mut triangles = Vec::new();
         for chuck in self.indices.chunks(3) {
-            let vertices_a: Option<&[f32; 3]> = self.vertices.get(chuck[0] as usize);
-            let vertices_b: Option<&[f32; 3]> = self.vertices.get(chuck[1] as usize);
-            let vertices_c: Option<&[f32; 3]> = self.vertices.get(chuck[2] as usize);
-            if vertices_a.is_none() || vertices_b.is_none() || vertices_c.is_none() { continue; }
+            let mut vertices_a: Vec3 = self.vertices[chuck[0] as usize];
+            let mut vertices_b: Vec3 = self.vertices[chuck[1] as usize];
+            let mut vertices_c: Vec3 = self.vertices[chuck[2] as usize];
 
-            let vertices_a = Vec3::from_array(*vertices_a.unwrap());
-            let vertices_b = Vec3::from_array(*vertices_b.unwrap());
-            let vertices_c = Vec3::from_array(*vertices_c.unwrap());
-
-            let pt_a = transform.transform_point3(vertices_a);
-            let pt_b = transform.transform_point3(vertices_b);
-            let pt_c = transform.transform_point3(vertices_c);
-
+            if let Some(transform) = transform {
+                vertices_a = transform.transform_point3(vertices_a);
+                vertices_b = transform.transform_point3(vertices_b);
+                vertices_c = transform.transform_point3(vertices_c);
+            }
             triangles.push(csg::Triangle {
-                a: CsgPt3 { x: pt_a[0] as f64, y: pt_a[1] as f64, z: pt_a[2] as f64 },
-                b: CsgPt3 { x: pt_b[0] as f64, y: pt_b[1] as f64, z: pt_b[2] as f64 },
-                c: CsgPt3 { x: pt_c[0] as f64, y: pt_c[1] as f64, z: pt_c[2] as f64 },
+                a: CsgPt3 { x: vertices_a[0] as f64, y: vertices_a[1] as f64, z: vertices_a[2] as f64 },
+                b: CsgPt3 { x: vertices_b[0] as f64, y: vertices_b[1] as f64, z: vertices_b[2] as f64 },
+                c: CsgPt3 { x: vertices_c[0] as f64, y: vertices_c[1] as f64, z: vertices_c[2] as f64 },
             })
         }
         csg::Mesh::from_triangles(triangles)
@@ -452,8 +462,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             let meshed_shape = brep.triangulation(tolerance as f64);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
-            let vertices = polygon.positions().iter().map(|&x| x.array()).collect::<Vec<_>>();
-            let normals = polygon.normals().iter().map(|&x| x.array()).collect::<Vec<_>>();
+            let vertices = polygon.positions().iter().map(|&x| x.vec3()).collect::<Vec<_>>();
+            let normals = polygon.normals().iter().map(|&x| x.vec3()).collect::<Vec<_>>();
             let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
             let indices = polygon
                 .faces()
@@ -466,9 +476,9 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 .edge_iter()
                 .map(|edge| edge.curve())
                 .collect::<Vec<_>>();
-            let wire_vertices: Vec<Vec<[f32; 3]>> = curves
+            let wire_vertices: Vec<Vec<Vec3>> = curves
                 .iter()
-                .map(|poly| poly.iter().map(|x| x.array()).collect::<Vec<_>>())
+                .map(|poly| poly.iter().map(|x| x.vec3()).collect::<Vec<_>>())
                 .collect();
 
             return Some(PlantGeoData {

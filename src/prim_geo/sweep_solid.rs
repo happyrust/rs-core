@@ -522,8 +522,8 @@ impl BrepShapeTrait for SweepSolid {
                         let c2 = &wire_e[i];
                         faces.push(builder::homotopy(c1, c2).inverse());
                     }
-                    let mut face_s = builder::try_attach_plane(&[wire_s]).unwrap();
-                    let mut face_e = builder::try_attach_plane(&[wire_e]).unwrap();
+                    let mut face_s = builder::try_attach_plane(&[wire_s]).ok()?;
+                    let mut face_e = builder::try_attach_plane(&[wire_e]).ok()?;
                     faces.push(face_s.clone());
                     faces.push(face_e.inverse());
 
