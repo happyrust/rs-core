@@ -41,7 +41,7 @@ use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
-
+use std::io::BufWriter;
 use rkyv::with::Skip;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -89,74 +89,6 @@ pub struct PlantMesh {
     pub normals: Vec<Vec3>,
     pub wire_vertices: Vec<Vec<Vec3>>,
 }
-
-
-#[cfg(feature = "opencascade")]
-impl From<OCCMesh> for PlantGeoData {
-    fn from(o: OCCMesh) -> Self {
-        let vertex_count = o.triangles.len() * 3;
-        let mut aabb = Aabb::new_invalid();
-        o.vertices.iter().for_each(|v| {
-            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
-        });
-
-        let mut vertices = Vec::with_capacity(vertex_count);
-        let mut normals = Vec::with_capacity(vertex_count);
-        let mut indices = Vec::with_capacity(vertex_count);
-
-        for (i, (t, normal)) in o.triangles_with_normals().enumerate() {
-            //顶点重排，保证normal是正确的
-            vertices.push(o.vertices[t[0]].into());
-            vertices.push(o.vertices[t[1]].into());
-            vertices.push(o.vertices[t[2]].into());
-            indices.push((i * 3) as u32);
-            indices.push((i * 3 + 1) as u32);
-            indices.push((i * 3 + 2) as u32);
-            normals.push(normal.into());
-            normals.push(normal.into());
-            normals.push(normal.into());
-        }
-
-        Self {
-            geo_hash: 0,
-            mesh: Some(PlantMesh {
-                indices,
-                vertices,
-                normals,
-                wire_vertices: vec![],
-            }),
-            aabb: Some(aabb),
-            occ_shape: None,
-        }
-    }
-}
-
-
-#[test]
-fn test_project_to_plane() {
-    // Define a triangle's vertices in 3D space
-    let v1 = vec3(0.0, 0.0, 0.0);
-    let v2 = vec3(1.0, 0.0, 0.0);
-    let v3 = vec3(0.0, 1.0, 0.0);
-
-    // Define a projection plane in 3D space
-    let plane_origin = vec3(0.0, 0.0, 1.0);
-    let plane_normal = vec3(0.0, 0.0, 1.0); // the plane normal faces in the positive Z direction
-    let projection_matrix = Mat4::from_scale_rotation_translation(Vec3::ONE, glam::Quat::from_rotation_z(0.0),
-                                                                  -plane_origin);
-
-    // Project the triangle onto the 2D plane
-    let projected_v1 = projection_matrix.transform_point3(v1);
-    let projected_v2 = projection_matrix.transform_point3(v2);
-    let projected_v3 = projection_matrix.transform_point3(v3);
-
-    // Check if the triangle is valid, i.e., if its area is positive
-    let edge1 = projected_v2 - projected_v1;
-    let edge2 = projected_v3 - projected_v1;
-    let triangle_area = edge1.cross(edge2).length() * 0.5;
-    assert!(triangle_area > 0.0);
-}
-
 
 impl PlantMesh {
     //集成lod的功能
@@ -270,43 +202,87 @@ impl PlantMesh {
         csg::Mesh::from_triangles(triangles)
     }
 
-    // #[cfg(not(target_arch = "wasm32"))]
-    // pub fn from_scg_mesh(&self, csg_mesh: &CsgMesh, world_transform: &Transform) -> Self {
-    //     let rev_mat = world_transform.compute_matrix().inverse();
-    //     let mut mesh = PlantMesh {
-    //         aabb: self.aabb.clone(),
-    //         ..default()
-    //     };
-    //     let mut i = 0;
-    //     for tri in &csg_mesh.triangles {
-    //         mesh.indices.push(i);
-    //         mesh.indices.push(i + 1);
-    //         mesh.indices.push(i + 2);
-    //         let normal = tri.normal();
-    //         let normal = Vec3::from_array([normal.x as f32, normal.y as f32, normal.z as f32]);
-    //         let local_normal = rev_mat.transform_vector3(normal);
-    //         let normal = [local_normal.x, local_normal.y, local_normal.z];
-    //         mesh.normals.push(normal);
-    //         mesh.normals.push(normal);
-    //         mesh.normals.push(normal);
-    // 
-    //         let pta = Vec3::from_array([tri.a.x as f32, tri.a.y as f32, tri.a.z as f32]);
-    //         let pta = rev_mat.transform_point3(pta);
-    // 
-    //         let ptb = Vec3::from_array([tri.b.x as f32, tri.b.y as f32, tri.b.z as f32]);
-    //         let ptb = rev_mat.transform_point3(ptb);
-    // 
-    //         let ptc = Vec3::from_array([tri.c.x as f32, tri.c.y as f32, tri.c.z as f32]);
-    //         let ptc = rev_mat.transform_point3(ptc);
-    // 
-    //         mesh.vertices.push(pta.into());
-    //         mesh.vertices.push(ptb.into());
-    //         mesh.vertices.push(ptc.into());
-    //         i += 3;
-    //     }
-    //     mesh
-    // }
+    pub fn export_obj(&self, reverse: bool, file_path: &str) -> std::io::Result<()> {
+        let mut buffer = BufWriter::new(File::create(file_path)?);
+        buffer.write_all(b"# List of geometric vertices, with (x, y, z [,w]) coordinates, w is optional and defaults to 1.0.\n")?;
+        for vd in &self.vertices {
+            buffer.write_all(
+                format!(
+                    "v {:.3} {:.3} {:.3} 1.0\n",
+                    vd[0] as f32, vd[1] as f32, vd[2] as f32
+                )
+                    .as_ref(),
+            )?;
+        }
+        buffer.write_all(b"# Polygonal face element\n")?;
+        for id in self.indices.chunks(3) {
+            if reverse {
+                buffer.write_all(
+                    format!(
+                        "f {} {} {}\n",
+                        id[2] + 1,
+                        id[1] + 1,
+                        id[0] + 1,
+                    ).as_ref(),
+                )?;
+            }else {
+                buffer.write_all(
+                    format!(
+                        "f {} {} {}\n",
+                        id[0] + 1,
+                        id[1] + 1,
+                        id[2] + 1,
+                    ).as_ref(),
+                )?;
+            }
+
+        }
+
+        buffer.flush()?;
+        Ok(())
+    }
 }
+
+#[cfg(feature = "opencascade")]
+impl From<OCCMesh> for PlantGeoData {
+    fn from(o: OCCMesh) -> Self {
+        let vertex_count = o.triangles.len() * 3;
+        let mut aabb = Aabb::new_invalid();
+        o.vertices.iter().for_each(|v| {
+            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
+        });
+
+        let mut vertices = Vec::with_capacity(vertex_count);
+        let mut normals = Vec::with_capacity(vertex_count);
+        let mut indices = Vec::with_capacity(vertex_count);
+
+        for (i, (t, normal)) in o.triangles_with_normals().enumerate() {
+            //顶点重排，保证normal是正确的
+            vertices.push(o.vertices[t[0]].into());
+            vertices.push(o.vertices[t[1]].into());
+            vertices.push(o.vertices[t[2]].into());
+            indices.push((i * 3) as u32);
+            indices.push((i * 3 + 1) as u32);
+            indices.push((i * 3 + 2) as u32);
+            normals.push(normal.into());
+            normals.push(normal.into());
+            normals.push(normal.into());
+        }
+
+        Self {
+            geo_hash: 0,
+            mesh: Some(PlantMesh {
+                indices,
+                vertices,
+                normals,
+                wire_vertices: vec![],
+            }),
+            aabb: Some(aabb),
+            occ_shape: None,
+        }
+    }
+}
+
 
 #[cfg(not(target_arch = "wasm32"))]
 impl From<CsgMesh> for PlantGeoData {
