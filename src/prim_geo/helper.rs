@@ -1,4 +1,4 @@
-use bevy::prelude::{Quat, Vec3};
+use bevy_math::prelude::{Quat, Vec3};
 
 #[inline]
 pub fn cal_ref_axis(v: &Vec3) -> Vec3 {

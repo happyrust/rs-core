@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
-use bevy::prelude::Resource;
+use bevy_ecs::prelude::Resource;
 use glam::{Mat4, Vec3};
 use nalgebra::Point3;
 use parry3d::bounding_volume::Aabb;

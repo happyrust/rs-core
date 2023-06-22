@@ -1,7 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
-use bevy::prelude::*;
+use bevy_ecs::prelude::*;
 use glam::Vec3;
 use lyon::path::builder::PathBuilder;
 use lyon::path::Path;

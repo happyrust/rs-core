@@ -1,12 +1,13 @@
 use std::f64::consts::PI;
 use std::f32::EPSILON;
-use bevy::prelude::*;
+use glam::Vec3;
+
 use truck_base::cgmath64::Vector3;
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{builder, Shell, Solid};
 use crate::tool::hash_tool::*;
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
+
+use bevy_ecs::reflect::ReflectComponent;
 
 use lyon::math::size;
 use hexasphere::shapes::IcoSphere;
@@ -20,9 +21,9 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, Verifie
 #[cfg(feature = "opencascade")]
 use opencascade::OCCShape;
 use crate::pdms_types::AttrMap;
-
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
-// #[reflect(Component)]
+use bevy_ecs::prelude::*;
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+//
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f32,

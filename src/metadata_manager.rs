@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, Resource, World};
+use bevy_ecs::prelude::{Component, Resource, World};
 use serde_derive::{Deserialize, Serialize};
 use crate::pdms_types::{PdmsElement, PdmsNodeTrait, RefU64};
 

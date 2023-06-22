@@ -1,9 +1,9 @@
 use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
-use bevy::math::Quat;
+use bevy_math::prelude::Quat;
 use std::default::default;
 use approx::abs_diff_eq;
-use bevy::prelude::Transform;
+use bevy_transform::prelude::Transform;
 use crate::pdms_types::RefU64;
 use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};

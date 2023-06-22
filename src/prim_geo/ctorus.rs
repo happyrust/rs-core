@@ -3,11 +3,13 @@ use std::f32::EPSILON;
 use std::hash::Hasher;
 use std::hash::Hash;
 use anyhow::anyhow;
-use bevy::prelude::*;
+use bevy_ecs::prelude::*;
+use std::default::default;
 use truck_modeling::{builder, Shell};
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
-use bevy::reflect::erased_serde::{Error, Serializer};
+
+use bevy_ecs::reflect::ReflectComponent;
+use bevy_transform::prelude::Transform;
+use glam::{Quat, Vec3};
 use crate::tool::hash_tool::*;
 use nalgebra_glm::normalize;
 use serde::{Serialize, Deserialize};
@@ -20,8 +22,8 @@ use crate::tool::float_tool::hash_f32;
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis};
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-#[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+
 pub struct SCTorus {
     pub paax_pt: Vec3,
     //A Axis point
@@ -46,7 +48,7 @@ impl SCTorus {
             let x_axis = (self.pbax_pt - torus_info.center).normalize();
             let y_axis = z_axis.cross(x_axis).normalize();
             let mat = Transform {
-                rotation: bevy::prelude::Quat::from_mat3(&bevy::prelude::Mat3::from_cols(
+                rotation: Quat::from_mat3(&bevy_math::Mat3::from_cols(
                     x_axis, y_axis, z_axis,
                 )),
                 translation: torus_info.center,
@@ -138,7 +140,7 @@ impl From<AttrMap> for SCTorus {
     }
 }
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct CTorus {
     pub rins: f32,
     //内圆半径

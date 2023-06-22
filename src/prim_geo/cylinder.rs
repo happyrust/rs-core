@@ -5,7 +5,9 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 use approx::{abs_diff_eq, abs_diff_ne};
-use bevy::prelude::*;
+use glam::Vec3;
+use bevy_ecs::prelude::*;
+use bevy_transform::prelude::Transform;
 use nom::Parser;
 use serde::{Deserialize, Serialize};
 use truck_topology::Face;
@@ -21,8 +23,8 @@ use crate::tool::float_tool::hash_f32;
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex, DsShape};
 
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-// #[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+//
 pub struct LCylinder {
     pub paxi_expr: String,
     pub paxi_pt: Vec3,
@@ -130,8 +132,8 @@ impl From<AttrMap> for LCylinder {
 }
 
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-// #[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+//
 pub struct SCylinder {
     pub paxi_expr: String,
     pub paxi_pt: Vec3,

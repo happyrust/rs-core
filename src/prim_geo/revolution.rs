@@ -4,11 +4,11 @@ use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use anyhow::anyhow;
 use approx::abs_diff_eq;
-use bevy::prelude::*;
+
 use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
+
+use bevy_ecs::reflect::ReflectComponent;
 use glam::Vec3;
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
@@ -18,12 +18,12 @@ use crate::prim_geo::wire::*;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
-
+use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis};
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
-#[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+
 pub struct Revolution {
     pub verts: Vec<Vec3>, //loop vertex
     pub fradius_vec: Vec<f32>,

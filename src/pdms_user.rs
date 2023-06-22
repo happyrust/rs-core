@@ -1,5 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
-use bevy::prelude::Resource;
+use bevy_ecs::prelude::Resource;
 use crate::pdms_types::{PdmsElement, RefU64};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]

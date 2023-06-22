@@ -11,12 +11,8 @@ use std::sync::Arc;
 use std::vec::IntoIter;
 use rkyv::with::Skip;
 use serde_with::{DisplayFromStr, serde_as};
-
+use bevy_ecs::prelude::*;
 use anyhow::anyhow;
-// use arangors_lite::Cursor;
-// use arangors_lite::response::Response;
-use bevy::prelude::*;
-use bevy::render::primitives::Plane;
 use bitflags::bitflags;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
@@ -59,8 +55,12 @@ use crate::prim_geo::sphere::Sphere;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
-use bevy::render::render_resource::PrimitiveTopology::TriangleList;
-use bevy::render::mesh::Indices;
+use bevy_transform::prelude::*;
+use bevy_ecs::prelude::*;
+#[cfg(feature = "bevy_render")]
+use bevy_render::render_resource::PrimitiveTopology::TriangleList;
+#[cfg(feature = "bevy_render")]
+use bevy_render::mesh::Indices;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -491,9 +491,9 @@ impl RefU64Vec {
     }
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Reflect, Eq, Hash, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 // PartialEq, Ord, PartialOrd)]
-// #[reflect(Component)]
+//
 // pub struct (pub u32);
 //
 // impl ToString for NounHash {
@@ -1524,25 +1524,25 @@ impl AttrVal {
         };
     }
 
-    #[inline]
-    pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
-        return match self {
-            InvalidType => { Box::new("unset".to_string()) }
-            // IntegerType(v) => { Box::new(*v) }
-            StringType(v) | ElementType(v) | WordType(v) => { Box::new(v.to_string()) }
-            RefU64Type(v) => { Box::new(v.to_string()) }
-            BoolArrayType(v) => { Box::new(v.clone()) }
-            IntArrayType(v) => { Box::new(v.clone()) }
-            IntegerType(v) => { Box::new(*v) }
-            DoubleArrayType(v) => { Box::new(v.clone()) }
-            DoubleType(v) => { Box::new(*v) }
-            BoolType(v) => { Box::new(*v) }
-            StringHashType(v) => { Box::new(*v) }
-            StringArrayType(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
-            Vec3Type(v) => { Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)) }
-            RefU64Array(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
-        };
-    }
+    // #[inline]
+    // pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
+    //     return match self {
+    //         InvalidType => { Box::new("unset".to_string()) }
+    //         // IntegerType(v) => { Box::new(*v) }
+    //         StringType(v) | ElementType(v) | WordType(v) => { Box::new(v.to_string()) }
+    //         RefU64Type(v) => { Box::new(v.to_string()) }
+    //         BoolArrayType(v) => { Box::new(v.clone()) }
+    //         IntArrayType(v) => { Box::new(v.clone()) }
+    //         IntegerType(v) => { Box::new(*v) }
+    //         DoubleArrayType(v) => { Box::new(v.clone()) }
+    //         DoubleType(v) => { Box::new(*v) }
+    //         BoolType(v) => { Box::new(*v) }
+    //         StringHashType(v) => { Box::new(*v) }
+    //         StringArrayType(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
+    //         Vec3Type(v) => { Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)) }
+    //         RefU64Array(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
+    //     };
+    // }
 
     #[inline]
     pub fn get_val_as_string(&self) -> String {
@@ -2180,6 +2180,7 @@ unsafe impl Send for PlantGeoData {}
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
+    #[cfg(feature = "bevy_render")]
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
         let mut mesh = Mesh::new(TriangleList);
         let d = self.mesh.as_ref()?;
@@ -2212,6 +2213,7 @@ impl PlantMeshesData {
     }
 
     /// 获得对应的bevy 三角模型和线框模型
+    #[cfg(feature = "bevy_render")]
     pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Option<Aabb>)> {
         if let Some(c) = self.get(mesh_hash) {
             let bevy_mesh = c.gen_bevy_mesh_with_aabb();

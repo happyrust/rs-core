@@ -2,10 +2,11 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
+use glam::Vec3;
 
-use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::*;
-use bevy::reflect::Reflect;
+use bevy_ecs::reflect::ReflectComponent;
+
+
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell};
@@ -16,10 +17,10 @@ use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
-
+use bevy_ecs::prelude::*;
 //可不可以用来表达 sphere
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
-#[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+
 pub struct Dish {
     pub paax_expr: String,
     pub paax_pt: Vec3,

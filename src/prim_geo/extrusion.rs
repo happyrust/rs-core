@@ -2,13 +2,13 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
-
+use std::default::default;
 use anyhow::anyhow;
 use approx::abs_diff_eq;
-use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::*;
-use bevy::reflect::Reflect;
-use glam::DVec3;
+use bevy_ecs::reflect::ReflectComponent;
+
+
+use glam::{DVec3, Vec3};
 use nalgebra_glm::sin;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
@@ -20,7 +20,7 @@ use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
 use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{hash_f32, hash_vec3};
-
+use bevy_ecs::prelude::*;
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct Extrusion {
     pub verts: Vec<Vec3>,
@@ -92,7 +92,7 @@ impl BrepShapeTrait for Extrusion {
             }
         } else {
             dbg!(self);
-            error!("生成的wire有问题，数据：{:?}", self);
+            println!("生成的wire有问题，数据：{:?}", self);
         }
         None
     }

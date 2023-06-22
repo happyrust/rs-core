@@ -1,8 +1,8 @@
-use bevy::prelude::Resource;
+use bevy_ecs::prelude::Resource;
 use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
-use bevy::transform::components::Transform;
-use bevy::utils::HashMap;
+use bevy_transform::prelude::Transform;
+use std::collections::HashMap;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ThreeDimensionalModelDataCrate {

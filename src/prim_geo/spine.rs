@@ -1,13 +1,15 @@
-use bevy::ecs::component::Component;
+use bevy_ecs::component::Component;
 use glam::{Mat3, Quat, Vec2, Vec3};
 use nalgebra::center;
 use serde::{Deserialize, Serialize};
 use truck_modeling::{Shell, Wire};
 use std::f32::consts::PI;
-use bevy::prelude::*;
+
+use bevy_math::prelude::*;
+use bevy_transform::prelude::*;
 use crate::tool::float_tool::{f32_round_1, f32_round_3, vec3_round_1, vec3_round_3};
 
-#[derive(Component, Default, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+#[derive(Component, Default, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub enum SpineCurveType {
     #[default]
     UNKNOWN,

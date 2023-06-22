@@ -2,11 +2,11 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
-use bevy::prelude::*;
+
 use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
+
+use bevy_ecs::reflect::ReflectComponent;
 use glam::Vec3;
 
 use truck_modeling::builder::try_attach_plane;
@@ -15,12 +15,12 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
-
+use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-#[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+
 pub struct Pyramid {
     pub pbax_pt: Vec3,
     pub pbax_dir: Vec3,   //B Axis Direction

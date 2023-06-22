@@ -1,26 +1,29 @@
 use std::collections::hash_map::DefaultHasher;
+use std::default::default;
 use std::f32::EPSILON;
 use std::hash::Hasher;
 use std::hash::Hash;
 use anyhow::anyhow;
-use bevy::prelude::*;
+use glam::{Mat3, Quat, Vec3};
+use bevy_ecs::prelude::*;
 use truck_modeling::{builder, Shell};
 use crate::tool::hash_tool::*;
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
+
+use bevy_ecs::reflect::ReflectComponent;
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-
+use bevy_ecs::prelude::*;
 use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
+use bevy_ecs::prelude::*;
 
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+use bevy_transform::prelude::Transform;
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-#[reflect(Component)]
 pub struct SRTorus {
     pub paax_expr: String,
     pub paax_pt: Vec3,
@@ -75,7 +78,7 @@ impl SRTorus {
             let y_axis = z_axis.cross(x_axis).normalize();
             let translation = torus_info.center;
             let mat = Transform {
-                rotation: bevy::prelude::Quat::from_mat3(&bevy::prelude::Mat3::from_cols(
+                rotation: Quat::from_mat3(&Mat3::from_cols(
                     x_axis, y_axis, z_axis,
                 )),
                 translation,
@@ -166,7 +169,7 @@ impl From<AttrMap> for SRTorus {
     }
 }
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct RTorus {
     pub rins: f32,
     //内圆半径

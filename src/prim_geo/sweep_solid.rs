@@ -3,11 +3,13 @@ use std::f32::consts::{FRAC_PI_2, PI, TAU};
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use anyhow::anyhow;
-
+use std::default::default;
 use approx::{abs_diff_eq, abs_diff_ne};
-use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::*;
-use bevy::reflect::Reflect;
+use bevy_ecs::reflect::ReflectComponent;
+use bevy_math::prelude::*;
+
+
+use bevy_ecs::prelude::*;
 use glam::{Vec3};
 use serde::{Deserialize, Serialize};
 
@@ -584,18 +586,18 @@ impl BrepShapeTrait for SweepSolid {
     }
 
     #[inline]
-    fn get_trans(&self) -> bevy::prelude::Transform {
+    fn get_trans(&self) -> bevy_transform::prelude::Transform {
         match &self.profile {
             CateProfileParam::SANN(p) => {
                 let mut translation = Vec3::ZERO;
-                return bevy::prelude::Transform {
+                return bevy_transform::prelude::Transform {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),
                     translation,
                 };
             }
             CateProfileParam::SPRO(_) => {
-                return bevy::prelude::Transform {
+                return bevy_transform::prelude::Transform {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),
                     translation: Vec3::ZERO,
@@ -604,6 +606,6 @@ impl BrepShapeTrait for SweepSolid {
             _ => {}
         }
 
-        bevy::prelude::Transform::IDENTITY
+        bevy_transform::prelude::Transform::IDENTITY
     }
 }

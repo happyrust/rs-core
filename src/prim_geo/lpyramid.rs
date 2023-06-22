@@ -4,9 +4,8 @@ use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use approx::abs_diff_eq;
 
-use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::*;
-use bevy::reflect::Reflect;
+use bevy_ecs::reflect::ReflectComponent;
+
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
@@ -17,9 +16,9 @@ use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+use bevy_ecs::prelude::*;
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-#[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct LPyramid {
     pub pbax_pt: Vec3,
     pub pbax_dir: Vec3,   //B Axis Direction
@@ -294,10 +293,10 @@ impl BrepShapeTrait for LPyramid {
         ];
 
         let pts = vec![
-           builder::vertex((b_pt - bx * x_dir - by * y_dir).point3()),
-           builder::vertex((b_pt + bx * x_dir - by * y_dir).point3()),
-           builder::vertex((b_pt + bx * x_dir + by * y_dir).point3()),
-           builder::vertex((b_pt - bx * x_dir + by * y_dir).point3()),
+            builder::vertex((b_pt - bx * x_dir - by * y_dir).point3()),
+            builder::vertex((b_pt + bx * x_dir - by * y_dir).point3()),
+            builder::vertex((b_pt + bx * x_dir + by * y_dir).point3()),
+            builder::vertex((b_pt - bx * x_dir + by * y_dir).point3()),
         ];
         let mut ebs = vec![
             builder::line(&pts[0], &pts[1]),

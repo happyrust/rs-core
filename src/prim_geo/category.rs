@@ -3,9 +3,8 @@ use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::ops::Range;
 
-use bevy::app::RunMode::Loop;
-use bevy::math::*;
-use bevy::prelude::Transform;
+use bevy_math::prelude::*;
+use bevy_transform::prelude::Transform;
 use id_tree::NodeId;
 use smallvec::SmallVec;
 
