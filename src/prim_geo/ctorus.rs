@@ -11,7 +11,6 @@ use bevy_ecs::reflect::ReflectComponent;
 use bevy_transform::prelude::Transform;
 use glam::{Quat, Vec3};
 use crate::tool::hash_tool::*;
-use nalgebra_glm::normalize;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;

@@ -1,6 +1,6 @@
 #![feature(default_free_fn)]
 #![feature(mixed_integer_ops)]
-#![feature(drain_filter)]
+// #![feature(drain_filter)]
 #![feature(let_chains)]
 #![feature(trivial_bounds)]
 
@@ -11,6 +11,7 @@ use crate::pdms_types::PdmsDatabaseInfo;
 
 extern crate bitflags;
 extern crate phf;
+extern crate core;
 
 pub mod aql_types;
 pub mod pdms_types;

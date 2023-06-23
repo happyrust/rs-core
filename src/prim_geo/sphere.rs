@@ -69,47 +69,46 @@ impl BrepShapeTrait for Sphere {
         Some(shell)
     }
 
-    // #[cfg(feature = "truck")]
-    // fn gen_mesh(&self) -> Option<PlantMesh> {
-    //     let generated = IcoSphere::new(32, |point| {
-    //         let inclination = point.y.acos();
-    //         let azimuth = point.z.atan2(point.x);
-    //
-    //         let norm_inclination = inclination / std::f32::consts::PI;
-    //         let norm_azimuth = 0.5 - (azimuth / std::f32::consts::TAU);
-    //
-    //         [norm_azimuth, norm_inclination]
-    //     });
-    //
-    //     let raw_points = generated.raw_points();
-    //
-    //     let points = raw_points
-    //         .iter()
-    //         .map(|&p| (p * self.radius).into())
-    //         .collect::<Vec<[f32; 3]>>();
-    //
-    //     let normals = raw_points
-    //         .iter()
-    //         .copied()
-    //         .map(Into::into)
-    //         .collect::<Vec<[f32; 3]>>();
-    //
-    //     let mut indices = Vec::with_capacity(generated.indices_per_main_triangle() * 20);
-    //     for i in 0..20 {
-    //         generated.get_indices(i, &mut indices);
-    //     }
-    //
-    //     //球也需要提供wireframe的绘制
-    //     return Some(PlantMesh{
-    //         indices,
-    //         vertices: points,
-    //         normals,
-    //         wire_vertices: vec![],
-    //         aabb: None,
-    //         #[cfg(feature = "opencascade")]
-    //         occ_shape: None,
-    //     });
-    // }
+    ///直接通过基本体的参数，生成模型
+    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
+        let generated = IcoSphere::new(32, |point| {
+            let inclination = point.y.acos();
+            let azimuth = point.z.atan2(point.x);
+
+            let norm_inclination = inclination / std::f32::consts::PI;
+            let norm_azimuth = 0.5 - (azimuth / std::f32::consts::TAU);
+
+            [norm_azimuth, norm_inclination]
+        });
+
+        let raw_points = generated.raw_points();
+
+        let points = raw_points
+            .iter()
+            .map(|&p| Vec3::from(p * self.radius))
+            .collect::<Vec<Vec3>>();
+
+        let normals = raw_points
+            .iter()
+            .copied()
+            .map(Into::into)
+            .collect::<Vec<Vec3>>();
+
+        let mut indices = Vec::with_capacity(generated.indices_per_main_triangle() * 20);
+        for i in 0..20 {
+            generated.get_indices(i, &mut indices);
+        }
+
+        //球也需要提供wireframe的绘制
+        return Some(PlantMesh{
+            indices,
+            vertices: points,
+            normals,
+            wire_vertices: vec![],
+            // #[cfg(feature = "opencascade")]
+            // occ_shape: None,
+        });
+    }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(Sphere::default())

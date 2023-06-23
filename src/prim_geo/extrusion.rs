@@ -9,7 +9,6 @@ use bevy_ecs::reflect::ReflectComponent;
 
 
 use glam::{DVec3, Vec3};
-use nalgebra_glm::sin;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};

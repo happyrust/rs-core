@@ -40,8 +40,11 @@ use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use std::io::BufWriter;
+use std::{slice, vec};
 use bevy_transform::prelude::Transform;
+use hexasphere::shapes::IcoSphere;
 use rkyv::with::Skip;
+use tobj::{export_faces_multi_index, LoadOptions};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_2;
@@ -107,6 +110,19 @@ impl PlantMesh {
         TriMesh::new(points, indices)
     }
 
+    pub fn cal_normals(&mut self) {
+        for (i, c) in self.indices.chunks(3).enumerate() {
+            let a: Vec3 = self.vertices[c[0] as usize];
+            let b: Vec3 = self.vertices[c[1] as usize];
+            let c: Vec3 = self.vertices[c[2] as usize];
+
+            let normal = ((b - a).cross(c - a)).normalize();
+            self.normals.push(normal);
+            self.normals.push(normal);
+            self.normals.push(normal);
+        }
+    }
+
     ///todo 后面需要把uv使用上
     #[cfg(feature = "bevy_render")]
     pub fn gen_bevy_mesh(&self) -> Mesh {
@@ -126,7 +142,9 @@ impl PlantMesh {
         let len = self.vertices.len();
         for i in 0..len {
             vertices.push(t.transform_point3(self.vertices[i]));
-            normals.push(t.transform_vector3(self.normals[i]).normalize());
+            if i < self.normals.len() {
+                normals.push(t.transform_vector3(self.normals[i]).normalize());
+            }
         }
         Self{
             indices: self.indices.clone(),
@@ -134,6 +152,37 @@ impl PlantMesh {
             normals,
             wire_vertices: vec![],
         }
+    }
+
+    pub fn merge_without_normal(&self, merge_iden: bool) -> anyhow::Result<Self>{
+        let pos = unsafe {
+            slice::from_raw_parts(self.vertices.as_ptr() as *mut Vec3 as * mut f32, self.vertices.len() * 3)
+        };
+        let faces = self.indices.chunks(3).map(|c|
+            tobj::Face::Triangle(tobj::VertexIndices{
+                v: c[0] as usize,
+                ..default()
+            }, tobj::VertexIndices{
+                v: c[1] as usize,
+                ..default()
+            }, tobj::VertexIndices{
+                v: c[2] as usize,
+                ..default()
+            }
+        )).collect::<Vec<_>>();
+        //try to use custom implementation
+        let options = tobj::LoadOptions{
+            merge_identical_points: merge_iden,
+            ..default()
+        };
+        let t_mesh = export_faces_multi_index(pos, &[], &[], &[], &faces, None, &options)?;
+        Ok(Self{
+            indices: t_mesh.indices,
+            vertices: t_mesh.positions.chunks(3).map(|c| Vec3::new(c[0], c[1], c[2])).collect(),
+            normals: vec![],
+            wire_vertices: vec![],
+        })
+
     }
 
 
@@ -208,7 +257,7 @@ impl PlantMesh {
         for vd in &self.vertices {
             buffer.write_all(
                 format!(
-                    "v {:.3} {:.3} {:.3} 1.0\n",
+                    "v {:.3} {:.3} {:.3}\n",
                     vd[0] as f32, vd[1] as f32, vd[2] as f32
                 )
                     .as_ref(),
@@ -401,6 +450,17 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     #[cfg(feature = "truck")]
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
         let mut aabb = Aabb::new_invalid();
+        let geo_hash = self.hash_unit_mesh_params();
+        if let Some(csg_mesh) = self.gen_csg_mesh() {
+            for vertex in &csg_mesh.vertices {
+                aabb.take_point((*vertex).into());
+            }
+            return Some(PlantGeoData {
+                geo_hash,
+                mesh: Some(csg_mesh),
+                aabb: Some(aabb),
+            });
+        }
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
             let d = brep_bbox.diagonal();
@@ -448,7 +508,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 .collect();
 
             return Some(PlantGeoData {
-                geo_hash: 0,
+                geo_hash,
                 mesh: Some(PlantMesh {
                     indices,
                     vertices,
@@ -464,6 +524,10 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        None
+    }
+
+    fn gen_csg_mesh(&self) -> Option<PlantMesh>{
         None
     }
 }
