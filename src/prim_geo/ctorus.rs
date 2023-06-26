@@ -38,13 +38,17 @@ pub struct SCTorus {
 
 impl SCTorus {
     pub fn convert_to_ctorus(&self) -> Option<(CTorus, Transform)> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
+                                                              self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
             let mut ctorus = CTorus::default();
             ctorus.angle = torus_info.angle;
             ctorus.rins = torus_info.radius - self.pdia / 2.0;
             ctorus.rout = torus_info.radius + self.pdia / 2.0;
             let z_axis = -torus_info.rot_axis.normalize();
-            let x_axis = (self.pbax_pt - torus_info.center).normalize();
+            let mut x_axis = (self.pbax_pt - torus_info.center).normalize();
+            if x_axis.is_nan() {
+                x_axis = self.paax_dir;
+            }
             let y_axis = z_axis.cross(x_axis).normalize();
             let mat = Transform {
                 rotation: Quat::from_mat3(&bevy_math::Mat3::from_cols(
@@ -97,7 +101,7 @@ impl BrepShapeTrait for SCTorus {
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        if let Some(t) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+        if let Some(t) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
             let o = self.paax_pt;
             let circle = Wire::circle(t.radius, o, -self.paax_dir)?;
             let axis = Axis::new(t.center, t.rot_axis);
@@ -108,7 +112,8 @@ impl BrepShapeTrait for SCTorus {
 
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
+                                                              self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
             let circle_origin = self.paax_pt.point3();
             let pt_0 = self.paax_pt + torus_info.rot_axis * self.pdia / 2.0;
             let v = builder::vertex(pt_0.point3());
@@ -219,7 +224,7 @@ impl BrepShapeTrait for CTorus {
 
 
     fn tol(&self) -> f32 {
-        0.003 * (self.rout -self.rins).abs().max(1.0)
+        0.001
     }
 
 

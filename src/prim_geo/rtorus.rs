@@ -67,7 +67,8 @@ struct TorusInfo {
 
 impl SRTorus {
     pub fn convert_to_rtorus(&self) -> Option<(RTorus, Transform)> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
+                                                              self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
             let mut rtorus = RTorus::default();
             rtorus.angle = torus_info.angle;
             rtorus.height = self.pheig;
@@ -110,7 +111,8 @@ impl BrepShapeTrait for SRTorus {
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
+                                                              self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
             let z_axis = self.paax_dir.normalize();
             let y_axis = torus_info.rot_axis;
             let x_axis = z_axis.cross(y_axis);
@@ -138,7 +140,8 @@ impl BrepShapeTrait for SRTorus {
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt) {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
+                                                              self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
             use truck_modeling::*;
             let circle_origin = self.paax_pt.point3();
             let z_axis = self.paax_dir.normalize().vector3();

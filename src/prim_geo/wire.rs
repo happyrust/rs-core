@@ -356,6 +356,20 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck
                     circle_indexs.remove(0);
                     j += 1;
                 } else {
+
+
+                    //检查方向是否平行，去掉尖锐的部分
+                    // if j > 2 {
+                    //     let cur_dir = (cur_vert.point() - pre_vert.point()).normalize();
+                    //     let angle = prev_dir.angle(cur_dir);
+                    //     // dbg!(angle);
+                    //     if (angle.0 as f32 > PI * 0.99) || ((angle.0 as f32) < (0.01 * PI)) {
+                    //         wire.pop_back();
+                    //         continue;
+                    //     }
+                    //     prev_dir = cur_dir;
+                    // }
+
                     wire.push_back(builder::line(&pre_vert, cur_vert));
                     pre_vert = cur_vert.clone();
                 }

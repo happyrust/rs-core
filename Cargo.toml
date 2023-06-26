@@ -62,10 +62,12 @@ truck-geometry = { version = "0.4.0", path = "../truck/truck-geometry" }
 truck-polymesh = { version = "0.5.0", path = "../truck/truck-polymesh" }
 truck-topology = { version = "0.5.0", path = "../truck/truck-topology" }
 truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
-truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo" }
+truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.0.0"
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 redb = "0.15.0"
+csg = { path = "../csgrs/csg" }
+manifold-sys = { path = "../manifold-sys"}

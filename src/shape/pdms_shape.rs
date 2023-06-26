@@ -22,8 +22,6 @@ use truck_base::bounding_box::BoundingBox;
 use truck_base::cgmath64::{Point3, Vector3, Vector4, Matrix4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
-// #[cfg(not(target_arch = "wasm32"))]
-// use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Matrix, Point, Vector};
 use parry3d::shape::{TriMesh, TriMeshFlags};
@@ -47,7 +45,10 @@ use rkyv::with::Skip;
 use tobj::{export_faces_multi_index, LoadOptions};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::tool::float_tool::f32_round_2;
+use crate::tool::float_tool::f32_round_3;
+
+#[cfg(not(target_arch = "wasm32"))]
+use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
 
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCMesh, OCCShape};
@@ -136,7 +137,7 @@ impl PlantMesh {
         mesh
     }
 
-    pub fn transform_by(&self, t: &Mat4) -> Self{
+    pub fn transform_by(&self, t: &Mat4) -> Self {
         let mut vertices = Vec::with_capacity(self.vertices.len());
         let mut normals = Vec::with_capacity(self.vertices.len());
         let len = self.vertices.len();
@@ -146,7 +147,7 @@ impl PlantMesh {
                 normals.push(t.transform_vector3(self.normals[i]).normalize());
             }
         }
-        Self{
+        Self {
             indices: self.indices.clone(),
             vertices,
             normals,
@@ -154,35 +155,34 @@ impl PlantMesh {
         }
     }
 
-    pub fn merge_without_normal(&self, merge_iden: bool) -> anyhow::Result<Self>{
+    pub fn merge_without_normal(&self, merge_iden: bool) -> anyhow::Result<Self> {
         let pos = unsafe {
-            slice::from_raw_parts(self.vertices.as_ptr() as *mut Vec3 as * mut f32, self.vertices.len() * 3)
+            slice::from_raw_parts(self.vertices.as_ptr() as *mut Vec3 as *mut f32, self.vertices.len() * 3)
         };
         let faces = self.indices.chunks(3).map(|c|
-            tobj::Face::Triangle(tobj::VertexIndices{
+            tobj::Face::Triangle(tobj::VertexIndices {
                 v: c[0] as usize,
                 ..default()
-            }, tobj::VertexIndices{
+            }, tobj::VertexIndices {
                 v: c[1] as usize,
                 ..default()
-            }, tobj::VertexIndices{
+            }, tobj::VertexIndices {
                 v: c[2] as usize,
                 ..default()
-            }
-        )).collect::<Vec<_>>();
+            },
+            )).collect::<Vec<_>>();
         //try to use custom implementation
-        let options = tobj::LoadOptions{
+        let options = tobj::LoadOptions {
             merge_identical_points: merge_iden,
             ..default()
         };
         let t_mesh = export_faces_multi_index(pos, &[], &[], &[], &faces, None, &options)?;
-        Ok(Self{
+        Ok(Self {
             indices: t_mesh.indices,
             vertices: t_mesh.positions.chunks(3).map(|c| Vec3::new(c[0], c[1], c[2])).collect(),
             normals: vec![],
             wire_vertices: vec![],
         })
-
     }
 
 
@@ -229,27 +229,27 @@ impl PlantMesh {
     }
 
     //转变成csg模型
-    // #[cfg(not(target_arch = "wasm32"))]
-    // pub fn into_csg_mesh(&self, transform: Option<&Mat4>) -> CsgMesh {
-    //     let mut triangles = Vec::new();
-    //     for chuck in self.indices.chunks(3) {
-    //         let mut vertices_a: Vec3 = self.vertices[chuck[0] as usize];
-    //         let mut vertices_b: Vec3 = self.vertices[chuck[1] as usize];
-    //         let mut vertices_c: Vec3 = self.vertices[chuck[2] as usize];
-    //
-    //         if let Some(transform) = transform {
-    //             vertices_a = transform.transform_point3(vertices_a);
-    //             vertices_b = transform.transform_point3(vertices_b);
-    //             vertices_c = transform.transform_point3(vertices_c);
-    //         }
-    //         triangles.push(csg::Triangle {
-    //             a: CsgPt3 { x: vertices_a[0] as f64, y: vertices_a[1] as f64, z: vertices_a[2] as f64 },
-    //             b: CsgPt3 { x: vertices_b[0] as f64, y: vertices_b[1] as f64, z: vertices_b[2] as f64 },
-    //             c: CsgPt3 { x: vertices_c[0] as f64, y: vertices_c[1] as f64, z: vertices_c[2] as f64 },
-    //         })
-    //     }
-    //     csg::Mesh::from_triangles(triangles)
-    // }
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn into_csg_mesh(&self, transform: Option<&Mat4>) -> CsgMesh {
+        let mut triangles = Vec::new();
+        for chuck in self.indices.chunks(3) {
+            let mut vertices_a: Vec3 = self.vertices[chuck[0] as usize];
+            let mut vertices_b: Vec3 = self.vertices[chuck[1] as usize];
+            let mut vertices_c: Vec3 = self.vertices[chuck[2] as usize];
+
+            if let Some(transform) = transform {
+                vertices_a = transform.transform_point3(vertices_a);
+                vertices_b = transform.transform_point3(vertices_b);
+                vertices_c = transform.transform_point3(vertices_c);
+            }
+            triangles.push(csg::Triangle {
+                a: CsgPt3 { x: vertices_a[0] as f64, y: vertices_a[1] as f64, z: vertices_a[2] as f64 },
+                b: CsgPt3 { x: vertices_b[0] as f64, y: vertices_b[1] as f64, z: vertices_b[2] as f64 },
+                c: CsgPt3 { x: vertices_c[0] as f64, y: vertices_c[1] as f64, z: vertices_c[2] as f64 },
+            })
+        }
+        csg::Mesh::from_triangles(triangles)
+    }
 
     pub fn export_obj(&self, reverse: bool, file_path: &str) -> std::io::Result<()> {
         let mut buffer = BufWriter::new(File::create(file_path)?);
@@ -274,7 +274,7 @@ impl PlantMesh {
                         id[0] + 1,
                     ).as_ref(),
                 )?;
-            }else {
+            } else {
                 buffer.write_all(
                     format!(
                         "f {} {} {}\n",
@@ -284,7 +284,6 @@ impl PlantMesh {
                     ).as_ref(),
                 )?;
             }
-
         }
 
         buffer.flush()?;
@@ -332,46 +331,52 @@ impl From<OCCMesh> for PlantGeoData {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+impl From<CsgMesh> for PlantGeoData {
+    fn from(o: CsgMesh) -> Self {
+        (&o).into()
+    }
+}
 
-// #[cfg(not(target_arch = "wasm32"))]
-// impl From<&CsgMesh> for PlantGeoData {
-//     fn from(o: &CsgMesh) -> Self {
-//         let vertex_count = o.triangles.len() * 3;
-//         let mut aabb = Aabb::new_invalid();
-//
-//         let mut vertices = Vec::with_capacity(vertex_count);
-//         let mut normals = Vec::with_capacity(vertex_count);
-//         let mut indices = Vec::with_capacity(vertex_count);
-//
-//         for (i, t) in o.triangles.iter().enumerate() {
-//             //顶点重排，保证normal是正确的
-//             aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
-//             vertices.push(t.a.into());
-//             vertices.push(t.b.into());
-//             vertices.push(t.c.into());
-//             indices.push((i * 3) as u32);
-//             indices.push((i * 3 + 1) as u32);
-//             indices.push((i * 3 + 2) as u32);
-//             normals.push(t.normal().into());
-//             normals.push(t.normal().into());
-//             normals.push(t.normal().into());
-//         }
-//
-//         Self {
-//             geo_hash: 0,
-//             mesh: Some(PlantMesh {
-//                 indices,
-//                 vertices,
-//                 normals,
-//                 wire_vertices: vec![],
-//             }),
-//             aabb: Some(aabb),
-//             #[cfg(feature = "opencascade")]
-//             occ_shape: None,
-//         }
-//     }
-// }
-//
+#[cfg(not(target_arch = "wasm32"))]
+impl From<&CsgMesh> for PlantGeoData {
+    fn from(o: &CsgMesh) -> Self {
+        let vertex_count = o.triangles.len() * 3;
+        let mut aabb = Aabb::new_invalid();
+
+        let mut vertices = Vec::with_capacity(vertex_count);
+        let mut normals = Vec::with_capacity(vertex_count);
+        let mut indices = Vec::with_capacity(vertex_count);
+
+        for (i, t) in o.triangles.iter().enumerate() {
+            //顶点重排，保证normal是正确的
+            aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
+            vertices.push(t.a.into());
+            vertices.push(t.b.into());
+            vertices.push(t.c.into());
+            indices.push((i * 3) as u32);
+            indices.push((i * 3 + 1) as u32);
+            indices.push((i * 3 + 2) as u32);
+            normals.push(t.normal().into());
+            normals.push(t.normal().into());
+            normals.push(t.normal().into());
+        }
+
+        Self {
+            geo_hash: 0,
+            mesh: Some(PlantMesh {
+                indices,
+                vertices,
+                normals,
+                wire_vertices: vec![],
+            }),
+            aabb: Some(aabb),
+            #[cfg(feature = "opencascade")]
+            occ_shape: None,
+        }
+    }
+}
+
 
 pub const TRI_TOL: f32 = 0.05;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
@@ -451,15 +456,18 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
         let mut aabb = Aabb::new_invalid();
         let geo_hash = self.hash_unit_mesh_params();
-        if let Some(csg_mesh) = self.gen_csg_mesh() {
-            for vertex in &csg_mesh.vertices {
-                aabb.take_point((*vertex).into());
+        if self.need_use_csg() {
+            if let Some(csg_mesh) = self.gen_csg_mesh() {
+                for vertex in &csg_mesh.vertices {
+                    aabb.take_point((*vertex).into());
+                }
+                return Some(PlantGeoData {
+                    geo_hash,
+                    mesh: Some(csg_mesh),
+                    aabb: Some(aabb),
+                });
             }
-            return Some(PlantGeoData {
-                geo_hash,
-                mesh: Some(csg_mesh),
-                aabb: Some(aabb),
-            });
+            return None;
         }
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -482,8 +490,9 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if size <= f64::EPSILON {
                 return None;
             }
-            let tolerance = self.tol()  * tol_ratio.unwrap_or(2.0);
+            let tolerance = self.tol() * tol_ratio.unwrap_or(2.0);
             // dbg!(self.tol());
+            // #[cfg(debug_assertions)]
             // dbg!(tolerance);
             let meshed_shape = brep.triangulation(tolerance as f64);
             let polygon = meshed_shape.to_polygon();
@@ -527,8 +536,12 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         None
     }
 
-    fn gen_csg_mesh(&self) -> Option<PlantMesh>{
+    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         None
+    }
+
+    fn need_use_csg(&self) -> bool {
+        false
     }
 }
 
@@ -556,10 +569,10 @@ impl BrepMathTrait for Vec3 {
     fn point3(&self) -> Point3 {
         Point3::new(self[0] as f64, self[1] as f64, self[2] as f64)
     }
-    //point3_without_z
+    
     #[inline]
     fn point3_without_z(&self) -> Point3 {
-        Point3::new(f32_round_2(self[0]) as f64, f32_round_2(self[1]) as f64, 0.0 as f64)
+        Point3::new(f32_round_3(self[0]) as f64, f32_round_3(self[1]) as f64, 0.0 as f64)
     }
 }
 

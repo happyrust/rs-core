@@ -1,7 +1,7 @@
 use approx::{abs_diff_eq, relative_eq};
 use glam::{Mat3, Vec3};
 use lazy_static::lazy_static;
-use crate::tool::float_tool::f32_round_2;
+use crate::tool::float_tool::f32_round_3;
 
 lazy_static! {
     pub static ref AXIS_VEC_TUPLES: [(glam::Vec3, &'static str); 6] = {
@@ -45,7 +45,7 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
             x_str = if x > 0.0 { "E" } else { "W" };
             y_str = if y > 0.0 { "N" } else { "S" };
         }
-        angle = f32_round_2(angle);
+        angle = f32_round_3(angle);
         if angle < 0.0 {
             angle = 90.0  + angle;
             return format!("{y_str} {angle} {x_str}");
@@ -66,7 +66,7 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
     let l = plane_vec.length();
     let mut theta = (vec.z / l).atan().to_degrees();
     let mut z_str = "U";
-    theta = f32_round_2(theta);
+    theta = f32_round_3(theta);
     if theta < 0.0 {
         theta = -theta;
         z_str = "D";

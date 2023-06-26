@@ -69,6 +69,10 @@ impl BrepShapeTrait for Sphere {
         Some(shell)
     }
 
+    fn need_use_csg(&self) -> bool{
+        true
+    }
+
     ///直接通过基本体的参数，生成模型
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         let generated = IcoSphere::new(32, |point| {

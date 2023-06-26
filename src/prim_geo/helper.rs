@@ -61,17 +61,28 @@ pub struct RotateInfo {
 }
 
 impl RotateInfo {
-    pub fn cal_rotate_info(paax_dir: Vec3, paax_pt: Vec3, pbax_dir: Vec3, pbax_pt: Vec3) -> Option<RotateInfo> {
+    pub fn cal_rotate_info(a_dir: Vec3, a_pt: Vec3, b_dir: Vec3, b_pt: Vec3, default_r: f32) -> Option<RotateInfo> {
         let mut rotate_info = RotateInfo::default();
-        let pa_dir = Vec3::new(paax_dir.x, paax_dir.y, paax_dir.z).normalize();
-        let pb_dir = Vec3::new(pbax_dir.x, pbax_dir.y, pbax_dir.z).normalize();
-        let x_dir = (pbax_pt - paax_pt).normalize();
+        let pa_dir = a_dir.normalize();
+        let pb_dir = b_dir.normalize();
+        let mut x_dir = (b_pt - a_pt).normalize();
+        if  x_dir.is_nan() {
+
+            let mut rot_axis = (-pa_dir).cross(pb_dir).normalize();
+            if rot_axis.is_nan() { return None; }
+            return Some(RotateInfo {
+                center: Default::default(),
+                angle: (-pa_dir).angle_between(pb_dir).to_degrees(),
+                rot_axis,
+                radius: default_r,
+            });
+        }
         let quat = rotate_from_vec3_to_vec3(x_dir, -pa_dir, pb_dir);
         let (mut axis_z, angle) = quat.to_axis_angle();
         rotate_info.rot_axis = axis_z;
         rotate_info.angle = angle.to_degrees();
-        let mid_pt = (paax_pt + pbax_pt) / 2.0;
-        let x_len = pbax_pt.distance(paax_pt);
+        let mid_pt = (a_pt + b_pt) / 2.0;
+        let x_len = b_pt.distance(a_pt);
         if x_len < 1.0e-3 {
             return None;
         }
@@ -80,8 +91,8 @@ impl RotateInfo {
             rotate_info.radius = x_len / 2.0;
         } else {
             let mut y_dir = rotate_info.rot_axis.cross(x_dir);
-            let ref_dir = rotate_info.rot_axis.cross(pbax_dir.normalize()).normalize();
-            let p = pbax_pt - mid_pt;
+            let ref_dir = rotate_info.rot_axis.cross(b_dir.normalize()).normalize();
+            let p = b_pt - mid_pt;
             let px = p.dot(x_dir);
             let _py = p.dot(y_dir);
             if px < 1.0e-3 {
@@ -89,7 +100,7 @@ impl RotateInfo {
             }
             let beta = angle / 2.0;
             rotate_info.radius = px / beta.sin().abs();
-            rotate_info.center = pbax_pt + ref_dir * rotate_info.radius;
+            rotate_info.center = b_pt + ref_dir * rotate_info.radius;
         }
         return Some(rotate_info);
     }

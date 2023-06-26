@@ -8,7 +8,7 @@ use approx::abs_diff_eq;
 use bevy_ecs::reflect::ReflectComponent;
 
 
-use glam::{DVec3, Vec3};
+use glam::{DVec3, Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
@@ -20,6 +20,8 @@ use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
+use crate::csg::manifold::*;
+
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct Extrusion {
     pub verts: Vec<Vec3>,
@@ -67,6 +69,43 @@ impl BrepShapeTrait for Extrusion {
         };
         // dbg!(self);
         Ok(wire.extrude(DVec3::new(0., 0.0, self.height as _))?)
+    }
+
+    ///使用manifold生成拉身体的mesh
+    fn gen_csg_mesh(&self) -> Option<PlantMesh>{
+        use truck_modeling::{builder, Shell, Surface, Wire};
+        use truck_meshalgo::prelude::*;
+        if !self.check_valid() { return None; }
+        let mut wire = gen_wire( &self.verts, &self.fradius_vec).unwrap();
+        if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
+            if let Surface::Plane(plane) = face.surface() {
+                let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
+                if plane.normal().dot(extrude_dir) < 0.0 {
+                    wire = wire.inverse();
+                }
+                let e_len = wire.len();
+                let pts = wire.edge_iter().enumerate().map(|(i, e)|{
+                    let curve = e.oriented_curve();
+                    let polyline = PolylineCurve::from_curve(&curve, curve.parameter_range(),self.tol() as _);
+                    // dbg!(&polyline);
+                    let mut v = polyline.iter().map(|x| Vec2::new(x.x as _, x.y as _)).collect::<Vec<_>>();
+                    if !v.is_empty() && i != (e_len - 1) { v.pop(); }
+                    v
+                }).flatten().collect::<Vec<Vec2>>();
+                // dbg!(&pts);
+                unsafe {
+                    let mut cross_section = ManifoldCrossSectionRust::from_points(&pts);
+                    let manifold = cross_section.extrude(1000.0, 0);
+                    return Some(PlantMesh::from(manifold));
+                }
+            }
+
+        }
+        None
+    }
+
+    fn need_use_csg(&self) -> bool{
+        true
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
@@ -127,7 +166,8 @@ impl BrepShapeTrait for Extrusion {
             nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
         ).collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
-        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
+        // 0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
+        0.002 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     //沿着指定方向拉伸 pbax_dir

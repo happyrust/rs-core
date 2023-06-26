@@ -46,7 +46,7 @@ pub struct CateBrepShape {
 ///转换成brep shape
 pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
     match geom {
-        CateGeoParam::Pyramid(d) => {   //now dont resue pyramid
+        CateGeoParam::Pyramid(d) => {
             let pa = d.pa.as_ref()?;
             let pb = d.pb.as_ref()?;
             let pc = d.pc.as_ref()?;
@@ -55,7 +55,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             pts.push(pc.number);
 
-            let z_axis = Vec3::new(pa.dir[0], pa.dir[1], pa.dir[2]).normalize_or_zero();
+            let z_axis = pa.dir.normalize_or_zero();
             //需要转换成CTorus
             let pyramid = LPyramid {
                 pbax_pt: (pb.pt),
@@ -75,13 +75,15 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pcof: d.y_offset,
             };
             ///需要偏移到 btm
-            let translation = z_axis * (d.dist_to_btm + d.dist_to_top ) / 2.0;
+            let translation = z_axis * (d.dist_to_btm + d.dist_to_top ) / 2.0 + pa.pt;
+            let rotation = Quat::from_rotation_arc(Vec3::Z, z_axis);
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 refno: d.refno,
                 brep_shape,
                 transform: Transform {
                     translation,
+                    rotation,
                     ..default()
                 },
                 visible: d.tube_flag,
@@ -361,8 +363,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             };
             let angle_flag = -1.0;
             let rotation = Quat::from_mat3(&mat3);
-            let translation = z_dir * (d.dist_to_btm as f32) +
-                Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
+            let translation = z_dir * (d.dist_to_btm as f32) + axis.pt;
             let transform = Transform {
                 rotation,
                 translation,
@@ -472,12 +473,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let mut verts = vec![];
             if d.verts.len() > 2 {
-                let mut prev = Vec3::new(d.verts[0][0], d.verts[0][1], 0.0);
-                verts.push(prev);
+                let mut prev = d.verts[0].truncate();
+                verts.push(prev.extend(0.0));
                 for vert in &d.verts[1..] {
-                    let p = Vec3::new(vert[0], vert[1], 0.0);
+                    let p = vert.truncate();
                     if p.distance(prev) > EPSILON {
-                        verts.push(p);
+                        verts.push(p.extend(0.0));
                     }
                 }
             } else {

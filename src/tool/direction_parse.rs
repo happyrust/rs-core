@@ -78,15 +78,15 @@ pub fn parse_expr_to_dir(expr: &str) -> Option<Vec3> {
             let rot1 = res.rot1.as_ref().unwrap();
             let target_axis = axis.cross(rot1.axis);
             let quat1 = Quat::from_axis_angle(target_axis, rot1.angle.to_radians());
-            axis = quat1 * axis;
+            axis = (quat1 * axis).normalize();
             if res.rot2.is_some() {
                 let rot2 = res.rot2.as_ref().unwrap();
                 let target_axis = axis.cross(rot2.axis);
                 let quat2 = Quat::from_axis_angle(target_axis, rot2.angle.to_radians());
-                axis = quat2 * axis;
+                axis = (quat2 * axis).normalize();
             }
         }
-        return Some(vec3_round_2(axis));
+        return Some(axis);
     }
     None
 }

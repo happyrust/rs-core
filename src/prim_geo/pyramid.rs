@@ -141,14 +141,13 @@ impl BrepShapeTrait for Pyramid {
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
 
-        let z_pt = self.paax_pt.point3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp as f64 / 2.0).max(0.001);
         let ty = (self.pctp as f64 / 2.0).max(0.001);
         let bx = (self.pbbt as f64 / 2.0).max(0.001);
         let by = (self.pcbt as f64 / 2.0).max(0.001);
-        let ox = 0.5 * self.pbof as f64;
-        let oy = 0.5 * self.pcof as f64;
+        let ox =  0.5 * self.pbof as f64;
+        let oy =  0.5 * self.pcof as f64;
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
         let pts = vec![
@@ -176,7 +175,6 @@ impl BrepShapeTrait for Pyramid {
             builder::line(&pts[2], &pts[3]),
             builder::line(&pts[3], &pts[0]),
         ];
-
 
         let mut faces = vec![];
         if let Ok(f) = try_attach_plane(&[Wire::from_iter(&ebs)]) {

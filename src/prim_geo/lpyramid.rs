@@ -144,147 +144,25 @@ impl BrepShapeTrait for LPyramid {
 
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
-    // fn gen_brep_shell_old(&self) -> Option<truck_modeling::Shell> {
-    //     use truck_modeling::*;
-    //     let x_dir = self.pbax_dir.normalize().vector3();
-    //     let x_pt = self.pbax_pt.point3();
-    //     let y_dir = self.pcax_dir.normalize().vector3();
-    //     let y_pt = self.pcax_pt.point3();
-    //     let z_dir = self.paax_dir.normalize().vector3();
-    //     let z_pt = self.paax_pt.point3();
-    //
-    //
-    //     let tx = (self.pbtp as f64 / 2.0).max(0.001);
-    //     let ty = (self.pctp as f64 / 2.0).max(0.001);
-    //     let bx = (self.pbbt as f64 / 2.0).max(0.001);
-    //     let by = (self.pcbt as f64 / 2.0).max(0.001);
-    //     let ox = self.pbof as f64;
-    //     let oy = self.pcof as f64;
-    //     let h_vector = z_dir * (self.ptdi - self.pbdi) as f64;
-    //
-    //     let t_pt = z_pt + x_dir * ox + y_dir * oy + h_vector;
-    //     let b_pt = z_pt ;
-    //
-    //     let pts = vec![
-    //         builder::vertex(t_pt - tx * x_dir - ty * y_dir),
-    //         builder::vertex(t_pt + tx * x_dir - ty * y_dir),
-    //         builder::vertex(t_pt + tx * x_dir + ty * y_dir),
-    //         builder::vertex(t_pt - tx * x_dir + ty * y_dir),
-    //     ];
-    //
-    //     let mut ets = vec![
-    //         builder::line(&pts[0], &pts[1]),
-    //         builder::line(&pts[1], &pts[2]),
-    //         builder::line(&pts[2], &pts[3]),
-    //         builder::line(&pts[3], &pts[0]),
-    //     ];
-    //
-    //     let pts = vec![
-    //         builder::vertex(b_pt - bx * x_dir - by * y_dir),
-    //         builder::vertex(b_pt + bx * x_dir - by * y_dir),
-    //         builder::vertex(b_pt + bx * x_dir + by * y_dir),
-    //         builder::vertex(b_pt - bx * x_dir + by * y_dir),
-    //     ];
-    //     let mut ebs = vec![
-    //         builder::line(&pts[0], &pts[1]),
-    //         builder::line(&pts[1], &pts[2]),
-    //         builder::line(&pts[2], &pts[3]),
-    //         builder::line(&pts[3], &pts[0]),
-    //     ];
-    //
-    //     let mut need_inverse = false;
-    //     let mut faces = vec![];
-    //     let n = h_vector.normalize();
-    //     // dbg!(&n);
-    //     if let Ok(f) = truck_modeling::builder::try_attach_plane(&[Wire::from_iter(&ets)]) {
-    //         if let Surface::Plane(plane) = f.surface() {
-    //             // dbg!(&plane.normal());
-    //             if plane.normal().dot(h_vector.normalize()) < 0.0 {
-    //                 need_inverse = true;
-    //             }
-    //         }
-    //         // dbg!(need_inverse);
-    //         if need_inverse {
-    //             faces.push(f.inverse());
-    //         }else{
-    //             faces.push(f);
-    //         }
-    //     }
-    //
-    //     if let Ok(f) = truck_modeling::builder::try_attach_plane(&[Wire::from_iter(&ebs)]) {
-    //
-    //         if need_inverse {
-    //             faces.push(f);
-    //         }else{
-    //             faces.push(f.inverse());
-    //         }
-    //     }
-    //
-    //     let mut shell: Shell = Shell::from(faces);
-    //     if need_inverse {
-    //         shell.push(builder::homotopy(&ebs[0], &ets[0]).inverse());
-    //         shell.push(builder::homotopy(&ebs[1], &ets[1]).inverse());
-    //         shell.push(builder::homotopy(&ebs[2], &ets[2]).inverse());
-    //         shell.push(builder::homotopy(&ebs[3], &ets[3]).inverse());
-    //     }
-    //     else{
-    //         shell.push(builder::homotopy(&ebs[0], &ets[0]));
-    //         shell.push(builder::homotopy(&ebs[1], &ets[1]));
-    //         shell.push(builder::homotopy(&ebs[2], &ets[2]));
-    //         shell.push(builder::homotopy(&ebs[3], &ets[3]));
-    //     }
-    //
-    //     Some(shell)
-    // }
-
-
-    //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
-        let mut x_dir = self.pbax_dir.normalize();
-        let mut y_dir = self.pcax_dir.normalize();
-        let mut z_dir = self.paax_dir.normalize();
-
-        //容错处理
-        let ref_dir = z_dir.cross(x_dir).normalize();
-        //如果和预期的方向垂直了，也就是和x方向共线了，需要重置
-        // dbg!(ref_dir.dot(y_dir));
-        if abs_diff_eq!(ref_dir.dot(y_dir).abs(), 0.0, epsilon=0.01) {
-            y_dir = ref_dir;
-            x_dir = ref_dir.cross(z_dir).normalize();
-        }
-
-        let x_pt = self.pbax_pt;
-        let y_pt = self.pcax_pt;
-        let c_pt = self.paax_pt;
+        use truck_modeling::builder::*;
 
         //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0).max(0.001);
-        let ty = (self.pctp / 2.0).max(0.001);
-        let bx = (self.pbbt / 2.0).max(0.001);
-        let by = (self.pcbt / 2.0).max(0.001);
-        let ox = 0.5 * self.pbof;
-        let oy = 0.5 * self.pcof;
+        let tx = (self.pbtp as f64 / 2.0).max(0.001);
+        let ty = (self.pctp as f64 / 2.0).max(0.001);
+        let bx = (self.pbbt as f64 / 2.0).max(0.001);
+        let by = (self.pcbt as f64 / 2.0).max(0.001);
+        let ox = self.pbof as f64;
+        let oy = self.pcof as f64;
+        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
-        let h_vector = z_dir * (self.ptdi - self.pbdi) / 2.0;
-
-        let t_pt = c_pt + x_dir * ox + y_dir * oy + h_vector;
-        let b_pt = c_pt - x_dir * ox - y_dir * oy - h_vector;
-
-        // let pts = vec![
-        //     builder::vertex(t_pt - tx * x_dir - ty * y_dir),
-        //     builder::vertex(t_pt + tx * x_dir - ty * y_dir),
-        //     builder::vertex(t_pt + tx * x_dir + ty * y_dir),
-        //     builder::vertex(t_pt - tx * x_dir + ty * y_dir),
-        // ];
         let pts = vec![
-            builder::vertex((t_pt - tx * x_dir - ty * y_dir).point3()),
-            builder::vertex((t_pt + tx * x_dir - ty * y_dir).point3()),
-            builder::vertex((t_pt + tx * x_dir + ty * y_dir).point3()),
-            builder::vertex((t_pt - tx * x_dir + ty * y_dir).point3()),
+            builder::vertex(Point3::new(-tx + ox, -ty + oy, h2)),
+            builder::vertex(Point3::new(tx + ox, -ty + oy, h2)),
+            builder::vertex(Point3::new(tx + ox, ty + oy, h2)),
+            builder::vertex(Point3::new(-tx + ox, ty + oy, h2)),
         ];
-
-
         let mut ets = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
@@ -292,11 +170,14 @@ impl BrepShapeTrait for LPyramid {
             builder::line(&pts[3], &pts[0]),
         ];
 
+        let ox = 0.0 as f64;
+        let oy = 0.0 as f64;
+
         let pts = vec![
-            builder::vertex((b_pt - bx * x_dir - by * y_dir).point3()),
-            builder::vertex((b_pt + bx * x_dir - by * y_dir).point3()),
-            builder::vertex((b_pt + bx * x_dir + by * y_dir).point3()),
-            builder::vertex((b_pt - bx * x_dir + by * y_dir).point3()),
+            builder::vertex(Point3::new(-bx - ox, -by - oy, -h2)),
+            builder::vertex(Point3::new(bx - ox, -by - oy, -h2)),
+            builder::vertex(Point3::new(bx - ox, by - oy, -h2)),
+            builder::vertex(Point3::new(-bx - ox, by - oy, -h2)),
         ];
         let mut ebs = vec![
             builder::line(&pts[0], &pts[1]),
@@ -305,45 +186,18 @@ impl BrepShapeTrait for LPyramid {
             builder::line(&pts[3], &pts[0]),
         ];
 
-        let mut need_inverse = false;
         let mut faces = vec![];
-        let n = h_vector.normalize();
-        // dbg!(&n);
-        if let Ok(f) = truck_modeling::builder::try_attach_plane(&[Wire::from_iter(&ets)]) {
-            if let Surface::Plane(plane) = f.surface() {
-                // dbg!(&plane.normal());
-                if plane.normal().vec3().dot(h_vector.normalize()) < 0.0 {
-                    need_inverse = true;
-                }
-            }
-            // dbg!(need_inverse);
-            if need_inverse {
-                faces.push(f.inverse());
-            } else {
-                faces.push(f);
-            }
+        if let Ok(f) = try_attach_plane(&[Wire::from_iter(&ebs)]) {
+            faces.push(f.inverse());
         }
-
-        if let Ok(f) = truck_modeling::builder::try_attach_plane(&[Wire::from_iter(&ebs)]) {
-            if need_inverse {
-                faces.push(f);
-            } else {
-                faces.push(f.inverse());
-            }
+        if let Ok(f) = try_attach_plane(&[Wire::from_iter(&ets)]) {
+            faces.push(f);
         }
-
         let mut shell: Shell = Shell::from(faces);
-        if need_inverse {
-            shell.push(builder::homotopy(&ebs[0], &ets[0]).inverse());
-            shell.push(builder::homotopy(&ebs[1], &ets[1]).inverse());
-            shell.push(builder::homotopy(&ebs[2], &ets[2]).inverse());
-            shell.push(builder::homotopy(&ebs[3], &ets[3]).inverse());
-        } else {
-            shell.push(builder::homotopy(&ebs[0], &ets[0]));
-            shell.push(builder::homotopy(&ebs[1], &ets[1]));
-            shell.push(builder::homotopy(&ebs[2], &ets[2]));
-            shell.push(builder::homotopy(&ebs[3], &ets[3]));
-        }
+        shell.push(builder::homotopy(&ebs[0], &ets[0]));
+        shell.push(builder::homotopy(&ebs[1], &ets[1]));
+        shell.push(builder::homotopy(&ebs[2], &ets[2]));
+        shell.push(builder::homotopy(&ebs[3], &ets[3]));
 
         Some(shell)
     }

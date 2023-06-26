@@ -61,6 +61,100 @@ impl VerifiedShape for LCylinder {
     }
 }
 
+pub fn gen_unit_cylinder() -> PlantMesh{
+    let segments = 1;
+    let resolution = 36;
+    let height = 1.0;
+    let radius = 0.5;
+    let num_rings = segments + 1;
+    let num_vertices = resolution * 2 + num_rings * (resolution + 1);
+    let num_faces = resolution * (num_rings - 2);
+    let num_indices = (2 * num_faces + 2 * (resolution - 1) * 2) * 3;
+    let mut vertices: Vec<Vec3> = Vec::with_capacity(num_vertices as usize);
+    let mut normals: Vec<Vec3> = Vec::with_capacity(num_vertices as usize);
+    // let mut uvs = Vec::with_capacity(num_vertices as usize);
+    let mut indices = Vec::with_capacity(num_indices as usize);
+
+    let step_theta = std::f32::consts::TAU / resolution as f32;
+    let step_z = height / segments as f32;
+
+    // rings
+
+    for ring in 0..num_rings {
+        let z = 0.0 + ring as f32 * step_z;
+
+        for segment in 0..=resolution {
+            let theta = segment as f32 * step_theta;
+            let (sin, cos) = theta.sin_cos();
+
+            vertices.push([radius * cos,  radius * sin, z].into());
+            normals.push([cos, sin, 0.0].into());
+            // uvs.push([
+            //     segment as f32 / resolution as f32,
+            //     ring as f32 / segments as f32,
+            // ]);
+        }
+    }
+
+    // barrel skin
+
+    for i in 0..segments {
+        let ring = i * (resolution + 1);
+        let next_ring = (i + 1) * (resolution + 1);
+
+        for j in 0..resolution {
+            indices.extend_from_slice(&[
+                ring + j + 1,
+                next_ring + j,
+                ring + j,
+                ring + j + 1,
+                next_ring + j + 1,
+                next_ring + j,
+            ]);
+        }
+    }
+
+    // caps
+
+    let mut build_cap = |top: bool| {
+        let offset = vertices.len() as u32;
+        let (z, normal_z, winding) = if top {
+            (height , 1., (1, 0))
+        } else {
+            (0.0, -1., (0, 1))
+        };
+
+        for i in 0..resolution {
+            let theta = i as f32 * step_theta;
+            let (sin, cos) = theta.sin_cos();
+
+            vertices.push([cos * radius, sin * radius, z].into());
+            normals.push([0.0,  0.0, normal_z].into());
+            // uvs.push([0.5 * (cos + 1.0), 1.0 - 0.5 * (sin + 1.0)]);
+        }
+
+        for i in 1..(resolution - 1) {
+            indices.extend_from_slice(&[
+                offset,
+                offset + i + winding.1,
+                offset + i + winding.0,
+            ]);
+        }
+    };
+
+    // top
+
+    build_cap(true);
+    build_cap(false);
+
+    PlantMesh{
+        vertices,
+        normals,
+        indices,
+        wire_vertices: vec![],
+    }
+}
+
 //#[typetag::serde]
 impl BrepShapeTrait for LCylinder {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -73,6 +167,15 @@ impl BrepShapeTrait for LCylinder {
         let r = self.pdia as f64 / 2.0;
         let h = (self.ptdi - self.pbdi) as f64;
         Ok(OCCShape::cylinder(r, h)?)
+    }
+
+    ///直接通过基本体的参数，生成模型
+    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
+        Some(gen_unit_cylinder())
+    }
+
+    fn need_use_csg(&self) -> bool{
+        true
     }
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
@@ -194,11 +297,12 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
+    #[inline]
     fn tol(&self) -> f32 {
         if self.is_sscl() {
-            0.001 * (self.pdia.max(1.0))
+            0.004 * (self.pdia.max(1.0))
         }else{
-            0.001
+            TRI_TOL
         }
     }
 
@@ -207,6 +311,16 @@ impl BrepShapeTrait for SCylinder {
         self.phei = self.phei.min(l);
         self.pdia = self.pdia.min(l);
     }
+
+    ///直接通过基本体的参数，生成模型
+    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
+        Some(gen_unit_cylinder())
+    }
+
+    fn need_use_csg(&self) -> bool{
+        !self.is_sscl()
+    }
+
 
     #[cfg(feature = "opencascade")]
     ///OCC 的生成
