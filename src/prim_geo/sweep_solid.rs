@@ -17,7 +17,7 @@ use crate::parsed_data::{CateProfileParam, SannData, SProfileData};
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::prim_geo::spine::*;
 use crate::prim_geo::wire;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, convert_to_cg_matrix4, PlantMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{ANGLE_RAD_TOL, BrepMathTrait, BrepShapeTrait, convert_to_cg_matrix4, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
 #[cfg(feature = "opencascade")]
@@ -47,13 +47,13 @@ impl SweepSolid {
     #[inline]
     pub fn is_drns_sloped(&self) -> bool {
         let dot_s = self.drns.dot(self.extrude_dir);
-        abs_diff_ne!(dot_s.abs(), 1.0, epsilon = 0.01) && abs_diff_ne!(dot_s.abs(), 0.0, epsilon = 0.01)
+        abs_diff_ne!(dot_s.abs(), 1.0, epsilon = 0.001) && abs_diff_ne!(dot_s.abs(), 0.0, epsilon = 0.001)
     }
 
     #[inline]
     pub fn is_drne_sloped(&self) -> bool {
         let dot_e = self.drne.dot(self.extrude_dir);
-        abs_diff_ne!(dot_e.abs(), 1.0, epsilon = 0.01) && abs_diff_ne!(dot_e.abs(), 0.0, epsilon = 0.01)
+        abs_diff_ne!(dot_e.abs(), 1.0, epsilon = 0.001) && abs_diff_ne!(dot_e.abs(), 0.0, epsilon = 0.001)
     }
 
 
@@ -503,20 +503,47 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         println!("drns {:?}  is sloped", self.drns);
-                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns));
+                        let mut angle = (-self.drns).angle_between(Vec3::X);
+                        // dbg!(angle);
+                        let scale_x = if angle < ANGLE_RAD_TOL {
+                            1.0
+                        }else{
+                            1.0 / (angle.sin())
+                        };
+                        let mut angle = (-self.drns).angle_between(Vec3::Y).abs();
+                        // dbg!(angle);
+                        let scale_y = if angle < ANGLE_RAD_TOL {
+                            1.0
+                        }else{
+                            1.0 / (angle.sin())
+                        };
+                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
+                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
                     if self.drne.is_normalized() &&  self.is_drne_sloped() {
                         println!("drne {:?}  is sloped", self.drne);
-                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne));
+                        let mut angle = (-self.drne).angle_between(Vec3::X);
+                        // dbg!(angle);
+                        let scale_x = if angle < ANGLE_RAD_TOL {
+                            1.0
+                        }else{
+                            1.0 / (angle.sin())
+                        };
+                        let mut angle = (-self.drne).angle_between(Vec3::Y).abs();
+                        // dbg!(angle);
+                        let scale_y = if angle < ANGLE_RAD_TOL {
+                            1.0
+                        }else{
+                            1.0 / (angle.sin())
+                        };
+                        dbg!(Vec3::new(scale_x, scale_y, 1.0));
+                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
+                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
                     transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.len())) * transform_top;
 
                     let mut faces = vec![];
-                    // let m = Matrix4::from_cols(transform_btm.x_axis.vector4(), transform_btm.y_axis.vector4(),
-                    //                            transform_btm.z_axis.vector4(), transform_btm.w_axis.vector4());
                     let wire_s = builder::transformed(&wire, convert_to_cg_matrix4(&transform_btm));
-                    // let m = Matrix4::from_cols(transform_top.x_axis.vector4(), transform_top.y_axis.vector4(),
-                    //                            transform_top.z_axis.vector4(), transform_top.w_axis.vector4());
                     let wire_e = builder::transformed(&wire, convert_to_cg_matrix4(&transform_top));
                     let edges_cnt = wire_s.len();
                     for i in 0..edges_cnt {

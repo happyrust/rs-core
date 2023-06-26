@@ -328,10 +328,10 @@ impl BrepShapeTrait for SCylinder {
         if self.is_sscl() {
             let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos();
             let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos();
-
             let transform_btm = Mat4::from_axis_angle(Vec3::Y,self.btm_shear_angles[0].to_radians())
                 * Mat4::from_axis_angle(Vec3::Y, self.btm_shear_angles[1].to_radians())
                 * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
+
             let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos();
             let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos();
             let ext_dir = self.paxi_dir.normalize();

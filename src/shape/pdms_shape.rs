@@ -378,7 +378,10 @@ impl From<&CsgMesh> for PlantGeoData {
 }
 
 
-pub const TRI_TOL: f32 = 0.05;
+pub const TRI_TOL: f32 = 0.001;
+pub const ANGLE_RAD_TOL: f32 = 0.01;
+pub const MIN_SIZE_TOL: f32 = 0.01;
+pub const MAX_SIZE_TOL: f32 = 1.0e5;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 ///brep形状trait
@@ -471,12 +474,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         }
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
-            let d = brep_bbox.diagonal();
-            if d.x < 0.01 || d.y < 0.01 || d.z < 0.01 {
-                return None;
-            }
-            let vv = DVec3::new(d.x, d.y, d.z);
-            if vv.max_element() / vv.min_element() > 10000.0 {
+            let d = brep_bbox.diameter() as f32;
+            if d < MIN_SIZE_TOL || d > MAX_SIZE_TOL{
                 return None;
             }
             let (size, c) = (brep_bbox.diameter(), brep_bbox.center());
@@ -485,15 +484,9 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 Point::<f32>::new(c[0] as f32, c[1] as f32, c[2] as f32),
                 Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
             );
-            // dbg!(&aabb);
-            // dbg!(size);
-            if size <= f64::EPSILON {
-                return None;
-            }
             let tolerance = self.tol() * tol_ratio.unwrap_or(2.0);
-            // dbg!(self.tol());
-            // #[cfg(debug_assertions)]
-            // dbg!(tolerance);
+            #[cfg(debug_assertions)]
+            dbg!(tolerance);
             let meshed_shape = brep.triangulation(tolerance as f64);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }

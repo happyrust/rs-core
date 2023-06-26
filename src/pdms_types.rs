@@ -671,7 +671,6 @@ impl AttrMap {
                 let pose = self.get_vec3("POSE").unwrap_or_default();
                 let v = (pose - poss).length();
                 hash_f32(v, &mut hasher);
-                // return Some(*self.get_refno().unwrap_or_default());
             }
             let val = std::hash::Hasher::finish(&hasher);
 
