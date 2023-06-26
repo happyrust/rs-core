@@ -1,6 +1,7 @@
 use approx::{abs_diff_eq, relative_eq};
 use glam::{Mat3, Vec3};
 use lazy_static::lazy_static;
+use crate::shape::pdms_shape::ANGLE_RAD_TOL;
 use crate::tool::float_tool::f32_round_3;
 
 lazy_static! {
@@ -46,17 +47,24 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
             y_str = if y > 0.0 { "N" } else { "S" };
         }
         angle = f32_round_3(angle);
-        if angle < 0.0 {
-            angle = 90.0  + angle;
-            return format!("{y_str} {angle} {x_str}");
+        if angle.abs() < ANGLE_RAD_TOL {
+            return x_str.to_string();
         }
 
+        if angle < 0.0 {
+            angle = 90.0  + angle;
+            if angle > 45.0 {
+                let angle = 90.0 - angle;
+                return format!("{x_str} {angle} {y_str}");
+            }else {
+                return format!("{y_str} {angle} {x_str}");
+            }
+        }
         if angle > 45.0 {
             let angle = 90.0 - angle;
             return format!("{y_str} {angle} {x_str}");
-        }else if angle.abs() < f32::EPSILON {
-            return x_str.to_string();
         }
+
         return format!("{x_str} {angle} {y_str}");
     }
 
@@ -70,6 +78,9 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
     if theta < 0.0 {
         theta = -theta;
         z_str = "D";
+    }
+    if theta < ANGLE_RAD_TOL  {
+        return format!("{part_str}");
     }
 
     format!("{part_str} {theta} {z_str}")

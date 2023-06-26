@@ -477,6 +477,7 @@ impl BrepShapeTrait for SweepSolid {
             let mut scale_mat = Matrix4::one();
 
             match &self.path {
+                //todo 旋转体的drne 和 drns也需要考虑，loft需要支持曲线的loft才行
                 SweepPath3D::SpineArc(arc) => {
                     let mut face_s = builder::try_attach_plane(&[wire]).unwrap();
                     if let Surface::Plane(plane) = face_s.surface() {
@@ -504,14 +505,12 @@ impl BrepShapeTrait for SweepSolid {
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         println!("drns {:?}  is sloped", self.drns);
                         let mut angle = (-self.drns).angle_between(Vec3::X);
-                        // dbg!(angle);
                         let scale_x = if angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
                             1.0 / (angle.sin())
                         };
                         let mut angle = (-self.drns).angle_between(Vec3::Y).abs();
-                        // dbg!(angle);
                         let scale_y = if angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
@@ -536,7 +535,9 @@ impl BrepShapeTrait for SweepSolid {
                         }else{
                             1.0 / (angle.sin())
                         };
-                        dbg!(Vec3::new(scale_x, scale_y, 1.0));
+                        //debug assersion
+                        // dbg!(Vec3::new(scale_x, scale_y, 1.0));
+                        // dbg!((-self.drne).angle_between(Vec3::Z));
                         transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
