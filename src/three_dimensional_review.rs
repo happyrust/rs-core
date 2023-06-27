@@ -3,6 +3,8 @@ use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
 use bevy::transform::components::Transform;
 use bevy::utils::HashMap;
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ThreeDimensionalModelDataCrate {
@@ -80,7 +82,7 @@ pub struct ThreeDimensionalReviewData {
     pub status: bool,
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq,Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ModelDataIndex {
     pub refno: RefU64,
     pub name: String,
@@ -119,3 +121,35 @@ pub struct VagueSearchRequest {
     pub filter_condition: Vec<(String, (VagueSearchCondition, String))>,
 }
 
+/// 模糊查询导出为csv文件的数据
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct VagueSearchExportCsvData {
+    pub key_word: String,
+    pub result: String,
+    pub belong_level: String,
+    pub att_type: String,
+}
+
+impl VagueSearchExportCsvData {
+    /// 将结构体数据转为Vec<String>，方便导出csv
+    pub fn into_vec_string(self) -> Vec<String> {
+        vec![self.key_word, self.result, self.belong_level, self.att_type]
+    }
+}
+
+/// 模糊查询 从图数据库中查询到的需要导出的数据
+#[serde_as]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct VagueSearchExportAqlData {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    pub name: String,
+    pub level: Vec<String>,
+    pub att_type: String,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct VagueSearchExportRequest{
+    pub condition: String,
+    pub refnos: Vec<RefU64>,
+}
