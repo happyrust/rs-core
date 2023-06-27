@@ -16,9 +16,9 @@ use serde_with::DisplayFromStr;
 pub struct PdmsTubing {
     #[serde(rename="_key")]
     #[serde_as(as = "DisplayFromStr")]
-    pub refno: RefU64,
+    pub leave_refno: RefU64,
     #[serde_as(as = "DisplayFromStr")]
-    pub next_refno: RefU64,
+    pub arrive_refno: RefU64,
     pub start_pt: Vec3,
     pub end_pt: Vec3,
     pub desire_leave_dir: Vec3,

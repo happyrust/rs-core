@@ -634,6 +634,9 @@ impl AttrMap {
     pub fn cal_cata_hash(&self) -> Option<u64> {
         //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
         let type_name = self.get_type();
+        if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
+            return Some(*self.get_refno().unwrap_or_default());
+        }
         let ref_name = if type_name == "NOZZ" {
             "CATR"
         }else {
@@ -669,8 +672,9 @@ impl AttrMap {
                 hash_f32(v, &mut hasher);
                 // return Some(*self.get_refno().unwrap_or_default());
             }
+            let val = std::hash::Hasher::finish(&hasher);
 
-            return Some(std::hash::Hasher::finish(&hasher));
+            return Some(val / 23 + 739 );
         }
         return None;
     }
@@ -1676,6 +1680,7 @@ pub enum PdmsGenericType {
     EQUI,
     ROOM,
     SCTN,
+    WALL,
     GENSEC,
     HANG,
     HANDRA,
@@ -1775,6 +1780,7 @@ impl GeoEdge {
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default, Resource)]
+#[serde_as]
 pub struct EleGeosInfo {
     #[serde(serialize_with = "ser_refno_as_key_str")]
     #[serde(deserialize_with = "de_refno_from_key_str")]
@@ -1783,8 +1789,8 @@ pub struct EleGeosInfo {
     //todo 这里的数据是重复的，需要复用
     //有哪一些 geo insts 组成
     //也可以通过edge 来组合
-    // pub geo_basics: Vec<GeoBasic>,
-    pub cata_hash: Option<u64>,
+    #[serde(default)]
+    pub cata_hash: Option<String>,
     //是否可见
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
@@ -1815,7 +1821,10 @@ pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 impl EleGeosInfo {
     #[inline]
     pub fn get_inst_key(&self) -> u64 {
-        self.cata_hash.unwrap_or(*self.refno)
+        if let Some(c) = &self.cata_hash {
+            return c.parse::<u64>().unwrap_or(0);
+        }
+        *self.refno
     }
 
     ///获得所有的geo hashes
@@ -2229,11 +2238,11 @@ impl PlantMeshesData {
     }
 }
 
+#[serde_as]
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default, Resource)]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
-    #[serde(deserialize_with = "de_from_str")]
-    #[serde(serialize_with = "ser_u64_as_str")]
+    #[serde_as(as = "DisplayFromStr")]
     pub inst_key: u64,
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
@@ -2540,8 +2549,9 @@ pub struct ChildrenNode {
 pub struct CataHashRefnoKV {
     // #[serde(deserialize_with = "de_from_str")]
     // #[serde(serialize_with = "ser_u64_as_str")]
+    // #[serde_as(as = "Option<DisplayFromStr>")]
     #[serde(default)]
-    pub cata_hash: Option<u64>,
+    pub cata_hash: Option<String>,
     // #[serde_as(as = "DisplayFromStr")]
     #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,
