@@ -7,11 +7,6 @@ use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use anyhow::anyhow;
-use bevy::ecs::component::Component;
-use bevy::prelude::{FromWorld, Mesh, Transform};
-use bevy::render::mesh::Indices;
-use bevy::render::render_resource::PrimitiveTopology::{LineList, TriangleList};
-use bevy::utils::HashSet;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{DVec3, Mat4, Vec3, vec3, Vec4};
@@ -22,6 +17,7 @@ use truck_base::bounding_box::BoundingBox;
 use truck_base::cgmath64::{Point3, Vector3, Vector4, Matrix4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
+use bevy_ecs::prelude::Component;
 #[cfg(not(target_arch = "wasm32"))]
 use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
 use parry3d::bounding_volume::Aabb;
@@ -46,6 +42,7 @@ use crate::tool::float_tool::f32_round_3;
 
 
 pub const TRIANGLE_TOL: f64 = 0.01;
+pub const ANGLE_RAD_TOL: f32 = 0.01;
 
 pub trait VerifiedShape {
     fn check_valid(&self) -> bool {
@@ -146,31 +143,6 @@ impl PlantMesh {
             wire_vertices: vec![],
         }
     }
-
-
-    // ///变成压缩的模型数据
-    // #[inline]
-    // pub fn into_compress_bytes(&self) -> Vec<u8> {
-    //     use flate2::Compression;
-    //     use flate2::write::DeflateEncoder;
-    //     let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-    //     let serialized = rkyv::to_bytes::<_, 2048>(self).unwrap().to_vec();
-    //     e.write_all(&serialized);
-    //     e.finish().unwrap_or_default()
-    // }
-
-    // ///根据反序列化的数据还原成mesh
-    // #[inline]
-    // pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
-    //     use flate2::write::DeflateDecoder;
-    //     let mut writer = Vec::new();
-    //     let mut deflater = DeflateDecoder::new(writer);
-    //     deflater.write_all(bytes).ok()?;
-    //     let buf = deflater.finish().ok()?;
-    //     use rkyv::{archived_root, Deserialize};
-    //     let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
-    //     archived.deserialize(&mut rkyv::Infallible).ok()
-    // }
 
     #[inline]
     pub fn into_compress_bytes(&self) -> Vec<u8> {
@@ -292,16 +264,6 @@ impl From<&CsgMesh> for PlantGeoData {
             }),
             aabb: Some(aabb),
         }
-
-        // Self{
-        //     indices,
-        //     vertices,
-        //     normals,
-        //     wire_vertices: vec![],
-        //     aabb: Some(aabb),
-        //     #[cfg(feature = "opencascade")]
-        //     occ_shape: None,
-        // }
     }
 }
 

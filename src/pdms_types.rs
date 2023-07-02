@@ -51,7 +51,6 @@ use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use bevy_transform::prelude::*;
@@ -1237,28 +1236,6 @@ impl AttrMap {
         None
     }
 
-    ///生成具有几何属性的element的shape
-    pub fn create_brep_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
-        let type_noun = self.get_type();
-        let mut r: Option<Box<dyn BrepShapeTrait>> = match type_noun {
-            "BOX" | "NBOX" => {
-                Some(Box::new(SBox::from(self)))
-            }
-            "CYLI" | "NCYL" => Some(Box::new(SCylinder::from(self))),
-            "SPHE" => Some(Box::new(Sphere::from(self))),
-            "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
-            "DISH" | "NDIS" => Some(Box::new(Dish::from(self))),
-            "CTOR" | "NCTO" => Some(Box::new(CTorus::from(self))),
-            "RTOR" | "NRTO" => Some(Box::new(RTorus::from(self))),
-            "PYRA" | "NPYR" => Some(Box::new(Pyramid::from(self))),
-            _ => None,
-        };
-        if r.is_some() && limit_size.is_some() {
-            r.as_mut().unwrap().apply_limit_by_size(limit_size.unwrap());
-        }
-        r
-    }
-
     /// 获取string属性数组，忽略为空的值
     pub fn get_attr_strings_without_default(&self, keys: &[&str]) -> Vec<String> {
         let mut results = vec![];
@@ -2184,6 +2161,7 @@ use bevy_render::prelude::*;
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 #[cfg(feature = "render")]
 use bevy_render::mesh::Indices;
+use crate::shape::pdms_shape::PlantMesh;
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
