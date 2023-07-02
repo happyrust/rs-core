@@ -1,10 +1,11 @@
 use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
-use bevy::math::Quat;
+use bevy_math::prelude::Quat;
 use std::default::default;
 use approx::abs_diff_eq;
-use bevy::prelude::Transform;
+use bevy_transform::prelude::Transform;
 use crate::pdms_types::RefU64;
+use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::CateSCylinderParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -77,5 +78,29 @@ impl PdmsTubing {
             translation: self.start_pt,
             scale: Vec3::new(self.bore, self.bore,v.length()),
         })
+    }
+
+    pub fn convert_to_shape(&self) -> CateBrepShape {
+        let dir = (self.end_pt - self.start_pt).normalize();
+        let mut cylinder = SCylinder {
+            phei: self.start_pt.distance(self.end_pt),
+            pdia: self.bore,
+            center_in_mid: false,
+            ..default()
+        };
+
+        CateBrepShape {
+            refno: self.leave_refno,
+            brep_shape: Box::new(cylinder.clone()),
+            transform: Transform {
+                rotation: Quat::from_rotation_arc(Vec3::Z, dir),
+                translation: self.start_pt,
+                scale: Vec3::ONE,
+            },
+            visible: true,
+            is_tubi: true,
+            shape_err: None,
+            pts: Default::default(),
+        }
     }
 }

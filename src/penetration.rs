@@ -1,6 +1,6 @@
-use bevy::math::Vec3;
+use bevy_math::prelude::Vec3;
 use crate::pdms_types::RefU64;
-use bevy::ecs::system::Resource;
+use bevy_ecs::system::Resource;
 use serde::{Serialize,Deserialize};
 
 #[derive(Resource,Serialize, Deserialize, Debug, Default, Clone)]

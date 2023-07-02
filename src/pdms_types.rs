@@ -11,12 +11,8 @@ use std::sync::Arc;
 use std::vec::IntoIter;
 use rkyv::with::Skip;
 use serde_with::{DisplayFromStr, serde_as};
-
+use bevy_ecs::prelude::*;
 use anyhow::anyhow;
-// use arangors_lite::Cursor;
-// use arangors_lite::response::Response;
-use bevy::prelude::*;
-use bevy::render::primitives::Plane;
 use bitflags::bitflags;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
@@ -55,11 +51,17 @@ use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::shape::pdms_shape::{PlantMesh};
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
-use bevy::render::render_resource::PrimitiveTopology::TriangleList;
-use bevy::render::mesh::Indices;
+use bevy_transform::prelude::*;
+use bevy_ecs::prelude::*;
+#[cfg(feature = "bevy_render")]
+use bevy_render::render_resource::PrimitiveTopology::TriangleList;
+#[cfg(feature = "bevy_render")]
+use bevy_render::mesh::Indices;
+
+use bevy_reflect::{DynamicStruct, GetField, Reflect, Struct};
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -462,7 +464,7 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Deref, DerefMut, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
-#[cfg(not(target_arch = "wasm32"))]
+
 impl BytesTrait for RefU64Vec {}
 
 impl From<Vec<RefU64>> for RefU64Vec {
@@ -490,9 +492,9 @@ impl RefU64Vec {
     }
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Reflect, Eq, Hash, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 // PartialEq, Ord, PartialOrd)]
-// #[reflect(Component)]
+//
 // pub struct (pub u32);
 //
 // impl ToString for NounHash {
@@ -637,7 +639,7 @@ impl AttrMap {
         if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
             return Some(*self.get_refno().unwrap_or_default());
         }
-        let ref_name = if type_name == "NOZZ" {
+        let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
             "CATR"
         }else {
             "SPRE"
@@ -670,7 +672,6 @@ impl AttrMap {
                 let pose = self.get_vec3("POSE").unwrap_or_default();
                 let v = (pose - poss).length();
                 hash_f32(v, &mut hasher);
-                // return Some(*self.get_refno().unwrap_or_default());
             }
             let val = std::hash::Hasher::finish(&hasher);
 
@@ -1234,6 +1235,28 @@ impl AttrMap {
             return Some(d.clone());
         }
         None
+    }
+
+    ///生成具有几何属性的element的shape
+    pub fn create_brep_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
+        let type_noun = self.get_type();
+        let mut r: Option<Box<dyn BrepShapeTrait>> = match type_noun {
+            "BOX" | "NBOX" => {
+                Some(Box::new(SBox::from(self)))
+            }
+            "CYLI" | "NCYL" => Some(Box::new(SCylinder::from(self))),
+            "SPHE" => Some(Box::new(Sphere::from(self))),
+            "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
+            "DISH" | "NDIS" => Some(Box::new(Dish::from(self))),
+            "CTOR" | "NCTO" => Some(Box::new(CTorus::from(self))),
+            "RTOR" | "NRTO" => Some(Box::new(RTorus::from(self))),
+            "PYRA" | "NPYR" => Some(Box::new(Pyramid::from(self))),
+            _ => None,
+        };
+        if r.is_some() && limit_size.is_some() {
+            r.as_mut().unwrap().apply_limit_by_size(limit_size.unwrap());
+        }
+        r
     }
 
     /// 获取string属性数组，忽略为空的值
@@ -2155,10 +2178,18 @@ unsafe impl Sync for PlantGeoData {}
 
 unsafe impl Send for PlantGeoData {}
 
+#[cfg(feature = "render")]
+use bevy_render::prelude::*;
+#[cfg(feature = "render")]
+use bevy_render::render_resource::PrimitiveTopology::TriangleList;
+#[cfg(feature = "render")]
+use bevy_render::mesh::Indices;
+
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
+    #[cfg(feature = "render")]
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
-        let mut mesh = Mesh::new(TriangleList);
+        let mut mesh = bevy_render::prelude::Mesh::new(TriangleList);
         let d = self.mesh.as_ref()?;
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, d.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, d.normals.clone());
@@ -2189,7 +2220,8 @@ impl PlantMeshesData {
     }
 
     /// 获得对应的bevy 三角模型和线框模型
-    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Option<Aabb>)> {
+    #[cfg(feature = "render")]
+    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(bevy_render::prelude::Mesh, Option<Aabb>)> {
         if let Some(c) = self.get(mesh_hash) {
             let bevy_mesh = c.gen_bevy_mesh_with_aabb();
             return bevy_mesh;
@@ -2204,12 +2236,6 @@ impl PlantMeshesData {
     pub fn get_aabb(&self, geo_hash: u64) -> Option<Aabb> {
         self.meshes.get(&geo_hash).and_then(|x| x.aabb)
     }
-
-    #[cfg(feature = "opencascade")]
-    pub fn get_occ_shape(&self, geo_hash: u64) -> Option<&OCCShape> {
-        self.meshes.get(&geo_hash).and_then(|x| x.occ_shape.as_ref())
-    }
-
 
     pub fn get_bbox(&self, hash: &u64) -> Option<Aabb> {
         if self.meshes.contains_key(hash) {

@@ -1,5 +1,5 @@
 use std::io::SeekFrom;
-use bevy::prelude::Resource;
+use bevy_ecs::prelude::Resource;
 use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;

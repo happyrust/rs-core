@@ -1,7 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
-use bevy::prelude::*;
+use bevy_ecs::prelude::*;
 use glam::Vec3;
 use lyon::path::builder::PathBuilder;
 use lyon::path::Path;
@@ -10,7 +10,7 @@ use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
-use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 
 #[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Facet {
@@ -35,6 +35,34 @@ impl VerifiedShape for Facet {
     fn check_valid(&self) -> bool { true }
 }
 
+//#[typetag::serde]
+impl BrepShapeTrait for Facet {
+
+    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64{
+        let bytes = bincode::serialize(self).unwrap();
+        let mut hasher = DefaultHasher::default();
+        bytes.hash(&mut hasher);
+        hasher.finish()
+    }
+
+
+    #[inline]
+    fn get_scaled_vec3(&self) -> Vec3 {
+        Vec3::ONE
+    }
+
+    fn gen_brep_shell(& self) -> Option<Shell> {
+        None
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+}
 
 impl Facet {
     fn to2d(pts: &[[f32; 3]], normal: [f32;3], coord_sys: &mut [Vec3; 3]) -> Vec<lyon::math::Point> {

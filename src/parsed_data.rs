@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::future::Future;
-use bevy::utils::HashMap;
 use dashmap::DashMap;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;

@@ -1,4 +1,4 @@
-use bevy::prelude::Resource;
+use bevy_ecs::prelude::Resource;
 use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
 use bevy::transform::components::Transform;
