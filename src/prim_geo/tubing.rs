@@ -1,9 +1,9 @@
 use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
-use bevy::math::Quat;
+use bevy_math::prelude::Quat;
 use std::default::default;
 use approx::abs_diff_eq;
-use bevy::prelude::Transform;
+use bevy_transform::prelude::Transform;
 use crate::pdms_types::RefU64;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::CateSCylinderParam;
@@ -12,9 +12,9 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 
 #[serde_as]
-#[derive(Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct PdmsTubing {
-    #[serde(rename="_key")]
+    #[serde(rename = "_key")]
     #[serde_as(as = "DisplayFromStr")]
     pub leave_refno: RefU64,
     #[serde_as(as = "DisplayFromStr")]
@@ -41,8 +41,8 @@ pub struct TubiEdge {
 }
 
 impl TubiEdge {
-    pub fn new_from_edge() -> Self{
-        Self{
+    pub fn new_from_edge() -> Self {
+        Self {
             ..default()
         }
     }
@@ -64,18 +64,17 @@ impl PdmsTubing {
         abs_diff_eq!(a.dot(c).abs(), 1.0, epsilon=0.01) && abs_diff_eq!(b.dot(c).abs(), 1.0, epsilon=0.01)
     }
 
-    pub fn get_transform(&self) -> Option<Transform>{
-
+    pub fn get_transform(&self) -> Option<Transform> {
         let v = (self.end_pt - self.start_pt);
         let dir = v.normalize_or_zero();
         if self.bore.abs() < f32::EPSILON || dir.length().abs() < f32::EPSILON {
-            return  None;
+            return None;
         }
 
         Some(Transform {
             rotation: Quat::from_rotation_arc(Vec3::Z, dir),
             translation: self.start_pt,
-            scale: Vec3::new(self.bore, self.bore,v.length()),
+            scale: Vec3::new(self.bore, self.bore, v.length()),
         })
     }
 }

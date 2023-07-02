@@ -1,4 +1,4 @@
-use bevy::prelude::Transform;
+use bevy_transform::prelude::Transform;
 use glam::{Quat, Vec3};
 use parry3d::bounding_volume::Aabb;
 use serde::{Serialize, Deserialize};

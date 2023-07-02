@@ -36,11 +36,11 @@ impl BytesTrait for Aabb{
 
 }
 
+//, rkyv::Archive
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Clone, Debug)]
 pub struct CacheMgr<T: BytesTrait + Clone + Serialize + DeserializeOwned> {
     name: String,
-    // #[serde(skip_serializing)]
     db: Option<Arc<Database>>,
     map: DashMap<RefU64, T>,
     use_redb: bool,
