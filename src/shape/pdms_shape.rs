@@ -43,6 +43,7 @@ use crate::tool::float_tool::f32_round_3;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 pub const ANGLE_RAD_TOL: f32 = 0.01;
+pub const LEN_TOL: f32 = 0.001;
 
 pub trait VerifiedShape {
     fn check_valid(&self) -> bool {
