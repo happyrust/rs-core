@@ -258,6 +258,7 @@ impl SweepSolid {
         use truck_modeling::{builder, Face, Shell, Surface, Wire};
         use truck_modeling::builder::try_attach_plane;
         let verts = &profile.verts;
+        dbg!(&verts);
         let len = verts.len();
 
         let mut offset_pt = Vec3::ZERO;
@@ -276,8 +277,8 @@ impl SweepSolid {
                 if d.clock_wise {
                     z_axis = -z_axis;
                 }
+                dbg!(&d.clock_wise);
                 let x_axis = y_axis.cross(z_axis).normalize();
-                // dbg!((x_axis, y_axis, z_axis));
                 //旋转到期望的平面
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
@@ -285,7 +286,6 @@ impl SweepSolid {
             SweepPath3D::Line(d) => {
                 rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Y));
                 if d.is_spine {
-                    // dbg!(self.bangle.to_radians());
                     beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
                 }
             }
@@ -504,44 +504,47 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         println!("drns {:?}  is sloped", self.drns);
-                        let mut angle = (-self.drns).angle_between(Vec3::X);
-                        let scale_x = if angle < ANGLE_RAD_TOL {
+                        let mut x_angle = self.drns.angle_between(Vec3::X).abs();
+                        dbg!(x_angle);
+                        let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
-                            1.0 / (angle.sin())
+                            1.0 / (x_angle.sin())
                         };
-                        let mut angle = (-self.drns).angle_between(Vec3::Y).abs();
-                        let scale_y = if angle < ANGLE_RAD_TOL {
+                        let mut y_angle = self.drns.angle_between(Vec3::Y).abs();
+                        dbg!(y_angle);
+                        let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
-                            1.0 / (angle.sin())
+                            1.0 / (y_angle.sin())
                         };
+                        dbg!((self.drns).angle_between(Vec3::Z));
                         transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
                     if self.drne.is_normalized() &&  self.is_drne_sloped() {
                         println!("drne {:?}  is sloped", self.drne);
-                        let mut angle = (-self.drne).angle_between(Vec3::X);
-                        // dbg!(angle);
-                        let scale_x = if angle < ANGLE_RAD_TOL {
+                        let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
+                        dbg!(x_angle);
+                        let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
-                            1.0 / (angle.sin())
+                            1.0 / (x_angle.sin())
                         };
-                        let mut angle = (-self.drne).angle_between(Vec3::Y).abs();
-                        // dbg!(angle);
-                        let scale_y = if angle < ANGLE_RAD_TOL {
+                        let mut y_angle = (-self.drne).angle_between(Vec3::Y).abs();
+                        dbg!(y_angle);
+                        let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
-                            1.0 / (angle.sin())
+                            1.0 / (y_angle.sin())
                         };
                         //debug assersion
                         // dbg!(Vec3::new(scale_x, scale_y, 1.0));
-                        // dbg!((-self.drne).angle_between(Vec3::Z));
+                        dbg!((-self.drne).angle_between(Vec3::Z));
                         transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
-                    transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.len())) * transform_top;
+                    transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.length())) * transform_top;
 
                     let mut faces = vec![];
                     let wire_s = builder::transformed(&wire, convert_to_cg_matrix4(&transform_btm));

@@ -34,7 +34,6 @@ use truck_modeling::Shell;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::{BHashMap, prim_geo};
-#[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::cache::refno::CachedRefBasic;
@@ -61,6 +60,8 @@ use bevy_ecs::prelude::*;
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 #[cfg(feature = "bevy_render")]
 use bevy_render::mesh::Indices;
+
+use bevy_reflect::{DynamicStruct, GetField, Reflect, Struct};
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -638,7 +639,7 @@ impl AttrMap {
         if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
             return Some(*self.get_refno().unwrap_or_default());
         }
-        let ref_name = if type_name == "NOZZ" {
+        let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
             "CATR"
         }else {
             "SPRE"
@@ -1523,25 +1524,25 @@ impl AttrVal {
         };
     }
 
-    // #[inline]
-    // pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
-    //     return match self {
-    //         InvalidType => { Box::new("unset".to_string()) }
-    //         // IntegerType(v) => { Box::new(*v) }
-    //         StringType(v) | ElementType(v) | WordType(v) => { Box::new(v.to_string()) }
-    //         RefU64Type(v) => { Box::new(v.to_string()) }
-    //         BoolArrayType(v) => { Box::new(v.clone()) }
-    //         IntArrayType(v) => { Box::new(v.clone()) }
-    //         IntegerType(v) => { Box::new(*v) }
-    //         DoubleArrayType(v) => { Box::new(v.clone()) }
-    //         DoubleType(v) => { Box::new(*v) }
-    //         BoolType(v) => { Box::new(*v) }
-    //         StringHashType(v) => { Box::new(*v) }
-    //         StringArrayType(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
-    //         Vec3Type(v) => { Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)) }
-    //         RefU64Array(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
-    //     };
-    // }
+    #[inline]
+    pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
+        return match self {
+            InvalidType => { Box::new("unset".to_string()) }
+            // IntegerType(v) => { Box::new(*v) }
+            StringType(v) | ElementType(v) | WordType(v) => { Box::new(v.to_string()) }
+            RefU64Type(v) => { Box::new(v.to_string()) }
+            BoolArrayType(v) => { Box::new(v.clone()) }
+            IntArrayType(v) => { Box::new(v.clone()) }
+            IntegerType(v) => { Box::new(*v) }
+            DoubleArrayType(v) => { Box::new(v.clone()) }
+            DoubleType(v) => { Box::new(*v) }
+            BoolType(v) => { Box::new(*v) }
+            StringHashType(v) => { Box::new(*v) }
+            StringArrayType(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
+            Vec3Type(v) => { Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)) }
+            RefU64Array(v) => { Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()) }
+        };
+    }
 
     #[inline]
     pub fn get_val_as_string(&self) -> String {
@@ -2177,11 +2178,18 @@ unsafe impl Sync for PlantGeoData {}
 
 unsafe impl Send for PlantGeoData {}
 
+#[cfg(feature = "render")]
+use bevy_render::prelude::*;
+#[cfg(feature = "render")]
+use bevy_render::render_resource::PrimitiveTopology::TriangleList;
+#[cfg(feature = "render")]
+use bevy_render::mesh::Indices;
+
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
-    #[cfg(feature = "bevy_render")]
+    #[cfg(feature = "render")]
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
-        let mut mesh = Mesh::new(TriangleList);
+        let mut mesh = bevy_render::prelude::Mesh::new(TriangleList);
         let d = self.mesh.as_ref()?;
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, d.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, d.normals.clone());
@@ -2212,8 +2220,8 @@ impl PlantMeshesData {
     }
 
     /// 获得对应的bevy 三角模型和线框模型
-    #[cfg(feature = "bevy_render")]
-    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(Mesh, Option<Aabb>)> {
+    #[cfg(feature = "render")]
+    pub fn get_bevy_mesh(&self, mesh_hash: &u64) -> Option<(bevy_render::prelude::Mesh, Option<Aabb>)> {
         if let Some(c) = self.get(mesh_hash) {
             let bevy_mesh = c.gen_bevy_mesh_with_aabb();
             return bevy_mesh;

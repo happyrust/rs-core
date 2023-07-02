@@ -1,5 +1,5 @@
 use approx::{abs_diff_eq, relative_eq};
-use glam::{Mat3, Vec3};
+use glam::{Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
 use crate::shape::pdms_shape::ANGLE_RAD_TOL;
 use crate::tool::float_tool::f32_round_3;
@@ -86,8 +86,19 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
     format!("{part_str} {theta} {z_str}")
 }
 
-
+#[inline]
 pub fn to_pdms_ori_str(rot: &Mat3) -> String {
+    let y_axis = &rot.y_axis;
+    let z_axis = &rot.z_axis;
+
+    // "E".to_string()
+    format!("Y is {} and Z is {}", to_pdms_vec_str(y_axis), to_pdms_vec_str(z_axis))
+}
+
+
+#[inline]
+pub fn quat_to_pdms_ori_str(rot: &Quat) -> String {
+    let rot = Mat3::from_quat(*rot);
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
 

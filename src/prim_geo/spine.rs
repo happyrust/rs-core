@@ -28,9 +28,9 @@ pub struct Spine3D {
     pub cond_pos: Vec3,
     pub radius: f32,
     pub curve_type: SpineCurveType,
-
     pub preferred_dir: Vec3,
 }
+
 
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
@@ -42,6 +42,15 @@ pub enum SweepPath3D {
 impl Default for SweepPath3D {
     fn default() -> Self {
         Self::Line(Line3D::default())
+    }
+}
+
+impl SweepPath3D{
+    pub fn length(&self) -> f32{
+        match self {
+            Self::Line(line) => line.length(),
+            Self::SpineArc(arc) => arc.angle.abs() * arc.radius,
+        }
     }
 }
 
@@ -65,7 +74,7 @@ pub struct Line3D {
 
 impl Line3D {
     #[inline]
-    pub fn len(&self) -> f32{
+    pub fn length(&self) -> f32{
         self.start.distance(self.end)
     }
 
@@ -102,6 +111,7 @@ impl Spine3D {
         let mut paths = vec![];
         let mut transform = Transform::IDENTITY;
         let pref_axis = self.preferred_dir.normalize();
+        // dbg!(&self);
         match self.curve_type {
             SpineCurveType::THRU => {
                 let center = circum_center(self.pt0, self.pt1, self.thru_pt);
@@ -117,11 +127,10 @@ impl Spine3D {
                 } else { Vec3::Z };
                 let y_axis = ref_axis.cross(x_axis).normalize();
                 let z_axis = x_axis.cross(y_axis).normalize();
-                // dbg!((x_axis, y_axis, z_axis));
                 transform.rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
                 let arc = Arc3D{
-                    center: vec3_round_1(center),
-                    radius: f32_round_1(center.distance(self.pt0)),
+                    center: vec3_round_3(center),
+                    radius: f32_round_3(center.distance(self.pt0)),
                     angle,
                     clock_wise: axis.z < 0.0,
                     axis,

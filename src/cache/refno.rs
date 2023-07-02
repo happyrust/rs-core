@@ -1,5 +1,4 @@
 use serde::{Serialize, Deserialize};
-#[cfg(not(target_arch = "wasm32"))]
 use crate::cache::mgr::BytesTrait;
 use crate::pdms_types::{AttrMap, RefU64};
 use crate::pdms_types::NounHash;

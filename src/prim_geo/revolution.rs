@@ -21,6 +21,7 @@ use crate::tool::float_tool::{hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis};
+#[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -72,7 +73,7 @@ impl BrepShapeTrait for Revolution {
     }
 
     ///使用manifold生成拉身体的mesh
-    ///使用manifold生成拉身体的mesh
+    #[cfg(feature = "gen_model")]
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         use truck_modeling::{builder, Shell, Surface, Wire};
         use truck_meshalgo::prelude::*;

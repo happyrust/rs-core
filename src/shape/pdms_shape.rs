@@ -379,6 +379,7 @@ impl From<&CsgMesh> for PlantGeoData {
 
 
 pub const TRI_TOL: f32 = 0.001;
+pub const LEN_TOL: f32 = 0.001;
 pub const ANGLE_RAD_TOL: f32 = 0.01;
 pub const MIN_SIZE_TOL: f32 = 0.01;
 pub const MAX_SIZE_TOL: f32 = 1.0e5;
@@ -485,8 +486,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
             );
             let tolerance = self.tol() * tol_ratio.unwrap_or(2.0);
-            #[cfg(debug_assertions)]
-            dbg!(tolerance);
+            // #[cfg(debug_assertions)]
+            // dbg!(tolerance);
             let meshed_shape = brep.triangulation(tolerance as f64);
             let polygon = meshed_shape.to_polygon();
             if polygon.positions().is_empty() { return None; }
