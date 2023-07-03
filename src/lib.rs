@@ -11,6 +11,7 @@ use crate::pdms_types::PdmsDatabaseInfo;
 
 extern crate bitflags;
 extern crate phf;
+extern crate core;
 
 pub mod aql_types;
 pub mod pdms_types;
@@ -44,6 +45,8 @@ pub mod ssc_setting;
 pub mod version_control;
 pub mod penetration;
 pub mod vague_search;
+
+pub mod achiver;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;

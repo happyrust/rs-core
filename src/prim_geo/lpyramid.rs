@@ -3,10 +3,9 @@ use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use approx::abs_diff_eq;
+use crate::shape::pdms_shape::VerifiedShape;
+use bevy_ecs::reflect::ReflectComponent;
 
-use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::*;
-use bevy::reflect::Reflect;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
@@ -14,12 +13,9 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::hash_tool::*;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait,  PlantMesh, VerifiedShape};
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+use bevy_ecs::prelude::*;
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-#[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct LPyramid {
     pub pbax_pt: Vec3,
     pub pbax_dir: Vec3,   //B Axis Direction

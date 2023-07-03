@@ -1,13 +1,13 @@
 use std::f64::consts::PI;
 use std::f32::EPSILON;
-use bevy::prelude::*;
+use glam::Vec3;
+
 use truck_base::cgmath64::Vector3;
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{builder, Shell, Solid};
 use crate::tool::hash_tool::*;
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
-
+use bevy_ecs::reflect::ReflectComponent;
+use crate::shape::pdms_shape::VerifiedShape;
 use lyon::math::size;
 use hexasphere::shapes::IcoSphere;
 use nalgebra::Point3;
@@ -16,11 +16,10 @@ use parry3d::math::{Point, Vector};
 use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
-use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, VerifiedShape};
 use crate::pdms_types::AttrMap;
+use bevy_ecs::prelude::*;
 
-#[derive(Component, Debug, Clone, Reflect, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
-// #[reflect(Component)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f32,
@@ -43,6 +42,7 @@ impl VerifiedShape for Sphere {
         self.radius > f32::EPSILON
     }
 }
+
 
 impl From<&AttrMap> for Sphere {
     fn from(m: &AttrMap) -> Self {

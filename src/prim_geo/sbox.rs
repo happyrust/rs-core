@@ -1,20 +1,16 @@
 use std::f32::EPSILON;
-use bevy::prelude::*;
+use glam::Vec3;
+use crate::shape::pdms_shape::VerifiedShape;
 use truck_base::cgmath64::Vector3;
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{builder, Shell, Solid};
-use bevy::reflect::Reflect;
-use bevy::ecs::reflect::ReflectComponent;
 use serde::{Serialize, Deserialize};
 use crate::consts::BOX_HASH;
 use crate::parsed_data::CateBoxParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
-use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, VerifiedShape};
-
+use bevy_ecs::prelude::*;
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SBox {
     pub center: Vec3,
@@ -37,6 +33,7 @@ impl VerifiedShape for SBox {
     }
 }
 
+
 impl From<&AttrMap> for SBox {
     fn from(m: &AttrMap) -> Self {
         SBox {
@@ -45,6 +42,12 @@ impl From<&AttrMap> for SBox {
                             m.get_f32("YLEN").unwrap_or_default(),
                             m.get_f32("ZLEN").unwrap_or_default(), ),
         }
+    }
+}
+
+impl From<AttrMap> for SBox {
+    fn from(m: AttrMap) -> Self {
+        (&m).into()
     }
 }
 

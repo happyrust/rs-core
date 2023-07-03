@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use bevy::prelude::Resource;
+use bevy_ecs::prelude::Resource;
 use glam::Vec3;
 use serde::{Serialize, Deserialize, Serializer};
 use serde::de::DeserializeOwned;

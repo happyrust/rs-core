@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
 use serde::{Serialize, Deserialize};
 use std::io::{Read, Write};
-use bevy::prelude::Resource;
+use bevy_ecs::prelude::Resource;
 use derive_more::*;
 use itertools::Itertools;
 use crate::pdms_types::RefU64;

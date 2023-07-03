@@ -1,7 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
-use bevy::prelude::*;
+use bevy_ecs::prelude::*;
 use glam::Vec3;
 use lyon::path::builder::PathBuilder;
 use lyon::path::Path;
@@ -10,7 +10,7 @@ use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use truck_modeling::Shell;
 use serde::{Serialize,Deserialize};
-use crate::shape::pdms_shape::{BrepMathTrait,  PlantMesh, VerifiedShape};
+use crate::shape::pdms_shape::VerifiedShape;
 
 #[derive(Component, Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Facet {

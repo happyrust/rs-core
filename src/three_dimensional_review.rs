@@ -1,8 +1,8 @@
-use bevy::prelude::Resource;
+use std::collections::HashMap;
+use bevy_ecs::prelude::Resource;
+use bevy_transform::prelude::Transform;
 use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
-use bevy::transform::components::Transform;
-use bevy::utils::HashMap;
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 
@@ -95,7 +95,7 @@ pub struct ModelData {
     pub data: Vec<HashMap<String, String>>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Eq, PartialEq,Hash)]
 pub enum VagueSearchCondition {
     #[default]
     And,
@@ -149,7 +149,7 @@ pub struct VagueSearchExportAqlData {
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct VagueSearchExportRequest{
+pub struct VagueSearchExportRequest {
     pub condition: String,
     pub refnos: Vec<RefU64>,
 }
