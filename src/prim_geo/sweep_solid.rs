@@ -35,6 +35,7 @@ pub struct SweepSolid {
     pub extrude_dir: Vec3,
     pub height: f32,
     pub path: SweepPath3D,
+    pub lmirror: bool,
 }
 
 
@@ -142,8 +143,9 @@ impl SweepSolid {
                 let mut y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius as f64;
-                if d.clock_wise {
+                if !self.lmirror {
                     z_axis = -z_axis;
+                    dbg!("lmirror");
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
                 dbg!((x_axis, y_axis, z_axis));
@@ -258,7 +260,6 @@ impl SweepSolid {
         use truck_modeling::{builder, Face, Shell, Surface, Wire};
         use truck_modeling::builder::try_attach_plane;
         let verts = &profile.verts;
-        dbg!(&verts);
         let len = verts.len();
 
         let mut offset_pt = Vec3::ZERO;
@@ -274,10 +275,13 @@ impl SweepSolid {
                 let mut y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius as f64;
-                if d.clock_wise {
+                // if d.clock_wise {
+                //     z_axis = -z_axis;
+                // }
+                if !self.lmirror {
                     z_axis = -z_axis;
+                    dbg!("lmirror");
                 }
-                dbg!(&d.clock_wise);
                 let x_axis = y_axis.cross(z_axis).normalize();
                 //旋转到期望的平面
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
