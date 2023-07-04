@@ -275,12 +275,11 @@ impl SweepSolid {
                 let mut y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius as f64;
-                // if d.clock_wise {
-                //     z_axis = -z_axis;
-                // }
-                if !self.lmirror {
+                if d.clock_wise {
                     z_axis = -z_axis;
-                    dbg!("lmirror");
+                }
+                if self.lmirror {
+                    z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
                 //旋转到期望的平面
