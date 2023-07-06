@@ -17,7 +17,7 @@ use bitflags::bitflags;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use derive_more::{Deref, DerefMut};
-use glam::{Affine3A, Mat4, Quat, Vec3, Vec4};
+use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Point3, Quaternion, UnitQuaternion};
@@ -56,11 +56,12 @@ use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use bevy_transform::prelude::*;
 use bevy_ecs::prelude::*;
+use bevy_math::*;
 #[cfg(feature = "bevy_render")]
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 #[cfg(feature = "bevy_render")]
 use bevy_render::mesh::Indices;
-
+use crate::tool::math_tool::*;
 use bevy_reflect::{DynamicStruct, GetField, Reflect, Struct};
 
 ///控制pdms显示的深度层级
@@ -641,7 +642,7 @@ impl AttrMap {
         }
         let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
             "CATR"
-        }else {
+        } else {
             "SPRE"
         };
         if let Some(spref) = self.get_as_string(ref_name) {
@@ -675,7 +676,7 @@ impl AttrMap {
             }
             let val = std::hash::Hasher::finish(&hasher);
 
-            return Some(val / 23 + 739 );
+            return Some(val / 23 + 739);
         }
         return None;
     }
@@ -1184,11 +1185,49 @@ impl AttrMap {
 
     #[inline]
     pub fn get_rotation(&self) -> Option<Quat> {
-        let ang = self.get_f64_vec("ORI")?;
-        let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
-            * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-            * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
-        Some(Quat::from_mat3(&mat))
+        let type_name = self.get_type();
+        let mut quat = Quat::IDENTITY;
+        match type_name {
+            "SBFI" => {
+                let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
+                dbg!(to_pdms_vec_str(&axis_dir));
+                if axis_dir.is_normalized() {
+                    //zdir 需要翻转Y轴，暂时不知道原因
+                    axis_dir.y = -axis_dir.y;
+                    let z_dir = axis_dir;
+                    let x_dir = if z_dir.x >= 0.0 {
+                        Vec3::Z
+                    } else {
+                        Vec3::NEG_Z
+                    };
+                    let y_dir = z_dir.cross(x_dir).normalize();
+
+                    quat = Quat::from_mat3(&Mat3::from_cols(
+                        x_dir,
+                        y_dir,
+                        z_dir,
+                    ));
+                    dbg!(quat_to_pdms_ori_str(&quat));
+                }
+            }
+
+            "CMPF" => {
+                quat = Quat::from_mat3(&Mat3::from_cols(
+                    Vec3::X,
+                    Vec3::NEG_Y,
+                    Vec3::NEG_Z,
+                ));
+            }
+            _ => {
+                let ang = self.get_f64_vec("ORI")?;
+                let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
+                    * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
+                    * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
+                quat = Quat::from_mat3(&mat);
+            }
+        }
+
+        return Some(quat);
     }
 
     pub fn get_matrix(&self) -> Option<Affine3A> {
@@ -1226,6 +1265,13 @@ impl AttrMap {
     pub fn get_vec3(&self, key: &str) -> Option<Vec3> {
         if let AttrVal::Vec3Type(d) = self.get_val(key)? {
             return Some(Vec3::new(d[0] as f32, d[1] as f32, d[2] as f32));
+        }
+        None
+    }
+
+    pub fn get_dvec3(&self, key: &str) -> Option<DVec3> {
+        if let AttrVal::Vec3Type(d) = self.get_val(key)? {
+            return Some(DVec3::new(d[0], d[1], d[2]));
         }
         None
     }
@@ -1911,7 +1957,7 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn get_show_refnos(&self) -> Vec<RefU64>{
+    pub fn get_show_refnos(&self) -> Vec<RefU64> {
         let mut ready_refnos: Vec<RefU64> = self.inst_info_map.keys().cloned().collect();
         ready_refnos.extend(self.inst_tubi_map.keys().cloned());
         ready_refnos
@@ -2148,7 +2194,7 @@ pub struct PlantGeoData {
 
 impl Clone for PlantGeoData {
     fn clone(&self) -> Self {
-        Self{
+        Self {
             geo_hash: self.geo_hash.clone(),
             mesh: self.mesh.clone(),
             aabb: self.aabb.clone(),
