@@ -57093,6 +57093,1118 @@
 				},
 				"att_type": "BOOL"
 			}
+		},
+		"897934": {
+			"774699": {
+				"name": "ORIF",
+				"hash": 774699,
+				"offset": 3145754,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"857539": {
+				"name": "SHOP",
+				"hash": 857539,
+				"offset": 1048602,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"840333": {
+				"name": "LSRO",
+				"hash": 840333,
+				"offset": 29,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"774767": {
+				"name": "BUIL",
+				"hash": 774767,
+				"offset": 26,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"639374": {
+				"name": "NAME",
+				"hash": 639374,
+				"offset": 0,
+				"default_val": {
+					"StringType": ""
+				},
+				"att_type": "STRING"
+			},
+			"545713": {
+				"name": "POS",
+				"hash": 545713,
+				"offset": 12,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "POSITION"
+			},
+			"642215": {
+				"name": "TYPE",
+				"hash": 642215,
+				"offset": 0,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"865141": {
+				"name": "GTYP",
+				"hash": 865141,
+				"offset": 11,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"860359": {
+				"name": "DESP",
+				"hash": 860359,
+				"offset": 0,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"750558": {
+				"name": "LOCK",
+				"hash": 750558,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"711549": {
+				"name": "RADI",
+				"hash": 711549,
+				"offset": 37,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"675926": {
+				"name": "HEIG",
+				"hash": 675926,
+				"offset": 35,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"555987": {
+				"name": "CRFA",
+				"hash": 555987,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"663162": {
+				"name": "ORRF",
+				"hash": 663162,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"965343": {
+				"name": "LEAV",
+				"hash": 965343,
+				"offset": 32,
+				"default_val": {
+					"IntegerType": 2
+				},
+				"att_type": "INTEGER"
+			},
+			"10206636": {
+				"name": "OWNER",
+				"hash": 10206636,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"773119": {
+				"name": "ANGL",
+				"hash": 773119,
+				"offset": 33,
+				"default_val": {
+					"DoubleType": 90.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"562397": {
+				"name": "NLOA",
+				"hash": 562397,
+				"offset": 39,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"538503": {
+				"name": "ORI",
+				"hash": 538503,
+				"offset": 19,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "ORIENTATION"
+			},
+			"665964": {
+				"name": "INVF",
+				"hash": 665964,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"643429": {
+				"name": "SPRE",
+				"hash": 643429,
+				"offset": 27,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"722860": {
+				"name": "POSF",
+				"hash": 722860,
+				"offset": 2097178,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"722197": {
+				"name": "ARRI",
+				"hash": 722197,
+				"offset": 31,
+				"default_val": {
+					"IntegerType": 1
+				},
+				"att_type": "INTEGER"
+			}
+		},
+		"779400": {
+			"538503": {
+				"name": "ORI",
+				"hash": 538503,
+				"offset": 19,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "ORIENTATION"
+			},
+			"642215": {
+				"name": "TYPE",
+				"hash": 642215,
+				"offset": 0,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"773119": {
+				"name": "ANGL",
+				"hash": 773119,
+				"offset": 33,
+				"default_val": {
+					"DoubleType": 90.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"857539": {
+				"name": "SHOP",
+				"hash": 857539,
+				"offset": 1048602,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"675926": {
+				"name": "HEIG",
+				"hash": 675926,
+				"offset": 35,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"722197": {
+				"name": "ARRI",
+				"hash": 722197,
+				"offset": 31,
+				"default_val": {
+					"IntegerType": 1
+				},
+				"att_type": "INTEGER"
+			},
+			"840333": {
+				"name": "LSRO",
+				"hash": 840333,
+				"offset": 29,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"545713": {
+				"name": "POS",
+				"hash": 545713,
+				"offset": 12,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "POSITION"
+			},
+			"665964": {
+				"name": "INVF",
+				"hash": 665964,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"722860": {
+				"name": "POSF",
+				"hash": 722860,
+				"offset": 2097178,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"643429": {
+				"name": "SPRE",
+				"hash": 643429,
+				"offset": 27,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"562397": {
+				"name": "NLOA",
+				"hash": 562397,
+				"offset": 39,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"774699": {
+				"name": "ORIF",
+				"hash": 774699,
+				"offset": 3145754,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"865141": {
+				"name": "GTYP",
+				"hash": 865141,
+				"offset": 11,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"663162": {
+				"name": "ORRF",
+				"hash": 663162,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"750558": {
+				"name": "LOCK",
+				"hash": 750558,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"774767": {
+				"name": "BUIL",
+				"hash": 774767,
+				"offset": 26,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"860359": {
+				"name": "DESP",
+				"hash": 860359,
+				"offset": 0,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"555987": {
+				"name": "CRFA",
+				"hash": 555987,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"965343": {
+				"name": "LEAV",
+				"hash": 965343,
+				"offset": 32,
+				"default_val": {
+					"IntegerType": 2
+				},
+				"att_type": "INTEGER"
+			},
+			"10206636": {
+				"name": "OWNER",
+				"hash": 10206636,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"639374": {
+				"name": "NAME",
+				"hash": 639374,
+				"offset": 0,
+				"default_val": {
+					"StringType": ""
+				},
+				"att_type": "STRING"
+			},
+			"711549": {
+				"name": "RADI",
+				"hash": 711549,
+				"offset": 37,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			}
+		},
+		"619544": {
+			"675926": {
+				"name": "HEIG",
+				"hash": 675926,
+				"offset": 35,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"750558": {
+				"name": "LOCK",
+				"hash": 750558,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"774699": {
+				"name": "ORIF",
+				"hash": 774699,
+				"offset": 3145754,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"665964": {
+				"name": "INVF",
+				"hash": 665964,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"722197": {
+				"name": "ARRI",
+				"hash": 722197,
+				"offset": 31,
+				"default_val": {
+					"IntegerType": 1
+				},
+				"att_type": "INTEGER"
+			},
+			"545713": {
+				"name": "POS",
+				"hash": 545713,
+				"offset": 12,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "POSITION"
+			},
+			"722860": {
+				"name": "POSF",
+				"hash": 722860,
+				"offset": 2097178,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"857539": {
+				"name": "SHOP",
+				"hash": 857539,
+				"offset": 1048602,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"642215": {
+				"name": "TYPE",
+				"hash": 642215,
+				"offset": 0,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"555987": {
+				"name": "CRFA",
+				"hash": 555987,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"639374": {
+				"name": "NAME",
+				"hash": 639374,
+				"offset": 0,
+				"default_val": {
+					"StringType": ""
+				},
+				"att_type": "STRING"
+			},
+			"865141": {
+				"name": "GTYP",
+				"hash": 865141,
+				"offset": 11,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"10206636": {
+				"name": "OWNER",
+				"hash": 10206636,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"773119": {
+				"name": "ANGL",
+				"hash": 773119,
+				"offset": 33,
+				"default_val": {
+					"DoubleType": 90.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"965343": {
+				"name": "LEAV",
+				"hash": 965343,
+				"offset": 32,
+				"default_val": {
+					"IntegerType": 2
+				},
+				"att_type": "INTEGER"
+			},
+			"643429": {
+				"name": "SPRE",
+				"hash": 643429,
+				"offset": 27,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"860359": {
+				"name": "DESP",
+				"hash": 860359,
+				"offset": 0,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"840333": {
+				"name": "LSRO",
+				"hash": 840333,
+				"offset": 29,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"538503": {
+				"name": "ORI",
+				"hash": 538503,
+				"offset": 19,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "ORIENTATION"
+			},
+			"562397": {
+				"name": "NLOA",
+				"hash": 562397,
+				"offset": 37,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"774767": {
+				"name": "BUIL",
+				"hash": 774767,
+				"offset": 26,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			}
+		},
+		"623975": {
+			"965343": {
+				"name": "LEAV",
+				"hash": 965343,
+				"offset": 32,
+				"default_val": {
+					"IntegerType": 2
+				},
+				"att_type": "INTEGER"
+			},
+			"750558": {
+				"name": "LOCK",
+				"hash": 750558,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"545713": {
+				"name": "POS",
+				"hash": 545713,
+				"offset": 12,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "POSITION"
+			},
+			"643429": {
+				"name": "SPRE",
+				"hash": 643429,
+				"offset": 27,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"840333": {
+				"name": "LSRO",
+				"hash": 840333,
+				"offset": 29,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"774767": {
+				"name": "BUIL",
+				"hash": 774767,
+				"offset": 26,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"642215": {
+				"name": "TYPE",
+				"hash": 642215,
+				"offset": 0,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"722860": {
+				"name": "POSF",
+				"hash": 722860,
+				"offset": 2097178,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"10206636": {
+				"name": "OWNER",
+				"hash": 10206636,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"538503": {
+				"name": "ORI",
+				"hash": 538503,
+				"offset": 19,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "ORIENTATION"
+			},
+			"675926": {
+				"name": "HEIG",
+				"hash": 675926,
+				"offset": 35,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"639374": {
+				"name": "NAME",
+				"hash": 639374,
+				"offset": 0,
+				"default_val": {
+					"StringType": ""
+				},
+				"att_type": "STRING"
+			},
+			"711549": {
+				"name": "RADI",
+				"hash": 711549,
+				"offset": 37,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"665964": {
+				"name": "INVF",
+				"hash": 665964,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"555987": {
+				"name": "CRFA",
+				"hash": 555987,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"865141": {
+				"name": "GTYP",
+				"hash": 865141,
+				"offset": 11,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"663162": {
+				"name": "ORRF",
+				"hash": 663162,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"773119": {
+				"name": "ANGL",
+				"hash": 773119,
+				"offset": 33,
+				"default_val": {
+					"DoubleType": 90.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"860359": {
+				"name": "DESP",
+				"hash": 860359,
+				"offset": 0,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"562397": {
+				"name": "NLOA",
+				"hash": 562397,
+				"offset": 39,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"722197": {
+				"name": "ARRI",
+				"hash": 722197,
+				"offset": 31,
+				"default_val": {
+					"IntegerType": 1
+				},
+				"att_type": "INTEGER"
+			},
+			"857539": {
+				"name": "SHOP",
+				"hash": 857539,
+				"offset": 1048602,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"774699": {
+				"name": "ORIF",
+				"hash": 774699,
+				"offset": 3145754,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			}
+		},
+		"581519": {
+			"773119": {
+				"name": "ANGL",
+				"hash": 773119,
+				"offset": 33,
+				"default_val": {
+					"DoubleType": 90.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"675926": {
+				"name": "HEIG",
+				"hash": 675926,
+				"offset": 35,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"538503": {
+				"name": "ORI",
+				"hash": 538503,
+				"offset": 19,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "ORIENTATION"
+			},
+			"562397": {
+				"name": "NLOA",
+				"hash": 562397,
+				"offset": 39,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"700362": {
+				"name": "ISOHIDDEN",
+				"hash": 700362,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"722860": {
+				"name": "POSF",
+				"hash": 722860,
+				"offset": 2097178,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"711549": {
+				"name": "RADI",
+				"hash": 711549,
+				"offset": 37,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"774699": {
+				"name": "ORIF",
+				"hash": 774699,
+				"offset": 3145754,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"642215": {
+				"name": "TYPE",
+				"hash": 642215,
+				"offset": 0,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"643429": {
+				"name": "SPRE",
+				"hash": 643429,
+				"offset": 27,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"865141": {
+				"name": "GTYP",
+				"hash": 865141,
+				"offset": 11,
+				"default_val": {
+					"WordType": "unset"
+				},
+				"att_type": "WORD"
+			},
+			"10206636": {
+				"name": "OWNER",
+				"hash": 10206636,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"665964": {
+				"name": "INVF",
+				"hash": 665964,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"639374": {
+				"name": "NAME",
+				"hash": 639374,
+				"offset": 0,
+				"default_val": {
+					"StringType": ""
+				},
+				"att_type": "STRING"
+			},
+			"860359": {
+				"name": "DESP",
+				"hash": 860359,
+				"offset": 0,
+				"default_val": {
+					"DoubleType": 0.0
+				},
+				"att_type": "DOUBLE"
+			},
+			"774767": {
+				"name": "BUIL",
+				"hash": 774767,
+				"offset": 26,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"722197": {
+				"name": "ARRI",
+				"hash": 722197,
+				"offset": 31,
+				"default_val": {
+					"IntegerType": 1
+				},
+				"att_type": "INTEGER"
+			},
+			"965343": {
+				"name": "LEAV",
+				"hash": 965343,
+				"offset": 32,
+				"default_val": {
+					"IntegerType": 2
+				},
+				"att_type": "INTEGER"
+			},
+			"555987": {
+				"name": "CRFA",
+				"hash": 555987,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"840333": {
+				"name": "LSRO",
+				"hash": 840333,
+				"offset": 29,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			},
+			"545713": {
+				"name": "POS",
+				"hash": 545713,
+				"offset": 12,
+				"default_val": {
+					"Vec3Type": [
+						0.0,
+						0.0,
+						0.0
+					]
+				},
+				"att_type": "POSITION"
+			},
+			"857539": {
+				"name": "SHOP",
+				"hash": 857539,
+				"offset": 1048602,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"750558": {
+				"name": "LOCK",
+				"hash": 750558,
+				"offset": 0,
+				"default_val": {
+					"BoolType": false
+				},
+				"att_type": "BOOL"
+			},
+			"663162": {
+				"name": "ORRF",
+				"hash": 663162,
+				"offset": 0,
+				"default_val": {
+					"ElementType": ""
+				},
+				"att_type": "ELEMENT"
+			}
 		}
 	}
 }

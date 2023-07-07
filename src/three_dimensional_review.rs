@@ -95,7 +95,7 @@ pub struct ModelData {
     pub data: Vec<HashMap<String, String>>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Eq, PartialEq,Hash)]
 pub enum VagueSearchCondition {
     #[default]
     And,
@@ -149,7 +149,7 @@ pub struct VagueSearchExportAqlData {
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct VagueSearchExportRequest{
+pub struct VagueSearchExportRequest {
     pub condition: String,
     pub refnos: Vec<RefU64>,
 }

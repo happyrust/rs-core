@@ -9,3 +9,8 @@ pub struct SearchConditionSave {
     pub note: String,
     pub condition: Vec<String>,
 }
+
+#[derive(Resource, Debug, Default, Clone,Deserialize,Serialize)]
+pub struct SearchConditionVec {
+ pub data:Vec<SearchConditionSave>
+}

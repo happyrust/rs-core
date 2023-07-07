@@ -10,6 +10,8 @@ pub struct PenetrationData {
     pub name: String,
     pub position: Vec3,
     pub x_deviation_angle:String,
+    pub inner_room_num:String,
+    pub outer_room_num:String,
 }
 
 #[derive(Resource,Serialize, Deserialize, Debug, Default, Clone)]

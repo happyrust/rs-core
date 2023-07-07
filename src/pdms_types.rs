@@ -640,7 +640,7 @@ impl AttrMap {
         }
         let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
             "CATR"
-        }else {
+        } else {
             "SPRE"
         };
         if let Some(spref) = self.get_as_string(ref_name) {
@@ -674,7 +674,7 @@ impl AttrMap {
             }
             let val = std::hash::Hasher::finish(&hasher);
 
-            return Some(val / 23 + 739 );
+            return Some(val / 23 + 739);
         }
         return None;
     }
@@ -1888,7 +1888,7 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn get_show_refnos(&self) -> Vec<RefU64>{
+    pub fn get_show_refnos(&self) -> Vec<RefU64> {
         let mut ready_refnos: Vec<RefU64> = self.inst_info_map.keys().cloned().collect();
         ready_refnos.extend(self.inst_tubi_map.keys().cloned());
         ready_refnos
@@ -2125,7 +2125,7 @@ pub struct PlantGeoData {
 
 impl Clone for PlantGeoData {
     fn clone(&self) -> Self {
-        Self{
+        Self {
             geo_hash: self.geo_hash.clone(),
             mesh: self.mesh.clone(),
             aabb: self.aabb.clone(),
@@ -2925,6 +2925,32 @@ impl UdaMajorType {
         }
     }
 
+    pub fn to_chinese_name(&self) -> String {
+        match self {
+            UdaMajorType::T => { "工艺".to_string() }
+            UdaMajorType::V => { "通风".to_string() }
+            UdaMajorType::E => { "电气".to_string() }
+            UdaMajorType::I => { "仪控".to_string() }
+            UdaMajorType::W => { "给排水".to_string() }
+            UdaMajorType::N => { "BOP暖".to_string() }
+            UdaMajorType::Z => { "BOP水".to_string() }
+            UdaMajorType::K => { "通信".to_string() }
+            UdaMajorType::S => { "设备".to_string() }
+            UdaMajorType::L => { "照明".to_string() }
+            UdaMajorType::F => { "辐射安全".to_string() }
+            UdaMajorType::H => { "反应堆热工水力".to_string() }
+            UdaMajorType::R => { "辐射监测".to_string() }
+            UdaMajorType::A => { "建筑".to_string() }
+            UdaMajorType::J => { "结构".to_string() }
+            UdaMajorType::P => { "NPIC管道".to_string() }
+            UdaMajorType::B => { "NPIC设备".to_string() }
+            UdaMajorType::C => { "NPIC电气".to_string() }
+            UdaMajorType::Y => { "NPIC仪表".to_string() }
+            UdaMajorType::X => { "多专业".to_string() }
+            UdaMajorType::NULL => { "未知".to_string() }
+        }
+    }
+
     pub fn from_chinese_description(input: &str) -> Self {
         match input {
             "管道" | "工艺" => Self::T,
@@ -2945,6 +2971,7 @@ impl UdaMajorType {
             "BOP暖" => Self::N,
             "NPIC管道" => Self::P,
             "NPIC设备" => Self::B,
+            "NPIC电气" => Self::C,
             "NPIC仪表" => Self::Y,
             "多专业" => Self::X,
             _ => Self::NULL,
