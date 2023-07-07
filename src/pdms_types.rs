@@ -32,6 +32,7 @@ use serde::ser::{SerializeMap, SerializeStruct};
 use smallvec::SmallVec;
 use truck_modeling::Shell;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::tool::hash_tool::*;
 
 use crate::{BHashMap, prim_geo};
 use crate::cache::mgr::BytesTrait;
@@ -88,22 +89,32 @@ pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 14] = [
     "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-//"PLOO", "LOOP",
-pub const GENRAL_POS_NOUN_NAMES: [&'static str; 24] = [
+///元件库的负实体类型
+pub const CATE_NEG_NOUN_NAMES: [&'static str; 13] = [
+    "NSCY", "NLCY", "NSBO", "NCON", "NSNO", "NSEX", "NLSN", "NSDS", "NSCT", "NSRT", "NSLC", "NSRE", "NSSP"
+];
+
+pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 27] = [
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NSCY", "NLCY", "NSBO", "NCON", "NSNO", "NSEX", "NLSN", "NSDS", "NSCT", "NSRT", "NSLC", "NSRE", "NSSP"
+];
+
+
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
-    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+    "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
 ];
 
 
 pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 36] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 26] = [
+pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 27] = [
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO",
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NSCY", "NLCY", "NSBO", "NCON", "NSNO", "NSEX", "NLSN", "NSDS", "NSCT", "NSRT", "NSLC", "NSRE", "NSSP"
 ];
 
 
@@ -1895,6 +1906,14 @@ impl EleGeosInfo {
         self.geo_type == GeoBasicType::Compound
     }
 
+    #[inline]
+    pub fn update_to_compound_hash(&mut self){
+        let inst_key = hash_two_str(&self.get_inst_key().to_string(), "compound");
+        // let inst_key = self.get_inst_key() / 7 + 883;
+        self.cata_hash = Some(inst_key.to_string());
+    }
+
+
 
     #[inline]
     pub fn get_inst_key(&self) -> u64 {
@@ -1953,6 +1972,11 @@ pub struct ShapeInstancesData {
     ///保存instance几何数据
     pub inst_geos_map: std::collections::HashMap<u64, EleInstGeosData>,
 
+    ///保存所有用到的的compound数据
+    #[serde(skip)]
+    #[with(Skip)]
+    pub compound_inst_info_map: std::collections::HashMap<RefU64, EleGeosInfo>,
+
 }
 
 /// shape instances 的管理方法
@@ -1987,7 +2011,7 @@ impl ShapeInstancesData {
         let Self {
             inst_info_map,
             inst_tubi_map,
-            inst_geos_map
+            inst_geos_map, ..
         } = other;
         for (k, v) in inst_info_map {
             self.insert_info(k, v);
@@ -2042,6 +2066,11 @@ impl ShapeInstancesData {
     #[inline]
     pub fn insert_info(&mut self, refno: RefU64, info: EleGeosInfo) {
         self.inst_info_map.insert(refno, info);
+    }
+
+    #[inline]
+    pub fn insert_compound_info(&mut self, refno: RefU64, info: EleGeosInfo) {
+        self.compound_inst_info_map.insert(refno, info);
     }
 
     #[inline]
@@ -2297,7 +2326,6 @@ impl PlantMeshesData {
     }
 
     ///生成mesh的hash值，并且保存mesh
-    // #[cfg(feature = "opencascade")]
     pub fn gen_plant_data(&mut self, m: Box<dyn BrepShapeTrait>, replace: bool, tol_ratio: Option<f32>) -> Option<(u64, Aabb)> {
         let hash = m.hash_unit_mesh_params();
         //如果是重新生成，会去覆盖模型
