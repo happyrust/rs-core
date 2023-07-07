@@ -84,8 +84,8 @@ pub const GNERAL_LOOP_NOUN_NAMES: [&'static str; 2] = ["PLOO", "LOOP"];
 
 
 ///负实体基本体的种类
-pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
-    "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 14] = [
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
 //"PLOO", "LOOP",
@@ -1188,35 +1188,26 @@ impl AttrMap {
         let type_name = self.get_type();
         let mut quat = Quat::IDENTITY;
         match type_name {
-            "SBFI" => {
+            "SBFI" | "SBJO" | "RSEC" | "CURV" => {
                 let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
-                dbg!(to_pdms_vec_str(&axis_dir));
+                // dbg!(to_pdms_vec_str(&axis_dir));
                 if axis_dir.is_normalized() {
-                    //zdir 需要翻转Y轴，暂时不知道原因
-                    axis_dir.y = -axis_dir.y;
-                    let z_dir = axis_dir;
-                    let x_dir = if z_dir.x >= 0.0 {
-                        Vec3::Z
-                    } else {
-                        Vec3::NEG_Z
-                    };
-                    let y_dir = z_dir.cross(x_dir).normalize();
-
-                    quat = Quat::from_mat3(&Mat3::from_cols(
-                        x_dir,
-                        y_dir,
-                        z_dir,
-                    ));
-                    dbg!(quat_to_pdms_ori_str(&quat));
+                    quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                    // dbg!(quat_to_pdms_ori_str(&quat));
                 }
             }
 
             "CMPF" => {
-                quat = Quat::from_mat3(&Mat3::from_cols(
-                    Vec3::X,
-                    Vec3::NEG_Y,
-                    Vec3::NEG_Z,
-                ));
+                let sjus = self.get_str("SJUS").unwrap_or("unset");
+                //unset 和 UBOT 一样的效果
+                //DTOP, DCEN, DBOT
+                if sjus.starts_with("D") {
+                    quat = Quat::from_mat3(&Mat3::from_cols(
+                        Vec3::X,
+                        Vec3::NEG_Y,
+                        Vec3::NEG_Z,
+                    ));
+                }
             }
             _ => {
                 let ang = self.get_f64_vec("ORI")?;
@@ -1783,13 +1774,14 @@ pub enum PdmsGenericType {
     HICSTI,
 }
 
+/// 几何体的基本类型
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, PartialEq, Debug, Clone, Default, Resource)]
 pub enum GeoBasicType {
     #[default]
     Pos,
     Neg,
-    Compound, //混合运算过了
-    // CataNode,
+    //负实体运算过了
+    Compound,
 }
 
 //元件库里的模型，需要两级来完成这个边，有一个代表的refno
@@ -1875,6 +1867,8 @@ pub struct EleGeosInfo {
     pub geo_type: GeoBasicType,
 }
 
+
+
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
     where D: Deserializer<'de> {
     let s = String::deserialize(deserializer)?;
@@ -1888,6 +1882,13 @@ pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 }
 
 impl EleGeosInfo {
+
+    #[inline]
+    pub fn is_compound(&self) -> bool{
+        self.geo_type == GeoBasicType::Compound
+    }
+
+
     #[inline]
     pub fn get_inst_key(&self) -> u64 {
         if let Some(c) = &self.cata_hash {
@@ -2351,6 +2352,13 @@ pub struct EleInstGeosData {
 
     ///if resuse
     pub reuse_unit: bool,
+}
+
+impl EleInstGeosData {
+    #[inline]
+    pub fn is_compound(&self) -> bool {
+        self.insts.len() == 1 && self.insts[0].geo_type == GeoType::Compound
+    }
 }
 
 ///分拆的基本体信息, 应该是不需要复用的

@@ -1,4 +1,4 @@
-use approx::{abs_diff_eq, relative_eq};
+use approx::{abs_diff_eq, abs_diff_ne, relative_eq};
 use glam::{DVec3, Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
 use crate::shape::pdms_shape::ANGLE_RAD_TOL;
@@ -21,77 +21,17 @@ lazy_static! {
     };
 }
 
-pub fn dvec_to_pdms_str(vec: &DVec3) -> String {
-    for (v, v_str) in AXIS_DVEC_TUPLES.iter() {
-        if relative_eq!(vec.dot(*v), 1.0) {
-            return (*v_str).to_string();
-        }
+pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3{
+    let mut quat = Quat::from_rotation_arc(Vec3::Z, zdir);
+    let mut m = Mat3::from_quat(quat);
+    if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon=ANGLE_RAD_TOL) {
+        m.y_axis.z = 0.0;
+        m.y_axis = m.y_axis.normalize();
+        m.x_axis = m.y_axis.cross(m.z_axis).normalize();
     }
-    //1个象限的组合
-    if abs_diff_eq!(vec.x * vec.y * vec.z, 0.0, epsilon=ANGLE_RAD_TOL) {
-        let mut x = 0.0;
-        let mut y = 0.0;
-        let mut x_str = "";
-        let mut y_str = "";
-        let mut angle = 0.0f64;
-        if abs_diff_eq!(vec.x, 0.0) {
-            x = vec.y;
-            y = vec.z;
-            angle = (y / x).atan().to_degrees();
-            x_str = if x > 0.0 { "N" } else { "S" };
-            y_str = if y > 0.0 { "U" } else { "D" };
-        } else if abs_diff_eq!(vec.y, 0.0) {
-            x = vec.x;
-            y = vec.z;
-            angle = (y / x).atan().to_degrees();
-            x_str = if x > 0.0 { "E" } else { "W" };
-            y_str = if y > 0.0 { "U" } else { "D" };
-        } else if abs_diff_eq!(vec.z, 0.0) {
-            x = vec.x;
-            y = vec.y;
-            angle = (y / x).atan().to_degrees();
-            x_str = if x > 0.0 { "E" } else { "W" };
-            y_str = if y > 0.0 { "N" } else { "S" };
-        }
-        angle = f64_round_3(angle);
-        if angle.abs() < ANGLE_RAD_TOL as _ {
-            return x_str.to_string();
-        }
-
-        if angle < 0.0 {
-            angle = 90.0  + angle;
-            if angle > 45.0 {
-                let angle = 90.0 - angle;
-                return format!("{x_str} {angle} {y_str}");
-            }else {
-                return format!("{y_str} {angle} {x_str}");
-            }
-        }
-        if angle > 45.0 {
-            let angle = 90.0 - angle;
-            return format!("{y_str} {angle} {x_str}");
-        }
-
-        return format!("{x_str} {angle} {y_str}");
-    }
-
-    //2个象限的组合, 最后一个留给Z轴
-    let plane_vec = DVec3::new(vec.x, vec.y, 0.0);
-    let part_str = dvec_to_pdms_str(&plane_vec);
-    let l = plane_vec.length();
-    let mut theta = (vec.z / l).atan().to_degrees();
-    let mut z_str = "U";
-    theta = f64_round_3(theta);
-    if theta < 0.0 {
-        theta = -theta;
-        z_str = "D";
-    }
-    if theta < ANGLE_RAD_TOL as _ {
-        return format!("{part_str}");
-    }
-
-    format!("{part_str} {theta} {z_str}")
+    m
 }
+
 
 pub fn to_pdms_vec_str(vec: &Vec3) -> String {
     for (v, v_str) in AXIS_VEC_TUPLES.iter() {
@@ -106,19 +46,19 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
         let mut x_str = "";
         let mut y_str = "";
         let mut angle = 0.0f32;
-        if abs_diff_eq!(vec.x, 0.0) {
+        if abs_diff_eq!(vec.x, 0.0, epsilon=ANGLE_RAD_TOL) {
             x = vec.y;
             y = vec.z;
             angle = (y / x).atan().to_degrees();
             x_str = if x > 0.0 { "N" } else { "S" };
             y_str = if y > 0.0 { "U" } else { "D" };
-        } else if abs_diff_eq!(vec.y, 0.0) {
+        } else if abs_diff_eq!(vec.y, 0.0, epsilon=ANGLE_RAD_TOL) {
             x = vec.x;
             y = vec.z;
             angle = (y / x).atan().to_degrees();
             x_str = if x > 0.0 { "E" } else { "W" };
             y_str = if y > 0.0 { "U" } else { "D" };
-        } else if abs_diff_eq!(vec.z, 0.0) {
+        } else if abs_diff_eq!(vec.z, 0.0, epsilon=ANGLE_RAD_TOL) {
             x = vec.x;
             y = vec.y;
             angle = (y / x).atan().to_degrees();
