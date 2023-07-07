@@ -25,7 +25,6 @@ use parry3d::math::{Matrix, Point, Vector};
 use parry3d::shape::{TriMesh, TriMeshFlags};
 use dyn_clone::DynClone;
 use crate::pdms_types::*;
-use crate::prim_geo::category::CateBrepShape;
 use crate::prim_geo::ctorus::{CTorus, SCTorus};
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
 use crate::prim_geo::dish::Dish;

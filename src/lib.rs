@@ -45,7 +45,6 @@ pub mod ssc_setting;
 pub mod version_control;
 pub mod penetration;
 pub mod vague_search;
-pub mod datacenter_options;
 
 pub mod achiver;
 pub mod plugging_material;
