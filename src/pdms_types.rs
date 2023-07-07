@@ -1778,9 +1778,16 @@ pub enum PdmsGenericType {
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, PartialEq, Debug, Clone, Default, Resource)]
 pub enum GeoBasicType {
     #[default]
+    UNKOWN,
+    ///正实体
     Pos,
+    ///普通负实体
     Neg,
-    //负实体运算过了
+    ///元件库的负实体
+    CateNeg,
+    ///元件库的需要和design运算的负实体
+    CateCrossNeg,
+    ///负实体运算过了
     Compound,
 }
 
@@ -2357,7 +2364,7 @@ pub struct EleInstGeosData {
 impl EleInstGeosData {
     #[inline]
     pub fn is_compound(&self) -> bool {
-        self.insts.len() == 1 && self.insts[0].geo_type == GeoType::Compound
+        self.insts.len() == 1 && self.insts[0].geo_type == GeoBasicType::Compound
     }
 }
 
