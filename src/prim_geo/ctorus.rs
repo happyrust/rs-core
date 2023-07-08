@@ -22,7 +22,6 @@ use crate::tool::float_tool::hash_f32;
 use opencascade::{OCCShape, Edge, Wire, Axis};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-
 pub struct SCTorus {
     pub paax_pt: Vec3,
     //A Axis point
@@ -39,28 +38,32 @@ pub struct SCTorus {
 impl SCTorus {
     pub fn convert_to_ctorus(&self) -> Option<(CTorus, Transform)> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
-                                                              self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
+                                                              self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
             let mut ctorus = CTorus::default();
             ctorus.angle = torus_info.angle;
             ctorus.rins = torus_info.radius - self.pdia / 2.0;
             ctorus.rout = torus_info.radius + self.pdia / 2.0;
             let z_axis = -torus_info.rot_axis.normalize();
             let mut x_axis = (self.pbax_pt - torus_info.center).normalize();
+            let mut translation = torus_info.center;
+            // dbg!(torus_info.center);
             if x_axis.is_nan() {
-                x_axis = self.paax_dir;
+                x_axis = -Vec3::Y;
+                ctorus.rout = ctorus.rout / 2.0;
             }
             let y_axis = z_axis.cross(x_axis).normalize();
             let mat = Transform {
                 rotation: Quat::from_mat3(&bevy_math::Mat3::from_cols(
                     x_axis, y_axis, z_axis,
                 )),
-                translation: torus_info.center,
+                translation,
                 ..default()
             };
             if mat.is_nan() {
                 return None;
             }
             // dbg!(torus_info.radius);
+            dbg!((x_axis, y_axis, z_axis));
             return Some((ctorus, mat));
         }
         None
@@ -90,7 +93,6 @@ impl VerifiedShape for SCTorus {
 
 //#[typetag::serde]
 impl BrepShapeTrait for SCTorus {
-
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -101,7 +103,7 @@ impl BrepShapeTrait for SCTorus {
 
     #[cfg(feature = "opencascade")]
     fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        if let Some(t) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
+        if let Some(t) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
             let o = self.paax_pt;
             let circle = Wire::circle(t.radius, o, -self.paax_dir)?;
             let axis = Axis::new(t.center, t.rot_axis);
@@ -113,7 +115,7 @@ impl BrepShapeTrait for SCTorus {
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
-                                                              self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
+                                                              self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
             let circle_origin = self.paax_pt.point3();
             let pt_0 = self.paax_pt + torus_info.rot_axis * self.pdia / 2.0;
             let v = builder::vertex(pt_0.point3());

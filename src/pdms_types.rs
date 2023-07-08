@@ -91,12 +91,12 @@ pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 14] = [
 
 ///元件库的负实体类型
 pub const CATE_NEG_NOUN_NAMES: [&'static str; 13] = [
-    "NSCY", "NLCY", "NSBO", "NCON", "NSNO", "NSEX", "NLSN", "NSDS", "NSCT", "NSRT", "NSLC", "NSRE", "NSSP"
+    "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
 ];
 
 pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 27] = [
     "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
-    "NSCY", "NLCY", "NSBO", "NCON", "NSNO", "NSEX", "NLSN", "NSDS", "NSCT", "NSRT", "NSLC", "NSRE", "NSSP"
+    "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
 ];
 
 
@@ -114,7 +114,7 @@ pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 36] = [
 
 pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 27] = [
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO",
-    "NSCY", "NLCY", "NSBO", "NCON", "NSNO", "NSEX", "NLSN", "NSDS", "NSCT", "NSRT", "NSLC", "NSRE", "NSSP"
+    "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
 ];
 
 
@@ -570,7 +570,7 @@ impl BytesTrait for AttrMap {}
 impl AttrMap {
     #[inline]
     pub fn is_neg(&self) -> bool {
-        GENRAL_NEG_NOUN_NAMES.contains(&self.get_type())
+        TOTAL_NEG_NOUN_NAMES.contains(&self.get_type())
     }
 
     #[inline]
@@ -1225,6 +1225,7 @@ impl AttrMap {
                 let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
                     * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
                     * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
+
                 quat = Quat::from_mat3(&mat);
             }
         }
@@ -2391,8 +2392,8 @@ pub struct EleInstGeosData {
 
 impl EleInstGeosData {
     #[inline]
-    pub fn is_compound(&self) -> bool {
-        self.insts.len() == 1 && self.insts[0].geo_type == GeoBasicType::Compound
+    pub fn has_neg(&self) -> bool {
+        self.insts.iter().any(|x| x.geo_type == GeoBasicType::Neg)
     }
 }
 
