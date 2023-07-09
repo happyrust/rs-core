@@ -101,6 +101,7 @@ impl PdmsTubing {
             is_tubi: true,
             shape_err: None,
             pts: Default::default(),
+            is_ngmr: false,
         }
     }
 }

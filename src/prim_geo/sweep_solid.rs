@@ -508,34 +508,34 @@ impl BrepShapeTrait for SweepSolid {
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         println!("drns {:?}  is sloped", self.drns);
                         let mut x_angle = self.drns.angle_between(Vec3::X).abs();
-                        dbg!(x_angle);
+                        // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
                             1.0 / (x_angle.sin())
                         };
                         let mut y_angle = self.drns.angle_between(Vec3::Y).abs();
-                        dbg!(y_angle);
+                        // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
                             1.0 / (y_angle.sin())
                         };
-                        dbg!((self.drns).angle_between(Vec3::Z));
+                        // dbg!((self.drns).angle_between(Vec3::Z));
                         transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
                     if self.drne.is_normalized() &&  self.is_drne_sloped() {
                         println!("drne {:?}  is sloped", self.drne);
                         let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
-                        dbg!(x_angle);
+                        // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
                             1.0 / (x_angle.sin())
                         };
                         let mut y_angle = (-self.drne).angle_between(Vec3::Y).abs();
-                        dbg!(y_angle);
+                        // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
                         }else{
@@ -543,7 +543,7 @@ impl BrepShapeTrait for SweepSolid {
                         };
                         //debug assersion
                         // dbg!(Vec3::new(scale_x, scale_y, 1.0));
-                        dbg!((-self.drne).angle_between(Vec3::Z));
+                        // dbg!((-self.drne).angle_between(Vec3::Z));
                         transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
