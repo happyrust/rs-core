@@ -63,7 +63,7 @@ impl SCTorus {
                 return None;
             }
             // dbg!(torus_info.radius);
-            dbg!((x_axis, y_axis, z_axis));
+            // dbg!((x_axis, y_axis, z_axis));
             return Some((ctorus, mat));
         }
         None

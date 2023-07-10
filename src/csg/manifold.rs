@@ -144,31 +144,27 @@ impl ManifoldRust {
             }
             let mut result = Self::new();
             manifold_batch_boolean(result.ptr as _, m_vec, op);
+            manifold_delete_manifold_vec(m_vec);
             result
         }
     }
 
 
-    pub fn batch_boolean_subtract(src_manifold: &Self, batch: &[Self]) -> Self {
+    pub fn batch_boolean_subtract(&self, negs: &[Self]) -> Self {
         unsafe {
             let mut result = Self::new();
-            if batch.len() == 0 { return src_manifold.clone(); }
-            let mut pos = src_manifold.clone();
-            if batch.len() >= 2 {
-                for (i, b) in batch.iter().enumerate() {
-                    manifold_difference(result.ptr as _, pos.ptr, b.ptr);
-                    #[cfg(debug_assertions)]
-                    dbg!(result.num_tri());
-                    pos.ptr = result.ptr;
-                }
+            if negs.len() == 0 { return self.clone(); }
+            let mut src = self.clone();
+            for (i, b) in negs.iter().enumerate() {
+                manifold_difference(result.ptr as _, src.ptr, b.ptr);
+                #[cfg(debug_assertions)]
+                dbg!(result.num_tri());
+                src.ptr = result.ptr;
             }
+            manifold_as_original(result.ptr as _, src.ptr);
             result
         }
     }
-
-
-
-
     pub fn destroy(&self) {
         unsafe {
             manifold_delete_manifold(self.ptr);
