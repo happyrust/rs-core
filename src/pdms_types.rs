@@ -32,6 +32,7 @@ use serde::ser::{SerializeMap, SerializeStruct};
 use smallvec::SmallVec;
 use truck_modeling::Shell;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::tool::hash_tool::*;
 
 use crate::{BHashMap, prim_geo};
 use crate::cache::mgr::BytesTrait;
@@ -87,22 +88,37 @@ pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 14] = [
     "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-//"PLOO", "LOOP",
-pub const GENRAL_POS_NOUN_NAMES: [&'static str; 24] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
-    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+///元件库的负实体类型
+pub const CATE_NEG_NOUN_NAMES: [&'static str; 13] = [
+    "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
+];
+
+pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 27] = [
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
 ];
 
 
-pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 36] = [
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
+    "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
+];
+
+
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 38] = [
     "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 26] = [
+pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 27] = [
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO",
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
+];
+
+///可能会与ngmr发生作用的类型
+pub const TOTAL_CONTAIN_NGMR_GEO_NAEMS : [&'static str; 6] = [
+    "WALL", "STWALL", "GWALL", "SCTN", "PANEL", "FLOOR"
 ];
 
 
@@ -558,7 +574,7 @@ impl BytesTrait for AttrMap {}
 impl AttrMap {
     #[inline]
     pub fn is_neg(&self) -> bool {
-        GENRAL_NEG_NOUN_NAMES.contains(&self.get_type())
+        TOTAL_NEG_NOUN_NAMES.contains(&self.get_type())
     }
 
     #[inline]
@@ -1213,6 +1229,7 @@ impl AttrMap {
                 let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
                     * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
                     * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
+
                 quat = Quat::from_mat3(&mat);
             }
         }
@@ -1872,6 +1889,23 @@ impl EleGeosInfo {
         self.geo_type == GeoBasicType::Compound
     }
 
+    #[inline]
+    pub fn update_to_compound(&mut self){
+        let inst_key = hash_two_str(&self.get_inst_key().to_string(), "compound");
+        // let inst_key = self.get_inst_key() / 7 + 883;
+        self.cata_hash = Some(inst_key.to_string());
+        self.geo_type = GeoBasicType::Compound;
+    }
+
+    #[inline]
+    pub fn update_to_ngmr(&mut self){
+        let inst_key = hash_two_str(&self.get_inst_key().to_string(), "ngmr");
+        // let inst_key = self.get_inst_key() / 7 + 883;
+        self.cata_hash = Some(inst_key.to_string());
+        self.geo_type = GeoBasicType::CateCrossNeg;
+    }
+
+
 
     #[inline]
     pub fn get_inst_key(&self) -> u64 {
@@ -1930,6 +1964,16 @@ pub struct ShapeInstancesData {
     ///保存instance几何数据
     pub inst_geos_map: std::collections::HashMap<u64, EleInstGeosData>,
 
+    ///保存所有用到的的compound数据
+    #[serde(skip)]
+    #[with(Skip)]
+    pub compound_inst_info_map: std::collections::HashMap<RefU64, EleGeosInfo>,
+
+    ///保存所有用到的的ngmr数据
+    #[serde(skip)]
+    #[with(Skip)]
+    pub ngmr_inst_info_map: std::collections::HashMap<RefU64, EleGeosInfo>,
+
 }
 
 /// shape instances 的管理方法
@@ -1964,7 +2008,7 @@ impl ShapeInstancesData {
         let Self {
             inst_info_map,
             inst_tubi_map,
-            inst_geos_map
+            inst_geos_map, ..
         } = other;
         for (k, v) in inst_info_map {
             self.insert_info(k, v);
@@ -2002,6 +2046,12 @@ impl ShapeInstancesData {
     }
 
     #[inline]
+    pub fn get_inst_geos_data_mut(&mut self, info: &EleGeosInfo) -> Option<&mut EleInstGeosData> {
+        let k = info.get_inst_key();
+        self.inst_geos_map.get_mut(&k)
+    }
+
+    #[inline]
     pub fn get_inst_tubi(&self, refno: RefU64) -> Option<&EleGeosInfo> {
         self.inst_tubi_map.get(&refno)
     }
@@ -2022,6 +2072,16 @@ impl ShapeInstancesData {
     }
 
     #[inline]
+    pub fn insert_compound_info(&mut self, refno: RefU64, info: EleGeosInfo) {
+        self.compound_inst_info_map.insert(refno, info);
+    }
+
+    #[inline]
+    pub fn insert_ngmr_info(&mut self, refno: RefU64, info: EleGeosInfo) {
+        self.ngmr_inst_info_map.insert(refno, info);
+    }
+
+    #[inline]
     pub fn insert_geos_data(&mut self, hash: u64, geo: EleInstGeosData) {
         self.inst_geos_map.insert(hash, geo);
     }
@@ -2033,6 +2093,10 @@ impl ShapeInstancesData {
 
     pub fn get_info(&self, refno: &RefU64) -> Option<&EleGeosInfo> {
         self.inst_info_map.get(refno)
+    }
+
+    pub fn get_ngmr_info(&self, refno: &RefU64) -> Option<&EleGeosInfo> {
+        self.ngmr_inst_info_map.get(refno)
     }
 
     //serialize_to_bytes
@@ -2319,8 +2383,18 @@ pub struct EleInstGeosData {
 
 impl EleInstGeosData {
     #[inline]
-    pub fn is_compound(&self) -> bool {
-        self.insts.len() == 1 && self.insts[0].geo_type == GeoBasicType::Compound
+    pub fn has_neg(&self) -> bool {
+        self.insts.iter().any(|x| x.geo_type == GeoBasicType::Neg)
+    }
+
+    #[inline]
+    pub fn has_cata_neg(&self) -> bool {
+        self.insts.iter().any(|x| x.geo_type == GeoBasicType::CateNeg)
+    }
+
+    #[inline]
+    pub fn has_ngmr(&self) -> bool {
+        self.insts.iter().any(|x| x.geo_type == GeoBasicType::CateCrossNeg)
     }
 }
 
