@@ -1,14 +1,10 @@
 use std::hash::{Hash, Hasher};
 use glam::Vec3;
-// use ordered_float::OrderedFloat;
-//
-// pub fn hash_vec3<T: Hasher>(v: &Vec3, hasher: &mut T){
-//     OrderedFloat(v[0]).hash(hasher);
-//     OrderedFloat(v[1]).hash(hasher);
-//     OrderedFloat(v[2]).hash(hasher);
-// }
-//
-// //三位有效数字的精度
-// pub fn hash_f32<T: Hasher>(v: &f32, hasher: &mut T){
-//     OrderedFloat(*v).hash(hasher);
-// }
+
+
+pub fn hash_two_str(from: &str, to: &str) -> u64 {
+    let mut hash = std::collections::hash_map::DefaultHasher::new();
+    std::hash::Hash::hash(from, &mut hash);
+    std::hash::Hash::hash(to, &mut hash);
+    std::hash::Hasher::finish(&hash)
+}

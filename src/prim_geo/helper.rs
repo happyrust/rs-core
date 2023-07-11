@@ -67,8 +67,7 @@ impl RotateInfo {
         let pb_dir = b_dir.normalize();
         let mut x_dir = (b_pt - a_pt).normalize();
         if  x_dir.is_nan() {
-
-            let mut rot_axis = (-pa_dir).cross(pb_dir).normalize();
+            let mut rot_axis = pb_dir.cross(-pa_dir).normalize();
             if rot_axis.is_nan() { return None; }
             return Some(RotateInfo {
                 center: Default::default(),

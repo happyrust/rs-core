@@ -52,6 +52,8 @@ pub struct CateGeomsInfo {
     //catref
     pub refno: RefU64,
     pub geometries: Vec<CateGeoParam>,
+    /// 和dsign发生运算的负实体数据
+    pub n_geometries: Vec<CateGeoParam>,
     pub axis_map: BTreeMap<i32, CateAxisParam>,
 }
 

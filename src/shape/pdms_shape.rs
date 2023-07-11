@@ -34,7 +34,10 @@ use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
-
+use std::io::BufWriter;
+use std::{slice, vec};
+use bevy_transform::prelude::Transform;
+use hexasphere::shapes::IcoSphere;
 use rkyv::with::Skip;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -205,16 +208,16 @@ impl PlantMesh {
     //         mesh.normals.push(normal);
     //         mesh.normals.push(normal);
     //         mesh.normals.push(normal);
-    // 
+    //
     //         let pta = Vec3::from_array([tri.a.x as f32, tri.a.y as f32, tri.a.z as f32]);
     //         let pta = rev_mat.transform_point3(pta);
-    // 
+    //
     //         let ptb = Vec3::from_array([tri.b.x as f32, tri.b.y as f32, tri.b.z as f32]);
     //         let ptb = rev_mat.transform_point3(ptb);
-    // 
+    //
     //         let ptc = Vec3::from_array([tri.c.x as f32, tri.c.y as f32, tri.c.z as f32]);
     //         let ptc = rev_mat.transform_point3(ptc);
-    // 
+    //
     //         mesh.vertices.push(pta.into());
     //         mesh.vertices.push(ptb.into());
     //         mesh.vertices.push(ptc.into());

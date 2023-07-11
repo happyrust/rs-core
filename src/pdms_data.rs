@@ -12,12 +12,16 @@ use crate::pdms_types::*;
 use glam::Vec3;
 
 
+///元件库信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ScomInfo {
     pub attr_map: AttrMap,
     pub gtype: String,
     pub dtse_params: Vec<DatasetParamStr>,
+    ///几何体信息
     pub gm_params: Vec<GmParam>,
+    ///和design发生运算的负实体信息
+    pub ngm_params: Vec<GmParam>,
     pub axis_params: Vec<AxisParam>,
     pub params: String,
     pub axis_param_numbers: Vec<i32>,
