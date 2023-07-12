@@ -111,6 +111,18 @@ impl PlantMesh {
         TriMesh::new(points, indices)
     }
 
+    ///计算aabb
+    pub fn cal_aabb(&self) -> Option<Aabb>{
+        let mut aabb = Aabb::new_invalid();
+        self.vertices.iter().for_each(|v|{
+            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
+        });
+        if Vec3::from(aabb.mins).is_nan() || Vec3::from(aabb.maxs).is_nan()  {
+            return None;
+        }
+        Some(aabb)
+    }
+
     pub fn cal_normals(&mut self) {
         for (i, c) in self.indices.chunks(3).enumerate() {
             let a: Vec3 = self.vertices[c[0] as usize];

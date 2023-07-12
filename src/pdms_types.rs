@@ -112,8 +112,8 @@ pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 38] = [
     "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 27] = [
-    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO",
+pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 28] = [
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO", "SANN",
     "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
 ];
 
@@ -1915,10 +1915,10 @@ impl EleGeosInfo {
     #[inline]
     pub fn update_to_compound(&mut self){
         let inst_key = hash_two_str(&self.get_inst_key().to_string(), "compound");
-        // let inst_key = self.get_inst_key() / 7 + 883;
         self.cata_hash = Some(inst_key.to_string());
         self.geo_type = GeoBasicType::Compound;
     }
+
 
     #[inline]
     pub fn update_to_ngmr(&mut self){
@@ -1930,6 +1930,7 @@ impl EleGeosInfo {
 
 
 
+    ///获取几何体数据的key
     #[inline]
     pub fn get_inst_key(&self) -> u64 {
         if let Some(c) = &self.cata_hash {
@@ -2087,6 +2088,11 @@ impl ShapeInstancesData {
     #[inline]
     pub fn get_inst_info(&self, refno: RefU64) -> Option<&EleGeosInfo> {
         self.inst_info_map.get(&refno)
+    }
+
+    #[inline]
+    pub fn get_compound_info(&self, refno: RefU64) -> Option<&EleGeosInfo> {
+        self.compound_inst_info_map.get(&refno)
     }
 
     #[inline]

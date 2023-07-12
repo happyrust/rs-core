@@ -131,7 +131,8 @@ impl SweepSolid {
         // dbg!((r1, r2));
         use truck_base::cgmath64::*;
         let mut z_axis = Vec3::Z;
-        let mut a = sann.pangle.abs();
+        let mut angle = sann.pangle.to_radians();
+        // dbg!(angle);
         let mut offset_pt = Vec3::ZERO;
         let mut rot_mat = Mat3::IDENTITY;
         let mut beta_rot = Quat::IDENTITY;
@@ -143,9 +144,11 @@ impl SweepSolid {
                 let mut y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius as f64;
-                if !self.lmirror {
+                if d.clock_wise {
                     z_axis = -z_axis;
-                    dbg!("lmirror");
+                }
+                if self.lmirror {
+                    z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
                 dbg!((x_axis, y_axis, z_axis));
@@ -164,8 +167,8 @@ impl SweepSolid {
         }
         let p1 = (Vec3::new(r1, 0.0, 0.0));
         let p2 = (Vec3::new(r2, 0.0, 0.0));
-        let p3 = (Vec3::new(r2 * a.cos(), r2 * a.sin(), 0.0));
-        let p4 = (Vec3::new(r1 * a.cos(), r1 * a.sin(), 0.0));
+        let p3 = (Vec3::new(r2 * angle.cos(), r2 * angle.sin(), 0.0));
+        let p4 = (Vec3::new(r1 * angle.cos(), r1 * angle.sin(), 0.0));
 
         let v1 = builder::vertex(p1.point3());
         let v2 = builder::vertex(p2.point3());
@@ -175,10 +178,10 @@ impl SweepSolid {
         let mut wire = Wire::from(vec![
             builder::line(&v1, &v2),
             builder::circle_arc_with_center(center_pt,
-                                            &v2, &v3, z_axis.vector3(), Rad(a as f64)),
+                                            &v2, &v3, z_axis.vector3(), Rad(angle as f64)),
             builder::line(&v3, &v4),
             builder::circle_arc_with_center(center_pt,
-                                            &v4, &v1, -z_axis.vector3(), Rad(a as f64)),
+                                            &v4, &v1, -z_axis.vector3(), Rad(angle as f64)),
         ]);
         let offset = offset_pt + Vec3::new(origin.x, origin.y, 0.0);
         let translation = Matrix4::from_translation(offset.vector3());
@@ -197,7 +200,15 @@ impl SweepSolid {
             m.z_axis.vector4(),
             Vector4::new(0.0, 0.0, 0.0, 1.0),
         );
-        Some(builder::transformed(&wire, r_trans_mat * beta_mat * local_mat * translation))
+        let mut result_wire = builder::transformed(&wire, r_trans_mat * beta_mat * local_mat * translation);
+        let mut face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
+        if let Surface::Plane(plane) = face.surface() {
+            let s = self.plane_normal.y as f64;
+            if is_btm && plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
+                result_wire.invert();
+            }
+        }
+        Some(result_wire)
     }
 
     #[cfg(feature = "opencascade")]
@@ -319,7 +330,15 @@ impl SweepSolid {
             m.z_axis.vector4(),
             Vector4::new(0.0, 0.0, 0.0, 1.0),
         );
-        Some(builder::transformed(&wire, r_trans_mat * beta_mat * local_mat * translation))
+        let mut result_wire = builder::transformed(&wire, r_trans_mat * beta_mat * local_mat * translation);
+        let mut face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
+        if let Surface::Plane(plane) = face.surface() {
+            let s = self.plane_normal.y as f64;
+            if plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
+                result_wire.invert();
+            }
+        }
+        Some(result_wire)
     }
 }
 
@@ -541,7 +560,6 @@ impl BrepShapeTrait for SweepSolid {
                         }else{
                             1.0 / (y_angle.sin())
                         };
-                        //debug assersion
                         // dbg!(Vec3::new(scale_x, scale_y, 1.0));
                         // dbg!((-self.drne).angle_between(Vec3::Z));
                         transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
@@ -560,17 +578,19 @@ impl BrepShapeTrait for SweepSolid {
                     }
                     let mut face_s = builder::try_attach_plane(&[wire_s]).ok()?;
                     let mut face_e = builder::try_attach_plane(&[wire_e]).ok()?;
-                    faces.push(face_s.clone());
+                    faces.push(face_s);
                     faces.push(face_e.inverse());
 
-                    if let Surface::Plane(plane) = face_s.surface() {
-                        let s = self.plane_normal.y as f64;
-                        if plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
-                            for mut f in &mut faces {
-                                f.invert();
-                            }
-                        }
-                    }
+                    // if let Surface::Plane(plane) = face_s.surface() {
+                    //     let s = self.plane_normal.y as f64;
+                    //     if plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
+                    //         for mut f in &mut faces {
+                    //             if let Surface::Plane(plane) = f.surface(){
+                    //                 f.invert();
+                    //             }
+                    //         }
+                    //     }
+                    // }
                     let shell: Shell = faces.into();
                     return Some(shell);
                 }
