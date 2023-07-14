@@ -5,6 +5,7 @@ use std::default::default;
 use approx::abs_diff_eq;
 use bevy_transform::prelude::Transform;
 use crate::pdms_types::RefU64;
+use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::CateSCylinderParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -12,9 +13,9 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 
 #[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct PdmsTubing {
-    #[serde(rename = "_key")]
+    #[serde(rename="_key")]
     #[serde_as(as = "DisplayFromStr")]
     pub leave_refno: RefU64,
     #[serde_as(as = "DisplayFromStr")]
@@ -41,8 +42,8 @@ pub struct TubiEdge {
 }
 
 impl TubiEdge {
-    pub fn new_from_edge() -> Self {
-        Self {
+    pub fn new_from_edge() -> Self{
+        Self{
             ..default()
         }
     }
@@ -64,17 +65,43 @@ impl PdmsTubing {
         abs_diff_eq!(a.dot(c).abs(), 1.0, epsilon=0.01) && abs_diff_eq!(b.dot(c).abs(), 1.0, epsilon=0.01)
     }
 
-    pub fn get_transform(&self) -> Option<Transform> {
+    pub fn get_transform(&self) -> Option<Transform>{
+
         let v = (self.end_pt - self.start_pt);
         let dir = v.normalize_or_zero();
         if self.bore.abs() < f32::EPSILON || dir.length().abs() < f32::EPSILON {
-            return None;
+            return  None;
         }
 
         Some(Transform {
             rotation: Quat::from_rotation_arc(Vec3::Z, dir),
             translation: self.start_pt,
-            scale: Vec3::new(self.bore, self.bore, v.length()),
+            scale: Vec3::new(self.bore, self.bore,v.length()),
         })
+    }
+
+    pub fn convert_to_shape(&self) -> CateBrepShape {
+        let dir = (self.end_pt - self.start_pt).normalize();
+        let mut cylinder = SCylinder {
+            phei: self.start_pt.distance(self.end_pt),
+            pdia: self.bore,
+            center_in_mid: false,
+            ..default()
+        };
+
+        CateBrepShape {
+            refno: self.leave_refno,
+            brep_shape: Box::new(cylinder.clone()),
+            transform: Transform {
+                rotation: Quat::from_rotation_arc(Vec3::Z, dir),
+                translation: self.start_pt,
+                scale: Vec3::ONE,
+            },
+            visible: true,
+            is_tubi: true,
+            shape_err: None,
+            pts: Default::default(),
+            is_ngmr: false,
+        }
     }
 }

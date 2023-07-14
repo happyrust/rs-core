@@ -52,7 +52,6 @@ use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use bevy_transform::prelude::*;
@@ -2340,6 +2339,7 @@ use bevy_render::prelude::*;
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 #[cfg(feature = "render")]
 use bevy_render::mesh::Indices;
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
