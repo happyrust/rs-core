@@ -8,6 +8,7 @@ use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 use crate::metadata_manager::FileBytes;
 use crate::pdms_types::RefU64;
 use bevy_ecs::prelude::Component;
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProject {
     #[serde(rename = "packageCode")]
@@ -277,10 +278,15 @@ pub struct SendHoleDataFormData {
     #[serde(rename = "files")]
     pub files: Vec<DataCenterFile>,
     #[serde(rename = "ModelData")]
-    pub model_data: Vec<(RefU64, String)>,
-    #[serde(rename = "SelectedItem")]
-    pub selected_item: Vec<VirtualHoleData>,
+    pub model_data: HoleWallBoardVec,
 }
+
+//墙板列表
+#[derive(Serialize, Deserialize,Default, Clone, Debug, Resource)]
+pub struct HoleWallBoardVec {
+    pub data: Vec<(RefU64, String)>,
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HoleDataModelBody {
