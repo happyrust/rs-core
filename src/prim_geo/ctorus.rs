@@ -6,7 +6,7 @@ use anyhow::anyhow;
 use bevy_ecs::prelude::*;
 use std::default::default;
 use truck_modeling::{builder, Shell};
-
+use crate::shape::pdms_shape::VerifiedShape;
 use bevy_ecs::reflect::ReflectComponent;
 use bevy_transform::prelude::Transform;
 use glam::{Quat, Vec3};
@@ -15,7 +15,7 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
+
 use crate::tool::float_tool::hash_f32;
 
 #[cfg(feature = "opencascade")]
@@ -91,54 +91,6 @@ impl VerifiedShape for SCTorus {
     }
 }
 
-//#[typetag::serde]
-impl BrepShapeTrait for SCTorus {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn tol(&self) -> f32 {
-        0.01 * self.pdia.max(1.0)
-    }
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        if let Some(t) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
-            let o = self.paax_pt;
-            let circle = Wire::circle(t.radius, o, -self.paax_dir)?;
-            let axis = Axis::new(t.center, t.rot_axis);
-            return Ok(circle.extrude_rotate(&axis, t.angle.to_radians() as _)?);
-        }
-        Err(anyhow!("SCTorus参数错误，无法生成Shape"))
-    }
-
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
-                                                              self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
-            let circle_origin = self.paax_pt.point3();
-            let pt_0 = self.paax_pt + torus_info.rot_axis * self.pdia / 2.0;
-            let v = builder::vertex(pt_0.point3());
-            let rot_axis = torus_info.rot_axis.vector3();
-            let w = builder::rsweep(
-                &v,
-                circle_origin,
-                -self.paax_dir.normalize().vector3(),
-                Rad(7.0),
-            );
-            if let Ok(disk) = builder::try_attach_plane(&vec![w]) {
-                let center = torus_info.center.point3();
-                let mut solid = builder::rsweep(&disk, center, rot_axis, Rad(torus_info.angle.to_radians() as f64)).into_boundaries();
-                return solid.pop();
-            }
-        }
-        None
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-}
 
 impl From<AttrMap> for SCTorus {
     fn from(m: AttrMap) -> Self {
@@ -168,78 +120,6 @@ impl Default for CTorus {
 impl VerifiedShape for CTorus {
     fn check_valid(&self) -> bool {
         self.rout > 0.0 && self.rins >= 0.0 && self.angle.abs() > 0.0 && (self.rout - self.rins) > f32::EPSILON
-    }
-}
-
-//#[typetag::serde]
-impl BrepShapeTrait for CTorus {
-    fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        let r1 = (self.rins + self.rout) / 2.0;
-        let r2 = (self.rout - self.rins) / 2.0;
-        Ok(opencascade::OCCShape::ctorus(r1 as _, r2 as _, self.angle.to_radians() as _)?)
-    }
-
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
-        let radius = ((self.rout - self.rins) / 2.0) as f64;
-        if radius <= 0.0 { return None; }
-        let circle_origin = Point3::new(self.rins as f64 + radius, 0.0, 0.0);
-        let v = builder::vertex(Point3::new(self.rout as f64, 0.0, 0.0));
-        let w = builder::rsweep(
-            &v,
-            circle_origin,
-            Vector3::new(0.0, 1.0, 0.0),
-            Rad(7.0),
-        );
-        if let Ok(disk) = builder::try_attach_plane(&vec![w]) {
-            let mut solid = builder::rsweep(&disk, Point3::new(0.0, 0.0, 0.0),
-                                            Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
-            return solid.pop();
-        }
-        None
-    }
-
-
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        hash_f32((self.rins / self.rout), &mut hasher);
-        hash_f32(self.angle, &mut hasher);
-        "ctorus".hash(&mut hasher);
-        hasher.finish()
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        let rins = self.rins / self.rout;
-        let unit = Self {
-            rins,
-            rout: 1.0,
-            angle: self.angle,
-        };
-        Box::new(unit)
-    }
-
-
-    fn tol(&self) -> f32 {
-        0.001
-    }
-
-
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::splat(self.rout)
-        // Vec3::ONE
-    }
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimCTorus(self.clone())
-        )
     }
 }
 
