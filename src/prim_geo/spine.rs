@@ -155,7 +155,7 @@ impl Spine3D {
 
                 let p_axis = ref_axis.cross(extru_dir).normalize();
                 let y_axis = extru_dir.cross(p_axis).normalize();
-                dbg!((p_axis, y_axis, extru_dir));
+                // dbg!((p_axis, y_axis, extru_dir));
                 transform.rotation = Quat::from_mat3(&glam::f32::Mat3::from_cols(
                     p_axis, y_axis, extru_dir
                 ));

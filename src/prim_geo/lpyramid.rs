@@ -3,9 +3,7 @@ use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use approx::abs_diff_eq;
-
 use bevy_ecs::reflect::ReflectComponent;
-
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;

@@ -434,7 +434,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             );
             let rotation = Quat::from_mat3(&mat3);
             let xyz_pt = Vec3::new(d.x, d.y, d.z);
-            let origin_pt = (pa.pt);
+            let origin_pt = pa.pt;
             if d.verts.len() <= 2 {
                 return None;
             }
@@ -446,7 +446,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
 
-            let translation = origin_pt + xyz_pt;
+            let translation = origin_pt + rotation * xyz_pt;
             let transform = Transform {
                 rotation,
                 translation,

@@ -13,6 +13,7 @@ pub mod rtorus;
 pub mod facet;
 pub mod sweep_solid;
 pub mod tubing;
+pub mod polyhedron;
 
 pub mod category;
 pub mod spine;

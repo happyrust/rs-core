@@ -75,8 +75,8 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 20] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU",
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSLC", "NSCY",
 ];
 
@@ -106,8 +106,8 @@ pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
 ];
 
 
-pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 38] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 39] = [
+    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP", "POHE",
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
     "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
@@ -118,10 +118,14 @@ pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 28] = [
 ];
 
 ///可能会与ngmr发生作用的类型
-pub const TOTAL_CONTAIN_NGMR_GEO_NAEMS : [&'static str; 6] = [
+pub const TOTAL_CONTAIN_NGMR_GEO_NAEMS: [&'static str; 6] = [
     "WALL", "STWALL", "GWALL", "SCTN", "PANEL", "FLOOR"
 ];
 
+///POHE
+pub const POHE_GEO_NAMES: [&'static str; 1] = [
+    "POHE",
+];
 
 ///元件库的种类
 pub const CATA_GEO_NAMES: [&'static str; 26] = [
@@ -1203,40 +1207,70 @@ impl AttrMap {
     pub fn get_rotation(&self) -> Option<Quat> {
         let type_name = self.get_type();
         let mut quat = Quat::IDENTITY;
-        match type_name {
-            "SBFI" | "SBJO" | "RSEC" | "CURV" => {
-                let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
-                // dbg!(to_pdms_vec_str(&axis_dir));
-                if axis_dir.is_normalized() {
-                    quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-                    // dbg!(quat_to_pdms_ori_str(&quat));
-                }
+        if self.contains_attr_name("ZDIR") {
+            let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
+            if axis_dir.is_normalized() {
+                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
             }
-
-            "CMPF" => {
-                let sjus = self.get_str("SJUS").unwrap_or("unset");
-                //unset 和 UBOT 一样的效果
-                //DTOP, DCEN, DBOT
-                if sjus.starts_with("D") {
-                    quat = Quat::from_mat3(&Mat3::from_cols(
-                        Vec3::X,
-                        Vec3::NEG_Y,
-                        Vec3::NEG_Z,
-                    ));
+        }else{
+            match type_name {
+                "CMPF" | "PFIT" => {
+                    let sjus = self.get_str("SJUS").unwrap_or("unset");
+                    //unset 和 UBOT 一样的效果
+                    //DTOP, DCEN, DBOT
+                    if sjus.starts_with("D") {
+                        quat = Quat::from_mat3(&Mat3::from_cols(
+                            Vec3::X,
+                            Vec3::NEG_Y,
+                            Vec3::NEG_Z,
+                        ));
+                    }
                 }
-            }
-            _ => {
-                let ang = self.get_f64_vec("ORI")?;
-                let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
-                    * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-                    * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
+                _ => {
+                    let ang = self.get_f64_vec("ORI")?;
+                    let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
+                        * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
+                        * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
 
-                quat = Quat::from_mat3(&mat);
+                    quat = Quat::from_mat3(&mat);
+                }
             }
         }
-
         return Some(quat);
     }
+
+    // #[inline]
+    // pub fn get_rotation(&self) -> Option<Quat> {
+    //     let type_name = self.get_type();
+    //     let mut quat = Quat::IDENTITY;
+    //
+    //     if self.contains_attr_name("SJUS"){
+    //         //unset 和 UBOT 一样的效果
+    //         //DTOP, DCEN, DBOT
+    //         let sjus = self.get_str("SJUS").unwrap_or("unset");
+    //         if sjus.starts_with("D") {
+    //             quat = Quat::from_mat3(&Mat3::from_cols(
+    //                 Vec3::X,
+    //                 Vec3::NEG_Y,
+    //                 Vec3::NEG_Z,
+    //             ));
+    //         }
+    //     } else if self.contains_attr_name("ZDIR"){
+    //         let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
+    //         if axis_dir.is_normalized() {
+    //             quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+    //         }
+    //     }else{
+    //         let ang = self.get_f64_vec("ORI")?;
+    //         let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
+    //             * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
+    //             * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
+    //
+    //         quat = Quat::from_mat3(&mat);
+    //     }
+    //
+    //     return Some(quat);
+    // }
 
     pub fn get_matrix(&self) -> Option<Affine3A> {
         let mut affine = Affine3A::IDENTITY;
@@ -1305,6 +1339,7 @@ impl AttrMap {
             "CTOR" | "NCTO" => Some(Box::new(CTorus::from(self))),
             "RTOR" | "NRTO" => Some(Box::new(RTorus::from(self))),
             "PYRA" | "NPYR" => Some(Box::new(Pyramid::from(self))),
+            // "POHE" => Some(Box::new(Polyhedron::from(self))),
             _ => None,
         };
         if r.is_some() && limit_size.is_some() {
@@ -1892,7 +1927,6 @@ pub struct EleGeosInfo {
 }
 
 
-
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
     where D: Deserializer<'de> {
     let s = String::deserialize(deserializer)?;
@@ -1906,14 +1940,13 @@ pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 }
 
 impl EleGeosInfo {
-
     #[inline]
-    pub fn is_compound(&self) -> bool{
+    pub fn is_compound(&self) -> bool {
         self.geo_type == GeoBasicType::Compound
     }
 
     #[inline]
-    pub fn update_to_compound(&mut self){
+    pub fn update_to_compound(&mut self) {
         let inst_key = hash_two_str(&self.get_inst_key().to_string(), "compound");
         self.cata_hash = Some(inst_key.to_string());
         self.geo_type = GeoBasicType::Compound;
@@ -1921,13 +1954,12 @@ impl EleGeosInfo {
 
 
     #[inline]
-    pub fn update_to_ngmr(&mut self){
+    pub fn update_to_ngmr(&mut self) {
         let inst_key = hash_two_str(&self.get_inst_key().to_string(), "ngmr");
         // let inst_key = self.get_inst_key() / 7 + 883;
         self.cata_hash = Some(inst_key.to_string());
         self.geo_type = GeoBasicType::CateCrossNeg;
     }
-
 
 
     ///获取几何体数据的key
