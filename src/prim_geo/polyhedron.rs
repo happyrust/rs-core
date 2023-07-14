@@ -5,6 +5,7 @@ use std::hash::{Hash, Hasher};
 use approx::abs_diff_eq;
 use bevy_ecs::reflect::ReflectComponent;
 use glam::Vec3;
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -17,7 +18,7 @@ use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 use bevy_ecs::prelude::*;
 use itertools::Itertools;
 use truck_modeling::Face;
-use truck_topology::Shell;
+use truck_topology::{Shell, Wire};
 use crate::prim_geo::wire::gen_wire;
 
 
@@ -35,9 +36,18 @@ impl Polygon {
     pub fn gen_face(&self) -> anyhow::Result<Face>{
         use truck_modeling::{builder, Shell, Surface, Wire};
         use truck_meshalgo::prelude::*;
-        let mut fradius_vec = vec![];
-        fradius_vec.resize(self.verts.len(), 0.0);
-        let wire = gen_wire(&self.verts, &fradius_vec)?;
+        if self.verts.len() < 3 {
+            return Err(anyhow!("Polygon must have at least 3 vertices"));
+        }
+        let mut wire = Wire::new();
+        let mut verts = self.verts.iter()
+            .map(|x| builder::vertex(x.point3()))
+            .collect::<Vec<_>>();
+        verts.pop();
+        for (v0, v1) in verts.iter().tuple_windows() {
+            wire.push_back(builder::line(v0, v1));
+        }
+        wire.push_back(builder::line(verts.last().unwrap(), verts.first().unwrap()));
         Ok(builder::try_attach_plane(&[wire])?)
     }
 }

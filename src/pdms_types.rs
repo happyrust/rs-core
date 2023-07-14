@@ -68,14 +68,14 @@ use bevy_reflect::{DynamicStruct, GetField, Reflect, Struct};
 pub const LEVEL_VISBLE: u32 = 6;
 
 ///非负实体基本体的种类
-pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA",
+pub const PRIMITIVE_NOUN_NAMES: [&'static str; 9] = [
+    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA",
 ];
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
+    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSLC", "NSCY",
 ];
 
@@ -99,14 +99,14 @@ pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 27] = [
 ];
 
 
-pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 26] = [
+    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
     "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
 ];
 
 
-pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 39] = [
-    "BOX", "CYLI", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP", "POHE",
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
+    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP", "POHE",
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC",
     "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
@@ -1331,7 +1331,7 @@ impl AttrMap {
             "BOX" | "NBOX" => {
                 Some(Box::new(SBox::from(self)))
             }
-            "CYLI" | "NCYL" => Some(Box::new(SCylinder::from(self))),
+            "CYLI" | "SLCY" | "NCYL" => Some(Box::new(SCylinder::from(self))),
             "SPHE" => Some(Box::new(Sphere::from(self))),
             "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
             "DISH" | "NDIS" => Some(Box::new(Dish::from(self))),

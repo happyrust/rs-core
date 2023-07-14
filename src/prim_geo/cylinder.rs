@@ -471,6 +471,14 @@ impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
         let mut phei = m.get_f64("HEIG").unwrap_or_default() as f32;
         let pdia = m.get_f64("DIAM").unwrap_or_default() as f32;
+        // Xtshear 0degree
+        // Ytshear -28.691degree
+        // Xbshear 0degree
+        // Ybshear 0degree
+        let xtsh = m.get_f64("XTSH").unwrap_or_default() as f32;
+        let ytsh = m.get_f64("YTSH").unwrap_or_default() as f32;
+        let xbsh = m.get_f64("XBSH").unwrap_or_default() as f32;
+        let ybsh = m.get_f64("YBSH").unwrap_or_default() as f32;
         // dbg!(m);
         SCylinder {
             paxi_expr: "Z".to_string(),
@@ -478,8 +486,8 @@ impl From<&AttrMap> for SCylinder {
             paxi_dir: Vec3::Z,
             phei,
             pdia,
-            btm_shear_angles: [0.0; 2],
-            top_shear_angles: [0.0; 2],
+            btm_shear_angles: [xbsh, ybsh],
+            top_shear_angles: [xtsh, ytsh],
             negative: false,
             center_in_mid: true,
         }
