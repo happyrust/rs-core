@@ -7,6 +7,7 @@ use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 use crate::metadata_manager::FileBytes;
 use crate::pdms_types::RefU64;
+use bevy_ecs::prelude::Component;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProject {
@@ -215,7 +216,7 @@ impl SendHoleData {
     pub fn to_arango_struct(self) -> SendHoleDataToArango {
         SendHoleDataToArango {
             _key: self.key_value.clone(),
-            key_value:self.key_value,
+            key_value: self.key_value,
             form_data: self.form_data,
         }
     }
@@ -228,6 +229,22 @@ impl SendHoleDataToArango {
             form_data: self.form_data,
         }
     }
+}
+
+//可提资物资信息
+#[derive(Resource, Default, Clone, Debug, Serialize, Deserialize, Component, PartialEq)]
+pub struct VirtualHoleData {
+    pub key: String,
+    pub No: String,
+    pub last_use_time: String,
+    pub type_: String,
+    pub major: String,
+    pub description: String,
+    pub operator: String,
+    pub coord: String,
+    pub remark: String,
+    pub is_hole: bool,
+    pub flag: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -260,7 +277,16 @@ pub struct SendHoleDataFormData {
     pub detail: Vec<DataCenterDetail>,
     #[serde(rename = "files")]
     pub files: Vec<DataCenterFile>,
+    #[serde(rename = "ModelData")]
+    pub model_data: HoleWallBoardVec,
 }
+
+//墙板列表
+#[derive(Serialize, Deserialize,Default, Clone, Debug, Resource)]
+pub struct HoleWallBoardVec {
+    pub data: Vec<(RefU64, String)>,
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HoleDataModelBody {
@@ -311,8 +337,8 @@ pub struct DataCenterDetail {
     pub update: String,
     #[serde(rename = "ActHum")]
     pub act_hum: String,
-    pub is_hole:bool,
-    pub key:String
+    pub is_hole: bool,
+    pub key: String,
 }
 
 #[test]
