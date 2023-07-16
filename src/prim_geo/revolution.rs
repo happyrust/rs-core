@@ -118,7 +118,7 @@ impl BrepShapeTrait for Revolution {
             nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
         ).collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
-        0.004 * profile_aabb.bounding_sphere().radius.max(1.0)
+        0.006 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
