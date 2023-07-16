@@ -41,6 +41,8 @@ pub struct CateBrepShape {
     pub shape_err: Option<ShapeErr>,
     //点集信息
     pub pts: Vec<i32>,
+    //是否要和design发生负实体运算
+    pub is_ngmr: bool,
 }
 
 ///转换成brep shape
@@ -90,7 +92,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
         CateGeoParam::Torus(d) => {
@@ -117,7 +119,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     is_tubi: false,
                     shape_err: None,
                     pts,
-
+                    is_ngmr: false,
                 });
             }
         }
@@ -147,7 +149,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     is_tubi: false,
                     shape_err: None,
                     pts,
-
+                    is_ngmr: false,
                 });
             }
         }
@@ -168,7 +170,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts: Default::default(),
-
+                is_ngmr: false,
             });
         }
         CateGeoParam::Dish(d) => {
@@ -199,7 +201,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
         CateGeoParam::Snout(d) => {
@@ -260,7 +262,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
         CateGeoParam::SCylinder(d) => {
@@ -297,7 +299,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
         CateGeoParam::LCylinder(d) => {
@@ -333,7 +335,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
 
@@ -385,7 +387,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
 
@@ -410,7 +412,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
 
@@ -432,7 +434,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             );
             let rotation = Quat::from_mat3(&mat3);
             let xyz_pt = Vec3::new(d.x, d.y, d.z);
-            let origin_pt = (pa.pt);
+            let origin_pt = pa.pt;
             if d.verts.len() <= 2 {
                 return None;
             }
@@ -444,7 +446,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..default()
             });
 
-            let translation = origin_pt + xyz_pt;
+            let translation = origin_pt + rotation * xyz_pt;
             let transform = Transform {
                 rotation,
                 translation,
@@ -458,7 +460,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
 
@@ -514,7 +516,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_tubi: false,
                 shape_err: None,
                 pts,
-
+                is_ngmr: false,
             });
         }
         _ => {}

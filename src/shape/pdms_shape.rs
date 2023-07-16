@@ -111,6 +111,18 @@ impl PlantMesh {
         TriMesh::new(points, indices)
     }
 
+    ///计算aabb
+    pub fn cal_aabb(&self) -> Option<Aabb>{
+        let mut aabb = Aabb::new_invalid();
+        self.vertices.iter().for_each(|v|{
+            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
+        });
+        if Vec3::from(aabb.mins).is_nan() || Vec3::from(aabb.maxs).is_nan()  {
+            return None;
+        }
+        Some(aabb)
+    }
+
     pub fn cal_normals(&mut self) {
         for (i, c) in self.indices.chunks(3).enumerate() {
             let a: Vec3 = self.vertices[c[0] as usize];
@@ -380,7 +392,7 @@ impl From<&CsgMesh> for PlantGeoData {
 
 pub const TRI_TOL: f32 = 0.001;
 pub const LEN_TOL: f32 = 0.001;
-pub const ANGLE_RAD_TOL: f32 = 0.01;
+pub const ANGLE_RAD_TOL: f32 = 0.001;
 pub const MIN_SIZE_TOL: f32 = 0.01;
 pub const MAX_SIZE_TOL: f32 = 1.0e5;
 dyn_clone::clone_trait_object!(BrepShapeTrait);

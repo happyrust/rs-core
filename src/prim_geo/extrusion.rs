@@ -78,7 +78,8 @@ impl BrepShapeTrait for Extrusion {
         use truck_modeling::{builder, Shell, Surface, Wire};
         use truck_meshalgo::prelude::*;
         if !self.check_valid() { return None; }
-        let mut wire = gen_wire( &self.verts, &self.fradius_vec).unwrap();
+        // let mut wire = gen_wire( &self.verts, &self.fradius_vec).unwrap();
+        let mut wire = gen_wire( &self.verts, &self.fradius_vec).ok()?;
         if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
             if let Surface::Plane(plane) = face.surface() {
                 let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
@@ -97,7 +98,7 @@ impl BrepShapeTrait for Extrusion {
                 // dbg!(&pts);
                 unsafe {
                     let mut cross_section = ManifoldCrossSectionRust::from_points(&pts);
-                    let manifold = cross_section.extrude(1000.0, 0);
+                    let manifold = cross_section.extrude(100.0, 0);
                     return Some(PlantMesh::from(manifold));
                 }
             }
@@ -168,13 +169,12 @@ impl BrepShapeTrait for Extrusion {
             nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
         ).collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
-        // 0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
-        0.002 * profile_aabb.bounding_sphere().radius.max(1.0)
+        0.005 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     //沿着指定方向拉伸 pbax_dir
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(1.0, 1.0, (self.height as f32 / 1000.0))
+        Vec3::new(1.0, 1.0, (self.height as f32 / 100.0))
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

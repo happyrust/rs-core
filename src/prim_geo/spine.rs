@@ -60,6 +60,7 @@ pub struct Arc3D {
     pub center: Vec3,
     pub radius: f32,
     pub angle: f32,
+    pub start_pt: Vec3,
     pub clock_wise: bool,
     pub axis: Vec3,
     pub pref_axis: Vec3,
@@ -132,6 +133,7 @@ impl Spine3D {
                     center: vec3_round_3(center),
                     radius: f32_round_3(center.distance(self.pt0)),
                     angle,
+                    start_pt: self.pt0,
                     clock_wise: axis.z < 0.0,
                     axis,
                     pref_axis,
@@ -153,7 +155,7 @@ impl Spine3D {
 
                 let p_axis = ref_axis.cross(extru_dir).normalize();
                 let y_axis = extru_dir.cross(p_axis).normalize();
-                dbg!((p_axis, y_axis, extru_dir));
+                // dbg!((p_axis, y_axis, extru_dir));
                 transform.rotation = Quat::from_mat3(&glam::f32::Mat3::from_cols(
                     p_axis, y_axis, extru_dir
                 ));

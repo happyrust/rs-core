@@ -35,7 +35,6 @@ impl VerifiedShape for Facet {
     fn check_valid(&self) -> bool { true }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for Facet {
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {

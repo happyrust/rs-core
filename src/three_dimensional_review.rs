@@ -82,7 +82,7 @@ pub struct ThreeDimensionalReviewData {
     pub status: bool,
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq,Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ModelDataIndex {
     pub refno: RefU64,
     pub name: String,
@@ -95,7 +95,7 @@ pub struct ModelData {
     pub data: Vec<HashMap<String, String>>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Eq, PartialEq,Hash)]
 pub enum VagueSearchCondition {
     #[default]
     And,
@@ -149,8 +149,7 @@ pub struct VagueSearchExportAqlData {
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct VagueSearchExportRequest{
+pub struct VagueSearchExportRequest {
     pub condition: String,
     pub refnos: Vec<RefU64>,
 }
-
