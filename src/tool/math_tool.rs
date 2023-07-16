@@ -21,11 +21,15 @@ lazy_static! {
     };
 }
 
-pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3{
+pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3 {
     let mut quat = Quat::from_rotation_arc(Vec3::Z, zdir);
     let mut m = Mat3::from_quat(quat);
     if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon=ANGLE_RAD_TOL) {
         m.y_axis.z = 0.0;
+        m.y_axis = m.y_axis.normalize();
+        m.x_axis = m.y_axis.cross(m.z_axis).normalize();
+    } else if m.y_axis.z < 0.0 {
+        m.y_axis.z = 1.0;
         m.y_axis = m.y_axis.normalize();
         m.x_axis = m.y_axis.cross(m.z_axis).normalize();
     }
@@ -71,11 +75,11 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
         }
 
         if angle < 0.0 {
-            angle = 90.0  + angle;
+            angle = 90.0 + angle;
             if angle > 45.0 {
                 let angle = 90.0 - angle;
                 return format!("{x_str} {angle} {y_str}");
-            }else {
+            } else {
                 return format!("{y_str} {angle} {x_str}");
             }
         }
@@ -98,7 +102,7 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
         theta = -theta;
         z_str = "D";
     }
-    if theta < ANGLE_RAD_TOL  {
+    if theta < ANGLE_RAD_TOL {
         return format!("{part_str}");
     }
 
