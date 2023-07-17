@@ -124,6 +124,7 @@ pub mod geo_params_data {
     use crate::prim_geo::dish::Dish;
     use crate::prim_geo::extrusion::Extrusion;
     use crate::prim_geo::lpyramid::LPyramid;
+    use crate::prim_geo::polyhedron::Polyhedron;
     use crate::prim_geo::pyramid::Pyramid;
     use crate::prim_geo::revolution::Revolution;
     use crate::prim_geo::rtorus::RTorus;
@@ -177,6 +178,7 @@ pub mod geo_params_data {
         PrimLCylinder(LCylinder),
         PrimRevolution(Revolution),
         PrimExtrusion(Extrusion),
+        PrimPolyhedron(Polyhedron),
         CompoundShape,
     }
 
@@ -194,8 +196,9 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimPyramid(_) => { Some(1) }
                 PdmsGeoParam::PrimSCylinder(_) => { Some(8) }
                 PdmsGeoParam::PrimLCylinder(_) => { Some(8) }
-                PdmsGeoParam::PrimRevolution(_) => { Some(11) }
+                PdmsGeoParam::PrimRevolution(_) => { Some(10) }
                 PdmsGeoParam::PrimExtrusion(_) => { Some(11) }
+                PdmsGeoParam::PrimPolyhedron(_) => { Some(12) }
             }
         }
 

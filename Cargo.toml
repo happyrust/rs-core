@@ -5,9 +5,11 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = []
+default = ["truck"]
 #opencascade = ["dep:opencascade"]
 render = ["dep:bevy_render"]
+gen_model = []
+truck = []
 
 [dependencies]
 smol_str = { version = "0.2.0", features = ["serde"] }
@@ -66,8 +68,7 @@ truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.0.0"
 
-
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 redb = "0.15.0"
-#csg = { path = "../csgrs/csg" }
+csg = { path = "../csgrs/csg" }
 
