@@ -4,14 +4,12 @@ use crate::tool::db_tool::db1_hash;
 use std::collections::HashSet;
 
 pub const UNSET_STR: &'static str = "unset";
-
 pub const ATT_WORLD: u32 = 0xBEB83u32;
 pub const ATT_NUMBDB: u32 = 31404443;
 pub const ATT_STYP: u32 = 865153;
 pub const ATT_SITE: u32 = 0x9D65A;
 pub const ATT_TYPE: u32 = 0x9CCA7;
 pub const ATT_CURD: u32 = 623865;
-
 pub const TYPE_HASH: NounHash = db1_hash("TYPE");
 pub const BOX_HASH: NounHash = db1_hash("BOX");
 pub const NAME_HASH: NounHash = db1_hash("NAME");
