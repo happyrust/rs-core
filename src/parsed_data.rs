@@ -113,6 +113,8 @@ pub struct CateAxisParam {
     pub pt: Vec3,
     pub dir: Vec3,
     pub pbore: f32,
+    pub pwidth: f32,
+    pub pheight: f32,
     pub pconnect: String,
 }
 
