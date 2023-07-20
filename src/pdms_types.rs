@@ -971,7 +971,6 @@ impl AttrMap {
         if let RefU64Type(d) = self.get_val("OWNER")? {
             return Some(*d);
         }
-        // return Err(anyhow!("Owner type not corrent".to_string()));
         None
     }
 
@@ -1202,15 +1201,23 @@ impl AttrMap {
         None
     }
 
+
+
     #[inline]
     pub fn get_rotation(&self) -> Option<Quat> {
         let type_name = self.get_type();
         let mut quat = Quat::IDENTITY;
-        if self.contains_attr_name("ZDIR") {
+        if self.contains_attr_name("ZDIR")  {
             let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
                 quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-                // dbg!(quat_to_pdms_ori_str(&quat));
+                dbg!(quat_to_pdms_ori_str(&quat));
+            }
+        }else if self.contains_attr_name("OPDI") { //PJOI 的方向
+            let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
+            if axis_dir.is_normalized() {
+                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                dbg!(quat_to_pdms_ori_str(&quat));
             }
         }else{
             match type_name {
