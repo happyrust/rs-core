@@ -351,7 +351,7 @@ impl From<ManifoldRust> for PlantMesh {
                 indices.push(i * 3 + 2);
             }
 
-            m.destroy();
+            // m.destroy();
 
             Self {
                 indices,

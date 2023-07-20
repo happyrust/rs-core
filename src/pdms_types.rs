@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::default::Default;
+use std::default;
 use std::f32::consts::PI;
 use std::{fmt, hash};
 use std::fmt::{Debug, Display, Formatter, Pointer};
@@ -1214,6 +1214,12 @@ impl AttrMap {
                 dbg!(quat_to_pdms_ori_str(&quat));
             }
         }else if self.contains_attr_name("OPDI") { //PJOI 的方向
+            let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
+            if axis_dir.is_normalized() {
+                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                dbg!(quat_to_pdms_ori_str(&quat));
+            }
+        }else if self.contains_attr_name("OPDI") {
             let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
                 quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
