@@ -47,8 +47,8 @@ use tobj::{export_faces_multi_index, LoadOptions};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
 
-#[cfg(not(target_arch = "wasm32"))]
-use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
+// #[cfg(not(target_arch = "wasm32"))]
+// use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
 
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCMesh, OCCShape};
@@ -241,27 +241,27 @@ impl PlantMesh {
     }
 
     //转变成csg模型
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn into_csg_mesh(&self, transform: Option<&Mat4>) -> CsgMesh {
-        let mut triangles = Vec::new();
-        for chuck in self.indices.chunks(3) {
-            let mut vertices_a: Vec3 = self.vertices[chuck[0] as usize];
-            let mut vertices_b: Vec3 = self.vertices[chuck[1] as usize];
-            let mut vertices_c: Vec3 = self.vertices[chuck[2] as usize];
-
-            if let Some(transform) = transform {
-                vertices_a = transform.transform_point3(vertices_a);
-                vertices_b = transform.transform_point3(vertices_b);
-                vertices_c = transform.transform_point3(vertices_c);
-            }
-            triangles.push(csg::Triangle {
-                a: CsgPt3 { x: vertices_a[0] as f64, y: vertices_a[1] as f64, z: vertices_a[2] as f64 },
-                b: CsgPt3 { x: vertices_b[0] as f64, y: vertices_b[1] as f64, z: vertices_b[2] as f64 },
-                c: CsgPt3 { x: vertices_c[0] as f64, y: vertices_c[1] as f64, z: vertices_c[2] as f64 },
-            })
-        }
-        csg::Mesh::from_triangles(triangles)
-    }
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn into_csg_mesh(&self, transform: Option<&Mat4>) -> CsgMesh {
+    //     let mut triangles = Vec::new();
+    //     for chuck in self.indices.chunks(3) {
+    //         let mut vertices_a: Vec3 = self.vertices[chuck[0] as usize];
+    //         let mut vertices_b: Vec3 = self.vertices[chuck[1] as usize];
+    //         let mut vertices_c: Vec3 = self.vertices[chuck[2] as usize];
+    //
+    //         if let Some(transform) = transform {
+    //             vertices_a = transform.transform_point3(vertices_a);
+    //             vertices_b = transform.transform_point3(vertices_b);
+    //             vertices_c = transform.transform_point3(vertices_c);
+    //         }
+    //         triangles.push(csg::Triangle {
+    //             a: CsgPt3 { x: vertices_a[0] as f64, y: vertices_a[1] as f64, z: vertices_a[2] as f64 },
+    //             b: CsgPt3 { x: vertices_b[0] as f64, y: vertices_b[1] as f64, z: vertices_b[2] as f64 },
+    //             c: CsgPt3 { x: vertices_c[0] as f64, y: vertices_c[1] as f64, z: vertices_c[2] as f64 },
+    //         })
+    //     }
+    //     csg::Mesh::from_triangles(triangles)
+    // }
 
     pub fn export_obj(&self, reverse: bool, file_path: &str) -> std::io::Result<()> {
         let mut buffer = BufWriter::new(File::create(file_path)?);
@@ -343,51 +343,51 @@ impl From<OCCMesh> for PlantGeoData {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-impl From<CsgMesh> for PlantGeoData {
-    fn from(o: CsgMesh) -> Self {
-        (&o).into()
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl From<&CsgMesh> for PlantGeoData {
-    fn from(o: &CsgMesh) -> Self {
-        let vertex_count = o.triangles.len() * 3;
-        let mut aabb = Aabb::new_invalid();
-
-        let mut vertices = Vec::with_capacity(vertex_count);
-        let mut normals = Vec::with_capacity(vertex_count);
-        let mut indices = Vec::with_capacity(vertex_count);
-
-        for (i, t) in o.triangles.iter().enumerate() {
-            //顶点重排，保证normal是正确的
-            aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
-            vertices.push(t.a.into());
-            vertices.push(t.b.into());
-            vertices.push(t.c.into());
-            indices.push((i * 3) as u32);
-            indices.push((i * 3 + 1) as u32);
-            indices.push((i * 3 + 2) as u32);
-            normals.push(t.normal().into());
-            normals.push(t.normal().into());
-            normals.push(t.normal().into());
-        }
-
-        Self {
-            geo_hash: 0,
-            mesh: Some(PlantMesh {
-                indices,
-                vertices,
-                normals,
-                wire_vertices: vec![],
-            }),
-            aabb: Some(aabb),
-            #[cfg(feature = "opencascade")]
-            occ_shape: None,
-        }
-    }
-}
+// #[cfg(not(target_arch = "wasm32"))]
+// impl From<CsgMesh> for PlantGeoData {
+//     fn from(o: CsgMesh) -> Self {
+//         (&o).into()
+//     }
+// }
+//
+// #[cfg(not(target_arch = "wasm32"))]
+// impl From<&CsgMesh> for PlantGeoData {
+//     fn from(o: &CsgMesh) -> Self {
+//         let vertex_count = o.triangles.len() * 3;
+//         let mut aabb = Aabb::new_invalid();
+//
+//         let mut vertices = Vec::with_capacity(vertex_count);
+//         let mut normals = Vec::with_capacity(vertex_count);
+//         let mut indices = Vec::with_capacity(vertex_count);
+//
+//         for (i, t) in o.triangles.iter().enumerate() {
+//             //顶点重排，保证normal是正确的
+//             aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
+//             vertices.push(t.a.into());
+//             vertices.push(t.b.into());
+//             vertices.push(t.c.into());
+//             indices.push((i * 3) as u32);
+//             indices.push((i * 3 + 1) as u32);
+//             indices.push((i * 3 + 2) as u32);
+//             normals.push(t.normal().into());
+//             normals.push(t.normal().into());
+//             normals.push(t.normal().into());
+//         }
+//
+//         Self {
+//             geo_hash: 0,
+//             mesh: Some(PlantMesh {
+//                 indices,
+//                 vertices,
+//                 normals,
+//                 wire_vertices: vec![],
+//             }),
+//             aabb: Some(aabb),
+//             #[cfg(feature = "opencascade")]
+//             occ_shape: None,
+//         }
+//     }
+// }
 
 
 pub const TRI_TOL: f32 = 0.001;

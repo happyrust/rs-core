@@ -111,8 +111,8 @@ pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
     "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
 ];
 
-pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 28] = [
-    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO", "SANN",
+pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 29] = [
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO", "SSLC", "SPRO", "SANN", "BOXI",
     "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE"
 ];
 
@@ -1369,13 +1369,10 @@ impl AttrMap {
     pub fn get_attr_strings(&self, keys: &[&str]) -> Vec<String> {
         let mut results = vec![];
         for &attr_name in keys {
-            if let Some(result) = self.get_val(attr_name) {
-                match result {
-                    AttrVal::StringType(v) => {
-                        results.push(v.trim_matches('\0').to_owned().clone().into());
-                    }
-                    _ => {}
-                }
+            if let Some(result) = self.get_str(attr_name) {
+                results.push(result.trim_matches('\0').to_owned().clone().into());
+            }else{
+                results.push("".to_string());
             }
         }
         results
@@ -1841,6 +1838,8 @@ pub enum GeoBasicType {
     CateCrossNeg,
     ///负实体运算过了
     Compound,
+    ///属于隐含直段的类型
+    Tubi,
 }
 
 //元件库里的模型，需要两级来完成这个边，有一个代表的refno
@@ -2042,8 +2041,8 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn get_show_refnos(&self) -> Vec<RefU64> {
-        let mut ready_refnos: Vec<RefU64> = self.inst_info_map.keys().cloned().collect();
+    pub fn get_show_refnos(&self) -> HashSet<RefU64> {
+        let mut ready_refnos: HashSet<RefU64> = self.inst_info_map.keys().cloned().collect();
         ready_refnos.extend(self.inst_tubi_map.keys().cloned());
         ready_refnos
     }
@@ -2458,9 +2457,6 @@ pub struct EleInstGeosData {
 
     #[serde(default)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
-
-    ///if resuse
-    pub reuse_unit: bool,
 }
 
 impl EleInstGeosData {
