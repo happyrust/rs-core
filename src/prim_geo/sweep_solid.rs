@@ -3,7 +3,7 @@ use std::f32::consts::{FRAC_PI_2, PI, TAU};
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use anyhow::anyhow;
-use std::default::default;
+use std::default;
 use approx::{abs_diff_eq, abs_diff_ne};
 use bevy_ecs::reflect::ReflectComponent;
 use bevy_math::prelude::*;
@@ -351,7 +351,7 @@ impl Default for SweepSolid {
             bangle: 0.0,
             plane_normal: Vec3::Z,
             extrude_dir: Vec3::Z,
-            ..default()
+            ..Default::default()
         }
     }
 }

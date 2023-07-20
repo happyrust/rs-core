@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::default::Default;
+use std::default;
 use std::f32::consts::PI;
 use std::{fmt, hash};
 use std::fmt::{Debug, Display, Formatter, Pointer};

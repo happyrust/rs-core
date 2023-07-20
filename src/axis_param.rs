@@ -1,4 +1,4 @@
-use std::default::default;
+use std::default;
 use std::ops::Neg;
 use glam::{Vec3, Vec3A};
 use crate::parsed_data::CateAxisParam;
@@ -20,7 +20,7 @@ impl CateAxisParam {
             pt: Vec3::ZERO,
             dir: Vec3::ZERO,
             pconnect: "".to_string(),
-            ..default()
+            ..Default::default()
         }
     }
 
@@ -29,7 +29,7 @@ impl CateAxisParam {
             pt: Vec3::ZERO,
             dir: Vec3::X,
             pconnect: "".to_string(),
-            ..default()
+            ..Default::default()
         }
     }
 
@@ -38,7 +38,7 @@ impl CateAxisParam {
             pt: Vec3::ZERO,
             dir: Vec3::Y,
             pconnect: "".to_string(),
-            ..default()
+            ..Default::default()
         }
     }
 
@@ -47,7 +47,7 @@ impl CateAxisParam {
             pt: Vec3::ZERO,
             dir: Vec3::Z,
             pconnect: "".to_string(),
-            ..default()
+            ..Default::default()
         }
     }
 

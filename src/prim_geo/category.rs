@@ -1,4 +1,4 @@
-use std::default::default;
+use std::default;
 use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::ops::Range;
@@ -86,7 +86,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 transform: Transform {
                     translation,
                     rotation,
-                    ..default()
+                    ..Default::default()
                 },
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -156,11 +156,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         CateGeoParam::Box(d) => {
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SBox {
                 size: d.size,
-                ..default()
+                ..Default::default()
             });
             let transform = Transform {
                 translation: d.offset,
-                ..default()
+                ..Default::default()
             };
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -183,7 +183,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let transform = Transform {
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
                 translation,
-                ..default()
+                ..Default::default()
             };
             let pheig = d.height as f32;
             let pdia = d.diameter as f32;
@@ -191,7 +191,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pdis: 0.0,
                 pheig,
                 pdia,
-                ..default()
+                ..Default::default()
             });
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -243,7 +243,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let transform = Transform {
                 rotation,
                 translation,
-                ..default()
+                ..Default::default()
             };
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LSnout {
                 ptdi: height / 2.0,
@@ -283,13 +283,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let transform = Transform {
                 rotation,
                 translation,
-                ..default()
+                ..Default::default()
             };
             // 是以中心为原点，所以需要移动到中心位置
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 phei,
                 pdia,
-                ..default()
+                ..Default::default()
             });
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -319,13 +319,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let transform = Transform {
                 rotation,
                 translation,
-                ..default()
+                ..Default::default()
             };
             // 是以中心为原点，所以需要移动到中心位置
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 phei,
                 pdia,
-                ..default()
+                ..Default::default()
             });
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -369,7 +369,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let transform = Transform {
                 rotation,
                 translation,
-                ..default()
+                ..Default::default()
             };
             // 是以中心为原点，所以需要移动到中心位置
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
@@ -377,7 +377,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pdia,
                 btm_shear_angles: [d.alt_x_shear * angle_flag, d.alt_y_shear * angle_flag],
                 top_shear_angles: [d.x_shear * angle_flag, d.y_shear * angle_flag],
-                ..default()
+                ..Default::default()
             });
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -395,14 +395,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             // dbg!(d);
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Sphere {
                 radius: d.diameter as f32 / 2.0,
-                ..default()
+                ..Default::default()
             });
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
             let transform = Transform {
                 translation: axis.pt,
-                ..default()
+                ..Default::default()
             };
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -443,14 +443,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 verts: d.verts.clone(),
                 fradius_vec: d.frads.clone(),
                 angle: d.angle,
-                ..default()
+                ..Default::default()
             });
 
             let translation = origin_pt + rotation * xyz_pt;
             let transform = Transform {
                 rotation,
                 translation,
-                ..default()
+                ..Default::default()
             };
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -491,7 +491,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 verts,
                 fradius_vec: d.frads.clone(),
                 height: d.height,
-                ..default()
+                ..Default::default()
             });
             let extrude_dir = paax_dir.normalize_or_zero()
                 .cross(pbax_dir.normalize_or_zero()).normalize_or_zero();
@@ -506,7 +506,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let transform = Transform {
                 rotation,
                 translation,
-                ..default()
+                ..Default::default()
             };
             return Some(CateBrepShape {
                 refno: d.refno,

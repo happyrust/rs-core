@@ -1,6 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
-use std::default::default;
+use std::default;
 use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
@@ -174,19 +174,19 @@ impl PlantMesh {
         let faces = self.indices.chunks(3).map(|c|
             tobj::Face::Triangle(tobj::VertexIndices {
                 v: c[0] as usize,
-                ..default()
+                ..Default::default()
             }, tobj::VertexIndices {
                 v: c[1] as usize,
-                ..default()
+                ..Default::default()
             }, tobj::VertexIndices {
                 v: c[2] as usize,
-                ..default()
+                ..Default::default()
             },
             )).collect::<Vec<_>>();
         //try to use custom implementation
         let options = tobj::LoadOptions {
             merge_identical_points: merge_iden,
-            ..default()
+            ..Default::default()
         };
         let t_mesh = export_faces_multi_index(pos, &[], &[], &[], &faces, None, &options)?;
         Ok(Self {

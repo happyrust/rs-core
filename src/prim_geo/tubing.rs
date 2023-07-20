@@ -1,7 +1,7 @@
 use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
 use bevy_math::prelude::Quat;
-use std::default::default;
+use std::default;
 use approx::abs_diff_eq;
 use bevy_transform::prelude::Transform;
 use crate::pdms_types::RefU64;
@@ -44,7 +44,7 @@ pub struct TubiEdge {
 impl TubiEdge {
     pub fn new_from_edge() -> Self{
         Self{
-            ..default()
+            ..Default::default()
         }
     }
 }
@@ -86,7 +86,7 @@ impl PdmsTubing {
             phei: self.start_pt.distance(self.end_pt),
             pdia: self.bore,
             center_in_mid: false,
-            ..default()
+            ..Default::default()
         };
 
         CateBrepShape {
