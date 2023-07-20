@@ -112,7 +112,10 @@ pub struct CateAxisParam {
     pub number: i32,
     pub pt: Vec3,
     pub dir: Vec3,
+    pub ref_dir: Vec3,
     pub pbore: f32,
+    pub pwidth: f32,
+    pub pheight: f32,
     pub pconnect: String,
 }
 
@@ -139,7 +142,6 @@ pub mod geo_params_data {
         #[default]
         Unknown,
         //元件库的几何体几何存储
-        Boxi(super::CateBoxImpliedParam),
         Box(super::CateBoxParam),
         Cone(super::CateConeParam),
         LCylinder(super::CateLCylinderParam),
@@ -158,6 +160,7 @@ pub mod geo_params_data {
         Sphere(super::CateSphereParam),
         Torus(super::CateTorusParam),
         TubeImplied(super::CateTubeImpliedParam),
+        BoxImplied(super::CateBoxImpliedParam),
         SVER(super::CateSverParam),
     }
 
@@ -252,14 +255,6 @@ pub mod geo_params_data {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
-pub struct CateBoxImpliedParam {
-    pub axis: Option<CateAxisParam>,
-    pub x_length: f32,
-    pub z_length: f32,
-    pub centre_line_flag: bool,
-    pub tube_flag: bool,
-}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateBoxParam {
@@ -514,11 +509,18 @@ pub struct CateTubeImpliedParam {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+pub struct CateBoxImpliedParam {
+    pub axis: Option<CateAxisParam>,
+    pub width: f32,
+    pub height: f32,
+    pub centre_line_flag: bool,
+    pub tube_flag: bool,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct CateSverParam {
     pub x: f64,
-
     pub y: f64,
-
     pub radius: f64,
 }
 

@@ -68,6 +68,7 @@ truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.0.0"
 
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 redb = "0.15.0"
 csg = { path = "../csgrs/csg" }

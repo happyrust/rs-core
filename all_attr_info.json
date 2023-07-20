@@ -24161,9 +24161,9 @@
         "hash": 5788249,
         "offset": 0,
         "default_val": {
-          "IntegerType": 0
+          "StringType": ""
         },
-        "att_type": "INTEGER"
+        "att_type": "STRING"
       },
       "642215": {
         "name": "TYPE",
@@ -31107,9 +31107,9 @@
         "hash": 5788249,
         "offset": 0,
         "default_val": {
-          "IntegerType": 0
+          "StringType": ""
         },
-        "att_type": "INTEGER"
+        "att_type": "STRING"
       },
       "750558": {
         "name": "LOCK",
@@ -34110,9 +34110,9 @@
         "hash": 5788249,
         "offset": 0,
         "default_val": {
-          "IntegerType": 0
+          "StringType": ""
         },
-        "att_type": "INTEGER"
+        "att_type": "STRING"
       },
       "639374": {
         "name": "NAME",
@@ -51483,9 +51483,9 @@
         "hash": 5788249,
         "offset": 0,
         "default_val": {
-          "IntegerType": 0
+          "StringType": ""
         },
-        "att_type": "INTEGER"
+        "att_type": "STRING"
       },
       "108442720": {
         "name": "ALLANG",
