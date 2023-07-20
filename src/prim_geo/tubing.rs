@@ -138,7 +138,7 @@ impl PdmsTubing {
                     phei: self.start_pt.distance(self.end_pt),
                     pdia: *d,
                     center_in_mid: false,
-                    ..default()
+                    ..Default::default()
                 };
                 Some(Box::new(cylinder))
             },

@@ -525,7 +525,7 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_btm = Mat4::IDENTITY;
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
-                        println!("drns {:?}  is sloped", self.drns);
+                        // println!("drns {:?}  is sloped", self.drns);
                         let mut x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
