@@ -18,3 +18,8 @@ pub struct SiteVec {
 pub struct SelectedSiteVec {
     pub data: Vec<SiteData>,
 }
+
+#[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
+pub struct FlagSiteVec {
+    pub data: Vec<SiteData>,
+}

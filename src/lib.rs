@@ -48,6 +48,7 @@ pub mod vague_search;
 
 pub mod achiver;
 pub mod plugging_material;
+pub mod room_setting;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
