@@ -341,6 +341,16 @@ pub struct DataCenterDetail {
     pub key: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct CableWeight {
+    pub types: String,
+    pub width: f32,
+    /// 托盘重量
+    pub tray_weight: String,
+    /// 电缆线重
+    pub cable_weight: String,
+}
+
 #[test]
 fn test_attr_json() {
     let data = AttrStrArray(vec!["hello".to_string(), "world".to_string()]);
