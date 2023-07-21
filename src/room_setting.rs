@@ -8,6 +8,11 @@ pub struct RoomSiteVec {
 }
 
 #[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
-pub struct SelectedRoomSiteVec {
+pub struct RoomSelectedSiteVec {
+    pub data: Vec<SiteData>,
+}
+
+#[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
+pub struct FlagRoomSiteVec {
     pub data: Vec<SiteData>,
 }
