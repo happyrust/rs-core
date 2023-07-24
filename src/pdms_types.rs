@@ -1967,9 +1967,18 @@ impl EleGeosInfo {
     }
 
 
-    ///获取几何体数据的key
+    ///获取几何体数据的string key
     #[inline]
-    pub fn get_inst_key(&self) -> u64 {
+    pub fn get_inst_key(&self) -> String {
+        if let Some(c) = &self.cata_hash {
+            return c.parse::<u64>().unwrap_or(0).to_string();
+        }
+        self.refno.to_url_refno()
+    }
+
+    ///获取几何体数据的u64 key
+    #[inline]
+    pub fn get_inst_key_u64(&self) -> u64 {
         if let Some(c) = &self.cata_hash {
             return c.parse::<u64>().unwrap_or(0);
         }
@@ -2023,7 +2032,7 @@ pub struct ShapeInstancesData {
     ///保存所有用到的的tubi数据
     pub inst_tubi_map: std::collections::HashMap<RefU64, EleGeosInfo>,
     ///保存instance几何数据
-    pub inst_geos_map: std::collections::HashMap<u64, EleInstGeosData>,
+    pub inst_geos_map: std::collections::HashMap<String, EleInstGeosData>,
 
     ///保存所有用到的的compound数据
     #[serde(skip)]
@@ -2148,7 +2157,7 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn insert_geos_data(&mut self, hash: u64, geo: EleInstGeosData) {
+    pub fn insert_geos_data(&mut self, hash: String, geo: EleInstGeosData) {
         self.inst_geos_map.insert(hash, geo);
     }
 
@@ -2451,8 +2460,8 @@ impl PlantMeshesData {
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default, Resource)]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
-    #[serde_as(as = "DisplayFromStr")]
-    pub inst_key: u64,
+    // #[serde_as(as = "DisplayFromStr")]
+    pub inst_key: String,
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
