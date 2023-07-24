@@ -140,11 +140,11 @@ impl ManifoldRust {
             }
             let mut result = Self::new();
             manifold_batch_boolean(result.ptr as _, m_vec, op);
-            manifold_delete_manifold_vec(m_vec);
+            //todo how to release memory
+            // manifold_delete_manifold_vec(m_vec);
             result
         }
     }
-
 
     pub fn batch_boolean_subtract(&self, negs: &[Self]) -> Self {
         unsafe {
@@ -161,6 +161,7 @@ impl ManifoldRust {
             result
         }
     }
+
     pub fn destroy(&self) {
         unsafe {
             manifold_delete_manifold(self.ptr);
