@@ -3,7 +3,7 @@ use std::f32::consts::{FRAC_PI_2, PI, TAU};
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
 use anyhow::anyhow;
-use std::default::default;
+use std::default;
 use approx::{abs_diff_eq, abs_diff_ne};
 use bevy_ecs::reflect::ReflectComponent;
 use bevy_math::prelude::*;
@@ -351,7 +351,7 @@ impl Default for SweepSolid {
             bangle: 0.0,
             plane_normal: Vec3::Z,
             extrude_dir: Vec3::Z,
-            ..default()
+            ..Default::default()
         }
     }
 }
@@ -525,7 +525,7 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_btm = Mat4::IDENTITY;
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
-                        println!("drns {:?}  is sloped", self.drns);
+                        // println!("drns {:?}  is sloped", self.drns);
                         let mut x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {

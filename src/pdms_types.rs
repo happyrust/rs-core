@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::default::Default;
+use std::default;
 use std::f32::consts::PI;
 use std::{fmt, hash};
 use std::fmt::{Debug, Display, Formatter, Pointer};
@@ -971,7 +971,6 @@ impl AttrMap {
         if let RefU64Type(d) = self.get_val("OWNER")? {
             return Some(*d);
         }
-        // return Err(anyhow!("Owner type not corrent".to_string()));
         None
     }
 
@@ -1202,15 +1201,29 @@ impl AttrMap {
         None
     }
 
+
+
     #[inline]
     pub fn get_rotation(&self) -> Option<Quat> {
         let type_name = self.get_type();
         let mut quat = Quat::IDENTITY;
-        if self.contains_attr_name("ZDIR") {
+        if self.contains_attr_name("ZDIR")  {
             let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
                 quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-                // dbg!(quat_to_pdms_ori_str(&quat));
+                dbg!(quat_to_pdms_ori_str(&quat));
+            }
+        }else if self.contains_attr_name("OPDI") { //PJOI 的方向
+            let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
+            if axis_dir.is_normalized() {
+                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                dbg!(quat_to_pdms_ori_str(&quat));
+            }
+        }else if self.contains_attr_name("OPDI") {
+            let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
+            if axis_dir.is_normalized() {
+                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                dbg!(quat_to_pdms_ori_str(&quat));
             }
         }else{
             match type_name {
@@ -1961,9 +1974,18 @@ impl EleGeosInfo {
     }
 
 
-    ///获取几何体数据的key
+    ///获取几何体数据的string key
     #[inline]
-    pub fn get_inst_key(&self) -> u64 {
+    pub fn get_inst_key(&self) -> String {
+        if let Some(c) = &self.cata_hash {
+            return c.parse::<u64>().unwrap_or(0).to_string();
+        }
+        self.refno.to_url_refno()
+    }
+
+    ///获取几何体数据的u64 key
+    #[inline]
+    pub fn get_inst_key_u64(&self) -> u64 {
         if let Some(c) = &self.cata_hash {
             return c.parse::<u64>().unwrap_or(0);
         }
@@ -2017,7 +2039,7 @@ pub struct ShapeInstancesData {
     ///保存所有用到的的tubi数据
     pub inst_tubi_map: std::collections::HashMap<RefU64, EleGeosInfo>,
     ///保存instance几何数据
-    pub inst_geos_map: std::collections::HashMap<u64, EleInstGeosData>,
+    pub inst_geos_map: std::collections::HashMap<String, EleInstGeosData>,
 
     ///保存所有用到的的compound数据
     #[serde(skip)]
@@ -2142,7 +2164,7 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn insert_geos_data(&mut self, hash: u64, geo: EleInstGeosData) {
+    pub fn insert_geos_data(&mut self, hash: String, geo: EleInstGeosData) {
         self.inst_geos_map.insert(hash, geo);
     }
 
@@ -2445,8 +2467,8 @@ impl PlantMeshesData {
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default, Resource)]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
-    #[serde_as(as = "DisplayFromStr")]
-    pub inst_key: u64,
+    // #[serde_as(as = "DisplayFromStr")]
+    pub inst_key: String,
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
