@@ -4,7 +4,7 @@ use std::hash::Hasher;
 use std::hash::Hash;
 use anyhow::anyhow;
 use bevy_ecs::prelude::*;
-use std::default::default;
+use std::default;
 use truck_modeling::{builder, Shell};
 
 use bevy_ecs::reflect::ReflectComponent;
@@ -57,7 +57,7 @@ impl SCTorus {
                     x_axis, y_axis, z_axis,
                 )),
                 translation,
-                ..default()
+                ..Default::default()
             };
             if mat.is_nan() {
                 return None;

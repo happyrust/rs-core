@@ -2,7 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::f32::EPSILON;
 use std::hash::{Hash, Hasher};
-use std::default::default;
+use std::default;
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use bevy_ecs::reflect::ReflectComponent;
@@ -157,7 +157,7 @@ impl BrepShapeTrait for Extrusion {
             height: 1000.0,   //开放一点大小,不然三角化出来的不对
             fradius_vec: self.fradius_vec.clone(),
             cur_type: self.cur_type.clone(),
-            ..default()
+            ..Default::default()
         };
         Box::new(unit)
     }
@@ -202,7 +202,7 @@ fn test_circle_fradius() {
         ],
         fradius_vec: vec![125.0; 4],
         height: 100.0,
-        ..default()
+        ..Default::default()
     };
     let r = ext.gen_brep_shell();
     dbg!(r);
