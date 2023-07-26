@@ -1,5 +1,5 @@
 use std::collections::hash_map::DefaultHasher;
-use std::default::default;
+use std::default;
 use std::f32::EPSILON;
 use std::hash::Hasher;
 use std::hash::Hash;
@@ -83,7 +83,7 @@ impl SRTorus {
                     x_axis, y_axis, z_axis,
                 )),
                 translation,
-                ..default()
+                ..Default::default()
             };
             return Some((rtorus, mat));
         }

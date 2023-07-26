@@ -344,7 +344,7 @@ pub struct DataCenterDetail {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CableWeight {
     pub types: String,
-    pub width: f32,
+    pub width: String,
     /// 托盘重量
     pub tray_weight: String,
     /// 电缆线重
