@@ -6,8 +6,6 @@ use bevy_ecs::prelude::Component;
 use bevy_ecs::prelude::Event;
 
 
-
-
 #[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct WaterComputeStp {
     //土建
@@ -16,6 +14,8 @@ pub struct WaterComputeStp {
     pub non_civil_engineering: Vec<RefU64>,
 }
 
+
+///水淹计算中需要封堵的孔洞或门洞
 #[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct CivilEngineeringStp {
     pub wall_refno: RefU64,
