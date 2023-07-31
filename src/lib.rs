@@ -28,7 +28,8 @@ pub mod db_number;
 pub mod cache;
 pub mod tiny_expr;
 pub mod accel_tree;
-pub mod plot_struct; // 全自动出图所需的结构体
+pub mod plot_struct;
+// 全自动出图所需的结构体
 pub mod pdms_user;
 pub mod plat_user;
 pub mod metadata_manager;
@@ -48,12 +49,13 @@ pub mod vague_search;
 pub mod achiver;
 pub mod plugging_material;
 pub mod room_setting;
+pub mod water_calculation;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 // pub type BHashMap<K, V> = HashMap<K, V>;
 
-pub fn get_default_pdms_db_info() -> PdmsDatabaseInfo{
+pub fn get_default_pdms_db_info() -> PdmsDatabaseInfo {
     serde_json::from_str::<PdmsDatabaseInfo>(&include_str!("../all_attr_info.json")).unwrap()
 }
