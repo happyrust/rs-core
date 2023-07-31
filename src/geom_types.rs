@@ -65,6 +65,7 @@ impl RvmTubiGeoInfos {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct RvmInstGeo {
     pub geo_param: PdmsGeoParam,
+    pub geo_hash: u64,
     pub aabb: Option<Aabb>,
     //相对于自身的坐标系变换
     pub transform: Transform,

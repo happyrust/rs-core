@@ -5,6 +5,7 @@ use serde::Deserialize;
 
 #[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PluggingData {
+    pub refno:RefU64,
     pub name: String,
     pub size: String,
     pub room_1: String,
@@ -13,8 +14,6 @@ pub struct PluggingData {
     pub plugging_area: f32,
     pub plugging_volume: f32,
     pub materials: String,
-    pub own_refno:RefU64,
-
 }
 
 #[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
