@@ -7,9 +7,8 @@ use crate::pdms_types::{EleInstGeo, RefU64};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::borrow::BorrowMut;
-use opencascade::primitives::Compound;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::Shape;
+use opencascade::primitives::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam::PrimSCylinder;
 use crate::pdms_types::GeoBasicType;
 
