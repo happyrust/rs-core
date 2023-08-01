@@ -20,6 +20,8 @@ use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::Shape;
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
 
@@ -60,16 +62,15 @@ impl BrepShapeTrait for Extrusion {
         dbg!(&self.height);
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         if !self.check_valid() || self.verts.len() < 3 { return Err(anyhow!("Extrusion params not valid.")); }
         let mut wire = if let CurveType::Spline(thick) = self.cur_type {
             gen_occ_spline_wire(&self.verts, thick)?
         } else {
             gen_occ_wire(&self.verts, &self.fradius_vec)?
         };
-        // dbg!(self);
-        Ok(wire.extrude(DVec3::new(0., 0.0, self.height as _))?)
+        Ok(wire.to_face().extrude(DVec3::new(0., 0.0, self.height as _)).to_shape())
     }
 
     ///使用manifold生成拉身体的mesh
@@ -78,7 +79,6 @@ impl BrepShapeTrait for Extrusion {
         use truck_modeling::{builder, Shell, Surface, Wire};
         use truck_meshalgo::prelude::*;
         if !self.check_valid() { return None; }
-        // let mut wire = gen_wire( &self.verts, &self.fradius_vec).unwrap();
         let mut wire = gen_wire( &self.verts, &self.fradius_vec).ok()?;
         if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
             if let Surface::Plane(plane) = face.surface() {
@@ -205,5 +205,11 @@ fn test_circle_fradius() {
         ..Default::default()
     };
     let r = ext.gen_brep_shell();
-    dbg!(r);
+    // dbg!(r);
+    #[cfg(feature = "opencascade_rs")]
+    {
+        let occ_shape = ext.gen_occ_shape().unwrap();
+        occ_shape.write_step("circle_fradius.step").unwrap();
+    }
+
 }

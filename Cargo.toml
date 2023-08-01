@@ -6,7 +6,7 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["truck"]
-#opencascade = ["dep:opencascade"]
+opencascade_rs = []
 render = ["dep:bevy_render"]
 gen_model = []
 truck = []
@@ -69,7 +69,7 @@ rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.0.0"
 
 
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-redb = "0.15.0"
-csg = { path = "../csgrs/csg" }
+redb = "1.0.5"
 
