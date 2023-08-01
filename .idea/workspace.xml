@@ -15,9 +15,25 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="remove comment">
+      <change afterPath="$PROJECT_DIR$/src/csg/manifold_back.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/csg/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/water_calculation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/water_calculation.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/csg/manifold.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/csg/manifold.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/geom_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,7 +54,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="test" />
+        <entry key="$PROJECT_DIR$" value="merge" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -75,6 +91,9 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="29VwsntJ23BsU7FTwegFbGg9gfM" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -116,14 +135,14 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Build">
+  <component name="RunManager" selected="Cargo.Test prim_geo::extrusion::test_circle_fradius">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build --release" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -134,13 +153,13 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test pdms_types::test_ele_geo_instance_serialize_deserialize" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib pdms_types::test_ele_geo_instance_serialize_deserialize --  --nocapture --exact" />
+    <configuration name="Test prim_geo::extrusion::test_circle_fradius" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib prim_geo::extrusion::test_circle_fradius -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -154,10 +173,10 @@
     <configuration name="Test shape::pdms_shape::test_project_to_plane" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib shape::pdms_shape::test_project_to_plane -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -171,10 +190,10 @@
     <configuration name="Test tool::db_tool::test_chinese_data" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib tool::db_tool::test_chinese_data -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -188,10 +207,10 @@
     <configuration name="Test tool::dir_tool::parse_ori" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib tool::dir_tool::parse_ori -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -205,10 +224,10 @@
     <configuration name="Test tool::serde_tool::test_i64" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib tool::serde_tool::test_i64 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -222,10 +241,10 @@
     <configuration name="build" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="build --all" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -239,7 +258,7 @@
     <list>
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.build" />
-      <item itemvalue="Cargo.Test pdms_types::test_ele_geo_instance_serialize_deserialize" />
+      <item itemvalue="Cargo.Test prim_geo::extrusion::test_circle_fradius" />
       <item itemvalue="Cargo.Test shape::pdms_shape::test_project_to_plane" />
       <item itemvalue="Cargo.Test tool::db_tool::test_chinese_data" />
       <item itemvalue="Cargo.Test tool::dir_tool::parse_ori" />
@@ -247,11 +266,11 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test prim_geo::extrusion::test_circle_fradius" />
         <item itemvalue="Cargo.Test tool::serde_tool::test_i64" />
         <item itemvalue="Cargo.Test tool::dir_tool::parse_ori" />
         <item itemvalue="Cargo.Test tool::db_tool::test_chinese_data" />
         <item itemvalue="Cargo.Test shape::pdms_shape::test_project_to_plane" />
-        <item itemvalue="Cargo.Test pdms_types::test_ele_geo_instance_serialize_deserialize" />
       </list>
     </recent_temporary>
   </component>
@@ -442,6 +461,8 @@
       <workItem from="1687503763099" duration="1724000" />
       <workItem from="1688313440845" duration="18222000" />
       <workItem from="1690510005023" duration="1188000" />
+      <workItem from="1690819858307" duration="208000" />
+      <workItem from="1690878425621" duration="1537000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>

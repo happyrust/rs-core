@@ -18,8 +18,7 @@ use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+
 use crate::pdms_types::AttrMap;
 use bevy_ecs::prelude::*;
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]

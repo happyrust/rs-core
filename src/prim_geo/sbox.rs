@@ -10,8 +10,7 @@ use crate::parsed_data::CateBoxParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
+
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]

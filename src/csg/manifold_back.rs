@@ -140,11 +140,11 @@ impl ManifoldRust {
             }
             let mut result = Self::new();
             manifold_batch_boolean(result.ptr as _, m_vec, op);
-            //todo how to release memory
-            // manifold_delete_manifold_vec(m_vec);
+            manifold_delete_manifold_vec(m_vec);
             result
         }
     }
+
 
     pub fn batch_boolean_subtract(&self, negs: &[Self]) -> Self {
         unsafe {
@@ -153,15 +153,14 @@ impl ManifoldRust {
             let mut src = self.clone();
             for (i, b) in negs.iter().enumerate() {
                 manifold_difference(result.ptr as _, src.ptr, b.ptr);
-                // #[cfg(debug_assertions)]
-                // dbg!(result.num_tri());
+                #[cfg(debug_assertions)]
+                dbg!(result.num_tri());
                 src.ptr = result.ptr;
             }
             manifold_as_original(result.ptr as _, src.ptr);
             result
         }
     }
-
     pub fn destroy(&self) {
         unsafe {
             manifold_delete_manifold(self.ptr);
@@ -234,26 +233,6 @@ impl ManifoldMeshRust {
     }
 }
 
-impl From<(&PlantMesh, &Mat4)> for ManifoldMeshRust {
-    fn from(c: (&PlantMesh, &Mat4)) -> Self {
-        let m = c.0;
-        let t = c.1;
-        unsafe {
-            let mesh = ManifoldMeshRust::new();
-            let mut verts = Vec::with_capacity(m.vertices.len() * 3);
-            for v in m.vertices.clone() {
-                let pt = t.transform_point3(Vec3::from(v));
-                verts.push(pt[0]);
-                verts.push(pt[1]);
-                verts.push(pt[2]);
-            }
-            manifold_meshgl(mesh.ptr as _,
-                            verts.as_ptr(), m.vertices.len(), 3,
-                            m.indices.as_ptr(), m.indices.len() / 3);
-            mesh
-        }
-    }
-}
 
 impl From<&PlantMesh> for ManifoldMeshRust {
     fn from(m: &PlantMesh) -> Self {
@@ -290,8 +269,25 @@ impl From<PlantMesh> for ManifoldRust {
 impl From<(&PlantMesh, &Mat4)> for ManifoldRust {
     fn from(m: (&PlantMesh, &Mat4)) -> Self {
         unsafe {
-            let mesh: ManifoldMeshRust = m.into();
-            Self::from_mesh(&mesh)
+            let mesh: ManifoldMeshRust = m.0.into();
+            let manifold = Self::from_mesh(&mesh);
+            dbg!(manifold.num_tri());
+            let result = Self::new();
+            let mat = m.1;
+            // manifold_transform(result.ptr as _, manifold.ptr,
+            //                    mat.x_axis.x, mat.x_axis.y, mat.x_axis.z,
+            //                    mat.y_axis.x, mat.y_axis.y, mat.y_axis.z,
+            //                    mat.z_axis.x, mat.z_axis.y, mat.z_axis.z,
+            //                    mat.w_axis.x, mat.w_axis.y, mat.w_axis.z,
+            // );
+            manifold_transform(manifold.ptr as _, manifold.ptr,
+                               mat.x_axis.x, mat.x_axis.y, mat.x_axis.z,
+                               mat.y_axis.x, mat.y_axis.y, mat.y_axis.z,
+                               mat.z_axis.x, mat.z_axis.y, mat.z_axis.z,
+                               mat.w_axis.x, mat.w_axis.y, mat.w_axis.z,
+            );
+
+            manifold
         }
     }
 }
@@ -352,7 +348,7 @@ impl From<ManifoldRust> for PlantMesh {
                 indices.push(i * 3 + 2);
             }
 
-            // m.destroy();
+            m.destroy();
 
             Self {
                 indices,
