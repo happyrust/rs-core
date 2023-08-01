@@ -205,35 +205,35 @@ pub mod geo_params_data {
             }
         }
 
-        pub fn convert_rvm_pri_data(&self) -> Vec<u8> {
+        pub fn convert_rvm_pri_data(&self) -> Option<Vec<u8>> {
             match &self {
                 PdmsGeoParam::PrimBox(data) => {
-                    RvmShapeTypeData::Box([data.size.x, data.size.y, data.size.z]).convert_shape_type_to_bytes()
+                    Some(RvmShapeTypeData::Box([data.size.x, data.size.y, data.size.z]).convert_shape_type_to_bytes())
                 }
                 PdmsGeoParam::PrimLSnout(data) => {
                     let height = (data.ptdi - data.pbdi).abs();
                     let bottom_radius = data.pbdm / 2.0;
                     let top_radius = data.ptdm / 2.0;
                     let offset = data.poff;
-                    RvmShapeTypeData::Snout([bottom_radius, top_radius, height, offset, 0.0, 0.0, 0.0, 0.0, 0.0]).convert_shape_type_to_bytes()
+                    Some(RvmShapeTypeData::Snout([bottom_radius, top_radius, height, offset, 0.0, 0.0, 0.0, 0.0, 0.0]).convert_shape_type_to_bytes())
                 }
                 PdmsGeoParam::PrimDish(data) => {
                     let radius = data.pdia / 2.0;
                     let height = data.pheig;
-                    RvmShapeTypeData::SphericalDish([radius, height]).convert_shape_type_to_bytes()
+                    Some(RvmShapeTypeData::SphericalDish([radius, height]).convert_shape_type_to_bytes())
                 }
                 PdmsGeoParam::PrimCTorus(data) => {
                     let in_torus = (data.rout - data.rins) / 2.0;
                     let out_torus = data.rout - in_torus;
                     let angle = (data.angle / 180.0) * std::f32::consts::PI;
-                    RvmShapeTypeData::CircularTorus([out_torus, in_torus, angle]).convert_shape_type_to_bytes()
+                    Some(RvmShapeTypeData::CircularTorus([out_torus, in_torus, angle]).convert_shape_type_to_bytes())
                 }
                 PdmsGeoParam::PrimRTorus(data) => {
                     let out_torus = data.rout;
                     let len = data.rout - data.rins;
                     let height = data.height;
                     let angle = (data.angle / 180.0) * std::f32::consts::PI;
-                    RvmShapeTypeData::RectangularTorus([out_torus, len, height, angle]).convert_shape_type_to_bytes()
+                    Some(RvmShapeTypeData::RectangularTorus([out_torus, len, height, angle]).convert_shape_type_to_bytes())
                 }
                 PdmsGeoParam::PrimPyramid(data) => {
                     let bottom_width = data.pbbt;
@@ -243,13 +243,14 @@ pub mod geo_params_data {
                     let x_offset = data.pbof;
                     let y_offset = data.pcof;
                     let height = (data.pbdi - data.ptdi).abs();
-                    RvmShapeTypeData::Pyramid([data.pbbt, data.pcbt, data.pbtp, data.pctp, x_offset, y_offset, height]).convert_shape_type_to_bytes()
+                    Some(RvmShapeTypeData::Pyramid([data.pbbt, data.pcbt, data.pbtp, data.pctp, x_offset, y_offset, height])
+                             .convert_shape_type_to_bytes())
                 }
                 PdmsGeoParam::PrimSCylinder(data) => {
                     let radius = data.pdia / 2.0;
-                    RvmShapeTypeData::Cylinder([radius, data.phei]).convert_shape_type_to_bytes()
+                    Some(RvmShapeTypeData::Cylinder([radius, data.phei]).convert_shape_type_to_bytes())
                 }
-                _ => { vec![] }
+                _ => { None }
             }
         }
     }

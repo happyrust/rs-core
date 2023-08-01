@@ -19,7 +19,7 @@ pub struct RvmGeoInfo {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default,Clone)]
 pub struct RvmGeoInfos {
     #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
@@ -62,10 +62,10 @@ impl RvmTubiGeoInfos {
 }
 
 /// rvm 需要的 元件 geo 数据
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default,Clone)]
 pub struct RvmInstGeo {
     pub geo_param: PdmsGeoParam,
-    pub geo_hash: u64,
+    pub geo_hash: String,
     pub aabb: Option<Aabb>,
     //相对于自身的坐标系变换
     pub transform: Transform,
