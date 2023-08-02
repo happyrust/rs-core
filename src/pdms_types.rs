@@ -21,8 +21,6 @@ use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::{Point3, Quaternion, UnitQuaternion};
-#[cfg(feature = "opencascade")]
-use opencascade::OCCShape;
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Isometry, Point, Vector};
 use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape, TriMesh};
@@ -139,17 +137,12 @@ pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = [
 ];
 
 ///可以重用的类型
-/// todo 实现 "FIXING"类型的计算
-pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 6] = [
-    "STWALL", "SCTN", "FITT", "PFIT", "NOZZ", "FIXING"
+pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 3] = [
+    "STWALL", "SCTN", "NOZZ",
 ];
 
-pub const SCALED_REUSE_GEO_NAMES: [&'static str; 2] = [
-    "SCTN", "STWALL",
-];
-
-pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 18] = [
-    "ELCONN", "CMPF", "WALL", "GWALL", "SJOI",
+pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 21] = [
+    "ELCONN", "CMPF", "WALL", "GWALL", "SJOI",  "FITT", "PFIT",  "FIXING",
     "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ",
     "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI"
 ];
@@ -659,6 +652,10 @@ impl AttrMap {
         if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
             return Some(*self.get_refno().unwrap_or_default());
         }
+        //由于有ODESP这种，会导致复用出现问题，怎么解决这个问题
+        //1、主动去判断是否CataRef是这个类型，即有ODESP这种字段，然后从复用的逻辑排除出来
+        //2、解析的时候发现表达式有这些字段，主动去给catref加一个标记位，表示是不能复用的构件
+        //3、把相关的数据都做一遍统计，owner、attach
         let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
             "CATR"
         } else {
@@ -1958,17 +1955,17 @@ impl EleGeosInfo {
     }
 
     #[inline]
-    pub fn update_to_compound(&mut self) {
-        let inst_key = hash_two_str(&self.get_inst_key().to_string(), "compound");
+    pub fn update_to_compound(&mut self, key: Option<&str>) {
+        let inst_key = hash_two_str(&self.get_inst_key().to_string(), key.as_deref().unwrap_or("compound"));
         self.cata_hash = Some(inst_key.to_string());
         self.geo_type = GeoBasicType::Compound;
     }
 
 
+
     #[inline]
-    pub fn update_to_ngmr(&mut self) {
-        let inst_key = hash_two_str(&self.get_inst_key().to_string(), "ngmr");
-        // let inst_key = self.get_inst_key() / 7 + 883;
+    pub fn update_to_ngmr(&mut self,  key: Option<&str>) {
+        let inst_key = hash_two_str(&self.get_inst_key().to_string(), key.as_deref().unwrap_or("ngmr"));
         self.cata_hash = Some(inst_key.to_string());
         self.geo_type = GeoBasicType::CateCrossNeg;
     }

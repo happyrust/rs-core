@@ -5,12 +5,11 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 use approx::{abs_diff_eq, abs_diff_ne};
-use glam::Vec3;
+use glam::{DVec3, Mat4, Vec3};
 use bevy_ecs::prelude::*;
 use bevy_transform::prelude::Transform;
 use nom::Parser;
 use serde::{Deserialize, Serialize};
-use truck_topology::Face;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::pdms_types::AttrMap;
@@ -18,13 +17,18 @@ use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
+#[cfg(feature = "opencascade_rs")]
+use opencascade::{
+    angle::{RVec, ToAngle},
+    primitives::{Face, Shape, Solid, Wire},
+    workplane::Workplane,
+};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::adhoc::AdHocShape;
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex, DsShape};
 
-
+///元件库里的LCylinder
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-//
 pub struct LCylinder {
     pub paxi_expr: String,
     pub paxi_pt: Vec3,
@@ -162,11 +166,12 @@ impl BrepShapeTrait for LCylinder {
     }
 
     //OCC 的生成
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let r = self.pdia as f64 / 2.0;
         let h = (self.ptdi - self.pbdi) as f64;
-        Ok(OCCShape::cylinder(r, h)?)
+        // Ok(OCCShape::cylinder(r, h)?)
+        Ok(AdHocShape::make_cylinder(DVec3::Z, r, h).into_inner())
     }
 
     ///直接通过基本体的参数，生成模型
@@ -321,10 +326,8 @@ impl BrepShapeTrait for SCylinder {
         !self.is_sscl()
     }
 
-
-    #[cfg(feature = "opencascade")]
-    ///OCC 的生成
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         if self.is_sscl() {
             let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos();
             let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos();
@@ -340,16 +343,22 @@ impl BrepShapeTrait for SCylinder {
                 * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[0].to_radians())
                 * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
                 * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
-            let mut circle = Wire::circle(self.pdia/2.0, Vec3::ZERO, ext_dir)?;
-            let mut btm_circe = circle.g_transform(&transform_btm.as_dmat4())?;
-            let mut top_circle = circle.g_transform(&transform_top.as_dmat4())?;
+            let mut circle = Workplane::xy().circle(0.0, 0.0, self.pdia as f64 /2.0);
+            // let mut circle = Wire::circle(self.pdia/2.0, Vec3::ZERO, ext_dir)?;
+            let (s, r, t) = transform_btm.to_scale_rotation_translation();
+            let (axis, angle) = r.to_axis_angle();
+            let mut btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
+            let mut top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
+            // let mut btm_circe = circle.g_transform(&transform_btm.as_dmat4())?;
+            // let mut top_circle = circle.g_transform(&transform_top.as_dmat4())?;
 
-            Ok(OCCShape::loft([btm_circe, top_circle].iter(), [].iter())?)
+            Ok(Solid::loft([btm_circe, top_circle].iter()).to_shape())
 
         } else {
             let r = self.pdia as f64 / 2.0;
             let h = self.phei as f64;
-            Ok(OCCShape::cylinder(r, h)?)
+            // Ok(OCCShape::cylinder(r, h)?)
+            Ok(AdHocShape::make_cylinder(DVec3::Z, r, h).into_inner())
         }
 
 

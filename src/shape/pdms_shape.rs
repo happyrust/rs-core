@@ -47,11 +47,8 @@ use tobj::{export_faces_multi_index, LoadOptions};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
 
-// #[cfg(not(target_arch = "wasm32"))]
-// use csg::{Mesh as CsgMesh, Pt3 as CsgPt3};
-
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCMesh, OCCShape};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::Shape;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -414,8 +411,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, limit_size: f32) {}
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         return Err(anyhow!("不存在该occ shape"));
     }
 
@@ -456,15 +453,15 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         TRI_TOL
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_plant_geo_data(&self) -> Option<PlantGeoData> {
-        if let Ok(shape) = self.gen_occ_shape() {
-            let mut data: PlantGeoData = shape.mesh(self.tol() as f64).ok()?.into();
-            data.occ_shape = Some(shape);
-            return Some(data);
-        }
-        None
-    }
+    // #[cfg(feature = "opencascade")]
+    // fn gen_plant_geo_data(&self) -> Option<PlantGeoData> {
+    //     if let Ok(shape) = self.gen_occ_shape() {
+    //         let mut data: PlantGeoData = shape.mesh(self.tol() as f64).ok()?.into();
+    //         data.occ_shape = Some(shape);
+    //         return Some(data);
+    //     }
+    //     None
+    // }
 
     // #[cfg(not(feature = "opencascade"))]
     ///生成mesh

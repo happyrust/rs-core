@@ -121,6 +121,7 @@ impl BrepShapeTrait for Revolution {
         0.006 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
+
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::{builder, Shell, Surface, Wire};
 
@@ -146,17 +147,17 @@ impl BrepShapeTrait for Revolution {
                 }
                 //允许有误差
                 //todo fix 当出现单点的时候，会出现三角化的问题
-                // if angle.abs() >= (core::f64::consts::TAU - 0.01) {
-                //     let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64)).into_boundaries();
-                //     let mut shell = s.pop();
-                //     if shell.is_none() {
-                //         dbg!(&self);
-                //     }
-                //     let face = face.inverse();
-                //     let mut s = builder::rsweep(&face, rot_pt, -rot_dir, Rad(PI as f64)).into_boundaries();
-                //     shell.as_mut().unwrap().append(&mut s[0]);
-                //     return shell;
-                // } else {
+                if angle.abs() >= (core::f64::consts::TAU - 0.01) {
+                    let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64)).into_boundaries();
+                    let mut shell = s.pop();
+                    if shell.is_none() {
+                        dbg!(&self);
+                    }
+                    let face = face.inverse();
+                    let mut s = builder::rsweep(&face, rot_pt, -rot_dir, Rad(PI as f64)).into_boundaries();
+                    shell.as_mut().unwrap().append(&mut s[0]);
+                    return shell;
+                } else {
                     let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64)).into_boundaries();
                     let shell = s.pop();
                     if shell.is_none() {
@@ -166,31 +167,31 @@ impl BrepShapeTrait for Revolution {
                     // std::fs::write("revo.json", json).unwrap();
 
                     return shell;
-                    // }
                 }
-            } else {
-                // dbg!(&self);
             }
-            None
+        } else {
+            // dbg!(&self);
         }
-
-        fn hash_unit_mesh_params(&self) -> u64 {
-            let mut hasher = DefaultHasher::new();
-            self.verts.iter().for_each(|v| {
-                hash_vec3::<DefaultHasher>(v, &mut hasher);
-            });
-            "Revolution".hash(&mut hasher);
-            hash_f32(self.angle, &mut hasher);
-            hasher.finish()
-        }
-
-        fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-            Box::new(self.clone())
-        }
-
-        fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-            Some(
-                PdmsGeoParam::PrimRevolution(self.clone())
-            )
-        }
+        None
     }
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.verts.iter().for_each(|v| {
+            hash_vec3::<DefaultHasher>(v, &mut hasher);
+        });
+        "Revolution".hash(&mut hasher);
+        hash_f32(self.angle, &mut hasher);
+        hasher.finish()
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimRevolution(self.clone())
+        )
+    }
+}

@@ -6,7 +6,7 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["truck"]
-#opencascade = ["dep:opencascade"]
+opencascade_rs = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 gen_model = ["dep:manifold-sys"]
 truck = []
@@ -69,6 +69,7 @@ rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.0.0"
 
 manifold-sys = { path = "../manifold-sys", optional = true }
+opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
