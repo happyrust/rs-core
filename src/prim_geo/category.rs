@@ -446,7 +446,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             });
 
-            let translation = origin_pt + rotation * xyz_pt;
+            //rotation * origin_pt +
+            let translation =   xyz_pt;
             let transform = Transform {
                 rotation,
                 translation,

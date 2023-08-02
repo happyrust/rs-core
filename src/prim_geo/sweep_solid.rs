@@ -10,7 +10,7 @@ use bevy_math::prelude::*;
 
 
 use bevy_ecs::prelude::*;
-use glam::{Vec3};
+use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
 
 use crate::parsed_data::{CateProfileParam, SannData, SProfileData};
@@ -20,8 +20,11 @@ use crate::prim_geo::wire;
 use crate::shape::pdms_shape::{ANGLE_RAD_TOL, BrepMathTrait, BrepShapeTrait, convert_to_cg_matrix4, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Wire, Axis, Edge, Point, DsShape};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::angle::ToAngle;
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Edge, Shape, Solid, Wire};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 
 ///含有两边方向的，扫描体
@@ -58,14 +61,14 @@ impl SweepSolid {
     }
 
 
-    #[cfg(feature = "opencascade")]
+    #[cfg(feature = "opencascade_rs")]
     ///生成OCC的SANN 线框
     fn gen_occ_sann_wire(&self, origin: Vec2, sann: &SannData, is_btm: bool, r1: f32, r2: f32) -> anyhow::Result<Wire> {
         let (r1, r2) = if is_btm {
             (r1, r2)
         } else { (r2 + sann.drad - sann.dwid - sann.pwidth, r2 + sann.drad) };
         let mut z_axis = Vec3::Z;
-        let mut a = sann.pangle.abs();
+        let mut angle = sann.pangle.to_radians();
         let mut offset_pt = Vec3::ZERO;
         let mut rot_mat = Mat3::IDENTITY;
         let mut beta_rot = Quat::IDENTITY;
@@ -78,6 +81,9 @@ impl SweepSolid {
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius;
                 if d.clock_wise {
+                    z_axis = -z_axis;
+                }
+                if self.lmirror {
                     z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
@@ -95,29 +101,27 @@ impl SweepSolid {
                 }
             }
         }
-        let p1: Point = Vec3::new(r1, 0.0, 0.0).into();
-        let p2: Point = Vec3::new(r2, 0.0, 0.0).into();
-        let p3: Point = Vec3::new(r2 * a.cos(), r2 * a.sin(), 0.0).into();
-        let p4: Point = Vec3::new(r1 * a.cos(), r1 * a.sin(), 0.0).into();
-        let b = a / 2.0;
-        let t1: Point = Vec3::new(r2 * b.cos(), r2 * b.sin(), 0.0).into();
-        let t2: Point = Vec3::new(r1 * b.cos(), r1 * b.sin(), 0.0).into();
+        let p1 = (Vec3::new(r1, 0.0, 0.0)).as_dvec3();
+        let p2 = (Vec3::new(r2, 0.0, 0.0)).as_dvec3();
+        let p3 = (Vec3::new(r2 * angle.cos(), r2 * angle.sin(), 0.0)).as_dvec3();
+        let p4 = (Vec3::new(r1 * angle.cos(), r1 * angle.sin(), 0.0)).as_dvec3();
 
+        let center_pt = DVec3::ZERO;
         let mut wire = Wire::from_edges(&vec![
-            Edge::new_line(&p1, &p2)?,
-            Edge::new_arc(&p2, &t1, &p3)?,
-            Edge::new_line(&p3, &p4)?,
-            Edge::new_arc(&p4, &t2, &p1)?,
-        ])?;
+            Edge::segment(p1, p2),
+            Edge::arc(center_pt, p2, p3),
+            Edge::segment(p3, p4),
+            Edge::arc(center_pt, p4, p1),
+        ]);
         let offset = offset_pt + Vec3::new(origin.x, origin.y, 0.0);
-        let trans_mat = Mat4::from_translation(offset);
+        let translation = Mat4::from_translation(offset);
         let r_trans_mat = Mat4::from_translation(r_translation);
+        let local_mat = Mat4::from_mat3(rot_mat);
+        let m = Mat3::from_quat(beta_rot);
+        let beta_mat = Mat4::from_mat3(m);
+        let final_mat = r_trans_mat * beta_mat * local_mat * translation;
 
-        let local_mat = Mat4::from_mat3(Mat3::from_quat(beta_rot) * rot_mat);
-        let final_mat = r_trans_mat * local_mat * trans_mat;
-
-        Ok(wire.g_transform(&final_mat.as_dmat4())?)
-
+        Ok(wire.g_transformed_by_mat(&final_mat.as_dmat4()))
     }
 
     /// 生成sann的线框
@@ -151,7 +155,7 @@ impl SweepSolid {
                     z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
-                dbg!((x_axis, y_axis, z_axis));
+                // dbg!((x_axis, y_axis, z_axis));
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
                 rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Z));
@@ -211,7 +215,7 @@ impl SweepSolid {
         Some(result_wire)
     }
 
-    #[cfg(feature = "opencascade")]
+    #[cfg(feature = "opencascade_rs")]
     ///计算SPRO的face
     /// start_vec 为起始方向
     fn gen_occ_spro_wire(&self, profile: &SProfileData) -> anyhow::Result<Wire> {
@@ -230,13 +234,14 @@ impl SweepSolid {
             SweepPath3D::SpineArc(d) => {
                 let mut y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
-                // dbg!(z_axis);
                 r_translation.x = d.radius;
                 if d.clock_wise {
                     z_axis = -z_axis;
                 }
+                if self.lmirror {
+                    z_axis = -z_axis;
+                }
                 let x_axis = y_axis.cross(z_axis).normalize();
-                // dbg!((x_axis, y_axis, z_axis));
                 //旋转到期望的平面
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
@@ -244,7 +249,6 @@ impl SweepSolid {
             SweepPath3D::Line(d) => {
                 rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Y));
                 if d.is_spine {
-                    // dbg!(self.bangle.to_radians());
                     beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
                 }
             }
@@ -255,12 +259,14 @@ impl SweepSolid {
             points.push(p);
         }
         let mut wire = wire::gen_occ_wire(&points, &profile.frads)?;
-        let trans_mat = Mat4::from_translation(offset_pt);
+        let translation = Mat4::from_translation(offset_pt);
         let r_trans_mat = Mat4::from_translation(r_translation);
-        let local_mat = Mat4::from_mat3(Mat3::from_quat(beta_rot) * rot_mat);
-        let final_mat = r_trans_mat * local_mat * trans_mat;
+        let beta_mat = Mat4::from_mat3(Mat3::from_quat(beta_rot));
+        let local_mat = Mat4::from_mat3(rot_mat);
+        let final_mat = r_trans_mat * beta_mat * local_mat * translation;
+        dbg!(&final_mat);
 
-        Ok(wire.g_transform(&final_mat.as_dmat4())?)
+        Ok(wire.g_transformed_by_mat(&final_mat.as_dmat4()))
     }
 
 
@@ -330,7 +336,9 @@ impl SweepSolid {
             m.z_axis.vector4(),
             Vector4::new(0.0, 0.0, 0.0, 1.0),
         );
-        let mut result_wire = builder::transformed(&wire, r_trans_mat * beta_mat * local_mat * translation);
+        let final_mat = r_trans_mat * beta_mat * local_mat * translation;
+        dbg!(&final_mat);
+        let mut result_wire = builder::transformed(&wire, final_mat);
         let mut face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
         if let Surface::Plane(plane) = face.surface() {
             let s = self.plane_normal.y as f64;
@@ -363,8 +371,7 @@ impl VerifiedShape for SweepSolid {
 
 //#[typetag::serde]
 impl BrepShapeTrait for SweepSolid {
-
-    fn is_reuse_unit(&self) -> bool{
+    fn is_reuse_unit(&self) -> bool {
         matches!(&self.path, SweepPath3D::Line(_)) && !self.is_sloped()
     }
 
@@ -379,8 +386,8 @@ impl BrepShapeTrait for SweepSolid {
         0.01
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let mut is_sann = false;
         let (mut profile_wire, mut top_profile_wire) = match &self.profile {
             CateProfileParam::SANN(p) => {
@@ -405,8 +412,6 @@ impl BrepShapeTrait for SweepSolid {
             }
         };
 
-        let mut wires = vec![];
-        // let mut verts = vec![];
 
         if let Some(mut wire) = profile_wire {
             //check if valid
@@ -425,30 +430,62 @@ impl BrepShapeTrait for SweepSolid {
                     } else {
                         Vec3::Z
                     };
-                    let axis = Axis::new(Vec3::ZERO, rot_axis);
-                    let r = wire.extrude_rotate(&axis, rot_angle as _)?;
-                    return Ok(r);
+                    // let axis = Axis::new(Vec3::ZERO, rot_axis);
+                    let r = wire.to_face().revolve(DVec3::ZERO, rot_axis.as_dvec3(), Some(rot_angle.radians()));
+                    return Ok(r.to_shape());
                 }
                 SweepPath3D::Line(l) => {
+                    let mut wires = vec![];
                     let mut transform_btm = Mat4::IDENTITY;
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         println!("drns {:?}  is sloped", self.drns);
-                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns));
+                        let mut x_angle = self.drns.angle_between(Vec3::X).abs();
+                        // dbg!(x_angle);
+                        let scale_x = if x_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (x_angle.sin())
+                        };
+                        let mut y_angle = self.drns.angle_between(Vec3::Y).abs();
+                        // dbg!(y_angle);
+                        let scale_y = if y_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (y_angle.sin())
+                        };
+                        // dbg!((self.drns).angle_between(Vec3::Z));
+                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
+                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
-                    if self.drne.is_normalized() &&  self.is_drne_sloped() {
+                    if self.drne.is_normalized() && self.is_drne_sloped() {
                         println!("drne {:?}  is sloped", self.drne);
-                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne));
+                        let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
+                        // dbg!(x_angle);
+                        let scale_x = if x_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (x_angle.sin())
+                        };
+                        let mut y_angle = (-self.drne).angle_between(Vec3::Y).abs();
+                        // dbg!(y_angle);
+                        let scale_y = if y_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (y_angle.sin())
+                        };
+                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
+                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
-                    transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.len())) * transform_top;
-                    wires.push(wire.g_transform(&transform_btm.as_dmat4())?);
-                    if let Some(mut top_wire) = top_profile_wire{
-                        wires.push(top_wire.g_transform(&transform_top.as_dmat4())?);
-                    }else{
-                        wires.push(wire.g_transform(&transform_top.as_dmat4())?);
+                    transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.length())) * transform_top;
+                    wires.push(wire.g_transformed_by_mat(&transform_btm.as_dmat4()));
+                    if let Some(mut top_wire) = top_profile_wire {
+                        wires.push(top_wire.g_transformed_by_mat(&transform_top.as_dmat4()));
+                    } else {
+                        wires.push(wire.g_transformed_by_mat(&transform_top.as_dmat4()));
                     }
 
-                    return Ok(OCCShape::loft(wires.iter(), [].iter())?);
+                    return Ok(Solid::loft(wires.iter()).to_shape());
                 }
             }
         }
@@ -484,7 +521,7 @@ impl BrepShapeTrait for SweepSolid {
                 (None, None)
             }
         };
-            // if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
+        // if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
         if let Some(mut wire) = profile_wire {
             //check if valid
             if self.drns.is_nan() || self.drne.is_nan() {
@@ -525,43 +562,41 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_btm = Mat4::IDENTITY;
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
-                        // println!("drns {:?}  is sloped", self.drns);
+                        println!("drns {:?}  is sloped", self.drns);
                         let mut x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
-                        }else{
+                        } else {
                             1.0 / (x_angle.sin())
                         };
                         let mut y_angle = self.drns.angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
-                        }else{
+                        } else {
                             1.0 / (y_angle.sin())
                         };
                         // dbg!((self.drns).angle_between(Vec3::Z));
                         transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
-                    if self.drne.is_normalized() &&  self.is_drne_sloped() {
+                    if self.drne.is_normalized() && self.is_drne_sloped() {
                         println!("drne {:?}  is sloped", self.drne);
                         let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
-                        }else{
+                        } else {
                             1.0 / (x_angle.sin())
                         };
                         let mut y_angle = (-self.drne).angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
-                        }else{
+                        } else {
                             1.0 / (y_angle.sin())
                         };
-                        // dbg!(Vec3::new(scale_x, scale_y, 1.0));
-                        // dbg!((-self.drne).angle_between(Vec3::Z));
                         transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
@@ -580,17 +615,6 @@ impl BrepShapeTrait for SweepSolid {
                     let mut face_e = builder::try_attach_plane(&[wire_e]).ok()?;
                     faces.push(face_s);
                     faces.push(face_e.inverse());
-
-                    // if let Surface::Plane(plane) = face_s.surface() {
-                    //     let s = self.plane_normal.y as f64;
-                    //     if plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
-                    //         for mut f in &mut faces {
-                    //             if let Surface::Plane(plane) = f.surface(){
-                    //                 f.invert();
-                    //             }
-                    //         }
-                    //     }
-                    // }
                     let shell: Shell = faces.into();
                     return Some(shell);
                 }
@@ -637,6 +661,12 @@ impl BrepShapeTrait for SweepSolid {
             SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, self.height),
             _ => Vec3::ONE,
         }
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimLoft(self.clone())
+        )
     }
 
     #[inline]

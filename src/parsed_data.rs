@@ -121,6 +121,8 @@ pub struct CateAxisParam {
 
 
 pub mod geo_params_data {
+    #[cfg(feature = "opencascade_rs")]
+    use opencascade::primitives::Shape;
     use serde_derive::{Deserialize, Serialize};
     use crate::prim_geo::ctorus::CTorus;
     use crate::prim_geo::cylinder::*;
@@ -134,7 +136,9 @@ pub mod geo_params_data {
     use crate::prim_geo::sbox::SBox;
     use crate::prim_geo::snout::LSnout;
     use crate::prim_geo::sphere::Sphere;
+    use crate::prim_geo::sweep_solid::SweepSolid;
     use crate::rvm_types::RvmShapeTypeData;
+    use crate::shape::pdms_shape::BrepShapeTrait;
 
 
     #[derive(Clone, Serialize, Deserialize, Debug, Default)]
@@ -182,10 +186,34 @@ pub mod geo_params_data {
         PrimRevolution(Revolution),
         PrimExtrusion(Extrusion),
         PrimPolyhedron(Polyhedron),
+        PrimLoft(SweepSolid),
         CompoundShape,
     }
 
+
     impl PdmsGeoParam {
+
+        #[cfg(feature = "opencascade_rs")]
+        pub fn gen_occ_shape(&self) -> Option<Shape>{
+            match self {
+                PdmsGeoParam::PrimSCylinder(s) =>{
+                    s.gen_occ_shape().ok()
+                }
+                PdmsGeoParam::PrimLCylinder(s) =>{
+                    s.gen_occ_shape().ok()
+                }
+                PdmsGeoParam::PrimExtrusion(s) =>{
+                    s.gen_occ_shape().ok()
+                }
+                PdmsGeoParam::PrimLoft(s) =>{
+                    s.gen_occ_shape().ok()
+                }
+                _ => {
+                    None
+                }
+            }
+        }
+
         pub fn into_rvm_pri_num(&self) -> Option<u8> {
             match self {
                 PdmsGeoParam::Unknown => { None }
@@ -202,6 +230,7 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimRevolution(_) => { Some(10) }
                 PdmsGeoParam::PrimExtrusion(_) => { Some(11) }
                 PdmsGeoParam::PrimPolyhedron(_) => { Some(12) }
+                PdmsGeoParam::PrimLoft(_) => {   None }
             }
         }
 
