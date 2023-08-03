@@ -446,13 +446,7 @@
       <workItem from="1690510005023" duration="1188000" />
       <workItem from="1690819858307" duration="208000" />
       <workItem from="1690878425621" duration="1537000" />
-    </task>
-    <task id="LOCAL-00155" summary="update">
-      <created>1667131046027</created>
-      <option name="number" value="00155" />
-      <option name="presentableId" value="LOCAL-00155" />
-      <option name="project" value="LOCAL" />
-      <updated>1667131046027</updated>
+      <workItem from="1691056035109" duration="1252000" />
     </task>
     <task id="LOCAL-00156" summary="update">
       <created>1667144717878</created>
@@ -790,7 +784,14 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="219" />
+    <task id="LOCAL-00219" summary="增加step的导出，调整SINGLE_REUSE_CATA_SHAPE">
+      <created>1691056047677</created>
+      <option name="number" value="00219" />
+      <option name="presentableId" value="LOCAL-00219" />
+      <option name="project" value="LOCAL" />
+      <updated>1691056047677</updated>
+    </task>
+    <option name="localTasksCounter" value="220" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
