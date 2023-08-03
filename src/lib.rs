@@ -16,7 +16,6 @@ pub mod aql_types;
 pub mod pdms_types;
 pub mod consts;
 pub mod prim_geo;
-pub mod csg;
 pub mod shape;
 pub mod tool;
 pub mod parsed_data;

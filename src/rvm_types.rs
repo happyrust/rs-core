@@ -1,3 +1,8 @@
+use crate::pdms_types::{PlantGeoData, RefU64};
+use serde_derive::{ Serialize , Deserialize};
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
+
 /// rvm 格式类型
 #[derive(Debug, Clone)]
 pub enum RvmShapeTypeData {
@@ -78,4 +83,12 @@ impl RvmShapeTypeData {
         }
         data
     }
+}
+
+#[serde_as]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct RvmPlatMesh {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    pub mesh: PlantGeoData,
 }

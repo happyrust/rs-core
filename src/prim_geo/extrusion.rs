@@ -206,8 +206,10 @@ fn test_circle_fradius() {
     };
     let r = ext.gen_brep_shell();
     // dbg!(r);
-    let occ_shape = ext.gen_occ_shape().unwrap();
-
-    occ_shape.write_step("circle_fradius.step").unwrap();
+    #[cfg(feature = "opencascade_rs")]
+    {
+        let occ_shape = ext.gen_occ_shape().unwrap();
+        occ_shape.write_step("circle_fradius.step").unwrap();
+    }
 
 }
