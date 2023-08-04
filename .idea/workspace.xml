@@ -820,7 +820,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="merge" />
+                        <option value="test" />
                       </list>
                     </value>
                   </entry>
