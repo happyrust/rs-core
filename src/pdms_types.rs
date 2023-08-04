@@ -1208,19 +1208,12 @@ impl AttrMap {
             let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
                 quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-                dbg!(quat_to_pdms_ori_str(&quat));
             }
         }else if self.contains_attr_name("OPDI") { //PJOI 的方向
             let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
                 quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-                dbg!(quat_to_pdms_ori_str(&quat));
-            }
-        }else if self.contains_attr_name("OPDI") {
-            let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
-            if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-                dbg!(quat_to_pdms_ori_str(&quat));
+                // dbg!(quat_to_pdms_ori_str(&quat));
             }
         }else{
             match type_name {

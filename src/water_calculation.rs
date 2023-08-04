@@ -8,8 +8,9 @@ use bevy_ecs::prelude::Component;
 use bevy_ecs::prelude::Event;
 
 
+//xxxx
 #[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
-pub struct WaterComputeStp {
+pub struct WaterComputeStpInput {
     //土建
     pub civil_engineering: Vec<HashMap<RefU64, Vec<CivilEngineeringStp>>>,
     //非土建
@@ -17,14 +18,25 @@ pub struct WaterComputeStp {
 }
 
 
+// ///水淹计算中需要封堵的孔洞或门洞
+// #[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
+// pub struct CivilEngineeringStp {
+//     pub wall_refno: RefU64,
+//     pub hole_refno: Option<RefU64>,
+//     pub door_refno: Option<RefU64>,
+// }
 ///水淹计算中需要封堵的孔洞或门洞
 #[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct CivilEngineeringStp {
+    //
     pub wall_refno: RefU64,
-    pub hole_refno: Option<RefU64>,
-    pub door_refno: Option<RefU64>,
+    //
+    pub hole_refnos: Vec<RefU64>,
+    //
+    pub door_refnos: Vec<RefU64>,
 }
 
+///
 #[derive(Resource, Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FloodingHole {
     pub owner_refno: RefU64,
@@ -44,7 +56,8 @@ pub struct FloodingHoleVec {
 pub struct ExportFloodingStpEvent {
     pub file_name: String,
     pub save_time: String,
-    pub stp: WaterComputeStp,
+    pub stp: WaterComputeStpInput,
+    // pub root_refno: RefU64,
     pub refnos: Vec<(RefU64, RefU64)>,
     pub model_list: Vec<(RefU64, String)>,
     pub all_hole_list: Vec<FloodingHole>,
