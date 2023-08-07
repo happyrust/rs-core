@@ -1653,6 +1653,26 @@ impl AttrVal {
             RefU64Array(v) => { serde_json::to_string(v).unwrap() }
         };
     }
+
+    pub fn get_val_as_string_csv(&self) -> String {
+        return match self {
+            AttrVal::InvalidType => { "unset".to_string() }
+            IntegerType(v) => { v.to_string().replace(",",";") }
+            StringType(v) => { v.to_string().replace(",",";") }
+            DoubleType(v) => { v.to_string().replace(",",";") }
+            DoubleArrayType(v) => { serde_json::to_string(v).unwrap().replace(",",";") }
+            StringArrayType(v) => { serde_json::to_string(v).unwrap().replace(",",";") }
+            BoolArrayType(v) => { serde_json::to_string(v).unwrap().replace(",",";") }
+            IntArrayType(v) => { serde_json::to_string(v).unwrap().replace(",",";") }
+            BoolType(v) => { v.to_string().replace(",",";") }
+            Vec3Type(v) => { serde_json::to_string(v).unwrap().replace(",",";") }
+            ElementType(v) => { v.to_string().replace(",",";") }
+            WordType(v) => { v.to_string().replace(",",";") }
+            RefU64Type(v) => { v.to_refno_str().to_string().replace(",",";") }
+            StringHashType(v) => { v.to_string().replace(",",";") }
+            RefU64Array(v) => { serde_json::to_string(v).unwrap().replace(",",";") }
+        };
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Component)]
