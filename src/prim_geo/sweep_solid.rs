@@ -337,7 +337,7 @@ impl SweepSolid {
             Vector4::new(0.0, 0.0, 0.0, 1.0),
         );
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
-        dbg!(&final_mat);
+        // dbg!(&final_mat);
         let mut result_wire = builder::transformed(&wire, final_mat);
         let mut face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
         if let Surface::Plane(plane) = face.surface() {
