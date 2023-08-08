@@ -51,6 +51,8 @@ pub mod plugging_material;
 pub mod room_setting;
 pub mod water_calculation;
 
+pub mod test;
+
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;
