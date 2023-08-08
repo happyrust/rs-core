@@ -1,8 +1,17 @@
 use bevy_ecs::system::Resource;
 use serde::Deserialize;
 use serde::Serialize;
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
+use parry3d::bounding_volume::Aabb;
+use bevy_transform::prelude::*;
+use crate::pdms_types::GeoBasicType;
+use crate::pdms_types::ser_refno_as_key_str;
+use crate::pdms_types::de_refno_from_key_str;
+use crate::pdms_types::PdmsGenericType;
 use crate::data_center::DataCenterProject;
-use crate::pdms_types::RefU64;
+use crate::pdms_types::{RefU64};
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 #[derive(Resource, PartialEq, Default, Debug, Serialize, Deserialize)]
 pub struct PersonnelInfo {
@@ -65,4 +74,40 @@ pub struct RectHoleSize {
 pub struct HoleBlockageMethod {
     pub method: String,
     pub thickness: f32,
+}
+
+#[serde_as]
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct HoleInstInfo {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    pub inst: Vec<HoleEleGeosInfo>
+}
+
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default, Resource)]
+#[serde_as]
+pub struct HoleEleGeosInfo {
+    #[serde(serialize_with = "ser_refno_as_key_str")]
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    pub refno: RefU64,
+    //todo 这里的数据是重复的，需要复用
+    //有哪一些 geo insts 组成
+    //也可以通过edge 来组合
+    #[serde(default)]
+    pub geo_hash: Option<String>,
+    //是否可见
+    pub visible: bool,
+    //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
+    // pub generic_type: PdmsGenericType,
+    pub aabb: Option<Aabb>,
+    //相对世界坐标系下的变换矩阵 rot, translation, scale
+    pub transform: Transform,
+
+    #[serde(default)]
+    pub pts: Vec<i32>,
+
+    #[serde(default)]
+    pub geo_type: GeoBasicType,
+
+    pub geo_param: PdmsGeoParam,
 }

@@ -185,6 +185,7 @@ impl BrepShapeTrait for Extrusion {
 }
 
 
+#[cfg(feature = "opencascade_rs")]
 #[test]
 fn test_circle_fradius() {
     let ext = Extrusion {
