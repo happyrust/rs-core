@@ -171,7 +171,7 @@ impl BrepShapeTrait for LCylinder {
         let r = self.pdia as f64 / 2.0;
         let h = (self.ptdi - self.pbdi) as f64;
         // Ok(OCCShape::cylinder(r, h)?)
-        Ok(AdHocShape::make_cylinder(DVec3::Z, r, h).into_inner())
+        Ok(AdHocShape::make_cylinder(DVec3::ZERO, r, h).into_inner())
     }
 
     ///直接通过基本体的参数，生成模型
@@ -358,7 +358,7 @@ impl BrepShapeTrait for SCylinder {
             let r = self.pdia as f64 / 2.0;
             let h = self.phei as f64;
             // Ok(OCCShape::cylinder(r, h)?)
-            Ok(AdHocShape::make_cylinder(DVec3::Z, r, h).into_inner())
+            Ok(AdHocShape::make_cylinder(DVec3::ZERO, r, h).into_inner())
         }
 
 
