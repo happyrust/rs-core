@@ -505,51 +505,77 @@ impl RefU64Vec {
     }
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Eq, Hash, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
-// PartialEq, Ord, PartialOrd)]
-//
-// pub struct (pub u32);
-//
-// impl ToString for NounHash {
-//     fn to_string(&self) -> String {
-//         db1_dehash(self.0)
-//     }
-// }
-//
-// impl Deref for NounHash {
-//     type Target = u32;
-//
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
-//
-// impl From<&String> for NounHash {
-//     fn from(s: &String) -> Self {
-//         Self(db1_hash(s.as_str()))
-//     }
-// }
-//
-// impl From<String> for NounHash {
-//     fn from(s: String) -> Self {
-//         Self(db1_hash(s.as_str()))
-//     }
-// }
-//
-// impl From<u32> for NounHash {
-//     fn from(n: u32) -> Self {
-//         Self(n)
-//     }
-// }
-//
-// impl From<&str> for NounHash {
-//     fn from(s: &str) -> Self {
-//         Self(db1_hash(s))
-//     }
-// }
-
-
 pub type NounHash = u32;
+//untagged
+///新的属性数据结构
+#[derive(Serialize, Deserialize, Clone, Debug, Component, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[serde(untagged)]
+pub enum NamedAttrValue {
+    InvalidType,
+    IntegerType(i32),
+    StringType(String),
+    F32Type(f32),
+    F32VecType(Vec<f32>),
+    // DoubleArrayType(Vec<f64>),
+    StringArrayType(Vec<String>),
+    BoolArrayType(Vec<bool>),
+    IntArrayType(Vec<i32>),
+    BoolType(bool),
+    // Vec3Type([f64; 3]),
+    ElementType(String),
+    WordType(String),
+
+    // RefU64Type(RefU64),
+    // StringHashType(AiosStrHash),
+    // RefU64Array(RefU64Vec),
+}
+
+impl From<&AttrVal> for NamedAttrValue {
+    fn from(v: &AttrVal) -> Self {
+        match v.clone() {
+            InvalidType => Self::InvalidType,
+            IntegerType(d) => Self::IntegerType(d),
+            StringType(d) => Self::StringType(d),
+            DoubleType(d) => {
+                if d > f32::MAX as f64 {
+                    Self::StringType(d.to_string())
+                }else{
+                    Self::F32Type(d as f32)
+                }
+            },
+            DoubleArrayType(d) => {
+                Self::F32VecType(d.into_iter().map(|x| x as f32).collect())
+            }
+            StringArrayType(d) => Self::StringArrayType(d),
+            BoolArrayType(d) => Self::BoolArrayType(d),
+            IntArrayType(d) => Self::IntArrayType(d),
+            BoolType(d) => Self::BoolType(d),
+            Vec3Type(d) => Self::F32VecType(d.into_iter().map(|x| x as f32).collect()),
+            ElementType(d) => Self::ElementType(d),
+            WordType(d) => Self::ElementType(d),
+            RefU64Type(d) => Self::StringType(d.to_url_refno()),
+            StringHashType(d) => Self::IntegerType(d as i32),
+            RefU64Array(d) => Self::StringArrayType(d.into_iter().map(|x| x.to_url_refno()).collect()),
+        }
+    }
+}
+
+
+///带名称的属性map
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Deref, DerefMut, Clone, Default, Component)]
+pub struct NamedAttrMap {
+    #[serde(flatten)]
+    pub map: BHashMap<String, NamedAttrValue>,
+}
+
+impl From<&AttrMap> for  NamedAttrMap {
+    fn from(v: &AttrMap) -> Self {
+        Self{
+            map: v.map.iter().map(|(h, v)| (db1_dehash(*h), NamedAttrValue::from(v))).collect()
+        }
+    }
+}
+
 
 ///PDMS的属性数据Map
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Deref, DerefMut, Clone, Default, Component)]
@@ -569,26 +595,32 @@ impl BytesTrait for AttrMap {}
 
 
 impl AttrMap {
+
+    ///是否为负实体
     #[inline]
     pub fn is_neg(&self) -> bool {
         TOTAL_NEG_NOUN_NAMES.contains(&self.get_type())
     }
 
+    ///是否为正实体
     #[inline]
     pub fn is_pos(&self) -> bool {
         GENRAL_POS_NOUN_NAMES.contains(&self.get_type())
     }
 
+    ///是否为空
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.map.len() == 0
     }
 
+    ///序列化成bincode
     #[inline]
     pub fn into_bincode_bytes(&self) -> Vec<u8> {
         bincode::serialize(self).unwrap()
     }
 
+    ///从bincode反序列化
     #[inline]
     pub fn from_bincode_bytes(bytes: &[u8]) -> Option<Self> {
         bincode::deserialize(bytes).ok()
