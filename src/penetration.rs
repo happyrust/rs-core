@@ -3,6 +3,7 @@ use crate::pdms_types::RefU64;
 use bevy_ecs::system::Resource;
 use serde::{Serialize,Deserialize};
 
+//贯穿件结构体
 #[derive(Resource,Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PenetrationData {
     pub owner_refno: RefU64,
@@ -14,6 +15,7 @@ pub struct PenetrationData {
     pub outer_room_num:String,
 }
 
+//所有的贯穿件组织成资源
 #[derive(Resource,Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PenetrationVec {
     pub data: Vec<PenetrationData>,
