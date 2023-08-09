@@ -193,6 +193,14 @@ pub mod geo_params_data {
 
     impl PdmsGeoParam {
 
+        ///获得关键点
+        pub fn key_points(&self) -> Vec<glam::Vec3>{
+            match self {
+                PdmsGeoParam::PrimSCylinder(s) => s.key_points(),
+                _ => vec![]
+            }
+        }
+
         #[cfg(feature = "opencascade_rs")]
         pub fn gen_occ_shape(&self) -> Option<Shape>{
             match self {
