@@ -45,7 +45,7 @@ pub struct ExportFloodingStpEvent {
     //保存时间
     pub save_time: String,
     //封堵孔洞需要用到的数据
-    pub stp: Vec<CivilEngineeringStp>,
+    pub stp:  Vec<CivilEngineeringStp>,
     //所有选中的模型列表
     pub model_list: Vec<(RefU64, String)>,
     //不需进行封堵的孔洞列表

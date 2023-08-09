@@ -317,6 +317,15 @@ impl BrepShapeTrait for SCylinder {
         self.pdia = self.pdia.min(l);
     }
 
+    ///获得关键点
+    fn key_points(&self) -> Vec<Vec3>{
+        if self.is_sscl() {
+            vec![Vec3::ZERO, Vec3::Z * self.phei.abs()]
+        } else {
+            vec![Vec3::ZERO, Vec3::Z * 1.0]
+        }
+    }
+
     ///直接通过基本体的参数，生成模型
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         Some(gen_unit_cylinder())
@@ -344,24 +353,18 @@ impl BrepShapeTrait for SCylinder {
                 * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
                 * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
             let mut circle = Workplane::xy().circle(0.0, 0.0, self.pdia as f64 /2.0);
-            // let mut circle = Wire::circle(self.pdia/2.0, Vec3::ZERO, ext_dir)?;
             let (s, r, t) = transform_btm.to_scale_rotation_translation();
             let (axis, angle) = r.to_axis_angle();
             let mut btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
             let mut top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
-            // let mut btm_circe = circle.g_transform(&transform_btm.as_dmat4())?;
-            // let mut top_circle = circle.g_transform(&transform_top.as_dmat4())?;
 
             Ok(Solid::loft([btm_circe, top_circle].iter()).to_shape())
 
         } else {
             let r = self.pdia as f64 / 2.0;
             let h = self.phei as f64;
-            // Ok(OCCShape::cylinder(r, h)?)
             Ok(AdHocShape::make_cylinder(DVec3::ZERO, r, h).into_inner())
         }
-
-
     }
 
     #[inline]
