@@ -15,16 +15,11 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="add NamedAttrMap">
-      <change afterPath="$PROJECT_DIR$/src/csg/manifold.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/csg/manifold_back.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/csg/mod.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="refactor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geom_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/penetration.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/penetration.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/water_calculation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/water_calculation.rs" afterDir="false" />
     </list>
@@ -47,7 +42,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="gen-model" />
+        <entry key="$PROJECT_DIR$" value="merge" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -829,7 +824,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="merge" />
+                        <option value="origin/merge" />
                       </list>
                     </value>
                   </entry>

@@ -409,7 +409,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     ///获得关键点
-    fn key_points(&self) -> Vec<Vec3>{  return vec![];}
+    fn key_points(&self) -> Vec<Vec3>{  return vec![Vec3::ZERO];}
 
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, limit_size: f32) {}

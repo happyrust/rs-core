@@ -8,17 +8,6 @@ use bevy_ecs::prelude::Component;
 use bevy_ecs::prelude::Event;
 
 
-///水淹计算中需要封堵的孔洞或门洞
-#[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
-pub struct CivilEngineeringStp {
-    //墙的refno
-    pub wall_refno: RefU64,
-    //墙下需要封堵的孔洞refno
-    pub hole_refnos: Vec<RefU64>,
-    //墙下需要封堵的门洞refno
-    pub door_refnos: Vec<RefU64>,
-}
-
 ///水淹计算孔洞的结构体
 #[derive(Resource, Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FloodingHole {
@@ -44,14 +33,12 @@ pub struct ExportFloodingStpEvent {
     pub file_name: String,
     //保存时间
     pub save_time: String,
-    //封堵孔洞需要用到的数据
-    pub stp:  Vec<CivilEngineeringStp>,
     //所有选中的模型列表
     pub model_list: Vec<(RefU64, String)>,
     //不需进行封堵的孔洞列表
-    pub all_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
+    pub opening_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
     //需要进行封堵的孔洞列表
-    pub selected_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
+    pub plugging_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
 }
 
 impl ExportFloodingStpEvent {
@@ -64,9 +51,8 @@ impl ExportFloodingStpEvent {
             save_time: self.save_time,
             file_name: self.file_name,
             model_list: self.model_list,
-            all_hole_list: self.all_hole_list,
-            selected_hole_list: self.selected_hole_list,
-            stp: self.stp,
+            opening_hole_list: self.opening_hole_list,
+            plugging_hole_list: self.plugging_hole_list,
         }
     }
 }
@@ -79,16 +65,15 @@ pub struct FloodingStpToArangodb {
     pub file_name: String,
     //保存时间
     pub save_time: String,
-    //封堵孔洞需要用到的数据
-    pub stp: Vec<CivilEngineeringStp>,
     //所有选中的模型列表
     pub model_list: Vec<(RefU64, String)>,
     //不需进行封堵的孔洞列表
-    pub all_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
+    pub opening_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
     //需要进行封堵的孔洞列表
-    pub selected_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
+    pub plugging_hole_list: Vec<HashMap<RefU64, Vec<FloodingHole>>>,
 }
 
+///将数据库中的数据组织成资源，导出历史记录时使用
 #[derive(Component, Resource, Clone, Debug, Default, Event, Deserialize, Serialize)]
 pub struct FloodingStpToArangodbVec {
     pub data: Vec<FloodingStpToArangodb>,
