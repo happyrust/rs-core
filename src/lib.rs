@@ -16,6 +16,7 @@ pub mod aql_types;
 pub mod pdms_types;
 pub mod consts;
 pub mod prim_geo;
+pub mod csg;
 pub mod shape;
 pub mod tool;
 pub mod parsed_data;
@@ -50,6 +51,8 @@ pub mod achiver;
 pub mod plugging_material;
 pub mod room_setting;
 pub mod water_calculation;
+
+pub mod test;
 
 
 // pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;

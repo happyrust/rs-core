@@ -193,6 +193,27 @@ pub mod geo_params_data {
 
     impl PdmsGeoParam {
 
+        ///获得关键点
+        pub fn key_points(&self) -> Vec<glam::Vec3>{
+            match self {
+                PdmsGeoParam::Unknown => vec![],
+                PdmsGeoParam::PrimBox(s) => s.key_points(),
+                PdmsGeoParam::PrimLSnout(s) => s.key_points(),
+                PdmsGeoParam::PrimDish(s) => s.key_points(),
+                PdmsGeoParam::PrimSphere(s) => s.key_points(),
+                PdmsGeoParam::PrimCTorus(s) => s.key_points(),
+                PdmsGeoParam::PrimRTorus(s) => s.key_points(),
+                PdmsGeoParam::PrimPyramid(s) => s.key_points(),
+                PdmsGeoParam::PrimSCylinder(s) => s.key_points(),
+                PdmsGeoParam::PrimLCylinder(s) => s.key_points(),
+                PdmsGeoParam::PrimRevolution(s) => s.key_points(),
+                PdmsGeoParam::PrimExtrusion(s) => s.key_points(),
+                PdmsGeoParam::PrimPolyhedron(s) => s.key_points(),
+                PdmsGeoParam::PrimLoft(s) => s.key_points(),
+                PdmsGeoParam::CompoundShape => vec![],
+            }
+        }
+
         #[cfg(feature = "opencascade_rs")]
         pub fn gen_occ_shape(&self) -> Option<Shape>{
             match self {
