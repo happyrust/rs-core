@@ -15,8 +15,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/penetration.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/penetration.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/water_calculation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/water_calculation.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -448,13 +449,9 @@
       <workItem from="1690819858307" duration="208000" />
       <workItem from="1690878425621" duration="1537000" />
       <workItem from="1691049917108" duration="604000" />
-    </task>
-    <task id="LOCAL-00155" summary="update">
-      <created>1667131046027</created>
-      <option name="number" value="00155" />
-      <option name="presentableId" value="LOCAL-00155" />
-      <option name="project" value="LOCAL" />
-      <updated>1667131046027</updated>
+      <workItem from="1691418797281" duration="957000" />
+      <workItem from="1691420123533" duration="143000" />
+      <workItem from="1691459928748" duration="5026000" />
     </task>
     <task id="LOCAL-00156" summary="update">
       <created>1667144717878</created>
@@ -792,7 +789,14 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="221" />
+    <task id="LOCAL-00221" summary="重构水工计算数据组织">
+      <created>1691418820727</created>
+      <option name="number" value="00221" />
+      <option name="presentableId" value="LOCAL-00221" />
+      <option name="project" value="LOCAL" />
+      <updated>1691418820727</updated>
+    </task>
+    <option name="localTasksCounter" value="222" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -833,7 +837,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fix too high NCYL" />
     <MESSAGE value="Fix lines colinear" />
     <MESSAGE value="Update" />
     <MESSAGE value="添加方位字符串的解析还原，得到Quat" />
@@ -858,7 +861,8 @@
     <MESSAGE value="fix substract boolean" />
     <MESSAGE value="修改 PZAXI，增加Rect tubi" />
     <MESSAGE value="update" />
-    <option name="LAST_COMMIT_MESSAGE" value="update" />
+    <MESSAGE value="重构水工计算数据组织" />
+    <option name="LAST_COMMIT_MESSAGE" value="重构水工计算数据组织" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
