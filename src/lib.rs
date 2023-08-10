@@ -50,6 +50,7 @@ pub mod achiver;
 pub mod plugging_material;
 pub mod room_setting;
 pub mod water_calculation;
+pub mod enso_types;
 
 pub mod test;
 

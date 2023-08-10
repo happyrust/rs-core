@@ -568,9 +568,9 @@ pub struct NamedAttrMap {
     pub map: BHashMap<String, NamedAttrValue>,
 }
 
-impl From<&AttrMap> for  NamedAttrMap {
+impl From<&AttrMap> for NamedAttrMap {
     fn from(v: &AttrMap) -> Self {
-        Self{
+        Self {
             map: v.map.iter().map(|(h, v)| (db1_dehash(*h), NamedAttrValue::from(v))).collect()
         }
     }
@@ -2885,6 +2885,20 @@ impl PdmsNodeTrait for PdmsElement {
     }
 }
 
+impl PdmsElement {
+    pub fn get_enso_headers() -> Vec<String> {
+        vec!["refno".to_string(),"owner".to_string(),"name".to_string(),"noun".to_string(),"version".to_string(),"children_count".to_string()]
+    }
+
+    pub fn into_enso_value_json(self) -> Vec<NamedAttrValue> {
+        vec![NamedAttrValue::StringType(self.refno.to_url_refno()),
+             NamedAttrValue::StringType(self.owner.to_url_refno()),
+             NamedAttrValue::StringType(self.name),
+             NamedAttrValue::StringType(self.noun),
+             NamedAttrValue::IntegerType(self.version as i32),
+             NamedAttrValue::IntegerType(self.children_count as i32)]
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
