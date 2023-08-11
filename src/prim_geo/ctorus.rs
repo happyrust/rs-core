@@ -18,8 +18,10 @@ use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Vertex, Shape, Solid, Wire, Edge};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::angle::ToAngle;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SCTorus {
@@ -108,6 +110,18 @@ impl BrepShapeTrait for SCTorus {
             let circle = Wire::circle(t.radius, o, -self.paax_dir)?;
             let axis = Axis::new(t.center, t.rot_axis);
             return Ok(circle.extrude_rotate(&axis, t.angle.to_radians() as _)?);
+        }
+        Err(anyhow!("SCTorus参数错误，无法生成Shape"))
+    }
+
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
+            let circle = Wire::circle(torus_info.radius as _, self.paax_pt.as_dvec3(), -self.paax_dir.as_dvec3());
+            let center = torus_info.center;
+            let r = circle.to_face().revolve(center.as_dvec3(),
+                                             torus_info.rot_axis.as_dvec3(), Some(torus_info.angle.radians()));
+            return Ok(r.to_shape());
         }
         Err(anyhow!("SCTorus参数错误，无法生成Shape"))
     }

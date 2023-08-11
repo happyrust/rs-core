@@ -264,7 +264,6 @@ impl SweepSolid {
         let beta_mat = Mat4::from_mat3(Mat3::from_quat(beta_rot));
         let local_mat = Mat4::from_mat3(rot_mat);
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
-        dbg!(&final_mat);
 
         Ok(wire.g_transformed_by_mat(&final_mat.as_dmat4()))
     }
@@ -438,7 +437,7 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_btm = Mat4::IDENTITY;
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
-                        println!("drns {:?}  is sloped", self.drns);
+                        // println!("drns {:?}  is sloped", self.drns);
                         let mut x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
@@ -458,7 +457,7 @@ impl BrepShapeTrait for SweepSolid {
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
                     if self.drne.is_normalized() && self.is_drne_sloped() {
-                        println!("drne {:?}  is sloped", self.drne);
+                        // println!("drne {:?}  is sloped", self.drne);
                         let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
@@ -561,7 +560,7 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_btm = Mat4::IDENTITY;
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
-                        println!("drns {:?}  is sloped", self.drns);
+                        // println!("drns {:?}  is sloped", self.drns);
                         let mut x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
@@ -581,7 +580,7 @@ impl BrepShapeTrait for SweepSolid {
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                     }
                     if self.drne.is_normalized() && self.is_drne_sloped() {
-                        println!("drne {:?}  is sloped", self.drne);
+                        // println!("drne {:?}  is sloped", self.drne);
                         let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {

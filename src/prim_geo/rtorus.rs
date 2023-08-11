@@ -7,9 +7,6 @@ use anyhow::anyhow;
 use glam::{Mat3, Quat, Vec3};
 use bevy_ecs::prelude::*;
 use truck_modeling::{builder, Shell};
-use crate::tool::hash_tool::*;
-
-use bevy_ecs::reflect::ReflectComponent;
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -18,10 +15,12 @@ use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
 use bevy_ecs::prelude::*;
-
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Vertex, Shape, Solid, Wire, Edge};
 use bevy_transform::prelude::Transform;
+#[cfg(feature = "opencascade_rs")]
+use opencascade::angle::ToAngle;
+
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 
 pub struct SRTorus {
@@ -109,31 +108,34 @@ impl BrepShapeTrait for SRTorus {
         0.01 * self.pdia.min(self.pheig).max(1.0)
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
                                                               self.pbax_dir, self.pbax_pt, self.pdia/2.0) {
-            let z_axis = self.paax_dir.normalize();
-            let y_axis = torus_info.rot_axis;
+            let z_axis = self.paax_dir.normalize().as_dvec3();
+            let y_axis = torus_info.rot_axis.as_dvec3();
             let x_axis = z_axis.cross(y_axis);
-            let h = self.pheig;
-            let d = self.pdia;
-            let p1 = (self.paax_pt - y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p2 = (self.paax_pt + y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p3 = (self.paax_pt + y_axis * h / 2.0 + x_axis * d / 2.0).into();
-            let p4 = (self.paax_pt - y_axis * h / 2.0 + x_axis * d / 2.0).into();
+            let h = self.pheig as f64;
+            let d = self.pdia as f64;
+            let pt = self.paax_pt.as_dvec3();
+            let p1 = (pt - y_axis * h / 2.0 - x_axis * d / 2.0).into();
+            let p2 = (pt + y_axis * h / 2.0 - x_axis * d / 2.0).into();
+            let p3 = (pt + y_axis * h / 2.0 + x_axis * d / 2.0).into();
+            let p4 = (pt - y_axis * h / 2.0 + x_axis * d / 2.0).into();
             //创建四边形
-            let top = Edge::new_line(&p1, &p2)?;
-            let right = Edge::new_line(&p2, &p3)?;
-            let bottom = Edge::new_line(&p3, &p4)?;
-            let left = Edge::new_line(&p4, &p1)?;
+            let top = Edge::segment(p1, p2);
+            let right = Edge::segment(p2, p3);
+            let bottom = Edge::segment(p3, p4);
+            let left = Edge::segment(p4, p1);
 
-            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
+            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
             let center = torus_info.center;
+            let r = wire.to_face().revolve(center.as_dvec3(), -y_axis, Some(torus_info.angle.radians()));
+            return Ok(r.to_shape());
             // dbg!(center);
             // dbg!(-y_axis);
-            let axis = Axis::new(center, -y_axis);
-            return Ok(wire.extrude_rotate(&axis, torus_info.angle.to_radians() as _)?);
+            // let axis = Axis::new(center, -y_axis);
+            // return Ok(wire.extrude_rotate(&axis, torus_info.angle.to_radians() as _)?);
         }
 
         Err(anyhow::anyhow!("Rect torus 参数有问题。"))

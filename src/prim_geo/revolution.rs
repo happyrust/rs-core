@@ -9,7 +9,7 @@ use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
 
 use bevy_ecs::reflect::ReflectComponent;
-use glam::{Vec2, Vec3};
+use glam::{DVec3, Vec2, Vec3};
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -19,8 +19,9 @@ use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis};
+use opencascade::angle::ToAngle;
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Vertex, Shape, Solid, Wire};
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
 
@@ -60,16 +61,19 @@ impl BrepShapeTrait for Revolution {
         Box::new(self.clone())
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let wire = gen_occ_wire(&self.verts, &self.fradius_vec)?;
-        let axis = Axis::new(self.rot_pt, self.rot_dir);
-        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon=1.0) {
+        // let axis = Axis::new(self.rot_pt, self.rot_dir);
+        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon=0.01) {
             core::f64::consts::TAU
         } else {
             self.angle.to_radians() as _
         };
-        Ok(wire.extrude_rotate(&axis, angle)?)
+        let r = wire.to_face().revolve(self.rot_pt.as_dvec3(), self.rot_dir.as_dvec3(), Some(angle.radians()));
+        return Ok(r.to_shape());
+
+        // Ok(wire.extrude_rotate(&axis, angle)?)
     }
 
     ///使用manifold生成拉身体的mesh

@@ -14,8 +14,9 @@ use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::tool::hash_tool::*;
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Vertex, Shape, Solid, Wire};
+use opencascade::workplane::Workplane;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct LSnout {
@@ -78,8 +79,8 @@ impl BrepShapeTrait for LSnout {
         0.005 * (( self.pbdm + self.ptdm) / 2.0).max(1.0)
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let rt = (self.ptdm/2.0);
         let rb = (self.pbdm/2.0);
 
@@ -91,18 +92,24 @@ impl BrepShapeTrait for LSnout {
         let mut circles = vec![];
         let mut verts = vec![];
         if self.pbdm < f32::EPSILON {
-            verts.push(Vertex::new(p0));
+            verts.push(Vertex::new(p0.as_dvec3()));
         }else{
-            circles.push(Wire::circle(rb, p0, a_dir)?);
+            // circles.push(Wire::circle(rb, p0, a_dir)?);
+            // let mut circle =  Workplane::xy().translated(p0.as_dvec3()).circle(0.0, 0.0, rb as f64);
+            let circle = Wire::circle(rb as _, p0.as_dvec3(), a_dir.as_dvec3());
+            circles.push(circle);
         }
 
         if self.ptdm < f32::EPSILON {
-            verts.push(Vertex::new(p1));
+            verts.push(Vertex::new(p1.as_dvec3()));
         }else{
-            circles.push(Wire::circle(rt, p1, a_dir)?);
+            // circles.push(Wire::circle(rt, p1, a_dir)?);
+            // let mut circle = Workplane::xy().translated(p1.as_dvec3()).circle(0.0, 0.0, rt as f64);
+            let circle = Wire::circle(rt as _, p1.as_dvec3(), a_dir.as_dvec3());
+            circles.push(circle);
         }
 
-        Ok(OCCShape::loft(circles.iter(), verts.iter())?)
+        Ok(Solid::loft_with_points(circles.iter(), verts.iter()).to_shape())
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

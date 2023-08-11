@@ -10,7 +10,8 @@ use crate::parsed_data::CateBoxParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
-
+#[cfg(feature = "opencascade_rs")]
+use opencascade::{primitives::Shape, adhoc::AdHocShape};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -47,9 +48,14 @@ impl BrepShapeTrait for SBox {
         self.size.z = self.size.z.min(l);
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
+    // #[cfg(feature = "opencascade")]
+    // fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    //     Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
+    // }
+
+    #[cfg(feature = "opencascade-rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+        Ok(AdHocShape::make_box(self.size.x as f64, self.size.y as f64, self.size.z as f64).0)
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

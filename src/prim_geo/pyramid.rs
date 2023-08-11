@@ -7,7 +7,7 @@ use crate::tool::hash_tool::*;
 use truck_meshalgo::prelude::*;
 
 use bevy_ecs::reflect::ReflectComponent;
-use glam::Vec3;
+use glam::{DVec3, Vec3};
 
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize, Deserialize};
@@ -16,8 +16,8 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Vertex, Shape, Solid, Wire};
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 
@@ -93,47 +93,46 @@ impl BrepShapeTrait for Pyramid {
         hasher.finish()
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
 
-        let z_pt = self.paax_pt;
         //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0);
-        let ty = (self.pctp / 2.0);
-        let bx = (self.pbbt / 2.0);
-        let by = (self.pcbt / 2.0);
-        let ox = 0.5 * self.pbof;
-        let oy = 0.5 * self.pcof;
-        let h2 = 0.5 * (self.ptdi - self.pbdi);
+        let tx = (self.pbtp / 2.0) as f64;
+        let ty = (self.pctp / 2.0) as f64;
+        let bx = (self.pbbt / 2.0) as f64;
+        let by = (self.pcbt / 2.0) as f64;
+        let ox = 0.5 * self.pbof as f64;
+        let oy = 0.5 * self.pcof as f64;
+        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
         let mut polys = vec![];
         let mut verts = vec![];
 
         let pts = vec![
-            Vec3::new(-tx + ox, -ty + oy, h2),
-            Vec3::new(tx + ox, -ty + oy, h2),
-            Vec3::new(tx + ox, ty + oy, h2),
-            Vec3::new(-tx + ox, ty + oy, h2),
+            DVec3::new(-tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, ty + oy, h2),
+            DVec3::new(-tx + ox, ty + oy, h2),
         ];
-        if tx * ty < f32::EPSILON {
-            verts.push(Vertex::new(Vec3::new(ox, oy, h2)));
+        if tx * ty < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
         } else {
-            polys.push(Wire::from_points(&pts)?);
+            polys.push(Wire::from_points(&pts));
         }
 
         let pts = vec![
-            Vec3::new(-bx - ox, -by - oy, -h2),
-            Vec3::new(bx - ox, -by - oy, -h2),
-            Vec3::new(bx - ox, by - oy, -h2),
-            Vec3::new(-bx - ox, by - oy, -h2),
+            DVec3::new(-bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, by - oy, -h2),
+            DVec3::new(-bx - ox, by - oy, -h2),
         ];
-        if bx * by < f32::EPSILON {
-            verts.push(Vertex::new(Vec3::new(-ox, -oy, -h2)));
+        if bx * by < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
         } else {
-            polys.push(Wire::from_points(&pts)?);
+            polys.push(Wire::from_points(&pts));
         }
 
-        Ok(OCCShape::loft(polys.iter(), verts.iter())?)
+        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).to_shape())
     }
 
 

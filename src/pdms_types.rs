@@ -2083,6 +2083,9 @@ pub struct ShapeInstancesData {
     ///保存instance几何数据
     pub inst_geos_map: std::collections::HashMap<String, EleInstGeosData>,
 
+    ///负实体运算的参考号组合记录
+    pub compound_refnos_map: std::collections::HashMap<RefU64, Vec<RefU64>>,
+
     ///保存所有用到的的compound数据
     #[serde(skip)]
     #[with(Skip)]
@@ -2102,6 +2105,8 @@ impl ShapeInstancesData {
         self.inst_info_map.clear();
         self.inst_geos_map.clear();
         self.inst_tubi_map.clear();
+        self.compound_inst_info_map.clear();
+        self.ngmr_inst_info_map.clear();
     }
 
     #[inline]
@@ -2244,6 +2249,11 @@ impl ShapeInstancesData {
         let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
+    }
+
+    ///保存compound的edge关系到arango图数据库
+    pub async fn save_compound_edges_to_arango() {
+
     }
 }
 

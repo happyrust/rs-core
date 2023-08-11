@@ -5,10 +5,10 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["truck"]
-opencascade_rs = []
+default = ["truck", "opencascade_rs"]
+opencascade_rs = ["dep:opencascade"]
 render = ["dep:bevy_render"]
-gen_model = []
+gen_model = ["dep:manifold-sys"]
 truck = []
 
 [dependencies]
@@ -67,6 +67,9 @@ truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.0.0"
+
+manifold-sys = { path = "../manifold-sys", optional = true }
+opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
