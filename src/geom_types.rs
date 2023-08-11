@@ -33,6 +33,20 @@ pub struct RvmGeoInfos {
 
 
 impl RvmGeoInfos {
+
+    ///获得关键点
+    pub fn key_points(&self) -> Vec<Vec3>{
+        self.rvm_inst_geo.iter()
+            .map(|x|
+                x.geo_param.key_points()
+                .into_iter()
+                .map(|v| self.world_transform.transform_point(v))
+            )
+            .flatten()
+            .collect()
+    }
+
+
     #[cfg(feature = "opencascade_rs")]
     pub fn gen_occ_shape(&self) -> Option<Shape> {
         let mut pos_shapes = self.rvm_inst_geo.iter()
@@ -127,6 +141,12 @@ pub struct RvmInstGeo {
 }
 
 impl RvmInstGeo {
+
+    #[inline]
+    pub fn key_points(&self) -> Vec<Vec3>{
+        self.geo_param.key_points()
+    }
+
     #[cfg(feature = "opencascade_rs")]
     pub fn gen_occ_shape(&self) -> Option<Shape> {
         let mut shape: Option<Shape> = self.geo_param.gen_occ_shape();

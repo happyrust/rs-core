@@ -408,6 +408,9 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         return None;
     }
 
+    ///获得关键点
+    fn key_points(&self) -> Vec<Vec3>{  return vec![Vec3::ZERO];}
+
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, limit_size: f32) {}
 
@@ -453,17 +456,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         TRI_TOL
     }
 
-    // #[cfg(feature = "opencascade")]
-    // fn gen_plant_geo_data(&self) -> Option<PlantGeoData> {
-    //     if let Ok(shape) = self.gen_occ_shape() {
-    //         let mut data: PlantGeoData = shape.mesh(self.tol() as f64).ok()?.into();
-    //         data.occ_shape = Some(shape);
-    //         return Some(data);
-    //     }
-    //     None
-    // }
-
-    // #[cfg(not(feature = "opencascade"))]
     ///生成mesh
     #[cfg(feature = "truck")]
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
