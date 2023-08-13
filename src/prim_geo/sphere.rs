@@ -55,7 +55,7 @@ impl BrepShapeTrait for Sphere {
     }
 
     //OCC 的生成
-    #[cfg(feature = "opencascade-rs")]
+    #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         Ok(AdHocShape::sphere(self.radius as f64).0)
     }

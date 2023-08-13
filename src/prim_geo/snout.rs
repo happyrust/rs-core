@@ -16,6 +16,7 @@ use crate::tool::hash_tool::*;
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Vertex, Shape, Solid, Wire};
+#[cfg(feature = "opencascade_rs")]
 use opencascade::workplane::Workplane;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]

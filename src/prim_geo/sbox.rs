@@ -53,7 +53,7 @@ impl BrepShapeTrait for SBox {
     //     Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
     // }
 
-    #[cfg(feature = "opencascade-rs")]
+    #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         Ok(AdHocShape::make_box(self.size.x as f64, self.size.y as f64, self.size.z as f64).0)
     }

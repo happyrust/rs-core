@@ -19,6 +19,7 @@ use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
+#[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Vertex, Shape, Solid, Wire};

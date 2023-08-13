@@ -8,7 +8,7 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::borrow::BorrowMut;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::*;
+use opencascade::primitives::{Shape, Compound, };
 use crate::parsed_data::geo_params_data::PdmsGeoParam::PrimSCylinder;
 use crate::pdms_types::GeoBasicType;
 
@@ -54,26 +54,36 @@ impl RvmGeoInfos {
             .map(|x| x.gen_occ_shape())
             .flatten()
             .collect::<Vec<_>>();
+
+        let mut neg_shapes = self.rvm_inst_geo.iter()
+            .filter(|x| x.geo_type == GeoBasicType::CateNeg)
+            .map(|x| x.gen_occ_shape())
+            .flatten()
+            .collect::<Vec<_>>();
+
         if pos_shapes.is_empty() { return None; }
-        let mut final_shape = if pos_shapes.len() == 1 { pos_shapes.pop().unwrap() } else {
-            let mut first_shape = pos_shapes.pop().unwrap();
-            for s in pos_shapes {
-                first_shape = first_shape.union_shape(&s).0;
-            }
-            first_shape
-        };
+        // let mut final_shape = if pos_shapes.len() == 1 { pos_shapes.pop().unwrap() } else {
+        //     let mut first_shape = pos_shapes.pop().unwrap();
+        //     for s in pos_shapes {
+        //         first_shape = first_shape.union_shape(&s).0;
+        //     }
+        //     first_shape
+        // };
+        // dbg!(pos_shapes.len());
+        // let mut final_shape = Compound::from_shapes(&pos_shapes);
 
         //执行相减运算
-        self.rvm_inst_geo.iter()
-            .filter(|x| x.geo_type == GeoBasicType::Neg ||x.geo_type == GeoBasicType::CateNeg)
-            .for_each(|x|{
-                if let Some(s) = x.gen_occ_shape() {
-                    final_shape = final_shape.subtract_shape(&s).0;
-                }
-            });
-
-        final_shape.transform_by_mat(&self.world_transform.compute_matrix().as_dmat4());
-        Some(final_shape)
+        // self.rvm_inst_geo.iter()
+        //     .filter(|x| x.geo_type == GeoBasicType::Neg ||x.geo_type == GeoBasicType::CateNeg)
+        //     .for_each(|x|{
+        //         if let Some(s) = x.gen_occ_shape() {
+        //             final_shape = final_shape.subtract_shape(&s).0;
+        //         }
+        //     });
+        //
+        // final_shape.transform_by_mat(&self.world_transform.compute_matrix().as_dmat4());
+        // Some(final_shape)
+        None
     }
 
     #[cfg(feature = "opencascade_rs")]

@@ -217,21 +217,21 @@ pub mod geo_params_data {
         #[cfg(feature = "opencascade_rs")]
         pub fn gen_occ_shape(&self) -> Option<Shape>{
             match self {
-                PdmsGeoParam::PrimSCylinder(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                PdmsGeoParam::PrimLCylinder(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                PdmsGeoParam::PrimExtrusion(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                PdmsGeoParam::PrimLoft(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                _ => {
-                    None
-                }
+                PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLCylinder(s) =>s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimExtrusion(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLoft(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::Unknown => None,
+                PdmsGeoParam::PrimBox(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLSnout(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimDish(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimSphere(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimCTorus(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimRTorus(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimPyramid(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimRevolution(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimPolyhedron(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::CompoundShape => None,
             }
         }
 
