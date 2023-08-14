@@ -9,10 +9,10 @@ use glam::Vec3;
 use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
-use crate::shape::pdms_shape::{BrepMathTrait, PlantMesh};
+use crate::shape::pdms_shape::{BrepMathTrait};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
-use crate::tool::hash_tool::*;
+
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Vertex, Shape, Solid, Wire};
@@ -118,8 +118,8 @@ impl BrepShapeTrait for LSnout {
         let rt = (self.ptdm/2.0).max(0.01);
         let rb = (self.pbdm/2.0).max(0.01);
 
-        let mut a_dir = self.paax_dir.normalize();
-        let mut b_dir = self.pbax_dir.normalize();
+        let a_dir = self.paax_dir.normalize();
+        let b_dir = self.pbax_dir.normalize();
         let p0 = a_dir * self.pbdi + self.paax_pt;
         let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
         let p2 = b_dir * rt + p1;
@@ -135,20 +135,20 @@ impl BrepShapeTrait for LSnout {
 
         let rot_axis = a_dir.vector3();
         let mut circle1 = builder::rsweep(&v3, p0.point3(), rot_axis, Rad(7.0));
-        let mut c1 = circle1.clone();
+        let c1 = circle1.clone();
 
         let mut circle2 = builder::rsweep(&v2, p1.point3(), rot_axis, Rad(7.0));
-        let mut c2 = circle2.clone();
+        let c2 = circle2.clone();
 
 
         let new_wire_1 = circle1.split_off((0.5 * circle1.len() as f32) as usize);
         let new_wire_2 = circle2.split_off((0.5 * circle2.len() as f32) as usize);
-        let mut face1 = builder::homotopy(new_wire_1.front().unwrap(), &new_wire_2.front().unwrap());
-        let mut face2 = builder::homotopy(circle1.front().unwrap(), &circle2.front().unwrap());
+        let face1 = builder::homotopy(new_wire_1.front().unwrap(), &new_wire_2.front().unwrap());
+        let face2 = builder::homotopy(circle1.front().unwrap(), &circle2.front().unwrap());
 
         if let Ok(disk1) = builder::try_attach_plane(&vec![c1.inverse()]){
             if let Ok(disk2) = builder::try_attach_plane(&vec![c2]){
-                let mut shell = Shell::from(vec![face1, face2, disk1, disk2]);
+                let shell = Shell::from(vec![face1, face2, disk1, disk2]);
                 return Some(shell)
             }
         }

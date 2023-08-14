@@ -3,42 +3,41 @@ use crate::tool::hash_tool::*;
 use anyhow::anyhow;
 use bevy_ecs::prelude::*;
 use bitflags::bitflags;
-use dashmap::mapref::one::Ref;
+
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
-use nalgebra::{Point3, Quaternion, UnitQuaternion};
+
 use parry3d::bounding_volume::Aabb;
-use parry3d::math::{Isometry, Point, Vector};
-use parry3d::shape::{Compound, ConvexPolyhedron, SharedShape, TriMesh};
+
+use parry3d::shape::{SharedShape};
 use rkyv::with::Skip;
-use serde::de::{MapAccess, SeqAccess, Unexpected, Visitor};
-use serde::ser::{SerializeMap, SerializeStruct};
+
+
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
-use smallvec::SmallVec;
+
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::default;
-use std::f32::consts::PI;
+
+
 use std::fmt::{Debug, Display, Formatter, Pointer};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
-use std::sync::Arc;
+
 use std::vec::IntoIter;
 use std::{fmt, hash};
-use truck_modeling::Shell;
+
 
 use crate::cache::mgr::BytesTrait;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::cache::refno::CachedRefBasic;
+
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
-use crate::pdms_data::{AxisParam, GmParam, NewDataOperate};
+use crate::pdms_data::{NewDataOperate};
 use crate::pdms_types::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::SCylinder;
@@ -48,14 +47,14 @@ use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::prim_geo::CYLINDER_GEO_HASH;
+
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::tool::math_tool::*;
-use crate::{prim_geo, BHashMap};
-use bevy_ecs::prelude::*;
+use crate::{BHashMap};
+
 use bevy_math::*;
-use bevy_reflect::{DynamicStruct, GetField, Reflect, Struct};
+use bevy_reflect::{Reflect};
 #[cfg(feature = "bevy_render")]
 use bevy_render::mesh::Indices;
 #[cfg(feature = "bevy_render")]
@@ -698,7 +697,7 @@ impl AttrMap {
 
     #[inline]
     pub fn from_rkyv_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use rkyv::{archived_root, Deserialize};
+        use rkyv::{Deserialize};
         let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -707,7 +706,7 @@ impl AttrMap {
     #[inline]
     pub fn from_rkvy_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         use flate2::write::DeflateDecoder;
-        let mut writer = Vec::new();
+        let writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes)?;
         Self::from_rkyv_bytes(&deflater.finish()?)
@@ -725,7 +724,7 @@ impl AttrMap {
     #[inline]
     pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
         use flate2::write::DeflateDecoder;
-        let mut writer = Vec::new();
+        let writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes).ok()?;
         bincode::deserialize(&deflater.finish().ok()?).ok()
@@ -808,11 +807,11 @@ pub struct WholeAttMap {
 
 impl WholeAttMap {
     pub fn refine(mut self, info_map: &DashMap<i32, AttrInfo>) -> Self {
-        for (noun_hash, v) in self.explicit_attmap.clone().map {
+        for (noun_hash, _v) in self.explicit_attmap.clone().map {
             if let Some(info) = info_map.get(&(noun_hash as i32)) {
                 if info.offset > 0 && EXPR_ATT_SET.contains(&(noun_hash as i32)) {
                     let v = self.explicit_attmap.map.remove(&(noun_hash)).unwrap();
-                    self.implicit_attmap.insert((noun_hash), v);
+                    self.implicit_attmap.insert(noun_hash, v);
                 }
             }
         }
@@ -836,7 +835,7 @@ impl WholeAttMap {
     #[inline]
     pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
         use flate2::write::DeflateDecoder;
-        let mut writer = Vec::new();
+        let writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes).ok()?;
         // writer = ;
@@ -1273,13 +1272,13 @@ impl AttrMap {
         let type_name = self.get_type();
         let mut quat = Quat::IDENTITY;
         if self.contains_attr_name("ZDIR") {
-            let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
+            let axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
                 quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
             }
         } else if self.contains_attr_name("OPDI") {
             //PJOI 的方向
-            let mut axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
+            let axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
                 quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
                 // dbg!(quat_to_pdms_ori_str(&quat));
@@ -1296,9 +1295,9 @@ impl AttrMap {
                 }
                 _ => {
                     let ang = self.get_f64_vec("ORI")?;
-                    let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
+                    let mat = glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
                         * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-                        * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
+                        * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32);
 
                     quat = Quat::from_mat3(&mat);
                 }
@@ -1345,9 +1344,9 @@ impl AttrMap {
         let pos = self.get_f64_vec("POS")?;
         affine.translation = glam::f32::Vec3A::new(pos[0] as f32, pos[1] as f32, pos[2] as f32);
         let ang = self.get_f64_vec("ORI")?;
-        affine.matrix3 = (glam::f32::Mat3A::from_rotation_z(ang[2].to_radians() as f32)
+        affine.matrix3 = glam::f32::Mat3A::from_rotation_z(ang[2].to_radians() as f32)
             * glam::f32::Mat3A::from_rotation_y(ang[1].to_radians() as f32)
-            * glam::f32::Mat3A::from_rotation_x(ang[0].to_radians() as f32));
+            * glam::f32::Mat3A::from_rotation_x(ang[0].to_radians() as f32);
         Some(affine)
     }
 
@@ -2355,7 +2354,7 @@ impl ShapeInstancesData {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        use rkyv::{archived_root, Deserialize};
+        use rkyv::{Deserialize};
         let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -2384,14 +2383,14 @@ impl PdmsInstanceMeshData {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        use rkyv::{archived_root, Deserialize};
+        use rkyv::{Deserialize};
         let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
     }
 
     pub fn deserialize_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use rkyv::{archived_root, Deserialize};
+        use rkyv::{Deserialize};
         let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -2646,7 +2645,7 @@ impl PlantMeshesData {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        use rkyv::{archived_root, Deserialize};
+        use rkyv::{Deserialize};
         let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -2871,7 +2870,7 @@ where
 
 #[test]
 fn test_ele_geo_instance_serialize_deserialize() {
-    let data = EleInstGeo {
+    let _data = EleInstGeo {
         geo_hash: 1,
         refno: RefU64(56882546920359),
         geo_param: Default::default(),
@@ -2892,7 +2891,7 @@ fn test_ele_geo_instance_serialize_deserialize() {
     // let data: Vec<EleGeosInfo>  = serde_json::from_str(&json).unwrap();
     // dbg!(&data);
 
-    let json = r#"
+    let _json = r#"
     {
   "result": [
     {
@@ -3225,11 +3224,11 @@ pub struct DbnoVersion {
 
 #[test]
 fn test_dashmap() {
-    let mut dashmap_1 = DashMap::new();
+    let dashmap_1 = DashMap::new();
     dashmap_1.insert("1", "hello");
-    let mut dashmap_2 = DashMap::new();
+    let dashmap_2 = DashMap::new();
     dashmap_2.insert("2", "world");
-    let mut dashmap_3 = DashMap::new();
+    let dashmap_3 = DashMap::new();
     dashmap_1.iter().for_each(|m| {
         dashmap_3.insert(m.key().clone(), m.value().clone());
     });
@@ -3240,7 +3239,7 @@ fn test_dashmap() {
 
 #[test]
 fn test_refu64() {
-    let refno = RefU64::from(RefI32Tuple(((16477, 80))));
+    let refno = RefU64::from(RefI32Tuple((16477, 80)));
     println!("refno={}", refno.0);
 }
 
@@ -3329,7 +3328,7 @@ impl AiosStr {
         self.hash(&mut fnv);
         fnv.finish32()
     }
-    pub fn take(mut self) -> String {
+    pub fn take(self) -> String {
         self.0
     }
 

@@ -1,5 +1,5 @@
 use bevy_transform::prelude::Transform;
-use glam::{Quat, Vec3};
+use glam::{Vec3};
 use parry3d::bounding_volume::Aabb;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -118,7 +118,7 @@ pub struct RvmTubiGeoInfos {
 impl RvmTubiGeoInfos {
     pub fn into_rvmgeoinfos(self) -> RvmGeoInfos {
         let mut geos = self.rvm_inst_geo;
-        for mut geo in geos.iter_mut() {
+        for geo in geos.iter_mut() {
             match geo.geo_param.borrow_mut() {
                 PrimSCylinder(data) => {
                     data.phei = self.world_transform.scale.z;

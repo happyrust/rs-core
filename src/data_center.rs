@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use bevy_ecs::prelude::Resource;
 use glam::Vec3;
-use serde::{Serialize, Deserialize, Serializer};
-use serde::de::DeserializeOwned;
+use serde::{Serialize, Deserialize};
+
 use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 use crate::metadata_manager::FileBytes;
@@ -353,7 +353,7 @@ pub struct CableWeight {
 
 #[test]
 fn test_attr_json() {
-    let data = AttrStrArray(vec!["hello".to_string(), "world".to_string()]);
+    let _data = AttrStrArray(vec!["hello".to_string(), "world".to_string()]);
     let data = AttrFloat(1.0);
     let json = serde_json::to_string(&data).unwrap();
     dbg!(&json);

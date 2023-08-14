@@ -1,25 +1,25 @@
-use anyhow::anyhow;
-use approx::abs_diff_eq;
+
+
 use std::collections::hash_map::DefaultHasher;
-use std::f32::consts::{PI, TAU};
-use std::f32::EPSILON;
+use std::f32::consts::{PI};
+
 use std::hash::{Hash, Hasher};
 
-use crate::tool::hash_tool::*;
+
 use truck_meshalgo::prelude::*;
 
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::pdms_types::AttrMap;
-use crate::prim_geo::extrusion::Extrusion;
-use crate::prim_geo::helper::cal_ref_axis;
+
+
+
 use crate::prim_geo::wire::*;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape, TRI_TOL};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
-use bevy_ecs::reflect::ReflectComponent;
-use glam::{DVec3, Vec2, Vec3};
+
+use glam::{Vec3};
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
 #[cfg(feature = "opencascade_rs")]
@@ -161,7 +161,7 @@ impl BrepShapeTrait for Revolution {
 
     ///如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::{builder, Shell, Surface, Wire};
+        use truck_modeling::{builder, Surface};
 
         if !self.check_valid() {
             return None;
@@ -200,7 +200,7 @@ impl BrepShapeTrait for Revolution {
                     shell.as_mut().unwrap().append(&mut s[0]);
                     return shell;
                 } else {
-                    let mut s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
+                    let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
 
                     let json = serde_json::to_vec_pretty(&s).unwrap();
                     std::fs::write("revo.json", json).unwrap();

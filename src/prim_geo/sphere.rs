@@ -1,23 +1,23 @@
 use std::f64::consts::PI;
-use std::f32::EPSILON;
+
 use glam::Vec3;
 
-use truck_base::cgmath64::Vector3;
-use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
-use truck_modeling::{builder, Shell, Solid};
-use crate::tool::hash_tool::*;
 
-use bevy_ecs::reflect::ReflectComponent;
 
-use lyon::math::size;
+use truck_modeling::{Shell};
+
+
+
+
+
 use hexasphere::shapes::IcoSphere;
-use nalgebra::Point3;
-use parry3d::bounding_volume::Aabb;
-use parry3d::math::{Point, Vector};
+
+
+
 use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, VerifiedShape};
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{primitives::Shape, adhoc::AdHocShape};
 

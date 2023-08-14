@@ -1,4 +1,4 @@
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
@@ -88,14 +88,14 @@ impl Facet {
         coord_sys: &mut [Vec3; 3],
     ) -> Vec<lyon::math::Point> {
         let mut polygon2d = Vec::new();
-        let mut x_n: Vec3;
-        let mut y_n: Vec3;
-        let mut v0: Vec3;
+        let x_n: Vec3;
+        let y_n: Vec3;
+        let v0: Vec3;
         if coord_sys[1].length_squared() < f32::EPSILON {
             v0 = Vec3::from_slice(&pts[0]);
             let v1 = Vec3::from_slice(&pts[1]);
-            let mut loc_x = (v1 - v0).normalize();
-            let mut n = Vec3::from_slice(&normal).normalize();
+            let loc_x = (v1 - v0).normalize();
+            let n = Vec3::from_slice(&normal).normalize();
 
             let loc_y = n.cross(loc_x);
             x_n = loc_x.normalize();

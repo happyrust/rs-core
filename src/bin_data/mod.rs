@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{HashMap};
 use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -50,7 +50,7 @@ pub fn generate_att_info_json() -> anyhow::Result<()> {
         // let mut bytes = include_bytes!("bins/att_rest.bin");
         // println!("{:#4X?}", &bytes[0..0x10]);
 
-        let mut attr_pointer = bytes.as_ptr() as *mut u8 as *mut i32;
+        let attr_pointer = bytes.as_ptr() as *mut u8 as *mut i32;
         unsafe {
             let type_hash = *attr_pointer.offset(1) as u32;
             let type_name = db1_dehash(type_hash);
@@ -59,8 +59,8 @@ pub fn generate_att_info_json() -> anyhow::Result<()> {
             let total_attr_cnt = *attr_pointer.offset(9) as isize;
             let mut k = 0xE;
             // let mut hashmap = BTreeMap::new();
-            for i in 0..total_attr_cnt {
-                let hash = (*attr_pointer.offset(k));
+            for _i in 0..total_attr_cnt {
+                let hash = *attr_pointer.offset(k);
                 let offset = (*attr_pointer.offset(k + 8)) as u32;
                 let type_id = *attr_pointer.offset(k + 2);
                 let word_cnt = *attr_pointer.offset(k + 3);

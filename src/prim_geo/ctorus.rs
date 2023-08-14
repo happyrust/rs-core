@@ -1,21 +1,21 @@
 use std::collections::hash_map::DefaultHasher;
-use std::f32::EPSILON;
+
 use std::hash::Hasher;
 use std::hash::Hash;
-use anyhow::anyhow;
-use bevy_ecs::prelude::*;
-use std::default;
-use truck_modeling::{builder, Shell};
 
-use bevy_ecs::reflect::ReflectComponent;
+use bevy_ecs::prelude::*;
+
+use truck_modeling::{Shell};
+
+
 use bevy_transform::prelude::Transform;
 use glam::{Quat, Vec3};
-use crate::tool::hash_tool::*;
+
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
-use crate::prim_geo::helper::{cal_ref_axis, rotate_from_vec3_to_vec3, RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
+use crate::prim_geo::helper::{RotateInfo};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
 #[cfg(feature = "opencascade_rs")]
@@ -47,7 +47,7 @@ impl SCTorus {
             ctorus.rout = torus_info.radius + self.pdia / 2.0;
             let z_axis = -torus_info.rot_axis.normalize();
             let mut x_axis = (self.pbax_pt - torus_info.center).normalize();
-            let mut translation = torus_info.center;
+            let translation = torus_info.center;
             // dbg!(torus_info.center);
             if x_axis.is_nan() {
                 x_axis = -Vec3::Y;
@@ -155,7 +155,7 @@ impl BrepShapeTrait for SCTorus {
 }
 
 impl From<AttrMap> for SCTorus {
-    fn from(m: AttrMap) -> Self {
+    fn from(_m: AttrMap) -> Self {
         Default::default()
     }
 }
@@ -222,7 +222,7 @@ impl BrepShapeTrait for CTorus {
 
     fn hash_unit_mesh_params(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
-        hash_f32((self.rins / self.rout), &mut hasher);
+        hash_f32(self.rins / self.rout, &mut hasher);
         hash_f32(self.angle, &mut hasher);
         "ctorus".hash(&mut hasher);
         hasher.finish()

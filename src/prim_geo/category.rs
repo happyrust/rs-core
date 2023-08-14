@@ -1,27 +1,27 @@
-use std::default;
-use std::f32::consts::PI;
+
+
 use std::f32::EPSILON;
-use std::ops::Range;
+
 
 use bevy_math::prelude::*;
 use bevy_transform::prelude::Transform;
-use id_tree::NodeId;
-use smallvec::SmallVec;
 
-use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
+
+
+use crate::parsed_data::geo_params_data::{CateGeoParam};
 use crate::pdms_types::RefU64;
-use crate::prim_geo::ctorus::{CTorus, SCTorus};
+use crate::prim_geo::ctorus::{SCTorus};
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;
 use crate::prim_geo::extrusion::Extrusion;
 use crate::prim_geo::lpyramid::LPyramid;
-use crate::prim_geo::pyramid::Pyramid;
+
 use crate::prim_geo::revolution::Revolution;
-use crate::prim_geo::rtorus::{RTorus, SRTorus};
+use crate::prim_geo::rtorus::{SRTorus};
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::prim_geo::tubing::PdmsTubing;
+
 use crate::shape::pdms_shape::BrepShapeTrait;
 
 #[derive(Debug, Clone)]
@@ -213,14 +213,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(x.number);
 
             let mut btm_on_top = false;
-            let mut z_axis = z.dir;
+            let z_axis = z.dir;
             if z_axis.length() == 0.0 { return None; }
             let origin = z.pt;
             let x_axis = x.dir;
             let translation = origin + z_axis * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
 
             let mut height = (d.dist_to_top - d.dist_to_btm) as f32;
-            let mut poff = d.offset as f32;
+            let poff = d.offset as f32;
 
             let mut ptdm = d.top_diameter as f32;
             let mut pbdm = d.btm_diameter as f32;
@@ -348,7 +348,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
 
-            let mut x_dir = Vec3::Y.cross(z_dir).normalize_or_zero();
+            let x_dir = Vec3::Y.cross(z_dir).normalize_or_zero();
             // dbg!(x_dir);
             let mat3 = if x_dir.x > 0.0 {
                 Mat3::from_cols(
@@ -422,8 +422,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(pa.number);
             pts.push(pb.number);
-            let paax_dir = (pa.dir);
-            let pbax_dir = (pb.dir);
+            let paax_dir = pa.dir;
+            let pbax_dir = pb.dir;
             let extrude_dir = paax_dir.normalize_or_zero()
                 .cross(pbax_dir.normalize_or_zero()).normalize_or_zero();
             if extrude_dir.length() == 0.0 { return None; }
@@ -434,7 +434,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             );
             let rotation = Quat::from_mat3(&mat3);
             let xyz_pt = Vec3::new(d.x, d.y, d.z);
-            let origin_pt = pa.pt;
+            let _origin_pt = pa.pt;
             if d.verts.len() <= 2 {
                 return None;
             }
@@ -471,12 +471,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(pa.number);
             pts.push(pb.number);
-            let paax_dir = (pa.dir);
-            let mut pbax_dir = (pb.dir);
+            let paax_dir = pa.dir;
+            let pbax_dir = pb.dir;
 
             let mut verts = vec![];
             if d.verts.len() > 2 {
-                let mut prev = d.verts[0].truncate();
+                let prev = d.verts[0].truncate();
                 verts.push(prev.extend(0.0));
                 for vert in &d.verts[1..] {
                     let p = vert.truncate();

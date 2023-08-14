@@ -1,13 +1,13 @@
-use glam::{DVec3, Vec3};
+use glam::{Vec3};
 use serde_derive::{Deserialize, Serialize};
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
 
 use crate::shape::pdms_shape::BrepMathTrait;
-use crate::tool::float_tool::{hash_vec3, vec3_round_2};
-use crate::{prim_geo::extrusion::Extrusion, tool::float_tool::f32_round_2};
+use crate::tool::float_tool::{vec3_round_2};
+use crate::{tool::float_tool::f32_round_2};
 use anyhow::anyhow;
-use approx::{abs_diff_eq, abs_diff_ne};
-use std::collections::hash_map::DefaultHasher;
+use approx::{abs_diff_eq};
+
 use std::f32::consts::PI;
 use std::hash::Hasher;
 
@@ -95,7 +95,7 @@ pub fn gen_spline_wire(
     input_verts: &Vec<Vec3>,
     thick: f32,
 ) -> anyhow::Result<truck_modeling::Wire> {
-    use truck_modeling::{builder, Vertex, Wire};
+    use truck_modeling::{builder, Wire};
     if input_verts.len() != 3 {
         return Err(anyhow!("SPINE number is not 3".to_string())); //先假定必须有三个
     }
@@ -111,12 +111,12 @@ pub fn gen_spline_wire(
     let vec0 = (pt0 - transit).normalize();
     let vec1 = (pt1 - transit).normalize();
     let origin = circus_center(pt0, pt1, transit);
-    let mut angle = Rad(PI as f64) - vec0.angle(vec1);
+    let _angle = Rad(PI as f64) - vec0.angle(vec1);
     let mut rot_axis = Vec3::Z;
     if (vec0.cross(vec1)).dot(Vector3::unit_z()) > 0.0 {
         rot_axis = -Vec3::Z;
     }
-    let radius = origin.distance(pt0);
+    let _radius = origin.distance(pt0);
 
     let v0 = (pt0 - origin).normalize();
     let v1 = (pt1 - origin).normalize();
@@ -392,11 +392,11 @@ pub fn gen_wire(
     if input_pts.len() < 3 || input_fradius_vec.len() != input_pts.len() {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
-    let mut pts = input_pts
+    let pts = input_pts
         .into_iter()
         .map(|x| vec3_round_2(*x))
         .collect::<Vec<_>>();
-    let mut fradius_vec = input_fradius_vec
+    let fradius_vec = input_fradius_vec
         .into_iter()
         .map(|x| f32_round_2(*x))
         .collect::<Vec<_>>();
