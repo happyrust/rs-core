@@ -96,7 +96,7 @@ pub fn gen_spline_wire(
     thick: f32,
 ) -> anyhow::Result<truck_modeling::Wire> {
     use truck_modeling::{builder, Vertex, Wire};
-    if verts.len() != 3 {
+    if input_verts.len() != 3 {
         return Err(anyhow!("SPINE number is not 3".to_string())); //先假定必须有三个
     }
     let verts = input_verts

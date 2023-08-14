@@ -15,9 +15,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="refactor occ generate">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix wire precision problem">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/facet.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/facet.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -453,6 +454,7 @@
       <workItem from="1691931058893" duration="2090000" />
       <workItem from="1691939204625" duration="717000" />
       <workItem from="1691976882319" duration="1000" />
+      <workItem from="1691981392582" duration="104000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -797,7 +799,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="224" />
+    <option name="localTasksCounter" value="225" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -838,7 +840,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fix lines colinear" />
     <MESSAGE value="Update" />
     <MESSAGE value="添加方位字符串的解析还原，得到Quat" />
     <MESSAGE value="tmp" />
@@ -863,7 +864,8 @@
     <MESSAGE value="update" />
     <MESSAGE value="refactor" />
     <MESSAGE value="refactor occ generate" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor occ generate" />
+    <MESSAGE value="fix wire precision problem" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix wire precision problem" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

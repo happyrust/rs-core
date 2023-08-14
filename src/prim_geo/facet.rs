@@ -4,6 +4,7 @@ use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use truck_modeling::Shell;
 
 #[derive(
     Component,
