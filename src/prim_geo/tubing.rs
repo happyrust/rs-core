@@ -1,26 +1,27 @@
 use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
 use bevy_math::prelude::Quat;
-use std::default;
+
 use approx::abs_diff_eq;
 use bevy_transform::prelude::Transform;
-use crate::pdms_types::RefU64;
+use crate::pdms_types::{NamedAttrValue, RefU64};
 use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
-use crate::parsed_data::CateSCylinderParam;
-use crate::parsed_data::geo_params_data::PdmsGeoParam;
+
+
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use crate::prim_geo::sbox::SBox;
-use crate::shape::pdms_shape::{BrepShapeTrait, TRI_TOL};
+use crate::shape::pdms_shape::{BrepShapeTrait};
 use glam::Mat3;
-use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_vec_str};
+
 use crate::shape::pdms_shape::ANGLE_RAD_TOL;
+use crate::prim_geo::tubing::TubiSize::{BoreSize, BoxSize};
 
 #[serde_as]
-#[derive(Debug, Clone,  Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct PdmsTubing {
-    #[serde(rename="_key")]
+    #[serde(rename = "_key")]
     #[serde_as(as = "DisplayFromStr")]
     pub leave_refno: RefU64,
     #[serde_as(as = "DisplayFromStr")]
@@ -48,16 +49,41 @@ pub struct TubiEdge {
 }
 
 impl TubiEdge {
-    pub fn new_from_edge() -> Self{
-        Self{
+    pub fn new_from_edge() -> Self {
+        Self {
             ..Default::default()
         }
+    }
+
+    pub fn get_enco_header() -> Vec<String> {
+        vec!["_key".to_string(), "_from".to_string(), "_to".to_string(),
+             "start_pt".to_string(), "end_pt".to_string(), "att_type".to_string(), "extra_type".to_string(),
+             "tubi_size".to_string(), "bran_name".to_string(), "distance".to_string(), ]
+    }
+
+    pub fn into_enso_value(self) -> Vec<NamedAttrValue> {
+        let distance = self.start_pt.distance(self.end_pt);
+        let tubi_size = match self.tubi_size {
+            TubiSize::None => { NamedAttrValue::F32VecType(vec![0.0]) }
+            BoreSize(d) => { NamedAttrValue::F32VecType(vec![d]) }
+            BoxSize((x, y)) => { NamedAttrValue::F32VecType(vec![x, y]) }
+        };
+        vec![NamedAttrValue::StringType(self._key),
+             NamedAttrValue::StringType(self._from),
+             NamedAttrValue::StringType(self._to),
+             NamedAttrValue::F32VecType(vec![self.start_pt.x, self.start_pt.y, self.start_pt.z]),
+             NamedAttrValue::F32VecType(vec![self.end_pt.x, self.end_pt.y, self.end_pt.z]),
+             NamedAttrValue::StringType(self.att_type),
+             NamedAttrValue::StringType(self.extra_type),
+             tubi_size,
+             NamedAttrValue::StringType(self.bran_name),
+             NamedAttrValue::F32Type(distance)]
     }
 }
 
 #[serde_as]
-#[derive(PartialEq, Default, Debug, Clone, Copy, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
-pub enum TubiSize{
+#[derive(PartialEq, Default, Debug, Clone, Copy, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+pub enum TubiSize {
     #[default]
     None,
     BoreSize(f32),
@@ -66,7 +92,6 @@ pub enum TubiSize{
 
 
 impl PdmsTubing {
-
     ///获得方向
     #[inline]
     pub fn get_dir(&self) -> Vec3 {
@@ -84,18 +109,18 @@ impl PdmsTubing {
     }
 
     /// 获得tubi的transform
-    pub fn get_transform(&self) -> Option<Transform>{
+    pub fn get_transform(&self) -> Option<Transform> {
         let v = self.end_pt - self.start_pt;
         let len = v.length();
         let is_bore = matches!(self.tubi_size, TubiSize::BoreSize(_));
         let z_dir = if is_bore {
             v.normalize_or_zero()
-        }else {
+        } else {
             self.desire_leave_dir.normalize_or_zero()
         };
 
         if self.tubi_size == TubiSize::None || z_dir.length().abs() < f32::EPSILON {
-            return  None;
+            return None;
         }
         let scale = match self.tubi_size {
             TubiSize::BoreSize(bore) => Vec3::new(bore, bore, len),
@@ -104,16 +129,16 @@ impl PdmsTubing {
         };
         let rotation = if is_bore {
             Quat::from_rotation_arc(Vec3::Z, z_dir)
-        }else if let Some(y_dir) = self.leave_ref_dir{
-                // dbg!(to_pdms_vec_str(&y_dir));
-                let x_dir = y_dir.cross(z_dir).normalize_or_zero();
-                //考虑平行的情况
-                if x_dir.length() < ANGLE_RAD_TOL {
-                    Quat::from_rotation_arc(Vec3::Z, z_dir)
-                } else {
-                    Quat::from_mat3(&Mat3::from_cols(x_dir, y_dir, z_dir))
-                }
-        }else{
+        } else if let Some(y_dir) = self.leave_ref_dir {
+            // dbg!(to_pdms_vec_str(&y_dir));
+            let x_dir = y_dir.cross(z_dir).normalize_or_zero();
+            //考虑平行的情况
+            if x_dir.length() < ANGLE_RAD_TOL {
+                Quat::from_rotation_arc(Vec3::Z, z_dir)
+            } else {
+                Quat::from_mat3(&Mat3::from_cols(x_dir, y_dir, z_dir))
+            }
+        } else {
             Quat::from_rotation_arc(Vec3::Z, z_dir)
         };
 
@@ -134,23 +159,23 @@ impl PdmsTubing {
         let dir = (self.end_pt - self.start_pt).normalize();
         let brep_shape: Option<Box<dyn BrepShapeTrait>> = match &self.tubi_size {
             TubiSize::BoreSize(d) => {
-                let mut cylinder = SCylinder {
+                let cylinder = SCylinder {
                     phei: self.start_pt.distance(self.end_pt),
                     pdia: *d,
                     center_in_mid: false,
                     ..Default::default()
                 };
                 Some(Box::new(cylinder))
-            },
-            TubiSize::BoxSize((w, h)) =>{
+            }
+            TubiSize::BoxSize((w, h)) => {
                 let len = self.start_pt.distance(self.end_pt);
                 let size = Vec3::new(*w, *h, len);
-                let mut cube = SBox {
+                let cube = SBox {
                     center: Default::default(),
                     size,
                 };
                 Some(Box::new(cube))
-            },
+            }
             _ => {
                 None
             }

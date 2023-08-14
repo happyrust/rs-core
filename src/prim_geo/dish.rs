@@ -1,26 +1,25 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
-use std::f32::EPSILON;
+
 use std::hash::{Hash, Hasher};
 use glam::Vec3;
-
-use bevy_ecs::reflect::ReflectComponent;
 
 
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
-use truck_modeling::{builder, Shell};
+use truck_modeling::{Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
-use crate::tool::hash_tool::*;
+
 use bevy_ecs::prelude::*;
+#[cfg(feature = "opencascade_rs")]
+use opencascade::{primitives::Shape, adhoc::AdHocShape};
+
 //可不可以用来表达 sphere
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
-
 pub struct Dish {
     pub paax_expr: String,
     pub paax_pt: Vec3,
@@ -58,10 +57,26 @@ impl BrepShapeTrait for Dish {
         Box::new(self.clone())
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-        Ok(opencascade::OCCShape::dish(self.pdia as f64 / 2.0, self.pheig as f64)?)
+    // #[cfg(feature = "opencascade")]
+    // fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
+    //     Ok(opencascade::OCCShape::dish(self.pdia as f64 / 2.0, self.pheig as f64)?)
+    // }
+
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+        Ok(AdHocShape::dish(self.pdia as f64 / 2.0, self.pheig as f64).ok_or(anyhow!("Dish 参数错误"))?.0)
     }
+
+    // #[cfg(feature = "opencascade_rs")]
+    // fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    //     if !self.check_valid() || self.verts.len() < 3 { return Err(anyhow!("Extrusion params not valid.")); }
+    //     let mut wire = if let CurveType::Spline(thick) = self.cur_type {
+    //         gen_occ_spline_wire(&self.verts, thick)?
+    //     } else {
+    //         gen_occ_wire(&self.verts, &self.fradius_vec)?
+    //     };
+    //     Ok(wire.to_face().extrude(DVec3::new(0., 0.0, self.height as _)).to_shape())
+    // }
 
     fn tol(&self) -> f32 {
         0.001 * self.pdia.max(1.0)

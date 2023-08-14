@@ -15,13 +15,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="refactor">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix wire precision problem">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/penetration.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/penetration.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/water_calculation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/water_calculation.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/facet.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/facet.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -101,7 +98,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;gen-model&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/dongpengcheng/Documents/week-work/crates/aios-core/src&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/dongpengcheng/Documents/week-work/crates/aios-core&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -117,10 +114,10 @@
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/src" />
       <recent name="$PROJECT_DIR$/src/tool" />
       <recent name="$PROJECT_DIR$/src/accel_tree" />
-      <recent name="$PROJECT_DIR$" />
     </key>
   </component>
   <component name="RunManager" selected="Cargo.Test prim_geo::extrusion::test_circle_fradius">
@@ -452,6 +449,12 @@
       <workItem from="1690819858307" duration="208000" />
       <workItem from="1690878425621" duration="1537000" />
       <workItem from="1691049917108" duration="604000" />
+      <workItem from="1691717677045" duration="244000" />
+      <workItem from="1691717924722" duration="3516000" />
+      <workItem from="1691931058893" duration="2090000" />
+      <workItem from="1691939204625" duration="717000" />
+      <workItem from="1691976882319" duration="1000" />
+      <workItem from="1691981392582" duration="104000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -796,7 +799,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="221" />
+    <option name="localTasksCounter" value="225" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -824,7 +827,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="origin/merge" />
+                        <option value="merge" />
                       </list>
                     </value>
                   </entry>
@@ -837,8 +840,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fix too high NCYL" />
-    <MESSAGE value="Fix lines colinear" />
     <MESSAGE value="Update" />
     <MESSAGE value="添加方位字符串的解析还原，得到Quat" />
     <MESSAGE value="tmp" />
@@ -847,7 +848,6 @@
     <MESSAGE value="增加弧形墙的OCC处理" />
     <MESSAGE value="跳过不需要复用的元件库，比如Wall这些" />
     <MESSAGE value="不要使用LOOP、PLOO作为显示类型" />
-    <MESSAGE value="refactor" />
     <MESSAGE value="update truck impl" />
     <MESSAGE value="adjust tol" />
     <MESSAGE value="split bevy crate" />
@@ -862,7 +862,10 @@
     <MESSAGE value="fix substract boolean" />
     <MESSAGE value="修改 PZAXI，增加Rect tubi" />
     <MESSAGE value="update" />
-    <option name="LAST_COMMIT_MESSAGE" value="update" />
+    <MESSAGE value="refactor" />
+    <MESSAGE value="refactor occ generate" />
+    <MESSAGE value="fix wire precision problem" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix wire precision problem" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

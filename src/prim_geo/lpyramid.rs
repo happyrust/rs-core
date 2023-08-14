@@ -1,19 +1,19 @@
 use std::collections::hash_map::DefaultHasher;
-use std::f32::consts::PI;
-use std::f32::EPSILON;
+
+
 use std::hash::{Hash, Hasher};
-use approx::abs_diff_eq;
-use bevy_ecs::reflect::ReflectComponent;
-use glam::Vec3;
+
+
+use glam::{Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
-use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::tool::hash_tool::*;
-use crate::pdms_types::AttrMap;
-use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
-#[cfg(feature = "opencascade")]
-use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
+
+
+
+
+use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Vertex, Shape, Solid, Wire};
 use bevy_ecs::prelude::*;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -75,69 +75,47 @@ impl BrepShapeTrait for LPyramid {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        let mut x_dir = self.pbax_dir.normalize();
-        let mut y_dir = self.pcax_dir.normalize();
-        let mut z_dir = self.paax_dir.normalize();
-
-        //容错处理
-        let ref_dir = z_dir.cross(x_dir).normalize();
-        //如果和预期的方向垂直了，也就是和x方向共线了，需要重置
-        // dbg!(ref_dir.dot(y_dir));
-        if abs_diff_eq!(ref_dir.dot(y_dir).abs(), 0.0, epsilon=0.01) {
-            y_dir = ref_dir;
-            x_dir = ref_dir.cross(z_dir).normalize();
-        }
-
-        let x_pt = self.pbax_pt;
-        let y_pt = self.pcax_pt;
-        let c_pt = self.paax_pt;
-
+        let z_pt = self.paax_pt.as_dvec3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0);
-        let ty = (self.pctp / 2.0);
-        let bx = (self.pbbt / 2.0);
-        let by = (self.pcbt / 2.0);
-        let ox = 0.5 * self.pbof;
-        let oy = 0.5 * self.pcof;
-
-        let h_vector = z_dir * (self.ptdi - self.pbdi) / 2.0;
-
-        let t_pt = c_pt + x_dir * ox + y_dir * oy + h_vector;
-        let b_pt = c_pt - x_dir * ox - y_dir * oy - h_vector;
+        let tx = (self.pbtp / 2.0) as f64;
+        let ty = (self.pctp / 2.0) as f64;
+        let bx = (self.pbbt / 2.0) as f64;
+        let by = (self.pcbt / 2.0) as f64;
+        let ox = self.pbof as f64;
+        let oy = self.pcof as f64;
+        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
         let mut polys = vec![];
         let mut verts = vec![];
 
-        let t_pts = vec![
-            t_pt - tx * x_dir - ty * y_dir,
-            t_pt + tx * x_dir - ty * y_dir,
-            t_pt + tx * x_dir + ty * y_dir,
-            t_pt - tx * x_dir + ty * y_dir,
+        let pts = vec![
+            DVec3::new(-tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, ty + oy, h2),
+            DVec3::new(-tx + ox, ty + oy, h2),
         ];
-        if tx * ty < f32::EPSILON {
-            verts.push(Vertex::new(t_pt));
+        if tx * ty < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
         } else {
-            // dbg!(&t_pts);
-            polys.push(Wire::from_points(&t_pts)?);
+            polys.push(Wire::from_points(&pts));
         }
 
-        let b_pts = vec![
-            b_pt - bx * x_dir - by * y_dir,
-            b_pt + bx * x_dir - by * y_dir,
-            b_pt + bx * x_dir + by * y_dir,
-            b_pt - bx * x_dir + by * y_dir,
+        let pts = vec![
+            DVec3::new(-bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, by - oy, -h2),
+            DVec3::new(-bx - ox, by - oy, -h2),
         ];
-        if bx * by < f32::EPSILON {
-            verts.push(Vertex::new(b_pt));
+        if bx * by < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
         } else {
-            // dbg!(&b_pts);
-            polys.push(Wire::from_points(&b_pts)?);
+            polys.push(Wire::from_points(&pts));
         }
 
-        Ok(OCCShape::loft(polys.iter(), verts.iter())?)
+        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).to_shape())
     }
 
 
@@ -161,7 +139,7 @@ impl BrepShapeTrait for LPyramid {
             builder::vertex(Point3::new(tx + ox, ty + oy, h2)),
             builder::vertex(Point3::new(-tx + ox, ty + oy, h2)),
         ];
-        let mut ets = vec![
+        let ets = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),
@@ -177,7 +155,7 @@ impl BrepShapeTrait for LPyramid {
             builder::vertex(Point3::new(bx - ox, by - oy, -h2)),
             builder::vertex(Point3::new(-bx - ox, by - oy, -h2)),
         ];
-        let mut ebs = vec![
+        let ebs = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),

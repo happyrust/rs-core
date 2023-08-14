@@ -21,8 +21,8 @@ pub fn cal_ref_axis(v: &Vec3) -> Vec3 {
 pub fn rotate_from_vec3_to_vec3(dir: Vec3, from: Vec3, to: Vec3) -> Quat {
     let mut angle = from.angle_between(to);
     if angle.abs() < 1.0e-3 || (angle.abs() - std::f32::consts::PI).abs() < 1.0e-3 {
-        let mut rotation_angle = angle;
-        let mut ref_axis = dir;
+        let rotation_angle = angle;
+        let ref_axis = dir;
         Quat::from_axis_angle(
             from.cross(ref_axis).normalize(),
             rotation_angle,
@@ -65,9 +65,9 @@ impl RotateInfo {
         let mut rotate_info = RotateInfo::default();
         let pa_dir = a_dir.normalize();
         let pb_dir = b_dir.normalize();
-        let mut x_dir = (b_pt - a_pt).normalize();
+        let x_dir = (b_pt - a_pt).normalize();
         if  x_dir.is_nan() {
-            let mut rot_axis = pb_dir.cross(-pa_dir).normalize();
+            let rot_axis = pb_dir.cross(-pa_dir).normalize();
             if rot_axis.is_nan() { return None; }
             return Some(RotateInfo {
                 center: Default::default(),
@@ -77,7 +77,7 @@ impl RotateInfo {
             });
         }
         let quat = rotate_from_vec3_to_vec3(x_dir, -pa_dir, pb_dir);
-        let (mut axis_z, angle) = quat.to_axis_angle();
+        let (axis_z, angle) = quat.to_axis_angle();
         rotate_info.rot_axis = axis_z;
         rotate_info.angle = angle.to_degrees();
         let mid_pt = (a_pt + b_pt) / 2.0;
@@ -89,7 +89,7 @@ impl RotateInfo {
             rotate_info.center = mid_pt;
             rotate_info.radius = x_len / 2.0;
         } else {
-            let mut y_dir = rotate_info.rot_axis.cross(x_dir);
+            let y_dir = rotate_info.rot_axis.cross(x_dir);
             let ref_dir = rotate_info.rot_axis.cross(b_dir.normalize()).normalize();
             let p = b_pt - mid_pt;
             let px = p.dot(x_dir);

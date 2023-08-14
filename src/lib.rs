@@ -5,7 +5,7 @@
 
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
-use std::collections::HashMap;
+
 use crate::pdms_types::PdmsDatabaseInfo;
 
 extern crate bitflags;
@@ -51,6 +51,7 @@ pub mod achiver;
 pub mod plugging_material;
 pub mod room_setting;
 pub mod water_calculation;
+pub mod enso_types;
 
 pub mod test;
 

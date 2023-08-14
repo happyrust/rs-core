@@ -1,23 +1,25 @@
+use glam::{Vec3};
 use serde_derive::{Deserialize, Serialize};
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
-use glam::{DVec3, Vec3};
+
+use crate::shape::pdms_shape::BrepMathTrait;
+use crate::tool::float_tool::{vec3_round_2};
+use crate::{tool::float_tool::f32_round_2};
+use anyhow::anyhow;
+use approx::{abs_diff_eq};
 
 use std::f32::consts::PI;
-use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
-use anyhow::anyhow;
-use crate::prim_geo::extrusion::Extrusion;
-use crate::shape::pdms_shape::BrepMathTrait;
-use crate::tool::float_tool::hash_vec3;
-use approx::{abs_diff_eq, abs_diff_ne};
 
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Edge, Wire};
 
-#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+)]
 pub enum CurveType {
     Fill,
-    Spline(f32),  //thick
+    Spline(f32), //thick
 }
 
 pub fn cal_circus_center(pt0: Vec3, pt1: Vec3, pt2: Vec3) -> Vec3 {
@@ -48,7 +50,7 @@ pub fn circus_center(pt0: Point3, pt1: Point3, pt2: Point3) -> Point3 {
 ///生成occ的wire
 pub fn gen_occ_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire> {
     if verts.len() != 3 {
-        return Err(anyhow!("SPINE number is not 3".to_string()));   //先假定必须有三个
+        return Err(anyhow!("SPINE number is not 3".to_string())); //先假定必须有三个
     }
 
     let pt0 = verts[0];
@@ -89,11 +91,18 @@ pub fn gen_occ_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire
 }
 
 ///生成truck的wire
-pub fn gen_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<truck_modeling::Wire> {
-    use truck_modeling::{builder, Vertex, Wire};
-    if verts.len() != 3 {
-        return Err(anyhow!("SPINE number is not 3".to_string()));   //先假定必须有三个
+pub fn gen_spline_wire(
+    input_verts: &Vec<Vec3>,
+    thick: f32,
+) -> anyhow::Result<truck_modeling::Wire> {
+    use truck_modeling::{builder, Wire};
+    if input_verts.len() != 3 {
+        return Err(anyhow!("SPINE number is not 3".to_string())); //先假定必须有三个
     }
+    let verts = input_verts
+        .into_iter()
+        .map(|x| vec3_round_2(*x))
+        .collect::<Vec<_>>();
 
     let pt0 = verts[0].point3();
     let transit = verts[1].point3();
@@ -102,12 +111,12 @@ pub fn gen_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<truck_mo
     let vec0 = (pt0 - transit).normalize();
     let vec1 = (pt1 - transit).normalize();
     let origin = circus_center(pt0, pt1, transit);
-    let mut angle = Rad(PI as f64) - vec0.angle(vec1);
+    let _angle = Rad(PI as f64) - vec0.angle(vec1);
     let mut rot_axis = Vec3::Z;
     if (vec0.cross(vec1)).dot(Vector3::unit_z()) > 0.0 {
         rot_axis = -Vec3::Z;
     }
-    let radius = origin.distance(pt0);
+    let _radius = origin.distance(pt0);
 
     let v0 = (pt0 - origin).normalize();
     let v1 = (pt1 - origin).normalize();
@@ -223,7 +232,11 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                 if circle_indexs.len() > 0 && j == circle_indexs[0] {
                     let next_vert = &verts[(j + 1) % v_len];
                     // wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.point()));
-                    edges.push(Edge::arc(pre_vert.as_dvec3(), cur_vert.as_dvec3(), next_vert.as_dvec3()));
+                    edges.push(Edge::arc(
+                        pre_vert.as_dvec3(),
+                        cur_vert.as_dvec3(),
+                        next_vert.as_dvec3(),
+                    ));
                     pre_vert = next_vert.clone();
                     circle_indexs.remove(0);
                     j += 1;
@@ -278,7 +291,7 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                 // dbg!(v);
                 // dbg!(fradius);
                 //共线的点不要
-                if all_on_line && abs_diff_ne!(v.length(), 0.0, epsilon=0.001) {
+                if all_on_line && abs_diff_ne!(v.length(), 0.0, epsilon = 0.001) {
                     // dbg!("发现共线的点");
                     all_on_line = false;
                 }
@@ -349,7 +362,11 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             if pre_vert.distance(cur_vert) > 1.0 {
                 if circle_indexs.len() > 0 && j == circle_indexs[0] {
                     let next_vert = verts[(j + 1) % v_len];
-                    edges.push(Edge::new_arc(&pre_vert.into(), &cur_vert.into(), &next_vert.into())?);
+                    edges.push(Edge::new_arc(
+                        &pre_vert.into(),
+                        &cur_vert.into(),
+                        &next_vert.into(),
+                    )?);
                     pre_vert = next_vert;
                     circle_indexs.remove(0);
                     j += 1;
@@ -366,20 +383,26 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
     Ok(Wire::from_edges(&edges)?)
 }
 
-
 /// 根据顶点信息和fradius半径，生成wire
-pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck_modeling::Wire> {
+pub fn gen_wire(
+    input_pts: &Vec<Vec3>,
+    input_fradius_vec: &Vec<f32>,
+) -> anyhow::Result<truck_modeling::Wire> {
     use truck_modeling::{builder, Vertex, Wire};
-    if pts.len() < 3 {
+    if input_pts.len() < 3 || input_fradius_vec.len() != input_pts.len() {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
+    let pts = input_pts
+        .into_iter()
+        .map(|x| vec3_round_2(*x))
+        .collect::<Vec<_>>();
+    let fradius_vec = input_fradius_vec
+        .into_iter()
+        .map(|x| f32_round_2(*x))
+        .collect::<Vec<_>>();
     let mut wire = Wire::new();
     let ll = pts.len();
-    let mut pre_radius = 0.0;
-    let mut i = 1;
-    let r = fradius_vec[0];
     let mut verts = vec![];
-    let mut pre_pt = pts[0];
     let mut circle_indexs = vec![];
     for i in 0..ll {
         let fradius = fradius_vec[i];
@@ -397,7 +420,6 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck
         }
         if abs_diff_eq!(fradius.abs(), 0.0) {
             verts.push(builder::vertex(pt));
-            pre_pt = pts[i];
         } else {
             let r = fradius;
             let pre_i = (ll + i - 1) % ll;
@@ -420,14 +442,14 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck
             let mid_dir = (cur_pt - mid_pt).normalize();
             let transit_pt = mid_pt + mid_dir * d;
             if pa_dist - b_len > 0.01 {
-                verts.push(builder::vertex(p0.point3_without_z()));
+                verts.push(builder::vertex(vec3_round_2(p0).point3_without_z()));
             }
 
-            verts.push(builder::vertex(transit_pt.point3_without_z()));
+            verts.push(builder::vertex(vec3_round_2(transit_pt).point3_without_z()));
             circle_indexs.push(verts.len() - 1);
 
             if pb_dist - b_len > 0.01 {
-                verts.push(builder::vertex(p1.point3_without_z()));
+                verts.push(builder::vertex(vec3_round_2(p1).point3_without_z()));
             }
         }
     }
@@ -452,6 +474,7 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck
             if pre_vert.point().distance(cur_vert.point()) > 1.0 {
                 if circle_indexs.len() > 0 && j == circle_indexs[0] {
                     let next_vert = &verts[(j + 1) % v_len];
+                    dbg!(&pre_vert, next_vert, cur_vert);
                     wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.point()));
                     pre_vert = next_vert.clone();
                     circle_indexs.remove(0);
@@ -464,5 +487,6 @@ pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck
             j += 1;
         }
     }
+    dbg!(&wire);
     Ok(wire)
 }
