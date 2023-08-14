@@ -1,20 +1,20 @@
 use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
 use bevy_math::prelude::Quat;
-use std::default;
+
 use approx::abs_diff_eq;
 use bevy_transform::prelude::Transform;
 use crate::pdms_types::{NamedAttrValue, RefU64};
 use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
-use crate::parsed_data::CateSCylinderParam;
-use crate::parsed_data::geo_params_data::PdmsGeoParam;
+
+
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use crate::prim_geo::sbox::SBox;
-use crate::shape::pdms_shape::{BrepShapeTrait, TRI_TOL};
+use crate::shape::pdms_shape::{BrepShapeTrait};
 use glam::Mat3;
-use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_vec_str};
+
 use crate::shape::pdms_shape::ANGLE_RAD_TOL;
 use crate::prim_geo::tubing::TubiSize::{BoreSize, BoxSize};
 
@@ -159,7 +159,7 @@ impl PdmsTubing {
         let dir = (self.end_pt - self.start_pt).normalize();
         let brep_shape: Option<Box<dyn BrepShapeTrait>> = match &self.tubi_size {
             TubiSize::BoreSize(d) => {
-                let mut cylinder = SCylinder {
+                let cylinder = SCylinder {
                     phei: self.start_pt.distance(self.end_pt),
                     pdia: *d,
                     center_in_mid: false,
@@ -170,7 +170,7 @@ impl PdmsTubing {
             TubiSize::BoxSize((w, h)) => {
                 let len = self.start_pt.distance(self.end_pt);
                 let size = Vec3::new(*w, *h, len);
-                let mut cube = SBox {
+                let cube = SBox {
                     center: Default::default(),
                     size,
                 };

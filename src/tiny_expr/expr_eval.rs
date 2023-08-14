@@ -243,7 +243,7 @@ fn rand01(_: f64, _: f64) -> f64 {
     // rng.gen()
     0.0
 }
-fn randint(a: f64, b: f64) -> f64 {
+fn randint(_a: f64, _b: f64) -> f64 {
     // let mut rng = thread_rng();
     // rng.gen_range(a..=b).round()
     0.0

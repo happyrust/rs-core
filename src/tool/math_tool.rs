@@ -1,4 +1,4 @@
-use approx::{abs_diff_eq, abs_diff_ne, relative_eq};
+use approx::{abs_diff_eq, abs_diff_ne};
 use glam::{DVec3, Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
 use crate::shape::pdms_shape::ANGLE_RAD_TOL;
@@ -22,7 +22,7 @@ lazy_static! {
 }
 
 pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3 {
-    let mut quat = Quat::from_rotation_arc(Vec3::Z, zdir);
+    let quat = Quat::from_rotation_arc(Vec3::Z, zdir);
     let mut m = Mat3::from_quat(quat);
     if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon=ANGLE_RAD_TOL) {
         m.y_axis.z = 0.0;

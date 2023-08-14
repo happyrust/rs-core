@@ -1,20 +1,20 @@
 use std::io::{Read, Write};
 use std::sync::Arc;
 use dashmap::DashMap;
-use lazy_static::lazy_static;
+
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::pdms_types::RefU64;
-use crate::pdms_types::AttrMap;
-use crate::cache::refno::CachedRefBasic;
-use crate::pdms_types::PdmsElementVec;
+
+
+
 use dashmap::mapref::one::Ref;
 use parry3d::bounding_volume::Aabb;
-use crate::pdms_types::RefU64Vec;
-use serde::Deserialize;
+
+
 #[cfg(not(target_arch = "wasm32"))]
 use redb::{
-    Builder, Database, Durability, Error, MultimapTableDefinition, ReadableTable, TableDefinition,
+    Database, ReadableTable, TableDefinition,
 };
 
 
@@ -82,7 +82,7 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
         let mut file = std::fs::File::open(path)?;
         let mut bytes = vec![];
         file.read_to_end(&mut bytes)?;
-        let mut map = bincode::deserialize::<DashMap<RefU64, T>>(&bytes)?;
+        let map = bincode::deserialize::<DashMap<RefU64, T>>(&bytes)?;
         for (k, v) in map.into_iter() {
             self.map.insert(k, v);
         }

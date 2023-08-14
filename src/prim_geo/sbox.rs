@@ -1,17 +1,18 @@
-use std::f32::EPSILON;
+
 use glam::Vec3;
 
 use truck_base::cgmath64::Vector3;
-use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
-use truck_modeling::{builder, Shell, Solid};
+
+use truck_modeling::{builder, Shell};
 use serde::{Serialize, Deserialize};
-use crate::consts::BOX_HASH;
-use crate::parsed_data::CateBoxParam;
+
+
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
-
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+#[cfg(feature = "opencascade_rs")]
+use opencascade::{primitives::Shape, adhoc::AdHocShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SBox {
@@ -47,9 +48,14 @@ impl BrepShapeTrait for SBox {
         self.size.z = self.size.z.min(l);
     }
 
-    #[cfg(feature = "opencascade")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-        Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
+    // #[cfg(feature = "opencascade")]
+    // fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
+    //     Ok(OCCShape::cube(self.size.x as f64, self.size.y as f64, self.size.z as f64)?)
+    // }
+
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+        Ok(AdHocShape::make_box(self.size.x as f64, self.size.y as f64, self.size.z as f64).0)
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {
