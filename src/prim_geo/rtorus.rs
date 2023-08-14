@@ -4,7 +4,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 use std::hash::Hash;
 
-use glam::{Mat3, Quat, Vec3};
+use glam::{DVec3, Mat3, Quat, Vec3};
 use bevy_ecs::prelude::*;
 use truck_modeling::{Shell};
 use crate::pdms_types::AttrMap;
@@ -16,7 +16,7 @@ use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
 
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Vertex, Shape, Solid, Wire, Edge};
+use opencascade::primitives::{Shape, Wire, Edge};
 use bevy_transform::prelude::Transform;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;

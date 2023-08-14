@@ -4,7 +4,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 
-use glam::{Vec3};
+use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 
@@ -78,7 +78,7 @@ impl BrepShapeTrait for LPyramid {
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
 
-        let z_pt = self.paax_pt.as_dvec3();
+        let _z_pt = self.paax_pt.as_dvec3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp / 2.0) as f64;
         let ty = (self.pctp / 2.0) as f64;

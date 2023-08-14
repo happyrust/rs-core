@@ -2,7 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 
 use std::hash::Hasher;
 use std::hash::Hash;
-
+use anyhow::anyhow;
 use bevy_ecs::prelude::*;
 
 use truck_modeling::{Shell};
@@ -19,7 +19,7 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Vertex, Shape, Solid, Wire, Edge};
+use opencascade::primitives::{Shape, Wire};
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
 

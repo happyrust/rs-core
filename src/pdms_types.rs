@@ -2206,7 +2206,7 @@ impl ShapeInstancesData {
     #[cfg(feature = "opencascade_rs")]
     pub fn gen_occ_shape(&self, refno: RefU64) -> Option<Shape> {
         let info = self.get_inst_info(refno)?;
-        let geos = self.get_inst_geos(info)?;
+        let _geos = self.get_inst_geos(info)?;
         // let mut shapes = vec![];
         // for geo in geos {
         //

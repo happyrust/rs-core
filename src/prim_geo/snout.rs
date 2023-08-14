@@ -16,8 +16,7 @@ use crate::tool::float_tool::hash_f32;
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Vertex, Shape, Solid, Wire};
-#[cfg(feature = "opencascade_rs")]
-use opencascade::workplane::Workplane;
+
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct LSnout {
@@ -82,11 +81,11 @@ impl BrepShapeTrait for LSnout {
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        let rt = (self.ptdm/2.0);
-        let rb = (self.pbdm/2.0);
+        let rt = self.ptdm/2.0;
+        let rb = self.pbdm/2.0;
 
-        let mut a_dir = self.paax_dir.normalize();
-        let mut b_dir = self.pbax_dir.normalize();
+        let a_dir = self.paax_dir.normalize();
+        let b_dir = self.pbax_dir.normalize();
         let p0 = a_dir * self.pbdi + self.paax_pt;
         let p1 = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
 

@@ -2,7 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 
 
 use std::hash::{Hash, Hasher};
-
+use anyhow::anyhow;
 
 use approx::{abs_diff_ne};
 
@@ -10,7 +10,7 @@ use bevy_math::prelude::*;
 
 
 use bevy_ecs::prelude::*;
-use glam::{Vec3};
+use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
 
 use crate::parsed_data::{CateProfileParam, SannData, SProfileData};
@@ -67,8 +67,8 @@ impl SweepSolid {
         let (r1, r2) = if is_btm {
             (r1, r2)
         } else { (r2 + sann.drad - sann.dwid - sann.pwidth, r2 + sann.drad) };
-        let mut z_axis = Vec3::Z;
-        let mut angle = sann.pangle.to_radians();
+        let _z_axis = Vec3::Z;
+        let angle = sann.pangle.to_radians();
         let mut offset_pt = Vec3::ZERO;
         let mut rot_mat = Mat3::IDENTITY;
         let mut beta_rot = Quat::IDENTITY;
@@ -77,7 +77,7 @@ impl SweepSolid {
         offset_pt.y = -sann.plin_pos.y;
         match &self.path {
             SweepPath3D::SpineArc(d) => {
-                let mut y_axis = d.pref_axis;
+                let y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius;
                 if d.clock_wise {
@@ -232,7 +232,7 @@ impl SweepSolid {
         offset_pt.y = -plin_pos.y;
         match &self.path {
             SweepPath3D::SpineArc(d) => {
-                let mut y_axis = d.pref_axis;
+                let y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius;
                 if d.clock_wise {
@@ -387,14 +387,14 @@ impl BrepShapeTrait for SweepSolid {
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let mut is_sann = false;
-        let (mut profile_wire, mut top_profile_wire) = match &self.profile {
+        let (profile_wire, top_profile_wire) = match &self.profile {
             CateProfileParam::SANN(p) => {
                 let w = p.pwidth;
                 let r = p.pradius;
                 let r1 = r - w;
                 let r2 = r;
-                let d = p.paxis.as_ref().unwrap().dir.normalize();
-                let mut angle = p.pangle.to_radians();
+                let _d = p.paxis.as_ref().unwrap().dir.normalize();
+                let _angle = p.pangle.to_radians();
                 let origin = p.xy + p.dxy;
                 let wire_btm = self.gen_occ_sann_wire(origin, p, true, r1, r2).ok();
                 let wire_top = self.gen_occ_sann_wire(origin, p, false, r1, r2).ok();
@@ -417,8 +417,8 @@ impl BrepShapeTrait for SweepSolid {
                 return Err(anyhow!("drns or drne is nan"));
             }
 
-            let mut rotation = Mat4::IDENTITY;
-            let mut scale_mat = Mat4::IDENTITY;
+            let _rotation = Mat4::IDENTITY;
+            let _scale_mat = Mat4::IDENTITY;
 
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
@@ -438,14 +438,14 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         // println!("drns {:?}  is sloped", self.drns);
-                        let mut x_angle = self.drns.angle_between(Vec3::X).abs();
+                        let x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         } else {
                             1.0 / (x_angle.sin())
                         };
-                        let mut y_angle = self.drns.angle_between(Vec3::Y).abs();
+                        let y_angle = self.drns.angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
@@ -458,14 +458,14 @@ impl BrepShapeTrait for SweepSolid {
                     }
                     if self.drne.is_normalized() && self.is_drne_sloped() {
                         // println!("drne {:?}  is sloped", self.drne);
-                        let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
+                        let x_angle = (-self.drne).angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         } else {
                             1.0 / (x_angle.sin())
                         };
-                        let mut y_angle = (-self.drne).angle_between(Vec3::Y).abs();
+                        let y_angle = (-self.drne).angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0

@@ -5,7 +5,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 
-use glam::{Vec3};
+use glam::{DVec3, Mat4, Vec3};
 use bevy_ecs::prelude::*;
 use bevy_transform::prelude::Transform;
 use nom::Parser;
@@ -19,8 +19,7 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL
 
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{
-    angle::{RVec, ToAngle},
-    primitives::{Face, Shape, Solid, Wire},
+    primitives::{Shape, Solid},
     workplane::Workplane,
 };
 #[cfg(feature = "opencascade_rs")]
@@ -353,10 +352,10 @@ impl BrepShapeTrait for SCylinder {
                 * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
                 * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
             let mut circle = Workplane::xy().circle(0.0, 0.0, self.pdia as f64 /2.0);
-            let (s, r, t) = transform_btm.to_scale_rotation_translation();
-            let (axis, angle) = r.to_axis_angle();
-            let mut btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
-            let mut top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
+            let (_s, r, _t) = transform_btm.to_scale_rotation_translation();
+            let (_axis, _angle) = r.to_axis_angle();
+            let btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
+            let top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
 
             Ok(Solid::loft([btm_circe, top_circle].iter()).to_shape())
 

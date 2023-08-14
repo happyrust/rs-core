@@ -7,7 +7,7 @@ use std::hash::{Hash, Hasher};
 use truck_meshalgo::prelude::*;
 
 
-use glam::{Vec3};
+use glam::{DVec3, Vec3};
 
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize, Deserialize};
