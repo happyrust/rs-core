@@ -17,17 +17,7 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="refactor occ generate">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geom_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/water_calculation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/water_calculation.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -461,6 +451,8 @@
       <workItem from="1691717677045" duration="244000" />
       <workItem from="1691717924722" duration="3516000" />
       <workItem from="1691931058893" duration="2090000" />
+      <workItem from="1691939204625" duration="717000" />
+      <workItem from="1691976882319" duration="1000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -805,7 +797,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="223" />
+    <option name="localTasksCounter" value="224" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -833,7 +825,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="gen-model" />
+                        <option value="merge" />
                       </list>
                     </value>
                   </entry>
@@ -846,7 +838,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fix too high NCYL" />
     <MESSAGE value="Fix lines colinear" />
     <MESSAGE value="Update" />
     <MESSAGE value="添加方位字符串的解析还原，得到Quat" />
@@ -871,7 +862,8 @@
     <MESSAGE value="修改 PZAXI，增加Rect tubi" />
     <MESSAGE value="update" />
     <MESSAGE value="refactor" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor" />
+    <MESSAGE value="refactor occ generate" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor occ generate" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

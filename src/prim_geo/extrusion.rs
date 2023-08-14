@@ -19,7 +19,7 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
 use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
-use crate::tool::float_tool::{hash_f32, hash_vec3};
+use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
@@ -58,7 +58,6 @@ impl VerifiedShape for Extrusion {
     }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for Extrusion {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
@@ -158,8 +157,8 @@ impl BrepShapeTrait for Extrusion {
                 if plane.normal().dot(extrude_dir) < 0.0 {
                     face = face.inverse();
                 }
-                let mut s =
-                    builder::tsweep(&face, extrude_dir * self.height as f64).into_boundaries();
+                let mut s = builder::tsweep(&face, extrude_dir * (f32_round_3(self.height)) as f64)
+                    .into_boundaries();
                 return s.pop();
             }
         } else {
