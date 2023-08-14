@@ -1,13 +1,13 @@
 use bevy_ecs::component::Component;
-use glam::{Mat3, Quat, Vec2, Vec3};
-use nalgebra::center;
+use glam::{Mat3, Quat, Vec3};
+
 use serde::{Deserialize, Serialize};
-use truck_modeling::{Shell, Wire};
+
 use std::f32::consts::PI;
 
-use bevy_math::prelude::*;
+
 use bevy_transform::prelude::*;
-use crate::tool::float_tool::{f32_round_1, f32_round_3, vec3_round_1, vec3_round_3};
+use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 
 #[derive(Component, Default, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub enum SpineCurveType {
@@ -119,11 +119,11 @@ impl Spine3D {
                 let vec0 = self.pt0 - self.thru_pt;
                 let vec1 = self.pt1 - self.thru_pt;
                 let angle = (PI - vec0.angle_between(vec1)) * 2.0;
-                let mut axis = vec1.cross(vec0).normalize();
+                let axis = vec1.cross(vec0).normalize();
 
                 let x_axis = (self.pt0 - center).normalize();
                 let d = x_axis.dot(Vec3::Z).abs();
-                let mut ref_axis = if approx::abs_diff_eq!(1.0, d) {
+                let ref_axis = if approx::abs_diff_eq!(1.0, d) {
                     Vec3::Y
                 } else { Vec3::Z };
                 let y_axis = ref_axis.cross(x_axis).normalize();
@@ -146,10 +146,10 @@ impl Spine3D {
             SpineCurveType::CENT => {}
             SpineCurveType::LINE => {
                 transform.translation = self.pt0;
-                let extru = (self.pt1 - self.pt0);
+                let extru = self.pt1 - self.pt0;
                 let extru_dir = extru.normalize();
                 let d = extru_dir.dot(pref_axis).abs();
-                let mut ref_axis = if approx::abs_diff_eq!(1.0, d) {
+                let ref_axis = if approx::abs_diff_eq!(1.0, d) {
                     Vec3::Y
                 } else { pref_axis };
 

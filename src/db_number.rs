@@ -43,7 +43,7 @@ impl DbNumMgr{
 
     #[inline]
     pub fn get_all_dbnos(&self) -> Vec<u32> {
-        let mut v = HashSet::new();
+        let v = HashSet::new();
         for kv in &self.ref0_dbnos_map {
             v.union(kv.1);
         }

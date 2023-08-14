@@ -1,8 +1,5 @@
-use serde_derive::*;
-use serde_with::{serde_as, EnumMap};
 use crate::BHashMap;
-use crate::pdms_types::{NamedAttrValue, NamedAttrMap};
-
+use crate::pdms_types::{NamedAttrMap, NamedAttrValue};
 
 #[test]
 fn test_serde_attr_value() {

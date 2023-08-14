@@ -5,7 +5,7 @@
 
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
-use std::collections::HashMap;
+
 use crate::pdms_types::PdmsDatabaseInfo;
 
 extern crate bitflags;
@@ -16,6 +16,7 @@ pub mod aql_types;
 pub mod pdms_types;
 pub mod consts;
 pub mod prim_geo;
+pub mod csg;
 pub mod shape;
 pub mod tool;
 pub mod parsed_data;
