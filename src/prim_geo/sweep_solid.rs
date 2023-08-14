@@ -1,11 +1,11 @@
 use std::collections::hash_map::DefaultHasher;
-use std::f32::consts::{FRAC_PI_2, PI, TAU};
-use std::f32::EPSILON;
+
+
 use std::hash::{Hash, Hasher};
 use anyhow::anyhow;
-use std::default;
-use approx::{abs_diff_eq, abs_diff_ne};
-use bevy_ecs::reflect::ReflectComponent;
+
+use approx::{abs_diff_ne};
+
 use bevy_math::prelude::*;
 
 
@@ -14,11 +14,11 @@ use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
 
 use crate::parsed_data::{CateProfileParam, SannData, SProfileData};
-use crate::prim_geo::helper::cal_ref_axis;
+
 use crate::prim_geo::spine::*;
 use crate::prim_geo::wire;
-use crate::shape::pdms_shape::{ANGLE_RAD_TOL, BrepMathTrait, BrepShapeTrait, convert_to_cg_matrix4, PlantMesh, TRI_TOL, VerifiedShape};
-use crate::tool::float_tool::{hash_f32, hash_vec3};
+use crate::shape::pdms_shape::{ANGLE_RAD_TOL, BrepMathTrait, BrepShapeTrait, convert_to_cg_matrix4, VerifiedShape};
+
 
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
@@ -67,8 +67,8 @@ impl SweepSolid {
         let (r1, r2) = if is_btm {
             (r1, r2)
         } else { (r2 + sann.drad - sann.dwid - sann.pwidth, r2 + sann.drad) };
-        let mut z_axis = Vec3::Z;
-        let mut angle = sann.pangle.to_radians();
+        let _z_axis = Vec3::Z;
+        let angle = sann.pangle.to_radians();
         let mut offset_pt = Vec3::ZERO;
         let mut rot_mat = Mat3::IDENTITY;
         let mut beta_rot = Quat::IDENTITY;
@@ -77,7 +77,7 @@ impl SweepSolid {
         offset_pt.y = -sann.plin_pos.y;
         match &self.path {
             SweepPath3D::SpineArc(d) => {
-                let mut y_axis = d.pref_axis;
+                let y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius;
                 if d.clock_wise {
@@ -126,16 +126,16 @@ impl SweepSolid {
 
     /// 生成sann的线框
     fn gen_sann_wire(&self, origin: Vec2, sann: &SannData, is_btm: bool, r1: f32, r2: f32) -> Option<truck_modeling::Wire> {
-        use truck_modeling::{builder, Face, Shell, Surface, Wire};
-        use truck_modeling::builder::try_attach_plane;
+        use truck_modeling::{builder, Surface, Wire};
+        
 
         let (r1, r2) = if is_btm {
             (r1, r2)
         } else { (r2 + sann.drad - sann.dwid - sann.pwidth, r2 + sann.drad) };
         // dbg!((r1, r2));
         use truck_base::cgmath64::*;
-        let mut z_axis = Vec3::Z;
-        let mut angle = sann.pangle.to_radians();
+        let z_axis = Vec3::Z;
+        let angle = sann.pangle.to_radians();
         // dbg!(angle);
         let mut offset_pt = Vec3::ZERO;
         let mut rot_mat = Mat3::IDENTITY;
@@ -145,7 +145,7 @@ impl SweepSolid {
         offset_pt.y = -sann.plin_pos.y;
         match &self.path {
             SweepPath3D::SpineArc(d) => {
-                let mut y_axis = d.pref_axis;
+                let y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius as f64;
                 if d.clock_wise {
@@ -169,17 +169,17 @@ impl SweepSolid {
                 }
             }
         }
-        let p1 = (Vec3::new(r1, 0.0, 0.0));
-        let p2 = (Vec3::new(r2, 0.0, 0.0));
-        let p3 = (Vec3::new(r2 * angle.cos(), r2 * angle.sin(), 0.0));
-        let p4 = (Vec3::new(r1 * angle.cos(), r1 * angle.sin(), 0.0));
+        let p1 = Vec3::new(r1, 0.0, 0.0);
+        let p2 = Vec3::new(r2, 0.0, 0.0);
+        let p3 = Vec3::new(r2 * angle.cos(), r2 * angle.sin(), 0.0);
+        let p4 = Vec3::new(r1 * angle.cos(), r1 * angle.sin(), 0.0);
 
         let v1 = builder::vertex(p1.point3());
         let v2 = builder::vertex(p2.point3());
         let v3 = builder::vertex(p3.point3());
         let v4 = builder::vertex(p4.point3());
         let center_pt = Point3::new(0.0, 0.0, 0.0);
-        let mut wire = Wire::from(vec![
+        let wire = Wire::from(vec![
             builder::line(&v1, &v2),
             builder::circle_arc_with_center(center_pt,
                                             &v2, &v3, z_axis.vector3(), Rad(angle as f64)),
@@ -205,9 +205,9 @@ impl SweepSolid {
             Vector4::new(0.0, 0.0, 0.0, 1.0),
         );
         let mut result_wire = builder::transformed(&wire, r_trans_mat * beta_mat * local_mat * translation);
-        let mut face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
+        let face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
         if let Surface::Plane(plane) = face.surface() {
-            let s = self.plane_normal.y as f64;
+            let _s = self.plane_normal.y as f64;
             if is_btm && plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
                 result_wire.invert();
             }
@@ -232,7 +232,7 @@ impl SweepSolid {
         offset_pt.y = -plin_pos.y;
         match &self.path {
             SweepPath3D::SpineArc(d) => {
-                let mut y_axis = d.pref_axis;
+                let y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius;
                 if d.clock_wise {
@@ -273,8 +273,8 @@ impl SweepSolid {
     /// start_vec 为起始方向
     fn cal_spro_wire(&self, profile: &SProfileData) -> Option<truck_modeling::Wire> {
         use truck_meshalgo::prelude::*;
-        use truck_modeling::{builder, Face, Shell, Surface, Wire};
-        use truck_modeling::builder::try_attach_plane;
+        use truck_modeling::{builder, Surface};
+        
         let verts = &profile.verts;
         let len = verts.len();
 
@@ -288,7 +288,7 @@ impl SweepSolid {
         offset_pt.y = -plin_pos.y;
         match &self.path {
             SweepPath3D::SpineArc(d) => {
-                let mut y_axis = d.pref_axis;
+                let y_axis = d.pref_axis;
                 let mut z_axis = self.plane_normal;
                 r_translation.x = d.radius as f64;
                 if d.clock_wise {
@@ -316,7 +316,7 @@ impl SweepSolid {
             let p = Vec3::new(verts[i][0], verts[i][1], 0.0);
             points.push(p);
         }
-        let mut wire = wire::gen_wire(&points, &profile.frads).ok()?;
+        let wire = wire::gen_wire(&points, &profile.frads).ok()?;
         // dbg!(self.bangle);
         let translation = Matrix4::from_translation(offset_pt.vector3());
         // dbg!(r_translation);
@@ -337,9 +337,9 @@ impl SweepSolid {
         );
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
         let mut result_wire = builder::transformed(&wire, final_mat);
-        let mut face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
+        let face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
         if let Surface::Plane(plane) = face.surface() {
-            let s = self.plane_normal.y as f64;
+            let _s = self.plane_normal.y as f64;
             if plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
                 result_wire.invert();
             }
@@ -387,14 +387,14 @@ impl BrepShapeTrait for SweepSolid {
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let mut is_sann = false;
-        let (mut profile_wire, mut top_profile_wire) = match &self.profile {
+        let (profile_wire, top_profile_wire) = match &self.profile {
             CateProfileParam::SANN(p) => {
                 let w = p.pwidth;
                 let r = p.pradius;
                 let r1 = r - w;
                 let r2 = r;
-                let d = p.paxis.as_ref().unwrap().dir.normalize();
-                let mut angle = p.pangle.to_radians();
+                let _d = p.paxis.as_ref().unwrap().dir.normalize();
+                let _angle = p.pangle.to_radians();
                 let origin = p.xy + p.dxy;
                 let wire_btm = self.gen_occ_sann_wire(origin, p, true, r1, r2).ok();
                 let wire_top = self.gen_occ_sann_wire(origin, p, false, r1, r2).ok();
@@ -417,8 +417,8 @@ impl BrepShapeTrait for SweepSolid {
                 return Err(anyhow!("drns or drne is nan"));
             }
 
-            let mut rotation = Mat4::IDENTITY;
-            let mut scale_mat = Mat4::IDENTITY;
+            let _rotation = Mat4::IDENTITY;
+            let _scale_mat = Mat4::IDENTITY;
 
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
@@ -438,14 +438,14 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         // println!("drns {:?}  is sloped", self.drns);
-                        let mut x_angle = self.drns.angle_between(Vec3::X).abs();
+                        let x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         } else {
                             1.0 / (x_angle.sin())
                         };
-                        let mut y_angle = self.drns.angle_between(Vec3::Y).abs();
+                        let y_angle = self.drns.angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
@@ -458,14 +458,14 @@ impl BrepShapeTrait for SweepSolid {
                     }
                     if self.drne.is_normalized() && self.is_drne_sloped() {
                         // println!("drne {:?}  is sloped", self.drne);
-                        let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
+                        let x_angle = (-self.drne).angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         } else {
                             1.0 / (x_angle.sin())
                         };
-                        let mut y_angle = (-self.drne).angle_between(Vec3::Y).abs();
+                        let y_angle = (-self.drne).angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
@@ -493,18 +493,18 @@ impl BrepShapeTrait for SweepSolid {
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
-        use truck_base::cgmath64::{Point3, Vector3};
+        use truck_base::cgmath64::{Point3};
         let mut profile_wire = None;
         let mut top_profile_wire = None;
         let mut is_sann = false;
-        let (mut profile_wire, mut top_profile_wire) = match &self.profile {
+        let (profile_wire, _top_profile_wire) = match &self.profile {
             CateProfileParam::SANN(p) => {
                 let w = p.pwidth;
                 let r = p.pradius;
                 let r1 = r - w;
                 let r2 = r;
-                let d = p.paxis.as_ref().unwrap().dir.normalize();
-                let mut angle = p.pangle.to_radians();
+                let _d = p.paxis.as_ref().unwrap().dir.normalize();
+                let _angle = p.pangle.to_radians();
                 let origin = p.xy + p.dxy;
                 profile_wire = self.gen_sann_wire(origin, p, true, r1, r2);
                 top_profile_wire = self.gen_sann_wire(origin, p, false, r1, r2);
@@ -520,7 +520,7 @@ impl BrepShapeTrait for SweepSolid {
             }
         };
         // if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
-        if let Some(mut wire) = profile_wire {
+        if let Some(wire) = profile_wire {
             //check if valid
             if self.drns.is_nan() || self.drne.is_nan() {
                 // return Err(anyhow!("drns or drne is nan"));
@@ -528,10 +528,10 @@ impl BrepShapeTrait for SweepSolid {
                 return None;
             }
             //先生成start 和 end face
-            let mut transform_btm = Matrix4::one();
-            let mut transform_top = Matrix4::one();
-            let mut rotation = Matrix4::one();
-            let mut scale_mat = Matrix4::one();
+            let _transform_btm = Matrix4::one();
+            let _transform_top = Matrix4::one();
+            let _rotation = Matrix4::one();
+            let _scale_mat = Matrix4::one();
 
             match &self.path {
                 //todo 旋转体的drne 和 drns也需要考虑，loft需要支持曲线的loft才行
@@ -561,14 +561,14 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
                         // println!("drns {:?}  is sloped", self.drns);
-                        let mut x_angle = self.drns.angle_between(Vec3::X).abs();
+                        let x_angle = self.drns.angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         } else {
                             1.0 / (x_angle.sin())
                         };
-                        let mut y_angle = self.drns.angle_between(Vec3::Y).abs();
+                        let y_angle = self.drns.angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
@@ -581,14 +581,14 @@ impl BrepShapeTrait for SweepSolid {
                     }
                     if self.drne.is_normalized() && self.is_drne_sloped() {
                         // println!("drne {:?}  is sloped", self.drne);
-                        let mut x_angle = (-self.drne).angle_between(Vec3::X).abs();
+                        let x_angle = (-self.drne).angle_between(Vec3::X).abs();
                         // dbg!(x_angle);
                         let scale_x = if x_angle < ANGLE_RAD_TOL {
                             1.0
                         } else {
                             1.0 / (x_angle.sin())
                         };
-                        let mut y_angle = (-self.drne).angle_between(Vec3::Y).abs();
+                        let y_angle = (-self.drne).angle_between(Vec3::Y).abs();
                         // dbg!(y_angle);
                         let scale_y = if y_angle < ANGLE_RAD_TOL {
                             1.0
@@ -609,8 +609,8 @@ impl BrepShapeTrait for SweepSolid {
                         let c2 = &wire_e[i];
                         faces.push(builder::homotopy(c1, c2).inverse());
                     }
-                    let mut face_s = builder::try_attach_plane(&[wire_s]).ok()?;
-                    let mut face_e = builder::try_attach_plane(&[wire_e]).ok()?;
+                    let face_s = builder::try_attach_plane(&[wire_s]).ok()?;
+                    let face_e = builder::try_attach_plane(&[wire_e]).ok()?;
                     faces.push(face_s);
                     faces.push(face_e.inverse());
                     let shell: Shell = faces.into();
@@ -656,7 +656,7 @@ impl BrepShapeTrait for SweepSolid {
     fn get_scaled_vec3(&self) -> Vec3 {
         if self.is_sloped() { return Vec3::ONE; }
         match &self.path {
-            SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, self.height),
+            SweepPath3D::Line(_l) => Vec3::new(1.0, 1.0, self.height),
             _ => Vec3::ONE,
         }
     }
@@ -670,8 +670,8 @@ impl BrepShapeTrait for SweepSolid {
     #[inline]
     fn get_trans(&self) -> bevy_transform::prelude::Transform {
         match &self.profile {
-            CateProfileParam::SANN(p) => {
-                let mut translation = Vec3::ZERO;
+            CateProfileParam::SANN(_p) => {
+                let translation = Vec3::ZERO;
                 return bevy_transform::prelude::Transform {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),

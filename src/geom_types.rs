@@ -1,5 +1,5 @@
 use bevy_transform::prelude::Transform;
-use glam::{Quat, Vec3};
+use glam::{Vec3};
 use parry3d::bounding_volume::Aabb;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -49,13 +49,13 @@ impl RvmGeoInfos {
 
     #[cfg(feature = "opencascade_rs")]
     pub fn gen_occ_shape(&self) -> Option<Shape> {
-        let mut pos_shapes = self.rvm_inst_geo.iter()
+        let pos_shapes = self.rvm_inst_geo.iter()
             .filter(|x| x.geo_type == GeoBasicType::Pos)
             .map(|x| x.gen_occ_shape())
             .flatten()
             .collect::<Vec<_>>();
 
-        let mut neg_shapes = self.rvm_inst_geo.iter()
+        let _neg_shapes = self.rvm_inst_geo.iter()
             .filter(|x| x.geo_type == GeoBasicType::CateNeg)
             .map(|x| x.gen_occ_shape())
             .flatten()
@@ -88,7 +88,7 @@ impl RvmGeoInfos {
 
     #[cfg(feature = "opencascade_rs")]
     pub fn gen_ngmr_occ_shape(&self) -> Option<Shape> {
-        let mut ngmr_shapes = self.rvm_inst_geo.iter()
+        let ngmr_shapes = self.rvm_inst_geo.iter()
             .filter(|x| x.geo_type == GeoBasicType::CateCrossNeg)
             .map(|x| x.gen_occ_shape())
             .flatten()
@@ -118,7 +118,7 @@ pub struct RvmTubiGeoInfos {
 impl RvmTubiGeoInfos {
     pub fn into_rvmgeoinfos(self) -> RvmGeoInfos {
         let mut geos = self.rvm_inst_geo;
-        for mut geo in geos.iter_mut() {
+        for geo in geos.iter_mut() {
             match geo.geo_param.borrow_mut() {
                 PrimSCylinder(data) => {
                     data.phei = self.world_transform.scale.z;
@@ -163,7 +163,7 @@ impl RvmInstGeo {
         //scale 不能要，已经包含在OCC的真实参数里
         let mut new_transform = self.transform;
         new_transform.scale = Vec3::ONE;
-        if let Some(mut s) = shape.as_mut() {
+        if let Some(s) = shape.as_mut() {
             s.transform_by_mat(&new_transform.compute_matrix().as_dmat4());
         }
         shape

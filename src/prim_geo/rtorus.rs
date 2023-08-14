@@ -1,22 +1,22 @@
 use std::collections::hash_map::DefaultHasher;
-use std::default;
-use std::f32::EPSILON;
+
+
 use std::hash::Hasher;
 use std::hash::Hash;
-use anyhow::anyhow;
+
 use glam::{DVec3, Mat3, Quat, Vec3};
 use bevy_ecs::prelude::*;
-use truck_modeling::{builder, Shell};
+use truck_modeling::{Shell};
 use crate::pdms_types::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use bevy_ecs::prelude::*;
+
 use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
-use bevy_ecs::prelude::*;
+
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Vertex, Shape, Solid, Wire, Edge};
+use opencascade::primitives::{Shape, Wire, Edge};
 use bevy_transform::prelude::Transform;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
@@ -140,7 +140,7 @@ impl BrepShapeTrait for SRTorus {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
                                                               self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
             use truck_modeling::*;
-            let circle_origin = self.paax_pt.point3();
+            let _circle_origin = self.paax_pt.point3();
             let z_axis = self.paax_dir.normalize().vector3();
             let y_axis = torus_info.rot_axis.vector3();
             let x_axis = z_axis.cross(y_axis);
@@ -205,7 +205,7 @@ impl BrepShapeTrait for RTorus {
 
     fn hash_unit_mesh_params(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
-        hash_f32((self.rins / self.rout), &mut hasher);
+        hash_f32(self.rins / self.rout, &mut hasher);
         hash_f32(self.angle, &mut hasher);
         "rtorus".hash(&mut hasher);
         hasher.finish()

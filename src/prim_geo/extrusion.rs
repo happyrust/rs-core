@@ -1,22 +1,22 @@
 use anyhow::anyhow;
-use approx::abs_diff_eq;
-use bevy_ecs::reflect::ReflectComponent;
+
+
 use std::collections::hash_map::DefaultHasher;
-use std::default;
-use std::f32::consts::PI;
-use std::f32::EPSILON;
+
+
+
 use std::hash::{Hash, Hasher};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use glam::{DVec3, Vec2, Vec3};
+use glam::{DVec3, Vec3, Vec2};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
 
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
-use crate::pdms_types::AttrMap;
-use crate::prim_geo::helper::{cal_ref_axis, RotateInfo};
+
+
 use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
@@ -205,7 +205,7 @@ impl BrepShapeTrait for Extrusion {
 
     //沿着指定方向拉伸 pbax_dir
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(1.0, 1.0, (self.height as f32 / 100.0))
+        Vec3::new(1.0, 1.0, self.height as f32 / 100.0)
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
@@ -227,7 +227,7 @@ fn test_circle_fradius() {
         height: 100.0,
         ..Default::default()
     };
-    let r = ext.gen_brep_shell();
+    let _r = ext.gen_brep_shell();
     // dbg!(r);
     let occ_shape = ext.gen_occ_shape().unwrap();
 

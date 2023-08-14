@@ -1,7 +1,7 @@
-use glam::Vec3;
+
 use smol_str::SmolStr;
 use crate::tool::db_tool::db1_dehash;
-use crate::tool::float_tool::{f32_round_2, f32_round_3, f64_round_3};
+use crate::tool::float_tool::{f32_round_3, f64_round_3};
 
 pub mod table;
 pub use table::*;
@@ -29,7 +29,7 @@ pub fn parse_to_u32(input: &[u8]) -> u32 {
 
 #[inline]
 pub fn parse_to_f32(input: &[u8]) -> f32 {
-    f32_round_3((f32::from_be_bytes(input.try_into().unwrap())))
+    f32_round_3(f32::from_be_bytes(input.try_into().unwrap()))
 }
 
 #[inline]

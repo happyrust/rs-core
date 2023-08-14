@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::cache::mgr::BytesTrait;
-use crate::pdms_types::{AttrMap, RefU64};
+use crate::pdms_types::{RefU64};
 use crate::pdms_types::NounHash;
 use crate::tool::db_tool::db1_hash;
 use crate::helper::table::restore_type_name;

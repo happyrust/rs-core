@@ -1,19 +1,19 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
-use std::f32::EPSILON;
+
 use std::hash::{Hash, Hasher};
 use glam::Vec3;
 use anyhow::anyhow;
-use bevy_ecs::reflect::ReflectComponent;
+
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
-use truck_modeling::{builder, Shell};
+use truck_modeling::{Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
-use crate::tool::hash_tool::*;
+
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{primitives::Shape, adhoc::AdHocShape};

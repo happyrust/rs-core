@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use truck_polymesh::stl::IntoStlIterator;
+
 
 ///水淹计算孔洞的结构体
 #[derive(Resource, Clone, Debug, Default, Deserialize, Serialize)]

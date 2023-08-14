@@ -1,25 +1,25 @@
 use std::collections::hash_map::DefaultHasher;
-use std::f32::consts::PI;
-use std::f32::EPSILON;
+
+
 use std::hash::{Hash, Hasher};
-use approx::abs_diff_eq;
-use bevy_ecs::reflect::ReflectComponent;
+
+
 use glam::Vec3;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::tool::hash_tool::*;
-use crate::pdms_types::AttrMap;
-use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+
+
+
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 use bevy_ecs::prelude::*;
 use itertools::Itertools;
 use truck_modeling::Face;
-use truck_topology::{Shell, Wire};
-use crate::prim_geo::wire::gen_wire;
+
+
 
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -34,7 +34,7 @@ pub struct Polygon {
 
 impl Polygon {
     pub fn gen_face(&self) -> anyhow::Result<Face>{
-        use truck_modeling::{builder, Shell, Surface, Wire};
+        use truck_modeling::{builder, Wire};
         use truck_meshalgo::prelude::*;
         if self.verts.len() < 3 {
             return Err(anyhow!("Polygon must have at least 3 vertices"));
@@ -74,7 +74,7 @@ impl BrepShapeTrait for Polyhedron  {
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
-        use truck_modeling::builder::*;
+        
 
         let mut faces = vec![];
         for poly  in &self.polygons {

@@ -1,20 +1,20 @@
 use std::collections::hash_map::DefaultHasher;
-use std::f32::consts::PI;
-use std::f32::EPSILON;
+
+
 use std::hash::{Hash, Hasher};
 
-use crate::tool::hash_tool::*;
+
 use truck_meshalgo::prelude::*;
 
-use bevy_ecs::reflect::ReflectComponent;
+
 use glam::{DVec3, Vec3};
 
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
-use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+
+use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Vertex, Shape, Solid, Wire};
@@ -155,7 +155,7 @@ impl BrepShapeTrait for Pyramid {
             builder::vertex(Point3::new(tx + ox, ty + oy, h2)),
             builder::vertex(Point3::new(-tx + ox, ty + oy, h2)),
         ];
-        let mut ets = vec![
+        let ets = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),
@@ -168,7 +168,7 @@ impl BrepShapeTrait for Pyramid {
             builder::vertex(Point3::new(bx - ox, by - oy, -h2)),
             builder::vertex(Point3::new(-bx - ox, by - oy, -h2)),
         ];
-        let mut ebs = vec![
+        let ebs = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),

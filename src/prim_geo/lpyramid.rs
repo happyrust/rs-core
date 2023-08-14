@@ -1,17 +1,17 @@
 use std::collections::hash_map::DefaultHasher;
-use std::f32::consts::PI;
-use std::f32::EPSILON;
+
+
 use std::hash::{Hash, Hasher};
-use approx::abs_diff_eq;
-use bevy_ecs::reflect::ReflectComponent;
+
+
 use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
-use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::tool::hash_tool::*;
-use crate::pdms_types::AttrMap;
-use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BevyMathTrait, BrepMathTrait, BrepShapeTrait, PlantMesh, VerifiedShape};
+
+
+
+
+use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Vertex, Shape, Solid, Wire};
 use bevy_ecs::prelude::*;
@@ -78,7 +78,7 @@ impl BrepShapeTrait for LPyramid {
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
 
-        let z_pt = self.paax_pt.as_dvec3();
+        let _z_pt = self.paax_pt.as_dvec3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp / 2.0) as f64;
         let ty = (self.pctp / 2.0) as f64;
@@ -139,7 +139,7 @@ impl BrepShapeTrait for LPyramid {
             builder::vertex(Point3::new(tx + ox, ty + oy, h2)),
             builder::vertex(Point3::new(-tx + ox, ty + oy, h2)),
         ];
-        let mut ets = vec![
+        let ets = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),
@@ -155,7 +155,7 @@ impl BrepShapeTrait for LPyramid {
             builder::vertex(Point3::new(bx - ox, by - oy, -h2)),
             builder::vertex(Point3::new(-bx - ox, by - oy, -h2)),
         ];
-        let mut ebs = vec![
+        let ebs = vec![
             builder::line(&pts[0], &pts[1]),
             builder::line(&pts[1], &pts[2]),
             builder::line(&pts[2], &pts[3]),
