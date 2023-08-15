@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
-use std::future::Future;
-use dashmap::DashMap;
+
+
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
-use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
+use crate::parsed_data::geo_params_data::{CateGeoParam};
 use crate::pdms_types::RefU64;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -128,7 +128,7 @@ pub mod geo_params_data {
     use crate::prim_geo::cylinder::*;
     use crate::prim_geo::dish::Dish;
     use crate::prim_geo::extrusion::Extrusion;
-    use crate::prim_geo::lpyramid::LPyramid;
+    
     use crate::prim_geo::polyhedron::Polyhedron;
     use crate::prim_geo::pyramid::Pyramid;
     use crate::prim_geo::revolution::Revolution;
@@ -217,21 +217,21 @@ pub mod geo_params_data {
         #[cfg(feature = "opencascade_rs")]
         pub fn gen_occ_shape(&self) -> Option<Shape>{
             match self {
-                PdmsGeoParam::PrimSCylinder(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                PdmsGeoParam::PrimLCylinder(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                PdmsGeoParam::PrimExtrusion(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                PdmsGeoParam::PrimLoft(s) =>{
-                    s.gen_occ_shape().ok()
-                }
-                _ => {
-                    None
-                }
+                PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLCylinder(s) =>s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimExtrusion(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLoft(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::Unknown => None,
+                PdmsGeoParam::PrimBox(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLSnout(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimDish(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimSphere(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimCTorus(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimRTorus(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimPyramid(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimRevolution(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimPolyhedron(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::CompoundShape => None,
             }
         }
 
@@ -286,10 +286,10 @@ pub mod geo_params_data {
                     Some(RvmShapeTypeData::RectangularTorus([out_torus, len, height, angle]).convert_shape_type_to_bytes())
                 }
                 PdmsGeoParam::PrimPyramid(data) => {
-                    let bottom_width = data.pbbt;
-                    let bottom_length = data.pbbt;
-                    let top_width = data.pctp;
-                    let top_length = data.pcbt;
+                    let _bottom_width = data.pbbt;
+                    let _bottom_length = data.pbbt;
+                    let _top_width = data.pctp;
+                    let _top_length = data.pcbt;
                     let x_offset = data.pbof;
                     let y_offset = data.pcof;
                     let height = (data.pbdi - data.ptdi).abs();

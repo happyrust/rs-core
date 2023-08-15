@@ -1,48 +1,48 @@
-use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
-use std::default;
+
+
+
 use std::fmt::Debug;
 use std::fs::File;
-use std::hash::{Hash, Hasher};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::hash::{Hasher};
+use std::io::{Write};
+
 use anyhow::anyhow;
 // #[cfg(feature = "opencascade")]
 // use opencascade::OCCShape;
 use bevy_ecs::component::Component;
 #[cfg(feature = "bevy_render")]
 use bevy_render::prelude::*;
-use dashmap::DashMap;
-use dashmap::mapref::one::Ref;
-use glam::{DVec3, Mat4, Vec3, vec3, Vec4};
-use lyon::path::polygon;
+
+
+use glam::{Mat4, Vec3, Vec4};
+
 use serde::{Deserialize, Serialize};
-use serde::de::DeserializeOwned;
+
 use truck_base::bounding_box::BoundingBox;
 use truck_base::cgmath64::{Point3, Vector3, Vector4, Matrix4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 use truck_modeling::{Curve, Shell};
 use parry3d::bounding_volume::Aabb;
-use parry3d::math::{Matrix, Point, Vector};
-use parry3d::shape::{TriMesh, TriMeshFlags};
+use parry3d::math::{Point, Vector};
+use parry3d::shape::{TriMesh};
 use dyn_clone::DynClone;
 use crate::pdms_types::*;
-use crate::prim_geo::category::CateBrepShape;
-use crate::prim_geo::ctorus::{CTorus, SCTorus};
-use crate::prim_geo::cylinder::{LCylinder, SCylinder};
-use crate::prim_geo::dish::Dish;
-use crate::prim_geo::extrusion::Extrusion;
-use crate::prim_geo::facet::Facet;
-use crate::prim_geo::pyramid::Pyramid;
-use crate::prim_geo::rtorus::SRTorus;
-use crate::prim_geo::sbox::SBox;
-use crate::prim_geo::snout::LSnout;
+
+
+
+
+
+
+
+
+
+
 use std::io::BufWriter;
 use std::{slice, vec};
 use bevy_transform::prelude::Transform;
-use hexasphere::shapes::IcoSphere;
-use rkyv::with::Skip;
-use tobj::{export_faces_multi_index, LoadOptions};
+
+
+use tobj::{export_faces_multi_index};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
@@ -121,7 +121,7 @@ impl PlantMesh {
     }
 
     pub fn cal_normals(&mut self) {
-        for (i, c) in self.indices.chunks(3).enumerate() {
+        for (_i, c) in self.indices.chunks(3).enumerate() {
             let a: Vec3 = self.vertices[c[0] as usize];
             let b: Vec3 = self.vertices[c[1] as usize];
             let c: Vec3 = self.vertices[c[2] as usize];
@@ -231,7 +231,7 @@ impl PlantMesh {
     #[inline]
     pub fn from_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         use flate2::write::DeflateDecoder;
-        let mut writer = Vec::new();
+        let writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes)?;
         Ok(bincode::deserialize(&deflater.finish()?)?)
@@ -412,7 +412,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     fn key_points(&self) -> Vec<Vec3>{  return vec![Vec3::ZERO];}
 
     ///限制参数大小，主要是对负实体的不合理进行限制
-    fn apply_limit_by_size(&mut self, limit_size: f32) {}
+    fn apply_limit_by_size(&mut self, _limit_size: f32) {}
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
@@ -480,7 +480,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if d < MIN_SIZE_TOL || d > MAX_SIZE_TOL{
                 return None;
             }
-            let (size, c) = (brep_bbox.diameter(), brep_bbox.center());
+            let (_size, c) = (brep_bbox.diameter(), brep_bbox.center());
             let d = brep_bbox.diagonal() / 2.0;
             aabb = Aabb::from_half_extents(
                 Point::<f32>::new(c[0] as f32, c[1] as f32, c[2] as f32),
@@ -494,7 +494,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             if polygon.positions().is_empty() { return None; }
             let vertices = polygon.positions().iter().map(|&x| x.vec3()).collect::<Vec<_>>();
             let normals = polygon.normals().iter().map(|&x| x.vec3()).collect::<Vec<_>>();
-            let uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
+            let _uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
             let indices = polygon
                 .faces()
                 .triangle_iter()

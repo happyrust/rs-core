@@ -1,10 +1,10 @@
 use std::collections::hash_map::DefaultHasher;
-use std::f32::EPSILON;
-use std::f64::consts::PI;
+
+
 use std::hash::Hash;
 use std::hash::Hasher;
 
-use approx::{abs_diff_eq, abs_diff_ne};
+
 use glam::{DVec3, Mat4, Vec3};
 use bevy_ecs::prelude::*;
 use bevy_transform::prelude::Transform;
@@ -16,11 +16,10 @@ use crate::pdms_types::AttrMap;
 use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
-use crate::tool::float_tool::hash_f32;
+
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{
-    angle::{RVec, ToAngle},
-    primitives::{Face, Shape, Solid, Wire},
+    primitives::{Shape, Solid},
     workplane::Workplane,
 };
 #[cfg(feature = "opencascade_rs")]
@@ -212,7 +211,7 @@ impl BrepShapeTrait for LCylinder {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi))
+        Vec3::new(self.pdia, self.pdia, self.pbdi - self.ptdi)
     }
 }
 
@@ -353,10 +352,10 @@ impl BrepShapeTrait for SCylinder {
                 * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
                 * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
             let mut circle = Workplane::xy().circle(0.0, 0.0, self.pdia as f64 /2.0);
-            let (s, r, t) = transform_btm.to_scale_rotation_translation();
-            let (axis, angle) = r.to_axis_angle();
-            let mut btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
-            let mut top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
+            let (_s, r, _t) = transform_btm.to_scale_rotation_translation();
+            let (_axis, _angle) = r.to_axis_angle();
+            let btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
+            let top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
 
             Ok(Solid::loft([btm_circe, top_circle].iter()).to_shape())
 
@@ -388,8 +387,8 @@ impl BrepShapeTrait for SCylinder {
         let center = c_pt.point3();
         let ref_axis = cal_ref_axis(&dir);
         let pt0 = c_pt + ref_axis * r;
-        let mut ext_len = self.phei as f64;
-        let mut ext_dir = dir.vector3();
+        let ext_len = self.phei as f64;
+        let ext_dir = dir.vector3();
         let mut reverse_dir = false;
         if ext_len < 0.0 {
             reverse_dir = true;
@@ -424,9 +423,9 @@ impl BrepShapeTrait for SCylinder {
             }
             let h_w_s = w_s.split_off(w_s.len() / 2);
             let h_w_e = w_e.split_off(w_e.len() / 2);
-            let mut face1 = builder::homotopy(w_s.front().unwrap(), &w_e.front().unwrap());
-            let mut face2 = builder::homotopy(h_w_s.front().unwrap(), &h_w_e.front().unwrap());
-            let mut shell = vec![f, f_e, face1, face2].into();
+            let face1 = builder::homotopy(w_s.front().unwrap(), &w_e.front().unwrap());
+            let face2 = builder::homotopy(h_w_s.front().unwrap(), &h_w_e.front().unwrap());
+            let shell = vec![f, f_e, face1, face2].into();
             return Some(shell);
         }
         None
@@ -446,7 +445,7 @@ impl BrepShapeTrait for SCylinder {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         if self.is_sscl() {
-            let mut s = SCylinder {
+            let s = SCylinder {
                 paxi_expr: "Z".to_string(),
                 paxi_pt: Default::default(),
                 paxi_dir: Vec3::Z,
@@ -481,7 +480,7 @@ impl BrepShapeTrait for SCylinder {
 
 impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
-        let mut phei = m.get_f64("HEIG").unwrap_or_default() as f32;
+        let phei = m.get_f64("HEIG").unwrap_or_default() as f32;
         let pdia = m.get_f64("DIAM").unwrap_or_default() as f32;
         // Xtshear 0degree
         // Ytshear -28.691degree
