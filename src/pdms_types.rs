@@ -12,15 +12,13 @@ use itertools::Itertools;
 
 use parry3d::bounding_volume::Aabb;
 
-use parry3d::shape::{SharedShape};
+use parry3d::shape::SharedShape;
 use rkyv::with::Skip;
-
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-
 
 use std::fmt::{Debug, Display, Formatter, Pointer};
 use std::fs::File;
@@ -31,13 +29,12 @@ use std::path::Path;
 use std::vec::IntoIter;
 use std::{fmt, hash};
 
-
 use crate::cache::mgr::BytesTrait;
 
 use crate::consts::*;
 use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
-use crate::pdms_data::{NewDataOperate};
+use crate::pdms_data::NewDataOperate;
 use crate::pdms_types::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::SCylinder;
@@ -51,10 +48,10 @@ use crate::prim_geo::sphere::Sphere;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::tool::math_tool::*;
-use crate::{BHashMap};
+use crate::BHashMap;
 
 use bevy_math::*;
-use bevy_reflect::{Reflect};
+use bevy_reflect::Reflect;
 #[cfg(feature = "bevy_render")]
 use bevy_render::mesh::Indices;
 #[cfg(feature = "bevy_render")]
@@ -262,6 +259,16 @@ impl std::str::FromStr for RefU64 {
             Self::from_refno_str(s).map_err(|_| ParseRefU64Error)
         } else {
             Err(ParseRefU64Error)
+        }
+    }
+}
+
+impl From<&str> for RefU64 {
+    fn from(s: &str) -> Self {
+        if s.contains('_') {
+            Self::from_url_refno(s).unwrap_or_default()
+        } else {
+            Self::from_refno_str(s).unwrap_or_default()
         }
     }
 }
@@ -697,7 +704,7 @@ impl AttrMap {
 
     #[inline]
     pub fn from_rkyv_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use rkyv::{Deserialize};
+        use rkyv::Deserialize;
         let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -2321,7 +2328,15 @@ impl ShapeInstancesData {
 
     #[inline]
     pub fn insert_geos_data(&mut self, hash: String, geo: EleInstGeosData) {
-        self.inst_geos_map.insert(hash, geo);
+        if self.inst_geos_map.contains_key(&hash) {
+            self.inst_geos_map
+                .get_mut(&hash)
+                .unwrap()
+                .insts
+                .extend_from_slice(&geo.insts);
+        } else {
+            self.inst_geos_map.insert(hash, geo);
+        }
     }
 
     #[inline]
@@ -2354,7 +2369,7 @@ impl ShapeInstancesData {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        use rkyv::{Deserialize};
+        use rkyv::Deserialize;
         let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -2383,14 +2398,14 @@ impl PdmsInstanceMeshData {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        use rkyv::{Deserialize};
+        use rkyv::Deserialize;
         let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
     }
 
     pub fn deserialize_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use rkyv::{Deserialize};
+        use rkyv::Deserialize;
         let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -2645,7 +2660,7 @@ impl PlantMeshesData {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        use rkyv::{Deserialize};
+        use rkyv::Deserialize;
         let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
@@ -2814,6 +2829,11 @@ impl EleInstGeo {
     #[inline]
     pub fn is_cata_neg(&self) -> bool {
         self.geo_type == GeoBasicType::CateNeg
+    }
+
+    #[inline]
+    pub fn is_neg(&self) -> bool {
+        self.geo_type == GeoBasicType::Neg
     }
 
     #[inline]

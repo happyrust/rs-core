@@ -160,7 +160,6 @@ impl BrepShapeTrait for Revolution {
         if !self.check_valid() {
             return None;
         }
-
         let wire = gen_wire(&self.verts, &self.fradius_vec).unwrap();
         if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = face.surface() {
