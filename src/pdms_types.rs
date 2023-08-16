@@ -263,6 +263,16 @@ impl std::str::FromStr for RefU64 {
     }
 }
 
+impl From<&str> for RefU64 {
+    fn from(s: &str) -> Self {
+        if s.contains('_') {
+            Self::from_url_refno(s).unwrap_or_default()
+        } else {
+            Self::from_refno_str(s).unwrap_or_default()
+        }
+    }
+}
+
 impl hash::Hash for ArchivedRefU64 {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
