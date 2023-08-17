@@ -112,7 +112,6 @@ impl Spine3D {
         let mut paths = vec![];
         let mut transform = Transform::IDENTITY;
         let pref_axis = self.preferred_dir.normalize();
-        // dbg!(&self);
         match self.curve_type {
             SpineCurveType::THRU => {
                 let center = circum_center(self.pt0, self.pt1, self.thru_pt);
