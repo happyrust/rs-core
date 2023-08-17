@@ -181,10 +181,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             };
             let pheig = d.height as f32;
             let pdia = d.diameter as f32;
+            let prad = d.radius as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Dish {
                 pdis: 0.0,
                 pheig,
                 pdia,
+                prad,
                 ..Default::default()
             });
             return Some(CateBrepShape {
@@ -214,7 +216,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let origin = z.pt;
             let x_axis = x.dir;
             let translation = origin + z_axis * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
-
             let mut height = (d.dist_to_top - d.dist_to_btm) as f32;
             let poff = d.offset as f32;
 
@@ -234,7 +235,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
 
             let rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
-
             let transform = Transform {
                 rotation,
                 translation,
@@ -269,7 +269,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 return None;
             }
             let mut phei = d.height as f32;
-            let translation = dir * d.dist_to_btm + axis.pt;
             // dbg!(&translation);
             if phei < 0.0 {
                 phei = -phei;
@@ -277,6 +276,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+            let translation =  (dir * d.dist_to_btm + axis.pt);
             let transform = Transform {
                 rotation,
                 translation,
@@ -308,13 +308,15 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 return None;
             }
             let mut phei = (d.dist_to_top - d.dist_to_btm) as f32;
-            let translation = dir * (d.dist_to_btm) + axis.pt;
+            let mut dis = d.dist_to_btm;
             if phei < 0.0 {
                 phei = -phei;
                 dir = -dir;
+                dis = d.dist_to_top;
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+            let translation =  (dir * dis + axis.pt);
             let transform = Transform {
                 rotation,
                 translation,
