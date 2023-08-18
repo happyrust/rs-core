@@ -11,7 +11,6 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
-use bevy_ecs::prelude::*;
 
 use glam::{Vec2, Vec3};
 #[cfg(feature = "opencascade_rs")]
@@ -21,7 +20,6 @@ use opencascade::primitives::Shape;
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -178,27 +176,30 @@ impl BrepShapeTrait for Revolution {
                     angle = -angle;
                     rot_dir = -rot_dir;
                 }
-                //允许有误差
-                //todo fix 当出现单点的时候，会出现三角化的问题
-                // if angle.abs() >= (core::f64::consts::TAU - 0.01) {
-                //     let mut s =
-                //         builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64)).into_boundaries();
-                //     let mut shell = s.pop();
-                //     if shell.is_none() {
-                //         dbg!(&self);
-                //     }
-                //     let face = face.inverse();
-                //     let mut s =
-                //         builder::rsweep(&face, rot_pt, -rot_dir, Rad(PI as f64)).into_boundaries();
-                //     shell.as_mut().unwrap().append(&mut s[0]);
-                //     return shell;
-                // } else
+                //check if exist any point on axis
+                                            let exist_on_rot_axis = self.verts.iter().any(|x| abs_diff_eq!(x.x, 0.0, epsilon=0.001));
+                // dbg!(&self.verts);
+                // dbg!(rot_dir);
+
+                //允许有误差, 只有没有在旋转轴（X轴）坐标轴上时，需要这样处理
+                if !exist_on_rot_axis && angle.abs() >= (core::f64::consts::TAU - 0.01) {
+                    let mut s =
+                        builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64)).into_boundaries();
+                    let mut shell = s.pop();
+                    if shell.is_none() {
+                        dbg!(&self);
+                    }
+                    let face = face.inverse();
+                    let mut s =
+                        builder::rsweep(&face, rot_pt, -rot_dir, Rad(PI as f64)).into_boundaries();
+                    shell.as_mut().unwrap().append(&mut s[0]);
+                    return shell;
+                }
+
                 {
                     let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
-
                     let json = serde_json::to_vec_pretty(&s).unwrap();
-                    std::fs::write("revo.json", json).unwrap();
-
+                    // std::fs::write("revo.json", json).unwrap();
                     let shell = s.into_boundaries().pop();
                     if shell.is_none() {
                         dbg!(&self);
@@ -207,8 +208,6 @@ impl BrepShapeTrait for Revolution {
                     return shell;
                 }
             }
-        } else {
-            // dbg!(&self);
         }
         None
     }

@@ -2,6 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 
 use std::hash::{Hash, Hasher};
+use std::thread::sleep;
 use glam::Vec3;
 use anyhow::anyhow;
 
@@ -11,7 +12,7 @@ use truck_modeling::{Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, LEN_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
 use bevy_ecs::prelude::*;
@@ -29,6 +30,9 @@ pub struct Dish {
     pub pdis: f32,
     pub pheig: f32,
     pub pdia: f32, //diameter
+    //r = √[(a^2 - b^2) / a^2]
+    #[serde(default)]
+    pub prad: f32,
 }
 
 impl Default for Dish {
@@ -40,6 +44,7 @@ impl Default for Dish {
             pdis: 0.0,
             pheig: 1.0,
             pdia: 2.0,
+            prad: 0.0,
         }
     }
 }
@@ -57,26 +62,11 @@ impl BrepShapeTrait for Dish {
         Box::new(self.clone())
     }
 
-    // #[cfg(feature = "opencascade")]
-    // fn gen_occ_shape(&self) -> anyhow::Result<opencascade::OCCShape> {
-    //     Ok(opencascade::OCCShape::dish(self.pdia as f64 / 2.0, self.pheig as f64)?)
-    // }
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         Ok(AdHocShape::dish(self.pdia as f64 / 2.0, self.pheig as f64).ok_or(anyhow!("Dish 参数错误"))?.0)
     }
-
-    // #[cfg(feature = "opencascade_rs")]
-    // fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-    //     if !self.check_valid() || self.verts.len() < 3 { return Err(anyhow!("Extrusion params not valid.")); }
-    //     let mut wire = if let CurveType::Spline(thick) = self.cur_type {
-    //         gen_occ_spline_wire(&self.verts, thick)?
-    //     } else {
-    //         gen_occ_wire(&self.verts, &self.fradius_vec)?
-    //     };
-    //     Ok(wire.to_face().extrude(DVec3::new(0., 0.0, self.height as _)).to_shape())
-    // }
 
     fn tol(&self) -> f32 {
         0.001 * self.pdia.max(1.0)
@@ -85,7 +75,11 @@ impl BrepShapeTrait for Dish {
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         let r = self.pdia / 2.0;
-        let h = self.pheig;
+        let mut h = self.pheig;
+        //是个椭圆, 先暂时按圆来处理，然后再拉伸
+        if self.prad > 0.0 {
+            h = r;
+        }
         let radius = (r * r + h * h) / (2.0f32 * h);
         if radius < f32::EPSILON { return None; }
         let sinval = (r / radius).max(-1.0f32).min(1.0f32);
@@ -95,9 +89,9 @@ impl BrepShapeTrait for Dish {
         let rot_axis = self.paax_dir.normalize();
         let c = rot_axis * self.pdis + self.paax_pt;
         let ref_axis = cal_ref_axis(&rot_axis);
-        let p0 = rot_axis * self.pheig + c;
+        let p0 = rot_axis * h + c;
         let center = p0 - radius * rot_axis;
-        let p1 = ref_axis * self.pdia / 2.0 + c;
+        let p1 = ref_axis * r + c;
 
         let c = c.point3();
         let v0 = builder::vertex(c);
@@ -106,7 +100,7 @@ impl BrepShapeTrait for Dish {
 
         let axis = -ref_axis.cross(rot_axis);
         let curve = builder::circle_arc_with_center(center.point3(), &v1, &v2, axis.vector3(), Rad(theta as f64));
-        let wire: Wire = vec![curve, builder::line(&v2, &v0),/* builder::line(&v0, &v1)*/].into();
+        let wire: Wire = vec![curve, builder::line(&v2, &v0)].into();
         let up_axis = rot_axis.vector3();
         let mut s = builder::cone(&wire, up_axis, Rad(7.0));
         let btm = builder::rsweep(
@@ -116,7 +110,6 @@ impl BrepShapeTrait for Dish {
             Rad(7.0),
         );
         if let Ok(disk) = builder::try_attach_plane(&vec![btm]) {
-            // dbg!(&disk);
             s.push(disk);
         }
         Some(s)
@@ -138,24 +131,32 @@ impl BrepShapeTrait for Dish {
         let mut hasher = DefaultHasher::new();
 
         hash_f32(theta, &mut hasher);
+        hash_f32(self.prad, &mut hasher);
         hash_f32(beta, &mut hasher);
         "dish".hash(&mut hasher);
         hasher.finish()
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        let r = self.pdia;
-        let h = self.pheig / r;
+        //按比例跳到单位直径圆下
+        let dia = self.pdia;
+        let h = self.pheig / dia;
+        let prad = self.prad / dia;
         Box::new(Self {
             pheig: h,
             pdia: 1.0,
+            prad,
             ..Default::default()
         })
     }
 
 
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(self.pdia, self.pdia, self.pdia)
+        if self.prad > 0.0 {
+            Vec3::new(self.pdia, self.pdia, (self.pheig/(self.pdia/2.0)) * self.pdia)
+        }else{
+            Vec3::new(self.pdia, self.pdia, self.pdia)
+        }
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
@@ -174,6 +175,7 @@ impl From<&AttrMap> for Dish {
             pdis: 0.0,
             pheig: m.get_val("HEIG").unwrap().f32_value().unwrap_or_default(),
             pdia: m.get_val("DIAM").unwrap().f32_value().unwrap_or_default(),
+            prad: m.get_val("RAD").unwrap().f32_value().unwrap_or_default(),
         }
     }
 }
