@@ -474,7 +474,6 @@ pub fn gen_wire(
             if pre_vert.point().distance(cur_vert.point()) > 1.0 {
                 if circle_indexs.len() > 0 && j == circle_indexs[0] {
                     let next_vert = &verts[(j + 1) % v_len];
-                    dbg!(&pre_vert, next_vert, cur_vert);
                     wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.point()));
                     pre_vert = next_vert.clone();
                     circle_indexs.remove(0);
