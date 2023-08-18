@@ -10,9 +10,9 @@ pub struct PluggingData {
     pub size: String,
     pub room_1: String,
     pub room_2: String,
-    pub cable_area: f32,
-    pub plugging_area: f32,
-    pub plugging_volume: f32,
+    pub cable_area: f64,
+    pub plugging_area: f64,
+    pub plugging_volume: f64,
     pub materials: String,
 }
 
