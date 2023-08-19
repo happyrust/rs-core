@@ -399,7 +399,10 @@ pub fn gen_wire(
     let fradius_vec = input_fradius_vec
         .into_iter()
         .map(|x| f32_round_2(*x))
+        // .map(|x| 0.0f32)
         .collect::<Vec<_>>();
+    // dbg!(&pts);
+    // dbg!(&fradius_vec);
     let mut wire = Wire::new();
     let ll = pts.len();
     let mut verts = vec![];
@@ -441,14 +444,26 @@ pub fn gen_wire(
             let mid_pt = (p0 + p1) / 2.0;
             let mid_dir = (cur_pt - mid_pt).normalize();
             let transit_pt = mid_pt + mid_dir * d;
-            if pa_dist - b_len > 0.01 {
+            // dbg!(pa_dist);
+
+            // dbg!((pa_dist - b_len));
+            // dbg!((pb_dist - b_len));
+
+            if (pa_dist - b_len < -0.1)  || (pb_dist - b_len) < -0.1{
+                verts.push(builder::vertex(pt));
+                continue;
+            }
+
+            // if pa_dist - b_len > 0.01
+            {
                 verts.push(builder::vertex(vec3_round_2(p0).point3_without_z()));
             }
 
             verts.push(builder::vertex(vec3_round_2(transit_pt).point3_without_z()));
             circle_indexs.push(verts.len() - 1);
 
-            if pb_dist - b_len > 0.01 {
+            // if pb_dist - b_len > 0.01
+            {
                 verts.push(builder::vertex(vec3_round_2(p1).point3_without_z()));
             }
         }
