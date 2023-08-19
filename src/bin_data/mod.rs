@@ -18,6 +18,7 @@ pub fn get_default_att(t: i32, num: i32) -> (AttrVal, DbAttributeType) {
         2 => (AttrVal::DoubleType(0.0), DbAttributeType::DOUBLE),
         // 3 => (AttrVal::WordType("unset".to_string()), DbAttributeType::WORD),
         // 0x3 也可能是WORD
+        // 怎样自动判定为WORD呢？
         3 => (AttrVal::IntegerType(0), DbAttributeType::INTEGER),
         4 | 0x8| 0x10 | 0x11 => (AttrVal::ElementType("".to_string()), DbAttributeType::ELEMENT),
         5 => (AttrVal::BoolType(false), DbAttributeType::BOOL),

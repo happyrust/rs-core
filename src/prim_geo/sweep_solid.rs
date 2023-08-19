@@ -656,7 +656,7 @@ impl BrepShapeTrait for SweepSolid {
     fn get_scaled_vec3(&self) -> Vec3 {
         if self.is_sloped() { return Vec3::ONE; }
         match &self.path {
-            SweepPath3D::Line(_l) => Vec3::new(1.0, 1.0, self.height),
+            SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, l.length()),
             _ => Vec3::ONE,
         }
     }

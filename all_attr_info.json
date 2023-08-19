@@ -59737,9 +59737,9 @@
         "hash": 781909,
         "offset": 16,
         "default_val": {
-          "IntegerType": 0
+          "WordType": "unset"
         },
-        "att_type": "INTEGER"
+        "att_type": "WORD"
       },
       "892429": {
         "name": "YDIR",
