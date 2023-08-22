@@ -37,7 +37,7 @@ pub struct PluggingHoleData {
     // 孔洞的尺寸( 圆形:直径 ，方形:长 宽 )
     pub hole_size: HoleSize,
     // 孔洞两边的房间
-    pub hole_rooms: (String,String),
+    pub hole_rooms: (String, String),
     // 电缆的占用面积
     pub cable_area: f32,
     // 防火封堵材料面积
@@ -81,7 +81,7 @@ pub struct HoleBlockageMethod {
 pub struct HoleInstInfo {
     #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
-    pub inst: Vec<HoleEleGeosInfo>
+    pub inst: Vec<HoleEleGeosInfo>,
 }
 
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default, Resource)]

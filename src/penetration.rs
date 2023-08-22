@@ -13,6 +13,7 @@ pub struct PenetrationData {
     pub x_deviation_angle:String,
     pub inner_room_num:String,
     pub outer_room_num:String,
+    pub height_difference:f32,
 }
 
 //所有的贯穿件组织成资源
