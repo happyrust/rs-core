@@ -70,6 +70,7 @@ serde_with = "3.0.0"
 
 manifold-sys = { path = "../manifold-sys", optional = true }
 opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
+geo = "0.26.0"
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
