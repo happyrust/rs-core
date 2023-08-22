@@ -35,7 +35,7 @@ pub struct ExportFloodingStpEvent {
     pub file_name: String,
     ///保存时间
     pub save_time: String,
-    ///所有需要导出的模型列表
+    ///所有需要导出的模型列表, refno->name
     pub export_models_map: HashMap<RefU64, String>,
     ///墙与孔洞的对应关系
     pub walls_map: HashMap<RefU64, Vec<FloodingHole>>,
