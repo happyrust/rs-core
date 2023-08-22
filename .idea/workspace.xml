@@ -15,12 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix extrusion and revolution">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/csg/manifold_back.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -463,6 +459,8 @@
       <workItem from="1692005294719" duration="7000" />
       <workItem from="1692086742064" duration="776000" />
       <workItem from="1692115441637" duration="971000" />
+      <workItem from="1692666773990" duration="471000" />
+      <workItem from="1692676453505" duration="680000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -807,7 +805,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="228" />
+    <option name="localTasksCounter" value="229" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -848,7 +846,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="tmp" />
     <MESSAGE value="fix shape bugs" />
     <MESSAGE value="fix torus" />
     <MESSAGE value="增加弧形墙的OCC处理" />
@@ -873,7 +870,8 @@
     <MESSAGE value="make opencascade_rs as default" />
     <MESSAGE value="update" />
     <MESSAGE value="fix revolution problem" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix revolution problem" />
+    <MESSAGE value="fix extrusion and revolution" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix extrusion and revolution" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

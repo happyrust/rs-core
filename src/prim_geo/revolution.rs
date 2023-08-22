@@ -165,10 +165,6 @@ impl BrepShapeTrait for Revolution {
         let geo_axis: LineString<f64> = vec![(0.0, 0.0), (100000.0, 0.0)].into();
         let intersect = polygon.intersects(&geo_axis);
         dbg!(intersect);
-
-        // let coords = vec![(0., 0.), (5., 0.), (10., 10.)];
-        // let ls: LineString<f32> = coords.into_iter().collect();
-
         if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = face.surface() {
                 let mut rot_dir = self.rot_dir.normalize().vector3();
