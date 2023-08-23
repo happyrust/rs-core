@@ -1,8 +1,8 @@
-
 use bevy_ecs::prelude::Resource;
 use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use nom::character::streaming::char;
 
 //显示需创建ATTA的refno及name
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
@@ -256,14 +256,14 @@ pub struct VirtualHoleGraphNodeQuery {
     pub main_item_refs: String,
     #[serde(rename = "Version")]
     #[serde(default = "default_version_value")]
-    pub version: String,
+    pub version: char,
     // 只用于存储和查询的数据，不涉及任何业务
     #[serde(flatten)]
     pub map: HashMap<String, String>,
 }
 
-fn default_version_value() -> String {
-    "".to_string()
+fn default_version_value() -> char {
+    ' '
 }
 
 // This function gets the key of a virtual embed graph node from the
@@ -447,7 +447,7 @@ pub struct VirtualEmbedGraphNodeQuery {
     pub form: String,
     #[serde(rename = "Version")]
     #[serde(default = "default_version_value")]
-    pub version: String,
+    pub version: char,
     // 只用于存储和查询的数据，不涉及任何业务
     #[serde(flatten)]
     pub map: HashMap<String, String>,

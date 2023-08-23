@@ -5,6 +5,9 @@ use serde::{Serialize, Deserialize};
 use crate::pdms_types::RefU64;
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
+use bevy_ecs::prelude::Component;
+use bevy_ecs::prelude::Event;
+
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ThreeDimensionalModelDataCrate {
@@ -152,4 +155,11 @@ pub struct VagueSearchExportAqlData {
 pub struct VagueSearchExportRequest {
     pub condition: String,
     pub refnos: Vec<RefU64>,
+}
+
+///显示范围内所有模型
+#[derive(Component, Clone, Debug, Default, Serialize, Deserialize, Event)]
+pub struct ShowModelInRangeEvent{
+    pub refno:RefU64,
+    pub range:f32,
 }

@@ -353,15 +353,6 @@ impl BytesTrait for RefU64 {
     }
 }
 
-// impl FromSkyhashBytes for RefU64 {
-//     fn from_element(element: Element) -> SkyResult<Self> {
-//         if let Element::Binstr(v) = element {
-//             return Ok(bincode::deserialize::<RefU64>(&v).unwrap());
-//         }
-//         Err(skytable::error::Error::ParseError("Bad element type".to_string()))
-//     }
-// }
-
 impl Display for RefU64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let refno: RefI32Tuple = self.into();
@@ -369,12 +360,6 @@ impl Display for RefU64 {
     }
 }
 
-// impl ToString for RefU64 {
-//     fn to_string(&self) -> String {
-//         let refno: RefI32Tuple = self.into();
-//         refno.into()
-//     }
-// }
 
 impl RefU64 {
     #[inline]
@@ -419,6 +404,11 @@ impl RefU64 {
         let refno: RefI32Tuple = self.into();
         let refno_str: String = refno.into();
         refno_str.to_string()
+    }
+
+    #[inline]
+    pub fn format_url_name(&self, col: &str) -> String{
+        format!("{}/{}", col, self.to_url_refno())
     }
 
     ///转换成数据库允许的字符串

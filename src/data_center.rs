@@ -267,6 +267,10 @@ pub struct SendHoleDataFormData {
     pub sd_name: String,
     #[serde(rename = "SZ_Name")]
     pub sz_name: String,
+    #[serde(rename = "DeviseHum")]
+    pub devise_hum: String,
+    #[serde(rename = "OverruleHum")]
+    pub overrule_hum: String,
     #[serde(rename = "Memo")]
     pub memo: String,
     #[serde(rename = "databody")]
@@ -282,7 +286,7 @@ pub struct SendHoleDataFormData {
 }
 
 //墙板列表
-#[derive(Serialize, Deserialize,Default, Clone, Debug, Resource)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug, Resource)]
 pub struct HoleWallBoardVec {
     pub data: Vec<(RefU64, String)>,
 }
