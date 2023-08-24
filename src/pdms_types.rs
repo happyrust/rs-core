@@ -433,6 +433,7 @@ impl RefU64 {
     // abcd/2333
     #[inline]
     pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
+        let refno = if refno.starts_with("=") { refno[1..].to_string() } else { refno.to_string() };
         let split_refno = refno.split('/').collect::<Vec<_>>();
         if split_refno.len() != 2 {
             return Err(anyhow!("参考号错误, 没有斜线!".to_string()));

@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use crate::pdms_types::NounHash;
-use crate::tool::db_tool::db1_hash;
+use crate::tool::db_tool::{db1_hash, db1_hash_const};
 use std::collections::HashSet;
 
 pub const UNSET_STR: &'static str = "unset";
@@ -10,32 +10,32 @@ pub const ATT_STYP: u32 = 865153;
 pub const ATT_SITE: u32 = 0x9D65A;
 pub const ATT_TYPE: u32 = 0x9CCA7;
 pub const ATT_CURD: u32 = 623865;
-pub const TYPE_HASH: NounHash = db1_hash("TYPE");
-pub const BOX_HASH: NounHash = db1_hash("BOX");
-pub const NAME_HASH: NounHash = db1_hash("NAME");
-pub const REFNO_HASH: NounHash = db1_hash("REFNO");
-pub const OWNER_HASH: NounHash = db1_hash("OWNER");
-pub const CYLI_HASH: NounHash = db1_hash("CYLI");
-pub const SPHE_HASH: NounHash = db1_hash("SPHE");
-pub const CONE_HASH: NounHash = db1_hash("CONE");
-pub const DISH_HASH: NounHash = db1_hash("DISH");
-pub const CTOR_HASH: NounHash = db1_hash("CTOR");
-pub const RTOR_HASH: NounHash = db1_hash("RTOR");
-pub const PYRA_HASH: NounHash = db1_hash("PYRA");
-pub const LOOP_HASH: NounHash = db1_hash("LOOP");
-pub const PLOO_HASH: NounHash = db1_hash("PLOO");
-pub const SPINE_HASH: NounHash = db1_hash("SPINE");
-pub const GENSEC_HASH: NounHash = db1_hash("GENSEC");
-pub const POHE_HASH: NounHash = db1_hash("POHE");
+pub const TYPE_HASH: NounHash = 642215;
+pub const BOX_HASH: NounHash = 549344;
+pub const NAME_HASH: NounHash = 639374;
+pub const REFNO_HASH: NounHash = db1_hash_const("REFNO");
+pub const OWNER_HASH: NounHash = db1_hash_const("OWNER");
+pub const CYLI_HASH: NounHash = db1_hash_const("CYLI");
+pub const SPHE_HASH: NounHash = db1_hash_const("SPHE");
+pub const CONE_HASH: NounHash = db1_hash_const("CONE");
+pub const DISH_HASH: NounHash = db1_hash_const("DISH");
+pub const CTOR_HASH: NounHash = db1_hash_const("CTOR");
+pub const RTOR_HASH: NounHash = db1_hash_const("RTOR");
+pub const PYRA_HASH: NounHash = db1_hash_const("PYRA");
+pub const LOOP_HASH: NounHash = db1_hash_const("LOOP");
+pub const PLOO_HASH: NounHash = db1_hash_const("PLOO");
+pub const SPINE_HASH: NounHash = db1_hash_const("SPINE");
+pub const GENSEC_HASH: NounHash = db1_hash_const("GENSEC");
+pub const POHE_HASH: NounHash = db1_hash_const("POHE");
 //多边形的处理
-pub const REVO_HASH: NounHash = db1_hash("REVO");
-pub const NREV_HASH: NounHash = db1_hash("NREV");   //todo 负实体，后面需要加入
+pub const REVO_HASH: NounHash = db1_hash_const("REVO");
+pub const NREV_HASH: NounHash = db1_hash_const("NREV");   //todo 负实体，后面需要加入
 
 const ATT_PAXI: i32 = 0xB146F;
 const ATT_PAAX: i32 = 0xF543D;
 const ATT_PBAX: i32 = 0xF5458;
 const ATT_PCAX: i32 = 0xF5473;
-const ATT_PLAX: i32 = db1_hash("PLAX") as i32;
+const ATT_PLAX: i32 = db1_hash_const("PLAX") as i32;
 
 const ATT_PX: i32 = 0xFFF7E177u32 as i32;
 const ATT_PY: i32 = 0xFFF7E15Cu32 as i32;
@@ -69,9 +69,9 @@ const ATT_PYTS: i32 = 0xFFF1F38Fu32 as i32;
 const ATT_PXBS: i32 = 0xFFF226ECu32 as i32;
 const ATT_PYBS: i32 = 0xFFF226D1u32 as i32;
 const ATT_ALLANG: i32 = 0xF9894BA0u32 as i32;
-const ATT_PRAD: i32 = db1_hash("PRAD") as i32;
-const ATT_DRAD: i32 = db1_hash("DRAD") as i32;
-const ATT_PWID: i32 = db1_hash("PWID") as i32;
+const ATT_PRAD: i32 = db1_hash_const("PRAD") as i32;
+const ATT_DRAD: i32 = db1_hash_const("DRAD") as i32;
+const ATT_PWID: i32 = db1_hash_const("PWID") as i32;
 
 const ATT_PANG: i32 = 0xA5E2F;
 const IMP_PAXI: i32 = 0xB146F;
