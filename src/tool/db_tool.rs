@@ -9,6 +9,8 @@ use crate::pdms_types::PdmsDatabaseInfo;
 
 lazy_static! {
     pub static ref GLOBAL_UDA_NAME_MAP: DashMap<u32, String> = DashMap::new();
+
+   pub static ref GLOBAL_UDA_UKEY_MAP: DashMap<String, u32> = DashMap::new();
 }
 
 /// 从bincode数据加载PdmsDatabaseInfo
@@ -50,7 +52,7 @@ pub fn db1_dehash(hash: u32) -> String {
             if k <= 0 {
                 break;
             }
-            result.push((k % 64  + 32) as u8 as char);
+            result.push((k % 64 + 32) as u8 as char);
             k /= 64;
         }
     } else {
@@ -68,7 +70,10 @@ pub fn db1_dehash(hash: u32) -> String {
 
 //todo 处理出错的情况
 #[inline]
-pub const fn db1_hash(hash_str: &str) -> u32 {
+pub fn db1_hash(hash_str: &str) -> u32 {
+    if GLOBAL_UDA_UKEY_MAP.contains_key(hash_str) {
+        return *GLOBAL_UDA_UKEY_MAP.get(hash_str).unwrap();
+    }
     let chars = hash_str.as_bytes();
     if chars.len() < 1 {
         return 0;  //出错的暂时用0 表达
@@ -81,6 +86,20 @@ pub const fn db1_hash(hash_str: &str) -> u32 {
     }
     val.saturating_add_unsigned(0x81BF1) as u32
     // 0x81BF1 + val as u32
+}
+
+pub const fn db1_hash_const(hash_str: &str) -> u32 {
+    let chars = hash_str.as_bytes();
+    if chars.len() < 1 {
+        return 0;  //出错的暂时用0 表达
+    }
+    let mut val = 0i64;
+    let mut i = (chars.len() - 1) as i32;
+    while i >= 0 {
+        val = val.overflowing_mul(27).0 + (chars[i as usize] as i64 - 64);
+        i -= 1;
+    }
+    val.saturating_add_unsigned(0x81BF1) as u32
 }
 
 #[test]
@@ -292,11 +311,11 @@ fn test_chinese_data() {
 #[test]
 fn test_db1_dehash() {
     let hash = db1_dehash(688051936);
-    assert_eq!(":CNPEspco".to_string(),hash);
+    assert_eq!(":CNPEspco".to_string(), hash);
     let hash = db1_dehash(3832756588);
-    assert_eq!(":3D_SJZT".to_string(),hash);
+    assert_eq!(":3D_SJZT".to_string(), hash);
     let hash = db1_dehash(642951949);
-    assert_eq!(":3D_SJRY".to_string(),hash);
+    assert_eq!(":3D_SJRY".to_string(), hash);
 }
 
 
