@@ -15,7 +15,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="add comment">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -123,10 +123,10 @@
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build --release" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -140,10 +140,10 @@
     <configuration name="Test prim_geo::extrusion::test_circle_fradius" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib prim_geo::extrusion::test_circle_fradius -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -157,10 +157,10 @@
     <configuration name="Test shape::pdms_shape::test_project_to_plane" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib shape::pdms_shape::test_project_to_plane -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -174,10 +174,10 @@
     <configuration name="Test tool::db_tool::test_chinese_data" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib tool::db_tool::test_chinese_data -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -191,10 +191,10 @@
     <configuration name="Test tool::dir_tool::parse_ori" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib tool::dir_tool::parse_ori -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -208,10 +208,10 @@
     <configuration name="Test tool::serde_tool::test_i64" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib tool::serde_tool::test_i64 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -225,10 +225,10 @@
     <configuration name="build" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="build --all" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="false" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
       <option name="withSudo" value="false" />
       <option name="buildTarget" value="REMOTE" />
       <option name="backtrace" value="SHORT" />
@@ -458,49 +458,12 @@
       <workItem from="1692005294719" duration="7000" />
       <workItem from="1692086742064" duration="776000" />
       <workItem from="1692115441637" duration="971000" />
-      <workItem from="1692678053693" duration="815000" />
-    </task>
-    <task id="LOCAL-00155" summary="update">
-      <created>1667131046027</created>
-      <option name="number" value="00155" />
-      <option name="presentableId" value="LOCAL-00155" />
-      <option name="project" value="LOCAL" />
-      <updated>1667131046027</updated>
-    </task>
-    <task id="LOCAL-00156" summary="update">
-      <created>1667144717878</created>
-      <option name="number" value="00156" />
-      <option name="presentableId" value="LOCAL-00156" />
-      <option name="project" value="LOCAL" />
-      <updated>1667144717878</updated>
-    </task>
-    <task id="LOCAL-00157" summary="upgrade to new bevy">
-      <created>1669136909034</created>
-      <option name="number" value="00157" />
-      <option name="presentableId" value="LOCAL-00157" />
-      <option name="project" value="LOCAL" />
-      <updated>1669136909034</updated>
-    </task>
-    <task id="LOCAL-00158" summary="新版本">
-      <created>1671523239574</created>
-      <option name="number" value="00158" />
-      <option name="presentableId" value="LOCAL-00158" />
-      <option name="project" value="LOCAL" />
-      <updated>1671523239574</updated>
-    </task>
-    <task id="LOCAL-00159" summary="增加Refu64::from_arangodb_refno_str api">
-      <created>1672818303773</created>
-      <option name="number" value="00159" />
-      <option name="presentableId" value="LOCAL-00159" />
-      <option name="project" value="LOCAL" />
-      <updated>1672818303774</updated>
-    </task>
-    <task id="LOCAL-00160" summary="增加获取ATTA的结构体">
-      <created>1674114864451</created>
-      <option name="number" value="00160" />
-      <option name="presentableId" value="LOCAL-00160" />
-      <option name="project" value="LOCAL" />
-      <updated>1674114864451</updated>
+      <workItem from="1692237304301" duration="786000" />
+      <workItem from="1692324286005" duration="4271000" />
+      <workItem from="1692435540870" duration="3073000" />
+      <workItem from="1692583858190" duration="3777000" />
+      <workItem from="1692671157366" duration="2019000" />
+      <workItem from="1692693267584" duration="654000" />
     </task>
     <task id="LOCAL-00161" summary="增加获取ATTA的结构体">
       <created>1674878051065</created>
@@ -803,7 +766,49 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="228" />
+    <task id="LOCAL-00228" summary="fix revolution problem">
+      <created>1692328874751</created>
+      <option name="number" value="00228" />
+      <option name="presentableId" value="LOCAL-00228" />
+      <option name="project" value="LOCAL" />
+      <updated>1692328874751</updated>
+    </task>
+    <task id="LOCAL-00229" summary="虚拟孔洞结构体更新">
+      <created>1692438368137</created>
+      <option name="number" value="00229" />
+      <option name="presentableId" value="LOCAL-00229" />
+      <option name="project" value="LOCAL" />
+      <updated>1692438368137</updated>
+    </task>
+    <task id="LOCAL-00230" summary="贯穿件结构体更新">
+      <created>1692584194299</created>
+      <option name="number" value="00230" />
+      <option name="presentableId" value="LOCAL-00230" />
+      <option name="project" value="LOCAL" />
+      <updated>1692584194299</updated>
+    </task>
+    <task id="LOCAL-00231" summary="编校审范围查询">
+      <created>1692595610814</created>
+      <option name="number" value="00231" />
+      <option name="presentableId" value="LOCAL-00231" />
+      <option name="project" value="LOCAL" />
+      <updated>1692595610814</updated>
+    </task>
+    <task id="LOCAL-00232" summary="编校审范围查询">
+      <created>1692607261436</created>
+      <option name="number" value="00232" />
+      <option name="presentableId" value="LOCAL-00232" />
+      <option name="project" value="LOCAL" />
+      <updated>1692607261436</updated>
+    </task>
+    <task id="LOCAL-00233" summary="虚拟孔洞更新">
+      <created>1692677841669</created>
+      <option name="number" value="00233" />
+      <option name="presentableId" value="LOCAL-00233" />
+      <option name="project" value="LOCAL" />
+      <updated>1692677841669</updated>
+    </task>
+    <option name="localTasksCounter" value="234" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -844,10 +849,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="tmp" />
-    <MESSAGE value="fix shape bugs" />
-    <MESSAGE value="fix torus" />
-    <MESSAGE value="增加弧形墙的OCC处理" />
     <MESSAGE value="跳过不需要复用的元件库，比如Wall这些" />
     <MESSAGE value="不要使用LOOP、PLOO作为显示类型" />
     <MESSAGE value="update truck impl" />
@@ -869,7 +870,11 @@
     <MESSAGE value="make opencascade_rs as default" />
     <MESSAGE value="update" />
     <MESSAGE value="fix revolution problem" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix revolution problem" />
+    <MESSAGE value="虚拟孔洞结构体更新" />
+    <MESSAGE value="贯穿件结构体更新" />
+    <MESSAGE value="编校审范围查询" />
+    <MESSAGE value="虚拟孔洞更新" />
+    <option name="LAST_COMMIT_MESSAGE" value="虚拟孔洞更新" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
