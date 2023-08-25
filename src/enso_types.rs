@@ -1,9 +1,9 @@
 use crate::pdms_types::NamedAttrValue;
-use serde::{Serialize,Deserialize};
 use bevy_ecs::prelude::Component;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Component)]
 pub struct EnsoJson {
-    pub header: Vec<String>,
-    pub value: Vec<Vec<NamedAttrValue>>
+    pub headers: Vec<String>,
+    pub values: Vec<Vec<NamedAttrValue>>,
 }

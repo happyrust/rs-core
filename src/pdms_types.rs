@@ -58,6 +58,7 @@ use bevy_render::mesh::Indices;
 #[cfg(feature = "bevy_render")]
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 use bevy_transform::prelude::*;
+use clap::builder::Str;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -242,6 +243,7 @@ pub mod string {
 pub struct ParseRefU64Error;
 
 //把Refno当作u64
+#[serde_as]
 #[derive(
     rkyv::Archive,
     rkyv::Deserialize,
@@ -356,10 +358,9 @@ impl BytesTrait for RefU64 {
 impl Display for RefU64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let refno: RefI32Tuple = self.into();
-        write!(f, "{}/{}", refno.get_0(), refno.get_1())
+        write!(f, "{}_{}", refno.get_0(), refno.get_1())
     }
 }
-
 
 impl RefU64 {
     #[inline]
@@ -407,7 +408,7 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn format_url_name(&self, col: &str) -> String{
+    pub fn format_url_name(&self, col: &str) -> String {
         format!("{}/{}", col, self.to_url_refno())
     }
 
@@ -494,6 +495,7 @@ impl RefU64 {
     }
 }
 
+#[serde_as]
 #[derive(
     Serialize,
     Deserialize,
@@ -507,7 +509,7 @@ impl RefU64 {
     rkyv::Deserialize,
     rkyv::Serialize,
 )]
-pub struct RefU64Vec(pub Vec<RefU64>);
+pub struct RefU64Vec(#[serde_as(as = "Vec<DisplayFromStr>")] pub Vec<RefU64>);
 
 impl BytesTrait for RefU64Vec {}
 
@@ -736,7 +738,6 @@ impl AttrMap {
         bincode::deserialize(&deflater.finish().ok()?).ok()
     }
 
-    //todo 需要更多的完善
     //计算使用元件库的design 元件 hash
     pub fn cal_cata_hash(&self) -> Option<u64> {
         //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
@@ -954,6 +955,11 @@ impl AttrMap {
 
 impl AttrMap {
     #[inline]
+    pub fn get_att_by_name(&self, name: &str) -> Option<&AttrVal> {
+        self.map.get(&db1_hash(name))
+    }
+
+    #[inline]
     pub fn insert(&mut self, k: NounHash, v: AttrVal) {
         self.map.insert(k, v);
     }
@@ -991,11 +997,11 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_name(&self) -> AiosStr {
+    pub fn get_name_string(&self) -> String {
         return if let Some(StringType(name)) = self.get_val("NAME") {
-            AiosStr(name.clone())
+            name.clone()
         } else {
-            AiosStr("".to_string())
+            Default::default()
         };
     }
 
@@ -1036,7 +1042,6 @@ impl AttrMap {
         if v.len() >= 2 {
             return Some([v[0] as u32, v[1] as u32]);
         }
-        // Err(anyhow!("Level number is less than 2".to_string()))
         None
     }
 
@@ -2208,18 +2213,6 @@ impl ShapeInstancesData {
         ready_refnos
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    pub fn gen_occ_shape(&self, refno: RefU64) -> Option<Shape> {
-        let info = self.get_inst_info(refno)?;
-        let _geos = self.get_inst_geos(info)?;
-        // let mut shapes = vec![];
-        // for geo in geos {
-        //
-        // }
-        //
-        None
-    }
-
     pub fn merge_ref(&mut self, o: &Self) {
         for (k, v) in o.inst_info_map.clone() {
             self.insert_info(k, v);
@@ -2779,8 +2772,6 @@ impl EleInstGeosData {
         compound.transform_by_mat(&transform.compute_matrix().as_dmat4());
         Some((compound, None))
     }
-
-    //
 }
 
 ///分拆的基本体信息, 应该是不需要复用的
@@ -3362,16 +3353,6 @@ impl Deref for AiosStr {
         &self.0
     }
 }
-
-// impl hash32::Hash for AiosStr {
-//     fn hash<H>(&self, state: &mut H)
-//         where
-//             H: Hasher,
-//     {
-//         state.write(self.0.as_str().as_bytes());
-//         state.write(&[0xff]);
-//     }
-// }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefnoNodeId {
