@@ -56,11 +56,19 @@ impl ExportFloodingStpEvent {
             .map(|x| x.iter().filter(|x| !x.is_plugged).map(|x| x.refno))
     }
 
-    ///返回所有封堵了的洞的参考号
+    ///返回所有封堵了的洞的参考号，排除门的情况
     pub fn all_plugged_hole_refnos(&self) -> impl Iterator<Item = RefU64> + '_ {
         self.walls_map
             .values()
-            .map(|x| x.iter().filter(|x| x.is_plugged).map(|x| x.refno))
+            .map(|x| x.iter().filter(|x| x.is_plugged && !x.is_door).map(|x| x.refno))
+            .flatten()
+    }
+
+    ///返回所有封堵了的门洞的参考号
+    pub fn all_plugged_door_refnos(&self) -> impl Iterator<Item = RefU64> + '_ {
+        self.walls_map
+            .values()
+            .map(|x| x.iter().filter(|x| x.is_plugged && x.is_door).map(|x| x.refno))
             .flatten()
     }
 

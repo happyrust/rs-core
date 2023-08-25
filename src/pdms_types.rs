@@ -2213,18 +2213,6 @@ impl ShapeInstancesData {
         ready_refnos
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    pub fn gen_occ_shape(&self, refno: RefU64) -> Option<Shape> {
-        let info = self.get_inst_info(refno)?;
-        let _geos = self.get_inst_geos(info)?;
-        // let mut shapes = vec![];
-        // for geo in geos {
-        //
-        // }
-        //
-        None
-    }
-
     pub fn merge_ref(&mut self, o: &Self) {
         for (k, v) in o.inst_info_map.clone() {
             self.insert_info(k, v);
@@ -2784,8 +2772,6 @@ impl EleInstGeosData {
         compound.transform_by_mat(&transform.compute_matrix().as_dmat4());
         Some((compound, None))
     }
-
-    //
 }
 
 ///分拆的基本体信息, 应该是不需要复用的
