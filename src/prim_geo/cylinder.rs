@@ -15,7 +15,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{
@@ -317,11 +317,11 @@ impl BrepShapeTrait for SCylinder {
     }
 
     ///获得关键点
-    fn key_points(&self) -> Vec<Vec3>{
+    fn key_points(&self) -> Vec<RsVec3>{
         if self.is_sscl() {
-            vec![Vec3::ZERO, Vec3::Z * self.phei.abs()]
+            vec![Vec3::ZERO.into(), (Vec3::Z * self.phei.abs()).into()]
         } else {
-            vec![Vec3::ZERO, Vec3::Z * 1.0]
+            vec![Vec3::ZERO.into(), (Vec3::Z * 1.0).into()]
         }
     }
 

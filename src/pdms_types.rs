@@ -8,6 +8,7 @@ use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
+use indexmap::IndexMap;
 use itertools::Itertools;
 
 use parry3d::bounding_volume::Aabb;
@@ -433,7 +434,11 @@ impl RefU64 {
     // abcd/2333
     #[inline]
     pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
-        let refno = if refno.starts_with("=") { refno[1..].to_string() } else { refno.to_string() };
+        let refno = if refno.starts_with("=") {
+            refno[1..].to_string()
+        } else {
+            refno.to_string()
+        };
         let split_refno = refno.split('/').collect::<Vec<_>>();
         if split_refno.len() != 2 {
             return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
@@ -509,7 +514,7 @@ impl RefU64 {
     rkyv::Deserialize,
     rkyv::Serialize,
 )]
-pub struct RefU64Vec(#[serde_as(as = "Vec<DisplayFromStr>")] pub Vec<RefU64>);
+pub struct RefU64Vec(pub Vec<RefU64>);
 
 impl BytesTrait for RefU64Vec {}
 
@@ -547,12 +552,14 @@ pub type NounHash = u32;
     Clone,
     Debug,
     Component,
+    Default,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
 )]
 #[serde(untagged)]
 pub enum NamedAttrValue {
+    #[default]
     InvalidType,
     IntegerType(i32),
     StringType(String),
@@ -616,7 +623,7 @@ impl From<&AttrVal> for NamedAttrValue {
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
-    pub map: BHashMap<String, NamedAttrValue>,
+    pub map: BTreeMap<String, NamedAttrValue>,
 }
 
 impl From<&AttrMap> for NamedAttrMap {
@@ -2830,7 +2837,7 @@ impl EleInstGeo {
         self.geo_param
             .key_points()
             .into_iter()
-            .map(|v| self.transform.transform_point(v))
+            .map(|v| self.transform.transform_point(*v))
             .collect()
     }
 
@@ -3127,12 +3134,8 @@ pub struct ChildrenNode {
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct CataHashRefnoKV {
-    // #[serde(deserialize_with = "de_from_str")]
-    // #[serde(serialize_with = "ser_u64_as_str")]
-    // #[serde_as(as = "Option<DisplayFromStr>")]
     #[serde(default)]
     pub cata_hash: Option<String>,
-    // #[serde_as(as = "DisplayFromStr")]
     #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,
     #[serde_as(as = "Vec<DisplayFromStr>")]

@@ -12,7 +12,7 @@ use truck_modeling::{Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, LEN_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, LEN_TOL, RsVec3, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
 use bevy_ecs::prelude::*;
@@ -62,6 +62,27 @@ impl BrepShapeTrait for Dish {
         Box::new(self.clone())
     }
 
+    ///获得关键点
+    fn key_points(&self) -> Vec<RsVec3>{
+        let r = self.pdia / 2.0;
+        let mut h = self.pheig;
+        //是个椭圆, 先暂时按圆来处理，然后再拉伸
+        if self.prad > 0.0 {
+            h = r;
+        }
+        let radius = (r * r + h * h) / (2.0f32 * h);
+        if radius < f32::EPSILON { return vec![]; }
+        let sinval = (r / radius).max(-1.0f32).min(1.0f32);
+        let mut theta = (sinval).asin();
+        if r < h { theta = PI - theta; }
+
+        let rot_axis = self.paax_dir.normalize();
+        let c = rot_axis * self.pdis + self.paax_pt;
+        let ref_axis = cal_ref_axis(&rot_axis);
+        let p0 = rot_axis * h + c;
+        let center = p0 - radius * rot_axis;
+        vec![center.into()]
+    }
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
