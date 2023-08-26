@@ -3,6 +3,7 @@ use approx::abs_diff_eq;
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::hash::{Hash, Hasher};
+use geo::{Intersects, LineString, Polygon};
 use truck_meshalgo::prelude::*;
 
 #[cfg(feature = "gen_model")]
@@ -148,7 +149,7 @@ impl BrepShapeTrait for Revolution {
             .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
             .collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
-        0.003 * profile_aabb.bounding_sphere().radius.max(1.0)
+        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     ///如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
@@ -159,6 +160,11 @@ impl BrepShapeTrait for Revolution {
             return None;
         }
         let wire = gen_wire(&self.verts, &self.fradius_vec).unwrap();
+                let geo_2d: LineString<f64> = wire.vertex_iter().map(|x| (x.point().x, x.point().y)).collect();
+        let polygon = Polygon::new(geo_2d,Vec::new());
+        let geo_axis: LineString<f64> = vec![(0.0, 0.0), (100000.0, 0.0)].into();
+        let intersect = polygon.intersects(&geo_axis);
+        dbg!(intersect);
         if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = face.surface() {
                 let mut rot_dir = self.rot_dir.normalize().vector3();
@@ -177,12 +183,8 @@ impl BrepShapeTrait for Revolution {
                     rot_dir = -rot_dir;
                 }
                 //check if exist any point on axis
-                                            let exist_on_rot_axis = self.verts.iter().any(|x| abs_diff_eq!(x.x, 0.0, epsilon=0.001));
-                // dbg!(&self.verts);
-                // dbg!(rot_dir);
-
                 //允许有误差, 只有没有在旋转轴（X轴）坐标轴上时，需要这样处理
-                if !exist_on_rot_axis && angle.abs() >= (core::f64::consts::TAU - 0.01) {
+                if !intersect && angle.abs() >= (core::f64::consts::TAU - 0.01) {
                     let mut s =
                         builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64)).into_boundaries();
                     let mut shell = s.pop();

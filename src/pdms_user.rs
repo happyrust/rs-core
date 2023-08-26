@@ -64,7 +64,7 @@ pub struct PdmsElementWithMajor {
 }
 
 #[serde_as]
-#[derive(Debug, Clone, PartialEq,Serialize,Deserialize)]
+#[derive(Debug, Clone, PartialEq,Default,Serialize,Deserialize)]
 pub struct RefnoMajor{
     pub refno:String,
     pub major: String,
