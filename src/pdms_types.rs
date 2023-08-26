@@ -266,10 +266,11 @@ pub struct RefU64(pub u64);
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = if s.starts_with("=") { s[1..].to_string() } else { s.to_string() };
         if s.contains('_') {
-            Self::from_url_refno(s).ok_or(ParseRefU64Error)
+            Self::from_url_refno(&s).ok_or(ParseRefU64Error)
         } else if s.contains('/') {
-            Self::from_refno_str(s).map_err(|_| ParseRefU64Error)
+            Self::from_refno_str(&s).map_err(|_| ParseRefU64Error)
         } else {
             let d = s.parse::<u64>().map_err(|_| ParseRefU64Error)?;
             Ok(Self(d))
@@ -434,18 +435,23 @@ impl RefU64 {
     // abcd/2333
     #[inline]
     pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
-        let refno = if refno.starts_with("=") {
-            refno[1..].to_string()
+        let refno = if refno.starts_with("=") { refno[1..].to_string() } else { refno.to_string() };
+        if refno.contains("/") {
+            let split_refno = refno.split('/').collect::<Vec<_>>();
+            if split_refno.len() != 2 {
+                return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
+            }
+            let refno0: i32 = split_refno[0].parse::<i32>()?;
+            let refno1: i32 = split_refno[1].parse::<i32>()?;
+            Ok(RefI32Tuple((refno0, refno1)).into())
+        } else if refno.contains("_") {
+            return match Self::from_url_refno(&refno) {
+                None => { Err(anyhow!("参考号错误!".to_string())) }
+                Some(refno) => { Ok(refno) }
+            }
         } else {
-            refno.to_string()
-        };
-        let split_refno = refno.split('/').collect::<Vec<_>>();
-        if split_refno.len() != 2 {
-            return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
+            Err(anyhow!("参考号错误!".to_string()))
         }
-        let refno0: i32 = split_refno[0].parse::<i32>()?;
-        let refno1: i32 = split_refno[1].parse::<i32>()?;
-        Ok(RefI32Tuple((refno0, refno1)).into())
     }
 
     #[inline]
