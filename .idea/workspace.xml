@@ -15,7 +15,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="虚拟孔洞更新">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -464,13 +464,8 @@
       <workItem from="1692583858190" duration="3777000" />
       <workItem from="1692671157366" duration="2019000" />
       <workItem from="1692693267584" duration="654000" />
-    </task>
-    <task id="LOCAL-00161" summary="增加获取ATTA的结构体">
-      <created>1674878051065</created>
-      <option name="number" value="00161" />
-      <option name="presentableId" value="LOCAL-00161" />
-      <option name="project" value="LOCAL" />
-      <updated>1674878051065</updated>
+      <workItem from="1692760274963" duration="744000" />
+      <workItem from="1692762308866" duration="1198000" />
     </task>
     <task id="LOCAL-00162" summary="增加虚拟孔洞的结构体">
       <created>1674965877579</created>
@@ -808,7 +803,14 @@
       <option name="project" value="LOCAL" />
       <updated>1692677841669</updated>
     </task>
-    <option name="localTasksCounter" value="234" />
+    <task id="LOCAL-00234" summary="虚拟孔洞更新">
+      <created>1692760282699</created>
+      <option name="number" value="00234" />
+      <option name="presentableId" value="LOCAL-00234" />
+      <option name="project" value="LOCAL" />
+      <updated>1692760282699</updated>
+    </task>
+    <option name="localTasksCounter" value="235" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
