@@ -15,7 +15,7 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::AttrMap;
 use crate::prim_geo::helper::{RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
+use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, RsVec3, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
 #[cfg(feature = "opencascade_rs")]
@@ -101,6 +101,12 @@ impl BrepShapeTrait for SCTorus {
 
     fn tol(&self) -> f32 {
         0.01 * self.pdia.max(1.0)
+    }
+
+    fn key_points(&self) -> Vec<RsVec3>{
+        let mut points = BrepShapeTrait::key_points(self);
+        points.extend_from_slice(&[self.paax_pt.into(), self.pbax_pt.into()]);
+        points
     }
 
     #[cfg(feature = "opencascade")]

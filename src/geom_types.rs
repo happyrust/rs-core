@@ -7,10 +7,12 @@ use crate::pdms_types::{EleInstGeo, RefU64};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::borrow::BorrowMut;
+use std::hash::{Hash, Hasher};
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Shape, Compound, };
 use crate::parsed_data::geo_params_data::PdmsGeoParam::PrimSCylinder;
 use crate::pdms_types::GeoBasicType;
+use crate::shape::pdms_shape::RsVec3;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct RvmGeoInfo {
@@ -35,12 +37,12 @@ pub struct RvmGeoInfos {
 impl RvmGeoInfos {
 
     ///获得关键点
-    pub fn key_points(&self) -> Vec<Vec3>{
+    pub fn key_points(&self) -> Vec<RsVec3>{
         self.rvm_inst_geo.iter()
             .map(|x|
                 x.geo_param.key_points()
                 .into_iter()
-                .map(|v| self.world_transform.transform_point(v))
+                .map(|v| self.world_transform.transform_point(*v).into())
             )
             .flatten()
             .collect()
@@ -153,7 +155,7 @@ pub struct RvmInstGeo {
 impl RvmInstGeo {
 
     #[inline]
-    pub fn key_points(&self) -> Vec<Vec3>{
+    pub fn key_points(&self) -> Vec<RsVec3>{
         self.geo_param.key_points()
     }
 

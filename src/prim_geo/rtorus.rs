@@ -197,7 +197,6 @@ impl VerifiedShape for RTorus {
     }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for RTorus {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
@@ -222,31 +221,7 @@ impl BrepShapeTrait for RTorus {
         0.01 * d.max(1.0)
     }
 
-    // #[cfg(feature = "opencascade_rs")]
-    // fn gen_occ_shape(&self) -> anyhow::Result<OCCShape> {
-    //     let h = self.height;
-    //     let d = (self.rout - self.rins);
-    //     // dbg!(d);
-    //     let c = (self.rins + self.rout) / 2.0;
-    //     // dbg!(Vec3::new(c - d / 2.0, 0.0, -h / 2.0));
-    //     // dbg!(Vec3::new(c - d / 2.0, 0.0, h / 2.0));
-    //     // dbg!(Vec3::new(c + d / 2.0, 0.0, h / 2.0));
-    //     // dbg!(Vec3::new(c + d / 2.0, 0.0, -h / 2.0));
-    //
-    //     let p1 = Vec3::new(c - d / 2.0, 0.0, -h / 2.0).into();
-    //     let p2 = Vec3::new(c - d / 2.0, 0.0, h / 2.0).into();
-    //     let p3 = Vec3::new(c + d / 2.0, 0.0, h / 2.0).into();
-    //     let p4 = Vec3::new(c + d / 2.0, 0.0, -h / 2.0).into();
-    //     //创建四边形
-    //     let top = Edge::new_line(&p1, &p2)?;
-    //     let right = Edge::new_line(&p2, &p3)?;
-    //     let bottom = Edge::new_line(&p3, &p4)?;
-    //     let left = Edge::new_line(&p4, &p1)?;
-    //
-    //     let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
-    //     let axis = Axis::new(Vec3::ZERO, Vec3::Z);
-    //     return Ok(wire.extrude_rotate(&axis, self.angle.to_radians() as _)?);
-    // }
+
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let h = self.height as f64;
@@ -268,6 +243,7 @@ impl BrepShapeTrait for RTorus {
         return Ok(r.to_shape());
     }
 
+    ///生成brep模型，是否需要存储key points
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
         //旋转圆心在中间
@@ -279,7 +255,8 @@ impl BrepShapeTrait for RTorus {
         let f = builder::tsweep(&e, Vector3::new(d, 0.0, 0.0));
 
         let mut solid = builder::rsweep(&f, Point3::new(0.0, 0.0, 0.0),
-                                        Vector3::new(0.0, 0.0, 1.0), Rad(self.angle.to_radians() as f64)).into_boundaries();
+                                        Vector3::new(0.0, 0.0, 1.0),
+                                        Rad(self.angle.to_radians() as f64)).into_boundaries();
         return solid.pop();
     }
 

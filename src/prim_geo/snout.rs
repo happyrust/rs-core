@@ -94,8 +94,6 @@ impl BrepShapeTrait for LSnout {
         if self.pbdm < f32::EPSILON {
             verts.push(Vertex::new(p0.as_dvec3()));
         }else{
-            // circles.push(Wire::circle(rb, p0, a_dir)?);
-            // let mut circle =  Workplane::xy().translated(p0.as_dvec3()).circle(0.0, 0.0, rb as f64);
             let circle = Wire::circle(rb as _, p0.as_dvec3(), a_dir.as_dvec3());
             circles.push(circle);
         }
@@ -103,8 +101,6 @@ impl BrepShapeTrait for LSnout {
         if self.ptdm < f32::EPSILON {
             verts.push(Vertex::new(p1.as_dvec3()));
         }else{
-            // circles.push(Wire::circle(rt, p1, a_dir)?);
-            // let mut circle = Workplane::xy().translated(p1.as_dvec3()).circle(0.0, 0.0, rt as f64);
             let circle = Wire::circle(rt as _, p1.as_dvec3(), a_dir.as_dvec3());
             circles.push(circle);
         }
@@ -138,7 +134,6 @@ impl BrepShapeTrait for LSnout {
 
         let mut circle2 = builder::rsweep(&v2, p1.point3(), rot_axis, Rad(7.0));
         let c2 = circle2.clone();
-
 
         let new_wire_1 = circle1.split_off((0.5 * circle1.len() as f32) as usize);
         let new_wire_2 = circle2.split_off((0.5 * circle2.len() as f32) as usize);

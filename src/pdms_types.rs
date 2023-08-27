@@ -8,6 +8,7 @@ use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
+use indexmap::IndexMap;
 use itertools::Itertools;
 
 use parry3d::bounding_volume::Aabb;
@@ -265,10 +266,11 @@ pub struct RefU64(pub u64);
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = if s.starts_with("=") { s[1..].to_string() } else { s.to_string() };
         if s.contains('_') {
-            Self::from_url_refno(s).ok_or(ParseRefU64Error)
+            Self::from_url_refno(&s).ok_or(ParseRefU64Error)
         } else if s.contains('/') {
-            Self::from_refno_str(s).map_err(|_| ParseRefU64Error)
+            Self::from_refno_str(&s).map_err(|_| ParseRefU64Error)
         } else {
             let d = s.parse::<u64>().map_err(|_| ParseRefU64Error)?;
             Ok(Self(d))
@@ -434,13 +436,22 @@ impl RefU64 {
     #[inline]
     pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
         let refno = if refno.starts_with("=") { refno[1..].to_string() } else { refno.to_string() };
-        let split_refno = refno.split('/').collect::<Vec<_>>();
-        if split_refno.len() != 2 {
-            return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
+        if refno.contains("/") {
+            let split_refno = refno.split('/').collect::<Vec<_>>();
+            if split_refno.len() != 2 {
+                return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
+            }
+            let refno0: i32 = split_refno[0].parse::<i32>()?;
+            let refno1: i32 = split_refno[1].parse::<i32>()?;
+            Ok(RefI32Tuple((refno0, refno1)).into())
+        } else if refno.contains("_") {
+            return match Self::from_url_refno(&refno) {
+                None => { Err(anyhow!("参考号错误!".to_string())) }
+                Some(refno) => { Ok(refno) }
+            }
+        } else {
+            Err(anyhow!("参考号错误!".to_string()))
         }
-        let refno0: i32 = split_refno[0].parse::<i32>()?;
-        let refno1: i32 = split_refno[1].parse::<i32>()?;
-        Ok(RefI32Tuple((refno0, refno1)).into())
     }
 
     #[inline]
@@ -509,7 +520,7 @@ impl RefU64 {
     rkyv::Deserialize,
     rkyv::Serialize,
 )]
-pub struct RefU64Vec(#[serde_as(as = "Vec<DisplayFromStr>")] pub Vec<RefU64>);
+pub struct RefU64Vec(pub Vec<RefU64>);
 
 impl BytesTrait for RefU64Vec {}
 
@@ -547,12 +558,14 @@ pub type NounHash = u32;
     Clone,
     Debug,
     Component,
+    Default,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
 )]
 #[serde(untagged)]
 pub enum NamedAttrValue {
+    #[default]
     InvalidType,
     IntegerType(i32),
     StringType(String),
@@ -616,7 +629,7 @@ impl From<&AttrVal> for NamedAttrValue {
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
-    pub map: BHashMap<String, NamedAttrValue>,
+    pub map: BTreeMap<String, NamedAttrValue>,
 }
 
 impl From<&AttrMap> for NamedAttrMap {
@@ -2830,7 +2843,7 @@ impl EleInstGeo {
         self.geo_param
             .key_points()
             .into_iter()
-            .map(|v| self.transform.transform_point(v))
+            .map(|v| self.transform.transform_point(*v))
             .collect()
     }
 
@@ -3127,12 +3140,8 @@ pub struct ChildrenNode {
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct CataHashRefnoKV {
-    // #[serde(deserialize_with = "de_from_str")]
-    // #[serde(serialize_with = "ser_u64_as_str")]
-    // #[serde_as(as = "Option<DisplayFromStr>")]
     #[serde(default)]
     pub cata_hash: Option<String>,
-    // #[serde_as(as = "DisplayFromStr")]
     #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,
     #[serde_as(as = "Vec<DisplayFromStr>")]

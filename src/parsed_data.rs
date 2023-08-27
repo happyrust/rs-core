@@ -1,11 +1,10 @@
 use std::collections::BTreeMap;
 
-
+use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::pdms_types::RefU64;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
-use crate::parsed_data::geo_params_data::{CateGeoParam};
-use crate::pdms_types::RefU64;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignPipeRequest {
@@ -105,8 +104,17 @@ pub struct GmseParamData {
     pub plin_plax: Vec3,
 }
 
-
-#[derive(Clone, PartialEq, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default)]
+#[derive(
+    Clone,
+    PartialEq,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+)]
 pub struct CateAxisParam {
     pub refno: RefU64,
     pub number: i32,
@@ -119,16 +127,15 @@ pub struct CateAxisParam {
     pub pconnect: String,
 }
 
-
 pub mod geo_params_data {
-    #[cfg(feature = "opencascade_rs")]
-    use opencascade::primitives::Shape;
-    use serde_derive::{Deserialize, Serialize};
     use crate::prim_geo::ctorus::CTorus;
     use crate::prim_geo::cylinder::*;
     use crate::prim_geo::dish::Dish;
     use crate::prim_geo::extrusion::Extrusion;
-    
+    #[cfg(feature = "opencascade_rs")]
+    use opencascade::primitives::Shape;
+    use serde_derive::{Deserialize, Serialize};
+
     use crate::prim_geo::polyhedron::Polyhedron;
     use crate::prim_geo::pyramid::Pyramid;
     use crate::prim_geo::revolution::Revolution;
@@ -138,8 +145,7 @@ pub mod geo_params_data {
     use crate::prim_geo::sphere::Sphere;
     use crate::prim_geo::sweep_solid::SweepSolid;
     use crate::rvm_types::RvmShapeTypeData;
-    use crate::shape::pdms_shape::BrepShapeTrait;
-
+    use crate::shape::pdms_shape::{BrepShapeTrait, RsVec3};
 
     #[derive(Clone, Serialize, Deserialize, Debug, Default)]
     pub enum CateGeoParam {
@@ -168,8 +174,16 @@ pub mod geo_params_data {
         SVER(super::CateSverParam),
     }
 
-
-    #[derive(Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Default)]
+    #[derive(
+        Clone,
+        rkyv::Archive,
+        rkyv::Deserialize,
+        rkyv::Serialize,
+        Serialize,
+        Deserialize,
+        Debug,
+        Default,
+    )]
     pub enum PdmsGeoParam {
         #[default]
         Unknown,
@@ -190,11 +204,9 @@ pub mod geo_params_data {
         CompoundShape,
     }
 
-
     impl PdmsGeoParam {
-
         ///获得关键点
-        pub fn key_points(&self) -> Vec<glam::Vec3>{
+        pub fn key_points(&self) -> Vec<RsVec3> {
             match self {
                 PdmsGeoParam::Unknown => vec![],
                 PdmsGeoParam::PrimBox(s) => s.key_points(),
@@ -215,10 +227,10 @@ pub mod geo_params_data {
         }
 
         #[cfg(feature = "opencascade_rs")]
-        pub fn gen_occ_shape(&self) -> Option<Shape>{
+        pub fn gen_occ_shape(&self) -> Option<Shape> {
             match self {
                 PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimLCylinder(s) =>s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLCylinder(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::PrimExtrusion(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::PrimLoft(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::Unknown => None,
@@ -237,53 +249,76 @@ pub mod geo_params_data {
 
         pub fn into_rvm_pri_num(&self) -> Option<u8> {
             match self {
-                PdmsGeoParam::Unknown => { None }
-                PdmsGeoParam::CompoundShape => { None }
-                PdmsGeoParam::PrimBox(_) => { Some(2) }
-                PdmsGeoParam::PrimLSnout(_) => { Some(7) }
-                PdmsGeoParam::PrimDish(_) => { Some(6) }
-                PdmsGeoParam::PrimSphere(_) => { Some(9) }
-                PdmsGeoParam::PrimCTorus(_) => { Some(4) }
-                PdmsGeoParam::PrimRTorus(_) => { Some(3) }
-                PdmsGeoParam::PrimPyramid(_) => { Some(1) }
-                PdmsGeoParam::PrimSCylinder(_) => { Some(8) }
-                PdmsGeoParam::PrimLCylinder(_) => { Some(8) }
-                PdmsGeoParam::PrimRevolution(_) => { Some(10) }
-                PdmsGeoParam::PrimExtrusion(_) => { Some(11) }
-                PdmsGeoParam::PrimPolyhedron(_) => { Some(12) }
-                PdmsGeoParam::PrimLoft(_) => {   None }
+                PdmsGeoParam::Unknown => None,
+                PdmsGeoParam::CompoundShape => None,
+                PdmsGeoParam::PrimBox(_) => Some(2),
+                PdmsGeoParam::PrimLSnout(_) => Some(7),
+                PdmsGeoParam::PrimDish(_) => Some(6),
+                PdmsGeoParam::PrimSphere(_) => Some(9),
+                PdmsGeoParam::PrimCTorus(_) => Some(4),
+                PdmsGeoParam::PrimRTorus(_) => Some(3),
+                PdmsGeoParam::PrimPyramid(_) => Some(1),
+                PdmsGeoParam::PrimSCylinder(_) => Some(8),
+                PdmsGeoParam::PrimLCylinder(_) => Some(8),
+                PdmsGeoParam::PrimRevolution(_) => Some(10),
+                PdmsGeoParam::PrimExtrusion(_) => Some(11),
+                PdmsGeoParam::PrimPolyhedron(_) => Some(12),
+                PdmsGeoParam::PrimLoft(_) => None,
             }
         }
 
         pub fn convert_rvm_pri_data(&self) -> Option<Vec<u8>> {
             match &self {
-                PdmsGeoParam::PrimBox(data) => {
-                    Some(RvmShapeTypeData::Box([data.size.x, data.size.y, data.size.z]).convert_shape_type_to_bytes())
-                }
+                PdmsGeoParam::PrimBox(data) => Some(
+                    RvmShapeTypeData::Box([data.size.x, data.size.y, data.size.z])
+                        .convert_shape_type_to_bytes(),
+                ),
                 PdmsGeoParam::PrimLSnout(data) => {
                     let height = (data.ptdi - data.pbdi).abs();
                     let bottom_radius = data.pbdm / 2.0;
                     let top_radius = data.ptdm / 2.0;
                     let offset = data.poff;
-                    Some(RvmShapeTypeData::Snout([bottom_radius, top_radius, height, offset, 0.0, 0.0, 0.0, 0.0, 0.0]).convert_shape_type_to_bytes())
+                    Some(
+                        RvmShapeTypeData::Snout([
+                            bottom_radius,
+                            top_radius,
+                            height,
+                            offset,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                        ])
+                        .convert_shape_type_to_bytes(),
+                    )
                 }
                 PdmsGeoParam::PrimDish(data) => {
                     let radius = data.pdia / 2.0;
                     let height = data.pheig;
-                    Some(RvmShapeTypeData::SphericalDish([radius, height]).convert_shape_type_to_bytes())
+                    Some(
+                        RvmShapeTypeData::SphericalDish([radius, height])
+                            .convert_shape_type_to_bytes(),
+                    )
                 }
                 PdmsGeoParam::PrimCTorus(data) => {
                     let in_torus = (data.rout - data.rins) / 2.0;
                     let out_torus = data.rout - in_torus;
                     let angle = (data.angle / 180.0) * std::f32::consts::PI;
-                    Some(RvmShapeTypeData::CircularTorus([out_torus, in_torus, angle]).convert_shape_type_to_bytes())
+                    Some(
+                        RvmShapeTypeData::CircularTorus([out_torus, in_torus, angle])
+                            .convert_shape_type_to_bytes(),
+                    )
                 }
                 PdmsGeoParam::PrimRTorus(data) => {
                     let out_torus = data.rout;
                     let len = data.rout - data.rins;
                     let height = data.height;
                     let angle = (data.angle / 180.0) * std::f32::consts::PI;
-                    Some(RvmShapeTypeData::RectangularTorus([out_torus, len, height, angle]).convert_shape_type_to_bytes())
+                    Some(
+                        RvmShapeTypeData::RectangularTorus([out_torus, len, height, angle])
+                            .convert_shape_type_to_bytes(),
+                    )
                 }
                 PdmsGeoParam::PrimPyramid(data) => {
                     let _bottom_width = data.pbbt;
@@ -293,21 +328,37 @@ pub mod geo_params_data {
                     let x_offset = data.pbof;
                     let y_offset = data.pcof;
                     let height = (data.pbdi - data.ptdi).abs();
-                    Some(RvmShapeTypeData::Pyramid([data.pbbt, data.pcbt, data.pbtp, data.pctp, x_offset, y_offset, height])
-                             .convert_shape_type_to_bytes())
+                    Some(
+                        RvmShapeTypeData::Pyramid([
+                            data.pbbt, data.pcbt, data.pbtp, data.pctp, x_offset, y_offset, height,
+                        ])
+                        .convert_shape_type_to_bytes(),
+                    )
                 }
                 PdmsGeoParam::PrimSCylinder(data) => {
                     let radius = data.pdia / 2.0;
-                    Some(RvmShapeTypeData::Cylinder([radius, data.phei]).convert_shape_type_to_bytes())
+                    Some(
+                        RvmShapeTypeData::Cylinder([radius, data.phei])
+                            .convert_shape_type_to_bytes(),
+                    )
                 }
-                _ => { None }
+                _ => None,
             }
         }
     }
 }
 
-
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateBoxParam {
     pub size: Vec3,
     pub offset: Vec3,
@@ -316,7 +367,17 @@ pub struct CateBoxParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateConeParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
@@ -326,7 +387,17 @@ pub struct CateConeParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateSCylinderParam {
     pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
@@ -337,7 +408,17 @@ pub struct CateSCylinderParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateLCylinderParam {
     pub refno: RefU64,
     pub axis: Option<CateAxisParam>,
@@ -349,7 +430,17 @@ pub struct CateLCylinderParam {
 }
 
 ///拉伸的基本体
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateExtrusionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -366,7 +457,17 @@ pub struct CateExtrusionParam {
 }
 
 //structural annulus
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct SannData {
     pub xy: Vec2,
     pub dxy: Vec2,
@@ -381,7 +482,17 @@ pub struct SannData {
     pub plin_axis: Vec3,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct SProfileData {
     pub verts: Vec<Vec3>,
     pub frads: Vec<f32>,
@@ -391,7 +502,17 @@ pub struct SProfileData {
 }
 
 //截面的处理，还需要旋转自身的平面
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub enum CateProfileParam {
     #[default]
     UNKOWN,
@@ -403,22 +524,33 @@ impl CateProfileParam {
     pub fn get_bbox(&self) -> Option<Aabb> {
         match self {
             Self::UNKOWN => None,
-            Self::SANN(s) => {
-                Some(Aabb::new(nalgebra::Vector2::from(s.xy + s.dxy - Vec2::ONE * s.drad).into(),
-                               nalgebra::Vector2::from(s.xy + s.dxy + Vec2::ONE * s.drad).into()))
-            }
+            Self::SANN(s) => Some(Aabb::new(
+                nalgebra::Vector2::from(s.xy + s.dxy - Vec2::ONE * s.drad).into(),
+                nalgebra::Vector2::from(s.xy + s.dxy + Vec2::ONE * s.drad).into(),
+            )),
             Self::SPRO(s) => {
-                let pts = s.verts.iter().map(|x|
-                    nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate()))
-                ).collect::<Vec<_>>();
+                let pts = s
+                    .verts
+                    .iter()
+                    .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
+                    .collect::<Vec<_>>();
                 Some(Aabb::from_points(&pts))
             }
         }
     }
 }
 
-
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateDishParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
@@ -430,7 +562,17 @@ pub struct CateDishParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateLineParam {
     pub pa: ::core::option::Option<CateAxisParam>,
 
@@ -444,7 +586,17 @@ pub struct CateLineParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CatePyramidParam {
     pub refno: RefU64,
     pub pa: Option<CateAxisParam>,
@@ -463,7 +615,17 @@ pub struct CatePyramidParam {
 }
 
 /// 截面为矩形的弯管
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateRectTorusParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -474,7 +636,17 @@ pub struct CateRectTorusParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateRevolutionParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -489,7 +661,17 @@ pub struct CateRevolutionParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateSplineParam {
     pub start_pt: Vec<f32>,
     pub end_pt: Vec<f32>,
@@ -499,7 +681,17 @@ pub struct CateSplineParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateSlopeBottomCylinderParam {
     pub axis: Option<CateAxisParam>,
     pub height: f32,
@@ -515,7 +707,17 @@ pub struct CateSlopeBottomCylinderParam {
 }
 
 /// 圆台 或 管嘴
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateSnoutParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -530,7 +732,17 @@ pub struct CateSnoutParam {
 }
 
 /// 球
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateSphereParam {
     pub axis: Option<CateAxisParam>,
     pub dist_to_center: f32,
@@ -541,7 +753,17 @@ pub struct CateSphereParam {
 }
 
 ///元件库里的torus参数
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateTorusParam {
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
@@ -551,7 +773,17 @@ pub struct CateTorusParam {
     pub refno: RefU64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateTubeImpliedParam {
     pub axis: Option<CateAxisParam>,
     pub diameter: f32,
@@ -559,7 +791,17 @@ pub struct CateTubeImpliedParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateBoxImpliedParam {
     pub axis: Option<CateAxisParam>,
     pub width: f32,
@@ -568,12 +810,19 @@ pub struct CateBoxImpliedParam {
     pub tube_flag: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CateSverParam {
     pub x: f64,
     pub y: f64,
     pub radius: f64,
 }
-
-
-

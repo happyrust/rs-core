@@ -111,7 +111,6 @@ impl BrepShapeTrait for Revolution {
                             curve.parameter_range(),
                             self.tol() as _,
                         );
-                        // dbg!(&polyline);
                         let mut v = polyline
                             .iter()
                             .map(|x| Vec2::new(x.x as _, x.y as _))
@@ -136,7 +135,6 @@ impl BrepShapeTrait for Revolution {
 
     #[inline]
     fn need_use_csg(&self) -> bool {
-        // self.angle.abs()  >  (TAU - 0.01)
         false
     }
 
@@ -164,7 +162,6 @@ impl BrepShapeTrait for Revolution {
         let polygon = Polygon::new(geo_2d,Vec::new());
         let geo_axis: LineString<f64> = vec![(0.0, 0.0), (100000.0, 0.0)].into();
         let intersect = polygon.intersects(&geo_axis);
-        dbg!(intersect);
         if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = face.surface() {
                 let mut rot_dir = self.rot_dir.normalize().vector3();
