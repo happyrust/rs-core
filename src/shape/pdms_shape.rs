@@ -3,7 +3,7 @@
 
 use std::fmt::Debug;
 use std::fs::File;
-use std::hash::{Hasher};
+use std::hash::{Hash, Hasher};
 use std::io::{Write};
 
 use anyhow::anyhow;
@@ -27,21 +27,12 @@ use parry3d::math::{Point, Vector};
 use parry3d::shape::{TriMesh};
 use dyn_clone::DynClone;
 use crate::pdms_types::*;
-
-
-
-
-
-
-
-
-
-
+use itertools::Itertools;
 use std::io::BufWriter;
 use std::{slice, vec};
+use std::path::Display;
 use bevy_transform::prelude::Transform;
-
-
+use derive_more::{Deref, DerefMut};
 use tobj::{export_faces_multi_index};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -49,6 +40,7 @@ use crate::tool::float_tool::f32_round_3;
 
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
+use truck_polymesh::stl::IntoStlIterator;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -394,6 +386,52 @@ pub const MIN_SIZE_TOL: f32 = 0.01;
 pub const MAX_SIZE_TOL: f32 = 1.0e5;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
+
+#[derive(
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Deref,
+DerefMut,
+Clone,
+Default,
+Debug,
+)]
+pub struct RsVec3(pub Vec3);
+impl Hash for RsVec3 {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        format!("{:.5}", self.x).hash(state);
+        format!("{:.5}", self.y).hash(state);
+        format!("{:.5}", self.z).hash(state);
+    }
+}
+
+
+impl PartialEq<Self> for RsVec3 {
+    fn eq(&self, other: &Self) -> bool {
+        self.distance(other.0) < 1.0E-5
+    }
+}
+
+impl Eq for RsVec3 {}
+
+impl From<Vec3> for RsVec3 {
+    fn from(value: Vec3) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Point3> for RsVec3 {
+    fn from(value: Point3) -> Self {
+        Self(Vec3::new(value.x as f32, value.y as f32, value.z as f32))
+    }
+}
+
+
+
+
 ///brep形状trait
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     fn is_reuse_unit(&self) -> bool {
@@ -409,7 +447,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     ///获得关键点
-    fn key_points(&self) -> Vec<Vec3>{  return vec![Vec3::ZERO];}
+    fn key_points(&self) -> Vec<RsVec3>{
+        self.gen_brep_shell()
+            .map(|x| x.vertex_iter().map(|x| RsVec3::from(x.point())).into_iter().unique().collect())
+            .unwrap_or(vec![Vec3::ZERO.into()])
+    }
 
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, _limit_size: f32) {}
