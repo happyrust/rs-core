@@ -506,7 +506,6 @@ impl RefU64 {
     }
 }
 
-#[serde_as]
 #[derive(
     Serialize,
     Deserialize,
