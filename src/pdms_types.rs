@@ -1088,17 +1088,12 @@ impl AttrMap {
 
     #[inline]
     pub fn get_type(&self) -> &str {
-        self.get_str("TYPE").unwrap_or("unset")
+        self.get_str("TYPE").unwrap_or(self.get_str("TYPEX").unwrap_or("unset"))
     }
 
     #[inline]
     pub fn is_type(&self, type_name: &str) -> bool {
         self.get_type() == type_name
-    }
-
-    #[inline]
-    pub fn get_type_cloned(&self) -> Option<String> {
-        self.get_str("TYPE").map(|x| x.to_string())
     }
 
     #[inline]
