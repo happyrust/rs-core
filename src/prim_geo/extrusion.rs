@@ -63,6 +63,36 @@ impl BrepShapeTrait for Extrusion {
         Box::new(self.clone())
     }
 
+    fn gen_brep_shell(&self) -> Option<Shell> {
+        if !self.check_valid() {
+            return None;
+        }
+        if self.verts.len() < 3 {
+            return None;
+        }
+        let mut wire = Wire::new();
+        if let CurveType::Spline(thick) = self.cur_type {
+            wire = gen_spline_wire(&self.verts, thick).ok()?;
+        } else {
+            wire = gen_wire(&self.verts, &self.fradius_vec).ok()?;
+        };
+        if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
+            if let Surface::Plane(plane) = face.surface() {
+                let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
+                if plane.normal().dot(extrude_dir) < 0.0 {
+                    face = face.inverse();
+                }
+                let mut s = builder::tsweep(&face, extrude_dir * (f32_round_3(self.height)) as f64)
+                    .into_boundaries();
+                return s.pop();
+            }
+        } else {
+            dbg!(self);
+            println!("生成的wire有问题，数据：{:?}", self);
+        }
+        None
+    }
+
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, l: f32) {
         self.height = self.height.min(l);
@@ -83,6 +113,50 @@ impl BrepShapeTrait for Extrusion {
             .to_face()
             .extrude(DVec3::new(0., 0.0, self.height as _))
             .to_shape())
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.verts.iter().for_each(|v| {
+            hash_vec3::<DefaultHasher>(v, &mut hasher);
+        });
+        self.fradius_vec.iter().for_each(|v| {
+            hash_f32::<DefaultHasher>(*v, &mut hasher);
+        });
+        "Extrusion".hash(&mut hasher);
+        hasher.finish()
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        let unit = Self {
+            verts: self.verts.clone(),
+            height: 1000.0, //开放一点大小,不然三角化出来的不对
+            fradius_vec: self.fradius_vec.clone(),
+            cur_type: self.cur_type.clone(),
+            ..Default::default()
+        };
+        Box::new(unit)
+    }
+
+    //沿着指定方向拉伸 pbax_dir
+    fn get_scaled_vec3(&self) -> Vec3 {
+        Vec3::new(1.0, 1.0, self.height as f32 / 100.0)
+    }
+
+    #[inline]
+    fn tol(&self) -> f32 {
+        use parry2d::bounding_volume::Aabb;
+        let pts = self
+            .verts
+            .iter()
+            .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
+            .collect::<Vec<_>>();
+        let profile_aabb = Aabb::from_points(&pts);
+        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(PdmsGeoParam::PrimExtrusion(self.clone()))
     }
 
     ///使用manifold生成拉身体的mesh
@@ -136,80 +210,6 @@ impl BrepShapeTrait for Extrusion {
 
     fn need_use_csg(&self) -> bool {
         true
-    }
-
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        if !self.check_valid() {
-            return None;
-        }
-        if self.verts.len() < 3 {
-            return None;
-        }
-        let mut wire = Wire::new();
-        if let CurveType::Spline(thick) = self.cur_type {
-            wire = gen_spline_wire(&self.verts, thick).ok()?;
-        } else {
-            wire = gen_wire(&self.verts, &self.fradius_vec).ok()?;
-        };
-        if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
-            if let Surface::Plane(plane) = face.surface() {
-                let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
-                if plane.normal().dot(extrude_dir) < 0.0 {
-                    face = face.inverse();
-                }
-                let mut s = builder::tsweep(&face, extrude_dir * (f32_round_3(self.height)) as f64)
-                    .into_boundaries();
-                return s.pop();
-            }
-        } else {
-            dbg!(self);
-            println!("生成的wire有问题，数据：{:?}", self);
-        }
-        None
-    }
-
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        self.verts.iter().for_each(|v| {
-            hash_vec3::<DefaultHasher>(v, &mut hasher);
-        });
-        self.fradius_vec.iter().for_each(|v| {
-            hash_f32::<DefaultHasher>(*v, &mut hasher);
-        });
-        "Extrusion".hash(&mut hasher);
-        hasher.finish()
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        let unit = Self {
-            verts: self.verts.clone(),
-            height: 1000.0, //开放一点大小,不然三角化出来的不对
-            fradius_vec: self.fradius_vec.clone(),
-            cur_type: self.cur_type.clone(),
-            ..Default::default()
-        };
-        Box::new(unit)
-    }
-
-    #[inline]
-    fn tol(&self) -> f32 {
-        use parry2d::bounding_volume::Aabb;
-        let pts = self
-            .verts
-            .iter()
-            .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
-            .collect::<Vec<_>>();
-        let profile_aabb = Aabb::from_points(&pts);
-        0.005 * profile_aabb.bounding_sphere().radius.max(1.0)
-    }
-
-    //沿着指定方向拉伸 pbax_dir
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(1.0, 1.0, self.height as f32 / 100.0)
-    }
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(PdmsGeoParam::PrimExtrusion(self.clone()))
     }
 }
 

@@ -58968,13 +58968,6 @@
         },
         "att_type": "INTEGER"
       },
-      "-2017098320": {
-        "name": ":WA=I",
-        "hash": -2017098320,
-        "offset": 2277890656,
-        "default_val": "InvalidType",
-        "att_type": "INTEGER"
-      },
       "665964": {
         "name": "INVF",
         "hash": 665964,

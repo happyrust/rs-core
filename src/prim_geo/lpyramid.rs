@@ -75,50 +75,6 @@ impl BrepShapeTrait for LPyramid {
         Box::new(self.clone())
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-
-        let _z_pt = self.paax_pt.as_dvec3();
-        //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0) as f64;
-        let ty = (self.pctp / 2.0) as f64;
-        let bx = (self.pbbt / 2.0) as f64;
-        let by = (self.pcbt / 2.0) as f64;
-        let ox = self.pbof as f64;
-        let oy = self.pcof as f64;
-        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
-
-        let mut polys = vec![];
-        let mut verts = vec![];
-
-        let pts = vec![
-            DVec3::new(-tx + ox, -ty + oy, h2),
-            DVec3::new(tx + ox, -ty + oy, h2),
-            DVec3::new(tx + ox, ty + oy, h2),
-            DVec3::new(-tx + ox, ty + oy, h2),
-        ];
-        if tx * ty < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
-        } else {
-            polys.push(Wire::from_points(&pts));
-        }
-
-        let pts = vec![
-            DVec3::new(-bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, by - oy, -h2),
-            DVec3::new(-bx - ox, by - oy, -h2),
-        ];
-        if bx * by < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
-        } else {
-            polys.push(Wire::from_points(&pts));
-        }
-
-        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).to_shape())
-    }
-
-
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
@@ -176,6 +132,50 @@ impl BrepShapeTrait for LPyramid {
         shell.push(builder::homotopy(&ebs[3], &ets[3]));
 
         Some(shell)
+    }
+
+
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+
+        let _z_pt = self.paax_pt.as_dvec3();
+        //todo 以防止出现有单个点的情况，暂时用这个模拟
+        let tx = (self.pbtp / 2.0) as f64;
+        let ty = (self.pctp / 2.0) as f64;
+        let bx = (self.pbbt / 2.0) as f64;
+        let by = (self.pcbt / 2.0) as f64;
+        let ox = self.pbof as f64;
+        let oy = self.pcof as f64;
+        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
+
+        let mut polys = vec![];
+        let mut verts = vec![];
+
+        let pts = vec![
+            DVec3::new(-tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, ty + oy, h2),
+            DVec3::new(-tx + ox, ty + oy, h2),
+        ];
+        if tx * ty < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
+        } else {
+            polys.push(Wire::from_points(&pts));
+        }
+
+        let pts = vec![
+            DVec3::new(-bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, by - oy, -h2),
+            DVec3::new(-bx - ox, by - oy, -h2),
+        ];
+        if bx * by < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
+        } else {
+            polys.push(Wire::from_points(&pts));
+        }
+
+        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).to_shape())
     }
 
 
