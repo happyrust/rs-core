@@ -1019,6 +1019,15 @@ impl AttrMap {
     }
 
     #[inline]
+    pub fn get_name(&self) -> Option<String> {
+        return if let Some(StringType(name)) = self.get_val("NAME") {
+            Some(name.clone())
+        } else {
+            None
+        };
+    }
+
+    #[inline]
     pub fn get_main_db_in_mdb(&self) -> Option<RefU64> {
         if let Some(v) = self.map.get(&ATT_CURD) {
             match v {
@@ -1793,7 +1802,7 @@ impl From<AttrVal> for AttrValAql {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PdmsDatabaseInfo {
     pub db_names_map: DashMap<i32, String>,
     // 第一个i32是type_hash ，第二个i32是属性的hash
