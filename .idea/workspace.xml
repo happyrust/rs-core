@@ -37,7 +37,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="merge" />
+        <entry key="$PROJECT_DIR$" value="gen-model" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -96,7 +96,7 @@
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;gen-model&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;merge&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/dongpengcheng/Documents/week-work/crates/aios-core&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -465,6 +465,7 @@
       <workItem from="1692671157366" duration="2019000" />
       <workItem from="1692693267584" duration="654000" />
       <workItem from="1693215627471" duration="618000" />
+      <workItem from="1693291440362" duration="969000" />
     </task>
     <task id="LOCAL-00161" summary="增加获取ATTA的结构体">
       <created>1674878051065</created>
