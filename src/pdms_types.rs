@@ -506,7 +506,6 @@ impl RefU64 {
     }
 }
 
-#[serde_as]
 #[derive(
     Serialize,
     Deserialize,
@@ -1099,7 +1098,10 @@ impl AttrMap {
     pub fn get_type(&self) -> &str {
         self.get_str("TYPE").unwrap_or(self.get_str("TYPEX").unwrap_or("unset"))
     }
-
+    #[inline]
+    pub fn get_typex(&self) -> &str {
+        self.get_str("TYPEX").unwrap_or("unset")
+    }
     #[inline]
     pub fn is_type(&self, type_name: &str) -> bool {
         self.get_type() == type_name
@@ -1702,9 +1704,8 @@ impl AttrVal {
     pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
         return match self {
             InvalidType => Box::new("unset".to_string()),
-            // IntegerType(v) => { Box::new(*v) }
             StringType(v) | ElementType(v) | WordType(v) => Box::new(v.to_string()),
-            RefU64Type(v) => Box::new(v.to_string()),
+            RefU64Type(v) => Box::new(v.to_refno_string()),
             BoolArrayType(v) => Box::new(v.clone()),
             IntArrayType(v) => Box::new(v.clone()),
             IntegerType(v) => Box::new(*v),
@@ -1714,7 +1715,7 @@ impl AttrVal {
             StringHashType(v) => Box::new(*v),
             StringArrayType(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
             Vec3Type(v) => Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)),
-            RefU64Array(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
+            RefU64Array(v) => Box::new(v.iter().map(|x| x.to_refno_string()).collect::<Vec<_>>()),
         };
     }
 
