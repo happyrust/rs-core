@@ -689,6 +689,7 @@ impl AttrMap {
         self.map.len() == 0
     }
 
+
     ///序列化成bincode
     #[inline]
     pub fn into_bincode_bytes(&self) -> Vec<u8> {
