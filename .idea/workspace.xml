@@ -15,7 +15,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="变更">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -466,6 +466,7 @@
       <workItem from="1692693267584" duration="654000" />
       <workItem from="1693215627471" duration="618000" />
       <workItem from="1693291440362" duration="969000" />
+      <workItem from="1693299647034" duration="3599000" />
     </task>
     <task id="LOCAL-00161" summary="增加获取ATTA的结构体">
       <created>1674878051065</created>
@@ -810,7 +811,7 @@
       <option name="project" value="LOCAL" />
       <updated>1692677841669</updated>
     </task>
-    <option name="localTasksCounter" value="234" />
+    <option name="localTasksCounter" value="235" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -870,13 +871,13 @@
     <MESSAGE value="refactor occ generate" />
     <MESSAGE value="fix wire precision problem" />
     <MESSAGE value="make opencascade_rs as default" />
-    <MESSAGE value="update" />
     <MESSAGE value="fix revolution problem" />
     <MESSAGE value="虚拟孔洞结构体更新" />
     <MESSAGE value="贯穿件结构体更新" />
     <MESSAGE value="编校审范围查询" />
     <MESSAGE value="虚拟孔洞更新" />
-    <option name="LAST_COMMIT_MESSAGE" value="虚拟孔洞更新" />
+    <MESSAGE value="update" />
+    <option name="LAST_COMMIT_MESSAGE" value="update" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
