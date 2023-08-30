@@ -689,6 +689,7 @@ impl AttrMap {
         self.map.len() == 0
     }
 
+
     ///序列化成bincode
     #[inline]
     pub fn into_bincode_bytes(&self) -> Vec<u8> {
@@ -1014,6 +1015,15 @@ impl AttrMap {
             name.clone()
         } else {
             Default::default()
+        };
+    }
+
+    #[inline]
+    pub fn get_name(&self) -> Option<String> {
+        return if let Some(StringType(name)) = self.get_val("NAME") {
+            Some(name.clone())
+        } else {
+            None
         };
     }
 
@@ -1794,7 +1804,7 @@ impl From<AttrVal> for AttrValAql {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PdmsDatabaseInfo {
     pub db_names_map: DashMap<i32, String>,
     // 第一个i32是type_hash ，第二个i32是属性的hash
