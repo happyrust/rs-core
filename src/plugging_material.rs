@@ -5,6 +5,7 @@ use serde::Deserialize;
 use bevy_ecs::prelude::Event;
 #[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PluggingData {
+    pub own_refno:RefU64,
     pub refno: RefU64,
     pub name: String,
     pub size: String,

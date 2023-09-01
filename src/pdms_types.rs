@@ -2855,7 +2855,7 @@ impl EleInstGeo {
         self.geo_param
             .key_points()
             .into_iter()
-            .map(|v| self.transform.transform_point(v))
+            .map(|v| self.transform.transform_point(*v))
             .collect()
     }
 
