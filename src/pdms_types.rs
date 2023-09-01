@@ -519,7 +519,7 @@ impl RefU64 {
     rkyv::Deserialize,
     rkyv::Serialize,
 )]
-pub struct RefU64Vec(#[serde_as(as = "Vec<DisplayFromStr>")] pub Vec<RefU64>);
+pub struct RefU64Vec( pub Vec<RefU64>);
 
 impl BytesTrait for RefU64Vec {}
 
