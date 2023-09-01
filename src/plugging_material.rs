@@ -5,11 +5,12 @@ use serde::Deserialize;
 
 #[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PluggingData {
-    pub refno:RefU64,
+    pub refno: RefU64,
     pub name: String,
     pub size: String,
     pub room_1: String,
     pub room_2: String,
+    pub height: f64,
     pub cable_area: f64,
     pub plugging_area: f64,
     pub plugging_volume: f64,
