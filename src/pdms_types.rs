@@ -506,6 +506,7 @@ impl RefU64 {
     }
 }
 
+#[serde_as]
 #[derive(
 Serialize,
 Deserialize,
@@ -1106,6 +1107,11 @@ impl AttrMap {
     #[inline]
     pub fn is_type(&self, type_name: &str) -> bool {
         self.get_type() == type_name
+    }
+
+    #[inline]
+    pub fn get_type_cloned(&self) -> Option<String> {
+        self.get_str("TYPE").map(|x| x.to_string())
     }
 
     #[inline]
@@ -1804,7 +1810,7 @@ impl From<AttrVal> for AttrValAql {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PdmsDatabaseInfo {
     pub db_names_map: DashMap<i32, String>,
     // 第一个i32是type_hash ，第二个i32是属性的hash
@@ -3146,8 +3152,12 @@ pub struct ChildrenNode {
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct CataHashRefnoKV {
+    // #[serde(deserialize_with = "de_from_str")]
+    // #[serde(serialize_with = "ser_u64_as_str")]
+    // #[serde_as(as = "Option<DisplayFromStr>")]
     #[serde(default)]
     pub cata_hash: Option<String>,
+    // #[serde_as(as = "DisplayFromStr")]
     #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,
     #[serde_as(as = "Vec<DisplayFromStr>")]
