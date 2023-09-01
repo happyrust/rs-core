@@ -1097,7 +1097,7 @@ impl AttrMap {
 
     #[inline]
     pub fn get_type(&self) -> &str {
-        self.get_str("TYPE").unwrap_or(self.get_str("TYPEX").unwrap_or("unset"))
+        self.get_str("TYPE").unwrap_or("unset")
     }
     #[inline]
     pub fn get_typex(&self) -> &str {
