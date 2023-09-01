@@ -367,7 +367,6 @@ impl VerifiedShape for SweepSolid {
 }
 
 
-//#[typetag::serde]
 impl BrepShapeTrait for SweepSolid {
     fn is_reuse_unit(&self) -> bool {
         matches!(&self.path, SweepPath3D::Line(_)) && !self.is_sloped()
@@ -377,11 +376,123 @@ impl BrepShapeTrait for SweepSolid {
         Box::new(self.clone())
     }
 
-    fn tol(&self) -> f32 {
-        if let Some(aabb) = self.profile.get_bbox() {
-            return 0.01 * aabb.bounding_sphere().radius.max(1.0);
+    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
+        use truck_modeling::*;
+        use truck_base::cgmath64::{Point3};
+        let mut profile_wire = None;
+        let mut top_profile_wire = None;
+        let mut is_sann = false;
+        let (profile_wire, _top_profile_wire) = match &self.profile {
+            CateProfileParam::SANN(p) => {
+                let w = p.pwidth;
+                let r = p.pradius;
+                let r1 = r - w;
+                let r2 = r;
+                let origin = p.xy + p.dxy;
+                profile_wire = self.gen_sann_wire(origin, p, true, r1, r2);
+                top_profile_wire = self.gen_sann_wire(origin, p, false, r1, r2);
+                is_sann = true;
+                (profile_wire, top_profile_wire)
+            }
+            CateProfileParam::SPRO(p) => {
+                let wire = self.cal_spro_wire(p);
+                (wire, None)
+            }
+            _ => {
+                (None, None)
+            }
+        };
+        // if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
+        if let Some(wire) = profile_wire {
+            //check if valid
+            if self.drns.is_nan() || self.drne.is_nan() {
+                // return Err(anyhow!("drns or drne is nan"));
+                println!("drns or drne is nan");
+                return None;
+            }
+            //先生成start 和 end face
+            let _transform_btm = Matrix4::one();
+            let _transform_top = Matrix4::one();
+            let _rotation = Matrix4::one();
+            let _scale_mat = Matrix4::one();
+
+            match &self.path {
+                SweepPath3D::SpineArc(arc) => {
+                    let mut face_s = builder::try_attach_plane(&[wire]).unwrap();
+                    if let Surface::Plane(plane) = face_s.surface() {
+                        let is_rev_face = (plane.normal().y * arc.axis.z as f64) < 0.0;
+                        if is_rev_face {
+                            dbg!("Face inveted");
+                            face_s.invert();
+                        }
+                    }
+                    let rot_angle = arc.angle;
+                    let rot_axis = if arc.clock_wise {
+                        -Vec3::Z
+                    } else {
+                        Vec3::Z
+                    };
+                    let solid = builder::rsweep(&face_s, Point3::origin(),
+                                                rot_axis.vector3(), Rad(rot_angle as f64));
+                    let shell: Shell = solid.into_boundaries().pop()?;
+                    return Some(shell);
+                }
+                SweepPath3D::Line(l) => {
+                    let mut transform_btm = Mat4::IDENTITY;
+                    let mut transform_top = Mat4::IDENTITY;
+                    if self.drns.is_normalized() && self.is_drns_sloped() {
+                        let x_angle = self.drns.angle_between(Vec3::X).abs();
+                        let scale_x = if x_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (x_angle.sin())
+                        };
+                        let y_angle = self.drns.angle_between(Vec3::Y).abs();
+                        let scale_y = if y_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (y_angle.sin())
+                        };
+                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
+                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
+                    }
+                    if self.drne.is_normalized() && self.is_drne_sloped() {
+                        let x_angle = (-self.drne).angle_between(Vec3::X).abs();
+                        let scale_x = if x_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (x_angle.sin())
+                        };
+                        let y_angle = (-self.drne).angle_between(Vec3::Y).abs();
+                        let scale_y = if y_angle < ANGLE_RAD_TOL {
+                            1.0
+                        } else {
+                            1.0 / (y_angle.sin())
+                        };
+                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
+                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
+                    }
+                    transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.length())) * transform_top;
+
+                    let mut faces = vec![];
+                    let wire_s = builder::transformed(&wire, convert_to_cg_matrix4(&transform_btm));
+                    let wire_e = builder::transformed(&wire, convert_to_cg_matrix4(&transform_top));
+                    let edges_cnt = wire_s.len();
+                    for i in 0..edges_cnt {
+                        let c1 = &wire_s[i];
+                        let c2 = &wire_e[i];
+                        faces.push(builder::homotopy(c1, c2).inverse());
+                    }
+                    let face_s = builder::try_attach_plane(&[wire_s]).ok()?;
+                    let face_e = builder::try_attach_plane(&[wire_e]).ok()?;
+                    faces.push(face_s);
+                    faces.push(face_e.inverse());
+                    let shell: Shell = faces.into();
+                    return Some(shell);
+                }
+            }
         }
-        0.01
+        None
     }
 
     #[cfg(feature = "opencascade_rs")]
@@ -393,8 +504,6 @@ impl BrepShapeTrait for SweepSolid {
                 let r = p.pradius;
                 let r1 = r - w;
                 let r2 = r;
-                let _d = p.paxis.as_ref().unwrap().dir.normalize();
-                let _angle = p.pangle.to_radians();
                 let origin = p.xy + p.dxy;
                 let wire_btm = self.gen_occ_sann_wire(origin, p, true, r1, r2).ok();
                 let wire_top = self.gen_occ_sann_wire(origin, p, false, r1, r2).ok();
@@ -491,137 +600,6 @@ impl BrepShapeTrait for SweepSolid {
         return Err(anyhow!("SweepSolid 生成错误"));
     }
 
-    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
-        use truck_base::cgmath64::{Point3};
-        let mut profile_wire = None;
-        let mut top_profile_wire = None;
-        let mut is_sann = false;
-        let (profile_wire, _top_profile_wire) = match &self.profile {
-            CateProfileParam::SANN(p) => {
-                let w = p.pwidth;
-                let r = p.pradius;
-                let r1 = r - w;
-                let r2 = r;
-                let _d = p.paxis.as_ref().unwrap().dir.normalize();
-                let _angle = p.pangle.to_radians();
-                let origin = p.xy + p.dxy;
-                profile_wire = self.gen_sann_wire(origin, p, true, r1, r2);
-                top_profile_wire = self.gen_sann_wire(origin, p, false, r1, r2);
-                is_sann = true;
-                (profile_wire, top_profile_wire)
-            }
-            CateProfileParam::SPRO(p) => {
-                let wire = self.cal_spro_wire(p);
-                (wire, None)
-            }
-            _ => {
-                (None, None)
-            }
-        };
-        // if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
-        if let Some(wire) = profile_wire {
-            //check if valid
-            if self.drns.is_nan() || self.drne.is_nan() {
-                // return Err(anyhow!("drns or drne is nan"));
-                println!("drns or drne is nan");
-                return None;
-            }
-            //先生成start 和 end face
-            let _transform_btm = Matrix4::one();
-            let _transform_top = Matrix4::one();
-            let _rotation = Matrix4::one();
-            let _scale_mat = Matrix4::one();
-
-            match &self.path {
-                //todo 旋转体的drne 和 drns也需要考虑，loft需要支持曲线的loft才行
-                SweepPath3D::SpineArc(arc) => {
-                    let mut face_s = builder::try_attach_plane(&[wire]).unwrap();
-                    if let Surface::Plane(plane) = face_s.surface() {
-                        let is_rev_face = (plane.normal().y * arc.axis.z as f64) < 0.0;
-                        if is_rev_face {
-                            dbg!("Face inveted");
-                            face_s.invert();
-                        }
-                    }
-                    let rot_angle = arc.angle;
-                    // dbg!(rot_angle);
-                    let rot_axis = if arc.clock_wise {
-                        -Vec3::Z
-                    } else {
-                        Vec3::Z
-                    };
-                    let solid = builder::rsweep(&face_s, Point3::origin(),
-                                                rot_axis.vector3(), Rad(rot_angle as f64));
-                    let shell: Shell = solid.into_boundaries().pop()?;
-                    return Some(shell);
-                }
-                SweepPath3D::Line(l) => {
-                    let mut transform_btm = Mat4::IDENTITY;
-                    let mut transform_top = Mat4::IDENTITY;
-                    if self.drns.is_normalized() && self.is_drns_sloped() {
-                        // println!("drns {:?}  is sloped", self.drns);
-                        let x_angle = self.drns.angle_between(Vec3::X).abs();
-                        // dbg!(x_angle);
-                        let scale_x = if x_angle < ANGLE_RAD_TOL {
-                            1.0
-                        } else {
-                            1.0 / (x_angle.sin())
-                        };
-                        let y_angle = self.drns.angle_between(Vec3::Y).abs();
-                        // dbg!(y_angle);
-                        let scale_y = if y_angle < ANGLE_RAD_TOL {
-                            1.0
-                        } else {
-                            1.0 / (y_angle.sin())
-                        };
-                        // dbg!((self.drns).angle_between(Vec3::Z));
-                        transform_btm = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
-                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
-                    }
-                    if self.drne.is_normalized() && self.is_drne_sloped() {
-                        // println!("drne {:?}  is sloped", self.drne);
-                        let x_angle = (-self.drne).angle_between(Vec3::X).abs();
-                        // dbg!(x_angle);
-                        let scale_x = if x_angle < ANGLE_RAD_TOL {
-                            1.0
-                        } else {
-                            1.0 / (x_angle.sin())
-                        };
-                        let y_angle = (-self.drne).angle_between(Vec3::Y).abs();
-                        // dbg!(y_angle);
-                        let scale_y = if y_angle < ANGLE_RAD_TOL {
-                            1.0
-                        } else {
-                            1.0 / (y_angle.sin())
-                        };
-                        transform_top = Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
-                            * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
-                    }
-                    transform_top = Mat4::from_translation(Vec3::new(0.0, 0.0, l.length())) * transform_top;
-
-                    let mut faces = vec![];
-                    let wire_s = builder::transformed(&wire, convert_to_cg_matrix4(&transform_btm));
-                    let wire_e = builder::transformed(&wire, convert_to_cg_matrix4(&transform_top));
-                    let edges_cnt = wire_s.len();
-                    for i in 0..edges_cnt {
-                        let c1 = &wire_s[i];
-                        let c2 = &wire_e[i];
-                        faces.push(builder::homotopy(c1, c2).inverse());
-                    }
-                    let face_s = builder::try_attach_plane(&[wire_s]).ok()?;
-                    let face_e = builder::try_attach_plane(&[wire_e]).ok()?;
-                    faces.push(face_s);
-                    faces.push(face_e.inverse());
-                    let shell: Shell = faces.into();
-                    return Some(shell);
-                }
-            }
-        }
-        None
-    }
-
-
     fn hash_unit_mesh_params(&self) -> u64 {
         //截面暂时用这个最省力的方法
         let mut hasher = DefaultHasher::default();
@@ -638,6 +616,7 @@ impl BrepShapeTrait for SweepSolid {
         hasher.finish()
     }
 
+
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let mut unit = self.clone();
         if let SweepPath3D::Line(_) = unit.path && !self.is_sloped() {
@@ -651,7 +630,6 @@ impl BrepShapeTrait for SweepSolid {
         Box::new(unit)
     }
 
-
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         if self.is_sloped() { return Vec3::ONE; }
@@ -661,11 +639,6 @@ impl BrepShapeTrait for SweepSolid {
         }
     }
 
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimLoft(self.clone())
-        )
-    }
 
     #[inline]
     fn get_trans(&self) -> bevy_transform::prelude::Transform {
@@ -689,5 +662,18 @@ impl BrepShapeTrait for SweepSolid {
         }
 
         bevy_transform::prelude::Transform::IDENTITY
+    }
+
+    fn tol(&self) -> f32 {
+        if let Some(aabb) = self.profile.get_bbox() {
+            return 0.01 * aabb.bounding_sphere().radius.max(1.0);
+        }
+        0.01
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimLoft(self.clone())
+        )
     }
 }
