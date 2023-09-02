@@ -3661,3 +3661,14 @@ impl From<i32> for EleOperation {
         }
     }
 }
+
+impl ToString for EleOperation {
+    fn to_string(&self) -> String {
+        match &self {
+            Self::None => { "Unknown".to_string() }
+            EleOperation::Add => { "增加".to_string() }
+            EleOperation::Modified => { "修改".to_string() }
+            EleOperation::Deleted => { "删除".to_string() }
+        }
+    }
+}
