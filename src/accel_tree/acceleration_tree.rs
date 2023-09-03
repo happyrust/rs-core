@@ -104,17 +104,17 @@ impl AccelerationTree {
         self.tree = rstar::RTree::bulk_load(bounding_boxes);
     }
 
-    pub fn query_within_distance<'a>(&'a self, loc: Vec3, distance: f32) -> impl Iterator<Item=(RefU64, [f32; 3])> + 'a {
+    pub fn query_within_distance<'a>(&'a self, loc: Vec3, distance: f32) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
         self.tree
             .locate_within_distance([loc.x, loc.y, loc.z], distance.powi(2))
-            .map(|bb| (bb.refno, bb.aabb.center()))
+            .map(|bb| (bb.refno, Aabb::new(bb.aabb.lower().into(), bb.aabb.upper().into())))
     }
 
-    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=(RefU64, [f32; 3])> + 'a {
+    pub fn locate_intersecting_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
         self.tree
             .locate_in_envelope_intersecting(&rstar::AABB::from_corners([bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                                                                         [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]]))
-            .map(|bb| (bb.refno, bb.aabb.center()))
+            .map(|bb| (bb.refno, Aabb::new(bb.aabb.lower().into(), bb.aabb.upper().into())))
     }
 
     pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=RefU64> + 'a {

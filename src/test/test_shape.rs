@@ -11,7 +11,4 @@ fn test_key_pts() {
 
     let revol = Revolution::default();
     dbg!(revol.key_points());
-
-
-
 }

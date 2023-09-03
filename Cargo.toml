@@ -75,4 +75,4 @@ indexmap = { version="2.0.0", features=["serde"] }
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-redb = "1.0.5"
+redb = "^1.0"
