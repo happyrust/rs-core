@@ -466,12 +466,12 @@ impl RefU64 {
         if strs.len() < 2 {
             return None;
         }
-        let ref0 = strs[0].parse::<u32>();
-        let ref1 = strs[1].parse::<u32>();
+        let ref0 = strs[0].parse::<i32>();
+        let ref1 = strs[1].parse::<i32>();
         if ref0.is_err() || ref1.is_err() {
             return None;
         }
-        Some(RefU64::from_two_nums(ref0.unwrap(), ref1.unwrap()))
+        Some(RefI32Tuple((ref0.unwrap(), ref1.unwrap())).into())
     }
 
     #[inline]
@@ -503,6 +503,12 @@ impl RefU64 {
         }
         let refno_url = refno_str.remove(1);
         RefU64::from_url_refno(refno_url)
+    }
+
+    /// 返回图数据库的id形式 例如 pdms_eles/1232_5445
+    pub fn to_arangodb_ids(collection_name: &str, refnos: Vec<RefU64>) -> Vec<String> {
+        refnos.into_iter()
+            .map(|refno| format!("{}/{}", collection_name, refno.to_url_refno())).collect()
     }
 }
 
