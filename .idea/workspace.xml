@@ -17,8 +17,6 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plugging_material.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/plugging_material.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -466,13 +464,6 @@
       <workItem from="1693018169142" duration="5278000" />
       <workItem from="1693199173821" duration="607000" />
     </task>
-    <task id="LOCAL-00155" summary="update">
-      <created>1667131046027</created>
-      <option name="number" value="00155" />
-      <option name="presentableId" value="LOCAL-00155" />
-      <option name="project" value="LOCAL" />
-      <updated>1667131046027</updated>
-    </task>
     <task id="LOCAL-00156" summary="update">
       <created>1667144717878</created>
       <option name="number" value="00156" />
@@ -809,7 +800,14 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="229" />
+    <task id="LOCAL-00229" summary="fix extrusion and revolution">
+      <created>1693553396068</created>
+      <option name="number" value="00229" />
+      <option name="presentableId" value="LOCAL-00229" />
+      <option name="project" value="LOCAL" />
+      <updated>1693553396068</updated>
+    </task>
+    <option name="localTasksCounter" value="230" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
