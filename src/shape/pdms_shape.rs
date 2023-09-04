@@ -448,7 +448,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     ///获得关键点
     fn key_points(&self) -> Vec<RsVec3>{
-        self.gen_brep_shell()
+        self.gen_unit_shape().gen_brep_shell()
             .map(|x| x.vertex_iter().map(|x| RsVec3::from(x.point())).into_iter().unique().collect())
             .unwrap_or(vec![Vec3::ZERO.into()])
     }
