@@ -1810,7 +1810,7 @@ impl From<AttrVal> for AttrValAql {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PdmsDatabaseInfo {
     pub db_names_map: DashMap<i32, String>,
     // 第一个i32是type_hash ，第二个i32是属性的hash
