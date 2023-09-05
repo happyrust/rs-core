@@ -3624,9 +3624,12 @@ pub struct PdmsNodeBelongRoomName {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PdmsNameBelongRoomName {
     #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    #[serde_as(as = "DisplayFromStr")]
     pub name: String,
     pub room_name: String,
 }
+
 
 /// 房间下的所有节点
 #[serde_as]

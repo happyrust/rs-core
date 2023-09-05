@@ -16,3 +16,4 @@ pub struct RoomSelectedSiteVec {
 pub struct FlagRoomSiteVec {
     pub data: Vec<SiteData>,
 }
+
