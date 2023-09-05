@@ -79,7 +79,7 @@ pub fn generate_att_info_json() -> anyhow::Result<()> {
                         default_val,
                         att_type,
                     };
-                    dbg!(&att_info);
+
                     attr_info_map.insert(hash, att_info);
                 }
                 k += *attr_pointer.offset(k + 1) as isize;
