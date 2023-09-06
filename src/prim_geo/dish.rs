@@ -6,6 +6,7 @@ use std::thread::sleep;
 use glam::Vec3;
 use anyhow::anyhow;
 
+use nalgebra::ComplexField;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{Shell};

@@ -449,21 +449,19 @@ pub fn gen_wire(
             // dbg!((pa_dist - b_len));
             // dbg!((pb_dist - b_len));
 
-            if (pa_dist - b_len < -0.1)  || (pb_dist - b_len) < -0.1{
-                verts.push(builder::vertex(pt));
-                continue;
-            }
+            // if (pa_dist - b_len < -0.1)  || (pb_dist - b_len) < -0.1{
+            //     verts.push(builder::vertex(pt));
+            //     continue;
+            // }
 
-            // if pa_dist - b_len > 0.01
-            {
+            if pa_dist - b_len > 0.01{
                 verts.push(builder::vertex(vec3_round_2(p0).point3_without_z()));
             }
 
             verts.push(builder::vertex(vec3_round_2(transit_pt).point3_without_z()));
             circle_indexs.push(verts.len() - 1);
 
-            // if pb_dist - b_len > 0.01
-            {
+            if pb_dist - b_len > 0.01{
                 verts.push(builder::vertex(vec3_round_2(p1).point3_without_z()));
             }
         }
