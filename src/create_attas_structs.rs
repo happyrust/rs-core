@@ -257,6 +257,10 @@ pub struct VirtualHoleGraphNodeQuery {
     #[serde(rename = "Version")]
     #[serde(default = "default_version_value")]
     pub version: char,
+    // 校审状态
+    #[serde(default)]
+    #[serde(rename = "JSStatus")]
+    pub js_status: String,
     // 只用于存储和查询的数据，不涉及任何业务
     #[serde(flatten)]
     pub map: HashMap<String, String>,
@@ -448,7 +452,54 @@ pub struct VirtualEmbedGraphNodeQuery {
     #[serde(rename = "Version")]
     #[serde(default = "default_version_value")]
     pub version: char,
+    // 校审状态
+    #[serde(default)]
+    #[serde(rename = "JSStatus")]
+    pub js_status: String,
     // 只用于存储和查询的数据，不涉及任何业务
     #[serde(flatten)]
     pub map: HashMap<String, String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug,PartialEq)]
+pub enum VirtualHoleGraphNodeJSStatus {
+    // 发起流程
+    Initiate,
+    // 会签
+    CounterSign,
+    // 校核
+    Review,
+    // 审核
+    Audit,
+    // 审定
+    Approve,
+    // 批准
+    FinalApprove,
+    Unknown,
+}
+
+impl VirtualHoleGraphNodeJSStatus {
+    pub fn from_chinese(chinese: &str) -> Self {
+        match chinese {
+            "发起流程" => Self::Initiate,
+            "会签" => Self::CounterSign,
+            "校核" => Self::Review,
+            "审核" => Self::Audit,
+            "审定" => Self::Approve,
+            "批准" => Self::FinalApprove,
+            _ => Self::Unknown,
+        }
+    }
+
+    pub fn to_chinese(&self) -> &str {
+        match self {
+            Self::Initiate => "发起流程",
+            Self::CounterSign => "会签",
+            Self::Review => "校核",
+            Self::Audit => "审核",
+            Self::Approve => "审定",
+            Self::FinalApprove => "批准",
+            Self::Unknown => "未知",
+        }
+    }
 }
