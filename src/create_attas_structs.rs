@@ -452,3 +452,15 @@ pub struct VirtualEmbedGraphNodeQuery {
     #[serde(flatten)]
     pub map: HashMap<String, String>,
 }
+
+
+//存储虚拟孔洞detail
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct VirtualHoleHistoryData {
+   pub data:VirtualHoleGraphNodeQuery
+}
+//存储虚拟埋件detail
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct VirtualEmbedHistoryData {
+    pub data:VirtualEmbedGraphNodeQuery
+}

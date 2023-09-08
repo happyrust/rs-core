@@ -231,6 +231,12 @@ impl SendHoleDataToArango {
     }
 }
 
+//提资列表
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct AuditDataVec {
+ pub data:Vec<SendHoleDataToArango>
+}
+
 //可提资物资信息
 #[derive(Resource, Default, Clone, Debug, Serialize, Deserialize, Component, PartialEq)]
 pub struct VirtualHoleData {
