@@ -153,7 +153,7 @@ pub mod geo_params_data {
         Unknown,
         //元件库的几何体几何存储
         Box(super::CateBoxParam),
-        Cone(super::CateConeParam),
+        Cone(super::CateSnoutParam),
         LCylinder(super::CateLCylinderParam),
         SCylinder(super::CateSCylinderParam),
 

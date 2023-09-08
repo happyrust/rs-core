@@ -168,27 +168,32 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let dir = axis.dir.normalize_or_zero();
+            let mut dir = axis.dir.normalize_or_zero();
             if dir.length() == 0.0 {
                 return None;
             }
-            let translation = dir * (d.dist_to_btm as f32)
-                + Vec3::new(axis.pt[0] as f32, axis.pt[1] as f32, axis.pt[2] as f32);
+            let translation = dir * (d.dist_to_btm as f32) + axis.pt;
+            let mut height = d.height;
+            if d.height < 0.0 {
+                height = -d.height;
+                dir = -dir;
+            }
+
             let transform = Transform {
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
                 translation,
                 ..Default::default()
             };
-            let pheig = d.height as f32;
             let pdia = d.diameter as f32;
             let prad = d.radius as f32;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Dish {
                 pdis: 0.0,
-                pheig,
+                pheig: height,
                 pdia,
                 prad,
                 ..Default::default()
             });
+            dbg!(&brep_shape);
             return Some(CateBrepShape {
                 refno: d.refno,
                 brep_shape,
@@ -200,21 +205,28 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_ngmr: false,
             });
         }
-        CateGeoParam::Snout(d) => {
-            // 统计复用个数
+        CateGeoParam::Snout(d) | CateGeoParam::Cone(d) => {
             let z = d.pa.as_ref()?;
-            let x = d.pb.as_ref()?;
+            // let x = d.pb.as_ref().unwrap_or(default);
+            let mut x_dir = Vec3::X;
+            let mut x_pt = Vec3::ZERO;
             let mut pts = Vec::default();
             pts.push(z.number);
-            pts.push(x.number);
-
+            let mut is_cone = d.btm_diameter == 0.0;
+            if let Some(pb) = d.pb.as_ref() {
+                x_dir = pb.dir;
+                pts.push(pb.number);
+            }else{
+                // dbg!(d);
+            }
+            
             let mut btm_on_top = false;
             let z_axis = z.dir;
             if z_axis.length() == 0.0 {
                 return None;
             }
             let origin = z.pt;
-            let x_axis = x.dir;
+            let x_axis = x_dir;
             let translation = origin + z_axis * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
             let mut height = (d.dist_to_top - d.dist_to_btm) as f32;
             let poff = d.offset as f32;
@@ -222,9 +234,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut ptdm = d.top_diameter as f32;
             let mut pbdm = d.btm_diameter as f32;
 
+            //统一使用旋转来实现
             if height < 0.0 {
                 btm_on_top = true;
                 height = -height;
+                // z_axis = -z_axis;
                 ptdm = d.btm_diameter as f32;
                 pbdm = d.top_diameter as f32;
             }
@@ -268,15 +282,15 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if dir.length() == 0.0 {
                 return None;
             }
+            let translation =  (dir * d.dist_to_btm + axis.pt);
             let mut phei = d.height as f32;
-            // dbg!(&translation);
+            //如果height是负数，相当于要额外旋转一下
             if phei < 0.0 {
                 phei = -phei;
                 dir = -dir;
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation =  (dir * d.dist_to_btm + axis.pt);
             let transform = Transform {
                 rotation,
                 translation,
@@ -309,14 +323,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
             let mut phei = (d.dist_to_top - d.dist_to_btm) as f32;
             let mut dis = d.dist_to_btm;
+            let translation =  (dir * dis + axis.pt);
+            //如果height是负数，相当于要额外旋转一下
             if phei < 0.0 {
                 phei = -phei;
                 dir = -dir;
-                dis = d.dist_to_top;
             }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            let translation =  (dir * dis + axis.pt);
             let transform = Transform {
                 rotation,
                 translation,
