@@ -69,7 +69,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             };
             ///需要偏移到 btm
             let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt;
-            let rotation = Quat::from_rotation_arc(Vec3::Z, z_axis);
+            let rotation = Quat::from_mat3(&Mat3::from_cols(pb.dir.normalize(), pc.dir.normalize(), pa.dir.normalize()));
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 refno: d.refno,

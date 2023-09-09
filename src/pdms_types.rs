@@ -803,9 +803,13 @@ impl AttrMap {
                 let v = (pose - poss).length();
                 hash_f32(v, &mut hasher);
             }
+            //JUSL is adjus in wire calculation, so here we should make hash unique by jusl
+            let jusl = self.get_str_or_default("JUSL");
+            std::hash::Hash::hash(jusl, &mut hasher);
+
             let val = std::hash::Hasher::finish(&hasher);
 
-            return Some(val / 23 + 739);
+            return Some(val);
         }
         return None;
     }
@@ -1159,6 +1163,11 @@ impl AttrMap {
             StringType(s) | WordType(s) | ElementType(s) => Some(s.as_str()),
             _ => None,
         }
+    }
+
+    #[inline]
+    pub fn get_str_or_default(&self, key: &str) -> &str {
+        self.get_str(key).unwrap_or("unset")
     }
 
     #[inline]

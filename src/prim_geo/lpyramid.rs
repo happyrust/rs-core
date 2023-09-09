@@ -69,6 +69,14 @@ impl VerifiedShape for LPyramid {
     }
 }
 
+fn create_pyramid_with_one_line() -> Option<truck_modeling::Shell>{
+    None
+}
+
+fn create_pyramid_with_one_point() -> Option<truck_modeling::Shell>{
+    None
+}
+
 //#[typetag::serde]
 impl BrepShapeTrait for LPyramid {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -80,7 +88,7 @@ impl BrepShapeTrait for LPyramid {
         use truck_modeling::*;
         use truck_modeling::builder::*;
 
-        //todo 以防止出现有单个点的情况，暂时用这个模拟
+        //todo 需要解决这里的homotopy问题，能兼容point 和 line的情况
         let tx = (self.pbtp as f64 / 2.0).max(0.001);
         let ty = (self.pctp as f64 / 2.0).max(0.001);
         let bx = (self.pbbt as f64 / 2.0).max(0.001);

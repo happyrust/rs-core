@@ -50797,6 +50797,15 @@
           "IntegerType": 0
         },
         "att_type": "INTEGER"
+      },
+      "858074": {
+        "name": "NAPP",
+        "hash": 858074,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
       }
     },
     "644143": {

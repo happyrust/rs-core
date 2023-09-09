@@ -46,8 +46,6 @@ bevy_ecs = { path = "../bevy/crates/bevy_ecs"}
 bevy_reflect = { path = "../bevy/crates/bevy_reflect"}
 bevy_render = { path = "../bevy/crates/bevy_render", optional = true}
 
-tobj = { path = "../tobj", features = ["merging"]}
-
 base64 = "0.21.0"
 serde-name = "0.2.1"
 serde = { version = "1.0.133", features = ["derive"] }
