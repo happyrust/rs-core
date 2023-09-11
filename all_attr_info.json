@@ -59058,9 +59058,9 @@
         "hash": 581569,
         "offset": 2277817984,
         "default_val": {
-          "IntArrayType": []
+          "IntegerType": 0
         },
-        "att_type": "INTVEC"
+        "att_type": "INTEGER"
       },
       "722860": {
         "name": "POSI",
@@ -59070,13 +59070,6 @@
           "BoolType": false
         },
         "att_type": "BOOL"
-      },
-      "0": {
-        "name": "",
-        "hash": 0,
-        "offset": 0,
-        "default_val": "InvalidType",
-        "att_type": "INTEGER"
       },
       "81285816": {
         "name": "UDTYPE",
