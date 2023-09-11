@@ -461,7 +461,7 @@ pub struct VirtualEmbedGraphNodeQuery {
     pub map: HashMap<String, String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug,PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum VirtualHoleGraphNodeJSStatus {
     // 发起流程
     Initiate,
@@ -508,10 +508,24 @@ impl VirtualHoleGraphNodeJSStatus {
 //存储虚拟孔洞detail
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualHoleHistoryData {
-   pub data:VirtualHoleGraphNodeQuery
+    pub data: VirtualHoleGraphNodeQuery,
 }
+
 //存储虚拟埋件detail
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualEmbedHistoryData {
-    pub data:VirtualEmbedGraphNodeQuery
+    pub data: VirtualEmbedGraphNodeQuery,
+}
+
+
+//存储校核人虚拟孔洞detail
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ReviewerHoleDetail {
+    pub data: VirtualHoleGraphNodeQuery,
+}
+
+//存储校核人虚拟埋件detail
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ReviewerEmbedDetail {
+    pub data: VirtualEmbedGraphNodeQuery,
 }
