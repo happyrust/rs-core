@@ -222,6 +222,10 @@ impl SendHoleData {
     }
 }
 
+
+
+
+
 impl SendHoleDataToArango {
     pub fn to_ui_struct(self) -> SendHoleData {
         SendHoleData {
