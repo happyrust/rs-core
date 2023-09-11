@@ -68,6 +68,11 @@ pub fn db1_dehash(hash: u32) -> String {
     result
 }
 
+#[inline]
+pub fn db1_hash_i32(hash_str: &str) -> i32 {
+    db1_hash(hash_str) as _
+}
+
 //todo 处理出错的情况
 #[inline]
 pub fn db1_hash(hash_str: &str) -> u32 {

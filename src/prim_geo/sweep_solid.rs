@@ -42,7 +42,7 @@ pub struct SweepSolid {
     pub drns: Vec3,
     pub drne: Vec3,
     pub bangle: f32,
-    pub plane_normal: Vec3,
+    pub plax: Vec3,
     pub extrude_dir: Vec3,
     pub height: f32,
     pub path: SweepPath3D,
@@ -171,7 +171,7 @@ impl SweepSolid {
         match &self.path {
             SweepPath3D::SpineArc(d) => {
                 let y_axis = d.pref_axis;
-                let mut z_axis = self.plane_normal;
+                let mut z_axis = self.plax;
                 r_translation.x = d.radius as f64;
                 if d.clock_wise {
                     z_axis = -z_axis;
@@ -183,11 +183,11 @@ impl SweepSolid {
                 // dbg!((x_axis, y_axis, z_axis));
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Z));
+                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Z));
             }
 
             SweepPath3D::Line(d) => {
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Y));
+                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
                 if d.is_spine {
                     dbg!(self.bangle.to_radians());
                     beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
@@ -243,7 +243,7 @@ impl SweepSolid {
             builder::transformed(&wire, r_trans_mat * beta_mat * local_mat * translation);
         let face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
         if let Surface::Plane(plane) = face.surface() {
-            let _s = self.plane_normal.y as f64;
+            let _s = self.plax.y as f64;
             if is_btm && plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
                 result_wire.invert();
             }
@@ -324,7 +324,7 @@ impl SweepSolid {
         match &self.path {
             SweepPath3D::SpineArc(d) => {
                 let y_axis = d.pref_axis;
-                let mut z_axis = self.plane_normal;
+                let mut z_axis = self.plax;
                 r_translation.x = d.radius as f64;
                 if d.clock_wise {
                     z_axis = -z_axis;
@@ -337,7 +337,7 @@ impl SweepSolid {
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
             }
             SweepPath3D::Line(d) => {
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Y));
+                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
                 // dbg!(rot_mat);
                 // dbg!(to_pdms_ori_str(&rot_mat));
             }
@@ -346,7 +346,8 @@ impl SweepSolid {
         // dbg!(&offset_pt);
         let mut points = vec![];
         for i in 0..len {
-            let p = Vec3::new(verts[i][0], verts[i][1], 0.0);
+            // let p = Vec3::new(verts[i][0], verts[i][1], 0.0);
+            let p = verts[i].extend(0.0);
             points.push(p);
         }
         let wire = wire::gen_wire(&points, &profile.frads).ok()?;
@@ -368,7 +369,7 @@ impl SweepSolid {
         // dbg!(result_wire.vertex_iter().collect::<Vec<_>>());
         let face = builder::try_attach_plane(&[result_wire.clone()]).ok()?;
         if let Surface::Plane(plane) = face.surface() {
-            let _s = self.plane_normal.y as f64;
+            let _s = self.plax.y as f64;
             if plane.normal().dot(self.extrude_dir.vector3()) > 0.0 {
                 result_wire.invert();
             }
@@ -384,7 +385,7 @@ impl Default for SweepSolid {
             drns: Default::default(),
             drne: Default::default(),
             bangle: 0.0,
-            plane_normal: Vec3::Z,
+            plax: Vec3::Z,
             extrude_dir: Vec3::Z,
             ..Default::default()
         }
@@ -428,6 +429,13 @@ impl BrepShapeTrait for SweepSolid {
                 let wire = self.cal_spro_wire(p);
                 (wire, None)
             }
+            CateProfileParam::SREC(p) => {
+                let profile = p.convert_to_spro();
+                dbg!(p);
+                dbg!(&profile);
+                let wire = self.cal_spro_wire(&profile);
+                (wire, None)
+            }
             _ => (None, None),
         };
         // if let Some(mut wire) = profile_wire && let Some(mut top_wire) = top_profile_wire {
@@ -438,12 +446,6 @@ impl BrepShapeTrait for SweepSolid {
                 println!("drns or drne is nan");
                 return None;
             }
-            //先生成start 和 end face
-            let _transform_btm = Matrix4::one();
-            let _transform_top = Matrix4::one();
-            let _rotation = Matrix4::one();
-            let _scale_mat = Matrix4::one();
-
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
                     let mut face_s = builder::try_attach_plane(&[wire]).unwrap();
@@ -651,12 +653,12 @@ impl BrepShapeTrait for SweepSolid {
         let mut unit = self.clone();
         if let SweepPath3D::Line(_) = unit.path && !self.is_sloped() {
             unit.extrude_dir = Vec3::Z;
-            unit.path = SweepPath3D::Line(Line3D::default());
+            unit.path = SweepPath3D::Line(Line3D{
+                start: Default::default(),
+                end: Vec3::Z * 10.0,
+                is_spine: false,
+            });
         }
-        // if let SweepPath3D::Line(_) = unit.path {
-        //     unit.extrude_dir = Vec3::Z;
-        //     unit.path = SweepPath3D::Line(Line3D::default());
-        // }
         Box::new(unit)
     }
 
@@ -666,7 +668,7 @@ impl BrepShapeTrait for SweepSolid {
             return Vec3::ONE;
         }
         match &self.path {
-            SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, l.length()),
+            SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, l.length() / 10.0),
             _ => Vec3::ONE,
         }
     }
@@ -682,7 +684,7 @@ impl BrepShapeTrait for SweepSolid {
                     translation,
                 };
             }
-            CateProfileParam::SPRO(_) => {
+            CateProfileParam::SPRO(_) | CateProfileParam::SREC(_)  => {
                 return bevy_transform::prelude::Transform {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),

@@ -1,18 +1,21 @@
-pub mod bin_data;
-
-
-
 use aios_core::tool::db_tool::{db1_dehash, db1_hash};
 use anyhow::Ok;
-use crate::bin_data::generate_att_info_json;
-
 
 fn main() -> anyhow::Result<()>{
 
     // dbg!(db1_dehash(0x04D852B8));
-    // dbg!(db1_dehash(785962));
-    println!("{:#4X}", db1_hash("SPRO"));
-    // generate_att_info_json()
+    dbg!(db1_dehash(0x9CCA7));
+    dbg!(db1_dehash(0xAE18D));
+    dbg!(db1_dehash(0x000C7983));
+    dbg!(db1_dehash(0x9E770));
+    println!("{:#4X}", db1_hash("DESP"));
+    // let type_att_info = generate_att_info_json(Some("att_APPLDW"))?;
+    // let type_att_info = generate_att_info_json(Some("att_NSEX"))?;
+    // // dbg!(&type_att_info);
+    // let mut pdms_database_info = get_default_pdms_db_info();
+    // pdms_database_info.merge(&type_att_info);
+    // // pdms_database_info.save(Some("new_all_attr_info.json"))?;
+    // pdms_database_info.save(None)?;
 
     Ok(())
 }

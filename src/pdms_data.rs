@@ -83,7 +83,7 @@ pub struct GmParam {
     pub phei: String,
     pub offset: String,
     /// 顺序 x y z
-    pub box_lengths: Vec<String>,
+    pub lengths: Vec<String>,
     pub xyz: Vec<String>,
 
     /// profile  SPVE   SANN(PX, PY)

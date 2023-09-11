@@ -47,6 +47,7 @@ pub mod ssc_setting;
 pub mod version_control;
 pub mod penetration;
 pub mod vague_search;
+pub mod bin_data;
 
 pub mod achiver;
 pub mod plugging_material;
@@ -54,14 +55,15 @@ pub mod room_setting;
 pub mod water_calculation;
 pub mod enso_types;
 
-
 pub mod test;
 
 
-// pub type BHashMap<K, V> = bevy::utils::HashMap<K, V>;
 pub type BHashMap<K, V> = BTreeMap<K, V>;
-// pub type BHashMap<K, V> = HashMap<K, V>;
 
-pub fn get_default_pdms_db_info() -> PdmsDatabaseInfo {
-    serde_json::from_str::<PdmsDatabaseInfo>(&include_str!("../all_attr_info.json")).unwrap()
+use once_cell_serde::sync::OnceCell;
+pub fn get_default_pdms_db_info() -> &'static PdmsDatabaseInfo {
+    static INSTANCE: OnceCell<PdmsDatabaseInfo> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        serde_json::from_str::<PdmsDatabaseInfo>(&include_str!("../all_attr_info.json")).unwrap()
+    })
 }
