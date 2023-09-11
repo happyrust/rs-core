@@ -1110,10 +1110,12 @@ impl AttrMap {
     pub fn get_type(&self) -> &str {
         self.get_str("TYPE").unwrap_or("unset")
     }
+
     #[inline]
     pub fn get_typex(&self) -> &str {
         self.get_str("TYPEX").unwrap_or("unset")
     }
+
     #[inline]
     pub fn is_type(&self, type_name: &str) -> bool {
         self.get_type() == type_name
