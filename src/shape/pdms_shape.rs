@@ -1,6 +1,6 @@
 
 
-
+use glam::DMat4;
 use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
@@ -137,14 +137,14 @@ impl PlantMesh {
         mesh
     }
 
-    pub fn transform_by(&self, t: &Mat4) -> Self {
+    pub fn transform_by(&self, t: &DMat4) -> Self {
         let mut vertices = Vec::with_capacity(self.vertices.len());
         let mut normals = Vec::with_capacity(self.vertices.len());
         let len = self.vertices.len();
         for i in 0..len {
-            vertices.push(t.transform_point3(self.vertices[i]));
+            vertices.push(t.transform_point3(self.vertices[i].as_dvec3()).as_vec3());
             if i < self.normals.len() {
-                normals.push(t.transform_vector3(self.normals[i]).normalize());
+                normals.push(t.transform_vector3(self.normals[i].as_dvec3()).normalize().as_vec3());
             }
         }
         Self {
