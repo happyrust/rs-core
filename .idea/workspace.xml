@@ -15,10 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix model problems">
-      <change afterPath="$PROJECT_DIR$/rust-toolchain.toml" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP 完善解析">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/all_attr_info.json" beforeDir="false" afterPath="$PROJECT_DIR$/all_attr_info.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bins/att_AIDGRO" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/bins/att_AIDLIN" beforeDir="false" />
@@ -31,16 +29,8 @@
       <change beforePath="$PROJECT_DIR$/bins/att_SUPPO" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/bins/att_TRNB" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/bins/att_VSPR" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bin_data/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bin_data/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tiny_expr/expr_eval.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tiny_expr/expr_eval.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/db_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/db_tool.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -497,7 +487,7 @@
       <workItem from="1693836024050" duration="717000" />
       <workItem from="1693984757937" duration="298000" />
       <workItem from="1694164973641" duration="156000" />
-      <workItem from="1694403208860" duration="7290000" />
+      <workItem from="1694403208860" duration="11570000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -842,7 +832,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="235" />
+    <option name="localTasksCounter" value="236" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -883,7 +873,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="跳过不需要复用的元件库，比如Wall这些" />
     <MESSAGE value="不要使用LOOP、PLOO作为显示类型" />
     <MESSAGE value="update truck impl" />
     <MESSAGE value="adjust tol" />
@@ -908,7 +897,8 @@
     <MESSAGE value="update rtree" />
     <MESSAGE value="update" />
     <MESSAGE value="fix model problems" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix model problems" />
+    <MESSAGE value="WIP 完善解析" />
+    <option name="LAST_COMMIT_MESSAGE" value="WIP 完善解析" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

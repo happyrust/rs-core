@@ -431,8 +431,8 @@ impl BrepShapeTrait for SweepSolid {
             }
             CateProfileParam::SREC(p) => {
                 let profile = p.convert_to_spro();
-                dbg!(p);
-                dbg!(&profile);
+                // dbg!(p);
+                // dbg!(&profile);
                 let wire = self.cal_spro_wire(&profile);
                 (wire, None)
             }

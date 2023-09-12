@@ -2360,6 +2360,11 @@ impl ShapeInstancesData {
     }
 
     #[inline]
+    pub fn get_final_inst_info(&self, refno: RefU64) -> Option<&EleGeosInfo> {
+        self.get_compound_info(refno).or(self.get_inst_info(refno))
+    }
+
+    #[inline]
     pub fn get_inst_geos_data_mut_by_refno(
         &mut self,
         refno: RefU64,
@@ -2809,7 +2814,7 @@ impl EleInstGeosData {
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
                     s.transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    own_pos_refno = x.owner_pos_refno;
+                    own_pos_refno = x.owner_pos_refnos;
                     Some((own_pos_refno, s))
                 } else {
                     None
@@ -2821,15 +2826,15 @@ impl EleInstGeosData {
 
     ///返回新的shape，如果只有负实体，需要返回对应正实体的参考号
     #[cfg(feature = "opencascade_rs")]
-    pub fn gen_occ_shape(&self, transform: &Transform) -> Option<(Shape, Option<RefU64>)> {
-        let mut neg_shapes: Vec<(Shape, Option<RefU64>)> = self
+    pub fn gen_occ_shape(&self, transform: &Transform) -> Option<(Shape, Vec<RefU64>)> {
+        let mut neg_shapes: Vec<(Shape, Vec<RefU64>)> = self
             .insts
             .iter()
             .filter(|x| x.geo_type == GeoBasicType::Neg)
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
                     s.transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    Some((s, Some(x.owner_pos_refno)))
+                    Some((s, x.owner_pos_refnos))
                 } else {
                     None
                 }
@@ -2854,7 +2859,7 @@ impl EleInstGeosData {
             .collect();
         //执行cut 运算
         for cate_neg_inst in self.insts.iter().filter(|x| x.is_cata_neg()) {
-            if let Some(pos_shape) = pos_shapes.get_mut(&cate_neg_inst.owner_pos_refno) {
+            if let Some(pos_shape) = pos_shapes.get_mut(&cate_neg_inst.owner_pos_refnos) {
                 if let Some(neg_shape) = cate_neg_inst.gen_occ_shape() {
                     *pos_shape = pos_shape.subtract_shape(&neg_shape).0;
                 }
@@ -2878,6 +2883,7 @@ impl EleInstGeosData {
     Default,
     Resource,
 )]
+#[serde_as]
 pub struct EleInstGeo {
     /// 几何hash参数
     #[serde(deserialize_with = "de_from_str")]
@@ -2888,10 +2894,9 @@ pub struct EleInstGeo {
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
     ///如果是负实体, 指定它的附属正实体参考号
-    #[serde(deserialize_with = "de_refno_from_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+    #[serde_as(as = "HashSet<DisplayFromStr>")]
     #[serde(default)]
-    pub owner_pos_refno: RefU64,
+    pub owner_pos_refnos: HashSet<RefU64>,
     ///几何参数数据
     #[serde(default)]
     pub geo_param: PdmsGeoParam,
@@ -2982,7 +2987,7 @@ fn test_ele_geo_instance_serialize_deserialize() {
         visible: false,
         is_tubi: false,
         geo_type: Default::default(),
-        owner_pos_refno: Default::default(),
+        owner_pos_refnos: Default::default(),
     };
     // let json = serde_json::to_string(&data).unwrap();
     // dbg!(&json);
