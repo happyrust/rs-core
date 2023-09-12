@@ -85,10 +85,10 @@ pub struct GmseParamData {
     pub offset: f32,
     /// 顶点集合
     pub verts: Vec<Vec3>,
-    pub dxy: Vec<[f32; 2]>,
+    pub dxy: Vec<Vec2>,
     pub drad: f32,
     pub dwid: f32,
-    pub box_lengths: Vec<f32>,
+    pub lengths: Vec<f32>,
     /// 顺序 x y z
     pub xyz: Vec<f32>,
     /// 顺序 paxis pa_axis pb_axis pc_axis
@@ -482,6 +482,7 @@ pub struct SannData {
     pub plin_axis: Vec3,
 }
 
+///一般的由顶点组成的截面信息
 #[derive(
     Clone,
     PartialEq,
@@ -494,11 +495,46 @@ pub struct SannData {
     rkyv::Serialize,
 )]
 pub struct SProfileData {
-    pub verts: Vec<Vec3>,
+    pub verts: Vec<Vec2>,
     pub frads: Vec<f32>,
     pub normal_axis: Vec3,
     pub plin_pos: Vec2,
     pub plin_axis: Vec3,
+}
+
+///一般的由顶点组成的截面信息
+#[derive(
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
+pub struct SRectData {
+    pub center: Vec2,
+    pub size: Vec2,
+    pub dxy: Vec2,
+    pub normal_axis: Vec3,
+    pub plin_pos: Vec2,
+    pub plin_axis: Vec3,
+}
+
+impl SRectData{
+    pub fn convert_to_spro(&self) -> SProfileData{
+        let c = self.center + self.dxy;
+        let h = self.size/2.0;
+        SProfileData{
+            verts: vec![c - h, c + Vec2::new(h.x, -h.y), c + h, c + Vec2::new(-h.x, h.y) ],
+            frads: vec![0.0; 4],
+            normal_axis: self.normal_axis,
+            plin_pos: self.plin_pos,
+            plin_axis: self.plin_axis,
+        }
+    }
 }
 
 //截面的处理，还需要旋转自身的平面
@@ -518,24 +554,39 @@ pub enum CateProfileParam {
     UNKOWN,
     SPRO(SProfileData),
     SANN(SannData),
+    SREC(SRectData),
 }
 
 impl CateProfileParam {
+
+    pub fn get_plax(&self) -> Vec3{
+        match self {
+            CateProfileParam::UNKOWN => Vec3::Y,
+            CateProfileParam::SPRO(s) => s.normal_axis.normalize(),
+            CateProfileParam::SANN(s) => s.paxis.as_ref().map(|x| x.dir).unwrap_or(Vec3::Y),
+            CateProfileParam::SREC(s) => s.normal_axis.normalize(),
+        }
+    }
+
     pub fn get_bbox(&self) -> Option<Aabb> {
         match self {
-            Self::UNKOWN => None,
-            Self::SANN(s) => Some(Aabb::new(
-                nalgebra::Vector2::from(s.xy + s.dxy - Vec2::ONE * s.drad).into(),
-                nalgebra::Vector2::from(s.xy + s.dxy + Vec2::ONE * s.drad).into(),
+            CateProfileParam::UNKOWN => None,
+            CateProfileParam::SANN(s) => Some(Aabb::new(
+                nalgebra::Point2::from(s.xy + s.dxy - Vec2::ONE * s.drad),
+                nalgebra::Point2::from(s.xy + s.dxy + Vec2::ONE * s.drad),
             )),
-            Self::SPRO(s) => {
+            CateProfileParam::SPRO(s) => {
                 let pts = s
                     .verts
                     .iter()
-                    .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
+                    .map(|x| nalgebra::Point2::from(*x))
                     .collect::<Vec<_>>();
                 Some(Aabb::from_points(&pts))
             }
+            CateProfileParam::SREC(s) => Some(Aabb::new(
+                nalgebra::Point2::from(s.center + s.dxy - s.size/2.0),
+                nalgebra::Point2::from(s.center + s.dxy + s.size/2.0),
+            )),
         }
     }
 }

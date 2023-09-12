@@ -1,7 +1,7 @@
 use std::alloc::{alloc, Layout};
 use std::panic;
 
-use glam::{Mat4, Vec2, Vec3};
+use glam::{DMat4, Mat4, Vec2, Vec3};
 use itertools::Itertools;
 use manifold_sys::bindings::*;
 use crate::shape::pdms_shape::PlantMesh;
@@ -153,8 +153,8 @@ impl ManifoldRust {
             let mut src = self.clone();
             for (i, b) in negs.iter().enumerate() {
                 manifold_difference(result.ptr as _, src.ptr, b.ptr);
-                // #[cfg(debug_assertions)]
-                // dbg!(result.num_tri());
+                #[cfg(debug_assertions)]
+                dbg!(result.num_tri());
                 src.ptr = result.ptr;
             }
             manifold_as_original(result.ptr as _, src.ptr);
@@ -234,18 +234,18 @@ impl ManifoldMeshRust {
     }
 }
 
-impl From<(&PlantMesh, &Mat4)> for ManifoldMeshRust {
-    fn from(c: (&PlantMesh, &Mat4)) -> Self {
+impl From<(&PlantMesh, &DMat4)> for ManifoldMeshRust {
+    fn from(c: (&PlantMesh, &DMat4)) -> Self {
         let m = c.0;
         let t = c.1;
         unsafe {
             let mesh = ManifoldMeshRust::new();
-            let mut verts = Vec::with_capacity(m.vertices.len() * 3);
+            let mut verts: Vec<f32> = Vec::with_capacity(m.vertices.len() * 3);
             for v in m.vertices.clone() {
-                let pt = t.transform_point3(Vec3::from(v));
-                verts.push(pt[0]);
-                verts.push(pt[1]);
-                verts.push(pt[2]);
+                let pt = t.transform_point3(glam::DVec3::from(v));
+                verts.push(pt[0] as _);
+                verts.push(pt[1] as _);
+                verts.push(pt[2] as _);
             }
             manifold_meshgl(mesh.ptr as _,
                             verts.as_ptr(), m.vertices.len(), 3,
@@ -287,8 +287,8 @@ impl From<PlantMesh> for ManifoldRust {
     }
 }
 
-impl From<(&PlantMesh, &Mat4)> for ManifoldRust {
-    fn from(m: (&PlantMesh, &Mat4)) -> Self {
+impl From<(&PlantMesh, &DMat4)> for ManifoldRust {
+    fn from(m: (&PlantMesh, &DMat4)) -> Self {
         unsafe {
             let mesh: ManifoldMeshRust = m.into();
             Self::from_mesh(&mesh)

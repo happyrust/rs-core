@@ -4,7 +4,7 @@ use clap::Parser;
 
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
-    #[clap(long)]
+    #[clap(long, default_value="false")]
     pub enable_log: bool,
     #[clap(long)]
     pub total_sync: bool,
@@ -16,6 +16,10 @@ pub struct DbOption {
     pub sync_localdb: Option<bool>,
     #[clap(long)]
     pub incr_sync: bool,
+    #[clap(long, default_value="10_0000")]
+    pub sync_chunk_size: Option<u32>,
+
+
     #[clap(long)]
     pub replace_dbs: bool,
     #[clap(skip)]
