@@ -47,7 +47,7 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 
-use crate::tool::db_tool::{db1_dehash, db1_hash};
+use crate::tool::db_tool::{db1_dehash, db1_hash_i32, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::tool::math_tool::*;
 use crate::BHashMap;
