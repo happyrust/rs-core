@@ -5,6 +5,7 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use parry3d::bounding_volume::Aabb;
 use bevy_transform::prelude::*;
+use crate::data_center::SendHoleData;
 use crate::pdms_types::GeoBasicType;
 use crate::pdms_types::ser_refno_as_key_str;
 use crate::pdms_types::de_refno_from_key_str;
@@ -110,4 +111,18 @@ pub struct HoleEleGeosInfo {
     pub geo_type: GeoBasicType,
 
     pub geo_param: PdmsGeoParam,
+}
+
+
+//显示提资记录以及当前该记录处于哪个校核阶段
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ShowReviewerData {
+    pub record: SendHoleData,
+    pub reviewer: String,
+}
+
+//将Vec<ShowReviewerData>组织成一种资源插入ECS
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ShowReviewerDataVec {
+    pub data: Vec<ShowReviewerData>,
 }

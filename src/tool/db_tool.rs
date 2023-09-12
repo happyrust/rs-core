@@ -93,6 +93,32 @@ pub fn db1_hash(hash_str: &str) -> u32 {
     // 0x81BF1 + val as u32
 }
 
+#[inline]
+pub fn db1_dehash_const(hash: u32) -> String {
+    let mut result = String::new();
+    if hash > 0x171FAD39 { // UDA的情况
+        let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
+        result.push(':');
+        for _i in 0..6 {
+            if k <= 0 {
+                break;
+            }
+            result.push((k % 64 + 32) as u8 as char);
+            k /= 64;
+        }
+    } else {
+        if hash <= 0x81BF1 {
+            return "".to_string();
+        }
+        let mut k = (hash - 0x81BF1) as i32;
+        while k > 0 {
+            result.push((k % 27 + 64) as u8 as char);
+            k /= 27;
+        }
+    }
+    result
+}
+
 pub const fn db1_hash_const(hash_str: &str) -> u32 {
     let chars = hash_str.as_bytes();
     if chars.len() < 1 {

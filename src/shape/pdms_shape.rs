@@ -33,7 +33,6 @@ use std::{slice, vec};
 use std::path::Display;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
-use tobj::{export_faces_multi_index};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
@@ -155,37 +154,6 @@ impl PlantMesh {
             wire_vertices: vec![],
         }
     }
-
-    pub fn merge_without_normal(&self, merge_iden: bool) -> anyhow::Result<Self> {
-        let pos = unsafe {
-            slice::from_raw_parts(self.vertices.as_ptr() as *mut Vec3 as *mut f32, self.vertices.len() * 3)
-        };
-        let faces = self.indices.chunks(3).map(|c|
-            tobj::Face::Triangle(tobj::VertexIndices {
-                v: c[0] as usize,
-                ..Default::default()
-            }, tobj::VertexIndices {
-                v: c[1] as usize,
-                ..Default::default()
-            }, tobj::VertexIndices {
-                v: c[2] as usize,
-                ..Default::default()
-            },
-            )).collect::<Vec<_>>();
-        //try to use custom implementation
-        let options = tobj::LoadOptions {
-            merge_identical_points: merge_iden,
-            ..Default::default()
-        };
-        let t_mesh = export_faces_multi_index(pos, &[], &[], &[], &faces, None, &options)?;
-        Ok(Self {
-            indices: t_mesh.indices,
-            vertices: t_mesh.positions.chunks(3).map(|c| Vec3::new(c[0], c[1], c[2])).collect(),
-            normals: vec![],
-            wire_vertices: vec![],
-        })
-    }
-
 
     // ///变成压缩的模型数据
     // #[inline]

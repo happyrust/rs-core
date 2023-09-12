@@ -47,7 +47,7 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 
-use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32};
+use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::tool::math_tool::*;
 use crate::BHashMap;
@@ -1129,6 +1129,7 @@ impl AttrMap {
     pub fn get_typex(&self) -> &str {
         self.get_str("TYPEX").unwrap_or("unset")
     }
+
     #[inline]
     pub fn is_type(&self, type_name: &str) -> bool {
         self.get_type() == type_name
