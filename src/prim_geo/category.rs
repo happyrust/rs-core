@@ -193,7 +193,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 prad,
                 ..Default::default()
             });
-            dbg!(&brep_shape);
+            // dbg!(&brep_shape);
             return Some(CateBrepShape {
                 refno: d.refno,
                 brep_shape,
