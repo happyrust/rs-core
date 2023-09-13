@@ -2806,8 +2806,7 @@ impl EleInstGeosData {
 
     ///返回ngmr的组合shape和owner pos refno
     #[cfg(feature = "opencascade_rs")]
-    pub fn gen_ngmr_occ_shapes(&self, transform: &Transform) -> Vec<(RefU64, Shape)> {
-        let mut own_pos_refno = RefU64::default();
+    pub fn gen_ngmr_occ_shapes(&self, transform: &Transform) -> Vec<(Vec<RefU64>, Shape)> {
         let ngmr_shapes: Vec<_> = self
             .insts
             .iter()
@@ -2815,8 +2814,8 @@ impl EleInstGeosData {
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
                     s.transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    own_pos_refno = x.owner_pos_refnos;
-                    Some((own_pos_refno, s))
+                    let own_pos_refnos = x.owner_pos_refnos.into_iter().collect();
+                    Some((own_pos_refnos, s))
                 } else {
                     None
                 }
@@ -2835,7 +2834,8 @@ impl EleInstGeosData {
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
                     s.transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    Some((s, x.owner_pos_refnos))
+                    let own_pos_refnos = x.owner_pos_refnos.into_iter().collect();
+                    Some((s, owner_pos_refnos))
                 } else {
                     None
                 }
