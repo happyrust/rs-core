@@ -2834,7 +2834,8 @@ impl EleInstGeosData {
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
                     s.transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    Some((s, x.owner_pos_refnos))
+                    let own_pos_refnos = x.owner_pos_refnos.into_iter().collect();
+                    Some((s, owner_pos_refnos))
                 } else {
                     None
                 }
