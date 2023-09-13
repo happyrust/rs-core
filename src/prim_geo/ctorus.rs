@@ -265,9 +265,9 @@ impl BrepShapeTrait for CTorus {
 
 impl From<&AttrMap> for CTorus {
     fn from(m: &AttrMap) -> Self {
-        let r_i = m.get_f64("RINS").unwrap_or_default() as f32;
-        let r_o = m.get_f64("ROUT").unwrap_or_default() as f32;
-        let angle = m.get_f64("ANGL").unwrap_or_default() as f32;
+        let r_i = m.get_f32_or_default("RINS");
+        let r_o = m.get_f32_or_default("ROUT");
+        let angle = m.get_f32_or_default("ANGL");
         CTorus {
             rins: r_i,
             rout: r_o,

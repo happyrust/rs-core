@@ -195,9 +195,9 @@ impl From<&AttrMap> for Dish {
             paax_pt: Default::default(),
             paax_dir: Vec3::Z,
             pdis: 0.0,
-            pheig: m.get_val("HEIG").unwrap().f32_value().unwrap_or_default(),
-            pdia: m.get_val("DIAM").unwrap().f32_value().unwrap_or_default(),
-            prad: m.get_val("RAD").unwrap().f32_value().unwrap_or_default(),
+            pheig: m.get_f32_or_default("HEIG"),
+            pdia: m.get_f32_or_default("DIAM"),
+            prad: m.get_f32_or_default("RAD"),
         }
     }
 }

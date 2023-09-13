@@ -1302,6 +1302,11 @@ impl AttrMap {
     }
 
     #[inline]
+    pub fn get_f32_or_default(&self, key: &str) -> f32 {
+        self.get_f64(key).map(|x| x as f32).unwrap_or_default()
+    }
+
+    #[inline]
     pub fn get_position(&self) -> Option<Vec3> {
         if let Some(pos) = self.get_f64_vec("POS") {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
