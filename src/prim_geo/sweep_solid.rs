@@ -95,7 +95,7 @@ impl SweepSolid {
         match &self.path {
             SweepPath3D::SpineArc(d) => {
                 let y_axis = d.pref_axis;
-                let mut z_axis = self.plane_normal;
+                let mut z_axis = self.plax;
                 r_translation.x = d.radius;
                 if d.clock_wise {
                     z_axis = -z_axis;
@@ -107,11 +107,11 @@ impl SweepSolid {
                 // dbg!((x_axis, y_axis, z_axis));
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Z));
+                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Z));
             }
 
             SweepPath3D::Line(d) => {
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Y));
+                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
                 if d.is_spine {
                     dbg!(self.bangle.to_radians());
                     beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
@@ -269,7 +269,7 @@ impl SweepSolid {
         match &self.path {
             SweepPath3D::SpineArc(d) => {
                 let y_axis = d.pref_axis;
-                let mut z_axis = self.plane_normal;
+                let mut z_axis = self.plax;
                 r_translation.x = d.radius;
                 if d.clock_wise {
                     z_axis = -z_axis;
@@ -283,7 +283,7 @@ impl SweepSolid {
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
             }
             SweepPath3D::Line(d) => {
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plane_normal, Vec3::Y));
+                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
                 if d.is_spine {
                     beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
                 }

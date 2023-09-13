@@ -2814,7 +2814,7 @@ impl EleInstGeosData {
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
                     s.transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    let own_pos_refnos = x.owner_pos_refnos.into_iter().collect();
+                    let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
                     Some((own_pos_refnos, s))
                 } else {
                     None
@@ -2834,8 +2834,8 @@ impl EleInstGeosData {
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
                     s.transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    let own_pos_refnos = x.owner_pos_refnos.into_iter().collect();
-                    Some((s, owner_pos_refnos))
+                    let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
+                    Some((s, own_pos_refnos))
                 } else {
                     None
                 }
@@ -2860,15 +2860,16 @@ impl EleInstGeosData {
             .collect();
         //执行cut 运算
         for cate_neg_inst in self.insts.iter().filter(|x| x.is_cata_neg()) {
-            if let Some(pos_shape) = pos_shapes.get_mut(&cate_neg_inst.owner_pos_refnos) {
+            cate_neg_inst.owner_pos_refnos.iter().for_each(|r|  {
+                if let Some(pos_shape) = pos_shapes.get_mut(r) {
                 if let Some(neg_shape) = cate_neg_inst.gen_occ_shape() {
                     *pos_shape = pos_shape.subtract_shape(&neg_shape).0;
                 }
-            }
+            }});
         }
         let mut compound = opencascade::primitives::Compound::from_shapes(pos_shapes.values());
         compound.transform_by_mat(&transform.compute_matrix().as_dmat4());
-        Some((compound, None))
+        Some((compound, vec![]))
     }
 }
 
