@@ -17,6 +17,7 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
 use bevy_ecs::prelude::*;
 use itertools::Itertools;
+use nalgebra::Point;
 use truck_modeling::Face;
 
 
@@ -63,18 +64,18 @@ impl BrepShapeTrait for Polyhedron  {
         Box::new(self.clone())
     }
 
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let bytes = bincode::serialize(self).unwrap();
-        let mut hasher = DefaultHasher::default();
-        bytes.hash(&mut hasher);
-        "Polyhedron".hash(&mut hasher);
-        hasher.finish()
+    #[inline]
+    fn tol(&self) -> f32 {
+        let pts: Vec<parry3d::math::Point<f32>> = self.polygons.iter().map(|x|
+            x.verts.iter().map(|y| y.clone().into())).flatten().collect();
+        let profile_aabb = parry3d::bounding_volume::Aabb::from_points(&pts);
+        // dbg!(0.01 * profile_aabb.bounding_sphere().radius.max(1.0));
+        0.01 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
-
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
-        
+
 
         let mut faces = vec![];
         for poly  in &self.polygons {
@@ -84,6 +85,15 @@ impl BrepShapeTrait for Polyhedron  {
         }
         let shell: Shell = faces.into();
         Some(shell)
+    }
+
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        let bytes = bincode::serialize(self).unwrap();
+        let mut hasher = DefaultHasher::default();
+        bytes.hash(&mut hasher);
+        "Polyhedron".hash(&mut hasher);
+        hasher.finish()
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
