@@ -203,16 +203,16 @@ impl BrepShapeTrait for Pyramid {
 
 impl From<&AttrMap> for Pyramid {
     fn from(m: &AttrMap) -> Self {
-        let xbot = m.get_val("XBOT").unwrap().f32_value().unwrap_or_default();
-        let ybot = m.get_val("YBOT").unwrap().f32_value().unwrap_or_default();
+        let xbot = m.get_f32_or_default("XBOT");
+        let ybot = m.get_f32_or_default("YBOT");
 
-        let xtop = m.get_val("XTOP").unwrap().f32_value().unwrap_or_default();
-        let ytop = m.get_val("YTOP").unwrap().f32_value().unwrap_or_default();
+        let xtop = m.get_f32_or_default("XTOP");
+        let ytop = m.get_f32_or_default("YTOP");
 
-        let xoff = m.get_val("XOFF").unwrap().f32_value().unwrap_or_default();
-        let yoff = m.get_val("YOFF").unwrap().f32_value().unwrap_or_default();
+        let xoff = m.get_f32_or_default("XOFF");
+        let yoff = m.get_f32_or_default("YOFF");
 
-        let height = m.get_val("HEIG").unwrap().f32_value().unwrap_or_default();
+        let height = m.get_f32_or_default("HEIG");
 
 
         Pyramid {

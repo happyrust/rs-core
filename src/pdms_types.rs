@@ -153,7 +153,7 @@ pub enum SjusType {
 ///pdms的参考号
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct RefI32Tuple(pub (i32, i32));
-
+use std::string::String;
 impl Into<String> for RefI32Tuple {
     fn into(self) -> String {
         String::from(format!("{}/{}", self.get_0(), self.get_1()))
@@ -244,7 +244,6 @@ pub mod string {
 pub struct ParseRefU64Error;
 
 //把Refno当作u64
-#[serde_as]
 #[derive(
 rkyv::Archive,
 rkyv::Deserialize,
@@ -1308,6 +1307,11 @@ impl AttrMap {
     #[inline]
     pub fn get_f32(&self, key: &str) -> Option<f32> {
         self.get_f64(key).map(|x| x as f32)
+    }
+
+    #[inline]
+    pub fn get_f32_or_default(&self, key: &str) -> f32 {
+        self.get_f64(key).map(|x| x as f32).unwrap_or_default()
     }
 
     #[inline]
@@ -2905,7 +2909,9 @@ pub struct EleInstGeo {
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
     ///如果是负实体, 指定它的附属正实体参考号
-    #[serde_as(as = "HashSet<DisplayFromStr>")]
+    // #[serde_as(as = "HashSet<String>")]
+    #[serde(deserialize_with = "de_hashset_from_str")]
+    #[serde(serialize_with = "ser_hashset_as_str")]
     #[serde(default)]
     pub owner_pos_refnos: HashSet<RefU64>,
     ///几何参数数据
@@ -2970,6 +2976,25 @@ fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
     let s = String::deserialize(deserializer)?;
     RefU64::from_refno_str(&s).map_err(de::Error::custom)
 }
+
+fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
+    where
+        D: Deserializer<'de>, {
+    let s: String = String::deserialize(deserializer).unwrap_or_default();
+    Ok(serde_json::from_str::<HashSet<String>>(s.as_str())
+        .unwrap_or_default()
+        .into_iter().map(|x| RefU64::from_str(x.as_str()).unwrap_or_default()).collect())
+}
+
+pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+{
+    let set = refnos.into_iter().map(|x| x.to_refno_string()).collect::<HashSet<_>>();
+    s.serialize_str(serde_json::to_string(&set).unwrap_or_default().as_str())
+    // s.ser(&set)
+}
+
 
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
     where
