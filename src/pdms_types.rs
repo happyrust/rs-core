@@ -47,16 +47,16 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 
-use crate::tool::db_tool::{db1_dehash, db1_hash_i32, db1_hash};
+use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::tool::math_tool::*;
 use crate::BHashMap;
 
 use bevy_math::*;
 use bevy_reflect::Reflect;
-#[cfg(feature = "bevy_render")]
+#[cfg(feature = "render")]
 use bevy_render::mesh::Indices;
-#[cfg(feature = "bevy_render")]
+#[cfg(feature = "render")]
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 use bevy_transform::prelude::*;
 use clap::builder::Str;
@@ -197,12 +197,12 @@ impl RefI32Tuple {
 
     #[inline]
     pub fn get_0(&self) -> i32 {
-        self.0.0
+        self.0 .0
     }
 
     #[inline]
     pub fn get_1(&self) -> i32 {
-        self.0.1
+        self.0 .1
     }
 }
 
@@ -221,18 +221,18 @@ pub mod string {
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            T: Display,
-            S: Serializer,
+    where
+        T: Display,
+        S: Serializer,
     {
         serializer.collect_str(value)
     }
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-        where
-            T: FromStr,
-            T::Err: Display,
-            D: Deserializer<'de>,
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
     {
         String::deserialize(deserializer)?
             .parse()
@@ -245,20 +245,20 @@ pub struct ParseRefU64Error;
 
 //把Refno当作u64
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Hash,
-Serialize,
-Deserialize,
-Clone,
-Copy,
-Default,
-Component,
-Eq,
-PartialEq,
-PartialOrd,
-Ord,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Hash,
+    Serialize,
+    Deserialize,
+    Clone,
+    Copy,
+    Default,
+    Component,
+    Eq,
+    PartialEq,
+    PartialOrd,
+    Ord,
 )]
 pub struct RefU64(pub u64);
 
@@ -523,17 +523,17 @@ impl RefU64 {
 
 #[serde_as]
 #[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Component,
-Deref,
-DerefMut,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Component,
+    Deref,
+    DerefMut,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
@@ -568,15 +568,15 @@ pub type NounHash = u32;
 //untagged
 ///新的属性数据结构
 #[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Component,
-Default,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Component,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 #[serde(untagged)]
 pub enum NamedAttrValue {
@@ -631,16 +631,16 @@ impl From<&AttrVal> for NamedAttrValue {
 
 ///带名称的属性map
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Deref,
+    DerefMut,
+    Clone,
+    Default,
+    Component,
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
@@ -661,16 +661,16 @@ impl From<&AttrMap> for NamedAttrMap {
 
 ///PDMS的属性数据Map
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Deref,
+    DerefMut,
+    Clone,
+    Default,
+    Component,
 )]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
@@ -1578,7 +1578,7 @@ impl DerefMut for PdmsTree {
 
 /// 一个参考号是有可能重复的，project信息可以不用存储，获取信息时必须要带上 db_no
 #[derive(
-Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct RefnoInfo {
     /// 参考号的ref0
@@ -1588,15 +1588,15 @@ pub struct RefnoInfo {
 }
 
 #[derive(
-Default,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Component,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Default,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub enum AttrVal {
     #[default]
@@ -1928,17 +1928,17 @@ pub struct AiosMaterial {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum GeoData {
     Primitive(PdmsMeshIdx), //索引的哪个mesh,和对应的拉伸值， 先从dish开始判断相似性
-    // Raw(Mesh),          //原生的Mesh
+                            // Raw(Mesh),          //原生的Mesh
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Deref,
-DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Deref,
+    DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
 )]
 pub struct LevelShapeMgr {
     pub level_mgr: DashMap<RefU64, RefU64Vec>,
@@ -1973,19 +1973,19 @@ bitflags! {
 
 #[repr(C)]
 #[derive(
-Component,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Default,
-Clone,
-Debug,
-Copy,
-Eq,
-PartialEq,
-Hash,
+    Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Default,
+    Clone,
+    Debug,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
 )]
 pub enum PdmsGenericType {
     #[default]
@@ -2032,16 +2032,16 @@ pub enum PdmsGenericType {
 
 /// 几何体的基本类型
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-PartialEq,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 pub enum GeoBasicType {
     #[default]
@@ -2064,15 +2064,15 @@ pub enum GeoBasicType {
 //指向典型的例子
 
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 pub struct GeoEdge {
     //元件的参考号
@@ -2094,16 +2094,16 @@ pub struct GeoEdge {
 // }
 #[inline]
 fn ser_inst_info_edge_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_infos/{}", refno.to_url_refno()).as_str())
 }
 
 #[inline]
 fn ser_inst_geo_edge_as_key_str<S>(k: &u64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_geos/{}", *k).as_str())
 }
@@ -2127,15 +2127,15 @@ impl GeoEdge {
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 #[serde_as]
 pub struct EleGeosInfo {
@@ -2164,16 +2164,16 @@ pub struct EleGeosInfo {
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     Ok(RefU64::from_url_refno(&s).unwrap_or_default())
 }
 
 pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(refno.to_url_refno().as_str())
 }
@@ -2262,14 +2262,14 @@ impl EleGeosInfo {
 
 /// instane数据集合管理
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Resource,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Resource,
 )]
 pub struct ShapeInstancesData {
     /// 保存instance信息数据
@@ -2474,7 +2474,7 @@ impl ShapeInstancesData {
 
 //todo mesh 增量传输
 #[derive(
-Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct PdmsInstanceMeshData {
     pub shape_insts: ShapeInstancesData,
@@ -2571,14 +2571,14 @@ impl ColliderShapeMgr {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-Resource,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct PlantGeoData {
     #[serde(rename = "_key")]
@@ -2608,8 +2608,8 @@ impl Clone for PlantGeoData {
 }
 
 fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     if let Ok(r) = hex::decode(s.as_str()) {
@@ -2619,8 +2619,8 @@ fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
 }
 
 fn se_plant_mesh<S>(mesh: &Option<PlantMesh>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     let mesh_string = mesh
         .as_ref()
@@ -2635,11 +2635,7 @@ unsafe impl Send for PlantGeoData {}
 
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 #[cfg(feature = "render")]
-use bevy_render::mesh::Indices;
-#[cfg(feature = "render")]
 use bevy_render::prelude::*;
-#[cfg(feature = "render")]
-use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
 
@@ -2665,16 +2661,16 @@ impl PlantGeoData {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-Deref,
-DerefMut,
-Resource,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    Deref,
+    DerefMut,
+    Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct PlantMeshesData {
     pub meshes: HashMap<GeoHash, PlantGeoData>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
@@ -2762,15 +2758,15 @@ impl PlantMeshesData {
 
 #[serde_as]
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Resource,
 )]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
@@ -2880,15 +2876,15 @@ impl EleInstGeosData {
 
 ///分拆的基本体信息, 应该是不需要复用的
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Resource,
 )]
 #[serde_as]
 pub struct EleInstGeo {
@@ -2954,50 +2950,55 @@ impl EleInstGeo {
 }
 
 fn de_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     s.parse::<u64>().map_err(de::Error::custom)
 }
 
 fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     RefU64::from_refno_str(&s).map_err(de::Error::custom)
 }
 
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
-    where
-        D: Deserializer<'de>, {
+where
+    D: Deserializer<'de>,
+{
     let s: String = String::deserialize(deserializer).unwrap_or_default();
     Ok(serde_json::from_str::<HashSet<String>>(s.as_str())
         .unwrap_or_default()
-        .into_iter().map(|x| RefU64::from_str(x.as_str()).unwrap_or_default()).collect())
+        .into_iter()
+        .map(|x| RefU64::from_str(x.as_str()).unwrap_or_default())
+        .collect())
 }
 
 pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
-    let set = refnos.into_iter().map(|x| x.to_refno_string()).collect::<HashSet<_>>();
+    let set = refnos
+        .into_iter()
+        .map(|x| x.to_refno_string())
+        .collect::<HashSet<_>>();
     s.serialize_str(serde_json::to_string(&set).unwrap_or_default().as_str())
     // s.ser(&set)
 }
 
-
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str((*id).to_string().as_str())
 }
 
 pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(refno.to_refno_str().as_str())
 }
@@ -3428,17 +3429,17 @@ pub struct PdmsRefno {
 pub type AiosStrHash = u32;
 
 #[derive(
-Debug,
-Clone,
-Default,
-Serialize,
-Deserialize,
-PartialEq,
-Eq,
-Hash,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Debug,
+    Clone,
+    Default,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Hash,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct AiosStr(pub String);
 

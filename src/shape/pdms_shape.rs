@@ -1,38 +1,35 @@
-
-
 use glam::DMat4;
 use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io::{Write};
+use std::io::Write;
 
 use anyhow::anyhow;
 // #[cfg(feature = "opencascade")]
 // use opencascade::OCCShape;
 use bevy_ecs::component::Component;
-#[cfg(feature = "bevy_render")]
+#[cfg(feature = "render")]
 use bevy_render::prelude::*;
-
 
 use glam::{Mat4, Vec3, Vec4};
 
 use serde::{Deserialize, Serialize};
 
-use truck_base::bounding_box::BoundingBox;
-use truck_base::cgmath64::{Point3, Vector3, Vector4, Matrix4};
-use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
-use truck_modeling::{Curve, Shell};
-use parry3d::bounding_volume::Aabb;
-use parry3d::math::{Point, Vector};
-use parry3d::shape::{TriMesh};
-use dyn_clone::DynClone;
 use crate::pdms_types::*;
-use itertools::Itertools;
-use std::io::BufWriter;
-use std::{slice, vec};
-use std::path::Display;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
+use dyn_clone::DynClone;
+use itertools::Itertools;
+use parry3d::bounding_volume::Aabb;
+use parry3d::math::{Point, Vector};
+use parry3d::shape::TriMesh;
+use std::io::BufWriter;
+use std::path::Display;
+use std::{slice, vec};
+use truck_base::bounding_box::BoundingBox;
+use truck_base::cgmath64::{Matrix4, Point3, Vector3, Vector4};
+use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
+use truck_modeling::{Curve, Shell};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
@@ -71,9 +68,18 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
     bdd_box
 }
 
-
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Default, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(
+    Serialize,
+    Deserialize,
+    Component,
+    Debug,
+    Default,
+    Clone,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<Vec3>,
@@ -100,12 +106,12 @@ impl PlantMesh {
     }
 
     ///计算aabb
-    pub fn cal_aabb(&self) -> Option<Aabb>{
+    pub fn cal_aabb(&self) -> Option<Aabb> {
         let mut aabb = Aabb::new_invalid();
-        self.vertices.iter().for_each(|v|{
+        self.vertices.iter().for_each(|v| {
             aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
         });
-        if Vec3::from(aabb.mins).is_nan() || Vec3::from(aabb.maxs).is_nan()  {
+        if Vec3::from(aabb.mins).is_nan() || Vec3::from(aabb.maxs).is_nan() {
             return None;
         }
         Some(aabb)
@@ -125,15 +131,16 @@ impl PlantMesh {
     }
 
     ///todo 后面需要把uv使用上
-    #[cfg(feature = "bevy_render")]
+    #[cfg(feature = "render")]
     pub fn gen_bevy_mesh(&self) -> Mesh {
+        use bevy_render::mesh::Indices;
+        use bevy_render::render_resource::PrimitiveTopology::TriangleList;
+
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
         // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-        mesh.set_indices(Some(Indices::U32(
-            self.indices.clone()
-        )));
+        mesh.set_indices(Some(Indices::U32(self.indices.clone())));
         mesh
     }
 
@@ -144,7 +151,11 @@ impl PlantMesh {
         for i in 0..len {
             vertices.push(t.transform_point3(self.vertices[i].as_dvec3()).as_vec3());
             if i < self.normals.len() {
-                normals.push(t.transform_vector3(self.normals[i].as_dvec3()).normalize().as_vec3());
+                normals.push(
+                    t.transform_vector3(self.normals[i].as_dvec3())
+                        .normalize()
+                        .as_vec3(),
+                );
             }
         }
         Self {
@@ -181,8 +192,8 @@ impl PlantMesh {
 
     #[inline]
     pub fn into_compress_bytes(&self) -> Vec<u8> {
-        use flate2::Compression;
         use flate2::write::DeflateEncoder;
+        use flate2::Compression;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
         e.write_all(&bincode::serialize(&self).unwrap());
         e.finish().unwrap_or_default()
@@ -229,28 +240,18 @@ impl PlantMesh {
                     "v {:.3} {:.3} {:.3}\n",
                     vd[0] as f32, vd[1] as f32, vd[2] as f32
                 )
-                    .as_ref(),
+                .as_ref(),
             )?;
         }
         buffer.write_all(b"# Polygonal face element\n")?;
         for id in self.indices.chunks(3) {
             if reverse {
                 buffer.write_all(
-                    format!(
-                        "f {} {} {}\n",
-                        id[2] + 1,
-                        id[1] + 1,
-                        id[0] + 1,
-                    ).as_ref(),
+                    format!("f {} {} {}\n", id[2] + 1, id[1] + 1, id[0] + 1,).as_ref(),
                 )?;
             } else {
                 buffer.write_all(
-                    format!(
-                        "f {} {} {}\n",
-                        id[0] + 1,
-                        id[1] + 1,
-                        id[2] + 1,
-                    ).as_ref(),
+                    format!("f {} {} {}\n", id[0] + 1, id[1] + 1, id[2] + 1,).as_ref(),
                 )?;
             }
         }
@@ -346,7 +347,6 @@ impl From<OCCMesh> for PlantGeoData {
 //     }
 // }
 
-
 pub const TRI_TOL: f32 = 0.001;
 pub const LEN_TOL: f32 = 0.001;
 pub const ANGLE_RAD_TOL: f32 = 0.001;
@@ -354,18 +354,17 @@ pub const MIN_SIZE_TOL: f32 = 0.01;
 pub const MAX_SIZE_TOL: f32 = 1.0e5;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
-
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Deref,
+    DerefMut,
+    Clone,
+    Default,
+    Debug,
 )]
 pub struct RsVec3(pub Vec3);
 impl Hash for RsVec3 {
@@ -375,7 +374,6 @@ impl Hash for RsVec3 {
         format!("{:.5}", self.z).hash(state);
     }
 }
-
 
 impl PartialEq<Self> for RsVec3 {
     fn eq(&self, other: &Self) -> bool {
@@ -397,9 +395,6 @@ impl From<Point3> for RsVec3 {
     }
 }
 
-
-
-
 ///brep形状trait
 pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     fn is_reuse_unit(&self) -> bool {
@@ -415,9 +410,16 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     ///获得关键点
-    fn key_points(&self) -> Vec<RsVec3>{
-        self.gen_unit_shape().gen_brep_shell()
-            .map(|x| x.vertex_iter().map(|x| RsVec3::from(x.point())).into_iter().unique().collect())
+    fn key_points(&self) -> Vec<RsVec3> {
+        self.gen_unit_shape()
+            .gen_brep_shell()
+            .map(|x| {
+                x.vertex_iter()
+                    .map(|x| RsVec3::from(x.point()))
+                    .into_iter()
+                    .unique()
+                    .collect()
+            })
             .unwrap_or(vec![Vec3::ZERO.into()])
     }
 
@@ -433,7 +435,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     fn hash_unit_mesh_params(&self) -> u64 {
         0
     }
-
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait>;
 
@@ -487,7 +488,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
             let d = brep_bbox.diameter() as f32;
-            if d < MIN_SIZE_TOL || d > MAX_SIZE_TOL{
+            if d < MIN_SIZE_TOL || d > MAX_SIZE_TOL {
                 return None;
             }
             let (_size, c) = (brep_bbox.diameter(), brep_bbox.center());
@@ -501,10 +502,24 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
             // dbg!(tolerance);
             let meshed_shape = brep.triangulation(tolerance as f64);
             let polygon = meshed_shape.to_polygon();
-            if polygon.positions().is_empty() { return None; }
-            let vertices = polygon.positions().iter().map(|&x| x.vec3()).collect::<Vec<_>>();
-            let normals = polygon.normals().iter().map(|&x| x.vec3()).collect::<Vec<_>>();
-            let _uvs = polygon.uv_coords().iter().map(|x| [x[0] as f32, x[1] as f32]).collect::<Vec<_>>();
+            if polygon.positions().is_empty() {
+                return None;
+            }
+            let vertices = polygon
+                .positions()
+                .iter()
+                .map(|&x| x.vec3())
+                .collect::<Vec<_>>();
+            let normals = polygon
+                .normals()
+                .iter()
+                .map(|&x| x.vec3())
+                .collect::<Vec<_>>();
+            let _uvs = polygon
+                .uv_coords()
+                .iter()
+                .map(|x| [x[0] as f32, x[1] as f32])
+                .collect::<Vec<_>>();
             let indices = polygon
                 .faces()
                 .triangle_iter()
@@ -550,14 +565,12 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 }
 
-
 pub trait BrepMathTrait {
     fn vector3(&self) -> Vector3;
     fn vector4(&self) -> Vector4;
     fn point3(&self) -> Point3;
     fn point3_without_z(&self) -> Point3;
 }
-
 
 impl BrepMathTrait for Vec3 {
     #[inline]
@@ -574,10 +587,14 @@ impl BrepMathTrait for Vec3 {
     fn point3(&self) -> Point3 {
         Point3::new(self[0] as f64, self[1] as f64, self[2] as f64)
     }
-    
+
     #[inline]
     fn point3_without_z(&self) -> Point3 {
-        Point3::new(f32_round_3(self[0]) as f64, f32_round_3(self[1]) as f64, 0.0 as f64)
+        Point3::new(
+            f32_round_3(self[0]) as f64,
+            f32_round_3(self[1]) as f64,
+            0.0 as f64,
+        )
     }
 }
 
@@ -589,7 +606,12 @@ impl BrepMathTrait for Vec4 {
 
     #[inline]
     fn vector4(&self) -> Vector4 {
-        Vector4::new(self[0] as f64, self[1] as f64, self[2] as f64, self[3] as f64)
+        Vector4::new(
+            self[0] as f64,
+            self[1] as f64,
+            self[2] as f64,
+            self[3] as f64,
+        )
     }
 
     #[inline]
@@ -634,6 +656,10 @@ impl BevyMathTrait for Point3 {
 
 #[inline]
 pub fn convert_to_cg_matrix4(m: &Mat4) -> Matrix4 {
-    Matrix4::from_cols(m.x_axis.vector4(), m.y_axis.vector4(), m.z_axis.vector4(), m.w_axis.vector4())
+    Matrix4::from_cols(
+        m.x_axis.vector4(),
+        m.y_axis.vector4(),
+        m.z_axis.vector4(),
+        m.w_axis.vector4(),
+    )
 }
-
