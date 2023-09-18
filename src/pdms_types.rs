@@ -153,7 +153,9 @@ pub enum SjusType {
 ///pdms的参考号
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct RefI32Tuple(pub (i32, i32));
+
 use std::string::String;
+
 impl Into<String> for RefI32Tuple {
     fn into(self) -> String {
         String::from(format!("{}/{}", self.get_0(), self.get_1()))
@@ -691,6 +693,18 @@ impl Debug for AttrMap {
     }
 }
 
+impl Into<NamedAttrMap> for AttrMap {
+    fn into(self) -> NamedAttrMap {
+        let mut map = BTreeMap::new();
+        for (k, v) in self.map {
+            map.entry(db1_dehash(k)).or_insert(NamedAttrValue::from(&v));
+        }
+        NamedAttrMap {
+            map,
+        }
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for AttrMap {}
 
@@ -844,6 +858,7 @@ impl AttrMap {
         }
     }
 }
+
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct WholeAttMap {
