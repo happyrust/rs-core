@@ -519,6 +519,14 @@ impl RefU64 {
             .map(|refno| format!("{}/{}", collection_name, refno.to_url_refno()))
             .collect()
     }
+
+    /// 将参考号字符串类型集合转为 Vec<RefU64>
+    pub fn from_refno_strs(refno_strs: &Vec<String>) -> Vec<Self> {
+        refno_strs
+            .iter()
+            .filter_map(|refno| Self::from_refno_str(refno).ok())
+            .collect()
+    }
 }
 
 #[serde_as]
