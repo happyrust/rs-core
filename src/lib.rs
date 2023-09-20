@@ -5,6 +5,10 @@
 
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
+use std::fs::File;
+use std::io::Read;
+use bincode::Config;
+use dashmap::DashMap;
 
 use crate::pdms_types::PdmsDatabaseInfo;
 
@@ -61,9 +65,37 @@ pub mod test;
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 
 use once_cell_serde::sync::OnceCell;
+use crate::options::DbOption;
+
 pub fn get_default_pdms_db_info() -> &'static PdmsDatabaseInfo {
     static INSTANCE: OnceCell<PdmsDatabaseInfo> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         serde_json::from_str::<PdmsDatabaseInfo>(&include_str!("../all_attr_info.json")).unwrap()
+    })
+}
+
+pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
+    static INSTANCE: OnceCell<(DashMap<u32, String>, DashMap<String, u32>)> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        let mut ukey_udna_map = DashMap::new();
+        let mut udna_ukey_map = DashMap::new();
+        use config::{Config, ConfigError, Environment, File};
+        let Ok(s) = Config::builder()
+            .add_source(File::with_name("DbOption"))
+            .build() else { return (DashMap::new(),DashMap::new()) };
+        let db_option: DbOption = s.try_deserialize().unwrap();
+        for project in db_option.included_projects {
+            let path = format!("{}_uda.bin", project);
+            if let Ok(mut file) = std::fs::File::open(path) {
+                let mut data = Vec::new();
+                let _ = file.read_to_end(&mut data);
+                let map = bincode::deserialize::<DashMap<u32, String>>(&data).unwrap_or_default();
+                for (k, v) in map {
+                    ukey_udna_map.entry(k).or_insert(v.to_string());
+                    udna_ukey_map.entry(v).or_insert(k);
+                }
+            }
+        }
+        (ukey_udna_map, udna_ukey_map)
     })
 }

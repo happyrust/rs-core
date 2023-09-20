@@ -110,7 +110,7 @@ const IMP_PYTS: i32 = 0xE0C71;
 const IMP_PXBS: i32 = 0xDD914;
 const IMP_PYBS: i32 = 0xDD92F;
 const IMP_DPRO: i32 = 0xCD234;
-
+const IMP_ALLANG: i32 = 0x676B460;
 lazy_static! {
     pub static ref EXPR_ATT_SET: HashSet<i32> = {
         let mut s = HashSet::new();
