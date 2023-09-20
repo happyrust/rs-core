@@ -153,8 +153,6 @@ impl ManifoldRust {
             let mut src = self.clone();
             for (i, b) in negs.iter().enumerate() {
                 manifold_difference(result.ptr as _, src.ptr, b.ptr);
-                #[cfg(debug_assertions)]
-                dbg!(result.num_tri());
                 src.ptr = result.ptr;
             }
             manifold_as_original(result.ptr as _, src.ptr);
