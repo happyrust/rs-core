@@ -14,7 +14,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam::PrimSCylinder;
 use crate::pdms_types::GeoBasicType;
 use crate::shape::pdms_shape::RsVec3;
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default,Clone)]
 pub struct RvmGeoInfo {
     pub _key: String,
     pub aabb: Option<Aabb>,
