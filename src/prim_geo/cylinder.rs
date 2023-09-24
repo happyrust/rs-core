@@ -35,11 +35,9 @@ pub struct LCylinder {
     pub paxi_dir: Vec3,   //A Axis Direction
 
     pub pbdi: f32,
-    //dist to bottom
     pub ptdi: f32,
-    //dist to top
-    pub pdia: f32,
     //diameter
+    pub pdia: f32,
     pub negative: bool,
 }
 
@@ -482,25 +480,16 @@ impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
         let phei = m.get_f32_or_default("HEIG");
         let pdia = m.get_f32_or_default("DIAM");
-        // Xtshear 0degree
-        // Ytshear -28.691degree
-        // Xbshear 0degree
-        // Ybshear 0degree
-        let xtsh = m.get_f32_or_default("XTSH");
-        let ytsh = m.get_f32_or_default("YTSH");
-        let xbsh = m.get_f32_or_default("XBSH");
-        let ybsh = m.get_f32_or_default("YBSH");
-        // dbg!(m);
+        // dbg!(phei, pdia);
         SCylinder {
             paxi_expr: "Z".to_string(),
             paxi_pt: Default::default(),
             paxi_dir: Vec3::Z,
             phei,
             pdia,
-            btm_shear_angles: [xbsh, ybsh],
-            top_shear_angles: [xtsh, ytsh],
             negative: false,
             center_in_mid: true,
+            ..Default::default()
         }
     }
 }

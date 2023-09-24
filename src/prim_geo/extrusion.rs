@@ -1,21 +1,17 @@
 use anyhow::anyhow;
 
-
 use std::collections::hash_map::DefaultHasher;
-
-
 
 use std::hash::{Hash, Hasher};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use glam::{DVec3, Vec3, Vec2};
+use glam::{DVec3, Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Shell, Surface, Wire};
 
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
-
 
 use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
@@ -180,11 +176,8 @@ impl BrepShapeTrait for Extrusion {
                     .enumerate()
                     .map(|(i, e)| {
                         let curve = e.oriented_curve();
-                        let polyline = PolylineCurve::from_curve(
-                            &curve,
-                            curve.parameter_range(),
-                            self.tol() as _,
-                        );
+                        let polyline =
+                            PolylineCurve::from_curve(&curve, curve.range_tuple(), self.tol() as _);
                         // dbg!(&polyline);
                         let mut v = polyline
                             .iter()

@@ -1,11 +1,11 @@
 use crate::shape::pdms_shape::PlantMesh;
 use approx::abs_diff_eq;
+use geo::{BooleanOps, Contains, Intersects, LineString, point, Polygon};
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::hash::{Hash, Hasher};
-use geo::{Intersects, LineString, Polygon};
 use truck_meshalgo::prelude::*;
-
+use approx::AbsDiffEq;
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -20,21 +20,11 @@ use opencascade::angle::ToAngle;
 use opencascade::primitives::Shape;
 use serde::{Deserialize, Serialize};
 
-#[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-)]
+#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct Revolution {
     pub verts: Vec<Vec3>,
-    //loop vertex
     pub fradius_vec: Vec<f32>,
     pub angle: f32,
-    //degrees
     pub rot_dir: Vec3,
     pub rot_pt: Vec3,
 }
@@ -106,11 +96,8 @@ impl BrepShapeTrait for Revolution {
                     .enumerate()
                     .map(|(i, e)| {
                         let curve = e.oriented_curve();
-                        let polyline = PolylineCurve::from_curve(
-                            &curve,
-                            curve.parameter_range(),
-                            self.tol() as _,
-                        );
+                        let polyline =
+                            PolylineCurve::from_curve(&curve, curve.range_tuple(), self.tol() as _);
                         let mut v = polyline
                             .iter()
                             .map(|x| Vec2::new(x.x as _, x.y as _))
@@ -122,7 +109,7 @@ impl BrepShapeTrait for Revolution {
                     })
                     .flatten()
                     .collect::<Vec<Vec2>>();
-                dbg!(&pts);
+                // dbg!(&pts);
                 unsafe {
                     let mut cross_section = ManifoldCrossSectionRust::from_points(&pts);
                     let manifold = cross_section.extrude_rotate(Vec3::ZERO);
@@ -147,7 +134,7 @@ impl BrepShapeTrait for Revolution {
             .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
             .collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
-        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
+        0.0005 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     ///如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
@@ -158,10 +145,14 @@ impl BrepShapeTrait for Revolution {
             return None;
         }
         let wire = gen_wire(&self.verts, &self.fradius_vec).unwrap();
-                let geo_2d: LineString<f64> = wire.vertex_iter().map(|x| (x.point().x, x.point().y)).collect();
-        let polygon = Polygon::new(geo_2d,Vec::new());
-        let geo_axis: LineString<f64> = vec![(0.0, 0.0), (100000.0, 0.0)].into();
-        let intersect = polygon.intersects(&geo_axis);
+        let axis_on_edge = wire.edge_iter().any(|x| {
+             (x.back().point().y.abs().abs_diff_eq(&0.0, 0.0001) &&
+                 x.front().point().y.abs().abs_diff_eq(&0.0, 0.0001))
+        });
+        // dbg!(axis_on_edge);
+
+        //如果截面包含了原点，就考虑用分成两块的办法
+        // let contains_origin = polygon.contains(&point!{ x: 0.0, y: 0.0 });
         if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
             if let Surface::Plane(plane) = face.surface() {
                 let mut rot_dir = self.rot_dir.normalize().vector3();
@@ -181,24 +172,26 @@ impl BrepShapeTrait for Revolution {
                 }
                 //check if exist any point on axis
                 //允许有误差, 只有没有在旋转轴（X轴）坐标轴上时，需要这样处理
-                if !intersect && angle.abs() >= (core::f64::consts::TAU - 0.01) {
+                // !intersect
+                if axis_on_edge && angle.abs() >= (core::f64::consts::TAU - 0.01) {
                     let mut s =
-                        builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64)).into_boundaries();
-                    let mut shell = s.pop();
+                        builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64));
+                    let mut shell = s.into_boundaries().pop();
                     if shell.is_none() {
                         dbg!(&self);
+                        return None;
                     }
-                    let face = face.inverse();
-                    let mut s =
-                        builder::rsweep(&face, rot_pt, -rot_dir, Rad(PI as f64)).into_boundaries();
-                    shell.as_mut().unwrap().append(&mut s[0]);
+                    let rev_face = face.inverse();
+                    let mut rev_s =
+                        builder::rsweep(&rev_face, rot_pt, -rot_dir, Rad(PI as f64));
+                    shell.as_mut().unwrap().append(&mut rev_s.into_boundaries().pop().unwrap());
                     return shell;
                 }
 
                 {
                     let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
                     let json = serde_json::to_vec_pretty(&s).unwrap();
-                    // std::fs::write("revo.json", json).unwrap();
+                    // std::fs::write("half_revo.json", json).unwrap();
                     let shell = s.into_boundaries().pop();
                     if shell.is_none() {
                         dbg!(&self);

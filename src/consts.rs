@@ -138,3 +138,8 @@ lazy_static! {
         s
     };
 }
+
+
+pub const HAS_PLIN_TYPES: [&str; 4] = ["SCTN", "GENSEC", "WALL", "STWALL"];
+
+pub const NGMR_OWN_TYPES: [&str; 6] = ["SCTN", "GENSEC", "WALL", "STWALL", "FLOOR", "PANEL"];

@@ -65,6 +65,7 @@ truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.3.0"
+config = "0.13.3"
 
 manifold-sys = { path = "../manifold-sys", optional = true }
 opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
