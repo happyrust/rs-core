@@ -197,7 +197,7 @@ impl From<&AttrMap> for Dish {
             pdis: 0.0,
             pheig: m.get_f32_or_default("HEIG"),
             pdia: m.get_f32_or_default("DIAM"),
-            prad: m.get_f32_or_default("RAD"),
+            prad: m.get_f32_or_default("RADI"),
         }
     }
 }

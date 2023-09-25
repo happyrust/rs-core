@@ -134,11 +134,11 @@ pub const CATA_GEO_NAMES: [&'static str; 26] = [
 pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = ["BRAN", "HANG"];
 
 ///可以重用的类型
-pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 3] = ["STWALL", "SCTN", "NOZZ"];
+pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 0] = [];
 
-pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 21] = [
+pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
     "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
-    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI",
+    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ"
 ];
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]

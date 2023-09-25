@@ -115,7 +115,6 @@ pub struct GmseParamData {
     Serialize,
     Deserialize,
     Debug,
-    Default,
 )]
 pub struct CateAxisParam {
     pub refno: RefU64,
@@ -127,6 +126,22 @@ pub struct CateAxisParam {
     pub pwidth: f32,
     pub pheight: f32,
     pub pconnect: String,
+}
+
+impl Default for CateAxisParam {
+    fn default() -> Self{
+        Self{
+            refno: Default::default(),
+            number: 0,
+            pt: Default::default(),
+            dir: Vec3::Y,
+            ref_dir: Default::default(),
+            pbore: 0.0,
+            pwidth: 0.0,
+            pheight: 0.0,
+            pconnect: "".to_string(),
+        }
+    }
 }
 
 pub mod geo_params_data {
