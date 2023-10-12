@@ -3348,6 +3348,7 @@ pub struct PdmsElement {
     pub version: u32,
     #[serde(default)]
     pub children_count: usize,
+    // pub status_tag: Option<String>,
 }
 
 impl PdmsNodeTrait for PdmsElement {
