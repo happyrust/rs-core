@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Read;
 use dashmap::DashMap;
 use lazy_static::lazy_static;
-
+use once_cell::sync::Lazy;
 use memchr::memmem::{find, find_iter};
 
 use crate::pdms_types::PdmsDatabaseInfo;
@@ -30,14 +30,15 @@ pub fn read_attr_info_config_from_json(config_path: &str) -> PdmsDatabaseInfo {
 }
 
 #[inline]
-pub fn convert_to_hash(bytes: &[u8]) -> u32 {
-    i32::from_be_bytes(bytes.try_into().unwrap()).abs() as u32
+pub fn convert_to_hash(bytes: &[u8]) -> i32 {
+    i32::from_be_bytes(bytes.try_into().unwrap())
 }
 
 #[inline]
 pub fn is_uda(hash: u32) -> bool {
     hash > 0x171FAD39
 }
+
 
 #[inline]
 pub fn db1_dehash(hash: u32) -> String {
@@ -73,9 +74,20 @@ pub fn db1_hash_i32(hash_str: &str) -> i32 {
     db1_hash(hash_str) as _
 }
 
+//类似于POSF，这种它的hash是POSI，这里需要强制的把名称缓过来
+// static ALIAS_ATT_NAME_MAP: Lazy<DashMap<&'static str, u32>> = Lazy::new(|| {
+//     let mut m = DashMap::new();
+//     m.insert("POSF", db1_hash("POSI"));
+//     m
+// });
+
+
 //todo 处理出错的情况
 #[inline]
 pub fn db1_hash(hash_str: &str) -> u32 {
+    // if ALIAS_ATT_NAME_MAP.contains_key(hash_str) {
+    //     return *ALIAS_ATT_NAME_MAP.get(hash_str).unwrap();
+    // }
     if GLOBAL_UDA_UKEY_MAP.contains_key(hash_str) {
         return *GLOBAL_UDA_UKEY_MAP.get(hash_str).unwrap();
     }

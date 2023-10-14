@@ -67,10 +67,18 @@ pub type BHashMap<K, V> = BTreeMap<K, V>;
 use once_cell_serde::sync::OnceCell;
 use crate::options::DbOption;
 
+///获取默认的数据库属性元数据信息
 pub fn get_default_pdms_db_info() -> &'static PdmsDatabaseInfo {
     static INSTANCE: OnceCell<PdmsDatabaseInfo> = OnceCell::new();
     INSTANCE.get_or_init(|| {
-        serde_json::from_str::<PdmsDatabaseInfo>(&include_str!("../all_attr_info.json")).unwrap()
+        //会动态维护这个json，所以需要通过文件来加载
+        let mut file = File::open("all_attr_info.json").unwrap();
+        let mut string = String::new();
+        file.read_to_string(&mut string);
+        let dbinfo = serde_json::from_str::<PdmsDatabaseInfo>(&string).unwrap();
+        // dbinfo.fix();
+        // dbinfo.save(None);
+        dbinfo
     })
 }
 

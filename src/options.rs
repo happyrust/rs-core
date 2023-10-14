@@ -19,6 +19,9 @@ pub struct DbOption {
     #[clap(long, default_value="10_0000")]
     pub sync_chunk_size: Option<u32>,
 
+    #[clap(long)]
+    pub use_tidb: Option<bool>,
+
 
     #[clap(long)]
     pub replace_dbs: bool,

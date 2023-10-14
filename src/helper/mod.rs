@@ -48,19 +48,28 @@ pub fn convert_u32_to_noun(input: &[u8]) -> SmolStr {
 }
 
 #[inline]
-pub fn parse_to_f64_arr(input: &[u8]) -> [f64; 3] {
-    let mut data = [0f64; 3];
-    for i in 0..3 {
-        data[i] = parse_to_f64(&input[i * 8..i * 8 + 8]);
+pub fn parse_to_f64_arr(input: &[u8], num: usize) -> Vec<f64> {
+    let mut data = vec![];
+    for i in 0..num {
+        data.push(parse_to_f64(&input[i * 8..i * 8 + 8]));
     }
     data
 }
 
+// #[inline]
+// pub fn parse_to_f32_arr(input: &[u8]) -> [f64; 3] {
+//     let mut data = [0f64; 3];
+//     for i in 0..3 {
+//         data[i] = parse_to_f32(&input[i * 4..i * 4 + 4]) as f64;
+//     }
+//     data
+// }
+
 #[inline]
-pub fn parse_to_f32_arr(input: &[u8]) -> [f64; 3] {
-    let mut data = [0f64; 3];
-    for i in 0..3 {
-        data[i] = parse_to_f32(&input[i * 4..i * 4 + 4]) as f64;
+pub fn parse_to_f32_arr(input: &[u8], num: usize) -> Vec<f64> {
+    let mut data = vec![];
+    for i in 0..num {
+        data.push(parse_to_f32(&input[i * 4..i * 4 + 4]) as f64);
     }
     data
 }

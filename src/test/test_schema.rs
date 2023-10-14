@@ -1,0 +1,10 @@
+use crate::get_default_pdms_db_info;
+
+#[test]
+fn test_gen_att_schema() {
+    let db_info = get_default_pdms_db_info();
+    let schema = db_info.get_all_schemas();
+    let v = schema.into_iter().next().unwrap();
+    // let pretty_json = jsonxf::minimize(&v).unwrap();
+    dbg!(serde_json::to_string(&v));
+}
