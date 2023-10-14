@@ -603,60 +603,18 @@ pub enum NamedAttrValue {
     StringType(String),
     F32Type(f32),
     F32VecType(Vec<f32>),
+    Vec3Type(Vec3),
     // DoubleArrayType(Vec<f64>),
     StringArrayType(Vec<String>),
     BoolArrayType(Vec<bool>),
     IntArrayType(Vec<i32>),
     BoolType(bool),
-    Vec3Type(Vec3),
+    // Vec3Type([f64; 3]),
     ElementType(String),
     WordType(String),
-    RefU64Type(RefU64),
+    // RefU64Type(RefU64),
     // StringHashType(AiosStrHash),
     // RefU64Array(RefU64Vec),
-}
-
-
-// impl Into<AttrInfo> for NamedAttrValue{
-//     fn into(self) -> AttrInfo {
-//         match self {
-//
-//             _ => AttrInfo{
-//                 name: "".to_string(),
-//                 hash: 0,
-//                 offset: 0,
-//                 default_val: Default::default(),
-//                 att_type: Default::default(),
-//             }
-//         }
-//     }
-// }
-
-impl Into<serde_json::Value> for NamedAttrValue {
-    fn into(self) -> serde_json::Value {
-        match self {
-            NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
-            NamedAttrValue::F32Type(d) => serde_json::Value::Number(serde_json::Number::from_f64(d as _).unwrap()),
-            NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
-            NamedAttrValue::StringType(s) => serde_json::Value::String(s),
-            NamedAttrValue::F32VecType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::Vec3Type(d) => serde_json::Value::Array(d.to_array().into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::StringArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::BoolArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::IntArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::RefU64Type(d) => {
-                //需要结合具体的类型来跳转
-                d.to_string().into()
-            }
-            NamedAttrValue::WordType(d) => {
-                d.into()
-            }
-            _ => serde_json::Value::Null,
-            // NamedAttrValue::ElementType(_) => {}
-            // NamedAttrValue::WordType(_) => {}
-            // NamedAttrValue::RefU64Type(_) => {}
-        }
-    }
 }
 
 impl From<&AttrVal> for NamedAttrValue {
@@ -678,9 +636,9 @@ impl From<&AttrVal> for NamedAttrValue {
             IntArrayType(d) => Self::IntArrayType(d),
             BoolType(d) => Self::BoolType(d),
             Vec3Type(d) => Self::F32VecType(d.into_iter().map(|x| x as f32).collect()),
-            ElementType(d) => Self::StringType(d),
-            WordType(d) => Self::StringType(d),
-            RefU64Type(d) => Self::RefU64Type(d.clone()),
+            ElementType(d) => Self::ElementType(d),
+            WordType(d) => Self::ElementType(d),
+            RefU64Type(d) => Self::StringType(d.to_url_refno()),
             StringHashType(d) => Self::IntegerType(d as i32),
             RefU64Array(d) => {
                 Self::StringArrayType(d.into_iter().map(|x| x.to_url_refno()).collect())
@@ -703,8 +661,7 @@ impl NamedAttrValue {
             NamedAttrValue::StringArrayType(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
             NamedAttrValue::F32Type(v) => { Box::new(*v) }
             NamedAttrValue::F32VecType(v) => { Box::new(v.clone()) }
-            NamedAttrValue::Vec3Type(v) => { Box::new(v.clone()) }
-            NamedAttrValue::RefU64Type(v) => { Box::new(v.to_refno_string()) }
+            NamedAttrValue::Vec3Type(v) => { Box::new(vec![v.x, v.y, v.z]) }
         };
     }
 }
