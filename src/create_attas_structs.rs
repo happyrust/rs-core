@@ -3,6 +3,7 @@ use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use nom::character::streaming::char;
+use crate::pdms_types::RefU64;
 
 //显示需创建ATTA的refno及name
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
@@ -529,3 +530,27 @@ pub struct ReviewerHoleDetail {
 pub struct ReviewerEmbedDetail {
     pub data: VirtualEmbedGraphNodeQuery,
 }
+//
+// #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+// pub struct ShowModelData {
+//     //图数据库的key
+//     pub key: String,
+//     //形状
+//     pub shape: String,
+//     //编号
+//     pub item_ref: String,
+//     //长
+//     pub size_length: f32,
+//     //宽
+//     pub size_width: f32,
+//     //位置
+//     pub position: String,
+//     //朝向
+//     pub ori: String,
+//     //对应墙板的refno
+//     pub rely_item_ref: String,
+//     //厚度
+//     pub size_throw_wall: f32,
+//     //依附物项的refno
+//     pub rely_refno:RefU64,
+// }
