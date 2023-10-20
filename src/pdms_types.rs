@@ -612,7 +612,7 @@ pub enum NamedAttrValue {
     // Vec3Type([f64; 3]),
     ElementType(String),
     WordType(String),
-    // RefU64Type(RefU64),
+    RefU64Type(RefU64),
     // StringHashType(AiosStrHash),
     // RefU64Array(RefU64Vec),
 }
@@ -636,9 +636,9 @@ impl From<&AttrVal> for NamedAttrValue {
             IntArrayType(d) => Self::IntArrayType(d),
             BoolType(d) => Self::BoolType(d),
             Vec3Type(d) => Self::F32VecType(d.into_iter().map(|x| x as f32).collect()),
-            ElementType(d) => Self::ElementType(d),
-            WordType(d) => Self::ElementType(d),
-            RefU64Type(d) => Self::StringType(d.to_url_refno()),
+            ElementType(d) => Self::StringType(d),
+            WordType(d) => Self::StringType(d),
+            RefU64Type(d) => Self::RefU64Type(d),
             StringHashType(d) => Self::IntegerType(d as i32),
             RefU64Array(d) => {
                 Self::StringArrayType(d.into_iter().map(|x| x.to_url_refno()).collect())
@@ -662,7 +662,36 @@ impl NamedAttrValue {
             NamedAttrValue::F32Type(v) => { Box::new(*v) }
             NamedAttrValue::F32VecType(v) => { Box::new(v.clone()) }
             NamedAttrValue::Vec3Type(v) => { Box::new(vec![v.x, v.y, v.z]) }
+            NamedAttrValue::RefU64Type(r) => { Box::new(r.to_refno_string()) }
         };
+    }
+}
+
+impl Into<serde_json::Value> for NamedAttrValue {
+    fn into(self) -> serde_json::Value {
+        match self {
+            NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
+            NamedAttrValue::F32Type(d) => serde_json::Value::Number(serde_json::Number::from_f64(d as _).unwrap()),
+            NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
+            NamedAttrValue::StringType(s) => serde_json::Value::String(s),
+            NamedAttrValue::F32VecType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
+            NamedAttrValue::Vec3Type(d) => serde_json::Value::Array(d.to_array().into_iter().map(|x| x.into()).collect()),
+            NamedAttrValue::StringArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
+            NamedAttrValue::BoolArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
+            NamedAttrValue::IntArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
+            NamedAttrValue::RefU64Type(d) => {
+                //需要结合PdmsElement来跳转
+                // d.to_string().into()
+                format!("PdmsElement/{}", d.to_string()).into()
+            }
+            NamedAttrValue::WordType(d) => {
+                d.into()
+            }
+            _ => serde_json::Value::Null,
+            // NamedAttrValue::ElementType(_) => {}
+            // NamedAttrValue::WordType(_) => {}
+            // NamedAttrValue::RefU64Type(_) => {}
+        }
     }
 }
 
@@ -720,10 +749,12 @@ impl NamedAttrMap {
         }
     }
 
+    #[inline]
     pub fn get_string_or_default(&self, att_name: &str) -> String {
         self.get_string(att_name).unwrap_or_default()
     }
 
+    #[inline]
     pub fn get_string(&self, att_name: &str) -> Option<String> {
         let att = self.map.get(att_name)?;
         match att {
@@ -732,10 +763,17 @@ impl NamedAttrMap {
         }
     }
 
+    #[inline]
+    pub fn get_owner(&self) -> RefU64{
+        self.get_refno_by_att_or_default("OWNER")
+    }
+
+    #[inline]
     pub fn get_refno_by_att_or_default(&self, att_name: &str) -> RefU64 {
         self.get_refno_by_att(att_name).unwrap_or_default()
     }
 
+    #[inline]
     pub fn get_refno_by_att(&self, att_name: &str) -> Option<RefU64> {
         let att = self.map.get(att_name)?;
         match att {
@@ -754,15 +792,17 @@ impl NamedAttrMap {
         let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
         map.insert("@id".into(), format!("{}/{}", &type_name, refno.to_string()).into());
         map.insert("@type".into(), type_name.into());
+        map.insert("REFNO".into(), refno.to_string().into());
+        map.insert("ELEMENT".into(), format!("PdmsElement/{}", refno.to_string()).into());
 
         for (key, val) in self.map.clone().into_iter() {
-            if key.starts_with(":") {
+            //refno 单独处理
+            if key.starts_with(":") || key.as_str() == "REFNO" {
                 continue;
             }
             map.insert(key, val.into());
         }
         map
-        // serde_json::to_string(&map).unwrap_or_default()
     }
 }
 
@@ -1030,11 +1070,11 @@ impl WholeAttMap {
                 map.insert(k.clone(), v.clone());
             }
         }
-        for (k, v) in &self.uda_attmap.map {
-            if !map.contains_attr_hash(*k) {
-                map.insert(k.clone(), v.clone());
-            }
-        }
+        // for (k, v) in &self.uda_attmap.map {
+        //     if !map.contains_attr_hash(*k) {
+        //         map.insert(k.clone(), v.clone());
+        //     }
+        // }
         for (k, v) in &self.uda_attmap.map {
             map.insert(k.clone(), v.clone());
         }
@@ -2126,6 +2166,7 @@ impl PdmsDatabaseInfo {
                         "@id"   : "{}",
                         "@key"  : {{ "@type": "Lexical", "@fields": ["REFNO"] }},
                         "REFNO"    : "xsd:string",
+                        "ELEMENT" : "PdmsElement",
                         "TYPEX"    : {{
                             "@class": "xsd:string",
                             "@type": "Optional"
@@ -2143,6 +2184,7 @@ impl PdmsDatabaseInfo {
                         "@id"   : "{}",
                         "@key"  : {{ "@type": "Lexical", "@fields": ["REFNO"] }},
                         "REFNO"    : "xsd:string",
+                        "ELEMENT" : "PdmsElement",
                         "TYPEX"    : {{
                             "@class": "xsd:string",
                             "@type": "Optional"
@@ -2172,7 +2214,7 @@ impl PdmsDatabaseInfo {
                 continue;
             }
             let type_name = db1_dehash(*kv.key() as _);
-            // if type_name.as_str() != "SDTE" {
+            // if type_name.as_str() != "SELE" {
             //     continue;
             // }
             // dbg!(*kv.key());

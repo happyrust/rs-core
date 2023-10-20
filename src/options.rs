@@ -12,6 +12,8 @@ pub struct DbOption {
     pub sync_graph_db: Option<bool>,
     #[clap(long)]
     pub sync_tidb: Option<bool>,
+    #[clap(long, default_value="true")]
+    pub sync_versioned: Option<bool>,
     #[clap(long)]
     pub sync_localdb: Option<bool>,
     #[clap(long)]

@@ -3,6 +3,7 @@ use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use nom::character::streaming::char;
+use crate::schema::generate_basic_versioned_schema;
 
 //显示需创建ATTA的refno及name
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
@@ -262,8 +263,32 @@ pub struct VirtualHoleGraphNodeQuery {
     #[serde(rename = "JSStatus")]
     pub js_status: String,
     // 只用于存储和查询的数据，不涉及任何业务
-    #[serde(flatten)]
+    #[serde(flatten, default)]
     pub map: HashMap<String, String>,
+}
+
+impl VirtualHoleGraphNodeQuery{
+
+    //todo 写一个proc macro来生成schema
+    pub fn get_scheme() -> String {
+        let basic_schema = generate_basic_versioned_schema::<Self>();
+        format!(r#"{{
+        "@type" : "Class",
+        "@id"   : "VirtualHole",
+        "@key"  : {{ "@type": "Lexical", "@fields": ["_key"] }},
+        {}
+        }}"#, basic_schema)
+    }
+
+    pub fn gen_versioned_data_json(&self) -> anyhow::Result<String> {
+        let mut json_map = serde_json::to_value(self).unwrap();
+        if let serde_json::Value::Object(m) = &mut json_map {
+            m.insert("@id".into(), format!("VirtualHole/{}", self._key).into());
+            m.insert("@type".into(), "VirtualHole".into());
+        }
+        Ok(serde_json::to_string(&json_map)?)
+    }
+
 }
 
 fn default_version_value() -> char {

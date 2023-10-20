@@ -15,18 +15,16 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="remove tobj">
-      <change afterPath="$PROJECT_DIR$/src/test/test_schema.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="upgrade">
+      <change afterPath="$PROJECT_DIR$/all_attr_info.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/schema.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/all_attr_info.json" beforeDir="false" afterPath="$PROJECT_DIR$/all_attr_info.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/helper/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/helper/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/consts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/consts.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/create_attas_structs.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/create_attas_structs.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/db_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/db_tool.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_schema.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_schema.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,6 +98,8 @@
   &quot;keyToString&quot;: {
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Cargo.Test test::test_schema::test_gen_att_schema.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_schema::test_gen_schema_from_json.executor&quot;: &quot;Run&quot;,
     &quot;Project.color&quot;: &quot;011c4a&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
@@ -131,7 +131,7 @@
       <recent name="$PROJECT_DIR$/src/tool" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_schema::test_gen_att_schema">
+  <component name="RunManager" selected="Cargo.Test test::test_schema::test_gen_schema_from_json">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -166,8 +166,26 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test test::test_schema::test_gen_schema_from_json" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_schema::test_gen_schema_from_json -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <envs />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test test::test_schema::test_gen_schema_from_json" />
         <item itemvalue="Cargo.Test test::test_schema::test_gen_att_schema" />
       </list>
     </recent_temporary>
@@ -402,6 +420,9 @@
       <workItem from="1696957288818" duration="6519000" />
       <workItem from="1697083339244" duration="1153000" />
       <workItem from="1697177270964" duration="29000" />
+      <workItem from="1697303047511" duration="3325000" />
+      <workItem from="1697430280597" duration="603000" />
+      <workItem from="1697570291698" duration="1787000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -746,7 +767,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="240" />
+    <option name="localTasksCounter" value="242" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -789,7 +810,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="update truck impl" />
     <MESSAGE value="adjust tol" />
     <MESSAGE value="split bevy crate" />
     <MESSAGE value="add TOLS" />
@@ -814,7 +834,8 @@
     <MESSAGE value="WIP 完善解析" />
     <MESSAGE value="fix model problems" />
     <MESSAGE value="fix" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix" />
+    <MESSAGE value="upgrade" />
+    <option name="LAST_COMMIT_MESSAGE" value="upgrade" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

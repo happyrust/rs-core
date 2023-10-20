@@ -62,6 +62,8 @@ pub mod enso_types;
 pub mod test;
 pub mod data_state;
 
+pub mod schema;
+
 
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 

@@ -10,7 +10,7 @@ pub const ATT_STYP: u32 = db1_hash_const("STYP");
 pub const ATT_SITE: u32 = db1_hash_const("SITE");
 pub const ATT_TYPE: u32 = db1_hash_const("TYPE");
 pub const ATT_CURD: u32 = db1_hash_const("CURD");
-pub const TYPE_HASH: NounHash = db1_hash_const("HASH");
+pub const TYPE_HASH: NounHash = db1_hash_const("TYPE");
 
 pub const WORD_HASH: NounHash = db1_hash_const("WORD");
 pub const BOX_HASH: NounHash = db1_hash_const("BOX");

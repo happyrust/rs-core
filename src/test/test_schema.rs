@@ -1,4 +1,6 @@
+use crate::create_attas_structs::VirtualHoleGraphNodeQuery;
 use crate::get_default_pdms_db_info;
+use crate::schema::generate_basic_versioned_schema;
 
 #[test]
 fn test_gen_att_schema() {
@@ -7,4 +9,13 @@ fn test_gen_att_schema() {
     let v = schema.into_iter().next().unwrap();
     // let pretty_json = jsonxf::minimize(&v).unwrap();
     dbg!(serde_json::to_string(&v));
+}
+
+#[test]
+fn test_gen_schema_from_json() {
+    // let test_data = VirtualHoleGraphNodeQuery::default();
+    let schema = VirtualHoleGraphNodeQuery::get_scheme();
+    dbg!(&schema);
+    // let pretty_json = jsonxf::minimize(&v).unwrap();
+    // dbg!(serde_json::to_string(&v));
 }
