@@ -3,6 +3,7 @@ use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use nom::character::streaming::char;
+use crate::pdms_types::RefU64;
 use crate::schema::generate_basic_versioned_schema;
 
 //显示需创建ATTA的refno及name

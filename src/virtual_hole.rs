@@ -1,3 +1,4 @@
+use bevy_ecs::event::Event;
 use bevy_ecs::system::Resource;
 use serde::Deserialize;
 use serde::Serialize;
@@ -125,4 +126,27 @@ pub struct ShowReviewerData {
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShowReviewerDataVec {
     pub data: Vec<ShowReviewerData>,
+}
+
+//绘制虚拟孔洞埋件需要的数据
+#[derive(Resource, Clone, Debug, Default,Serialize,Deserialize, Event)]
+pub struct HoleGeoData {
+    //图数据库的key
+    pub key: String,
+    //形状
+    pub shape: String,
+    //编号
+    pub item_ref: String,
+    //长
+    pub size_length: f32,
+    //宽
+    pub size_width: f32,
+    //位置
+    pub position: String,
+    //朝向
+    pub ori: String,
+    //对应墙板的refno
+    pub rely_item_ref: String,
+    //厚度
+    pub size_throw_wall: f32,
 }
