@@ -3,14 +3,11 @@ use crate::tool::hash_tool::*;
 use anyhow::anyhow;
 use bevy_ecs::prelude::*;
 use bitflags::bitflags;
-
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
-use indexmap::IndexMap;
 use itertools::Itertools;
-
 use parry3d::bounding_volume::Aabb;
 
 use parry3d::shape::SharedShape;
@@ -138,7 +135,8 @@ pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 0] = [];
 
 pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
     "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
-    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ"
+    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL",
+    "SCTN", "NOZZ",
 ];
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
@@ -199,12 +197,12 @@ impl RefI32Tuple {
 
     #[inline]
     pub fn get_0(&self) -> i32 {
-        self.0.0
+        self.0 .0
     }
 
     #[inline]
     pub fn get_1(&self) -> i32 {
-        self.0.1
+        self.0 .1
     }
 }
 
@@ -223,18 +221,18 @@ pub mod string {
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            T: Display,
-            S: Serializer,
+    where
+        T: Display,
+        S: Serializer,
     {
         serializer.collect_str(value)
     }
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-        where
-            T: FromStr,
-            T::Err: Display,
-            D: Deserializer<'de>,
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
     {
         String::deserialize(deserializer)?
             .parse()
@@ -247,21 +245,23 @@ pub struct ParseRefU64Error;
 
 //把Refno当作u64
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Hash,
-Serialize,
-Deserialize,
-Clone,
-Copy,
-Default,
-Component,
-Eq,
-PartialEq,
-PartialOrd,
-Ord,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Hash,
+    Serialize,
+    Deserialize,
+    Clone,
+    Copy,
+    Default,
+    Component,
+    Eq,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    // DeriveValueType,
 )]
+// #[sea_orm(column_type = "Text", array_type = "String")]
 pub struct RefU64(pub u64);
 
 impl FromStr for RefU64 {
@@ -282,6 +282,28 @@ impl FromStr for RefU64 {
         }
     }
 }
+
+// impl Into<sea_orm::Value> for RefU64 {
+//     fn into(self) -> sea_orm::Value {
+//         let string: String = self.to_refno_string();
+//         sea_orm::Value::String(Some(Box::new(string)))
+//     }
+// }
+
+// impl From<&str> for Value {
+//     fn from(x: &str) -> Value {
+//         let string: String = x.into();
+//         Value::String(Some(Box::new(string)))
+//     }
+// }
+// impl<T> From<T> for RefU64
+// where
+//     T: ToString,
+// {
+//     fn from(v: T) -> RefU64 {
+//         Self(v.into())
+//     }
+// }
 
 impl From<&str> for RefU64 {
     fn from(s: &str) -> Self {
@@ -366,7 +388,7 @@ impl Display for RefU64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.get_0() == 0 {
             write!(f, "unset")
-        }else{
+        } else {
             write!(f, "{}_{}", self.get_0(), self.get_1())
         }
     }
@@ -540,17 +562,17 @@ impl RefU64 {
 
 #[serde_as]
 #[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Component,
-Deref,
-DerefMut,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Component,
+    Deref,
+    DerefMut,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
@@ -585,15 +607,15 @@ pub type NounHash = u32;
 //untagged
 ///新的属性数据结构
 #[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Component,
-Default,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Component,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 #[serde(untagged)]
 pub enum NamedAttrValue {
@@ -651,18 +673,20 @@ impl NamedAttrValue {
     pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
         return match self {
             NamedAttrValue::InvalidType => Box::new("unset".to_string()),
-            NamedAttrValue::StringType(v) |
-            NamedAttrValue::ElementType(v) |
-            NamedAttrValue::WordType(v) => Box::new(v.to_string()),
+            NamedAttrValue::StringType(v)
+            | NamedAttrValue::ElementType(v)
+            | NamedAttrValue::WordType(v) => Box::new(v.to_string()),
             NamedAttrValue::BoolArrayType(v) => Box::new(v.clone()),
             NamedAttrValue::IntArrayType(v) => Box::new(v.clone()),
             NamedAttrValue::IntegerType(v) => Box::new(*v),
             NamedAttrValue::BoolType(v) => Box::new(*v),
-            NamedAttrValue::StringArrayType(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
-            NamedAttrValue::F32Type(v) => { Box::new(*v) }
-            NamedAttrValue::F32VecType(v) => { Box::new(v.clone()) }
-            NamedAttrValue::Vec3Type(v) => { Box::new(vec![v.x, v.y, v.z]) }
-            NamedAttrValue::RefU64Type(r) => { Box::new(r.to_refno_string()) }
+            NamedAttrValue::StringArrayType(v) => {
+                Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>())
+            }
+            NamedAttrValue::F32Type(v) => Box::new(*v),
+            NamedAttrValue::F32VecType(v) => Box::new(v.clone()),
+            NamedAttrValue::Vec3Type(v) => Box::new(vec![v.x, v.y, v.z]),
+            NamedAttrValue::RefU64Type(r) => Box::new(r.to_refno_string()),
         };
     }
 }
@@ -671,22 +695,32 @@ impl Into<serde_json::Value> for NamedAttrValue {
     fn into(self) -> serde_json::Value {
         match self {
             NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
-            NamedAttrValue::F32Type(d) => serde_json::Value::Number(serde_json::Number::from_f64(d as _).unwrap()),
+            NamedAttrValue::F32Type(d) => {
+                serde_json::Value::Number(serde_json::Number::from_f64(d as _).unwrap())
+            }
             NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
             NamedAttrValue::StringType(s) => serde_json::Value::String(s),
-            NamedAttrValue::F32VecType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::Vec3Type(d) => serde_json::Value::Array(d.to_array().into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::StringArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::BoolArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
-            NamedAttrValue::IntArrayType(d) => serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect()),
+            NamedAttrValue::F32VecType(d) => {
+                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
+            }
+            NamedAttrValue::Vec3Type(d) => {
+                serde_json::Value::Array(d.to_array().into_iter().map(|x| x.into()).collect())
+            }
+            NamedAttrValue::StringArrayType(d) => {
+                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
+            }
+            NamedAttrValue::BoolArrayType(d) => {
+                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
+            }
+            NamedAttrValue::IntArrayType(d) => {
+                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
+            }
             NamedAttrValue::RefU64Type(d) => {
                 //需要结合PdmsElement来跳转
                 // d.to_string().into()
                 format!("PdmsElement/{}", d.to_string()).into()
             }
-            NamedAttrValue::WordType(d) => {
-                d.into()
-            }
+            NamedAttrValue::WordType(d) => d.into(),
             _ => serde_json::Value::Null,
             // NamedAttrValue::ElementType(_) => {}
             // NamedAttrValue::WordType(_) => {}
@@ -697,17 +731,17 @@ impl Into<serde_json::Value> for NamedAttrValue {
 
 ///带名称的属性map
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Debug,
-Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Deref,
+    DerefMut,
+    Clone,
+    Default,
+    Debug,
+    Component,
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
@@ -764,7 +798,7 @@ impl NamedAttrMap {
     }
 
     #[inline]
-    pub fn get_owner(&self) -> RefU64{
+    pub fn get_owner(&self) -> RefU64 {
         self.get_refno_by_att_or_default("OWNER")
     }
 
@@ -790,10 +824,16 @@ impl NamedAttrMap {
 
         let type_name = self.get_type();
         let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
-        map.insert("@id".into(), format!("{}/{}", &type_name, refno.to_string()).into());
+        map.insert(
+            "@id".into(),
+            format!("{}/{}", &type_name, refno.to_string()).into(),
+        );
         map.insert("@type".into(), type_name.into());
         map.insert("REFNO".into(), refno.to_string().into());
-        map.insert("ELEMENT".into(), format!("PdmsElement/{}", refno.to_string()).into());
+        map.insert(
+            "ELEMENT".into(),
+            format!("PdmsElement/{}", refno.to_string()).into(),
+        );
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
@@ -808,16 +848,16 @@ impl NamedAttrMap {
 
 ///PDMS的属性数据Map
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Deref,
+    DerefMut,
+    Clone,
+    Default,
+    Component,
 )]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
@@ -836,9 +876,7 @@ impl Into<NamedAttrMap> for AttrMap {
         for (k, v) in self.map {
             map.entry(db1_dehash(k)).or_insert(NamedAttrValue::from(&v));
         }
-        NamedAttrMap {
-            map,
-        }
+        NamedAttrMap { map }
     }
 }
 
@@ -1730,7 +1768,7 @@ impl DerefMut for PdmsTree {
 
 /// 一个参考号是有可能重复的，project信息可以不用存储，获取信息时必须要带上 db_no
 #[derive(
-Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct RefnoInfo {
     /// 参考号的ref0
@@ -1740,15 +1778,15 @@ pub struct RefnoInfo {
 }
 
 #[derive(
-Default,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Component,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Default,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub enum AttrVal {
     #[default]
@@ -2015,7 +2053,7 @@ impl PdmsDatabaseInfo {
         map
     }
 
-    pub fn fix(&self){
+    pub fn fix(&self) {
         for kv in self.noun_attr_info_map.iter_mut() {
             for mut info in kv.value().iter_mut() {
                 info.name = db1_dehash(*info.key() as _);
@@ -2023,123 +2061,155 @@ impl PdmsDatabaseInfo {
         }
     }
 
-
     ///检查当前的att_map，是否需要更新schema数据
     pub fn check_schema(&self, noun: i32, att_map: &NamedAttrMap) -> Option<String> {
-        let mut found_diff = false;
-        // let mut new_atts_info = None;
-        let atts_info = self.noun_attr_info_map.get_mut(&noun)?;
-        // dbg!(atts_info.value());
-        let type_hash = db1_hash("TYPE") as _;
-        atts_info.insert(type_hash, AttrInfo{
-            name: "TYPE".to_string(),
-            hash: type_hash,
-            offset: 0,
-            default_val: AttrVal::WordType("unset".to_string()),
-            att_type: DbAttributeType::WORD,
-        });
-        {
-            att_map.iter().for_each(|(k, v)| {
-                let hash = db1_hash(k) as _;
-                if hash > 0 && !BASIC_TYPE_NAMES.contains(&k.as_str())
-                    && !atts_info.contains_key(&(hash as _)) {
-                    found_diff = true;
-                    match v {
-                        NamedAttrValue::F32VecType(_) =>{
-                            atts_info.insert(hash, AttrInfo{
-                                name: k.clone(),
-                                hash,
-                                offset: 0,
-                                default_val: AttrVal::DoubleArrayType(vec![]),
-                                att_type: DbAttributeType::DOUBLE,
-                            });
-                        }
-                        NamedAttrValue::IntArrayType(_) =>{
-                            atts_info.insert(hash, AttrInfo{
-                                name: k.clone(),
-                                hash,
-                                offset: 0,
-                                default_val: AttrVal::IntArrayType(vec![]),
-                                att_type: DbAttributeType::INTEGER,
-                            });
-                        }
-                        NamedAttrValue::StringArrayType(_) =>{
-                            atts_info.insert(hash, AttrInfo{
-                                name: k.clone(),
-                                hash,
-                                offset: 0,
-                                default_val: AttrVal::StringArrayType(vec![]),
-                                att_type: DbAttributeType::STRING,
-                            });
-                        }
-                        NamedAttrValue::F32Type(_) =>{
-                            atts_info.insert(hash, AttrInfo{
-                                name: k.clone(),
-                                hash,
-                                offset: 0,
-                                default_val: AttrVal::DoubleType(0.0),
-                                att_type: DbAttributeType::DOUBLE,
-                            });
-                        }
-                        NamedAttrValue::BoolType(_) =>{
-                            atts_info.insert(hash, AttrInfo{
-                                name: k.clone(),
-                                hash,
-                                offset: 0,
-                                default_val: AttrVal::BoolType(false),
-                                att_type: DbAttributeType::BOOL,
-                            });
-                        }
-                        NamedAttrValue::IntegerType(_) =>{
-                            atts_info.insert(hash, AttrInfo{
-                                name: k.clone(),
-                                hash,
-                                offset: 0,
-                                default_val: AttrVal::IntegerType(0),
-                                att_type: DbAttributeType::INTEGER,
-                            });
-                        }
-                        NamedAttrValue::StringType(_) | NamedAttrValue::ElementType(_) | NamedAttrValue::WordType(_) | NamedAttrValue::RefU64Type(_) =>{
-                            atts_info.insert(hash, AttrInfo{
-                                name: k.clone(),
-                                hash,
-                                offset: 0,
-                                default_val: AttrVal::StringType("".into()),
-                                att_type: DbAttributeType::STRING,
-                            });
-                        }
-                        _ => {}
-                    }
-                    dbg!((k, v));
-                }
-            });
-        }
+        // let mut found_diff = false;
+        // // let mut new_atts_info = None;
+        // let atts_info = self.noun_attr_info_map.get_mut(&noun)?;
+        // // dbg!(atts_info.value());
+        // let type_hash = db1_hash("TYPE") as _;
+        // atts_info.insert(
+        //     type_hash,
+        //     AttrInfo {
+        //         name: "TYPE".to_string(),
+        //         hash: type_hash,
+        //         offset: 0,
+        //         default_val: AttrVal::WordType("unset".to_string()),
+        //         att_type: DbAttributeType::WORD,
+        //     },
+        // );
+        // {
+        //     att_map.iter().for_each(|(k, v)| {
+        //         let hash = db1_hash(k) as _;
+        //         if hash > 0
+        //             && !BASIC_TYPE_NAMES.contains(&k.as_str())
+        //             && !atts_info.contains_key(&(hash as _))
+        //         {
+        //             found_diff = true;
+        //             match v {
+        //                 NamedAttrValue::F32VecType(_) => {
+        //                     atts_info.insert(
+        //                         hash,
+        //                         AttrInfo {
+        //                             name: k.clone(),
+        //                             hash,
+        //                             offset: 0,
+        //                             default_val: AttrVal::DoubleArrayType(vec![]),
+        //                             att_type: DbAttributeType::DOUBLE,
+        //                         },
+        //                     );
+        //                 }
+        //                 NamedAttrValue::IntArrayType(_) => {
+        //                     atts_info.insert(
+        //                         hash,
+        //                         AttrInfo {
+        //                             name: k.clone(),
+        //                             hash,
+        //                             offset: 0,
+        //                             default_val: AttrVal::IntArrayType(vec![]),
+        //                             att_type: DbAttributeType::INTEGER,
+        //                         },
+        //                     );
+        //                 }
+        //                 NamedAttrValue::StringArrayType(_) => {
+        //                     atts_info.insert(
+        //                         hash,
+        //                         AttrInfo {
+        //                             name: k.clone(),
+        //                             hash,
+        //                             offset: 0,
+        //                             default_val: AttrVal::StringArrayType(vec![]),
+        //                             att_type: DbAttributeType::STRING,
+        //                         },
+        //                     );
+        //                 }
+        //                 NamedAttrValue::F32Type(_) => {
+        //                     atts_info.insert(
+        //                         hash,
+        //                         AttrInfo {
+        //                             name: k.clone(),
+        //                             hash,
+        //                             offset: 0,
+        //                             default_val: AttrVal::DoubleType(0.0),
+        //                             att_type: DbAttributeType::DOUBLE,
+        //                         },
+        //                     );
+        //                 }
+        //                 NamedAttrValue::BoolType(_) => {
+        //                     atts_info.insert(
+        //                         hash,
+        //                         AttrInfo {
+        //                             name: k.clone(),
+        //                             hash,
+        //                             offset: 0,
+        //                             default_val: AttrVal::BoolType(false),
+        //                             att_type: DbAttributeType::BOOL,
+        //                         },
+        //                     );
+        //                 }
+        //                 NamedAttrValue::IntegerType(_) => {
+        //                     atts_info.insert(
+        //                         hash,
+        //                         AttrInfo {
+        //                             name: k.clone(),
+        //                             hash,
+        //                             offset: 0,
+        //                             default_val: AttrVal::IntegerType(0),
+        //                             att_type: DbAttributeType::INTEGER,
+        //                         },
+        //                     );
+        //                 }
+        //                 NamedAttrValue::StringType(_)
+        //                 | NamedAttrValue::ElementType(_)
+        //                 | NamedAttrValue::WordType(_)
+        //                 | NamedAttrValue::RefU64Type(_) => {
+        //                     atts_info.insert(
+        //                         hash,
+        //                         AttrInfo {
+        //                             name: k.clone(),
+        //                             hash,
+        //                             offset: 0,
+        //                             default_val: AttrVal::StringType("".into()),
+        //                             att_type: DbAttributeType::STRING,
+        //                         },
+        //                     );
+        //                 }
+        //                 _ => {}
+        //             }
+        //             dbg!((k, v));
+        //         }
+        //     });
+        // }
 
-        // let Some(new) = new_atts_info else{
+        // // let Some(new) = new_atts_info else{
+        // //     return None;
+        // // };
+        // if !found_diff {
         //     return None;
-        // };
-        if !found_diff {
-            return None;
-        }
+        // }
 
-        use serde_json::{Map, Value};
-        let mut context: Map<String, Value> = serde_json::from_str(r#"{
-            "@base": "terminusdb:///data/",
-            "@schema": "terminusdb:///schema#",
-            "@type": "@context"
-        }"#).unwrap_or_default();
+        // use serde_json::{Map, Value};
+        // let mut context: Map<String, Value> = serde_json::from_str(
+        //     r#"{
+        //     "@base": "terminusdb:///data/",
+        //     "@schema": "terminusdb:///schema#",
+        //     "@type": "@context"
+        // }"#,
+        // )
+        // .unwrap_or_default();
 
-        //todo 需要考虑UDA的schema
-        let schema = Self::gen_schema(noun, &atts_info)?;
-        let mut modify = vec![context, schema];
+        // //todo 需要考虑UDA的schema
+        // let schema = Self::gen_schema(noun, &atts_info)?;
+        // let mut modify = vec![context, schema];
 
-        // self.noun_attr_info_map.remove(&noun);
-        // self.noun_attr_info_map.insert(noun, new);
-        // *self.noun_attr_info_map.get_mut(&noun).unwrap() = new;
-        serde_json::to_string(&modify).ok()
+        // // self.noun_attr_info_map.remove(&noun);
+        // // self.noun_attr_info_map.insert(noun, new);
+        // // *self.noun_attr_info_map.get_mut(&noun).unwrap() = new;
+        // serde_json::to_string(&modify).ok()
+        None
     }
 
-    pub fn gen_schema(noun: i32, info_map: &DashMap<i32, AttrInfo>) -> Option<Map<String, Value>> {
+    pub fn gen_schema(noun: i32, info_map: &DashMap<i32, AttrInfo>) -> Option<serde_json::Map<String, serde_json::Value>> {
         if noun <= 0 {
             return None;
         }
@@ -2160,7 +2230,8 @@ impl PdmsDatabaseInfo {
             att_schemas_vec.push(s);
         }
         let mut json = if att_schemas_vec.is_empty() {
-            format!(r#"
+            format!(
+                r#"
                     {{
                         "@type" : "Class",
                         "@id"   : "{}",
@@ -2176,9 +2247,12 @@ impl PdmsDatabaseInfo {
                             "@type": "Optional"
                         }}
                     }}
-                "#, &type_name)
+                "#,
+                &type_name
+            )
         } else {
-            format!(r#"
+            format!(
+                r#"
                     {{
                         "@type" : "Class",
                         "@id"   : "{}",
@@ -2195,7 +2269,10 @@ impl PdmsDatabaseInfo {
                         }},
                         {}
                     }}
-                "#, &type_name, att_schemas_vec.join(","))
+                "#,
+                &type_name,
+                att_schemas_vec.join(",")
+            )
         };
         if let Ok(obj) = serde_json::from_str::<serde_json::Map<String, Value>>(&json) {
             return Some(obj);
@@ -2206,7 +2283,7 @@ impl PdmsDatabaseInfo {
         None
     }
 
-    pub fn get_all_schemas(&self) -> Vec<Map<String, Value>> {
+    pub fn get_all_schemas(&self) -> Vec<serde_json::Map<String, serde_json::Value>> {
         use serde_json::{Map, Value};
         let mut schemas = Vec::new();
         for kv in &self.noun_attr_info_map {
@@ -2219,7 +2296,7 @@ impl PdmsDatabaseInfo {
             // }
             // dbg!(*kv.key());
             // dbg!(&kv.value());
-            if let Some(obj) = Self::gen_schema(*kv.key(), kv.value())  {
+            if let Some(obj) = Self::gen_schema(*kv.key(), kv.value()) {
                 // dbg!(&obj);
                 schemas.push(obj);
             } else {
@@ -2296,17 +2373,17 @@ pub struct AiosMaterial {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum GeoData {
     Primitive(PdmsMeshIdx), //索引的哪个mesh,和对应的拉伸值， 先从dish开始判断相似性
-    // Raw(Mesh),          //原生的Mesh
+                            // Raw(Mesh),          //原生的Mesh
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Deref,
-DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Deref,
+    DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
 )]
 pub struct LevelShapeMgr {
     pub level_mgr: DashMap<RefU64, RefU64Vec>,
@@ -2341,19 +2418,19 @@ bitflags! {
 
 #[repr(C)]
 #[derive(
-Component,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Default,
-Clone,
-Debug,
-Copy,
-Eq,
-PartialEq,
-Hash,
+    Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Default,
+    Clone,
+    Debug,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
 )]
 pub enum PdmsGenericType {
     #[default]
@@ -2400,16 +2477,16 @@ pub enum PdmsGenericType {
 
 /// 几何体的基本类型
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-PartialEq,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 pub enum GeoBasicType {
     #[default]
@@ -2432,15 +2509,15 @@ pub enum GeoBasicType {
 //指向典型的例子
 
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 pub struct GeoEdge {
     //元件的参考号
@@ -2462,16 +2539,16 @@ pub struct GeoEdge {
 // }
 #[inline]
 fn ser_inst_info_edge_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_infos/{}", refno.to_url_refno()).as_str())
 }
 
 #[inline]
 fn ser_inst_geo_edge_as_key_str<S>(k: &u64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_geos/{}", *k).as_str())
 }
@@ -2495,15 +2572,15 @@ impl GeoEdge {
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 #[serde_as]
 pub struct EleGeosInfo {
@@ -2532,16 +2609,16 @@ pub struct EleGeosInfo {
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     Ok(RefU64::from_url_refno(&s).unwrap_or_default())
 }
 
 pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(refno.to_url_refno().as_str())
 }
@@ -2630,14 +2707,14 @@ impl EleGeosInfo {
 
 /// instane数据集合管理
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Resource,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Resource,
 )]
 pub struct ShapeInstancesData {
     /// 保存instance信息数据
@@ -2842,7 +2919,7 @@ impl ShapeInstancesData {
 
 //todo mesh 增量传输
 #[derive(
-Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct PdmsInstanceMeshData {
     pub shape_insts: ShapeInstancesData,
@@ -2939,14 +3016,14 @@ impl ColliderShapeMgr {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-Resource,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct PlantGeoData {
     #[serde(rename = "_key")]
@@ -2976,8 +3053,8 @@ impl Clone for PlantGeoData {
 }
 
 fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     if let Ok(r) = hex::decode(s.as_str()) {
@@ -2987,8 +3064,8 @@ fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
 }
 
 fn se_plant_mesh<S>(mesh: &Option<PlantMesh>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     let mesh_string = mesh
         .as_ref()
@@ -3006,7 +3083,6 @@ use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 use bevy_render::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
-use serde_json::{json, Map, Number, to_string, Value};
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
@@ -3030,16 +3106,16 @@ impl PlantGeoData {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-Deref,
-DerefMut,
-Resource,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    Deref,
+    DerefMut,
+    Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct PlantMeshesData {
     pub meshes: HashMap<GeoHash, PlantGeoData>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
@@ -3127,15 +3203,15 @@ impl PlantMeshesData {
 
 #[serde_as]
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Resource,
 )]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
@@ -3245,15 +3321,15 @@ impl EleInstGeosData {
 
 ///分拆的基本体信息, 应该是不需要复用的
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Resource,
 )]
 #[serde_as]
 pub struct EleInstGeo {
@@ -3319,24 +3395,24 @@ impl EleInstGeo {
 }
 
 fn de_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     s.parse::<u64>().map_err(de::Error::custom)
 }
 
 fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     RefU64::from_refno_str(&s).map_err(de::Error::custom)
 }
 
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer).unwrap_or_default();
     Ok(serde_json::from_str::<HashSet<String>>(s.as_str())
@@ -3347,8 +3423,8 @@ fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Er
 }
 
 pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     let set = refnos
         .into_iter()
@@ -3359,15 +3435,15 @@ pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S:
 }
 
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str((*id).to_string().as_str())
 }
 
 pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(refno.to_refno_str().as_str())
 }
@@ -3785,75 +3861,94 @@ impl AttrInfo {
         match self.default_val {
             AttrVal::IntegerType(_) => {
                 if self.offset > 0 {
-                    Some(r#"
+                    Some(
+                        r#"
                          "xsd:integer"
-                    "#)
+                    "#,
+                    )
                 } else {
-                    Some(r#"{
+                    Some(
+                        r#"{
                         "@class": "xsd:integer",
                         "@type": "Optional"
-                    }"#)
+                    }"#,
+                    )
                 }
             }
             AttrVal::BoolType(_) => {
                 if self.offset > 0 {
-                    Some(r#"
+                    Some(
+                        r#"
                         "xsd:boolean"
-                    "#)
+                    "#,
+                    )
                 } else {
-                    Some(r#"{
+                    Some(
+                        r#"{
                         "@class": "xsd:boolean",
                         "@type": "Optional"
-                    }"#)
+                    }"#,
+                    )
                 }
             }
             AttrVal::DoubleType(_) => {
                 if self.offset > 0 {
-                    Some(r#"
+                    Some(
+                        r#"
                         "xsd:decimal"
-                    "#)
+                    "#,
+                    )
                 } else {
-                    Some(r#"{
+                    Some(
+                        r#"{
                         "@class": "xsd:decimal",
                         "@type": "Optional"
-                    }"#)
+                    }"#,
+                    )
                 }
             }
             //element 暂时为string，需要转换成type class
-            AttrVal::StringType(_) | AttrVal::RefU64Type(_) | AttrVal::WordType(_) | AttrVal::ElementType(_) => {
+            AttrVal::StringType(_)
+            | AttrVal::RefU64Type(_)
+            | AttrVal::WordType(_)
+            | AttrVal::ElementType(_) => {
                 if self.offset > 0 {
-                    Some(r#"
+                    Some(
+                        r#"
                         "xsd:string"
-                    "#)
+                    "#,
+                    )
                 } else {
-                    Some(r#"{
+                    Some(
+                        r#"{
                         "@class": "xsd:string",
                         "@type": "Optional"
-                    }"#)
+                    }"#,
+                    )
                 }
             }
-            AttrVal::DoubleArrayType(_) | AttrVal::Vec3Type(_) => {
-                Some(r#"{
+            AttrVal::DoubleArrayType(_) | AttrVal::Vec3Type(_) => Some(
+                r#"{
                         "@class": "xsd:decimal",
                         "@type": "Array"
-                    }"#)
-            }
-            AttrVal::IntArrayType(_) => {
-                Some(r#"
+                    }"#,
+            ),
+            AttrVal::IntArrayType(_) => Some(
+                r#"
                      {
                         "@class": "xsd:integer",
                         "@type": "Array"
                      }
-                "#)
-            }
-            AttrVal::BoolArrayType(_) => {
-                Some(r#"
+                "#,
+            ),
+            AttrVal::BoolArrayType(_) => Some(
+                r#"
                      {
                         "@class": "xsd:boolean",
                         "@type": "Array"
                      }
-                "#)
-            }
+                "#,
+            ),
 
             // DbAttributeType::ELEMENT => {
             //     Some(r#"{
@@ -3877,34 +3972,37 @@ impl AttrInfo {
     ///需要考虑
     pub fn gen_schema_old(&self) -> Option<String> {
         match self.att_type {
-            DbAttributeType::INTEGER => {
-                Some(format!(r#""{}": "xsd:integer""#, &self.name))
+            DbAttributeType::INTEGER => Some(format!(r#""{}": "xsd:integer""#, &self.name)),
+            DbAttributeType::DOUBLE => Some(format!(r#""{}": "xsd:decimal""#, &self.name)),
+            DbAttributeType::BOOL => Some(format!(r#""{}": "xsd:bool""#, &self.name)),
+            DbAttributeType::STRING | DbAttributeType::TYPEX | DbAttributeType::WORD => {
+                Some(format!(r#""{}": "xsd:string""#, &self.name))
             }
-            DbAttributeType::DOUBLE => { Some(format!(r#""{}": "xsd:decimal""#, &self.name)) }
-            DbAttributeType::BOOL => { Some(format!(r#""{}": "xsd:bool""#, &self.name)) }
-            DbAttributeType::STRING | DbAttributeType::TYPEX | DbAttributeType::WORD => { Some(format!(r#""{}": "xsd:string""#, &self.name)) }
-            DbAttributeType::DIRECTION | DbAttributeType::POSITION | DbAttributeType::ORIENTATION
-            | DbAttributeType::DOUBLEVEC | DbAttributeType::FLOATVEC | DbAttributeType::Vec3Type => {
-                Some(format!(r#""{}":
+            DbAttributeType::DIRECTION
+            | DbAttributeType::POSITION
+            | DbAttributeType::ORIENTATION
+            | DbAttributeType::DOUBLEVEC
+            | DbAttributeType::FLOATVEC
+            | DbAttributeType::Vec3Type => Some(format!(
+                r#""{}":
                      {{
                         "@class": "xsd:decimal",
                         "@type": "Array"
                     }}
-                "#, &self.name))
-            }
-            DbAttributeType::INTVEC => {
-                Some(format!(r#""{}":
+                "#,
+                &self.name
+            )),
+            DbAttributeType::INTVEC => Some(format!(
+                r#""{}":
                      {{
                         "@class": "xsd:integer",
                         "@type": "Array"
                     }}
-                "#, &self.name))
-            }
-            DbAttributeType::ELEMENT => {
-                Some(format!(r#""{}": "xsd:string""#, &self.name))
-            }
+                "#,
+                &self.name
+            )),
+            DbAttributeType::ELEMENT => Some(format!(r#""{}": "xsd:string""#, &self.name)),
             // DbAttributeType::RefU64Vec => {}
-
             _ => None,
         }
     }
@@ -3928,17 +4026,17 @@ pub struct PdmsRefno {
 pub type AiosStrHash = u32;
 
 #[derive(
-Debug,
-Clone,
-Default,
-Serialize,
-Deserialize,
-PartialEq,
-Eq,
-Hash,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Debug,
+    Clone,
+    Default,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Hash,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct AiosStr(pub String);
 

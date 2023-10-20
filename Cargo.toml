@@ -76,7 +76,7 @@ pretty-hex = "0.3.0"
 once_cell_serde = "1.17.1"
 jsonxf = "1.1.1"
 once_cell = "1.18.0"
-sea-orm = "0.12.4"
+#sea-orm = { version = "0.12.4"}
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
