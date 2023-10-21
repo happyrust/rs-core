@@ -1,6 +1,6 @@
 
 use parry3d::bounding_volume::Aabb;
-use crate::pdms_types::RefU64;
+use crate::types::*;
 
 pub struct RStarBoundingBox2D {
     aabb: rstar::AABB<[f32; 2]>,

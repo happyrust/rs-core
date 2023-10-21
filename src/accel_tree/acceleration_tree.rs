@@ -7,7 +7,7 @@ use glam::{Mat4, Vec3};
 use parry3d::bounding_volume::Aabb;
 use rstar::Envelope;
 use serde_derive::{Deserialize, Serialize};
-use crate::pdms_types::RefU64;
+use crate::types::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RStarBoundingBox {

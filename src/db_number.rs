@@ -5,7 +5,7 @@ use std::io::{Read, Write};
 use bevy_ecs::prelude::Resource;
 use derive_more::*;
 use itertools::Itertools;
-use crate::pdms_types::RefU64;
+use crate::types::*;
 
 #[derive(Clone, Debug, Default, Deref, DerefMut, Serialize, Deserialize, Resource)]
 pub struct DbNumMgr{

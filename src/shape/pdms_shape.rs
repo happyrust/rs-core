@@ -16,6 +16,7 @@ use glam::{Mat4, Vec3, Vec4};
 use serde::{Deserialize, Serialize};
 
 use crate::pdms_types::*;
+use crate::types::*;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
 use dyn_clone::DynClone;

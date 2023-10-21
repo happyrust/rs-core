@@ -122,3 +122,32 @@ pub struct DbOption {
     pub puhua_database_password: String,
 }
 
+
+impl DbOption{
+    #[inline]
+    pub fn get_mysql_conn_str(&self) -> String {
+        let user = self.user.as_str();
+        let pwd = urlencoding::encode(self.password.as_str());
+        let ip = self.ip.as_str();
+        let port = self.port.as_str();
+        format!("mysql://{user}:{pwd}@{ip}:{port}")
+    }
+
+    #[inline]
+    pub fn get_mysql_project_db_conn_str(&self) -> String {
+        let user = self.user.as_str();
+        let pwd = urlencoding::encode(self.password.as_str());
+        let ip = self.ip.as_str();
+        let port = self.port.as_str();
+        format!("mysql://{user}:{pwd}@{ip}:{port}/{}", &self.project_name)
+    }
+
+    #[inline]
+    pub fn get_mysql_db_conn_str(&self, db: &str) -> String {
+        let user = self.user.as_str();
+        let pwd = urlencoding::encode(self.password.as_str());
+        let ip = self.ip.as_str();
+        let port = self.port.as_str();
+        format!("mysql://{user}:{pwd}@{ip}:{port}/{}", db)
+    }
+}

@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 use crate::metadata_manager::FileBytes;
-use crate::pdms_types::RefU64;
+use crate::types::*;
 use bevy_ecs::prelude::Component;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

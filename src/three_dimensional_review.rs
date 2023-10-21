@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use bevy_ecs::prelude::Resource;
 use bevy_transform::prelude::Transform;
 use serde::{Serialize, Deserialize};
-use crate::pdms_types::RefU64;
+use crate::types::*;
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use bevy_ecs::prelude::Component;

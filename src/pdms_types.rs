@@ -9,15 +9,13 @@ use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use parry3d::bounding_volume::Aabb;
-
+use sea_orm::entity::prelude::*;
 use parry3d::shape::SharedShape;
 use rkyv::with::Skip;
-
+use crate::types::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
-
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-
 use std::fmt::{Debug, Display, Formatter, Pointer};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -57,6 +55,9 @@ use bevy_render::mesh::Indices;
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 use bevy_transform::prelude::*;
 use clap::builder::Str;
+
+pub use crate::types::*;
+
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -148,63 +149,6 @@ pub enum SjusType {
     UCEN,
 }
 
-///pdms的参考号
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
-pub struct RefI32Tuple(pub (i32, i32));
-
-use std::string::String;
-
-impl Into<String> for RefI32Tuple {
-    fn into(self) -> String {
-        String::from(format!("{}/{}", self.get_0(), self.get_1()))
-    }
-}
-
-impl From<&[u8]> for RefI32Tuple {
-    fn from(input: &[u8]) -> Self {
-        Self::new(
-            i32::from_be_bytes(input[0..4].try_into().unwrap()),
-            i32::from_be_bytes(input[4..8].try_into().unwrap()),
-        )
-    }
-}
-
-impl From<&str> for RefI32Tuple {
-    fn from(s: &str) -> Self {
-        let x: Vec<i32> = s
-            .split('/')
-            .map(|x| x.parse::<i32>().unwrap_or_default())
-            .collect();
-        Self::new(x[0], x[1])
-    }
-}
-
-impl From<&RefU64> for RefI32Tuple {
-    fn from(n: &RefU64) -> Self {
-        let n = n.0.to_be_bytes();
-        Self((
-            i32::from_be_bytes(n[..4].try_into().unwrap()),
-            i32::from_be_bytes(n[4..].try_into().unwrap()),
-        ))
-    }
-}
-
-impl RefI32Tuple {
-    #[inline]
-    pub fn new(ref_0: i32, ref_1: i32) -> Self {
-        Self { 0: (ref_0, ref_1) }
-    }
-
-    #[inline]
-    pub fn get_0(&self) -> i32 {
-        self.0 .0
-    }
-
-    #[inline]
-    pub fn get_1(&self) -> i32 {
-        self.0 .1
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Jsgf {
@@ -221,18 +165,18 @@ pub mod string {
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Display,
-        S: Serializer,
+        where
+            T: Display,
+            S: Serializer,
     {
         serializer.collect_str(value)
     }
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-    where
-        T: FromStr,
-        T::Err: Display,
-        D: Deserializer<'de>,
+        where
+            T: FromStr,
+            T::Err: Display,
+            D: Deserializer<'de>,
     {
         String::deserialize(deserializer)?
             .parse()
@@ -240,339 +184,20 @@ pub mod string {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, derive_more::Display)]
-pub struct ParseRefU64Error;
-
-//把Refno当作u64
-#[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Hash,
-    Serialize,
-    Deserialize,
-    Clone,
-    Copy,
-    Default,
-    Component,
-    Eq,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    // DeriveValueType,
-)]
-// #[sea_orm(column_type = "Text", array_type = "String")]
-pub struct RefU64(pub u64);
-
-impl FromStr for RefU64 {
-    type Err = ParseRefU64Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = if s.starts_with("=") {
-            s[1..].to_string()
-        } else {
-            s.to_string()
-        };
-        if s.contains('_') {
-            Self::from_url_refno(&s).ok_or(ParseRefU64Error)
-        } else if s.contains('/') {
-            Self::from_refno_str(&s).map_err(|_| ParseRefU64Error)
-        } else {
-            let d = s.parse::<u64>().map_err(|_| ParseRefU64Error)?;
-            Ok(Self(d))
-        }
-    }
-}
-
-// impl Into<sea_orm::Value> for RefU64 {
-//     fn into(self) -> sea_orm::Value {
-//         let string: String = self.to_refno_string();
-//         sea_orm::Value::String(Some(Box::new(string)))
-//     }
-// }
-
-// impl From<&str> for Value {
-//     fn from(x: &str) -> Value {
-//         let string: String = x.into();
-//         Value::String(Some(Box::new(string)))
-//     }
-// }
-// impl<T> From<T> for RefU64
-// where
-//     T: ToString,
-// {
-//     fn from(v: T) -> RefU64 {
-//         Self(v.into())
-//     }
-// }
-
-impl From<&str> for RefU64 {
-    fn from(s: &str) -> Self {
-        Self::from_str(s).unwrap_or_default()
-    }
-}
-
-impl hash::Hash for ArchivedRefU64 {
-    #[inline]
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-    }
-}
-
-impl PartialEq for ArchivedRefU64 {
-    fn eq(&self, other: &ArchivedRefU64) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl Eq for ArchivedRefU64 {}
-
-impl Deref for RefU64 {
-    type Target = u64;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Debug for RefU64 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(self.to_refno_str().as_str())
-    }
-}
-
-impl From<u64> for RefU64 {
-    fn from(d: u64) -> Self {
-        Self(d)
-    }
-}
-
-impl From<&RefI32Tuple> for RefU64 {
-    fn from(n: &RefI32Tuple) -> Self {
-        let bytes: Vec<u8> = [n.get_0().to_be_bytes(), n.get_1().to_be_bytes()].concat();
-        let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
-        Self(v)
-    }
-}
-
-impl From<RefI32Tuple> for RefU64 {
-    fn from(n: RefI32Tuple) -> Self {
-        let bytes: Vec<u8> = [n.get_0().to_be_bytes(), n.get_1().to_be_bytes()].concat();
-        let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
-        Self(v)
-    }
-}
-
-impl From<&[u8]> for RefU64 {
-    fn from(input: &[u8]) -> Self {
-        Self(u64::from_be_bytes(input[..8].try_into().unwrap()))
-    }
-}
-
-impl Into<Vec<u8>> for RefU64 {
-    fn into(self) -> Vec<u8> {
-        self.0.to_be_bytes().to_vec().into()
-    }
-}
-
-impl BytesTrait for RefU64 {
-    fn to_bytes(&self) -> anyhow::Result<Vec<u8>> {
-        Ok(self.0.to_be_bytes().to_vec().into())
-    }
-
-    fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        Ok(Self(u64::from_be_bytes(bytes[..8].try_into()?)))
-    }
-}
-
-impl Display for RefU64 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.get_0() == 0 {
-            write!(f, "unset")
-        } else {
-            write!(f, "{}_{}", self.get_0(), self.get_1())
-        }
-    }
-}
-
-impl RefU64 {
-    #[inline]
-    pub fn is_valid(&self) -> bool {
-        self.get_0() > 0 && self.get_1() >= 0
-    }
-
-    pub fn is_unset(&self) -> bool {
-        self.get_0() == 0 && self.get_1() == 0
-    }
-
-    #[inline]
-    pub fn get_sled_key(&self) -> [u8; 8] {
-        self.0.to_be_bytes()
-    }
-
-    #[inline]
-    pub fn get_0(&self) -> u32 {
-        let bytes = self.0.to_be_bytes();
-        u32::from_be_bytes(bytes[0..4].try_into().unwrap())
-    }
-
-    #[inline]
-    pub fn get_1(&self) -> u32 {
-        let bytes = self.0.to_be_bytes();
-        u32::from_be_bytes(bytes[4..8].try_into().unwrap())
-    }
-
-    #[inline]
-    pub fn get_u32_hash(&self) -> u32 {
-        use hash32::{FnvHasher, Hasher};
-        use std::hash::Hash;
-        let mut fnv = FnvHasher::default();
-        self.hash(&mut fnv);
-        fnv.finish32()
-    }
-
-    #[inline]
-    pub fn to_refno_str(&self) -> String {
-        let refno: RefI32Tuple = self.into();
-        refno.into()
-    }
-
-    #[inline]
-    pub fn to_refno_string(&self) -> String {
-        let refno: RefI32Tuple = self.into();
-        let refno_str: String = refno.into();
-        refno_str.to_string()
-    }
-
-    #[inline]
-    pub fn format_url_name(&self, col: &str) -> String {
-        format!("{}/{}", col, self.to_url_refno())
-    }
-
-    ///转换成数据库允许的字符串
-    #[inline]
-    pub fn to_refno_normal_string(&self) -> String {
-        self.to_refno_string().replace("/", "_")
-    }
-
-    #[inline]
-    pub fn from_two_nums(i: u32, j: u32) -> Self {
-        let bytes: Vec<u8> = [i.to_be_bytes(), j.to_be_bytes()].concat();
-        let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
-        Self(v)
-    }
-
-    #[inline]
-    pub fn from_refno_string(refno: String) -> anyhow::Result<RefU64> {
-        Self::from_refno_str(refno.as_str())
-    }
-
-    // abcd/2333
-    #[inline]
-    pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
-        let refno = if refno.starts_with("=") {
-            refno[1..].to_string()
-        } else {
-            refno.to_string()
-        };
-        if refno.contains("/") {
-            let split_refno = refno.split('/').collect::<Vec<_>>();
-            if split_refno.len() != 2 {
-                return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
-            }
-            let refno0: i32 = split_refno[0].parse::<i32>()?;
-            let refno1: i32 = split_refno[1].parse::<i32>()?;
-            Ok(RefI32Tuple((refno0, refno1)).into())
-        } else if refno.contains("_") {
-            return match Self::from_url_refno(&refno) {
-                None => Err(anyhow!("参考号错误!".to_string())),
-                Some(refno) => Ok(refno),
-            };
-        } else {
-            Err(anyhow!("参考号错误!".to_string()))
-        }
-    }
-
-    #[inline]
-    pub fn to_url_refno(&self) -> String {
-        let refno: RefI32Tuple = self.into();
-        format!("{}_{}", refno.get_0(), refno.get_1())
-    }
-
-    #[inline]
-    pub fn from_url_refno(refno: &str) -> Option<Self> {
-        let strs = refno.split('_').collect::<Vec<_>>();
-        if strs.len() < 2 {
-            return None;
-        }
-        let ref0 = strs[0].parse::<i32>();
-        let ref1 = strs[1].parse::<i32>();
-        if ref0.is_err() || ref1.is_err() {
-            return None;
-        }
-        Some(RefI32Tuple((ref0.unwrap(), ref1.unwrap())).into())
-    }
-
-    #[inline]
-    pub fn from_url_refno_default(refno: &str) -> Self {
-        Self::from_url_refno(refno).unwrap_or_default()
-    }
-
-    #[inline]
-    pub fn hash_with_another_refno(&self, another_refno: RefU64) -> u64 {
-        let mut hash = std::collections::hash_map::DefaultHasher::new();
-        std::hash::Hash::hash(&self.0, &mut hash);
-        std::hash::Hash::hash(&another_refno.0, &mut hash);
-        std::hash::Hasher::finish(&hash)
-    }
-
-    #[inline]
-    pub fn hash_with_str(&self, input: &str) -> u64 {
-        let mut hash = std::collections::hash_map::DefaultHasher::new();
-        std::hash::Hash::hash(&self.0, &mut hash);
-        std::hash::Hash::hash(&input, &mut hash);
-        std::hash::Hasher::finish(&hash)
-    }
-
-    #[inline]
-    pub fn from_arangodb_refno_str(refno_str: &str) -> Option<Self> {
-        let mut refno_str = refno_str.split("/").collect::<Vec<_>>();
-        if refno_str.len() <= 1 {
-            return None;
-        }
-        let refno_url = refno_str.remove(1);
-        RefU64::from_url_refno(refno_url)
-    }
-
-    /// 返回图数据库的id形式 例如 pdms_eles/1232_5445
-    pub fn to_arangodb_ids(collection_name: &str, refnos: Vec<RefU64>) -> Vec<String> {
-        refnos
-            .into_iter()
-            .map(|refno| format!("{}/{}", collection_name, refno.to_url_refno()))
-            .collect()
-    }
-
-    /// 将参考号字符串类型集合转为 Vec<RefU64>
-    pub fn from_refno_strs(refno_strs: &Vec<String>) -> Vec<Self> {
-        refno_strs
-            .iter()
-            .filter_map(|refno| Self::from_refno_str(refno).ok())
-            .collect()
-    }
-}
 
 #[serde_as]
 #[derive(
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Default,
-    Component,
-    Deref,
-    DerefMut,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Serialize,
+Deserialize,
+Clone,
+Debug,
+Default,
+Component,
+Deref,
+DerefMut,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct RefU64Vec(pub Vec<RefU64>);
 
@@ -607,15 +232,15 @@ pub type NounHash = u32;
 //untagged
 ///新的属性数据结构
 #[derive(
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Component,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Serialize,
+Deserialize,
+Clone,
+Debug,
+Component,
+Default,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 #[serde(untagged)]
 pub enum NamedAttrValue {
@@ -731,17 +356,17 @@ impl Into<serde_json::Value> for NamedAttrValue {
 
 ///带名称的属性map
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Deref,
-    DerefMut,
-    Clone,
-    Default,
-    Debug,
-    Component,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Deref,
+DerefMut,
+Clone,
+Default,
+Debug,
+Component,
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
@@ -848,16 +473,16 @@ impl NamedAttrMap {
 
 ///PDMS的属性数据Map
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Deref,
-    DerefMut,
-    Clone,
-    Default,
-    Component,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Deref,
+DerefMut,
+Clone,
+Default,
+Component,
 )]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
@@ -1768,7 +1393,7 @@ impl DerefMut for PdmsTree {
 
 /// 一个参考号是有可能重复的，project信息可以不用存储，获取信息时必须要带上 db_no
 #[derive(
-    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct RefnoInfo {
     /// 参考号的ref0
@@ -1778,15 +1403,15 @@ pub struct RefnoInfo {
 }
 
 #[derive(
-    Default,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Component,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Default,
+Serialize,
+Deserialize,
+Clone,
+Debug,
+Component,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub enum AttrVal {
     #[default]
@@ -2291,16 +1916,8 @@ impl PdmsDatabaseInfo {
                 continue;
             }
             let type_name = db1_dehash(*kv.key() as _);
-            // if type_name.as_str() != "SELE" {
-            //     continue;
-            // }
-            // dbg!(*kv.key());
-            // dbg!(&kv.value());
             if let Some(obj) = Self::gen_schema(*kv.key(), kv.value()) {
-                // dbg!(&obj);
                 schemas.push(obj);
-            } else {
-                // dbg!(&json);
             }
         }
         schemas
@@ -2373,17 +1990,17 @@ pub struct AiosMaterial {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum GeoData {
     Primitive(PdmsMeshIdx), //索引的哪个mesh,和对应的拉伸值， 先从dish开始判断相似性
-                            // Raw(Mesh),          //原生的Mesh
+    // Raw(Mesh),          //原生的Mesh
 }
 
 #[derive(
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Default,
-    Deref,
-    DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
+Serialize,
+Deserialize,
+Clone,
+Debug,
+Default,
+Deref,
+DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
 )]
 pub struct LevelShapeMgr {
     pub level_mgr: DashMap<RefU64, RefU64Vec>,
@@ -2418,19 +2035,19 @@ bitflags! {
 
 #[repr(C)]
 #[derive(
-    Component,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Default,
-    Clone,
-    Debug,
-    Copy,
-    Eq,
-    PartialEq,
-    Hash,
+Component,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Default,
+Clone,
+Debug,
+Copy,
+Eq,
+PartialEq,
+Hash,
 )]
 pub enum PdmsGenericType {
     #[default]
@@ -2477,16 +2094,16 @@ pub enum PdmsGenericType {
 
 /// 几何体的基本类型
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    PartialEq,
-    Debug,
-    Clone,
-    Default,
-    Resource,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+PartialEq,
+Debug,
+Clone,
+Default,
+Resource,
 )]
 pub enum GeoBasicType {
     #[default]
@@ -2509,15 +2126,15 @@ pub enum GeoBasicType {
 //指向典型的例子
 
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    Default,
-    Resource,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Debug,
+Clone,
+Default,
+Resource,
 )]
 pub struct GeoEdge {
     //元件的参考号
@@ -2539,16 +2156,16 @@ pub struct GeoEdge {
 // }
 #[inline]
 fn ser_inst_info_edge_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_infos/{}", refno.to_url_refno()).as_str())
 }
 
 #[inline]
 fn ser_inst_geo_edge_as_key_str<S>(k: &u64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_geos/{}", *k).as_str())
 }
@@ -2572,15 +2189,15 @@ impl GeoEdge {
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    Default,
-    Resource,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Debug,
+Clone,
+Default,
+Resource,
 )]
 #[serde_as]
 pub struct EleGeosInfo {
@@ -2609,16 +2226,16 @@ pub struct EleGeosInfo {
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     Ok(RefU64::from_url_refno(&s).unwrap_or_default())
 }
 
 pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     s.serialize_str(refno.to_url_refno().as_str())
 }
@@ -2707,14 +2324,14 @@ impl EleGeosInfo {
 
 /// instane数据集合管理
 #[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Resource,
+Serialize,
+Deserialize,
+Debug,
+Default,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Resource,
 )]
 pub struct ShapeInstancesData {
     /// 保存instance信息数据
@@ -2919,7 +2536,7 @@ impl ShapeInstancesData {
 
 //todo mesh 增量传输
 #[derive(
-    Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct PdmsInstanceMeshData {
     pub shape_insts: ShapeInstancesData,
@@ -3016,14 +2633,14 @@ impl ColliderShapeMgr {
 }
 
 #[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Default,
-    Resource,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Serialize,
+Deserialize,
+Debug,
+Default,
+Resource,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct PlantGeoData {
     #[serde(rename = "_key")]
@@ -3053,8 +2670,8 @@ impl Clone for PlantGeoData {
 }
 
 fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     if let Ok(r) = hex::decode(s.as_str()) {
@@ -3064,8 +2681,8 @@ where
 }
 
 fn se_plant_mesh<S>(mesh: &Option<PlantMesh>, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     let mesh_string = mesh
         .as_ref()
@@ -3106,16 +2723,16 @@ impl PlantGeoData {
 }
 
 #[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Default,
-    Deref,
-    DerefMut,
-    Resource,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Serialize,
+Deserialize,
+Debug,
+Default,
+Deref,
+DerefMut,
+Resource,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct PlantMeshesData {
     pub meshes: HashMap<GeoHash, PlantGeoData>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
@@ -3203,15 +2820,15 @@ impl PlantMeshesData {
 
 #[serde_as]
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Default,
-    Resource,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Clone,
+Debug,
+Default,
+Resource,
 )]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
@@ -3321,15 +2938,15 @@ impl EleInstGeosData {
 
 ///分拆的基本体信息, 应该是不需要复用的
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Default,
-    Resource,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Clone,
+Debug,
+Default,
+Resource,
 )]
 #[serde_as]
 pub struct EleInstGeo {
@@ -3395,24 +3012,24 @@ impl EleInstGeo {
 }
 
 fn de_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     s.parse::<u64>().map_err(de::Error::custom)
 }
 
 fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     RefU64::from_refno_str(&s).map_err(de::Error::custom)
 }
 
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer).unwrap_or_default();
     Ok(serde_json::from_str::<HashSet<String>>(s.as_str())
@@ -3423,8 +3040,8 @@ where
 }
 
 pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     let set = refnos
         .into_iter()
@@ -3435,15 +3052,15 @@ where
 }
 
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     s.serialize_str((*id).to_string().as_str())
 }
 
 pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     s.serialize_str(refno.to_refno_str().as_str())
 }
@@ -3817,11 +3434,6 @@ fn test_dashmap() {
     });
 }
 
-#[test]
-fn test_refu64() {
-    let refno = RefU64::from(RefI32Tuple((16477, 80)));
-    println!("refno={}", refno.0);
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum DbAttributeType {
@@ -4026,17 +3638,17 @@ pub struct PdmsRefno {
 pub type AiosStrHash = u32;
 
 #[derive(
-    Debug,
-    Clone,
-    Default,
-    Serialize,
-    Deserialize,
-    PartialEq,
-    Eq,
-    Hash,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Debug,
+Clone,
+Default,
+Serialize,
+Deserialize,
+PartialEq,
+Eq,
+Hash,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct AiosStr(pub String);
 

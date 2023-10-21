@@ -63,6 +63,8 @@ pub mod test;
 pub mod data_state;
 
 pub mod schema;
+pub mod orm;
+pub mod types;
 
 
 pub type BHashMap<K, V> = BTreeMap<K, V>;

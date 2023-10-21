@@ -1,5 +1,5 @@
 use bevy_math::prelude::Vec3;
-use crate::pdms_types::RefU64;
+use crate::types::*;
 use bevy_ecs::system::Resource;
 use serde::{Serialize,Deserialize};
 

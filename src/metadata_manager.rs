@@ -1,6 +1,7 @@
 use bevy_ecs::prelude::{Component, Resource};
 use serde_derive::{Deserialize, Serialize};
-use crate::pdms_types::{PdmsNodeTrait, RefU64};
+use crate::pdms_types::{PdmsNodeTrait};
+use crate::types::*;
 
 /// 元数据管理各个字段在excel中的第几列
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

@@ -1,5 +1,5 @@
 use crate::parsed_data::geo_params_data::CateGeoParam;
-use crate::pdms_types::RefU64;
+use crate::types::*;
 use crate::prim_geo::ctorus::SCTorus;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;

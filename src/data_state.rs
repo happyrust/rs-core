@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::{Component, Event};
 use serde_derive::{Deserialize, Serialize};
-use crate::pdms_types::RefU64;
+use crate::types::*;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct RefnoStatusInfo {

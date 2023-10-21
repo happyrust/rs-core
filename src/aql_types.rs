@@ -1,5 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
-use crate::pdms_types::RefU64;
+use crate::types::*;
 
 /// 只存储 _from 和 _to 的信息 不加其他边界信息
 #[derive(Serialize, Deserialize, Clone, Default)]

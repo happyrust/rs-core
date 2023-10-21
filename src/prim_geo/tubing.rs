@@ -1,20 +1,17 @@
 use glam::{Vec3};
 use crate::prim_geo::cylinder::SCylinder;
 use bevy_math::prelude::Quat;
-
 use approx::abs_diff_eq;
 use bevy_transform::prelude::Transform;
-use crate::pdms_types::{NamedAttrValue, RefU64};
+use crate::pdms_types::{NamedAttrValue};
 use crate::prim_geo::category::CateBrepShape;
 use serde::{Serialize, Deserialize};
-
-
+use crate::types::*;
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use crate::prim_geo::sbox::SBox;
 use crate::shape::pdms_shape::{BrepShapeTrait};
 use glam::Mat3;
-
 use crate::shape::pdms_shape::ANGLE_RAD_TOL;
 use crate::prim_geo::tubing::TubiSize::{BoreSize, BoxSize};
 

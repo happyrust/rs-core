@@ -1,4 +1,4 @@
-use crate::pdms_types::RefU64;
+use crate::types::*;
 use serde::{Serialize, Deserialize};
 
 /// 支吊架出图所需的所有数据

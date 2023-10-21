@@ -12,7 +12,7 @@ use crate::pdms_types::ser_refno_as_key_str;
 use crate::pdms_types::de_refno_from_key_str;
 
 
-use crate::pdms_types::{RefU64};
+use crate::types::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 #[derive(Resource, PartialEq, Default, Debug, Serialize, Deserialize)]

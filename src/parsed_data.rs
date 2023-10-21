@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::parsed_data::geo_params_data::CateGeoParam;
-use crate::pdms_types::RefU64;
+use crate::types::*;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
