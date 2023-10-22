@@ -302,52 +302,6 @@ impl From<OCCMesh> for PlantGeoData {
     }
 }
 
-// #[cfg(not(target_arch = "wasm32"))]
-// impl From<CsgMesh> for PlantGeoData {
-//     fn from(o: CsgMesh) -> Self {
-//         (&o).into()
-//     }
-// }
-//
-// #[cfg(not(target_arch = "wasm32"))]
-// impl From<&CsgMesh> for PlantGeoData {
-//     fn from(o: &CsgMesh) -> Self {
-//         let vertex_count = o.triangles.len() * 3;
-//         let mut aabb = Aabb::new_invalid();
-//
-//         let mut vertices = Vec::with_capacity(vertex_count);
-//         let mut normals = Vec::with_capacity(vertex_count);
-//         let mut indices = Vec::with_capacity(vertex_count);
-//
-//         for (i, t) in o.triangles.iter().enumerate() {
-//             //顶点重排，保证normal是正确的
-//             aabb.take_point(nalgebra::Point3::new(t.a.x as _, t.a.y as _, t.a.z as _));
-//             vertices.push(t.a.into());
-//             vertices.push(t.b.into());
-//             vertices.push(t.c.into());
-//             indices.push((i * 3) as u32);
-//             indices.push((i * 3 + 1) as u32);
-//             indices.push((i * 3 + 2) as u32);
-//             normals.push(t.normal().into());
-//             normals.push(t.normal().into());
-//             normals.push(t.normal().into());
-//         }
-//
-//         Self {
-//             geo_hash: 0,
-//             mesh: Some(PlantMesh {
-//                 indices,
-//                 vertices,
-//                 normals,
-//                 wire_vertices: vec![],
-//             }),
-//             aabb: Some(aabb),
-//             #[cfg(feature = "opencascade")]
-//             occ_shape: None,
-//         }
-//     }
-// }
-
 pub const TRI_TOL: f32 = 0.001;
 pub const LEN_TOL: f32 = 0.001;
 pub const ANGLE_RAD_TOL: f32 = 0.001;

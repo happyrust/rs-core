@@ -1,30 +1,27 @@
-use std::any::TypeId;
-
-use bevy_reflect::{Reflect, Struct, reflect_trait, TypeRegistry, DynamicStruct, Typed, ReflectFromReflect, std_traits::ReflectDefault};
+use std::{any::TypeId};
+use bevy_reflect::{Reflect, Struct, TypeRegistry, DynamicStruct, Typed, ReflectFromReflect, std_traits::ReflectDefault};
 use serde_with::serde_as;
 use crate::types::*;
 use serde::{Serialize, Deserialize};
-use sea_orm::entity::prelude::*;
+use sea_orm::{entity::prelude::*, Schema, QueryTrait, DatabaseBackend};
 use serde_with::DisplayFromStr;
+use crate::orm::traits::{DbOpTrait, ReflectDbOpTrait};
+use crate::impl_db_op_trait;
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, DeriveEntityModel)]
 #[sea_orm(table_name = "PdmsElement")]
 #[derive(Reflect)]
-#[reflect(DoThing, Default)]
+#[reflect(Default, DbOpTrait)]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,
     #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
-    // #[serde(serialize_with = "ser_refno_as_ref_type")]
-    // #[serde(skip_serializing_if = "is_zero")]
     #[serde_as(as = "DisplayFromStr")]
     pub owner: RefU64,
     pub name: String,
     pub noun: String,
-    // #[serde(default)]
-    // pub order: u32,
     pub dbnum: i32,
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -34,12 +31,7 @@ pub struct Model {
     pub cata_hash: Option<String>,
 }
 
-impl DoThing for Model {
-    fn do_thing(&self) -> String {
-        format!("{} World!", &self.name)
-    }
-}
-
+impl_db_op_trait!();
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
@@ -63,23 +55,9 @@ fn test_ele_reflect() {
     dynamic_struct.set_represented_type(Some(type_info));
     dynamic_struct.insert("name", "Test".to_string());
 
-    // First, lets box our type as a Box<dyn Reflect>
-    let reflect_value: Box<dyn Reflect> = Box::new(data);
-    dbg!(reflect_value.type_name());
-    dbg!(reflect_value.type_id());
-    
 
-    
-    // 
-    let reflect_value_test: Box<dyn Reflect> = Box::new(dynamic_struct);
-    // dbg!(reflect_value_test.type_name());
-    // dbg!(reflect_value_test.type_id());
-    
     let mut type_registry: TypeRegistry = TypeRegistry::default();
     type_registry.register::<Model>();
-    
-    dbg!(TypeId::of::<Model>());
-
 
      // Get type data
      let type_id = TypeId::of::<Model>();
@@ -87,31 +65,21 @@ fn test_ele_reflect() {
          .get_type_data::<ReflectFromReflect>(type_id)
          .expect("the FromReflect trait should be registered");
 
-     // Call from_reflect
+    //  // Call from_reflect
      let mut dynamic_struct = DynamicStruct::default();
      dynamic_struct.insert("name", "test".to_string());
      let reflected = rfr
          .from_reflect(&dynamic_struct)
          .expect("the type should be properly reflected");
 
-
-    // The #[reflect] attribute we put on our DoThing trait generated a new `ReflectDoThing` struct, which implements TypeData.
-    // This was added to MyType's TypeRegistration.
     let reflect_do_thing = type_registry
-        // .get_type_data::<ReflectDoThing>(reflect_value.type_id())
-        .get_type_data::<ReflectDoThing>(TypeId::of::<Model>())
+        .get_type_data::<ReflectDbOpTrait>(TypeId::of::<Model>())
         .unwrap();
+    let entity_trait: &dyn DbOpTrait = reflect_do_thing.get(&*reflected).unwrap();
 
-    // We can use this generated type to convert our `&dyn Reflect` reference to a `&dyn DoThing` reference
-    // let my_trait: &dyn DoThing = reflect_do_thing.get(&*reflect_value).unwrap();
-    let my_trait: &dyn DoThing = reflect_do_thing.get(&*reflected).unwrap();
-
-    // Which means we can now call do_thing(). Magic!
-    println!("{}", my_trait.do_thing());
-
+    // // Which means we can now call do_thing(). Magic!
+    println!("{}", entity_trait.gen_insert_many(vec![dynamic_struct], DatabaseBackend::MySql));
+    let create_sql = entity_trait.gen_create_table(DatabaseBackend::MySql);
+    dbg!(&create_sql);
 }
 
-#[reflect_trait]
-pub trait DoThing {
-    fn do_thing(&self) -> String;
-}

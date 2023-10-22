@@ -48,7 +48,7 @@ use crate::tool::math_tool::*;
 use crate::BHashMap;
 
 use bevy_math::*;
-use bevy_reflect::Reflect;
+use bevy_reflect::{DynamicStruct, Reflect};
 #[cfg(feature = "render")]
 use bevy_render::mesh::Indices;
 #[cfg(feature = "render")]
@@ -347,9 +347,9 @@ impl Into<serde_json::Value> for NamedAttrValue {
             }
             NamedAttrValue::WordType(d) => d.into(),
             _ => serde_json::Value::Null,
-            // NamedAttrValue::ElementType(_) => {}
-            // NamedAttrValue::WordType(_) => {}
-            // NamedAttrValue::RefU64Type(_) => {}
+            // NamedAttrValue::ElementType(d) => ds.insert(k.as_str(), d),
+            // NamedAttrValue::WordType(d) => ds.insert(k.as_str(), d),
+            // NamedAttrValue::RefU64Type(d) => ds.insert(k.as_str(), d),
         }
     }
 }
@@ -385,6 +385,32 @@ impl From<&AttrMap> for NamedAttrMap {
     }
 }
 
+impl Into<DynamicStruct> for NamedAttrMap {
+    fn into(self) -> DynamicStruct {
+        let mut ds = DynamicStruct::default();
+        for (k, v) in self.map {
+            match v.clone() {
+                NamedAttrValue::InvalidType => {}
+                NamedAttrValue::IntegerType(d) => ds.insert(k.as_str(), d),
+                NamedAttrValue::StringType(d) => ds.insert(k.as_str(), d),
+                NamedAttrValue::F32Type(d) => ds.insert(k.as_str(), d),
+                NamedAttrValue::F32VecType(d) => ds.insert(k.as_str(), F32Vec(d)),
+                NamedAttrValue::Vec3Type(d) => ds.insert(k.as_str(), F32Vec(d.to_array().into())),
+                NamedAttrValue::StringArrayType(d) => ds.insert(k.as_str(), StringVec(d)),
+                NamedAttrValue::BoolArrayType(d) => ds.insert(k.as_str(), BoolVec(d)),
+                NamedAttrValue::IntArrayType(d) => ds.insert(k.as_str(), I32Vec(d)),
+                NamedAttrValue::BoolType(d) => ds.insert(k.as_str(), d),
+                NamedAttrValue::ElementType(d) => ds.insert(k.as_str(), d),
+                NamedAttrValue::WordType(d) => ds.insert(k.as_str(), d),
+                NamedAttrValue::RefU64Type(d) => ds.insert(k.as_str(), d),
+            }
+        }
+
+        ds
+    }
+}
+
+
 impl NamedAttrMap {
     pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap) {
         let mut default_att = NamedAttrMap::default();
@@ -399,6 +425,7 @@ impl NamedAttrMap {
         }
         (default_att, comp_att)
     }
+
 
     pub fn get_type(&self) -> String {
         if let Some(NamedAttrValue::StringType(v)) = self.map.get("TYPE") {
@@ -2700,6 +2727,7 @@ use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 use bevy_render::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
+use crate::orm::*;
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
