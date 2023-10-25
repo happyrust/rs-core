@@ -1,5 +1,6 @@
 use crate::BHashMap;
-use crate::pdms_types::{NamedAttrMap, NamedAttrValue};
+use crate::types::named_attvalue::NamedAttrValue;
+use crate::types::named_attmap::NamedAttrMap;
 
 #[test]
 fn test_serde_attr_value() {

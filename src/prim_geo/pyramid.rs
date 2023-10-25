@@ -12,7 +12,7 @@ use glam::{DVec3, Vec3};
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::pdms_types::AttrMap;
+use crate::types::attmap::AttrMap;
 
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;

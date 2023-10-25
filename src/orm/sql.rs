@@ -2,25 +2,24 @@ use anyhow::anyhow;
 use bevy_reflect::{DynamicStruct, ReflectFromReflect};
 use sea_orm::DatabaseBackend;
 use crate::{get_default_pdms_db_info, orm};
-use crate::orm::{DbOpTrait, ReflectDbOpTrait};
 use crate::tool::db_tool::db1_dehash;
+use crate::orm::traits::*;
 
 pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>>{
     let db_info = get_default_pdms_db_info();  // 获取默认的数据库信息
 
-    let mut sqls = vec![gen_create_table_sql("pdms_element")?];
-    for noun_att_info in &db_info.noun_attr_info_map {  // 遍历数据库中的名词属性信息
-        let type_name = db1_dehash(*noun_att_info.key() as _);  // 获取属性类型名
-        if let Ok(sql) = gen_create_table_sql(&type_name) {
-            sqls.push(sql);
-        }
-    }
+    let mut sqls = vec![gen_create_table_sql_reflect("pdms_element")?];
+    let type_sqls = db_info.gen_all_create_table_sql();
+    sqls.extend_from_slice(&type_sqls);
     Ok(sqls)
 }
 
-pub fn gen_create_table_sql(type_name: &str) -> anyhow::Result<String>{
 
-    let type_id = orm::get_type_name_cache().id_for_name(type_name).ok_or(anyhow!("Not exist"))?;
+
+pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String>{
+
+    // dbg!(&type_name);
+    let type_id = orm::get_type_name_cache().id_for_name(type_name).ok_or(anyhow!("Not exist")).unwrap();
     let rfr = orm::get_type_registry()
         .get_type_data::<ReflectFromReflect>(type_id)
         .expect("the FromReflect trait should be registered");
@@ -50,7 +49,7 @@ pub fn gen_insert_many_sql(type_name: &str, data_vec: Vec<DynamicStruct>) -> any
         .get_type_data::<ReflectFromReflect>(type_id)
         .expect("the FromReflect trait should be registered");
 
-    let mut dynamic_struct = DynamicStruct::default();
+    let dynamic_struct = DynamicStruct::default();
     let reflected = rfr
         .from_reflect(&dynamic_struct)
         .expect("the type should be properly reflected");

@@ -10,7 +10,7 @@ use std::io::Read;
 use bincode::Config;
 use dashmap::DashMap;
 
-use crate::pdms_types::PdmsDatabaseInfo;
+pub use types::db_info::PdmsDatabaseInfo;
 
 extern crate bitflags;
 extern crate phf;
@@ -66,6 +66,7 @@ pub mod schema;
 pub mod orm;
 pub mod types;
 
+pub use crate::types::*;
 
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 

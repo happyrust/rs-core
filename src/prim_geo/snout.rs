@@ -3,7 +3,7 @@ use std::f32::EPSILON;
 use std::hash::Hasher;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::pdms_types::AttrMap;
+use crate::types::attmap::AttrMap;
 use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;

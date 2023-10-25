@@ -3,8 +3,6 @@ use sea_orm::{DatabaseBackend, DatabaseConnection};
 
 #[reflect_trait]
 pub trait DbOpTrait {
-    fn save(&self, db: &DatabaseConnection) -> bool;
-    // async
     fn gen_insert_many(&self, models: Vec<DynamicStruct>, backend: DatabaseBackend) -> String;
 
     fn gen_create_table(&self, backend: DatabaseBackend) -> String;

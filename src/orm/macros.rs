@@ -3,12 +3,6 @@
 macro_rules! impl_db_op_trait{
     ()=>{
         impl DbOpTrait for Model {
-            fn save(&self, db: &DatabaseConnection) -> bool {
-                let am: ActiveModel = self.clone().into();
-                // dbg!(am.get_primary_key_value());
-                true
-            }
-
             fn gen_insert_many(&self, models: Vec<DynamicStruct>, backend: DatabaseBackend) -> String{
                 let active_models = models.into_iter().map(|x|{
                     let mut value = Self::default();

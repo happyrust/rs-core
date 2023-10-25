@@ -12,7 +12,7 @@ use nom::Parser;
 use serde::{Deserialize, Serialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
-use crate::pdms_types::AttrMap;
+use crate::types::attmap::AttrMap;
 use crate::prim_geo::CYLINDER_GEO_HASH;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};

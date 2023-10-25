@@ -1,4 +1,4 @@
-use crate::pdms_types::NamedAttrValue;
+use crate::types::named_attvalue::NamedAttrValue;
 use bevy_ecs::prelude::Component;
 use serde::{Deserialize, Serialize};
 

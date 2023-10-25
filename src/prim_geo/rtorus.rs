@@ -7,7 +7,7 @@ use std::hash::Hash;
 use glam::{DVec3, Mat3, Quat, Vec3};
 use bevy_ecs::prelude::*;
 use truck_modeling::{Shell};
-use crate::pdms_types::AttrMap;
+use crate::types::attmap::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 

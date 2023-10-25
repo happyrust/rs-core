@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use memchr::memmem::{find, find_iter};
 
-use crate::pdms_types::PdmsDatabaseInfo;
+use crate::types::db_info::PdmsDatabaseInfo;
 
 lazy_static! {
     pub static ref GLOBAL_UDA_NAME_MAP: DashMap<u32, String> = DashMap::new();
@@ -38,6 +38,7 @@ pub fn convert_to_hash(bytes: &[u8]) -> i32 {
 pub fn is_uda(hash: u32) -> bool {
     hash > 0x171FAD39
 }
+
 
 
 #[inline]

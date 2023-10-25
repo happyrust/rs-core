@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize};
 
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::pdms_types::AttrMap;
+use crate::types::attmap::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{primitives::Shape, adhoc::AdHocShape};

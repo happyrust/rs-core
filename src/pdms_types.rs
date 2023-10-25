@@ -1,63 +1,41 @@
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::hash_tool::*;
-use anyhow::anyhow;
+use crate::types::*;
 use bevy_ecs::prelude::*;
 use bitflags::bitflags;
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
-use glam::{Affine3A, DVec3, Mat4, Quat, Vec3, Vec4};
+use glam::{Vec3, Vec4};
 use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use parry3d::bounding_volume::Aabb;
-use sea_orm::entity::prelude::*;
 use parry3d::shape::SharedShape;
 use rkyv::with::Skip;
-use crate::types::*;
+use sea_orm::entity::prelude::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{DisplayFromStr, serde_as};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fmt::{Debug, Display, Formatter, Pointer};
+use std::fmt::{Debug, Display, Pointer};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
-
 use std::str::FromStr;
-use std::vec::IntoIter;
-use std::{fmt, hash};
-
 use crate::cache::mgr::BytesTrait;
-
 use crate::consts::*;
-use crate::consts::{ATT_CURD, UNSET_STR};
 use crate::parsed_data::CateAxisParam;
-use crate::pdms_data::NewDataOperate;
-use crate::pdms_types::AttrVal::*;
-use crate::prim_geo::ctorus::CTorus;
-use crate::prim_geo::cylinder::SCylinder;
-use crate::prim_geo::dish::Dish;
-use crate::prim_geo::pyramid::Pyramid;
-use crate::prim_geo::rtorus::RTorus;
-use crate::prim_geo::sbox::SBox;
-use crate::prim_geo::snout::LSnout;
-use crate::prim_geo::sphere::Sphere;
-
-use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32};
-use crate::tool::float_tool::{hash_f32, hash_f64_slice};
-use crate::tool::math_tool::*;
-use crate::BHashMap;
+use crate::types::attval::AttrVal::*;
+use crate::tool::db_tool::{db1_dehash, db1_hash};
+use sea_query::*;
 
 use bevy_math::*;
-use bevy_reflect::{DynamicStruct, Reflect};
+use bevy_reflect::Reflect;
 #[cfg(feature = "render")]
 use bevy_render::mesh::Indices;
 #[cfg(feature = "render")]
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 use bevy_transform::prelude::*;
-use clap::builder::Str;
-
 pub use crate::types::*;
-
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -149,7 +127,6 @@ pub enum SjusType {
     UCEN,
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 struct Jsgf {
     #[serde(with = "string")]
@@ -165,18 +142,18 @@ pub mod string {
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            T: Display,
-            S: Serializer,
+    where
+        T: Display,
+        S: Serializer,
     {
         serializer.collect_str(value)
     }
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-        where
-            T: FromStr,
-            T::Err: Display,
-            D: Deserializer<'de>,
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
     {
         String::deserialize(deserializer)?
             .parse()
@@ -184,621 +161,6 @@ pub mod string {
     }
 }
 
-
-#[serde_as]
-#[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Component,
-Deref,
-DerefMut,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-)]
-pub struct RefU64Vec(pub Vec<RefU64>);
-
-impl BytesTrait for RefU64Vec {}
-
-impl From<Vec<RefU64>> for RefU64Vec {
-    fn from(d: Vec<RefU64>) -> Self {
-        RefU64Vec(d)
-    }
-}
-
-impl IntoIterator for RefU64Vec {
-    type Item = RefU64;
-    type IntoIter = IntoIter<RefU64>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-impl RefU64Vec {
-    #[inline]
-    pub fn push(&mut self, v: RefU64) {
-        if !self.0.contains(&v) {
-            self.0.push(v);
-        }
-    }
-}
-
-pub type NounHash = u32;
-
-//untagged
-///新的属性数据结构
-#[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Component,
-Default,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-)]
-#[serde(untagged)]
-pub enum NamedAttrValue {
-    #[default]
-    InvalidType,
-    IntegerType(i32),
-    StringType(String),
-    F32Type(f32),
-    F32VecType(Vec<f32>),
-    Vec3Type(Vec3),
-    // DoubleArrayType(Vec<f64>),
-    StringArrayType(Vec<String>),
-    BoolArrayType(Vec<bool>),
-    IntArrayType(Vec<i32>),
-    BoolType(bool),
-    // Vec3Type([f64; 3]),
-    ElementType(String),
-    WordType(String),
-    RefU64Type(RefU64),
-    // StringHashType(AiosStrHash),
-    // RefU64Array(RefU64Vec),
-}
-
-impl From<&AttrVal> for NamedAttrValue {
-    fn from(v: &AttrVal) -> Self {
-        match v.clone() {
-            InvalidType => Self::InvalidType,
-            IntegerType(d) => Self::IntegerType(d),
-            StringType(d) => Self::StringType(d),
-            DoubleType(d) => {
-                if d > f32::MAX as f64 {
-                    Self::StringType(d.to_string())
-                } else {
-                    Self::F32Type(d as f32)
-                }
-            }
-            DoubleArrayType(d) => Self::F32VecType(d.into_iter().map(|x| x as f32).collect()),
-            StringArrayType(d) => Self::StringArrayType(d),
-            BoolArrayType(d) => Self::BoolArrayType(d),
-            IntArrayType(d) => Self::IntArrayType(d),
-            BoolType(d) => Self::BoolType(d),
-            Vec3Type(d) => Self::F32VecType(d.into_iter().map(|x| x as f32).collect()),
-            ElementType(d) => Self::StringType(d),
-            WordType(d) => Self::StringType(d),
-            RefU64Type(d) => Self::RefU64Type(d),
-            StringHashType(d) => Self::IntegerType(d as i32),
-            RefU64Array(d) => {
-                Self::StringArrayType(d.into_iter().map(|x| x.to_url_refno()).collect())
-            }
-        }
-    }
-}
-
-impl NamedAttrValue {
-    pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
-        return match self {
-            NamedAttrValue::InvalidType => Box::new("unset".to_string()),
-            NamedAttrValue::StringType(v)
-            | NamedAttrValue::ElementType(v)
-            | NamedAttrValue::WordType(v) => Box::new(v.to_string()),
-            NamedAttrValue::BoolArrayType(v) => Box::new(v.clone()),
-            NamedAttrValue::IntArrayType(v) => Box::new(v.clone()),
-            NamedAttrValue::IntegerType(v) => Box::new(*v),
-            NamedAttrValue::BoolType(v) => Box::new(*v),
-            NamedAttrValue::StringArrayType(v) => {
-                Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>())
-            }
-            NamedAttrValue::F32Type(v) => Box::new(*v),
-            NamedAttrValue::F32VecType(v) => Box::new(v.clone()),
-            NamedAttrValue::Vec3Type(v) => Box::new(vec![v.x, v.y, v.z]),
-            NamedAttrValue::RefU64Type(r) => Box::new(r.to_refno_string()),
-        };
-    }
-}
-
-impl Into<serde_json::Value> for NamedAttrValue {
-    fn into(self) -> serde_json::Value {
-        match self {
-            NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
-            NamedAttrValue::F32Type(d) => {
-                serde_json::Value::Number(serde_json::Number::from_f64(d as _).unwrap())
-            }
-            NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
-            NamedAttrValue::StringType(s) => serde_json::Value::String(s),
-            NamedAttrValue::F32VecType(d) => {
-                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
-            }
-            NamedAttrValue::Vec3Type(d) => {
-                serde_json::Value::Array(d.to_array().into_iter().map(|x| x.into()).collect())
-            }
-            NamedAttrValue::StringArrayType(d) => {
-                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
-            }
-            NamedAttrValue::BoolArrayType(d) => {
-                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
-            }
-            NamedAttrValue::IntArrayType(d) => {
-                serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
-            }
-            NamedAttrValue::RefU64Type(d) => {
-                //需要结合PdmsElement来跳转
-                // d.to_string().into()
-                format!("PdmsElement/{}", d.to_string()).into()
-            }
-            NamedAttrValue::WordType(d) => d.into(),
-            _ => serde_json::Value::Null,
-            // NamedAttrValue::ElementType(d) => ds.insert(k.as_str(), d),
-            // NamedAttrValue::WordType(d) => ds.insert(k.as_str(), d),
-            // NamedAttrValue::RefU64Type(d) => ds.insert(k.as_str(), d),
-        }
-    }
-}
-
-///带名称的属性map
-#[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Debug,
-Component,
-)]
-pub struct NamedAttrMap {
-    #[serde(flatten)]
-    pub map: BTreeMap<String, NamedAttrValue>,
-}
-
-impl From<&AttrMap> for NamedAttrMap {
-    fn from(v: &AttrMap) -> Self {
-        Self {
-            map: v
-                .map
-                .iter()
-                .map(|(h, v)| (db1_dehash(*h), NamedAttrValue::from(v)))
-                .collect(),
-        }
-    }
-}
-
-impl Into<DynamicStruct> for NamedAttrMap {
-    fn into(self) -> DynamicStruct {
-        let mut ds = DynamicStruct::default();
-        for (k, v) in self.map {
-            match v.clone() {
-                NamedAttrValue::InvalidType => {}
-                NamedAttrValue::IntegerType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::StringType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::F32Type(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::F32VecType(d) => ds.insert(k.as_str(), F32Vec(d)),
-                NamedAttrValue::Vec3Type(d) => ds.insert(k.as_str(), F32Vec(d.to_array().into())),
-                NamedAttrValue::StringArrayType(d) => ds.insert(k.as_str(), StringVec(d)),
-                NamedAttrValue::BoolArrayType(d) => ds.insert(k.as_str(), BoolVec(d)),
-                NamedAttrValue::IntArrayType(d) => ds.insert(k.as_str(), I32Vec(d)),
-                NamedAttrValue::BoolType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::ElementType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::WordType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::RefU64Type(d) => ds.insert(k.as_str(), d),
-            }
-        }
-
-        ds
-    }
-}
-
-
-impl NamedAttrMap {
-    pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap) {
-        let mut default_att = NamedAttrMap::default();
-        let mut comp_att = NamedAttrMap::default();
-
-        for (k, v) in self.map.iter() {
-            if DEFAULT_NAMED_NOUNS.contains(&k.as_str()) {
-                default_att.map.insert(k.clone(), v.clone());
-            } else {
-                comp_att.insert(k.clone(), v.clone());
-            }
-        }
-        (default_att, comp_att)
-    }
-
-
-    pub fn get_type(&self) -> String {
-        if let Some(NamedAttrValue::StringType(v)) = self.map.get("TYPE") {
-            v.to_string()
-        } else {
-            "unset".to_string()
-        }
-    }
-
-    #[inline]
-    pub fn get_string_or_default(&self, att_name: &str) -> String {
-        self.get_string(att_name).unwrap_or_default()
-    }
-
-    #[inline]
-    pub fn get_string(&self, att_name: &str) -> Option<String> {
-        let att = self.map.get(att_name)?;
-        match att {
-            NamedAttrValue::StringType(s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn get_owner(&self) -> RefU64 {
-        self.get_refno_by_att_or_default("OWNER")
-    }
-
-    #[inline]
-    pub fn get_refno_by_att_or_default(&self, att_name: &str) -> RefU64 {
-        self.get_refno_by_att(att_name).unwrap_or_default()
-    }
-
-    #[inline]
-    pub fn get_refno_by_att(&self, att_name: &str) -> Option<RefU64> {
-        let att = self.map.get(att_name)?;
-        match att {
-            NamedAttrValue::RefU64Type(s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
-    ///生成版本数据json
-    pub fn gen_versioned_json_map(&self) -> serde_json::Map<String, serde_json::Value> {
-        use serde_json::{Map, Value};
-
-        let mut map = Map::new();
-
-        let type_name = self.get_type();
-        let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
-        map.insert(
-            "@id".into(),
-            format!("{}/{}", &type_name, refno.to_string()).into(),
-        );
-        map.insert("@type".into(), type_name.into());
-        map.insert("REFNO".into(), refno.to_string().into());
-        map.insert(
-            "ELEMENT".into(),
-            format!("PdmsElement/{}", refno.to_string()).into(),
-        );
-
-        for (key, val) in self.map.clone().into_iter() {
-            //refno 单独处理
-            if key.starts_with(":") || key.as_str() == "REFNO" {
-                continue;
-            }
-            map.insert(key, val.into());
-        }
-        map
-    }
-}
-
-///PDMS的属性数据Map
-#[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Component,
-)]
-pub struct AttrMap {
-    pub map: BHashMap<NounHash, AttrVal>,
-}
-
-impl Debug for AttrMap {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = self.to_string_hashmap();
-        s.fmt(f)
-    }
-}
-
-impl Into<NamedAttrMap> for AttrMap {
-    fn into(self) -> NamedAttrMap {
-        let mut map = BTreeMap::new();
-        for (k, v) in self.map {
-            map.entry(db1_dehash(k)).or_insert(NamedAttrValue::from(&v));
-        }
-        NamedAttrMap { map }
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl BytesTrait for AttrMap {}
-
-impl AttrMap {
-    ///是否为负实体
-    #[inline]
-    pub fn is_neg(&self) -> bool {
-        TOTAL_NEG_NOUN_NAMES.contains(&self.get_type())
-    }
-
-    ///是否为正实体
-    #[inline]
-    pub fn is_pos(&self) -> bool {
-        GENRAL_POS_NOUN_NAMES.contains(&self.get_type())
-    }
-
-    ///是否为空
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.map.len() == 0
-    }
-
-    ///序列化成bincode
-    #[inline]
-    pub fn into_bincode_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
-    }
-
-    ///从bincode反序列化
-    #[inline]
-    pub fn from_bincode_bytes(bytes: &[u8]) -> Option<Self> {
-        bincode::deserialize(bytes).ok()
-    }
-
-    #[inline]
-    pub fn into_rkyv_bytes(&self) -> Vec<u8> {
-        rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec()
-    }
-
-    #[inline]
-    pub fn into_rkyv_compress_bytes(&self) -> Vec<u8> {
-        use flate2::write::DeflateEncoder;
-        use flate2::Compression;
-        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&self.into_rkyv_bytes());
-        e.finish().unwrap_or_default()
-    }
-
-    #[inline]
-    pub fn from_rkyv_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use rkyv::Deserialize;
-        let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
-        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
-        Ok(r)
-    }
-
-    #[inline]
-    pub fn from_rkvy_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use flate2::write::DeflateDecoder;
-        let writer = Vec::new();
-        let mut deflater = DeflateDecoder::new(writer);
-        deflater.write_all(bytes)?;
-        Self::from_rkyv_bytes(&deflater.finish()?)
-    }
-
-    #[inline]
-    pub fn into_compress_bytes(&self) -> Vec<u8> {
-        use flate2::write::DeflateEncoder;
-        use flate2::Compression;
-        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&self.into_bincode_bytes());
-        e.finish().unwrap_or_default()
-    }
-
-    #[inline]
-    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
-        use flate2::write::DeflateDecoder;
-        let writer = Vec::new();
-        let mut deflater = DeflateDecoder::new(writer);
-        deflater.write_all(bytes).ok()?;
-        bincode::deserialize(&deflater.finish().ok()?).ok()
-    }
-
-    //计算使用元件库的design 元件 hash
-    pub fn cal_cata_hash(&self) -> Option<u64> {
-        //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
-        let type_name = self.get_type();
-        if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
-            return Some(*self.get_refno().unwrap_or_default());
-        }
-        //由于有ODESP这种，会导致复用出现问题，怎么解决这个问题
-        //1、主动去判断是否CataRef是这个类型，即有ODESP这种字段，然后从复用的逻辑排除出来
-        //2、解析的时候发现表达式有这些字段，主动去给catref加一个标记位，表示是不能复用的构件
-        //3、把相关的数据都做一遍统计，owner、attach
-        let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
-            "CATR"
-        } else {
-            "SPRE"
-        };
-        if let Some(spref) = self.get_as_string(ref_name) {
-            if spref.starts_with('0') {
-                return None;
-            }
-            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
-                return Some(*self.get_refno().unwrap_or_default());
-            }
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            std::hash::Hash::hash(&spref, &mut hasher);
-            if let Some(des_para) = self.get_f64_vec("DESP") {
-                hash_f64_slice(&des_para, &mut hasher);
-            }
-            let ref_strs = ["ANGL", "HEIG", "RADI"];
-            let key_strs = self.get_as_strings(&ref_strs);
-            for (ref_str, key_str) in ref_strs.iter().zip(key_strs) {
-                std::hash::Hash::hash(*ref_str, &mut hasher);
-                std::hash::Hash::hash(&key_str, &mut hasher);
-            }
-
-            //如果是土建模型 "DRNS", "DRNE"
-            if let Some(drns) = self.get_as_string("DRNS") &&
-                let Some(drne) = self.get_as_string("DRNE") {
-                std::hash::Hash::hash(&drns, &mut hasher);
-                std::hash::Hash::hash(&drne, &mut hasher);
-                let poss = self.get_vec3("POSS").unwrap_or_default();
-                let pose = self.get_vec3("POSE").unwrap_or_default();
-                let v = (pose - poss).length();
-                hash_f32(v, &mut hasher);
-            }
-            //JUSL is adjus in wire calculation, so here we should make hash unique by jusl
-            let jusl = self.get_str_or_default("JUSL");
-            std::hash::Hash::hash(jusl, &mut hasher);
-
-            let val = std::hash::Hasher::finish(&hasher);
-
-            return Some(val);
-        }
-        return None;
-    }
-
-    // 返回 DESI 、 CATA .. 等模块值
-    pub fn get_db_stype(&self) -> Option<&'static str> {
-        let val = self.map.get(&ATT_STYP)?;
-        match val {
-            AttrVal::IntegerType(v) => Some(match *v {
-                1 => "DESI",
-                2 => "CATA",
-                8 => "DICT",
-                _ => "UNSET",
-            }),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct WholeAttMap {
-    pub implicit_attmap: AttrMap,
-    pub explicit_attmap: AttrMap,
-    pub uda_attmap: AttrMap,
-}
-
-impl WholeAttMap {
-    pub fn refine(mut self, info_map: &DashMap<i32, AttrInfo>) -> Self {
-        for (noun_hash, _v) in self.explicit_attmap.clone().map {
-            if let Some(info) = info_map.get(&(noun_hash as i32)) {
-                if info.offset > 0 && EXPR_ATT_SET.contains(&(noun_hash as i32)) {
-                    let v = self.explicit_attmap.map.remove(&(noun_hash)).unwrap();
-                    self.implicit_attmap.insert(noun_hash, v);
-                }
-            }
-        }
-        self
-    }
-
-    #[inline]
-    pub fn into_bincode_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
-    }
-
-    #[inline]
-    pub fn into_compress_bytes(&self) -> Vec<u8> {
-        use flate2::write::DeflateEncoder;
-        use flate2::Compression;
-        let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&self.into_bincode_bytes());
-        e.finish().unwrap_or_default()
-    }
-
-    #[inline]
-    pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
-        use flate2::write::DeflateDecoder;
-        let writer = Vec::new();
-        let mut deflater = DeflateDecoder::new(writer);
-        deflater.write_all(bytes).ok()?;
-        // writer = ;
-        bincode::deserialize(&deflater.finish().ok()?).ok()
-    }
-
-    /// 将隐式属性和显示属性放到一个attrmap中
-    #[inline]
-    pub fn change_implicit_explicit_into_attr(self) -> AttrMap {
-        let mut map = self.implicit_attmap;
-        for (k, v) in self.explicit_attmap.map {
-            map.insert(k, v);
-        }
-        map
-    }
-
-    pub fn check_two_attr_difference(
-        old_attr: WholeAttMap,
-        new_attr: WholeAttMap,
-    ) -> Vec<DifferenceValue> {
-        let implicit_difference =
-            get_two_attr_map_difference(old_attr.implicit_attmap, new_attr.implicit_attmap);
-        let explicit_difference =
-            get_two_attr_map_difference(old_attr.explicit_attmap, new_attr.explicit_attmap);
-        [implicit_difference, explicit_difference].concat()
-    }
-
-    /// 将隐式属性和显示属性放到一个attrmap中
-    #[inline]
-    pub fn merge(&self) -> AttrMap {
-        let mut map = self.implicit_attmap.clone();
-        for (k, v) in &self.explicit_attmap.map {
-            if !map.contains_attr_hash(*k) {
-                map.insert(k.clone(), v.clone());
-            }
-        }
-        // for (k, v) in &self.uda_attmap.map {
-        //     if !map.contains_attr_hash(*k) {
-        //         map.insert(k.clone(), v.clone());
-        //     }
-        // }
-        for (k, v) in &self.uda_attmap.map {
-            map.insert(k.clone(), v.clone());
-        }
-        map
-    }
-}
-
-fn get_two_attr_map_difference(old_map: AttrMap, mut new_map: AttrMap) -> Vec<DifferenceValue> {
-    let mut result = vec![];
-    for (k, v) in old_map.map.into_iter() {
-        let new_value = new_map.map.remove(&k);
-        result.push(DifferenceValue {
-            noun: k,
-            old_value: Some(v.clone()),
-            new_value,
-        });
-        continue;
-    }
-    if !new_map.map.is_empty() {
-        for (k, v) in new_map.map.into_iter() {
-            result.push(DifferenceValue {
-                noun: k,
-                old_value: None,
-                new_value: Some(v),
-            })
-        }
-    }
-    result
-}
-
-// #[derive(Debug, Clone, Default, Deref, DerefMut, Serialize, Deserialize)]
-// pub struct NameAttrMap {
-//     pub map: BHashMap<String, AttrVal>,
-// }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifferenceValue {
@@ -810,545 +172,6 @@ pub struct DifferenceValue {
 
 pub const DEFAULT_NOUNS: [NounHash; 4] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
 pub const DEFAULT_NAMED_NOUNS: [&'static str; 4] = ["TYPE", "NAME", "REFNO", "OWNER"];
-
-impl AttrMap {
-    pub fn split_to_default_groups(&self) -> (AttrMap, AttrMap) {
-        let mut default_att = AttrMap::default();
-        let mut comp_att = AttrMap::default();
-
-        for (k, v) in self.map.iter() {
-            if DEFAULT_NOUNS.contains(k) {
-                default_att.map.insert(k.clone(), v.clone());
-            } else {
-                comp_att.insert(k.clone(), v.clone());
-            }
-        }
-        (default_att, comp_att)
-    }
-}
-
-impl AttrMap {
-    #[inline]
-    pub fn get_att_by_name(&self, name: &str) -> Option<&AttrVal> {
-        self.map.get(&db1_hash(name))
-    }
-
-    #[inline]
-    pub fn insert(&mut self, k: NounHash, v: AttrVal) {
-        self.map.insert(k, v);
-    }
-
-    #[inline]
-    pub fn insert_by_att_name(&mut self, k: &str, v: AttrVal) {
-        self.map.insert(db1_hash(k), v);
-    }
-
-    #[inline]
-    pub fn contains_attr_name(&self, name: &str) -> bool {
-        self.map.contains_key(&db1_hash(name))
-    }
-
-    #[inline]
-    pub fn contains_attr_hash(&self, hash: u32) -> bool {
-        self.map.contains_key(&hash)
-    }
-
-    pub fn to_string_hashmap(&self) -> BTreeMap<String, String> {
-        let mut map = BTreeMap::new();
-        for (k, v) in &self.map {
-            map.insert(db1_dehash(*k), format!("{:?}", v));
-        }
-        map
-    }
-
-    #[inline]
-    pub fn get_name_hash(&self) -> AiosStrHash {
-        return if let Some(StringHashType(name_hash)) = self.get_val("NAME") {
-            *name_hash
-        } else {
-            0
-        };
-    }
-
-    #[inline]
-    pub fn get_name_string(&self) -> String {
-        return if let Some(StringType(name)) = self.get_val("NAME") {
-            name.clone()
-        } else {
-            Default::default()
-        };
-    }
-
-    #[inline]
-    pub fn get_name(&self) -> Option<String> {
-        return if let Some(StringType(name)) = self.get_val("NAME") {
-            Some(name.clone())
-        } else {
-            None
-        };
-    }
-
-    #[inline]
-    pub fn get_main_db_in_mdb(&self) -> Option<RefU64> {
-        if let Some(v) = self.map.get(&ATT_CURD) {
-            match v {
-                AttrVal::IntArrayType(v) => {
-                    let refno = RefU64::from_two_nums(v[0] as u32, v[1] as u32);
-                    return Some(refno);
-                }
-                _ => {}
-            }
-        }
-        None
-    }
-
-    //获取spref
-    #[inline]
-    pub fn get_foreign_refno(&self, key: &str) -> Option<RefU64> {
-        if let RefU64Type(d) = self.get_val(key)? {
-            return Some(*d);
-        }
-        None
-    }
-
-    #[inline]
-    pub fn get_refno_as_string(&self) -> Option<String> {
-        self.get_as_smol_str("REFNO")
-    }
-
-    pub fn get_obstruction(&self) -> Option<u32> {
-        self.get_u32("OBST")
-    }
-
-    pub fn get_level(&self) -> Option<[u32; 2]> {
-        let v = self.get_i32_vec("LEVE")?;
-        if v.len() >= 2 {
-            return Some([v[0] as u32, v[1] as u32]);
-        }
-        None
-    }
-
-    ///判断构件是否可见
-    pub fn is_visible_by_level(&self, level: Option<u32>) -> Option<bool> {
-        let levels = self.get_level()?;
-        let l = level.unwrap_or(LEVEL_VISBLE);
-        Some(levels[0] <= l && l <= levels[1])
-    }
-
-    #[inline]
-    pub fn get_refno(&self) -> Option<RefU64> {
-        if let RefU64Type(d) = self.get_val("REFNO")? {
-            return Some(*d);
-        }
-        None
-    }
-
-    #[inline]
-    pub fn get_owner(&self) -> Option<RefU64> {
-        if let RefU64Type(d) = self.get_val("OWNER")? {
-            return Some(*d);
-        }
-        None
-    }
-
-    #[inline]
-    pub fn get_owner_as_string(&self) -> String {
-        self.get_as_string("OWNER").unwrap_or(UNSET_STR.into())
-    }
-
-    #[inline]
-    pub fn get_type(&self) -> &str {
-        self.get_str("TYPE").unwrap_or("unset")
-    }
-
-    #[inline]
-    pub fn get_noun(&self) -> i32 {
-        db1_hash_i32(self.get_type())
-    }
-
-    #[inline]
-    pub fn get_typex(&self) -> &str {
-        self.get_str("TYPEX").unwrap_or("unset")
-    }
-
-    #[inline]
-    pub fn is_type(&self, type_name: &str) -> bool {
-        self.get_type() == type_name
-    }
-
-    #[inline]
-    pub fn get_type_cloned(&self) -> Option<String> {
-        self.get_str("TYPE").map(|x| x.to_string())
-    }
-
-    #[inline]
-    pub fn get_u32(&self, key: &str) -> Option<u32> {
-        self.get_i32(key).map(|s| s as u32)
-    }
-
-    #[inline]
-    pub fn get_i32(&self, key: &str) -> Option<i32> {
-        let v = self.get_val(key)?;
-        match v {
-            IntegerType(d) => Some(*d as i32),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn get_refu64(&self, key: &str) -> Option<RefU64> {
-        let v = self.get_val(key)?;
-        match v {
-            RefU64Type(d) => Some(*d),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn get_refu64_vec(&self, key: &str) -> Option<RefU64Vec> {
-        let v = self.get_val(key)?;
-        match v {
-            RefU64Array(d) => Some(d.clone()),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn get_str(&self, key: &str) -> Option<&str> {
-        let v = self.get_val(key)?;
-        match v {
-            StringType(s) | WordType(s) | ElementType(s) => Some(s.as_str()),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn get_str_or_default(&self, key: &str) -> &str {
-        self.get_str(key).unwrap_or("unset")
-    }
-
-    #[inline]
-    pub fn get_as_strings(&self, keys: &[&str]) -> Vec<String> {
-        let mut result = vec![];
-        for key in keys {
-            result.push(self.get_as_string(*key).unwrap_or(UNSET_STR.to_string()));
-        }
-        result
-    }
-
-    #[inline]
-    pub fn get_as_string(&self, key: &str) -> Option<String> {
-        let v = self.get_val(key)?;
-        let s = match v {
-            StringType(s) | WordType(s) | ElementType(s) => s.to_string(),
-            IntegerType(d) => d.to_string().into(),
-            DoubleType(d) => d.to_string().into(),
-            BoolType(d) => d.to_string().into(),
-            DoubleArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {:.3}", i))
-                .collect::<String>()
-                .into(),
-            StringArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-            IntArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-            BoolArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-            Vec3Type(d) => d
-                .iter()
-                .map(|i| format!(" {:.3}", i))
-                .collect::<String>()
-                .into(),
-
-            RefU64Type(d) => RefI32Tuple::from(d).into(),
-            StringHashType(d) => format!("{d}").into(),
-
-            _ => UNSET_STR.into(),
-        };
-        Some(s)
-    }
-
-    #[inline]
-    pub fn get_as_smol_str(&self, key: &str) -> Option<String> {
-        let v = self.get_val(key)?;
-        let s = match v {
-            StringType(s) | WordType(s) | ElementType(s) => s.clone(),
-            IntegerType(d) => d.to_string().into(),
-            DoubleType(d) => d.to_string().into(),
-            BoolType(d) => d.to_string().into(),
-            DoubleArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-            StringArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-            IntArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-            BoolArrayType(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-            Vec3Type(d) => d
-                .iter()
-                .map(|i| format!(" {}", i))
-                .collect::<String>()
-                .into(),
-
-            RefU64Type(d) => RefI32Tuple::from(d).into(),
-            StringHashType(d) => format!("{d}").into(),
-
-            _ => UNSET_STR.into(),
-        };
-        Some(s)
-    }
-
-    #[inline]
-    pub fn get_bool(&self, key: &str) -> Option<bool> {
-        if let AttrVal::BoolType(d) = self.get_val(key)? {
-            return Some(*d);
-        }
-        None
-    }
-
-    #[inline]
-    pub fn get_val(&self, key: &str) -> Option<&AttrVal> {
-        self.map.get(&db1_hash(key).into())
-    }
-
-    #[inline]
-    pub fn get_f64(&self, key: &str) -> Option<f64> {
-        self.get_val(key)?.double_value()
-    }
-
-    #[inline]
-    pub fn get_f32(&self, key: &str) -> Option<f32> {
-        self.get_f64(key).map(|x| x as f32)
-    }
-
-    #[inline]
-    pub fn get_f32_or_default(&self, key: &str) -> f32 {
-        self.get_f64(key).map(|x| x as f32).unwrap_or_default()
-    }
-
-    #[inline]
-    pub fn get_position(&self) -> Option<Vec3> {
-        if let Some(pos) = self.get_f64_vec("POS") {
-            return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
-        } else {
-            //如果没有POS，就以POSS来尝试
-            self.get_poss()
-        }
-    }
-
-    #[inline]
-    pub fn get_posse_dist(&self) -> Option<f32> {
-        Some(self.get_pose()?.distance(self.get_poss()?))
-    }
-
-    #[inline]
-    pub fn get_poss(&self) -> Option<Vec3> {
-        let pos = self.get_f64_vec("POSS")?;
-        if pos.len() == 3 {
-            return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
-        }
-        None
-    }
-
-    #[inline]
-    pub fn get_pose(&self) -> Option<Vec3> {
-        let pos = self.get_f64_vec("POSE")?;
-        if pos.len() == 3 {
-            return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
-        }
-        None
-    }
-
-    #[inline]
-    pub fn get_rotation(&self) -> Option<Quat> {
-        let type_name = self.get_type();
-        let mut quat = Quat::IDENTITY;
-        if self.contains_attr_name("ZDIR") {
-            let axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
-            if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-            }
-        } else if self.contains_attr_name("OPDI") {
-            //PJOI 的方向
-            let axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
-            if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-                // dbg!(quat_to_pdms_ori_str(&quat));
-            }
-        } else {
-            match type_name {
-                "CMPF" | "PFIT" => {
-                    let sjus = self.get_str("SJUS").unwrap_or("unset");
-                    //unset 和 UBOT 一样的效果
-                    //DTOP, DCEN, DBOT
-                    if sjus.starts_with("D") {
-                        quat = Quat::from_mat3(&Mat3::from_cols(Vec3::X, Vec3::NEG_Y, Vec3::NEG_Z));
-                    }
-                }
-                _ => {
-                    let ang = self.get_f64_vec("ORI")?;
-                    let mat = glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
-                        * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-                        * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32);
-
-                    quat = Quat::from_mat3(&mat);
-                }
-            }
-        }
-        return Some(quat);
-    }
-
-    // #[inline]
-    // pub fn get_rotation(&self) -> Option<Quat> {
-    //     let type_name = self.get_type();
-    //     let mut quat = Quat::IDENTITY;
-    //
-    //     if self.contains_attr_name("SJUS"){
-    //         //unset 和 UBOT 一样的效果
-    //         //DTOP, DCEN, DBOT
-    //         let sjus = self.get_str("SJUS").unwrap_or("unset");
-    //         if sjus.starts_with("D") {
-    //             quat = Quat::from_mat3(&Mat3::from_cols(
-    //                 Vec3::X,
-    //                 Vec3::NEG_Y,
-    //                 Vec3::NEG_Z,
-    //             ));
-    //         }
-    //     } else if self.contains_attr_name("ZDIR"){
-    //         let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
-    //         if axis_dir.is_normalized() {
-    //             quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-    //         }
-    //     }else{
-    //         let ang = self.get_f64_vec("ORI")?;
-    //         let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
-    //             * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-    //             * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
-    //
-    //         quat = Quat::from_mat3(&mat);
-    //     }
-    //
-    //     return Some(quat);
-    // }
-
-    pub fn get_matrix(&self) -> Option<Affine3A> {
-        let mut affine = Affine3A::IDENTITY;
-        let pos = self.get_f64_vec("POS")?;
-        affine.translation = glam::f32::Vec3A::new(pos[0] as f32, pos[1] as f32, pos[2] as f32);
-        let ang = self.get_f64_vec("ORI")?;
-        affine.matrix3 = glam::f32::Mat3A::from_rotation_z(ang[2].to_radians() as f32)
-            * glam::f32::Mat3A::from_rotation_y(ang[1].to_radians() as f32)
-            * glam::f32::Mat3A::from_rotation_x(ang[0].to_radians() as f32);
-        Some(affine)
-    }
-
-    #[inline]
-    pub fn get_mat4(&self) -> Option<Mat4> {
-        Some(Mat4::from(self.get_matrix()?))
-    }
-
-    pub fn get_f64_vec(&self, key: &str) -> Option<Vec<f64>> {
-        let val = self.get_val(key)?;
-        return match val {
-            AttrVal::DoubleArrayType(data) => Some(data.clone()),
-            AttrVal::Vec3Type(data) => Some(data.to_vec()),
-            _ => None,
-        };
-    }
-
-    pub fn get_vec3(&self, key: &str) -> Option<Vec3> {
-        if let AttrVal::Vec3Type(d) = self.get_val(key)? {
-            return Some(Vec3::new(d[0] as f32, d[1] as f32, d[2] as f32));
-        }
-        None
-    }
-
-    pub fn get_dvec3(&self, key: &str) -> Option<DVec3> {
-        if let AttrVal::Vec3Type(d) = self.get_val(key)? {
-            return Some(DVec3::new(d[0], d[1], d[2]));
-        }
-        None
-    }
-
-    pub fn get_i32_vec(&self, key: &str) -> Option<Vec<i32>> {
-        if let AttrVal::IntArrayType(d) = self.get_val(key)? {
-            return Some(d.clone());
-        }
-        None
-    }
-
-    ///生成具有几何属性的element的shape
-    pub fn create_brep_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
-        let type_noun = self.get_type();
-        let mut r: Option<Box<dyn BrepShapeTrait>> = match type_noun {
-            "BOX" | "NBOX" => Some(Box::new(SBox::from(self))),
-            "CYLI" | "SLCY" | "NCYL" => Some(Box::new(SCylinder::from(self))),
-            "SPHE" => Some(Box::new(Sphere::from(self))),
-            "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
-            "DISH" | "NDIS" => Some(Box::new(Dish::from(self))),
-            "CTOR" | "NCTO" => Some(Box::new(CTorus::from(self))),
-            "RTOR" | "NRTO" => Some(Box::new(RTorus::from(self))),
-            "PYRA" | "NPYR" => Some(Box::new(Pyramid::from(self))),
-            _ => None,
-        };
-        if r.is_some() && limit_size.is_some() {
-            r.as_mut().unwrap().apply_limit_by_size(limit_size.unwrap());
-        }
-        r
-    }
-
-    /// 获取string属性数组，忽略为空的值
-    pub fn get_attr_strings_without_default(&self, keys: &[&str]) -> Vec<String> {
-        let mut results = vec![];
-        for &attr_name in keys {
-            if let Some(result) = self.get_val(attr_name) {
-                match result {
-                    AttrVal::StringType(v) => {
-                        if v != "" {
-                            results.push(v.trim_matches('\0').to_owned().clone().into());
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-        results
-    }
-
-    pub fn get_attr_strings(&self, keys: &[&str]) -> Vec<String> {
-        let mut results = vec![];
-        for &attr_name in keys {
-            if let Some(result) = self.get_str(attr_name) {
-                results.push(result.trim_matches('\0').to_owned().clone().into());
-            } else {
-                results.push("".to_string());
-            }
-        }
-        results
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct PdmsCachedAttrMap(pub HashMap<RefU64, AttrMap>);
@@ -1420,7 +243,7 @@ impl DerefMut for PdmsTree {
 
 /// 一个参考号是有可能重复的，project信息可以不用存储，获取信息时必须要带上 db_no
 #[derive(
-Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct RefnoInfo {
     /// 参考号的ref0
@@ -1428,559 +251,6 @@ pub struct RefnoInfo {
     /// 对应db number
     pub db_no: u32,
 }
-
-#[derive(
-Default,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Component,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-)]
-pub enum AttrVal {
-    #[default]
-    InvalidType,
-    IntegerType(i32),
-    StringType(String),
-    DoubleType(f64),
-    DoubleArrayType(Vec<f64>),
-    StringArrayType(Vec<String>),
-    BoolArrayType(Vec<bool>),
-    IntArrayType(Vec<i32>),
-    BoolType(bool),
-    Vec3Type([f64; 3]),
-    ElementType(String),
-    WordType(String),
-
-    RefU64Type(RefU64),
-    StringHashType(AiosStrHash),
-    RefU64Array(RefU64Vec),
-}
-
-impl From<AttrValAql> for AttrVal {
-    fn from(value: AttrValAql) -> Self {
-        match value {
-            AttrValAql::InvalidType => InvalidType,
-            AttrValAql::IntegerType(i) => IntegerType(i),
-            AttrValAql::StringType(d) => StringType(d),
-            AttrValAql::DoubleType(d) => DoubleType(d),
-            AttrValAql::DoubleArrayType(d) => DoubleArrayType(d),
-            AttrValAql::StringArrayType(d) => StringArrayType(d),
-            AttrValAql::BoolArrayType(d) => BoolArrayType(d),
-            AttrValAql::IntArrayType(d) => IntArrayType(d),
-            AttrValAql::BoolType(d) => BoolType(d),
-            AttrValAql::Vec3Type(d) => Vec3Type(d),
-            AttrValAql::ElementType(d) => ElementType(d),
-            AttrValAql::WordType(d) => WordType(d),
-            // AttrValAql::RefU64Type(d) => { RefU64Type(d) }
-            AttrValAql::StringHashType(d) => StringHashType(d),
-            AttrValAql::RefU64Array(d) => RefU64Array(d),
-        }
-    }
-}
-
-impl AttrVal {
-    #[inline]
-    pub fn i32_value(&self) -> i32 {
-        return match self {
-            IntegerType(v) => *v,
-            _ => 0,
-        };
-    }
-
-    #[inline]
-    pub fn i32_array_value(&self) -> Vec<i32> {
-        return match self {
-            IntArrayType(v) => v.to_vec(),
-            _ => vec![],
-        };
-    }
-
-    #[inline]
-    pub fn double_value(&self) -> Option<f64> {
-        return match self {
-            DoubleType(v) => Some(*v),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn f32_value(&self) -> Option<f32> {
-        return match self {
-            DoubleType(v) => Some(*v as f32),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn vec3_value(&self) -> Option<[f64; 3]> {
-        return match self {
-            Vec3Type(v) => Some(*v),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn dvec_value(&self) -> Option<Vec<f64>> {
-        return match self {
-            DoubleArrayType(v) => Some(v.to_vec()),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn element_value(&self) -> Option<String> {
-        return match self {
-            ElementType(v) => Some(v.clone()),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn string_value(&self) -> String {
-        return match self {
-            StringType(v) => v.to_string(),
-            WordType(v) => v.to_string(),
-            _ => "unset".to_string(),
-        };
-    }
-
-    #[inline]
-    pub fn refno_value(&self) -> Option<RefU64> {
-        return match self {
-            RefU64Type(v) => Some(*v),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn string_hash_value(&self) -> Option<AiosStrHash> {
-        return match self {
-            StringHashType(v) => Some(v.clone()),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn refu64_vec_value(&self) -> Option<RefU64Vec> {
-        return match self {
-            RefU64Array(v) => Some(v.clone()),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn bool_value(&self) -> Option<bool> {
-        return match self {
-            BoolType(v) => Some(*v),
-            _ => None,
-        };
-    }
-
-    #[inline]
-    pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
-        return match self {
-            InvalidType => Box::new("unset".to_string()),
-            StringType(v) | ElementType(v) | WordType(v) => Box::new(v.to_string()),
-            RefU64Type(v) => Box::new(v.to_refno_string()),
-            BoolArrayType(v) => Box::new(v.clone()),
-            IntArrayType(v) => Box::new(v.clone()),
-            IntegerType(v) => Box::new(*v),
-            DoubleArrayType(v) => Box::new(v.clone()),
-            DoubleType(v) => Box::new(*v),
-            BoolType(v) => Box::new(*v),
-            StringHashType(v) => Box::new(*v),
-            StringArrayType(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
-            Vec3Type(v) => Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)),
-            RefU64Array(v) => Box::new(v.iter().map(|x| x.to_refno_string()).collect::<Vec<_>>()),
-        };
-    }
-
-    #[inline]
-    pub fn get_val_as_string(&self) -> String {
-        return match self {
-            AttrVal::InvalidType => "unset".to_string(),
-            IntegerType(v) => v.to_string(),
-            StringType(v) => v.to_string(),
-            DoubleType(v) => v.to_string(),
-            DoubleArrayType(v) => serde_json::to_string(v).unwrap(),
-            StringArrayType(v) => serde_json::to_string(v).unwrap(),
-            BoolArrayType(v) => serde_json::to_string(v).unwrap(),
-            IntArrayType(v) => serde_json::to_string(v).unwrap(),
-            BoolType(v) => v.to_string(),
-            Vec3Type(v) => serde_json::to_string(v).unwrap(),
-            ElementType(v) => v.to_string(),
-            WordType(v) => v.to_string(),
-            RefU64Type(v) => v.to_refno_str().to_string(),
-            StringHashType(v) => v.to_string(),
-            RefU64Array(v) => serde_json::to_string(v).unwrap(),
-        };
-    }
-
-    pub fn get_val_as_string_csv(&self) -> String {
-        return match self {
-            AttrVal::InvalidType => "unset".to_string(),
-            IntegerType(v) => v.to_string().replace(",", ";"),
-            StringType(v) => v.to_string().replace(",", ";"),
-            DoubleType(v) => v.to_string().replace(",", ";"),
-            DoubleArrayType(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
-            StringArrayType(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
-            BoolArrayType(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
-            IntArrayType(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
-            BoolType(v) => v.to_string().replace(",", ";"),
-            Vec3Type(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
-            ElementType(v) => v.to_string().replace(",", ";"),
-            WordType(v) => v.to_string().replace(",", ";"),
-            RefU64Type(v) => v.to_refno_str().to_string().replace(",", ";"),
-            StringHashType(v) => v.to_string().replace(",", ";"),
-            RefU64Array(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
-        };
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Component)]
-#[serde(untagged)]
-pub enum AttrValAql {
-    InvalidType,
-    IntegerType(i32),
-    StringType(String),
-    DoubleType(f64),
-    DoubleArrayType(Vec<f64>),
-    StringArrayType(Vec<String>),
-    BoolArrayType(Vec<bool>),
-    IntArrayType(Vec<i32>),
-    BoolType(bool),
-    Vec3Type([f64; 3]),
-    ElementType(String),
-    WordType(String),
-    // RefU64Type(RefU64),
-    StringHashType(AiosStrHash),
-    RefU64Array(RefU64Vec),
-}
-
-impl From<AttrVal> for AttrValAql {
-    fn from(value: AttrVal) -> Self {
-        match value {
-            InvalidType => AttrValAql::InvalidType,
-            IntegerType(i) => AttrValAql::IntegerType(i),
-            StringType(d) => AttrValAql::StringType(d),
-            DoubleType(d) => AttrValAql::DoubleType(d),
-            DoubleArrayType(d) => AttrValAql::DoubleArrayType(d),
-            StringArrayType(d) => AttrValAql::StringArrayType(d),
-            BoolArrayType(d) => AttrValAql::BoolArrayType(d),
-            IntArrayType(d) => AttrValAql::IntArrayType(d),
-            BoolType(d) => AttrValAql::BoolType(d),
-            Vec3Type(d) => AttrValAql::Vec3Type(d),
-            ElementType(d) => AttrValAql::ElementType(d),
-            WordType(d) => AttrValAql::WordType(d),
-            RefU64Type(d) => AttrValAql::StringType(d.to_url_refno().into()),
-            StringHashType(d) => AttrValAql::StringHashType(d),
-            RefU64Array(d) => AttrValAql::RefU64Array(d),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
-pub struct PdmsDatabaseInfo {
-    // 第一个i32是type_hash ，第二个i32是属性的hash
-    pub noun_attr_info_map: DashMap<i32, DashMap<i32, AttrInfo>>,
-}
-
-const BASIC_TYPE_NAMES: [&'static str; 3] = ["REFNO", "OWNER", "TYPEX"];
-
-impl PdmsDatabaseInfo {
-    ///获得所有的explicit nouns
-    pub fn get_all_explicit_nouns(&self) -> DashMap<i32, AttrInfo> {
-        let mut map = DashMap::default();
-        for kv in &self.noun_attr_info_map {
-            for info in kv.value() {
-                if info.offset == 0 && !map.contains_key(info.key()) {
-                    map.insert(*info.key(), info.value().clone());
-                }
-            }
-        }
-        map
-    }
-
-    pub fn fix(&self) {
-        for kv in self.noun_attr_info_map.iter_mut() {
-            for mut info in kv.value().iter_mut() {
-                info.name = db1_dehash(*info.key() as _);
-            }
-        }
-    }
-
-    ///检查当前的att_map，是否需要更新schema数据
-    pub fn check_schema(&self, noun: i32, att_map: &NamedAttrMap) -> Option<String> {
-        // let mut found_diff = false;
-        // // let mut new_atts_info = None;
-        // let atts_info = self.noun_attr_info_map.get_mut(&noun)?;
-        // // dbg!(atts_info.value());
-        // let type_hash = db1_hash("TYPE") as _;
-        // atts_info.insert(
-        //     type_hash,
-        //     AttrInfo {
-        //         name: "TYPE".to_string(),
-        //         hash: type_hash,
-        //         offset: 0,
-        //         default_val: AttrVal::WordType("unset".to_string()),
-        //         att_type: DbAttributeType::WORD,
-        //     },
-        // );
-        // {
-        //     att_map.iter().for_each(|(k, v)| {
-        //         let hash = db1_hash(k) as _;
-        //         if hash > 0
-        //             && !BASIC_TYPE_NAMES.contains(&k.as_str())
-        //             && !atts_info.contains_key(&(hash as _))
-        //         {
-        //             found_diff = true;
-        //             match v {
-        //                 NamedAttrValue::F32VecType(_) => {
-        //                     atts_info.insert(
-        //                         hash,
-        //                         AttrInfo {
-        //                             name: k.clone(),
-        //                             hash,
-        //                             offset: 0,
-        //                             default_val: AttrVal::DoubleArrayType(vec![]),
-        //                             att_type: DbAttributeType::DOUBLE,
-        //                         },
-        //                     );
-        //                 }
-        //                 NamedAttrValue::IntArrayType(_) => {
-        //                     atts_info.insert(
-        //                         hash,
-        //                         AttrInfo {
-        //                             name: k.clone(),
-        //                             hash,
-        //                             offset: 0,
-        //                             default_val: AttrVal::IntArrayType(vec![]),
-        //                             att_type: DbAttributeType::INTEGER,
-        //                         },
-        //                     );
-        //                 }
-        //                 NamedAttrValue::StringArrayType(_) => {
-        //                     atts_info.insert(
-        //                         hash,
-        //                         AttrInfo {
-        //                             name: k.clone(),
-        //                             hash,
-        //                             offset: 0,
-        //                             default_val: AttrVal::StringArrayType(vec![]),
-        //                             att_type: DbAttributeType::STRING,
-        //                         },
-        //                     );
-        //                 }
-        //                 NamedAttrValue::F32Type(_) => {
-        //                     atts_info.insert(
-        //                         hash,
-        //                         AttrInfo {
-        //                             name: k.clone(),
-        //                             hash,
-        //                             offset: 0,
-        //                             default_val: AttrVal::DoubleType(0.0),
-        //                             att_type: DbAttributeType::DOUBLE,
-        //                         },
-        //                     );
-        //                 }
-        //                 NamedAttrValue::BoolType(_) => {
-        //                     atts_info.insert(
-        //                         hash,
-        //                         AttrInfo {
-        //                             name: k.clone(),
-        //                             hash,
-        //                             offset: 0,
-        //                             default_val: AttrVal::BoolType(false),
-        //                             att_type: DbAttributeType::BOOL,
-        //                         },
-        //                     );
-        //                 }
-        //                 NamedAttrValue::IntegerType(_) => {
-        //                     atts_info.insert(
-        //                         hash,
-        //                         AttrInfo {
-        //                             name: k.clone(),
-        //                             hash,
-        //                             offset: 0,
-        //                             default_val: AttrVal::IntegerType(0),
-        //                             att_type: DbAttributeType::INTEGER,
-        //                         },
-        //                     );
-        //                 }
-        //                 NamedAttrValue::StringType(_)
-        //                 | NamedAttrValue::ElementType(_)
-        //                 | NamedAttrValue::WordType(_)
-        //                 | NamedAttrValue::RefU64Type(_) => {
-        //                     atts_info.insert(
-        //                         hash,
-        //                         AttrInfo {
-        //                             name: k.clone(),
-        //                             hash,
-        //                             offset: 0,
-        //                             default_val: AttrVal::StringType("".into()),
-        //                             att_type: DbAttributeType::STRING,
-        //                         },
-        //                     );
-        //                 }
-        //                 _ => {}
-        //             }
-        //             dbg!((k, v));
-        //         }
-        //     });
-        // }
-
-        // // let Some(new) = new_atts_info else{
-        // //     return None;
-        // // };
-        // if !found_diff {
-        //     return None;
-        // }
-
-        // use serde_json::{Map, Value};
-        // let mut context: Map<String, Value> = serde_json::from_str(
-        //     r#"{
-        //     "@base": "terminusdb:///data/",
-        //     "@schema": "terminusdb:///schema#",
-        //     "@type": "@context"
-        // }"#,
-        // )
-        // .unwrap_or_default();
-
-        // //todo 需要考虑UDA的schema
-        // let schema = Self::gen_schema(noun, &atts_info)?;
-        // let mut modify = vec![context, schema];
-
-        // // self.noun_attr_info_map.remove(&noun);
-        // // self.noun_attr_info_map.insert(noun, new);
-        // // *self.noun_attr_info_map.get_mut(&noun).unwrap() = new;
-        // serde_json::to_string(&modify).ok()
-        None
-    }
-
-    pub fn gen_schema(noun: i32, info_map: &DashMap<i32, AttrInfo>) -> Option<serde_json::Map<String, serde_json::Value>> {
-        if noun <= 0 {
-            return None;
-        }
-        use serde_json::{Map, Value};
-        // dbg!(*k);
-        let type_name = db1_dehash(noun as _);
-        if type_name.is_empty() {
-            dbg!(noun);
-            dbg!(&type_name);
-            return None;
-        }
-        let mut att_schemas_vec = vec![];
-        for info in info_map {
-            //需要执行for 循环，来生成 schema
-            let Some(s) = info.gen_schema() else {
-                continue;
-            };
-            att_schemas_vec.push(s);
-        }
-        let mut json = if att_schemas_vec.is_empty() {
-            format!(
-                r#"
-                    {{
-                        "@type" : "Class",
-                        "@id"   : "{}",
-                        "@key"  : {{ "@type": "Lexical", "@fields": ["REFNO"] }},
-                        "REFNO"    : "xsd:string",
-                        "ELEMENT" : "PdmsElement",
-                        "TYPEX"    : {{
-                            "@class": "xsd:string",
-                            "@type": "Optional"
-                        }},
-                        "OWNER"    : {{
-                            "@class": "xsd:string",
-                            "@type": "Optional"
-                        }}
-                    }}
-                "#,
-                &type_name
-            )
-        } else {
-            format!(
-                r#"
-                    {{
-                        "@type" : "Class",
-                        "@id"   : "{}",
-                        "@key"  : {{ "@type": "Lexical", "@fields": ["REFNO"] }},
-                        "REFNO"    : "xsd:string",
-                        "ELEMENT" : "PdmsElement",
-                        "TYPEX"    : {{
-                            "@class": "xsd:string",
-                            "@type": "Optional"
-                        }},
-                        "OWNER"    : {{
-                            "@class": "xsd:string",
-                            "@type": "Optional"
-                        }},
-                        {}
-                    }}
-                "#,
-                &type_name,
-                att_schemas_vec.join(",")
-            )
-        };
-        if let Ok(obj) = serde_json::from_str::<serde_json::Map<String, Value>>(&json) {
-            return Some(obj);
-        } else {
-            let pretty_json = jsonxf::minimize(&json).unwrap();
-            dbg!(&pretty_json);
-        }
-        None
-    }
-
-    pub fn get_all_schemas(&self) -> Vec<serde_json::Map<String, serde_json::Value>> {
-        use serde_json::{Map, Value};
-        let mut schemas = Vec::new();
-        for kv in &self.noun_attr_info_map {
-            if *kv.key() < 0 {
-                continue;
-            }
-            let type_name = db1_dehash(*kv.key() as _);
-            if let Some(obj) = Self::gen_schema(*kv.key(), kv.value()) {
-                schemas.push(obj);
-            }
-        }
-        schemas
-    }
-
-    pub fn fill_default_values(&self, att_map: &mut AttrMap) {
-        let noun_hash = att_map.get_noun();
-        if let Some(m) = self.noun_attr_info_map.get(&noun_hash) {
-            for info in m.value() {
-                if info.offset == 0 && !att_map.contains_attr_hash(noun_hash as _) {
-                    att_map.insert(noun_hash as _, info.default_val.clone());
-                }
-            }
-        }
-    }
-
-    ///合并
-    pub fn merge(&self, new: &DashMap<i32, DashMap<i32, AttrInfo>>) {
-        for kv in new {
-            self.noun_attr_info_map
-                .insert(*kv.key(), kv.value().clone());
-        }
-    }
-
-    pub fn save(&self, path: Option<&str>) -> anyhow::Result<()> {
-        let path = path.unwrap_or("all_attr_info.json");
-        let bytes = serde_json::to_string(self)?;
-        let mut file = std::fs::File::create(path)?;
-        file.write_all(bytes.as_bytes());
-        Ok(())
-    }
-}
-
-unsafe impl Send for PdmsDatabaseInfo {}
-
-unsafe impl Sync for PdmsDatabaseInfo {}
 
 ///可以缩放的类型
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1990,7 +260,6 @@ pub enum ScaledGeom {
     Sphere(f32),
 }
 
-//for json compatibility
 pub type PdmsMeshIdx = String;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -2017,17 +286,17 @@ pub struct AiosMaterial {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum GeoData {
     Primitive(PdmsMeshIdx), //索引的哪个mesh,和对应的拉伸值， 先从dish开始判断相似性
-    // Raw(Mesh),          //原生的Mesh
+                            // Raw(Mesh),          //原生的Mesh
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Deref,
-DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Deref,
+    DerefMut, /*, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,*/
 )]
 pub struct LevelShapeMgr {
     pub level_mgr: DashMap<RefU64, RefU64Vec>,
@@ -2042,11 +311,6 @@ impl LevelShapeMgr {
     }
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, Default, Resource, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
-// pub struct CachedInstanceMgr {
-//     pub inst_data: ShapeInstancesData,
-//     // pub level_shape_mgr: LevelShapeMgr,   //每个非叶子节点都知道自己的所有shape refno
-// }
 
 bitflags! {
     struct PdmsGenericTypeFlag: u32 {
@@ -2062,19 +326,19 @@ bitflags! {
 
 #[repr(C)]
 #[derive(
-Component,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Default,
-Clone,
-Debug,
-Copy,
-Eq,
-PartialEq,
-Hash,
+    Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Default,
+    Clone,
+    Debug,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
 )]
 pub enum PdmsGenericType {
     #[default]
@@ -2121,16 +385,16 @@ pub enum PdmsGenericType {
 
 /// 几何体的基本类型
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-PartialEq,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 pub enum GeoBasicType {
     #[default]
@@ -2149,19 +413,17 @@ pub enum GeoBasicType {
     Tubi,
 }
 
-//元件库里的模型，需要两级来完成这个边，有一个代表的refno
-//指向典型的例子
 
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 pub struct GeoEdge {
     //元件的参考号
@@ -2176,23 +438,18 @@ pub struct GeoEdge {
     pub cata_hash: Option<u64>,
 }
 
-// fn de_geo_edge_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-//     where D: Deserializer<'de> {
-//     let s = String::deserialize(deserializer)?;
-//     Ok(RefU64::from_url_refno(&s).unwrap_or_default())
-// }
 #[inline]
 fn ser_inst_info_edge_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_infos/{}", refno.to_url_refno()).as_str())
 }
 
 #[inline]
 fn ser_inst_geo_edge_as_key_str<S>(k: &u64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(format!("pdms_inst_geos/{}", *k).as_str())
 }
@@ -2216,15 +473,15 @@ impl GeoEdge {
 
 /// 存储一个Element 包含的所有几何信息
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Debug,
-Clone,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Default,
+    Resource,
 )]
 #[serde_as]
 pub struct EleGeosInfo {
@@ -2253,16 +510,16 @@ pub struct EleGeosInfo {
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     Ok(RefU64::from_url_refno(&s).unwrap_or_default())
 }
 
 pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(refno.to_url_refno().as_str())
 }
@@ -2351,14 +608,14 @@ impl EleGeosInfo {
 
 /// instane数据集合管理
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Resource,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Resource,
 )]
 pub struct ShapeInstancesData {
     /// 保存instance信息数据
@@ -2563,7 +820,7 @@ impl ShapeInstancesData {
 
 //todo mesh 增量传输
 #[derive(
-Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct PdmsInstanceMeshData {
     pub shape_insts: ShapeInstancesData,
@@ -2660,14 +917,14 @@ impl ColliderShapeMgr {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-Resource,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct PlantGeoData {
     #[serde(rename = "_key")]
@@ -2697,8 +954,8 @@ impl Clone for PlantGeoData {
 }
 
 fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     if let Ok(r) = hex::decode(s.as_str()) {
@@ -2708,8 +965,8 @@ fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
 }
 
 fn se_plant_mesh<S>(mesh: &Option<PlantMesh>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     let mesh_string = mesh
         .as_ref()
@@ -2722,12 +979,17 @@ unsafe impl Sync for PlantGeoData {}
 
 unsafe impl Send for PlantGeoData {}
 
+use crate::orm::*;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
-use crate::orm::*;
+use sea_query::*;
+use crate::ref64vec::RefU64Vec;
+use crate::types::attmap::AttrMap;
+use crate::types::attval::{AttrVal, AttrValAql};
+use crate::types::named_attvalue::NamedAttrValue;
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
@@ -2751,16 +1013,16 @@ impl PlantGeoData {
 }
 
 #[derive(
-Serialize,
-Deserialize,
-Debug,
-Default,
-Deref,
-DerefMut,
-Resource,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    Deref,
+    DerefMut,
+    Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct PlantMeshesData {
     pub meshes: HashMap<GeoHash, PlantGeoData>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
@@ -2848,15 +1110,15 @@ impl PlantMeshesData {
 
 #[serde_as]
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Resource,
 )]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
@@ -2966,15 +1228,15 @@ impl EleInstGeosData {
 
 ///分拆的基本体信息, 应该是不需要复用的
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Clone,
-Debug,
-Default,
-Resource,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Resource,
 )]
 #[serde_as]
 pub struct EleInstGeo {
@@ -3040,24 +1302,24 @@ impl EleInstGeo {
 }
 
 fn de_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     s.parse::<u64>().map_err(de::Error::custom)
 }
 
 fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     RefU64::from_refno_str(&s).map_err(de::Error::custom)
 }
 
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer).unwrap_or_default();
     Ok(serde_json::from_str::<HashSet<String>>(s.as_str())
@@ -3068,8 +1330,8 @@ fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Er
 }
 
 pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     let set = refnos
         .into_iter()
@@ -3080,15 +1342,15 @@ pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S:
 }
 
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str((*id).to_string().as_str())
 }
 
 pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(refno.to_refno_str().as_str())
 }
@@ -3462,7 +1724,6 @@ fn test_dashmap() {
     });
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum DbAttributeType {
     #[default]
@@ -3666,17 +1927,17 @@ pub struct PdmsRefno {
 pub type AiosStrHash = u32;
 
 #[derive(
-Debug,
-Clone,
-Default,
-Serialize,
-Deserialize,
-PartialEq,
-Eq,
-Hash,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Debug,
+    Clone,
+    Default,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Hash,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct AiosStr(pub String);
 

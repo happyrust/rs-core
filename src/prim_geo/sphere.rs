@@ -21,7 +21,7 @@ use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, VerifiedShape}
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{primitives::Shape, adhoc::AdHocShape};
 
-use crate::pdms_types::AttrMap;
+use crate::types::attmap::AttrMap;
 use bevy_ecs::prelude::*;
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 //

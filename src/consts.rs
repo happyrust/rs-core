@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use crate::pdms_types::NounHash;
+use crate::types::NounHash;
 use crate::tool::db_tool::{db1_hash, db1_hash_const};
 use std::collections::HashSet;
 

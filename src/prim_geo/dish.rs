@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::pdms_types::AttrMap;
+use crate::types::attmap::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, LEN_TOL, RsVec3, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
