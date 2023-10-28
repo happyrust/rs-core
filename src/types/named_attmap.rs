@@ -15,17 +15,17 @@ use crate::types::named_attvalue::NamedAttrValue;
 
 ///带名称的属性map
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Deref,
-    DerefMut,
-    Clone,
-    Default,
-    Debug,
-    Component,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Deref,
+DerefMut,
+Clone,
+Default,
+Debug,
+Component,
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
@@ -70,14 +70,13 @@ impl Into<DynamicStruct> for NamedAttrMap {
 }
 
 impl NamedAttrMap {
-
     ///初始化
-    pub fn new(type_name: &str) -> Self{
+    pub fn new(type_name: &str) -> Self {
         let mut v = Self::default();
         let db_info = get_default_pdms_db_info();
         let hash = db1_hash(type_name) as i32;
         if let Some(info) = db_info.noun_attr_info_map.get(&hash) {
-            for kv in info.value(){
+            for kv in info.value() {
                 if kv.offset == 0 {
                     v.insert(kv.name.clone(), (&kv.default_val).into());
                 }
@@ -110,9 +109,17 @@ impl NamedAttrMap {
         }
     }
 
+    pub fn get_type_str(&self) -> &str {
+        if let Some(NamedAttrValue::StringType(v)) = self.map.get("TYPE") {
+            v.as_str()
+        } else {
+            "unset"
+        }
+    }
+
 
     pub fn get_type_hash(&self) -> u32 {
-        db1_hash(&self.get_type())
+        db1_hash(self.get_type_str())
     }
 
     #[inline]
@@ -179,17 +186,16 @@ impl NamedAttrMap {
 }
 
 impl NamedAttrMap {
-
     #[inline]
-    pub fn get_columns(&self) -> Vec<Alias>{
-        self.map.keys().map(|x|{
+    pub fn get_columns(&self) -> Vec<Alias> {
+        self.map.keys().map(|x| {
             Alias::new(x.clone())
         }).collect()
     }
 
     #[inline]
-    pub fn get_values(&self) -> Vec<sea_query::Value>{
-        self.map.values().map(|x|{
+    pub fn get_values(&self) -> Vec<sea_query::Value> {
+        self.map.values().map(|x| {
             x.clone().into()
         }).collect()
     }
@@ -201,7 +207,7 @@ impl NamedAttrMap {
         if let Some(m) = db_info.noun_attr_info_map.get(&noun_hash) {
             for info in m.value() {
                 if info.offset == 0 && !self.map.contains_key(&info.name) {
-                    self.map.insert( info.name.clone(), (&info.default_val).into());
+                    self.map.insert(info.name.clone(), (&info.default_val).into());
                 }
             }
 
@@ -229,62 +235,120 @@ impl NamedAttrMap {
     //     }
     // }
 
-    pub fn contains_attr_hash(&self, hash: u32) -> bool{
+    pub fn contains_attr_hash(&self, hash: u32) -> bool {
         self.map.contains_key(&db1_dehash(hash))
     }
 
     ///执行保存
-    pub async fn exec_insert(&self, db: &DatabaseConnection) -> anyhow::Result<()>{
-        let sql = self.gen_insert_sql()?;
+    pub async fn exec_insert(&self, db: &DatabaseConnection, replace: bool) -> anyhow::Result<()> {
+        let sql = self.gen_insert_sql(replace)?;
         db.execute_unprepared(&sql).await?;
         Ok(())
     }
 
     ///生成保存的sql
-    pub fn gen_insert_sql(&self) -> anyhow::Result<String>{
+    pub fn gen_insert_sql(&self, replace: bool) -> anyhow::Result<String> {
         let type_name = self.get_type();
 
         let mut query = sea_query::Query::insert()
             .into_table(Alias::new(type_name))
-            .columns(self.get_columns())
-            .values(self.get_values().into_iter().map(|x| x.into()))?
+            .columns(self.get_columns()).to_owned();
+        if replace { query.replace(); }
+        query.values(self.get_values().into_iter().map(|x| x.into()))?
             .to_owned();
         Ok(query.to_string(MysqlQueryBuilder))
     }
 
     ///生成插入的语句
-    pub async fn exec_insert_many<I>(atts: I, db: &DatabaseConnection) -> anyhow::Result<()>
-        where I: IntoIterator<Item = Self> {
-        let sql = Self::gen_insert_many_sql(atts)?;
-        db.execute_unprepared(&sql).await?;
+    pub async fn exec_insert_many<I>(atts: I, db: &DatabaseConnection, replace: bool) -> anyhow::Result<()>
+        where I: IntoIterator<Item=Self> {
+        let sqls = Self::gen_insert_many_sql(atts, replace)?;
+        for sql in sqls {
+            db.execute_unprepared(&sql).await?;
+        }
         Ok(())
     }
 
     ///生成插入的语句
-    pub fn gen_insert_many_sql<I>(atts: I) -> anyhow::Result<String>
-        where I: IntoIterator<Item = Self>,
+    pub fn gen_insert_many_sql<I>(atts: I, replace: bool) -> anyhow::Result<Vec<String>>
+        where I: IntoIterator<Item=Self>,
     {
-        let mut new_atts = vec![];
-        for mut a in atts{
+        ///按照类型重新划分组
+        let mut grouped_map: BTreeMap<String, Vec<Self>> = BTreeMap::new();
+
+        for mut a in atts {
+            let type_name = a.get_type();
             a.fill_explicit_default_values();
-            new_atts.push(a);
+            grouped_map.entry(type_name).or_insert(Vec::new()).push(a);
         }
-        if new_atts.is_empty() {
+        if grouped_map.is_empty() {
             return Err(anyhow::anyhow!("Empty atts can't gen insert sql."));
         }
-        let type_name = new_atts[0].get_type();
-        // dbg!(&type_name);
-        // dbg!(db1_hash(&type_name));
-        let colums = new_atts[0].get_columns();
-        let mut query = sea_query::Query::insert()
-            .into_table(Alias::new(type_name))
-            .columns(colums).to_owned();
-        let multi_values = new_atts.into_iter().map(|x| {
-            // dbg!(x.get_values());
-            x.get_values()
-        }).for_each(|x|{
-            query.values(x.into_iter().map(|x| x.into()));
-        });
-        Ok(query.to_string(MysqlQueryBuilder))
+        let mut final_sqls = Vec::new();
+        //这里需要按type归类，按不同的type分类
+        for (type_name, new_atts) in grouped_map {
+            let colums = new_atts[0].get_columns();
+            let mut query = sea_query::Query::insert()
+                .into_table(Alias::new(type_name))
+                .columns(colums).to_owned();
+            if replace { query.replace(); }
+            new_atts.into_iter().map(|x| {
+                x.get_values()
+            }).for_each(|x| {
+                query.values(x.into_iter().map(|x| x.into())).unwrap();
+            });
+            let sql = query.to_string(MysqlQueryBuilder);
+            final_sqls.push(sql);
+        }
+        Ok(final_sqls)
     }
+
+    ///执行增量更新的提交
+    pub async fn exec_commit_atts_change(db: &DatabaseConnection, message: Option<&str>) -> anyhow::Result<()> {
+
+        // db.execute_unprepared(r#"call dolt_add('.')"#).await.unwrap();
+        let msg = message.unwrap_or("提交增量更新数据");
+        db.execute_unprepared(&format!(r#"call dolt_commit('-m', '{}')"#, msg)).await?;
+
+        Ok(())
+    }
+
+    //执行推送到主仓库的操作
+
+    ///目前当作一个补充，
+    ///生成查询多个的sql语句
+    /// todo，根据id集合，或者所有的 NamedAttrMap
+    pub fn gen_query_delta_commits_sql() -> anyhow::Result<Vec<Self>> {
+        let query = sea_query::Query::select()
+            // .columns()
+            // .column(Char::Character)
+            // .column((Font::Table, Font::Name))
+            // .from(Char::Table)
+            // .left_join(Font::Table, Expr::col((Char::Table, Char::FontId)).equals((Font::Table, Font::Id)))
+            // .and_where(Expr::col(Char::SizeW).is_in([3, 4]))
+            // .and_where(Expr::col(Char::Character).like("A%"))
+            .to_owned();
+        Ok(vec![])
+    }
+
+    //后面还要根据参考号确定使用哪个类型、还有db numer
+    //生成查询语句
+    pub fn gen_query_sql(refnos: &Vec<RefU64>) -> anyhow::Result<Vec<String>> {
+        //首先要查询到类型信息
+        let types = sea_query::Query::select().to_owned();
+
+        //按照类型不同, 分别去查询
+        let query = sea_query::Query::select()
+            // .cond_where()
+            // .columns()
+            // .column(Char::Character)
+            // .column((Font::Table, Font::Name))
+            // .from(Char::Table)
+            // .left_join(Font::Table, Expr::col((Char::Table, Char::FontId)).equals((Font::Table, Font::Id)))
+            // .and_where(Expr::col(Char::SizeW).is_in([3, 4]))
+            // .and_where(Expr::col(Char::Character).like("A%"))
+            .to_owned();
+        Ok(vec![])
+    }
+
 }

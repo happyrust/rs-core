@@ -16,48 +16,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP 生成类型">
-      <change afterPath="$PROJECT_DIR$/DbOption.toml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/orm/diff_data.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/orm/entities.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/orm/log_data.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/test_sql/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/test_sql/test_insert.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/test_sql/test_query_log.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/test_sql/test_table.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/attmap.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/attval.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/db_info.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/query_sql.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/ref64vec.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/whole_attmap.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/all_attr_info.json" beforeDir="false" afterPath="$PROJECT_DIR$/all_attr_info.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bin_data/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bin_data/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cache/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cache/refno.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/consts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/consts.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/enso_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/enso_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/orm/macros.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/orm/macros.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/orm/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/orm/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/orm/sql.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/orm/sql.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/orm/traits.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/orm/traits.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/dish.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/dish.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/tubing.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/tubing.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_attrmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_attrmap.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/db_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/db_tool.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_sql/test_insert.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_sql/test_insert.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -543,7 +505,11 @@
       <workItem from="1698070634296" duration="9298000" />
       <workItem from="1698134111983" duration="4911000" />
       <workItem from="1698139073916" duration="9469000" />
-      <workItem from="1698204099919" duration="604000" />
+      <workItem from="1698204099919" duration="1434000" />
+      <workItem from="1698239414352" duration="303000" />
+      <workItem from="1698239730803" duration="115000" />
+      <workItem from="1698239856970" duration="10079000" />
+      <workItem from="1698506834938" duration="592000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -888,7 +854,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="246" />
+    <option name="localTasksCounter" value="247" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

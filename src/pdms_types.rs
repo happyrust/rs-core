@@ -27,7 +27,7 @@ use crate::parsed_data::CateAxisParam;
 use crate::types::attval::AttrVal::*;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use sea_query::*;
-
+use nalgebra::Point3;
 use bevy_math::*;
 use bevy_reflect::Reflect;
 #[cfg(feature = "render")]
@@ -36,6 +36,9 @@ use bevy_render::mesh::Indices;
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 use bevy_transform::prelude::*;
 pub use crate::types::*;
+use crate::prim_geo::*;
+use crate::prim_geo::cylinder::*;
+use crate::prim_geo::sbox::SBox;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -640,6 +643,57 @@ pub struct ShapeInstancesData {
 
 /// shape instances 的管理方法
 impl ShapeInstancesData {
+
+    ///填充基本的形状
+    pub fn fill_basic_shapes(&mut self){
+        let unit_cyli_aabb = Aabb::new(Point3::new(-0.5, -0.5, 0.0), Point3::new(0.5, 0.5, 1.0));
+        let unit_box_aabb = Aabb::new(Point3::new(-0.5, -0.5, -0.5), Point3::new(0.5, 0.5, 0.5));
+        self.insert_geos_data(
+            TUBI_GEO_HASH.to_string(),
+            EleInstGeosData {
+                inst_key: TUBI_GEO_HASH.to_string(),
+                refno: Default::default(),
+                insts: vec![EleInstGeo {
+                    geo_hash: TUBI_GEO_HASH,
+                    refno: Default::default(),
+                    owner_pos_refnos: Default::default(),
+                    geo_param: PdmsGeoParam::PrimSCylinder(SCylinder::default()),
+                    pts: vec![],
+                    aabb: Some(unit_cyli_aabb),
+                    transform: Default::default(),
+                    visible: true,
+                    is_tubi: true,
+                    geo_type: GeoBasicType::Tubi,
+                }],
+                aabb: Some(unit_cyli_aabb),
+                type_name: "TUBI".to_string(),
+                ptset_map: Default::default(),
+            },
+        );
+        self.insert_geos_data(
+            BOXI_GEO_HASH.to_string(),
+            EleInstGeosData {
+                inst_key: BOXI_GEO_HASH.to_string(),
+                refno: Default::default(),
+                insts: vec![EleInstGeo {
+                    geo_hash: BOXI_GEO_HASH,
+                    refno: Default::default(),
+                    owner_pos_refnos: Default::default(),
+                    geo_param: PdmsGeoParam::PrimBox(SBox::default()),
+                    pts: vec![],
+                    aabb: Some(unit_box_aabb),
+                    transform: Default::default(),
+                    visible: true,
+                    is_tubi: true,
+                    geo_type: GeoBasicType::Tubi,
+                }],
+                aabb: Some(unit_box_aabb),
+                type_name: "BOXI".to_string(),
+                ptset_map: Default::default(),
+            },
+        );
+    }
+
     #[inline]
     pub fn clear(&mut self) {
         self.inst_info_map.clear();
@@ -1605,12 +1659,8 @@ pub struct ChildrenNode {
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct CataHashRefnoKV {
-    // #[serde(deserialize_with = "de_from_str")]
-    // #[serde(serialize_with = "ser_u64_as_str")]
-    // #[serde_as(as = "Option<DisplayFromStr>")]
     #[serde(default)]
     pub cata_hash: Option<String>,
-    // #[serde_as(as = "DisplayFromStr")]
     #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,
     #[serde_as(as = "Vec<DisplayFromStr>")]
