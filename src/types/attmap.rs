@@ -175,7 +175,7 @@ impl AttrMap {
             }
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             std::hash::Hash::hash(&spref, &mut hasher);
-            if let Some(des_para) = self.get_f64_vec("DESP") {
+            if let Some(des_para) = self.get_f32_vec("DESP") {
                 hash_f64_slice(&des_para, &mut hasher);
             }
             let ref_strs = ["ANGL", "HEIG", "RADI"];
@@ -560,7 +560,7 @@ impl AttrMap {
 
     #[inline]
     pub fn get_position(&self) -> Option<Vec3> {
-        if let Some(pos) = self.get_f64_vec("POS") {
+        if let Some(pos) = self.get_f32_vec("POS") {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         } else {
             //如果没有POS，就以POSS来尝试
@@ -575,7 +575,7 @@ impl AttrMap {
 
     #[inline]
     pub fn get_poss(&self) -> Option<Vec3> {
-        let pos = self.get_f64_vec("POSS")?;
+        let pos = self.get_f32_vec("POSS")?;
         if pos.len() == 3 {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         }
@@ -584,7 +584,7 @@ impl AttrMap {
 
     #[inline]
     pub fn get_pose(&self) -> Option<Vec3> {
-        let pos = self.get_f64_vec("POSE")?;
+        let pos = self.get_f32_vec("POSE")?;
         if pos.len() == 3 {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         }
@@ -618,7 +618,7 @@ impl AttrMap {
                     }
                 }
                 _ => {
-                    let ang = self.get_f64_vec("ORI")?;
+                    let ang = self.get_f32_vec("ORI")?;
                     let mat = glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
                         * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
                         * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32);
@@ -652,7 +652,7 @@ impl AttrMap {
     //             quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
     //         }
     //     }else{
-    //         let ang = self.get_f64_vec("ORI")?;
+    //         let ang = self.get_f32_vec("ORI")?;
     //         let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
     //             * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
     //             * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
@@ -665,9 +665,9 @@ impl AttrMap {
 
     pub fn get_matrix(&self) -> Option<Affine3A> {
         let mut affine = Affine3A::IDENTITY;
-        let pos = self.get_f64_vec("POS")?;
+        let pos = self.get_f32_vec("POS")?;
         affine.translation = glam::f32::Vec3A::new(pos[0] as f32, pos[1] as f32, pos[2] as f32);
-        let ang = self.get_f64_vec("ORI")?;
+        let ang = self.get_f32_vec("ORI")?;
         affine.matrix3 = glam::f32::Mat3A::from_rotation_z(ang[2].to_radians() as f32)
             * glam::f32::Mat3A::from_rotation_y(ang[1].to_radians() as f32)
             * glam::f32::Mat3A::from_rotation_x(ang[0].to_radians() as f32);
@@ -679,7 +679,7 @@ impl AttrMap {
         Some(Mat4::from(self.get_matrix()?))
     }
 
-    pub fn get_f64_vec(&self, key: &str) -> Option<Vec<f64>> {
+    pub fn get_f32_vec(&self, key: &str) -> Option<Vec<f64>> {
         let val = self.get_val(key)?;
         return match val {
             AttrVal::DoubleArrayType(data) => Some(data.clone()),

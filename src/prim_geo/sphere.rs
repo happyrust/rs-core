@@ -23,6 +23,8 @@ use opencascade::{primitives::Shape, adhoc::AdHocShape};
 
 use crate::types::attmap::AttrMap;
 use bevy_ecs::prelude::*;
+use crate::NamedAttrMap;
+
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 //
 pub struct Sphere {
@@ -144,10 +146,15 @@ impl From<&AttrMap> for Sphere {
     fn from(m: &AttrMap) -> Self {
         Self {
             center: Default::default(),
-            
-            // size: Vec3::new(m.get_f32("XLEN").unwrap_or_default(),
-            //                 m.get_f32("YLEN").unwrap_or_default(),
-            //                 m.get_f32("ZLEN").unwrap_or_default(),),
+            radius: m.get_f32("RADI").unwrap_or_default(),
+        }
+    }
+}
+
+impl From<&NamedAttrMap> for Sphere {
+    fn from(m: &NamedAttrMap) -> Self {
+        Self {
+            center: Default::default(),
             radius: m.get_f32("RADI").unwrap_or_default(),
         }
     }

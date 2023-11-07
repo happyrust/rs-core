@@ -1,13 +1,13 @@
-use glam::{bool, f32, f64, i32, Vec3};
-use serde_derive::{Deserialize, Serialize};
-use bevy_ecs::component::Component;
-use sea_query::Value;
-use serde_json::json;
-use bevy_reflect::Reflect;
 use crate::attval::AttrVal;
-use crate::attval::AttrVal::{BoolArrayType, BoolType, DoubleArrayType, DoubleType, ElementType, IntArrayType, IntegerType, InvalidType, RefU64Array, RefU64Type, StringArrayType, StringHashType, StringType, Vec3Type, WordType};
-use crate::RefU64;
 use crate::tool::float_tool::f32_round_3;
+use crate::{RefU64, RefU64Vec, SurlValue};
+use bevy_ecs::component::Component;
+use bevy_reflect::Reflect;
+use glam::{bool, f32, f64, i32, Vec3};
+use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
+use sea_query::Value;
+use serde_derive::{Deserialize, Serialize};
+use serde_json::json;
 
 ///新的属性数据结构
 #[derive(
@@ -40,35 +40,39 @@ pub enum NamedAttrValue {
     RefU64Type(RefU64),
 }
 
-impl Into<Value> for NamedAttrValue{
-    fn into(self) -> Value{
+
+impl Into<Value> for NamedAttrValue {
+    fn into(self) -> Value {
         match self {
             NamedAttrValue::IntegerType(val) => Value::Int(val.into()),
-            NamedAttrValue::StringType(val) | NamedAttrValue::WordType(val) |
-                NamedAttrValue::ElementType(val)  => Value::String(Some(val.into())),
+            NamedAttrValue::StringType(val)
+            | NamedAttrValue::WordType(val)
+            | NamedAttrValue::ElementType(val) => Value::String(Some(val.into())),
             NamedAttrValue::F32Type(val) => {
                 //只保留3位有效数字
                 let new_val = f32_round_3(val);
                 Value::Float(val.into())
-            },
+            }
             NamedAttrValue::BoolType(val) => Value::Bool(val.into()),
             NamedAttrValue::RefU64Type(val) => Value::String(Some(val.to_refno_string().into())),
             NamedAttrValue::F32VecType(val) => {
                 let new_val = val.into_iter().map(|x| f32_round_3(x)).collect::<Vec<_>>();
                 Value::Json(Some(json!(new_val).into()))
-            },
+            }
             NamedAttrValue::Vec3Type(val) => Value::Json(Some(json!(val).into())),
             NamedAttrValue::StringArrayType(val) => Value::Json(Some(json!(val).into())),
             NamedAttrValue::BoolArrayType(val) => Value::Json(Some(json!(val).into())),
             NamedAttrValue::IntArrayType(val) => Value::Json(Some(json!(val).into())),
 
             _ => Value::String(None),
+            // NamedAttrValue::InvalidType => {}
         }
     }
 }
 
 impl From<&AttrVal> for NamedAttrValue {
     fn from(v: &AttrVal) -> Self {
+        use crate::attval::AttrVal::*;
         match v.clone() {
             InvalidType => Self::InvalidType,
             IntegerType(d) => Self::IntegerType(d),
@@ -97,7 +101,132 @@ impl From<&AttrVal> for NamedAttrValue {
     }
 }
 
+
 impl NamedAttrValue {
+    #[inline]
+    pub fn i32_value(&self) -> i32 {
+        return match self {
+            Self::IntegerType(v) => *v,
+            _ => 0,
+        };
+    }
+
+    #[inline]
+    pub fn i32_array_value(&self) -> Vec<i32> {
+        return match self {
+            Self::IntArrayType(v) => v.to_vec(),
+            _ => vec![],
+        };
+    }
+
+    // #[inline]
+    // pub fn double_value(&self) -> Option<f64> {
+    //     return match self {
+    //         Self::F32Type(v) => Some(*v),
+    //         _ => None,
+    //     };
+    // }
+
+    #[inline]
+    pub fn f32_value(&self) -> Option<f32> {
+        return match self {
+            Self::F32Type(v) => Some(*v),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn vec3_value(&self) -> Option<Vec3> {
+        return match self {
+            Self::Vec3Type(v) => Some(*v),
+            _ => None,
+        };
+    }
+
+    // #[inline]
+    // pub fn dvec_value(&self) -> Option<Vec<f64>> {
+    //     return match self {
+    //         Self::DoubleArrayType(v) => Some(v.to_vec()),
+    //         _ => None,
+    //     };
+    // }
+
+    #[inline]
+    pub fn element_value(&self) -> Option<String> {
+        return match self {
+            Self::ElementType(v) => Some(v.clone()),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn string_value(&self) -> String {
+        return match self {
+            Self::StringType(v) => v.to_string(),
+            Self::WordType(v) => v.to_string(),
+            _ => "unset".to_string(),
+        };
+    }
+
+    #[inline]
+    pub fn refno_value(&self) -> Option<RefU64> {
+        return match self {
+            Self::RefU64Type(v) => Some(*v),
+            _ => None,
+        };
+    }
+
+    // #[inline]
+    // pub fn string_hash_value(&self) -> Option<AiosStrHash> {
+    //     return match self {
+    //         StringHashType(v) => Some(v.clone()),
+    //         _ => None,
+    //     };
+    // }
+
+    // #[inline]
+    // pub fn refu64_vec_value(&self) -> Option<RefU64Vec> {
+    //     return match self {
+    //         NamedAttrValue::RefU64Array(v) => Some(v.clone()),
+    //         _ => None,
+    //     };
+    // }
+
+    #[inline]
+    pub fn bool_value(&self) -> Option<bool> {
+        return match self {
+            Self::BoolType(v) => Some(*v),
+            _ => None,
+        };
+    }
+
+    #[inline]
+    pub fn get_val_as_string(&self) -> String {
+        return match self {
+            Self::InvalidType => "unset".to_string(),
+            Self:: IntegerType(v) => v.to_string(),
+            Self::StringType(v) => v.to_string(),
+            Self::F32Type(v) => v.to_string(),
+            Self::F32VecType(v) => serde_json::to_string(v).unwrap(),
+            Self::StringArrayType(v) => serde_json::to_string(v).unwrap(),
+            Self::BoolArrayType(v) => serde_json::to_string(v).unwrap(),
+            Self::IntArrayType(v) => serde_json::to_string(v).unwrap(),
+            Self::BoolType(v) => v.to_string(),
+            Self::Vec3Type(v) => serde_json::to_string(v).unwrap(),
+            Self::ElementType(v) => v.to_string(),
+            Self::WordType(v) => v.to_string(),
+            Self::RefU64Type(v) => v.to_refno_str().to_string(),
+            // Self::StringHashType(v) => v.to_string(),
+            // Self::RefU64Array(v) => serde_json::to_string(v).unwrap(),
+        };
+    }
+
+
+}
+
+
+impl NamedAttrValue {
+
     pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
         return match self {
             NamedAttrValue::InvalidType => Box::new("unset".to_string()),
@@ -127,7 +256,14 @@ impl Into<serde_json::Value> for NamedAttrValue {
                 serde_json::Value::Number(serde_json::Number::from_f64(d as _).unwrap())
             }
             NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
-            NamedAttrValue::StringType(s) => serde_json::Value::String(s),
+            NamedAttrValue::StringType(s)
+            | NamedAttrValue::WordType(s)
+            | NamedAttrValue::ElementType(s) => {
+                if s.contains('\0') || s.contains("u0000") {
+                    return serde_json::Value::String("".into());
+                }
+                serde_json::Value::String(s)
+            }
             NamedAttrValue::F32VecType(d) => {
                 serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
             }
@@ -145,13 +281,12 @@ impl Into<serde_json::Value> for NamedAttrValue {
             }
             NamedAttrValue::RefU64Type(d) => {
                 //需要结合PdmsElement来跳转
-                format!("PdmsElement/{}", d.to_string()).into()
+                // format!("PdmsElement/{}", d.to_string()).into()
+                d.to_string().into()
             }
-            NamedAttrValue::WordType(d) => d.into(),
             _ => serde_json::Value::Null,
-            // NamedAttrValue::ElementType(d) => ds.insert(k.as_str(), d),
+            // NamedAttrValue::ElementType(d) => serde_json::Value::String(d),
             // NamedAttrValue::WordType(d) => ds.insert(k.as_str(), d),
-            // NamedAttrValue::RefU64Type(d) => ds.insert(k.as_str(), d),
         }
     }
 }

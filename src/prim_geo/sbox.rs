@@ -14,6 +14,8 @@ use crate::prim_geo::CUBE_GEO_HASH;
 use opencascade::{primitives::Shape, adhoc::AdHocShape};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
+use crate::NamedAttrMap;
+
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SBox {
     pub center: Vec3,
@@ -94,6 +96,23 @@ impl From<&AttrMap> for SBox {
 
 impl From<AttrMap> for SBox {
     fn from(m: AttrMap) -> Self {
+        (&m).into()
+    }
+}
+
+impl From<&NamedAttrMap> for SBox {
+    fn from(m: &NamedAttrMap) -> Self {
+        SBox {
+            center: Default::default(),
+            size: Vec3::new(m.get_f32("XLEN").unwrap_or_default(),
+                            m.get_f32("YLEN").unwrap_or_default(),
+                            m.get_f32("ZLEN").unwrap_or_default(), ),
+        }
+    }
+}
+
+impl From<NamedAttrMap> for SBox {
+    fn from(m: NamedAttrMap) -> Self {
         (&m).into()
     }
 }

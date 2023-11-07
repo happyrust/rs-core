@@ -180,7 +180,6 @@ impl SweepSolid {
                     z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
-                // dbg!((x_axis, y_axis, z_axis));
                 rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
                 rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Z));

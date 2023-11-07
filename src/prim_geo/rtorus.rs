@@ -20,6 +20,7 @@ use opencascade::primitives::{Shape, Wire, Edge};
 use bevy_transform::prelude::Transform;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
+use crate::NamedAttrMap;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SRTorus {
@@ -295,6 +296,29 @@ impl From<&AttrMap> for RTorus {
 
 impl From<AttrMap> for RTorus {
     fn from(m: AttrMap) -> Self {
+        (&m).into()
+    }
+}
+
+
+
+impl From<&NamedAttrMap> for RTorus {
+    fn from(m: &NamedAttrMap) -> Self {
+        let rins = m.get_f32_or_default("RINS");
+        let rout = m.get_f32_or_default("ROUT");
+        let height = m.get_f32_or_default("HEIG");
+        let angle = m.get_f32_or_default("ANGL");
+        RTorus {
+            rins,
+            rout,
+            height,
+            angle,
+        }
+    }
+}
+
+impl From<NamedAttrMap> for RTorus {
+    fn from(m: NamedAttrMap) -> Self {
         (&m).into()
     }
 }

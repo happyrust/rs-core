@@ -1,20 +1,21 @@
-use std::collections::BTreeMap;
-use dashmap::DashMap;
-use glam::i32;
-use sea_query::{MysqlQueryBuilder, Table};
-use serde_derive::{Deserialize, Serialize};
-use std::io::Write;
 use crate::pdms_types::AttrInfo;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
-use sea_query::*;
 use crate::types::attmap::AttrMap;
 use crate::types::attval::AttrVal;
 use crate::types::named_attmap::NamedAttrMap;
+use dashmap::DashMap;
+use glam::i32;
+use sea_query::*;
+use sea_query::{MysqlQueryBuilder, Table};
+use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::io::Write;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PdmsDatabaseInfo {
     // 第一个i32是type_hash ，第二个i32是属性的hash
     pub noun_attr_info_map: DashMap<i32, DashMap<i32, AttrInfo>>,
+    pub named_attr_info_map: DashMap<String, DashMap<String, AttrInfo>>,
 }
 
 const BASIC_TYPE_NAMES: [&'static str; 3] = ["REFNO", "OWNER", "TYPEX"];
@@ -36,6 +37,20 @@ impl PdmsDatabaseInfo {
         map
     }
 
+    pub fn fill_named_map(&mut self) {
+        for kv in &self.noun_attr_info_map {
+            let noun = *kv.key();
+            if noun == 0 {
+                continue;
+            }
+            let mut map = DashMap::default();
+            for info in kv.value() {
+                map.insert(db1_dehash(*info.key() as _), info.value().clone());
+            }
+            self.named_attr_info_map.insert(db1_dehash(noun as _), map);
+        }
+    }
+
     pub fn fix(&self) {
         for kv in self.noun_attr_info_map.iter_mut() {
             for mut info in kv.value().iter_mut() {
@@ -47,8 +62,9 @@ impl PdmsDatabaseInfo {
     ///生成所有db info里的table
     pub fn gen_all_create_table_sql(&self) -> Vec<String> {
         let mut sqls = vec![];
-        for noun_att_info in &self.noun_attr_info_map {  // 遍历数据库中的名词属性信息
-            let type_name = db1_dehash(*noun_att_info.key() as _);  // 获取属性类型名
+        for noun_att_info in &self.noun_attr_info_map {
+            // 遍历数据库中的名词属性信息
+            let type_name = db1_dehash(*noun_att_info.key() as _); // 获取属性类型名
             if type_name.is_empty() {
                 continue;
             }
@@ -67,14 +83,20 @@ impl PdmsDatabaseInfo {
             .to_owned();
         let hash = db1_hash(type_name) as i32;
         let info = self.noun_attr_info_map.get(&hash)?;
-        let bmap: BTreeMap<String, AttrInfo> = info.iter().map(|x| (x.name.clone(), x.clone())).collect();  // 创建BTreeMap用于存储属性信息
+        let bmap: BTreeMap<String, AttrInfo> =
+            info.iter().map(|x| (x.name.clone(), x.clone())).collect(); // 创建BTreeMap用于存储属性信息
 
         // pub REFNO: RefU64,
         // pub NAME: String,
         // pub OWNER: RefU64,
         // pub TYPE: String,
         // pub TYPEX: String,
-        table_create_statement.col(&mut ColumnDef::new(Alias::new("REFNO")).string().primary_key().not_null());
+        table_create_statement.col(
+            &mut ColumnDef::new(Alias::new("REFNO"))
+                .string()
+                .primary_key()
+                .not_null(),
+        );
         table_create_statement.col(&mut ColumnDef::new(Alias::new("NAME")).string());
         table_create_statement.col(&mut ColumnDef::new(Alias::new("OWNER")).string());
         table_create_statement.col(&mut ColumnDef::new(Alias::new("TYPE")).not_null().string());
@@ -82,8 +104,14 @@ impl PdmsDatabaseInfo {
         table_create_statement.col(&mut ColumnDef::new(Alias::new("TYPEX")).string());
         for kv in bmap.values() {
             let att_name = db1_dehash(kv.hash as _);
-            if att_name == "NAME" || att_name == "TYPE" || att_name == "TYPEX" || att_name == "OWNER"
-                || att_name.contains(":") || att_name.contains("@")  {  // 如果属性名是"NAME"或"TYPE"，则跳过
+            if att_name == "NAME"
+                || att_name == "TYPE"
+                || att_name == "TYPEX"
+                || att_name == "OWNER"
+                || att_name.contains(":")
+                || att_name.contains("@")
+            {
+                // 如果属性名是"NAME"或"TYPE"，则跳过
                 continue;
             }
             let mut column_def = ColumnDef::new(Alias::new(att_name));
@@ -95,8 +123,10 @@ impl PdmsDatabaseInfo {
                 //不需要存储double这么高精度
                 AttrVal::DoubleType(_) => column_def.float(),
                 AttrVal::BoolType(_) => column_def.boolean(),
-                AttrVal::StringType(_) | AttrVal::WordType(_) | AttrVal::ElementType(_)
-                    | AttrVal::RefU64Type(_) => column_def.string(),
+                AttrVal::StringType(_)
+                | AttrVal::WordType(_)
+                | AttrVal::ElementType(_)
+                | AttrVal::RefU64Type(_) => column_def.string(),
                 _ => column_def.json(),
             };
             table_create_statement.col(&mut column_def);
@@ -377,4 +407,3 @@ impl PdmsDatabaseInfo {
 unsafe impl Send for PdmsDatabaseInfo {}
 
 unsafe impl Sync for PdmsDatabaseInfo {}
-

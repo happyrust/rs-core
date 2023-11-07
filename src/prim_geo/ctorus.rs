@@ -22,6 +22,7 @@ use crate::tool::float_tool::hash_f32;
 use opencascade::primitives::{Shape, Wire};
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
+use crate::NamedAttrMap;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SCTorus {
@@ -278,6 +279,25 @@ impl From<&AttrMap> for CTorus {
 
 impl From<AttrMap> for CTorus {
     fn from(m: AttrMap) -> Self {
+        (&m).into()
+    }
+}
+
+impl From<&NamedAttrMap> for CTorus {
+    fn from(m: &NamedAttrMap) -> Self {
+        let r_i = m.get_f32_or_default("RINS");
+        let r_o = m.get_f32_or_default("ROUT");
+        let angle = m.get_f32_or_default("ANGL");
+        CTorus {
+            rins: r_i,
+            rout: r_o,
+            angle,
+        }
+    }
+}
+
+impl From<NamedAttrMap> for CTorus {
+    fn from(m: NamedAttrMap) -> Self {
         (&m).into()
     }
 }

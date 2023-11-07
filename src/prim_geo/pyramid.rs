@@ -18,6 +18,7 @@ use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Vertex, Shape, Solid, Wire};
+use crate::NamedAttrMap;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 
@@ -236,6 +237,46 @@ impl From<&AttrMap> for Pyramid {
 
 impl From<AttrMap> for Pyramid {
     fn from(m: AttrMap) -> Self {
+        (&m).into()
+    }
+}
+
+
+impl From<&NamedAttrMap> for Pyramid {
+    fn from(m: &NamedAttrMap) -> Self {
+        let xbot = m.get_f32_or_default("XBOT");
+        let ybot = m.get_f32_or_default("YBOT");
+
+        let xtop = m.get_f32_or_default("XTOP");
+        let ytop = m.get_f32_or_default("YTOP");
+
+        let xoff = m.get_f32_or_default("XOFF");
+        let yoff = m.get_f32_or_default("YOFF");
+
+        let height = m.get_f32_or_default("HEIG");
+
+
+        Pyramid {
+            pbax_pt: Default::default(),
+            pbax_dir: Vec3::X,
+            pcax_pt: Default::default(),
+            pcax_dir: Vec3::Y,
+            paax_pt: Default::default(),
+            paax_dir: Vec3::Z,
+            pbtp: xtop,
+            pctp: ytop,
+            pbbt: xbot,
+            pcbt: ybot,
+            ptdi: height / 2.0,
+            pbdi: -height / 2.0,
+            pbof: xoff,
+            pcof: yoff,
+        }
+    }
+}
+
+impl From<NamedAttrMap> for Pyramid {
+    fn from(m: NamedAttrMap) -> Self {
         (&m).into()
     }
 }

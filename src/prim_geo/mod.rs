@@ -28,3 +28,20 @@ pub const TUBI_GEO_HASH: u64 = 2u64;
 pub const BOXI_GEO_HASH: u64 = 1u64;
 pub const SPHERE_GEO_HASH: u64 = 3u64;
 
+pub use sbox::*;
+pub use sphere::*;
+pub use cylinder::*;
+pub use snout::*;
+pub use dish::*;
+pub use ctorus::*;
+pub use extrusion::*;
+pub use revolution::*;
+pub use pyramid::*;
+pub use lpyramid::*;
+pub use rtorus::*;
+pub use facet::*;
+pub use sweep_solid::*;
+pub use tubing::*;
+pub use polyhedron::*;
+
+

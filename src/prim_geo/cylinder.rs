@@ -24,6 +24,7 @@ use opencascade::{
 };
 #[cfg(feature = "opencascade_rs")]
 use opencascade::adhoc::AdHocShape;
+use crate::NamedAttrMap;
 
 
 ///元件库里的LCylinder
@@ -480,7 +481,6 @@ impl From<&AttrMap> for SCylinder {
     fn from(m: &AttrMap) -> Self {
         let phei = m.get_f32_or_default("HEIG");
         let pdia = m.get_f32_or_default("DIAM");
-        // dbg!(phei, pdia);
         SCylinder {
             paxi_expr: "Z".to_string(),
             paxi_pt: Default::default(),
@@ -496,6 +496,30 @@ impl From<&AttrMap> for SCylinder {
 
 impl From<AttrMap> for SCylinder {
     fn from(m: AttrMap) -> Self {
+        (&m).into()
+    }
+}
+
+
+impl From<&NamedAttrMap> for SCylinder {
+    fn from(m: &NamedAttrMap) -> Self {
+        let phei = m.get_f32_or_default("HEIG");
+        let pdia = m.get_f32_or_default("DIAM");
+        SCylinder {
+            paxi_expr: "Z".to_string(),
+            paxi_pt: Default::default(),
+            paxi_dir: Vec3::Z,
+            phei,
+            pdia,
+            negative: false,
+            center_in_mid: true,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<NamedAttrMap> for SCylinder {
+    fn from(m: NamedAttrMap) -> Self {
         (&m).into()
     }
 }

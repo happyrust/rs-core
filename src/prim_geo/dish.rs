@@ -19,6 +19,7 @@ use crate::tool::float_tool::hash_f32;
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::{primitives::Shape, adhoc::AdHocShape};
+use crate::NamedAttrMap;
 
 //可不可以用来表达 sphere
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
@@ -204,6 +205,26 @@ impl From<&AttrMap> for Dish {
 
 impl From<AttrMap> for Dish {
     fn from(m: AttrMap) -> Self {
+        (&m).into()
+    }
+}
+
+impl From<&NamedAttrMap> for Dish {
+    fn from(m: &NamedAttrMap) -> Self {
+        Self {
+            paax_expr: "Z".to_string(),
+            paax_pt: Default::default(),
+            paax_dir: Vec3::Z,
+            pdis: 0.0,
+            pheig: m.get_f32_or_default("HEIG"),
+            pdia: m.get_f32_or_default("DIAM"),
+            prad: m.get_f32_or_default("RADI"),
+        }
+    }
+}
+
+impl From<NamedAttrMap> for Dish {
+    fn from(m: NamedAttrMap) -> Self {
         (&m).into()
     }
 }

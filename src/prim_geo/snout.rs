@@ -16,6 +16,7 @@ use truck_modeling::Shell;
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Shape, Solid, Vertex, Wire};
+use crate::NamedAttrMap;
 
 #[derive(
     Component,
@@ -233,12 +234,12 @@ impl BrepShapeTrait for LSnout {
 
 impl From<&AttrMap> for LSnout {
     fn from(m: &AttrMap) -> Self {
-        let h = m.get_val("HEIG").unwrap().double_value().unwrap() as f32;
+        let h = m.get_f32("HEIG").unwrap_or_default();
         LSnout {
             ptdi: h / 2.0,
             pbdi: -h / 2.0,
-            ptdm: m.get_val("DTOP").unwrap().double_value().unwrap() as f32,
-            pbdm: m.get_val("DBOT").unwrap().double_value().unwrap() as f32,
+            ptdm: m.get_f32("DTOP").unwrap_or_default(),
+            pbdm: m.get_f32("DBOT").unwrap_or_default(),
             ..Default::default()
         }
     }
@@ -246,6 +247,25 @@ impl From<&AttrMap> for LSnout {
 
 impl From<AttrMap> for LSnout {
     fn from(m: AttrMap) -> Self {
+        (&m).into()
+    }
+}
+
+impl From<&NamedAttrMap> for LSnout {
+    fn from(m: &NamedAttrMap) -> Self {
+        let h = m.get_f32("HEIG").unwrap_or_default();
+        LSnout {
+            ptdi: h / 2.0,
+            pbdi: -h / 2.0,
+            ptdm: m.get_f32("DTOP").unwrap_or_default(),
+            pbdm: m.get_f32("DBOT").unwrap_or_default(),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<NamedAttrMap> for LSnout {
+    fn from(m: NamedAttrMap) -> Self {
         (&m).into()
     }
 }
