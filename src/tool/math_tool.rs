@@ -36,6 +36,10 @@ pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3 {
     m
 }
 
+pub fn convert_to_xyz(s: &str) -> String{
+    s.replace("E", "X").replace("N", "Y").replace("U", "Z")
+        .replace("W", "-X").replace("S", "-Y").replace("D", "-Z")
+}
 
 pub fn to_pdms_vec_str(vec: &Vec3) -> String {
     for (v, v_str) in AXIS_VEC_TUPLES.iter() {
@@ -114,8 +118,17 @@ pub fn to_pdms_ori_str(rot: &Mat3) -> String {
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
 
-    // "E".to_string()
     format!("Y is {} and Z is {}", to_pdms_vec_str(y_axis), to_pdms_vec_str(z_axis))
+}
+
+#[inline]
+pub fn to_pdms_ori_xyz_str(rot: &Mat3) -> String {
+    let y_axis = &rot.y_axis;
+    let z_axis = &rot.z_axis;
+    let s = to_pdms_vec_str(y_axis);
+    //讲s里面的 "E" 替换成 "X", "N" 替换成 "Y", "U" 替换成 "Z", "W" 替换成 "-X", "S" 替换成 "-Y", "D" 替换成 "-Z"
+    format!("Y is {} and Z is {}", convert_to_xyz(&to_pdms_vec_str(y_axis)),
+            convert_to_xyz(&to_pdms_vec_str(z_axis)))
 }
 
 

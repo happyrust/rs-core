@@ -20,6 +20,7 @@ use glam::{Affine3A, Mat4, Vec3, DVec3, Quat, Mat3};
 use crate::consts::UNSET_STR;
 use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
+use crate::cache::mgr::BytesTrait;
 
 ///带名称的属性map
 #[derive(
@@ -39,6 +40,8 @@ pub struct NamedAttrMap {
     #[serde(flatten)]
     pub map: BTreeMap<String, NamedAttrValue>,
 }
+
+impl BytesTrait for NamedAttrMap {}
 
 impl From<SurlValue> for NamedAttrMap {
     fn from(s: SurlValue) -> Self {
@@ -60,7 +63,6 @@ impl From<SurlValue> for NamedAttrMap {
                         };
                         let named_value = match default_val {
                             crate::AttrVal::IntegerType(_) => {
-                                // NamedAttrValue::IntegerType(i32::try_from(v.clone()).unwrap())
                                 NamedAttrValue::IntegerType(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::StringType(_)
@@ -302,6 +304,11 @@ impl NamedAttrMap {
         let levels = self.get_level()?;
         let l = level.unwrap_or(LEVEL_VISBLE);
         Some(levels[0] <= l && l <= levels[1])
+    }
+
+    #[inline]
+    pub fn get_refno_or_default(&self) -> RefU64 {
+       self.get_refno().unwrap_or_default()
     }
 
     #[inline]
@@ -810,6 +817,37 @@ impl NamedAttrMap {
         }
         return None;
     }
+
+    /// 获取string属性数组，忽略为空的值
+    pub fn get_attr_strings_without_default(&self, keys: &[&str]) -> Vec<String> {
+        let mut results = vec![];
+        for &attr_name in keys {
+            if let Some(result) = self.get_val(attr_name) {
+                match result {
+                    NamedAttrValue::StringType(v) => {
+                        if v != "" {
+                            results.push(v.trim_matches('\0').to_owned().clone().into());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        results
+    }
+
+    pub fn get_attr_strings(&self, keys: &[&str]) -> Vec<String> {
+        let mut results = vec![];
+        for &attr_name in keys {
+            if let Some(result) = self.get_str(attr_name) {
+                results.push(result.trim_matches('\0').to_owned().clone().into());
+            } else {
+                results.push("".to_string());
+            }
+        }
+        results
+    }
+
 
 
     //后面还要根据参考号确定使用哪个类型、还有db numer

@@ -18,7 +18,7 @@ use crate::types::attmap::AttrMap;
 ///元件库信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ScomInfo {
-    pub attr_map: AttrMap,
+    pub attr_map: NamedAttrMap,
     pub gtype: String,
     pub dtse_params: Vec<DatasetParamStr>,
     ///几何体信息

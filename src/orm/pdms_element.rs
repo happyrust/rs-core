@@ -51,7 +51,7 @@ impl ActiveModelBehavior for ActiveModel {}
 
 impl Model{
     #[inline]
-    pub fn get_type(&self) -> &str{
+    pub fn get_type_str(&self) -> &str{
         return self.noun.as_str()
     }
     #[inline]
