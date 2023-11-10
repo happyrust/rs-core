@@ -80,9 +80,19 @@ pub fn get_default_pdms_db_info() -> &'static PdmsDatabaseInfo {
     static INSTANCE: OnceCell<PdmsDatabaseInfo> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         //会动态维护这个json，所以需要通过文件来加载
-        let mut file = File::open("all_attr_info.json").unwrap();
+        //使用feature，来选择是否加载文件，还是使用include_str
         let mut string = String::new();
-        file.read_to_string(&mut string);
+        #[cfg(feature = "load_file")]
+        {
+            let mut file = File::open("all_attr_info.json").unwrap();
+            file.read_to_string(&mut string);
+        }
+
+        #[cfg(not(feature = "load_file"))]
+        {
+            string = include_str!("../all_attr_info.json").to_string();
+        }
+
         let mut db_info = serde_json::from_str::<PdmsDatabaseInfo>(&string).unwrap();
         db_info.fill_named_map();
         // dbinfo.fix();
