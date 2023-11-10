@@ -24,6 +24,17 @@ pub struct DbOption {
     #[clap(long)]
     pub use_tidb: Option<bool>,
 
+    //添加这4个变量
+    #[clap(long)]
+    pub v_ip: String,
+    #[clap(long)]
+    pub v_user: String,
+    #[clap(long)]
+    pub v_password: String,
+    #[clap(long)]
+    pub v_port: String,
+
+
 
     #[clap(long)]
     pub replace_dbs: bool,
@@ -124,6 +135,14 @@ pub struct DbOption {
 
 
 impl DbOption{
+
+    #[inline]
+    pub fn get_version_db_conn_str(&self) -> String {
+        let ip = self.v_ip.as_str();
+        let port = self.v_port.as_str();
+        format!("{ip}:{port}")
+    }
+
     #[inline]
     pub fn get_mysql_conn_str(&self) -> String {
         let user = self.user.as_str();
