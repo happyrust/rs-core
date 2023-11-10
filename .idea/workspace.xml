@@ -15,10 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP surreal">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP adjust">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/all_attr_info.json" beforeDir="false" afterPath="$PROJECT_DIR$/all_attr_info.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -516,7 +514,7 @@
       <workItem from="1699321038470" duration="1160000" />
       <workItem from="1699347328960" duration="2845000" />
       <workItem from="1699356060534" duration="1461000" />
-      <workItem from="1699438228988" duration="3021000" />
+      <workItem from="1699438228988" duration="3991000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -861,7 +859,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="250" />
+    <option name="localTasksCounter" value="251" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -904,7 +902,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="调小角度的TOL" />
     <MESSAGE value="添加一下常用数学方法" />
     <MESSAGE value="添加GeoBasicType的更多类型" />
     <MESSAGE value="merge" />
@@ -929,7 +926,8 @@
     <MESSAGE value="WIP 生成类型" />
     <MESSAGE value="WIP fix" />
     <MESSAGE value="WIP surreal" />
-    <option name="LAST_COMMIT_MESSAGE" value="WIP surreal" />
+    <MESSAGE value="WIP adjust" />
+    <option name="LAST_COMMIT_MESSAGE" value="WIP adjust" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
