@@ -312,7 +312,6 @@ impl AttrMap {
         None
     }
 
-    //获取spref
     #[inline]
     pub fn get_foreign_refno(&self, key: &str) -> Option<RefU64> {
         if let RefU64Type(d) = self.get_val(key)? {
@@ -354,11 +353,11 @@ impl AttrMap {
     }
 
     #[inline]
-    pub fn get_owner(&self) -> Option<RefU64> {
-        if let RefU64Type(d) = self.get_val("OWNER")? {
-            return Some(*d);
+    pub fn get_owner(&self) -> RefU64 {
+        if let Some(RefU64Type(d)) = self.get_val("OWNER") {
+            return *d;
         }
-        None
+        RefU64::default()
     }
 
     #[inline]

@@ -38,6 +38,7 @@ pub enum NamedAttrValue {
     ElementType(String),
     WordType(String),
     RefU64Type(RefU64),
+    RefU64Array(Vec<RefU64>),
 }
 
 
@@ -203,7 +204,7 @@ impl NamedAttrValue {
     #[inline]
     pub fn get_val_as_string(&self) -> String {
         return match self {
-            Self::InvalidType => "unset".to_string(),
+            _ => "unset".to_string(),
             Self:: IntegerType(v) => v.to_string(),
             Self::StringType(v) => v.to_string(),
             Self::F32Type(v) => v.to_string(),
@@ -229,7 +230,7 @@ impl NamedAttrValue {
 
     pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
         return match self {
-            NamedAttrValue::InvalidType => Box::new("unset".to_string()),
+            _ => Box::new("unset".to_string()),
             NamedAttrValue::StringType(v)
             | NamedAttrValue::ElementType(v)
             | NamedAttrValue::WordType(v) => Box::new(v.to_string()),

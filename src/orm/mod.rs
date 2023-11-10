@@ -1,7 +1,7 @@
 pub mod pdms_element;
 pub mod log_data;
 pub mod diff_data;
-pub mod entities;
+// pub mod entities;
 
 pub mod types;
 pub mod sql;
@@ -17,7 +17,7 @@ use std::collections::BTreeMap;
 use bevy_reflect::TypeRegistry;
 use once_cell::sync::OnceCell;
 
-pub use entities::*;
+// pub use entities::*;
 pub use types::*;
 pub use traits::*;
 pub use macros::*;

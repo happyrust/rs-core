@@ -1,5 +1,5 @@
 use crate::orm::{BoolVec, F32Vec, I32Vec, StringVec};
-use crate::pdms_types::{DEFAULT_NAMED_NOUNS, LEVEL_VISBLE, TOTAL_NEG_NOUN_NAMES};
+use crate::pdms_types::*;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::types::attmap::AttrMap;
 use crate::types::named_attvalue::NamedAttrValue;
@@ -18,21 +18,22 @@ use crate::prim_geo::*;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use glam::{Affine3A, Mat4, Vec3, DVec3, Quat, Mat3};
 use crate::consts::UNSET_STR;
+use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
 
 ///带名称的属性map
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Deref,
-    DerefMut,
-    Clone,
-    Default,
-    Debug,
-    Component,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Deref,
+DerefMut,
+Clone,
+Default,
+Debug,
+Component,
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
@@ -79,7 +80,7 @@ impl From<SurlValue> for NamedAttrMap {
                                         .collect(),
                                 )
                             }
-                            crate::AttrVal::StringArrayType(_) =>  {
+                            crate::AttrVal::StringArrayType(_) => {
                                 let v: Vec<surrealdb::sql::Value> =
                                     v.try_into().unwrap_or_default();
                                 NamedAttrValue::StringArrayType(
@@ -88,7 +89,7 @@ impl From<SurlValue> for NamedAttrMap {
                                         .collect(),
                                 )
                             }
-                            crate::AttrVal::BoolArrayType(_) =>  {
+                            crate::AttrVal::BoolArrayType(_) => {
                                 let v: Vec<surrealdb::sql::Value> =
                                     v.try_into().unwrap_or_default();
                                 NamedAttrValue::BoolArrayType(
@@ -97,7 +98,7 @@ impl From<SurlValue> for NamedAttrMap {
                                         .collect(),
                                 )
                             }
-                            crate::AttrVal::IntArrayType(_) =>  {
+                            crate::AttrVal::IntArrayType(_) => {
                                 let v: Vec<surrealdb::sql::Value> =
                                     v.try_into().unwrap_or_default();
                                 NamedAttrValue::IntArrayType(
@@ -141,7 +142,7 @@ impl Into<DynamicStruct> for NamedAttrMap {
         let mut ds = DynamicStruct::default();
         for (k, v) in self.map {
             match v.clone() {
-                NamedAttrValue::InvalidType => {}
+                _ => {}
                 NamedAttrValue::IntegerType(d) => ds.insert(k.as_str(), d),
                 NamedAttrValue::StringType(d) => ds.insert(k.as_str(), d),
                 NamedAttrValue::F32Type(d) => ds.insert(k.as_str(), d),
@@ -186,6 +187,26 @@ impl NamedAttrMap {
         TOTAL_NEG_NOUN_NAMES.contains(&self.get_type_str())
     }
 
+    #[inline]
+    pub fn get_name(&self) -> Option<String>{
+        self.get_string("NAME")
+    }
+
+    #[inline]
+    pub fn get_name_or_default(&self) -> String{
+        self.get_string_or_default("NAME")
+    }
+
+    #[inline]
+    pub fn set_e3d_version(&mut self, v: i32){
+        self.map.insert("VERSION".into(), NamedAttrValue::IntegerType(v));
+    }
+
+    #[inline]
+    pub fn get_e3d_version(&self) -> i32{
+        self.get_i32("VERSION").unwrap_or_default()
+    }
+
     pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap) {
         let mut default_att = NamedAttrMap::default();
         let mut comp_att = NamedAttrMap::default();
@@ -198,6 +219,74 @@ impl NamedAttrMap {
             }
         }
         (default_att, comp_att)
+    }
+
+    #[inline]
+    pub fn get_foreign_refno(&self, key: &str) -> Option<RefU64> {
+        if let NamedAttrValue::RefU64Type(d) = self.get_val(key)? {
+            return Some(*d);
+        }
+        None
+    }
+
+
+    #[inline]
+    pub fn is_type(&self, type_name: &str) -> bool {
+        self.get_type() == type_name
+    }
+
+    #[inline]
+    pub fn get_type_cloned(&self) -> Option<String> {
+        self.get_str("TYPE").map(|x| x.to_string())
+    }
+
+    #[inline]
+    pub fn get_u32(&self, key: &str) -> Option<u32> {
+        self.get_i32(key).map(|s| s as u32)
+    }
+
+    #[inline]
+    pub fn get_i32(&self, key: &str) -> Option<i32> {
+        let v = self.get_val(key)?;
+        match v {
+            NamedAttrValue::IntegerType(d) => Some(*d as i32),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn get_bool(&self, key: &str) -> Option<bool> {
+        if let NamedAttrValue::BoolType(d) = self.get_val(key)? {
+            return Some(*d);
+        }
+        None
+    }
+
+    #[inline]
+    pub fn get_refu64(&self, key: &str) -> Option<RefU64> {
+        let v = self.get_val(key)?;
+        match v {
+            NamedAttrValue::RefU64Type(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn get_refu64_vec(&self, key: &str) -> Option<Vec<RefU64>> {
+        let v = self.get_val(key)?;
+        match v {
+            NamedAttrValue::RefU64Array(d) => Some(d.clone()),
+            _ => None,
+        }
+    }
+
+    // #[inline]
+    // pub fn get_refno_as_string(&self) -> Option<String> {
+    //     self.get_as_smol_str("REFNO")
+    // }
+
+    pub fn get_obstruction(&self) -> Option<u32> {
+        self.get_u32("OBST")
     }
 
     pub fn get_level(&self) -> Option<[u32; 2]> {
@@ -305,11 +394,11 @@ impl NamedAttrMap {
     pub fn get_matrix(&self) -> Option<Affine3A> {
         let mut affine = Affine3A::IDENTITY;
         let pos = self.get_f32_vec("POS")?;
-        affine.translation = glam::f32::Vec3A::new(pos[0] , pos[1] , pos[2] );
+        affine.translation = glam::f32::Vec3A::new(pos[0], pos[1], pos[2]);
         let ang = self.get_f32_vec("ORI")?;
-        affine.matrix3 = glam::f32::Mat3A::from_rotation_z(ang[2].to_radians() )
-            * glam::f32::Mat3A::from_rotation_y(ang[1].to_radians() )
-            * glam::f32::Mat3A::from_rotation_x(ang[0].to_radians() );
+        affine.matrix3 = glam::f32::Mat3A::from_rotation_z(ang[2].to_radians())
+            * glam::f32::Mat3A::from_rotation_y(ang[1].to_radians())
+            * glam::f32::Mat3A::from_rotation_x(ang[0].to_radians());
         Some(affine)
     }
 
@@ -329,7 +418,7 @@ impl NamedAttrMap {
 
     pub fn get_vec3(&self, key: &str) -> Option<Vec3> {
         if let NamedAttrValue::Vec3Type(d) = self.get_val(key)? {
-            return Some(Vec3::new(d[0] , d[1] , d[2] ));
+            return Some(Vec3::new(d[0], d[1], d[2]));
         }
         None
     }
@@ -391,7 +480,7 @@ impl NamedAttrMap {
     #[inline]
     pub fn get_position(&self) -> Option<Vec3> {
         if let Some(pos) = self.get_f32_vec("POS") {
-            return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
+            return Some(Vec3::new(pos[0], pos[1], pos[2]));
         } else {
             //如果没有POS，就以POSS来尝试
             self.get_poss()
@@ -521,7 +610,6 @@ impl NamedAttrMap {
         }
         return Some(quat);
     }
-
 }
 
 impl NamedAttrMap {
@@ -608,8 +696,8 @@ impl NamedAttrMap {
         db: &DatabaseConnection,
         replace: bool,
     ) -> anyhow::Result<()>
-    where
-        I: IntoIterator<Item = Self>,
+        where
+            I: IntoIterator<Item=Self>,
     {
         let sqls = Self::gen_insert_many_sql(atts, replace)?;
         for sql in sqls {
@@ -620,8 +708,8 @@ impl NamedAttrMap {
 
     ///生成插入的语句
     pub fn gen_insert_many_sql<I>(atts: I, replace: bool) -> anyhow::Result<Vec<String>>
-    where
-        I: IntoIterator<Item = Self>,
+        where
+            I: IntoIterator<Item=Self>,
     {
         ///按照类型重新划分组
         let mut grouped_map: BTreeMap<String, Vec<Self>> = BTreeMap::new();
@@ -666,6 +754,63 @@ impl NamedAttrMap {
 
         Ok(())
     }
+
+    //计算使用元件库的design 元件 hash
+    pub fn cal_cata_hash(&self) -> Option<u64> {
+        //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
+        let type_name = self.get_type_str();
+        if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
+            return Some(*self.get_refno().unwrap_or_default());
+        }
+        //由于有ODESP这种，会导致复用出现问题，怎么解决这个问题
+        //1、主动去判断是否CataRef是这个类型，即有ODESP这种字段，然后从复用的逻辑排除出来
+        //2、解析的时候发现表达式有这些字段，主动去给catref加一个标记位，表示是不能复用的构件
+        //3、把相关的数据都做一遍统计，owner、attach
+        let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
+            "CATR"
+        } else {
+            "SPRE"
+        };
+        if let Some(spref) = self.get_as_string(ref_name) {
+            if spref.starts_with('0') {
+                return None;
+            }
+            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
+                return Some(*self.get_refno().unwrap_or_default());
+            }
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            std::hash::Hash::hash(&spref, &mut hasher);
+            if let Some(des_para) = self.get_f32_vec("DESP") {
+                hash_f32_slice(&des_para, &mut hasher);
+            }
+            let ref_strs = ["ANGL", "HEIG", "RADI"];
+            let key_strs = self.get_as_strings(&ref_strs);
+            for (ref_str, key_str) in ref_strs.iter().zip(key_strs) {
+                std::hash::Hash::hash(*ref_str, &mut hasher);
+                std::hash::Hash::hash(&key_str, &mut hasher);
+            }
+
+            //如果是土建模型 "DRNS", "DRNE"
+            if let Some(drns) = self.get_as_string("DRNS") &&
+                let Some(drne) = self.get_as_string("DRNE") {
+                std::hash::Hash::hash(&drns, &mut hasher);
+                std::hash::Hash::hash(&drne, &mut hasher);
+                let poss = self.get_vec3("POSS").unwrap_or_default();
+                let pose = self.get_vec3("POSE").unwrap_or_default();
+                let v = (pose - poss).length();
+                hash_f32(v, &mut hasher);
+            }
+            //JUSL is adjus in wire calculation, so here we should make hash unique by jusl
+            let jusl = self.get_str_or_default("JUSL");
+            std::hash::Hash::hash(jusl, &mut hasher);
+
+            let val = std::hash::Hasher::finish(&hasher);
+
+            return Some(val);
+        }
+        return None;
+    }
+
 
     //后面还要根据参考号确定使用哪个类型、还有db numer
     //生成查询语句

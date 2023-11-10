@@ -17,6 +17,13 @@ pub fn hash_f64_slice<T: Hasher>(a: &[f64], hasher: &mut T) {
     }
 }
 
+#[inline]
+pub fn hash_f32_slice<T: Hasher>(a: &[f32], hasher: &mut T) {
+    for v in a {
+        hash_f32(*v, hasher);
+    }
+}
+
 //三位有效数字的精度
 #[inline]
 pub fn hash_f32<T: Hasher>(v: f32, hasher: &mut T) {
