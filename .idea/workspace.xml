@@ -15,13 +15,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP add surreal config option">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP refactor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/orm/pdms_element.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/orm/pdms_element.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/math_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/math_tool.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/attmap.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -244,10 +239,10 @@
     </configuration>
     <list>
       <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.Test test::test_sql::test_insert::test_gen_insert_sql" />
-      <item itemvalue="Cargo.Test test::test_sql::test_table::test_create_table" />
       <item itemvalue="Cargo.Test orm::diff_data::test_query_diff" />
       <item itemvalue="Cargo.Test orm::sql::test_do_op_reflect_sql" />
+      <item itemvalue="Cargo.Test test::test_sql::test_insert::test_gen_insert_sql" />
+      <item itemvalue="Cargo.Test test::test_sql::test_table::test_create_table" />
       <item itemvalue="Cargo.Test test::test_sync2::test_gen_att_type_structs" />
     </list>
     <recent_temporary>
@@ -522,7 +517,7 @@
       <workItem from="1699438228988" duration="5369000" />
       <workItem from="1699588195822" duration="2505000" />
       <workItem from="1699608077201" duration="1234000" />
-      <workItem from="1699642151878" duration="598000" />
+      <workItem from="1699642151878" duration="1377000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -867,7 +862,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="253" />
+    <option name="localTasksCounter" value="254" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -910,7 +905,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="merge" />
     <MESSAGE value="storus  的特殊处理" />
     <MESSAGE value="增加ngmr负实体的处理" />
     <MESSAGE value="fix substract boolean" />
@@ -935,7 +929,8 @@
     <MESSAGE value="WIP adjust" />
     <MESSAGE value="WIP commit" />
     <MESSAGE value="WIP add surreal config option" />
-    <option name="LAST_COMMIT_MESSAGE" value="WIP add surreal config option" />
+    <MESSAGE value="WIP refactor" />
+    <option name="LAST_COMMIT_MESSAGE" value="WIP refactor" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

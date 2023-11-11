@@ -126,7 +126,7 @@ impl BrepShapeTrait for Extrusion {
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let unit = Self {
             verts: self.verts.clone(),
-            height: 1000.0, //开放一点大小,不然三角化出来的不对
+            height: 100.0, //开放一点大小,不然三角化出来的不对
             fradius_vec: self.fradius_vec.clone(),
             cur_type: self.cur_type.clone(),
             ..Default::default()
@@ -164,41 +164,41 @@ impl BrepShapeTrait for Extrusion {
             return None;
         }
         let mut wire = gen_wire(&self.verts, &self.fradius_vec).ok()?;
-        // if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
-        //     if let Surface::Plane(plane) = face.surface() {
-        //         let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
-        //         if plane.normal().dot(extrude_dir) < 0.0 {
-        //             wire = wire.inverse();
-        //         }
-        //         let e_len = wire.len();
-        //         let pts = wire
-        //             .edge_iter()
-        //             .enumerate()
-        //             .map(|(i, e)| {
-        //                 let curve = e.oriented_curve();
-        //                 let polyline =
-        //                     PolylineCurve::from_curve(&curve, curve.range_tuple(), self.tol() as _);
-        //                 // let polyline = PolylineCurve::default();
-        //                 // dbg!(&polyline);
-        //                 let mut v = polyline
-        //                     .iter()
-        //                     .map(|x| Vec2::new(x.x as _, x.y as _))
-        //                     .collect::<Vec<_>>();
-        //                 if !v.is_empty() && i != (e_len - 1) {
-        //                     v.pop();
-        //                 }
-        //                 v
-        //             })
-        //             .flatten()
-        //             .collect::<Vec<Vec2>>();
-        //         // dbg!(&pts);
-        //         unsafe {
-        //             let mut cross_section = ManifoldCrossSectionRust::from_points(&pts);
-        //             let manifold = cross_section.extrude(100.0, 0);
-        //             return Some(PlantMesh::from(manifold));
-        //         }
-        //     }
-        // }
+        if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
+            if let Surface::Plane(plane) = face.surface() {
+                let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
+                if plane.normal().dot(extrude_dir) < 0.0 {
+                    wire = wire.inverse();
+                }
+                let e_len = wire.len();
+                let pts = wire
+                    .edge_iter()
+                    .enumerate()
+                    .map(|(i, e)| {
+                        let curve = e.oriented_curve();
+                        let polyline =
+                            PolylineCurve::from_curve(&curve, curve.range_tuple(), self.tol() as _);
+                        // let polyline = PolylineCurve::default();
+                        // dbg!(&polyline);
+                        let mut v = polyline
+                            .iter()
+                            .map(|x| Vec2::new(x.x as _, x.y as _))
+                            .collect::<Vec<_>>();
+                        if !v.is_empty() && i != (e_len - 1) {
+                            v.pop();
+                        }
+                        v
+                    })
+                    .flatten()
+                    .collect::<Vec<Vec2>>();
+                // dbg!(&pts);
+                unsafe {
+                    let mut cross_section = ManifoldCrossSectionRust::from_points(&pts);
+                    let manifold = cross_section.extrude(100.0, 0);
+                    return Some(PlantMesh::from(manifold));
+                }
+            }
+        }
         None
     }
 
