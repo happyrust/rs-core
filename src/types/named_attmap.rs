@@ -398,6 +398,45 @@ impl NamedAttrMap {
         map
     }
 
+    pub fn gen_surreal_json(&self) -> Option<String> {
+        let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
+        let mut record_map: IndexMap<String, RefU64> = IndexMap::new();
+        let type_name = self.get_type();
+        let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
+        map.insert("id".into(), refno.to_string().into());
+        map.insert("TYPE".into(), type_name.into());
+        // map.insert("REFNO".into(), refno.to_string().into());
+
+        for (key, val) in self.map.clone().into_iter() {
+            //refno 单独处理
+            if key.starts_with(":") || key.as_str() == "REFNO" {
+                continue;
+            }
+            if matches!(val, NamedAttrValue::RefU64Type(_)) {
+                record_map.insert(key, val.refno_value().unwrap_or_default());
+            }else{
+                // let new_key = key.replace(":", "_");
+                map.insert(key, val.into());
+            }
+        }
+
+        //加上pe，去掉双引号
+        let Ok(mut sjson) = serde_json::to_string_pretty(&map) else {
+            dbg!(&self);
+            return None;
+        };
+
+        sjson.remove(sjson.len() - 1);
+        sjson.push_str(&format!(",REFNO: pe:{},", refno.to_string()));
+        for (key, val) in record_map.into_iter() {
+            if val.is_unset() { continue;  }
+            sjson.push_str(&format!(r#""{}": pe:{},"#, key, val));
+        }
+        sjson.remove(sjson.len() - 1);
+        sjson.push_str("}");
+        Some(sjson)
+    }
+
     pub fn get_matrix(&self) -> Option<Affine3A> {
         let mut affine = Affine3A::IDENTITY;
         let pos = self.get_f32_vec("POS")?;
@@ -762,62 +801,6 @@ impl NamedAttrMap {
         Ok(())
     }
 
-    //计算使用元件库的design 元件 hash
-    pub fn cal_cata_hash(&self) -> Option<u64> {
-        //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
-        let type_name = self.get_type_str();
-        if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
-            return Some(*self.get_refno().unwrap_or_default());
-        }
-        //由于有ODESP这种，会导致复用出现问题，怎么解决这个问题
-        //1、主动去判断是否CataRef是这个类型，即有ODESP这种字段，然后从复用的逻辑排除出来
-        //2、解析的时候发现表达式有这些字段，主动去给catref加一个标记位，表示是不能复用的构件
-        //3、把相关的数据都做一遍统计，owner、attach
-        let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
-            "CATR"
-        } else {
-            "SPRE"
-        };
-        if let Some(spref) = self.get_as_string(ref_name) {
-            if spref.starts_with('0') {
-                return None;
-            }
-            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
-                return Some(*self.get_refno().unwrap_or_default());
-            }
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            std::hash::Hash::hash(&spref, &mut hasher);
-            if let Some(des_para) = self.get_f32_vec("DESP") {
-                hash_f32_slice(&des_para, &mut hasher);
-            }
-            let ref_strs = ["ANGL", "HEIG", "RADI"];
-            let key_strs = self.get_as_strings(&ref_strs);
-            for (ref_str, key_str) in ref_strs.iter().zip(key_strs) {
-                std::hash::Hash::hash(*ref_str, &mut hasher);
-                std::hash::Hash::hash(&key_str, &mut hasher);
-            }
-
-            //如果是土建模型 "DRNS", "DRNE"
-            if let Some(drns) = self.get_as_string("DRNS") &&
-                let Some(drne) = self.get_as_string("DRNE") {
-                std::hash::Hash::hash(&drns, &mut hasher);
-                std::hash::Hash::hash(&drne, &mut hasher);
-                let poss = self.get_vec3("POSS").unwrap_or_default();
-                let pose = self.get_vec3("POSE").unwrap_or_default();
-                let v = (pose - poss).length();
-                hash_f32(v, &mut hasher);
-            }
-            //JUSL is adjus in wire calculation, so here we should make hash unique by jusl
-            let jusl = self.get_str_or_default("JUSL");
-            std::hash::Hash::hash(jusl, &mut hasher);
-
-            let val = std::hash::Hasher::finish(&hasher);
-
-            return Some(val);
-        }
-        return None;
-    }
-
     /// 获取string属性数组，忽略为空的值
     pub fn get_attr_strings_without_default(&self, keys: &[&str]) -> Vec<String> {
         let mut results = vec![];
@@ -868,5 +851,66 @@ impl NamedAttrMap {
             // .and_where(Expr::col(Char::Character).like("A%"))
             .to_owned();
         Ok(vec![])
+    }
+}
+
+
+impl NamedAttrMap{
+    //计算使用元件库的design 元件 hash
+    pub fn cal_cata_hash(&self) -> Option<u64> {
+        //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
+        let type_name = self.get_type_str();
+        if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
+            return Some(*self.get_refno().unwrap_or_default());
+        }
+        //由于有ODESP这种，会导致复用出现问题，怎么解决这个问题
+        //1、主动去判断是否CataRef是这个类型，即有ODESP这种字段，然后从复用的逻辑排除出来
+        //2、解析的时候发现表达式有这些字段，主动去给catref加一个标记位，表示是不能复用的构件
+        //3、把相关的数据都做一遍统计，owner、attach
+
+        //todo 这里能否使用数据库查询得到的数据，而不是从内存中获取
+        let ref_name = if type_name == "NOZZ" || type_name == "ELCONN" {
+            "CATR"
+        } else {
+            "SPRE"
+        };
+        if let Some(spref) = self.get_as_string(ref_name) {
+            if spref.starts_with('0') {
+                return None;
+            }
+            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
+                return Some(*self.get_refno().unwrap_or_default());
+            }
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            std::hash::Hash::hash(&spref, &mut hasher);
+            if let Some(des_para) = self.get_f32_vec("DESP") {
+                hash_f32_slice(&des_para, &mut hasher);
+            }
+            let ref_strs = ["ANGL", "HEIG", "RADI"];
+            let key_strs = self.get_as_strings(&ref_strs);
+            for (ref_str, key_str) in ref_strs.iter().zip(key_strs) {
+                std::hash::Hash::hash(*ref_str, &mut hasher);
+                std::hash::Hash::hash(&key_str, &mut hasher);
+            }
+
+            //如果是土建模型 "DRNS", "DRNE"
+            if let Some(drns) = self.get_as_string("DRNS") &&
+                let Some(drne) = self.get_as_string("DRNE") {
+                std::hash::Hash::hash(&drns, &mut hasher);
+                std::hash::Hash::hash(&drne, &mut hasher);
+                let poss = self.get_vec3("POSS").unwrap_or_default();
+                let pose = self.get_vec3("POSE").unwrap_or_default();
+                let v = (pose - poss).length();
+                hash_f32(v, &mut hasher);
+            }
+            //JUSL is adjus in wire calculation, so here we should make hash unique by jusl
+            let jusl = self.get_str_or_default("JUSL");
+            std::hash::Hash::hash(jusl, &mut hasher);
+
+            let val = std::hash::Hasher::finish(&hasher);
+
+            return Some(val);
+        }
+        return None;
     }
 }
