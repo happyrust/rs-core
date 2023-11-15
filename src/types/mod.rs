@@ -9,6 +9,8 @@ pub mod refno;
 pub mod surreal;
 pub mod whole_attmap;
 
+pub mod pe;
+
 use glam::u32;
 pub use refno::*;
 

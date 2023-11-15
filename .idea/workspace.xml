@@ -16,7 +16,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP refactor">
+      <change afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -239,10 +244,10 @@
     </configuration>
     <list>
       <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.Test orm::diff_data::test_query_diff" />
-      <item itemvalue="Cargo.Test orm::sql::test_do_op_reflect_sql" />
       <item itemvalue="Cargo.Test test::test_sql::test_insert::test_gen_insert_sql" />
       <item itemvalue="Cargo.Test test::test_sql::test_table::test_create_table" />
+      <item itemvalue="Cargo.Test orm::diff_data::test_query_diff" />
+      <item itemvalue="Cargo.Test orm::sql::test_do_op_reflect_sql" />
       <item itemvalue="Cargo.Test test::test_sync2::test_gen_att_type_structs" />
     </list>
     <recent_temporary>
@@ -518,6 +523,8 @@
       <workItem from="1699588195822" duration="2505000" />
       <workItem from="1699608077201" duration="1234000" />
       <workItem from="1699642151878" duration="1377000" />
+      <workItem from="1699662804623" duration="367000" />
+      <workItem from="1699938408298" duration="2838000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -862,7 +869,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="254" />
+    <option name="localTasksCounter" value="255" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

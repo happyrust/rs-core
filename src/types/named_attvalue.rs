@@ -254,7 +254,10 @@ impl Into<serde_json::Value> for NamedAttrValue {
         match self {
             NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
             NamedAttrValue::F32Type(d) => {
-                serde_json::Value::Number(serde_json::Number::from_f64(d as _).unwrap())
+                //todo fix 为什么会有出错的情况
+                //infinite ??
+                serde_json::Value::Number(serde_json::Number::from_f64(d as _)
+                    .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()))
             }
             NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
             NamedAttrValue::StringType(s)
