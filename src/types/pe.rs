@@ -33,10 +33,11 @@ pub struct SPdmsElement {
     pub cata_hash: Option<String>,
     ///锁定模型
     pub lock: bool,
+    pub deleted: bool,
 }
 
 impl SPdmsElement {
-    pub fn gen_json(&self) -> String {
+    pub fn gen_sur_json(&self) -> String {
         let mut json_string = to_string_pretty(&json!({
             "id": self.id,
             // "refno": self.refno.to_string(),
@@ -49,6 +50,7 @@ impl SPdmsElement {
             "status_tag": self.status_tag,
             "cata_hash": self.cata_hash,
             "lock": self.lock,
+            "deleted": self.deleted,
         })).unwrap();
         json_string.remove(json_string.len() - 1);
         json_string.push_str(",");

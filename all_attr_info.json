@@ -13114,9 +13114,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "896740": {
         "name": "PBOR",
@@ -13500,9 +13500,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "532159": {
         "name": "PZ",
@@ -14662,9 +14662,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "617371": {
         "name": "PWID",
@@ -27839,9 +27839,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "639374": {
         "name": "NAME",
@@ -61591,9 +61591,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "PX": {
         "name": "PX",
@@ -67583,9 +67583,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "PBOR": {
         "name": "PBOR",
@@ -106786,9 +106786,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "PVIF": {
         "name": "PVIF",
@@ -118253,9 +118253,9 @@
         "hash": 818035,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "WordType": "unset"
         },
-        "att_type": "STRING"
+        "att_type": "WORD"
       },
       "PSKE": {
         "name": "PSKE",

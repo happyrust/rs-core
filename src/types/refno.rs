@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use sea_orm::entity::prelude::*;
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
+use serde::{Serializer, Deserializer};
 
 #[derive(Debug, PartialEq, Eq, derive_more::Display)]
 pub struct ParseRefU64Error;
@@ -17,8 +18,6 @@ rkyv::Archive,
 rkyv::Deserialize,
 rkyv::Serialize,
 Hash,
-Serialize,
-Deserialize,
 Clone,
 Copy,
 Default,
@@ -30,11 +29,28 @@ Ord,
 Reflect
 // DeriveValueType,
 )]
-// #[sea_orm(column_type = "Text", array_type = "String")]
 pub struct RefU64(
-    // #[serde_as(as = "DisplayFromStr")]
     pub u64
 );
+
+impl Serialize for RefU64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        serializer.serialize_str(self.to_refno_str().as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for RefU64 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        let str = String::deserialize(deserializer)?;
+        Self::from_str(str.as_str()).map_err(|_| serde::de::Error::custom("refno parse error"))
+    }
+}
 
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
@@ -199,6 +215,16 @@ impl RefU64 {
     pub fn get_sled_key(&self) -> [u8; 8] {
         self.0.to_be_bytes()
     }
+
+    #[inline]
+    pub fn to_pe_key(&self) -> String{
+        format!("pe:{}", &self.to_string())
+    }
+    #[inline]
+    pub fn to_pe_thing(&self) -> Thing{
+        ("pe".to_owned(), self.to_string()).into()
+    }
+
 
     #[inline]
     pub fn get_0(&self) -> u32 {

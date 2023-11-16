@@ -1064,6 +1064,24 @@ impl PlantGeoData {
 
         Some((mesh, self.aabb))
     }
+
+    pub fn serialize_to_specify_file(&self, file_path: &dyn AsRef<Path>) -> bool {
+        let mut file = File::create(file_path).unwrap();
+        let serialized = rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec();
+        file.write_all(serialized.as_slice()).unwrap();
+        true
+    }
+
+    pub fn deserialize_from_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
+        let mut file = File::open(file_path)?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        use rkyv::Deserialize;
+        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
+        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        Ok(r)
+    }
+
 }
 
 #[derive(
@@ -1176,10 +1194,8 @@ impl PlantMeshesData {
 )]
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
-    // #[serde_as(as = "DisplayFromStr")]
     pub inst_key: String,
-    #[serde(deserialize_with = "de_refno_from_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+    #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
     pub insts: Vec<EleInstGeo>,
 
@@ -1191,6 +1207,25 @@ pub struct EleInstGeosData {
 }
 
 impl EleInstGeosData {
+
+    ///生成surreal的json文件
+    pub fn gen_sur_json(&self) -> String{
+        let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
+            "id": self.refno.to_string(),
+            // "refno": self.refno.to_url_refno(),
+            "type_name": self.type_name,
+            "aabb": self.aabb,
+            "ptset_map": self.ptset_map,
+            "insts": self.insts,
+        })).unwrap();
+
+        json_string.remove(json_string.len() - 1);
+        json_string.push_str(",");
+        json_string.push_str(&format!(r#""refno": pe:{},"#, self.refno.to_string()));
+        json_string.push_str("}");
+        json_string
+    }
+
     #[inline]
     pub fn has_neg(&self) -> bool {
         self.insts.iter().any(|x| x.geo_type == GeoBasicType::Neg)

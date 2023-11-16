@@ -1,22 +1,28 @@
+use crate::shape::pdms_shape::ANGLE_RAD_TOL;
+use crate::tool::float_tool::*;
 use approx::{abs_diff_eq, abs_diff_ne};
 use glam::{DVec3, Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
-use crate::shape::pdms_shape::ANGLE_RAD_TOL;
-use crate::tool::float_tool::*;
 
 lazy_static! {
     pub static ref AXIS_VEC_TUPLES: [(glam::Vec3, &'static str); 6] = {
         [
-            (Vec3::X, "E"), (-Vec3::X, "W"),
-            (Vec3::Y, "N"), (-Vec3::Y, "S"),
-            (Vec3::Z, "U"), (-Vec3::Z, "D")
+            (Vec3::X, "E"),
+            (-Vec3::X, "W"),
+            (Vec3::Y, "N"),
+            (-Vec3::Y, "S"),
+            (Vec3::Z, "U"),
+            (-Vec3::Z, "D"),
         ]
     };
     pub static ref AXIS_DVEC_TUPLES: [(glam::DVec3, &'static str); 6] = {
         [
-            (DVec3::X, "E"), (-DVec3::X, "W"),
-            (DVec3::Y, "N"), (-DVec3::Y, "S"),
-            (DVec3::Z, "U"), (-DVec3::Z, "D")
+            (DVec3::X, "E"),
+            (-DVec3::X, "W"),
+            (DVec3::Y, "N"),
+            (-DVec3::Y, "S"),
+            (DVec3::Z, "U"),
+            (-DVec3::Z, "D"),
         ]
     };
 }
@@ -24,7 +30,7 @@ lazy_static! {
 pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3 {
     let quat = Quat::from_rotation_arc(Vec3::Z, zdir);
     let mut m = Mat3::from_quat(quat);
-    if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon=ANGLE_RAD_TOL) {
+    if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon = ANGLE_RAD_TOL) {
         m.y_axis.z = 0.0;
         m.y_axis = m.y_axis.normalize();
         m.x_axis = m.y_axis.cross(m.z_axis).normalize();
@@ -36,37 +42,41 @@ pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3 {
     m
 }
 
-pub fn convert_to_xyz(s: &str) -> String{
-    s.replace("E", "X").replace("N", "Y").replace("U", "Z")
-        .replace("W", "-X").replace("S", "-Y").replace("D", "-Z")
+pub fn convert_to_xyz(s: &str) -> String {
+    s.replace("E", "X")
+        .replace("N", "Y")
+        .replace("U", "Z")
+        .replace("W", "-X")
+        .replace("S", "-Y")
+        .replace("D", "-Z")
 }
 
 pub fn to_pdms_vec_str(vec: &Vec3) -> String {
     for (v, v_str) in AXIS_VEC_TUPLES.iter() {
-        if abs_diff_eq!(vec.dot(*v), 1.0, epsilon=ANGLE_RAD_TOL) {
+        if abs_diff_eq!(vec.dot(*v), 1.0, epsilon = ANGLE_RAD_TOL) {
             return (*v_str).to_string();
         }
     }
     //1个象限的组合
-    if abs_diff_eq!(vec.x * vec.y * vec.z, 0.0, epsilon=ANGLE_RAD_TOL) {
+    if abs_diff_eq!(vec.x * vec.y * vec.z, 0.0, epsilon = ANGLE_RAD_TOL) {
         let mut x = 0.0;
         let mut y = 0.0;
         let mut x_str = "";
         let mut y_str = "";
         let mut angle = 0.0f32;
-        if abs_diff_eq!(vec.x, 0.0, epsilon=ANGLE_RAD_TOL) {
+        if abs_diff_eq!(vec.x, 0.0, epsilon = ANGLE_RAD_TOL) {
             x = vec.y;
             y = vec.z;
             angle = (y / x).atan().to_degrees();
             x_str = if x > 0.0 { "N" } else { "S" };
             y_str = if y > 0.0 { "U" } else { "D" };
-        } else if abs_diff_eq!(vec.y, 0.0, epsilon=ANGLE_RAD_TOL) {
+        } else if abs_diff_eq!(vec.y, 0.0, epsilon = ANGLE_RAD_TOL) {
             x = vec.x;
             y = vec.z;
             angle = (y / x).atan().to_degrees();
             x_str = if x > 0.0 { "E" } else { "W" };
             y_str = if y > 0.0 { "U" } else { "D" };
-        } else if abs_diff_eq!(vec.z, 0.0, epsilon=ANGLE_RAD_TOL) {
+        } else if abs_diff_eq!(vec.z, 0.0, epsilon = ANGLE_RAD_TOL) {
             x = vec.x;
             y = vec.y;
             angle = (y / x).atan().to_degrees();
@@ -118,7 +128,11 @@ pub fn to_pdms_ori_str(rot: &Mat3) -> String {
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
 
-    format!("Y is {} and Z is {}", to_pdms_vec_str(y_axis), to_pdms_vec_str(z_axis))
+    format!(
+        "Y is {} and Z is {}",
+        to_pdms_vec_str(y_axis),
+        to_pdms_vec_str(z_axis)
+    )
 }
 
 #[inline]
@@ -127,10 +141,12 @@ pub fn to_pdms_ori_xyz_str(rot: &Mat3) -> String {
     let z_axis = &rot.z_axis;
     let s = to_pdms_vec_str(y_axis);
     //讲s里面的 "E" 替换成 "X", "N" 替换成 "Y", "U" 替换成 "Z", "W" 替换成 "-X", "S" 替换成 "-Y", "D" 替换成 "-Z"
-    format!("Y is {} and Z is {}", convert_to_xyz(&to_pdms_vec_str(y_axis)),
-            convert_to_xyz(&to_pdms_vec_str(z_axis)))
+    format!(
+        "Y is {} and Z is {}",
+        convert_to_xyz(&to_pdms_vec_str(y_axis)),
+        convert_to_xyz(&to_pdms_vec_str(z_axis))
+    )
 }
-
 
 #[inline]
 pub fn quat_to_pdms_ori_str(rot: &Quat) -> String {
@@ -139,5 +155,23 @@ pub fn quat_to_pdms_ori_str(rot: &Quat) -> String {
     let z_axis = &rot.z_axis;
 
     // "E".to_string()
-    format!("Y is {} and Z is {}", to_pdms_vec_str(y_axis), to_pdms_vec_str(z_axis))
+    format!(
+        "Y is {} and Z is {}",
+        to_pdms_vec_str(y_axis),
+        to_pdms_vec_str(z_axis)
+    )
+}
+
+#[inline]
+pub fn quat_to_pdms_ori_xyz_str(rot: &Quat) -> String {
+    let rot = Mat3::from_quat(*rot);
+    let y_axis = &rot.y_axis;
+    let z_axis = &rot.z_axis;
+
+    // "E".to_string()
+    format!(
+        "Y is {} and Z is {}",
+        convert_to_xyz(&to_pdms_vec_str(y_axis)),
+        convert_to_xyz(&to_pdms_vec_str(z_axis))
+    )
 }
