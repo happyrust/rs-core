@@ -12,7 +12,7 @@ use sea_orm::{ConnectionTrait, DatabaseConnection};
 use sea_query::{Alias, MysqlQueryBuilder};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use surrealdb::sql::Strand;
+use surrealdb::sql::{Strand, Thing};
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::*;
 use crate::shape::pdms_shape::BrepShapeTrait;
@@ -65,21 +65,29 @@ impl From<SurlValue> for NamedAttrMap {
                             crate::AttrVal::IntegerType(_) => {
                                 NamedAttrValue::IntegerType(v.try_into().unwrap_or_default())
                             }
-                            crate::AttrVal::StringType(_)
-                            | crate::AttrVal::WordType(_)
-                            | crate::AttrVal::ElementType(_) => {
+                            crate::AttrVal::StringType(_) | crate::AttrVal::WordType(_) => {
                                 NamedAttrValue::StringType(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::DoubleType(_) => {
                                 NamedAttrValue::F32Type(v.try_into().unwrap_or_default())
                             }
-                            crate::AttrVal::DoubleArrayType(_) | crate::AttrVal::Vec3Type(_) => {
+                            crate::AttrVal::DoubleArrayType(_) => {
                                 let v: Vec<surrealdb::sql::Value> =
                                     v.try_into().unwrap_or_default();
                                 NamedAttrValue::F32VecType(
                                     v.into_iter()
                                         .map(|x| f32::try_from(x).unwrap_or_default())
                                         .collect(),
+                                )
+                            }
+                            crate::AttrVal::Vec3Type(_) => {
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
+                                let p = v.into_iter()
+                                    .map(|x| f32::try_from(x).unwrap_or_default())
+                                    .collect::<Vec<_>>();
+                                NamedAttrValue::Vec3Type(
+                                    Vec3::new(p[0], p[1], p[2])
                                 )
                             }
                             crate::AttrVal::StringArrayType(_) => {
@@ -112,9 +120,12 @@ impl From<SurlValue> for NamedAttrMap {
                             crate::AttrVal::BoolType(_) => {
                                 NamedAttrValue::BoolType(v.try_into().unwrap_or_default())
                             }
-                            crate::AttrVal::RefU64Type(_) => {
-                                let str: String = v.try_into().unwrap_or_default();
-                                NamedAttrValue::RefU64Type(str.as_str().into())
+                            crate::AttrVal::RefU64Type(_) | crate::AttrVal::ElementType(_) => {
+                                if let surreal::SurlValue::Thing(id) = v{
+                                    NamedAttrValue::RefU64Type(id.into())
+                                }else{
+                                    NamedAttrValue::InvalidType
+                                }
                             }
                             _ => NamedAttrValue::InvalidType,
                         };
@@ -190,22 +201,22 @@ impl NamedAttrMap {
     }
 
     #[inline]
-    pub fn get_name(&self) -> Option<String>{
+    pub fn get_name(&self) -> Option<String> {
         self.get_string("NAME")
     }
 
     #[inline]
-    pub fn get_name_or_default(&self) -> String{
+    pub fn get_name_or_default(&self) -> String {
         self.get_string_or_default("NAME")
     }
 
     #[inline]
-    pub fn set_e3d_version(&mut self, v: i32){
+    pub fn set_e3d_version(&mut self, v: i32) {
         self.map.insert("VERSION".into(), NamedAttrValue::IntegerType(v));
     }
 
     #[inline]
-    pub fn get_e3d_version(&self) -> i32{
+    pub fn get_e3d_version(&self) -> i32 {
         self.get_i32("VERSION").unwrap_or_default()
     }
 
@@ -308,7 +319,7 @@ impl NamedAttrMap {
 
     #[inline]
     pub fn get_refno_or_default(&self) -> RefU64 {
-       self.get_refno().unwrap_or_default()
+        self.get_refno().unwrap_or_default()
     }
 
     #[inline]
@@ -398,7 +409,7 @@ impl NamedAttrMap {
         map
     }
 
-    pub fn gen_surreal_json(&self) -> Option<String> {
+    pub fn gen_sur_json(&self) -> Option<String> {
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         let mut record_map: IndexMap<String, RefU64> = IndexMap::new();
         let type_name = self.get_type();
@@ -414,7 +425,7 @@ impl NamedAttrMap {
             }
             if matches!(val, NamedAttrValue::RefU64Type(_)) {
                 record_map.insert(key, val.refno_value().unwrap_or_default());
-            }else{
+            } else {
                 // let new_key = key.replace(":", "_");
                 map.insert(key, val.into());
             }
@@ -429,7 +440,7 @@ impl NamedAttrMap {
         sjson.remove(sjson.len() - 1);
         sjson.push_str(&format!(",REFNO: pe:{},", refno.to_string()));
         for (key, val) in record_map.into_iter() {
-            if val.is_unset() { continue;  }
+            if val.is_unset() { continue; }
             sjson.push_str(&format!(r#""{}": pe:{},"#, key, val));
         }
         sjson.remove(sjson.len() - 1);
@@ -832,7 +843,6 @@ impl NamedAttrMap {
     }
 
 
-
     //后面还要根据参考号确定使用哪个类型、还有db numer
     //生成查询语句
     pub fn gen_query_sql(refnos: &Vec<RefU64>) -> anyhow::Result<Vec<String>> {
@@ -855,7 +865,7 @@ impl NamedAttrMap {
 }
 
 
-impl NamedAttrMap{
+impl NamedAttrMap {
     //计算使用元件库的design 元件 hash
     pub fn cal_cata_hash(&self) -> Option<u64> {
         //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
