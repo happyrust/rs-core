@@ -68,12 +68,27 @@ pub mod types;
 
 pub mod serde;
 
+pub mod file_helper;
+
 pub use crate::types::*;
 
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 
 use crate::options::DbOption;
 use once_cell_serde::sync::OnceCell;
+
+///获得db option
+#[inline]
+pub fn get_db_option() -> &'static DbOption {
+    static INSTANCE: OnceCell<DbOption> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        use config::{Config, ConfigError, Environment, File};
+        let s = Config::builder()
+            .add_source(File::with_name("DbOption"))
+            .build().unwrap();
+        s.try_deserialize::<DbOption>().unwrap()
+    })
+}
 
 ///获取默认的数据库属性元数据信息
 pub fn get_default_pdms_db_info() -> &'static PdmsDatabaseInfo {
@@ -110,9 +125,9 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
         let Ok(s) = Config::builder()
             .add_source(File::with_name("DbOption"))
             .build()
-        else {
-            return (DashMap::new(), DashMap::new());
-        };
+            else {
+                return (DashMap::new(), DashMap::new());
+            };
         let db_option: DbOption = s.try_deserialize().unwrap();
         for project in db_option.included_projects {
             let path = format!("{}_uda.bin", project);
