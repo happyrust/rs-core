@@ -54,7 +54,6 @@ pub struct DbOption {
     pub load_spatial_tree: bool,
     #[clap(long, default_value = "12.1SP4Projects")]
     pub project_path: String,
-    //#[clap(long, default_value = "MASTER", "SAMPLE")]
     pub included_projects: Vec<String>,
     #[clap(skip)]
     pub included_db_files: Option<Vec<String>>,
