@@ -34,7 +34,8 @@ pub struct DbOption {
     #[clap(long)]
     pub v_port: String,
 
-
+    #[clap(long)]
+    pub remote_file_hosts: Vec<String>,
 
     #[clap(long)]
     pub replace_dbs: bool,
