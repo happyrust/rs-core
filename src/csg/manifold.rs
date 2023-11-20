@@ -12,6 +12,8 @@ pub struct ManifoldSimplePolygonRust {
     pub ptr: *mut ManifoldSimplePolygon,
 }
 
+
+
 impl ManifoldSimplePolygonRust {
     pub fn new() -> Self {
         unsafe {
@@ -87,6 +89,8 @@ impl ManifoldCrossSectionRust {
 pub struct ManifoldRust {
     pub ptr: *mut ManifoldManifold,
 }
+
+unsafe impl Send for ManifoldRust{}
 
 impl ManifoldRust {
     pub fn new() -> Self {

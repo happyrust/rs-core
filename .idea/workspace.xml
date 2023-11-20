@@ -16,10 +16,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP refactor">
-      <change afterPath="$PROJECT_DIR$/src/file_helper/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/csg/manifold.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/csg/manifold.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -529,6 +527,7 @@
       <workItem from="1700218461654" duration="9000" />
       <workItem from="1700221587024" duration="1009000" />
       <workItem from="1700384413394" duration="2054000" />
+      <workItem from="1700410048885" duration="1402000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -873,7 +872,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="257" />
+    <option name="localTasksCounter" value="258" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
