@@ -37,12 +37,16 @@ pub struct DbOption {
     // mqtt_host
     #[clap(long)]
     pub mqtt_host: String,
-
     #[clap(long)]
     pub mqtt_port: u16,
+    #[clap(long)]
+    pub location: String,
 
     #[clap(long)]
-    pub remote_file_hosts: Vec<String>,
+    pub remote_file_server_hosts: Vec<String>,
+
+    #[clap(long)]
+    pub file_server_host: String,
 
     #[clap(long)]
     pub replace_dbs: bool,
