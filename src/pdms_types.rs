@@ -1195,6 +1195,7 @@ impl PlantMeshesData {
 pub struct EleInstGeosData {
     #[serde(rename = "_key")]
     pub inst_key: String,
+    // #[serde_as(as = "DisplayFromStr")]
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
