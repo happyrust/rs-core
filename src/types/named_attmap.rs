@@ -409,14 +409,18 @@ impl NamedAttrMap {
         map
     }
 
+
     pub fn gen_sur_json(&self) -> Option<String> {
+        self.gen_sur_json_exclude(&[])
+    }
+
+    pub fn gen_sur_json_exclude(&self, excludes: &[&str]) -> Option<String> {
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         let mut record_map: IndexMap<String, RefU64> = IndexMap::new();
         let type_name = self.get_type();
         let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
         map.insert("id".into(), refno.to_string().into());
         map.insert("TYPE".into(), type_name.into());
-        // map.insert("REFNO".into(), refno.to_string().into());
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
@@ -431,6 +435,10 @@ impl NamedAttrMap {
             }
         }
 
+        for key in excludes {
+            map.remove(*key);
+        }
+
         //加上pe，去掉双引号
         let Ok(mut sjson) = serde_json::to_string_pretty(&map) else {
             dbg!(&self);
@@ -440,7 +448,7 @@ impl NamedAttrMap {
         sjson.remove(sjson.len() - 1);
         sjson.push_str(&format!(",REFNO: pe:{},", refno.to_string()));
         for (key, val) in record_map.into_iter() {
-            if val.is_unset() { continue; }
+            if val.is_unset() && excludes.contains(&key.as_str()) { continue; }
             sjson.push_str(&format!(r#""{}": pe:{},"#, key, val));
         }
         sjson.remove(sjson.len() - 1);
