@@ -1,4 +1,6 @@
+use bevy_ecs::component::Component;
 use bevy_reflect::Reflect;
+#[cfg(feature = "sea-orm")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
@@ -14,26 +16,26 @@ use std::{fmt, hash};
 pub struct ParseRefU64Error;
 
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Hash,
-    Clone,
-    Copy,
-    Default,
-    // Component,
-    Eq,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    Reflect, // DeriveValueType,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Hash,
+Clone,
+Copy,
+Default,
+Component,
+Eq,
+PartialEq,
+PartialOrd,
+Ord,
+Reflect, // DeriveValueType,
 )]
 pub struct RefU64(pub u64);
 
 impl Serialize for RefU64 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_str(self.to_string().as_str())
     }
@@ -48,17 +50,16 @@ enum StringOrU64 {
 
 impl<'de> Deserialize<'de> for RefU64 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         if let Ok(s) = StringOrU64::deserialize(deserializer) {
             match s {
-                StringOrU64::Str(s) => {
-                   Self::from_str(s.as_str()).map_err(|_| serde::de::Error::custom("refno parse error"))
-                }
+                StringOrU64::Str(s) => Self::from_str(s.as_str())
+                    .map_err(|_| serde::de::Error::custom("refno parse error")),
                 StringOrU64::Num(d) => Ok(Self(d)),
             }
-        }else{
+        } else {
             return Err(serde::de::Error::custom("refno parse error"));
         }
     }
@@ -85,6 +86,7 @@ impl From<Thing> for RefU64 {
     }
 }
 
+#[cfg(feature = "sea-orm")]
 impl sea_orm::sea_query::ValueType for RefU64 {
     fn try_from(v: Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
         <String as sea_orm::sea_query::ValueType>::try_from(v)
@@ -104,6 +106,7 @@ impl sea_orm::sea_query::ValueType for RefU64 {
     }
 }
 
+#[cfg(feature = "sea-orm")]
 impl Into<sea_orm::Value> for RefU64 {
     fn into(self) -> sea_orm::Value {
         let string: String = self.to_refno_string();
@@ -111,6 +114,7 @@ impl Into<sea_orm::Value> for RefU64 {
     }
 }
 
+#[cfg(feature = "sea-orm")]
 impl sea_orm::TryGetable for RefU64 {
     fn try_get_by<I: sea_orm::ColIdx>(
         res: &sea_orm::QueryResult,
@@ -208,22 +212,18 @@ impl BytesTrait for RefU64 {
 
 impl Display for RefU64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.get_0() == 0 {
-            write!(f, "unset")
-        } else {
-            write!(f, "{}_{}", self.get_0(), self.get_1())
-        }
+        write!(f, "{}_{}", self.get_0(), self.get_1())
     }
 }
 
 impl RefU64 {
     #[inline]
     pub fn is_valid(&self) -> bool {
-        self.get_0() > 0 && self.get_1() >= 0
+        self.get_0() > 0
     }
 
     pub fn is_unset(&self) -> bool {
-        self.get_0() == 0 && self.get_1() == 0
+        self.get_0() == 0
     }
 
     #[inline]
@@ -255,7 +255,6 @@ impl RefU64 {
     #[inline]
     pub fn get_u32_hash(&self) -> u32 {
         use hash32::{FnvHasher, Hasher};
-        use std::hash::Hash;
         let mut fnv = FnvHasher::default();
         self.hash(&mut fnv);
         fnv.finish32()
@@ -335,12 +334,11 @@ impl RefU64 {
         if strs.len() < 2 {
             return None;
         }
-        let ref0 = strs[0].parse::<i32>();
-        let ref1 = strs[1].parse::<i32>();
-        if ref0.is_err() || ref1.is_err() {
-            return None;
+        if let Ok(r0) = strs[0].parse::<i32>() && let Ok(r1) = strs[1].parse::<i32>() {
+            Some(RefI32Tuple((r0, r1)).into())
+        } else {
+            None
         }
-        Some(RefI32Tuple((ref0.unwrap(), ref1.unwrap())).into())
     }
 
     #[inline]
@@ -397,10 +395,10 @@ pub struct RefI32Tuple(pub (i32, i32));
 
 use crate::cache::mgr::BytesTrait;
 use anyhow::anyhow;
+#[cfg(feature = "sea-orm")]
 use sea_orm::sea_query::ValueType;
 use std::string::String;
 use surrealdb::sql::Thing;
-use crate::AttrVal::RefU64Type;
 
 impl Into<String> for RefI32Tuple {
     fn into(self) -> String {
@@ -445,11 +443,11 @@ impl RefI32Tuple {
 
     #[inline]
     pub fn get_0(&self) -> i32 {
-        self.0 .0
+        self.0.0
     }
 
     #[inline]
     pub fn get_1(&self) -> i32 {
-        self.0 .1
+        self.0.1
     }
 }

@@ -47886,7 +47886,7 @@
         "hash": 771611,
         "offset": 0,
         "default_val": {
-          "WordType": "unset"
+          "StringArrayType": []
         },
         "att_type": "WORD"
       },
@@ -67927,7 +67927,7 @@
         "hash": 771611,
         "offset": 0,
         "default_val": {
-          "WordType": "unset"
+          "StringArrayType": []
         },
         "att_type": "WORD"
       },

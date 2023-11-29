@@ -6,7 +6,6 @@ pub mod named_attvalue;
 pub mod query_sql;
 pub mod ref64vec;
 pub mod refno;
-pub mod surreal;
 pub mod whole_attmap;
 
 pub mod pe;
@@ -24,5 +23,4 @@ pub use named_attvalue::*;
 pub use query_sql::*;
 pub use ref64vec::*;
 pub use refno::*;
-pub use surreal::*;
 pub use whole_attmap::*;

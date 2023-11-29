@@ -1,31 +1,29 @@
-use std::f64::consts::PI;
-
 use glam::Vec3;
-
-
-
-use truck_modeling::{Shell};
-
-
-
-
-
 use hexasphere::shapes::IcoSphere;
+use std::f64::consts::PI;
+use truck_modeling::Shell;
 
-
-
-use serde::{Serialize,Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, VerifiedShape};
 #[cfg(feature = "opencascade_rs")]
-use opencascade::{primitives::Shape, adhoc::AdHocShape};
+use opencascade::{adhoc::AdHocShape, primitives::Shape};
+use serde::{Deserialize, Serialize};
 
 use crate::types::attmap::AttrMap;
-use bevy_ecs::prelude::*;
 use crate::NamedAttrMap;
+use bevy_ecs::prelude::*;
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
+#[derive(
+    Component,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 //
 pub struct Sphere {
     pub center: Vec3,
@@ -41,8 +39,6 @@ impl Default for Sphere {
     }
 }
 
-
-
 impl VerifiedShape for Sphere {
     #[inline]
     fn check_valid(&self) -> bool {
@@ -51,14 +47,13 @@ impl VerifiedShape for Sphere {
 }
 
 impl BrepShapeTrait for Sphere {
-
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
 
     //由于geom kernel还不支持fixed point ，暂时不用这个shell去生成mesh
     fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_base::cgmath64::{Point3, Vector3, Rad};
+        use truck_base::cgmath64::{Point3, Rad, Vector3};
         use truck_modeling::*;
         let vertex = builder::vertex(Point3::new(0.0, 0.0, 1.0));
         let wire = builder::rsweep(&vertex, Point3::origin(), Vector3::unit_y(), Rad(PI));
@@ -67,7 +62,7 @@ impl BrepShapeTrait for Sphere {
     }
 
     ///获得关键点
-    fn key_points(&self) -> Vec<RsVec3>{
+    fn key_points(&self) -> Vec<RsVec3> {
         vec![self.center.into()]
     }
 
@@ -77,8 +72,8 @@ impl BrepShapeTrait for Sphere {
         Ok(AdHocShape::sphere(self.radius as f64).0)
     }
 
-    fn hash_unit_mesh_params(&self) -> u64{
-        SPHERE_GEO_HASH            //代表SPHERE
+    fn hash_unit_mesh_params(&self) -> u64 {
+        SPHERE_GEO_HASH //代表SPHERE
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
@@ -91,9 +86,7 @@ impl BrepShapeTrait for Sphere {
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimSphere(self.clone())
-        )
+        Some(PdmsGeoParam::PrimSphere(self.clone()))
     }
 
     ///直接通过基本体的参数，生成模型
@@ -127,7 +120,7 @@ impl BrepShapeTrait for Sphere {
         }
 
         //球也需要提供wireframe的绘制
-        return Some(PlantMesh{
+        return Some(PlantMesh {
             indices,
             vertices: points,
             normals,
@@ -137,7 +130,7 @@ impl BrepShapeTrait for Sphere {
         });
     }
 
-    fn need_use_csg(&self) -> bool{
+    fn need_use_csg(&self) -> bool {
         true
     }
 }
@@ -159,8 +152,3 @@ impl From<&NamedAttrMap> for Sphere {
         }
     }
 }
-
-
-
-
-

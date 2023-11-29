@@ -1,13 +1,10 @@
 #![feature(mixed_integer_ops)]
-// #![feature(drain_filter)]
 #![feature(let_chains)]
 #![feature(trivial_bounds)]
 
-use bincode::Config;
 use dashmap::DashMap;
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
-use std::fs::File;
 use std::io::Read;
 
 pub use types::db_info::PdmsDatabaseInfo;
@@ -62,15 +59,16 @@ pub mod water_calculation;
 pub mod data_state;
 pub mod test;
 
+#[cfg(feature = "sea-orm")]
 pub mod orm;
+pub mod rs_surreal;
 pub mod schema;
 pub mod types;
-
-pub mod serde;
 
 pub mod file_helper;
 
 pub use crate::types::*;
+pub use rs_surreal::*;
 
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 
@@ -85,7 +83,8 @@ pub fn get_db_option() -> &'static DbOption {
         use config::{Config, ConfigError, Environment, File};
         let s = Config::builder()
             .add_source(File::with_name("DbOption"))
-            .build().unwrap();
+            .build()
+            .unwrap();
         s.try_deserialize::<DbOption>().unwrap()
     })
 }
@@ -125,9 +124,9 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
         let Ok(s) = Config::builder()
             .add_source(File::with_name("DbOption"))
             .build()
-            else {
-                return (DashMap::new(), DashMap::new());
-            };
+        else {
+            return (DashMap::new(), DashMap::new());
+        };
         let db_option: DbOption = s.try_deserialize().unwrap();
         for project in db_option.included_projects {
             let path = format!("{}_uda.bin", project);

@@ -1,33 +1,14 @@
-use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::tool::hash_tool::*;
-use crate::types::*;
-use bevy_ecs::prelude::*;
-use bitflags::bitflags;
-use dashmap::DashMap;
-use derive_more::{Deref, DerefMut};
-use glam::{Vec3, Vec4};
-use id_tree::{NodeId, Tree};
-use itertools::Itertools;
-use parry3d::bounding_volume::Aabb;
-use parry3d::shape::SharedShape;
-use rkyv::with::Skip;
-use sea_orm::entity::prelude::*;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use serde_with::{DisplayFromStr, serde_as};
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fmt::{Debug, Display, Pointer};
-use std::fs::File;
-use std::io::{Read, Write};
-use std::ops::{Deref, DerefMut};
-use std::path::Path;
-use std::str::FromStr;
 use crate::cache::mgr::BytesTrait;
 use crate::consts::*;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::parsed_data::CateAxisParam;
-use crate::types::attval::AttrVal::*;
+use crate::prim_geo::cylinder::*;
+use crate::prim_geo::sbox::SBox;
+use crate::prim_geo::*;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
-use sea_query::*;
-use nalgebra::Point3;
+use crate::tool::hash_tool::*;
+pub use crate::types::*;
+use bevy_ecs::prelude::*;
 use bevy_math::*;
 use bevy_reflect::Reflect;
 #[cfg(feature = "render")]
@@ -35,10 +16,29 @@ use bevy_render::mesh::Indices;
 #[cfg(feature = "render")]
 use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 use bevy_transform::prelude::*;
-pub use crate::types::*;
-use crate::prim_geo::*;
-use crate::prim_geo::cylinder::*;
-use crate::prim_geo::sbox::SBox;
+use bitflags::bitflags;
+use dashmap::DashMap;
+use derive_more::{Deref, DerefMut};
+use glam::{Vec3, Vec4};
+use id_tree::{NodeId, Tree};
+use itertools::Itertools;
+use nalgebra::Point3;
+use parry3d::bounding_volume::Aabb;
+use parry3d::shape::SharedShape;
+use rkyv::with::Skip;
+#[cfg(feature="sea-orm")]
+use sea_orm::entity::prelude::*;
+#[cfg(feature="sea-orm")]
+use sea_query::*;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde_with::{serde_as, DisplayFromStr};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::fmt::{Debug, Display, Pointer};
+use std::fs::File;
+use std::io::{Read, Write};
+use std::ops::{Deref, DerefMut};
+use std::path::Path;
+use std::str::FromStr;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -164,13 +164,12 @@ pub mod string {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifferenceValue {
-    pub noun: NounHash,
-    pub old_value: Option<AttrVal>,
+    pub noun: String,
+    pub old_value: Option<NamedAttrValue>,
     // 新增 old_value 为 none
-    pub new_value: Option<AttrVal>, // 删除 new_value 为 none
+    pub new_value: Option<NamedAttrValue>, // 删除 new_value 为 none
 }
 
 pub const DEFAULT_NOUNS: [NounHash; 4] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
@@ -314,7 +313,6 @@ impl LevelShapeMgr {
     }
 }
 
-
 bitflags! {
     struct PdmsGenericTypeFlag: u32 {
         const UNKOWN = 0x1 << 30;
@@ -415,7 +413,6 @@ pub enum GeoBasicType {
     ///属于隐含直段的类型
     Tubi,
 }
-
 
 #[derive(
     rkyv::Archive,
@@ -643,9 +640,8 @@ pub struct ShapeInstancesData {
 
 /// shape instances 的管理方法
 impl ShapeInstancesData {
-
     ///填充基本的形状
-    pub fn fill_basic_shapes(&mut self){
+    pub fn fill_basic_shapes(&mut self) {
         let unit_cyli_aabb = Aabb::new(Point3::new(-0.5, -0.5, 0.0), Point3::new(0.5, 0.5, 1.0));
         let unit_box_aabb = Aabb::new(Point3::new(-0.5, -0.5, -0.5), Point3::new(0.5, 0.5, 0.5));
         self.insert_geos_data(
@@ -1033,17 +1029,19 @@ unsafe impl Sync for PlantGeoData {}
 
 unsafe impl Send for PlantGeoData {}
 
+#[cfg(feature="sea-orm")]
 use crate::orm::*;
+use crate::ref64vec::RefU64Vec;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
+use crate::types::attmap::AttrMap;
+use crate::types::attval::{AttrVal, AttrValAql};
+use crate::types::named_attvalue::NamedAttrValue;
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
+#[cfg(feature="sea-orm")]
 use sea_query::*;
-use crate::ref64vec::RefU64Vec;
-use crate::types::attmap::AttrMap;
-use crate::types::attval::{AttrVal, AttrValAql};
-use crate::types::named_attvalue::NamedAttrValue;
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
@@ -1081,7 +1079,6 @@ impl PlantGeoData {
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
     }
-
 }
 
 #[derive(
@@ -1209,9 +1206,8 @@ pub struct EleInstGeosData {
 }
 
 impl EleInstGeosData {
-
     ///生成surreal的json文件
-    pub fn gen_sur_json(&self) -> String{
+    pub fn gen_sur_json(&self) -> String {
         let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
             "id": self.refno.to_string(),
             // "refno": self.refno.to_url_refno(),
@@ -1219,7 +1215,8 @@ impl EleInstGeosData {
             "aabb": self.aabb,
             "ptset_map": self.ptset_map,
             "insts": self.insts,
-        })).unwrap();
+        }))
+        .unwrap();
 
         json_string.remove(json_string.len() - 1);
         json_string.push_str(",");
@@ -1697,7 +1694,7 @@ pub struct ChildrenNode {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct CataHashRefnoKV {
     #[serde(default)]
-    pub cata_hash: Option<String>,
+    pub cata_hash: String,
     #[serde(default)]
     pub exist_geo: Option<EleInstGeosData>,
     #[serde_as(as = "Vec<DisplayFromStr>")]

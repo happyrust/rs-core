@@ -2,6 +2,7 @@
 total_sync = true
 enable_log = false
 sync_graph_db = false
+sync_versioned = false
 sync_tidb = false
 sync_localdb = false
 incr_sync = false
@@ -9,9 +10,9 @@ replace_dbs = true
 sync_chunk_size = 100_0000
 
 #项目设置
-project_path = "D:/AVEVA/Projects/E3D2.1" 
+project_path = "/Users/dongpengcheng/Documents/models/e3d_models"
 included_projects = ["AvevaMarineSample" , "AvevaCatalogue", "SCB", "ZDJ"]
-
+# included_projects = ["AvevaCatalogue"]
 mdb_name = "ALL"
 project_name = "AvevaMarineSample"
 project_code = 1516
@@ -32,6 +33,7 @@ arangodb_database = "ams"
 multi_threads = false
 only_sync_sys = false
 arangodb_url = "http://127.0.0.1:8529"
+# arangodb_url = "http://50c170h624.zicp.vip:15830"
 rebuild_ssc_tree = false
 arangodb_user = "root"
 arangodb_password = ""
@@ -45,9 +47,25 @@ port = "3306"
 sql_threads_number = 50
 batch_insert_sql_cnt = 100   #mysql 批量插入的数量
 
+#版本数据库服务配置
+v_ip = "localhost"
+#v_ip = "50c170h624.zicp.vip"
+v_user = "root"
+v_password = ""
+v_port = "8003"
+#v_port = "38389"
+
+#mqtt 事件 ip
+mqtt_host = "50c170h624.zicp.vip"
+mqtt_port = 41761
+location = "BJ"
+
 #服务器启动配置
 server_release_ip = "127.0.0.1:9099"
 
+#暂时做分离，可以使用axum的分享文件夹
+remote_file_server_hosts = ["http://50c170h624.zicp.vip:56785/asset/archives"]
+file_server_host = "http://localhost:9010/asset/archives"
 
 #调试选项
 replace_mesh = true
@@ -61,9 +79,12 @@ only_rebuild_pdms_element = false
 debug_refno_types = ["CATA", "LOOP", "PRIM"]
 #debug_refno_types = ["CATA"]
 #included_db_files = ["ams7351_0001", "ams7353_0001", "ams7741_0001", "ams7998_0001"]
-included_db_files = ["ams1112_0001"]
-#included_db_files = ["ams5052_0001"]
-#included_db_files = ["acp7002_0001"]
+#included_db_files = ["ams7353_0001", "ams7741_0001", "ams7998_0001"]
+# included_db_files = ["ams1112_0001", "ams5052_0001", "ams7000_0001", "ams5053_0001", "ams7002_0001", "ams6890_0001", "ams7997_0001"]
+# included_db_files = ["ams5052_0001", "ams5053_0001"]
+included_db_files = ["ams7997_0001"]
+# included_db_files = ["acp7002_0001"]
+# included_db_files = ["ams1112_0001"]
 #manual_db_nums = [7999, 7997, 1112, 8000]
 #manual_db_nums = [7354]
 #manual_db_nums = [1112]  #, 8000
@@ -74,7 +95,7 @@ puhua_database_ip = ""
 puhua_database_user = ""
 puhua_database_password = ""
 
-debug_root_refnos = ["17496/105740"]
+debug_root_refnos = ["24381/47118"]
 
 #joint还有问题，方位对齐的问题
 #debug_root_refnos = ["25688/48687"]
@@ -96,7 +117,6 @@ debug_root_refnos = ["17496/105740"]
 # debug_root_refnos = ["23734/3041"]
 
 #打洞的问题，需要重构一下own pos refnos
-#debug_root_refnos = ["23713/6093"]
 #debug_root_refnos = ["24383/73928"]
 #debug_root_refnos = ["25688/4595", ]
 #debug_root_refnos = ["23713/6104"]
