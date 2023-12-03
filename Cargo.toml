@@ -84,7 +84,7 @@ proc-macro2 = "1.0.69"
 rust-format = "0.3.4"
 chrono = "0.4.31"
 custom_debug = "0.5.1"
-sea-query = "0.30.2"
+# sea-query = "0.30.2"
 
 surrealdb = { path = "../../surrealdb/lib" }
 num-traits = "0.2.17"
@@ -92,8 +92,7 @@ regex = "1.10.2"
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-redb = "^1.0"
 tokio = { version = "1.29.1", features = ["full"] }
-sea-orm = { version = "0.12.4", features = ["sqlx-all", "runtime-tokio"]}
-sqlx = { version = "0.7.2", features = ["runtime-tokio"] }
-
+redb = "1.4.0"
+# # sea-orm = { version = "0.12.4", features = ["sqlx-all", "runtime-tokio"]}
+# sqlx = { version = "0.7.2", features = ["runtime-tokio"] }

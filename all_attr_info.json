@@ -39146,6 +39146,15 @@
         },
         "att_type": "RefU64Vec"
       },
+      "914224": {
+        "name": "DBLS",
+        "hash": 914224,
+        "offset": 0,
+        "default_val": {
+          "RefU64Array": []
+        },
+        "att_type": "RefU64Vec"
+      },
       "604480": {
         "name": "DESC",
         "hash": 604480,
@@ -47886,7 +47895,7 @@
         "hash": 771611,
         "offset": 0,
         "default_val": {
-          "WordType": "unset"
+          "StringArrayType": []
         },
         "att_type": "WORD"
       },
@@ -67927,7 +67936,7 @@
         "hash": 771611,
         "offset": 0,
         "default_val": {
-          "WordType": "unset"
+          "StringArrayType": []
         },
         "att_type": "WORD"
       },
@@ -107495,6 +107504,15 @@
       "CURD": {
         "name": "CURD",
         "hash": 623865,
+        "offset": 0,
+        "default_val": {
+          "RefU64Array": []
+        },
+        "att_type": "RefU64Vec"
+      },
+      "DBLS": {
+        "name": "DBLS",
+        "hash": 914224,
         "offset": 0,
         "default_val": {
           "RefU64Array": []

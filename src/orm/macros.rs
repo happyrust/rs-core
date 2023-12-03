@@ -1,4 +1,5 @@
 
+#[cfg(feature = "sea-orm")]
 #[macro_export]
 macro_rules! impl_db_op_trait{
     ()=>{

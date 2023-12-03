@@ -1,14 +1,16 @@
-use std::{fmt, hash};
+use bevy_ecs::component::Component;
+use bevy_reflect::Reflect;
+#[cfg(feature = "sea-orm")]
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
+use serde::{Deserializer, Serializer};
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::hash::Hash;
 use std::ops::Deref;
 use std::str::FromStr;
-use bevy_reflect::Reflect;
-use serde::{Deserialize, Serialize};
-use sea_orm::entity::prelude::*;
-use serde_with::serde_as;
-use serde_with::DisplayFromStr;
-use serde::{Serializer, Deserializer};
+use std::{fmt, hash};
 
 #[derive(Debug, PartialEq, Eq, derive_more::Display)]
 pub struct ParseRefU64Error;
@@ -21,25 +23,29 @@ Hash,
 Clone,
 Copy,
 Default,
-// Component,
+Component,
 Eq,
 PartialEq,
 PartialOrd,
 Ord,
-Reflect
-// DeriveValueType,
+Reflect, // DeriveValueType,
 )]
-pub struct RefU64(
-    pub u64
-);
+pub struct RefU64(pub u64);
 
 impl Serialize for RefU64 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer,
     {
-        serializer.serialize_str(self.to_refno_str().as_str())
+        serializer.serialize_str(self.to_string().as_str())
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+enum StringOrU64 {
+    Str(String),
+    Num(u64),
 }
 
 impl<'de> Deserialize<'de> for RefU64 {
@@ -47,8 +53,15 @@ impl<'de> Deserialize<'de> for RefU64 {
         where
             D: Deserializer<'de>,
     {
-        let str = String::deserialize(deserializer)?;
-        Self::from_str(str.as_str()).map_err(|_| serde::de::Error::custom("refno parse error"))
+        if let Ok(s) = StringOrU64::deserialize(deserializer) {
+            match s {
+                StringOrU64::Str(s) => Self::from_str(s.as_str())
+                    .map_err(|_| serde::de::Error::custom("refno parse error")),
+                StringOrU64::Num(d) => Ok(Self(d)),
+            }
+        } else {
+            return Err(serde::de::Error::custom("refno parse error"));
+        }
     }
 }
 
@@ -67,16 +80,17 @@ impl FromStr for RefU64 {
     }
 }
 
-impl From<Thing> for RefU64{
+impl From<Thing> for RefU64 {
     fn from(thing: Thing) -> Self {
         thing.id.to_string().as_str().into()
     }
 }
 
-
+#[cfg(feature = "sea-orm")]
 impl sea_orm::sea_query::ValueType for RefU64 {
     fn try_from(v: Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
-        <String as sea_orm::sea_query::ValueType>::try_from(v).map(|v| Self::from_str(&v).unwrap_or_default())
+        <String as sea_orm::sea_query::ValueType>::try_from(v)
+            .map(|v| Self::from_str(&v).unwrap_or_default())
     }
 
     fn type_name() -> String {
@@ -92,6 +106,7 @@ impl sea_orm::sea_query::ValueType for RefU64 {
     }
 }
 
+#[cfg(feature = "sea-orm")]
 impl Into<sea_orm::Value> for RefU64 {
     fn into(self) -> sea_orm::Value {
         let string: String = self.to_refno_string();
@@ -99,12 +114,16 @@ impl Into<sea_orm::Value> for RefU64 {
     }
 }
 
+#[cfg(feature = "sea-orm")]
 impl sea_orm::TryGetable for RefU64 {
-    fn try_get_by<I: sea_orm::ColIdx>(res: &sea_orm::QueryResult, idx: I) -> Result<Self, sea_orm::TryGetError> {
-        <String as sea_orm::TryGetable>::try_get_by(res, idx).map(|v| Self::from_str(&v).unwrap_or_default())
+    fn try_get_by<I: sea_orm::ColIdx>(
+        res: &sea_orm::QueryResult,
+        idx: I,
+    ) -> Result<Self, sea_orm::TryGetError> {
+        <String as sea_orm::TryGetable>::try_get_by(res, idx)
+            .map(|v| Self::from_str(&v).unwrap_or_default())
     }
 }
-
 
 impl From<&str> for RefU64 {
     fn from(s: &str) -> Self {
@@ -193,22 +212,18 @@ impl BytesTrait for RefU64 {
 
 impl Display for RefU64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.get_0() == 0 {
-            write!(f, "unset")
-        } else {
-            write!(f, "{}_{}", self.get_0(), self.get_1())
-        }
+        write!(f, "{}_{}", self.get_0(), self.get_1())
     }
 }
 
 impl RefU64 {
     #[inline]
     pub fn is_valid(&self) -> bool {
-        self.get_0() > 0 && self.get_1() >= 0
+        self.get_0() > 0
     }
 
     pub fn is_unset(&self) -> bool {
-        self.get_0() == 0 && self.get_1() == 0
+        self.get_0() == 0
     }
 
     #[inline]
@@ -217,14 +232,13 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn to_pe_key(&self) -> String{
+    pub fn to_pe_key(&self) -> String {
         format!("pe:{}", &self.to_string())
     }
     #[inline]
-    pub fn to_pe_thing(&self) -> Thing{
+    pub fn to_pe_thing(&self) -> Thing {
         ("pe".to_owned(), self.to_string()).into()
     }
-
 
     #[inline]
     pub fn get_0(&self) -> u32 {
@@ -241,7 +255,6 @@ impl RefU64 {
     #[inline]
     pub fn get_u32_hash(&self) -> u32 {
         use hash32::{FnvHasher, Hasher};
-        use std::hash::Hash;
         let mut fnv = FnvHasher::default();
         self.hash(&mut fnv);
         fnv.finish32()
@@ -259,6 +272,7 @@ impl RefU64 {
         let refno_str: String = refno.into();
         refno_str.to_string()
     }
+
 
     #[inline]
     pub fn format_url_name(&self, col: &str) -> String {
@@ -321,12 +335,11 @@ impl RefU64 {
         if strs.len() < 2 {
             return None;
         }
-        let ref0 = strs[0].parse::<i32>();
-        let ref1 = strs[1].parse::<i32>();
-        if ref0.is_err() || ref1.is_err() {
-            return None;
+        if let Ok(r0) = strs[0].parse::<i32>() && let Ok(r1) = strs[1].parse::<i32>() {
+            Some(RefI32Tuple((r0, r1)).into())
+        } else {
+            None
         }
-        Some(RefI32Tuple((ref0.unwrap(), ref1.unwrap())).into())
     }
 
     #[inline]
@@ -377,16 +390,16 @@ impl RefU64 {
     }
 }
 
-
 ///pdms的参考号
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct RefI32Tuple(pub (i32, i32));
 
-use std::string::String;
-use anyhow::anyhow;
-use sea_orm::sea_query::ValueType;
-use surrealdb::sql::Thing;
 use crate::cache::mgr::BytesTrait;
+use anyhow::anyhow;
+#[cfg(feature = "sea-orm")]
+use sea_orm::sea_query::ValueType;
+use std::string::String;
+use surrealdb::sql::Thing;
 
 impl Into<String> for RefI32Tuple {
     fn into(self) -> String {

@@ -1,40 +1,44 @@
+use crate::cache::mgr::BytesTrait;
+use crate::consts::UNSET_STR;
+#[cfg(feature = "sea-orm")]
 use crate::orm::{BoolVec, F32Vec, I32Vec, StringVec};
 use crate::pdms_types::*;
-use crate::tool::db_tool::{db1_dehash, db1_hash};
-use crate::types::attmap::AttrMap;
-use crate::types::named_attvalue::NamedAttrValue;
-use crate::{get_default_pdms_db_info, AttrVal, RefU64, SurlValue, RefI32Tuple};
-use bevy_ecs::component::Component;
-use bevy_reflect::DynamicStruct;
-use derive_more::{Deref, DerefMut};
-use indexmap::IndexMap;
-use sea_orm::{ConnectionTrait, DatabaseConnection};
-use sea_query::{Alias, MysqlQueryBuilder};
-use serde_derive::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use surrealdb::sql::{Strand, Thing};
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::*;
 use crate::shape::pdms_shape::BrepShapeTrait;
-use glam::{Affine3A, Mat4, Vec3, DVec3, Quat, Mat3};
-use crate::consts::UNSET_STR;
+use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
-use crate::cache::mgr::BytesTrait;
+use crate::types::attmap::AttrMap;
+use crate::types::named_attvalue::NamedAttrValue;
+use crate::{get_default_pdms_db_info, AttrVal, RefI32Tuple, RefU64, SurlValue};
+use bevy_ecs::component::Component;
+use bevy_reflect::{DynamicStruct, Reflect};
+use derive_more::{Deref, DerefMut};
+use glam::{Affine3A, DVec3, Mat3, Mat4, Quat, Vec3};
+use indexmap::IndexMap;
+#[cfg(feature = "sea-orm")]
+use sea_orm::{ConnectionTrait, DatabaseConnection};
+#[cfg(feature = "sea-orm")]
+use sea_query::{Alias, MysqlQueryBuilder};
+use serde_derive::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::str::FromStr;
+use surrealdb::sql::{Strand, Thing};
 
 ///带名称的属性map
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Debug,
-Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Deref,
+    DerefMut,
+    Clone,
+    Default,
+    Debug,
+    Component,
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
@@ -83,12 +87,11 @@ impl From<SurlValue> for NamedAttrMap {
                             crate::AttrVal::Vec3Type(_) => {
                                 let v: Vec<surrealdb::sql::Value> =
                                     v.try_into().unwrap_or_default();
-                                let p = v.into_iter()
+                                let p = v
+                                    .into_iter()
                                     .map(|x| f32::try_from(x).unwrap_or_default())
                                     .collect::<Vec<_>>();
-                                NamedAttrValue::Vec3Type(
-                                    Vec3::new(p[0], p[1], p[2])
-                                )
+                                NamedAttrValue::Vec3Type(Vec3::new(p[0], p[1], p[2]))
                             }
                             crate::AttrVal::StringArrayType(_) => {
                                 let v: Vec<surrealdb::sql::Value> =
@@ -121,9 +124,9 @@ impl From<SurlValue> for NamedAttrMap {
                                 NamedAttrValue::BoolType(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::RefU64Type(_) | crate::AttrVal::ElementType(_) => {
-                                if let surreal::SurlValue::Thing(id) = v{
+                                if let SurlValue::Thing(id) = v {
                                     NamedAttrValue::RefU64Type(id.into())
-                                }else{
+                                } else {
                                     NamedAttrValue::InvalidType
                                 }
                             }
@@ -135,6 +138,12 @@ impl From<SurlValue> for NamedAttrMap {
             }
         }
         Self { map }
+    }
+}
+
+impl From<AttrMap> for NamedAttrMap {
+    fn from(v: AttrMap) -> Self {
+        (&v).into()
     }
 }
 
@@ -150,6 +159,7 @@ impl From<&AttrMap> for NamedAttrMap {
     }
 }
 
+#[cfg(feature = "sea-orm")]
 impl Into<DynamicStruct> for NamedAttrMap {
     fn into(self) -> DynamicStruct {
         let mut ds = DynamicStruct::default();
@@ -212,7 +222,8 @@ impl NamedAttrMap {
 
     #[inline]
     pub fn set_e3d_version(&mut self, v: i32) {
-        self.map.insert("VERSION".into(), NamedAttrValue::IntegerType(v));
+        self.map
+            .insert("VERSION".into(), NamedAttrValue::IntegerType(v));
     }
 
     #[inline]
@@ -220,18 +231,21 @@ impl NamedAttrMap {
         self.get_i32("VERSION").unwrap_or_default()
     }
 
-    pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap) {
+    pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap, NamedAttrMap) {
         let mut default_att = NamedAttrMap::default();
         let mut comp_att = NamedAttrMap::default();
+        let mut uda_att = NamedAttrMap::default();
 
-        for (k, v) in self.map.iter() {
+        for (k, v) in self.map.clone() {
             if DEFAULT_NAMED_NOUNS.contains(&k.as_str()) {
-                default_att.map.insert(k.clone(), v.clone());
-            } else {
-                comp_att.insert(k.clone(), v.clone());
+                default_att.insert(k, v);
+            } else if k.starts_with(":"){
+                uda_att.insert(k, v);
+            }else {
+                comp_att.insert(k, v);
             }
         }
-        (default_att, comp_att)
+        (default_att, comp_att, uda_att)
     }
 
     #[inline]
@@ -241,7 +255,6 @@ impl NamedAttrMap {
         }
         None
     }
-
 
     #[inline]
     pub fn is_type(&self, type_name: &str) -> bool {
@@ -324,8 +337,21 @@ impl NamedAttrMap {
 
     #[inline]
     pub fn get_refno(&self) -> Option<RefU64> {
-        if let NamedAttrValue::RefU64Type(d) = self.get_val("REFNO")? {
+        if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("REFNO") {
             return Some(*d);
+        } else if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("refno") {
+            return Some(*d);
+        }
+        None
+    }
+
+    #[inline]
+    pub fn get_refno_lossy(&self) -> Option<RefU64> {
+        if let Some(s) = self.get_as_string("REFNO") {
+            return RefU64::from_str(s.as_str()).ok();
+        } else if let Some(s) = self.get_as_string("refno") {
+            dbg!(&s);
+            return RefU64::from_str(s.as_str()).ok();
         }
         None
     }
@@ -334,7 +360,6 @@ impl NamedAttrMap {
     pub fn get_owner_as_string(&self) -> String {
         self.get_as_string("OWNER").unwrap_or(UNSET_STR.into())
     }
-
 
     pub fn get_type(&self) -> String {
         if let Some(NamedAttrValue::StringType(v)) = self.map.get("TYPE") {
@@ -410,25 +435,36 @@ impl NamedAttrMap {
     }
 
     pub fn gen_sur_json(&self) -> Option<String> {
+        self.gen_sur_json_exclude(&[])
+    }
+
+    pub fn gen_sur_json_exclude(&self, excludes: &[&str]) -> Option<String> {
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         let mut record_map: IndexMap<String, RefU64> = IndexMap::new();
+        let mut records_map: IndexMap<String, Vec<RefU64>> = IndexMap::new();
         let type_name = self.get_type();
         let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
         map.insert("id".into(), refno.to_string().into());
         map.insert("TYPE".into(), type_name.into());
-        // map.insert("REFNO".into(), refno.to_string().into());
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
-            if key.starts_with(":") || key.as_str() == "REFNO" {
+            if key.starts_with("UDA:") || key.as_str() == "REFNO" {
                 continue;
             }
-            if matches!(val, NamedAttrValue::RefU64Type(_)) {
+            if matches!(val, NamedAttrValue::RefU64Type(_))
+                || matches!(val, NamedAttrValue::ElementType(_))
+            {
                 record_map.insert(key, val.refno_value().unwrap_or_default());
+            } else if let NamedAttrValue::RefU64Array(refnos) = val {
+                records_map.insert(key, refnos);
             } else {
-                // let new_key = key.replace(":", "_");
                 map.insert(key, val.into());
             }
+        }
+
+        for key in excludes {
+            map.remove(*key);
         }
 
         //加上pe，去掉双引号
@@ -440,11 +476,85 @@ impl NamedAttrMap {
         sjson.remove(sjson.len() - 1);
         sjson.push_str(&format!(",REFNO: pe:{},", refno.to_string()));
         for (key, val) in record_map.into_iter() {
-            if val.is_unset() { continue; }
+            if val.is_unset() && excludes.contains(&key.as_str()) {
+                continue;
+            }
             sjson.push_str(&format!(r#""{}": pe:{},"#, key, val));
+        }
+        for (key, val) in records_map.into_iter() {
+            if val.is_empty() && excludes.contains(&key.as_str()) {
+                continue;
+            }
+            let s = format!(
+                r#""{}": [{}],"#,
+                key,
+                val.iter()
+                    .map(|r| r.to_pe_key())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            );
+            // dbg!(&s);
+            sjson.push_str(&s);
         }
         sjson.remove(sjson.len() - 1);
         sjson.push_str("}");
+
+        Some(sjson)
+    }
+
+    pub fn gen_sur_json_uda(&self, excludes: &[&str]) -> Option<String> {
+        let mut uda_json_vec = vec![];
+        for (key, val) in self.map.clone().into_iter() {
+            //refno 单独处理
+            if key.as_str() == "REFNO" {
+                continue;
+            }
+            if key.starts_with("UDA:") {
+                let json = if matches!(val, NamedAttrValue::RefU64Type(_))
+                    || matches!(val, NamedAttrValue::ElementType(_))
+                {
+                    val.refno_value().unwrap_or_default().to_pe_key()
+                } else {
+                    serde_json::to_string(&val).unwrap()
+                };
+                uda_json_vec.push(format!("{{ 'u': {}, 'v': {} }}", key.as_str(), json));
+            }
+        }
+        if uda_json_vec.is_empty() {
+            return None;
+        }
+
+        let type_name = self.get_type();
+        let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
+        let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
+        map.insert("id".into(), refno.to_string().into());
+        map.insert("TYPE".into(), type_name.clone().into());
+
+        for key in excludes {
+            map.remove(*key);
+        }
+
+        //加上pe，去掉双引号
+        let Ok(mut sjson) = serde_json::to_string_pretty(&map) else {
+            dbg!(&self);
+            return None;
+        };
+
+        sjson.remove(sjson.len() - 1);
+        sjson.push_str(&format!(
+            r#", "refno": {}:{} "#,
+            type_name,
+            refno.to_string()
+        ));
+        if !uda_json_vec.is_empty() {
+            sjson.push_str(&format!(r#", "udas": [{}]"#, uda_json_vec.join(",")));
+        }
+        sjson.push_str("}");
+
+        if refno.get_1() == 124126 {
+            println!("uda sjon: {}", sjson);
+        }
+
         Some(sjson)
     }
 
@@ -571,7 +681,9 @@ impl NamedAttrMap {
     pub fn get_str(&self, key: &str) -> Option<&str> {
         let v = self.get_val(key)?;
         match v {
-            NamedAttrValue::StringType(s) | NamedAttrValue::WordType(s) | NamedAttrValue::ElementType(s) => Some(s.as_str()),
+            NamedAttrValue::StringType(s)
+            | NamedAttrValue::WordType(s)
+            | NamedAttrValue::ElementType(s) => Some(s.as_str()),
             _ => None,
         }
     }
@@ -619,7 +731,8 @@ impl NamedAttrMap {
                 .map(|i| format!(" {}", i))
                 .collect::<String>()
                 .into(),
-            Vec3Type(d) => d.to_array()
+            Vec3Type(d) => d
+                .to_array()
                 .iter()
                 .map(|i| format!(" {:.3}", i))
                 .collect::<String>()
@@ -670,17 +783,19 @@ impl NamedAttrMap {
 }
 
 impl NamedAttrMap {
+    #[cfg(feature = "sea-orm")]
     #[inline]
     pub fn get_columns(&self) -> Vec<Alias> {
         self.map.keys().map(|x| Alias::new(x.clone())).collect()
     }
 
+    #[cfg(feature = "sea-orm")]
     #[inline]
     pub fn get_values(&self) -> Vec<sea_query::Value> {
         self.map.values().map(|x| x.clone().into()).collect()
     }
 
-    //填充其他显示类型数据为默认数据
+    //填充其他显示类型数据为默认数据, 包括uda的默认属性
     pub fn fill_explicit_default_values(&mut self) {
         let db_info = get_default_pdms_db_info();
         let noun_hash = self.get_type_hash() as i32;
@@ -691,39 +806,15 @@ impl NamedAttrMap {
                         .insert(info.name.clone(), (&info.default_val).into());
                 }
             }
-
-            //还有个TYPEX需要加
-            if !self.map.contains_key("TYPEX") {
-                self.map.insert(
-                    "TYPEX".to_string(),
-                    NamedAttrValue::StringType("".to_string()),
-                );
-            }
         }
     }
-
-    // pub fn fill_explicit_empty_values(&mut self) {
-    //     let db_info = get_default_pdms_db_info();
-    //     let noun_hash = self.get_type_hash() as i32;
-    //     if let Some(m) = db_info.noun_attr_info_map.get(&noun_hash) {
-    //         for info in m.value() {
-    //             if info.offset == 0 && !self.map.contains_key(&info.name) {
-    //                 self.map.insert( info.name.clone(), (&info.default_val).into());
-    //             }
-    //         }
-    //
-    //         //还有个TYPEX需要加
-    //         if !self.map.contains_key("TYPEX") {
-    //             self.map.insert("TYPEX".to_string(), NamedAttrValue::StringType("".to_string()));
-    //         }
-    //     }
-    // }
 
     pub fn contains_attr_hash(&self, hash: u32) -> bool {
         self.map.contains_key(&db1_dehash(hash))
     }
 
     ///执行保存
+    #[cfg(feature = "sea-orm")]
     pub async fn exec_insert(&self, db: &DatabaseConnection, replace: bool) -> anyhow::Result<()> {
         let sql = self.gen_insert_sql(replace)?;
         db.execute_unprepared(&sql).await?;
@@ -731,6 +822,7 @@ impl NamedAttrMap {
     }
 
     ///生成保存的sql
+    #[cfg(feature = "sea-orm")]
     pub fn gen_insert_sql(&self, replace: bool) -> anyhow::Result<String> {
         let type_name = self.get_type();
 
@@ -748,13 +840,14 @@ impl NamedAttrMap {
     }
 
     ///生成插入的语句
+    #[cfg(feature = "sea-orm")]
     pub async fn exec_insert_many<I>(
         atts: I,
         db: &DatabaseConnection,
         replace: bool,
     ) -> anyhow::Result<()>
-        where
-            I: IntoIterator<Item=Self>,
+    where
+        I: IntoIterator<Item = Self>,
     {
         let sqls = Self::gen_insert_many_sql(atts, replace)?;
         for sql in sqls {
@@ -764,9 +857,10 @@ impl NamedAttrMap {
     }
 
     ///生成插入的语句
+    #[cfg(feature = "sea-orm")]
     pub fn gen_insert_many_sql<I>(atts: I, replace: bool) -> anyhow::Result<Vec<String>>
-        where
-            I: IntoIterator<Item=Self>,
+    where
+        I: IntoIterator<Item = Self>,
     {
         ///按照类型重新划分组
         let mut grouped_map: BTreeMap<String, Vec<Self>> = BTreeMap::new();
@@ -800,6 +894,7 @@ impl NamedAttrMap {
     }
 
     ///执行增量更新的提交
+    #[cfg(feature = "sea-orm")]
     pub async fn exec_commit_atts_change(
         db: &DatabaseConnection,
         message: Option<&str>,
@@ -842,9 +937,9 @@ impl NamedAttrMap {
         results
     }
 
-
     //后面还要根据参考号确定使用哪个类型、还有db numer
     //生成查询语句
+    #[cfg(feature = "sea-orm")]
     pub fn gen_query_sql(refnos: &Vec<RefU64>) -> anyhow::Result<Vec<String>> {
         //首先要查询到类型信息
         let types = sea_query::Query::select().to_owned();
@@ -864,15 +959,11 @@ impl NamedAttrMap {
     }
 }
 
-
 impl NamedAttrMap {
     //计算使用元件库的design 元件 hash
-    pub fn cal_cata_hash(&self) -> Option<u64> {
+    pub fn cal_cata_hash(&self) -> String {
         //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
         let type_name = self.get_type_str();
-        if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
-            return Some(*self.get_refno().unwrap_or_default());
-        }
         //由于有ODESP这种，会导致复用出现问题，怎么解决这个问题
         //1、主动去判断是否CataRef是这个类型，即有ODESP这种字段，然后从复用的逻辑排除出来
         //2、解析的时候发现表达式有这些字段，主动去给catref加一个标记位，表示是不能复用的构件
@@ -884,13 +975,9 @@ impl NamedAttrMap {
         } else {
             "SPRE"
         };
-        if let Some(spref) = self.get_as_string(ref_name) {
-            if spref.starts_with('0') {
-                return None;
-            }
-            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
-                return Some(*self.get_refno().unwrap_or_default());
-            }
+        if let Some(spref) = self.get_as_string(ref_name)
+            && !CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name)
+        {
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             std::hash::Hash::hash(&spref, &mut hasher);
             if let Some(des_para) = self.get_f32_vec("DESP") {
@@ -904,8 +991,9 @@ impl NamedAttrMap {
             }
 
             //如果是土建模型 "DRNS", "DRNE"
-            if let Some(drns) = self.get_as_string("DRNS") &&
-                let Some(drne) = self.get_as_string("DRNE") {
+            if let Some(drns) = self.get_as_string("DRNS")
+                && let Some(drne) = self.get_as_string("DRNE")
+            {
                 std::hash::Hash::hash(&drns, &mut hasher);
                 std::hash::Hash::hash(&drne, &mut hasher);
                 let poss = self.get_vec3("POSS").unwrap_or_default();
@@ -919,8 +1007,8 @@ impl NamedAttrMap {
 
             let val = std::hash::Hasher::finish(&hasher);
 
-            return Some(val);
+            return val.to_string();
         }
-        return None;
+        return self.get_refno().unwrap_or_default().to_string();
     }
 }

@@ -5,11 +5,9 @@ use std::fmt::Debug;
 use std::fmt;
 use std::collections::BTreeMap;
 use glam::*;
-use std::hash::{Hash, Hasher};
 use crate::{BHashMap, RefI32Tuple, RefU64};
 use crate::cache::mgr::BytesTrait;
 use crate::consts::{ATT_CURD, ATT_STYP, UNSET_STR};
-use crate::named_attmap::NamedAttrMap;
 use crate::pdms_types::*;
 use crate::types::attval::AttrVal::*;
 use crate::prim_geo::ctorus::CTorus;
@@ -21,11 +19,10 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 use crate::shape::pdms_shape::BrepShapeTrait;
-use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32, is_uda};
+use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::tool::math_tool::cal_mat3_by_zdir;
 use crate::types::attval::AttrVal;
-use crate::types::named_attvalue::NamedAttrValue;
 use crate::ref64vec::RefU64Vec;
 
 ///PDMS的属性数据Map
@@ -52,16 +49,16 @@ impl Debug for AttrMap {
     }
 }
 
-impl Into<NamedAttrMap> for AttrMap {
-    fn into(self) -> NamedAttrMap {
-        let mut map = BTreeMap::new();
-        for (k, v) in self.map {
-            if is_uda(k) {   continue; }
-            map.entry(db1_dehash(k)).or_insert(NamedAttrValue::from(&v));
-        }
-        NamedAttrMap { map }
-    }
-}
+// impl Into<NamedAttrMap> for AttrMap {
+//     fn into(self) -> NamedAttrMap {
+//         let mut map = BTreeMap::new();
+//         for (k, v) in self.map {
+//             if is_uda(k) {   continue; }
+//             map.entry(db1_dehash(k)).or_insert(NamedAttrValue::from(&v));
+//         }
+//         NamedAttrMap { map }
+//     }
+// }
 
 #[cfg(not(target_arch = "wasm32"))]
 impl BytesTrait for AttrMap {}
@@ -108,7 +105,7 @@ impl AttrMap {
         use flate2::Compression;
         use std::io::Write;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&self.into_rkyv_bytes());
+        let _ = e.write_all(&self.into_rkyv_bytes());
         e.finish().unwrap_or_default()
     }
 
@@ -136,7 +133,7 @@ impl AttrMap {
         use flate2::Compression;
         use std::io::Write;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&self.into_bincode_bytes());
+        let _ = e.write_all(&self.into_bincode_bytes());
         e.finish().unwrap_or_default()
     }
 

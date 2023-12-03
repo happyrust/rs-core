@@ -1,12 +1,11 @@
 use crate::pdms_types::AttrInfo;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::types::attmap::AttrMap;
-use crate::types::attval::AttrVal;
 use crate::types::named_attmap::NamedAttrMap;
 use dashmap::DashMap;
 use glam::i32;
+#[cfg(feature = "sea-orm")]
 use sea_query::*;
-use sea_query::{MysqlQueryBuilder, Table};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -60,6 +59,7 @@ impl PdmsDatabaseInfo {
     }
 
     ///生成所有db info里的table
+    #[cfg(feature = "sea-orm")]
     pub fn gen_all_create_table_sql(&self) -> Vec<String> {
         let mut sqls = vec![];
         for noun_att_info in &self.noun_attr_info_map {
@@ -76,6 +76,7 @@ impl PdmsDatabaseInfo {
     }
 
     ///生成创建table的语句
+    #[cfg(feature = "sea-orm")]
     pub fn gen_create_table_sql(&self, type_name: &str) -> Option<String> {
         let mut table_create_statement = Table::create()
             .table(Alias::new(type_name))
@@ -399,7 +400,7 @@ impl PdmsDatabaseInfo {
         let path = path.unwrap_or("all_attr_info.json");
         let bytes = serde_json::to_string(self)?;
         let mut file = std::fs::File::create(path)?;
-        file.write_all(bytes.as_bytes());
+        let _ = file.write_all(bytes.as_bytes());
         Ok(())
     }
 }

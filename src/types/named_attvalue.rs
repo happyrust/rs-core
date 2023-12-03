@@ -5,7 +5,8 @@ use bevy_ecs::component::Component;
 use bevy_reflect::Reflect;
 use glam::{bool, f32, f64, i32, Vec3};
 use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
-use sea_query::Value;
+#[cfg(feature = "sea-orm")]
+use sea_query::Value as SeaValue;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -25,7 +26,6 @@ use serde_json::json;
 pub enum NamedAttrValue {
     #[default]
     InvalidType,
-    // EmptyValue(String),  //String 指明是什么Type
     IntegerType(i32),
     StringType(String),
     F32Type(f32),
@@ -41,7 +41,7 @@ pub enum NamedAttrValue {
     RefU64Array(Vec<RefU64>),
 }
 
-
+#[cfg(feature = "sea-orm")]
 impl Into<Value> for NamedAttrValue {
     fn into(self) -> Value {
         match self {
@@ -49,11 +49,7 @@ impl Into<Value> for NamedAttrValue {
             NamedAttrValue::StringType(val)
             | NamedAttrValue::WordType(val)
             | NamedAttrValue::ElementType(val) => Value::String(Some(val.into())),
-            NamedAttrValue::F32Type(val) => {
-                //只保留3位有效数字
-                let new_val = f32_round_3(val);
-                Value::Float(val.into())
-            }
+            NamedAttrValue::F32Type(val) => Value::Float(val.into()),
             NamedAttrValue::BoolType(val) => Value::Bool(val.into()),
             NamedAttrValue::RefU64Type(val) => Value::String(Some(val.to_refno_string().into())),
             NamedAttrValue::F32VecType(val) => {
@@ -95,13 +91,29 @@ impl From<&AttrVal> for NamedAttrValue {
             WordType(d) => Self::StringType(d),
             RefU64Type(d) => Self::RefU64Type(d),
             StringHashType(d) => Self::IntegerType(d as i32),
-            RefU64Array(d) => {
-                Self::StringArrayType(d.into_iter().map(|x| x.to_url_refno()).collect())
-            }
+            RefU64Array(d) => Self::RefU64Array(d.0),
         }
     }
 }
 
+impl From<AttrVal> for NamedAttrValue {
+    fn from(v: AttrVal) -> Self {
+        (&v).into()
+    }
+}
+
+impl NamedAttrValue {
+    #[inline]
+    pub fn get_default_val(typ: &str) -> Self {
+        match typ {
+            "LOG" => Self::BoolType(false),
+            "REAL" => Self::F32Type(0.0),
+            "ELEMENT" => Self::RefU64Type(Default::default()),
+            "TEXT" => Self::StringType("".into()),
+            _ => Self::StringType("unset".into()),
+        }
+    }
+}
 
 impl NamedAttrValue {
     #[inline]
@@ -204,8 +216,7 @@ impl NamedAttrValue {
     #[inline]
     pub fn get_val_as_string(&self) -> String {
         return match self {
-            _ => "unset".to_string(),
-            Self:: IntegerType(v) => v.to_string(),
+            Self::IntegerType(v) => v.to_string(),
             Self::StringType(v) => v.to_string(),
             Self::F32Type(v) => v.to_string(),
             Self::F32VecType(v) => serde_json::to_string(v).unwrap(),
@@ -217,20 +228,14 @@ impl NamedAttrValue {
             Self::ElementType(v) => v.to_string(),
             Self::WordType(v) => v.to_string(),
             Self::RefU64Type(v) => v.to_refno_str().to_string(),
-            // Self::StringHashType(v) => v.to_string(),
-            // Self::RefU64Array(v) => serde_json::to_string(v).unwrap(),
+            _ => "unset".to_string(),
         };
     }
-
-
 }
 
-
 impl NamedAttrValue {
-
     pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
         return match self {
-            _ => Box::new("unset".to_string()),
             NamedAttrValue::StringType(v)
             | NamedAttrValue::ElementType(v)
             | NamedAttrValue::WordType(v) => Box::new(v.to_string()),
@@ -245,6 +250,7 @@ impl NamedAttrValue {
             NamedAttrValue::F32VecType(v) => Box::new(v.clone()),
             NamedAttrValue::Vec3Type(v) => Box::new(vec![v.x, v.y, v.z]),
             NamedAttrValue::RefU64Type(r) => Box::new(r.to_refno_string()),
+            _ => Box::new("unset".to_string()),
         };
     }
 }
@@ -256,8 +262,10 @@ impl Into<serde_json::Value> for NamedAttrValue {
             NamedAttrValue::F32Type(d) => {
                 //todo fix 为什么会有出错的情况
                 //infinite ??
-                serde_json::Value::Number(serde_json::Number::from_f64(d as _)
-                    .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()))
+                serde_json::Value::Number(
+                    serde_json::Number::from_f64(d as _)
+                        .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
+                )
             }
             NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
             NamedAttrValue::StringType(s)

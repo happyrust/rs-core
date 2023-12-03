@@ -1,16 +1,15 @@
-use std::fs::File;
-use std::io::Read;
 use dashmap::DashMap;
 use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
 use memchr::memmem::{find, find_iter};
+use once_cell::sync::Lazy;
+use std::fs::File;
+use std::io::Read;
 
 use crate::types::db_info::PdmsDatabaseInfo;
 
 lazy_static! {
     pub static ref GLOBAL_UDA_NAME_MAP: DashMap<u32, String> = DashMap::new();
-
-   pub static ref GLOBAL_UDA_UKEY_MAP: DashMap<String, u32> = DashMap::new();
+    pub static ref GLOBAL_UDA_UKEY_MAP: DashMap<String, u32> = DashMap::new();
 }
 
 /// 从bincode数据加载PdmsDatabaseInfo
@@ -39,7 +38,19 @@ pub fn is_uda(hash: u32) -> bool {
     hash > 0x171FAD39
 }
 
+#[inline]
+pub fn is_uda_name(name: &str) -> bool {
+     name.starts_with(":")
+}
 
+#[inline]
+pub fn get_uda_index(hash: u32) -> Option<u32> {
+    if hash > 0x171FAD39 {
+        Some((hash - 0x171FAD39) >> 24)
+    } else {
+        None
+    }
+}
 
 #[inline]
 pub fn db1_dehash(hash: u32) -> String {
@@ -47,8 +58,11 @@ pub fn db1_dehash(hash: u32) -> String {
     if GLOBAL_UDA_NAME_MAP.contains_key(&hash) {
         return GLOBAL_UDA_NAME_MAP.get(&hash).unwrap().to_string();
     }
-    if hash > 0x171FAD39 { // UDA的情况
+    if hash > 0x171FAD39 {
+        // UDA的情况
+        // println!("uda index {:?}", get_uda_index(hash));
         let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
+        // println!("Init k: {:#4X}", k);
         result.push(':');
         for _i in 0..6 {
             if k <= 0 {
@@ -56,6 +70,7 @@ pub fn db1_dehash(hash: u32) -> String {
             }
             result.push((k % 64 + 32) as u8 as char);
             k /= 64;
+            // println!("k: {:#4X}", k);
         }
     } else {
         if hash <= 0x81BF1 {
@@ -82,7 +97,6 @@ pub fn db1_hash_i32(hash_str: &str) -> i32 {
 //     m
 // });
 
-
 //todo 处理出错的情况
 #[inline]
 pub fn db1_hash(hash_str: &str) -> u32 {
@@ -94,7 +108,7 @@ pub fn db1_hash(hash_str: &str) -> u32 {
     }
     let chars = hash_str.as_bytes();
     if chars.len() < 1 {
-        return 0;  //出错的暂时用0 表达
+        return 0; //出错的暂时用0 表达
     }
     let mut val = 0i64;
     let mut i = (chars.len() - 1) as i32;
@@ -109,7 +123,8 @@ pub fn db1_hash(hash_str: &str) -> u32 {
 #[inline]
 pub fn db1_dehash_const(hash: u32) -> String {
     let mut result = String::new();
-    if hash > 0x171FAD39 { // UDA的情况
+    if hash > 0x171FAD39 {
+        // UDA的情况
         let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
         result.push(':');
         for _i in 0..6 {
@@ -135,7 +150,7 @@ pub fn db1_dehash_const(hash: u32) -> String {
 pub const fn db1_hash_const(hash_str: &str) -> u32 {
     let chars = hash_str.as_bytes();
     if chars.len() < 1 {
-        return 0;  //出错的暂时用0 表达
+        return 0; //出错的暂时用0 表达
     }
     let mut val = 0i64;
     let mut i = (chars.len() - 1) as i32;
@@ -148,7 +163,6 @@ pub const fn db1_hash_const(hash_str: &str) -> u32 {
 
 #[test]
 fn db1_dehash_test() {
-
     //USER
     //0xd943a
     let name = db1_dehash(0xd943a);
@@ -227,7 +241,6 @@ fn db1_dehash_test() {
     println!("{:#4X}", val);
 }
 
-
 fn convert_to_le_i32(table: &[u8], dw_offset: usize) -> i32 {
     i32::from_le_bytes(table[dw_offset * 4..dw_offset * 4 + 4].try_into().unwrap())
 }
@@ -256,14 +269,16 @@ fn get_mapped_value(table: &[u8], v: i32) -> i32 {
         let a = v & 0xFF;
         // //println!("{:#4X}", a);
         //println!("{}", (a + (c / 4) as i32 + 1) as usize);
-        res = convert_to_le_i32(table, (a + (c / 4) as i32 + 1) as usize) as i32;  //从1开始
+        res = convert_to_le_i32(table, (a + (c / 4) as i32 + 1) as usize) as i32;
+        //从1开始
     }
     res
 }
 
 pub fn convert_to_u8_vec(v: i64) -> Vec<u8> {
     let mut res = vec![];
-    if v < 0 {} else if v <= 127 {
+    if v < 0 {
+    } else if v <= 127 {
         res.push(v as u8);
     } else if v <= 2047 {
         res.push((v / 0x40 + 0xC0) as u8);
@@ -292,7 +307,8 @@ pub fn decode_chi_chars(table: &[u8], data: &[u8]) -> String {
     let d = &data[2..data.len() - 2];
     //println!("{:#4X?}", d);
     let mut i = 0;
-    while i < d.len() - 1 { //todo 原来是 d.len() 加了个 -1 ，该方法可能需要调整
+    while i < d.len() - 1 {
+        //todo 原来是 d.len() 加了个 -1 ，该方法可能需要调整
         let d0 = d[i] as u64;
         //println!("{:#4X?}", d0);
         let d1 = d[i + 1] as i32;
@@ -317,7 +333,8 @@ pub fn decode_chars_data(input: &[u8]) -> (String, bool) {
     let mut res = vec![];
     let mut prev_pos = 0;
     for p in start_iter {
-        if input.len() > p && prev_pos <= p { // todo 这个地方也需要调整
+        if input.len() > p && prev_pos <= p {
+            // todo 这个地方也需要调整
             res.extend_from_slice(&input[prev_pos..p]);
             if let Some(len) = find(&input[p..], &[0x20, 0x26]) {
                 // dbg!(&input[p..p + len]);
@@ -340,11 +357,18 @@ pub fn decode_chars_data(input: &[u8]) -> (String, bool) {
 fn test_chinese_data() {
     // //println!("Hello, world!");
     //26 7E 37 27 43 45 20 26
-    let _test_code = vec![0x26, 0x7E, 0x37, 0x56, 0x56, 0x27, 0x32, 0x62, 0x4A, 0x54, 0x20, 0x26];
+    let _test_code = vec![
+        0x26, 0x7E, 0x37, 0x56, 0x56, 0x27, 0x32, 0x62, 0x4A, 0x54, 0x20, 0x26,
+    ];
     let _test_code = vec![0x26, 0x7E, 0x37, 0x27, 0x43, 0x45, 0x20, 0x26];
     let _test_code = vec![0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26];
-    let _test_code = vec![0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26];
-    let _test_code = vec![0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26, 0x74, 0x65, 0x73, 0x74];
+    let _test_code = vec![
+        0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26,
+    ];
+    let _test_code = vec![
+        0x2F, 0x26, 0x7E, 0x39, 0x5C, 0x20, 0x26, 0x31, 0x32, 0x26, 0x7E, 0x35, 0x40, 0x20, 0x26,
+        0x74, 0x65, 0x73, 0x74,
+    ];
     let test_code = vec![0x2F, 0x31, 0x30, 0x30, 0x2D, 0x42, 0x2D, 0x31];
     // let table_data = include_bytes!("../encode_char_table.bin");
 
@@ -361,6 +385,3 @@ fn test_db1_dehash() {
     let hash = db1_dehash(642951949);
     assert_eq!(":3D_SJRY".to_string(), hash);
 }
-
-
-
