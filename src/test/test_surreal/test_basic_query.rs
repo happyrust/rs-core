@@ -57,19 +57,23 @@ async fn test_query_wtrans_by_refno() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_att_by_refno() {
     super::init_test_surreal().await;
-    let attmap = rs_surreal::get_named_attmap("13292_106".into()).await;
+    // let attmap = rs_surreal::get_named_attmap("25688/53371".into()).await;
+    // dbg!(attmap);
+    let attmap = rs_surreal::get_named_attmap_with_uda("17496/258778".into(), true).await.unwrap();
     dbg!(attmap);
+    //get_named_full_attmap
+    //get_named_attmap
+    // let attmap = rs_surreal::get_named_full_attmap("25688/53371".into()).await;
+    // dbg!(attmap); 
 }
 
 #[tokio::test]
 async fn test_query_children() {
     super::init_test_surreal().await;
-    let refnos = rs_surreal::get_children_refnos("17496_171104".into()).await;
-    dbg!(refnos);
-    let refnos = rs_surreal::get_children_refnos("17496_171188".into()).await;
-    dbg!(refnos);
-    let refnos = rs_surreal::get_children_refnos("17496_0".into()).await;
-    dbg!(refnos);
+    // let refnos = rs_surreal::get_children_refnos("9304_0".into()).await;
+    // dbg!(refnos);
+    let nodes = rs_surreal::get_children_ele_nodes("17496_256208".into()).await.unwrap();
+    dbg!(nodes);
 }
 
 #[tokio::test]

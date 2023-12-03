@@ -4,9 +4,10 @@ use serde_json::{json, to_string_pretty};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::fmt::format;
+use bevy_ecs::system::Resource;
 use surrealdb::sql::Thing;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Resource)]
 pub struct SPdmsElement {
     //todo 用来作为sql的主键
     pub id: String,

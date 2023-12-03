@@ -19,11 +19,10 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 use crate::shape::pdms_shape::BrepShapeTrait;
-use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32, is_uda};
+use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::tool::math_tool::cal_mat3_by_zdir;
 use crate::types::attval::AttrVal;
-use crate::types::named_attvalue::NamedAttrValue;
 use crate::ref64vec::RefU64Vec;
 
 ///PDMS的属性数据Map

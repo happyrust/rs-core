@@ -9,6 +9,7 @@ fn main() -> anyhow::Result<()>{
     dbg!(db1_dehash(0x000C7983));
     dbg!(db1_dehash(0x9E770));
     println!("{:#4X}", db1_hash("DESP"));
+    println!("{:#4X}", db1_hash("DBLS"));
     // let type_att_info = generate_att_info_json(Some("att_APPLDW"))?;
     // let type_att_info = generate_att_info_json(Some("att_NSEX"))?;
     // // dbg!(&type_att_info);

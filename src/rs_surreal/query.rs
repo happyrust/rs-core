@@ -1,3 +1,6 @@
+use std::collections::{BTreeMap, HashMap};
+
+use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::types::*;
 use crate::{NamedAttrMap, RefU64};
@@ -56,6 +59,44 @@ pub async fn get_type_name(refno: RefU64) -> anyhow::Result<String> {
     Ok(type_name.unwrap_or_default())
 }
 
+///查询的数据把 refno->name，换成名称
+pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
+    let mut attmap = get_named_attmap_with_uda(refno, true).await?;
+    attmap.fill_explicit_default_values();
+    let mut refno_fields = vec![];
+    let mut keys = vec![];
+    let mut unset_keys = vec![];
+    for (k, v) in &attmap.map {
+        if k != "REFNO"
+            && let NamedAttrValue::RefU64Type(r) = v
+        {
+            if r.is_valid() {
+                refno_fields.push(r.to_pe_key());
+                keys.push(k.to_owned());
+            } else {
+                unset_keys.push(k.to_owned());
+            }
+        }
+    }
+    // dbg!(&keys);
+    // dbg!(&refno_fields);
+    let mut response = SUL_DB
+        .query(format!(
+            "select value name from [{}]",
+            refno_fields.join(",")
+        ))
+        .await?;
+    let names: Vec<String> = response.take(0)?;
+    // dbg!(&names);
+    for (k, v) in keys.into_iter().zip(names) {
+        attmap.insert(k, NamedAttrValue::StringType(v));
+    }
+    for k in unset_keys {
+        attmap.insert(k, NamedAttrValue::StringType("unset".to_owned()));
+    }
+    Ok(attmap)
+}
+
 ///通过surql查询属性数据
 pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     let mut response = SUL_DB
@@ -64,6 +105,50 @@ pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
         .await?;
     let o: SurlValue = response.take(0)?;
     let named_attmap: NamedAttrMap = o.into();
+    Ok(named_attmap)
+}
+
+///通过surql查询属性数据，包含UDA数据
+pub async fn get_named_attmap_with_uda(
+    refno: RefU64,
+    default_unset: bool,
+) -> anyhow::Result<NamedAttrMap> {
+    let mut response = SUL_DB
+        .query(include_str!("schemas/query_full_attmap_by_refno.surql"))
+        .bind(("refno", refno.to_string()))
+        .await?;
+    //获得uda的 map
+    let o: SurlValue = response.take(0)?;
+    let mut named_attmap: NamedAttrMap = o.into();
+    let uda_kvs: Vec<NamedAttrMap> = response.take(2)?;
+    // dbg!(&uda_kvs);
+    for map in uda_kvs {
+        let k = map.get("u").unwrap().get_val_as_string();
+        let splits = k.split("::").collect::<Vec<_>>();
+        let uname = splits[0];
+        if uname == ":NONE" || uname.is_empty() {
+            continue;
+        }
+        let utype = splits[1];
+        // dbg!((uname, utype));
+        let v = map.get("v").unwrap().clone();
+        if matches!(&v, NamedAttrValue::InvalidType) {
+            if default_unset {
+                named_attmap.insert(uname.to_owned(), NamedAttrValue::InvalidType);
+            } else {
+                named_attmap.insert(uname.to_owned(), NamedAttrValue::get_default_val(utype));
+            }
+        } else {
+            named_attmap.insert(uname.to_owned(), v);
+        }
+    }
+    let overite_kvs: Vec<NamedAttrMap> = response.take(3)?;
+    // dbg!(&overite_kvs);
+    for map in overite_kvs {
+        let k = map.get("u").unwrap().get_val_as_string();
+        let v = map.get("v").unwrap().clone();
+        named_attmap.insert(k, v);
+    }
     Ok(named_attmap)
 }
 
@@ -89,9 +174,7 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 
 pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
     let mut response = SUL_DB
-        .query(include_str!(
-            "schemas/query_children_attmap_by_refno.surql"
-        ))
+        .query(include_str!("schemas/query_children_attmap_by_refno.surql"))
         .bind(("refno", refno.to_string()))
         .await?;
     let o: SurlValue = response.take(0)?;
@@ -103,13 +186,35 @@ pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<Nam
 
 pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>> {
     let mut response = SUL_DB
-        .query(include_str!(
-            "schemas/query_children_pes_by_refno.surql"
-        ))
+        .query(include_str!("schemas/query_children_pes_by_refno.surql"))
         .bind(("refno", refno.to_string()))
         .await?;
     let pes: Vec<SPdmsElement> = response.take(0)?;
     Ok(pes)
+}
+
+pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
+    let mut response = SUL_DB
+        .query(include_str!("schemas/query_children_nodes_by_refno.surql"))
+        .bind(("refno", refno.to_string()))
+        .await?;
+    let mut nodes: Vec<EleTreeNode> = response.take(0)?;
+    //检查名称，如果没有给名字的，需要给上默认值, todo 后续如果是删除了又增加，名称后面的数字可能会继续增加
+    let mut hashmap: HashMap<&str, i32> = HashMap::new();
+    for node in &mut nodes {
+        if node.name.is_empty() {
+            // hashmap.entry(&node.noun).or_insert(1);
+            let mut n = 1;
+            if let Some(k) = hashmap.get_mut(&node.noun.as_str()) {
+                *k += 1;
+                n = *k;
+            }else{
+                hashmap.insert(node.noun.as_str(), 1);
+            }
+            node.name = format!("{} {}", node.noun.as_str(), n);
+        }
+    }
+    Ok(nodes)
 }
 
 ///获得children

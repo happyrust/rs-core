@@ -273,6 +273,7 @@ impl RefU64 {
         refno_str.to_string()
     }
 
+
     #[inline]
     pub fn format_url_name(&self, col: &str) -> String {
         format!("{}/{}", col, self.to_url_refno())
