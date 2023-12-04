@@ -4,7 +4,7 @@ use crate::RefU64;
 fn test_des_refno() {
     //生成针对refno反序列化的测试，包含 string和u64两种情况
     let num = 8242042241025u64;
-    let num_str = "1919_1";
+    let num_str = "pe:1919_1";
 
     let refno: RefU64 = num_str.into();
     dbg!(refno);

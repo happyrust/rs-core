@@ -69,13 +69,13 @@ impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let ts = s.split(['=', ':']).skip(1).next().unwrap_or(s);
-        if ts.contains('_') {
-            Self::from_url_refno(&ts).ok_or(ParseRefU64Error)
-        } else if ts.contains('/') {
-            Self::from_refno_str(&ts).map_err(|_| ParseRefU64Error)
-        } else {
-            let d = ts.parse::<u64>().map_err(|_| ParseRefU64Error)?;
+        let nums = ts.split(['_', '/']).filter_map(|x| x.parse::<u32>().ok()).collect::<Vec<_>>();
+        if nums.len() == 2 {
+            Ok(Self::from_two_nums(nums[0], nums[1]))
+        } else if let Ok(d) = ts.parse::<u64>().map_err(|_| ParseRefU64Error) {
             Ok(Self(d))
+        } else {
+            Err(ParseRefU64Error)
         }
     }
 }
@@ -226,6 +226,7 @@ impl RefU64 {
         self.get_0() == 0
     }
 
+
     #[inline]
     pub fn get_sled_key(&self) -> [u8; 8] {
         self.0.to_be_bytes()
@@ -286,41 +287,8 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn from_two_nums(i: u32, j: u32) -> Self {
-        let bytes: Vec<u8> = [i.to_be_bytes(), j.to_be_bytes()].concat();
-        let v = u64::from_be_bytes(bytes[..8].try_into().unwrap());
-        Self(v)
-    }
-
-    #[inline]
-    pub fn from_refno_string(refno: String) -> anyhow::Result<RefU64> {
-        Self::from_refno_str(refno.as_str())
-    }
-
-    // abcd/2333
-    #[inline]
-    pub fn from_refno_str(refno: &str) -> anyhow::Result<RefU64> {
-        let refno = if refno.starts_with("=") {
-            refno[1..].to_string()
-        } else {
-            refno.to_string()
-        };
-        if refno.contains("/") {
-            let split_refno = refno.split('/').collect::<Vec<_>>();
-            if split_refno.len() != 2 {
-                return Err(anyhow!("参考号错误, 没有斜线!".to_string()));
-            }
-            let refno0: i32 = split_refno[0].parse::<i32>()?;
-            let refno1: i32 = split_refno[1].parse::<i32>()?;
-            Ok(RefI32Tuple((refno0, refno1)).into())
-        } else if refno.contains("_") {
-            return match Self::from_url_refno(&refno) {
-                None => Err(anyhow!("参考号错误!".to_string())),
-                Some(refno) => Ok(refno),
-            };
-        } else {
-            Err(anyhow!("参考号错误!".to_string()))
-        }
+    pub fn from_two_nums(n: u32, m: u32) -> Self {
+        Self(((n as u64) << 32) + m as u64)
     }
 
     #[inline]
@@ -330,21 +298,8 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn from_url_refno(refno: &str) -> Option<Self> {
-        let strs = refno.split('_').collect::<Vec<_>>();
-        if strs.len() < 2 {
-            return None;
-        }
-        if let Ok(r0) = strs[0].parse::<i32>() && let Ok(r1) = strs[1].parse::<i32>() {
-            Some(RefI32Tuple((r0, r1)).into())
-        } else {
-            None
-        }
-    }
-
-    #[inline]
     pub fn from_url_refno_default(refno: &str) -> Self {
-        Self::from_url_refno(refno).unwrap_or_default()
+        Self::from_str(refno).unwrap_or_default()
     }
 
     #[inline]
@@ -363,15 +318,6 @@ impl RefU64 {
         std::hash::Hasher::finish(&hash)
     }
 
-    #[inline]
-    pub fn from_arangodb_refno_str(refno_str: &str) -> Option<Self> {
-        let mut refno_str = refno_str.split("/").collect::<Vec<_>>();
-        if refno_str.len() <= 1 {
-            return None;
-        }
-        let refno_url = refno_str.remove(1);
-        RefU64::from_url_refno(refno_url)
-    }
 
     /// 返回图数据库的id形式 例如 pdms_eles/1232_5445
     pub fn to_arangodb_ids(collection_name: &str, refnos: Vec<RefU64>) -> Vec<String> {
@@ -385,7 +331,7 @@ impl RefU64 {
     pub fn from_refno_strs(refno_strs: &Vec<String>) -> Vec<Self> {
         refno_strs
             .iter()
-            .filter_map(|refno| Self::from_refno_str(refno).ok())
+            .filter_map(|refno| Self::from_str(refno).ok())
             .collect()
     }
 }

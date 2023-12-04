@@ -54,7 +54,7 @@ pub async fn get_type_name(refno: RefU64) -> anyhow::Result<String> {
         .query(r#"return (select value noun from only (type::thing("pe", $refno)));"#)
         .bind(("refno", refno.to_string()))
         .await?;
-    dbg!(&response);
+    // dbg!(&response);
     let type_name: Option<String> = response.take(0)?;
     Ok(type_name.unwrap_or_default())
 }
@@ -274,7 +274,7 @@ pub async fn query_group_by_cata_hash(
 //     Ok(r)
 // }
 
-pub async fn query_single_map_by_paths(
+pub async fn query_single_by_paths(
     refno: RefU64,
     paths: &[&str],
     fields: &[&str],
@@ -299,8 +299,8 @@ pub async fn query_single_map_by_paths(
         select_fieds,
         ps.join(",")
     );
-    #[cfg(debug_assertions)]
-    println!("Sql is {}", sql);
+    // #[cfg(debug_assertions)]
+    // println!("Sql is {}", sql);
     let mut response = SUL_DB.query(sql).bind(("refno", refno.to_string())).await?;
     let r: Option<NamedAttrMap> = response.take(0)?;
     Ok(r.unwrap_or_default())

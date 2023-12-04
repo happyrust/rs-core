@@ -514,7 +514,7 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    Ok(RefU64::from_url_refno(&s).unwrap_or_default())
+    Ok(RefU64::from_str(&s).unwrap_or_default())
 }
 
 pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
@@ -525,6 +525,29 @@ where
 }
 
 impl EleGeosInfo {
+
+    ///生成surreal的json文件
+    pub fn gen_sur_json(&self) -> String {
+        let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
+            "id": self.refno,
+            "visible": self.visible,
+            "aabb": self.aabb,
+            "generic_type": self.generic_type,
+            "world_transform": self.world_transform,
+            "flow_pt_indexs": self.flow_pt_indexs.clone(),
+            "geo_type": self.geo_type.clone(),
+        }))
+            .unwrap();
+
+        json_string.remove(json_string.len() - 1);
+        json_string.push_str(",");
+        // json_string.push_str(&format!(r#""id": {},"#, id));
+        json_string.push_str(&format!(r#""cata_hash": inst_geos:⟨{}⟩"#,
+                                      self.cata_hash.as_deref().unwrap_or("0")));
+        json_string.push_str("}");
+        json_string
+    }
+
     #[inline]
     pub fn is_compound(&self) -> bool {
         self.geo_type == GeoBasicType::Compound
@@ -625,8 +648,6 @@ pub struct ShapeInstancesData {
     ///保存instance几何数据
     pub inst_geos_map: std::collections::HashMap<String, EleInstGeosData>,
 
-    //负实体运算的参考号组合记录
-    // pub compound_refnos_map: std::collections::HashMap<RefU64, Vec<RefU64>>,
     ///保存所有用到的的compound数据
     #[serde(skip)]
     #[with(Skip)]
@@ -1079,6 +1100,13 @@ impl PlantGeoData {
         let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
         Ok(r)
     }
+
+    pub fn deserialize_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+        use rkyv::Deserialize;
+        let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
+        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        Ok(r)
+    }
 }
 
 #[derive(
@@ -1190,12 +1218,14 @@ impl PlantMeshesData {
     Resource,
 )]
 pub struct EleInstGeosData {
-    #[serde(rename = "_key")]
+    //maybe some hash value, or refno
+    #[serde(rename = "_key", alias = "id")]
     pub inst_key: String,
     // #[serde_as(as = "DisplayFromStr")]
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
+    //todo 需要单独保存，使用record link 去发访问？
     pub insts: Vec<EleInstGeo>,
 
     pub aabb: Option<Aabb>,
@@ -1208,9 +1238,9 @@ pub struct EleInstGeosData {
 impl EleInstGeosData {
     ///生成surreal的json文件
     pub fn gen_sur_json(&self) -> String {
+
         let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
-            "id": self.refno.to_string(),
-            // "refno": self.refno.to_url_refno(),
+            "id": self.inst_key.clone(),
             "type_name": self.type_name,
             "aabb": self.aabb,
             "ptset_map": self.ptset_map,
@@ -1220,7 +1250,8 @@ impl EleInstGeosData {
 
         json_string.remove(json_string.len() - 1);
         json_string.push_str(",");
-        json_string.push_str(&format!(r#""refno": pe:{},"#, self.refno.to_string()));
+        // json_string.push_str(&format!(r#""id": {},"#, id));
+        json_string.push_str(&format!(r#""refno": pe:{}"#, self.refno.to_string()));
         json_string.push_str("}");
         json_string
     }
@@ -1332,7 +1363,7 @@ pub struct EleInstGeo {
     #[serde(deserialize_with = "de_from_str")]
     #[serde(serialize_with = "ser_u64_as_str")]
     pub geo_hash: u64,
-    ///对应参考号
+    ///对应参考号, some debug
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
@@ -1402,7 +1433,7 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    RefU64::from_refno_str(&s).map_err(de::Error::custom)
+    RefU64::from_str(&s).map_err(de::Error::custom)
 }
 
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>

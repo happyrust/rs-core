@@ -83,7 +83,7 @@ async fn test_query_children_att() {
     // dbg!(children_atts);
     // let children_pes = rs_surreal::get_children_pes("17496_171555".into()).await;
     // dbg!(children_pes);
-    let children_atts = rs_surreal::get_children_named_attmaps("15192_338265".into())
+    let children_atts = rs_surreal::get_children_named_attmaps("13244/142143".into())
         .await
         .unwrap();
     dbg!(children_atts);
@@ -108,12 +108,12 @@ async fn test_query_custom() -> anyhow::Result<()> {
 async fn test_query_cata() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
-    let cat_refno = rs_surreal::get_cat_refno("17496_266621".into())
+    let cat_refno = rs_surreal::get_cat_refno("17496/171198".into())
         .await
         .unwrap();
     dbg!(cat_refno);
     // get_cat_attmap
-    let cat_attmap = rs_surreal::get_cat_attmap("17496_266621".into())
+    let cat_attmap = rs_surreal::get_cat_attmap("17496/171198".into())
         .await
         .unwrap();
     dbg!(cat_attmap);
@@ -124,7 +124,7 @@ async fn test_query_cata() -> anyhow::Result<()> {
 async fn test_query_path() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let cat_refno =
-        rs_surreal::query_single_map_by_paths("15194/5835".into(), &["->GMRE"], &[])
+        rs_surreal::query_single_by_paths("15194/5835".into(), &["->GMRE"], &[])
             .await
             .unwrap();
     dbg!(cat_refno);
@@ -134,7 +134,7 @@ async fn test_query_path() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_paths() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let cat_refno = rs_surreal::query_single_map_by_paths(
+    let cat_refno = rs_surreal::query_single_by_paths(
         "15194/5835".into(),
         &["->GMRE", "->GMSR"],
         &["id"],
