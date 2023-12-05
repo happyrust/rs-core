@@ -56,6 +56,8 @@ pub mod plugging_material;
 pub mod room_setting;
 pub mod water_calculation;
 
+pub mod noun_graph;
+
 pub mod data_state;
 pub mod test;
 

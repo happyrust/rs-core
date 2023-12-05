@@ -26,9 +26,9 @@ use nalgebra::Point3;
 use parry3d::bounding_volume::Aabb;
 use parry3d::shape::SharedShape;
 use rkyv::with::Skip;
-#[cfg(feature="sea-orm")]
+#[cfg(feature = "sea-orm")]
 use sea_orm::entity::prelude::*;
-#[cfg(feature="sea-orm")]
+#[cfg(feature = "sea-orm")]
 use sea_query::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
@@ -525,7 +525,6 @@ where
 }
 
 impl EleGeosInfo {
-
     ///生成surreal的json文件
     pub fn gen_sur_json(&self) -> String {
         let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
@@ -537,13 +536,14 @@ impl EleGeosInfo {
             "flow_pt_indexs": self.flow_pt_indexs.clone(),
             "geo_type": self.geo_type.clone(),
         }))
-            .unwrap();
+        .unwrap();
 
         json_string.remove(json_string.len() - 1);
         json_string.push_str(",");
-        // json_string.push_str(&format!(r#""id": {},"#, id));
-        json_string.push_str(&format!(r#""cata_hash": inst_geos:⟨{}⟩"#,
-                                      self.cata_hash.as_deref().unwrap_or("0")));
+        json_string.push_str(&format!(
+            r#""cata_hash": inst_geos:⟨{}⟩"#,
+            self.cata_hash.as_deref().unwrap_or("0")
+        ));
         json_string.push_str("}");
         json_string
     }
@@ -1050,7 +1050,7 @@ unsafe impl Sync for PlantGeoData {}
 
 unsafe impl Send for PlantGeoData {}
 
-#[cfg(feature="sea-orm")]
+#[cfg(feature = "sea-orm")]
 use crate::orm::*;
 use crate::ref64vec::RefU64Vec;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh};
@@ -1061,7 +1061,7 @@ use crate::types::named_attvalue::NamedAttrValue;
 use bevy_render::prelude::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
-#[cfg(feature="sea-orm")]
+#[cfg(feature = "sea-orm")]
 use sea_query::*;
 
 impl PlantGeoData {
@@ -1238,7 +1238,6 @@ pub struct EleInstGeosData {
 impl EleInstGeosData {
     ///生成surreal的json文件
     pub fn gen_sur_json(&self) -> String {
-
         let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
             "id": self.inst_key.clone(),
             "type_name": self.type_name,

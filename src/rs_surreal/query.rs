@@ -1,13 +1,13 @@
 use std::collections::{BTreeMap, HashMap};
-
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::types::*;
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use indexmap::IndexMap;
-use serde::{Deserialize, Deserializer, Serialize};
-use surrealdb::sql::Thing;
+use serde::{Deserialize, Serialize};
+use cached::proc_macro::cached;
+use std::sync::Mutex;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -31,8 +31,8 @@ pub async fn get_ancestor(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
         .query(include_str!("schemas/query_ancestor_by_refno.surql"))
         .bind(("refno", refno.to_string()))
         .await?;
-    let s = response.take::<Vec<Thing>>(1)?;
-    Ok(s.into_iter().map(|s| s.into()).collect())
+    let s = response.take::<Vec<RefU64>>(1);
+    Ok(s?)
 }
 
 ///查询到祖先节点属性数据
@@ -49,6 +49,7 @@ pub async fn get_ancestor_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttr
     Ok(named_attmaps)
 }
 
+#[cached(result = true)]
 pub async fn get_type_name(refno: RefU64) -> anyhow::Result<String> {
     let mut response = SUL_DB
         .query(r#"return (select value noun from only (type::thing("pe", $refno)));"#)

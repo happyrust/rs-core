@@ -1,7 +1,9 @@
 pub mod query;
+pub mod graph;
 
 use anyhow::Ok;
 pub use query::*;
+pub use graph::*;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::remote::ws::{Client, Ws};

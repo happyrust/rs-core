@@ -18,7 +18,7 @@ async fn test_query_pe_by_refno() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let refno: RefU64 = "13292_0".into();
+    let refno: RefU64 = "17496/171238".into();
     let type_name = rs_surreal::get_type_name(refno)
         .await
         .unwrap_or_default();
@@ -108,12 +108,13 @@ async fn test_query_custom() -> anyhow::Result<()> {
 async fn test_query_cata() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
-    let cat_refno = rs_surreal::get_cat_refno("17496/171198".into())
+    let refno = "24384/24827".into();
+    let cat_refno = rs_surreal::get_cat_refno(refno)
         .await
         .unwrap();
     dbg!(cat_refno);
     // get_cat_attmap
-    let cat_attmap = rs_surreal::get_cat_attmap("17496/171198".into())
+    let cat_attmap = rs_surreal::get_cat_attmap(refno)
         .await
         .unwrap();
     dbg!(cat_attmap);

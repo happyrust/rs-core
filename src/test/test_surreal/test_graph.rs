@@ -1,0 +1,72 @@
+use petgraph::algo::all_simple_paths;
+use petgraph::graph::Graph;
+use petgraph::graph::NodeIndex;
+use petgraph::graphmap::DiGraphMap;
+use petgraph::graphmap::GraphMap;
+
+use crate::graph::query_all_bran_hangs;
+use crate::graph::query_refno_deep_children;
+use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
+
+#[test]
+fn test_petgraph() {
+    // 创建一个有向图
+    let mut graph = DiGraphMap::new();
+    let node_a = graph.add_node("A");
+    let node_b = graph.add_node("B");
+    let node_c = graph.add_node("C");
+    let node_d = graph.add_node("D");
+    let node_e = graph.add_node("E");
+
+    graph.add_edge(node_a, node_b, 1);
+    graph.add_edge(node_a, node_c, 1);
+    graph.add_edge(node_b, node_d, 1);
+    graph.add_edge(node_c, node_d, 1);
+    graph.add_edge(node_d, node_e, 1);
+    let node_e = graph.add_node("E");
+
+    let start_node = node_a;
+    let end_node = node_e;
+
+    // let index = graph.node_indices().find(|i| graph[*i] == "B").unwrap();
+    // dbg!(&index);
+
+    // 使用 all_simple_paths 函数找到所有路径
+    let paths =
+        all_simple_paths::<Vec<_>, _>(&graph, start_node, end_node, 0, None).collect::<Vec<_>>();
+
+    // 遍历路径并计算距离
+    for path in paths {
+        // let distance: i32 = path
+        //     .windows(2)
+        //     .map(|window| {
+        //         graph
+        //             .edge_weight(graph.find_edge(window[0], window[1]).unwrap())
+        //             .unwrap()
+        //     })
+        //     .sum();
+        // println!("Path: {:?}, Distance: {}", path, distance);
+        println!("Path: {:?}", path);
+    }
+}
+
+#[tokio::test]
+async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
+    // TODO: Add test setup code if needed
+
+    super::init_test_surreal().await;
+    let refno = "17496/171102".into(); // Replace with your desired refno value
+    let result = query_all_bran_hangs(refno).await?;
+    dbg!(&result);
+
+    let result = query_refno_deep_children(refno, &CATA_WITHOUT_REUSE_GEO_NAMES).await?;
+    dbg!(&result);
+
+    let refno = "17496/171180".into(); // Replace with your desired refno value
+    let result = query_all_bran_hangs(refno).await?;
+    dbg!(&result);
+
+    // TODO: Add assertions to validate the result
+
+    Ok(())
+}

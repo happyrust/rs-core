@@ -34,7 +34,7 @@ pub fn convert_to_hash(bytes: &[u8]) -> i32 {
 }
 
 #[inline]
-pub fn is_uda(hash: u32) -> bool {
+pub fn is_uda(hash: i32) -> bool {
     hash > 0x171FAD39
 }
 

@@ -12,6 +12,8 @@ pub mod test_basic_query;
 
 pub mod test_query_group;
 
+pub mod test_graph;
+
 pub mod transform;
 
 pub mod test_serde;
