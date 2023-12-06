@@ -20,6 +20,7 @@ pub async fn query_refno_deep_children(
     nouns: &[&str],
 ) -> anyhow::Result<Vec<RefU64>> {
     let end_noun = super::get_type_name(refno).await?;
+    // dbg!(&end_noun);
     if let Some(relate_sql) = gen_noun_outcoming_relate_path(&end_noun, nouns) {
         // dbg!(&relate_sql);
         let nouns_str = nouns
@@ -32,7 +33,6 @@ pub async fn query_refno_deep_children(
         );
         // dbg!(&sql);
         let mut response = SUL_DB.query(&sql).with_stats().await?;
-        // dbg!(&response);
         if let Some((stats, result)) = response.take(0) {
             let execution_time = stats.execution_time;
             dbg!(&execution_time);

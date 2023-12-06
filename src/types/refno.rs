@@ -16,26 +16,26 @@ use std::{fmt, hash};
 pub struct ParseRefU64Error;
 
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Hash,
-Clone,
-Copy,
-Default,
-Component,
-Eq,
-PartialEq,
-PartialOrd,
-Ord,
-Reflect, // DeriveValueType,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Hash,
+    Clone,
+    Copy,
+    Default,
+    Component,
+    Eq,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    Reflect, // DeriveValueType,
 )]
 pub struct RefU64(pub u64);
 
 impl Serialize for RefU64 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(self.to_string().as_str())
     }
@@ -50,8 +50,8 @@ enum StringOrU64 {
 
 impl<'de> Deserialize<'de> for RefU64 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         if let Ok(s) = StringOrU64::deserialize(deserializer) {
             match s {
@@ -69,7 +69,10 @@ impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let ts = s.split(['=', ':']).skip(1).next().unwrap_or(s);
-        let nums = ts.split(['_', '/']).filter_map(|x| x.parse::<u32>().ok()).collect::<Vec<_>>();
+        let nums = ts
+            .split(['_', '/'])
+            .filter_map(|x| x.parse::<u32>().ok())
+            .collect::<Vec<_>>();
         if nums.len() == 2 {
             Ok(Self::from_two_nums(nums[0], nums[1]))
         } else if let Ok(d) = ts.parse::<u64>().map_err(|_| ParseRefU64Error) {
@@ -109,7 +112,7 @@ impl sea_orm::sea_query::ValueType for RefU64 {
 #[cfg(feature = "sea-orm")]
 impl Into<sea_orm::Value> for RefU64 {
     fn into(self) -> sea_orm::Value {
-        let string: String = self.to_refno_string();
+        let string: String = self.to_string();
         sea_orm::Value::String(Some(Box::new(string)))
     }
 }
@@ -162,7 +165,7 @@ impl Deref for RefU64 {
 
 impl Debug for RefU64 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(self.to_refno_str().as_str())
+        f.write_str(self.to_string().as_str())
     }
 }
 
@@ -226,7 +229,6 @@ impl RefU64 {
         self.get_0() == 0
     }
 
-
     #[inline]
     pub fn get_sled_key(&self) -> [u8; 8] {
         self.0.to_be_bytes()
@@ -262,44 +264,13 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn to_refno_str(&self) -> String {
-        let refno: RefI32Tuple = self.into();
-        refno.into()
-    }
-
-    #[inline]
-    pub fn to_refno_string(&self) -> String {
-        let refno: RefI32Tuple = self.into();
-        let refno_str: String = refno.into();
-        refno_str.to_string()
-    }
-
-
-    #[inline]
-    pub fn format_url_name(&self, col: &str) -> String {
-        format!("{}/{}", col, self.to_url_refno())
-    }
-
-    ///转换成数据库允许的字符串
-    #[inline]
-    pub fn to_refno_normal_string(&self) -> String {
-        self.to_refno_string().replace("/", "_")
+    pub fn to_slash_string(&self) -> String {
+        format!("{}/{}", self.get_0(), self.get_1())
     }
 
     #[inline]
     pub fn from_two_nums(n: u32, m: u32) -> Self {
         Self(((n as u64) << 32) + m as u64)
-    }
-
-    #[inline]
-    pub fn to_url_refno(&self) -> String {
-        let refno: RefI32Tuple = self.into();
-        format!("{}_{}", refno.get_0(), refno.get_1())
-    }
-
-    #[inline]
-    pub fn from_url_refno_default(refno: &str) -> Self {
-        Self::from_str(refno).unwrap_or_default()
     }
 
     #[inline]
@@ -318,13 +289,17 @@ impl RefU64 {
         std::hash::Hasher::finish(&hash)
     }
 
-
     /// 返回图数据库的id形式 例如 pdms_eles/1232_5445
     pub fn to_arangodb_ids(collection_name: &str, refnos: Vec<RefU64>) -> Vec<String> {
         refnos
             .into_iter()
-            .map(|refno| format!("{}/{}", collection_name, refno.to_url_refno()))
+            .map(|refno| format!("{}/{}", collection_name, refno.to_string()))
             .collect()
+    }
+
+    #[inline]
+    pub fn format_url_name(&self, col: &str) -> String {
+        format!("{}/{}", col, self.to_string())
     }
 
     /// 将参考号字符串类型集合转为 Vec<RefU64>
@@ -390,11 +365,11 @@ impl RefI32Tuple {
 
     #[inline]
     pub fn get_0(&self) -> i32 {
-        self.0.0
+        self.0 .0
     }
 
     #[inline]
     pub fn get_1(&self) -> i32 {
-        self.0.1
+        self.0 .1
     }
 }

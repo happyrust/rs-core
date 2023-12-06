@@ -14,8 +14,8 @@ impl AqlEdge {
         let hash = from.hash_with_another_refno(to);
         AqlEdge {
             _key: hash.to_string(),
-            _from: format!("{}/{}", from_collection, from.to_url_refno()),
-            _to: format!("{}/{}", to_collection, to.to_url_refno()),
+            _from: format!("{}/{}", from_collection, from.to_string()),
+            _to: format!("{}/{}", to_collection, to.to_string()),
         }
     }
 }

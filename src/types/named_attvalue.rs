@@ -51,7 +51,7 @@ impl Into<Value> for NamedAttrValue {
             | NamedAttrValue::ElementType(val) => Value::String(Some(val.into())),
             NamedAttrValue::F32Type(val) => Value::Float(val.into()),
             NamedAttrValue::BoolType(val) => Value::Bool(val.into()),
-            NamedAttrValue::RefU64Type(val) => Value::String(Some(val.to_refno_string().into())),
+            NamedAttrValue::RefU64Type(val) => Value::String(Some(val.to_string().into())),
             NamedAttrValue::F32VecType(val) => {
                 let new_val = val.into_iter().map(|x| f32_round_3(x)).collect::<Vec<_>>();
                 Value::Json(Some(json!(new_val).into()))
@@ -227,7 +227,7 @@ impl NamedAttrValue {
             Self::Vec3Type(v) => serde_json::to_string(v).unwrap(),
             Self::ElementType(v) => v.to_string(),
             Self::WordType(v) => v.to_string(),
-            Self::RefU64Type(v) => v.to_refno_str().to_string(),
+            Self::RefU64Type(v) => v.to_string().to_string(),
             _ => "unset".to_string(),
         };
     }
@@ -249,7 +249,7 @@ impl NamedAttrValue {
             NamedAttrValue::F32Type(v) => Box::new(*v),
             NamedAttrValue::F32VecType(v) => Box::new(v.clone()),
             NamedAttrValue::Vec3Type(v) => Box::new(vec![v.x, v.y, v.z]),
-            NamedAttrValue::RefU64Type(r) => Box::new(r.to_refno_string()),
+            NamedAttrValue::RefU64Type(r) => Box::new(r.to_string()),
             _ => Box::new("unset".to_string()),
         };
     }

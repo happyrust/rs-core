@@ -163,7 +163,7 @@ pub struct IncrementData {
 impl Debug for IncrementData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IncrementData")
-            .field("refno", &self.refno.to_refno_str())
+            .field("refno", &self.refno.to_string())
             .field("map", &self.attr_data_map.to_string_hashmap())
             .field("state", &self.state)
             .field("version", &self.version)

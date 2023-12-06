@@ -44,24 +44,23 @@ use std::str::FromStr;
 pub const LEVEL_VISBLE: u32 = 6;
 
 ///非负实体基本体的种类
-pub const PRIMITIVE_NOUN_NAMES: [&'static str; 9] = [
-    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA",
+pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA",
 ];
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
-    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX",
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSLC", "NSCY",
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 20] = [
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX",
+    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY",
 ];
 
 ///有loop的几何体
 pub const GNERAL_LOOP_NOUN_NAMES: [&'static str; 2] = ["PLOO", "LOOP"];
 
 ///负实体基本体的种类
-pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 14] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC",
-    "NREV", "NSCY",
+pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV", "NSCY",
 ];
 
 ///元件库的负实体类型
@@ -70,23 +69,23 @@ pub const CATE_NEG_NOUN_NAMES: [&'static str; 13] = [
     "NSRE",
 ];
 
-pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 27] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NSLC",
+pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 26] = [
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", 
     "NREV", "NSCY", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL",
     "NLPY", "NSEX", "NSRE",
 ];
 
-pub const GENRAL_POS_NOUN_NAMES: [&'static str; 26] = [
-    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR",
+pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR",
     "PANEL", "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO",
     "SEXT", "SREV", "SRTO", "SSLC",
 ];
 
-pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 42] = [
-    "BOX", "CYLI", "SLCY", "SPHE", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
+pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
     "POHE", "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV",
     "SRTO", "SSLC", "SPRO", "SREC", "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS",
-    "NXTR", "NCTO", "NRTO", "NSLC", "NREV", "NSCY",
+    "NXTR", "NCTO", "NRTO", "NREV", "NSCY",
 ];
 
 pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 30] = [
@@ -443,7 +442,7 @@ fn ser_inst_info_edge_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Er
 where
     S: Serializer,
 {
-    s.serialize_str(format!("pdms_inst_infos/{}", refno.to_url_refno()).as_str())
+    s.serialize_str(format!("pdms_inst_infos/{}", refno.to_string()).as_str())
 }
 
 #[inline]
@@ -509,6 +508,7 @@ pub struct EleGeosInfo {
     pub geo_type: GeoBasicType,
 }
 
+
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
 where
     D: Deserializer<'de>,
@@ -521,8 +521,15 @@ pub fn ser_refno_as_key_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    s.serialize_str(refno.to_url_refno().as_str())
+    s.serialize_str(refno.to_string().as_str())
 }
+
+// pub fn ser_refno_slash_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
+// where
+//     S: Serializer,
+// {
+//     s.serialize_str(refno.to_string().as_str())
+// }
 
 impl EleGeosInfo {
     ///生成surreal的json文件
@@ -548,6 +555,7 @@ impl EleGeosInfo {
         json_string
     }
 
+    /// Checks if the PDMS type is a compound.
     #[inline]
     pub fn is_compound(&self) -> bool {
         self.geo_type == GeoBasicType::Compound
@@ -579,7 +587,7 @@ impl EleGeosInfo {
         if let Some(c) = &self.cata_hash {
             return c.parse::<u64>().unwrap_or(0).to_string();
         }
-        self.refno.to_url_refno()
+        self.refno.to_string()
     }
 
     ///获取几何体数据的u64 key
@@ -591,28 +599,6 @@ impl EleGeosInfo {
         *self.refno
     }
 
-    ///获得所有的geo hashes
-    // #[inline]
-    // pub fn get_all_geo_hashes(&self) -> Vec<u64>{
-    //     self.geo_basics.iter().map(|x| x.get_hash()).collect()
-    // }
-    //
-    // ///获得正实体的geo hashes
-    // #[inline]
-    // pub fn get_pos_geo_hashes(&self) -> Vec<u64>{
-    //     self.geo_basics.iter().filter(|&x| x.is_pos()).map(|x| x.get_hash()).collect()
-    // }
-    //
-    // ///获得负实体的geo hashes
-    // #[inline]
-    // pub fn get_neg_geo_hashes(&self) -> Vec<u64>{
-    //     self.geo_basics.iter().filter(|&x| x.is_neg()).map(|x| x.get_hash()).collect()
-    // }
-
-    // #[inline]
-    // pub fn has_neg(&self) -> bool{
-    //     self.geo_basics.iter().any(|x| x.is_neg())
-    // }
     #[inline]
     pub fn get_ele_world_transform(&self) -> Transform {
         self.world_transform
@@ -1453,7 +1439,7 @@ where
 {
     let set = refnos
         .into_iter()
-        .map(|x| x.to_refno_string())
+        .map(|x| x.to_string())
         .collect::<HashSet<_>>();
     s.serialize_str(serde_json::to_string(&set).unwrap_or_default().as_str())
     // s.ser(&set)
@@ -1470,7 +1456,7 @@ pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    s.serialize_str(refno.to_refno_str().as_str())
+    s.serialize_str(refno.to_string().as_str())
 }
 
 #[test]
@@ -1789,8 +1775,8 @@ impl PdmsElement {
 
     pub fn into_enso_value_json(self) -> Vec<NamedAttrValue> {
         vec![
-            NamedAttrValue::StringType(self.refno.to_url_refno()),
-            NamedAttrValue::StringType(self.owner.to_url_refno()),
+            NamedAttrValue::StringType(self.refno.to_string()),
+            NamedAttrValue::StringType(self.owner.to_string()),
             NamedAttrValue::StringType(self.name),
             NamedAttrValue::StringType(self.noun),
             NamedAttrValue::IntegerType(self.version as i32),

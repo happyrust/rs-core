@@ -19,6 +19,8 @@ pub static NOUN_GRAPH: Lazy<DiGraph<u32, u32>> = Lazy::new(|| {
 
 //指定起始的和目标noun node, 传入的参数是noun name, 通过 db1_hash 找到对应的node，找到经过的路径的noun， 使用all_simple_paths
 pub fn find_noun_path(start_noun: &str, end_noun: &str) -> Vec<Vec<String>> {
+    // dbg!(start_noun);
+    // dbg!(end_noun);
     let start_node = NOUN_GRAPH
         .node_indices()
         .find(|i| NOUN_GRAPH[*i] == db1_hash(start_noun))
@@ -64,6 +66,10 @@ pub fn gen_noun_outcoming_relate_path(start_noun: &str, filter_nouns: &[&str]) -
     let min_len = paths.iter().map(|x| x.len()).min().unwrap();
     let max_len = paths.iter().map(|x| x.len()).max().unwrap();
     let mut sql = "".to_string();
+    let contains_self = filter_nouns.contains(&start_noun);
+    if contains_self{
+        sql.push_str("id as p0, ");
+    }
     for i in 1..max_len {
         if i >= min_len - 1 {
             let filter = paths

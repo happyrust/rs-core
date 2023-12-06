@@ -163,7 +163,7 @@ impl AttrVal {
         return match self {
             InvalidType => Box::new("unset".to_string()),
             StringType(v) | ElementType(v) | WordType(v) => Box::new(v.to_string()),
-            RefU64Type(v) => Box::new(v.to_refno_string()),
+            RefU64Type(v) => Box::new(v.to_string()),
             BoolArrayType(v) => Box::new(v.clone()),
             IntArrayType(v) => Box::new(v.clone()),
             IntegerType(v) => Box::new(*v),
@@ -173,7 +173,7 @@ impl AttrVal {
             StringHashType(v) => Box::new(*v),
             StringArrayType(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
             Vec3Type(v) => Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)),
-            RefU64Array(v) => Box::new(v.iter().map(|x| x.to_refno_string()).collect::<Vec<_>>()),
+            RefU64Array(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
         };
     }
 
@@ -192,7 +192,7 @@ impl AttrVal {
             Vec3Type(v) => serde_json::to_string(v).unwrap(),
             ElementType(v) => v.to_string(),
             WordType(v) => v.to_string(),
-            RefU64Type(v) => v.to_refno_str().to_string(),
+            RefU64Type(v) => v.to_string().to_string(),
             StringHashType(v) => v.to_string(),
             RefU64Array(v) => serde_json::to_string(v).unwrap(),
         };
@@ -212,7 +212,7 @@ impl AttrVal {
             Vec3Type(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
             ElementType(v) => v.to_string().replace(",", ";"),
             WordType(v) => v.to_string().replace(",", ";"),
-            RefU64Type(v) => v.to_refno_str().to_string().replace(",", ";"),
+            RefU64Type(v) => v.to_string().to_string().replace(",", ";"),
             StringHashType(v) => v.to_string().replace(",", ";"),
             RefU64Array(v) => serde_json::to_string(v).unwrap().replace(",", ";"),
         };
@@ -254,7 +254,7 @@ impl From<AttrVal> for AttrValAql {
             Vec3Type(d) => AttrValAql::Vec3Type(d),
             ElementType(d) => AttrValAql::ElementType(d),
             WordType(d) => AttrValAql::WordType(d),
-            RefU64Type(d) => AttrValAql::StringType(d.to_url_refno().into()),
+            RefU64Type(d) => AttrValAql::StringType(d.to_string().into()),
             StringHashType(d) => AttrValAql::StringHashType(d),
             RefU64Array(d) => AttrValAql::RefU64Array(d),
         }

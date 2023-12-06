@@ -10,7 +10,7 @@ pub enum Role {
     Proofreader,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize,Resource)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Resource)]
 pub struct PdmsUser {
     pub user_name: String,
     pub user_major: String,
@@ -27,19 +27,19 @@ impl PdmsUser {
     }
 }
 
-#[derive(Debug, Clone, PartialEq,Serialize,Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PdmsElementWithUser {
     pub refno: String,
     pub owner: RefU64,
     pub name: String,
     pub noun: String,
     pub version: u32,
-    pub children_count: usize, 
+    pub children_count: usize,
     pub user: String,
 }
 
 impl PdmsElementWithUser {
-    pub fn from_pdms_element(pdms_element:PdmsElement,user:&str) -> Self {
+    pub fn from_pdms_element(pdms_element: PdmsElement, user: &str) -> Self {
         Self {
             refno: pdms_element.refno.to_string(),
             owner: pdms_element.owner,
@@ -53,7 +53,7 @@ impl PdmsElementWithUser {
 }
 
 #[serde_as]
-#[derive(Debug, Clone, PartialEq,Serialize,Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PdmsElementWithMajor {
     #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
@@ -65,9 +65,9 @@ pub struct PdmsElementWithMajor {
 }
 
 #[serde_as]
-#[derive(Debug, Clone, PartialEq,Default,Serialize,Deserialize)]
-pub struct RefnoMajor{
-    pub refno:String,
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct RefnoMajor {
+    pub refno: String,
     pub major: String,
     pub major_classify: String,
 }
