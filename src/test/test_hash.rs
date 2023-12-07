@@ -1,4 +1,6 @@
-use crate::{tool::db_tool::db1_dehash, RefU64};
+use parry3d::bounding_volume::Aabb;
+
+use crate::{tool::db_tool::db1_dehash, RefU64, hash::gen_bytes_hash};
 
 #[test]
 fn test_dehash_uda() {
@@ -10,4 +12,14 @@ fn test_dehash_uda() {
     dbg!(db1_dehash(hash));
     let hash = 738252150;
     dbg!(db1_dehash(hash));
+}
+
+
+#[test]
+fn test_gen_hash(){
+    let aabb = Aabb::new([-1.0, -1.0, -1.0].into(), [1.0, 1.0, 1.0].into());
+    let hash1 = gen_bytes_hash::<_, 512>(&aabb);
+    let aabb = Aabb::new([1.0, -1.0, -1.0].into(), [1.0, 1.0, 1.0].into());
+    let hash2 = gen_bytes_hash::<_, 512>(&aabb);
+    assert_ne!(hash1, hash2);
 }

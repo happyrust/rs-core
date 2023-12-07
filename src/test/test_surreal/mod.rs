@@ -14,9 +14,11 @@ pub mod test_query_group;
 
 pub mod test_graph;
 
-pub mod transform;
-
 pub mod test_serde;
+
+pub mod test_spatial;
+
+pub mod test_geom;
 
 pub async fn init_test_surreal() {
     let s = Config::builder()

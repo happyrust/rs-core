@@ -16,6 +16,7 @@ struct KV<K, V> {
 }
 
 ///通过surql查询pe数据
+#[cached(result = true)]
 pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_pe_by_refno.surql"))
@@ -26,6 +27,7 @@ pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
 }
 
 ///查询到祖先节点列表
+#[cached(result = true)]
 pub async fn get_ancestor(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_ancestor_by_refno.surql"))
@@ -36,6 +38,7 @@ pub async fn get_ancestor(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
 }
 
 ///查询到祖先节点属性数据
+#[cached(result = true)]
 pub async fn get_ancestor_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
     let mut response = SUL_DB
         .query(include_str!(
@@ -60,7 +63,29 @@ pub async fn get_type_name(refno: RefU64) -> anyhow::Result<String> {
     Ok(type_name.unwrap_or_default())
 }
 
+#[cached(result = true)]
+pub async fn get_owner_type_name(refno: RefU64) -> anyhow::Result<String> {
+    let mut response = SUL_DB
+        .query(r#"return (select value owner.noun from only (type::thing("pe", $refno)));"#)
+        .bind(("refno", refno.to_string()))
+        .await?;
+    // dbg!(&response);
+    let type_name: Option<String> = response.take(0)?;
+    Ok(type_name.unwrap_or_default())
+}
+
+#[cached(result = true)]
+pub async fn get_self_and_owner_type_name(refno: RefU64) -> anyhow::Result<Vec<String>> {
+    let mut response = SUL_DB
+        .query(r#"select value [noun, owner.noun] from only (type::thing("pe", $refno))"#)
+        .bind(("refno", refno.to_string()))
+        .await?;
+    let type_name: Vec<String> = response.take(0)?;
+    Ok(type_name)
+}
+
 ///查询的数据把 refno->name，换成名称
+#[cached(result = true)]
 pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     let mut attmap = get_named_attmap_with_uda(refno, true).await?;
     attmap.fill_explicit_default_values();
@@ -99,6 +124,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
 }
 
 ///通过surql查询属性数据
+#[cached(result = true)]
 pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_attmap_by_refno.surql"))
@@ -110,6 +136,7 @@ pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 }
 
 ///通过surql查询属性数据，包含UDA数据
+#[cached(result = true)]
 pub async fn get_named_attmap_with_uda(
     refno: RefU64,
     default_unset: bool,
@@ -153,6 +180,7 @@ pub async fn get_named_attmap_with_uda(
     Ok(named_attmap)
 }
 
+#[cached(result = true)]
 pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_cata_refno.surql"))
@@ -162,6 +190,7 @@ pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
     Ok(r)
 }
 
+#[cached(result = true)]
 pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_cata_attmap.surql"))
@@ -173,6 +202,7 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     Ok(named_attmap)
 }
 
+#[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_children_attmap_by_refno.surql"))
@@ -185,6 +215,7 @@ pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<Nam
     Ok(named_attmaps)
 }
 
+#[cached(result = true)]
 pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_children_pes_by_refno.surql"))
@@ -194,6 +225,7 @@ pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>
     Ok(pes)
 }
 
+#[cached(result = true)]
 pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_children_nodes_by_refno.surql"))
@@ -219,6 +251,7 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
 }
 
 ///获得children
+#[cached(result = true)]
 pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let mut response = SUL_DB
         .query(include_str!("schemas/query_children_by_refno.surql"))
@@ -233,7 +266,17 @@ pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     Ok(refnos)
 }
 
+pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Vec<RefU64>> {
+    let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
+    let mut response = SUL_DB
+        .query(format!("array::flatten(select value in.id from [{}]<-pe_owner)", refno_ids.join(",")))
+        .await?;
+    let refnos: Vec<RefU64> = response.take(0)?;
+    Ok(refnos)
+}
+
 ///按cata_hash 分组获得不同的参考号类型
+// #[cached(result = true)]
 pub async fn query_group_by_cata_hash(
     refnos: &[RefU64],
 ) -> anyhow::Result<IndexMap<String, Vec<RefU64>>> {
@@ -254,26 +297,6 @@ pub async fn query_group_by_cata_hash(
     Ok(map)
 }
 
-//后面可以写一个map的语法
-//沿着path，找到目标refno，如果没有就是None
-// pub async fn query_by_path<T: DeserializeOwned>(
-//     refno: RefU64,
-//     path: &str,
-// ) -> anyhow::Result<Option<T>> {
-//     let mut p = path.replace("->", ".refno.");
-//     let str = if p.starts_with(".") {
-//         &p[1..]
-//     } else {
-//         p.as_str()
-//     };
-//     let sql = format!(
-//         r#"select value {} from only type::thing("pe", $refno)"#,
-//         str
-//     );
-//     let mut response = SUL_DB.query(sql).bind(("refno", refno.to_string())).await?;
-//     let r: Option<T> = response.take(0)?;
-//     Ok(r)
-// }
 
 pub async fn query_single_by_paths(
     refno: RefU64,

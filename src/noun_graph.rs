@@ -60,15 +60,15 @@ pub fn gen_noun_outcoming_relate_path(start_noun: &str, filter_nouns: &[&str]) -
         .flatten()
         .collect::<Vec<_>>();
     // dbg!(&paths);
-    if paths.is_empty() {
+    let contains_self = filter_nouns.contains(&start_noun);
+    if paths.is_empty() && !contains_self{
         return None;
     }
-    let min_len = paths.iter().map(|x| x.len()).min().unwrap();
-    let max_len = paths.iter().map(|x| x.len()).max().unwrap();
-    let mut sql = "".to_string();
-    let contains_self = filter_nouns.contains(&start_noun);
+    let min_len = paths.iter().map(|x| x.len()).min().unwrap_or_default();
+    let max_len = paths.iter().map(|x| x.len()).max().unwrap_or_default();
+    let mut sql = String::new();
     if contains_self{
-        sql.push_str("id as p0, ");
+        sql.push_str("id as p0,");
     }
     for i in 1..max_len {
         if i >= min_len - 1 {
@@ -87,7 +87,11 @@ pub fn gen_noun_outcoming_relate_path(start_noun: &str, filter_nouns: &[&str]) -
             sql.push_str(&format!("<-pe_owner<-(?)"));
         }
     }
-    // println!("Sql is {}", &sql);
+    if sql.ends_with(',') {
+        sql.remove(sql.len() - 1);
+    }
+
+    // println!("Sql is {:?}", &sqls);
     Some(sql)
 }
 

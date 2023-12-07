@@ -1,46 +1,49 @@
 use std::collections::hash_map::DefaultHasher;
 
-
 use std::hash::{Hash, Hasher};
-
 
 use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 
-
-
-
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
-#[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Vertex, Shape, Solid, Wire};
 use bevy_ecs::prelude::*;
+#[cfg(feature = "opencascade_rs")]
+use opencascade::primitives::{Shape, Solid, Vertex, Wire};
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(
+    Component,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct LPyramid {
     pub pbax_pt: Vec3,
-    pub pbax_dir: Vec3,   //B Axis Direction
+    pub pbax_dir: Vec3, //B Axis Direction
 
     pub pcax_pt: Vec3,
-    pub pcax_dir: Vec3,   //C Axis Direction
+    pub pcax_dir: Vec3, //C Axis Direction
 
     pub paax_pt: Vec3,
-    pub paax_dir: Vec3,   //A Axis Direction
-
+    pub paax_dir: Vec3, //A Axis Direction
 
     pub pbtp: f32,
     pub pctp: f32,
     //y top
     pub pbbt: f32,
-    pub pcbt: f32,  // y bottom
+    pub pcbt: f32, // y bottom
 
     pub ptdi: f32,
     pub pbdi: f32,
     pub pbof: f32,
     // x offset
-    pub pcof: f32,  // y offset
+    pub pcof: f32, // y offset
 }
-
 
 impl Default for LPyramid {
     fn default() -> Self {
@@ -69,14 +72,6 @@ impl VerifiedShape for LPyramid {
     }
 }
 
-fn create_pyramid_with_one_line() -> Option<truck_modeling::Shell>{
-    None
-}
-
-fn create_pyramid_with_one_point() -> Option<truck_modeling::Shell>{
-    None
-}
-
 //#[typetag::serde]
 impl BrepShapeTrait for LPyramid {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -85,8 +80,8 @@ impl BrepShapeTrait for LPyramid {
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
         use truck_modeling::builder::*;
+        use truck_modeling::*;
 
         //todo 需要解决这里的homotopy问题，能兼容point 和 line的情况
         let tx = (self.pbtp as f64 / 2.0).max(0.001);
@@ -142,10 +137,12 @@ impl BrepShapeTrait for LPyramid {
         Some(shell)
     }
 
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(PdmsGeoParam::PrimLPyramid(self.clone()))
+    }
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-
         let _z_pt = self.paax_pt.as_dvec3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp / 2.0) as f64;
@@ -186,7 +183,6 @@ impl BrepShapeTrait for LPyramid {
         Ok(Solid::loft_with_points(polys.iter(), verts.iter()).to_shape())
     }
 
-
     fn hash_unit_mesh_params(&self) -> u64 {
         let bytes = bincode::serialize(self).unwrap();
         let mut hasher = DefaultHasher::default();
@@ -199,5 +195,3 @@ impl BrepShapeTrait for LPyramid {
         Box::new(self.clone())
     }
 }
-
-

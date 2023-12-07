@@ -28,7 +28,7 @@ pub struct ParseRefU64Error;
     PartialEq,
     PartialOrd,
     Ord,
-    Reflect, // DeriveValueType,
+    Reflect,
 )]
 pub struct RefU64(pub u64);
 

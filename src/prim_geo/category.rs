@@ -49,14 +49,18 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pc.number);
 
             let z_axis = pa.dir.normalize_or_zero();
+            let y_axis = pc.dir.normalize_or_zero();
+            //fix 防止出现向量不能组成坐标轴的问题，暂时忽略X轴的输入
+            let x_axis = y_axis.cross(z_axis).normalize_or_zero();
+
             //需要转换成CTorus
             let pyramid = LPyramid {
-                pbax_pt: (pb.pt),
-                pbax_dir: (pb.dir).normalize_or_zero(),
-                pcax_pt: (pc.pt),
-                pcax_dir: (pc.dir).normalize_or_zero(),
-                paax_pt: (pa.pt),
-                paax_dir: (pa.dir).normalize_or_zero(),
+                pbax_pt: pb.pt,
+                pbax_dir: x_axis,
+                pcax_pt: pc.pt,
+                pcax_dir: y_axis,
+                paax_pt: pa.pt,
+                paax_dir: z_axis,
 
                 pbtp: d.x_top,
                 pctp: d.y_top,
@@ -67,9 +71,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbof: d.x_offset,
                 pcof: d.y_offset,
             };
-            ///需要偏移到 btm
+            //需要偏移到 btm
             let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt;
-            let rotation = Quat::from_mat3(&Mat3::from_cols(pb.dir.normalize(), pc.dir.normalize(), pa.dir.normalize()));
+            let rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 refno: d.refno,

@@ -146,7 +146,7 @@ impl Default for CateAxisParam {
 
 pub mod geo_params_data {
     use crate::prim_geo::ctorus::CTorus;
-    use crate::prim_geo::cylinder::*;
+    use crate::prim_geo::{cylinder::*, LPyramid};
     use crate::prim_geo::dish::Dish;
     use crate::prim_geo::extrusion::Extrusion;
     #[cfg(feature = "opencascade_rs")]
@@ -212,6 +212,7 @@ pub mod geo_params_data {
         PrimCTorus(CTorus),
         PrimRTorus(RTorus),
         PrimPyramid(Pyramid),
+        PrimLPyramid(LPyramid),
         PrimSCylinder(SCylinder),
         PrimLCylinder(LCylinder),
         PrimRevolution(Revolution),
@@ -233,6 +234,7 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimCTorus(s) => s.key_points(),
                 PdmsGeoParam::PrimRTorus(s) => s.key_points(),
                 PdmsGeoParam::PrimPyramid(s) => s.key_points(),
+                PdmsGeoParam::PrimLPyramid(s) => s.key_points(),
                 PdmsGeoParam::PrimSCylinder(s) => s.key_points(),
                 PdmsGeoParam::PrimLCylinder(s) => s.key_points(),
                 PdmsGeoParam::PrimRevolution(s) => s.key_points(),
@@ -266,7 +268,7 @@ pub mod geo_params_data {
 
         pub fn into_rvm_pri_num(&self) -> Option<u8> {
             match self {
-                PdmsGeoParam::Unknown => None,
+                // PdmsGeoParam::Unknown => None,
                 PdmsGeoParam::CompoundShape => None,
                 PdmsGeoParam::PrimBox(_) => Some(2),
                 PdmsGeoParam::PrimLSnout(_) => Some(7),
@@ -280,7 +282,8 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimRevolution(_) => Some(10),
                 PdmsGeoParam::PrimExtrusion(_) => Some(11),
                 PdmsGeoParam::PrimPolyhedron(_) => Some(12),
-                PdmsGeoParam::PrimLoft(_) => None,
+                // PdmsGeoParam::PrimLoft(_) => None,
+                _ => None,
             }
         }
 

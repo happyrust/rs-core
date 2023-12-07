@@ -1,9 +1,13 @@
 pub mod query;
 pub mod graph;
+pub mod spatial;
+pub mod geom;
 
 use anyhow::Ok;
 pub use query::*;
 pub use graph::*;
+pub use spatial::*;
+pub use geom::*;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::remote::ws::{Client, Ws};

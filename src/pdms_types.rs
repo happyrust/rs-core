@@ -51,8 +51,8 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
 pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 20] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX",
-    "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY",
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
+     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY",
 ];
 
 ///有loop的几何体
@@ -60,7 +60,8 @@ pub const GNERAL_LOOP_NOUN_NAMES: [&'static str; 2] = ["PLOO", "LOOP"];
 
 ///负实体基本体的种类
 pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV", "NSCY",
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
+    "NSCY",
 ];
 
 ///元件库的负实体类型
@@ -70,22 +71,22 @@ pub const CATE_NEG_NOUN_NAMES: [&'static str; 13] = [
 ];
 
 pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 26] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", 
-    "NREV", "NSCY", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL",
-    "NLPY", "NSEX", "NSRE",
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
+    "NSCY", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY",
+    "NSEX", "NSRE",
 ];
 
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR",
-    "PANEL", "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO",
-    "SEXT", "SREV", "SRTO", "SSLC",
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
+    "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV",
+    "SRTO", "SSLC",
 ];
 
 pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP",
-    "POHE", "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV",
-    "SRTO", "SSLC", "SPRO", "SREC", "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS",
-    "NXTR", "NCTO", "NRTO", "NREV", "NSCY",
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP", "POHE",
+    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO",
+    "SSLC", "SPRO", "SREC", "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR",
+    "NCTO", "NRTO", "NREV", "NSCY",
 ];
 
 pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 30] = [
@@ -118,6 +119,13 @@ pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
     "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
     "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL",
     "SCTN", "NOZZ",
+];
+
+pub const VISBILE_GEO_NOUNS: [&'static str; 36] = [
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
+    "FLOOR", "PANE", 
+    "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
+    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL","SCTN", "NOZZ",
 ];
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
@@ -493,6 +501,10 @@ pub struct EleGeosInfo {
     //也可以通过edge 来组合
     #[serde(default)]
     pub cata_hash: Option<String>,
+    //记录对应的元件库参考号
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cata_refno: Option<RefU64>,
     //是否可见
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
@@ -507,7 +519,6 @@ pub struct EleGeosInfo {
     #[serde(default)]
     pub geo_type: GeoBasicType,
 }
-
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
 where
@@ -537,9 +548,9 @@ impl EleGeosInfo {
         let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
             "id": self.refno,
             "visible": self.visible,
-            "aabb": self.aabb,
+            // "aabb": self.aabb,
             "generic_type": self.generic_type,
-            "world_transform": self.world_transform,
+            // "world_transform": self.world_transform,
             "flow_pt_indexs": self.flow_pt_indexs.clone(),
             "geo_type": self.geo_type.clone(),
         }))
@@ -548,8 +559,14 @@ impl EleGeosInfo {
         json_string.remove(json_string.len() - 1);
         json_string.push_str(",");
         json_string.push_str(&format!(
-            r#""cata_hash": inst_geos:⟨{}⟩"#,
+            r#""cata_hash": inst_geos:⟨{}⟩, "#,
             self.cata_hash.as_deref().unwrap_or("0")
+        ));
+        let aabb_hash = self.aabb.map(|x| gen_bytes_hash::<_, 64>(&x)).unwrap_or_default();
+        json_string.push_str(&format!(
+            r#""aabb": aabb:⟨{}⟩, "world_trans": trans:⟨{}⟩"#,
+            aabb_hash,
+            gen_bytes_hash::<_, 64>(&self.world_transform),
         ));
         json_string.push_str("}");
         json_string
@@ -1207,7 +1224,7 @@ pub struct EleInstGeosData {
     //maybe some hash value, or refno
     #[serde(rename = "_key", alias = "id")]
     pub inst_key: String,
-    // #[serde_as(as = "DisplayFromStr")]
+    //design refno
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
@@ -1348,7 +1365,7 @@ pub struct EleInstGeo {
     #[serde(deserialize_with = "de_from_str")]
     #[serde(serialize_with = "ser_u64_as_str")]
     pub geo_hash: u64,
-    ///对应参考号, some debug
+    ///对应几何体参考号
     #[serde(deserialize_with = "de_refno_from_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub refno: RefU64,
@@ -1390,6 +1407,31 @@ impl EleInstGeo {
             .into_iter()
             .map(|v| self.transform.transform_point(*v))
             .collect()
+    }
+
+    ///fix 生成surreal的geo json数据，其他数据放在边上
+    pub fn gen_geo_sur_json(&self) -> String {
+        let mut json_string = "".to_string();
+        // let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
+        //     "id": self.geo_hash,
+        //     //点集索引 放到边里
+        //     // "ppts": self.pts,
+        //     "aabb": self.aabb,
+        // }))
+        // .unwrap();
+
+        // json_string.remove(json_string.len() - 1);
+        // json_string.push_str(",");
+        // json_string.push_str(&format!(r#""id": {},"#, self.geo_hash));
+        //, 'verts': 0, 'faces': 0'
+        json_string.push_str(&format!(
+            "{{'id': inst_geo:⟨{}⟩, 'aabb': aabb:⟨{}⟩, 'verts': 0, 'faces': 0}}",
+            self.geo_hash,
+            gen_bytes_hash::<_, 64>(&self.aabb)
+        ));
+        // json_string.push_str(&format!(r#""refno": pe:{}"#, self.refno.to_string()));
+        // json_string.push_str("}");
+        json_string
     }
 
     #[cfg(feature = "opencascade_rs")]
