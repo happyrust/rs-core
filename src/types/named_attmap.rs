@@ -1,5 +1,5 @@
 use crate::cache::mgr::BytesTrait;
-use crate::consts::UNSET_STR;
+use crate::consts::{UNSET_STR, WORD_HASH};
 #[cfg(feature = "sea-orm")]
 use crate::orm::{BoolVec, F32Vec, I32Vec, StringVec};
 use crate::pdms_types::*;
@@ -239,9 +239,9 @@ impl NamedAttrMap {
         for (k, v) in self.map.clone() {
             if DEFAULT_NAMED_NOUNS.contains(&k.as_str()) {
                 default_att.insert(k, v);
-            } else if k.starts_with(":"){
+            } else if k.starts_with(":") {
                 uda_att.insert(k, v);
-            }else {
+            } else {
                 comp_att.insert(k, v);
             }
         }
@@ -304,6 +304,43 @@ impl NamedAttrMap {
             NamedAttrValue::RefU64Array(d) => Some(d.clone()),
             _ => None,
         }
+    }
+
+    #[inline]
+    pub fn get_ddesp(&self) -> Option<Vec<f32>> {
+        if let Some(NamedAttrValue::F32VecType(d)) = self.get_val("DESP")
+            && let Some(NamedAttrValue::IntArrayType(u)) = self.get_val("UNIPAR")
+        {
+            return Some(
+                d.iter()
+                    .zip(u)
+                    .map(|(x, f)| if *f == WORD_HASH as i32 { 0.0 } else { *x })
+                    .collect::<Vec<f32>>(),
+            );
+        }
+        None
+    }
+
+    ///获取desp的文字描述
+    #[inline]
+    pub fn get_wdesp(&self) -> Option<Vec<String>> {
+        if let Some(NamedAttrValue::F32VecType(d)) = self.get_val("DESP")
+            && let Some(NamedAttrValue::IntArrayType(u)) = self.get_val("UNIPAR")
+        {
+            return Some(
+                d.iter()
+                    .zip(u)
+                    .map(|(x, f)| {
+                        if *f == WORD_HASH as i32 {
+                            db1_dehash(*x as u32)
+                        } else {
+                            "".to_string()
+                        }
+                    })
+                    .collect::<Vec<String>>(),
+            );
+        }
+        None
     }
 
     // #[inline]

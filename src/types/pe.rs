@@ -7,7 +7,7 @@ use std::fmt::format;
 use bevy_ecs::system::Resource;
 use surrealdb::sql::Thing;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Resource)]
+#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
 pub struct SPdmsElement {
     //todo 用来作为sql的主键
     pub id: String,

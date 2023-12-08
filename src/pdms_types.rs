@@ -503,7 +503,8 @@ pub struct EleGeosInfo {
     pub cata_hash: Option<String>,
     //记录对应的元件库参考号
     #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip)]
     pub cata_refno: Option<RefU64>,
     //是否可见
     pub visible: bool,
@@ -543,10 +544,16 @@ where
 // }
 
 impl EleGeosInfo {
+
+    pub fn id(&self) -> String {
+        self.cata_hash.clone().unwrap_or(self.refno.to_string())
+    }
+
     ///生成surreal的json文件
     pub fn gen_sur_json(&self) -> String {
-        let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
-            "id": self.refno,
+        let id = self.id();
+        let json_string = serde_json::to_string_pretty(&serde_json::json!({
+            "id": id,
             "visible": self.visible,
             // "aabb": self.aabb,
             "generic_type": self.generic_type,
@@ -556,19 +563,17 @@ impl EleGeosInfo {
         }))
         .unwrap();
 
-        json_string.remove(json_string.len() - 1);
-        json_string.push_str(",");
-        json_string.push_str(&format!(
-            r#""cata_hash": inst_geos:⟨{}⟩, "#,
-            self.cata_hash.as_deref().unwrap_or("0")
-        ));
-        let aabb_hash = self.aabb.map(|x| gen_bytes_hash::<_, 64>(&x)).unwrap_or_default();
-        json_string.push_str(&format!(
-            r#""aabb": aabb:⟨{}⟩, "world_trans": trans:⟨{}⟩"#,
-            aabb_hash,
-            gen_bytes_hash::<_, 64>(&self.world_transform),
-        ));
-        json_string.push_str("}");
+        // json_string.remove(json_string.len() - 1);
+        // json_string.push_str(",");
+
+        //add cata refno here
+
+        // json_string.push_str(&format!(
+        //     r#""cata_hash": inst_geos:⟨{}⟩, "#,
+        //     self.cata_hash.as_deref().unwrap_or("0")
+        // ));
+        
+        // json_string.push_str("}");
         json_string
     }
 

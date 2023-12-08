@@ -1,12 +1,13 @@
-use std::collections::{BTreeMap, HashMap};
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::types::*;
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
+use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use cached::proc_macro::cached;
+use std::collections::{BTreeMap, HashMap};
+use std::f32::consts::E;
 use std::sync::Mutex;
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -135,6 +136,32 @@ pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     Ok(named_attmap)
 }
 
+#[cached(result = true)]
+pub async fn get_siblings(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+    let mut response = SUL_DB
+    .query("select value in from (select * from type::thing('pe', $refno).owner<-pe_owner order by order_num) where in.deleted=false")
+    .bind(("refno", refno.to_string()))
+    .await?;
+    let refnos: Vec<RefU64> = response.take(0)?;
+    Ok(refnos)
+}
+
+#[cached(result = true)]
+pub async fn get_next_prev(refno: RefU64, next: bool) -> anyhow::Result<RefU64> {
+    let siblings = get_siblings(refno).await?;
+    let pos = siblings
+        .iter()
+        .position(|x| *x == refno)
+        .unwrap_or_default();
+    if pos == 0 {
+        Ok(Default::default())
+    } else if next {
+        Ok(siblings[pos + 1])
+    } else {
+        Ok(siblings[pos - 1])
+    }
+}
+
 ///通过surql查询属性数据，包含UDA数据
 #[cached(result = true)]
 pub async fn get_named_attmap_with_uda(
@@ -241,7 +268,7 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
             if let Some(k) = hashmap.get_mut(&node.noun.as_str()) {
                 *k += 1;
                 n = *k;
-            }else{
+            } else {
                 hashmap.insert(node.noun.as_str(), 1);
             }
             node.name = format!("{} {}", node.noun.as_str(), n);
@@ -269,7 +296,10 @@ pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
 pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Vec<RefU64>> {
     let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
     let mut response = SUL_DB
-        .query(format!("array::flatten(select value in.id from [{}]<-pe_owner)", refno_ids.join(",")))
+        .query(format!(
+            "array::flatten(select value in.id from [{}]<-pe_owner)",
+            refno_ids.join(",")
+        ))
         .await?;
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
@@ -296,7 +326,6 @@ pub async fn query_group_by_cata_hash(
         .collect();
     Ok(map)
 }
-
 
 pub async fn query_single_by_paths(
     refno: RefU64,

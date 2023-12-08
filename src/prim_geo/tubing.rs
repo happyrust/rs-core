@@ -31,6 +31,7 @@ pub struct PdmsTubing {
     pub tubi_size: TubiSize,
 }
 
+// remove the _from and _to
 // 存放在图数据库的 tubi 的数据
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct TubiEdge {
@@ -43,6 +44,7 @@ pub struct TubiEdge {
     pub extra_type: String,
     pub tubi_size: TubiSize,
     pub bran_name: String,
+
 }
 
 impl TubiEdge {

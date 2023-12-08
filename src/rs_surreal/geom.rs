@@ -40,3 +40,17 @@ pub async fn query_deep_inst_info_refnos(refno: RefU64) -> anyhow::Result<Vec<Re
     target_refnos.extend(visible_refnos);
     Ok(target_refnos)
 }
+
+//leave_or_arrive: true: leave, false: arrive
+#[cached(result = true)]
+pub async fn query_la_axis_attmap(refno: RefU64, leave_or_arrive: bool) -> anyhow::Result<NamedAttrMap> {
+    // let cata_refno = super::get_cat_refno(refno).await?.ok_or(anyhow::anyhow!("no cat_refno"))?;
+    // dbg!(&cata_refno);
+    // let axis_map = super::query_single_by_paths(
+    //     cata_refno,
+    //     &["->PTRE", "->PTSE"],
+    //     &["refno"],
+    // )
+    // .await?;
+    Ok(Default::default())
+}

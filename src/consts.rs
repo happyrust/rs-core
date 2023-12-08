@@ -12,6 +12,7 @@ pub const ATT_TYPE: u32 = db1_hash_const("TYPE");
 pub const ATT_CURD: u32 = db1_hash_const("CURD");
 pub const TYPE_HASH: NounHash = db1_hash_const("TYPE");
 
+//是文字的hash
 pub const WORD_HASH: NounHash = db1_hash_const("WORD");
 pub const BOX_HASH: NounHash = db1_hash_const("BOX");
 pub const NAME_HASH: NounHash = db1_hash_const("NAME");

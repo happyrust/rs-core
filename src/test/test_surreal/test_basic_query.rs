@@ -61,10 +61,16 @@ async fn test_query_att_by_refno() {
     // dbg!(attmap);
     let attmap = rs_surreal::get_named_attmap_with_uda("17496/258778".into(), true).await.unwrap();
     dbg!(attmap);
-    //get_named_full_attmap
-    //get_named_attmap
-    // let attmap = rs_surreal::get_named_full_attmap("25688/53371".into()).await;
-    // dbg!(attmap); 
+}
+
+#[tokio::test]
+async fn test_get_siblings_by_refno() {
+    super::init_test_surreal().await;
+    let refnos = rs_surreal::get_siblings("17496/258778".into()).await.unwrap();
+    dbg!(refnos);
+    let next = rs_surreal::get_next_prev("17496/258778".into(), true).await.unwrap();
+    let prev = rs_surreal::get_next_prev("17496/258778".into(), false).await.unwrap();
+    dbg!((next, prev));
 }
 
 #[tokio::test]

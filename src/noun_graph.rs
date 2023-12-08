@@ -10,10 +10,10 @@ use crate::tool::db_tool::*;
 
 //使用once_cell宏来实现单例模式, 读取 noun_graph.json 得到一个 DiGraph
 pub static NOUN_GRAPH: Lazy<DiGraph<u32, u32>> = Lazy::new(|| {
-    let mut file = File::open("noun_graph.json").unwrap();
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
-    let graph: DiGraph<u32, u32> = serde_json::from_str(&contents).unwrap();
+    // let mut file = File::open("noun_graph.json").unwrap();
+    // let mut contents = String::new();
+    // file.read_to_string(&mut contents).unwrap();
+    let graph: DiGraph<u32, u32> = serde_json::from_slice(include_bytes!("../noun_graph.json")).unwrap();
     graph
 });
 
