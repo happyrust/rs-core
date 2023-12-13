@@ -1,4 +1,5 @@
 use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::tool::math_tool::quat_to_pdms_ori_xyz_str;
 use crate::types::*;
 use crate::prim_geo::ctorus::SCTorus;
 use crate::prim_geo::cylinder::SCylinder;
@@ -49,18 +50,25 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pc.number);
 
             let z_axis = pa.dir.normalize_or_zero();
-            let y_axis = pc.dir.normalize_or_zero();
+            
+            let mut y_axis = pc.dir.normalize_or_zero();
+            //Y轴如果如果在第二象限和第四象限，需要反向
+            if y_axis.y < 0.0 {
+                y_axis = -y_axis;
+            }
             //fix 防止出现向量不能组成坐标轴的问题，暂时忽略X轴的输入
+            //但是偏移还是要用pa pb pc的方向
             let x_axis = y_axis.cross(z_axis).normalize_or_zero();
+            // dbg!(x_axis, y_axis, z_axis);
 
             //需要转换成CTorus
             let pyramid = LPyramid {
                 pbax_pt: pb.pt,
-                pbax_dir: x_axis,
+                pbax_dir: pb.dir,
                 pcax_pt: pc.pt,
-                pcax_dir: y_axis,
+                pcax_dir: pc.dir,
                 paax_pt: pa.pt,
-                paax_dir: z_axis,
+                paax_dir: pa.dir,
 
                 pbtp: d.x_top,
                 pctp: d.y_top,
@@ -279,6 +287,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
         }
         CateGeoParam::SCylinder(d) => {
+            
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
@@ -286,6 +295,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if dir.length() == 0.0 {
                 return None;
             }
+            
             let translation =  (dir * d.dist_to_btm + axis.pt);
             let mut phei = d.height as f32;
             //如果height是负数，相当于要额外旋转一下
@@ -293,8 +303,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 phei = -phei;
                 dir = -dir;
             }
+            // dbg!(dir);
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+            // dbg!(quat_to_pdms_ori_xyz_str(&rotation));
+            let rotation = Quat::IDENTITY;
             let transform = Transform {
                 rotation,
                 translation,
@@ -359,26 +372,44 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
 
         CateGeoParam::SlopeBottomCylinder(d) => {
+            dbg!(d.refno);
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let z_dir = axis.dir.normalize_or_zero();
-            if z_dir.length() == 0.0 {
+            let z_axis = axis.dir.normalize_or_zero();
+            if z_axis.length() == 0.0 {
                 return None;
             }
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
 
-            let x_dir = Vec3::Y.cross(z_dir).normalize_or_zero();
-            // dbg!(x_dir);
-            let mat3 = if x_dir.x > 0.0 {
-                Mat3::from_cols(x_dir, Vec3::Y, z_dir)
-            } else {
-                Mat3::from_cols(-x_dir, -Vec3::Y, z_dir)
-            };
-            let angle_flag = -1.0;
-            let rotation = Quat::from_mat3(&mat3);
-            let translation = z_dir * (d.dist_to_btm as f32) + axis.pt;
+            //不能使用这个from_rotation_arc
+            //改成使用有参考轴的，如果参考轴没有，默认使用Y轴
+            // let mut ref_axis = axis.ref_dir;
+            // if ref_axis.length() == 0.0 {
+            //     ref_axis = if z_axis.cross(Vec3::Y).length() < 0.01 {
+            //         Vec3::Y
+            //     } else {
+            //         Vec3::X
+            //     }
+            // }
+            // //如果这两个轴平行，则把ref_axis切换成Z轴
+            // if z_axis.dot(ref_axis).abs() > 0.999 {
+            //     ref_axis = Vec3::Z;
+            // }
+            // dbg!(ref_axis);
+            
+            // let x_axis = ref_axis.cross(z_axis).normalize_or_zero();
+            // let y_axis = z_axis.cross(x_axis).normalize_or_zero();
+
+            // dbg!((x_axis, y_axis, z_axis));
+
+            // let rotation = Quat::from_mat3(&Mat3::from_cols( x_axis, y_axis, z_axis));
+            
+
+            let rotation = Quat::from_rotation_arc(Vec3::Z, z_axis);
+            // dbg!(quat_to_pdms_ori_xyz_str(&rotation));
+            let translation = z_axis * (d.dist_to_btm as f32) + axis.pt;
             let transform = Transform {
                 rotation,
                 translation,
@@ -386,10 +417,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             };
             // 是以中心为原点，所以需要移动到中心位置
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
+                paxi_dir: z_axis,
                 phei,
                 pdia,
-                btm_shear_angles: [d.alt_x_shear * angle_flag, d.alt_y_shear * angle_flag],
-                top_shear_angles: [d.x_shear * angle_flag, d.y_shear * angle_flag],
+                btm_shear_angles: [d.alt_x_shear, d.alt_y_shear],
+                top_shear_angles: [d.x_shear, d.y_shear],
                 ..Default::default()
             });
             return Some(CateBrepShape {

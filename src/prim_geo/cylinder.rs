@@ -1,6 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 
 
+use std::f64::consts::FRAC_PI_2;
 use std::hash::Hash;
 use std::hash::Hasher;
 
@@ -48,7 +49,7 @@ impl Default for LCylinder {
         LCylinder {
             paxi_expr: "Z".to_string(),
             paxi_pt: Default::default(),
-            paxi_dir: Vec3::new(0.0, 0.0, 1.0),
+            paxi_dir: Vec3::Z,
             pbdi: -0.5,
             ptdi: 0.5,
             pdia: 1.0,
@@ -378,13 +379,18 @@ impl BrepShapeTrait for SCylinder {
         }
     }
 
+    //TODO: 固定的shell不用重复生成
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
+        //slope只能取最后的坐标轴后，执行angle的旋转，如果提前转，因为角度的问题可能对不上
         let dir = self.paxi_dir.normalize();
+        let dir = Vec3::Z;
         let r = self.pdia / 2.0;
         let c_pt = Vec3::ZERO;
         let center = c_pt.point3();
         let ref_axis = cal_ref_axis(&dir);
+        // let ref_axis = c;
+        // dbg!(ref_axis);
         let pt0 = c_pt + ref_axis * r;
         let ext_len = self.phei as f64;
         let ext_dir = dir.vector3();
@@ -392,23 +398,29 @@ impl BrepShapeTrait for SCylinder {
         if ext_len < 0.0 {
             reverse_dir = true;
         }
-        // dbg!(ext_len);
+        // dbg!(ext_dir);
         let v = builder::vertex(pt0.point3());
         let origin_w = builder::rsweep(&v, center, ext_dir, Rad(7.0));
 
         //还是要和extrude 区分出来
-        let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
-        let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
-        let transform_btm = Matrix4::from_angle_y(Rad(self.btm_shear_angles[0].to_radians() as f64))
-            * Matrix4::from_angle_y(Rad(self.btm_shear_angles[1].to_radians() as f64))
-            * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-        let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
-        let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
-        let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64)
-            * Matrix4::from_angle_y(Rad(self.top_shear_angles[0].to_radians() as f64))
-            * Matrix4::from_angle_y(Rad(self.top_shear_angles[1].to_radians() as f64))
+        let scale_y = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
+        let scale_x = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
+        // dbg!(&self.btm_shear_angles);
+        let transform_btm =
+            Matrix4::from_angle_y(Rad(self.btm_shear_angles[0].to_radians() as f64))
+            * Matrix4::from_angle_x(-Rad(self.btm_shear_angles[1].to_radians() as f64))
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
 
+        // dbg!(&self.top_shear_angles);
+        let scale_y = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
+        let scale_x = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
+        let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64)
+            * Matrix4::from_angle_y(Rad(self.top_shear_angles[0].to_radians() as f64))
+            * Matrix4::from_angle_x(-Rad(self.top_shear_angles[1].to_radians() as f64))
+            * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
+
+        // let transform_btm = Matrix4::one();
+        // let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64);
 
         let mut w_s = builder::transformed(&origin_w, transform_btm);
         let mut w_e = builder::transformed(&origin_w, transform_top);
@@ -425,6 +437,8 @@ impl BrepShapeTrait for SCylinder {
             let face1 = builder::homotopy(w_s.front().unwrap(), &w_e.front().unwrap());
             let face2 = builder::homotopy(h_w_s.front().unwrap(), &h_w_e.front().unwrap());
             let shell = vec![f, f_e, face1, face2].into();
+            //Matrix4::from_angle_y(Rad(FRAC_PI_2))
+            // let new_shell = builder::transformed(&shell, Matrix4::from_angle_y(Rad(FRAC_PI_2)));
             return Some(shell);
         }
         None
@@ -444,18 +458,18 @@ impl BrepShapeTrait for SCylinder {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         if self.is_sscl() {
-            let s = SCylinder {
-                paxi_expr: "Z".to_string(),
-                paxi_pt: Default::default(),
-                paxi_dir: Vec3::Z,
-                phei: self.phei,
-                pdia: self.pdia,
-                btm_shear_angles: self.btm_shear_angles.clone(),
-                top_shear_angles: self.top_shear_angles.clone(),
-                negative: false,
-                center_in_mid: self.center_in_mid,
-            };
-            return Box::new(s);
+            // let s = SCylinder {
+            //     paxi_expr: "Z".to_string(),
+            //     paxi_pt: Default::default(),
+            //     paxi_dir: Vec3::Z,
+            //     phei: self.phei,
+            //     pdia: self.pdia,
+            //     btm_shear_angles: self.btm_shear_angles.clone(),
+            //     top_shear_angles: self.top_shear_angles.clone(),
+            //     negative: false,
+            //     center_in_mid: self.center_in_mid,
+            // };
+            return Box::new(self.clone());
         }
         Box::new(Self::default())
     }

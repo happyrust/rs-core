@@ -1,8 +1,14 @@
-use crate::{RefU64, SUL_DB, prim_geo::spine::{SweepPath3D, SpineCurveType, Spine3D}, shape::pdms_shape::LEN_TOL};
+use crate::{
+    consts::HAS_PLIN_TYPES,
+    prim_geo::spine::{Spine3D, SpineCurveType, SweepPath3D},
+    shape::pdms_shape::LEN_TOL,
+    NamedAttrMap, RefU64, SUL_DB, pdms_data::{PlinParam, PlinParamData}, tool::{direction_parse::parse_expr_to_dir, math_tool::quat_to_pdms_ori_str},
+};
 use approx::abs_diff_eq;
-use bevy_transform::prelude::*;
-use glam::{Mat3, Quat, Vec3};
 use async_recursion::async_recursion;
+use bevy_transform::prelude::*;
+use cached::proc_macro::cached;
+use glam::{Mat3, Quat, Vec3};
 
 //获得世界坐标系
 ///使用cache，需要从db manager里移除出来
@@ -39,7 +45,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 
         let owner_type_name = super::get_type_name(owner).await?;
         let owner_is_gensec = owner_type_name == "GENSEC";
-        let mut quat_v = att.get_rotation();
+        let quat_v = att.get_rotation();
         let mut need_bangle = false;
         if !owner_is_gensec && quat_v.is_some() {
             quat = quat_v.unwrap();
@@ -69,7 +75,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     return Ok(None);
                 }
                 let d = extru_dir.dot(Vec3::Z).abs();
-                let mut ref_axis = if abs_diff_eq!(1.0, d) {
+                let ref_axis = if abs_diff_eq!(1.0, d) {
                     Vec3::Y
                 } else {
                     Vec3::Z
@@ -85,11 +91,12 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             quat = quat * Quat::from_rotation_z(bangle.to_radians());
         }
         //固定方位，不会怎旋转方向，但是会移动
-        let mut fixed_posl_ori = att.get_type_str() == "ENDATU";
+        let fixed_posl_ori = att.get_type_str() == "ENDATU";
 
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
         let c_ref = att.get_foreign_refno("CREF").unwrap_or_default();
         let mut cut_dir = Vec3::Y;
+        let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
         if att.get_str("POSL").is_none() && att.contains_key("CUTB") {
             cut_dir = att.get_vec3("CUTP").unwrap_or(cut_dir);
@@ -112,94 +119,79 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 } else {
                     translation = w_pose - cut_dir * cut_len;
                 }
+                has_cut_back = true;
             }
         }
         //todo fix 处理 posl的计算
-        // if att.contains_key("POSL") {
-        //     let pos_line = att.get_str_or_default("POSL");
-        //     let delta_vec = att.get_vec3("DELP").unwrap_or_default();
-        //     // dbg!(pos_line);
-        //     //plin里的位置偏移
-        //     let mut plin_pos = Vec3::ZERO;
-        //     let mut pline_plax = Vec3::X;
-        //     let mut new_quat = Quat::IDENTITY;
-        //     let mut plin_owner = att.get_owner();
-        //     // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
-        //     let mut cur_plin_param = None;
-        //     let mut own_plin_param = None;
-        //     let mut target_own_att = NamedAttrMap::default();
-        //     while cur_plin_param.is_none() {
-        //         let Some(t) = self.get_refno_basic(plin_owner) else {
-        //             break;
-        //         };
-        //         // #[cfg(debug_assertions)]
-        //         // dbg!(t.get_type());
-        //         if !HAS_PLIN_TYPES.contains(&t.get_type()) {
-        //             plin_owner = t.get_owner();
-        //             continue;
-        //         }
-        //         // dbg!(plin_owner);
-        //         // dbg!(pos_line);
-        //         target_own_att = aios_core::get_named_attmap(plin_owner).await.unwrap_or_default();
-        //         let own_pos_line = target_own_att.get_str_or_default("JUSL");
-        //         // dbg!(own_pos_line);
-        //         cur_plin_param = self.query_pline(plin_owner, pos_line).await?;
-        //         own_plin_param = self.query_pline(plin_owner, own_pos_line).await?;
-        //         if cur_plin_param.is_some() {
-        //             break;
-        //         }
-        //         plin_owner = t.get_owner();
-        //     }
-        //     let is_lmirror = target_own_att.get_bool("LMIRR").unwrap_or_default();
-        //     if let Some(param) = cur_plin_param {
-        //         plin_pos = param.pt;
-        //         pline_plax = param.plax;
-        //         // dbg!(&param);
-        //     }
-        //     if let Some(own_param) = own_plin_param {
-        //         plin_pos -= own_param.pt;
-        //         // dbg!(&own_param);
-        //     }
-        //     let mut y_axis = if att.contains_key("YDIR") {
-        //         att.get_vec3("YDIR").unwrap_or_default()
-        //     } else {
-        //         Vec3::Z
-        //     };
-        //     //和LMIRROR 有关系
-        //     let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
-        //     let x_axis = y_axis.cross(z_axis).normalize();
-        //     let posl_quat = if fixed_posl_ori {
-        //         Quat::IDENTITY
-        //     } else {
-        //         Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
-        //     };
-        //     new_quat = posl_quat * quat;
-        //     translation +=
-        //         rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
-        //
-        //     #[cfg(debug_assertions)]
-        //     {
-        //         dbg!(translation);
-        //         dbg!(quat_to_pdms_ori_str(&rotation));
-        //     }
-        //     //没有POSL时，需要使用cutback的方向
-        //     rotation = rotation * new_quat;
-        //     if pos_line == "unset" && has_cut_back {
-        //         // dbg!(has_cut_back);
-        //         //need to perpendicular to the Y axis
-        //         let mat3 = Mat3::from_quat(rotation);
-        //         let y_axis = mat3.y_axis;
-        //         let ref_axis = cut_dir;
-        //         // dbg!(cut_dir);
-        //         let x_axis = y_axis.cross(ref_axis).normalize();
-        //         let z_axis = x_axis.cross(y_axis).normalize();
-        //         let new_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
-        //         // dbg!(new_mat);
-        //         rotation = Quat::from_mat3(&new_mat);
-        //     }
-        // } else
-        //
-        {
+        if att.contains_key("POSL") {
+            let pos_line = att.get_str_or_default("POSL");
+            let delta_vec = att.get_vec3("DELP").unwrap_or_default();
+            // dbg!(pos_line);
+            //plin里的位置偏移
+            let mut plin_pos = Vec3::ZERO;
+            let mut pline_plax = Vec3::X;
+            let mut new_quat = Quat::IDENTITY;
+            let owner = att.get_owner();
+            // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
+            // let mut cur_plin_param = None;
+            // let mut own_plin_param = None;
+            // let mut target_own_att = NamedAttrMap::default();
+            let mut is_lmirror = false;
+            let ance_result = crate::query_filter_ancestors(owner, &HAS_PLIN_TYPES).await?;
+            if let Some(plin_owner) = ance_result.into_iter().next() {
+                let target_own_att = crate::get_named_attmap(plin_owner)
+                    .await
+                    .unwrap_or_default();
+                is_lmirror = target_own_att.get_bool("LMIRR").unwrap_or_default();
+                let own_pos_line = target_own_att.get_str_or_default("JUSL");
+
+                if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
+                    plin_pos = param.pt;
+                    pline_plax = param.plax;
+                    // dbg!(&param);
+                }
+                if let Ok(Some(own_param)) = crate::query_pline(plin_owner, own_pos_line.into()).await {
+                    plin_pos -= own_param.pt;
+                    // dbg!(&own_param);
+                }
+            }
+            let y_axis = if att.contains_key("YDIR") {
+                att.get_vec3("YDIR").unwrap_or_default()
+            } else {
+                Vec3::Z
+            };
+            //和LMIRROR 有关系
+            let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
+            let x_axis = y_axis.cross(z_axis).normalize();
+            let posl_quat = if fixed_posl_ori {
+                Quat::IDENTITY
+            } else {
+                Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
+            };
+            new_quat = posl_quat * quat;
+            translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
+
+            #[cfg(debug_assertions)]
+            {
+                dbg!(translation);
+                dbg!(quat_to_pdms_ori_str(&rotation));
+            }
+            //没有POSL时，需要使用cutback的方向
+            rotation = rotation * new_quat;
+            if pos_line == "unset" && has_cut_back {
+                // dbg!(has_cut_back);
+                //need to perpendicular to the Y axis
+                let mat3 = Mat3::from_quat(rotation);
+                let y_axis = mat3.y_axis;
+                let ref_axis = cut_dir;
+                // dbg!(cut_dir);
+                let x_axis = y_axis.cross(ref_axis).normalize();
+                let z_axis = x_axis.cross(y_axis).normalize();
+                let new_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
+                // dbg!(new_mat);
+                rotation = Quat::from_mat3(&new_mat);
+            }
+        } else {
             translation = translation + rotation * pos;
             rotation = rotation * quat;
         }
@@ -229,6 +221,59 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
         translation,
         scale: Vec3::ONE,
     }))
+}
+
+///查询形集PLIN的值，todo 需要做缓存优化
+// #[cached]
+pub async fn query_pline(
+    refno: RefU64,
+    jusl: String,
+) -> anyhow::Result<Option<PlinParamData>> {
+    let cat_att = crate::get_cat_attmap(refno)
+        .await
+        .unwrap_or_default();
+    let psref = cat_att
+        .get_foreign_refno("PSTR")
+        .unwrap_or(cat_att.get_foreign_refno("PTSS").unwrap_or_default());
+    if !psref.is_valid() {
+        return Ok(None);
+    }
+    let c_refnos = crate::get_children_refnos(psref)
+        .await
+        .unwrap_or_default();
+    // dbg!(&c_refnos);
+    for c_refno in c_refnos {
+        let a = crate::get_named_attmap(c_refno).await?;
+        let Some(p_key) = a.get_as_string("PKEY") else {
+            continue;
+        };
+        let param = PlinParam {
+            vxy: [
+                a.get_as_string("PX").unwrap_or("0".to_string()),
+                a.get_as_string("PY").unwrap_or("0".to_string()),
+            ],
+            dxy: [
+                a.get_as_string("DX").unwrap_or("0".to_string()),
+                a.get_as_string("DY").unwrap_or("0".to_string()),
+            ],
+            plax: a.get_as_string("PLAX").unwrap_or("unset".to_string()),
+        };
+        let x = super::resolve_expression_to_f32(&param.vxy[0], refno).await?;
+        let y = super::resolve_expression_to_f32(&param.vxy[1], refno).await?;
+        let dx = super::resolve_expression_to_f32(&param.dxy[0], refno).await?;
+        let dy = super::resolve_expression_to_f32(&param.dxy[1], refno).await?;
+        let plax = parse_expr_to_dir(&param.plax)
+            .unwrap_or(Vec3::Z)
+            .normalize();
+        let plin_data = PlinParamData {
+            pt: Vec3::new(x, y, 0.0) + Vec3::new(dx, dy, 0.0) * plax,
+            plax,
+        };
+        if p_key == jusl {
+            return Ok(Some(plin_data));
+        }
+    }
+    Ok(None)
 }
 
 /// 计算ZDIS和PKDI, refno 是有这个SPLINE属性或者SCTN这种的参考号
@@ -348,8 +393,8 @@ pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
         }
     }
 
-     //考虑sctn这种直接拉升出来的情况
-     if paths.is_empty() {
+    //考虑sctn这种直接拉升出来的情况
+    if paths.is_empty() {
         let att = super::get_named_attmap(refno).await?;
         if let Some(poss) = att.get_poss()
             && let Some(pose) = att.get_pose()

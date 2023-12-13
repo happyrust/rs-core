@@ -67,6 +67,8 @@ pub mod rs_surreal;
 pub mod schema;
 pub mod types;
 
+pub mod math;
+
 pub mod file_helper;
 
 pub use crate::types::*;

@@ -17,7 +17,22 @@
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP refactor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/noun_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/noun_graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/geom.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,6 +124,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
@@ -523,6 +539,13 @@
       <workItem from="1699608077201" duration="1234000" />
       <workItem from="1699642151878" duration="1377000" />
       <workItem from="1701679258497" duration="6366000" />
+      <workItem from="1701802982835" duration="210000" />
+      <workItem from="1701851277417" duration="894000" />
+      <workItem from="1701865805355" duration="299000" />
+      <workItem from="1701981432937" duration="713000" />
+      <workItem from="1702066544714" duration="43000" />
+      <workItem from="1702219174406" duration="777000" />
+      <workItem from="1702221272634" duration="120000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -867,7 +890,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="255" />
+    <option name="localTasksCounter" value="259" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -908,7 +931,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
     <MESSAGE value="storus  的特殊处理" />
     <MESSAGE value="增加ngmr负实体的处理" />

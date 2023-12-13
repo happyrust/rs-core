@@ -56,10 +56,9 @@ pub async fn get_ancestor_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttr
 #[cached(result = true)]
 pub async fn get_type_name(refno: RefU64) -> anyhow::Result<String> {
     let mut response = SUL_DB
-        .query(r#"return (select value noun from only (type::thing("pe", $refno)));"#)
+        .query(r#"select value noun from only type::thing("pe", $refno)"#)
         .bind(("refno", refno.to_string()))
         .await?;
-    // dbg!(&response);
     let type_name: Option<String> = response.take(0)?;
     Ok(type_name.unwrap_or_default())
 }

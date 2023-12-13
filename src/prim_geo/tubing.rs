@@ -126,6 +126,7 @@ impl PdmsTubing {
             TubiSize::BoxSize((w, h)) => Vec3::new(w, h, len),
             _ => Vec3::ONE,
         };
+        //统一都用Z轴为参考轴的方法
         let rotation = if is_bore {
             Quat::from_rotation_arc(Vec3::Z, z_dir)
         } else if let Some(y_dir) = self.leave_ref_dir {

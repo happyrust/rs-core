@@ -178,8 +178,6 @@ impl BrepShapeTrait for Extrusion {
                         let curve = e.oriented_curve();
                         let polyline =
                             PolylineCurve::from_curve(&curve, curve.range_tuple(), self.tol() as _);
-                        // let polyline = PolylineCurve::default();
-                        // dbg!(&polyline);
                         let mut v = polyline
                             .iter()
                             .map(|x| Vec2::new(x.x as _, x.y as _))

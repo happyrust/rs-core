@@ -505,6 +505,7 @@ pub struct EleGeosInfo {
     #[serde(default)]
     // #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(skip)]
+    #[with(rkyv::with::Skip)]
     pub cata_refno: Option<RefU64>,
     //是否可见
     pub visible: bool,
@@ -555,25 +556,11 @@ impl EleGeosInfo {
         let json_string = serde_json::to_string_pretty(&serde_json::json!({
             "id": id,
             "visible": self.visible,
-            // "aabb": self.aabb,
             "generic_type": self.generic_type,
-            // "world_transform": self.world_transform,
             "flow_pt_indexs": self.flow_pt_indexs.clone(),
             "geo_type": self.geo_type.clone(),
         }))
         .unwrap();
-
-        // json_string.remove(json_string.len() - 1);
-        // json_string.push_str(",");
-
-        //add cata refno here
-
-        // json_string.push_str(&format!(
-        //     r#""cata_hash": inst_geos:⟨{}⟩, "#,
-        //     self.cata_hash.as_deref().unwrap_or("0")
-        // ));
-        
-        // json_string.push_str("}");
         json_string
     }
 
@@ -607,7 +594,7 @@ impl EleGeosInfo {
     #[inline]
     pub fn get_inst_key(&self) -> String {
         if let Some(c) = &self.cata_hash {
-            return c.parse::<u64>().unwrap_or(0).to_string();
+            return c.clone();
         }
         self.refno.to_string()
     }
@@ -616,7 +603,7 @@ impl EleGeosInfo {
     #[inline]
     pub fn get_inst_key_u64(&self) -> u64 {
         if let Some(c) = &self.cata_hash {
-            return c.parse::<u64>().unwrap_or(0);
+            return c.parse::<u64>().unwrap_or(*self.refno);
         }
         *self.refno
     }

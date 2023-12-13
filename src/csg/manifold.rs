@@ -75,10 +75,10 @@ impl ManifoldCrossSectionRust {
     }
 
     //旋转成manifold
-    pub fn extrude_rotate(&mut self, euler: Vec3) -> ManifoldRust {
+    pub fn extrude_rotate(&mut self, segments: i32, angle: f32) -> ManifoldRust {
         unsafe {
             let mut manifold = ManifoldRust::new();
-            manifold_revolve(manifold.ptr as _, self.ptr as _, 0);
+            manifold_revolve(manifold.ptr as _, self.ptr as _, segments, angle);
             manifold
         }
     }
@@ -250,8 +250,8 @@ impl From<(&PlantMesh, &DMat4)> for ManifoldMeshRust {
                 verts.push(pt[2] as _);
             }
             manifold_meshgl(mesh.ptr as _,
-                            verts.as_ptr(), m.vertices.len(), 3,
-                            m.indices.as_ptr(), m.indices.len() / 3);
+                            verts.as_ptr() as _, m.vertices.len(), 3,
+                            m.indices.as_ptr() as _, m.indices.len() / 3);
             mesh
         }
     }
@@ -268,8 +268,8 @@ impl From<&PlantMesh> for ManifoldMeshRust {
                 verts.push(v[2]);
             }
             manifold_meshgl(mesh.ptr as _,
-                            verts.as_ptr(), m.vertices.len(), 3,
-                            m.indices.as_ptr(), m.indices.len() / 3);
+                            verts.as_ptr() as _, m.vertices.len(), 3,
+                            m.indices.as_ptr() as _, m.indices.len() / 3);
             mesh
         }
     }
@@ -297,9 +297,14 @@ impl From<(&PlantMesh, &DMat4)> for ManifoldRust {
         }
     }
 }
-
 impl From<ManifoldRust> for PlantMesh {
     fn from(m: ManifoldRust) -> Self {
+        (&m).into()
+    }
+}
+
+impl From<&ManifoldRust> for PlantMesh {
+    fn from(m: &ManifoldRust) -> Self {
         unsafe {
             let mesh = ManifoldMeshRust::new();
             manifold_get_meshgl(mesh.ptr as _, m.ptr);

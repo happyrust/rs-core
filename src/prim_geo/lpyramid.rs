@@ -88,15 +88,19 @@ impl BrepShapeTrait for LPyramid {
         let ty = (self.pctp as f64 / 2.0).max(0.001);
         let bx = (self.pbbt as f64 / 2.0).max(0.001);
         let by = (self.pcbt as f64 / 2.0).max(0.001);
-        let ox = self.pbof as f64;
-        let oy = self.pcof as f64;
+        let ox = self.pbof as f64 * Vector2::new(self.pbax_dir.x as _, self.pbax_dir.y as _);
+        let oy = self.pcof as f64 * Vector2::new(self.pcax_dir.x as _, self.pcax_dir.y as _);
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
+        let offset = ox + oy;
+        let offset_3d = Vector3::new(offset.x as _, offset.y as _, 0.0);
+        // dbg!((self.pbax_dir, self.pcax_dir, self.paax_dir));
+        // dbg!(offset_3d);
         let pts = vec![
-            builder::vertex(Point3::new(-tx + ox, -ty + oy, h2)),
-            builder::vertex(Point3::new(tx + ox, -ty + oy, h2)),
-            builder::vertex(Point3::new(tx + ox, ty + oy, h2)),
-            builder::vertex(Point3::new(-tx + ox, ty + oy, h2)),
+            builder::vertex(Point3::new(-tx, -ty, h2) + offset_3d),
+            builder::vertex(Point3::new(tx, -ty, h2) + offset_3d),
+            builder::vertex(Point3::new(tx, ty, h2) + offset_3d),
+            builder::vertex(Point3::new(-tx, ty, h2) + offset_3d),
         ];
         let ets = vec![
             builder::line(&pts[0], &pts[1]),
@@ -105,14 +109,12 @@ impl BrepShapeTrait for LPyramid {
             builder::line(&pts[3], &pts[0]),
         ];
 
-        let ox = 0.0 as f64;
-        let oy = 0.0 as f64;
 
         let pts = vec![
-            builder::vertex(Point3::new(-bx - ox, -by - oy, -h2)),
-            builder::vertex(Point3::new(bx - ox, -by - oy, -h2)),
-            builder::vertex(Point3::new(bx - ox, by - oy, -h2)),
-            builder::vertex(Point3::new(-bx - ox, by - oy, -h2)),
+            builder::vertex(Point3::new(-bx, -by, -h2)),
+            builder::vertex(Point3::new(bx, -by, -h2)),
+            builder::vertex(Point3::new(bx, by, -h2)),
+            builder::vertex(Point3::new(-bx, by, -h2)),
         ];
         let ebs = vec![
             builder::line(&pts[0], &pts[1]),
@@ -143,24 +145,30 @@ impl BrepShapeTrait for LPyramid {
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+        use glam::DVec2;
+
         let _z_pt = self.paax_pt.as_dvec3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp / 2.0) as f64;
         let ty = (self.pctp / 2.0) as f64;
         let bx = (self.pbbt / 2.0) as f64;
         let by = (self.pcbt / 2.0) as f64;
-        let ox = self.pbof as f64;
-        let oy = self.pcof as f64;
+        let ox = self.pbof as f64 * DVec2::new(self.pbax_dir.x as _, self.pbax_dir.y as _);
+        let oy = self.pcof as f64 * DVec2::new(self.pcax_dir.x as _, self.pcax_dir.y as _);
+        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
+
+        let offset = ox + oy;
+        let offset_3d = DVec3::new(offset.x as _, offset.y as _, 0.0);
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
         let mut polys = vec![];
         let mut verts = vec![];
 
         let pts = vec![
-            DVec3::new(-tx + ox, -ty + oy, h2),
-            DVec3::new(tx + ox, -ty + oy, h2),
-            DVec3::new(tx + ox, ty + oy, h2),
-            DVec3::new(-tx + ox, ty + oy, h2),
+            DVec3::new(-tx, -ty, h2) + offset_3d,
+            DVec3::new(tx, -ty, h2) + offset_3d,
+            DVec3::new(tx, ty, h2) + offset_3d,
+            DVec3::new(-tx, ty, h2) + offset_3d,
         ];
         if tx * ty < f64::EPSILON {
             verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
@@ -169,10 +177,10 @@ impl BrepShapeTrait for LPyramid {
         }
 
         let pts = vec![
-            DVec3::new(-bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, by - oy, -h2),
-            DVec3::new(-bx - ox, by - oy, -h2),
+            DVec3::new(-bx, -by, -h2) ,
+            DVec3::new(bx, -by, -h2) ,
+            DVec3::new(bx, by, -h2) ,
+            DVec3::new(-bx, by, -h2) ,
         ];
         if bx * by < f64::EPSILON {
             verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));

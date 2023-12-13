@@ -151,7 +151,7 @@ impl DbOption{
     pub fn get_version_db_conn_str(&self) -> String {
         let ip = self.v_ip.as_str();
         let port = self.v_port.as_str();
-        format!("{ip}:{port}")
+        format!("ws://{ip}:{port}")
     }
 
     #[inline]

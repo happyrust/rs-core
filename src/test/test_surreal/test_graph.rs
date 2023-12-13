@@ -4,8 +4,10 @@ use petgraph::graph::NodeIndex;
 use petgraph::graphmap::DiGraphMap;
 use petgraph::graphmap::GraphMap;
 
-use crate::graph::query_all_bran_hangs;
-use crate::graph::query_refno_deep_children;
+use crate::graph::query_filter_all_bran_hangs;
+use crate::graph::query_filter_deep_children;
+use crate::noun_graph::gen_noun_incoming_relate_sql;
+use crate::noun_graph::gen_noun_outcoming_relate_sql;
 use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
 
 #[test]
@@ -52,21 +54,29 @@ fn test_petgraph() {
 
 #[tokio::test]
 async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
-    // TODO: Add test setup code if needed
-
     super::init_test_surreal().await;
     let refno = "17496/171102".into(); // Replace with your desired refno value
-    let result = query_all_bran_hangs(refno).await?;
+    let result = query_filter_all_bran_hangs(refno).await?;
     dbg!(&result);
 
-    let result = query_refno_deep_children(refno, &CATA_WITHOUT_REUSE_GEO_NAMES).await?;
+    let result = query_filter_deep_children(refno, &CATA_WITHOUT_REUSE_GEO_NAMES).await?;
     dbg!(&result);
 
     let refno = "17496/171180".into(); // Replace with your desired refno value
-    let result = query_all_bran_hangs(refno).await?;
+    let result = query_filter_all_bran_hangs(refno).await?;
     dbg!(&result);
 
     // TODO: Add assertions to validate the result
 
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_query_ancestor_filter() -> anyhow::Result<()> {
+    super::init_test_surreal().await;
+    let refno = "25688/7957".into();
+    // let type_name = crate::get_type_name(refno).await?;
+    let target = crate::query_filter_ancestors(refno, &["STWALL", "ZONE"]).await.unwrap();
+    dbg!(target);
     Ok(())
 }

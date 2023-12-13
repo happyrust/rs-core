@@ -12,5 +12,8 @@ pub mod test_rotation;
 
 pub mod test_hash;
 
+pub mod test_serde;
+
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_surreal;

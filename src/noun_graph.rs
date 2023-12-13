@@ -13,7 +13,8 @@ pub static NOUN_GRAPH: Lazy<DiGraph<u32, u32>> = Lazy::new(|| {
     // let mut file = File::open("noun_graph.json").unwrap();
     // let mut contents = String::new();
     // file.read_to_string(&mut contents).unwrap();
-    let graph: DiGraph<u32, u32> = serde_json::from_slice(include_bytes!("../noun_graph.json")).unwrap();
+    let graph: DiGraph<u32, u32> =
+        serde_json::from_slice(include_bytes!("../noun_graph.json")).unwrap();
     graph
 });
 
@@ -21,14 +22,18 @@ pub static NOUN_GRAPH: Lazy<DiGraph<u32, u32>> = Lazy::new(|| {
 pub fn find_noun_path(start_noun: &str, end_noun: &str) -> Vec<Vec<String>> {
     // dbg!(start_noun);
     // dbg!(end_noun);
-    let start_node = NOUN_GRAPH
+    let Some(start_node) = NOUN_GRAPH
         .node_indices()
         .find(|i| NOUN_GRAPH[*i] == db1_hash(start_noun))
-        .unwrap();
-    let end_node = NOUN_GRAPH
+    else {
+        return vec![];
+    };
+    let Some(end_node) = NOUN_GRAPH
         .node_indices()
         .find(|i| NOUN_GRAPH[*i] == db1_hash(end_noun))
-        .unwrap();
+    else {
+        return vec![];
+    };
     let mut paths = petgraph::algo::all_simple_paths::<Vec<NodeIndex<u32>>, &DiGraph<u32, u32>>(
         &NOUN_GRAPH,
         start_node,
@@ -47,27 +52,30 @@ pub fn find_noun_path(start_noun: &str, end_noun: &str) -> Vec<Vec<String>> {
     result
 }
 
-pub fn gen_noun_outcoming_relate_path(start_noun: &str, filter_nouns: &[&str]) -> Option<String> {
+//TODO: 合并方法, 调用一个统一的
+///沿着owner一直往上找到过滤的节点
+pub fn gen_noun_outcoming_relate_sql(start_noun: &str, filter_nouns: &[&str]) -> Option<String> {
+    dbg!(&start_noun);
     let paths = filter_nouns
         .into_iter()
         .map(|n| {
-            find_noun_path(n, start_noun)
+            find_noun_path(start_noun, n)
                 .into_iter()
-                .map(|x: Vec<String>| x.into_iter().rev().collect::<Vec<_>>())
-                // .unique()
+                .map(|x: Vec<String>| x.clone())
                 .collect::<Vec<_>>()
         })
+        .filter(|x| !x.is_empty())
         .flatten()
         .collect::<Vec<_>>();
     // dbg!(&paths);
     let contains_self = filter_nouns.contains(&start_noun);
-    if paths.is_empty() && !contains_self{
+    if paths.is_empty() && !contains_self {
         return None;
     }
     let min_len = paths.iter().map(|x| x.len()).min().unwrap_or_default();
     let max_len = paths.iter().map(|x| x.len()).max().unwrap_or_default();
     let mut sql = String::new();
-    if contains_self{
+    if contains_self {
         sql.push_str("id as p0,");
     }
     for i in 1..max_len {
@@ -77,7 +85,51 @@ pub fn gen_noun_outcoming_relate_path(start_noun: &str, filter_nouns: &[&str]) -
                 .filter_map(|x| x.get(i).map(|s| format!("'{s}'")))
                 .unique()
                 .collect::<Vec<_>>();
-            // dbg!(&filter);
+            sql.push_str(&format!(
+                "->pe_owner[where out.noun in [{}]]->(? as p{})",
+                filter.join(","),
+                i,
+            ));
+        } else {
+            sql.push_str(&format!("->pe_owner->(?)"));
+        }
+    }
+    if sql.ends_with(',') {
+        sql.remove(sql.len() - 1);
+    }
+    Some(sql)
+}
+
+/// 获取与指定终止名词相关的路径，传入的参数是终止名词和过滤名词列表
+pub fn gen_noun_incoming_relate_sql(end_noun: &str, filter_nouns: &[&str]) -> Option<String> {
+    let paths = filter_nouns
+        .into_iter()
+        .map(|n| {
+            find_noun_path(n, end_noun)
+                .into_iter()
+                .map(|x: Vec<String>| x.into_iter().rev().collect::<Vec<_>>())
+                .collect::<Vec<_>>()
+        })
+        .filter(|x| !x.is_empty())
+        .flatten()
+        .collect::<Vec<_>>();
+    let contains_self = filter_nouns.contains(&end_noun);
+    if paths.is_empty() && !contains_self {
+        return None;
+    }
+    let min_len = paths.iter().map(|x| x.len()).min().unwrap_or_default();
+    let max_len = paths.iter().map(|x| x.len()).max().unwrap_or_default();
+    let mut sql = String::new();
+    if contains_self {
+        sql.push_str("id as p0,");
+    }
+    for i in 1..max_len {
+        if i >= min_len - 1 {
+            let filter = paths
+                .iter()
+                .filter_map(|x| x.get(i).map(|s| format!("'{s}'")))
+                .unique()
+                .collect::<Vec<_>>();
             sql.push_str(&format!(
                 "<-pe_owner[where in.noun in [{}]]<-(? as p{})",
                 filter.join(","),
@@ -90,8 +142,6 @@ pub fn gen_noun_outcoming_relate_path(start_noun: &str, filter_nouns: &[&str]) -
     if sql.ends_with(',') {
         sql.remove(sql.len() - 1);
     }
-
-    // println!("Sql is {:?}", &sqls);
     Some(sql)
 }
 

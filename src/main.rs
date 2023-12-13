@@ -3,7 +3,8 @@ use anyhow::Ok;
 
 fn main() -> anyhow::Result<()>{
 
-    // dbg!(db1_dehash(0x04D852B8));
+    dbg!(db1_dehash(0xADF11));
+    dbg!(db1_dehash(0x04D852B8));
     dbg!(db1_dehash(0x9CCA7));
     dbg!(db1_dehash(0xAE18D));
     dbg!(db1_dehash(0x000C7983));
