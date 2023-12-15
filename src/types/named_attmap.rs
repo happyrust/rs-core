@@ -91,7 +91,12 @@ impl From<SurlValue> for NamedAttrMap {
                                     .into_iter()
                                     .map(|x| f32::try_from(x).unwrap_or_default())
                                     .collect::<Vec<_>>();
-                                NamedAttrValue::Vec3Type(Vec3::new(p[0], p[1], p[2]))
+                                if p.len() < 3 {
+                                    //如果不够3个，就补0，错误处理？
+                                    NamedAttrValue::Vec3Type(Vec3::ZERO)
+                                }else{
+                                    NamedAttrValue::Vec3Type(Vec3::new(p[0], p[1], p[2]))
+                                }
                             }
                             crate::AttrVal::StringArrayType(_) => {
                                 let v: Vec<surrealdb::sql::Value> =
@@ -627,12 +632,12 @@ impl NamedAttrMap {
         None
     }
 
-    // pub fn get_dvec3(&self, key: &str) -> Option<DVec3> {
-    //     if let NamedAttrValue::Vec3Type(d) = self.get_val(key)? {
-    //         return Some(DVec3::new(d[0], d[1], d[2]));
-    //     }
-    //     None
-    // }
+    pub fn get_dvec3(&self, key: &str) -> Option<DVec3> {
+        if let NamedAttrValue::Vec3Type(d) = self.get_val(key)? {
+            return Some(DVec3::new(d[0] as _, d[1] as _, d[2] as _));
+        }
+        None
+    }
 
     pub fn get_i32_vec(&self, key: &str) -> Option<Vec<i32>> {
         if let NamedAttrValue::IntArrayType(d) = self.get_val(key)? {
@@ -785,15 +790,15 @@ impl NamedAttrMap {
         let type_name = self.get_type_str();
         let mut quat = Quat::IDENTITY;
         if self.contains_key("ZDIR") {
-            let axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
+            let axis_dir = self.get_dvec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
             }
         } else if self.contains_key("OPDI") {
             //PJOI 的方向
-            let axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
+            let axis_dir = self.get_dvec3("OPDI").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
             }
         } else {
             match type_name {

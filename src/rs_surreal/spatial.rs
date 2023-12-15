@@ -8,7 +8,7 @@ use approx::abs_diff_eq;
 use async_recursion::async_recursion;
 use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
-use glam::{Mat3, Quat, Vec3};
+use glam::{Mat3, Quat, Vec3, DVec3};
 
 //获得世界坐标系
 ///使用cache，需要从db manager里移除出来
@@ -137,7 +137,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             // let mut own_plin_param = None;
             // let mut target_own_att = NamedAttrMap::default();
             let mut is_lmirror = false;
-            let ance_result = crate::query_filter_ancestors(owner, &HAS_PLIN_TYPES).await?;
+            let ance_result = crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec()).await?;
             if let Some(plin_owner) = ance_result.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
@@ -258,13 +258,13 @@ pub async fn query_pline(
             ],
             plax: a.get_as_string("PLAX").unwrap_or("unset".to_string()),
         };
-        let x = super::resolve_expression_to_f32(&param.vxy[0], refno).await?;
-        let y = super::resolve_expression_to_f32(&param.vxy[1], refno).await?;
-        let dx = super::resolve_expression_to_f32(&param.dxy[0], refno).await?;
-        let dy = super::resolve_expression_to_f32(&param.dxy[1], refno).await?;
+        let x = super::resolve_expression_to_f32(&param.vxy[0], refno, false).await?;
+        let y = super::resolve_expression_to_f32(&param.vxy[1], refno, false).await?;
+        let dx = super::resolve_expression_to_f32(&param.dxy[0], refno, false).await?;
+        let dy = super::resolve_expression_to_f32(&param.dxy[1], refno, false).await?;
         let plax = parse_expr_to_dir(&param.plax)
-            .unwrap_or(Vec3::Z)
-            .normalize();
+            .unwrap_or(DVec3::Z)
+            .normalize().as_vec3();
         let plin_data = PlinParamData {
             pt: Vec3::new(x, y, 0.0) + Vec3::new(dx, dy, 0.0) * plax,
             plax,

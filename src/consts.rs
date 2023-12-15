@@ -43,6 +43,7 @@ const ATT_PLAX: i32 = db1_hash_const("PLAX") as i32;
 const ATT_PX: i32 = 0xFFF7E177u32 as i32;
 const ATT_PY: i32 = 0xFFF7E15Cu32 as i32;
 const ATT_PZ: i32 = 0xFFF7E141u32 as i32;
+const ATT_PZAXI: i32 = -0x585259 as i32;
 const ATT_PDIA: i32 = 0xFFF77D0Fu32 as i32;
 const ATT_PHEI: i32 = 0xFFF520EFu32 as i32;
 const ATT_PDIS: i32 = 0xFFF21519u32 as i32;
@@ -75,9 +76,10 @@ const ATT_ALLANG: i32 = 0xF9894BA0u32 as i32;
 const ATT_PRAD: i32 = db1_hash_const("PRAD") as i32;
 const ATT_DRAD: i32 = db1_hash_const("DRAD") as i32;
 const ATT_PWID: i32 = db1_hash_const("PWID") as i32;
-
 const ATT_PANG: i32 = 0xA5E2F;
+
 const IMP_PAXI: i32 = 0xB146F;
+const IMP_PZAXI: i32 = 0x585259;
 const IMP_PCON: i32 = 0xC7B73;
 const IMP_PDIS: i32 = 0xDEAE7;
 const IMP_PBOR: i32 = 0xDAEE4;
@@ -126,6 +128,7 @@ lazy_static! {
         s.insert(ATT_POFF);s.insert(ATT_DX);s.insert(ATT_DY);s.insert(ATT_DY);
         s.insert(ATT_PXTS);s.insert(ATT_PYTS);s.insert(ATT_PXBS);s.insert(ATT_PYBS);
         s.insert(ATT_PRAD);s.insert(ATT_PWID);s.insert(ATT_DRAD);s.insert(ATT_ALLANG);
+        s.insert(ATT_PZAXI);s.insert(ATT_PZAXI);s.insert(ATT_PANG);
 
         s.insert(IMP_PAXI);s.insert(IMP_PCON);s.insert(IMP_PDIS);s.insert(IMP_PBOR);
         s.insert(IMP_PDIA);s.insert(IMP_PHEI);s.insert(IMP_PTDI);s.insert(IMP_PTDM);
@@ -135,7 +138,8 @@ lazy_static! {
         s.insert(IMP_PBBT);s.insert(IMP_PBOF);s.insert(IMP_PCOF);s.insert(IMP_PBTP);
         s.insert(IMP_PTCDI);s.insert(IMP_POFF);s.insert(IMP_DX);s.insert(IMP_DY);
         s.insert(IMP_PLAX);s.insert(IMP_PXTS);s.insert(IMP_PYTS);s.insert(IMP_PXBS);
-        s.insert(IMP_PYBS);s.insert(ATT_PANG);s.insert(IMP_DPRO);
+        s.insert(IMP_PYBS);s.insert(IMP_DPRO);s.insert(IMP_PZAXI);
+        s.insert(-ATT_ALLANG); s.insert(-ATT_PWID);s.insert(-ATT_PANG);
         s
     };
 }

@@ -15,9 +15,15 @@ lazy_static! {
         s.insert("X", Vec3::X);
         s.insert("Y", Vec3::Y);
         s.insert("Z", Vec3::Z);
+        s.insert("E", Vec3::X);
+        s.insert("N", Vec3::Y);
+        s.insert("U", Vec3::Z);
         s.insert("-X", -Vec3::X);
         s.insert("-Y", -Vec3::Y);
         s.insert("-Z", -Vec3::Z);
+        s.insert("W", -Vec3::X);
+        s.insert("S", -Vec3::Y);
+        s.insert("D", -Vec3::Z);
         s
     };
 }
@@ -26,7 +32,7 @@ lazy_static! {
 #[derive(Debug, Default)]
 pub struct Rotation {
     axis: Vec3,
-    angle: f32,
+    angle: f64,
 }
 
 #[derive(Debug, Default)]
@@ -39,19 +45,22 @@ pub struct RotationStruct {
 pub fn signed_axis(input: &str) -> IResult<&str, (Option<&str>, &str)> {
     pair(
         opt(tag("-")),  // maybe sign?
-        alt((tag("X") , tag("Y"), tag("Z")))
+        alt((tag("X") , tag("Y"), tag("Z"), tag("E"), tag("N"), tag("U"), tag("W"), tag("S"), tag("D"))),
     )(input)
 }
 
-pub fn parse_angle(input: &str) -> IResult<&str, f32> {
+use nom::number::complete::double;
+
+pub fn parse_angle(input: &str) -> IResult<&str, f64> {
     alt((
-        float,
-        delimited( tag("("), float, tag(")") )
+        double,
+        delimited( tag("("), double, tag(")") )
     ))(input)
 }
 
 fn parse_axis_rotation(input: &str) -> IResult<&str, Rotation> {
-    let (input, angle) = parse_angle(input)?;
+    let (input, angle) = parse_angle(input).unwrap();
+    // dbg!(input);
     let (input, axis) = recognize(signed_axis)(input)?;
     Ok((input, Rotation{
         axis: *AXISES_MAP.get(axis).unwrap(),
@@ -61,7 +70,21 @@ fn parse_axis_rotation(input: &str) -> IResult<&str, Rotation> {
 
 pub fn parse_rotation_struct(input: &str) -> IResult<&str, RotationStruct> {
     let (input, axis) = recognize(signed_axis)(input)?;
+    if input.is_empty() {
+        return Ok((input, RotationStruct{
+            origin_axis: *AXISES_MAP.get(axis).unwrap(),
+            rot1: None,
+            rot2: None,
+        }));
+    }
     let (input, rot1) = opt(complete(parse_axis_rotation))(input)?;
+    if input.is_empty() {
+        return Ok((input, RotationStruct{
+            origin_axis: *AXISES_MAP.get(axis).unwrap(),
+            rot1,
+            rot2: None,
+        }));
+    }
     let (input, rot2) = opt(complete(parse_axis_rotation))(input)?;
     Ok((input, RotationStruct{
         origin_axis: *AXISES_MAP.get(axis).unwrap(),
@@ -71,22 +94,23 @@ pub fn parse_rotation_struct(input: &str) -> IResult<&str, RotationStruct> {
 }
 
 ///解析expression到direction
-pub fn parse_expr_to_dir(expr: &str) -> Option<Vec3> {
-    if let Ok((_, res)) = parse_rotation_struct(expr) {
-        let mut axis = res.origin_axis;
-        if res.rot1.is_some() {
-            let rot1 = res.rot1.as_ref().unwrap();
-            let target_axis = axis.cross(rot1.axis);
-            let quat1 = Quat::from_axis_angle(target_axis, rot1.angle.to_radians());
+pub fn parse_expr_to_dir(expr: &str) -> Option<DVec3> {
+    let expr = expr.replace(" ", "");
+    // dbg!(&expr);
+    if let Ok((_, rs)) = parse_rotation_struct(&expr) {
+        // dbg!(&rs);
+        let mut axis: DVec3 = rs.origin_axis.into();
+        if let Some(rot1) = rs.rot1 {
+            let target_axis = axis.cross(rot1.axis.into());
+            let quat1 = DQuat::from_axis_angle(target_axis, rot1.angle.to_radians() as _);
             axis = (quat1 * axis).normalize();
-            if res.rot2.is_some() {
-                let rot2 = res.rot2.as_ref().unwrap();
-                let target_axis = axis.cross(rot2.axis);
-                let quat2 = Quat::from_axis_angle(target_axis, rot2.angle.to_radians());
+            if let Some(rot2) = rs.rot2 {
+                let target_axis = axis.cross(rot2.axis.into());
+                let quat2 = DQuat::from_axis_angle(target_axis, rot2.angle.to_radians() as _);
                 axis = (quat2 * axis).normalize();
             }
         }
-        return Some(axis);
+        return Some(axis.into());
     }
     None
 }

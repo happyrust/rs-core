@@ -21,12 +21,12 @@ pub async fn query_deep_inst_info_refnos(refno: RefU64) -> anyhow::Result<Vec<Re
         let children_refnos = super::get_children_refnos(refno).await?;
         return Ok(children_refnos);
     }
-    let branch_refnos = super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
+    let branch_refnos = super::query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await?;
     // dbg!(&branch_refnos);
 
     let mut target_refnos = super::query_multi_children_refnos(&branch_refnos).await?;
 
-    let visible_refnos = super::query_filter_deep_children(refno, &VISBILE_GEO_NOUNS).await?;
+    let visible_refnos = super::query_filter_deep_children(refno, VISBILE_GEO_NOUNS.map(String::from).to_vec()).await?;
     // dbg!(&visible_refnos);
 
     target_refnos.extend(visible_refnos);
@@ -77,7 +77,7 @@ pub async fn query_refno_has_pos_neg_map(
         _ => &TOTAL_NEG_NOUN_NAMES.as_slice(),
     };
     //查询元件库下的负实体组合
-    let refnos = query_filter_deep_children(refno, nouns).await.unwrap();
+    let refnos = query_filter_deep_children(refno, nouns.iter().map(|&x| x.to_string()).collect()).await.unwrap();
     // dbg!(&refnos);
     //使用SUL_DB通过这些参考号反过来query查找父节点
     let sql = format!(

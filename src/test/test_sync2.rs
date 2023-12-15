@@ -133,16 +133,16 @@ impl_db_op_trait!();
 
     let file_path = format!("src/orm/template/{}_ents.rs", "template");  // 生成文件路径
     let mut file = File::create(file_path).unwrap();  // 创建文件
-    file.write(entites_content.join("\r\n").as_bytes());
+    let _ = file.write(entites_content.join("\r\n").as_bytes());
 
 
     let file_path = format!("src/orm/template/{}_regs.rs", "template");  // 生成文件路径
     let mut file = File::create(file_path).unwrap();  // 创建文件
-    file.write(type_registry_content.join("\r\n").as_bytes());
+    let _ = file.write(type_registry_content.join("\r\n").as_bytes());
 
     let file_path = format!("src/orm/template/{}_cache.rs", "template");  // 生成文件路径
     let mut file = File::create(file_path).unwrap();  // 创建文件
-    file.write(type_cache_content.join("\r\n").as_bytes());
+    let _ = file.write(type_cache_content.join("\r\n").as_bytes());
 
     //type_cache_content
 

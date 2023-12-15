@@ -2,7 +2,7 @@ use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
 
-use crate::shape::pdms_shape::BrepMathTrait;
+use crate::shape::pdms_shape::{BrepMathTrait, LEN_TOL};
 use crate::tool::float_tool::f32_round_2;
 use crate::tool::float_tool::vec3_round_2;
 use anyhow::anyhow;
@@ -392,14 +392,26 @@ pub fn gen_wire(
     if input_pts.len() < 3 || input_fradius_vec.len() != input_pts.len() {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
-    let pts = input_pts
+    let t_pts = input_pts
         .into_iter()
         .map(|x| vec3_round_2(*x))
         .collect::<Vec<_>>();
+    let mut prev_pt = t_pts[0].truncate();
+    let mut deleted = vec![];
+    let mut pts = vec![t_pts[0]];
+    for i in 1..t_pts.len() {
+        if t_pts[i].truncate().distance(prev_pt) < LEN_TOL {
+            deleted.push(i);
+            continue;
+        }
+        pts.push(t_pts[i]);
+        prev_pt = t_pts[i].truncate();
+    }
     let fradius_vec = input_fradius_vec
         .into_iter()
-        .map(|x| f32_round_2(*x))
-        // .map(|x| 0.0f32)
+        .enumerate()
+        .filter(|(i, _)| !deleted.contains(i))
+        .map(|(_, x)| f32_round_2(*x))
         .collect::<Vec<_>>();
     // dbg!(&pts);
     // dbg!(&fradius_vec);

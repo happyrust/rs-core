@@ -59,7 +59,7 @@ async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
     let result = query_filter_all_bran_hangs(refno).await?;
     dbg!(&result);
 
-    let result = query_filter_deep_children(refno, &CATA_WITHOUT_REUSE_GEO_NAMES).await?;
+    let result = query_filter_deep_children(refno, CATA_WITHOUT_REUSE_GEO_NAMES.map(String::from).to_vec() ).await?;
     dbg!(&result);
 
     let refno = "17496/171180".into(); // Replace with your desired refno value
@@ -76,7 +76,7 @@ async fn test_query_ancestor_filter() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let refno = "25688/7957".into();
     // let type_name = crate::get_type_name(refno).await?;
-    let target = crate::query_filter_ancestors(refno, &["STWALL", "ZONE"]).await.unwrap();
+    let target = crate::query_filter_ancestors(refno, vec!["STWALL".to_string(), "ZONE".to_string()]).await.unwrap();
     dbg!(target);
     Ok(())
 }

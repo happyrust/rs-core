@@ -128,6 +128,7 @@ pub const VISBILE_GEO_NOUNS: [&'static str; 36] = [
     "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL","SCTN", "NOZZ",
 ];
 
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub enum SjusType {
     #[default]

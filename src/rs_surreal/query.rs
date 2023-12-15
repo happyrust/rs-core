@@ -216,6 +216,7 @@ pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
     Ok(r)
 }
 
+
 #[cached(result = true)]
 pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     let mut response = SUL_DB

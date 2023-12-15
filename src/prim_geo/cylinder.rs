@@ -403,24 +403,21 @@ impl BrepShapeTrait for SCylinder {
         let origin_w = builder::rsweep(&v, center, ext_dir, Rad(7.0));
 
         //还是要和extrude 区分出来
-        let scale_y = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
-        let scale_x = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
+        let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
+        let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
         // dbg!(&self.btm_shear_angles);
         let transform_btm =
-            Matrix4::from_angle_y(Rad(self.btm_shear_angles[0].to_radians() as f64))
-            * Matrix4::from_angle_x(-Rad(self.btm_shear_angles[1].to_radians() as f64))
+            Matrix4::from_angle_y(-Rad(self.btm_shear_angles[0].to_radians() as f64))
+            * Matrix4::from_angle_x(Rad(self.btm_shear_angles[1].to_radians() as f64))
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
 
         // dbg!(&self.top_shear_angles);
-        let scale_y = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
-        let scale_x = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
+        let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
+        let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
         let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64)
-            * Matrix4::from_angle_y(Rad(self.top_shear_angles[0].to_radians() as f64))
-            * Matrix4::from_angle_x(-Rad(self.top_shear_angles[1].to_radians() as f64))
+            * Matrix4::from_angle_y(-Rad(self.top_shear_angles[0].to_radians() as f64))
+            * Matrix4::from_angle_x(Rad(self.top_shear_angles[1].to_radians() as f64))
             * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
-
-        // let transform_btm = Matrix4::one();
-        // let transform_top = Matrix4::from_translation(ext_dir * ext_len as f64);
 
         let mut w_s = builder::transformed(&origin_w, transform_btm);
         let mut w_e = builder::transformed(&origin_w, transform_top);

@@ -10,6 +10,9 @@ use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use tokio::sync::RwLock;
 
+//生成模型的中间过程中产生的伪属性，需要保存下来
+//使用once_cell, 初始化一个dashmap, 后面去修改用这个dashmap来保存NamedAttMap
+//加上tokio的读写锁，保证线程安全
 pub static HASH_PSEUDO_ATT_MAPS: Lazy<RwLock<HashMap<String, NamedAttrMap>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
@@ -21,7 +24,27 @@ pub const INTERNAL_PDMS_EXPRESS: [&'static str; 22] = [
 /// 元件库表达式相关的参数
 #[derive(Debug, Default, Clone, Deref, DerefMut)]
 pub struct CataContext {
+    #[deref]
+    #[deref_mut]
     pub context: DashMap<String, String>,
+    pub is_tubi: bool,
+}
+
+impl CataContext {
+    pub fn insert(&self, key: impl Into<String>, value: impl Into<String>) {
+        self.context.insert(key.into(), value.into());
+    }
+    pub fn get(&self, key: impl AsRef<str>) -> Option<String> {
+        self.context.get(key.as_ref()).map(|x| x.value().clone())
+    }
+    pub fn contains_key(&self, key: impl AsRef<str>) -> bool {
+        self.context.contains_key(key.as_ref())
+    }
+
+    #[inline]
+    pub fn is_tubi(&self) -> bool {
+        self.is_tubi
+    }
 }
 
 pub const DDHEIGHT_STR: &'static str = "DDHEIGHT";
@@ -29,30 +52,34 @@ pub const DDRADIUS_STR: &'static str = "DDRADIUS";
 pub const DDANGLE_STR: &'static str = "DDANGLE";
 
 ///创建desi参考号的元件库计算上下文
-pub async fn get_or_create_cata_context(desi_refno: RefU64) -> anyhow::Result<CataContext> {
+pub async fn get_or_create_cata_context(
+    desi_refno: RefU64,
+    is_tubi: bool,
+) -> anyhow::Result<CataContext> {
     let desi_att = crate::get_named_attmap(desi_refno).await?;
-    let context = CataContext::default();
+    let mut context = CataContext::default();
+    context.is_tubi = is_tubi;
     if let Some(v) = desi_att.get_as_string("JUSL") {
-        context.insert("JUSL".into(), v.into());
+        context.insert("JUSL".to_string(), v);
     }
-    context.insert("DESI_REFNO".into(), desi_refno.to_string());
+    context.insert("DESI_REFNO".to_string(), desi_refno.to_string());
     let desp = desi_att.get_f32_vec("DESP").unwrap_or_default();
     for i in 0..desp.len() {
-        context.insert(format!("DESI{}", i + 1).into(), desp[i].to_string().into());
-        context.insert(format!("DESP{}", i + 1).into(), desp[i].to_string().into());
+        context.insert(format!("DESI{}", i + 1), desp[i].to_string());
+        context.insert(format!("DESP{}", i + 1), desp[i].to_string());
     }
     let ddesp = desi_att.get_ddesp().unwrap_or_default();
     // dbg!(&ddesp);
     for i in 0..ddesp.len() {
-        context.insert(format!("DDES{}", i + 1).into(), ddesp[i].to_string().into());
+        context.insert(format!("DDES{}", i + 1), ddesp[i].to_string());
     }
 
     let height = desi_att.get_as_string("HEIG").unwrap_or("0.0".into());
-    context.insert(DDHEIGHT_STR.into(), height.clone());
+    context.insert(DDHEIGHT_STR.to_string(), height.clone());
     let angle = desi_att.get_as_string("ANGL").unwrap_or("0.0".into());
-    context.insert(DDANGLE_STR.into(), angle.clone());
+    context.insert(DDANGLE_STR.to_string(), angle.clone());
     let radi = desi_att.get_as_string("RADI").unwrap_or("0.0".into());
-    context.insert(DDRADIUS_STR.into(), radi.clone());
+    context.insert(DDRADIUS_STR.to_string(), radi.clone());
 
     for (str, v) in &desi_att.map {
         let is_uda = str.starts_with(":");
@@ -76,36 +103,27 @@ pub async fn get_or_create_cata_context(desi_refno: RefU64) -> anyhow::Result<Ca
     //todo 保温层厚度参数
     // let iparams = self.query_ipara_from_ele(desi_refno).unwrap_or_default();
     // for i in 0..iparams.len() {
-    //     context.insert(format!("IPAR{}", i + 1).into(), iparams[i].to_string().into());
-    //     context.insert(format!("IPARM{}", i + 1).into(), iparams[i].to_string().into());
+    //     context.insert(format!("IPAR{}", i + 1), iparams[i].to_string());
+    //     context.insert(format!("IPARM{}", i + 1), iparams[i].to_string());
     // }
 
-    context.insert("RS_DES_REFNO".into(), desi_refno.to_string());
+    context.insert("RS_DES_REFNO".to_string(), desi_refno.to_string());
     // dbg!(&desi_refno);
     //添加cata的信息
     if let Ok(cata_attmap) = crate::get_cat_attmap(desi_refno).await {
         // dbg!(&cata_attmap);
         context.insert(
-            "RS_CATR_REFNO".into(),
+            "RS_CATR_REFNO".to_string(),
             cata_attmap.get_refno_or_default().to_string(),
         );
         // dbg!(&cata_attmap);
         let params = cata_attmap.get_f32_vec("PARA").unwrap_or_default();
         for i in 0..params.len() {
-            context.insert(
-                format!("CPAR{}", i + 1).into(),
-                params[i].to_string().into(),
-            );
-            context.insert(
-                format!("PARA{}", i + 1).into(),
-                params[i].to_string().into(),
-            );
-            context.insert(
-                format!("PARAM{}", i + 1).into(),
-                params[i].to_string().into(),
-            );
-            context.insert(format!("IPARA{}", i + 1).into(), "0".to_string().into());
-            context.insert(format!("IPAR{}", i + 1).into(), "0".to_string().into());
+            context.insert(format!("CPAR{}", i + 1), params[i].to_string());
+            context.insert(format!("PARA{}", i + 1), params[i].to_string());
+            context.insert(format!("PARAM{}", i + 1), params[i].to_string());
+            context.insert(format!("IPARA{}", i + 1), "0".to_string());
+            context.insert(format!("IPAR{}", i + 1), "0".to_string());
         }
         let mut owner_ref = desi_att.get_owner();
         //todo 需要换掉
@@ -141,16 +159,13 @@ pub async fn get_or_create_cata_context(desi_refno: RefU64) -> anyhow::Result<Ca
 
         let desp = owner_att.get_f32_vec("DESP").unwrap_or_default();
         for i in 0..desp.len() {
-            context.insert(format!("ODES{}", i + 1).into(), desp[i].to_string().into());
+            context.insert(format!("ODES{}", i + 1), desp[i].to_string());
         }
         //找到owner 参考号，再找到它的元件库params
         if let Ok(parent_cat_am) = crate::get_cat_attmap(owner_ref).await {
             let params = parent_cat_am.get_f32_vec("PARA").unwrap_or_default();
             for i in 0..params.len() {
-                context.insert(
-                    format!("OPAR{}", i + 1).into(),
-                    params[i].to_string().into(),
-                );
+                context.insert(format!("OPAR{}", i + 1), params[i].to_string());
             }
         }
         let cref = desi_att.get_foreign_refno("CREF");
@@ -159,17 +174,14 @@ pub async fn get_or_create_cata_context(desi_refno: RefU64) -> anyhow::Result<Ca
         {
             let desp = c_att.get_f32_vec("DESP").unwrap_or_default();
             for i in 0..desp.len() {
-                context.insert(format!("ADES{}", i + 1).into(), desp[i].to_string().into());
+                context.insert(format!("ADES{}", i + 1), desp[i].to_string());
             }
             let c_refno = c_att.get_refno().unwrap_or_default();
 
             if let Ok(attach_cat_am) = crate::get_cat_attmap(c_refno).await {
                 let params = attach_cat_am.get_f32_vec("PARA").unwrap_or_default();
                 for i in 0..params.len() {
-                    context.insert(
-                        format!("APAR{}", i + 1).into(),
-                        params[i].to_string().into(),
-                    );
+                    context.insert(format!("APAR{}", i + 1), params[i].to_string());
                 }
             }
         }
@@ -187,6 +199,8 @@ pub fn eval_str_to_f64(
     if input_expr.is_empty() || input_expr == "UNSET" {
         return Ok(0.0);
     }
+    let refno_str = context.get("RS_DES_REFNO").unwrap();
+    let refno = RefU64::from_str(refno_str.as_str()).unwrap();
     //处理引用的情况 OF 的情况, 如果需要获取 att value，还是需要用数据库去获取值
     let mut new_exp = input_expr.replace("ATTRIB", "");
     if input_expr.contains(" OF ") {
@@ -195,32 +209,42 @@ pub fn eval_str_to_f64(
             let s = &caps[0];
             let c1 = caps.get(1).map_or("", |m| m.as_str());
             let c2 = caps.get(2).map_or("", |m| m.as_str());
-            let refno_str = context.get("RS_DES_REFNO").unwrap();
-            let refno = RefU64::from_str(refno_str.as_str()).unwrap();
+            let is_tubi = context.is_tubi();
+            // dbg!(input_expr);
             let expr_val = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async move {
+                    //如果是直段，直接取当前的参考号
                     let target_refno = match c2 {
-                        "PREV" => crate::get_next_prev(refno, false).await.unwrap_or_default(),
+                        "PREV" => {
+                            if is_tubi {
+                                refno
+                            } else {
+                                crate::get_next_prev(refno, false).await.unwrap_or_default()
+                            }
+                        }
                         "NEXT" => crate::get_next_prev(refno, true).await.unwrap_or_default(),
-                        refno_str => refno_str.into(),
+                        _ => c2.into(),
                     };
-                    // dbg!(target_refno);
                     let pe = crate::get_pe(target_refno)
                         .await
                         .unwrap_or_default()
                         .unwrap_or_default();
+                    // dbg!(&pe);
                     let pseudo_map = HASH_PSEUDO_ATT_MAPS.read().await;
                     //判断target_refno是否在pseudo_map，如果有，取出这里的值
                     if let Some(am) = pseudo_map.get(&pe.cata_hash) {
                         if let Some(v) = am.map.get(c1) {
-                            // dbg!(v);
+                            // if target_refno.get_1() == 58721 {
+                            //     dbg!(c1);
+                            //     dbg!(am);
+                            //     dbg!(v.get_val_as_string());
+                            // }
                             return v.get_val_as_string();
                         }
                     }
                     "0".to_owned()
                 })
             });
-            // dbg!(&expr_val);
             new_exp = new_exp.replace(s, expr_val.as_str());
             // dbg!(&new_exp);
             // maybe need?
@@ -326,7 +350,7 @@ pub fn eval_str_to_f64(
                     })
                 });
                 for (kk, vv) in uda_map.map {
-                    let kk =  kk.to_uppercase();
+                    let kk = kk.to_uppercase();
                     if kk.starts_with({ ":" }) {
                         match vv {
                             NamedAttrValue::F32Type(d) => {
@@ -345,7 +369,7 @@ pub fn eval_str_to_f64(
                                     kk.to_uppercase()
                                 };
                                 for (i, d) in ds.into_iter().enumerate() {
-                                    dbg!(format!("{} ->{}{}", kk, &short_name, i+1));
+                                    // dbg!(format!("{} ->{}{}", kk, &short_name, i+1));
                                     uda_context
                                         .insert(format!("{}{}", &short_name, i + 1), d.to_string());
                                     uda_context.insert(format!("{}{}", &kk, i + 1), d.to_string());
@@ -360,12 +384,11 @@ pub fn eval_str_to_f64(
 
             if context.contains_key(&k) {
                 result_exp = result_exp.replace(s, &context.get(&k).unwrap());
-                if is_uda {
-                    dbg!(&result_exp);
-                }
+                // if is_uda {
+                //     dbg!(&result_exp);
+                // }
                 found_replaced = true;
             } else if is_uda && uda_context.contains_key(&k) {
-                dbg!(&k);
                 result_exp = result_exp.replace(s, &uda_context.get(&k).unwrap());
                 // if is_uda{
                 //     dbg!(&result_exp);
@@ -519,8 +542,12 @@ pub fn eval_str_to_f64(
 
 /// 通用的解析表达式的方法, 解析desi参考号下的 表达式值
 /// 如果 desi_refno 为空，代表design的数据不需要参与计算
-pub async fn resolve_expression_to_f32(expr: &str, desi_refno: RefU64) -> anyhow::Result<f32> {
-    let context = get_or_create_cata_context(desi_refno).await?;
+pub async fn resolve_expression_to_f32(
+    expr: &str,
+    desi_refno: RefU64,
+    is_tubi: bool,
+) -> anyhow::Result<f32> {
+    let context = get_or_create_cata_context(desi_refno, is_tubi).await?;
     eval_str_to_f32(expr, &context, "DIST")
 }
 

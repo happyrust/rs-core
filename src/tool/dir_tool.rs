@@ -1,9 +1,6 @@
+use crate::tool::direction_parse::{parse_expr_to_dir, parse_rotation_struct, AXISES_MAP};
 use anyhow::anyhow;
 use glam::{Mat3, Quat};
-use crate::tool::direction_parse::{AXISES_MAP, parse_expr_to_dir, parse_rotation_struct};
-
-
-
 
 //Y is N and Z is U
 pub fn parse_ori_str_to_quat(ori_str: &str) -> anyhow::Result<Quat> {
@@ -26,7 +23,8 @@ pub fn parse_ori_str_to_quat(ori_str: &str) -> anyhow::Result<Quat> {
         let f = strs[0].trim().to_uppercase();
         // dbg!(&f);
 
-        let dir_str = strs[1].trim()
+        let dir_str = strs[1]
+            .trim()
             .replace("E", "X")
             .replace("W", "-X")
             .replace("N", "Y")
@@ -34,7 +32,8 @@ pub fn parse_ori_str_to_quat(ori_str: &str) -> anyhow::Result<Quat> {
             .replace("U", "Z")
             .replace("D", "-Z");
         // dbg!(&dir_str);
-        if let Some(dir) = parse_expr_to_dir(&dir_str){
+        if let Some(dir) = parse_expr_to_dir(&dir_str) {
+            let dir = dir.as_vec3();
             comb_dir_str.push_str(f.as_str());
             match f.as_str() {
                 "X" => mat.x_axis = dir,
@@ -42,7 +41,7 @@ pub fn parse_ori_str_to_quat(ori_str: &str) -> anyhow::Result<Quat> {
                 "Z" => mat.z_axis = dir,
                 _ => {}
             }
-        }else{
+        } else {
             return Err(anyhow!("方位字符串有错误"));
         }
     }
@@ -59,7 +58,6 @@ pub fn parse_ori_str_to_quat(ori_str: &str) -> anyhow::Result<Quat> {
     Ok(Quat::from_mat3(&mat))
 }
 
-
 #[test]
 fn test_parse_vector() {
     let test_str = "X30Y";
@@ -69,23 +67,22 @@ fn test_parse_vector() {
     dbg!(&dir);
     dbg!(AXISES_MAP.get("-X"));
     let test_str = "-X(59)Y";
-    let res= parse_expr_to_dir(test_str);
-    println!("{:?}",res);
+    let res = parse_expr_to_dir(test_str);
+    println!("{:?}", res);
     let test_str = "Z(90.0)Y";
-    let res= parse_expr_to_dir(test_str);
-    println!("{:?}",res);
+    let res = parse_expr_to_dir(test_str);
+    println!("{:?}", res);
     let test_str = "-Y45Z";
-    let res= parse_expr_to_dir(test_str);
-    println!("test_str: {:?}",res);
+    let res = parse_expr_to_dir(test_str);
+    println!("test_str: {:?}", res);
     let test_str = "Y45-Z";
-    let res= parse_expr_to_dir(test_str);
-    println!("test_str: {:?}",res);
+    let res = parse_expr_to_dir(test_str);
+    println!("test_str: {:?}", res);
     //Z DESIGN PARAM 14Y
 }
 
-
 #[test]
-fn parse_ori(){
+fn parse_ori() {
     let str = "Y is W and Z is U";
     let ori = parse_ori_str_to_quat(str);
     dbg!(ori);

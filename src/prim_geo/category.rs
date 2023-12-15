@@ -15,6 +15,7 @@ use crate::shape::pdms_shape::BrepShapeTrait;
 use bevy_math::prelude::*;
 use bevy_transform::prelude::Transform;
 use std::f32::EPSILON;
+use std::f32::consts::FRAC_PI_2;
 
 #[derive(Debug, Clone)]
 pub enum ShapeErr {
@@ -306,8 +307,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             // dbg!(dir);
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            // dbg!(quat_to_pdms_ori_xyz_str(&rotation));
-            let rotation = Quat::IDENTITY;
             let transform = Transform {
                 rotation,
                 translation,
@@ -372,7 +371,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
 
         CateGeoParam::SlopeBottomCylinder(d) => {
-            dbg!(d.refno);
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
@@ -382,33 +380,28 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
-
-            //不能使用这个from_rotation_arc
-            //改成使用有参考轴的，如果参考轴没有，默认使用Y轴
-            // let mut ref_axis = axis.ref_dir;
-            // if ref_axis.length() == 0.0 {
-            //     ref_axis = if z_axis.cross(Vec3::Y).length() < 0.01 {
-            //         Vec3::Y
-            //     } else {
-            //         Vec3::X
-            //     }
-            // }
-            // //如果这两个轴平行，则把ref_axis切换成Z轴
-            // if z_axis.dot(ref_axis).abs() > 0.999 {
-            //     ref_axis = Vec3::Z;
-            // }
-            // dbg!(ref_axis);
-            
-            // let x_axis = ref_axis.cross(z_axis).normalize_or_zero();
-            // let y_axis = z_axis.cross(x_axis).normalize_or_zero();
-
-            // dbg!((x_axis, y_axis, z_axis));
-
-            // let rotation = Quat::from_mat3(&Mat3::from_cols( x_axis, y_axis, z_axis));
-            
-
-            let rotation = Quat::from_rotation_arc(Vec3::Z, z_axis);
-            // dbg!(quat_to_pdms_ori_xyz_str(&rotation));
+            let ref_axis = axis.ref_dir.normalize_or_zero();
+            //检查有没有参考轴，没有的话使用底部的， 不能使用这个from_rotation_arc
+            let rotation = if ref_axis.length() == 0.0 {
+                //ref_axis初始轴为X轴，先绕着y轴旋转x_shear, 再绕着x轴旋转 y_shear
+                // let final_x= (Quat::from_rotation_x(d.y_shear as f32) * Quat::from_rotation_y(d.x_shear as f32) * Vec3::X).normalize_or_zero();
+                // Quat::from_rotation_arc(final_x, z_axis)
+                let rot1 = Quat::from_rotation_arc(Vec3::Z, z_axis);
+                let mut rot2 = Quat::IDENTITY;
+                if d.y_shear.abs() > d.x_shear.abs() {
+                    let t = if z_axis.z > 0.0 {
+                        -1.0
+                    } else {
+                        1.0
+                    };
+                    rot2 = Quat::from_axis_angle(z_axis, t * FRAC_PI_2);
+                }
+                rot2 * rot1
+            }else{
+                let y_axis = ref_axis;
+                let x_axis = y_axis.cross(z_axis).normalize_or_zero();
+                Quat::from_mat3(&Mat3::from_cols( x_axis, y_axis, z_axis))
+            };
             let translation = z_axis * (d.dist_to_btm as f32) + axis.pt;
             let transform = Transform {
                 rotation,
@@ -517,22 +510,22 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut paax_dir = pa.dir;
             let mut pbax_dir = pb.dir;
 
-            let mut verts = vec![];
-            if d.verts.len() > 2 {
-                let prev = d.verts[0].truncate();
-                verts.push(prev.extend(0.0));
-                for vert in &d.verts[1..] {
-                    let p = vert.truncate();
-                    if p.distance(prev) > EPSILON {
-                        verts.push(p.extend(0.0));
-                    }
-                }
-            } else {
-                return None;
-            }
+            // let mut verts = vec![];
+            // if d.verts.len() > 2 {
+            //     let prev = d.verts[0].truncate();
+            //     verts.push(prev.extend(0.0));
+            //     for vert in &d.verts[1..] {
+            //         let p = vert.truncate();
+            //         if p.distance(prev) > EPSILON {
+            //             verts.push(p.extend(0.0));
+            //         }
+            //     }
+            // } else {
+            //     return None;
+            // }
 
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
-                verts,
+                verts: d.verts.clone(),
                 fradius_vec: d.frads.clone(),
                 height: d.height,
                 ..Default::default()

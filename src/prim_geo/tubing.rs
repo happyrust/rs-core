@@ -1,22 +1,27 @@
-use glam::Vec3;
-use crate::prim_geo::cylinder::SCylinder;
-use bevy_math::prelude::Quat;
-use approx::abs_diff_eq;
-use bevy_transform::prelude::Transform;
 use crate::prim_geo::category::CateBrepShape;
-use serde::{Deserialize, Serialize};
+use crate::prim_geo::cylinder::SCylinder;
+use crate::prim_geo::sbox::SBox;
+use crate::prim_geo::tubing::TubiSize::{BoreSize, BoxSize};
+use crate::shape::pdms_shape::BrepShapeTrait;
+use crate::shape::pdms_shape::ANGLE_RAD_TOL;
+use crate::tool::dir_tool::parse_ori_str_to_quat;
+use crate::tool::direction_parse::parse_rotation_struct;
+use crate::tool::math_tool::{to_pdms_ori_str, quat_to_pdms_ori_xyz_str, to_pdms_vec_str};
+use crate::types::named_attvalue::NamedAttrValue;
 use crate::types::*;
+use approx::abs_diff_eq;
+use bevy_math::prelude::Quat;
+use bevy_transform::prelude::Transform;
+use glam::Mat3;
+use glam::Vec3;
+use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
-use crate::prim_geo::sbox::SBox;
-use crate::shape::pdms_shape::BrepShapeTrait;
-use glam::Mat3;
-use crate::shape::pdms_shape::ANGLE_RAD_TOL;
-use crate::prim_geo::tubing::TubiSize::{BoreSize, BoxSize};
-use crate::types::named_attvalue::NamedAttrValue;
 
 #[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+)]
 pub struct PdmsTubing {
     #[serde(rename = "_key")]
     #[serde_as(as = "DisplayFromStr")]
@@ -44,7 +49,6 @@ pub struct TubiEdge {
     pub extra_type: String,
     pub tubi_size: TubiSize,
     pub bran_name: String,
-
 }
 
 impl TubiEdge {
@@ -55,40 +59,61 @@ impl TubiEdge {
     }
 
     pub fn get_enco_header() -> Vec<String> {
-        vec!["_key".to_string(), "_from".to_string(), "_to".to_string(),
-             "start_pt".to_string(), "end_pt".to_string(), "att_type".to_string(), "extra_type".to_string(),
-             "tubi_size".to_string(), "bran_name".to_string(), "distance".to_string(), ]
+        vec![
+            "_key".to_string(),
+            "_from".to_string(),
+            "_to".to_string(),
+            "start_pt".to_string(),
+            "end_pt".to_string(),
+            "att_type".to_string(),
+            "extra_type".to_string(),
+            "tubi_size".to_string(),
+            "bran_name".to_string(),
+            "distance".to_string(),
+        ]
     }
 
     pub fn into_enso_value(self) -> Vec<NamedAttrValue> {
         let distance = self.start_pt.distance(self.end_pt);
         let tubi_size = match self.tubi_size {
-            TubiSize::None => { NamedAttrValue::F32VecType(vec![0.0]) }
-            BoreSize(d) => { NamedAttrValue::F32VecType(vec![d]) }
-            BoxSize((x, y)) => { NamedAttrValue::F32VecType(vec![x, y]) }
+            TubiSize::None => NamedAttrValue::F32VecType(vec![0.0]),
+            BoreSize(d) => NamedAttrValue::F32VecType(vec![d]),
+            BoxSize((x, y)) => NamedAttrValue::F32VecType(vec![x, y]),
         };
-        vec![NamedAttrValue::StringType(self._key),
-             NamedAttrValue::StringType(self._from),
-             NamedAttrValue::StringType(self._to),
-             NamedAttrValue::F32VecType(vec![self.start_pt.x, self.start_pt.y, self.start_pt.z]),
-             NamedAttrValue::F32VecType(vec![self.end_pt.x, self.end_pt.y, self.end_pt.z]),
-             NamedAttrValue::StringType(self.att_type),
-             NamedAttrValue::StringType(self.extra_type),
-             tubi_size,
-             NamedAttrValue::StringType(self.bran_name),
-             NamedAttrValue::F32Type(distance)]
+        vec![
+            NamedAttrValue::StringType(self._key),
+            NamedAttrValue::StringType(self._from),
+            NamedAttrValue::StringType(self._to),
+            NamedAttrValue::F32VecType(vec![self.start_pt.x, self.start_pt.y, self.start_pt.z]),
+            NamedAttrValue::F32VecType(vec![self.end_pt.x, self.end_pt.y, self.end_pt.z]),
+            NamedAttrValue::StringType(self.att_type),
+            NamedAttrValue::StringType(self.extra_type),
+            tubi_size,
+            NamedAttrValue::StringType(self.bran_name),
+            NamedAttrValue::F32Type(distance),
+        ]
     }
 }
 
 #[serde_as]
-#[derive(PartialEq, Default, Debug, Clone, Copy, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(
+    PartialEq,
+    Default,
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub enum TubiSize {
     #[default]
     None,
     BoreSize(f32),
     BoxSize((f32, f32)),
 }
-
 
 impl PdmsTubing {
     ///获得方向
@@ -104,7 +129,8 @@ impl PdmsTubing {
         let a = self.desire_leave_dir.normalize_or_zero();
         let b = -self.desire_arrive_dir.normalize_or_zero();
         let c = self.get_dir();
-        abs_diff_eq!(a.dot(c).abs(), 1.0, epsilon=0.01) && abs_diff_eq!(b.dot(c).abs(), 1.0, epsilon=0.01)
+        abs_diff_eq!(a.dot(c).abs(), 1.0, epsilon = 0.01)
+            && abs_diff_eq!(b.dot(c).abs(), 1.0, epsilon = 0.01)
     }
 
     /// 获得tubi的transform
@@ -123,22 +149,19 @@ impl PdmsTubing {
         }
         let scale = match self.tubi_size {
             TubiSize::BoreSize(bore) => Vec3::new(bore, bore, len),
-            TubiSize::BoxSize((w, h)) => Vec3::new(w, h, len),
+            TubiSize::BoxSize((w, h)) => Vec3::new(w, len, h),
             _ => Vec3::ONE,
         };
         //统一都用Z轴为参考轴的方法
-        let rotation = if is_bore {
-            Quat::from_rotation_arc(Vec3::Z, z_dir)
-        } else if let Some(y_dir) = self.leave_ref_dir {
-            // dbg!(to_pdms_vec_str(&y_dir));
-            let x_dir = y_dir.cross(z_dir).normalize_or_zero();
-            //考虑平行的情况
-            if x_dir.length() < ANGLE_RAD_TOL {
-                Quat::from_rotation_arc(Vec3::Z, z_dir)
-            } else {
-                Quat::from_mat3(&Mat3::from_cols(x_dir, y_dir, z_dir))
-            }
+        let rotation = if let Some(axis_dir) = self.leave_ref_dir {
+            dbg!(axis_dir);
+            let rot2 = Quat::from_rotation_arc(axis_dir, z_dir);
+            dbg!(quat_to_pdms_ori_xyz_str(&rot2));
+            // parse_ori_str_to_quat("Y is Y 5 -X and Z is -Z").unwrap_or(Quat::IDENTITY)
+            rot2
         } else {
+            // Quat::from_rotation_arc(Vec3::Z, z_dir)
+            // let dot = z_dir.dot(Vec3::Z);
             Quat::from_rotation_arc(Vec3::Z, z_dir)
         };
 
@@ -176,11 +199,11 @@ impl PdmsTubing {
                 };
                 Some(Box::new(cube))
             }
-            _ => {
-                None
-            }
+            _ => None,
         };
-        if brep_shape.is_none() { return None; }
+        if brep_shape.is_none() {
+            return None;
+        }
 
         Some(CateBrepShape {
             refno: self.leave_refno,

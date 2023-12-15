@@ -592,15 +592,15 @@ impl AttrMap {
         let type_name = self.get_type();
         let mut quat = Quat::IDENTITY;
         if self.contains_attr_name("ZDIR") {
-            let axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
+            let axis_dir = self.get_dvec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
             }
         } else if self.contains_attr_name("OPDI") {
             //PJOI 的方向
-            let axis_dir = self.get_vec3("OPDI").unwrap_or_default().normalize();
+            let axis_dir = self.get_dvec3("OPDI").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
+                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
                 // dbg!(quat_to_pdms_ori_str(&quat));
             }
         } else {
@@ -625,39 +625,6 @@ impl AttrMap {
         }
         return Some(quat);
     }
-
-    // #[inline]
-    // pub fn get_rotation(&self) -> Option<Quat> {
-    //     let type_name = self.get_type();
-    //     let mut quat = Quat::IDENTITY;
-    //
-    //     if self.contains_attr_name("SJUS"){
-    //         //unset 和 UBOT 一样的效果
-    //         //DTOP, DCEN, DBOT
-    //         let sjus = self.get_str("SJUS").unwrap_or("unset");
-    //         if sjus.starts_with("D") {
-    //             quat = Quat::from_mat3(&Mat3::from_cols(
-    //                 Vec3::X,
-    //                 Vec3::NEG_Y,
-    //                 Vec3::NEG_Z,
-    //             ));
-    //         }
-    //     } else if self.contains_attr_name("ZDIR"){
-    //         let mut axis_dir = self.get_vec3("ZDIR").unwrap_or_default().normalize();
-    //         if axis_dir.is_normalized() {
-    //             quat = Quat::from_mat3(&cal_mat3_by_zdir(axis_dir));
-    //         }
-    //     }else{
-    //         let ang = self.get_f32_vec("ORI")?;
-    //         let mat = (glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
-    //             * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-    //             * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32));
-    //
-    //         quat = Quat::from_mat3(&mat);
-    //     }
-    //
-    //     return Some(quat);
-    // }
 
     pub fn get_matrix(&self) -> Option<Affine3A> {
         let mut affine = Affine3A::IDENTITY;

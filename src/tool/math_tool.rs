@@ -1,7 +1,7 @@
 use crate::shape::pdms_shape::ANGLE_RAD_TOL;
 use crate::tool::float_tool::*;
 use approx::{abs_diff_eq, abs_diff_ne};
-use glam::{DVec3, Mat3, Quat, Vec3};
+use glam::{DVec3, Mat3, Quat, Vec3, DMat3, DQuat};
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -27,10 +27,10 @@ lazy_static! {
     };
 }
 
-pub fn cal_mat3_by_zdir(zdir: Vec3) -> Mat3 {
-    let quat = Quat::from_rotation_arc(Vec3::Z, zdir);
-    let mut m = Mat3::from_quat(quat);
-    if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon = ANGLE_RAD_TOL) {
+pub fn cal_mat3_by_zdir(zdir: DVec3) -> DMat3 {
+    let quat = DQuat::from_rotation_arc(DVec3::Z, zdir);
+    let mut m = DMat3::from_quat(quat);
+    if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon = ANGLE_RAD_TOL as f64) {
         m.y_axis.z = 0.0;
         m.y_axis = m.y_axis.normalize();
         m.x_axis = m.y_axis.cross(m.z_axis).normalize();
@@ -100,6 +100,10 @@ pub fn to_pdms_vec_str(vec: &Vec3) -> String {
         if angle > 45.0 {
             let angle = 90.0 - angle;
             return format!("{y_str} {angle} {x_str}");
+        }
+
+        if angle.is_nan(){
+            return "unset".to_string();
         }
 
         return format!("{x_str} {angle} {y_str}");

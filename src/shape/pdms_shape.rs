@@ -304,7 +304,7 @@ impl From<OCCMesh> for PlantGeoData {
 
 pub const TRI_TOL: f32 = 0.001;
 pub const LEN_TOL: f32 = 0.001;
-pub const ANGLE_RAD_TOL: f32 = 0.001;
+pub const ANGLE_RAD_TOL: f32 = 0.0001;
 pub const MIN_SIZE_TOL: f32 = 0.01;
 pub const MAX_SIZE_TOL: f32 = 1.0e5;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
