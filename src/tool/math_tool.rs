@@ -51,6 +51,10 @@ pub fn convert_to_xyz(s: &str) -> String {
         .replace("D", "-Z")
 }
 
+pub fn to_pdms_vec_xyz_str(vec: &Vec3) -> String {
+    convert_to_xyz(&to_pdms_vec_str(vec))
+}
+
 pub fn to_pdms_vec_str(vec: &Vec3) -> String {
     for (v, v_str) in AXIS_VEC_TUPLES.iter() {
         if abs_diff_eq!(vec.dot(*v), 1.0, epsilon = ANGLE_RAD_TOL) {

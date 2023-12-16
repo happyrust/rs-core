@@ -138,13 +138,13 @@ impl PdmsTubing {
         let v = self.end_pt - self.start_pt;
         let len = v.length();
         let is_bore = matches!(self.tubi_size, TubiSize::BoreSize(_));
-        let z_dir = if is_bore {
+        let leave_dir = if is_bore {
             v.normalize_or_zero()
         } else {
             self.desire_leave_dir.normalize_or_zero()
         };
 
-        if self.tubi_size == TubiSize::None || z_dir.length().abs() < f32::EPSILON {
+        if self.tubi_size == TubiSize::None || leave_dir.length().abs() < f32::EPSILON {
             return None;
         }
         let scale = match self.tubi_size {
@@ -153,21 +153,20 @@ impl PdmsTubing {
             _ => Vec3::ONE,
         };
         //统一都用Z轴为参考轴的方法
-        let rotation = if let Some(axis_dir) = self.leave_ref_dir {
-            dbg!(axis_dir);
-            let rot2 = Quat::from_rotation_arc(axis_dir, z_dir);
-            dbg!(quat_to_pdms_ori_xyz_str(&rot2));
-            // parse_ori_str_to_quat("Y is Y 5 -X and Z is -Z").unwrap_or(Quat::IDENTITY)
-            rot2
+        let rotation = if let Some(ref_dir) = self.leave_ref_dir {
+            let ydir = leave_dir;
+            let zdir = ref_dir;
+            let xdir = ydir.cross(zdir).normalize_or_zero();
+            let rot = Quat::from_mat3(&Mat3::from_cols(xdir, ydir, zdir));
+            // dbg!(quat_to_pdms_ori_xyz_str(&rot));
+            rot
         } else {
-            // Quat::from_rotation_arc(Vec3::Z, z_dir)
-            // let dot = z_dir.dot(Vec3::Z);
-            Quat::from_rotation_arc(Vec3::Z, z_dir)
+            Quat::from_rotation_arc(Vec3::Z, leave_dir)
         };
 
         let translation = match self.tubi_size {
             TubiSize::BoreSize(_) => self.start_pt,
-            TubiSize::BoxSize(_) => self.start_pt + rotation * (v * 0.5),
+            TubiSize::BoxSize(_) => self.start_pt + (v * 0.5),
             _ => self.start_pt,
         };
 
