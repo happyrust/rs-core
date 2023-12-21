@@ -89,9 +89,9 @@ pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
     "NCTO", "NRTO", "NREV", "NSCY",
 ];
 
-pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 30] = [
+pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 31] = [
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO",
-    "SSLC", "SPRO", "SANN", "BOXI", "SREC", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT",
+    "SSLC", "SPRO", "SANN", "BOXI", "TUBE", "SREC", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT",
     "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE",
 ];
 
@@ -121,8 +121,8 @@ pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
     "SCTN", "NOZZ",
 ];
 
-pub const VISBILE_GEO_NOUNS: [&'static str; 36] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
+pub const VISBILE_GEO_NOUNS: [&'static str; 38] = [
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "EXTR", "REVO",
     "FLOOR", "PANE", 
     "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
     "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL","SCTN", "NOZZ",

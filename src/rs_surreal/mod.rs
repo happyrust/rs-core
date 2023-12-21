@@ -19,7 +19,6 @@ pub use index::*;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::any::Any;
-use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::Surreal;
 
 pub type SurlValue = surrealdb::sql::Value;

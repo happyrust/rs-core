@@ -14,7 +14,6 @@ use crate::prim_geo::sphere::Sphere;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use bevy_math::prelude::*;
 use bevy_transform::prelude::Transform;
-use std::f32::EPSILON;
 use std::f32::consts::FRAC_PI_2;
 
 #[derive(Debug, Clone)]
@@ -51,7 +50,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pc.number);
 
             let z_axis = pa.dir.normalize_or_zero();
-            
+
             let mut y_axis = pc.dir.normalize_or_zero();
             //Y轴如果如果在第二象限和第四象限，需要反向
             if y_axis.y < 0.0 {
@@ -229,10 +228,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if let Some(pb) = d.pb.as_ref() {
                 x_dir = pb.dir;
                 pts.push(pb.number);
-            }else{
+            } else {
                 // dbg!(d);
             }
-            
+
             let mut btm_on_top = false;
             let z_axis = z.dir;
             if z_axis.length() == 0.0 {
@@ -288,7 +287,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
         }
         CateGeoParam::SCylinder(d) => {
-            
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
@@ -296,15 +294,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if dir.length() == 0.0 {
                 return None;
             }
-            
-            let translation =  (dir * d.dist_to_btm + axis.pt);
+
+            let translation = (dir * d.dist_to_btm + axis.pt);
             let mut phei = d.height as f32;
             //如果height是负数，相当于要额外旋转一下
             if phei < 0.0 {
                 phei = -phei;
                 dir = -dir;
             }
-            // dbg!(dir);
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
             let transform = Transform {
@@ -339,7 +336,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
             let mut phei = (d.dist_to_top - d.dist_to_btm) as f32;
             let mut dis = d.dist_to_btm;
-            let translation =  (dir * dis + axis.pt);
+            let translation = (dir * dis + axis.pt);
             //如果height是负数，相当于要额外旋转一下
             if phei < 0.0 {
                 phei = -phei;
@@ -375,32 +372,41 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(axis.number);
             let z_axis = axis.dir.normalize_or_zero();
+            // dbg!(d.refno);
             if z_axis.length() == 0.0 {
                 return None;
             }
+            // dbg!(z_axis);
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
             let ref_axis = axis.ref_dir.normalize_or_zero();
             //检查有没有参考轴，没有的话使用底部的， 不能使用这个from_rotation_arc
             let rotation = if ref_axis.length() == 0.0 {
                 //ref_axis初始轴为X轴，先绕着y轴旋转x_shear, 再绕着x轴旋转 y_shear
-                // let final_x= (Quat::from_rotation_x(d.y_shear as f32) * Quat::from_rotation_y(d.x_shear as f32) * Vec3::X).normalize_or_zero();
-                // Quat::from_rotation_arc(final_x, z_axis)
                 let rot1 = Quat::from_rotation_arc(Vec3::Z, z_axis);
                 let mut rot2 = Quat::IDENTITY;
                 if d.y_shear.abs() > d.x_shear.abs() {
-                    let t = if z_axis.z > 0.0 {
+                    //todo 旋转到长轴即可
+                    // let theta = Vec3::X.angle_between(Vec3::new( ));
+                    let t = if z_axis.z > 0.01 {
                         -1.0
-                    } else {
+                    } else if z_axis.z < -0.01  {
                         1.0
+                    } else {
+                        if z_axis.x > 0.01 {
+                            -1.0
+                        }else{
+                            1.0
+                        }
                     };
+                    // dbg!(t);
                     rot2 = Quat::from_axis_angle(z_axis, t * FRAC_PI_2);
                 }
                 rot2 * rot1
-            }else{
+            } else {
                 let y_axis = ref_axis;
                 let x_axis = y_axis.cross(z_axis).normalize_or_zero();
-                Quat::from_mat3(&Mat3::from_cols( x_axis, y_axis, z_axis))
+                Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
             };
             let translation = z_axis * (d.dist_to_btm as f32) + axis.pt;
             let transform = Transform {

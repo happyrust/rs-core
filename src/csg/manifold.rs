@@ -78,7 +78,7 @@ impl ManifoldCrossSectionRust {
     pub fn extrude_rotate(&mut self, segments: i32, angle: f32) -> ManifoldRust {
         unsafe {
             let mut manifold = ManifoldRust::new();
-            manifold_revolve(manifold.ptr as _, self.ptr as _, segments, angle);
+            // manifold_revolve(manifold.ptr as _, self.ptr as _, segments, angle);
             manifold
         }
     }

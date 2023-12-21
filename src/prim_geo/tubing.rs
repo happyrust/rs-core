@@ -20,7 +20,7 @@ use serde_with::DisplayFromStr;
 
 #[serde_as]
 #[derive(
-    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct PdmsTubing {
     #[serde(rename = "_key")]
@@ -97,16 +97,16 @@ impl TubiEdge {
 
 #[serde_as]
 #[derive(
-    PartialEq,
-    Default,
-    Debug,
-    Clone,
-    Copy,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+PartialEq,
+Default,
+Debug,
+Clone,
+Copy,
+Serialize,
+Deserialize,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub enum TubiSize {
     #[default]
@@ -153,7 +153,7 @@ impl PdmsTubing {
             _ => Vec3::ONE,
         };
         //统一都用Z轴为参考轴的方法
-        let rotation = if let Some(ref_dir) = self.leave_ref_dir {
+        let rotation = if let Some(ref_dir) = self.leave_ref_dir && !is_bore {
             let ydir = leave_dir;
             let zdir = ref_dir;
             let xdir = ydir.cross(zdir).normalize_or_zero();

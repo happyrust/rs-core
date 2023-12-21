@@ -1,6 +1,5 @@
 use crate::options::DbOption;
 use config::{Config, File};
-use surrealdb::engine::remote::ws::Ws;
 use crate::SUL_DB;
 
 pub mod test_mdb;

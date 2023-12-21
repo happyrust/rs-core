@@ -292,6 +292,10 @@ impl NamedAttrMap {
         }
         None
     }
+    #[inline]
+    pub fn get_bool_or_default(&self, key: &str) -> bool {
+        self.get_bool(key).unwrap_or_default()
+    }
 
     #[inline]
     pub fn get_refu64(&self, key: &str) -> Option<RefU64> {
