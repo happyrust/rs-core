@@ -113,6 +113,10 @@ pub struct DbOption {
     #[clap(short)]
     pub batch_insert_sql_cnt: u32,
     #[clap(short)]
+    pub pe_chunk: u32,
+    #[clap(short)]
+    pub att_chunk: u32,
+    #[clap(short)]
     pub gen_model_batch_size: usize,
     #[clap(long)]
     pub arangodb_url: String,
