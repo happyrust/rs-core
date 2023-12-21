@@ -1640,9 +1640,9 @@
         "hash": 633190,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "788433": {
         "name": "FNAM",
@@ -49306,9 +49306,9 @@
         "hash": 633190,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "955685": {
         "name": "TYNU",
@@ -81652,9 +81652,9 @@
         "hash": 633190,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "FUNI": {
         "name": "FUNI",
@@ -87512,9 +87512,9 @@
         "hash": 633190,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "TYPE": {
         "name": "TYPE",

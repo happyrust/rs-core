@@ -56,14 +56,15 @@ pub fn parse_to_f64_arr(input: &[u8], num: usize) -> Vec<f64> {
     data
 }
 
-// #[inline]
-// pub fn parse_to_f32_arr(input: &[u8]) -> [f64; 3] {
-//     let mut data = [0f64; 3];
-//     for i in 0..3 {
-//         data[i] = parse_to_f32(&input[i * 4..i * 4 + 4]) as f64;
-//     }
-//     data
-// }
+#[inline]
+pub fn parse_to_i32_vec(input: &[u8], num: usize) -> Vec<i32> {
+    let mut data = vec![];
+    for i in 0..num {
+        data.push(parse_to_i32(&input[i * 4..i * 4 + 4]));
+    }
+    data
+}
+
 
 #[inline]
 pub fn parse_to_f32_arr(input: &[u8], num: usize) -> Vec<f64> {
