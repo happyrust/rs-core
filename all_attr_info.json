@@ -31754,9 +31754,9 @@
         "hash": 865136,
         "offset": 0,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "557795": {
         "name": "BDIA",
@@ -57765,9 +57765,9 @@
         "hash": 865136,
         "offset": 14,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "10206636": {
         "name": "OWNER",
@@ -83309,9 +83309,9 @@
         "hash": 865136,
         "offset": 0,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "LOCK": {
         "name": "LOCK",
@@ -97763,9 +97763,9 @@
         "hash": 865136,
         "offset": 14,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       }
     },
     "CNODE": {
