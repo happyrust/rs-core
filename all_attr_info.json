@@ -31763,9 +31763,9 @@
         "hash": 557795,
         "offset": 0,
         "default_val": {
-          "StringType": ""
+          "DoubleType": 0.0
         },
-        "att_type": "STRING"
+        "att_type": "DOUBLE"
       },
       "642215": {
         "name": "TYPE",
@@ -57049,9 +57049,9 @@
         "hash": 557795,
         "offset": 13,
         "default_val": {
-          "StringType": ""
+          "DoubleType": 0.0
         },
-        "att_type": "STRING"
+        "att_type": "DOUBLE"
       },
       "10206636": {
         "name": "OWNER",
@@ -57747,9 +57747,9 @@
         "hash": 557795,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "DoubleType": 0.0
         },
-        "att_type": "STRING"
+        "att_type": "DOUBLE"
       },
       "754328": {
         "name": "BTHK",
@@ -63429,9 +63429,9 @@
         "hash": 557795,
         "offset": 13,
         "default_val": {
-          "StringType": ""
+          "DoubleType": 0.0
         },
-        "att_type": "STRING"
+        "att_type": "DOUBLE"
       },
       "NAME": {
         "name": "NAME",
@@ -83336,9 +83336,9 @@
         "hash": 557795,
         "offset": 0,
         "default_val": {
-          "StringType": ""
+          "DoubleType": 0.0
         },
-        "att_type": "STRING"
+        "att_type": "DOUBLE"
       },
       "OWNER": {
         "name": "OWNER",
@@ -97745,9 +97745,9 @@
         "hash": 557795,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "DoubleType": 0.0
         },
-        "att_type": "STRING"
+        "att_type": "DOUBLE"
       },
       "NAME": {
         "name": "NAME",
