@@ -17829,9 +17829,9 @@
         "hash": 837451,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       },
       "837387": {
         "name": "IRNO",
@@ -83520,9 +83520,9 @@
         "hash": 837451,
         "offset": 12,
         "default_val": {
-          "StringType": ""
+          "IntegerType": 0
         },
-        "att_type": "STRING"
+        "att_type": "INTEGER"
       }
     },
     "SRFTRT": {
