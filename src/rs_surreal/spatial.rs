@@ -124,18 +124,14 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
         }
         //todo fix 处理 posl的计算
         if att.contains_key("POSL") {
-            let pos_line = att.get_str_or_default("POSL");
+            let pos_line = att.get_str("POSL").unwrap_or("NA");
             let delta_vec = att.get_vec3("DELP").unwrap_or_default();
-            // dbg!(pos_line);
+            dbg!(pos_line);
             //plin里的位置偏移
             let mut plin_pos = Vec3::ZERO;
             let mut pline_plax = Vec3::X;
-            let mut new_quat = Quat::IDENTITY;
             let owner = att.get_owner();
             // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
-            // let mut cur_plin_param = None;
-            // let mut own_plin_param = None;
-            // let mut target_own_att = NamedAttrMap::default();
             let mut is_lmirror = false;
             let ance_result = crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec()).await?;
             if let Some(plin_owner) = ance_result.into_iter().next() {
@@ -148,11 +144,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
                     plin_pos = param.pt;
                     pline_plax = param.plax;
-                    // dbg!(&param);
+                    dbg!(&param);
                 }
                 if let Ok(Some(own_param)) = crate::query_pline(plin_owner, own_pos_line.into()).await {
                     plin_pos -= own_param.pt;
-                    // dbg!(&own_param);
+                    dbg!(&own_param);
                 }
             }
             let y_axis = if att.contains_key("YDIR") {
@@ -168,7 +164,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             } else {
                 Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
             };
-            new_quat = posl_quat * quat;
+            let new_quat = posl_quat * quat;
             translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
 
             #[cfg(debug_assertions)]
