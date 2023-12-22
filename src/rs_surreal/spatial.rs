@@ -2,7 +2,7 @@ use crate::{
     consts::HAS_PLIN_TYPES,
     prim_geo::spine::{Spine3D, SpineCurveType, SweepPath3D},
     shape::pdms_shape::LEN_TOL,
-    NamedAttrMap, RefU64, SUL_DB, pdms_data::{PlinParam, PlinParamData}, tool::{direction_parse::parse_expr_to_dir, math_tool::quat_to_pdms_ori_str},
+    NamedAttrMap, RefU64, SUL_DB, pdms_data::{PlinParam, PlinParamData}, tool::{direction_parse::parse_expr_to_dir, math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str}},
 };
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
@@ -93,6 +93,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
         let c_ref = att.get_foreign_refno("CREF").unwrap_or_default();
+        let c_t = get_world_transform(c_ref).await?.unwrap_or_default();
         let mut cut_dir = Vec3::Y;
         let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
@@ -101,7 +102,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             let cut_len = att.get_f32("CUTB").unwrap_or_default();
             if let Ok(c_att) = super::get_named_attmap(c_ref).await {
                 if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
-                    let c_t = get_world_transform(c_ref).await?.unwrap_or_default();
+                    
                     let w_poss = c_t.translation;
                     let axis = pose - poss;
                     let len = axis.length();
@@ -117,7 +118,15 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     has_cut_back = true;
                 }
             }
+            dbg!(has_cut_back);
         }
+
+        if let Some(opdir) = att.get_vec3("OPDI") {
+            let opdir = opdir.normalize();
+            quat = c_t.rotation * Quat::from_rotation_arc(c_t.local_z(), opdir); 
+            dbg!(quat_to_pdms_ori_xyz_str(&quat));
+        }
+        
         //todo fix 处理 posl的计算
         if att.contains_key("POSL") {
             let pos_line = att.get_str("POSL").unwrap_or("NA");
