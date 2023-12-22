@@ -113,7 +113,6 @@ const IMP_PYTS: i32 = 0xE0C71;
 const IMP_PXBS: i32 = 0xDD914;
 const IMP_PYBS: i32 = 0xDD92F;
 const IMP_DPRO: i32 = 0xCD234;
-const IMP_ALLANG: i32 = 0x676B460;
 lazy_static! {
     pub static ref EXPR_ATT_SET: HashSet<i32> = {
         let mut s = HashSet::new();
@@ -128,7 +127,7 @@ lazy_static! {
         s.insert(ATT_POFF);s.insert(ATT_DX);s.insert(ATT_DY);s.insert(ATT_DY);
         s.insert(ATT_PXTS);s.insert(ATT_PYTS);s.insert(ATT_PXBS);s.insert(ATT_PYBS);
         s.insert(ATT_PRAD);s.insert(ATT_PWID);s.insert(ATT_DRAD);s.insert(ATT_ALLANG);
-        s.insert(ATT_PZAXI);s.insert(ATT_PZAXI);s.insert(ATT_PANG);
+        s.insert(ATT_PZAXI);s.insert(ATT_PANG);
 
         s.insert(IMP_PAXI);s.insert(IMP_PCON);s.insert(IMP_PDIS);s.insert(IMP_PBOR);
         s.insert(IMP_PDIA);s.insert(IMP_PHEI);s.insert(IMP_PTDI);s.insert(IMP_PTDM);

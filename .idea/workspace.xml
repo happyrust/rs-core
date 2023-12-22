@@ -15,7 +15,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update attr json">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
     </list>
@@ -103,6 +103,7 @@
     &quot;Cargo.Test test::test_sql::test_table::test_create_table.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_sync2::test_gen_att_type_structs.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_sync2::test_parse.executor&quot;: &quot;Run&quot;,
     &quot;Project.color&quot;: &quot;011c4a&quot;,
@@ -139,28 +140,11 @@
       <recent name="$PROJECT_DIR$/src/tool" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_refno::test_des_refno">
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_query_transform">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="emulateTerminal" value="false" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <envs />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test orm::sql::test_do_op_reflect_sql" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib orm::sql::test_do_op_reflect_sql -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="emulateTerminal" value="true" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
@@ -242,21 +226,38 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test test::test_surreal::test_spatial::test_query_transform" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <envs />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.Test orm::sql::test_do_op_reflect_sql" />
       <item itemvalue="Cargo.Test test::test_refno::test_des_refno" />
       <item itemvalue="Cargo.Test test::test_sql::test_insert::test_gen_insert_sql" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_cata" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_children_att" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
         <item itemvalue="Cargo.Test test::test_refno::test_des_refno" />
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_children_att" />
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_cata" />
         <item itemvalue="Cargo.Test test::test_sql::test_insert::test_gen_insert_sql" />
-        <item itemvalue="Cargo.Test orm::sql::test_do_op_reflect_sql" />
       </list>
     </recent_temporary>
   </component>
@@ -531,6 +532,13 @@
       <workItem from="1702066544714" duration="43000" />
       <workItem from="1702219174406" duration="777000" />
       <workItem from="1702221272634" duration="120000" />
+      <workItem from="1703054529662" duration="939000" />
+      <workItem from="1703063155724" duration="6602000" />
+      <workItem from="1703096428686" duration="1612000" />
+      <workItem from="1703137398815" duration="4000" />
+      <workItem from="1703149141294" duration="3323000" />
+      <workItem from="1703160533110" duration="517000" />
+      <workItem from="1703169762723" duration="5325000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -875,7 +883,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="259" />
+    <option name="localTasksCounter" value="266" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -903,7 +911,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="surreal" />
+                        <option value="dpc/surreal" />
                       </list>
                     </value>
                   </entry>
@@ -916,13 +924,8 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="storus  的特殊处理" />
-    <MESSAGE value="增加ngmr负实体的处理" />
-    <MESSAGE value="fix substract boolean" />
-    <MESSAGE value="修改 PZAXI，增加Rect tubi" />
-    <MESSAGE value="refactor" />
-    <MESSAGE value="refactor occ generate" />
     <MESSAGE value="fix wire precision problem" />
     <MESSAGE value="make opencascade_rs as default" />
     <MESSAGE value="fix revolution problem" />
@@ -933,7 +936,6 @@
     <MESSAGE value="fix model problems" />
     <MESSAGE value="fix" />
     <MESSAGE value="upgrade" />
-    <MESSAGE value="update" />
     <MESSAGE value="WIP 使用dolt的修改，动态生成类型，通过orm来操作数据" />
     <MESSAGE value="WIP 生成类型" />
     <MESSAGE value="WIP fix" />
@@ -942,7 +944,14 @@
     <MESSAGE value="WIP commit" />
     <MESSAGE value="WIP add surreal config option" />
     <MESSAGE value="WIP refactor" />
-    <option name="LAST_COMMIT_MESSAGE" value="WIP refactor" />
+    <MESSAGE value="update" />
+    <MESSAGE value="Implement minor code refactoring across various modules&#10;&#10;This commit includes a series of minor code refactoring and updates across various modules as needed to improve overall code quality. The changes predominantly include cleaning up the spacing and indentation, modifying several function logic such as changing boolean and array values, removing and adding functions, and updating test queries for more accurate testing. Note that no major functionality was updated or added." />
+    <MESSAGE value="Refactor code for readability and correctness&#10;&#10;The codebase underwent a range of minor adjustments to improve consistency and alignment of the code. Updates also improved the boolean logic in certain functions, added new functionality for fetching boolean values, and enhanced the test scenarios for better code coverage. These changes were primarily focused on maintaining the code's quality standards." />
+    <MESSAGE value="Add new options to clap flags in options.rs&#10;&#10;New command line options, 'pe_chunk' and 'att_chunk', have been added to the options.rs file. These modifications improve the flexibility and customizability of the program by allowing the user to input the values for these two new options. The user's experience and the program's functionality have been enhanced with this update." />
+    <MESSAGE value="Implement parse_to_i32_vec function and update attribute types in JSON&#10;&#10;Introduced a parse_to_i32_vec function in the helper module and modified attribute types from STRING to INTEGER in the all_attr_info.json file. The new function expands the parsing capabilities of the application. The modifications to the JSON file ensure the correct data types are used for default values, fostering data consistency and integrity." />
+    <MESSAGE value="Change attribute types from STRING to INTEGER in JSON&#10;&#10;Updated the &quot;default_val&quot; and &quot;att_type&quot; fields in the 'all_attr_info.json' from STRING to INTEGER. This change ensures the correct data types are used for default values, improving data consistency and reliability across the application." />
+    <MESSAGE value="update attr json" />
+    <option name="LAST_COMMIT_MESSAGE" value="update attr json" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

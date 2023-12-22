@@ -93,16 +93,24 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
     let mut keys = vec![];
     let mut unset_keys = vec![];
     for (k, v) in &attmap.map {
-        if k != "REFNO"
-            && let NamedAttrValue::RefU64Type(r) = v
-        {
-            if r.is_valid() {
-                refno_fields.push(r.to_pe_key());
-                keys.push(k.to_owned());
-            } else {
+        if k == "REFNO" {
+            continue;
+        }
+        match v {
+            NamedAttrValue::RefU64Type(r) => {
+                if r.is_valid() {
+                    refno_fields.push(r.to_pe_key());
+                    keys.push(k.to_owned());
+                } else {
+                    unset_keys.push(k.to_owned());
+                }
+            }
+            NamedAttrValue::InvalidType => {
                 unset_keys.push(k.to_owned());
             }
+            _ => {}
         }
+        
     }
     // dbg!(&keys);
     // dbg!(&refno_fields);
@@ -115,7 +123,11 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
     let names: Vec<String> = response.take(0)?;
     // dbg!(&names);
     for (k, v) in keys.into_iter().zip(names) {
-        attmap.insert(k, NamedAttrValue::StringType(v));
+        attmap.insert(k, NamedAttrValue::StringType(if v.is_empty() {
+            "unset".to_owned()
+        } else {
+            v
+        }));
     }
     for k in unset_keys {
         attmap.insert(k, NamedAttrValue::StringType("unset".to_owned()));

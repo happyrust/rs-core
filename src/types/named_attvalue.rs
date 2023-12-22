@@ -189,22 +189,6 @@ impl NamedAttrValue {
         };
     }
 
-    // #[inline]
-    // pub fn string_hash_value(&self) -> Option<AiosStrHash> {
-    //     return match self {
-    //         StringHashType(v) => Some(v.clone()),
-    //         _ => None,
-    //     };
-    // }
-
-    // #[inline]
-    // pub fn refu64_vec_value(&self) -> Option<RefU64Vec> {
-    //     return match self {
-    //         NamedAttrValue::RefU64Array(v) => Some(v.clone()),
-    //         _ => None,
-    //     };
-    // }
-
     #[inline]
     pub fn bool_value(&self) -> Option<bool> {
         return match self {

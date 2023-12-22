@@ -86,7 +86,7 @@ chrono = "0.4.31"
 custom_debug = "0.5.1"
 # sea-query = "0.30.2"
 
-surrealdb = { path = "/Users/dongpengcheng/surreal_db/surrealdb/lib", default-features = false, features = ["kv-mem"]  }
+surrealdb = { path = "/Users/dongpengcheng/surreal_db/surrealdb/lib" }
 
 #surrealdb = { path = "../../surrealdb/lib" }
 num-traits = "0.2.17"
