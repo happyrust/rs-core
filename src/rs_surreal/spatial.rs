@@ -100,11 +100,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
         let c_ref = att.get_foreign_refno("CREF").unwrap_or_default();
-        let c_t = if c_ref.is_valid() {
-            get_world_transform(c_ref).await?.unwrap_or_default()
-        } else {
-            Transform::IDENTITY
-        };
+        
         let mut cut_dir = Vec3::Y;
         let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
@@ -112,6 +108,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             cut_dir = att.get_vec3("CUTP").unwrap_or(cut_dir);
             let cut_len = att.get_f32("CUTB").unwrap_or_default();
             if let Ok(c_att) = super::get_named_attmap(c_ref).await {
+                let c_t = get_world_transform(c_ref).await?.unwrap_or_default();
                 if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
                     let w_poss = c_t.translation;
                     let axis = pose - poss;
@@ -129,16 +126,17 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 }
                 //有 cref 的时候，需要保持方向和 cref 一致
                 quat = c_t.rotation;
+                if let Some(opdir) = att.get_vec3("OPDI") {
+                    //有自定义调节，需要选装到目标方向
+                    let opdir = opdir.normalize();
+                    quat = quat * Quat::from_rotation_arc(c_t.local_z(), opdir);
+                    dbg!(quat_to_pdms_ori_xyz_str(&quat));
+                }
             }
             dbg!(has_cut_back);
         }
 
-        if let Some(opdir) = att.get_vec3("OPDI") {
-            //有自定义调节，需要选装到目标方向
-            let opdir = opdir.normalize();
-            quat = quat * Quat::from_rotation_arc(c_t.local_z(), opdir);
-            dbg!(quat_to_pdms_ori_xyz_str(&quat));
-        }
+        
 
         //todo fix 处理 posl的计算
         if att.contains_key("POSL") {
