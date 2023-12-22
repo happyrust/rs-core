@@ -1,14 +1,21 @@
+use std::f32::consts::E;
+
 use crate::{
     consts::HAS_PLIN_TYPES,
+    pdms_data::{PlinParam, PlinParamData},
     prim_geo::spine::{Spine3D, SpineCurveType, SweepPath3D},
     shape::pdms_shape::LEN_TOL,
-    NamedAttrMap, RefU64, SUL_DB, pdms_data::{PlinParam, PlinParamData}, tool::{direction_parse::parse_expr_to_dir, math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str}},
+    tool::{
+        direction_parse::parse_expr_to_dir,
+        math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str},
+    },
+    NamedAttrMap, RefU64, SUL_DB,
 };
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
 use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
-use glam::{Mat3, Quat, Vec3, DVec3};
+use glam::{DVec3, Mat3, Quat, Vec3};
 
 //获得世界坐标系
 ///使用cache，需要从db manager里移除出来
@@ -93,7 +100,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
         let c_ref = att.get_foreign_refno("CREF").unwrap_or_default();
-        let c_t = get_world_transform(c_ref).await?.unwrap_or_default();
+        let c_t = if c_ref.is_valid() {
+            get_world_transform(c_ref).await?.unwrap_or_default()
+        } else {
+            Transform::IDENTITY
+        };
         let mut cut_dir = Vec3::Y;
         let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
@@ -102,7 +113,6 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             let cut_len = att.get_f32("CUTB").unwrap_or_default();
             if let Ok(c_att) = super::get_named_attmap(c_ref).await {
                 if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
-                    
                     let w_poss = c_t.translation;
                     let axis = pose - poss;
                     let len = axis.length();
@@ -117,24 +127,23 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     }
                     has_cut_back = true;
                 }
+                //有 cref 的时候，需要保持方向和 cref 一致
+                quat = c_t.rotation;
             }
             dbg!(has_cut_back);
         }
 
         if let Some(opdir) = att.get_vec3("OPDI") {
+            //有自定义调节，需要选装到目标方向
             let opdir = opdir.normalize();
-            quat = c_t.rotation * Quat::from_rotation_arc(c_t.local_z(), opdir); 
+            quat = quat * Quat::from_rotation_arc(c_t.local_z(), opdir);
             dbg!(quat_to_pdms_ori_xyz_str(&quat));
         }
-        
+
         //todo fix 处理 posl的计算
         if att.contains_key("POSL") {
             let pos_line = att.get_str("POSL").unwrap_or("NA");
-            let pos_line = if pos_line.is_empty() {
-                "NA"
-            } else {
-                pos_line
-            };
+            let pos_line = if pos_line.is_empty() { "NA" } else { pos_line };
             let delta_vec = att.get_vec3("DELP").unwrap_or_default();
             dbg!(pos_line);
             //plin里的位置偏移
@@ -143,7 +152,9 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             let owner = att.get_owner();
             // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
             let mut is_lmirror = false;
-            let ance_result = crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec()).await?;
+            let ance_result =
+                crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec())
+                    .await?;
             if let Some(plin_owner) = ance_result.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
@@ -162,7 +173,9 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     dbg!(pos_line);
                     dbg!(&param);
                 }
-                if let Ok(Some(own_param)) = crate::query_pline(plin_owner, own_pos_line.into()).await {
+                if let Ok(Some(own_param)) =
+                    crate::query_pline(plin_owner, own_pos_line.into()).await
+                {
                     plin_pos -= own_param.pt;
                     dbg!(own_pos_line);
                     dbg!(&own_param);
@@ -238,22 +251,15 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 
 ///查询形集PLIN的值，todo 需要做缓存优化
 // #[cached]
-pub async fn query_pline(
-    refno: RefU64,
-    jusl: String,
-) -> anyhow::Result<Option<PlinParamData>> {
-    let cat_att = crate::get_cat_attmap(refno)
-        .await
-        .unwrap_or_default();
+pub async fn query_pline(refno: RefU64, jusl: String) -> anyhow::Result<Option<PlinParamData>> {
+    let cat_att = crate::get_cat_attmap(refno).await.unwrap_or_default();
     let psref = cat_att
         .get_foreign_refno("PSTR")
         .unwrap_or(cat_att.get_foreign_refno("PTSS").unwrap_or_default());
     if !psref.is_valid() {
         return Ok(None);
     }
-    let c_refnos = crate::get_children_refnos(psref)
-        .await
-        .unwrap_or_default();
+    let c_refnos = crate::get_children_refnos(psref).await.unwrap_or_default();
     // dbg!(&c_refnos);
     for c_refno in c_refnos {
         let a = crate::get_named_attmap(c_refno).await?;
@@ -277,7 +283,8 @@ pub async fn query_pline(
         let dy = super::resolve_expression_to_f32(&param.dxy[1], refno, false).await?;
         let plax = parse_expr_to_dir(&param.plax)
             .unwrap_or(DVec3::Y)
-            .normalize().as_vec3();
+            .normalize()
+            .as_vec3();
         let plin_data = PlinParamData {
             pt: Vec3::new(x, y, 0.0) + Vec3::new(dx, dy, 0.0) * plax,
             plax,
