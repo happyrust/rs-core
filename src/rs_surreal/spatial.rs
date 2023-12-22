@@ -53,7 +53,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             let (l_poss, l_pose) = if owner_is_gensec {
                 //找到spine，获取spine的两个顶点
                 let mut response = SUL_DB.query(
-                            format!("select value <-pe_owner[where in.noun='SPINE'].in<-pe_owner.in.refno.POS from only pe:{}", owner)).await?;
+                    format!("select value <-pe_owner[where in.noun='SPINE'].in<-pe_owner.in.refno.POS from only pe:{}", owner)).await?;
                 let pts: Vec<f32> = response.take(0)?;
                 if pts.len() == 6 {
                     (
@@ -66,9 +66,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             } else {
                 (att.get_poss(), att.get_pose())
             };
-            if let Some(poss) = l_poss
-                && let Some(pose) = l_pose
-            {
+            if let (Some(poss), Some(pose)) = (l_poss, l_pose) {
                 need_bangle = true;
                 let extru_dir = (pose - poss).normalize();
                 if !extru_dir.is_normalized() {
@@ -101,30 +99,33 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
         if att.get_str("POSL").is_none() && att.contains_key("CUTB") {
             cut_dir = att.get_vec3("CUTP").unwrap_or(cut_dir);
             let cut_len = att.get_f32("CUTB").unwrap_or_default();
-            if c_ref.is_valid()
-                && let Ok(c_att) = super::get_named_attmap(c_ref).await
-                && let Some(poss) = c_att.get_poss()
-                && let Some(pose) = c_att.get_pose()
-            {
-                let c_t = get_world_transform(c_ref).await?.unwrap_or_default();
-                let w_poss = c_t.translation;
-                let axis = pose - poss;
-                let len = axis.length();
-                let w_pose = w_poss + c_t.rotation * Vec3::Z * len;
-                let dist_s = translation.distance(w_poss);
-                let dist_e = translation.distance(w_pose);
-                //取离node最近的点
-                if dist_s < dist_e {
-                    translation = w_poss - cut_dir * cut_len;
-                } else {
-                    translation = w_pose - cut_dir * cut_len;
+            if let Ok(c_att) = super::get_named_attmap(c_ref).await {
+                if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
+                    let c_t = get_world_transform(c_ref).await?.unwrap_or_default();
+                    let w_poss = c_t.translation;
+                    let axis = pose - poss;
+                    let len = axis.length();
+                    let w_pose = w_poss + c_t.rotation * Vec3::Z * len;
+                    let dist_s = translation.distance(w_poss);
+                    let dist_e = translation.distance(w_pose);
+                    //取离node最近的点
+                    if dist_s < dist_e {
+                        translation = w_poss - cut_dir * cut_len;
+                    } else {
+                        translation = w_pose - cut_dir * cut_len;
+                    }
+                    has_cut_back = true;
                 }
-                has_cut_back = true;
             }
         }
         //todo fix 处理 posl的计算
         if att.contains_key("POSL") {
             let pos_line = att.get_str("POSL").unwrap_or("NA");
+            let pos_line = if pos_line.is_empty() {
+                "NA"
+            } else {
+                pos_line
+            };
             let delta_vec = att.get_vec3("DELP").unwrap_or_default();
             dbg!(pos_line);
             //plin里的位置偏移
@@ -139,15 +140,22 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     .await
                     .unwrap_or_default();
                 is_lmirror = target_own_att.get_bool("LMIRR").unwrap_or_default();
-                let own_pos_line = target_own_att.get_str_or_default("JUSL");
+                let own_pos_line = target_own_att.get_str("JUSL").unwrap_or("NA");
+                let own_pos_line = if own_pos_line.is_empty() {
+                    "NA"
+                } else {
+                    own_pos_line
+                };
 
                 if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
                     plin_pos = param.pt;
                     pline_plax = param.plax;
+                    dbg!(pos_line);
                     dbg!(&param);
                 }
                 if let Ok(Some(own_param)) = crate::query_pline(plin_owner, own_pos_line.into()).await {
                     plin_pos -= own_param.pt;
+                    dbg!(own_pos_line);
                     dbg!(&own_param);
                 }
             }
@@ -259,7 +267,7 @@ pub async fn query_pline(
         let dx = super::resolve_expression_to_f32(&param.dxy[0], refno, false).await?;
         let dy = super::resolve_expression_to_f32(&param.dxy[1], refno, false).await?;
         let plax = parse_expr_to_dir(&param.plax)
-            .unwrap_or(DVec3::Z)
+            .unwrap_or(DVec3::Y)
             .normalize().as_vec3();
         let plin_data = PlinParamData {
             pt: Vec3::new(x, y, 0.0) + Vec3::new(dx, dy, 0.0) * plax,
