@@ -104,6 +104,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
         let mut cut_dir = Vec3::Y;
         let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
+        //直接在世界坐标系下求坐标，跳过局部求解
         if att.get_str("POSL").is_none() && att.contains_key("CUTB") {
             cut_dir = att.get_vec3("CUTP").unwrap_or(cut_dir);
             let cut_len = att.get_f32("CUTB").unwrap_or_default();
@@ -125,11 +126,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     has_cut_back = true;
                 }
                 //有 cref 的时候，需要保持方向和 cref 一致
-                quat = c_t.rotation;
+                rotation = c_t.rotation;
                 if let Some(opdir) = att.get_vec3("OPDI") {
                     //有自定义调节，需要选装到目标方向
                     let opdir = opdir.normalize();
-                    quat = quat * Quat::from_rotation_arc(c_t.local_z(), opdir);
+                    rotation = rotation * Quat::from_rotation_arc(c_t.local_z(), opdir);
                     dbg!(quat_to_pdms_ori_xyz_str(&quat));
                 }
             }
