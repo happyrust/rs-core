@@ -37,7 +37,7 @@ derivative = "2.2.0"
 erased-serde = "0.3.22"
 dyn-clone = "1.0.9"
 #axum-login = { version = "0.4.1"}
-rstar = { version = "0.11.0", features = ["serde"] }
+rstar = { path = "../rstar/rstar", features = ["serde"] }
 uuid = "1.3.0"
 config = "0.13.1"
 
@@ -64,13 +64,15 @@ truck-polymesh = { version = "0.5.0", path = "../truck/truck-polymesh" }
 truck-topology = { version = "0.5.0", path = "../truck/truck-topology" }
 truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
+truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio"}
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.3.0"
 #config = "0.13.3"
 
 manifold-sys = { path = "../manifold-sys", optional = true }
 opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
-geo = "0.27.0"
+# geo = "0.27.0"
+cavalier_contours ={ path = "../cavalier_contours/cavalier_contours"}
 indexmap = { version="2.0.0", features=["serde"] }
 pretty-hex = "0.4.0"
 once_cell_serde = "1.17.1"
@@ -86,7 +88,7 @@ chrono = "0.4.31"
 custom_debug = "0.5.1"
 # sea-query = "0.30.2"
 
-surrealdb = { path = "/Users/dongpengcheng/surreal_db/surrealdb/lib" }
+surrealdb = { path = "/Users/dongpengcheng/surreal_db/surrealdb/lib", default-features = false, features = ["protocol-ws"]}
 
 #surrealdb = { path = "../../surrealdb/lib" }
 num-traits = "0.2.17"
@@ -95,6 +97,7 @@ petgraph = { version = "0.6.4", features = ["serde-1"] }
 cached = { version = "0.46.1", features = ["wasm", "async", "proc_macro"]}
 async-recursion = "1.0.5"
 num_enum = "0.7.1"
+cgmath = "0.18.0"
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

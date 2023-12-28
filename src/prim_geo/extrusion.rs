@@ -66,7 +66,7 @@ impl BrepShapeTrait for Extrusion {
         if self.verts.len() < 3 {
             return None;
         }
-        let mut wire = Wire::new();
+        let wire: Wire;
         if let CurveType::Spline(thick) = self.cur_type {
             wire = gen_spline_wire(&self.verts, thick).ok()?;
         } else {

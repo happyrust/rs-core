@@ -1,15 +1,16 @@
-use glam::Vec3;
+use cgmath::Basis2;
+use glam::{DVec3, Quat, Vec3};
 use serde_derive::{Deserialize, Serialize};
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
 
 use crate::shape::pdms_shape::{BrepMathTrait, LEN_TOL};
-use crate::tool::float_tool::f32_round_2;
-use crate::tool::float_tool::vec3_round_2;
+use crate::tool::float_tool::*;
+use crate::tool::float_tool::{cal_vec2_hash_string, cal_xy_hash_string, vec3_round_2};
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 
+use std::collections::HashMap;
 use std::f32::consts::PI;
-use std::hash::Hasher;
 
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::{Edge, Wire};
@@ -383,8 +384,113 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
     Ok(Wire::from_edges(&edges)?)
 }
 
+pub fn gen_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck_modeling::Wire> {
+    use cavalier_contours::polyline::*;
+    use cgmath::prelude::*;
+    use truck_modeling::{builder, Vertex, Wire};
+    if pts.len() < 3 || fradius_vec.len() != pts.len() {
+        return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
+    }
+    let mut polyline = Polyline::new_closed();
+    for i in 0..pts.len() {
+        polyline.add(pts[i].x as f64, pts[i].y as f64, 0.0);
+    }
+
+    for (i, &r) in fradius_vec.into_iter().enumerate() {
+        let r = r as f64;
+        if r.abs() < 0.01 {
+            continue;
+        }
+        // dbg!(r);
+        let c_pt = pts[i].as_dvec3().truncate();
+        let p_pt = pts[(i + pts.len() - 1) % pts.len()].as_dvec3().truncate();
+        let n_pt = pts[(i + 1) % pts.len()].as_dvec3().truncate();
+        //以 c_pt 为圆心， r为半径，算出两个端点
+        let p_dir = (p_pt - c_pt).normalize();
+        let n_dir = (n_pt - c_pt).normalize();
+        let p_pt = c_pt + p_dir * r;
+        let n_pt = c_pt + n_dir * r;
+        // dbg!((p_dir, n_dir));
+        let angle = n_dir.angle_between(p_dir);
+        // dbg!(angle.to_degrees());
+        // dbg!((angle / 4.0).tan());
+        let bulge = angle.signum() * ((PI as f64 - angle.abs()) / 4.0).tan();
+        let bulge = f64_ceil_3(bulge);
+        // dbg!(bulge);
+
+        let mut cut_pline = Polyline::new_closed();
+        cut_pline.add(p_pt.x, p_pt.y, 0.0);
+        cut_pline.add(c_pt.x, c_pt.y, 0.0);
+        cut_pline.add(n_pt.x, n_pt.y, -bulge);
+        // dbg!(cut_pline.area());
+        // dbg!(&cut_pline);
+        // cut_pline.arcs_to_approx_lines(error_distance = 0.01);
+        // let pline_as_lines = cut_pline.arcs_to_approx_lines(1e-1).unwrap();
+        // dbg!(pline_as_lines.area());
+        // cut_pline.add(n_pt.x, n_pt.y, 0.0);
+        let mut result = polyline.boolean(&cut_pline, BooleanOp::Not);
+        // let mut result = polyline.boolean(&pline_as_lines, BooleanOp::Not);
+        if result.pos_plines.len() != 0 
+        {
+            polyline = result.pos_plines.remove(0).pline;
+        }
+    }
+    //TODO 暂时改成直线段
+    let polyline = polyline.arcs_to_approx_lines(1e-1).unwrap();
+    let new_polyline = if let Some(p) = polyline.remove_redundant(0.01) {
+        p
+    } else {
+        polyline
+    };
+
+    // dbg!(new_polyline.vertex_count());
+    // dbg!(&pts);
+    // dbg!(&fradius_vec);
+    let mut wire = Wire::new();
+
+    //将polyline 转换成wire
+    let first_vert = builder::vertex(Point3::new(new_polyline[0].x, new_polyline[0].y, 0.0));
+    let mut prev_vert = first_vert.clone();
+    let count = new_polyline.vertex_count();
+    for (index, (i, j)) in new_polyline.iter_segments().into_iter().enumerate() {
+        let pt = Point3::new(j.x, j.y, 0.0);
+        let vert = if index == count - 1 {
+            first_vert.clone()
+        } else {
+            builder::vertex(pt)
+        };
+        if !i.bulge_is_zero() {
+            // dbg!(i.bulge);
+            let h_angle = 2.0 * i.bulge;
+            let vec = pt - prev_vert.point();
+            // dbg!(&vec);
+            let v = vec.normalize();
+            let new_v = Basis2::from_angle(Rad(-h_angle)).rotate_vector(v.truncate());
+            let s = i.bulge.abs() * vec.magnitude() / 2.0;
+            // dbg!(s);
+            let transit = prev_vert.point() + vec / 2.0 + new_v.extend(0.0) * s;
+
+            // dbg!(prev_vert.point());
+            // dbg!(vert.point());
+
+            wire.push_back(builder::circle_arc(
+                &prev_vert,
+                &vert,
+                Point3::new(transit.x, transit.y, 0.0),
+            ));
+            // wire.push_back(builder::line(&prev_vert, &vert));
+        } else {
+            wire.push_back(builder::line(&prev_vert, &vert));
+        }
+        prev_vert = vert;
+    }
+    // dbg!(&wire);
+    Ok(wire)
+}
+
+///可以使用 cut 的办法
 /// 根据顶点信息和fradius半径，生成wire
-pub fn gen_wire(
+pub fn gen_wire_old(
     input_pts: &Vec<Vec3>,
     input_fradius_vec: &Vec<f32>,
 ) -> anyhow::Result<truck_modeling::Wire> {
@@ -416,6 +522,9 @@ pub fn gen_wire(
     // dbg!(&pts);
     // dbg!(&fradius_vec);
     let mut wire = Wire::new();
+
+    //使用boolean 运算来切割原来的线圈
+
     let ll = pts.len();
     let mut verts = vec![];
     let mut circle_indexs = vec![];
@@ -466,14 +575,14 @@ pub fn gen_wire(
             //     continue;
             // }
 
-            if pa_dist - b_len > 0.01{
+            if pa_dist - b_len > 0.01 {
                 verts.push(builder::vertex(vec3_round_2(p0).point3_without_z()));
             }
 
             verts.push(builder::vertex(vec3_round_2(transit_pt).point3_without_z()));
             circle_indexs.push(verts.len() - 1);
 
-            if pb_dist - b_len > 0.01{
+            if pb_dist - b_len > 0.01 {
                 verts.push(builder::vertex(vec3_round_2(p1).point3_without_z()));
             }
         }

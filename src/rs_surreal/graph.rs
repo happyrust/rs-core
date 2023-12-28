@@ -87,7 +87,7 @@ pub async fn query_filter_ancestors(
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
             let execution_time = stats.execution_time;
-            dbg!(&execution_time);
+            // dbg!(&execution_time);
             // let s: Vec<RefU64> = result?;
             return Ok(result);
         }

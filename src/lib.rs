@@ -1,4 +1,3 @@
-#![feature(mixed_integer_ops)]
 #![feature(let_chains)]
 #![feature(trivial_bounds)]
 
@@ -70,6 +69,8 @@ pub mod types;
 pub mod math;
 
 pub mod file_helper;
+
+pub mod spatial;
 
 pub use crate::types::*;
 pub use rs_surreal::*;

@@ -55,7 +55,7 @@ pub fn find_noun_path(start_noun: &str, end_noun: &str) -> Vec<Vec<String>> {
 //TODO: 合并方法, 调用一个统一的
 ///沿着owner一直往上找到过滤的节点
 pub fn gen_noun_outcoming_relate_sql(start_noun: &str, filter_nouns: &[&str]) -> Option<String> {
-    dbg!(&start_noun);
+    // dbg!(&start_noun);
     let paths = filter_nouns
         .into_iter()
         .map(|n| {

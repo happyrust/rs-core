@@ -55,6 +55,9 @@ v_password = ""
 v_port = "8003"
 #v_port = "38389"
 
+pe_chunk = 5000
+att_chunk = 300
+
 #mqtt 事件 ip
 mqtt_host = "50c170h624.zicp.vip"
 mqtt_port = 41761

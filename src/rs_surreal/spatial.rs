@@ -1,4 +1,4 @@
-use std::f32::consts::E;
+use std::{f32::consts::E, collections::HashSet, time::Instant};
 
 use crate::{
     consts::HAS_PLIN_TYPES,
@@ -9,13 +9,37 @@ use crate::{
         direction_parse::parse_expr_to_dir,
         math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str},
     },
-    NamedAttrMap, RefU64, SUL_DB,
+    NamedAttrMap, RefU64, SUL_DB, GLOBAL_AABB_TREE, accel_tree::acceleration_tree::QueryRay,
 };
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
 use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
 use glam::{DVec3, Mat3, Quat, Vec3};
+use parry3d::query::Ray;
+use serde::{Deserialize, Serialize};
+use parry3d::bounding_volume::Aabb;
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GeomInstQuery{
+    #[serde(alias="id")]
+    pub refno: RefU64,
+    pub world_aabb: Aabb,
+    pub world_trans: Transform,
+    pub insts: Vec<ModelHashInst>,
+}
+
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct ModelHashInst {
+    #[serde_as(as = "DisplayFromStr")]
+    pub geo_hash: u64,
+    pub transform: Transform,
+    #[serde(default)]
+    pub is_tubi: bool,
+}
 
 //获得世界坐标系
 ///使用cache，需要从db manager里移除出来
@@ -134,17 +158,14 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     dbg!(quat_to_pdms_ori_xyz_str(&quat));
                 }
             }
-            dbg!(has_cut_back);
+            // dbg!(has_cut_back);
         }
-
-        
-
         //todo fix 处理 posl的计算
         if att.contains_key("POSL") {
             let pos_line = att.get_str("POSL").unwrap_or("NA");
             let pos_line = if pos_line.is_empty() { "NA" } else { pos_line };
             let delta_vec = att.get_vec3("DELP").unwrap_or_default();
-            dbg!(pos_line);
+            // dbg!(pos_line);
             //plin里的位置偏移
             let mut plin_pos = Vec3::ZERO;
             let mut pline_plax = Vec3::X;
@@ -169,15 +190,15 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
                     plin_pos = param.pt;
                     pline_plax = param.plax;
-                    dbg!(pos_line);
-                    dbg!(&param);
+                    // dbg!(pos_line);
+                    // dbg!(&param);
                 }
                 if let Ok(Some(own_param)) =
                     crate::query_pline(plin_owner, own_pos_line.into()).await
                 {
                     plin_pos -= own_param.pt;
-                    dbg!(own_pos_line);
-                    dbg!(&own_param);
+                    // dbg!(own_pos_line);
+                    // dbg!(&own_param);
                 }
             }
             let y_axis = if att.contains_key("YDIR") {
@@ -429,4 +450,25 @@ pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
     }
 
     Ok(paths)
+}
+
+
+///沿着 dir 方向找到最近的目标构件
+pub async fn query_neareast_along_axis(refno: RefU64, dir: Vec3, target_type: &str) -> anyhow::Result<RefU64> {
+    let pos = get_world_transform(refno).await?.unwrap_or_default().translation;
+    //不用 room 的方法查询一次，直接用射线去查找
+    let ray = Ray::new(pos.into(), dir.into());
+    // dbg!(&ray);
+    let rtree = GLOBAL_AABB_TREE.read().await;
+    let mut filter = HashSet::new();
+    filter.insert(target_type.to_string());
+    // let time = Instant::now();
+    let nearest = rtree.query_nearest_by_ray(
+        QueryRay::new(ray, filter, true)
+    ).await;
+    // dbg!(time.elapsed());
+    //查询了之后，过滤 type
+    //然后加入是否使用 mesh 去判断最终的结果
+
+    Ok(nearest)
 }

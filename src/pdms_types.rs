@@ -497,14 +497,12 @@ pub struct EleGeosInfo {
     #[serde(deserialize_with = "de_refno_from_key_str")]
     #[serde(rename = "_key")]
     pub refno: RefU64,
-    //todo 这里的数据是重复的，需要复用
     //有哪一些 geo insts 组成
     //也可以通过edge 来组合
     #[serde(default)]
     pub cata_hash: Option<String>,
     //记录对应的元件库参考号
     #[serde(default)]
-    // #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(skip)]
     #[with(rkyv::with::Skip)]
     pub cata_refno: Option<RefU64>,
@@ -514,6 +512,7 @@ pub struct EleGeosInfo {
     pub generic_type: PdmsGenericType,
     pub aabb: Option<Aabb>,
     //相对世界坐标系下的变换矩阵 rot, translation, scale
+    //现在保存在 relate 里了，不需要再存储到图数据库里
     pub world_transform: Transform,
 
     #[serde(default)]
@@ -521,6 +520,9 @@ pub struct EleGeosInfo {
 
     #[serde(default)]
     pub geo_type: GeoBasicType,
+
+    #[serde(skip, default)]
+    pub ptset_map: BTreeMap<i32, CateAxisParam>,
 }
 
 pub fn de_refno_from_key_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
@@ -1020,6 +1022,26 @@ impl Clone for PlantGeoData {
     }
 }
 
+impl PlantGeoData{
+    pub fn load_from_file_by_hash(hashes: u64, path: &str) -> Self{
+        let file_path = format!("{path}/{}.mesh", hashes);
+        if let Ok(d) = Self::deserialize_from_bin_file(&file_path) {
+            return d;
+        }
+        Self::default()
+    }
+    pub fn load_from_file_by_hashes(hashes: Vec<u64>, path: &str) -> Vec<Self>{
+        let mut r = vec![];
+        for h in hashes {
+            let file_path = format!("{path}/{}.mesh", h);
+            if let Ok(d) = Self::deserialize_from_bin_file(&file_path) {
+                r.push(d);
+            }
+        }
+        r
+    }
+}
+
 fn de_plant_mesh<'de, D>(deserializer: D) -> Result<Option<PlantMesh>, D::Error>
 where
     D: Deserializer<'de>,
@@ -1227,7 +1249,7 @@ pub struct EleInstGeosData {
     pub aabb: Option<Aabb>,
     pub type_name: String,
 
-    #[serde(default)]
+    #[serde(skip)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
 }
 

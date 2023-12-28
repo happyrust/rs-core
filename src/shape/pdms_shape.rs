@@ -1,7 +1,8 @@
 use glam::DMat4;
+use hash32::FnvHasher;
 use std::fmt::Debug;
 use std::fs::File;
-use std::hash::{Hash, Hasher};
+use std::hash::{Hash, Hasher, DefaultHasher};
 use std::io::Write;
 
 use anyhow::anyhow;
@@ -322,6 +323,15 @@ dyn_clone::clone_trait_object!(BrepShapeTrait);
     Debug,
 )]
 pub struct RsVec3(pub Vec3);
+
+impl RsVec3{
+    pub fn gen_hash(&self) -> u64{
+        let mut hasher = DefaultHasher::default();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
+}
+
 impl Hash for RsVec3 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         format!("{:.5}", self.x).hash(state);

@@ -106,6 +106,7 @@ pub struct GmseParamData {
     pub plin_plax: Vec3,
 }
 
+///需要存储到数据库中
 #[derive(
     Clone,
     PartialEq,

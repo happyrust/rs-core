@@ -7,7 +7,6 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use approx::abs_diff_eq;
 use approx::AbsDiffEq;
-use geo::{point, BooleanOps, Contains, Intersects, LineString, Polygon};
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::hash::{Hash, Hasher};

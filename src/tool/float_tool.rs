@@ -1,7 +1,43 @@
 use std::hash::{Hash, Hasher};
-use glam::Vec3;
-// use fixed::types::I24F8;
+use glam::{Vec3, Vec2};
 use ordered_float::*;
+
+pub fn cal_vec3_hash(v: Vec3) -> u64 {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    hash_vec3(&v, &mut hasher);
+    hasher.finish()
+}
+
+pub fn cal_vec2_hash(v: Vec2) -> u64 {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    hash_f32(v[0], &mut hasher);
+    hash_f32(v[1], &mut hasher);
+    hasher.finish()
+}
+
+//保留三位有效数字的拼接
+pub fn cal_vec2_hash_string(v: Vec2) -> String {
+    format!("{:.3},{:.3}", v[0], v[1])
+}
+
+//保留三位有效数字的拼接
+pub fn cal_xy_hash_string(x: f32, y: f32) -> String {
+    format!("{:.3},{:.3}", x, y)
+}
+
+pub fn cal_xy_hash(x: f32, y: f32) -> u64 {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    hash_f32(x, &mut hasher);
+    hash_f32(y, &mut hasher);
+    hasher.finish()
+}
+
+// pub fn cal_dxy_hash(x: f32, y: f32) -> u64 {
+//     let mut hasher = std::collections::hash_map::DefaultHasher::new();
+//     hash_f32(x, &mut hasher);
+//     hash_f32(y, &mut hasher);
+//     hasher.finish()
+// }
 
 #[inline]
 pub fn hash_vec3<T: Hasher>(v: &Vec3, hasher: &mut T) {
@@ -74,6 +110,16 @@ pub fn f64_round_3(v: f64) -> f64 {
 #[inline]
 pub fn f64_round_2(v: f64) -> f64 {
     (v * 100.0).round() / 100.0f64    //以防止溢出
+}
+
+#[inline]
+pub fn f64_ceil_2(v: f64) -> f64 {
+    (v * 100.0).ceil() / 100.0f64    //以防止溢出
+}
+
+#[inline]
+pub fn f64_ceil_3(v: f64) -> f64 {
+    (v * 1000.0).ceil() / 1000.0f64    //以防止溢出
 }
 
 #[inline]
