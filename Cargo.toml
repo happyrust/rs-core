@@ -71,7 +71,7 @@ serde_with = "3.3.0"
 
 manifold-sys = { path = "../manifold-sys", optional = true }
 opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
-# geo = "0.27.0"
+geo = "0.27.0"
 cavalier_contours ={ path = "../cavalier_contours/cavalier_contours"}
 indexmap = { version="2.0.0", features=["serde"] }
 pretty-hex = "0.4.0"

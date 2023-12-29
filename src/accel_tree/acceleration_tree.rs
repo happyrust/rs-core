@@ -84,6 +84,8 @@ pub struct QueryRay {
     pub solid: bool,
     pub min_dist: Cell<f32>,
     pub min_refnos: RefCell<HashSet<RefU64>>,
+    //当只有一个结果时，是否跳过检查mesh
+    pub skip_mesh_check: bool,
 }
 
 impl QueryRay {
@@ -96,6 +98,7 @@ impl QueryRay {
             min_dist: Cell::new(f32::MAX),
             min_refnos: RefCell::new(HashSet::default()),
             solid,
+            skip_mesh_check: true,
         }
     }
 }
@@ -215,11 +218,12 @@ impl AccelerationTree {
             .tree
             .locate_with_selection_function(&ray)
             .collect::<Vec<_>>();
-        // RefU64::default()
-        // ray.min_refno.get()
         let refnos = ray.min_refnos.borrow();
         if refnos.is_empty() {
             return RefU64::default();
+        }
+        if ray.skip_mesh_check && refnos.len() == 1 {
+            return refnos.iter().next().unwrap().clone();
         }
         dbg!(&refnos);
         //检查是否真的和ray相交, 根据 profile 判断吗？
@@ -234,7 +238,7 @@ impl AccelerationTree {
         .query(format!(r#"
             let $a = (select value (select * from ->inst_relate where type>=0 order by type desc)[0] from [{}])[where $this != none];
             select in.id as refno, aabb.d as world_aabb, world_trans.d as world_trans, 
-            (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none) as insts from $a
+            (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none) as insts from $a where world_trans.d!=none
             "#, pes))
         .await
         .unwrap();
@@ -244,7 +248,7 @@ impl AccelerationTree {
             for inst in &g.insts {
                 let geo_data = PlantGeoData::load_from_file_by_hash(
                     inst.geo_hash,
-                    "/Users/dongpengcheng/work/rs-plant3-d/assets/meshes",
+                    "assets/meshes",
                 );
                 if let Some(mesh) = geo_data.mesh {
                     let trans = g.world_trans * inst.transform;
@@ -271,10 +275,4 @@ impl AccelerationTree {
         return RefU64::default();
     }
 
-    // pub fn query_neareast_by_ray<'a>(&'a self, ray: QueryRay) -> impl Iterator<Item = RefU64> + 'a {
-    //     self.tree
-    //         .nearest_neighbor(query_point)
-    //         // .locate_with_selection_function(ray)
-    //         .map(|bb| bb.refno)
-    // }
 }

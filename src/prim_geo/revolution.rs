@@ -178,7 +178,7 @@ impl BrepShapeTrait for Revolution {
                 let axis_on_edge = self.verts.iter().any(|x| {
                     x.y.abs().abs_diff_eq(&0.0, 0.01) && x.z.abs().abs_diff_eq(&0.0, 0.01)
                 });
-                dbg!(axis_on_edge);
+                // dbg!(axis_on_edge);
                 //如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
                 if axis_on_edge && angle.abs() >= (core::f64::consts::TAU - 0.01) {
                     let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64));

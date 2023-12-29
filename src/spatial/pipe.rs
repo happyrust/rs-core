@@ -9,8 +9,9 @@ pub async fn create_valve_floor_relations() -> anyhow::Result<()> {
     loop {
         //需要过滤
         //为了测试，暂时只取两个 db 1112 7999
+        //where REFNO.dbnum in [1112, 7999] 
         let sql = format!(
-            "select value id from VALV where REFNO.dbnum in [1112, 7999] start {} limit {page_count}",
+            "select value id from VALV start {} limit {page_count}",
             offset
         );
         let mut response = SUL_DB.query(&sql).await?;
@@ -19,6 +20,7 @@ pub async fn create_valve_floor_relations() -> anyhow::Result<()> {
         if refnos.is_empty() {
             break;
         }
+        let mut valve_floor_relations = vec![];
         for refno in refnos {
             let nearest = query_neareast_along_axis(refno, Vec3::NEG_Z, "FLOOR")
                 .await
@@ -27,7 +29,13 @@ pub async fn create_valve_floor_relations() -> anyhow::Result<()> {
                 continue;
             }
             dbg!(nearest);
+            valve_floor_relations.push(format!(
+                r#"relate pe:{}->spatial_axis_belong->pe:{} set dir="-Z""#,
+                refno, nearest
+            ));
         }
+        //保存到 SUL_DB
+        SUL_DB.query(valve_floor_relations.join(";")).await?;
         offset += page_count;
     }
 

@@ -455,6 +455,7 @@ pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
 
 ///沿着 dir 方向找到最近的目标构件
 pub async fn query_neareast_along_axis(refno: RefU64, dir: Vec3, target_type: &str) -> anyhow::Result<RefU64> {
+    dbg!(refno);
     let pos = get_world_transform(refno).await?.unwrap_or_default().translation;
     //不用 room 的方法查询一次，直接用射线去查找
     let ray = Ray::new(pos.into(), dir.into());
@@ -462,11 +463,9 @@ pub async fn query_neareast_along_axis(refno: RefU64, dir: Vec3, target_type: &s
     let rtree = GLOBAL_AABB_TREE.read().await;
     let mut filter = HashSet::new();
     filter.insert(target_type.to_string());
-    // let time = Instant::now();
     let nearest = rtree.query_nearest_by_ray(
         QueryRay::new(ray, filter, true)
     ).await;
-    // dbg!(time.elapsed());
     //查询了之后，过滤 type
     //然后加入是否使用 mesh 去判断最终的结果
 
