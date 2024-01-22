@@ -27,6 +27,21 @@ pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
     Ok(pe)
 }
 
+#[cached(result = true)]
+pub async fn get_design_dbnos(mdb_name: String) -> anyhow::Result<Vec<i32>> {
+    let mdb = if mdb_name.starts_with("/"){
+        mdb_name
+    }else{
+        format!("/{}", mdb_name)
+    };
+    let mut response = SUL_DB
+        .query("select value (select value DBNO from CURD.refno.* where STYP=1) from only MDB where NAME=$mdb limit 1")
+        .bind(("mdb", mdb))
+        .await?;
+    let dbnos: Vec<i32> = response.take(0)?;
+    Ok(dbnos)
+}
+
 ///查询到祖先节点列表
 #[cached(result = true)]
 pub async fn get_ancestor(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
