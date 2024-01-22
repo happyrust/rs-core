@@ -33,7 +33,7 @@ pub async fn create_valve_floor_relations() -> anyhow::Result<()> {
                 r#"relate pe:{}->spatial_axis_belong->pe:{} set dir="-Z""#,
                 refno, nearest
             ));
-        }
+        } 
         //保存到 SUL_DB
         SUL_DB.query(valve_floor_relations.join(";")).await?;
         offset += page_count;

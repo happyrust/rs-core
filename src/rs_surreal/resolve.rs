@@ -211,6 +211,8 @@ pub fn eval_str_to_f64(
             let c2 = caps.get(2).map_or("", |m| m.as_str());
             let is_tubi = context.is_tubi();
             // dbg!(input_expr);
+            let expr_val = "".to_string();
+            #[cfg(not(target_arch = "wasm32"))]
             let expr_val = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async move {
                     //如果是直段，直接取当前的参考号
@@ -247,13 +249,6 @@ pub fn eval_str_to_f64(
                 })
             });
             new_exp = new_exp.replace(s, expr_val.as_str());
-            // dbg!(&new_exp);
-            // maybe need?
-            // let target_att = aios_core::get_named_attmap(target_refno).await?;
-            // dbg!(&target_refno);
-            // if let Some(value) = target_att.get_as_string(c1) {
-            //     new_exp = new_exp.replace(s, value.as_str());
-            // }
         }
     }
 
@@ -341,6 +336,8 @@ pub fn eval_str_to_f64(
                 let refno_str = context.get("RS_DES_REFNO").unwrap();
                 let refno = RefU64::from_str(refno_str.as_str()).unwrap();
                 // dbg!(&k);
+                let uda_map = NamedAttrMap::default();
+                #[cfg(not(target_arch = "wasm32"))]
                 let uda_map = tokio::task::block_in_place(|| {
                     tokio::runtime::Handle::current().block_on(async move {
                         let d = crate::get_named_attmap_with_uda(refno, false)

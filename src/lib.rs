@@ -58,6 +58,7 @@ pub mod water_calculation;
 pub mod noun_graph;
 
 pub mod data_state;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod test;
 
 #[cfg(feature = "sea-orm")]
@@ -70,6 +71,7 @@ pub mod math;
 
 pub mod file_helper;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub mod spatial;
 
 pub use crate::types::*;

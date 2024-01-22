@@ -136,9 +136,10 @@ impl PlantMesh {
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh(&self) -> Mesh {
         use bevy_render::mesh::Indices;
+        use bevy_render::render_asset::RenderAssetPersistencePolicy;
         use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 
-        let mut mesh = Mesh::new(TriangleList);
+        let mut mesh = Mesh::new(TriangleList, RenderAssetPersistencePolicy::Keep);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
         // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
@@ -407,8 +408,14 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// box
     /// cylinder
     /// sphere
+    #[cfg(not(target_arch = "wasm32"))]
     fn gen_unit(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
         self.gen_unit_shape().gen_plant_geo_data(tol_ratio)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn gen_unit(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
+        None
     }
 
     ///获得缩放向量

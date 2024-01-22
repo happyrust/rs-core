@@ -11,15 +11,21 @@ render = ["dep:bevy_render"]
 gen_model = ["dep:manifold-sys"]
 truck = []
 
+# [lib]
+# name = "rs_core"
+# crate-type = ["staticlib", "cdylib"]
+
 [dependencies]
+strum = { version = "0.25.0", features = ["derive"] }
+strum_macros = "0.25"
 smol_str = { version = "0.2.0", features = ["serde"] }
-glam = { version = "0.24.0", features = ["serde", "rkyv"]}
+glam = { version = "0.25.0", features = ["serde", "rkyv"]}
 id_tree = { version = "1.8.0", features = ["serde_support"] }
 dashmap = { version = "5.2.0", features = ["serde"] }
-hexasphere = "9.1.0"
+hexasphere = "10.0.0"
 anyhow = "1.0.57"
 lyon = "1.0.0"
-nalgebra = { path="../nalgebra", features = ["serde", "rkyv", "glam024"] }
+nalgebra = { path="../nalgebra", features = ["serde", "rkyv", "glam025", "convert-glam025"] }
 parry3d = { path="../parry/crates/parry3d", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 parry2d = { path="../parry/crates/parry2d", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 approx = "0.5.1"
@@ -67,10 +73,8 @@ truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
 truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio"}
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.3.0"
-#config = "0.13.3"
 
-manifold-sys = { path = "../manifold-sys", optional = true }
-opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
+
 geo = "0.27.0"
 cavalier_contours ={ path = "../cavalier_contours/cavalier_contours"}
 indexmap = { version="2.0.0", features=["serde"] }
@@ -86,11 +90,8 @@ proc-macro2 = "1.0.69"
 rust-format = "0.3.4"
 chrono = "0.4.31"
 custom_debug = "0.5.1"
-# sea-query = "0.30.2"
 
 surrealdb = { path = "/Users/dongpengcheng/surreal_db/surrealdb/lib", default-features = false, features = ["protocol-ws"]}
-
-#surrealdb = { path = "../../surrealdb/lib" }
 num-traits = "0.2.17"
 regex = "1.10.2"
 petgraph = { version = "0.6.4", features = ["serde-1"] }
@@ -98,10 +99,11 @@ cached = { version = "0.46.1", features = ["wasm", "async", "proc_macro"]}
 async-recursion = "1.0.5"
 num_enum = "0.7.1"
 cgmath = "0.18.0"
+tokio = { version = "1", features = ["rt", "sync"] }
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1.29.1", features = ["full"] }
+tokio = { version = "1", features = ["rt-multi-thread"] }
 redb = "1.4.0"
-# # sea-orm = { version = "0.12.4", features = ["sqlx-all", "runtime-tokio"]}
-# sqlx = { version = "0.7.2", features = ["runtime-tokio"] }
+manifold-sys = { path = "../manifold-sys", optional = true }
+opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }

@@ -39,6 +39,7 @@ use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::str::FromStr;
+use std::string::ToString;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -343,6 +344,9 @@ bitflags! {
     Deserialize,
     Default,
     Clone,
+    // Display,
+    strum_macros::Display,
+    strum_macros::EnumString,
     Debug,
     Copy,
     Eq,
@@ -549,21 +553,32 @@ where
 
 impl EleGeosInfo {
 
-    pub fn id(&self) -> String {
+    pub fn id(&self) -> u64 {
+        self.cata_hash.as_ref().map(|x| x.parse().ok()).flatten().unwrap_or(*self.refno)
+    }
+
+    pub fn id_str(&self) -> String {
         self.cata_hash.clone().unwrap_or(self.refno.to_string())
     }
 
     ///生成surreal的json文件
     pub fn gen_sur_json(&self) -> String {
         let id = self.id();
-        let json_string = serde_json::to_string_pretty(&serde_json::json!({
-            "id": id,
+        let mut json_string = serde_json::to_string_pretty(&serde_json::json!({
+            // "id": self.,
             "visible": self.visible,
             "generic_type": self.generic_type,
             "flow_pt_indexs": self.flow_pt_indexs.clone(),
             "geo_type": self.geo_type.clone(),
         }))
         .unwrap();
+
+        json_string.remove(json_string.len() - 1);
+        json_string.push_str(",");
+        json_string.push_str(&format!(r#""id": inst_info:⟨{}⟩ "#, id));
+        json_string.push_str("}");
+
+
         json_string
     }
 
@@ -1086,7 +1101,10 @@ impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
-        let mut mesh = bevy_render::prelude::Mesh::new(TriangleList);
+        use bevy_render::render_asset::RenderAssetPersistencePolicy;
+
+        let mut mesh = bevy_render::prelude::Mesh::new(TriangleList, RenderAssetPersistencePolicy::Unload);
+        // let mut mesh = bevy_render::prelude::Mesh::new(TriangleList);
         let d = self.mesh.as_ref()?;
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, d.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, d.normals.clone());
@@ -1254,6 +1272,11 @@ pub struct EleInstGeosData {
 }
 
 impl EleInstGeosData {
+
+    pub fn id(&self) -> u64 {
+        self.inst_key.parse().unwrap_or(*self.refno)
+    }
+
     ///生成surreal的json文件
     pub fn gen_sur_json(&self) -> String {
         let mut json_string = serde_json::to_string_pretty(&serde_json::json!({

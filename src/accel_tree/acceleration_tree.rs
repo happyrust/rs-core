@@ -196,6 +196,7 @@ impl AccelerationTree {
     }
 
     //后面可以用数据库存储加载
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn serialize_to_bin_file(&self) -> anyhow::Result<bool> {
         // let mut file = File::create(format!(r"accel_tree.bin{}", "")).unwrap();
         let mut file = File::create("accel_tree.bin")?;
@@ -204,6 +205,7 @@ impl AccelerationTree {
         Ok(true)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn load_from_bin_file(&self) -> anyhow::Result<Self> {
         let mut file = File::open("accel_tree.bin").unwrap();
         let mut buf: Vec<u8> = Vec::new();

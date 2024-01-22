@@ -149,11 +149,6 @@ impl BrepShapeTrait for Revolution {
             return None;
         }
         let wire = gen_wire(&self.verts, &self.fradius_vec).unwrap();
-        // let axis_on_edge = wire.edge_iter().any(|x| {
-        //      (x.back().point().y.abs().abs_diff_eq(&0.0, 0.0001) &&
-        //          x.front().point().y.abs().abs_diff_eq(&0.0, 0.0001))
-        // });
-        // dbg!(axis_on_edge);
 
         //如果截面包含了原点，就考虑用分成两块的办法
         // let contains_origin = polygon.contains(&point!{ x: 0.0, y: 0.0 });
@@ -178,35 +173,42 @@ impl BrepShapeTrait for Revolution {
                 let axis_on_edge = self.verts.iter().any(|x| {
                     x.y.abs().abs_diff_eq(&0.0, 0.01) && x.z.abs().abs_diff_eq(&0.0, 0.01)
                 });
-                // dbg!(axis_on_edge);
+
                 //如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
                 if axis_on_edge && angle.abs() >= (core::f64::consts::TAU - 0.01) {
+                    dbg!(axis_on_edge);
                     let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64));
                     let mut shell = s.into_boundaries().pop()?;
                     let len = shell.len();
+                    // dbg!(len);
                     shell.remove(len - 1);
+                    // shell.remove(len - 2);
                     shell.remove(0);
                     // if shell.is_none() {
                     //     dbg!(&self);
                     //     return None;
                     // }
+
                     let rev_face = face.inverse();
                     let rev_s = builder::rsweep(&rev_face, rot_pt, -rot_dir, Rad(PI as f64));
                     let mut r_shell = rev_s.into_boundaries().pop()?;
                     let len = r_shell.len();
+                    // dbg!(len);
                     r_shell.remove(len - 1);
+                    // r_shell.remove(len - 2);
                     r_shell.remove(0);
                     shell.append(&mut r_shell);
+
+                    //将s缩小100倍
+                    // let new_s = builder::transformed(&shell, Matrix4::from_scale(0.01));
+                    // let json = serde_json::to_vec_pretty(&new_s).unwrap();
+                    // std::fs::write("revo.json", json).unwrap();
+
                     return Some(shell);
                 }
 
                 {
                     let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
-                    //将s缩小100倍
-                    // let new_s = transfor
-                    // let new_s = builder::transformed(&s, Matrix4::from_scale(0.01));
-                    // let json = serde_json::to_vec_pretty(&new_s).unwrap();
-                    // std::fs::write("revo.json", json).unwrap();
                     let shell = s.into_boundaries().pop();
                     if shell.is_none() {
                         dbg!(&self);
