@@ -139,7 +139,7 @@ impl PlantMesh {
         use bevy_render::mesh::Indices;
         use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 
-        let mut mesh = Mesh::new(TriangleList, RenderAssetUsages::RENDER_WORLD);
+        let mut mesh = Mesh::new(TriangleList, RenderAssetUsages::default());
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
         // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);

@@ -7,7 +7,7 @@ use std::sync::Arc;
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     // let pe = rs_surreal::get_pe("17496/254421".into()).await.unwrap();
-    let refno = "13292_0".into();
+    let refno = "17496_105691".into();
     let pe = rs_surreal::get_pe(refno)
         .await
         .unwrap();

@@ -144,16 +144,20 @@ impl BrepShapeTrait for LSnout {
         let mut circle2 = builder::rsweep(&v2, p1.point3(), rot_axis, Rad(7.0));
         let c2 = circle2.clone();
 
-        // dbg!(circle1.len(), circle2.len());
+        dbg!((circle1.len(), circle2.len()));
 
         let new_wire_1 = circle1.split_off((0.5 * circle1.len() as f32) as usize);
         let new_wire_2 = circle2.split_off((0.5 * circle2.len() as f32) as usize);
-        let face1 = builder::homotopy(new_wire_1.front().unwrap(), &new_wire_2.front().unwrap());
-        let face2 = builder::homotopy(&circle1.front().unwrap(), &circle2.front().unwrap());
+        dbg!((circle1.len(), circle2.len()));
+        dbg!((new_wire_1.len(), new_wire_2.len()));
+        let shell1 = builder::try_wire_homotopy(&new_wire_1, &new_wire_2).ok()?;
+        let shell2 = builder::try_wire_homotopy(&circle1, &circle2).ok()?;
 
         if let Ok(disk1) = builder::try_attach_plane(&vec![c1.inverse()]) {
             if let Ok(disk2) = builder::try_attach_plane(&vec![c2]) {
-                let shell = Shell::from(vec![face1, face2,  disk1, disk2]);
+                let mut shell = Shell::from(vec![disk1, disk2]);
+                shell.extend(shell1);
+                shell.extend(shell2);
                 return Some(shell);
             }
         }
