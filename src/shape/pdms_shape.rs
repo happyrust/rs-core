@@ -28,6 +28,7 @@ use parry3d::shape::TriMesh;
 use std::io::BufWriter;
 use std::path::Display;
 use std::{slice, vec};
+use bevy_render::render_asset::RenderAssetUsages;
 use truck_base::bounding_box::BoundingBox;
 use truck_base::cgmath64::{Matrix4, Point3, Vector3, Vector4};
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
@@ -61,7 +62,7 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
                 Curve::Line(line) => vec![line.0, line.1].into_iter().collect(),
                 Curve::BSplineCurve(curve) => {
                     let bdb = curve.roughly_bounding_box();
-                    vec![*bdb.max(), *bdb.min()].into_iter().collect()
+                    vec![bdb.max(), bdb.min()].into_iter().collect()
                 }
                 Curve::NurbsCurve(curve) => curve.roughly_bounding_box(),
                 Curve::IntersectionCurve(_) => BoundingBox::new(),
@@ -136,14 +137,13 @@ impl PlantMesh {
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh(&self) -> Mesh {
         use bevy_render::mesh::Indices;
-        use bevy_render::render_asset::RenderAssetPersistencePolicy;
         use bevy_render::render_resource::PrimitiveTopology::TriangleList;
 
-        let mut mesh = Mesh::new(TriangleList, RenderAssetPersistencePolicy::Keep);
+        let mut mesh = Mesh::new(TriangleList, RenderAssetUsages::RENDER_WORLD);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
         // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-        mesh.set_indices(Some(Indices::U32(self.indices.clone())));
+        mesh.insert_indices(Indices::U32(self.indices.clone()));
         mesh
     }
 

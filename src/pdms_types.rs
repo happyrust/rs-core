@@ -1092,6 +1092,7 @@ use crate::types::attval::{AttrVal, AttrValAql};
 use crate::types::named_attvalue::NamedAttrValue;
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;
+use bevy_render::render_asset::RenderAssetUsages;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::primitives::Shape;
 #[cfg(feature = "sea-orm")]
@@ -1101,9 +1102,8 @@ impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
-        use bevy_render::render_asset::RenderAssetPersistencePolicy;
 
-        let mut mesh = bevy_render::prelude::Mesh::new(TriangleList, RenderAssetPersistencePolicy::Unload);
+        let mut mesh = bevy_render::prelude::Mesh::new(TriangleList, RenderAssetUsages::RENDER_WORLD);
         // let mut mesh = bevy_render::prelude::Mesh::new(TriangleList);
         let d = self.mesh.as_ref()?;
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, d.vertices.clone());
@@ -1115,7 +1115,7 @@ impl PlantGeoData {
         }
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
         //todo 是否需要优化索引
-        mesh.set_indices(Some(Indices::U32(d.indices.clone())));
+        mesh.insert_indices(Indices::U32(d.indices.clone()));
 
         Some((mesh, self.aabb))
     }

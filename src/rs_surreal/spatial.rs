@@ -154,7 +154,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 if let Some(opdir) = att.get_vec3("OPDI") {
                     //有自定义调节，需要选装到目标方向
                     let opdir = opdir.normalize();
-                    rotation = rotation * Quat::from_rotation_arc(c_t.local_z(), opdir);
+                    rotation = rotation * Quat::from_rotation_arc(*c_t.local_z(), opdir);
                     dbg!(quat_to_pdms_ori_xyz_str(&quat));
                 }
             }
