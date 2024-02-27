@@ -55,11 +55,11 @@ fn test_petgraph() {
 #[tokio::test]
 async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let refno = "17496/171102".into(); // Replace with your desired refno value
+    let refno = "25688/76331".into(); // Replace with your desired refno value
     let result = query_filter_all_bran_hangs(refno).await?;
     dbg!(&result);
 
-    let result = query_filter_deep_children(refno, CATA_WITHOUT_REUSE_GEO_NAMES.map(String::from).to_vec() ).await?;
+    let result = query_filter_deep_children(refno,vec!["FIXING".to_string()] ).await?;
     dbg!(&result);
 
     let refno = "17496/171180".into(); // Replace with your desired refno value
