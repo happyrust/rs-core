@@ -163,3 +163,21 @@ pub struct ShowModelInRangeEvent{
     pub refno:RefU64,
     pub range:f32,
 }
+
+
+///编校审草图结构体
+#[derive(Debug, Resource, Default, Clone, Serialize, Deserialize)]
+pub struct ReviewBluePrint {
+    pub file_name: String,
+    pub data: Vec<u8>,
+    pub user: String,
+    pub time: String,
+}
+
+
+///得到编校审上传图纸Event
+#[derive(Component, Clone, Debug, Default, Event, Serialize, Deserialize)]
+pub struct GetBluePrintEvent {
+    pub filter_type: String,
+    pub filter_value: String,
+}

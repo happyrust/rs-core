@@ -224,9 +224,6 @@ impl SendHoleData {
 }
 
 
-
-
-
 impl SendHoleDataToArango {
     pub fn to_ui_struct(self) -> SendHoleData {
         SendHoleData {
@@ -239,7 +236,7 @@ impl SendHoleDataToArango {
 //提资列表
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AuditDataVec {
- pub data:Vec<SendHoleDataToArango>
+    pub data: Vec<SendHoleDataToArango>,
 }
 
 //可提资物资信息
@@ -365,6 +362,23 @@ pub struct CableWeight {
     pub tray_weight: String,
     /// 电缆线重
     pub cable_weight: String,
+}
+
+
+//接收创建虚拟孔洞流程的结构体
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ForwardHoleData {
+    pub title: String,
+    //孔洞或埋件的key
+    pub hole_keys: Vec<String>,
+    pub embed_keys: Vec<String>,
+    pub jd_name: String,
+    pub sh_name: String,
+    pub sd_name: String,
+    // #[serde(default)]
+    // pub sz_name: String,
+    pub human_code: String,
+    pub memo: String,
 }
 
 #[test]
