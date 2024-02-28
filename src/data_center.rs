@@ -1,14 +1,14 @@
-use std::cell::Ref;
 use std::collections::HashMap;
 use bevy_ecs::prelude::Resource;
 use glam::Vec3;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 use crate::metadata_manager::FileBytes;
 use crate::types::*;
 use bevy_ecs::prelude::Component;
+use crate::schema::generate_basic_versioned_schema;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProject {
@@ -205,15 +205,16 @@ pub struct SendHoleDataToArango {
     pub form_data: SendHoleDataFormData,
 }
 
+///虚拟孔洞提资单数据
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
-pub struct SendHoleData {
-    #[serde(rename = "KeyValue")]
+pub struct TiziVirtualHoleData {
+    #[serde(rename = "id", alias="KeyValue")]
     pub key_value: String,
     #[serde(rename = "formdata")]
     pub form_data: SendHoleDataFormData,
 }
 
-impl SendHoleData {
+impl TiziVirtualHoleData {
     pub fn to_arango_struct(self) -> SendHoleDataToArango {
         SendHoleDataToArango {
             _key: self.key_value.clone(),
@@ -221,12 +222,22 @@ impl SendHoleData {
             form_data: self.form_data,
         }
     }
+
+    pub fn to_publish_json(&self) -> anyhow::Result<String> {
+        let mut obj = serde_json::to_value(self)?;
+        if let serde_json::Value::Object(m) = &mut obj {
+            let value = m.remove("id").unwrap();
+            m.insert("KeyValue".into(), value);
+        }
+        Ok(serde_json::to_string(&obj)?)
+    }
+
 }
 
 
 impl SendHoleDataToArango {
-    pub fn to_ui_struct(self) -> SendHoleData {
-        SendHoleData {
+    pub fn to_ui_struct(self) -> TiziVirtualHoleData {
+        TiziVirtualHoleData {
             key_value: self.key_value,
             form_data: self.form_data,
         }
@@ -236,7 +247,7 @@ impl SendHoleDataToArango {
 //提资列表
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AuditDataVec {
-    pub data: Vec<SendHoleDataToArango>,
+ pub data:Vec<SendHoleDataToArango>
 }
 
 //可提资物资信息
@@ -290,8 +301,8 @@ pub struct SendHoleDataFormData {
     #[serde(rename = "files")]
     pub files: Vec<DataCenterFile>,
     #[serde(rename = "ModelData")]
-    // pub model_data: Vec<Vec<(RefU64,String)>>,
-    pub model_data: HoleWallBoardVec,
+    pub model_data: Vec<Vec<(RefU64,String)>>,
+    // pub model_data: HoleWallBoardVec,
 }
 
 //墙板列表
@@ -396,4 +407,160 @@ fn test_item_value() {
     let r = vec![item_1, item_2];
     let data = serde_json::to_string(&r).unwrap();
     dbg!(&data);
+}
+
+/// 从恩为插件过来的原生孔洞数据
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct RawHoleData {
+    // node identifier
+    #[serde(rename = "id", alias="_key")]
+    pub _key: String,
+    // node link
+    #[serde(rename = "RelyItem")]
+    pub rely_item: String,
+    // node main item
+    #[serde(rename = "MainItem")]
+    pub main_item: String,
+    // node speciality
+    #[serde(rename = "Speciality")]
+    pub speciality: String,
+    // node position
+    #[serde(rename = "Position")]
+    pub position: String,
+    // node work
+    #[serde(rename = "HoleWork")]
+    pub hole_work: String,
+    // node work by
+    #[serde(rename = "WorkBy")]
+    pub work_by: String,
+    // node time
+    #[serde(rename = "Time")]
+    pub time: String,
+    // node shape
+    #[serde(rename = "Shape")]
+    pub shape: String,
+    // node orientation
+    #[serde(rename = "Ori")]
+    pub ori: String,
+    // node item reference
+    #[serde(rename = "ItemREF")]
+    pub item_ref: String,
+    #[serde(rename = "RelyItemREF")]
+    pub rely_item_ref: String,
+    // node main item reference
+    #[serde(rename = "MainItemREF")]
+    pub main_item_ref: String,
+    // node open item
+    #[serde(rename = "OpenItem")]
+    pub open_item: String,
+    // node plug type
+    #[serde(rename = "PlugType")]
+    pub plug_type: String,
+    // node height
+    #[serde(rename = "SizeHeight")]
+    pub size_height: f32,
+    // node width
+    #[serde(rename = "SizeWidth")]
+    pub size_width: f32,
+    // node bank width
+    #[serde(rename = "BankWidth")]
+    pub bank_width: f32,
+    // node bank height
+    #[serde(rename = "BankHeight")]
+    pub bank_height: f32,
+    // node hot distance
+    #[serde(rename = "HotDis")]
+    pub hot_dis: String,
+    // node heat thickness
+    #[serde(rename = "HeatThick")]
+    pub heat_thick: f32,
+    // node reference number
+    #[serde(rename = "refNo")]
+    pub refno: String,
+    // node fitting reference number
+    #[serde(rename = "FittRefNo")]
+    pub fitt_refno: String,
+    // node subsurface material
+    #[serde(rename = "SubsMaterial")]
+    pub subs_material: String,
+    // node subsurface thickness
+    #[serde(rename = "SubsThickness")]
+    pub subs_thickness: f32,
+    // node create
+    #[serde(rename = "iCreate")]
+    pub i_create: i32,
+    // node subsurface type
+    #[serde(rename = "SubsType")]
+    pub subs_type: String,
+    // node extent length 1
+    #[serde(rename = "ExtentLength1")]
+    pub extent_length1: f32,
+    // node extent length 2
+    #[serde(rename = "ExtentLength2")]
+    pub extent_length2: f32,
+    // node second
+    #[serde(rename = "Second")]
+    pub second: bool,
+    // node rehole
+    #[serde(rename = "ReHole")]
+    pub re_hole: i32,
+    // node note
+    #[serde(rename = "Note")]
+    pub note: String,
+    #[serde(rename = "SizeThrowWall")]
+    pub size_throw_wall: f32,
+    #[serde(rename = "HoleBPID")]
+    pub hole_bpid: String,
+    #[serde(rename = "HoleBPVER")]
+    pub hole_bpver: String,
+    #[serde(rename = "RelyItemBPID")]
+    pub rely_item_bpid: String,
+    #[serde(rename = "RelyItemBPVER")]
+    pub rely_item_bpver: String,
+    #[serde(rename = "MainPipeline")]
+    pub main_pipeline: String,
+    #[serde(rename = "iFlowState")]
+    pub i_flow_state: String,
+    #[serde(rename = "hType")]
+    pub h_type: String,
+    #[serde(rename = "MainItems")]
+    pub main_items: String,
+    #[serde(rename = "MainItemRefs")]
+    pub main_item_refs: String,
+    // 只用于存储和查询的数据，不涉及任何业务
+    #[serde(flatten)]
+    pub map: HashMap<String, String>,
+}
+
+impl RawHoleData {
+
+    //todo 写一个proc macro来生成schema
+    pub fn get_scheme() -> String {
+        let basic_schema = generate_basic_versioned_schema::<Self>();
+        format!(r#"{{
+        "@type" : "Class",
+        "@id"   : "VirtualHole",
+        "@key"  : {{ "@type": "Lexical", "@fields": ["_key"] }},
+        {}
+        }}"#, basic_schema)
+    }
+
+    pub fn gen_versioned_data_json(&self) -> anyhow::Result<String> {
+        let mut json_map = serde_json::to_value(self).unwrap();
+        if let serde_json::Value::Object(m) = &mut json_map {
+            m.insert("@id".into(), format!("VirtualHole/{}", self._key).into());
+            m.insert("@type".into(), "VirtualHole".into());
+        }
+        Ok(serde_json::to_string(&json_map)?)
+    }
+
+    pub fn to_publish_json(&self) -> anyhow::Result<String> {
+        let mut obj = serde_json::to_value(self)?;
+        if let serde_json::Value::Object(m) = &mut obj {
+            let value = m.remove("id").unwrap();
+            m.insert("_key".into(), value);
+        }
+        Ok(serde_json::to_string(&obj)?)
+    }
+
 }

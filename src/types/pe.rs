@@ -25,6 +25,7 @@ pub struct SPdmsElement {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_tag: Option<String>,
+    #[serde(skip)]
     pub cata_hash: String,
     ///锁定模型
     pub lock: bool,
