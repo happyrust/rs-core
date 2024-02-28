@@ -6,7 +6,7 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use parry3d::bounding_volume::Aabb;
 use bevy_transform::prelude::*;
-use crate::data_center::SendHoleData;
+use crate::data_center::TiziVirtualHoleData;
 use crate::pdms_types::GeoBasicType;
 use crate::pdms_types::ser_refno_as_key_str;
 use crate::pdms_types::de_refno_from_key_str;
@@ -118,7 +118,7 @@ pub struct HoleEleGeosInfo {
 //显示提资记录以及当前该记录处于哪个校核阶段
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShowReviewerData {
-    pub record: SendHoleData,
+    pub record: TiziVirtualHoleData,
     pub reviewer: String,
 }
 
