@@ -301,8 +301,8 @@ pub struct SendHoleDataFormData {
     #[serde(rename = "files")]
     pub files: Vec<DataCenterFile>,
     #[serde(rename = "ModelData")]
-    // pub model_data: Vec<Vec<(RefU64,String)>>,
-    pub model_data: HoleWallBoardVec,
+    pub model_data: Vec<Vec<(RefU64,String)>>,
+    // pub model_data: HoleWallBoardVec,
 }
 
 //墙板列表
