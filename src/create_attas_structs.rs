@@ -3,8 +3,7 @@ use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use nom::character::streaming::char;
-use crate::types::*;
-use crate::schema::generate_basic_versioned_schema;
+use crate::data_center::RawHoleData;
 
 //显示需创建ATTA的refno及name
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
@@ -15,128 +14,6 @@ pub struct ATTAPos {
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct ATTAPosVec {
     pub data: Vec<ATTAPos>,
-}
-
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
-pub struct VirtualHoleGraphNode {
-    // node identifier
-    // #[serde(rename = "Code")]
-    pub _key: String,
-    // node link
-    #[serde(rename = "RelyItem")]
-    pub rely_item: String,
-    // node main item
-    #[serde(rename = "MainItem")]
-    pub main_item: String,
-    // node speciality
-    #[serde(rename = "Speciality")]
-    pub speciality: String,
-    // node position
-    #[serde(rename = "Position")]
-    pub position: String,
-    // node work
-    #[serde(rename = "HoleWork")]
-    pub hole_work: String,
-    // node work by
-    #[serde(rename = "WorkBy")]
-    pub work_by: String,
-    // node time
-    #[serde(rename = "Time")]
-    pub time: String,
-    // node shape
-    #[serde(rename = "Shape")]
-    pub shape: String,
-    // node orientation
-    #[serde(rename = "Ori")]
-    pub ori: String,
-    // node item reference
-    #[serde(rename = "ItemREF")]
-    pub item_ref: String,
-    #[serde(rename = "RelyItemREF")]
-    pub rely_item_ref: String,
-    // node main item reference
-    #[serde(rename = "MainItemREF")]
-    pub main_item_ref: String,
-    // node open item
-    #[serde(rename = "OpenItem")]
-    pub open_item: String,
-    // node plug type
-    #[serde(rename = "PlugType")]
-    pub plug_type: String,
-    // node height
-    #[serde(rename = "SizeHeight")]
-    pub size_height: f32,
-    // node width
-    #[serde(rename = "SizeWidth")]
-    pub size_width: f32,
-    // node bank width
-    #[serde(rename = "BankWidth")]
-    pub bank_width: f32,
-    // node bank height
-    #[serde(rename = "BankHeight")]
-    pub bank_height: f32,
-    // node hot distance
-    #[serde(rename = "HotDis")]
-    pub hot_dis: String,
-    // node heat thickness
-    #[serde(rename = "HeatThick")]
-    pub heat_thick: f32,
-    // node reference number
-    #[serde(rename = "refNo")]
-    pub refno: String,
-    // node fitting reference number
-    #[serde(rename = "FittRefNo")]
-    pub fitt_refno: String,
-    // node subsurface material
-    #[serde(rename = "SubsMaterial")]
-    pub subs_material: String,
-    // node subsurface thickness
-    #[serde(rename = "SubsThickness")]
-    pub subs_thickness: f32,
-    // node create
-    #[serde(rename = "iCreate")]
-    pub i_create: i32,
-    // node subsurface type
-    #[serde(rename = "SubsType")]
-    pub subs_type: String,
-    // node extent length 1
-    #[serde(rename = "ExtentLength1")]
-    pub extent_length1: f32,
-    // node extent length 2
-    #[serde(rename = "ExtentLength2")]
-    pub extent_length2: f32,
-    // node second
-    #[serde(rename = "Second")]
-    pub second: bool,
-    // node rehole
-    #[serde(rename = "ReHole")]
-    pub re_hole: i32,
-    // node note
-    #[serde(rename = "Note")]
-    pub note: String,
-    #[serde(rename = "SizeThrowWall")]
-    pub size_throw_wall: f32,
-    #[serde(rename = "HoleBPID")]
-    pub hole_bpid: String,
-    #[serde(rename = "HoleBPVER")]
-    pub hole_bpver: String,
-    #[serde(rename = "RelyItemBPID")]
-    pub rely_item_bpid: String,
-    #[serde(rename = "RelyItemBPVER")]
-    pub rely_item_bpver: String,
-    #[serde(rename = "MainPipeline")]
-    pub main_pipeline: String,
-    #[serde(rename = "iFlowState")]
-    pub i_flow_state: String,
-    #[serde(rename = "hType")]
-    pub h_type: String,
-    #[serde(rename = "MainItems")]
-    pub main_items: String,
-    #[serde(rename = "MainItemRefs")]
-    pub main_item_refs: String,
-    // 只用于存储和查询的数据，不涉及任何业务
-    #[serde(flatten)]
-    pub map: HashMap<String, String>,
 }
 
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
@@ -266,30 +143,6 @@ pub struct VirtualHoleGraphNodeQuery {
     // 只用于存储和查询的数据，不涉及任何业务
     #[serde(flatten, default)]
     pub map: HashMap<String, String>,
-}
-
-impl VirtualHoleGraphNodeQuery{
-
-    //todo 写一个proc macro来生成schema
-    pub fn get_scheme() -> String {
-        let basic_schema = generate_basic_versioned_schema::<Self>();
-        format!(r#"{{
-        "@type" : "Class",
-        "@id"   : "VirtualHole",
-        "@key"  : {{ "@type": "Lexical", "@fields": ["_key"] }},
-        {}
-        }}"#, basic_schema)
-    }
-
-    pub fn gen_versioned_data_json(&self) -> anyhow::Result<String> {
-        let mut json_map = serde_json::to_value(self).unwrap();
-        if let serde_json::Value::Object(m) = &mut json_map {
-            m.insert("@id".into(), format!("VirtualHole/{}", self._key).into());
-            m.insert("@type".into(), "VirtualHole".into());
-        }
-        Ok(serde_json::to_string(&json_map)?)
-    }
-
 }
 
 fn default_version_value() -> char {
@@ -534,7 +387,7 @@ impl VirtualHoleGraphNodeJSStatus {
 //存储虚拟孔洞detail
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualHoleHistoryData {
-    pub data: VirtualHoleGraphNodeQuery,
+    pub data: RawHoleData,
 }
 
 //存储虚拟埋件detail
@@ -547,7 +400,7 @@ pub struct VirtualEmbedHistoryData {
 //存储校核人虚拟孔洞detail
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ReviewerHoleDetail {
-    pub data: VirtualHoleGraphNodeQuery,
+    pub data: RawHoleData,
 }
 
 //存储校核人虚拟埋件detail
