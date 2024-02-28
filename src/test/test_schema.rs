@@ -1,4 +1,4 @@
-use crate::create_attas_structs::VirtualHoleGraphNodeQuery;
+use crate::data_center::RawHoleData;
 use crate::get_default_pdms_db_info;
 use crate::schema::generate_basic_versioned_schema;
 
