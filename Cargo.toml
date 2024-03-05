@@ -10,7 +10,8 @@ opencascade_rs = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 gen_model = ["dep:manifold-sys"]
 truck = []
-
+#opencascade_rs =[]
+#gen_model =[]
 # [lib]
 # name = "rs_core"
 # crate-type = ["staticlib", "cdylib"]
@@ -91,7 +92,7 @@ rust-format = "0.3.4"
 chrono = "0.4.31"
 custom_debug = "0.5.1"
 
-surrealdb = { path = "/Users/dongpengcheng/surreal_db/surrealdb/lib", default-features = false, features = ["protocol-ws"]}
+surrealdb = { path = "../../surrealdb/lib", default-features = false, features = ["protocol-ws"]}
 num-traits = "0.2.17"
 regex = "1.10.2"
 petgraph = { version = "0.6.4", features = ["serde-1"] }
