@@ -53,7 +53,6 @@ insert into hvac_pressure [{
     name: '超高压' 
 }]
 
-
 //shape * 8 + mat
 insert into hvac_depth [{
     // 矩形镀锌 中低压  L<= 700

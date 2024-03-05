@@ -1,0 +1,1 @@
+select refno,string::slice(refno.NAME,1) as name,'' as room_code from pe:24384_24829
