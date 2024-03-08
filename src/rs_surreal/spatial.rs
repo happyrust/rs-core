@@ -1,5 +1,5 @@
 use std::{f32::consts::E, collections::HashSet, time::Instant};
-
+use crate::room::room::GLOBAL_AABB_TREE;
 use crate::{
     consts::HAS_PLIN_TYPES,
     pdms_data::{PlinParam, PlinParamData},
@@ -9,7 +9,7 @@ use crate::{
         direction_parse::parse_expr_to_dir,
         math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str},
     },
-    NamedAttrMap, RefU64, SUL_DB, GLOBAL_AABB_TREE, accel_tree::acceleration_tree::QueryRay,
+    NamedAttrMap, RefU64, SUL_DB, accel_tree::acceleration_tree::QueryRay,
 };
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;

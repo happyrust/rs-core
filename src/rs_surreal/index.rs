@@ -16,11 +16,25 @@ pub async fn create_geom_index() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// 创建 pe_owner 的唯一性索引，in, out的组合索引
 pub async fn create_owner_index(db_option: &DbOption) -> anyhow::Result<()> {
     //针对一些特殊的表，需要先创建表，定义索引
     if !db_option.incr_sync {
         SUL_DB
             .query(r#"DEFINE INDEX unique_pe_owner ON TABLE pe_owner COLUMNS in, out UNIQUE"#)
+            .await
+            .unwrap();
+    }
+    Ok(())
+}
+
+pub async fn define_fullname_index(db_option: &DbOption) -> anyhow::Result<()> {
+    //针对一些特殊的表，需要先创建表，定义索引
+    if !db_option.incr_sync {
+        SUL_DB
+            .query(r#"DEFINE ANALYZER name_fulltext TOKENIZERS class FILTERS lowercase;
+                    DEFINE INDEX fulltext_name ON TABLE pe FIELDS name SEARCH ANALYZER name_fulltext BM25 HIGHLIGHTS;
+                "#)
             .await
             .unwrap();
     }

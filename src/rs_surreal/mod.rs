@@ -1,7 +1,6 @@
 pub mod query;
 pub mod graph;
 pub mod spatial;
-pub mod room;
 pub mod geom;
 pub mod mdb;
 pub mod uda;
@@ -16,7 +15,7 @@ pub use mdb::*;
 pub use uda::*;
 pub use resolve::*;
 pub use index::*;
-pub use room::*;
+// pub use room::*;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::any::Any;

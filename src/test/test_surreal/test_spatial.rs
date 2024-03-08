@@ -1,4 +1,4 @@
-use crate::{rs_surreal, tool::math_tool, load_aabb_tree};
+use crate::{room::room::load_aabb_tree, rs_surreal, tool::math_tool};
 
 use std::sync::Arc;
 use glam::{Mat3, Vec3};

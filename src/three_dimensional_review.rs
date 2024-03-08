@@ -10,8 +10,8 @@ use bevy_ecs::prelude::Event;
 
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
-pub struct ThreeDimensionalModelDataCrate {
-    #[serde(rename = "KeyValue")]
+pub struct ReviewModelData {
+    #[serde(rename = "id", alias = "KeyValue")]
     pub key_value: String,
     #[serde(rename = "ProjCode")]
     pub proj_code: String,
@@ -29,7 +29,7 @@ pub struct ThreeDimensionalModelDataCrate {
     pub flow_pic_data: ThreeDimensionalReviewComment,
 }
 
-impl ThreeDimensionalModelDataCrate {
+impl ReviewModelData {
     pub fn to_arango_struct(self) -> ThreeDimensionalModelDataToArango {
         ThreeDimensionalModelDataToArango {
             key_value: self.key_value,

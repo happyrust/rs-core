@@ -1,7 +1,6 @@
 use aios_core::spatial::pipe::create_valve_floor_relations;
 use aios_core::tool::math_tool::*;
 use aios_core::{
-    load_aabb_tree,
     test::test_surreal::init_test_surreal,
     tool::{
         db_tool::{db1_dehash, db1_hash},
@@ -10,6 +9,7 @@ use aios_core::{
 };
 use anyhow::Ok;
 use glam::{Mat3, Quat};
+use aios_core::room::room::load_aabb_tree;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

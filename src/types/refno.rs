@@ -83,6 +83,8 @@ impl FromStr for RefU64 {
     }
 }
 
+
+
 impl From<Thing> for RefU64 {
     fn from(thing: Thing) -> Self {
         thing.id.to_string().as_str().into()

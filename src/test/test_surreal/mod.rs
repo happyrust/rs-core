@@ -24,6 +24,7 @@ pub mod test_geom;
 pub mod test_uda;
 
 
+
 pub async fn init_test_surreal() {
     let s = Config::builder()
         .add_source(File::with_name("DbOption"))

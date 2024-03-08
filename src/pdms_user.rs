@@ -10,6 +10,7 @@ pub enum Role {
     Proofreader,
 }
 
+//b_designer
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Resource)]
 pub struct PdmsUser {
     pub user_name: String,
