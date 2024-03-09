@@ -144,12 +144,12 @@ impl BrepShapeTrait for LSnout {
         let mut circle2 = builder::rsweep(&v2, p1.point3(), rot_axis, Rad(7.0));
         let c2 = circle2.clone();
 
-        dbg!((circle1.len(), circle2.len()));
+        // dbg!((circle1.len(), circle2.len()));
 
         let new_wire_1 = circle1.split_off((0.5 * circle1.len() as f32) as usize);
         let new_wire_2 = circle2.split_off((0.5 * circle2.len() as f32) as usize);
-        dbg!((circle1.len(), circle2.len()));
-        dbg!((new_wire_1.len(), new_wire_2.len()));
+        // dbg!((circle1.len(), circle2.len()));
+        // dbg!((new_wire_1.len(), new_wire_2.len()));
         let shell1 = builder::try_wire_homotopy(&new_wire_1, &new_wire_2).ok()?;
         let shell2 = builder::try_wire_homotopy(&circle1, &circle2).ok()?;
 

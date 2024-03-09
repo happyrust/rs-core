@@ -252,6 +252,16 @@ impl DerefMut for PdmsTree {
     }
 }
 
+impl PdmsTree{
+
+    ///获得世界refno
+    #[inline]
+    pub fn get_world_refno(&self) -> Option<RefU64> {
+        self.root_node_id().map(|x| self.get(x).map(|t| t.data().refno).ok()).flatten()
+    }
+
+}
+
 /// 一个参考号是有可能重复的，project信息可以不用存储，获取信息时必须要带上 db_no
 #[derive(
     Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,

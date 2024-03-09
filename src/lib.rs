@@ -19,7 +19,6 @@ pub mod bevy_types;
 pub mod cache;
 pub mod consts;
 pub mod csg;
-pub mod db_number;
 pub mod geom_types;
 pub mod helper;
 pub mod parsed_data;

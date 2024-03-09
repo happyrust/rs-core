@@ -9,7 +9,8 @@ pub async fn gather_rooms() -> anyhow::Result<()> {
 ///计算单个房间包含哪些构件
 pub async fn calculate_room(room_refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     // let mut withing_room_items = vec![];
-    //房间是有多个 pannel，需要遍历
+    //房间是有多个 panel，需要遍历得到各个包围盒
+
 
     //先获得房间的包围盒
 
