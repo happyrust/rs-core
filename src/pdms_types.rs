@@ -1215,7 +1215,7 @@ impl PlantMeshesData {
         let hash = m.hash_unit_mesh_params();
         //如果是重新生成，会去覆盖模型
         if replace || !self.meshes.contains_key(&hash) {
-            if let Some(mut d) = m.gen_unit(tol_ratio) {
+            if let Ok(mut d) = m.gen_unit(tol_ratio) {
                 d.geo_hash = hash;
                 self.meshes.insert(hash, d);
             } else {

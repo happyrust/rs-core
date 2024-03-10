@@ -140,7 +140,7 @@ impl BrepShapeTrait for Revolution {
             .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
             .collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);
-        0.0002 * profile_aabb.bounding_sphere().radius.max(1.0)
+        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
     ///revolve 有些问题，暂时用manifold来代替

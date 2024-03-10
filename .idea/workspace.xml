@@ -11,30 +11,23 @@
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
     </configurations>
   </component>
+  <component name="CargoProjectFeatures">
+    <cargoProject file="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$">
+        <feature name="default" />
+      </package>
+    </cargoProject>
+  </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Remove db_number module and update various files&#10;&#10;This commit encompasses the removal of the entire 'db_number' module, which is no longer necessary. Updates were made to several files, including 'prim_geo/snout.rs', '.idea/workspace.xml', 'pdms_types.rs', and '.idea/.gitignore'. Base64 dependency version has been updated, and some debug lines were commented out for better readability.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/csg/manifold.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/csg/manifold.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geom_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/dish.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/dish.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -115,7 +108,7 @@
     &quot;Cargo.Test orm::pdms_element::test_ele_reflect.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::sql::test_do_op_reflect_sql.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::test_do_op_reflect.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_refno::test_des_refno.executor&quot;: &quot;Debug&quot;,
+    &quot;Cargo.Test test::test_refno::test_des_refno.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_schema::test_gen_att_schema.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_schema::test_gen_schema_from_json.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor&quot;: &quot;Run&quot;,
@@ -594,7 +587,10 @@
       <workItem from="1710056831468" duration="4355000" />
       <workItem from="1710062238676" duration="821000" />
       <workItem from="1710071319562" duration="52000" />
-      <workItem from="1710071408691" duration="3332000" />
+      <workItem from="1710071408691" duration="3468000" />
+      <workItem from="1710075630751" duration="8000" />
+      <workItem from="1710076061686" duration="2792000" />
+      <workItem from="1710089467214" duration="42000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -939,7 +935,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="273" />
+    <option name="localTasksCounter" value="274" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -982,7 +978,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix extrusion and revolution" />
     <MESSAGE value="tmp" />
     <MESSAGE value="update rtree" />
     <MESSAGE value="WIP 完善解析" />
@@ -1007,7 +1002,8 @@
     <MESSAGE value="fix by using try_wire_homotopy to generate snout" />
     <MESSAGE value="update" />
     <MESSAGE value="Remove db_number module and update various files&#10;&#10;This commit encompasses the removal of the entire 'db_number' module, which is no longer necessary. Updates were made to several files, including 'prim_geo/snout.rs', '.idea/workspace.xml', 'pdms_types.rs', and '.idea/.gitignore'. Base64 dependency version has been updated, and some debug lines were commented out for better readability." />
-    <option name="LAST_COMMIT_MESSAGE" value="Remove db_number module and update various files&#10;&#10;This commit encompasses the removal of the entire 'db_number' module, which is no longer necessary. Updates were made to several files, including 'prim_geo/snout.rs', '.idea/workspace.xml', 'pdms_types.rs', and '.idea/.gitignore'. Base64 dependency version has been updated, and some debug lines were commented out for better readability." />
+    <MESSAGE value="Update codebase to optimize geometry and shape transformations&#10;&#10;The codebase is updated to improve the geometry and shape transformations in project. This involves refactoring the code in multiple files including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs' and many others. The changes primarily streamline the method calls and namespaces used for geometric shapes and transformations, and also adjust tolerance handling in 'cylinder.rs'. Some deprecated code segments are removed for more readability and efficiency." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update codebase to optimize geometry and shape transformations&#10;&#10;The codebase is updated to improve the geometry and shape transformations in project. This involves refactoring the code in multiple files including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs' and many others. The changes primarily streamline the method calls and namespaces used for geometric shapes and transformations, and also adjust tolerance handling in 'cylinder.rs'. Some deprecated code segments are removed for more readability and efficiency." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

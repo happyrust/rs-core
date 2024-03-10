@@ -1,4 +1,4 @@
-use glam::DMat4;
+use glam::{DMat4, DVec3, vec3};
 use hash32::FnvHasher;
 use std::fmt::Debug;
 use std::fs::File;
@@ -332,16 +332,24 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     ///获得关键点
     fn key_points(&self) -> Vec<RsVec3> {
-        self.gen_unit_shape()
-            .gen_brep_shell()
-            .map(|x| {
-                x.vertex_iter()
-                    .map(|x| RsVec3::from(x.point()))
-                    .into_iter()
-                    .unique()
-                    .collect()
-            })
-            .unwrap_or(vec![Vec3::ZERO.into()])
+        #[cfg(feature = "truck")]
+        {
+            return self.gen_unit_shape()
+                .gen_brep_shell()
+                .map(|x| {
+                    x.vertex_iter()
+                        .map(|x| RsVec3::from(x.point()))
+                        .into_iter()
+                        .unique()
+                        .collect()
+                })
+                .unwrap_or(vec![Vec3::ZERO.into()]);
+        }
+
+        #[cfg(feature = "opencascade_rs")]
+        {
+            Default::default()
+        }
     }
 
     ///限制参数大小，主要是对负实体的不合理进行限制
@@ -364,7 +372,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// cylinder
     /// sphere
     #[cfg(not(target_arch = "wasm32"))]
-    fn gen_unit(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
+    fn gen_unit(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
         self.gen_unit_shape().gen_plant_geo_data(tol_ratio)
     }
 
@@ -394,9 +402,44 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         TRI_TOL
     }
 
+
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
+        let mut aabb = Aabb::new_invalid();
+        let geo_hash = self.hash_unit_mesh_params();
+
+        let shape = self.gen_occ_shape()?;
+
+        for edge in shape.edges() {
+            // let mut segments = vec![];
+            let mut last_point: Option<DVec3> = None;
+            let mut length_so_far = 0.0;
+            for point in edge.approximation_segments() {
+                aabb.take_point(nalgebra::Point3::new(point.x as f32, point.y as f32, point.z as f32));
+            }
+        }
+
+        let mesh = shape.mesh_with_tolerance(self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64)?;
+        // dbg!(&aabb);
+
+        Ok(PlantGeoData {
+            geo_hash,
+            mesh: Some(PlantMesh {
+                indices: mesh.indices.iter().map(|&x| x as u32).collect(),
+                vertices: mesh.vertices.iter().map(|&x| x.as_vec3()).collect(),
+                normals: mesh.normals.iter().map(|&x| x.as_vec3()).collect(),
+                wire_vertices: vec![],
+            }),
+            aabb: Some(aabb),
+        })
+
+
+        // Err(anyhow!("occ shape meshed failed"))
+    }
+
     ///生成mesh
     #[cfg(feature = "truck")]
-    fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
+    fn gen_plant_geo_data_truck(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
         let mut aabb = Aabb::new_invalid();
         let geo_hash = self.hash_unit_mesh_params();
         if self.need_use_csg() {
@@ -425,14 +468,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
             );
             let tolerance = self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64 ;
-            // let tolerance = 1.2;
-            // #[cfg(debug_assertions)]
-            // dbg!(tolerance);
             let meshed_shape = brep.triangulation(tolerance);
             let mut polygon_mesh = meshed_shape.to_polygon();
-            // polygon_mesh
-            //     .remove_degenerate_faces()
-            //     .remove_unused_attrs();;
             if polygon_mesh.positions().is_empty() {
                 return None;
             }
@@ -476,9 +513,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                     wire_vertices,
                 }),
                 aabb: Some(aabb),
-                // occ_shape: None,
             });
-            // return
         }
         None
     }

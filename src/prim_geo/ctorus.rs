@@ -100,8 +100,27 @@ impl BrepShapeTrait for SCTorus {
         Box::new(self.clone())
     }
 
-    fn tol(&self) -> f32 {
-        0.01 * self.pdia.max(1.0)
+    fn gen_brep_shell(&self) -> Option<Shell> {
+        use truck_modeling::*;
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
+                                                              self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
+            let circle_origin = self.paax_pt.point3();
+            let pt_0 = self.paax_pt + torus_info.rot_axis * self.pdia / 2.0;
+            let v = builder::vertex(pt_0.point3());
+            let rot_axis = torus_info.rot_axis.vector3();
+            let w = builder::rsweep(
+                &v,
+                circle_origin,
+                -self.paax_dir.normalize().vector3(),
+                Rad(7.0),
+            );
+            if let Ok(disk) = builder::try_attach_plane(&vec![w]) {
+                let center = torus_info.center.point3();
+                let mut solid = builder::rsweep(&disk, center, rot_axis, Rad(torus_info.angle.to_radians() as f64)).into_boundaries();
+                return solid.pop();
+            }
+        }
+        None
     }
 
     fn key_points(&self) -> Vec<RsVec3>{
@@ -133,31 +152,12 @@ impl BrepShapeTrait for SCTorus {
         Err(anyhow!("SCTorus参数错误，无法生成Shape"))
     }
 
-    fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
-                                                              self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
-            let circle_origin = self.paax_pt.point3();
-            let pt_0 = self.paax_pt + torus_info.rot_axis * self.pdia / 2.0;
-            let v = builder::vertex(pt_0.point3());
-            let rot_axis = torus_info.rot_axis.vector3();
-            let w = builder::rsweep(
-                &v,
-                circle_origin,
-                -self.paax_dir.normalize().vector3(),
-                Rad(7.0),
-            );
-            if let Ok(disk) = builder::try_attach_plane(&vec![w]) {
-                let center = torus_info.center.point3();
-                let mut solid = builder::rsweep(&disk, center, rot_axis, Rad(torus_info.angle.to_radians() as f64)).into_boundaries();
-                return solid.pop();
-            }
-        }
-        None
-    }
-
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    fn tol(&self) -> f32 {
+        0.01 * self.pdia.max(1.0)
     }
 }
 
