@@ -223,3 +223,6 @@ insert into tf_strt_flan_size [
     "size": "FB80x12"
 }
 ]
+
+
+(fn::b_pre_type($pe,'DAMP') || fn::b_pre_type($pe,'MESH')) && (fn::b_next_type($pe,'DAMP') || fn::b_next_type($pe,'MESH')) && !$bran_b_6
