@@ -1,6 +1,4 @@
 use std::collections::hash_map::DefaultHasher;
-
-
 use std::f64::consts::FRAC_PI_2;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -19,13 +17,9 @@ use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 
 #[cfg(feature = "opencascade_rs")]
-use opencascade::{
-    primitives::{Shape, Solid},
-    workplane::Workplane,
-};
-#[cfg(feature = "opencascade_rs")]
-use opencascade::adhoc::AdHocShape;
+use opencascade::primitives::*;
 use crate::NamedAttrMap;
+use opencascade::workplane::Workplane;
 
 
 ///元件库里的LCylinder
@@ -169,8 +163,7 @@ impl BrepShapeTrait for LCylinder {
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
         let r = self.pdia as f64 / 2.0;
         let h = (self.ptdi - self.pbdi) as f64;
-        // Ok(OCCShape::cylinder(r, h)?)
-        Ok(AdHocShape::make_cylinder(DVec3::ZERO, r, h).into_inner())
+        Ok(Shape::cylinder_radius_height(r, h))
     }
 
     ///直接通过基本体的参数，生成模型
@@ -301,84 +294,6 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
-    #[inline]
-    fn tol(&self) -> f32 {
-        if self.is_sscl() {
-            0.004 * (self.pdia.max(1.0))
-        }else{
-            TRI_TOL
-        }
-    }
-
-    ///引用限制大小
-    fn apply_limit_by_size(&mut self, l: f32) {
-        self.phei = self.phei.min(l);
-        self.pdia = self.pdia.min(l);
-    }
-
-    ///获得关键点
-    fn key_points(&self) -> Vec<RsVec3>{
-        if self.is_sscl() {
-            vec![Vec3::ZERO.into(), (Vec3::Z * self.phei.abs()).into()]
-        } else {
-            vec![Vec3::ZERO.into(), (Vec3::Z * 1.0).into()]
-        }
-    }
-
-    ///直接通过基本体的参数，生成模型
-    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
-        Some(gen_unit_cylinder())
-    }
-
-    fn need_use_csg(&self) -> bool{
-        !self.is_sscl()
-    }
-
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        if self.is_sscl() {
-            let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos();
-            let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos();
-            let transform_btm = Mat4::from_axis_angle(Vec3::Y,self.btm_shear_angles[0].to_radians())
-                * Mat4::from_axis_angle(Vec3::Y, self.btm_shear_angles[1].to_radians())
-                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
-
-            let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos();
-            let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos();
-            let ext_dir = self.paxi_dir.normalize();
-            let ext_len = self.phei;
-            let transform_top = Mat4::from_translation(ext_dir * ext_len)
-                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[0].to_radians())
-                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
-                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
-            let mut circle = Workplane::xy().circle(0.0, 0.0, self.pdia as f64 /2.0);
-            let (_s, r, _t) = transform_btm.to_scale_rotation_translation();
-            let (_axis, _angle) = r.to_axis_angle();
-            let btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
-            let top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
-
-            Ok(Solid::loft([btm_circe, top_circle].iter()).to_shape())
-
-        } else {
-            let r = self.pdia as f64 / 2.0;
-            let h = self.phei as f64;
-            Ok(AdHocShape::make_cylinder(DVec3::ZERO, r, h).into_inner())
-        }
-    }
-
-    #[inline]
-    fn get_trans(&self) -> Transform {
-        Transform {
-            rotation: Default::default(),
-            translation: if self.center_in_mid {
-                Vec3::new(0.0, 0.0, -self.phei / 2.0)
-            } else {
-                Vec3::ZERO
-            },
-            scale: self.get_scaled_vec3(),
-        }
-    }
-
     //TODO: 固定的shell不用重复生成
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
@@ -441,6 +356,53 @@ impl BrepShapeTrait for SCylinder {
         None
     }
 
+    ///获得关键点
+    fn key_points(&self) -> Vec<RsVec3>{
+        if self.is_sscl() {
+            vec![Vec3::ZERO.into(), (Vec3::Z * self.phei.abs()).into()]
+        } else {
+            vec![Vec3::ZERO.into(), (Vec3::Z * 1.0).into()]
+        }
+    }
+
+    ///引用限制大小
+    fn apply_limit_by_size(&mut self, l: f32) {
+        self.phei = self.phei.min(l);
+        self.pdia = self.pdia.min(l);
+    }
+
+    #[cfg(feature = "opencascade_rs")]
+    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+        if self.is_sscl() {
+            let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos();
+            let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos();
+            let transform_btm = Mat4::from_axis_angle(Vec3::Y,self.btm_shear_angles[0].to_radians())
+                * Mat4::from_axis_angle(Vec3::Y, self.btm_shear_angles[1].to_radians())
+                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
+
+            let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos();
+            let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos();
+            let ext_dir = self.paxi_dir.normalize();
+            let ext_len = self.phei;
+            let transform_top = Mat4::from_translation(ext_dir * ext_len)
+                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[0].to_radians())
+                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
+                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
+            let mut circle = Workplane::xy().circle(0.0, 0.0, self.pdia as f64 /2.0);
+            let (_s, r, _t) = transform_btm.to_scale_rotation_translation();
+            let (_axis, _angle) = r.to_axis_angle();
+            let btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
+            let top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
+
+            Ok(Solid::loft([btm_circe, top_circle].iter()).into())
+
+        } else {
+            let r = self.pdia as f64 / 2.0;
+            let h = self.phei as f64;
+            Ok(Shape::cylinder_centered(DVec3::ZERO, r, DVec3::Z, h))
+        }
+    }
+
     fn hash_unit_mesh_params(&self) -> u64 {
         if self.is_sscl() {
             let mut hasher = DefaultHasher::new();
@@ -471,7 +433,6 @@ impl BrepShapeTrait for SCylinder {
         Box::new(Self::default())
     }
 
-
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         if self.is_sscl() {
@@ -481,10 +442,42 @@ impl BrepShapeTrait for SCylinder {
         }
     }
 
+    #[inline]
+    fn get_trans(&self) -> Transform {
+        Transform {
+            rotation: Default::default(),
+            translation: if self.center_in_mid {
+                Vec3::new(0.0, 0.0, -self.phei / 2.0)
+            } else {
+                Vec3::ZERO
+            },
+            scale: self.get_scaled_vec3(),
+        }
+    }
+
+    #[inline]
+    fn tol(&self) -> f32 {
+        if self.is_sscl() {
+            0.004 * (self.pdia.max(1.0))
+        }else{
+            TRI_TOL
+        }
+    }
+
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(
             PdmsGeoParam::PrimSCylinder(self.clone())
         )
+    }
+
+
+    ///直接通过基本体的参数，生成模型
+    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
+        Some(gen_unit_cylinder())
+    }
+
+    fn need_use_csg(&self) -> bool{
+        !self.is_sscl()
     }
 }
 

@@ -98,7 +98,7 @@ impl RvmGeoInfos {
             .collect::<Vec<_>>();
         if ngmr_shapes.is_empty() {   return None;}
 
-        let mut final_shape = Compound::from_shapes(&ngmr_shapes);
+        let mut final_shape: Shape = Compound::from_shapes(&ngmr_shapes).into();
         final_shape.transform_by_mat(&self.world_transform.compute_matrix().as_dmat4());
         Some(final_shape)
     }

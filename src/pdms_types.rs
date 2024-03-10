@@ -51,9 +51,9 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 20] = [
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
-     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY",
+     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV"
 ];
 
 ///有loop的几何体
@@ -1104,7 +1104,7 @@ use crate::types::named_attvalue::NamedAttrValue;
 use bevy_render::prelude::*;
 use bevy_render::render_asset::RenderAssetUsages;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::Shape;
+use opencascade::primitives::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
 
@@ -1384,12 +1384,12 @@ impl EleInstGeosData {
             cate_neg_inst.owner_pos_refnos.iter().for_each(|r| {
                 if let Some(pos_shape) = pos_shapes.get_mut(r) {
                     if let Some(neg_shape) = cate_neg_inst.gen_occ_shape() {
-                        *pos_shape = pos_shape.subtract_shape(&neg_shape).0;
+                        *pos_shape = pos_shape.subtract(&neg_shape).into_shape();
                     }
                 }
             });
         }
-        let mut compound = opencascade::primitives::Compound::from_shapes(pos_shapes.values());
+        let mut compound: Shape = opencascade::primitives::Compound::from_shapes(pos_shapes.values()).into();
         compound.transform_by_mat(&transform.compute_matrix().as_dmat4());
         Some((compound, vec![]))
     }

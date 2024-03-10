@@ -18,7 +18,7 @@ use crate::tool::float_tool::hash_f32;
 
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::{primitives::Shape, adhoc::AdHocShape};
+use opencascade::primitives::*;
 use crate::NamedAttrMap;
 
 //可不可以用来表达 sphere
@@ -88,7 +88,7 @@ impl BrepShapeTrait for Dish {
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        Ok(AdHocShape::dish(self.pdia as f64 / 2.0, self.pheig as f64).ok_or(anyhow!("Dish 参数错误"))?.0)
+        Ok(Shape::dish(self.pdia as f64 / 2.0, self.pheig as f64).ok_or(anyhow!("Dish 参数错误"))?)
     }
 
     fn tol(&self) -> f32 {

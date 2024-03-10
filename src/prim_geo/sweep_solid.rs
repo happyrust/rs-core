@@ -24,7 +24,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Edge, Shape, Solid, Wire};
+use opencascade::primitives::*;
 
 ///含有两边方向的，扫描体
 #[derive(
@@ -568,7 +568,7 @@ impl BrepShapeTrait for SweepSolid {
                         rot_axis.as_dvec3(),
                         Some(rot_angle.radians()),
                     );
-                    return Ok(r.to_shape());
+                    return Ok(r.into_shape());
                 }
                 SweepPath3D::Line(l) => {
                     let mut wires = vec![];
@@ -624,7 +624,7 @@ impl BrepShapeTrait for SweepSolid {
                         wires.push(wire.g_transformed_by_mat(&transform_top.as_dmat4()));
                     }
 
-                    return Ok(Solid::loft(wires.iter()).to_shape());
+                    return Ok(Solid::loft(wires.iter()).into_shape());
                 }
             }
         }

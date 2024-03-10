@@ -151,7 +151,7 @@ pub mod geo_params_data {
     use crate::prim_geo::dish::Dish;
     use crate::prim_geo::extrusion::Extrusion;
     #[cfg(feature = "opencascade_rs")]
-    use opencascade::primitives::Shape;
+    use opencascade::primitives::*;
     use serde_derive::{Deserialize, Serialize};
 
     use crate::prim_geo::polyhedron::Polyhedron;
@@ -261,6 +261,7 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimCTorus(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::PrimRTorus(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::PrimPyramid(s) => s.gen_occ_shape().ok(),
+                PdmsGeoParam::PrimLPyramid(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::PrimRevolution(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::PrimPolyhedron(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::CompoundShape => None,

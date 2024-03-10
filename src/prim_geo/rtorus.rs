@@ -10,14 +10,14 @@ use truck_modeling::{Shell};
 use crate::types::attmap::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use bevy_transform::prelude::Transform;
 
 use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
 
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Shape, Wire, Edge};
-use bevy_transform::prelude::Transform;
+use opencascade::primitives::*;
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
 use crate::NamedAttrMap;
@@ -131,7 +131,7 @@ impl BrepShapeTrait for SRTorus {
             let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
             let center = torus_info.center;
             let r = wire.to_face().revolve(center.as_dvec3(), -y_axis, Some(torus_info.angle.radians()));
-            return Ok(r.to_shape());
+            return Ok(r.into_shape());
         }
 
         Err(anyhow::anyhow!("Rect torus 参数有问题。"))
@@ -241,7 +241,7 @@ impl BrepShapeTrait for RTorus {
 
         let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
         let r = wire.to_face().revolve(DVec3::ZERO, -DVec3::Z, Some(self.angle.radians()));
-        return Ok(r.to_shape());
+        return Ok(r.into_shape());
     }
 
     ///生成brep模型，是否需要存储key points

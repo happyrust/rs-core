@@ -27,7 +27,6 @@ pub async fn query_filter_deep_children(
     nouns: Vec<String>,
 ) -> anyhow::Result<Vec<RefU64>> {
     let end_noun = super::get_type_name(refno).await?;
-    // dbg!(&end_noun);
     let nouns_str = nouns
     .iter()
     .map(|s| format!("'{s}'"))

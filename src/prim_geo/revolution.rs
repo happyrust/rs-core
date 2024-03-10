@@ -16,8 +16,11 @@ use glam::{Vec2, Vec3};
 #[cfg(feature = "opencascade_rs")]
 use opencascade::angle::ToAngle;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::Shape;
+use opencascade::primitives::*;
 use serde::{Deserialize, Serialize};
+use truck_modeling::Curve;
+use truck_stepio::out;
+use truck_topology::compress::CompressedSolid;
 
 #[derive(
     Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
@@ -73,7 +76,7 @@ impl BrepShapeTrait for Revolution {
             self.rot_dir.as_dvec3(),
             Some(angle.radians()),
         );
-        return Ok(r.to_shape());
+        return Ok(r.into_shape());
     }
 
     ///使用manifold生成拉身体的mesh
@@ -158,17 +161,18 @@ impl BrepShapeTrait for Revolution {
                 let rot_pt = self.rot_pt.point3();
                 //避免精度的误差
                 let mut angle = (f32_round_3(self.angle) as f64).to_radians();
-                let normal_flag = plane.normal().dot(Vector3::new(0.0, 0.0, 1.0)) < 0.0;
-                let angle_flag = angle > 0.0;
-                //如果两者一致，就不需要reverse
-                let reverse_flag = !(normal_flag ^ angle_flag);
-                if reverse_flag {
-                    face = face.inverse();
-                }
+                let mut axis_reversed = false;
                 if angle < 0.0 {
                     angle = -angle;
                     rot_dir = -rot_dir;
+                    axis_reversed = true;
                 }
+                let z_flag = plane.normal().z > 0.0;
+                // //如果两者一致，就不需要reverse
+                // if z_flag && axis_reversed {
+                    face = face.inverse();
+                // }
+
                 //check if exist any point on axis
                 let axis_on_edge = self.verts.iter().any(|x| {
                     x.y.abs().abs_diff_eq(&0.0, 0.01) && x.z.abs().abs_diff_eq(&0.0, 0.01)
@@ -200,15 +204,29 @@ impl BrepShapeTrait for Revolution {
                     // shell.append(&mut r_shell);
 
                     // //将s缩小100倍
-                    // // let new_s = builder::transformed(&shell, Matrix4::from_scale(0.01));
-                    // // let json = serde_json::to_vec_pretty(&new_s).unwrap();
-                    // // std::fs::write("revo.json", json).unwrap();
+
 
                     // return Some(shell);
                 // }
 
                 {
                     let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
+                    let output_step_file = "revo.stp";
+                    let step_string = out::CompleteStepDisplay::new(
+                        out::StepModel::from(&s.compress()),
+                        out::StepHeaderDescriptor {
+                            organization_system: "shape-to-step".to_owned(),
+                            ..Default::default()
+                        },
+                    )
+                        .to_string();
+                    let mut step_file = std::fs::File::create(&output_step_file).unwrap();
+                    std::io::Write::write_all(&mut step_file, step_string.as_ref()).unwrap();
+
+                    let new_s = builder::transformed(&s, Matrix4::from_scale(0.01));
+                    let json = serde_json::to_vec_pretty(&new_s).unwrap();
+                    std::fs::write("revo.json", json).unwrap();
+
                     let shell = s.into_boundaries().pop();
                     if shell.is_none() {
                         dbg!(&self);

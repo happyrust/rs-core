@@ -1,14 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
-
-
 use std::hash::{Hash, Hasher};
-
-
 use truck_meshalgo::prelude::*;
-
-
 use glam::{DVec3, Vec3};
-
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -17,7 +10,7 @@ use crate::types::attmap::AttrMap;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Vertex, Shape, Solid, Wire};
+use opencascade::primitives::*;
 use crate::NamedAttrMap;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -118,7 +111,7 @@ impl BrepShapeTrait for Pyramid {
         if tx * ty < f64::EPSILON {
             verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
         } else {
-            polys.push(Wire::from_points(&pts));
+            polys.push(Wire::from_ordered_points(pts)?);
         }
 
         let pts = vec![
@@ -130,10 +123,10 @@ impl BrepShapeTrait for Pyramid {
         if bx * by < f64::EPSILON {
             verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
         } else {
-            polys.push(Wire::from_points(&pts));
+            polys.push(Wire::from_ordered_points(pts)?);
         }
 
-        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).to_shape())
+        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape())
     }
 
 

@@ -18,7 +18,7 @@ use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::Shape;
+use opencascade::primitives::*;
 
 #[derive(
     Component,
@@ -108,7 +108,7 @@ impl BrepShapeTrait for Extrusion {
         Ok(wire
             .to_face()
             .extrude(DVec3::new(0., 0.0, self.height as _))
-            .to_shape())
+            .into_shape())
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {

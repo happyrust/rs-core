@@ -128,7 +128,7 @@ impl BrepShapeTrait for SCTorus {
             let center = torus_info.center;
             let r = circle.to_face().revolve(center.as_dvec3(),
                                              torus_info.rot_axis.as_dvec3(), Some(torus_info.angle.radians()));
-            return Ok(r.to_shape());
+            return Ok(r.into());
         }
         Err(anyhow!("SCTorus参数错误，无法生成Shape"))
     }

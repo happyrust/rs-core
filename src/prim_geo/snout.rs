@@ -15,7 +15,7 @@ use truck_modeling::Shell;
 
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Shape, Solid, Vertex, Wire};
+use opencascade::primitives::*;
 use crate::NamedAttrMap;
 
 #[derive(
@@ -113,7 +113,7 @@ impl BrepShapeTrait for LSnout {
             circles.push(circle);
         }
 
-        Ok(Solid::loft_with_points(circles.iter(), verts.iter()).to_shape())
+        Ok(Solid::loft_with_points(circles.iter(), verts.iter()).into())
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

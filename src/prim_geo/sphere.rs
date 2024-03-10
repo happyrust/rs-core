@@ -7,7 +7,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::SPHERE_GEO_HASH;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, VerifiedShape};
 #[cfg(feature = "opencascade_rs")]
-use opencascade::{adhoc::AdHocShape, primitives::Shape};
+use opencascade::primitives::*;
 use serde::{Deserialize, Serialize};
 
 use crate::types::attmap::AttrMap;
@@ -69,7 +69,7 @@ impl BrepShapeTrait for Sphere {
     //OCC 的生成
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        Ok(AdHocShape::sphere(self.radius as f64).0)
+        Ok(Shape::sphere(self.radius as f64).build())
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {

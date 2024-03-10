@@ -1,17 +1,12 @@
-
 use glam::Vec3;
-
 use truck_base::cgmath64::Vector3;
-
 use truck_modeling::{builder, Shell};
 use serde::{Serialize, Deserialize};
-
-
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
 use crate::prim_geo::CUBE_GEO_HASH;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::{primitives::Shape, adhoc::AdHocShape};
+use opencascade::primitives::*;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 use crate::NamedAttrMap;
@@ -52,7 +47,7 @@ impl BrepShapeTrait for SBox {
 
     #[cfg(feature = "opencascade_rs")]
     fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        Ok(AdHocShape::make_box(self.size.x as f64, self.size.y as f64, self.size.z as f64).0)
+        Ok(Shape::box_centered(self.size.x as f64, self.size.y as f64, self.size.z as f64))
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

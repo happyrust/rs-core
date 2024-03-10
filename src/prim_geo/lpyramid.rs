@@ -10,7 +10,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::{Shape, Solid, Vertex, Wire};
+use opencascade::primitives::*;
 
 #[derive(
     Component,
@@ -94,8 +94,6 @@ impl BrepShapeTrait for LPyramid {
 
         let offset = ox + oy;
         let offset_3d = Vector3::new(offset.x as _, offset.y as _, 0.0);
-        // dbg!((self.pbax_dir, self.pcax_dir, self.paax_dir));
-        // dbg!(offset_3d);
         let pts = vec![
             builder::vertex(Point3::new(-tx, -ty, h2) + offset_3d),
             builder::vertex(Point3::new(tx, -ty, h2) + offset_3d),
@@ -170,10 +168,10 @@ impl BrepShapeTrait for LPyramid {
             DVec3::new(tx, ty, h2) + offset_3d,
             DVec3::new(-tx, ty, h2) + offset_3d,
         ];
-        if tx * ty < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
+        if tx + ty < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(offset.x, offset.y, h2)));
         } else {
-            polys.push(Wire::from_points(&pts));
+            polys.push(Wire::from_ordered_points(pts)?);
         }
 
         let pts = vec![
@@ -182,13 +180,13 @@ impl BrepShapeTrait for LPyramid {
             DVec3::new(bx, by, -h2) ,
             DVec3::new(-bx, by, -h2) ,
         ];
-        if bx * by < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
+        if bx + by < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(-offset.x, -offset.y, -h2)));
         } else {
-            polys.push(Wire::from_points(&pts));
+            polys.push(Wire::from_ordered_points(pts)?);
         }
 
-        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).to_shape())
+        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape())
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {

@@ -194,7 +194,8 @@ impl ManifoldMeshRust {
 
     pub fn merge(&mut self) -> bool {
         unsafe {
-            manifold_meshgl_merge(self.ptr) != 0
+            // manifold_meshgl_merge(self.ptr) != 0
+            true
         }
     }
 

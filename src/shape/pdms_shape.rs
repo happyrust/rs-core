@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{Hash, Hasher, DefaultHasher};
 use std::io::Write;
+use truck_meshalgo::filters::*;
 
 use anyhow::anyhow;
 // #[cfg(feature = "opencascade")]
@@ -38,7 +39,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
 
 #[cfg(feature = "opencascade_rs")]
-use opencascade::primitives::Shape;
+use opencascade::primitives::*;
 use truck_polymesh::stl::IntoStlIterator;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
@@ -169,29 +170,6 @@ impl PlantMesh {
         }
     }
 
-    // ///变成压缩的模型数据
-    // #[inline]
-    // pub fn into_compress_bytes(&self) -> Vec<u8> {
-    //     use flate2::Compression;
-    //     use flate2::write::DeflateEncoder;
-    //     let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-    //     let serialized = rkyv::to_bytes::<_, 2048>(self).unwrap().to_vec();
-    //     e.write_all(&serialized);
-    //     e.finish().unwrap_or_default()
-    // }
-
-    // ///根据反序列化的数据还原成mesh
-    // #[inline]
-    // pub fn from_compress_bytes(bytes: &[u8]) -> Option<Self> {
-    //     use flate2::write::DeflateDecoder;
-    //     let mut writer = Vec::new();
-    //     let mut deflater = DeflateDecoder::new(writer);
-    //     deflater.write_all(bytes).ok()?;
-    //     let buf = deflater.finish().ok()?;
-    //     use rkyv::{archived_root, Deserialize};
-    //     let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
-    //     archived.deserialize(&mut rkyv::Infallible).ok()
-    // }
 
     #[inline]
     pub fn into_compress_bytes(&self) -> Vec<u8> {
@@ -210,29 +188,6 @@ impl PlantMesh {
         deflater.write_all(bytes)?;
         Ok(bincode::deserialize(&deflater.finish()?)?)
     }
-
-    //转变成csg模型
-    // #[cfg(not(target_arch = "wasm32"))]
-    // pub fn into_csg_mesh(&self, transform: Option<&Mat4>) -> CsgMesh {
-    //     let mut triangles = Vec::new();
-    //     for chuck in self.indices.chunks(3) {
-    //         let mut vertices_a: Vec3 = self.vertices[chuck[0] as usize];
-    //         let mut vertices_b: Vec3 = self.vertices[chuck[1] as usize];
-    //         let mut vertices_c: Vec3 = self.vertices[chuck[2] as usize];
-    //
-    //         if let Some(transform) = transform {
-    //             vertices_a = transform.transform_point3(vertices_a);
-    //             vertices_b = transform.transform_point3(vertices_b);
-    //             vertices_c = transform.transform_point3(vertices_c);
-    //         }
-    //         triangles.push(csg::Triangle {
-    //             a: CsgPt3 { x: vertices_a[0] as f64, y: vertices_a[1] as f64, z: vertices_a[2] as f64 },
-    //             b: CsgPt3 { x: vertices_b[0] as f64, y: vertices_b[1] as f64, z: vertices_b[2] as f64 },
-    //             c: CsgPt3 { x: vertices_c[0] as f64, y: vertices_c[1] as f64, z: vertices_c[2] as f64 },
-    //         })
-    //     }
-    //     csg::Mesh::from_triangles(triangles)
-    // }
 
     pub fn export_obj(&self, reverse: bool, file_path: &str) -> std::io::Result<()> {
         let mut buffer = BufWriter::new(File::create(file_path)?);
@@ -469,30 +424,34 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 Point::<f32>::new(c[0] as f32, c[1] as f32, c[2] as f32),
                 Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
             );
-            let tolerance = self.tol() * tol_ratio.unwrap_or(2.0);
+            let tolerance = self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64 ;
+            // let tolerance = 1.2;
             // #[cfg(debug_assertions)]
             // dbg!(tolerance);
-            let meshed_shape = brep.triangulation(tolerance as f64);
-            let polygon = meshed_shape.to_polygon();
-            if polygon.positions().is_empty() {
+            let meshed_shape = brep.triangulation(tolerance);
+            let mut polygon_mesh = meshed_shape.to_polygon();
+            // polygon_mesh
+            //     .remove_degenerate_faces()
+            //     .remove_unused_attrs();;
+            if polygon_mesh.positions().is_empty() {
                 return None;
             }
-            let vertices = polygon
+            let vertices = polygon_mesh
                 .positions()
                 .iter()
                 .map(|&x| x.vec3())
                 .collect::<Vec<_>>();
-            let normals = polygon
+            let normals = polygon_mesh
                 .normals()
                 .iter()
                 .map(|&x| x.vec3())
                 .collect::<Vec<_>>();
-            let _uvs = polygon
+            let _uvs = polygon_mesh
                 .uv_coords()
                 .iter()
                 .map(|x| [x[0] as f32, x[1] as f32])
                 .collect::<Vec<_>>();
-            let indices = polygon
+            let indices = polygon_mesh
                 .faces()
                 .triangle_iter()
                 .flatten()
