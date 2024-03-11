@@ -2,6 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 use std::thread::sleep;
 use glam::Vec3;
 use anyhow::anyhow;
@@ -17,9 +18,10 @@ use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, LEN_TOL, RsVec3, V
 use crate::tool::float_tool::hash_f32;
 
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::NamedAttrMap;
+use crate::prim_geo::basic::OccSharedShape;
 
 //可不可以用来表达 sphere
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
@@ -86,9 +88,10 @@ impl BrepShapeTrait for Dish {
         vec![center.into()]
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        Ok(Shape::dish(self.pdia as f64 / 2.0, self.pheig as f64).ok_or(anyhow!("Dish 参数错误"))?)
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+        let shape = Shape::dish(self.pdia as f64 / 2.0, self.pheig as f64).ok_or(anyhow!("Dish 参数错误"))?;
+        Ok(OccSharedShape::new(shape))
     }
 
     fn tol(&self) -> f32 {

@@ -2,9 +2,10 @@ use std::collections::hash_map::DefaultHasher;
 use std::f64::consts::FRAC_PI_2;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::sync::Arc;
 
 
-use glam::{DVec3, Mat4, Vec3};
+use glam::{DMat4, DVec3, Mat4, Vec3};
 use bevy_ecs::prelude::*;
 use bevy_transform::prelude::Transform;
 use nom::Parser;
@@ -12,14 +13,15 @@ use serde::{Deserialize, Serialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::types::attmap::AttrMap;
-use crate::prim_geo::CYLINDER_GEO_HASH;
+use crate::prim_geo::basic::{CYLINDER_GEO_HASH, CYLINDER_SHAPE, OccSharedShape};
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::NamedAttrMap;
 use opencascade::workplane::Workplane;
+use crate::prim_geo::wire::gen_wire;
 
 
 ///元件库里的LCylinder
@@ -58,7 +60,7 @@ impl VerifiedShape for LCylinder {
     }
 }
 
-pub fn gen_unit_cylinder() -> PlantMesh{
+pub fn gen_unit_cylinder() -> PlantMesh {
     let segments = 1;
     let resolution = 36;
     let height = 1.0;
@@ -84,7 +86,7 @@ pub fn gen_unit_cylinder() -> PlantMesh{
             let theta = segment as f32 * step_theta;
             let (sin, cos) = theta.sin_cos();
 
-            vertices.push([radius * cos,  radius * sin, z].into());
+            vertices.push([radius * cos, radius * sin, z].into());
             normals.push([cos, sin, 0.0].into());
             // uvs.push([
             //     segment as f32 / resolution as f32,
@@ -116,7 +118,7 @@ pub fn gen_unit_cylinder() -> PlantMesh{
     let mut build_cap = |top: bool| {
         let offset = vertices.len() as u32;
         let (z, normal_z, winding) = if top {
-            (height , 1., (1, 0))
+            (height, 1., (1, 0))
         } else {
             (0.0, -1., (0, 1))
         };
@@ -126,8 +128,7 @@ pub fn gen_unit_cylinder() -> PlantMesh{
             let (sin, cos) = theta.sin_cos();
 
             vertices.push([cos * radius, sin * radius, z].into());
-            normals.push([0.0,  0.0, normal_z].into());
-            // uvs.push([0.5 * (cos + 1.0), 1.0 - 0.5 * (sin + 1.0)]);
+            normals.push([0.0, 0.0, normal_z].into());
         }
 
         for i in 1..(resolution - 1) {
@@ -144,7 +145,7 @@ pub fn gen_unit_cylinder() -> PlantMesh{
     build_cap(true);
     build_cap(false);
 
-    PlantMesh{
+    PlantMesh {
         vertices,
         normals,
         indices,
@@ -152,27 +153,9 @@ pub fn gen_unit_cylinder() -> PlantMesh{
     }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for LCylinder {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
-    }
-
-    //OCC 的生成
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        let r = self.pdia as f64 / 2.0;
-        let h = (self.ptdi - self.pbdi) as f64;
-        Ok(Shape::cylinder_radius_height(r, h))
-    }
-
-    ///直接通过基本体的参数，生成模型
-    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
-        Some(gen_unit_cylinder())
-    }
-
-    fn need_use_csg(&self) -> bool{
-        true
     }
 
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
@@ -198,6 +181,15 @@ impl BrepShapeTrait for LCylinder {
         s.pop()
     }
 
+
+    /// 如果是常规的基本体生成，直接跳过, 复用已经生成好的
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+        if !self.check_valid() { return Err(anyhow::anyhow!("Not valid LCylinder")); }
+
+        Ok(CYLINDER_SHAPE.clone())
+    }
+
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(Self::default())
     }
@@ -205,6 +197,15 @@ impl BrepShapeTrait for LCylinder {
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::new(self.pdia, self.pdia, self.pbdi - self.ptdi)
+    }
+
+    ///直接通过基本体的参数，生成模型
+    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
+        Some(gen_unit_cylinder())
+    }
+
+    fn need_use_csg(&self) -> bool {
+        false
     }
 }
 
@@ -294,18 +295,14 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
-    //TODO: 固定的shell不用重复生成
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
-        //slope只能取最后的坐标轴后，执行angle的旋转，如果提前转，因为角度的问题可能对不上
         let dir = self.paxi_dir.normalize();
         let dir = Vec3::Z;
         let r = self.pdia / 2.0;
         let c_pt = Vec3::ZERO;
         let center = c_pt.point3();
         let ref_axis = cal_ref_axis(&dir);
-        // let ref_axis = c;
-        // dbg!(ref_axis);
         let pt0 = c_pt + ref_axis * r;
         let ext_len = self.phei as f64;
         let ext_dir = dir.vector3();
@@ -323,8 +320,8 @@ impl BrepShapeTrait for SCylinder {
         // dbg!(&self.btm_shear_angles);
         let transform_btm =
             Matrix4::from_angle_y(-Rad(self.btm_shear_angles[0].to_radians() as f64))
-            * Matrix4::from_angle_x(Rad(self.btm_shear_angles[1].to_radians() as f64))
-            * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
+                * Matrix4::from_angle_x(Rad(self.btm_shear_angles[1].to_radians() as f64))
+                * Matrix4::from_nonuniform_scale(scale_x, scale_y, 1.0);
 
         // dbg!(&self.top_shear_angles);
         let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
@@ -349,15 +346,13 @@ impl BrepShapeTrait for SCylinder {
             let face1 = builder::homotopy(w_s.front().unwrap(), &w_e.front().unwrap());
             let face2 = builder::homotopy(h_w_s.front().unwrap(), &h_w_e.front().unwrap());
             let shell = vec![f, f_e, face1, face2].into();
-            //Matrix4::from_angle_y(Rad(FRAC_PI_2))
-            // let new_shell = builder::transformed(&shell, Matrix4::from_angle_y(Rad(FRAC_PI_2)));
             return Some(shell);
         }
         None
     }
 
     ///获得关键点
-    fn key_points(&self) -> Vec<RsVec3>{
+    fn key_points(&self) -> Vec<RsVec3> {
         if self.is_sscl() {
             vec![Vec3::ZERO.into(), (Vec3::Z * self.phei.abs()).into()]
         } else {
@@ -371,35 +366,39 @@ impl BrepShapeTrait for SCylinder {
         self.pdia = self.pdia.min(l);
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         if self.is_sscl() {
-            let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos();
-            let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos();
-            let transform_btm = Mat4::from_axis_angle(Vec3::Y,self.btm_shear_angles[0].to_radians())
-                * Mat4::from_axis_angle(Vec3::Y, self.btm_shear_angles[1].to_radians())
-                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
-
-            let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos();
-            let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos();
-            let ext_dir = self.paxi_dir.normalize();
-            let ext_len = self.phei;
-            let transform_top = Mat4::from_translation(ext_dir * ext_len)
-                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[0].to_radians())
-                * Mat4::from_axis_angle(Vec3::Y,self.top_shear_angles[1].to_radians())
-                * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
-            let mut circle = Workplane::xy().circle(0.0, 0.0, self.pdia as f64 /2.0);
-            let (_s, r, _t) = transform_btm.to_scale_rotation_translation();
-            let (_axis, _angle) = r.to_axis_angle();
-            let btm_circe = circle.g_transformed_by_mat(&transform_btm.as_dmat4());
-            let top_circle = circle.g_transformed_by_mat(&transform_top.as_dmat4());
-
-            Ok(Solid::loft([btm_circe, top_circle].iter()).into())
-
-        } else {
+            let dir = self.paxi_dir.normalize();
+            let dir = DVec3::Z;
             let r = self.pdia as f64 / 2.0;
-            let h = self.phei as f64;
-            Ok(Shape::cylinder_centered(DVec3::ZERO, r, DVec3::Z, h))
+            let center = DVec3::ZERO;
+            let ext_len = self.phei as f64;
+            let mut circle = Workplane::xy().circle(0.0, 0.0, r);
+
+            //还是要和extrude 区分出来
+            let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
+            let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
+            let scale_mat = DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
+            // dbg!(&self.btm_shear_angles);
+            let transform_btm =
+                DMat4::from_axis_angle(DVec3::Y, -(self.btm_shear_angles[0].to_radians() as f64))
+                    * DMat4::from_axis_angle(DVec3::X, (self.btm_shear_angles[1].to_radians() as f64))
+                    * scale_mat;
+
+            // dbg!(&self.top_shear_angles);
+            let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
+            let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
+            let transform_top = DMat4::from_translation(dir * ext_len as f64)
+                * DMat4::from_axis_angle(DVec3::Y, -(self.top_shear_angles[0].to_radians() as f64))
+                * DMat4::from_axis_angle(DVec3::X, (self.top_shear_angles[1].to_radians() as f64))
+                * scale_mat;
+            let btm_circe = circle.transformed_by_gmat(&transform_btm);
+            let top_circle = circle.transformed_by_gmat(&transform_top);
+
+            Ok(OccSharedShape::new(Solid::loft([btm_circe, top_circle].iter()).into()))
+        } else {
+            Ok(CYLINDER_SHAPE.clone())
         }
     }
 
@@ -417,17 +416,6 @@ impl BrepShapeTrait for SCylinder {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         if self.is_sscl() {
-            // let s = SCylinder {
-            //     paxi_expr: "Z".to_string(),
-            //     paxi_pt: Default::default(),
-            //     paxi_dir: Vec3::Z,
-            //     phei: self.phei,
-            //     pdia: self.pdia,
-            //     btm_shear_angles: self.btm_shear_angles.clone(),
-            //     top_shear_angles: self.top_shear_angles.clone(),
-            //     negative: false,
-            //     center_in_mid: self.center_in_mid,
-            // };
             return Box::new(self.clone());
         }
         Box::new(Self::default())
@@ -459,7 +447,7 @@ impl BrepShapeTrait for SCylinder {
     fn tol(&self) -> f32 {
         if self.is_sscl() {
             0.004 * (self.pdia.max(1.0))
-        }else{
+        } else {
             TRI_TOL
         }
     }
@@ -476,8 +464,9 @@ impl BrepShapeTrait for SCylinder {
         Some(gen_unit_cylinder())
     }
 
-    fn need_use_csg(&self) -> bool{
-        !self.is_sscl()
+    fn need_use_csg(&self) -> bool {
+        // !self.is_sscl()
+        false
     }
 }
 

@@ -10,20 +10,22 @@ use approx::AbsDiffEq;
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 use truck_meshalgo::prelude::*;
 
 use glam::{Vec2, Vec3};
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use serde::{Deserialize, Serialize};
 use truck_modeling::Curve;
 use truck_stepio::out;
 use truck_topology::compress::CompressedSolid;
+use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(
-    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Revolution {
     pub verts: Vec<Vec3>,
@@ -63,20 +65,114 @@ impl BrepShapeTrait for Revolution {
         Box::new(self.clone())
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    ///revolve 有些问题，暂时用manifold来代替
+    ///如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
+    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
+        use truck_modeling::{builder, Surface};
+
+        if !self.check_valid() {
+            return None;
+        }
+        let wire = gen_wire(&self.verts, &self.fradius_vec).unwrap();
+
+        //如果截面包含了原点，就考虑用分成两块的办法
+        // let contains_origin = polygon.contains(&point!{ x: 0.0, y: 0.0 });
+        if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
+            if let Surface::Plane(plane) = face.surface() {
+                let mut rot_dir = self.rot_dir.normalize().vector3();
+                let rot_pt = self.rot_pt.point3();
+                //避免精度的误差
+                let mut angle = (f32_round_3(self.angle) as f64).to_radians();
+                let mut axis_reversed = false;
+                if angle < 0.0 {
+                    angle = -angle;
+                    rot_dir = -rot_dir;
+                    axis_reversed = true;
+                }
+                let z_flag = plane.normal().z > 0.0;
+                // //如果两者一致，就不需要reverse
+                // if z_flag && axis_reversed {
+                face = face.inverse();
+                // }
+
+                //check if exist any point on axis
+                let axis_on_edge = self.verts.iter().any(|x| {
+                    x.y.abs().abs_diff_eq(&0.0, 0.01) && x.z.abs().abs_diff_eq(&0.0, 0.01)
+                });
+                {
+                    let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
+                    let output_step_file = "revo.stp";
+                    let step_string = out::CompleteStepDisplay::new(
+                        out::StepModel::from(&s.compress()),
+                        out::StepHeaderDescriptor {
+                            organization_system: "shape-to-step".to_owned(),
+                            ..Default::default()
+                        },
+                    )
+                        .to_string();
+                    let mut step_file = std::fs::File::create(&output_step_file).unwrap();
+                    std::io::Write::write_all(&mut step_file, step_string.as_ref()).unwrap();
+
+                    let new_s = builder::transformed(&s, Matrix4::from_scale(0.01));
+                    let json = serde_json::to_vec_pretty(&new_s).unwrap();
+                    std::fs::write("revo.json", json).unwrap();
+
+                    let shell = s.into_boundaries().pop();
+                    if shell.is_none() {
+                        dbg!(&self);
+                    }
+
+                    return shell;
+                }
+            }
+        }
+        None
+    }
+
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         let wire = gen_occ_wire(&self.verts, &self.fradius_vec)?;
         let angle = if abs_diff_eq!(self.angle, 360.0, epsilon = 0.01) {
-            core::f64::consts::TAU
+            360.0
         } else {
-            self.angle.to_radians() as _
+            self.angle as f64
         };
         let r = wire.to_face().revolve(
             self.rot_pt.as_dvec3(),
             self.rot_dir.as_dvec3(),
-            Some(angle.radians()),
+            Some(angle.degrees()),
         );
-        return Ok(r.into_shape());
+        return Ok(OccSharedShape::new(r.into_shape()));
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.verts.iter().for_each(|v| {
+            hash_vec3::<DefaultHasher>(v, &mut hasher);
+        });
+        "Revolution".hash(&mut hasher);
+        hash_f32(self.angle, &mut hasher);
+        hasher.finish()
+    }
+
+    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
+        Box::new(self.clone())
+    }
+
+    #[inline]
+    fn tol(&self) -> f32 {
+        use parry2d::bounding_volume::Aabb;
+        let pts = self
+            .verts
+            .iter()
+            .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
+            .collect::<Vec<_>>();
+        let profile_aabb = Aabb::from_points(&pts);
+        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(PdmsGeoParam::PrimRevolution(self.clone()))
     }
 
     ///使用manifold生成拉身体的mesh
@@ -129,131 +225,5 @@ impl BrepShapeTrait for Revolution {
     #[inline]
     fn need_use_csg(&self) -> bool {
         false
-    }
-
-    #[inline]
-    fn tol(&self) -> f32 {
-        use parry2d::bounding_volume::Aabb;
-        let pts = self
-            .verts
-            .iter()
-            .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
-            .collect::<Vec<_>>();
-        let profile_aabb = Aabb::from_points(&pts);
-        0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
-    }
-
-    ///revolve 有些问题，暂时用manifold来代替
-    ///如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
-    fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::{builder, Surface};
-
-        if !self.check_valid() {
-            return None;
-        }
-        let wire = gen_wire(&self.verts, &self.fradius_vec).unwrap();
-
-        //如果截面包含了原点，就考虑用分成两块的办法
-        // let contains_origin = polygon.contains(&point!{ x: 0.0, y: 0.0 });
-        if let Ok(mut face) = builder::try_attach_plane(&[wire]) {
-            if let Surface::Plane(plane) = face.surface() {
-                let mut rot_dir = self.rot_dir.normalize().vector3();
-                let rot_pt = self.rot_pt.point3();
-                //避免精度的误差
-                let mut angle = (f32_round_3(self.angle) as f64).to_radians();
-                let mut axis_reversed = false;
-                if angle < 0.0 {
-                    angle = -angle;
-                    rot_dir = -rot_dir;
-                    axis_reversed = true;
-                }
-                let z_flag = plane.normal().z > 0.0;
-                // //如果两者一致，就不需要reverse
-                // if z_flag && axis_reversed {
-                    face = face.inverse();
-                // }
-
-                //check if exist any point on axis
-                let axis_on_edge = self.verts.iter().any(|x| {
-                    x.y.abs().abs_diff_eq(&0.0, 0.01) && x.z.abs().abs_diff_eq(&0.0, 0.01)
-                });
-
-                //如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
-                // if axis_on_edge && angle.abs() >= (core::f64::consts::TAU - 0.01) {
-                    // dbg!(axis_on_edge);
-                    // let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(PI as f64));
-                    // let mut shell = s.into_boundaries().pop()?;
-                    // let len = shell.len();
-                    // // dbg!(len);
-                    // shell.remove(len - 1);
-                    // // shell.remove(len - 2);
-                    // shell.remove(0);
-                    // // if shell.is_none() {
-                    // //     dbg!(&self);
-                    // //     return None;
-                    // // }
-
-                    // let rev_face = face.inverse();
-                    // let rev_s = builder::rsweep(&rev_face, rot_pt, -rot_dir, Rad(PI as f64));
-                    // let mut r_shell = rev_s.into_boundaries().pop()?;
-                    // let len = r_shell.len();
-                    // // dbg!(len);
-                    // r_shell.remove(len - 1);
-                    // // r_shell.remove(len - 2);
-                    // r_shell.remove(0);
-                    // shell.append(&mut r_shell);
-
-                    // //将s缩小100倍
-
-
-                    // return Some(shell);
-                // }
-
-                {
-                    let s = builder::rsweep(&face, rot_pt, rot_dir, Rad(angle as f64));
-                    let output_step_file = "revo.stp";
-                    let step_string = out::CompleteStepDisplay::new(
-                        out::StepModel::from(&s.compress()),
-                        out::StepHeaderDescriptor {
-                            organization_system: "shape-to-step".to_owned(),
-                            ..Default::default()
-                        },
-                    )
-                        .to_string();
-                    let mut step_file = std::fs::File::create(&output_step_file).unwrap();
-                    std::io::Write::write_all(&mut step_file, step_string.as_ref()).unwrap();
-
-                    let new_s = builder::transformed(&s, Matrix4::from_scale(0.01));
-                    let json = serde_json::to_vec_pretty(&new_s).unwrap();
-                    std::fs::write("revo.json", json).unwrap();
-
-                    let shell = s.into_boundaries().pop();
-                    if shell.is_none() {
-                        dbg!(&self);
-                    }
-
-                    return shell;
-                }
-            }
-        }
-        None
-    }
-
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        self.verts.iter().for_each(|v| {
-            hash_vec3::<DefaultHasher>(v, &mut hasher);
-        });
-        "Revolution".hash(&mut hasher);
-        hash_f32(self.angle, &mut hasher);
-        hasher.finish()
-    }
-
-    fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        Box::new(self.clone())
-    }
-
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(PdmsGeoParam::PrimRevolution(self.clone()))
     }
 }

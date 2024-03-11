@@ -19,7 +19,7 @@ use approx::abs_diff_eq;
 use std::collections::{BTreeSet, HashMap};
 use std::f32::consts::PI;
 
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::{Edge, Wire};
 
 #[derive(
@@ -54,7 +54,7 @@ pub fn circus_center(pt0: Point3, pt1: Point3, pt2: Point3) -> Point3 {
     pt0 + u * vec0 + v * vec1
 }
 
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 ///生成occ的wire
 pub fn gen_occ_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire> {
     if verts.len() != 3 {
@@ -155,7 +155,7 @@ pub fn gen_spline_wire(
 }
 
 ///生成occ的wire
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));

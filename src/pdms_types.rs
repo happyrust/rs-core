@@ -24,14 +24,13 @@ use id_tree::{NodeId, Tree};
 use itertools::Itertools;
 use nalgebra::Point3;
 use parry3d::bounding_volume::Aabb;
-use parry3d::shape::SharedShape;
 use rkyv::with::Skip;
 #[cfg(feature = "sea-orm")]
 use sea_orm::entity::prelude::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{DisplayFromStr, serde_as};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::{Debug, Display, Pointer};
 use std::fs::File;
@@ -40,6 +39,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::str::FromStr;
 use std::string::ToString;
+use std::sync::Arc;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -947,69 +947,6 @@ impl PdmsInstanceMeshData {
 
 pub type GeoHash = u64;
 
-//凸面体的数据缓存，同时也是需要lod的
-#[derive(Serialize, Deserialize, Default, Deref, DerefMut)]
-pub struct ColliderShapeMgr {
-    pub shapes_map: DashMap<RefU64, SharedShape>,
-}
-
-impl ColliderShapeMgr {
-    //
-    // pub fn get_collider(ele_geos_info: &EleGeosInfo, mesh_mgr: &PlantMeshesData) -> Vec<SharedShape> {
-    //     let mut target_colliders = vec![];
-    //     let mut colliders = vec![];
-    //     let ele_trans = ele_geos_info.world_transform;
-    //     for geo in &ele_geos_info.geo_insts {
-    //         let t = ele_geos_info.get_geo_world_transform(geo);
-    //         let s = t.scale;
-    //         let mut local_rot = glam::Quat::IDENTITY;
-    //         let shape = match geo.geo_hash {
-    //             prim_geo::CUBE_GEO_HASH => {
-    //                 SharedShape::cuboid(s.x / 2.0, s.y / 2.0, s.z / 2.0)
-    //             }
-    //             prim_geo::SPHERE_GEO_HASH => {
-    //                 SharedShape::ball(s.x)
-    //             }
-    //             prim_geo::CYLINDER_GEO_HASH => {
-    //                 local_rot = glam::Quat::from_rotation_x(PI / 2.0);
-    //                 SharedShape::cylinder(s.z / 2.0, s.x / 2.0)
-    //             }
-    //             _ => {
-    //                 let m = mesh_mgr.get_mesh(geo.geo_hash).unwrap();
-    //                 SharedShape(Arc::new(m.get_tri_mesh(t.compute_matrix())))
-    //             }
-    //         };
-    //         let rot = t.rotation * local_rot;
-    //         if shape.as_composite_shape().is_none() {
-    //             colliders.push((Isometry {
-    //                 rotation: UnitQuaternion::from_quaternion(Quaternion::new(rot.w, rot.x, rot.y, rot.z)),
-    //                 translation: Vector::new(t.translation.x, t.translation.y, t.translation.z).into(),
-    //             }, shape));
-    //         } else {
-    //             target_colliders.push(shape);
-    //         }
-    //     }
-    //     if !colliders.is_empty() {
-    //         target_colliders.push(SharedShape::compound(colliders));
-    //     }
-    //     target_colliders
-    // }
-
-    pub fn serialize_to_bin_file(&self) -> bool {
-        let mut file = File::create(format!("collider.shapes")).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
-    }
-
-    pub fn deserialize_from_bin_file(file_path: &str) -> Option<Self> {
-        let mut file = File::open(file_path).ok()?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok()?;
-        bincode::deserialize(buf.as_slice()).ok()
-    }
-}
-
 #[derive(
     Serialize,
     Deserialize,
@@ -1103,10 +1040,11 @@ use crate::types::named_attvalue::NamedAttrValue;
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;
 use bevy_render::render_asset::RenderAssetUsages;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
+use crate::prim_geo::basic::{BOXI_GEO_HASH, OccSharedShape, TUBI_GEO_HASH};
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
@@ -1326,15 +1264,15 @@ impl EleInstGeosData {
     }
 
     ///返回ngmr的组合shape和owner pos refno
-    #[cfg(feature = "opencascade_rs")]
-    pub fn gen_ngmr_occ_shapes(&self, transform: &Transform) -> Vec<(Vec<RefU64>, Shape)> {
+    #[cfg(feature = "occ")]
+    pub fn gen_ngmr_occ_shapes(&self, transform: &Transform) -> Vec<(Vec<RefU64>, OccSharedShape)> {
         let ngmr_shapes: Vec<_> = self
             .insts
             .iter()
             .filter(|x| x.geo_type == GeoBasicType::CateCrossNeg)
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
-                    s.transform_by_mat(&transform.compute_matrix().as_dmat4());
+                    s.as_mut().transform_by_mat(&transform.compute_matrix().as_dmat4());
                     let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
                     Some((own_pos_refnos, s))
                 } else {
@@ -1346,15 +1284,15 @@ impl EleInstGeosData {
     }
 
     ///返回新的shape，如果只有负实体，需要返回对应正实体的参考号
-    #[cfg(feature = "opencascade_rs")]
-    pub fn gen_occ_shape(&self, transform: &Transform) -> Option<(Shape, Vec<RefU64>)> {
-        let mut neg_shapes: Vec<(Shape, Vec<RefU64>)> = self
+    #[cfg(feature = "occ")]
+    pub fn gen_occ_shape(&self, transform: &Transform) -> Option<(OccSharedShape, Vec<RefU64>)> {
+        let mut neg_shapes: Vec<(OccSharedShape, Vec<RefU64>)> = self
             .insts
             .iter()
             .filter(|x| x.geo_type == GeoBasicType::Neg)
             .filter_map(|x| {
                 if let Some(mut s) = x.gen_occ_shape() {
-                    s.transform_by_mat(&transform.compute_matrix().as_dmat4());
+                    s.as_mut().transform_by_mat(&transform.compute_matrix().as_dmat4());
                     let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
                     Some((s, own_pos_refnos))
                 } else {
@@ -1367,7 +1305,7 @@ impl EleInstGeosData {
             return neg_shapes.pop();
         }
 
-        let mut pos_shapes: HashMap<RefU64, Shape> = self
+        let mut pos_shapes: HashMap<RefU64, OccSharedShape> = self
             .insts
             .iter()
             .filter(|x| x.geo_type == GeoBasicType::Pos)
@@ -1384,14 +1322,14 @@ impl EleInstGeosData {
             cate_neg_inst.owner_pos_refnos.iter().for_each(|r| {
                 if let Some(pos_shape) = pos_shapes.get_mut(r) {
                     if let Some(neg_shape) = cate_neg_inst.gen_occ_shape() {
-                        *pos_shape = pos_shape.subtract(&neg_shape).into_shape();
+                        *pos_shape = pos_shape.subtract(&neg_shape).into_shape().into();
                     }
                 }
             });
         }
         let mut compound: Shape = opencascade::primitives::Compound::from_shapes(pos_shapes.values()).into();
         compound.transform_by_mat(&transform.compute_matrix().as_dmat4());
-        Some((compound, vec![]))
+        Some((compound.into(), vec![]))
     }
 }
 
@@ -1482,16 +1420,14 @@ impl EleInstGeo {
         json_string
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    pub fn gen_occ_shape(&self) -> Option<Shape> {
-        let mut shape: Option<Shape> = self.geo_param.gen_occ_shape();
+    #[cfg(feature = "occ")]
+    pub fn gen_occ_shape(&self) -> Option<OccSharedShape> {
+        let mut shape: OccSharedShape = self.geo_param.gen_occ_shape()?;
         //scale 不能要，已经包含在OCC的真实参数里
         let mut new_transform = self.transform;
         new_transform.scale = Vec3::ONE;
-        if let Some(s) = shape.as_mut() {
-            s.transform_by_mat(&new_transform.compute_matrix().as_dmat4());
-        }
-        shape
+        shape.as_mut().transform_by_mat(&new_transform.compute_matrix().as_dmat4());
+        Some(shape)
     }
 }
 

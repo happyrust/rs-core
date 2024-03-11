@@ -3,6 +3,7 @@ use anyhow::anyhow;
 use std::collections::hash_map::DefaultHasher;
 
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use glam::{DVec3, Vec2, Vec3};
@@ -17,8 +18,10 @@ use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
+use opencascade::workplane::Workplane;
+use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(
     Component,
@@ -95,8 +98,8 @@ impl BrepShapeTrait for Extrusion {
         dbg!(&self.height);
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         if !self.check_valid() || self.verts.len() < 3 {
             return Err(anyhow!("Extrusion params not valid."));
         }
@@ -105,10 +108,10 @@ impl BrepShapeTrait for Extrusion {
         } else {
             gen_occ_wire(&self.verts, &self.fradius_vec)?
         };
-        Ok(wire
+        Ok(OccSharedShape::new(wire
             .to_face()
             .extrude(DVec3::new(0., 0.0, self.height as _))
-            .into_shape())
+            .into_shape()))
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
@@ -206,7 +209,7 @@ impl BrepShapeTrait for Extrusion {
     }
 }
 
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 #[test]
 fn test_circle_fradius() {
     let ext = Extrusion {

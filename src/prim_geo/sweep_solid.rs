@@ -2,6 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 
 use anyhow::anyhow;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
 use approx::abs_diff_ne;
 
@@ -21,10 +22,11 @@ use crate::shape::pdms_shape::{
 use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_ori_str};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
+use crate::prim_geo::basic::OccSharedShape;
 
 ///含有两边方向的，扫描体
 #[derive(
@@ -69,7 +71,7 @@ impl SweepSolid {
             && abs_diff_ne!(dot_e.abs(), 0.0, epsilon = 0.001)
     }
 
-    #[cfg(feature = "opencascade_rs")]
+    #[cfg(feature = "occ")]
     ///生成OCC的SANN 线框
     fn gen_occ_sann_wire(
         &self,
@@ -138,7 +140,7 @@ impl SweepSolid {
         let beta_mat = Mat4::from_mat3(m);
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
 
-        Ok(wire.g_transformed_by_mat(&final_mat.as_dmat4()))
+        Ok(wire.transformed_by_gmat(&final_mat.as_dmat4()))
     }
 
     /// 生成sann的线框
@@ -250,7 +252,7 @@ impl SweepSolid {
         Some(result_wire)
     }
 
-    #[cfg(feature = "opencascade_rs")]
+    #[cfg(feature = "occ")]
     ///计算SPRO的face
     /// start_vec 为起始方向
     fn gen_occ_spro_wire(&self, profile: &SProfileData) -> anyhow::Result<Wire> {
@@ -300,7 +302,7 @@ impl SweepSolid {
         let local_mat = Mat4::from_mat3(rot_mat);
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
 
-        Ok(wire.g_transformed_by_mat(&final_mat.as_dmat4()))
+        Ok(wire.transformed_by_gmat(&final_mat.as_dmat4()))
     }
 
     ///计算SPRO的face
@@ -527,8 +529,8 @@ impl BrepShapeTrait for SweepSolid {
         None
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         let mut is_sann = false;
         let (profile_wire, top_profile_wire) = match &self.profile {
             CateProfileParam::SANN(p) => {
@@ -555,9 +557,6 @@ impl BrepShapeTrait for SweepSolid {
                 return Err(anyhow!("drns or drne is nan"));
             }
 
-            let _rotation = Mat4::IDENTITY;
-            let _scale_mat = Mat4::IDENTITY;
-
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
                     let rot_angle = arc.angle;
@@ -568,7 +567,7 @@ impl BrepShapeTrait for SweepSolid {
                         rot_axis.as_dvec3(),
                         Some(rot_angle.radians()),
                     );
-                    return Ok(r.into_shape());
+                    return Ok(r.into_shape().into());
                 }
                 SweepPath3D::Line(l) => {
                     let mut wires = vec![];
@@ -617,14 +616,14 @@ impl BrepShapeTrait for SweepSolid {
                     }
                     transform_top =
                         Mat4::from_translation(Vec3::new(0.0, 0.0, l.length())) * transform_top;
-                    wires.push(wire.g_transformed_by_mat(&transform_btm.as_dmat4()));
+                    wires.push(wire.transformed_by_gmat(&transform_btm.as_dmat4()));
                     if let Some(mut top_wire) = top_profile_wire {
-                        wires.push(top_wire.g_transformed_by_mat(&transform_top.as_dmat4()));
+                        wires.push(top_wire.transformed_by_gmat(&transform_top.as_dmat4()));
                     } else {
-                        wires.push(wire.g_transformed_by_mat(&transform_top.as_dmat4()));
+                        wires.push(wire.transformed_by_gmat(&transform_top.as_dmat4()));
                     }
 
-                    return Ok(Solid::loft(wires.iter()).into_shape());
+                    return Ok(Solid::loft(wires.iter()).into_shape().into());
                 }
             }
         }

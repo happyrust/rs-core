@@ -1,5 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 use truck_meshalgo::prelude::*;
 use glam::{DVec3, Vec3};
 use truck_modeling::builder::try_attach_plane;
@@ -9,9 +10,10 @@ use crate::types::attmap::AttrMap;
 
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::NamedAttrMap;
+use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 
@@ -79,57 +81,6 @@ impl BrepShapeTrait for Pyramid {
         Box::new(self.clone())
     }
 
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let bytes = bincode::serialize(self).unwrap();
-        let mut hasher = DefaultHasher::default();
-        bytes.hash(&mut hasher);
-        "Pyramid".hash(&mut hasher);
-        hasher.finish()
-    }
-
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-
-        //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0) as f64;
-        let ty = (self.pctp / 2.0) as f64;
-        let bx = (self.pbbt / 2.0) as f64;
-        let by = (self.pcbt / 2.0) as f64;
-        let ox = 0.5 * self.pbof as f64;
-        let oy = 0.5 * self.pcof as f64;
-        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
-
-        let mut polys = vec![];
-        let mut verts = vec![];
-
-        let pts = vec![
-            DVec3::new(-tx + ox, -ty + oy, h2),
-            DVec3::new(tx + ox, -ty + oy, h2),
-            DVec3::new(tx + ox, ty + oy, h2),
-            DVec3::new(-tx + ox, ty + oy, h2),
-        ];
-        if tx * ty < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
-        } else {
-            polys.push(Wire::from_ordered_points(pts)?);
-        }
-
-        let pts = vec![
-            DVec3::new(-bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, by - oy, -h2),
-            DVec3::new(-bx - ox, by - oy, -h2),
-        ];
-        if bx * by < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
-        } else {
-            polys.push(Wire::from_ordered_points(pts)?);
-        }
-
-        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape())
-    }
-
-
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
@@ -182,6 +133,57 @@ impl BrepShapeTrait for Pyramid {
         shell.push(builder::homotopy(&ebs[2], &ets[2]));
         shell.push(builder::homotopy(&ebs[3], &ets[3]));
         Some(shell)
+    }
+
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+
+        //todo 以防止出现有单个点的情况，暂时用这个模拟
+        let tx = (self.pbtp / 2.0) as f64;
+        let ty = (self.pctp / 2.0) as f64;
+        let bx = (self.pbbt / 2.0) as f64;
+        let by = (self.pcbt / 2.0) as f64;
+        let ox = 0.5 * self.pbof as f64;
+        let oy = 0.5 * self.pcof as f64;
+        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
+
+        let mut polys = vec![];
+        let mut verts = vec![];
+
+        let pts = vec![
+            DVec3::new(-tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, -ty + oy, h2),
+            DVec3::new(tx + ox, ty + oy, h2),
+            DVec3::new(-tx + ox, ty + oy, h2),
+        ];
+        if tx * ty < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
+        } else {
+            polys.push(Wire::from_ordered_points(pts)?);
+        }
+
+        let pts = vec![
+            DVec3::new(-bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, -by - oy, -h2),
+            DVec3::new(bx - ox, by - oy, -h2),
+            DVec3::new(-bx - ox, by - oy, -h2),
+        ];
+        if bx * by < f64::EPSILON {
+            verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
+        } else {
+            polys.push(Wire::from_ordered_points(pts)?);
+        }
+
+        Ok(OccSharedShape::new(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape()))
+    }
+
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        let bytes = bincode::serialize(self).unwrap();
+        let mut hasher = DefaultHasher::default();
+        bytes.hash(&mut hasher);
+        "Pyramid".hash(&mut hasher);
+        hasher.finish()
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {

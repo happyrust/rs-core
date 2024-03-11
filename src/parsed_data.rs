@@ -150,9 +150,10 @@ pub mod geo_params_data {
     use crate::prim_geo::{cylinder::*, LPyramid};
     use crate::prim_geo::dish::Dish;
     use crate::prim_geo::extrusion::Extrusion;
-    #[cfg(feature = "opencascade_rs")]
+    #[cfg(feature = "occ")]
     use opencascade::primitives::*;
     use serde_derive::{Deserialize, Serialize};
+    use crate::prim_geo::basic::OccSharedShape;
 
     use crate::prim_geo::polyhedron::Polyhedron;
     use crate::prim_geo::pyramid::Pyramid;
@@ -246,8 +247,8 @@ pub mod geo_params_data {
             }
         }
 
-        #[cfg(feature = "opencascade_rs")]
-        pub fn gen_occ_shape(&self) -> Option<Shape> {
+        #[cfg(feature = "occ")]
+        pub fn gen_occ_shape(&self) -> Option<OccSharedShape> {
             match self {
                 PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape().ok(),
                 PdmsGeoParam::PrimLCylinder(s) => s.gen_occ_shape().ok(),

@@ -4,8 +4,8 @@ use truck_modeling::{builder, Shell};
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
-use crate::prim_geo::CUBE_GEO_HASH;
-#[cfg(feature = "opencascade_rs")]
+use crate::prim_geo::basic::{BOX_SHAPE, BOX_GEO_HASH, OccSharedShape};
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
@@ -39,17 +39,6 @@ impl BrepShapeTrait for SBox {
         Box::new(self.clone())
     }
 
-    fn apply_limit_by_size(&mut self, l: f32) {
-        self.size.x = self.size.x.min(l);
-        self.size.y = self.size.y.min(l);
-        self.size.z = self.size.z.min(l);
-    }
-
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        Ok(Shape::box_centered(self.size.x as f64, self.size.y as f64, self.size.z as f64))
-    }
-
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         let v = builder::vertex((self.center - self.size / 2.0).point3());
@@ -59,8 +48,19 @@ impl BrepShapeTrait for SBox {
         s.pop()
     }
 
+    fn apply_limit_by_size(&mut self, l: f32) {
+        self.size.x = self.size.x.min(l);
+        self.size.y = self.size.y.min(l);
+        self.size.z = self.size.z.min(l);
+    }
+
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+        Ok(BOX_SHAPE.clone())
+    }
+
     fn hash_unit_mesh_params(&self) -> u64 {
-        CUBE_GEO_HASH
+        BOX_GEO_HASH
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {

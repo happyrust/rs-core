@@ -55,14 +55,28 @@ impl SweepPath3D{
 }
 
 
+/// `Arc3D` 结构的定义
 #[derive(Component, Debug, Clone, Default, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Arc3D {
+    /// 弧的中心点
     pub center: Vec3,
+
+    /// 弧的半径
     pub radius: f32,
+
+    /// 弧的角度 (以弧度表示)
     pub angle: f32,
+
+    /// 弧的起始点
     pub start_pt: Vec3,
+
+    /// 弧的绘制方向，如果顺时针则为 `true`
     pub clock_wise: bool,
+
+    /// 弧的轴
     pub axis: Vec3,
+
+    /// 弧的首选轴
     pub pref_axis: Vec3,
 }
 

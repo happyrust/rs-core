@@ -10,13 +10,15 @@ use crate::tool::float_tool::hash_f32;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
+use std::sync::Arc;
 use truck_meshalgo::prelude::*;
 use truck_modeling::Shell;
 
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::NamedAttrMap;
+use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(
     Component,
@@ -87,8 +89,8 @@ impl BrepShapeTrait for LSnout {
         0.005 * ((self.pbdm + self.ptdm) / 2.0).max(1.0)
     }
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         let rt = self.ptdm / 2.0;
         let rb = self.pbdm / 2.0;
 
@@ -113,7 +115,7 @@ impl BrepShapeTrait for LSnout {
             circles.push(circle);
         }
 
-        Ok(Solid::loft_with_points(circles.iter(), verts.iter()).into())
+        Ok(OccSharedShape::new(Solid::loft_with_points(circles.iter(), verts.iter()).into()))
     }
 
     fn gen_brep_shell(&self) -> Option<Shell> {

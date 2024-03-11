@@ -3,6 +3,7 @@ use std::collections::hash_map::DefaultHasher;
 
 use std::hash::Hasher;
 use std::hash::Hash;
+use std::sync::Arc;
 
 use glam::{DVec3, Mat3, Quat, Vec3};
 use bevy_ecs::prelude::*;
@@ -16,11 +17,12 @@ use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
 
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
 use crate::NamedAttrMap;
+use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct SRTorus {
@@ -103,40 +105,6 @@ impl BrepShapeTrait for SRTorus {
         Box::new(self.clone())
     }
 
-    #[inline]
-    fn tol(&self) -> f32 {
-        0.01 * self.pdia.min(self.pheig).max(1.0)
-    }
-
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
-                                                              self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
-            let z_axis = self.paax_dir.normalize().as_dvec3();
-            let y_axis = torus_info.rot_axis.as_dvec3();
-            let x_axis = z_axis.cross(y_axis);
-            let h = self.pheig as f64;
-            let d = self.pdia as f64;
-            let pt = self.paax_pt.as_dvec3();
-            let p1 = (pt - y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p2 = (pt + y_axis * h / 2.0 - x_axis * d / 2.0).into();
-            let p3 = (pt + y_axis * h / 2.0 + x_axis * d / 2.0).into();
-            let p4 = (pt - y_axis * h / 2.0 + x_axis * d / 2.0).into();
-            //创建四边形
-            let top = Edge::segment(p1, p2);
-            let right = Edge::segment(p2, p3);
-            let bottom = Edge::segment(p3, p4);
-            let left = Edge::segment(p4, p1);
-
-            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
-            let center = torus_info.center;
-            let r = wire.to_face().revolve(center.as_dvec3(), -y_axis, Some(torus_info.angle.radians()));
-            return Ok(r.into_shape());
-        }
-
-        Err(anyhow::anyhow!("Rect torus 参数有问题。"))
-    }
-
     fn gen_brep_shell(&self) -> Option<Shell> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
                                                               self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
@@ -159,8 +127,42 @@ impl BrepShapeTrait for SRTorus {
         None
     }
 
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
+                                                              self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
+            let z_axis = self.paax_dir.normalize().as_dvec3();
+            let y_axis = torus_info.rot_axis.as_dvec3();
+            let x_axis = z_axis.cross(y_axis);
+            let h = self.pheig as f64;
+            let d = self.pdia as f64;
+            let pt = self.paax_pt.as_dvec3();
+            let p1 = (pt - y_axis * h / 2.0 - x_axis * d / 2.0).into();
+            let p2 = (pt + y_axis * h / 2.0 - x_axis * d / 2.0).into();
+            let p3 = (pt + y_axis * h / 2.0 + x_axis * d / 2.0).into();
+            let p4 = (pt - y_axis * h / 2.0 + x_axis * d / 2.0).into();
+            //创建四边形
+            let top = Edge::segment(p1, p2);
+            let right = Edge::segment(p2, p3);
+            let bottom = Edge::segment(p3, p4);
+            let left = Edge::segment(p4, p1);
+
+            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
+            let center = torus_info.center;
+            let r = wire.to_face().revolve(center.as_dvec3(), -y_axis, Some(torus_info.angle.degrees()));
+            return Ok(OccSharedShape::new(r.into_shape()));
+        }
+
+        Err(anyhow::anyhow!("Rect torus 参数有问题。"))
+    }
+
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    #[inline]
+    fn tol(&self) -> f32 {
+        0.01 * self.pdia.min(self.pheig).max(1.0)
     }
 }
 
@@ -203,47 +205,6 @@ impl BrepShapeTrait for RTorus {
         Box::new(self.clone())
     }
 
-    fn hash_unit_mesh_params(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        hash_f32(self.rins / self.rout, &mut hasher);
-        hash_f32(self.angle, &mut hasher);
-        "rtorus".hash(&mut hasher);
-        hasher.finish()
-    }
-
-    #[inline]
-    fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(self.rout, self.rout, self.height)
-    }
-
-    #[inline]
-    fn tol(&self) -> f32 {
-        let d = ((self.rout - self.rins) / 2.0 + self.height) / 2.0;
-        0.01 * d.max(1.0)
-    }
-
-
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
-        let h = self.height as f64;
-        let d = (self.rout - self.rins) as f64;
-        let c = (self.rins + self.rout) as f64 / 2.0;
-
-        let p1 = DVec3::new(c - d / 2.0, 0.0, -h / 2.0);
-        let p2 = DVec3::new(c - d / 2.0, 0.0, h / 2.0);
-        let p3 = DVec3::new(c + d / 2.0, 0.0, h / 2.0);
-        let p4 = DVec3::new(c + d / 2.0, 0.0, -h / 2.0);
-        //创建四边形
-        let top = Edge::segment(p1, p2);
-        let right = Edge::segment(p2, p3);
-        let bottom = Edge::segment(p3, p4);
-        let left = Edge::segment(p4, p1);
-
-        let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
-        let r = wire.to_face().revolve(DVec3::ZERO, -DVec3::Z, Some(self.angle.radians()));
-        return Ok(r.into_shape());
-    }
-
     ///生成brep模型，是否需要存储key points
     fn gen_brep_shell(&self) -> Option<Shell> {
         use truck_modeling::*;
@@ -261,6 +222,36 @@ impl BrepShapeTrait for RTorus {
         return solid.pop();
     }
 
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+        let h = self.height as f64;
+        let d = (self.rout - self.rins) as f64;
+        let c = (self.rins + self.rout) as f64 / 2.0;
+
+        let p1 = DVec3::new(c - d / 2.0, 0.0, -h / 2.0);
+        let p2 = DVec3::new(c - d / 2.0, 0.0, h / 2.0);
+        let p3 = DVec3::new(c + d / 2.0, 0.0, h / 2.0);
+        let p4 = DVec3::new(c + d / 2.0, 0.0, -h / 2.0);
+        //创建四边形
+        let top = Edge::segment(p1, p2);
+        let right = Edge::segment(p2, p3);
+        let bottom = Edge::segment(p3, p4);
+        let left = Edge::segment(p4, p1);
+
+        let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
+        let r = wire.to_face().revolve(DVec3::ZERO, DVec3::Z, Some(self.angle.degrees()));
+        return Ok(r.into_shape().into());
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        hash_f32(self.rins / self.rout, &mut hasher);
+        hash_f32(self.angle, &mut hasher);
+        "rtorus".hash(&mut hasher);
+        hasher.finish()
+    }
+
+
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let rins = self.rins / self.rout;
         let unit = Self {
@@ -270,6 +261,17 @@ impl BrepShapeTrait for RTorus {
             angle: self.angle,
         };
         Box::new(unit)
+    }
+
+    #[inline]
+    fn get_scaled_vec3(&self) -> Vec3 {
+        Vec3::new(self.rout, self.rout, self.height)
+    }
+
+    #[inline]
+    fn tol(&self) -> f32 {
+        let d = ((self.rout - self.rins) / 2.0 + self.height) / 2.0;
+        0.01 * d.max(1.0)
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
@@ -299,7 +301,6 @@ impl From<AttrMap> for RTorus {
         (&m).into()
     }
 }
-
 
 
 impl From<&NamedAttrMap> for RTorus {

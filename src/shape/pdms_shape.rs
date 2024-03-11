@@ -38,9 +38,10 @@ use truck_modeling::{Curve, Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
 
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use truck_polymesh::stl::IntoStlIterator;
+use crate::prim_geo::basic::OccSharedShape;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -346,7 +347,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 .unwrap_or(vec![Vec3::ZERO.into()]);
         }
 
-        #[cfg(feature = "opencascade_rs")]
+        #[cfg(feature = "occ")]
         {
             Default::default()
         }
@@ -355,8 +356,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, _limit_size: f32) {}
 
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         return Err(anyhow!("不存在该occ shape"));
     }
 
@@ -403,7 +404,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
 
-    #[cfg(feature = "opencascade_rs")]
+    #[cfg(feature = "occ")]
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
         let mut aabb = Aabb::new_invalid();
         let geo_hash = self.hash_unit_mesh_params();

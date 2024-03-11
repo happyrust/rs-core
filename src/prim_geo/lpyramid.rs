@@ -1,6 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
 use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
@@ -9,8 +10,9 @@ use truck_meshalgo::prelude::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
-#[cfg(feature = "opencascade_rs")]
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
+use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(
     Component,
@@ -137,12 +139,8 @@ impl BrepShapeTrait for LPyramid {
         Some(shell)
     }
 
-    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(PdmsGeoParam::PrimLPyramid(self.clone()))
-    }
-
-    #[cfg(feature = "opencascade_rs")]
-    fn gen_occ_shape(&self) -> anyhow::Result<Shape> {
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         use glam::DVec2;
 
         let _z_pt = self.paax_pt.as_dvec3();
@@ -186,7 +184,7 @@ impl BrepShapeTrait for LPyramid {
             polys.push(Wire::from_ordered_points(pts)?);
         }
 
-        Ok(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape())
+        Ok(OccSharedShape::new(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape()))
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
@@ -199,5 +197,9 @@ impl BrepShapeTrait for LPyramid {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
+    }
+
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(PdmsGeoParam::PrimLPyramid(self.clone()))
     }
 }
