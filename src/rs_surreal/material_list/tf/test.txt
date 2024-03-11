@@ -1,1 +1,1 @@
-(!$pre_b_damp && !$pre_b_mesh) && ($next_b_damp && !$next_b_mesh) && $bran_4 != '6'
+(!fn::b_pre_type($pe,'DAMP') && !fn::b_pre_type($pe,'MESH')) && (fn::b_next_type($pe,'DAMP') || fn::b_next_type($pe,'MESH')) && !$bran_4 != '6'
