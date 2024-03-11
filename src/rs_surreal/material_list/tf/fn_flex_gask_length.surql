@@ -12,7 +12,7 @@ DEFINE FUNCTION fn::flex_gask_length_pre($pe:record) {
     let $next_b_mesh = fn::b_next_type($pe,'MESH');
     return
     select if fn::hvac_shape($pe) == 'RECT' && array::first($pre_desp)[0] == 614823  {
-        $flan_length + $flan_width * 8 / 1000
+        $flan_length + ($flan_width * 8) / 1000
     }
     else if fn::hvac_shape($pe) == 'CIRC' && array::first($pre_desp)[0] == 614823  {
         $flan_length

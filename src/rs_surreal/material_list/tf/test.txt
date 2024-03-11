@@ -1,1 +1,1 @@
-array::first($pre_desp)[0] == 614823 && (($next_b_damp AND array::first($next_desp)[0] == 614823) || $next_b_mesh)
+(!$pre_b_damp && !$pre_b_mesh) && ($next_b_damp && !$next_b_mesh) && $bran_4 != '6'
