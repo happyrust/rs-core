@@ -1,6 +1,7 @@
 // 法兰重量
 DEFINE FUNCTION fn::tape_flan_weight($pe:record) {
-    let $desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
+    //let $desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
+    let $desp = $pe.refno.DESP;
     let $flan_type = if array::first($desp)[57] == 531717 { 'FJ' } else if array::first($desp)[57] == 531501 { 'FB' } else { '' };
     let $flan_length = string::split(array::first(fn::tape_flan_length($pe)).length,',');
     return
