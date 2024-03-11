@@ -1,5 +1,13 @@
-
-let $mat_code_map = ['SS', 'GS'	,'CS','ACS','ASS',	'AS', 'FP'];
+let $mat_code_map = ['','SS', 'GS'	,'CS','ACS','ASS',	'AS', 'FP'];
+// 材质
+DEFINE FUNCTION fn::hvac_material($pe:record) {
+    return
+    select if array::at(string::split(owner.name,'-'),3) != '6' {
+        array::at($mat_code_map,<int>array::at(string::split(owner.name,'-'),3))
+    } else if fn::pre_or_next_b_type($this.id,'DAMP') { 'CS' } else {
+        'FP'
+    } as r from $pe
+};
 
 select
 id as refno, // 参考号
@@ -9,10 +17,10 @@ string::concat(string::split(owner.name,'-')[2],string::split(owner.name,'-')[5]
 // array::first(array::first((select value (select value v from only udas.* where u.NAME=='/H-SECTCODE' limit 1) from type::thing("ATT_UDA", meta::id(id)))))
 ) as bran_seg_code_split, // 管段编号
 array::first(fn::hvac_material($this.id)).r as mat,// 材质
-string::concat(array::at(string::split(owner.name,'-'),4),'P') as strt_name, // 压力等级
+string::concat(array::at(string::split(owner.name,'-'),4),'P') as pressure_level, // 压力等级
 refno.DESP[5] as l, // 长
-refno.DESP[1] as w, // 宽
-refno.DESP[3] as h, // 高
+if fn::hvac_shape($this.id) == 'RECT' { refno.DESP[1] } else if fn::hvac_shape($this.id) == 'CIRC' { string::concat('φ',string::slice(<string>refno.DESP[1],0,string::len(<string>refno.DESP[1])-1)) } else { refno.DESP[1] } as w, // 宽
+if fn::hvac_shape($this.id) == 'RECT' { refno.DESP[3] } else if fn::hvac_shape($this.id) == 'CIRC' { '' } else { refno.DESP[3] } as h, // 高
 (->inst_relate.world_trans.d.translation[0])[0] as x, // 坐标 x
 (->inst_relate.world_trans.d.translation[1])[0] as y, // 坐标 y
 (->inst_relate.world_trans.d.translation[2])[0] as z, // 坐标 z
@@ -37,4 +45,5 @@ array::at(string::split(owner.name,'-'),1) as system_name, // 系统号
 '' as material, // 材质 todo
 '' as hvac_thick, // 风管壁厚
 refno.DESP[80] / 2 as hvac_area // 风管面积
-from pe:24381_58343;
+from [pe:24381_58343,pe:24381_76693];
+
