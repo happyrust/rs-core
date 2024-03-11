@@ -22,29 +22,14 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor geometry and shape transformations codebase&#10;&#10;Refactoring involved multiple changes across source files, including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs', and others. The changes result in improved geometry and shape transformations, including a more efficient handling of tolerance attributes in 'cylinder.rs'. Redundant code segments have also been removed for efficiency and readability.">
-      <change afterPath="$PROJECT_DIR$/src/prim_geo/basic.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Update feature flag and clean up geometry primitives&#10;&#10;Updated feature flags from &quot;opencascade_rs&quot; to &quot;occ&quot; for consistency. Also, code for geometry primitives like Cube, Cylinder, Torus, etc., has been cleaned up. This involved creating a new module &quot;basic&quot;, introducing Arc for shared structures and replacing Shape structures with OccSharedShape where needed.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geom_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/axis_param.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/axis_param.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/dish.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/dish.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/spine.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/spine.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -628,7 +613,7 @@
       <workItem from="1710089467214" duration="42000" />
       <workItem from="1710089619441" duration="231000" />
       <workItem from="1710123666226" duration="14938000" />
-      <workItem from="1710148576734" duration="329000" />
+      <workItem from="1710148576734" duration="9220000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -973,7 +958,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="275" />
+    <option name="localTasksCounter" value="276" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1016,7 +1001,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="WIP 完善解析" />
     <MESSAGE value="fix model problems" />
     <MESSAGE value="upgrade" />
     <MESSAGE value="WIP 使用dolt的修改，动态生成类型，通过orm来操作数据" />
@@ -1041,7 +1025,8 @@
     <MESSAGE value="Update codebase to optimize geometry and shape transformations&#10;&#10;The codebase is updated to improve the geometry and shape transformations in project. This involves refactoring the code in multiple files including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs' and many others. The changes primarily streamline the method calls and namespaces used for geometric shapes and transformations, and also adjust tolerance handling in 'cylinder.rs'. Some deprecated code segments are removed for more readability and efficiency." />
     <MESSAGE value="变更" />
     <MESSAGE value="Refactor geometry and shape transformations codebase&#10;&#10;Refactoring involved multiple changes across source files, including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs', and others. The changes result in improved geometry and shape transformations, including a more efficient handling of tolerance attributes in 'cylinder.rs'. Redundant code segments have also been removed for efficiency and readability." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor geometry and shape transformations codebase&#10;&#10;Refactoring involved multiple changes across source files, including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs', and others. The changes result in improved geometry and shape transformations, including a more efficient handling of tolerance attributes in 'cylinder.rs'. Redundant code segments have also been removed for efficiency and readability." />
+    <MESSAGE value="Update feature flag and clean up geometry primitives&#10;&#10;Updated feature flags from &quot;opencascade_rs&quot; to &quot;occ&quot; for consistency. Also, code for geometry primitives like Cube, Cylinder, Torus, etc., has been cleaned up. This involved creating a new module &quot;basic&quot;, introducing Arc for shared structures and replacing Shape structures with OccSharedShape where needed." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update feature flag and clean up geometry primitives&#10;&#10;Updated feature flags from &quot;opencascade_rs&quot; to &quot;occ&quot; for consistency. Also, code for geometry primitives like Cube, Cylinder, Torus, etc., has been cleaned up. This involved creating a new module &quot;basic&quot;, introducing Arc for shared structures and replacing Shape structures with OccSharedShape where needed." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

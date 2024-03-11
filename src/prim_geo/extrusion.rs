@@ -204,8 +204,7 @@ impl BrepShapeTrait for Extrusion {
     }
 
     fn need_use_csg(&self) -> bool {
-        // false
-        true
+        false
     }
 }
 

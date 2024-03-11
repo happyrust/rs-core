@@ -112,6 +112,7 @@ pub struct AxisParam {
     pub z: String,
     pub distance: String,
     pub direction: String,
+    // pub dir_flag: bool,
     pub ref_direction: String,
     pub pconnect: String,
     pub pbore: String,

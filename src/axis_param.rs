@@ -9,6 +9,7 @@ impl Neg for CateAxisParam {
     fn neg(self) -> Self::Output {
         Self {
             dir: Vec3::new(-self.dir[0].clone(), -self.dir[1].clone(), -self.dir[2].clone()),
+            dir_flag: -1.0,
             ..self.clone()
         }
     }
