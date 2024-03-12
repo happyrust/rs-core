@@ -1,5 +1,5 @@
 // 其他材料类型
-DEFINE FUNCTION fn::bend_other_material_type_2($pe:record) {
+DEFINE FUNCTION fn::bend_other_material_count_2($pe:record) {
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
     let $hvac_shape = fn::hvac_shape($pe);
 
