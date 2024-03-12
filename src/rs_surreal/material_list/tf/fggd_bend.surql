@@ -14,9 +14,9 @@ if fn::hvac_shape($this.id) == 'RECT' { string::concat(string::slice(<string>ref
 (->inst_relate.world_trans.d.translation[0])[0] as x, // 坐标 x
 (->inst_relate.world_trans.d.translation[1])[0] as y, // 坐标 y
 (->inst_relate.world_trans.d.translation[2])[0] as z, // 坐标 z
-string::slice(<string>refno.DESP[32],0,string::len(<string>refno.DESP[32])-1)  as thickness, // 厚度
-string::slice(<string>math::fixed(refno.DESP[80] / 1000000,8),0,string::len(<string>math::fixed(refno.DESP[80] / 1000000,8)) -1 ) as area, // 面积
-string::slice(<string>math::fixed(refno.DESP[84],3),0,string::len(<string>math::fixed(refno.DESP[84],3))-1) as weight,  // 总重
+array::join([string::slice(<string>refno.DESP[32],0,string::len(<string>refno.DESP[32])-1),<string>array::first(fn::bend_hvac_thick($this.id)).size,fn::get_ispec_hvac_thick($this.id)],';')  as thickness, // 风管壁厚
+array::join([string::slice(<string>math::fixed(refno.DESP[80] / 1000000,8),0,string::len(<string>math::fixed(refno.DESP[80] / 1000000,8)) -1 ),array::first(fn::bend_hvac_area($this.id)).size],';') as area, // 风管面积
+array::join([string::slice(<string>math::fixed(refno.DESP[84],3),0,string::len(<string>math::fixed(refno.DESP[84],3))-1),string::replace(<string>array::first(fn::bend_hvac_weight($this.id).size),'f','')],';') as weight,  // 风管总重
 '' as steel, // 风管加强 型钢
 '0' as hvac_length, // 风管加强 长度
 '0' as hvac_weight, //// 风管加强 重量
@@ -25,15 +25,15 @@ array::first(fn::flex_flan_length($this.id)).length as flan_length, //法兰 长
 string::replace(<string>array::first(fn::flex_flan_weight($this.id)).weight,'f','') as flan_weight, ////法兰 总重
 fn::bend_gask_size($this.id) as gask_size, //垫片类型
 fn::flex_gask_size($this.id) as shim_width, // 垫片 长度
-<string>array::first(fn::bend_bolt_count($this.id)).count as bolt_count,  // 螺栓数量
-'' as other_material_type, // 其它材料类型
-'' as other_material_count, // 其它材料数量
-'' as screw, // 螺杆
-<string>array::first(fn::bend_bolt_count($this.id)).count as nut, // 螺母
-<string>(array::first(fn::bend_bolt_count($this.id)).count * 2) as gask_count, // 垫片数量
+array::join([string::replace(<string>array::first(fn::bend_bolt_count($this.id)).count,'f',''),array::first(fn::bend_bolt_count_2($this.id)).count],';') as bolt_count,  // 螺栓数量
+array::join([' ',array::first(fn::bend_other_material_type_2($this.id)).size],';') as other_material_type, // 其它材料类型
+array::join(['0',array::first(fn::bend_other_material_count_2($this.id)).size],';') as other_material_count, // 其它材料数量
+array::join(['',array::first(fn::bend_bolt_length_2($this.id)).count],';') as screw, // 螺杆长度
+array::join([string::replace(<string>array::first(fn::bend_bolt_count($this.id)).count,'f',''),array::first(fn::bend_bolt_count_2($this.id)).count ],';') as nut, // 螺母数量
+string::replace(<string>(array::first(fn::bend_bolt_count($this.id)).count * 2),'f','') as gask_count, // 垫片数量
 '' as room_num , // 房间号 todo
 array::at(string::split(owner.name,'-'),1) as system_name, // 系统号
-array::first(fn::hvac_material($this.id)).r as material, // 材质
-array::first(fn::bend_hvac_thick($this.id)).size as hvac_thick // 风管壁厚
+array::join([array::first(fn::hvac_material($this.id)).r,fn::get_ispec_material($this.id)],';') as material // 材质
+//array::first(fn::get_ipara($this.id))
 from [pe:24381_58571];
 
