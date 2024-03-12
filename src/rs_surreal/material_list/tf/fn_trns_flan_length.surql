@@ -1,14 +1,16 @@
 // 法兰长度
-DEFINE FUNCTION fn::tape_flan_length($pe:record) {
-    return
-    select if fn::hvac_shape($pe) == 'RECT' {
-        string::concat(string::slice(<string>(((refno.DESP[1] + refno.DESP[2] * 2 ) * 2 ) / 1000),0,string::len((<string>(((refno.DESP[1] + refno.DESP[2] * 2 ) * 2 ) / 1000)))-1)
-        , ',' ,string::slice(<string>(((refno.DESP[3] + refno.DESP[23] * 2 ) * 2 ) / 1000),0,string::len(<string>(((refno.DESP[3] + refno.DESP[23] * 2 ) * 2 ) / 1000))-1))
-    } else if fn::hvac_shape($pe) == 'CIRC' {
-        string::concat(string::slice((<string>((refno.DESP[1] + refno.DESP[20] * 2 ) * 3.14 ) / 1000),0,string::len(<string>((refno.DESP[1] + refno.DESP[20] * 2 ) * 3.14 ) / 1000)-1),
-        '',string::slice(<string>(((refno.DESP[3] + refno.DESP[23] * 2 ) * 3.14 ) / 1000),0,string::len(<string>((refno.DESP[3] + refno.DESP[23] * 2 ) * 3.14 ) / 1000)-1))
-    } else {
-        '0,0'
-    } as length from $pe
-};
-//return fn::tape_flan_length(pe:24381_76894);
+DEFINE FUNCTION fn::trns_flan_size($pe:record) {
+    let $height2 = fn::turn_deap_into_str($pe.refno.DESP[4]);
+    let $width = $pe.refno.DESP[1];
+    let $width2 = $pe.refno.DESP[3];
+    let $height = $pe.refno.DESP[2];
+    let $height_str = fn::turn_deap_into_str($height);
+    let $fl_width = $pe.refno.DESP[20];
+    let $fl_width2 = $pe.refno.DESP[23];
+
+    return if $height2 == 'DIAM' {
+        array::join([<string>(($width + $height + $fl_width * 2 ) / 1000),<string>((($width2 + $fl_width2 * 2 ) * 3.14) / 1000)],';')
+    } else if $height_str == 'DIAM' {
+        array::join([<string>((($width + $fl_width * 2 ) * 3.14) / 1000),<string>((($width2 + $height2 + $fl_width2 * 2 ) * 2) / 1000)],';')
+    }
+}
