@@ -6,18 +6,26 @@ DEFINE FUNCTION fn::flex_gask_length_pre($pe:record) {
     let $flan_width = $pe.refno.DESP[20];
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
 
-    let $pre_b_damp = fn::b_pre_type($pe,'DAMP');
-    let $pre_b_mesh = fn::b_pre_type($pe,'MESH');
-    let $next_b_damp = fn::b_next_type($pe,'DAMP');
-    let $next_b_mesh = fn::b_next_type($pe,'MESH');
+    let $pre_b_damp = array::first(fn::b_pre_type($pe,'DAMP'));
+    let $pre_b_mesh = array::first(fn::b_pre_type($pe,'MESH'));
+    let $next_b_damp = array::first(fn::b_next_type($pe,'DAMP'));
+    let $next_b_mesh = array::first(fn::b_next_type($pe,'MESH'));
+
     return
-    select if fn::hvac_shape($pe) == 'RECT' && array::first($pre_desp)[0] == 614823  {
+    select if fn::hvac_shape($pe) == 'RECT' && array::first($pre_desp)[0] == 614823  && array::first($next_desp)[0] == 614823 {
         $flan_length + ($flan_width * 8) / 1000
     }
     else if fn::hvac_shape($pe) == 'CIRC' && array::first($pre_desp)[0] == 614823  {
         $flan_length
     }
 
+    else if fn::hvac_shape($pe) == 'RECT' && array::first($pre_desp)[0] == 614823  && array::first($next_desp)[0] != 614823 {
+        $flan_length + ($flan_width * 8) / 1000 / 2
+    }
+    else if fn::hvac_shape($pe) == 'CIRC' && array::first($pre_desp)[0] == 614823  {
+        $flan_length / 2
+    }
+    // (('[Prev_Type]' NE 'DAMP') AND ('[Prev_Type]' NE 'MESH')) AND ('[Next_Stype]' EQ 'FJFD')
     else if fn::hvac_shape($pe) == 'RECT' && !$pre_b_damp && !$pre_b_mesh && array::first($next_desp)[0] == 614823 {
         (($flan_length + $flan_width / 1000) * 8) / 4
     } else if fn::hvac_shape($pe) == 'CIRC' && !$pre_b_damp && !$pre_b_mesh && array::first($next_desp)[0] == 614823 {

@@ -23,7 +23,7 @@ string::slice(<string>math::fixed(refno.DESP[84],3),0,string::len(<string>math::
 array::first(fn::strt_flan_size($this.id)).size as flan_steel, // 法兰 型钢
 array::first(fn::flex_flan_length($this.id)).length as flan_length, //法兰 长度
 string::replace(<string>array::first(fn::flex_flan_weight($this.id)).weight,'f','') as flan_weight, ////法兰 总重
-//fn::tape_gask_size($this.id) as gask_size, //垫片类型
+fn::tape_gask_size($this.id) as gask_size, //垫片类型
 fn::flex_gask_size($this.id) as shim_width, // 垫片 长度
 <string>array::first(fn::flex_bolt_count($this.id)).count as bolt_count,  // 螺栓数量
 '' as other_material_type, // 其它材料类型
