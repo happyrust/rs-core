@@ -8,9 +8,9 @@ DEFINE FUNCTION fn::bend_hvac_thick($pe:record) {
     select if $angle > 30 && $height > 500 && $bran_4 != '6' {
         $pe.refno.DESP[32]
     } else {
-        ''
+        0
     } as size from $pe
 };
 
 
-//return fn::bend_hvac_thick(pe:24381_58571)
+return fn::bend_hvac_thick(pe:24381_58571)
