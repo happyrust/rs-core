@@ -18,6 +18,7 @@ use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::NamedAttrMap;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(

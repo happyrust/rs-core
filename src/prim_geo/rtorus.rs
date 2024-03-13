@@ -12,16 +12,15 @@ use crate::types::attmap::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use bevy_transform::prelude::Transform;
-
 use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
-
+use crate::NamedAttrMap;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 #[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
-use crate::NamedAttrMap;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]

@@ -155,8 +155,8 @@ pub mod geo_params_data {
     #[cfg(feature = "occ")]
     use opencascade::primitives::*;
     use serde_derive::{Deserialize, Serialize};
+    #[cfg(feature = "occ")]
     use crate::prim_geo::basic::OccSharedShape;
-
     use crate::prim_geo::polyhedron::Polyhedron;
     use crate::prim_geo::pyramid::Pyramid;
     use crate::prim_geo::revolution::Revolution;

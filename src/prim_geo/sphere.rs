@@ -5,7 +5,7 @@ use std::sync::Arc;
 use truck_modeling::Shell;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::prim_geo::basic::{OccSharedShape, SPHERE_GEO_HASH};
+use crate::prim_geo::basic::*;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, VerifiedShape};
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;

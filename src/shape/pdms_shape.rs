@@ -41,6 +41,7 @@ use crate::tool::float_tool::f32_round_3;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use truck_polymesh::stl::IntoStlIterator;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
@@ -346,8 +347,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 })
                 .unwrap_or(vec![Vec3::ZERO.into()]);
         }
-
-        #[cfg(feature = "occ")]
         {
             Default::default()
         }
@@ -378,8 +377,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn gen_unit(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
-        None
+    fn gen_unit(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
+        todo!("wasm32 not support")
     }
 
     ///获得缩放向量

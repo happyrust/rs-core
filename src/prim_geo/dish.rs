@@ -20,8 +20,10 @@ use crate::tool::float_tool::hash_f32;
 use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
+#[cfg(feature = "occ")]
 use opencascade::workplane::{Sketch, Workplane};
 use crate::NamedAttrMap;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 //可不可以用来表达 sphere

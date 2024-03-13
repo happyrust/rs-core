@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize};
 use truck_modeling::Curve;
 use truck_stepio::out;
 use truck_topology::compress::CompressedSolid;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(

@@ -1,14 +1,10 @@
 use std::collections::hash_map::DefaultHasher;
-
 use std::hash::Hasher;
 use std::hash::Hash;
 use std::sync::Arc;
 use anyhow::anyhow;
 use bevy_ecs::prelude::*;
-
 use truck_modeling::{Shell};
-
-
 use bevy_transform::prelude::Transform;
 use glam::{DVec3, Quat, Vec3};
 
@@ -18,14 +14,15 @@ use crate::types::attmap::AttrMap;
 use crate::prim_geo::helper::{RotateInfo};
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, RsVec3, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
+use crate::NamedAttrMap;
 
 #[cfg(feature = "occ")]
 use opencascade::primitives::{Shape, Wire};
 #[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
+#[cfg(feature = "occ")]
 use opencascade::primitives::IntoShape;
-use parry3d::shape::SharedShape;
-use crate::NamedAttrMap;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]

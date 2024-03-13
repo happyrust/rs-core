@@ -106,11 +106,10 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefU64> {
         .query(
             " \
             let $f = (select value CURD.refno.DBNO from only MDB where NAME=$mdb limit 1)[0]; \
-            (select value REFNO from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
+            (select value REFNO from WORL where REFNO.dbnum=$f limit 1)[0]",
         )
         .bind(("mdb", mdb_name))
-        .await
-        .unwrap();
+        .await?;
     let id: Option<RefU64> = response.take(1)?;
     Ok(id.unwrap_or_default())
 }

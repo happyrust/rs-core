@@ -1,17 +1,10 @@
 use std::collections::hash_map::DefaultHasher;
-
-
 use std::hash::{Hash, Hasher};
-
-
 use glam::Vec3;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-
-
-
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
 #[cfg(feature = "opencascade")]
 use opencascade::{OCCShape, Edge, Wire, Axis, Vertex};
@@ -19,8 +12,6 @@ use bevy_ecs::prelude::*;
 use itertools::Itertools;
 use nalgebra::Point;
 use truck_modeling::Face;
-
-
 
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
@@ -34,7 +25,7 @@ pub struct Polygon {
 }
 
 impl Polygon {
-    pub fn gen_face(&self) -> anyhow::Result<Face>{
+    pub fn gen_face(&self) -> anyhow::Result<Face> {
         use truck_modeling::{builder, Wire};
         use truck_meshalgo::prelude::*;
         if self.verts.len() < 3 {
@@ -59,7 +50,7 @@ impl VerifiedShape for Polyhedron {
     }
 }
 
-impl BrepShapeTrait for Polyhedron  {
+impl BrepShapeTrait for Polyhedron {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -76,9 +67,8 @@ impl BrepShapeTrait for Polyhedron  {
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
         use truck_modeling::*;
 
-
         let mut faces = vec![];
-        for poly  in &self.polygons {
+        for poly in &self.polygons {
             if let Ok(face) = poly.gen_face() {
                 faces.push(face);
             }
@@ -105,6 +95,4 @@ impl BrepShapeTrait for Polyhedron  {
             PdmsGeoParam::PrimPolyhedron(self.clone())
         )
     }
-
-
 }

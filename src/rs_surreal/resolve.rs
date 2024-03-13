@@ -150,7 +150,6 @@ pub async fn get_or_create_cata_context(
                 let default_expr = child.get_as_string("DPRO").unwrap_or_default();
                 let type_key = format!("{}_default_type", key);
                 let type_value = child.get_as_string("PTYP").unwrap_or_default();
-
                 context.insert(key, exp);
                 context.insert(default_key, default_expr);
                 context.insert(type_key, type_value);
@@ -187,6 +186,23 @@ pub async fn get_or_create_cata_context(
         }
     }
     Ok(context)
+}
+
+fn replace_all_result<E>(
+    re: &Regex,
+    haystack: &str,
+    replacement: impl Fn(&Captures) -> Result<String, E>,
+) -> Result<String, E> {
+    let mut new = String::with_capacity(haystack.len());
+    let mut last_match = 0;
+    for caps in re.captures_iter(haystack) {
+        let m = caps.get(0).unwrap();
+        new.push_str(&haystack[last_match..m.start()]);
+        new.push_str(&replacement(&caps)?);
+        last_match = m.end();
+    }
+    new.push_str(&haystack[last_match..]);
+    Ok(new)
 }
 
 ///评估表达式的值
@@ -260,39 +276,48 @@ pub fn eval_str_to_f64(
     let rpro_re = Regex::new(r"(RPRO)\s+([a-zA-Z0-9]+)").unwrap();
     if new_exp.contains("RPRO") {
         let mut found_dtse_mismatch = false;
-        new_exp = rpro_re
-            .replace_all(&new_exp, |caps: &Captures| {
+        new_exp = replace_all_result(&rpro_re, &new_exp, |caps: &Captures| {
                 let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
                 let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
-                let key_type: String = format!("{}_{}_type", &caps[1], &caps[2]).into();
+                let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
+                // dbg!(&key_type,  context.get(&key_type));
                 //if not same type, or doesn't exist, just return error
                 if context
                     .get(&key_type)
                     .map(|x| x.as_str() != dtse_unit)
                     .unwrap_or(false)
                 {
-                    found_dtse_mismatch = true;
-                }
-                let v = context
-                    .get(&key)
-                    .map(|x| x.to_string())
-                    .unwrap_or("0".to_string());
-                if let Ok(t) = eval_str_to_f64(&v, &context, false, "DIST") {
-                    t.to_string()
-                } else {
+                    //应该break
                     //use default value
-                    context
-                        .get(&default_key)
+                    // context
+                    //     .get(&default_key)
+                    //     .map(|x| x.to_string())
+                    //     .unwrap_or("0".to_string())
+                    return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
+                }else{
+                    let v = context
+                        .get(&key)
                         .map(|x| x.to_string())
-                        .unwrap_or("0".to_string())
+                        .unwrap_or("0".to_string());
+                    if let Ok(t) = eval_str_to_f64(&v, &context, false, "DIST") {
+                        Ok(t.to_string())
+                    } else {
+                        //use default value
+                        Ok(context
+                            .get(&default_key)
+                            .map(|x| x.to_string())
+                            .unwrap_or("0".to_string()))
+                    }
                 }
-            })
+
+            })?
             .trim()
             .to_string();
-
-        if found_dtse_mismatch {
-            return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
-        }
+        //TODO: 如果有DTSE的表达式不一致，直接返回0？
+        // if found_dtse_mismatch {
+        //     // return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
+        //     return Ok(0.0);
+        // }
     }
 
     let mut new_exp = new_exp

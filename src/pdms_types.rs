@@ -1044,7 +1044,7 @@ use bevy_render::render_asset::RenderAssetUsages;
 use opencascade::primitives::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
-use crate::prim_geo::basic::{BOXI_GEO_HASH, OccSharedShape, TUBI_GEO_HASH};
+use crate::prim_geo::basic::*;
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）

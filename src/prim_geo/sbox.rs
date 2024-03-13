@@ -4,10 +4,10 @@ use truck_modeling::{builder, Shell};
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
-use crate::prim_geo::basic::{BOX_SHAPE, BOX_GEO_HASH, OccSharedShape};
+use crate::prim_geo::basic::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
+use crate::shape::pdms_shape::*;
 use bevy_ecs::prelude::*;
 use crate::NamedAttrMap;
 

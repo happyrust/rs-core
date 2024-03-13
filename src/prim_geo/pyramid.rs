@@ -8,11 +8,12 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
 
+use crate::NamedAttrMap;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
-use crate::NamedAttrMap;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]

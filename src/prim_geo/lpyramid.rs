@@ -6,12 +6,12 @@ use std::sync::Arc;
 use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
-
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(

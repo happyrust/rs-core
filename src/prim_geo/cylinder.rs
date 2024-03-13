@@ -3,8 +3,6 @@ use std::f64::consts::FRAC_PI_2;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::sync::Arc;
-
-
 use glam::{DMat4, DVec3, Mat4, Vec3};
 use bevy_ecs::prelude::*;
 use bevy_transform::prelude::Transform;
@@ -13,13 +11,14 @@ use serde::{Deserialize, Serialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
 use crate::types::attmap::AttrMap;
-use crate::prim_geo::basic::{CYLINDER_GEO_HASH, CYLINDER_SHAPE, OccSharedShape};
+use crate::prim_geo::basic::*;
 use crate::prim_geo::helper::cal_ref_axis;
 use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::NamedAttrMap;
+#[cfg(feature = "occ")]
 use opencascade::workplane::Workplane;
 use crate::prim_geo::wire::gen_wire;
 

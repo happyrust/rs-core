@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use derive_more::{Deref, DerefMut};
 use lazy_static::lazy_static;
+#[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use std::borrow::BorrowMut;
 
-#[cfg(feature = "gen_model")]
+#[cfg(feature = "occ")]
 lazy_static! {
     pub static ref BOX_SHAPE: OccSharedShape = OccSharedShape::new(Shape::box_centered(1.0, 1.0, 1.0));
     pub static ref SPHERE_SHAPE: OccSharedShape = OccSharedShape::new(Shape::sphere(0.5).build());
@@ -20,21 +21,25 @@ lazy_static! {
     };
 }
 
+#[cfg(feature = "occ")]
 #[derive(Clone, Deref, DerefMut)]
 pub struct OccSharedShape(pub Arc<Shape>);
 
+#[cfg(feature = "occ")]
 impl OccSharedShape {
     pub fn new(shape: Shape) -> Self {
         OccSharedShape(Arc::new(shape))
     }
 }
 
+#[cfg(feature = "occ")]
 impl AsRef<Shape> for OccSharedShape {
     fn as_ref(&self) -> &Shape {
         &self.0
     }
 }
 
+#[cfg(feature = "occ")]
 impl AsMut<Shape> for OccSharedShape {
     fn as_mut(&mut self) -> &mut Shape {
         // &mut self.0
@@ -42,6 +47,7 @@ impl AsMut<Shape> for OccSharedShape {
     }
 }
 
+#[cfg(feature = "occ")]
 impl From<Shape> for OccSharedShape {
     fn from(s: Shape) -> Self {
         OccSharedShape::new(s)

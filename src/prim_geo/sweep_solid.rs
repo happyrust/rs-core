@@ -26,6 +26,7 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use opencascade::angle::ToAngle;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 ///含有两边方向的，扫描体

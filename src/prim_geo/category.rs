@@ -284,8 +284,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = axis.dir.normalize_or_zero();
-            dir = dir.is_normalized().then(|| dir).unwrap_or(axis.dir_flag *  Vec3::X);
+            let mut dir = axis.dir.is_normalized().then(|| axis.dir).unwrap_or(axis.dir_flag * Vec3::Y);
 
             let translation = (dir * d.dist_to_btm + axis.pt);
             let mut phei = d.height as f32;
@@ -322,7 +321,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = axis.dir.is_normalized().then(|| axis.dir).unwrap_or(axis.dir_flag * Vec3::X);
+            let mut dir = axis.dir.is_normalized().then(|| axis.dir).unwrap_or(axis.dir_flag * Vec3::Y);
 
             let mut phei = (d.dist_to_top - d.dist_to_btm) as f32;
             let mut dis = d.dist_to_btm;
@@ -361,7 +360,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let z_axis = axis.dir.normalize_or_zero();
+            let z_axis = axis.dir.is_normalized().then(|| axis.dir).unwrap_or(axis.dir_flag * Vec3::Y);
             // dbg!(d.refno);
             if z_axis.length() == 0.0 {
                 return None;
@@ -458,14 +457,14 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             let paax_dir = pa.dir;
             let pbax_dir = pb.dir;
-            let extrude_dir = paax_dir
+            let z_dir = paax_dir
                 .normalize_or_zero()
                 .cross(pbax_dir.normalize_or_zero())
                 .normalize_or_zero();
-            if extrude_dir.length() == 0.0 {
+            if z_dir.length() == 0.0 {
                 return None;
             }
-            let mat3 = Mat3::from_cols(paax_dir, pbax_dir, extrude_dir);
+            let mat3 = Mat3::from_cols(paax_dir, pbax_dir, z_dir);
             let rotation = Quat::from_mat3(&mat3);
             let xyz_pt = Vec3::new(d.x, d.y, d.z);
             if d.verts.len() <= 2 {
@@ -503,9 +502,19 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(pa.number);
             pts.push(pb.number);
-            let mut paax_dir = pa.dir.is_normalized().then(|| pa.dir).unwrap_or(pa.dir_flag * Vec3::X);
-            let mut pbax_dir = pb.dir.is_normalized().then(|| pb.dir).unwrap_or(pb.dir_flag * Vec3::Y);
+            // let mut paax_dir = pa.dir.is_normalized().then(|| pa.dir).unwrap_or(pa.dir_flag * Vec3::Y);
+            // let mut pbax_dir = pb.dir.is_normalized().then(|| pb.dir).unwrap_or(pb.dir_flag * Vec3::X);
 
+            //如果有一个轴为0
+            let mut paax_dir = pa.dir;
+            let mut pbax_dir = pb.dir;
+            //默认参考轴线是Z轴
+            if !pa.dir.is_normalized() {
+                paax_dir = pbax_dir.cross(Vec3::Z).normalize_or_zero();
+            }else if !pb.dir.is_normalized() {
+                pbax_dir = Vec3::Z.cross(paax_dir).normalize_or_zero();
+                dbg!((paax_dir, pbax_dir));
+            }
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
                 verts: d.verts.clone(),
                 fradius_vec: d.frads.clone(),
@@ -516,7 +525,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .cross(pbax_dir)
                 .normalize_or_zero();
             // dbg!(z_dir);
-            let rotation = Quat::from_mat3(&Mat3::from_cols(paax_dir, pbax_dir, z_dir));
+            let rotation = Quat::from_mat3(&Mat3::from_cols( paax_dir, pbax_dir, z_dir));
             let translation = rotation * Vec3::new(d.x, d.y, d.z) + pa.pt;
             let transform = Transform {
                 rotation,

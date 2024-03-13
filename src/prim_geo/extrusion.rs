@@ -20,7 +20,9 @@ use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
+#[cfg(feature = "occ")]
 use opencascade::workplane::Workplane;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(

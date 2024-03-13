@@ -14,6 +14,7 @@ use std::sync::Arc;
 use opencascade::primitives::{Shape, Compound, };
 use crate::parsed_data::geo_params_data::PdmsGeoParam::PrimSCylinder;
 use crate::pdms_types::GeoBasicType;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 use crate::shape::pdms_shape::RsVec3;
 
