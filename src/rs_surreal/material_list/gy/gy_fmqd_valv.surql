@@ -1,3 +1,4 @@
+// 阀门清单
 select
 id,
 string::slice(fn::default_name(REFNO),1) as valv_name, // 阀门位号
