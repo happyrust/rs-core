@@ -20,6 +20,4 @@ string::split(refno.NAME,'-')[1] as painting_color,
 if refno.DESC == NONE { '无' } else { '是' } as b_partition, // 有无隔板
 refno.DESC as partition_num,
 if string::contains(string::uppercase((select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.NAME),'RISER') { '竖向' } else if string::contains(string::uppercase((select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.NAME),'DIVIDER') { '竖向' } else { '水平' } as horizontal_or_vertical,
-'' as unit,
-'' as length
 from pe:24383_84088
