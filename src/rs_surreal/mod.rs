@@ -7,6 +7,7 @@ pub mod mdb;
 pub mod uda;
 pub mod resolve;
 pub mod index;
+pub mod material_query;
 
 pub use query::*;
 pub use graph::*;
