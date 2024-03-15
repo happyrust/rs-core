@@ -5,12 +5,13 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["render", "gen_model", "occ"]
+default = ["render", "gen_model", "occ", "debug"]
 occ = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 manifold = ["dep:manifold-sys"]
 truck = []
 gen_model = ["manifold"]
+debug = []
 
 # [lib]
 # name = "rs_core"

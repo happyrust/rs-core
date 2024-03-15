@@ -2,6 +2,7 @@ use crate::SUL_DB;
 use crate::{NamedAttrMap, RefU64, rs_surreal};
 use glam::Vec3;
 use std::sync::Arc;
+use surrealdb::sql::Thing;
 
 #[tokio::test]
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
@@ -99,7 +100,7 @@ async fn test_query_children_att() {
 async fn test_query_custom() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let mut response = SUL_DB
-        .query(r#"(select owner, owner.noun as o_noun from (type::thing("pe", $refno)))[0]"#)
+        .query(r#"(select owner, owner.noun as o_noun from type::thing("pe", $refno) )[0]"#)
         .bind(("refno", "17496_171555"))
         .await
         .unwrap();
@@ -107,6 +108,31 @@ async fn test_query_custom() -> anyhow::Result<()> {
     dbg!(owner_noun);
     let owner: RefU64 = response.take::<Option<String>>("owner")?.unwrap().into();
     dbg!(owner);
+    Ok(())
+}
+
+
+
+#[tokio::test]
+async fn test_query_custom_bend() -> anyhow::Result<()> {
+    super::init_test_surreal().await;
+    let mut response = SUL_DB
+        .query(r#"
+        select
+id as id,
+string::split(string::split(if refno.SPRE.name == NONE { "//:" } else { refno.SPRE.name },'/')[2],':')[0] as code, // 编码
+refno.TYPE as noun, // 部件
+math::fixed((refno.ANGL / 360) * 2 *3.1415 * refno.SPRE.refno.CATR.refno.PARA[1],2) as count // 长度
+from $refnos
+        "#)
+        .bind(("refnos", [Thing::from(("pe", "24383_84092"))] ) )
+        .await
+        .unwrap();
+    dbg!(response);
+    // let owner_noun: Option<String> = response.take("o_noun").unwrap();
+    // dbg!(owner_noun);
+    // let owner: RefU64 = response.take::<Option<String>>("owner")?.unwrap().into();
+    // dbg!(owner);
     Ok(())
 }
 

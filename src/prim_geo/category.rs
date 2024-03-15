@@ -51,7 +51,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let z_axis = pa.dir.is_normalized().then(|| pa.dir).unwrap_or(pa.dir_flag * Vec3::Z);
 
-            let mut y_axis = pc.dir.is_normalized().then(|| pc.dir).unwrap_or( pc.dir_flag * Vec3::X);
+            let mut y_axis = pc.dir.is_normalized().then(|| pc.dir).unwrap_or(pc.dir_flag * Vec3::X);
             //Y轴如果如果在第二象限和第四象限，需要反向
             if y_axis.y < 0.0 {
                 y_axis = -y_axis;
@@ -107,7 +107,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 paax_pt: pa.pt,
                 paax_dir: pa.dir.is_normalized().then(|| pa.dir).unwrap_or(pa.dir_flag * Vec3::X),
                 pbax_pt: pb.pt,
-                pbax_dir: pb.dir.is_normalized().then(|| pb.dir).unwrap_or( pb.dir_flag * Vec3::Y),
+                pbax_dir: pb.dir.is_normalized().then(|| pb.dir).unwrap_or(pb.dir_flag * Vec3::Y),
                 pdia: d.diameter as f32,
             };
             // dbg!(d);
@@ -137,7 +137,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 paax_dir: pa.dir.is_normalized().then(|| pa.dir).unwrap_or(pa.dir_flag * Vec3::X),
                 pbax_expr: "PBAX".to_string(),
                 pbax_pt: pb.pt,
-                pbax_dir: pb.dir.is_normalized().then(|| pb.dir).unwrap_or( pb.dir_flag * Vec3::Y),
+                pbax_dir: pb.dir.is_normalized().then(|| pb.dir).unwrap_or(pb.dir_flag * Vec3::Y),
                 pheig: d.height as f32,
                 pdia: d.diameter as f32,
             };
@@ -183,7 +183,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if dir.length() == 0.0 {
                 return None;
             }
-            dir = dir.is_normalized().then(|| dir).unwrap_or(axis.dir_flag *  Vec3::X);
+            dir = dir.is_normalized().then(|| dir).unwrap_or(axis.dir_flag * Vec3::X);
             let translation = dir * (d.dist_to_btm as f32) + axis.pt;
             let mut height = d.height;
             if d.height < 0.0 {
@@ -225,7 +225,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(z.number);
             let mut is_cone = d.btm_diameter == 0.0;
             if let Some(pb) = d.pb.as_ref() {
-                x_dir = pb.dir.is_normalized().then(|| pb.dir).unwrap_or( pb.dir_flag *  Vec3::Y);
+                x_dir = pb.dir.is_normalized().then(|| pb.dir).unwrap_or(pb.dir_flag * Vec3::Y);
                 pts.push(pb.number);
             }
 
@@ -502,30 +502,34 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(pa.number);
             pts.push(pb.number);
-            // let mut paax_dir = pa.dir.is_normalized().then(|| pa.dir).unwrap_or(pa.dir_flag * Vec3::Y);
-            // let mut pbax_dir = pb.dir.is_normalized().then(|| pb.dir).unwrap_or(pb.dir_flag * Vec3::X);
 
             //如果有一个轴为0
             let mut paax_dir = pa.dir;
             let mut pbax_dir = pb.dir;
+            let mut z_dir = Vec3::Z;
             //默认参考轴线是Z轴
+            let mut empty = false;
             if !pa.dir.is_normalized() {
-                paax_dir = pbax_dir.cross(Vec3::Z).normalize_or_zero();
-            }else if !pb.dir.is_normalized() {
-                pbax_dir = Vec3::Z.cross(paax_dir).normalize_or_zero();
-                dbg!((paax_dir, pbax_dir));
+                paax_dir = pbax_dir.cross(z_dir).try_normalize().unwrap_or(Vec3::Y);
+                empty = true;
+            } else if !pb.dir.is_normalized() {
+                pbax_dir = z_dir.cross(paax_dir).try_normalize().unwrap_or(Vec3::X);
+                empty = true;
             }
+            if empty{
+                dbg!((d.refno, paax_dir, pbax_dir, z_dir));
+            }
+            z_dir = paax_dir
+                .cross(pbax_dir)
+                .try_normalize().unwrap_or(Vec3::Z);
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
                 verts: d.verts.clone(),
                 fradius_vec: d.frads.clone(),
                 height: d.height,
                 ..Default::default()
             });
-            let z_dir = paax_dir
-                .cross(pbax_dir)
-                .normalize_or_zero();
             // dbg!(z_dir);
-            let rotation = Quat::from_mat3(&Mat3::from_cols( paax_dir, pbax_dir, z_dir));
+            let rotation = Quat::from_mat3(&Mat3::from_cols(paax_dir, pbax_dir, z_dir));
             let translation = rotation * Vec3::new(d.x, d.y, d.z) + pa.pt;
             let transform = Transform {
                 rotation,

@@ -145,10 +145,10 @@ impl BrepShapeTrait for LPyramid {
 
         let _z_pt = self.paax_pt.as_dvec3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0) as f64;
-        let ty = (self.pctp / 2.0) as f64;
-        let bx = (self.pbbt / 2.0) as f64;
-        let by = (self.pcbt / 2.0) as f64;
+        let tx = (self.pbtp / 2.0).max(0.001) as f64;
+        let ty = (self.pctp / 2.0).max(0.001) as f64;
+        let bx = (self.pbbt / 2.0).max(0.001) as f64;
+        let by = (self.pcbt / 2.0).max(0.001) as f64;
         let ox = self.pbof as f64 * DVec2::new(self.pbax_dir.x as _, self.pbax_dir.y as _);
         let oy = self.pcof as f64 * DVec2::new(self.pcax_dir.x as _, self.pcax_dir.y as _);
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;

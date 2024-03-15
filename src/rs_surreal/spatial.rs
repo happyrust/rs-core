@@ -11,6 +11,7 @@ use crate::{
     },
     NamedAttrMap, RefU64, SUL_DB, accel_tree::acceleration_tree::QueryRay,
 };
+use crate::tool::math_tool;
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
 use bevy_transform::prelude::*;
@@ -46,7 +47,7 @@ pub struct ModelHashInst {
 ///获得世界坐标系, 需要缓存数据，如果已经存在数据了，直接获取
 #[async_recursion]
 pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transform>> {
-    let mut ancestors = super::get_ancestor_attmaps(refno).await?;
+    let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
     ancestors.reverse();
     // dbg!(&ancestors);
     let mut rotation = Quat::IDENTITY;
@@ -55,8 +56,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
     for atts in ancestors.windows(2) {
         let o_att = &atts[0];
         let att = &atts[1];
+        let refno = att.get_refno().unwrap_or_default();
         let owner = o_att.get_refno_or_default();
-        // dbg!(refno);
+        if refno == "25688/43205".into(){
+            dbg!(refno);
+        }
         let mut pos = att.get_position().unwrap_or_default();
         // dbg!(pos);
         let mut quat = Quat::IDENTITY;
@@ -74,8 +78,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             pos += npos;
         }
 
-        let owner_type_name = super::get_type_name(owner).await?;
-        let owner_is_gensec = owner_type_name == "GENSEC";
+        let owner_is_gensec = o_att.get_type() == "GENSEC";
         let quat_v = att.get_rotation();
         let mut need_bangle = false;
         if !owner_is_gensec && quat_v.is_some() {
@@ -129,7 +132,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
         let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
         //直接在世界坐标系下求坐标，跳过局部求解
-        if att.get_str("POSL").is_none() && att.contains_key("CUTB") {
+        if c_ref.is_valid() && att.get_str("POSL").is_none() && att.contains_key("CUTB") {
             cut_dir = att.get_vec3("CUTP").unwrap_or(cut_dir);
             let cut_len = att.get_f32("CUTB").unwrap_or_default();
             if let Ok(c_att) = super::get_named_attmap(c_ref).await {
@@ -155,6 +158,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     //有自定义调节，需要选装到目标方向
                     let opdir = opdir.normalize();
                     rotation = rotation * Quat::from_rotation_arc(*c_t.local_z(), opdir);
+                    #[cfg(feature = "debug")]
                     dbg!(quat_to_pdms_ori_xyz_str(&quat));
                 }
             }
@@ -190,15 +194,22 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
                     plin_pos = param.pt;
                     pline_plax = param.plax;
-                    // dbg!(pos_line);
-                    // dbg!(&param);
+                    #[cfg(feature = "debug")]
+                    {
+                        dbg!(plin_owner);
+                        dbg!(pos_line);
+                        dbg!(&param);
+                    }
                 }
                 if let Ok(Some(own_param)) =
                     crate::query_pline(plin_owner, own_pos_line.into()).await
                 {
                     plin_pos -= own_param.pt;
-                    // dbg!(own_pos_line);
-                    // dbg!(&own_param);
+                    #[cfg(feature = "debug")]
+                    {
+                        dbg!(own_pos_line);
+                        dbg!(&own_param);
+                    }
                 }
             }
             let y_axis = if att.contains_key("YDIR") {
@@ -214,14 +225,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             } else {
                 Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
             };
+            dbg!((x_axis, y_axis, z_axis));
             let new_quat = posl_quat * quat;
             translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
 
-            #[cfg(debug_assertions)]
-            {
-                dbg!(translation);
-                dbg!(quat_to_pdms_ori_str(&rotation));
-            }
+
             //没有POSL时，需要使用cutback的方向
             rotation = rotation * new_quat;
             if pos_line == "unset" && has_cut_back {
@@ -231,6 +239,10 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 let y_axis = mat3.y_axis;
                 let ref_axis = cut_dir;
                 // dbg!(cut_dir);
+                #[cfg(feature = "debug")]
+                {
+                    dbg!(cut_dir);
+                }
                 let x_axis = y_axis.cross(ref_axis).normalize();
                 let z_axis = x_axis.cross(y_axis).normalize();
                 let new_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
@@ -241,6 +253,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             translation = translation + rotation * pos;
             rotation = rotation * quat;
         }
+
 
         let trans = Transform {
             rotation,
