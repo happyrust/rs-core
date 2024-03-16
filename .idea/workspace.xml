@@ -22,14 +22,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor geometry primitives computation and cleanup&#10;&#10;Updated the computation in lpyramid.rs and cleanup in category.rs to prevent single-point situations. Maximized division result to 0.001 for better reliability. Fixed minor spacing issues for consistency and readability. Slight adjustments were made in workspace.xml, primarily changes related to Cargo and test settings.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Update geometry computation and cleanup code&#10;&#10;Refactored geometry primitives computation in lpyramid.rs and did cleanup in category.rs to avoid single-point situations. Optimized division result for better reliability and made minor formatting adjustments for readability. Modifications were also made in workspace.xml mainly in relation to Cargo and test settings.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -637,7 +633,7 @@
       <workItem from="1710353962413" duration="118000" />
       <workItem from="1710358574208" duration="159000" />
       <workItem from="1710417976488" duration="23131000" />
-      <workItem from="1710567100503" duration="2097000" />
+      <workItem from="1710567100503" duration="3735000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -982,7 +978,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="278" />
+    <option name="localTasksCounter" value="279" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1025,7 +1021,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="WIP 生成类型" />
     <MESSAGE value="WIP fix" />
     <MESSAGE value="WIP surreal" />
     <MESSAGE value="WIP adjust" />
@@ -1050,7 +1045,8 @@
     <MESSAGE value="local" />
     <MESSAGE value="Refactor geometry primitives and improve feature flags&#10;&#10;The feature flag has been consistently updated from &quot;opencascade_rs&quot; to &quot;occ&quot;. In addition, the code for geometry primitives like Cube, Cylinder, Torus, etc., has been refactored. This has involved creating a new module &quot;basic&quot;, introducing shared structures with Arc, and replacing Shape structures with OccSharedShape where needed." />
     <MESSAGE value="Refactor geometry primitives computation and cleanup&#10;&#10;Updated the computation in lpyramid.rs and cleanup in category.rs to prevent single-point situations. Maximized division result to 0.001 for better reliability. Fixed minor spacing issues for consistency and readability. Slight adjustments were made in workspace.xml, primarily changes related to Cargo and test settings." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor geometry primitives computation and cleanup&#10;&#10;Updated the computation in lpyramid.rs and cleanup in category.rs to prevent single-point situations. Maximized division result to 0.001 for better reliability. Fixed minor spacing issues for consistency and readability. Slight adjustments were made in workspace.xml, primarily changes related to Cargo and test settings." />
+    <MESSAGE value="Update geometry computation and cleanup code&#10;&#10;Refactored geometry primitives computation in lpyramid.rs and did cleanup in category.rs to avoid single-point situations. Optimized division result for better reliability and made minor formatting adjustments for readability. Modifications were also made in workspace.xml mainly in relation to Cargo and test settings." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update geometry computation and cleanup code&#10;&#10;Refactored geometry primitives computation in lpyramid.rs and did cleanup in category.rs to avoid single-point situations. Optimized division result for better reliability and made minor formatting adjustments for readability. Modifications were also made in workspace.xml mainly in relation to Cargo and test settings." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

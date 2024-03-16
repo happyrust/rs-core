@@ -140,6 +140,17 @@ from $refnos
 async fn test_query_cata() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
+    let refno = "17496/171646".into();
+    let cat_refno = rs_surreal::get_cat_refno(refno)
+        .await
+        .unwrap();
+    dbg!(cat_refno);
+    // get_cat_attmap
+    let cat_attmap = rs_surreal::get_cat_attmap(refno)
+        .await
+        .unwrap();
+    dbg!(cat_attmap);
+
     let refno = "17496/171647".into();
     let cat_refno = rs_surreal::get_cat_refno(refno)
         .await
@@ -150,6 +161,9 @@ async fn test_query_cata() -> anyhow::Result<()> {
         .await
         .unwrap();
     dbg!(cat_attmap);
+
+
+
     Ok(())
 }
 

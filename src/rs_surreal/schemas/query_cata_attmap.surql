@@ -1,1 +1,1 @@
-(select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR][where noun="SCOM"].refno.* from only pe:17496_171648 limit 1 fetch SCOM)[0];
+(select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR][where noun="SCOM"].refno.* from only type::thing("pe", $refno) limit 1 fetch SCOM)[0];
