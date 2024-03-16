@@ -316,7 +316,7 @@ pub fn eval_str_to_f64(
         Regex::new(r"(DESI(GN)?\s+)?([I|C|O|A)]?PARA?M?)|DESP|(O|A|W|D)DESP?").unwrap();
     let mut uda_context_added = false;
     let mut uda_context = HashMap::new();
-    for _ in 0..10 {
+    for _ in 0..30 {
         for caps in re.captures_iter(&new_exp) {
             let s = caps[0].trim();
             if INTERNAL_PDMS_EXPRESS.contains(&s) {
@@ -397,9 +397,17 @@ pub fn eval_str_to_f64(
                 result_exp = result_exp.replace(s, &uda_context.get(&k).unwrap());
                 found_replaced = true;
             } else if is_some_param {
+                // 匹配到没有别的嵌套，比如 cos(DESP[1])，这种应该cos(DESP[1])整体结果为 0
+
+
                 if dtse_unit == "DIST" {
-                    println!("{input_expr}： {} not found, use 0.", &k);
-                    result_exp = result_exp.replace(s, " 0");
+                    result_exp = result_exp.replace(s, "NaN");
+                    let re = Regex::new(r"\w+\(NaN\)").unwrap();
+                    result_exp = re.replace_all(&result_exp, "0.0").to_string();
+                    result_exp = result_exp.replace("NaN", " 0");
+                    // println!("{input_expr}： {} not found, use {}.", &k, &replaced_str);
+                    println!("{input_expr}： {} not found, use {}.", &k, &result_exp);
+                    //
                     found_replaced = true;
                 } else {
                     return Err(anyhow::anyhow!(format!(

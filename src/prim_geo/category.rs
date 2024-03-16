@@ -328,6 +328,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             //     dbg!(translation);
             //     dbg!(&d);
             // }
+            let phei = d.dist_to_top - d.dist_to_btm;
+            if phei < 0.0 {
+                dir = -dir;
+            }
 
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);

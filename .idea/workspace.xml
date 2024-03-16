@@ -22,14 +22,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor geometry computation and tidy up the code&#10;&#10;This commit includes code refactoring for the computation of geometry primitives in the lpyramid.rs file. It also addresses cleaning up in category.rs to prevent single-point scenarios. The division result was optimized for improved reliability and readability-enhancing formatting adjustments were applied. Changes in workspace.xml related mainly to Cargo and test settings.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -636,7 +632,7 @@
       <workItem from="1710353962413" duration="118000" />
       <workItem from="1710358574208" duration="159000" />
       <workItem from="1710417976488" duration="23131000" />
-      <workItem from="1710567100503" duration="7725000" />
+      <workItem from="1710567100503" duration="12501000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -981,7 +977,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="280" />
+    <option name="localTasksCounter" value="281" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1024,7 +1020,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="WIP surreal" />
     <MESSAGE value="WIP adjust" />
     <MESSAGE value="WIP commit" />
     <MESSAGE value="WIP add surreal config option" />
@@ -1049,7 +1044,8 @@
     <MESSAGE value="Refactor geometry primitives computation and cleanup&#10;&#10;Updated the computation in lpyramid.rs and cleanup in category.rs to prevent single-point situations. Maximized division result to 0.001 for better reliability. Fixed minor spacing issues for consistency and readability. Slight adjustments were made in workspace.xml, primarily changes related to Cargo and test settings." />
     <MESSAGE value="Update geometry computation and cleanup code&#10;&#10;Refactored geometry primitives computation in lpyramid.rs and did cleanup in category.rs to avoid single-point situations. Optimized division result for better reliability and made minor formatting adjustments for readability. Modifications were also made in workspace.xml mainly in relation to Cargo and test settings." />
     <MESSAGE value="Refactor geometry computation and tidy up the code&#10;&#10;This commit includes code refactoring for the computation of geometry primitives in the lpyramid.rs file. It also addresses cleaning up in category.rs to prevent single-point scenarios. The division result was optimized for improved reliability and readability-enhancing formatting adjustments were applied. Changes in workspace.xml related mainly to Cargo and test settings." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor geometry computation and tidy up the code&#10;&#10;This commit includes code refactoring for the computation of geometry primitives in the lpyramid.rs file. It also addresses cleaning up in category.rs to prevent single-point scenarios. The division result was optimized for improved reliability and readability-enhancing formatting adjustments were applied. Changes in workspace.xml related mainly to Cargo and test settings." />
+    <MESSAGE value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
+    <option name="LAST_COMMIT_MESSAGE" value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
