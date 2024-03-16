@@ -25,7 +25,7 @@ pub struct MaterialGyDataBend {
 
 impl MaterialGyDataBend {
     //// 将结构体转为HashMap
-    pub fn into_hashmap(self) -> HashMap<String,String> {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("编码".to_string()).or_insert(self.code);
@@ -46,7 +46,7 @@ pub struct MaterialGyData {
 
 impl MaterialGyData {
     //// 将结构体转为HashMap
-    pub fn into_hashmap(self) -> HashMap<String,String> {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("编码".to_string()).or_insert(self.code);
@@ -55,13 +55,45 @@ impl MaterialGyData {
     }
 }
 
-pub async fn get_pe_with_db(db: Surreal<Any>, refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
-    let mut response = db
-        .query(include_str!("schemas/query_pe_by_refno.surql"))
-        .bind(("refno", refno.to_string()))
-        .await?;
-    let pe: Option<SPdmsElement> = response.take(0)?;
-    Ok(pe)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialGyValvList {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    pub valv_name: String,
+    pub room_code: String,
+    pub valv_belong: String,
+    pub valv_length: Option<f32>,
+    pub valv_weight: Option<f32>,
+    pub valv_x: Option<f32>,
+    pub valv_y: Option<f32>,
+    pub valv_z: Option<f32>,
+    pub valv_supp: String,
+}
+
+impl MaterialGyValvList {
+    //// 将结构体转为HashMap
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("阀门位号".to_string()).or_insert(self.valv_name.to_string());
+        map.entry("房间号".to_string()).or_insert(self.room_code.to_string());
+        map.entry("阀门归属".to_string()).or_insert(self.valv_belong.to_string());
+        // 没有的给个默认值
+        let valv_length = self.valv_length.map_or("0".to_string(), |x| x.to_string());
+        map.entry("阀门长度".to_string()).or_insert(valv_length.to_string());
+        let valv_weight = self.valv_weight.map_or("0".to_string(), |x| x.to_string());
+        map.entry("阀门重量".to_string()).or_insert(valv_weight.to_string());
+        let valv_x = self.valv_x.map_or("0".to_string(), |x| x.to_string());
+        map.entry("阀门重心X".to_string()).or_insert(valv_x.to_string());
+        let valv_y = self.valv_y.map_or("0".to_string(), |x| x.to_string());
+        map.entry("阀门重心Y".to_string()).or_insert(valv_y.to_string());
+        let valv_z = self.valv_z.map_or("0".to_string(), |x| x.to_string());
+        map.entry("阀门重心Z".to_string()).or_insert(valv_z.to_string());
+
+        map.entry("是否阀门支架".to_string()).or_insert(self.valv_supp.to_string());
+        map
+    }
 }
 
 ///查询工艺大宗材料数据
@@ -112,9 +144,9 @@ pub async fn get_gy_dzcl(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Resul
     Ok((data, tubi_data))
 }
 
-pub async fn get_gy_dzcl_test(refnos: Vec<RefU64>) -> anyhow::Result<(Vec<MaterialGyData>, Vec<MaterialGyDataBend>)> {
+/// 查询工艺阀门清单数据
+pub async fn get_gy_valv_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialGyValvList>> {
     let mut data = Vec::new();
-    let mut tubi_data = Vec::new();
     for refno in refnos {
         let Some(pe) = get_pe(refno).await? else { continue; };
         // 如果是site，则需要过滤 site的 name
@@ -122,40 +154,30 @@ pub async fn get_gy_dzcl_test(refnos: Vec<RefU64>) -> anyhow::Result<(Vec<Materi
             if !pe.name.contains("PIPE") { continue; };
         }
         // 查询bend的数据
-        let refnos = query_filter_deep_children(refno, vec!["BEND".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, vec!["VALV".to_string(), "INST".to_string()]).await?;
         let refnos_str = serde_json::to_string(&refnos.into_iter()
             .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
         let sql = format!(r#"select
-    id as id,
-    string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
-    refno.TYPE as noun, // 部件
-    math::fixed((refno.ANGL / 360) * 2 * 3.1415 * refno.SPRE.refno.CATR.refno.PARA[1],2) as count // 长度
-    from {}"#, refnos_str);
-        let mut response = SUL_DB
+        id,
+        fn::default_name(id) as valv_name, // 阀门位号
+        '' as room_code, // 房间号 todo
+        string::split(string::slice(array::at(->pe_owner.out.name,0),1),'-')[0] as valv_belong, // 阀门归属
+        if refno.SPRE.refno.CATR.refno.PARA[1] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[1] }} * 2 as valv_length, // 阀门长度
+        if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) != "R" {{ refno.SPRE.refno.CATR.refno.PARA[10] }} else if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) == "R" {{ refno.SPRE.refno.CATR.refno.PARA[14] }} else {{ 0 }} as valv_weight, // 阀门重量
+        if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) != "R" {{ refno.SPRE.refno.CATR.refno.PARA[7] }} else if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) == "R" {{ refno.SPRE.refno.CATR.refno.PARA[11] }} else {{ 0 }} as valv_x, // 阀门重心X
+        if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) != "R" {{ refno.SPRE.refno.CATR.refno.PARA[8] }} else if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) == "R" {{ refno.SPRE.refno.CATR.refno.PARA[12] }} else {{ 0 }} as valv_y, // 阀门重心Y
+        if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) != "R" {{ refno.SPRE.refno.CATR.refno.PARA[9] }} else if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) == "R" {{ refno.SPRE.refno.CATR.refno.PARA[13] }} else {{ 0 }} as valv_z, // 阀门重心Z
+        fn::valv_b_supp(id) as valv_supp // 阀门支架
+        from {}"#, refnos_str);
+        let mut response = db
             .query(sql)
             .await?;
-        let mut result: Vec<MaterialGyDataBend> = response.take(0)?;
-        tubi_data.append(&mut result);
-        // 查询 elbo,tee,flan,gask,olet,redu,cap,couplig
-        let refnos = query_filter_deep_children(refno, vec!["ELBO".to_string(),
-                                                            "TEE".to_string(), "FLAN".to_string(), "GASK".to_string(),
-                                                            "OLET".to_string(), "REDU".to_string(), "CAP".to_string(),
-                                                            "COUP".to_string()]).await?;
-        let refnos_str = serde_json::to_string(&refnos.into_iter()
-            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
-        let sql = format!(r#"select
-    id as id,
-    string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
-    refno.TYPE as noun // 部件
-    from {}"#, refnos_str);
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
-        let mut result: Vec<MaterialGyData> = response.take(0)?;
+        let mut result: Vec<MaterialGyValvList> = response.take(0)?;
         data.append(&mut result);
     }
-    Ok((data, tubi_data))
+    Ok(data)
 }
+
 
 #[tokio::test]
 async fn test_get_gy_dzcl() -> anyhow::Result<()> {
