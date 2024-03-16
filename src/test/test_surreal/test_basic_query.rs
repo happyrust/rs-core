@@ -140,7 +140,7 @@ from $refnos
 async fn test_query_cata() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
-    let refno = "24384/24827".into();
+    let refno = "17496/171647".into();
     let cat_refno = rs_surreal::get_cat_refno(refno)
         .await
         .unwrap();

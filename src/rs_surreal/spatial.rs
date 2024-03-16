@@ -225,7 +225,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             } else {
                 Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
             };
-            dbg!((x_axis, y_axis, z_axis));
+            // dbg!((x_axis, y_axis, z_axis));
             let new_quat = posl_quat * quat;
             translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
 

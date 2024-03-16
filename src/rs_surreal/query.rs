@@ -239,7 +239,7 @@ pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
         .query(include_str!("schemas/query_cata_refno.surql"))
         .bind(("refno", refno.to_string()))
         .await?;
-    let r: Option<RefU64> = response.take(1)?;
+    let r: Option<RefU64> = response.take(0)?;
     Ok(r)
 }
 
@@ -250,7 +250,7 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
         .query(include_str!("schemas/query_cata_attmap.surql"))
         .bind(("refno", refno.to_string()))
         .await?;
-    let o: SurlValue = response.take(1)?;
+    let o: SurlValue = response.take(0)?;
     // dbg!(&o);
     let named_attmap: NamedAttrMap = o.into();
     Ok(named_attmap)

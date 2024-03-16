@@ -284,7 +284,7 @@ fn test_complex_circe() {
 }
 
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire_new(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
@@ -395,7 +395,7 @@ pub fn gen_occ_wire_new(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Resu
 
 ///生成occ的wire
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire_1(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
