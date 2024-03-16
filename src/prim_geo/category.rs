@@ -15,6 +15,7 @@ use crate::shape::pdms_shape::BrepShapeTrait;
 use bevy_math::prelude::*;
 use bevy_transform::prelude::Transform;
 use std::f32::consts::FRAC_PI_2;
+use crate::prim_geo::LCylinder;
 
 #[derive(Debug, Clone)]
 pub enum ShapeErr {
@@ -322,15 +323,12 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(axis.number);
             let mut dir = axis.dir.is_normalized().then(|| axis.dir).unwrap_or(axis.dir_flag * Vec3::Y);
+            let translation = (dir * d.dist_to_btm + axis.pt);
+            // if d.refno == "23984/89344".into() {
+            //     dbg!(translation);
+            //     dbg!(&d);
+            // }
 
-            let mut phei = (d.dist_to_top - d.dist_to_btm) as f32;
-            let mut dis = d.dist_to_btm;
-            let translation = (dir * dis + axis.pt);
-            //如果height是负数，相当于要额外旋转一下
-            if phei < 0.0 {
-                phei = -phei;
-                dir = -dir;
-            }
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
             let transform = Transform {
@@ -338,9 +336,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation,
                 ..Default::default()
             };
-            // 是以中心为原点，所以需要移动到中心位置
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
-                phei,
+            // 是以远点为起点，所以需要移动到中心位置
+            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LCylinder {
+                pbdi: d.dist_to_btm,
+                ptdi: d.dist_to_top,
                 pdia,
                 ..Default::default()
             });

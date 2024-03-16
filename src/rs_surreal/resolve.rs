@@ -229,7 +229,7 @@ pub fn eval_str_to_f64(
             // dbg!(input_expr);
             let expr_val = "".to_string();
             #[cfg(not(target_arch = "wasm32"))]
-            let expr_val = tokio::task::block_in_place(|| {
+                let expr_val = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async move {
                     //如果是直段，直接取当前的参考号
                     let target_refno = match c2 {
@@ -277,47 +277,33 @@ pub fn eval_str_to_f64(
     if new_exp.contains("RPRO") {
         let mut found_dtse_mismatch = false;
         new_exp = replace_all_result(&rpro_re, &new_exp, |caps: &Captures| {
-                let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
-                let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
-                let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
-                // dbg!(&key_type,  context.get(&key_type));
-                //if not same type, or doesn't exist, just return error
-                if context
-                    .get(&key_type)
-                    .map(|x| x.as_str() != dtse_unit)
-                    .unwrap_or(false)
-                {
-                    //应该break
+            let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
+            let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
+            let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
+            if context
+                .get(&key_type)
+                .map(|x| x.as_str() != dtse_unit)
+                .unwrap_or(false)
+            {
+                return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
+            } else {
+                let v = context
+                    .get(&key)
+                    .map(|x| x.to_string())
+                    .unwrap_or("0".to_string());
+                if let Ok(t) = eval_str_to_f64(&v, &context, false, "DIST") {
+                    Ok(t.to_string())
+                } else {
                     //use default value
-                    // context
-                    //     .get(&default_key)
-                    //     .map(|x| x.to_string())
-                    //     .unwrap_or("0".to_string())
-                    return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
-                }else{
-                    let v = context
-                        .get(&key)
+                    Ok(context
+                        .get(&default_key)
                         .map(|x| x.to_string())
-                        .unwrap_or("0".to_string());
-                    if let Ok(t) = eval_str_to_f64(&v, &context, false, "DIST") {
-                        Ok(t.to_string())
-                    } else {
-                        //use default value
-                        Ok(context
-                            .get(&default_key)
-                            .map(|x| x.to_string())
-                            .unwrap_or("0".to_string()))
-                    }
+                        .unwrap_or("0".to_string()))
                 }
-
-            })?
+            }
+        })?
             .trim()
             .to_string();
-        //TODO: 如果有DTSE的表达式不一致，直接返回0？
-        // if found_dtse_mismatch {
-        //     // return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
-        //     return Ok(0.0);
-        // }
     }
 
     let mut new_exp = new_exp
@@ -330,7 +316,7 @@ pub fn eval_str_to_f64(
         Regex::new(r"(DESI(GN)?\s+)?([I|C|O|A)]?PARA?M?)|DESP|(O|A|W|D)DESP?").unwrap();
     let mut uda_context_added = false;
     let mut uda_context = HashMap::new();
-    for _ in 0..100 {
+    for _ in 0..10 {
         for caps in re.captures_iter(&new_exp) {
             let s = caps[0].trim();
             if INTERNAL_PDMS_EXPRESS.contains(&s) {
@@ -355,7 +341,7 @@ pub fn eval_str_to_f64(
                     .map(|x| x.floor().to_string())
                     .unwrap_or_default()
             )
-            .into();
+                .into();
             let is_uda = k.starts_with(":");
             if is_uda && !uda_context_added {
                 let refno_str = context.get("RS_DES_REFNO").unwrap();
@@ -363,12 +349,11 @@ pub fn eval_str_to_f64(
                 // dbg!(&k);
                 let uda_map = NamedAttrMap::default();
                 #[cfg(not(target_arch = "wasm32"))]
-                let uda_map = tokio::task::block_in_place(|| {
+                    let uda_map = tokio::task::block_in_place(|| {
                     tokio::runtime::Handle::current().block_on(async move {
                         let d = crate::get_named_attmap_with_uda(refno, false)
                             .await
                             .unwrap_or_default();
-                        // dbg!(&d);
                         d
                     })
                 });
@@ -407,33 +392,22 @@ pub fn eval_str_to_f64(
 
             if context.contains_key(&k) {
                 result_exp = result_exp.replace(s, &context.get(&k).unwrap());
-                // if is_uda {
-                //     dbg!(&result_exp);
-                // }
                 found_replaced = true;
             } else if is_uda && uda_context.contains_key(&k) {
                 result_exp = result_exp.replace(s, &uda_context.get(&k).unwrap());
-                // if is_uda{
-                //     dbg!(&result_exp);
-                // }
                 found_replaced = true;
             } else if is_some_param {
-                //if !replace_err_by_zero
-                //todo 需要弄清楚，直接整体返回0.0， 不用坐特殊处理？ 是否可行
-                {
-                    // return Ok(0.0);
+                if dtse_unit == "DIST" {
+                    println!("{input_expr}： {} not found, use 0.", &k);
+                    result_exp = result_exp.replace(s, " 0");
+                    found_replaced = true;
+                } else {
                     return Err(anyhow::anyhow!(format!(
                         "{input_expr}:： {} not found.",
                         &k
                     )));
                 }
-                println!("{input_expr}： {} not found, use 0.", &k);
-                result_exp = result_exp.replace(s, " 0");
-                found_replaced = true;
             }
-            // if is_uda {
-            //     dbg!(&result_exp);
-            // }
         }
         //如果有RPRO 需要执行两次处理
         result_exp = result_exp.replace("ATTRIB", "");

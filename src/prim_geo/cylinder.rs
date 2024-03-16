@@ -195,7 +195,7 @@ impl BrepShapeTrait for LCylinder {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::new(self.pdia, self.pdia, self.pbdi - self.ptdi)
+        Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi).abs())
     }
 
     ///直接通过基本体的参数，生成模型
@@ -208,28 +208,7 @@ impl BrepShapeTrait for LCylinder {
     }
 }
 
-impl From<&AttrMap> for LCylinder {
-    fn from(m: &AttrMap) -> Self {
-        let pdia = m.get_val("DIAM").unwrap().double_value().unwrap() as f32;
-        let pbdi = m.get_val("PBDI").unwrap().double_value().unwrap() as f32;
-        let ptdi = m.get_val("PTDI").unwrap().double_value().unwrap() as f32;
-        LCylinder {
-            paxi_expr: "Z".to_string(),
-            paxi_pt: Default::default(),
-            paxi_dir: Vec3::Z,
-            pbdi,
-            ptdi,
-            negative: false,
-            pdia,
-        }
-    }
-}
 
-impl From<AttrMap> for LCylinder {
-    fn from(m: AttrMap) -> Self {
-        (&m).into()
-    }
-}
 
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
