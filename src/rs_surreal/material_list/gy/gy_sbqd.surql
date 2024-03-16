@@ -2,7 +2,7 @@
 // let $refno = [pe:24381_57828,pe:24383_76416];
 
 select
-id as id,
+id,
 string::slice(refno.NAME,1) as name, // 设备位号
 '' as room_code, // 房间号 todo
 fn::default_names(array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in])) as nozz_name, // 管口号

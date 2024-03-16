@@ -77,7 +77,7 @@ impl MaterialGyValvList {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("阀门位号".to_string()).or_insert(self.valv_name.to_string());
-        map.entry("房间号".to_string()).or_insert(self.room_code.to_string());
+        map.entry("所在房间号".to_string()).or_insert(self.room_code.to_string());
         map.entry("阀门归属".to_string()).or_insert(self.valv_belong.to_string());
         // 没有的给个默认值
         let valv_length = self.valv_length.map_or("0".to_string(), |x| x.to_string());
@@ -92,6 +92,33 @@ impl MaterialGyValvList {
         map.entry("阀门重心Z".to_string()).or_insert(valv_z.to_string());
 
         map.entry("是否阀门支架".to_string()).or_insert(self.valv_supp.to_string());
+        map
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialGyEquiList {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    pub name: String,
+    pub room_code: String,
+    pub nozz_name: Vec<String>,
+    pub nozz_pos: Vec<Vec<f32>>,
+    pub nozz_cref: Vec<String>,
+}
+
+impl MaterialGyEquiList {
+    //// 将结构体转为HashMap
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("设备位号".to_string()).or_insert(self.name.to_string());
+        map.entry("所在房间号".to_string()).or_insert(self.room_code.to_string());
+        map.entry("管口号".to_string()).or_insert(serde_json::to_string(&self.nozz_name).unwrap_or("[]".to_string()));
+        map.entry("管口坐标".to_string()).or_insert(serde_json::to_string(&self.nozz_pos).unwrap_or("[]".to_string()));
+        map.entry("相连管道编号".to_string()).or_insert(serde_json::to_string(&self.nozz_cref).unwrap_or("[]".to_string()));
+
         map
     }
 }
@@ -153,7 +180,7 @@ pub async fn get_gy_valv_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         if pe.noun == "SITE".to_string() {
             if !pe.name.contains("PIPE") { continue; };
         }
-        // 查询bend的数据
+        // 查询阀门的数据
         let refnos = query_filter_deep_children(refno, vec!["VALV".to_string(), "INST".to_string()]).await?;
         let refnos_str = serde_json::to_string(&refnos.into_iter()
             .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
@@ -178,6 +205,36 @@ pub async fn get_gy_valv_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
     Ok(data)
 }
 
+/// 查询工艺设备清单数据
+pub async fn get_gy_equi_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialGyEquiList>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("PIPE") { continue; };
+        }
+        // 查询阀门的数据
+        let refnos = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select
+        id,
+        string::slice(refno.NAME,1) as name, // 设备位号
+        '' as room_code, // 房间号 todo
+        fn::default_names(array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in])) as nozz_name, // 管口号
+        array::clump(array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe.refno.POS,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in.refno.POS]),3) as nozz_pos, // 管口坐标
+
+        (select value if (name == NONE) {{ '' }} else {{ string::slice(name, 1) }} from array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in])) as nozz_cref // 相连管道编号
+        from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialGyEquiList> = response.take(0)?;
+        data.append(&mut result);
+    }
+    Ok(data)
+}
 
 #[tokio::test]
 async fn test_get_gy_dzcl() -> anyhow::Result<()> {
