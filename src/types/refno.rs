@@ -16,26 +16,26 @@ use std::{fmt, hash};
 pub struct ParseRefU64Error;
 
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Hash,
-    Clone,
-    Copy,
-    Default,
-    Component,
-    Eq,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    Reflect,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Hash,
+Clone,
+Copy,
+Default,
+Component,
+Eq,
+PartialEq,
+PartialOrd,
+Ord,
+Reflect,
 )]
 pub struct RefU64(pub u64);
 
 impl Serialize for RefU64 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_str(self.to_string().as_str())
     }
@@ -50,8 +50,8 @@ enum StringOrU64 {
 
 impl<'de> Deserialize<'de> for RefU64 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         if let Ok(s) = StringOrU64::deserialize(deserializer) {
             match s {
@@ -309,6 +309,10 @@ impl RefU64 {
             .filter_map(|refno| Self::from_str(refno).ok())
             .collect()
     }
+    /// 转换为pdms的形式
+    pub fn to_pdms_str(&self) -> String {
+        format!("{}/{}", self.get_0(), self.get_1())
+    }
 }
 
 ///pdms的参考号
@@ -365,11 +369,11 @@ impl RefI32Tuple {
 
     #[inline]
     pub fn get_0(&self) -> i32 {
-        self.0 .0
+        self.0.0
     }
 
     #[inline]
     pub fn get_1(&self) -> i32 {
-        self.0 .1
+        self.0.1
     }
 }

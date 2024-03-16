@@ -8,6 +8,7 @@ pub mod uda;
 pub mod resolve;
 pub mod index;
 pub mod material_query;
+mod table_const;
 
 pub use query::*;
 pub use graph::*;

@@ -1,5 +1,6 @@
 use crate::options::DbOption;
 use config::{Config, File};
+use surrealdb::opt::auth::Root;
 use crate::SUL_DB;
 
 pub mod test_mdb;
@@ -40,4 +41,25 @@ pub async fn init_test_surreal() {
         .use_db(&db_option.project_name)
         .await
         .unwrap();
+}
+
+pub async fn init_surreal_with_signin() -> anyhow::Result<()> {
+    let s = Config::builder()
+        .add_source(File::with_name("DbOption"))
+        .build()?;
+    let db_option: DbOption = s.try_deserialize().unwrap();
+    SUL_DB
+        .connect(db_option.get_version_db_conn_str())
+        .with_capacity(1000)
+        .await?;
+    SUL_DB
+        .use_ns(&db_option.project_code)
+        .use_db(&db_option.project_name)
+        .await?;
+    SUL_DB
+        .signin(Root {
+        username: "root",
+        password: "root",
+    }).await?;
+    Ok(())
 }

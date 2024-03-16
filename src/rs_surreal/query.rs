@@ -9,6 +9,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
+use serde_json::Value;
+use surrealdb::engine::remote::ws::Client;
+use surrealdb::Surreal;
+use surrealdb::engine::any::Any;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -29,9 +33,9 @@ pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
 
 #[cached(result = true)]
 pub async fn get_design_dbnos(mdb_name: String) -> anyhow::Result<Vec<i32>> {
-    let mdb = if mdb_name.starts_with("/"){
+    let mdb = if mdb_name.starts_with("/") {
         mdb_name
-    }else{
+    } else {
         format!("/{}", mdb_name)
     };
     let mut response = SUL_DB
@@ -125,7 +129,6 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
             }
             _ => {}
         }
-        
     }
     // dbg!(&keys);
     // dbg!(&refno_fields);
@@ -165,9 +168,9 @@ pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 #[cached(result = true)]
 pub async fn get_siblings(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let mut response = SUL_DB
-    .query("select value in from (select * from type::thing('pe', $refno).owner<-pe_owner order by order_num) where in.deleted=false")
-    .bind(("refno", refno.to_string()))
-    .await?;
+        .query("select value in from (select * from type::thing('pe', $refno).owner<-pe_owner order by order_num) where in.deleted=false")
+        .bind(("refno", refno.to_string()))
+        .await?;
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
 }
@@ -384,4 +387,10 @@ pub async fn query_single_by_paths(
     let mut response = SUL_DB.query(sql).bind(("refno", refno.to_string())).await?;
     let r: Option<NamedAttrMap> = response.take(0)?;
     Ok(r.unwrap_or_default())
+}
+
+/// 插入数据
+pub async fn insert_into_table(db: &Surreal<Any>, table: &str, value: &str) -> anyhow::Result<()> {
+    db.query(format!("insert into {} {}", table, value)).await?;
+    Ok(())
 }
