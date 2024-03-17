@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 use config::{Config, File};
+use parry3d::partitioning::QbvhDataGenerator;
 use crate::{connect_surdb, get_children_pes, get_pe, query_filter_deep_children, RefU64, SUL_DB, SurlValue};
 use serde::{Serialize, Deserialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -148,6 +149,24 @@ pub async fn get_gy_dzcl(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Resul
             .await?;
         let mut result: Vec<MaterialGyDataBend> = response.take(0)?;
         tubi_data.append(&mut result);
+        // 查询tubi数据
+        let refnos = query_filter_deep_children(refno, vec!["BRAN".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"
+    select value (select leave as id,
+    (select value ( if leave.refno.LSTU.refno.NAME != NONE {{ string::split(array::at(string::split(leave.refno.LSTU.name, '/'), 2), ':')[0] }} else if leave.refno.HSTU.refno.NAME != NONE {{
+    string::split(array::at(string::split(leave.refno.HSTU.name, '/'), 2), ':')[0]
+    }} else {{ '' }}  ) from $self)[0]  as code,
+    'TUBI' as noun,
+    world_trans.d.scale[2] as count from ->tubi_relate) from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<Vec<MaterialGyDataBend>> = response.take(0)?;
+        if !result.is_empty() {
+            result.iter_mut().for_each(|x| tubi_data.append( x));
+        }
         // 查询 elbo,tee,flan,gask,olet,redu,cap,couplig
         let refnos = query_filter_deep_children(refno, vec!["ELBO".to_string(),
                                                             "TEE".to_string(), "FLAN".to_string(), "GASK".to_string(),
