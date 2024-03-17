@@ -124,6 +124,129 @@ impl MaterialGyEquiList {
     }
 }
 
+/// 通风 风管管段
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialTfHavcList {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    #[serde(rename = "Bolt_Qty")]
+    #[serde(default)]
+    pub bolt_qty: String,
+    #[serde(rename = "Description")]
+    #[serde(default)]
+    pub desc: String,
+    #[serde(rename = "Duct_Area")]
+    #[serde(default)]
+    pub duct_area: String,
+    #[serde(rename = "Duct_Wei")]
+    #[serde(default)]
+    pub duct_wei: String,
+    #[serde(rename = "FL_Len")]
+    #[serde(default)]
+    pub fl_len: String,
+    #[serde(rename = "FL_Type")]
+    #[serde(default)]
+    pub fl_type: String,
+    #[serde(rename = "FL_Wei")]
+    pub fl_wei: String,
+    #[serde(rename = "Height")]
+    #[serde(default)]
+    pub height: String,
+    #[serde(rename = "Length")]
+    pub length: String,
+    #[serde(rename = "Material")]
+    #[serde(default)]
+    pub material: String,
+    #[serde(rename = "Nut_Qty")]
+    #[serde(default)]
+    pub nut_qty: String,
+    #[serde(rename = "Other_Qty")]
+    #[serde(default)]
+    pub other_qty: String,
+    #[serde(rename = "Other_Type")]
+    #[serde(default)]
+    pub other_type: String,
+    #[serde(rename = "Pressure")]
+    #[serde(default)]
+    pub pressure: String,
+    #[serde(rename = "Room_No")]
+    #[serde(default)]
+    pub room_no: String,
+    #[serde(rename = "Seg_Code")]
+    #[serde(default)]
+    pub seg_code: String,
+    #[serde(rename = "Stif_Len")]
+    #[serde(default)]
+    pub stif_len: String,
+    #[serde(rename = "Stif_Sctn")]
+    #[serde(default)]
+    pub stif_sctn: String,
+    #[serde(rename = "Stif_Wei")]
+    #[serde(default)]
+    pub stif_wei: String,
+    #[serde(rename = "Stud")]
+    #[serde(default)]
+    pub stud: String,
+    #[serde(rename = "Sub_Code")]
+    #[serde(default)]
+    pub sub_code: String,
+    #[serde(rename = "System")]
+    #[serde(default)]
+    pub system: String,
+    #[serde(rename = "Wall_Thk")]
+    #[serde(default)]
+    pub wall_thk: String,
+    #[serde(rename = "Washer_Len")]
+    #[serde(default)]
+    pub washer_len: String,
+    #[serde(rename = "Washer_Type")]
+    #[serde(default)]
+    pub washer_type: String,
+    #[serde(rename = "Washer_Qty")]
+    #[serde(default)]
+    pub washer_qty: String,
+    #[serde(rename = "Width")]
+    #[serde(default)]
+    pub width: String,
+}
+
+impl MaterialTfHavcList {
+    //// 将结构体转为HashMap
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("描述".to_string()).or_insert(self.desc);
+        map.entry("管段编号".to_string()).or_insert(self.seg_code);
+        map.entry("子项号".to_string()).or_insert(self.sub_code);
+        map.entry("材质".to_string()).or_insert(self.material);
+        map.entry("压力等级".to_string()).or_insert(self.pressure);
+        map.entry("风管长度".to_string()).or_insert(self.length);
+        map.entry("风管宽度".to_string()).or_insert(self.width);
+        map.entry("风管高度".to_string()).or_insert(self.height);
+        map.entry("风管壁厚".to_string()).or_insert(self.wall_thk);
+        map.entry("风管面积".to_string()).or_insert(self.duct_area);
+        map.entry("风管重量".to_string()).or_insert(self.duct_wei);
+        map.entry("加强筋型材".to_string()).or_insert(self.stif_sctn);
+        map.entry("加强筋长度".to_string()).or_insert(self.stif_len);
+        map.entry("加强筋重量".to_string()).or_insert(self.stif_wei);
+        map.entry("法兰规格".to_string()).or_insert(self.fl_type);
+        map.entry("法兰长度".to_string()).or_insert(self.fl_len);
+        map.entry("法兰重量".to_string()).or_insert(self.fl_wei);
+        map.entry("垫圈类型".to_string()).or_insert(self.washer_type);
+        map.entry("垫圈长度".to_string()).or_insert(self.washer_len);
+        map.entry("螺栓数量".to_string()).or_insert(self.bolt_qty);
+        map.entry("其它材料类型".to_string()).or_insert(self.other_type);
+        map.entry("其它材料数量".to_string()).or_insert(self.other_qty);
+        map.entry("螺杆".to_string()).or_insert(self.stud);
+        map.entry("螺母数量".to_string()).or_insert(self.nut_qty);
+        map.entry("螺母数量_2".to_string()).or_insert(self.washer_qty);
+        map.entry("所在房间号".to_string()).or_insert(self.room_no);
+        map.entry("系统".to_string()).or_insert(self.system);
+        map
+    }
+}
+
 ///查询工艺大宗材料数据
 pub async fn get_gy_dzcl(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<(Vec<MaterialGyData>, Vec<MaterialGyDataBend>)> {
     let mut data = Vec::new();
@@ -165,7 +288,7 @@ pub async fn get_gy_dzcl(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Resul
             .await?;
         let mut result: Vec<Vec<MaterialGyDataBend>> = response.take(0)?;
         if !result.is_empty() {
-            result.iter_mut().for_each(|x| tubi_data.append( x));
+            result.iter_mut().for_each(|x| tubi_data.append(x));
         }
         // 查询 elbo,tee,flan,gask,olet,redu,cap,couplig
         let refnos = query_filter_deep_children(refno, vec!["ELBO".to_string(),
@@ -277,3 +400,4 @@ async fn test_get_gy_dzcl() -> anyhow::Result<()> {
     get_gy_dzcl(db, refnos).await.unwrap();
     Ok(())
 }
+
