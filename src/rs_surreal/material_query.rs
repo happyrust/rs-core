@@ -378,6 +378,12 @@ pub async fn get_gy_equi_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
     Ok(data)
 }
 
+/// 查询电气 托盘及接地
+pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<()> {
+
+    Ok(())
+}
+
 #[tokio::test]
 async fn test_get_gy_dzcl() -> anyhow::Result<()> {
     let s = Config::builder()

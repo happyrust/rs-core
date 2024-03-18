@@ -2,7 +2,9 @@
 DEFINE FUNCTION fn::turn_deap_into_str($desp:float) {
     return if $desp == 788296 {
         'DIAM'
-    } else {
-        float
+    } else if $desp == 531717 {
+        'FJ'
+    } else if $desp == 531501 {
+        'FB'
     }
 };

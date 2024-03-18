@@ -1,3 +1,5 @@
+// let $refno = [pe:24383_84088];
+
 select refno,string::slice(array::at(refno.REFNO->pe_owner.out->pe_owner.out->pe_owner.out.name,0),1,1) as num, // 机组号
 string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out->pe_owner.out.name,0),'-')[0],2) as project_num, //子项号
 if string::contains(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'MCT') || string::contains(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'MSUP')  { '主托盘' } else { '次托盘' } as major,//专业
@@ -18,4 +20,4 @@ if refno.DESC == NONE { '无' } else { '是' } as b_partition, // 有无隔板
 refno.DESC as partition_num,
 refno.SPRE.refno.NAME as spre,
 if string::contains(string::uppercase((select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.NAME),'RISER') { '竖向' } else if string::contains(string::uppercase((select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.NAME),'DIVIDER') { '竖向' } else { '水平' } as horizontal_or_vertical,
-from pe:24383_84088
+from $refno
