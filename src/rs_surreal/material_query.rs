@@ -54,6 +54,14 @@ impl MaterialGyData {
         map.entry("部件".to_string()).or_insert(self.noun);
         map
     }
+
+    pub fn into_yk_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("编码".to_string()).or_insert(self.code);
+        map.entry("品名".to_string()).or_insert(self.noun);
+        map
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -603,6 +611,33 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         data.append(&mut result);
     }
     Ok((data, stru_data))
+}
+
+/// 查询仪控 大宗材料
+pub async fn get_yk_dzcl_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialGyData>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("PIPE") { continue; };
+        }
+        // 查询bend的数据
+        let refnos = query_filter_deep_children(refno, vec!["VALV".to_string(),"TEE".to_string(),"COUP".to_string(),"INST".to_string(),"BEND".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select
+        id,
+        if refno.SPRE.name != NONE {{ string::split(string::split(refno.SPRE.name,'/')[2],':')[0] }} else {{ ' ' }} as code ,// 编码
+        refno.TYPE as noun
+        from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialGyData> = response.take(0)?;
+        data.append(&mut result);
+    }
+    Ok(data)
 }
 
 /// 提前运行定义好的方法
