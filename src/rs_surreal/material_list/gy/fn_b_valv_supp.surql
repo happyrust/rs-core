@@ -1,15 +1,13 @@
-// 阀门清单
-//let $pe = [pe:24383_66745];
+// 是否阀门支架
+DEFINE FUNCTION fn::valv_b_supp($pe:record) {
+    // let $pre_b_atta = fn::b_pre_type($pe,'ATTA');
+    let $pre = select value (select value in.refno.* from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe limit 1;
 
-select
-id,
-string::slice(fn::default_name(id),1) as valv_name, // 阀门位号
-'' as room_code, // 房间号 todo
-string::split(string::slice(array::at(->pe_owner.out.name,0),1),'-')[0] as valv_belong, // 阀门归属
-if refno.SPRE.refno.CATR.refno.PARA[1] == NONE { 0 } else { refno.SPRE.refno.CATR.refno.PARA[1] } * 2 as valv_length, // 阀门长度
-if string::slice(refno.SPRE.refno.CATR.name,4,1) == "R" { refno.SPRE.refno.CATR.refno.PARA[14] } else { refno.SPRE.refno.CATR.refno.PARA[10] } as vala_weight, // 阀门重量
-if string::slice(refno.SPRE.refno.CATR.name,4,1) == "R" { refno.SPRE.refno.CATR.refno.PARA[11] } else { refno.SPRE.refno.CATR.refno.PARA[7] } as vala_x, // 阀门重心X
-if string::slice(refno.SPRE.refno.CATR.name,4,1) == "R" { refno.SPRE.refno.CATR.refno.PARA[12] } else { refno.SPRE.refno.CATR.refno.PARA[8] } as vala_y, // 阀门重心Y
-if string::slice(refno.SPRE.refno.CATR.name,4,1) == "R" { refno.SPRE.refno.CATR.refno.PARA[13] } else { refno.SPRE.refno.CATR.refno.PARA[9] } as vala_z, // 阀门重心Z
-fn::valv_b_supp(id) as valv_supp // 阀门支架 
-from $pe
+    return if array::first($pre.TYPE) == 'ATTA' && array::first($pre.POS[0]) == $pe.refno.POS[0] && array::first($pre.POS[1]) == $pe.refno.POS[1] && array::first($pre.POS[2]) == $pe.refno.POS[2] && array::first($pre.AEXCES) == 0 {
+        '是'
+    } else {
+        '否'
+    };
+};
+
+// return fn::valv_b_supp(pe:24383_66745)

@@ -238,6 +238,11 @@ impl RefU64 {
     pub fn to_pe_key(&self) -> String {
         format!("pe:{}", &self.to_string())
     }
+
+    pub fn to_type_key(&self,noun:&str) -> String {
+        format!("{}:{}", noun,&self.to_string())
+    }
+
     #[inline]
     pub fn to_pe_thing(&self) -> Thing {
         ("pe".to_owned(), self.to_string()).into()

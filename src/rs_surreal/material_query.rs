@@ -576,10 +576,10 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         '' as room_code, // 房间号 todo
         fn::default_name($this.id) as supp_name, // 托盘支吊架名称
         '碳钢Q355' as material,  //材质
-        if (<-pe_owner.in<-pe_owner[where in.noun='SCTN'].in.refno.SPRE.name)[0] == NONE {{ '' }}
-        else {{ array::last(string::split((<-pe_owner.in<-pe_owner[where in.noun='SCTN'].in.refno.SPRE.name)[0],'-')) }} as size_num, // 规格型号
-        (<-pe_owner.in<-pe_owner[where in.noun='SCTN'].in.refno.SPRE.name)[0] as spre,
-        (<-pe_owner.in<-pe_owner[where in.noun='SCTN'].in.refno.SPRE.refno.CATR.refno.NAME)[0] as catr,
+        if (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0] == NONE {{ '' }}
+        else {{ array::last(string::split((<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0],'-')) }} as size_num, // 规格型号
+        (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0] as spre,
+        (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.refno.CATR.refno.NAME)[0] as catr,
         '2' as count // 数量
         from {}"#, refnos_str);
         let mut response = db
@@ -623,7 +623,7 @@ pub async fn get_yk_dzcl_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
             if !pe.name.contains("PIPE") { continue; };
         }
         // 查询bend的数据
-        let refnos = query_filter_deep_children(refno, vec!["VALV".to_string(),"TEE".to_string(),"COUP".to_string(),"INST".to_string(),"BEND".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, vec!["VALV".to_string(), "TEE".to_string(), "COUP".to_string(), "INST".to_string(), "BEND".to_string()]).await?;
         let refnos_str = serde_json::to_string(&refnos.into_iter()
             .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
         let sql = format!(r#"select
@@ -640,6 +640,370 @@ pub async fn get_yk_dzcl_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
     Ok(data)
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialYkInstData {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    pub name: String,
+    pub pipe_name: Vec<String>,
+    pub room_code: String,
+}
+
+impl MaterialYkInstData {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("传感器标识".to_string()).or_insert(self.name);
+        map.entry("对应根阀编号".to_string()).or_insert(serde_json::to_string(&self.pipe_name).unwrap_or("[]".to_string()));
+        map.entry("房间号".to_string()).or_insert(self.room_code);
+        map
+    }
+}
+
+/// 仪控 仪表管道
+pub async fn get_yk_inst_pipe(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialYkInstData>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("INST") { continue; };
+        }
+        // 查询 inst 的数据
+        let refnos = query_filter_deep_children(refno, vec!["INST".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select
+        id,
+        fn::default_name($this.id) as name,
+        fn::yk_pipe_num($this.id).href as pipe_name,
+        '' as room_code
+        from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialYkInstData> = response.take(0)?;
+        data.append(&mut result);
+    }
+    Ok(data)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialYkEquiListData {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    pub equi_name: String,
+    pub room_code: String,
+    pub pos: Option<f32>,
+    pub floor_height: String,
+}
+
+impl MaterialYkEquiListData {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("仪控设备位号".to_string()).or_insert(self.equi_name);
+        map.entry("所在房间号".to_string()).or_insert(self.room_code);
+        map.entry("设备绝对标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
+        map.entry("设备相对楼板标高".to_string()).or_insert(self.floor_height);
+
+        map
+    }
+}
+
+/// 仪控 设备清单
+pub async fn get_yk_equi_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialYkEquiListData>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("INST") { continue; };
+        }
+        // 查询 EQUI 的数据
+        let refnos = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select
+        id,
+        fn::default_name($this.id) as equi_name,
+        '' as room_code,
+        (->inst_relate.world_trans.d.translation[2])[0] as pos,
+        '' as floor_height
+        from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialYkEquiListData> = response.take(0)?;
+        data.append(&mut result);
+    }
+    Ok(data)
+}
+
+/// 给排水 大宗材料
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialGpsDzclData {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    pub code: String,
+    pub noun: String,
+    pub radius: Option<String>,
+    pub length: Option<f32>,
+    pub thick: Option<f32>,
+    pub count: Option<f32>,
+}
+
+impl MaterialGpsDzclData {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("物项编码".to_string()).or_insert(self.code);
+        map.entry("品名".to_string()).or_insert(self.noun);
+        map.entry("外径/Φ".to_string()).or_insert(self.radius.unwrap_or("0.0".to_string()));
+        map.entry("长度".to_string()).or_insert(self.count.unwrap_or(0.0).to_string());
+        map.entry("厚度".to_string()).or_insert(self.thick.unwrap_or(0.0).to_string());
+        map.entry("数量".to_string()).or_insert(self.count.unwrap_or(0.0).to_string());
+
+        map
+    }
+}
+
+/// 给排水 大宗材料
+pub async fn get_gps_dzcl_material(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialGpsDzclData>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("PIPE") { continue; };
+        }
+        // 查询 BEND 的数据
+        let refnos = query_filter_deep_children(refno, vec!["BEND".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select
+        id,
+        string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
+        refno.TYPE as noun ,// 部件
+        string::replace(<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[3] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[3] }},3),'f','') as radius, // 外径
+        math::fixed(if refno.SPRE.refno.CATR.refno.PARA == NONE && refno.ANGL == NONE {{ 0 }}
+        else {{ (refno.ANGL / 360) * 2 * 3.1415 * refno.SPRE.refno.CATR.refno.PARA[1] }},2) as count // 数量
+        from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
+        data.append(&mut result);
+        // 查询tubi的数据
+        let refnos = query_filter_deep_children(refno, vec!["BRAN".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select value (select leave as id,
+        (select value ( if leave.refno.LSTU.refno.NAME != NONE {{ string::split(array::at(string::split(leave.refno.LSTU.name, '/'), 2), ':')[0] }} else if leave.refno.HSTU.refno.NAME != NONE {{
+          string::split(array::at(string::split(leave.refno.HSTU.name, '/'), 2), ':')[0]
+        }} else {{ '' }}  ) from $self)[0]  as code,
+        'TUBI' as noun,
+        string::replace(<string>math::fixed(if leave.refno.LSTU.refno.NAME != NONE {{ leave.refno.LSTU.refno.CATR.refno.PARA[1] }} else if leave.refno.HSTU.refno.NAME != NONE {{ leave.refno.HSTU.refno.CATR.refno.PARA[1] }} else {{ 0 }},3 ),'f','') as radius, // 外径
+        world_trans.d.scale[2] as count from ->tubi_relate) from {};"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<Vec<MaterialGpsDzclData>> = response.take(0)?;
+        for mut d in result {
+            data.append(&mut d);
+        }
+        // 查询elbo的数据
+        let refnos = query_filter_deep_children(refno, vec!["ELBO".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select id,
+        string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
+        refno.TYPE as noun ,// 部件
+        string::replace(<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[3] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[3] }},3),'f','') as radius // 外径
+        from {};"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
+        data.append(&mut result);
+        // 查询flan的数据
+        let refnos = query_filter_deep_children(refno, vec!["FLAN".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select id,
+        string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
+        refno.TYPE as noun ,// 部件
+        string::replace(<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[6] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[6] }},3),'f','') as radius, // 外径
+        math::fixed(if refno.SPRE.refno.CATR.refno.PARA[4] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[4] }},3) as thick // 厚度
+        from {};"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
+        data.append(&mut result);
+        // 查询redu的数据
+        let refnos = query_filter_deep_children(refno, vec!["REDU".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select id,
+        string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
+        refno.TYPE as noun ,// 部件
+        string::replace(<string>array::join([math::fixed(if refno.SPRE.refno.CATR.refno.PARA[5] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[5] }},3),math::fixed(if refno.SPRE.refno.CATR.refno.PARA[6] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[6] }},3)],';'),'f','') as radius, // 外径
+        math::fixed(if refno.SPRE.refno.CATR.refno.PARA[3] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[3] }},3) as length // 长度
+        from {};"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
+        data.append(&mut result);
+        // 查询tee的数据
+        let refnos = query_filter_deep_children(refno, vec!["TEE".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select id,
+        string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
+        refno.TYPE as noun, // 部件
+        string::replace(<string>array::join([<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[6] != NONE {{ refno.SPRE.refno.CATR.refno.PARA[6] }} else {{ 0 }},3),<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[7] != NONE {{ refno.SPRE.refno.CATR.refno.PARA[7] }} else {{ 0 }},3)],';'),'f','') as radius // 外径
+        from {};"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
+        data.append(&mut result);
+    }
+    Ok(data)
+}
+
+/// 设备专业 通信系统
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialTxTxsbData {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    pub equi_name: String,
+    pub ptre_desc: String,
+    pub belong_factory: String,
+    pub room_code: String,
+    pub x: Option<f32>,
+    pub y: Option<f32>,
+    pub z: Option<f32>,
+    pub ptre_name: String,
+}
+
+impl MaterialTxTxsbData {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("设备位号".to_string()).or_insert(self.equi_name);
+        map.entry("设备名称".to_string()).or_insert(self.ptre_desc);
+        map.entry("所属厂房的编号".to_string()).or_insert(self.belong_factory);
+        map.entry("房间号".to_string()).or_insert(self.room_code);
+        map.entry("全局坐标X".to_string()).or_insert(self.x.unwrap_or(0.0).to_string());
+        map.entry("全局坐标Y".to_string()).or_insert(self.y.unwrap_or(0.0).to_string());
+        map.entry("全局坐标Z".to_string()).or_insert(self.z.unwrap_or(0.0).to_string());
+        map.entry("设备型号".to_string()).or_insert(self.ptre_name);
+
+        map
+    }
+}
+
+/// 通信专业 通信设备
+pub async fn get_tx_txsb_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialTxTxsbData>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("ELEC") { continue; };
+        }
+        // 过滤zone
+        let zones = get_children_pes(pe.refno).await?;
+        for zone in zones {
+            if !zone.name.contains("FAD") { continue; };
+            // 查询 EQUI 的数据
+            let refnos = query_filter_deep_children(refno, vec!["ELCONN".to_string()]).await?;
+            let refnos_str = serde_json::to_string(&refnos.into_iter()
+                .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+            let sql = format!(r#"select
+            id,
+            fn::default_name(refno.REFNO) as equi_name,
+            string::slice(if refno.CATR.refno.PRTREF.desc == NONE {{ '/' }} else {{ refno.CATR.refno.PRTREF.desc }},1) as ptre_desc, // 设备名称
+            string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'-')[0],1,3) as belong_factory, // 所属厂房编号
+            '' as room_code,
+            (->inst_relate.world_trans.d.translation[0])[0] as x, // 坐标 x
+            (->inst_relate.world_trans.d.translation[1])[0] as y, // 坐标 y
+            (->inst_relate.world_trans.d.translation[2])[0] as z, // 坐标 z
+            string::slice(refno.CATR.refno.PRTREF.refno.NAME,1) as ptre_name
+            from {}"#, refnos_str);
+            let mut response = db
+                .query(sql)
+                .await?;
+            let mut result: Vec<MaterialTxTxsbData> = response.take(0)?;
+            data.append(&mut result);
+        }
+    }
+    Ok(data)
+}
+
+/// 设备专业 大宗材料
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialSbListData {
+    pub id: RefU64,
+    pub name: String,
+    pub pos: Option<f32>,
+    pub length: Option<f32>,
+    pub room_code: String,
+}
+
+impl MaterialSbListData {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("设备位号".to_string()).or_insert(self.name);
+        map.entry("所在房间".to_string()).or_insert(self.room_code);
+        map.entry("轨道长度".to_string()).or_insert(self.length.unwrap_or(0.0).to_string());
+        map.entry("安装标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
+
+        map
+    }
+}
+
+/// 设备专业 大宗材料
+pub async fn get_sb_dzcl_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialSbListData>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("EQUI") { continue; };
+        }
+        // 查询 EQUI 的数据
+        let refnos = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select
+            id,
+            fn::default_name($this.id) as name,
+            '' as room_code,
+            array::max(<-pe_owner[where in.noun = 'BOX']<-pe->inst_relate.world_trans.d.translation[2]) as pos,
+            array::max(array::concat(array::concat(<-pe_owner[where in.noun = 'BOX'].in.refno.XLEN,<-pe_owner[where in.noun = 'BOX'].in.refno.YLEN) ,
+             <-pe_owner[where in.noun = 'BOX'].in.refno.ZLEN)) as length
+            from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let result: Vec<MaterialSbListData> = response.take(0)?;
+        let mut result = result.into_iter()
+            // .filter(|x| !x.name.contains("PR") || !x.name.contains("PD"))
+            .collect::<Vec<_>>();
+        data.append(&mut result);
+    }
+    Ok(data)
+}
+
 /// 提前运行定义好的方法
 pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     let response = db
@@ -651,9 +1015,17 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     let response = db
         .query(include_str!("material_list/dq/fn_vec3_distance.surql"))
         .await?;
+    let response = db
+        .query(include_str!("material_list/yk/fn_yk_pipe_num.surql"))
+        .await?;
+    let response = db
+        .query(include_str!("material_list/gy/fn_b_valv_supp.surql"))
+        .await?;
+    let response = db
+        .query(include_str!("material_list/dq/fn_dq_horizontal_or_vertical.surql"))
+        .await?;
     Ok(())
 }
-
 
 #[tokio::test]
 async fn test_get_gy_dzcl() -> anyhow::Result<()> {
