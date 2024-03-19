@@ -331,7 +331,7 @@ pub struct MaterialDqMaterialListStru {
     pub id: RefU64,
     pub num: String,
     pub project_num: String,
-    pub project_name: String,
+    pub project_name: Option<String>,
     pub major: String,
     pub room_code: String,
     pub pos: Option<f32>,
@@ -366,7 +366,7 @@ impl MaterialDqMaterialListStru {
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("机组号".to_string()).or_insert(self.num);
         map.entry("子项号".to_string()).or_insert(self.project_num);
-        map.entry("子项名称".to_string()).or_insert(self.project_name);
+        map.entry("子项名称".to_string()).or_insert(self.project_name.unwrap_or("".to_string()));
         map.entry("专业".to_string()).or_insert(self.major);
         map.entry("托盘标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
         map.entry("材质".to_string()).or_insert(self.material.unwrap_or("".to_string()));
@@ -536,10 +536,11 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
             .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
         let sql = format!(r#"select
         id,
-        string::slice(array::at(refno.REFNO->pe_owner.out->pe_owner.out->pe_owner.out.name,0),1,1) as num, // 机组号
-        string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out->pe_owner.out.name,0),'-')[0],2) as project_num, //子项号
-        array::first(refno.REFNO->pe_owner.out->pe_owner.out->pe_owner.out.refno.DESC) as project_name, //子项名称
-        if string::contains(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'MCT') || string::contains(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'MSUP')  {{ '主托盘' }} else {{ '次托盘' }} as major,//专业
+        string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num, // 机组号
+        string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
+        if string::contains(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'MCT')
+        || string::contains(fn::find_ancestor_type($this.id,"ZONE")[0].refno.NAME,'MSUP')  {{ '主托盘' }} else {{ '次托盘' }} as major,//专业
+        fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC as project_name, //子项名称
         '' as room_code,
         fn::default_name($this.id) as name,// 托盘段号
         refno.HPOS[2] as pos, // 托盘标高
@@ -565,13 +566,16 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         let mut result: Vec<MaterialDqMaterialList> = response.take(0)?;
         data.append(&mut result);
         // 查询电气支吊架的数据
-        let refnos = query_filter_deep_children(refno, vec!["STRU".to_string()]).await?;
-        let refnos_str = serde_json::to_string(&refnos.into_iter()
-            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
-        let sql = format!(r#"select id,
-        string::slice(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),1,1) as num, // 机组号
-        string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'-')[0],2) as project_num, //子项号
-        array::first(refno.REFNO->pe_owner.out->pe_owner.out.refno.DESC) as project_name, //子项名称
+        let zones = get_children_pes(pe.refno).await?;
+        for zone in zones {
+            if zone.name.contains("MTGD") { continue; };
+            let refnos = query_filter_deep_children(refno, vec!["STRU".to_string()]).await?;
+            let refnos_str = serde_json::to_string(&refnos.into_iter()
+                .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+            let sql = format!(r#"select id,
+        string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num, // 机组号
+        string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
+        fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC) as project_name, //子项名称
         '支吊架' as major,//专业
         '' as room_code, // 房间号 todo
         fn::default_name($this.id) as supp_name, // 托盘支吊架名称
@@ -582,33 +586,38 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.refno.CATR.refno.NAME)[0] as catr,
         '2' as count // 数量
         from {}"#, refnos_str);
-        let mut response = db
-            .query(sql)
-            .await?;
-        let mut result: Vec<MaterialDqMaterialListStru> = response.take(0)?;
-        stru_data.append(&mut result);
+            let mut response = db
+                .query(sql)
+                .await?;
+            let mut result: Vec<MaterialDqMaterialListStru> = response.take(0)?;
+            stru_data.append(&mut result);
+        }
         // 电缆及接地
-        let refnos = query_filter_deep_children(refno, vec!["GENSEC".to_string()]).await?;
-        let refnos_str = serde_json::to_string(&refnos.into_iter()
-            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
-        let sql = format!(r#"select id,
-        string::slice(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),1,1) as num, // 机组号
-        string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out->pe_owner.out.name,0),'-')[0],2) as project_num, //子项号
-        array::first(refno.REFNO->pe_owner.out->pe_owner.out->pe_owner.out->pe_owner.out.refno.DESC) as project_name, //子项名称
-        '主托盘接地' as major,//专业
-        '' as room_code, // 房间号 todo
-        fn::default_name($this.id) as name, // 托盘段号
-        math::fixed(refno.POS[2],3) as pos,
-        '裸铜缆' as material,  //材质
-        refno.SPRE.refno.NAME as spre,
-        refno.SPRE.refno.CATR.refno.NAME as catr,
-        math::fixed(fn::vec3_distance(array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[0],array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[1]),2) as count
-        from {}"#, refnos_str);
-        let mut response = db
-            .query(sql)
-            .await?;
-        let mut result: Vec<MaterialDqMaterialList> = response.take(0)?;
-        data.append(&mut result);
+        let zones = get_children_pes(pe.refno).await?;
+        for zone in zones {
+            if !zone.name.contains("MTGD") { continue; };
+            let refnos = query_filter_deep_children(refno, vec!["GENSEC".to_string()]).await?;
+            let refnos_str = serde_json::to_string(&refnos.into_iter()
+                .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+            let sql = format!(r#"select id,
+            string::slice(fn::find_ancestor_type($this.id,"SITE")[0].NAME,1,1) as num, // 机组号
+            string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].NAME,'-')[0],2) as project_num, //子项号
+            fn::find_ancestor_type($this.id,"SITE")[0].NAME.DESC as project_name, //子项名称
+            '主托盘接地' as major,//专业
+            '' as room_code, // 房间号 todo
+            fn::default_name($this.id) as name, // 托盘段号
+            math::fixed(refno.POS[2],3) as pos,
+            '裸铜缆' as material,  //材质
+            refno.SPRE.refno.NAME as spre,
+            refno.SPRE.refno.CATR.refno.NAME as catr,
+            math::fixed(fn::vec3_distance(array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[0],array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[1]),2) as count
+            from {}"#, refnos_str);
+            let mut response = db
+                .query(sql)
+                .await?;
+            let mut result: Vec<MaterialDqMaterialList> = response.take(0)?;
+            data.append(&mut result);
+        }
     }
     Ok((data, stru_data))
 }
@@ -620,7 +629,7 @@ pub async fn get_yk_dzcl_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         let Some(pe) = get_pe(refno).await? else { continue; };
         // 如果是site，则需要过滤 site的 name
         if pe.noun == "SITE".to_string() {
-            if !pe.name.contains("PIPE") { continue; };
+            if !pe.name.contains("INST") { continue; };
         }
         // 查询bend的数据
         let refnos = query_filter_deep_children(refno, vec!["VALV".to_string(), "TEE".to_string(), "COUP".to_string(), "INST".to_string(), "BEND".to_string()]).await?;
@@ -929,7 +938,7 @@ pub async fn get_tx_txsb_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
                 .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
             let sql = format!(r#"select
             id,
-            fn::default_name(refno.REFNO) as equi_name,
+            fn::default_name(owner) as equi_name,
             string::slice(if refno.CATR.refno.PRTREF.desc == NONE {{ '/' }} else {{ refno.CATR.refno.PRTREF.desc }},1) as ptre_desc, // 设备名称
             string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'-')[0],1,3) as belong_factory, // 所属厂房编号
             '' as room_code,
@@ -997,7 +1006,7 @@ pub async fn get_sb_dzcl_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
             .await?;
         let result: Vec<MaterialSbListData> = response.take(0)?;
         let mut result = result.into_iter()
-            // .filter(|x| !x.name.contains("PR") || !x.name.contains("PD"))
+            .filter(|x| !x.name.contains("PR") || !x.name.contains("PD"))
             .collect::<Vec<_>>();
         data.append(&mut result);
     }
@@ -1023,6 +1032,9 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
         .await?;
     let response = db
         .query(include_str!("material_list/dq/fn_dq_horizontal_or_vertical.surql"))
+        .await?;
+    let response = db
+        .query(include_str!("material_list/fn_get_ancestor.surql"))
         .await?;
     Ok(())
 }
