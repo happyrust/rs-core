@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ptr::eq;
 use std::str::FromStr;
 use config::{Config, File};
 use parry3d::partitioning::QbvhDataGenerator;
@@ -960,11 +961,23 @@ pub async fn get_tx_txsb_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
 /// 设备专业 大宗材料
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialSbListData {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
     pub name: String,
     pub pos: Option<f32>,
     pub length: Option<f32>,
     pub room_code: String,
+    pub boxs: Vec<Vec<String>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialSubeData {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub refno: RefU64,
+    pub pos: Option<f32>,
+    pub length: Option<f32>,
 }
 
 impl MaterialSbListData {
@@ -997,18 +1010,35 @@ pub async fn get_sb_dzcl_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
             id,
             fn::default_name($this.id) as name,
             '' as room_code,
-            array::max(<-pe_owner[where in.noun = 'BOX']<-pe->inst_relate.world_trans.d.translation[2]) as pos,
-            array::max(array::concat(array::concat(<-pe_owner[where in.noun = 'BOX'].in.refno.XLEN,<-pe_owner[where in.noun = 'BOX'].in.refno.YLEN) ,
-             <-pe_owner[where in.noun = 'BOX'].in.refno.ZLEN)) as length
+            fn::find_group_sube_children($this.id) as boxs
             from {}"#, refnos_str);
         let mut response = db
             .query(sql)
             .await?;
         let result: Vec<MaterialSbListData> = response.take(0)?;
-        let mut result = result.into_iter()
+        let mut equi_data = result.into_iter()
             .filter(|x| !x.name.contains("PR") || !x.name.contains("PD"))
-            .collect::<Vec<_>>();
-        data.append(&mut result);
+            .map(|equi| (equi.id,equi))
+            .collect::<HashMap<RefU64, MaterialSbListData>>();
+        // 查询轨道长度
+        let tray = equi_data.iter().map(|x| x.1.boxs.clone()).collect::<Vec<_>>();
+        let equi_children = filter_equi_children(tray);
+        let sql = format!(r#"select
+            (id.REFNO->pe_owner.out->pe_owner.out.refno)[0][0] as refno,
+            array::max(array::max([XLEN,YLEN,ZLEN])) as length,
+            array::max(POS[2]) as pos
+            from {}"#, serde_json::to_string(&equi_children).unwrap_or("[]".to_string()));
+        let mut response = db
+            .query(sql)
+            .await?;
+        let result: Vec<MaterialSubeData> = response.take(0)?;
+        // 将轨道长度放到设备的数据中
+        for r in result {
+            let Some(value) = equi_data.get_mut(&r.refno) else { continue; };
+            value.pos = r.pos;
+            value.length = r.length;
+        }
+        data.append(&mut equi_data.into_iter().map(|x| x.1).collect::<Vec<_>>())
     }
     Ok(data)
 }
@@ -1036,29 +1066,28 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     let response = db
         .query(include_str!("material_list/fn_get_ancestor.surql"))
         .await?;
+    let response = db
+        .query(include_str!("material_list/sb/fn_find_group_sube_children.surql"))
+        .await?;
     Ok(())
 }
 
-#[tokio::test]
-async fn test_get_gy_dzcl() -> anyhow::Result<()> {
-    let s = Config::builder()
-        .add_source(File::with_name("DbOption"))
-        .build()?;
-    let db_option: DbOption = s.try_deserialize().unwrap();
-    let url = format!("{}:{}", db_option.v_ip, db_option.v_port);
-    let db = Surreal::new::<Ws>(url).await?;
-    // db.signin(Root {
-    //     username: "root",
-    //     password: "root",
-    // }).await?;
-    // db.use_ns(db_option.project_code).use_db(db_option.project_name).await?;
-    db
-        .use_ns(&db_option.project_code)
-        .use_db(&db_option.project_name)
-        .await
-        .unwrap();
-    let refnos = vec![RefU64::from_str("24383/66456").unwrap()];
-    get_gy_dzcl(db, refnos).await.unwrap();
-    Ok(())
+fn filter_equi_children(datas: Vec<Vec<Vec<String>>>) -> Vec<Vec<String>> {
+    let mut result = Vec::new();
+    for data in datas {
+        let filtered_data: Vec<Vec<String>> = data
+            .into_iter()
+            .filter(|inner_vec| {
+                inner_vec.iter().all(|s| s.starts_with("BOX:"))
+            })
+            .filter(|inner_vec| {
+                let count = inner_vec.iter().count();
+                count == 3 || count == 4
+            })
+            .collect();
+        if !filtered_data.is_empty() {
+            result.push(filtered_data[0].clone())
+        }
+    }
+    result
 }
-
