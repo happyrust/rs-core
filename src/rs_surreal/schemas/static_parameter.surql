@@ -1,34 +1,34 @@
 
 insert into hvac_mat [{
-    id: 1,
+    key: '1',
     code: 'SS',
     name: '不锈钢'
 }, {
-    id: 2,
+    key: 2,
     code: 'GS',
     name: '镀锌钢（非气密）'
 },
 {
-    id: 3,
+    key: 3,
     code: 'CS',
     name: '碳钢（非气密）'
 },
 {
-    id: 4,
+    key: 4,
     code: 'ACS',
     name: '气密性碳钢'
 },
 {
-    id: 5,
+    key: 5,
     code: 'ASS',
     name: '气密性不锈钢'
 },
 {
-    id: 7,
+    key: 7,
     code: 'AS',
 },
 {
-    id: 8,
+    key: 8,
     code: 'FP',
 }]
 
