@@ -283,8 +283,18 @@ fn test_complex_circe() {
     }
 }
 
+#[test]
+fn test_complex_half_circle() {
+    let pts = vec![Vec3::new(233.5, 0.0, 0.0), Vec3::new(222.0, 233.5, 0.0),
+                   Vec3::new(-233.5, 233.5, 0.0),
+                   Vec3::new(-233.5, 0.0, 0.0)];
+    let fradius = vec![0.0, 233.5, 233.5, 0.0];
+    gen_occ_wire(&pts, &fradius);
+        // .expect("test_complex_half_circle failed");
+}
+
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire_0(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
@@ -395,7 +405,7 @@ pub fn gen_occ_wire_0(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result
 
 ///生成occ的wire
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire_1(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }

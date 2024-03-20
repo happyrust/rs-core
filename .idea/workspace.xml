@@ -22,10 +22,26 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor index definition functions in &quot;index.rs&quot;&#10;&#10;The update removes database option checks in &quot;create_owner_index&quot; and &quot;define_fullname_index&quot; methods, and renames these methods to &quot;define_owner_index&quot; and &quot;define_fullname_index&quot;. Additionally, a new index definition function &quot;define_pe_name_index&quot; is added. These changes streamline the index definition process and add new capabilities for indexing the 'pe' table.">
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STIF.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STRT.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/run_defines.bat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer_len.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/common.surql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/run.bat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +62,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="merge" />
+        <entry key="$PROJECT_DIR$" value="test" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -100,12 +116,17 @@
   &quot;keyToString&quot;: {
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Batch.run (1).executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run_defines.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Run aios_core.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::BOX::test_reflect.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::diff_data::test_query_diff.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::pdms_element::test_ele_reflect.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::sql::test_do_op_reflect_sql.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::test_do_op_reflect.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test prim_geo::wire::test_complex_circe.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_complex_half_circle.executor&quot;: &quot;Debug&quot;,
     &quot;Cargo.Test prim_geo::wire::test_gen_circle.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle_part.executor&quot;: &quot;Run&quot;,
@@ -139,7 +160,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;test&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/dongpengcheng/work/new-crates/aios-core&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/rs_surreal/mat_stastitcs/HVAC&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -152,23 +173,53 @@
     &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.AIAssistantPromptsLibrary&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC" />
       <recent name="$PROJECT_DIR$" />
       <recent name="E:\work\new-crates\aios-core" />
       <recent name="E:\work\crates\aios-core" />
       <recent name="$PROJECT_DIR$/src" />
-      <recent name="$PROJECT_DIR$/src/tool" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs" />
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC" />
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC\tools" />
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_basic_query::test_query_cata">
+  <component name="RunManager" selected="Batch.run_defines">
+    <configuration name="run (1)" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs/HVAC" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_defines" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs/HVAC/tools" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run_defines.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -186,8 +237,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test prim_geo::wire::test_complex_circe" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_complex_circe -- --exact" />
+    <configuration name="Run aios_core" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="run --package aios_core --bin aios_core" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -203,59 +254,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test prim_geo::wire::test_gen_occ_circle" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_gen_occ_circle -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test prim_geo::wire::test_gen_occ_concave_big" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_gen_occ_concave_big -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_cata" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_cata -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_query_fixing" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_query_fixing -- --exact" />
+    <configuration name="Test prim_geo::wire::test_complex_half_circle" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_complex_half_circle -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -289,21 +289,21 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Batch.run (1)" />
+      <item itemvalue="Batch.run" />
+      <item itemvalue="Batch.run_defines" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.Run aios_core" />
+      <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
       <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_cata" />
-      <item itemvalue="Cargo.Test prim_geo::wire::test_complex_circe" />
-      <item itemvalue="Cargo.Test prim_geo::wire::test_gen_occ_circle" />
-      <item itemvalue="Cargo.Test prim_geo::wire::test_gen_occ_concave_big" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_fixing" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_cata" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_fixing" />
-        <item itemvalue="Cargo.Test prim_geo::wire::test_complex_circe" />
-        <item itemvalue="Cargo.Test prim_geo::wire::test_gen_occ_concave_big" />
-        <item itemvalue="Cargo.Test prim_geo::wire::test_gen_occ_circle" />
+        <item itemvalue="Batch.run_defines" />
+        <item itemvalue="Batch.run" />
+        <item itemvalue="Batch.run (1)" />
+        <item itemvalue="Cargo.Run aios_core" />
+        <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
       </list>
     </recent_temporary>
   </component>
@@ -632,7 +632,14 @@
       <workItem from="1710353962413" duration="118000" />
       <workItem from="1710358574208" duration="159000" />
       <workItem from="1710417976488" duration="23131000" />
-      <workItem from="1710567100503" duration="12501000" />
+      <workItem from="1710567100503" duration="12532000" />
+      <workItem from="1710602077838" duration="896000" />
+      <workItem from="1710675796996" duration="35794000" />
+      <workItem from="1710853341534" duration="381000" />
+      <workItem from="1710855047563" duration="5804000" />
+      <workItem from="1710912785090" duration="41000" />
+      <workItem from="1710914243154" duration="1269000" />
+      <workItem from="1710918163100" duration="7467000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -977,7 +984,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="281" />
+    <option name="localTasksCounter" value="282" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1020,7 +1027,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="WIP adjust" />
     <MESSAGE value="WIP commit" />
     <MESSAGE value="WIP add surreal config option" />
     <MESSAGE value="WIP refactor" />
@@ -1045,7 +1051,8 @@
     <MESSAGE value="Update geometry computation and cleanup code&#10;&#10;Refactored geometry primitives computation in lpyramid.rs and did cleanup in category.rs to avoid single-point situations. Optimized division result for better reliability and made minor formatting adjustments for readability. Modifications were also made in workspace.xml mainly in relation to Cargo and test settings." />
     <MESSAGE value="Refactor geometry computation and tidy up the code&#10;&#10;This commit includes code refactoring for the computation of geometry primitives in the lpyramid.rs file. It also addresses cleaning up in category.rs to prevent single-point scenarios. The division result was optimized for improved reliability and readability-enhancing formatting adjustments were applied. Changes in workspace.xml related mainly to Cargo and test settings." />
     <MESSAGE value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
-    <option name="LAST_COMMIT_MESSAGE" value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
+    <MESSAGE value="Update geometry handling logic in category.rs and resolve.rs&#10;&#10;This commit refines geometry computation in category.rs and increases iteration limits in resolve.rs. It simplifies the logic in category.rs to enhance readability, while enhancing error resiliency in resolve.rs. Changes to workspace.xml pertain to updating group and task settings." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update geometry handling logic in category.rs and resolve.rs&#10;&#10;This commit refines geometry computation in category.rs and increases iteration limits in resolve.rs. It simplifies the logic in category.rs to enhance readability, while enhancing error resiliency in resolve.rs. Changes to workspace.xml pertain to updating group and task settings." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1054,6 +1061,11 @@
           <url>file://$PROJECT_DIR$/src/rs_surreal/spatial.rs</url>
           <line>61</line>
           <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/prim_geo/wire.rs</url>
+          <line>353</line>
+          <option name="timeStamp" value="6" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

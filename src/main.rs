@@ -14,9 +14,12 @@ use aios_core::room::room::load_aabb_tree;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     //创建保存元数据里的空间关系结果
-    init_test_surreal().await;
-    load_aabb_tree().await.unwrap();
-    create_valve_floor_relations().await.unwrap();
+    // init_test_surreal().await;
+    // load_aabb_tree().await.unwrap();
+    // create_valve_floor_relations().await.unwrap();
+    dbg!(db1_hash("FJFD"));
+    dbg!(db1_hash("DAMP"));
+    dbg!(db1_hash("MESH"));
 
     Ok(())
 }

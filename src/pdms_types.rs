@@ -968,7 +968,7 @@ pub struct PlantGeoData {
     pub mesh: Option<PlantMesh>,
     pub aabb: Option<Aabb>,
     //最好能反序列化，看看怎么实现
-    #[cfg(feature = "opencascade")]
+    #[cfg(feature = "occ")]
     #[serde(skip)]
     #[with(Skip)]
     pub occ_shape: Option<opencascade::OCCShape>,
@@ -980,6 +980,7 @@ impl Clone for PlantGeoData {
             geo_hash: self.geo_hash.clone(),
             mesh: self.mesh.clone(),
             aabb: self.aabb.clone(),
+            occ_shape: None,
         }
     }
 }
@@ -1106,7 +1107,8 @@ impl PlantGeoData {
     rkyv::Serialize,
 )]
 pub struct PlantMeshesData {
-    pub meshes: HashMap<GeoHash, PlantGeoData>, //世界坐标系的变换, 为了js兼容64位，暂时使用String
+    // pub meshes: HashMap<GeoHash, PlantGeoData>,
+    pub shapes: HashMap<GeoHash, Shape>,
 }
 
 impl PlantMeshesData {
@@ -1152,10 +1154,10 @@ impl PlantMeshesData {
     ) -> Option<(u64, Aabb)> {
         let hash = m.hash_unit_mesh_params();
         //如果是重新生成，会去覆盖模型
-        if replace || !self.meshes.contains_key(&hash) {
+        if replace || !self.shapes.contains_key(&hash) {
             if let Ok(mut d) = m.gen_unit(tol_ratio) {
                 d.geo_hash = hash;
-                self.meshes.insert(hash, d);
+                self.shapes.insert(hash, d);
             } else {
                 return None;
             }

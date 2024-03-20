@@ -376,6 +376,11 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         self.gen_unit_shape().gen_plant_geo_data(tol_ratio)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn gen_unit_occ_shape(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
+        self.gen_unit_shape().gen_plant_occ_geo(tol_ratio)
+    }
+
     #[cfg(target_arch = "wasm32")]
     fn gen_unit(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
         todo!("wasm32 not support")
@@ -420,8 +425,6 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         }
 
         let mesh = shape.mesh_with_tolerance(self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64)?;
-        // dbg!(&aabb);
-
         Ok(PlantGeoData {
             geo_hash,
             mesh: Some(PlantMesh {
@@ -431,6 +434,7 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
                 wire_vertices: vec![],
             }),
             aabb: Some(aabb),
+            occ_shape: None,
         })
 
 

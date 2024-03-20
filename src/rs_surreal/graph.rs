@@ -63,7 +63,6 @@ pub async fn query_multi_filter_deep_children(
     Ok(result)
 }
 
-//TODO: 使用统一的方法调用，查询path的filter
 #[cached(result = true)]
 pub async fn query_filter_ancestors(
     refno: RefU64,
@@ -82,12 +81,9 @@ pub async fn query_filter_ancestors(
         let sql = format!(
             "select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno})) where noun in [{nouns_str}]",
         );
-        // dbg!(&sql);
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
             let execution_time = stats.execution_time;
-            // dbg!(&execution_time);
-            // let s: Vec<RefU64> = result?;
             return Ok(result);
         }
     }
