@@ -43,11 +43,7 @@ pub async fn init_test_surreal() {
         .unwrap();
 }
 
-pub async fn init_surreal_with_signin() -> anyhow::Result<()> {
-    let s = Config::builder()
-        .add_source(File::with_name("DbOption"))
-        .build()?;
-    let db_option: DbOption = s.try_deserialize().unwrap();
+pub async fn init_surreal_with_signin(db_option:&DbOption) -> anyhow::Result<()> {
     SUL_DB
         .connect(db_option.get_version_db_conn_str())
         .with_capacity(1000)

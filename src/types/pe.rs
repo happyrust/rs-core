@@ -6,6 +6,7 @@ use serde_with::DisplayFromStr;
 use std::fmt::format;
 use bevy_ecs::system::Resource;
 use surrealdb::sql::Thing;
+use crate::pdms_types::PdmsElement;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
 pub struct SPdmsElement {

@@ -7,7 +7,7 @@ use crate::{
     accel_tree::acceleration_tree::{AccelerationTree, RStarBoundingBox},
     SUL_DB, RefU64,
 };
-use crate::test::test_surreal::init_surreal_with_signin;
+use crate::test::test_surreal::{init_surreal_with_signin, init_test_surreal};
 
 //或者改成第一次，需要去加载，后续就不用了
 //启动的时候就要去加载到内存里
@@ -199,7 +199,7 @@ fn match_room_name(room_name: &str) -> bool {
 
 #[tokio::test]
 async fn test_query_all_room_name() {
-    init_surreal_with_signin().await.unwrap();
+    init_test_surreal().await;
     let r = query_all_room_name().await.unwrap();
     dbg!(&r);
 }
