@@ -1,10 +1,13 @@
+use std::collections::HashMap;
 use once_cell::sync::Lazy;
+use regex::Regex;
 use tokio::sync::RwLock;
 
 use crate::{
     accel_tree::acceleration_tree::{AccelerationTree, RStarBoundingBox},
     SUL_DB, RefU64,
 };
+use crate::test::test_surreal::init_surreal_with_signin;
 
 //或者改成第一次，需要去加载，后续就不用了
 //启动的时候就要去加载到内存里
@@ -167,3 +170,36 @@ async fn calculate_room(room_refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
 //         .await?;
 //     Ok(())
 // }
+
+/// 查询项目的所有房间
+///
+/// 返回值: k 厂房 v 房间编号
+pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, Vec<String>>> {
+    let mut map = HashMap::new();
+    let mut response = SUL_DB
+        .query(include_str!("schemas/query_all_room.surql"))
+        .await?;
+    let results: Vec<Vec<String>> = response.take(0)?;
+    for r in results.clone() {
+        for room in r {
+            let split = room.split("-").collect::<Vec<_>>();
+            let Some(last) = split.last() else { continue; };
+            if !match_room_name(last) { continue; };
+            map.entry(last[..1].to_string()).or_insert_with(Vec::new).push(last.to_string());
+        }
+    }
+    Ok(map)
+}
+
+/// 正则匹配是否满足房间命名规则
+fn match_room_name(room_name: &str) -> bool {
+    let regex = Regex::new(r"^[A-Z]\d{3}$").unwrap();
+    regex.is_match(room_name)
+}
+
+#[tokio::test]
+async fn test_query_all_room_name() {
+    init_surreal_with_signin().await.unwrap();
+    let r = query_all_room_name().await.unwrap();
+    dbg!(&r);
+}

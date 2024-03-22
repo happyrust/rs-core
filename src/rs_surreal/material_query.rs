@@ -52,7 +52,7 @@ impl MaterialGyData {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("编码".to_string()).or_insert(self.code);
-        map.entry("部件".to_string()).or_insert(self.noun);
+        map.entry("类型".to_string()).or_insert(self.noun);
         map
     }
 
@@ -262,8 +262,8 @@ pub struct MaterialDqMaterialList {
     #[serde(deserialize_with = "de_refno_from_key_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
-    pub num: String,
-    pub project_num: String,
+    pub num: Option<String>,
+    pub project_num: Option<String>,
     pub project_name: Option<String>,
     pub major: String,
     pub room_code: String,
@@ -298,8 +298,9 @@ impl MaterialDqMaterialList {
     pub fn into_hashmap(self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
-        map.entry("机组号".to_string()).or_insert(self.num);
-        map.entry("子项号".to_string()).or_insert(self.project_num);
+        map.entry("机组号".to_string()).or_insert(self.num.unwrap_or("".to_string()));
+        map.entry("子项号".to_string()).or_insert(self.project_num.unwrap_or("".to_string()));
+        map.entry("元件等级名称".to_string()).or_insert(self.spre.clone().unwrap_or("".to_string()));
         map.entry("子项名称".to_string()).or_insert(self.project_name.unwrap_or("".to_string()));
         map.entry("专业".to_string()).or_insert(self.major);
         map.entry("托盘段号".to_string()).or_insert(self.name);
@@ -330,8 +331,8 @@ pub struct MaterialDqMaterialListStru {
     #[serde(deserialize_with = "de_refno_from_key_str")]
     #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
-    pub num: String,
-    pub project_num: String,
+    pub num: Option<String>,
+    pub project_num: Option<String>,
     pub project_name: Option<String>,
     pub major: String,
     pub room_code: String,
@@ -365,8 +366,9 @@ impl MaterialDqMaterialListStru {
     pub fn into_hashmap(self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
-        map.entry("机组号".to_string()).or_insert(self.num);
-        map.entry("子项号".to_string()).or_insert(self.project_num);
+        map.entry("机组号".to_string()).or_insert(self.num.unwrap_or("".to_string()));
+        map.entry("子项号".to_string()).or_insert(self.project_num.unwrap_or("".to_string()));
+        map.entry("元件等级名称".to_string()).or_insert(self.spre.clone().unwrap_or("".to_string()));
         map.entry("子项名称".to_string()).or_insert(self.project_name.unwrap_or("".to_string()));
         map.entry("专业".to_string()).or_insert(self.major);
         map.entry("托盘标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
@@ -539,8 +541,7 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         id,
         string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num, // 机组号
         string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
-        if string::contains(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'MCT')
-        || string::contains(fn::find_ancestor_type($this.id,"ZONE")[0].refno.NAME,'MSUP')  {{ '主托盘' }} else {{ '次托盘' }} as major,//专业
+        if string::contains(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'MCT') || string::contains(fn::default_name(fn::find_ancestor_type($this.id,"ZONE")[0]),'MSUP')  {{ '主托盘' }} else {{ '次托盘' }} as major,//专业
         fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC as project_name, //子项名称
         '' as room_code,
         fn::default_name($this.id) as name,// 托盘段号
@@ -576,7 +577,7 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
             let sql = format!(r#"select id,
         string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num, // 机组号
         string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
-        fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC) as project_name, //子项名称
+        fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC as project_name, //子项名称
         '支吊架' as major,//专业
         '' as room_code, // 房间号 todo
         fn::default_name($this.id) as supp_name, // 托盘支吊架名称
@@ -1018,7 +1019,7 @@ pub async fn get_sb_dzcl_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
         let result: Vec<MaterialSbListData> = response.take(0)?;
         let mut equi_data = result.into_iter()
             .filter(|x| !x.name.contains("PR") || !x.name.contains("PD"))
-            .map(|equi| (equi.id,equi))
+            .map(|equi| (equi.id, equi))
             .collect::<HashMap<RefU64, MaterialSbListData>>();
         // 查询轨道长度
         let tray = equi_data.iter().map(|x| x.1.boxs.clone()).collect::<Vec<_>>();
@@ -1039,6 +1040,66 @@ pub async fn get_sb_dzcl_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
             value.length = r.length;
         }
         data.append(&mut equi_data.into_iter().map(|x| x.1).collect::<Vec<_>>())
+    }
+    Ok(data)
+}
+
+/// 暖通 阀门清单
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialNtValvData {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
+    #[serde(serialize_with = "ser_refno_as_str")]
+    pub id: RefU64,
+    pub name: String,
+    pub room_code: String,
+    pub bran_name: String,
+    pub valv_size: Vec<f32>,
+    pub material: String,
+    pub valv_use: String,
+}
+
+impl MaterialNtValvData {
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
+        map.entry("阀门位号".to_string()).or_insert(self.name);
+        map.entry("所在房间号".to_string()).or_insert(self.room_code);
+        map.entry("阀门归属".to_string()).or_insert(self.bran_name);
+        map.entry("阀门尺寸".to_string()).or_insert(serde_json::to_string(&self.valv_size).unwrap_or("[]".to_string()));
+        map.entry("阀门材质".to_string()).or_insert(self.material);
+        map.entry("阀门功能".to_string()).or_insert(self.valv_use);
+        map
+    }
+}
+
+/// 暖通 阀门清单
+pub async fn get_nt_valv_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialNtValvData>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("HVAC") { continue; };
+        }
+        // 查询 DAMP 的数据
+        let refnos = query_filter_deep_children(refno, vec!["DAMP".to_string()]).await?;
+        let refnos_str = serde_json::to_string(&refnos.into_iter()
+            .map(|refno| refno.to_pe_key()).collect::<Vec<String>>())?;
+        let sql = format!(r#"select
+            id,
+            fn::default_name($this.id) as name,
+            '' as room_code,
+            (->pe_owner.out->pe_owner.in.refno.NAME)[0] as bran_name,
+            [if refno.DESP[1] == NONE {{ 0 }} else {{ refno.DESP[1] }},if refno.DESP[2] == NONE {{ 0 }} else {{ refno.DESP[2] }},
+            if refno.DESP[5] == NONE {{ 0 }} else {{ refno.DESP[5] }}] as valv_size,
+            fn::get_valv_material($this.id) as material,
+            if name == NONE {{ '' }} else {{ string::slice(name,-3) }} as valv_use
+            from {}"#, refnos_str);
+        let mut response = db
+            .query(sql)
+            .await?;
+        let mut result: Vec<MaterialNtValvData> = response.take(0)?;
+        data.append(&mut result);
     }
     Ok(data)
 }
@@ -1068,6 +1129,9 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
         .await?;
     let response = db
         .query(include_str!("material_list/sb/fn_find_group_sube_children.surql"))
+        .await?;
+    let response = db
+        .query(include_str!("material_list/nt/fn_get_valv_material.surql"))
         .await?;
     Ok(())
 }

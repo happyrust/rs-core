@@ -58,8 +58,8 @@ pub async fn init_surreal_with_signin() -> anyhow::Result<()> {
         .await?;
     SUL_DB
         .signin(Root {
-        username: "root",
-        password: "root",
+        username: &db_option.v_user,
+        password: &db_option.v_password,
     }).await?;
     Ok(())
 }
