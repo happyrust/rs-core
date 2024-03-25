@@ -3,6 +3,7 @@ use crate::{NamedAttrMap, RefU64, rs_surreal};
 use glam::Vec3;
 use std::sync::Arc;
 use surrealdb::sql::Thing;
+use crate::pdms_types::*;
 
 #[tokio::test]
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
@@ -90,10 +91,14 @@ async fn test_query_children_att() {
     // dbg!(children_atts);
     // let children_pes = rs_surreal::get_children_pes("17496_171555".into()).await;
     // dbg!(children_pes);
-    let children_atts = rs_surreal::get_children_named_attmaps("13244/142143".into())
-        .await
-        .unwrap();
-    dbg!(children_atts);
+    // let children_atts = rs_surreal::get_children_named_attmaps("13244/142143".into())
+    //     .await
+    //     .unwrap();
+    // dbg!(children_atts);
+
+    let children_pes = rs_surreal::query_filter_children("24384_30869".into(), &GENRAL_NEG_NOUN_NAMES).await;
+    dbg!(children_pes);
+
 }
 
 #[tokio::test]

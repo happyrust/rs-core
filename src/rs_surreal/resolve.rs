@@ -280,11 +280,9 @@ pub fn eval_str_to_f64(
             let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
             let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
             let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
-            if context
-                .get(&key_type)
-                .map(|x| x.as_str() != dtse_unit)
-                .unwrap_or(false)
-            {
+            let unit_type =  context.get(&key_type).unwrap_or_default();
+            // dbg!(&unit_type);
+            if (!unit_type.is_empty() && unit_type != dtse_unit) {
                 return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
             } else {
                 let v = context
@@ -405,8 +403,7 @@ pub fn eval_str_to_f64(
                     let re = Regex::new(r"\w+\(NaN\)").unwrap();
                     result_exp = re.replace_all(&result_exp, "0.0").to_string();
                     result_exp = result_exp.replace("NaN", " 0");
-                    // println!("{input_expr}： {} not found, use {}.", &k, &replaced_str);
-                    println!("{input_expr}： {} not found, use {}.", &k, &result_exp);
+                    // println!("{input_expr}： {} not found, use {}.", &k, &result_exp);
                     //
                     found_replaced = true;
                 } else {

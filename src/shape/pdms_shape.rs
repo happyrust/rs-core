@@ -1,24 +1,16 @@
-use glam::{DMat4, DVec3, vec3};
-use hash32::FnvHasher;
+use glam::{DMat4, DVec3};
 use std::fmt::Debug;
 use std::fs::File;
-use std::hash::{Hash, Hasher, DefaultHasher};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::Write;
-use truck_meshalgo::filters::*;
-
 use anyhow::anyhow;
-// #[cfg(feature = "opencascade")]
-// use opencascade::OCCShape;
+use downcast_rs::*;
 use bevy_ecs::component::Component;
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;
-
+use std::io::Read;
 use glam::{Mat4, Vec3, Vec4};
-
 use serde::{Deserialize, Serialize};
-
-use crate::pdms_types::*;
-use crate::types::*;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
 use dyn_clone::DynClone;
@@ -27,8 +19,8 @@ use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use parry3d::shape::TriMesh;
 use std::io::BufWriter;
-use std::path::Display;
-use std::{slice, vec};
+use std::path::Path;
+use std::vec;
 use bevy_render::render_asset::RenderAssetUsages;
 use truck_base::bounding_box::BoundingBox;
 use truck_base::cgmath64::{Matrix4, Point3, Vector3, Vector4};
@@ -38,11 +30,11 @@ use truck_modeling::{Curve, Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
 
-#[cfg(feature = "occ")]
-use opencascade::primitives::*;
-use truck_polymesh::stl::IntoStlIterator;
+use crate::geometry::PlantGeoData;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
+#[cfg(feature = "occ")]
+use opencascade::primitives::{Compound, IntoShape, Shape};
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -91,9 +83,29 @@ pub struct PlantMesh {
     pub vertices: Vec<Vec3>,
     pub normals: Vec<Vec3>,
     pub wire_vertices: Vec<Vec<Vec3>>,
+    pub aabb: Option<Aabb>,
 }
 
 impl PlantMesh {
+
+    #[cfg(feature = "occ")]
+    pub fn gen_occ_mesh(shape: &Shape, tol: f64) -> anyhow::Result<Self>{
+        let mut aabb = Aabb::new_invalid();
+        let mesh = shape.mesh_with_tolerance(tol)?;
+        let vertices = mesh.vertices.iter().map(|&x| x.as_vec3()).collect::<Vec<_>>();
+        for point in vertices.iter() {
+            aabb.take_point(nalgebra::Point3::new(point.x as f32, point.y as f32, point.z as f32));
+        }
+
+        Ok(PlantMesh {
+            indices: mesh.indices.iter().map(|&x| x as u32).collect(),
+            vertices,
+            normals: mesh.normals.iter().map(|&x| x.as_vec3()).collect(),
+            wire_vertices: vec![],
+            aabb: Some(aabb)
+        })
+    }
+
     //集成lod的功能
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> TriMesh {
@@ -169,7 +181,38 @@ impl PlantMesh {
             vertices,
             normals,
             wire_vertices: vec![],
+            aabb: None,
         }
+    }
+
+    #[inline]
+    pub fn ser_to_bytes(&self) -> Vec<u8> {
+        rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec()
+    }
+
+    #[inline]
+    pub fn ser_to_file(&self, file_path: &dyn AsRef<Path>) -> anyhow::Result<()> {
+        let bytes =  rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec();
+        let mut file = File::create(file_path).unwrap();
+        file.write_all(&bytes)?;
+        Ok(())
+    }
+
+    pub fn des_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
+        let mut file = File::open(file_path)?;
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf).ok();
+        use rkyv::Deserialize;
+        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
+        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        Ok(r)
+    }
+
+    pub fn des_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+        use rkyv::Deserialize;
+        let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
+        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        Ok(r)
     }
 
 
@@ -221,45 +264,6 @@ impl PlantMesh {
     }
 }
 
-#[cfg(feature = "opencascade")]
-impl From<OCCMesh> for PlantGeoData {
-    fn from(o: OCCMesh) -> Self {
-        let vertex_count = o.triangles.len() * 3;
-        let mut aabb = Aabb::new_invalid();
-        o.vertices.iter().for_each(|v| {
-            aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
-        });
-
-        let mut vertices = Vec::with_capacity(vertex_count);
-        let mut normals = Vec::with_capacity(vertex_count);
-        let mut indices = Vec::with_capacity(vertex_count);
-
-        for (i, (t, normal)) in o.triangles_with_normals().enumerate() {
-            //顶点重排，保证normal是正确的
-            vertices.push(o.vertices[t[0]].into());
-            vertices.push(o.vertices[t[1]].into());
-            vertices.push(o.vertices[t[2]].into());
-            indices.push((i * 3) as u32);
-            indices.push((i * 3 + 1) as u32);
-            indices.push((i * 3 + 2) as u32);
-            normals.push(normal.into());
-            normals.push(normal.into());
-            normals.push(normal.into());
-        }
-
-        Self {
-            geo_hash: 0,
-            mesh: Some(PlantMesh {
-                indices,
-                vertices,
-                normals,
-                wire_vertices: vec![],
-            }),
-            aabb: Some(aabb),
-            occ_shape: None,
-        }
-    }
-}
 
 pub const TRI_TOL: f32 = 0.001;
 pub const LEN_TOL: f32 = 0.001;
@@ -319,7 +323,7 @@ impl From<Point3> for RsVec3 {
 }
 
 ///brep形状trait
-pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
+pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynClone {
     fn is_reuse_unit(&self) -> bool {
         false
     }
@@ -373,12 +377,14 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
     /// sphere
     #[cfg(not(target_arch = "wasm32"))]
     fn gen_unit(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
-        self.gen_unit_shape().gen_plant_geo_data(tol_ratio)
+        // self.gen_unit_shape().gen_plant_geo_data(tol_ratio)
+        todo!("not support")
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     fn gen_unit_occ_shape(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
-        self.gen_unit_shape().gen_plant_occ_geo(tol_ratio)
+        // self.gen_unit_shape().gen_plant_occ_geo(tol_ratio)
+        todo!("wasm32 not support")
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -410,31 +416,23 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
 
     #[cfg(feature = "occ")]
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
-        let mut aabb = Aabb::new_invalid();
+
         let geo_hash = self.hash_unit_mesh_params();
 
         let shape = self.gen_occ_shape()?;
 
+        let mut aabb = Aabb::new_invalid();
         for edge in shape.edges() {
-            // let mut segments = vec![];
-            let mut last_point: Option<DVec3> = None;
-            let mut length_so_far = 0.0;
             for point in edge.approximation_segments() {
                 aabb.take_point(nalgebra::Point3::new(point.x as f32, point.y as f32, point.z as f32));
             }
         }
 
         let mesh = shape.mesh_with_tolerance(self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64)?;
+
         Ok(PlantGeoData {
             geo_hash,
-            mesh: Some(PlantMesh {
-                indices: mesh.indices.iter().map(|&x| x as u32).collect(),
-                vertices: mesh.vertices.iter().map(|&x| x.as_vec3()).collect(),
-                normals: mesh.normals.iter().map(|&x| x.as_vec3()).collect(),
-                wire_vertices: vec![],
-            }),
             aabb: Some(aabb),
-            occ_shape: None,
         })
 
 
@@ -534,6 +532,8 @@ pub trait BrepShapeTrait: VerifiedShape + Debug + Send + Sync + DynClone {
         false
     }
 }
+
+impl_downcast!(BrepShapeTrait);
 
 pub trait BrepMathTrait {
     fn vector3(&self) -> Vector3;

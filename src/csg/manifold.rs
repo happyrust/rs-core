@@ -6,6 +6,7 @@ use itertools::Itertools;
 use manifold_sys::bindings::*;
 use crate::shape::pdms_shape::PlantMesh;
 use derive_more::{Deref, DerefMut};
+use parry3d::bounding_volume::Aabb;
 
 #[derive(Clone, Deref, DerefMut)]
 pub struct ManifoldSimplePolygonRust {
@@ -199,42 +200,6 @@ impl ManifoldMeshRust {
         }
     }
 
-
-    pub fn direct_to_plant_mesh(&self) -> PlantMesh {
-        unsafe {
-            let len = manifold_meshgl_tri_length(self.ptr as _);
-            if len == 0 {
-                return PlantMesh::default();
-            }
-            let prop_num = manifold_meshgl_num_prop(self.ptr) as usize;
-            // dbg!(prop_num);
-            let vert_num = manifold_meshgl_num_vert(self.ptr) as usize;
-            // dbg!(vert_num);
-            let tri_num = manifold_meshgl_num_tri(self.ptr) as usize;
-            // dbg!(tri_num);
-
-            let mut p: Vec<f32> = Vec::with_capacity(vert_num * prop_num);
-            p.resize(vert_num * prop_num, 0.0);
-            let mut indices: Vec<u32> = Vec::with_capacity(tri_num * 3);
-            indices.resize(tri_num * 3, 0);
-
-            let mut vertices = Vec::with_capacity(vert_num);
-            manifold_meshgl_vert_properties(p.as_mut_ptr() as _, self.ptr);
-            manifold_meshgl_tri_verts(indices.as_mut_ptr() as _, self.ptr);
-
-            for i in 0..vert_num {
-                vertices.push(Vec3::new(p[prop_num * i + 0], p[prop_num * i + 1], p[prop_num * i + 2]));
-            }
-
-
-            PlantMesh {
-                indices,
-                vertices,
-                normals: vec![],
-                wire_vertices: vec![],
-            }
-        }
-    }
 }
 
 impl From<(&PlantMesh, &DMat4)> for ManifoldMeshRust {
@@ -308,6 +273,7 @@ impl From<&ManifoldRust> for PlantMesh {
     fn from(m: &ManifoldRust) -> Self {
         unsafe {
             let mesh = ManifoldMeshRust::new();
+            let mut aabb = Aabb::new_invalid();
             manifold_get_meshgl(mesh.ptr as _, m.ptr);
             let len = manifold_meshgl_tri_length(mesh.ptr as _);
             if len == 0 {
@@ -367,6 +333,7 @@ impl From<&ManifoldRust> for PlantMesh {
                 vertices,
                 normals,
                 wire_vertices: vec![],
+                aabb: None,
             }
         }
     }

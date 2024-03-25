@@ -294,7 +294,7 @@ fn test_complex_half_circle() {
 }
 
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire_test(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
@@ -405,21 +405,18 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
 
 ///生成occ的wire
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire_1(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
     let mut edges = vec![];
     let ll = pts.len();
-    let _pre_radius = 0.0;
-    let _i = 1;
-    let _r = fradius_vec[0];
-    let mut verts = vec![];
-    let mut pre_pt = pts[0];
+    let mut verts: Vec<DVec3> = vec![];
+    let mut pre_pt = pts[0].as_dvec3();
     let mut circle_indexs = vec![];
     for i in 0..ll {
         let fradius = fradius_vec[i];
-        let pt = pts[i].truncate().extend(0.0);
+        let pt = pts[i].truncate().extend(0.0).as_dvec3();
         //跳过相同的点
         if let Some(&last_pt) = verts.last() {
             if pt.distance(last_pt) < 0.1 {
@@ -433,14 +430,14 @@ pub fn gen_occ_wire_1(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result
         }
         if abs_diff_eq!(fradius.abs(), 0.0) {
             verts.push(pt);
-            pre_pt = pts[i];
+            pre_pt = pts[i].as_dvec3();
         } else {
-            let r = fradius;
+            let r = fradius as f64;
             let pre_i = (ll + i - 1) % ll;
             let n_i = (i + 1) % ll;
-            let pre_pt = pts[pre_i];
-            let cur_pt = pts[i % ll];
-            let next_pt = pts[n_i];
+            let pre_pt = pts[pre_i].as_dvec3();
+            let cur_pt = pts[i % ll].as_dvec3();
+            let next_pt = pts[n_i].as_dvec3();
             let pa_dist = pre_pt.distance(cur_pt);
             let pb_dist = next_pt.distance(cur_pt);
             let a_dir = (pre_pt - cur_pt).normalize();
@@ -484,22 +481,21 @@ pub fn gen_occ_wire_1(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result
         let mut pre_vert = verts[0].clone();
         j = 1;
         while j <= v_len {
-            let cur_vert = &verts[j % v_len];
-            if pre_vert.distance(*cur_vert) > 1.0 {
+            let cur_vert = verts[j % v_len];
+            if pre_vert.distance(cur_vert) > 1.0 {
                 if circle_indexs.len() > 0 && j == circle_indexs[0] {
-                    let next_vert = &verts[(j + 1) % v_len];
-                    // wire.push_back(builder::circle_arc(&pre_vert, next_vert, cur_vert.point()));
+                    let next_vert = verts[(j + 1) % v_len];
                     edges.push(Edge::arc(
-                        pre_vert.as_dvec3(),
-                        cur_vert.as_dvec3(),
-                        next_vert.as_dvec3(),
+                        pre_vert,
+                        cur_vert,
+                        next_vert,
                     ));
                     pre_vert = next_vert.clone();
                     circle_indexs.remove(0);
                     j += 1;
                 } else {
                     // wire.push_back(builder::line(&pre_vert, cur_vert));
-                    edges.push(Edge::segment(pre_vert.as_dvec3(), cur_vert.as_dvec3()));
+                    edges.push(Edge::segment(pre_vert, cur_vert));
                     pre_vert = cur_vert.clone();
                 }
             }

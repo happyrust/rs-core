@@ -11,7 +11,7 @@ use std::sync::Mutex;
 
 ///通过surql查询pe数据
 #[cached(result = true)]
-pub async fn query_deep_inst_info_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let types = super::get_self_and_owner_type_name(refno).await?;
     // dbg!(&types);
     if types[1] == "BRAN" || types[1] == "HANG" {
@@ -70,7 +70,6 @@ pub async fn query_refno_has_pos_neg_map(
     is_cata: Option<bool>, //是否是元件库里的负实体查询
 ) -> anyhow::Result<HashMap<RefU64, Vec<RefU64>>> {
     //先查询负实体和它的neg children
-    // let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
     let nouns = match is_cata {
         Some(true) => CATE_NEG_NOUN_NAMES.as_slice(),
         Some(false) => &GENRAL_NEG_NOUN_NAMES.as_slice(),
@@ -78,16 +77,12 @@ pub async fn query_refno_has_pos_neg_map(
     };
     //查询元件库下的负实体组合
     let refnos = query_filter_deep_children(refno, nouns.iter().map(|&x| x.to_string()).collect()).await.unwrap();
-    // dbg!(&refnos);
     //使用SUL_DB通过这些参考号反过来query查找父节点
     let sql = format!(
          "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
          refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
      );
-    //  dbg!(&sql);
     let mut response = SUL_DB.query(&sql).await?;
-    // let r = response.take::<Vec<RefnoHasNegPosInfo>>(0).unwrap();
-    //  dbg!(&response);
     let mut result = HashMap::new();
     if let Ok(r) = response.take::<Vec<RefnoHasNegPosInfo>>(0) {
         for info in r {

@@ -279,6 +279,29 @@ pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>
     Ok(pes)
 }
 
+pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Result<Vec<RefU64>> {
+    let nouns_str = types
+        .iter()
+        .map(|s| format!("'{s}'"))
+        .collect::<Vec<_>>()
+        .join(",");
+    let sql = if types.is_empty() {
+        format!(
+            r#"select value in from (select * from {}<-pe_owner order by order_num) where in.deleted=false"#,
+            refno.to_pe_key() )
+    } else {
+        format!(
+            r#"select value in from (select * from {}<-pe_owner order by order_num) where in.deleted=false and in.noun in [{nouns_str}] "#,
+            refno.to_pe_key())
+    };
+    // dbg!(&sql);
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let pes: Vec<RefU64> = response.take(0)?;
+    Ok(pes)
+}
+
 #[cached(result = true)]
 pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
     let mut response = SUL_DB

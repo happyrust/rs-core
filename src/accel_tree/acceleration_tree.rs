@@ -1,4 +1,4 @@
-use crate::pdms_types::PlantGeoData;
+use crate::geometry::PlantGeoData;
 use crate::{types::*, GeomInstQuery, SUL_DB};
 use approx::{abs_diff_ne, assert_abs_diff_eq, AbsDiffEq};
 use bevy_ecs::prelude::Resource;
@@ -246,34 +246,34 @@ impl AccelerationTree {
         .unwrap();
         let geom_insts = response.take::<Vec<GeomInstQuery>>(1).unwrap();
         dbg!(geom_insts.len());
-        for g in geom_insts {
-            for inst in &g.insts {
-                let geo_data = PlantGeoData::load_from_file_by_hash(
-                    inst.geo_hash,
-                    "assets/meshes",
-                );
-                if let Some(mesh) = geo_data.mesh {
-                    let trans = g.world_trans * inst.transform;
-                    let tri_mesh = mesh.get_tri_mesh(trans.compute_matrix());
-                    let intersection_flag = match tri_mesh.cast_local_ray_and_get_normal(
-                        &ray.ray,
-                        10_0000.0,
-                        ray.solid,
-                    ) {
-                        // Some(intersection) => tri_mesh.is_backface(intersection.feature),
-                        Some(intersection) =>{
-                            dbg!(&intersection);
-                            true
-                        }
-                        None => false,
-                    };
-                    if intersection_flag{
-                        // break;
-                        return g.refno;
-                    }
-                }
-            }
-        }
+        // for g in geom_insts {
+        //     for inst in &g.insts {
+        //         let geo_data = PlantGeoData::load_from_file_by_hash(
+        //             inst.geo_hash,
+        //             "assets/meshes",
+        //         );
+        //         if let Some(mesh) = geo_data.mesh {
+        //             let trans = g.world_trans * inst.transform;
+        //             let tri_mesh = mesh.get_tri_mesh(trans.compute_matrix());
+        //             let intersection_flag = match tri_mesh.cast_local_ray_and_get_normal(
+        //                 &ray.ray,
+        //                 10_0000.0,
+        //                 ray.solid,
+        //             ) {
+        //                 // Some(intersection) => tri_mesh.is_backface(intersection.feature),
+        //                 Some(intersection) =>{
+        //                     dbg!(&intersection);
+        //                     true
+        //                 }
+        //                 None => false,
+        //             };
+        //             if intersection_flag{
+        //                 // break;
+        //                 return g.refno;
+        //             }
+        //         }
+        //     }
+        // }
         return RefU64::default();
     }
 

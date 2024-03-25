@@ -1,6 +1,6 @@
+use glam::{Vec2, Vec3};
+use ordered_float::OrderedFloat;
 use std::hash::{Hash, Hasher};
-use glam::{Vec3, Vec2};
-use ordered_float::*;
 
 pub fn cal_vec3_hash(v: Vec3) -> u64 {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -88,42 +88,40 @@ pub fn vec3_round_1(v: Vec3) -> Vec3 {
 
 #[inline]
 pub fn f32_round_3(v: f32) -> f32 {
-    ((v as f64 * 1000.0).round() / 1000.0f64) as f32    //以防止溢出
+    ((v as f64 * 1000.0).round() / 1000.0f64) as f32 //以防止溢出
 }
 
 #[inline]
 pub fn f32_round_2(v: f32) -> f32 {
-    ((v as f64 * 100.0).round() / 100.0f64) as f32    //以防止溢出
+    ((v as f64 * 100.0).round() / 100.0f64) as f32 //以防止溢出
 }
 
 #[inline]
 pub fn f32_round_1(v: f32) -> f32 {
-    ((v as f64 * 10.0).round() / 10.0f64) as f32    //以防止溢出
+    ((v as f64 * 10.0).round() / 10.0f64) as f32 //以防止溢出
 }
-
 
 #[inline]
 pub fn f64_round_3(v: f64) -> f64 {
-    (v * 1000.0).round() / 1000.0f64    //以防止溢出
+    (v * 1000.0).round() / 1000.0f64 //以防止溢出
 }
 
 #[inline]
 pub fn f64_round_2(v: f64) -> f64 {
-    (v * 100.0).round() / 100.0f64    //以防止溢出
+    (v * 100.0).round() / 100.0f64 //以防止溢出
 }
 
 #[inline]
 pub fn f64_ceil_2(v: f64) -> f64 {
-    (v * 100.0).ceil() / 100.0f64    //以防止溢出
+    (v * 100.0).ceil() / 100.0f64 //以防止溢出
 }
 
 #[inline]
 pub fn f64_ceil_3(v: f64) -> f64 {
-    (v * 1000.0).ceil() / 1000.0f64    //以防止溢出
+    (v * 1000.0).ceil() / 1000.0f64 //以防止溢出
 }
 
 #[inline]
 pub fn f64_round_1(v: f64) -> f64 {
-    (v * 10.0).round() / 10.0f64    //以防止溢出
+    (v * 10.0).round() / 10.0f64 //以防止溢出
 }
-

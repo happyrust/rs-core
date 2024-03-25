@@ -1,19 +1,17 @@
 use bevy_transform::prelude::Transform;
-use glam::{Vec3};
 use parry3d::bounding_volume::Aabb;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::pdms_types::{EleInstGeo};
 use crate::types::*;
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::borrow::BorrowMut;
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
 #[cfg(feature = "occ")]
-use opencascade::primitives::{Shape, Compound, };
+use opencascade::primitives::Shape;
+use crate::geometry::EleInstGeo;
 use crate::parsed_data::geo_params_data::PdmsGeoParam::PrimSCylinder;
-use crate::pdms_types::GeoBasicType;
+use crate::geometry::GeoBasicType;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 use crate::shape::pdms_shape::RsVec3;

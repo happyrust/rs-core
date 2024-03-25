@@ -5,6 +5,7 @@ use lazy_static::lazy_static;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use std::borrow::BorrowMut;
+use glam::DMat4;
 
 #[cfg(feature = "occ")]
 lazy_static! {
@@ -27,8 +28,16 @@ pub struct OccSharedShape(pub Arc<Shape>);
 
 #[cfg(feature = "occ")]
 impl OccSharedShape {
+
+    #[inline]
     pub fn new(shape: Shape) -> Self {
         OccSharedShape(Arc::new(shape))
+    }
+
+    #[inline]
+    pub fn transformed(&self, m: &DMat4) -> Self {
+        let s = self.0.transformed_by_gmat(m);
+        OccSharedShape::new(s)
     }
 }
 

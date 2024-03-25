@@ -15,11 +15,17 @@ extern crate phf;
 pub mod accel_tree;
 pub mod aql_types;
 pub mod axis_param;
+
+pub mod basic;
+
 pub mod bevy_types;
 pub mod cache;
 pub mod consts;
 pub mod csg;
 pub mod geom_types;
+
+pub mod geometry;
+
 pub mod helper;
 pub mod parsed_data;
 pub mod pdms_data;

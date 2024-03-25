@@ -238,7 +238,6 @@ impl BrepShapeTrait for CTorus {
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         Vec3::splat(self.rout)
-        // Vec3::ONE
     }
 
 

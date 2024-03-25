@@ -67,6 +67,7 @@ impl BrepShapeTrait for SBox {
         Box::new(Self::default())
     }
 
+
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
         self.size

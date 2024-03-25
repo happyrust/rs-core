@@ -249,6 +249,48 @@ pub mod geo_params_data {
             }
         }
 
+        pub fn convert_to_unit_param(&self) -> Self {
+            use std::any::Any;
+            match self {
+                PdmsGeoParam::PrimBox(s) => PdmsGeoParam::PrimBox(*s.gen_unit_shape().downcast::<SBox>().unwrap()),
+                PdmsGeoParam::PrimLSnout(s) => PdmsGeoParam::PrimLSnout(*s.gen_unit_shape().downcast::<LSnout>().unwrap()),
+                PdmsGeoParam::PrimDish(s) => PdmsGeoParam::PrimDish(*s.gen_unit_shape().downcast::<Dish>().unwrap()),
+                PdmsGeoParam::PrimSphere(s) => PdmsGeoParam::PrimSphere(*s.gen_unit_shape().downcast::<Sphere>().unwrap()),
+                PdmsGeoParam::PrimCTorus(s) => PdmsGeoParam::PrimCTorus(*s.gen_unit_shape().downcast::<CTorus>().unwrap()),
+                PdmsGeoParam::PrimRTorus(s) => PdmsGeoParam::PrimRTorus(*s.gen_unit_shape().downcast::<RTorus>().unwrap()),
+                PdmsGeoParam::PrimPyramid(s) => PdmsGeoParam::PrimPyramid(*s.gen_unit_shape().downcast::<Pyramid>().unwrap()),
+                PdmsGeoParam::PrimLPyramid(s) => PdmsGeoParam::PrimLPyramid(*s.gen_unit_shape().downcast::<LPyramid>().unwrap()),
+                PdmsGeoParam::PrimSCylinder(s) => PdmsGeoParam::PrimSCylinder(*s.gen_unit_shape().downcast::<SCylinder>().unwrap()),
+                PdmsGeoParam::PrimLCylinder(s) => PdmsGeoParam::PrimLCylinder(*s.gen_unit_shape().downcast::<LCylinder>().unwrap()),
+                PdmsGeoParam::PrimRevolution(s) => PdmsGeoParam::PrimRevolution(*s.gen_unit_shape().downcast::<Revolution>().unwrap()),
+                PdmsGeoParam::PrimExtrusion(s) => PdmsGeoParam::PrimExtrusion(*s.gen_unit_shape().downcast::<Extrusion>().unwrap()),
+                PdmsGeoParam::PrimPolyhedron(s) => PdmsGeoParam::PrimPolyhedron(*s.gen_unit_shape().downcast::<Polyhedron>().unwrap()),
+                PdmsGeoParam::PrimLoft(s) => PdmsGeoParam::PrimLoft(*s.gen_unit_shape().downcast::<SweepSolid>().unwrap()),
+                PdmsGeoParam::CompoundShape => PdmsGeoParam::CompoundShape,
+                _ => PdmsGeoParam::Unknown,
+            }
+        }
+
+        pub fn tol(&self) -> f64 {
+            match self {
+                PdmsGeoParam::PrimBox(s) => s.tol() as f64,
+                PdmsGeoParam::PrimLSnout(s) => s.tol() as f64,
+                PdmsGeoParam::PrimDish(s) => s.tol() as f64,
+                PdmsGeoParam::PrimSphere(s) => s.tol() as f64,
+                PdmsGeoParam::PrimCTorus(s) => s.tol() as f64,
+                PdmsGeoParam::PrimRTorus(s) => s.tol() as f64,
+                PdmsGeoParam::PrimPyramid(s) => s.tol() as f64,
+                PdmsGeoParam::PrimLPyramid(s) => s.tol() as f64,
+                PdmsGeoParam::PrimSCylinder(s) => s.tol() as f64,
+                PdmsGeoParam::PrimLCylinder(s) => s.tol() as f64,
+                PdmsGeoParam::PrimRevolution(s) => s.tol() as f64,
+                PdmsGeoParam::PrimExtrusion(s) => s.tol() as f64,
+                PdmsGeoParam::PrimPolyhedron(s) => s.tol() as f64,
+                PdmsGeoParam::CompoundShape => 0.0,
+                _ => 0.0,
+            }
+        }
+
         #[cfg(feature = "occ")]
         pub fn gen_occ_shape(&self) -> Option<OccSharedShape> {
             match self {

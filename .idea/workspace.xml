@@ -22,26 +22,43 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor index definition functions in &quot;index.rs&quot;&#10;&#10;The update removes database option checks in &quot;create_owner_index&quot; and &quot;define_fullname_index&quot; methods, and renames these methods to &quot;define_owner_index&quot; and &quot;define_fullname_index&quot;. Additionally, a new index definition function &quot;define_pe_name_index&quot; is added. These changes streamline the index definition process and add new capabilities for indexing the 'pe' table.">
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STIF.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STRT.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/run_defines.bat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer_len.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/common.surql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/run.bat" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Add HVAC calculations and update geometry definition in pdms_shape.rs&#10;&#10;This update includes HVAC-related calculations in new SurQL files and adjusts the geometry definition in pdms_shape.rs. Target architecture conditions and additional functions are introduced for differentiating WASM from non-WASM builds. The commit also includes several new files contributing to HVAC computation logic, as well as a batch file for running the database scripts.">
+      <change afterPath="$PROJECT_DIR$/src/basic/info.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/basic/mod.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/basic/tree.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/csg/manifold.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/csg/manifold.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/geom_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_pluggin/heat_dissipation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_pluggin/heat_dissipation.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/basic.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/basic.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/geom.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rvm_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rvm_types.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/float_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/float_tool.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/hash.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/hash.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/virtual_hole.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +79,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="test" />
+        <entry key="$PROJECT_DIR$" value="backup" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -143,6 +160,8 @@
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_room::test_save_room_data.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor&quot;: &quot;Run&quot;,
@@ -171,6 +190,7 @@
     &quot;org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs&quot;: &quot;true&quot;,
     &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs&quot;: &quot;true&quot;,
     &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs&quot;: &quot;true&quot;,
+    &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
     &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;,
@@ -192,34 +212,7 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Batch.run_defines">
-    <configuration name="run (1)" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs/HVAC" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run.bat" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run.bat" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="run_defines" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs/HVAC/tools" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run_defines.bat" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -271,6 +264,57 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test test::test_surreal::test_basic_query::test_query_children_att" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_children_att -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_surreal::test_graph::test_query_refnos_without_inst" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_graph::test_query_refnos_without_inst -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_surreal::test_graph::test_query_refnos_without_insted" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_graph::test_query_refnos_without_insted -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="check" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="check" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -289,21 +333,21 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Batch.run (1)" />
-      <item itemvalue="Batch.run" />
-      <item itemvalue="Batch.run_defines" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Run aios_core" />
       <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
-      <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_children_att" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Batch.run_defines" />
-        <item itemvalue="Batch.run" />
-        <item itemvalue="Batch.run (1)" />
-        <item itemvalue="Cargo.Run aios_core" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_children_att" />
         <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
+        <item itemvalue="Cargo.Run aios_core" />
       </list>
     </recent_temporary>
   </component>
@@ -640,6 +684,24 @@
       <workItem from="1710912785090" duration="41000" />
       <workItem from="1710914243154" duration="1269000" />
       <workItem from="1710918163100" duration="7467000" />
+      <workItem from="1710943542475" duration="3260000" />
+      <workItem from="1710954881868" duration="633000" />
+      <workItem from="1710993235072" duration="1832000" />
+      <workItem from="1711009287776" duration="3427000" />
+      <workItem from="1711168752722" duration="850000" />
+      <workItem from="1711185430232" duration="369000" />
+      <workItem from="1711193733068" duration="736000" />
+      <workItem from="1711203766836" duration="1081000" />
+      <workItem from="1711205527331" duration="621000" />
+      <workItem from="1711206158186" duration="31000" />
+      <workItem from="1711206202924" duration="1524000" />
+      <workItem from="1711211625845" duration="132000" />
+      <workItem from="1711213759573" duration="59000" />
+      <workItem from="1711252198072" duration="19000" />
+      <workItem from="1711295021603" duration="150000" />
+      <workItem from="1711339031241" duration="1335000" />
+      <workItem from="1711344697318" duration="1190000" />
+      <workItem from="1711361927026" duration="1037000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1061,11 +1123,6 @@
           <url>file://$PROJECT_DIR$/src/rs_surreal/spatial.rs</url>
           <line>61</line>
           <option name="timeStamp" value="5" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/prim_geo/wire.rs</url>
-          <line>353</line>
-          <option name="timeStamp" value="6" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

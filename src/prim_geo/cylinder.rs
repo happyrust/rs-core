@@ -149,6 +149,7 @@ pub fn gen_unit_cylinder() -> PlantMesh {
         normals,
         indices,
         wire_vertices: vec![],
+        aabb: None,
     }
 }
 
@@ -180,6 +181,15 @@ impl BrepShapeTrait for LCylinder {
         s.pop()
     }
 
+    fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
+        Some(
+            PdmsGeoParam::PrimLCylinder(self.clone())
+        )
+    }
+
+    fn hash_unit_mesh_params(&self) -> u64 {
+        CYLINDER_GEO_HASH
+    }
 
     /// 如果是常规的基本体生成，直接跳过, 复用已经生成好的
     #[cfg(feature = "occ")]

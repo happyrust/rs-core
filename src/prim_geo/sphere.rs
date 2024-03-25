@@ -126,8 +126,7 @@ impl BrepShapeTrait for Sphere {
             vertices: points,
             normals,
             wire_vertices: vec![],
-            // #[cfg(feature = "opencascade")]
-            // occ_shape: None,
+            aabb: None,
         });
     }
 

@@ -7,11 +7,7 @@ use serde_with::DisplayFromStr;
 use parry3d::bounding_volume::Aabb;
 use bevy_transform::prelude::*;
 use crate::data_center::TiziVirtualHoleData;
-use crate::pdms_types::GeoBasicType;
-use crate::pdms_types::ser_refno_as_key_str;
-use crate::pdms_types::de_refno_from_key_str;
-
-
+use crate::geometry::GeoBasicType;
 use crate::types::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 
@@ -89,8 +85,6 @@ pub struct HoleInstInfo {
 #[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default, Resource)]
 #[serde_as]
 pub struct HoleEleGeosInfo {
-    #[serde(serialize_with = "ser_refno_as_key_str")]
-    #[serde(deserialize_with = "de_refno_from_key_str")]
     pub refno: RefU64,
     //todo 这里的数据是重复的，需要复用
     //有哪一些 geo insts 组成
