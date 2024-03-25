@@ -5,6 +5,7 @@ use crate::types::*;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
+use crate::pdms_types::de_refno_from_key_str;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct DesignPipeRequest {
@@ -118,6 +119,7 @@ pub struct GmseParamData {
     Debug,
 )]
 pub struct CateAxisParam {
+    #[serde(deserialize_with = "de_refno_from_key_str")]
     pub refno: RefU64,
     pub number: i32,
     pub pt: Vec3,

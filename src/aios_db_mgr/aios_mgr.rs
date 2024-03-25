@@ -1,9 +1,11 @@
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
-use crate::pdms_types::PdmsElement;
-use crate::{AttrMap, get_named_attmap, get_world, NamedAttrMap, RefU64};
+use crate::pdms_types::{EleTreeNode, PdmsElement};
+use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_world, NamedAttrMap, RefU64, SUL_DB};
 use async_trait::async_trait;
 use config::{Config, File};
+use surrealdb::engine::any::Any;
+use surrealdb::Surreal;
 use crate::test::test_surreal::{init_surreal_with_signin, init_test_surreal};
 
 pub struct AiosDBMgr {
@@ -22,12 +24,17 @@ impl AiosDBMgr {
             db_option,
         })
     }
+
+    pub async fn get_surreal_db(&self) -> anyhow::Result<Surreal<Any>> {
+        init_surreal_with_signin(&self.db_option).await?;
+        Ok(SUL_DB.clone())
+    }
 }
 
 #[async_trait]
 impl PdmsDataInterface for AiosDBMgr {
     async fn get_world(&self, mdb_name: &str) -> anyhow::Result<Option<PdmsElement>> {
-        let Some(world) = get_world(format!("/{}",mdb_name)).await? else { return Ok(None); };
+        let Some(world) = get_world(format!("/{}", mdb_name)).await? else { return Ok(None); };
         Ok(Some(PdmsElement {
             refno: world.refno,
             owner: world.owner,
@@ -40,6 +47,10 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_named_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
         get_named_attmap(refno).await
+    }
+
+    async fn get_children(&self, refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
+        get_children_ele_nodes(refno).await
     }
 }
 

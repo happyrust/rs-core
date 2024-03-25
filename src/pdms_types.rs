@@ -1722,6 +1722,17 @@ impl EleTreeNode {
             children_count,
         }
     }
+
+    pub fn into_handle_struct(self) -> PdmsElementHandle {
+        PdmsElementHandle {
+            refno: self.refno.to_pdms_str(),
+            owner: self.owner.to_pdms_str(),
+            name: self.name,
+            noun: self.noun,
+            version: 0,
+            children_count: self.children_count,
+        }
+    }
 }
 
 impl Into<PdmsElement> for EleTreeNode {

@@ -7,7 +7,11 @@ use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
+use std::str::FromStr;
 use std::sync::Mutex;
+use truck_polymesh::stl::IntoStlIterator;
+use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
+use crate::test::test_surreal::init_test_surreal;
 
 ///通过surql查询pe数据
 #[cached(result = true)]
@@ -119,3 +123,24 @@ pub async fn query_refnos_has_pos_neg_map(
     Ok(result)
 }
 
+/// 查询bran下所有元件的点集
+pub async fn query_bran_children_point_map(refno:RefU64) -> anyhow::Result<Vec<InstPointMap>>{
+    let sql = format!("
+    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type from
+    pe:{}<-pe_owner;",refno.to_string());
+    dbg!(&sql);
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
+    Ok(result.into_iter().map(|r| r.into_point_map()).collect())
+}
+
+#[tokio::test]
+async fn test_query_bran_children_point_map() -> anyhow::Result<()>{
+    init_test_surreal().await;
+    let refno = RefU64::from_str("24383/67331").unwrap();
+    let r = query_bran_children_point_map(refno).await?;
+    dbg!(&r);
+    Ok(())
+}

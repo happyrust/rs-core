@@ -51,6 +51,8 @@ pub struct DataCenterInstance {
     pub project_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub operate: Option<String>,
     pub version: String,
     pub attributes: Vec<DataCenterAttr>,
 }
