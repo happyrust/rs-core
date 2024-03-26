@@ -22,43 +22,14 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Add HVAC calculations and update geometry definition in pdms_shape.rs&#10;&#10;This update includes HVAC-related calculations in new SurQL files and adjusts the geometry definition in pdms_shape.rs. Target architecture conditions and additional functions are introduced for differentiating WASM from non-WASM builds. The commit also includes several new files contributing to HVAC computation logic, as well as a batch file for running the database scripts.">
-      <change afterPath="$PROJECT_DIR$/src/basic/info.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/basic/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/basic/tree.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts.">
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/csg/manifold.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/csg/manifold.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geom_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geom_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_pluggin/heat_dissipation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_pluggin/heat_dissipation.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/basic.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/basic.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/geom.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rvm_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rvm_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/float_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/float_tool.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/hash.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/hash.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/virtual_hole.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -212,7 +183,7 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst">
+  <component name="RunManager" selected="Cargo.Run aios_core">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -702,6 +673,8 @@
       <workItem from="1711339031241" duration="1335000" />
       <workItem from="1711344697318" duration="1190000" />
       <workItem from="1711361927026" duration="1037000" />
+      <workItem from="1711387898951" duration="38000" />
+      <workItem from="1711446161438" duration="4628000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1046,7 +1019,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="282" />
+    <option name="localTasksCounter" value="283" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1089,8 +1062,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="WIP commit" />
-    <MESSAGE value="WIP add surreal config option" />
     <MESSAGE value="WIP refactor" />
     <MESSAGE value="Implement minor code refactoring across various modules&#10;&#10;This commit includes a series of minor code refactoring and updates across various modules as needed to improve overall code quality. The changes predominantly include cleaning up the spacing and indentation, modifying several function logic such as changing boolean and array values, removing and adding functions, and updating test queries for more accurate testing. Note that no major functionality was updated or added." />
     <MESSAGE value="Refactor code for readability and correctness&#10;&#10;The codebase underwent a range of minor adjustments to improve consistency and alignment of the code. Updates also improved the boolean logic in certain functions, added new functionality for fetching boolean values, and enhanced the test scenarios for better code coverage. These changes were primarily focused on maintaining the code's quality standards." />
@@ -1114,7 +1085,9 @@
     <MESSAGE value="Refactor geometry computation and tidy up the code&#10;&#10;This commit includes code refactoring for the computation of geometry primitives in the lpyramid.rs file. It also addresses cleaning up in category.rs to prevent single-point scenarios. The division result was optimized for improved reliability and readability-enhancing formatting adjustments were applied. Changes in workspace.xml related mainly to Cargo and test settings." />
     <MESSAGE value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
     <MESSAGE value="Update geometry handling logic in category.rs and resolve.rs&#10;&#10;This commit refines geometry computation in category.rs and increases iteration limits in resolve.rs. It simplifies the logic in category.rs to enhance readability, while enhancing error resiliency in resolve.rs. Changes to workspace.xml pertain to updating group and task settings." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update geometry handling logic in category.rs and resolve.rs&#10;&#10;This commit refines geometry computation in category.rs and increases iteration limits in resolve.rs. It simplifies the logic in category.rs to enhance readability, while enhancing error resiliency in resolve.rs. Changes to workspace.xml pertain to updating group and task settings." />
+    <MESSAGE value="Add HVAC calculations and update geometry definition in pdms_shape.rs&#10;&#10;This update includes HVAC-related calculations in new SurQL files and adjusts the geometry definition in pdms_shape.rs. Target architecture conditions and additional functions are introduced for differentiating WASM from non-WASM builds. The commit also includes several new files contributing to HVAC computation logic, as well as a batch file for running the database scripts." />
+    <MESSAGE value="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

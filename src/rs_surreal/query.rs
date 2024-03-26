@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
+use crate::tool::db_tool::db1_dehash;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -107,7 +108,8 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
     let mut refno_fields = vec![];
     let mut keys = vec![];
     let mut unset_keys = vec![];
-    for (k, v) in &attmap.map {
+    let mut new_desp = None;
+    for (k, v) in &attmap.map{
         if k == "REFNO" {
             continue;
         }
@@ -120,15 +122,30 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     unset_keys.push(k.to_owned());
                 }
             }
+            NamedAttrValue::F32VecType(d) => {
+                if k == "DESP" {
+                    let unip = attmap.get_i32_vec("UNIPAR").unwrap_or_default();
+                    let mut vec = vec![];
+                    for (v, n) in d.iter().zip(&unip) {
+                        if *n == 623723{
+                            vec.push(db1_dehash(*v as u32));
+                        }else{
+                            vec.push(v.to_string());
+                        }
+                    }
+                    new_desp = Some(vec);
+                }
+            }
             NamedAttrValue::InvalidType => {
                 unset_keys.push(k.to_owned());
             }
             _ => {}
         }
-        
     }
-    // dbg!(&keys);
-    // dbg!(&refno_fields);
+    if let Some(new_desp) = new_desp {
+        attmap.insert("DESP".to_owned(), NamedAttrValue::StringArrayType(new_desp));
+        attmap.remove("UNIPAR");
+    }
     let mut response = SUL_DB
         .query(format!(
             "select value name from [{}]",
@@ -136,7 +153,6 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
         ))
         .await?;
     let names: Vec<String> = response.take(0)?;
-    // dbg!(&names);
     for (k, v) in keys.into_iter().zip(names) {
         attmap.insert(k, NamedAttrValue::StringType(if v.is_empty() {
             "unset".to_owned()

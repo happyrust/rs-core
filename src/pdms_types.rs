@@ -311,6 +311,7 @@ fn test_ele_geo_instance_serialize_deserialize() {
         is_tubi: false,
         geo_type: Default::default(),
         owner_pos_refnos: Default::default(),
+        cata_neg_refnos: vec![],
     };
     // let json = serde_json::to_string(&data).unwrap();
     // dbg!(&json);

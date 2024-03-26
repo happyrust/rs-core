@@ -7,6 +7,8 @@ pub mod uda;
 pub mod resolve;
 pub mod index;
 
+pub mod inst;
+
 pub use query::*;
 pub use graph::*;
 pub use spatial::*;
@@ -15,6 +17,7 @@ pub use mdb::*;
 pub use uda::*;
 pub use resolve::*;
 pub use index::*;
+pub use inst::*;
 // pub use room::*;
 
 use once_cell::sync::Lazy;

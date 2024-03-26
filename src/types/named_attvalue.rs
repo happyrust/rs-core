@@ -233,7 +233,7 @@ impl NamedAttrValue {
             NamedAttrValue::F32Type(v) => Box::new(*v),
             NamedAttrValue::F32VecType(v) => Box::new(v.clone()),
             NamedAttrValue::Vec3Type(v) => Box::new(vec![v.x, v.y, v.z]),
-            NamedAttrValue::RefU64Type(r) => Box::new(r.to_string()),
+            NamedAttrValue::RefU64Type(r) => Box::new(r.to_slash_string()),
             _ => Box::new("unset".to_string()),
         };
     }
@@ -244,8 +244,6 @@ impl Into<serde_json::Value> for NamedAttrValue {
         match self {
             NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
             NamedAttrValue::F32Type(d) => {
-                //todo fix 为什么会有出错的情况
-                //infinite ??
                 serde_json::Value::Number(
                     serde_json::Number::from_f64(d as _)
                         .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
@@ -276,13 +274,9 @@ impl Into<serde_json::Value> for NamedAttrValue {
                 serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
             }
             NamedAttrValue::RefU64Type(d) => {
-                //需要结合PdmsElement来跳转
-                // format!("PdmsElement/{}", d.to_string()).into()
                 d.to_string().into()
             }
             _ => serde_json::Value::Null,
-            // NamedAttrValue::ElementType(d) => serde_json::Value::String(d),
-            // NamedAttrValue::WordType(d) => ds.insert(k.as_str(), d),
         }
     }
 }

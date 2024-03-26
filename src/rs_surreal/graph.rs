@@ -52,7 +52,7 @@ pub async fn query_deep_children_skip_exist_inst(
     if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
         let sql = format!(
             r#"select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno}))
-             where array::len(->inst_relate) == 0 and noun in [{nouns_str}]"#,
+             where array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0 and noun in [{nouns_str}]"#,
         );
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
