@@ -85,9 +85,9 @@ pub async fn query_refno_has_pos_neg_map(
     // dbg!(&refnos);
     //使用SUL_DB通过这些参考号反过来query查找父节点
     let sql = format!(
-         "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
-         refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
-     );
+        "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
+        refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
+    );
     //  dbg!(&sql);
     let mut response = SUL_DB.query(&sql).await?;
     // let r = response.take::<Vec<RefnoHasNegPosInfo>>(0).unwrap();
@@ -99,7 +99,6 @@ pub async fn query_refno_has_pos_neg_map(
         }
     }
     Ok(result)
-
 }
 
 /// 查询具有正负实体映射关系的参考号集合
@@ -114,7 +113,6 @@ pub async fn query_refnos_has_pos_neg_map(
     refno: &[RefU64],
     is_cata: Option<bool>,
 ) -> anyhow::Result<HashMap<RefU64, Vec<RefU64>>> {
-    
     let mut result = HashMap::new();
     for &refno in refno {
         let mut map = query_refno_has_pos_neg_map(refno, is_cata).await?;
@@ -124,11 +122,10 @@ pub async fn query_refnos_has_pos_neg_map(
 }
 
 /// 查询bran下所有元件的点集
-pub async fn query_bran_children_point_map(refno:RefU64) -> anyhow::Result<Vec<InstPointMap>>{
+pub async fn query_bran_children_point_map(refno: RefU64) -> anyhow::Result<Vec<InstPointMap>> {
     let sql = format!("
-    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type from
-    pe:{}<-pe_owner;",refno.to_string());
-    dbg!(&sql);
+    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
+    from pe:{}<-pe_owner order by order_num;", refno.to_string());
     let mut response = SUL_DB
         .query(sql)
         .await?;
@@ -136,8 +133,9 @@ pub async fn query_bran_children_point_map(refno:RefU64) -> anyhow::Result<Vec<I
     Ok(result.into_iter().map(|r| r.into_point_map()).collect())
 }
 
+
 #[tokio::test]
-async fn test_query_bran_children_point_map() -> anyhow::Result<()>{
+async fn test_query_bran_children_point_map() -> anyhow::Result<()> {
     init_test_surreal().await;
     let refno = RefU64::from_str("24383/67331").unwrap();
     let r = query_bran_children_point_map(refno).await?;
