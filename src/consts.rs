@@ -3,8 +3,6 @@ use crate::types::NounHash;
 use crate::tool::db_tool::{db1_hash, db1_hash_const};
 use std::collections::HashSet;
 
-pub const PUHUA_MATERIAL_DATABASE: &'static str = "powerpmdb";
-// pub const PUHUA_MATERIAL_DATABASE: &'static str = "hdey_powerpmdb";
 
 pub const UNSET_STR: &'static str = "unset";
 pub const ATT_WORLD: u32 = db1_hash_const("WORLD");

@@ -19,6 +19,7 @@ pub mod aios_db_mgr;
 pub mod bevy_types;
 pub mod cache;
 pub mod consts;
+pub mod table_const;
 pub mod csg;
 pub mod db_number;
 pub mod geom_types;

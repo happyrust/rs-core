@@ -10,7 +10,7 @@ use sqlx::{MySql, Pool};
 use sqlx::pool::PoolOptions;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
-use crate::consts::PUHUA_MATERIAL_DATABASE;
+use crate::table_const::PUHUA_MATERIAL_DATABASE;
 use crate::pe::SPdmsElement;
 use crate::test::test_surreal::{init_surreal_with_signin, init_test_surreal};
 
