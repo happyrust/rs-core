@@ -29,10 +29,10 @@ pub async fn query_filter_deep_children(
     let end_noun = super::get_type_name(refno).await?;
     // dbg!(&end_noun);
     let nouns_str = nouns
-    .iter()
-    .map(|s| format!("'{s}'"))
-    .collect::<Vec<_>>()
-    .join(",");
+        .iter()
+        .map(|s| format!("'{s}'"))
+        .collect::<Vec<_>>()
+        .join(",");
     let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
     if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
         // dbg!(&relate_sql);
@@ -42,6 +42,35 @@ pub async fn query_filter_deep_children(
         // dbg!(&sql);
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
+            // let execution_time = stats.execution_time;
+            // dbg!(&execution_time);
+            // let s: Vec<RefU64> = result?;
+            return Ok(result);
+        }
+    }
+    Ok(vec![])
+}
+
+#[cached(result = true)]
+pub async fn query_ele_filter_deep_children(
+    refno: RefU64,
+    nouns: Vec<String>,
+) -> anyhow::Result<Vec<SPdmsElement>> {
+    let end_noun = super::get_type_name(refno).await?;
+    // dbg!(&end_noun);
+    let nouns_str = nouns
+        .iter()
+        .map(|s| format!("'{s}'"))
+        .collect::<Vec<_>>()
+        .join(",");
+    let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
+    if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
+        // dbg!(&relate_sql);
+        let sql = format!(
+            "select * from array::flatten(object::values(select {relate_sql} from only pe:{refno})) where noun in [{nouns_str}]",
+        );
+        let mut response = SUL_DB.query(&sql).with_stats().await?;
+        if let Some((stats, Ok(result))) = response.take::<Vec<SPdmsElement>>(0) {
             // let execution_time = stats.execution_time;
             // dbg!(&execution_time);
             // let s: Vec<RefU64> = result?;
@@ -73,12 +102,12 @@ pub async fn query_filter_ancestors(
     let start_noun = super::get_type_name(refno).await?;
     // dbg!(&start_noun);
     let nouns_str = nouns
-            .iter()
-            .map(|s| format!("'{s}'"))
-            .collect::<Vec<_>>()
-            .join(",");
+        .iter()
+        .map(|s| format!("'{s}'"))
+        .collect::<Vec<_>>()
+        .join(",");
     let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
-    if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun,  &nouns_slice) {
+    if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun, &nouns_slice) {
         // dbg!(&relate_sql);
         let sql = format!(
             "select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno})) where noun in [{nouns_str}]",

@@ -3,8 +3,9 @@ use std::time::Duration;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
-use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_world, NamedAttrMap, RefU64, SUL_DB, SurlValue};
+use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_next_prev, get_world, NamedAttrMap, RefU64, SUL_DB, SurlValue};
 use async_trait::async_trait;
+use bevy_transform::components::Transform;
 use config::{Config, File};
 use sqlx::{MySql, Pool};
 use sqlx::pool::PoolOptions;
@@ -133,8 +134,27 @@ impl PdmsDataInterface for AiosDBMgr {
         let mut response = SUL_DB
             .query(sql)
             .await?;
-        let o:Option<String> = response.take(0)?;
+        let o: Option<String> = response.take(0)?;
         Ok(o.unwrap_or("".to_string()))
+    }
+
+    async fn get_world_transform(&self, refno: RefU64) -> anyhow::Result<Option<Transform>> {
+        let sql = format!("
+        (select (->inst_relate.world_trans.d)[0] as length from {})[0].length;
+        ", refno.to_pe_key());
+        let mut response = SUL_DB
+            .query(sql)
+            .await?;
+        let transform: Option<Transform> = response.take(0)?;
+        Ok(transform)
+    }
+
+    async fn get_prev(&self, refno: RefU64) -> anyhow::Result<RefU64> {
+        get_next_prev(refno,false).await
+    }
+
+    async fn get_next(&self, refno: RefU64) -> anyhow::Result<RefU64> {
+        get_next_prev(refno,true).await
     }
 }
 
@@ -173,4 +193,6 @@ async fn test_get_world() {
     dbg!(&attr);
     let name = mgr.get_name(RefU64::from_str("24383/67331").unwrap()).await.unwrap();
     dbg!(&name);
+    let transform = mgr.get_world_transform(RefU64::from_str("24383/67335").unwrap()).await.unwrap();
+    dbg!(&transform);
 }

@@ -1,6 +1,7 @@
 use crate::{AttrMap, NamedAttrMap, RefU64};
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use async_trait::async_trait;
+use bevy_transform::prelude::Transform;
 
 pub mod aios_mgr;
 
@@ -8,7 +9,7 @@ pub mod aios_mgr;
 pub trait PdmsDataInterface {
     /// 获取 world 节点
     async fn get_world(&self, mdb_name: &str) -> anyhow::Result<Option<PdmsElement>>;
-    ///获得属性
+    /// 获得属性
     async fn get_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap>;
     /// 获取children
     async fn get_children(&self, refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>>;
@@ -25,4 +26,10 @@ pub trait PdmsDataInterface {
     async fn get_foreign_attr(&self, refno: RefU64, foreign_type: &str) -> anyhow::Result<Option<NamedAttrMap>>;
     /// 获取节点的name
     async fn get_name(&self,refno:RefU64) -> anyhow::Result<String>;
+    /// 获得指定参考号的世界坐标系
+    async fn get_world_transform(&self, refno: RefU64) -> anyhow::Result<Option<Transform>>;
+    /// 获取pdms树中，指定节点同层级的上一个
+    async fn get_prev(&self,refno:RefU64) -> anyhow::Result<RefU64>;
+    /// 获取pdms树中，指定节点同层级的下一个
+    async fn get_next(&self,refno:RefU64) -> anyhow::Result<RefU64>;
 }

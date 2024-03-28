@@ -1096,6 +1096,7 @@ use bevy_render::render_asset::RenderAssetUsages;
 use opencascade::primitives::Shape;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
+use crate::pe::SPdmsElement;
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
@@ -1880,6 +1881,19 @@ impl PdmsElement {
             noun: self.noun,
             version: self.version,
             children_count: self.children_count,
+        }
+    }
+}
+
+impl From<SPdmsElement> for PdmsElement {
+    fn from(value: SPdmsElement) -> Self {
+        Self {
+            refno: value.refno,
+            owner: value.owner,
+            name: value.name,
+            noun: value.noun,
+            version: 0,
+            children_count: 0,
         }
     }
 }

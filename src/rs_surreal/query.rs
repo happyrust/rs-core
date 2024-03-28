@@ -13,6 +13,7 @@ use serde_json::Value;
 use surrealdb::engine::remote::ws::Client;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
+use truck_polymesh::Attributes;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -182,12 +183,11 @@ pub async fn get_next_prev(refno: RefU64, next: bool) -> anyhow::Result<RefU64> 
         .iter()
         .position(|x| *x == refno)
         .unwrap_or_default();
-    if pos == 0 {
-        Ok(Default::default())
-    } else if next {
-        Ok(siblings[pos + 1])
+    if next {
+        Ok(siblings.get(pos + 1).unwrap_or_default())
     } else {
-        Ok(siblings[pos - 1])
+        if pos == 0 { return Ok(Default::default()); }
+        Ok(siblings.get(pos - 1).unwrap_or_default())
     }
 }
 

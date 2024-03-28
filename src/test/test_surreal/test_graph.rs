@@ -9,6 +9,7 @@ use crate::graph::query_filter_deep_children;
 use crate::noun_graph::gen_noun_incoming_relate_sql;
 use crate::noun_graph::gen_noun_outcoming_relate_sql;
 use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
+use crate::query_ele_filter_deep_children;
 
 #[test]
 fn test_petgraph() {
@@ -60,6 +61,8 @@ async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
     dbg!(&result);
 
     let result = query_filter_deep_children(refno,vec!["FIXING".to_string()] ).await?;
+    dbg!(&result);
+    let result = query_ele_filter_deep_children(refno,vec!["FIXING".to_string()] ).await?;
     dbg!(&result);
 
     let refno = "17496/171180".into(); // Replace with your desired refno value

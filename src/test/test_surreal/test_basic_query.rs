@@ -68,8 +68,8 @@ async fn test_get_siblings_by_refno() {
     super::init_test_surreal().await;
     let refnos = rs_surreal::get_siblings("17496/258778".into()).await.unwrap();
     dbg!(refnos);
-    let next = rs_surreal::get_next_prev("17496/258778".into(), true).await.unwrap();
-    let prev = rs_surreal::get_next_prev("17496/258778".into(), false).await.unwrap();
+    let next = rs_surreal::get_next_prev("24383/67332".into(), true).await.unwrap();
+    let prev = rs_surreal::get_next_prev("24383/67332".into(), false).await.unwrap();
     dbg!((next, prev));
 }
 
