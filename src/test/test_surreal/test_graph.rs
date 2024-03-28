@@ -51,13 +51,13 @@ fn test_petgraph() {
 }
 
 #[tokio::test]
-async fn test_query_refnos_without_inst() -> anyhow::Result<()> {
+async fn test_query_refnos_skip_inst() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let refno = "24384/24828".into(); // Replace with your desired refno value
 
     // let result = query_filter_deep_children(refno, crate::pdms_types::VISBILE_GEO_NOUNS.map(String::from).to_vec() ).await?;
     // dbg!(&result);
-    let result = query_deep_children_skip_exist_inst(refno, crate::pdms_types::VISBILE_GEO_NOUNS.map(String::from).to_vec() ).await?;
+    let result = query_deep_children_filter_inst(refno, crate::pdms_types::VISBILE_GEO_NOUNS.map(String::from).to_vec(), true).await?;
     dbg!(&result);
 
     Ok(())
@@ -70,7 +70,7 @@ async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
     let result = query_filter_all_bran_hangs(refno).await?;
     dbg!(&result);
 
-    let result = query_filter_deep_children(refno, CATA_WITHOUT_REUSE_GEO_NAMES.map(String::from).to_vec() ).await?;
+    let result = query_filter_deep_children(refno, CATA_WITHOUT_REUSE_GEO_NAMES.map(String::from).to_vec()).await?;
     dbg!(&result);
 
 

@@ -39,3 +39,16 @@ fn test_quat() {
     let q = Quat::from_xyzw(0., 0., 1., 0.);
     dbg!(quat_to_pdms_ori_xyz_str(&q));
 }
+
+
+#[tokio::test]
+async fn test_query_la_points() -> anyhow::Result<()> {
+    super::init_test_surreal().await;
+    let result = crate::point::query_arrive_leave_points(&[
+        "24383_66688".into(), "24383_66685".into()], false)
+        .await
+        .unwrap();
+
+    dbg!(result);
+    Ok(())
+}

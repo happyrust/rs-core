@@ -42,18 +42,22 @@ pub async fn query_filter_deep_children(
 }
 
 #[cached(result = true)]
-pub async fn query_deep_children_skip_exist_inst(
+pub async fn query_deep_children_filter_inst(
     refno: RefU64,
     nouns: Vec<String>,
+    filter: bool,
 ) -> anyhow::Result<Vec<RefU64>> {
     let end_noun = super::get_type_name(refno).await?;
     let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
     let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
     if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
-        let sql = format!(
+        let mut sql = format!(
             r#"select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno}))
-             where array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0 and noun in [{nouns_str}]"#,
+             where array::len(->inst_relate) = 0 and noun in [{nouns_str}]"#,
         );
+        if filter {
+            sql.push_str(" and array::len(->tubi_relate) = 0");
+        }
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
             return Ok(result);
@@ -76,13 +80,14 @@ pub async fn query_multi_filter_deep_children(
 }
 
 #[cached(result = true)]
-pub async fn query_multi_deep_children_skip_exist_inst(
+pub async fn query_multi_deep_children_filter_inst(
     refnos: Vec<RefU64>,
     nouns: Vec<String>,
+    filter: bool,
 ) -> anyhow::Result<HashSet<RefU64>> {
     let mut result = HashSet::new();
     for refno in refnos {
-        let mut children = query_deep_children_skip_exist_inst(refno, nouns.clone()).await?;
+        let mut children = query_deep_children_filter_inst(refno, nouns.clone(), filter).await?;
         result.extend(children.drain(..));
     }
     Ok(result)

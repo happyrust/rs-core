@@ -186,13 +186,13 @@ impl AccelerationTree {
             .map(|bb| (bb.refno, bb.aabb))
     }
 
-    pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item = RefU64> + 'a {
+    pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item = (RefU64, Aabb)> + 'a {
         self.tree
             .locate_in_envelope(&rstar::AABB::from_corners(
                 [bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                 [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]],
             ))
-            .map(|bb| bb.refno)
+            .map(|bb| (bb.refno, bb.aabb))
     }
 
     //后面可以用数据库存储加载

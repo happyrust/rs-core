@@ -13,6 +13,18 @@ pub async fn create_geom_index() -> anyhow::Result<()> {
     Ok(())
 }
 
+pub async fn define_room_index() -> anyhow::Result<()> {
+    //针对一些特殊的表，需要先创建表，定义索引
+    SUL_DB
+        .query(r#"
+        DEFINE INDEX unique_room_relate ON TABLE room_relate COLUMNS in, out UNIQUE;
+        DEFINE INDEX unique_room_panel_relate ON TABLE room_panel_relate COLUMNS in, out UNIQUE;
+               "#)
+        .await
+        .unwrap();
+    Ok(())
+}
+
 /// 创建 pe_owner 的唯一性索引，in, out的组合索引
 pub async fn define_owner_index() -> anyhow::Result<()> {
     //针对一些特殊的表，需要先创建表，定义索引

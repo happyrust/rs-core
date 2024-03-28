@@ -23,7 +23,7 @@ pub async fn load_aabb_tree() -> anyhow::Result<bool> {
     loop {
         //需要过滤
         let sql = format!(
-            "select in as refno, aabb.d.* as aabb, in.noun as noun from inst_relate where aabb.d!=none and type=0 start {} limit {page_count}",
+            "select in as refno, aabb.d.* as aabb, in.noun as noun from inst_relate where aabb.d!=none and aabb.d.mins[0] < 1000000 start {} limit {page_count}",
             offset
         );
         let mut response = SUL_DB.query(&sql).await?;

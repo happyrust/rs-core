@@ -551,10 +551,8 @@ pub struct CataHashRefnoKV {
     #[serde(default)]
     pub cata_hash: String,
     #[serde(default)]
-    pub exist_geo: Option<EleInstGeosData>,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    #[serde(default)]
     pub group_refnos: Vec<RefU64>,
+    pub exist_inst: bool,
 }
 
 #[serde_as]

@@ -119,8 +119,8 @@ impl PlantMesh {
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        // TriMesh::with_flags(points, indices, TriMeshFlags::ORIENTED)
-        TriMesh::new(points, indices)
+        TriMesh::with_flags(points, indices,  parry3d::shape::TriMeshFlags::ORIENTED)
+        // TriMesh::new(points, indices)
     }
 
     ///计算aabb
@@ -198,7 +198,7 @@ impl PlantMesh {
         Ok(())
     }
 
-    pub fn des_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
+    pub fn des_mesh_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
@@ -296,9 +296,9 @@ impl RsVec3{
 
 impl Hash for RsVec3 {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        format!("{:.5}", self.x).hash(state);
-        format!("{:.5}", self.y).hash(state);
-        format!("{:.5}", self.z).hash(state);
+        format!("{:.3}", self.x).hash(state);
+        format!("{:.3}", self.y).hash(state);
+        format!("{:.3}", self.z).hash(state);
     }
 }
 

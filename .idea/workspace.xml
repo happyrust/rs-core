@@ -22,14 +22,27 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts.">
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance.">
+      <change afterPath="$PROJECT_DIR$/src/basic/aabb.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/point.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/basic/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/basic/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/room/room.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/room/room.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -131,9 +144,11 @@
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_room::test_save_room_data.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor&quot;: &quot;Debug&quot;,
@@ -150,7 +165,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;test&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/rs_surreal/mat_stastitcs/HVAC&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/basic&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -170,11 +185,11 @@
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\basic" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC" />
       <recent name="$PROJECT_DIR$" />
       <recent name="E:\work\new-crates\aios-core" />
       <recent name="E:\work\crates\aios-core" />
-      <recent name="$PROJECT_DIR$/src" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs" />
@@ -183,7 +198,7 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Run aios_core">
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_geom::test_query_la_points">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -218,25 +233,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test prim_geo::wire::test_complex_half_circle" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_complex_half_circle -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_children_att" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_children_att -- --exact" />
+    <configuration name="Test test::test_surreal::test_geom::test_query_la_points" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_geom::test_query_la_points -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -286,6 +284,23 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test test::test_surreal::test_query_group::test_group_cata_hash" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_query_group::test_group_cata_hash -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="check" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="check" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -306,19 +321,19 @@
     <list>
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_la_points" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash" />
       <item itemvalue="Cargo.Run aios_core" />
-      <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_children_att" />
       <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst" />
       <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_la_points" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash" />
+        <item itemvalue="Cargo.Run aios_core" />
         <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst" />
         <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_children_att" />
-        <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
-        <item itemvalue="Cargo.Run aios_core" />
       </list>
     </recent_temporary>
   </component>
@@ -674,7 +689,8 @@
       <workItem from="1711344697318" duration="1190000" />
       <workItem from="1711361927026" duration="1037000" />
       <workItem from="1711387898951" duration="38000" />
-      <workItem from="1711446161438" duration="4628000" />
+      <workItem from="1711446161438" duration="24121000" />
+      <workItem from="1711644673824" duration="975000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1019,7 +1035,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="283" />
+    <option name="localTasksCounter" value="284" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1062,8 +1078,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="WIP refactor" />
-    <MESSAGE value="Implement minor code refactoring across various modules&#10;&#10;This commit includes a series of minor code refactoring and updates across various modules as needed to improve overall code quality. The changes predominantly include cleaning up the spacing and indentation, modifying several function logic such as changing boolean and array values, removing and adding functions, and updating test queries for more accurate testing. Note that no major functionality was updated or added." />
     <MESSAGE value="Refactor code for readability and correctness&#10;&#10;The codebase underwent a range of minor adjustments to improve consistency and alignment of the code. Updates also improved the boolean logic in certain functions, added new functionality for fetching boolean values, and enhanced the test scenarios for better code coverage. These changes were primarily focused on maintaining the code's quality standards." />
     <MESSAGE value="Add new options to clap flags in options.rs&#10;&#10;New command line options, 'pe_chunk' and 'att_chunk', have been added to the options.rs file. These modifications improve the flexibility and customizability of the program by allowing the user to input the values for these two new options. The user's experience and the program's functionality have been enhanced with this update." />
     <MESSAGE value="Implement parse_to_i32_vec function and update attribute types in JSON&#10;&#10;Introduced a parse_to_i32_vec function in the helper module and modified attribute types from STRING to INTEGER in the all_attr_info.json file. The new function expands the parsing capabilities of the application. The modifications to the JSON file ensure the correct data types are used for default values, fostering data consistency and integrity." />
@@ -1087,7 +1101,9 @@
     <MESSAGE value="Update geometry handling logic in category.rs and resolve.rs&#10;&#10;This commit refines geometry computation in category.rs and increases iteration limits in resolve.rs. It simplifies the logic in category.rs to enhance readability, while enhancing error resiliency in resolve.rs. Changes to workspace.xml pertain to updating group and task settings." />
     <MESSAGE value="Add HVAC calculations and update geometry definition in pdms_shape.rs&#10;&#10;This update includes HVAC-related calculations in new SurQL files and adjusts the geometry definition in pdms_shape.rs. Target architecture conditions and additional functions are introduced for differentiating WASM from non-WASM builds. The commit also includes several new files contributing to HVAC computation logic, as well as a batch file for running the database scripts." />
     <MESSAGE value="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts." />
+    <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization" />
+    <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

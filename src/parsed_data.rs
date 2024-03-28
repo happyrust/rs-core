@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use bevy_transform::prelude::Transform;
 
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::types::*;
@@ -128,6 +129,22 @@ pub struct CateAxisParam {
     pub pwidth: f32,
     pub pheight: f32,
     pub pconnect: String,
+}
+
+impl CateAxisParam{
+    pub fn transformed(&self, trans: &Transform) -> Self{
+        let mut axis = self.clone();
+        axis.pt = trans.transform_point(axis.pt);
+        axis.dir = trans.transform_vec3(axis.dir);
+        axis.ref_dir = trans.transform_vec3(axis.ref_dir);
+        axis
+    }
+
+    pub fn transform(&mut self, trans: &Transform){
+        self.pt = trans.transform_point(self.pt);
+        self.dir = trans.transform_vec3(self.dir);
+        self.ref_dir = trans.transform_vec3(self.ref_dir);
+    }
 }
 
 impl Default for CateAxisParam {

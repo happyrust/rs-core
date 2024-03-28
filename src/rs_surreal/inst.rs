@@ -1,8 +1,11 @@
 use bevy_transform::components::Transform;
+use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
 use crate::{RefU64, SUL_DB};
 use serde_with::serde_as;
 use parry3d::bounding_volume::Aabb;
+use crate::basic::aabb::ParryAabb;
+use crate::pdms_types::PdmsGenericType;
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
@@ -14,7 +17,7 @@ pub struct TubiInstQuery {
     pub geo_hash: String,
 }
 
-pub async fn query_tubi_insts(bran_refnos: &[RefU64]) -> anyhow::Result<Vec<TubiInstQuery>> {
+pub async fn query_tubi_insts_by_brans(bran_refnos: &[RefU64]) -> anyhow::Result<Vec<TubiInstQuery>> {
     let pes: String = bran_refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
     let mut response = SUL_DB
         .query(format!(r#"
@@ -26,4 +29,72 @@ pub async fn query_tubi_insts(bran_refnos: &[RefU64]) -> anyhow::Result<Vec<Tubi
     let r = response.take::<Vec<TubiInstQuery>>(0)?;
     Ok(r)
 }
+
+pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<TubiInstQuery>> {
+    let pes: String = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
+    let mut response = SUL_DB
+        .query(format!(r#"
+        array::group(array::complement(select value
+        (select in.id as refno, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
+            from tubi_relate where leave=$parent.id or arrive=$parent.id)
+                from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
+             "#, pes))
+        .await?;
+
+    let r = response.take::<Vec<TubiInstQuery>>(0).unwrap();
+    Ok(r)
+}
+
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct ModelHashInst {
+    pub geo_hash: String,
+    #[serde(default)]
+    pub transform: Transform,
+    #[serde(default)]
+    pub is_tubi: bool,
+}
+
+#[derive(Debug)]
+pub struct ModelInstData {
+    pub owner: RefU64,
+    pub insts: Vec<ModelHashInst>,
+    pub generic: PdmsGenericType,
+    pub world_trans: Transform,
+    pub world_aabb: ParryAabb,
+    pub ptset: Vec<Vec3>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GeomInstQuery {
+    #[serde(alias = "id")]
+    pub refno: RefU64,
+    pub owner: RefU64,
+    pub world_aabb: Aabb,
+    pub world_trans: Transform,
+    pub insts: Vec<ModelHashInst>,
+    pub generic: String,
+    pub pts: Option<Vec<Vec3>>,
+}
+
+pub async fn query_insts(refnos: &[RefU64]) -> anyhow::Result<Vec<GeomInstQuery>> {
+    let pes = refnos
+        .iter()
+        .map(|x| x.to_pe_key())
+        .collect::<Vec<_>>()
+        .join(",");
+    let mut response = SUL_DB
+        .query(format!(r#"
+                    select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
+            if neg_refnos == none {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos') }} else {{ [{{ "geo_hash": meta::id(in.id) }}] }} as insts
+            from [{}]->inst_relate[0] where aabb.d != none
+            "#, pes))
+        .await
+        .unwrap();
+    let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
+
+    Ok(geom_insts)
+}
+
+
 

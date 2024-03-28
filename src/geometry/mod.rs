@@ -21,7 +21,7 @@ use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::PdmsGenericType;
 use crate::prim_geo::{SBox, SCylinder};
-use crate::shape::pdms_shape::PlantMesh;
+use crate::shape::pdms_shape::{PlantMesh, RsVec3};
 use crate::tool::hash_tool::hash_two_str;
 use parry3d::bounding_volume::Aabb;
 
@@ -112,19 +112,29 @@ impl EleGeosInfo {
     }
 
     ///生成surreal的json文件
-    pub fn gen_sur_json(&self) -> String {
-        let id = self.id();
+    pub fn gen_sur_json(&self, vec3_map: &mut HashMap<u64, String>) -> String {
+        let id = self.id_str();
+        // 变换到世界坐标系中，方便计算
+        let mut pt_hashes: Vec<String> = vec![];
+        // dbg!(&self.ptset_map);
+        for (_, p) in &self.ptset_map {
+            let pts_hash = RsVec3(self.world_transform * p.pt).gen_hash();
+            pt_hashes.push(format!("vec3:⟨{}⟩", pts_hash));
+            if !vec3_map.contains_key(&pts_hash) {
+                vec3_map.insert(pts_hash, serde_json::to_string(&p).unwrap());
+            }
+        }
+        let ptset = pt_hashes.join(",");
         let mut json = serde_json::to_string_pretty(&serde_json::json!({
             "visible": self.visible,
             "generic_type": self.generic_type,
-            "flow_pt_indexs": self.flow_pt_indexs.clone(),
-            // "geo_type": self.geo_type.clone(),
         }))
         .unwrap();
 
         json.remove(json.len() - 1);
         json.push_str(",");
-        json.push_str(&format!(r#""id": inst_info:⟨{}⟩ "#, id));
+        json.push_str(&format!(r#""id": inst_info:⟨{}⟩, "#, id));
+        json.push_str(&format!(r#""ptset": [{}] "#, ptset));
         json.push_str("}");
         json
     }
@@ -349,7 +359,10 @@ impl ShapeInstancesData {
     #[inline]
     pub fn insert_ngmr(&mut self, refno: RefU64, owners: Vec<RefU64>) {
         for owner in owners {
-            self.ngmr_relate_map.entry(owner).or_insert_with(Vec::new).push(refno);
+            let mut d = self.ngmr_relate_map.entry(owner).or_insert_with(Vec::new);
+            if !d.contains(&refno) {
+                d.push(refno);
+            }
         }
     }
 
@@ -512,8 +525,13 @@ pub struct EleInstGeosData {
 
 impl EleInstGeosData {
 
-    pub fn id(&self) -> u64 {
-        self.inst_key.parse().unwrap_or(*self.refno)
+    // pub fn id(&self) -> u64 {
+    //     self.inst_key.parse().unwrap_or(*self.refno)
+    // }
+
+    #[inline]
+    pub fn id(&self) -> String {
+        self.inst_key.clone()
     }
 
     ///生成surreal的json文件

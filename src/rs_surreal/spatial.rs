@@ -23,24 +23,24 @@ use parry3d::bounding_volume::Aabb;
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GeomInstQuery{
-    #[serde(alias="id")]
-    pub refno: RefU64,
-    pub world_aabb: Aabb,
-    pub world_trans: Transform,
-    pub insts: Vec<ModelHashInst>,
-}
-
-#[serde_as]
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct ModelHashInst {
-    #[serde_as(as = "DisplayFromStr")]
-    pub geo_hash: u64,
-    pub transform: Transform,
-    #[serde(default)]
-    pub is_tubi: bool,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct GeomInstQuery{
+//     #[serde(alias="id")]
+//     pub refno: RefU64,
+//     pub world_aabb: Aabb,
+//     pub world_trans: Transform,
+//     pub insts: Vec<ModelHashInst>,
+// }
+//
+// #[serde_as]
+// #[derive(Serialize, Deserialize, Debug, Default)]
+// pub struct ModelHashInst {
+//     #[serde_as(as = "DisplayFromStr")]
+//     pub geo_hash: u64,
+//     pub transform: Transform,
+//     #[serde(default)]
+//     pub is_tubi: bool,
+// }
 
 //获得世界坐标系
 ///使用cache，需要从db manager里移除出来

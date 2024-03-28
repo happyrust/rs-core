@@ -9,6 +9,10 @@ pub mod index;
 
 pub mod inst;
 
+pub mod point;
+
+
+
 pub use query::*;
 pub use graph::*;
 pub use spatial::*;
@@ -18,6 +22,7 @@ pub use uda::*;
 pub use resolve::*;
 pub use index::*;
 pub use inst::*;
+pub use point::*;
 // pub use room::*;
 
 use once_cell::sync::Lazy;

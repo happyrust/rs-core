@@ -1,4 +1,4 @@
-use crate::pdms_types::EleTreeNode;
+use crate::pdms_types::{CataHashRefnoKV, EleTreeNode};
 use crate::pe::SPdmsElement;
 use crate::types::*;
 use crate::{NamedAttrMap, RefU64};
@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
+use dashmap::DashMap;
 use crate::tool::db_tool::db1_dehash;
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -30,9 +31,9 @@ pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
 
 #[cached(result = true)]
 pub async fn get_design_dbnos(mdb_name: String) -> anyhow::Result<Vec<i32>> {
-    let mdb = if mdb_name.starts_with("/"){
+    let mdb = if mdb_name.starts_with("/") {
         mdb_name
-    }else{
+    } else {
         format!("/{}", mdb_name)
     };
     let mut response = SUL_DB
@@ -109,7 +110,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
     let mut keys = vec![];
     let mut unset_keys = vec![];
     let mut new_desp = None;
-    for (k, v) in &attmap.map{
+    for (k, v) in &attmap.map {
         if k == "REFNO" {
             continue;
         }
@@ -127,9 +128,9 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     let unip = attmap.get_i32_vec("UNIPAR").unwrap_or_default();
                     let mut vec = vec![];
                     for (v, n) in d.iter().zip(&unip) {
-                        if *n == 623723{
+                        if *n == 623723 {
                             vec.push(db1_dehash(*v as u32));
-                        }else{
+                        } else {
                             vec.push(v.to_string());
                         }
                     }
@@ -181,9 +182,9 @@ pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 #[cached(result = true)]
 pub async fn get_siblings(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let mut response = SUL_DB
-    .query("select value in from (select * from type::thing('pe', $refno).owner<-pe_owner order by order_num) where in.deleted=false")
-    .bind(("refno", refno.to_string()))
-    .await?;
+        .query("select value in from (select * from type::thing('pe', $refno).owner<-pe_owner order by order_num) where in.deleted=false")
+        .bind(("refno", refno.to_string()))
+        .await?;
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
 }
@@ -304,7 +305,7 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
     let sql = if types.is_empty() {
         format!(
             r#"select value in from (select * from {}<-pe_owner order by order_num) where in.deleted=false"#,
-            refno.to_pe_key() )
+            refno.to_pe_key())
     } else {
         format!(
             r#"select value in from (select * from {}<-pe_owner order by order_num) where in.deleted=false and in.noun in [{nouns_str}] "#,
@@ -374,20 +375,25 @@ pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Ve
 ///按cata_hash 分组获得不同的参考号类型
 // #[cached(result = true)]
 pub async fn query_group_by_cata_hash(
-    refnos: &[RefU64],
-) -> anyhow::Result<IndexMap<String, Vec<RefU64>>> {
-    let keys = refnos.iter().map(|x| x.to_pe_thing()).collect::<Vec<_>>();
+    refnos: impl IntoIterator<Item = &RefU64>,
+) -> anyhow::Result<DashMap<String, CataHashRefnoKV>> {
+    let keys = refnos.into_iter().map(|x| x.to_pe_thing()).collect::<Vec<_>>();
     let mut response = SUL_DB
         .query(include_str!("schemas/group_by_cata_hash.surql"))
         .bind(("refnos", keys))
         .await?;
-    let d: Vec<KV<String, Vec<RefU64>>> = response.take(1)?;
+    let d: Vec<KV<(String, bool), Vec<RefU64>>> = response.take(1)?;
     let map = d
         .into_iter()
-        .map(|kv| {
-            let k = kv.k.clone();
-            let v: Vec<RefU64> = kv.v;
-            (k, v)
+        .map(|KV {
+                  k: (cata_hash, exist_inst),
+                  v: group_refnos
+              }| {
+            (cata_hash.clone(), CataHashRefnoKV {
+                cata_hash,
+                group_refnos,
+                exist_inst,
+            })
         })
         .collect();
     Ok(map)
