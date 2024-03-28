@@ -51,7 +51,7 @@ impl PdmsDataInterface for AiosDBMgr {
         }))
     }
 
-    async fn get_named_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
+    async fn get_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
         get_named_attmap(refno).await
     }
 
@@ -123,6 +123,19 @@ impl PdmsDataInterface for AiosDBMgr {
         if named_attmap.map.is_empty() { return Ok(None); };
         Ok(Some(named_attmap))
     }
+
+    async fn get_name(&self, refno: RefU64) -> anyhow::Result<String> {
+        let sql = format!("
+        (select value (if name='' {{ string::concat(noun,
+        <string> (array::find_index(select value order_num from ->pe_owner->pe<-pe_owner[where <-pe[where noun=$parent.noun]]
+        order by order_num, ->pe_owner[0].order_num) + 1) ) }} else {{ name }} ) from {})[0];
+        ", refno.to_pe_key());
+        let mut response = SUL_DB
+            .query(sql)
+            .await?;
+        let o:Option<String> = response.take(0)?;
+        Ok(o.unwrap_or("".to_string()))
+    }
 }
 
 impl AiosDBMgr {
@@ -151,11 +164,13 @@ async fn test_get_world() {
     let mgr = AiosDBMgr::init_from_db_option().await.unwrap();
     let data = mgr.get_world("/ALL").await.unwrap();
     let data = mgr.get_ele_from_name("/1WCC0294").await.unwrap();
+    dbg!(&data);
     let attr = mgr.get_spre_attr(RefU64::from_str("24383/67331").unwrap()).await.unwrap();
     dbg!(&attr);
     let attr = mgr.get_catr_attr(RefU64::from_str("24383/67350").unwrap()).await.unwrap();
     dbg!(&attr);
-    let attr = mgr.get_foreign_attr(RefU64::from_str("24383/67331").unwrap(),"HSTU").await.unwrap();
+    let attr = mgr.get_foreign_attr(RefU64::from_str("24383/67331").unwrap(), "HSTU").await.unwrap();
     dbg!(&attr);
-    dbg!(&data);
+    let name = mgr.get_name(RefU64::from_str("24383/67331").unwrap()).await.unwrap();
+    dbg!(&name);
 }

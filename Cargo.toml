@@ -116,5 +116,6 @@ default-features = false
 features = [
     #    "runtime-async-std-native-tls",
     "runtime-async-std-rustls",
+    "rust_decimal",
     "mysql",
 ]
