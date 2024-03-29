@@ -15,7 +15,7 @@ pub async fn get_spre_material_code(refno: RefU64, foreign_name: &str, aios_mgr:
 /// 通过spre name 返回材料编码 命名规则为 第二个 / 到 :
 ///
 /// 例如 "/VMB1/CPP00102:P,50" -> "CPP00102"
-fn split_spre_material_code(spre_name: &str) -> Option<String> {
+pub fn split_spre_material_code(spre_name: &str) -> Option<String> {
     let spre_name_split = spre_name.split("/").collect::<Vec<_>>();
     if spre_name_split.len() < 3 {
         return None;
