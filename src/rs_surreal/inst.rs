@@ -77,6 +77,15 @@ pub struct GeomInstQuery {
     pub pts: Option<Vec<Vec3>>,
 }
 
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GeomPtsQuery {
+    #[serde(alias = "id")]
+    pub refno: RefU64,
+    pub world_trans: Transform,
+    pub pts_group: Vec<(Transform, Vec<Vec3>)>,
+}
+
 pub async fn query_insts(refnos: &[RefU64]) -> anyhow::Result<Vec<GeomInstQuery>> {
     let pes = refnos
         .iter()
