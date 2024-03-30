@@ -1,10 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
-
-
 use std::hash::Hasher;
 use std::hash::Hash;
 use std::sync::Arc;
-
 use glam::{DVec3, Mat3, Quat, Vec3};
 use bevy_ecs::prelude::*;
 use truck_modeling::{Shell};

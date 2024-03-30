@@ -22,27 +22,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance.">
-      <change afterPath="$PROJECT_DIR$/src/basic/aabb.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/point.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Update handling of attribute values and optimize SQL queries&#10;&#10;The commit improves the string representation of 'RefU64Type' in 'NamedAttrValue'. Changes in 'graph.rs' also enhance the efficacy of SQL queries with revised criteria. Additionally, enhancements in 'pdms_types.rs' aid in vector handling.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/basic/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/basic/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/room/room.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/room/room.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -339,6 +322,9 @@
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="D:/.cargo/bin" />
+  </component>
+  <component name="RustfmtProjectSettings">
+    <option name="useRustfmt" value="true" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -690,7 +676,8 @@
       <workItem from="1711361927026" duration="1037000" />
       <workItem from="1711387898951" duration="38000" />
       <workItem from="1711446161438" duration="24121000" />
-      <workItem from="1711644673824" duration="975000" />
+      <workItem from="1711644673824" duration="1572000" />
+      <workItem from="1711780869706" duration="4140000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1035,7 +1022,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="284" />
+    <option name="localTasksCounter" value="285" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1078,7 +1065,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Refactor code for readability and correctness&#10;&#10;The codebase underwent a range of minor adjustments to improve consistency and alignment of the code. Updates also improved the boolean logic in certain functions, added new functionality for fetching boolean values, and enhanced the test scenarios for better code coverage. These changes were primarily focused on maintaining the code's quality standards." />
     <MESSAGE value="Add new options to clap flags in options.rs&#10;&#10;New command line options, 'pe_chunk' and 'att_chunk', have been added to the options.rs file. These modifications improve the flexibility and customizability of the program by allowing the user to input the values for these two new options. The user's experience and the program's functionality have been enhanced with this update." />
     <MESSAGE value="Implement parse_to_i32_vec function and update attribute types in JSON&#10;&#10;Introduced a parse_to_i32_vec function in the helper module and modified attribute types from STRING to INTEGER in the all_attr_info.json file. The new function expands the parsing capabilities of the application. The modifications to the JSON file ensure the correct data types are used for default values, fostering data consistency and integrity." />
     <MESSAGE value="Change attribute types from STRING to INTEGER in JSON&#10;&#10;Updated the &quot;default_val&quot; and &quot;att_type&quot; fields in the 'all_attr_info.json' from STRING to INTEGER. This change ensures the correct data types are used for default values, improving data consistency and reliability across the application." />
@@ -1103,7 +1089,8 @@
     <MESSAGE value="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts." />
     <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization" />
     <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance." />
+    <MESSAGE value="Update handling of attribute values and optimize SQL queries&#10;&#10;The commit improves the string representation of 'RefU64Type' in 'NamedAttrValue'. Changes in 'graph.rs' also enhance the efficacy of SQL queries with revised criteria. Additionally, enhancements in 'pdms_types.rs' aid in vector handling." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update handling of attribute values and optimize SQL queries&#10;&#10;The commit improves the string representation of 'RefU64Type' in 'NamedAttrValue'. Changes in 'graph.rs' also enhance the efficacy of SQL queries with revised criteria. Additionally, enhancements in 'pdms_types.rs' aid in vector handling." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
