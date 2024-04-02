@@ -741,7 +741,7 @@ pub async fn get_yk_equi_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
         id,
         fn::default_name($this.id) as equi_name,
         '' as room_code,
-        (->inst_relate.world_trans.d.translation[2])[0] as pos,
+        fn::get_world_pos($this.id)[0][2] as pos, // 坐标 z
         '' as floor_height
         from {}"#, refnos_str);
         let mut response = db
@@ -944,9 +944,9 @@ pub async fn get_tx_txsb_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
             string::slice(if refno.CATR.refno.PRTREF.desc == NONE {{ '/' }} else {{ refno.CATR.refno.PRTREF.desc }},1) as ptre_desc, // 设备名称
             string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'-')[0],1,3) as belong_factory, // 所属厂房编号
             '' as room_code,
-            (->inst_relate.world_trans.d.translation[0])[0] as x, // 坐标 x
-            (->inst_relate.world_trans.d.translation[1])[0] as y, // 坐标 y
-            (->inst_relate.world_trans.d.translation[2])[0] as z, // 坐标 z
+            fn::get_world_pos($this.id)[0][0] as x, // 坐标 x
+            fn::get_world_pos($this.id)[0][1] as y, // 坐标 y
+            fn::get_world_pos($this.id)[0][2] as z, // 坐标 z
             string::slice(refno.CATR.refno.PRTREF.refno.NAME,1) as ptre_name
             from {}"#, refnos_str);
             let mut response = db
@@ -1132,6 +1132,9 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
         .await?;
     let response = db
         .query(include_str!("material_list/nt/fn_get_valv_material.surql"))
+        .await?;
+    let response = db
+        .query(include_str!("material_list/fn_get_world_pos.surql"))
         .await?;
     Ok(())
 }
