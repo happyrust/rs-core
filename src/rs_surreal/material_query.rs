@@ -657,7 +657,7 @@ pub struct MaterialYkInstData {
     #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
     pub name: String,
-    pub pipe_name: Vec<String>,
+    pub pipe_name: Option<String>,
     pub room_code: String,
 }
 
@@ -666,7 +666,7 @@ impl MaterialYkInstData {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("传感器标识".to_string()).or_insert(self.name);
-        map.entry("对应根阀编号".to_string()).or_insert(serde_json::to_string(&self.pipe_name).unwrap_or("[]".to_string()));
+        map.entry("对应根阀编号".to_string()).or_insert(self.pipe_name.unwrap_or("".to_string()));
         map.entry("房间号".to_string()).or_insert(self.room_code);
         map
     }
@@ -688,7 +688,7 @@ pub async fn get_yk_inst_pipe(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         let sql = format!(r#"select
         id,
         fn::default_name($this.id) as name,
-        fn::yk_pipe_num($this.id).href as pipe_name,
+        fn::find_pipe_bran($this.id)[0][0] as pipe_name,
         '' as room_code
         from {}"#, refnos_str);
         let mut response = db
@@ -1116,7 +1116,7 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
         .query(include_str!("material_list/dq/fn_vec3_distance.surql"))
         .await?;
     let response = db
-        .query(include_str!("material_list/yk/fn_yk_pipe_num.surql"))
+        .query(include_str!("material_list/yk/fn_find_gy_bran.surql"))
         .await?;
     let response = db
         .query(include_str!("material_list/gy/fn_b_valv_supp.surql"))
