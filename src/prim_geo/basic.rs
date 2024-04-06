@@ -35,9 +35,9 @@ impl OccSharedShape {
     }
 
     #[inline]
-    pub fn transformed(&self, m: &DMat4) -> Self {
-        let s = self.0.transformed_by_gmat(m);
-        OccSharedShape::new(s)
+    pub fn transformed(&self, m: &DMat4) -> anyhow::Result<Self> {
+        let s = self.0.transformed_by_gmat(m)?;
+        Ok(OccSharedShape::new(s))
     }
 }
 

@@ -10,7 +10,7 @@ use lazy_static::lazy_static;
 use crate::cache::mgr::BytesTrait;
 use crate::pdms_types::*;
 use crate::types::*;
-use glam::Vec3;
+use glam::{DVec3, Vec3};
 use crate::PdmsDatabaseInfo;
 use crate::types::attmap::AttrMap;
 
@@ -43,8 +43,8 @@ pub struct PlinParam {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PlinParamData {
-    pub pt: Vec3,
-    pub plax: Vec3,
+    pub pt: DVec3,
+    pub plax: DVec3,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

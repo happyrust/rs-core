@@ -22,10 +22,37 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Update handling of attribute values and optimize SQL queries&#10;&#10;The commit improves the string representation of 'RefU64Type' in 'NamedAttrValue'. Changes in 'graph.rs' also enhance the efficacy of SQL queries with revised criteria. Additionally, enhancements in 'pdms_types.rs' aid in vector handling.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Add GeomPtsQuery structure in inst.rs&#10;&#10;Introduced a new structure, GeomPtsQuery, in inst.rs, which contains reference number, world transform, and a vector of points group data. The structure has been marked to support serialization, deserialization and debugging functionalities.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/basic.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/basic.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/room/room.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/room/room.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/spatial/pipe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/spatial/pipe.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_rotation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_rotation.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_spatial_caculation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_spatial_caculation.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/float_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/float_tool.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/math_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/math_tool.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -96,76 +123,84 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Batch.run (1).executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run_defines.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run aios_core.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::BOX::test_reflect.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::diff_data::test_query_diff.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::pdms_element::test_ele_reflect.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::sql::test_do_op_reflect_sql.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::test_do_op_reflect.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_complex_circe.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_complex_half_circle.executor&quot;: &quot;Debug&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_circle.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle_part.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_cire.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_concave.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_concave_big.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_cut_circle_big_corner_2.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_reverse_circle.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_refno::test_des_refno.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_schema::test_gen_att_schema.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_schema::test_gen_schema_from_json.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_sql::test_table::test_create_table.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_room::test_save_room_data.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor&quot;: &quot;Debug&quot;,
-    &quot;Cargo.Test test::test_sync2::test_gen_att_type_structs.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_sync2::test_parse.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.check.executor&quot;: &quot;Run&quot;,
-    &quot;Project.color&quot;: &quot;011c4a&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;test&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/basic&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
-    &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Batch.run (1).executor": "Run",
+    "Batch.run.executor": "Run",
+    "Batch.run_defines.executor": "Run",
+    "Cargo.Run aios_core.executor": "Run",
+    "Cargo.Test orm::BOX::test_reflect.executor": "Run",
+    "Cargo.Test orm::diff_data::test_query_diff.executor": "Run",
+    "Cargo.Test orm::pdms_element::test_ele_reflect.executor": "Run",
+    "Cargo.Test orm::sql::test_do_op_reflect_sql.executor": "Run",
+    "Cargo.Test orm::test_do_op_reflect.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_check_wire.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_check_wire_25688_45261.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_check_wire_25688_72092.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_1.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_circe.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_half_circle.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_half_circle_1.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_convex_hull.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_circle.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_circle.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_circle_part.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_cire.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_concave.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_concave_big.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_cut_circle_big_corner_2.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_reverse_circle.executor": "Run",
+    "Cargo.Test test::test_refno::test_des_refno.executor": "Run",
+    "Cargo.Test test::test_rotation::test_rotation_complex.executor": "Run",
+    "Cargo.Test test::test_schema::test_gen_att_schema.executor": "Run",
+    "Cargo.Test test::test_schema::test_gen_schema_from_json.executor": "Run",
+    "Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor": "Run",
+    "Cargo.Test test::test_sql::test_table::test_create_table.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor": "Run",
+    "Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor": "Run",
+    "Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor": "Run",
+    "Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor": "Run",
+    "Cargo.Test test::test_surreal::test_mdb::test_get_world.executor": "Run",
+    "Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash.executor": "Run",
+    "Cargo.Test test::test_surreal::test_room::test_save_room_data.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor": "Run",
+    "Cargo.Test test::test_sync2::test_gen_att_type_structs.executor": "Run",
+    "Cargo.Test test::test_sync2::test_parse.executor": "Run",
+    "Cargo.check.executor": "Run",
+    "Project.color": "011c4a",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "test",
+    "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core/src/basic",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs": "true",
+    "org.rust.first.attach.projects": "true",
+    "org.rust.first.attach.projects.stats": "true",
+    "org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs": "true",
+    "org.rust.hideToolchainNotifications": "true",
+    "settings.editor.selected.configurable": "preferences.fileTypes",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\basic" />
@@ -181,7 +216,7 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_geom::test_query_la_points">
+  <component name="RunManager" selected="Cargo.Test prim_geo::wire::test_complex_1">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -199,8 +234,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Run aios_core" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="run --package aios_core --bin aios_core" />
+    <configuration name="Test prim_geo::wire::test_check_wire_25688_72092" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_check_wire_25688_72092 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -216,8 +251,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_geom::test_query_la_points" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_geom::test_query_la_points -- --exact" />
+    <configuration name="Test prim_geo::wire::test_complex_1" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_complex_1 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -233,8 +268,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_graph::test_query_refnos_without_inst" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_graph::test_query_refnos_without_inst -- --exact" />
+    <configuration name="Test prim_geo::wire::test_complex_circe" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_complex_circe -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -250,8 +285,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_graph::test_query_refnos_without_insted" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_graph::test_query_refnos_without_insted -- --exact" />
+    <configuration name="Test prim_geo::wire::test_complex_half_circle" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_complex_half_circle -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -267,8 +302,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_query_group::test_group_cata_hash" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_query_group::test_group_cata_hash -- --exact" />
+    <configuration name="Test prim_geo::wire::test_complex_half_circle_1" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_complex_half_circle_1 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -304,19 +339,19 @@
     <list>
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_la_points" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash" />
-      <item itemvalue="Cargo.Run aios_core" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted" />
+      <item itemvalue="Cargo.Test prim_geo::wire::test_complex_1" />
+      <item itemvalue="Cargo.Test prim_geo::wire::test_complex_circe" />
+      <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
+      <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle_1" />
+      <item itemvalue="Cargo.Test prim_geo::wire::test_check_wire_25688_72092" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_la_points" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash" />
-        <item itemvalue="Cargo.Run aios_core" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted" />
+        <item itemvalue="Cargo.Test prim_geo::wire::test_complex_1" />
+        <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle_1" />
+        <item itemvalue="Cargo.Test prim_geo::wire::test_complex_circe" />
+        <item itemvalue="Cargo.Test prim_geo::wire::test_complex_half_circle" />
+        <item itemvalue="Cargo.Test prim_geo::wire::test_check_wire_25688_72092" />
       </list>
     </recent_temporary>
   </component>
@@ -677,7 +712,19 @@
       <workItem from="1711387898951" duration="38000" />
       <workItem from="1711446161438" duration="24121000" />
       <workItem from="1711644673824" duration="1572000" />
-      <workItem from="1711780869706" duration="4140000" />
+      <workItem from="1711780869706" duration="7081000" />
+      <workItem from="1711947369896" duration="985000" />
+      <workItem from="1711949919263" duration="8040000" />
+      <workItem from="1711962623231" duration="1857000" />
+      <workItem from="1712046613314" duration="11113000" />
+      <workItem from="1712064058057" duration="132000" />
+      <workItem from="1712064227878" duration="4566000" />
+      <workItem from="1712072928941" duration="14695000" />
+      <workItem from="1712242459569" duration="401000" />
+      <workItem from="1712243358561" duration="556000" />
+      <workItem from="1712243978710" duration="1163000" />
+      <workItem from="1712250112783" duration="4998000" />
+      <workItem from="1712385559241" duration="10962000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1022,7 +1069,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="285" />
+    <option name="localTasksCounter" value="287" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1065,8 +1112,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Add new options to clap flags in options.rs&#10;&#10;New command line options, 'pe_chunk' and 'att_chunk', have been added to the options.rs file. These modifications improve the flexibility and customizability of the program by allowing the user to input the values for these two new options. The user's experience and the program's functionality have been enhanced with this update." />
-    <MESSAGE value="Implement parse_to_i32_vec function and update attribute types in JSON&#10;&#10;Introduced a parse_to_i32_vec function in the helper module and modified attribute types from STRING to INTEGER in the all_attr_info.json file. The new function expands the parsing capabilities of the application. The modifications to the JSON file ensure the correct data types are used for default values, fostering data consistency and integrity." />
     <MESSAGE value="Change attribute types from STRING to INTEGER in JSON&#10;&#10;Updated the &quot;default_val&quot; and &quot;att_type&quot; fields in the 'all_attr_info.json' from STRING to INTEGER. This change ensures the correct data types are used for default values, improving data consistency and reliability across the application." />
     <MESSAGE value="update attr json" />
     <MESSAGE value="fix" />
@@ -1090,18 +1135,9 @@
     <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization" />
     <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance." />
     <MESSAGE value="Update handling of attribute values and optimize SQL queries&#10;&#10;The commit improves the string representation of 'RefU64Type' in 'NamedAttrValue'. Changes in 'graph.rs' also enhance the efficacy of SQL queries with revised criteria. Additionally, enhancements in 'pdms_types.rs' aid in vector handling." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update handling of attribute values and optimize SQL queries&#10;&#10;The commit improves the string representation of 'RefU64Type' in 'NamedAttrValue'. Changes in 'graph.rs' also enhance the efficacy of SQL queries with revised criteria. Additionally, enhancements in 'pdms_types.rs' aid in vector handling." />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/rs_surreal/spatial.rs</url>
-          <line>61</line>
-          <option name="timeStamp" value="5" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="Refactor attribute handling and optimize SQL queries&#10;&#10;Revised the handling of 'RefU64Type' in 'NamedAttrValue' for improved string representation. Optimized SQL queries in 'graph.rs' for increased performance and updated vector handling in 'pdms_types.rs'." />
+    <MESSAGE value="Add GeomPtsQuery structure in inst.rs&#10;&#10;Introduced a new structure, GeomPtsQuery, in inst.rs, which contains reference number, world transform, and a vector of points group data. The structure has been marked to support serialization, deserialization and debugging functionalities." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add GeomPtsQuery structure in inst.rs&#10;&#10;Introduced a new structure, GeomPtsQuery, in inst.rs, which contains reference number, world transform, and a vector of points group data. The structure has been marked to support serialization, deserialization and debugging functionalities." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

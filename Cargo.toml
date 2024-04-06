@@ -77,7 +77,7 @@ rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.3.0"
 
 
-geo = "0.27.0"
+geo = "0.28.0"
 cavalier_contours ={ path = "../cavalier_contours/cavalier_contours"}
 indexmap = { version="2.0.0", features=["serde"] }
 pretty-hex = "0.4.0"

@@ -579,7 +579,7 @@ impl EleInstGeosData {
             .iter()
             .filter(|x| x.geo_type == GeoBasicType::CataCrossNeg)
             .filter_map(|x| {
-                if let Some(mut s) = x.gen_occ_shape() {
+                if let Ok(mut s) = x.gen_occ_shape() {
                     s.as_mut().transform_by_mat(&transform.compute_matrix().as_dmat4());
                     let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
                     Some((own_pos_refnos, s))
@@ -599,7 +599,7 @@ impl EleInstGeosData {
             .iter()
             .filter(|x| x.geo_type == GeoBasicType::Neg)
             .filter_map(|x| {
-                if let Some(mut s) = x.gen_occ_shape() {
+                if let Ok(mut s) = x.gen_occ_shape() {
                     s.as_mut().transform_by_mat(&transform.compute_matrix().as_dmat4());
                     let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
                     Some((s, own_pos_refnos))
@@ -618,7 +618,7 @@ impl EleInstGeosData {
             .iter()
             .filter(|x| x.geo_type == GeoBasicType::Pos)
             .filter_map(|x| {
-                if let Some(s) = x.gen_occ_shape() {
+                if let Ok(s) = x.gen_occ_shape() {
                     Some((x.refno, s))
                 } else {
                     None
@@ -629,7 +629,7 @@ impl EleInstGeosData {
         for cate_neg_inst in self.insts.iter().filter(|x| x.is_cata_neg()) {
             cate_neg_inst.owner_pos_refnos.iter().for_each(|r| {
                 if let Some(pos_shape) = pos_shapes.get_mut(r) {
-                    if let Some(neg_shape) = cate_neg_inst.gen_occ_shape() {
+                    if let Ok(neg_shape) = cate_neg_inst.gen_occ_shape() {
                         *pos_shape = pos_shape.subtract(&neg_shape).into_shape().into();
                     }
                 }
@@ -714,12 +714,12 @@ impl EleInstGeo {
     }
 
     #[cfg(feature = "occ")]
-    pub fn gen_occ_shape(&self) -> Option<OccSharedShape> {
+    pub fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         let mut shape: OccSharedShape = self.geo_param.gen_occ_shape()?;
         //scale 不能要，已经包含在OCC的真实参数里
         let mut new_transform = self.transform;
         new_transform.scale = Vec3::ONE;
         shape.as_mut().transform_by_mat(&new_transform.compute_matrix().as_dmat4());
-        Some(shape)
+        Ok(shape)
     }
 }

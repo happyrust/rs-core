@@ -1,6 +1,8 @@
 use glam::{Vec2, Vec3};
 use ordered_float::OrderedFloat;
 use std::hash::{Hash, Hasher};
+use glam::DVec3;
+use glam::DVec4;
 
 pub fn cal_vec3_hash(v: Vec3) -> u64 {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -122,6 +124,22 @@ pub fn f64_ceil_3(v: f64) -> f64 {
 }
 
 #[inline]
+pub fn f64_trunc_3(v: f64) -> f64 {
+    ((v * 1000.0) as i64) as f64 / 1000.0f64 //以防止溢出
+}
+
+#[inline]
 pub fn f64_round_1(v: f64) -> f64 {
     (v * 10.0).round() / 10.0f64 //以防止溢出
+}
+
+
+#[inline]
+pub fn dvec3_round_3(v: DVec3) -> DVec3 {
+    DVec3::new(f64_round_3(v.x), f64_round_3(v.y), f64_round_3(v.z))
+}
+
+#[inline]
+pub fn dvec4_round_3(v: DVec4) -> DVec4 {
+    DVec4::new(f64_round_3(v.x), f64_round_3(v.y), f64_round_3(v.z), f64_round_3(v.w))
 }

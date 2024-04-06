@@ -22,3 +22,17 @@ fn test_rotation() {
     let axis_1 = rotation * Vec3::Z;
     dbg!(to_pdms_vec_xyz_str(&axis_1));
 }
+
+#[test]
+fn test_rotation_complex() {
+    //170
+    let rotation = parse_ori_str_to_quat("Y is X 23.729 Y 80 -Z and Z is Y 23.999 -X 0.0477 -Z").unwrap();
+    dbg!(Mat3::from_quat(rotation));
+    dbg!(quat_to_pdms_ori_xyz_str(&rotation));
+
+    //0
+    let rotation = parse_ori_str_to_quat("Y is Y 23.999 -X 89.952 Z and Z is Y 23.999 -X 0.0477 -Z").unwrap();
+    dbg!(Mat3::from_quat(rotation));
+    dbg!(quat_to_pdms_ori_xyz_str(&rotation));
+
+}

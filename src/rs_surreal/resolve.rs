@@ -209,7 +209,6 @@ fn replace_all_result<E>(
 pub fn eval_str_to_f64(
     input_expr: &str,
     context: &CataContext,
-    replace_err_by_zero: bool,
     dtse_unit: &str,
 ) -> anyhow::Result<f64> {
     if input_expr.is_empty() || input_expr == "UNSET" {
@@ -289,7 +288,7 @@ pub fn eval_str_to_f64(
                     .get(&key)
                     .map(|x| x.to_string())
                     .unwrap_or("0".to_string());
-                if let Ok(t) = eval_str_to_f64(&v, &context, false, "DIST") {
+                if let Ok(t) = eval_str_to_f64(&v, &context, "DIST") {
                     Ok(t.to_string())
                 } else {
                     //use default value
@@ -542,6 +541,15 @@ pub fn eval_str_to_f64(
     }
 }
 
+pub async fn resolve_expression(
+    expr: &str,
+    desi_refno: RefU64,
+    is_tubi: bool,
+) -> anyhow::Result<f64> {
+    let context = get_or_create_cata_context(desi_refno, is_tubi).await?;
+    eval_str_to_f64(expr, &context, "DIST")
+}
+
 /// 通用的解析表达式的方法, 解析desi参考号下的 表达式值
 /// 如果 desi_refno 为空，代表design的数据不需要参与计算
 pub async fn resolve_expression_to_f32(
@@ -559,7 +567,7 @@ pub fn eval_str_to_f32(
     dtse_unit: &str,
 ) -> anyhow::Result<f32> {
     let input_expr = input_expr.as_ref().trim().to_uppercase();
-    eval_str_to_f64(&input_expr, context, true, dtse_unit).map(|x| x as f32)
+    eval_str_to_f64(&input_expr, context, dtse_unit).map(|x| x as f32)
 }
 
 pub fn eval_str_to_f32_or_default(

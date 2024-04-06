@@ -12,6 +12,12 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
+use parry3d::shape::TriMeshFlags;
+use crate::shape::pdms_shape::PlantMesh;
+use std::collections::HashMap;
+use parry3d::shape::TriMesh;
+use dashmap::DashMap;
+use dashmap::mapref::one::Ref;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RStarBoundingBox {
@@ -60,6 +66,7 @@ impl rstar::PointDistance for RStarBoundingBox {
 #[derive(Clone, Default, Serialize, Deserialize, Resource)]
 pub struct AccelerationTree {
     pub tree: rstar::RTree<RStarBoundingBox>,
+    mesh_cache: DashMap<RefU64, Vec<TriMesh>>,
 }
 
 impl Deref for AccelerationTree {
@@ -84,8 +91,6 @@ pub struct QueryRay {
     pub solid: bool,
     pub min_dist: Cell<f32>,
     pub min_refnos: RefCell<HashSet<RefU64>>,
-    //当只有一个结果时，是否跳过检查mesh
-    pub skip_mesh_check: bool,
 }
 
 impl QueryRay {
@@ -98,7 +103,6 @@ impl QueryRay {
             min_dist: Cell::new(f32::MAX),
             min_refnos: RefCell::new(HashSet::default()),
             solid,
-            skip_mesh_check: true,
         }
     }
 }
@@ -157,6 +161,7 @@ impl AccelerationTree {
     pub fn load(bounding_boxes: Vec<RStarBoundingBox>) -> Self {
         Self {
             tree: rstar::RTree::bulk_load(bounding_boxes),
+            ..Default::default()
         }
     }
 
@@ -168,7 +173,7 @@ impl AccelerationTree {
         &'a self,
         loc: Vec3,
         distance: f32,
-    ) -> impl Iterator<Item = (RefU64, Aabb)> + 'a {
+    ) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
         self.tree
             .locate_within_distance([loc.x, loc.y, loc.z], distance.powi(2))
             .map(|bb| (bb.refno, bb.aabb))
@@ -177,7 +182,7 @@ impl AccelerationTree {
     pub fn locate_intersecting_bounds<'a>(
         &'a self,
         bounds: &Aabb,
-    ) -> impl Iterator<Item = (RefU64, Aabb)> + 'a {
+    ) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
         self.tree
             .locate_in_envelope_intersecting(&rstar::AABB::from_corners(
                 [bounds.mins[0], bounds.mins[1], bounds.mins[2]],
@@ -186,7 +191,7 @@ impl AccelerationTree {
             .map(|bb| (bb.refno, bb.aabb))
     }
 
-    pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item = (RefU64, Aabb)> + 'a {
+    pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
         self.tree
             .locate_in_envelope(&rstar::AABB::from_corners(
                 [bounds.mins[0], bounds.mins[1], bounds.mins[2]],
@@ -213,68 +218,68 @@ impl AccelerationTree {
         Ok(bincode::deserialize(&buf)?)
     }
 
+    pub async fn get_tri_mesh(&self, refno: RefU64) -> Option<Ref<RefU64, Vec<TriMesh>>> {
+        if let Some(r) = self.mesh_cache.get(&refno)  {
+            return Some(r);
+        }
+        let geom_insts = crate::query_insts(&[refno]).await.ok()?;
+        dbg!(geom_insts.len());
+        let mut meshes = vec![];
+        for g in geom_insts {
+            // dbg!(&g);
+            for inst in &g.insts {
+                let Ok(mesh) = PlantMesh::des_mesh_file(&format!("assets/meshes/{}.mesh", inst.geo_hash)) else {
+                    continue;
+                };
+                dbg!(mesh.vertices.len());
+                if mesh.vertices.is_empty() {
+                    continue;
+                }
+                let trans = g.world_trans * inst.transform;
+                let tri_mesh = mesh.get_tri_mesh(trans.compute_matrix());
+                meshes.push(tri_mesh);
+            }
+        }
+        self.mesh_cache.insert(refno, meshes);
+        return self.mesh_cache.get(&refno);
+    }
+
     /// Returns the refno of the nearest object to `query_point`
     /// 也可以检查墙等等，需要判断mesh
-    pub async fn query_nearest_by_ray(&self, ray: QueryRay) -> RefU64 {
+    pub async fn query_nearest_by_ray(&self, ray: QueryRay) -> anyhow::Result<Option<(RefU64, f32)>> {
         let _ = self
             .tree
             .locate_with_selection_function(&ray)
             .collect::<Vec<_>>();
         let refnos = ray.min_refnos.borrow();
         if refnos.is_empty() {
-            return RefU64::default();
+            return Ok(None);
         }
-        if ray.skip_mesh_check && refnos.len() == 1 {
-            return refnos.iter().next().unwrap().clone();
-        }
-        dbg!(&refnos);
         //检查是否真的和ray相交, 根据 profile 判断吗？
         //根据 param 判断是否相交吗？
         //直接检查是否在表面上即可
-        let pes = refnos
-            .iter()
-            .map(|x| x.to_pe_key())
-            .collect::<Vec<_>>()
-            .join(",");
-        let mut response = SUL_DB
-        .query(format!(r#"
-            let $a = (select value (select * from ->inst_relate where type>=0 order by type desc)[0] from [{}])[where $this != none];
-            select in.id as refno, aabb.d as world_aabb, world_trans.d as world_trans, 
-            (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none) as insts from $a where world_trans.d!=none
-            "#, pes))
-        .await
-        .unwrap();
-        let geom_insts = response.take::<Vec<GeomInstQuery>>(1).unwrap();
-        dbg!(geom_insts.len());
-        // for g in geom_insts {
-        //     for inst in &g.insts {
-        //         let geo_data = PlantGeoData::load_from_file_by_hash(
-        //             inst.geo_hash,
-        //             "assets/meshes",
-        //         );
-        //         if let Some(mesh) = geo_data.mesh {
-        //             let trans = g.world_trans * inst.transform;
-        //             let tri_mesh = mesh.get_tri_mesh(trans.compute_matrix());
-        //             let intersection_flag = match tri_mesh.cast_local_ray_and_get_normal(
-        //                 &ray.ray,
-        //                 10_0000.0,
-        //                 ray.solid,
-        //             ) {
-        //                 // Some(intersection) => tri_mesh.is_backface(intersection.feature),
-        //                 Some(intersection) =>{
-        //                     dbg!(&intersection);
-        //                     true
-        //                 }
-        //                 None => false,
-        //             };
-        //             if intersection_flag{
-        //                 // break;
-        //                 return g.refno;
-        //             }
-        //         }
-        //     }
-        // }
-        return RefU64::default();
+        for &refno in refnos.iter(){
+            let Some(tri_meshes) = self.get_tri_mesh(refno).await else{
+                continue;
+            };
+            for mesh in tri_meshes.value() {
+                let intersection_flag = match mesh.cast_local_ray_and_get_normal(
+                    &ray.ray,
+                    10_0000.0,
+                    ray.solid,
+                ) {
+                    // Some(intersection) => tri_mesh.is_backface(intersection.feature),
+                    Some(intersection) => {
+                        // dbg!(&intersection);
+                        true
+                    }
+                    None => false,
+                };
+                if intersection_flag {
+                    return Ok(Some((refno, ray.min_dist.get())));
+                }
+            }
+        }
+        return Ok(None);
     }
-
 }

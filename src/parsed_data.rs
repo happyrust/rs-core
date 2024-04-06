@@ -136,14 +136,14 @@ impl CateAxisParam{
         let mut axis = self.clone();
         axis.pt = trans.transform_point(axis.pt);
         axis.dir = trans.transform_vec3(axis.dir);
-        axis.ref_dir = trans.transform_vec3(axis.ref_dir);
+        // axis.ref_dir = trans.transform_vec3(axis.ref_dir);
         axis
     }
 
     pub fn transform(&mut self, trans: &Transform){
         self.pt = trans.transform_point(self.pt);
         self.dir = trans.transform_vec3(self.dir);
-        self.ref_dir = trans.transform_vec3(self.ref_dir);
+        // self.ref_dir = trans.transform_vec3(self.ref_dir);
     }
 }
 
@@ -165,6 +165,7 @@ impl Default for CateAxisParam {
 }
 
 pub mod geo_params_data {
+    use anyhow::anyhow;
     use crate::prim_geo::ctorus::CTorus;
     use crate::prim_geo::{cylinder::*, LPyramid};
     use crate::prim_geo::dish::Dish;
@@ -309,24 +310,23 @@ pub mod geo_params_data {
         }
 
         #[cfg(feature = "occ")]
-        pub fn gen_occ_shape(&self) -> Option<OccSharedShape> {
+        pub fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
             match self {
-                PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimLCylinder(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimExtrusion(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimLoft(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::Unknown => None,
-                PdmsGeoParam::PrimBox(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimLSnout(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimDish(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimSphere(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimCTorus(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimRTorus(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimPyramid(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimLPyramid(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimRevolution(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::PrimPolyhedron(s) => s.gen_occ_shape().ok(),
-                PdmsGeoParam::CompoundShape => None,
+                PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimLCylinder(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimExtrusion(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimLoft(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimBox(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimLSnout(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimDish(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimSphere(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimCTorus(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimRTorus(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimPyramid(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimLPyramid(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimRevolution(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimPolyhedron(s) => s.gen_occ_shape(),
+                _ => Err(anyhow!("Not support this shape")),
             }
         }
 

@@ -94,7 +94,7 @@ impl From<SurlValue> for NamedAttrMap {
                                 if p.len() < 3 {
                                     //如果不够3个，就补0，错误处理？
                                     NamedAttrValue::Vec3Type(Vec3::ZERO)
-                                }else{
+                                } else {
                                     NamedAttrValue::Vec3Type(Vec3::new(p[0], p[1], p[2]))
                                 }
                             }
@@ -637,10 +637,7 @@ impl NamedAttrMap {
     }
 
     pub fn get_dvec3(&self, key: &str) -> Option<DVec3> {
-        if let NamedAttrValue::Vec3Type(d) = self.get_val(key)? {
-            return Some(DVec3::new(d[0] as _, d[1] as _, d[2] as _));
-        }
-        None
+        self.get_vec3(key).map(|v| DVec3::from(v))
     }
 
     pub fn get_i32_vec(&self, key: &str) -> Option<Vec<i32>> {
@@ -675,10 +672,10 @@ impl NamedAttrMap {
         self.map.get(key).into()
     }
 
-    // #[inline]
-    // pub fn get_f64(&self, key: &str) -> Option<f64> {
-    //     self.get_val(key)?.double_value()
-    // }
+    #[inline]
+    pub fn get_f64(&self, key: &str) -> Option<f64> {
+        self.get_f32(key).map(|x| x as f64)
+    }
 
     #[inline]
     pub fn get_f32(&self, key: &str) -> Option<f32> {
@@ -715,12 +712,22 @@ impl NamedAttrMap {
     }
 
     #[inline]
+    pub fn get_dposs(&self) -> Option<DVec3> {
+       self.get_poss().map(|v| DVec3::from(v))
+    }
+
+    #[inline]
     pub fn get_pose(&self) -> Option<Vec3> {
         let pos = self.get_f32_vec("POSE")?;
         if pos.len() == 3 {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         }
         None
+    }
+
+    #[inline]
+    pub fn get_dpose(&self) -> Option<DVec3> {
+        self.get_pose().map(|v| DVec3::from(v))
     }
 
     #[inline]

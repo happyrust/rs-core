@@ -55,6 +55,16 @@ pub async fn get_ancestor(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     Ok(s?)
 }
 
+// #[cached(result = true)]
+// pub async fn get_ancestor_types(refno: RefU64) -> anyhow::Result<Vec<String>> {
+//     let mut response = SUL_DB
+//         .query(include_str!("schemas/query_ancestor_by_refno.surql"))
+//         .bind(("refno", refno.to_string()))
+//         .await?;
+//     let s = response.take::<Vec<RefU64>>(1);
+//     Ok(s?)
+// }
+
 ///查询到祖先节点属性数据
 #[cached(result = true)]
 pub async fn get_ancestor_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
@@ -429,4 +439,13 @@ pub async fn query_single_by_paths(
     let mut response = SUL_DB.query(sql).bind(("refno", refno.to_string())).await?;
     let r: Option<NamedAttrMap> = response.take(0)?;
     Ok(r.unwrap_or_default())
+}
+
+///通过类型过滤所有的参考号
+pub async fn query_refnos_by_type(noun: &str) -> anyhow::Result<Vec<RefU64>>{
+    let mut response = SUL_DB
+        .query(format!(r#"select value meta::id(id) from {}"#, noun.to_uppercase()))
+        .await?;
+    let refnos: Vec<RefU64> = response.take(0)?;
+    Ok(refnos)
 }

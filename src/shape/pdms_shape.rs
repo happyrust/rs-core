@@ -17,7 +17,7 @@ use dyn_clone::DynClone;
 use itertools::Itertools;
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
-use parry3d::shape::TriMesh;
+use parry3d::shape::{TriMesh, TriMeshFlags};
 use std::io::BufWriter;
 use std::path::Path;
 use std::vec;
@@ -106,9 +106,13 @@ impl PlantMesh {
         })
     }
 
-    //集成lod的功能
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> TriMesh {
+        self.get_tri_mesh_with_flag(trans, TriMeshFlags::default())
+    }
+
+    #[inline]
+    pub fn get_tri_mesh_with_flag(&self, trans: Mat4, flag: TriMeshFlags) -> TriMesh {
         let mut points: Vec<Point<f32>> = vec![];
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
@@ -119,8 +123,7 @@ impl PlantMesh {
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        TriMesh::with_flags(points, indices,  parry3d::shape::TriMeshFlags::ORIENTED)
-        // TriMesh::new(points, indices)
+        TriMesh::with_flags(points, indices, flag)
     }
 
     ///计算aabb
@@ -267,7 +270,8 @@ impl PlantMesh {
 
 pub const TRI_TOL: f32 = 0.001;
 pub const LEN_TOL: f32 = 0.001;
-pub const ANGLE_RAD_TOL: f32 = 0.0001;
+pub const ANGLE_RAD_TOL: f32 = 0.001;
+pub const ANGLE_RAD_F64_TOL: f64 = 0.001;
 pub const MIN_SIZE_TOL: f32 = 0.01;
 pub const MAX_SIZE_TOL: f32 = 1.0e5;
 dyn_clone::clone_trait_object!(BrepShapeTrait);

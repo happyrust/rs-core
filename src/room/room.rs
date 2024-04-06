@@ -14,6 +14,11 @@ pub static GLOBAL_AABB_TREE: Lazy<RwLock<AccelerationTree>> =
 // 不要每次都加载，需要检查缓存，如果缓存有，就不用从数据库里刷新了
 pub async fn load_aabb_tree() -> anyhow::Result<bool> {
 
+    {
+        if !GLOBAL_AABB_TREE.read().await.is_empty(){
+            return Ok(true);
+        }
+    }
     //如果有缓存文件，直接读取缓存文件
     //测试分页查询
     let mut rstar_objs = vec![];

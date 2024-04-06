@@ -1,32 +1,33 @@
+use crate::shape::pdms_shape::{BrepMathTrait, LEN_TOL};
+use crate::tool::float_tool::*;
+use crate::tool::float_tool::{cal_vec2_hash_string, cal_xy_hash_string, vec3_round_2};
+use anyhow::anyhow;
+use approx::abs_diff_eq;
 use cavalier_contours::core::traits::Real;
 use cavalier_contours::polyline::internal::pline_intersects::visit_global_self_intersects;
 use cavalier_contours::polyline::*;
 use cavalier_contours::static_aabb2d_index::StaticAABB2DIndex;
 use cgmath::Basis2;
 use geo::convex_hull::{graham_hull, quick_hull};
-use geo::{coord, IsConvex};
+use geo::LineString;
+use geo::Polygon;
+use geo::{coord, Contains, ConvexHull, IsConvex};
 use glam::{DVec2, DVec3, Quat, Vec3};
 use nalgebra::ComplexField;
 use serde_derive::{Deserialize, Serialize};
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
 
-use crate::shape::pdms_shape::{BrepMathTrait, LEN_TOL};
-use crate::tool::float_tool::*;
-use crate::tool::float_tool::{cal_vec2_hash_string, cal_xy_hash_string, vec3_round_2};
-use anyhow::anyhow;
-use approx::abs_diff_eq;
-
-use std::collections::{BTreeSet, HashMap};
-use std::f32::consts::PI;
-use std::f64::consts::FRAC_PI_2;
 use cavalier_contours::core::math::bulge_from_angle;
 use cavalier_contours::pline_closed;
+use clap::builder::TypedValueParser;
+use std::collections::{BTreeSet, HashMap};
+use std::f32::consts::PI;
 
 #[cfg(feature = "occ")]
 use opencascade::primitives::{Edge, Wire};
 
 #[derive(
-Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub enum CurveType {
     Fill,
@@ -181,32 +182,57 @@ pub fn to_debug_json_str(pline: &Polyline) -> String {
 fn gen_fillet_spline(pt: DVec3, d1: DVec3, d2: DVec3, r: f64, sig_num: f64) -> Polyline {
     let mut pline = Polyline::new_closed();
     let angle = d1.angle_between(d2);
+    dbg!(angle.to_degrees());
+    let bulge = f64_trunc_3(bulge_from_angle(PI as f64 - angle)) * sig_num;
+    dbg!(bulge);
+
     let l = r / (angle / 2.0).tan();
     let p0 = pt + d1 * l;
     let p2 = pt + d2 * l;
-
-    let bulge = bulge_from_angle(PI as f64 - angle) * sig_num;
-    dbg!(bulge);
-    pline.add(pt.x, pt.y, 0.0);
+    // let bulge = 0.3998724443344795;
     pline.add(p0.x, p0.y, bulge);
     pline.add(p2.x, p2.y, 0.0);
+    pline.add(pt.x, pt.y, 0.0);
     // dbg!(&pline);
     println!("pline: {}", to_debug_json_str(&pline));
     pline
 }
 
+#[inline]
+fn add_fillet_spline(pline: &mut Polyline, pt: DVec3, d1: DVec3, d2: DVec3, r: f64) {
+    // let mut pline = Polyline::new_closed();
+    let angle = d1.angle_between(d2);
+    let l = r / (angle / 2.0).tan();
+    let p0 = pt + d1 * l;
+    let p2 = pt + d2 * l;
+
+    let bulge = bulge_from_angle(PI as f64 - angle);
+    dbg!(bulge);
+    // pline.add(pt.x, pt.y, 0.0);
+    pline.add(p0.x, p0.y, bulge);
+    pline.add(p2.x, p2.y, 0.0);
+}
+
 #[test]
 fn test_gen_occ_circle() {
-    let pts = vec![Vec3::ZERO, Vec3::new(1.0, 0.0, 0.0),
-                   Vec3::new(1.0, 1.0, 0.0), Vec3::new(0.0, 1.0, 0.0)];
+    let pts = vec![
+        Vec3::ZERO,
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ];
     let fradius = vec![0.5; 4];
     gen_occ_wire(&pts, &fradius);
 }
 
 #[test]
 fn test_gen_occ_reverse_circle() {
-    let mut pts = vec![Vec3::ZERO, Vec3::new(1.0, 0.0, 0.0),
-                       Vec3::new(1.0, 1.0, 0.0), Vec3::new(0.0, 1.0, 0.0)];
+    let mut pts = vec![
+        Vec3::ZERO,
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ];
     pts.reverse();
     let mut fradius = vec![0.5; 4];
     gen_occ_wire(&pts, &fradius);
@@ -214,62 +240,88 @@ fn test_gen_occ_reverse_circle() {
 
 #[test]
 fn test_gen_occ_circle_part() {
-    let pts = vec![Vec3::ZERO, Vec3::new(1.0, 0.0, 0.0),
-                   Vec3::new(1.0, 1.0, 0.0), Vec3::new(0.0, 1.0, 0.0)];
+    let pts = vec![
+        Vec3::ZERO,
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ];
     let fradius = vec![0.2; 4];
     gen_occ_wire(&pts, &fradius);
 }
 
 #[test]
 fn test_gen_occ_cut_circle_big_corner_1() {
-    let pts = vec![Vec3::ZERO, Vec3::new(1.0, 0.0, 0.0),
-                   Vec3::new(1.0, 1.0, 0.0), Vec3::new(0.0, 1.0, 0.0)];
+    let pts = vec![
+        Vec3::ZERO,
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ];
     let fradius = vec![1.0f32, 0.0, 0.0, 0.0];
     gen_occ_wire(&pts, &fradius);
 }
 
 #[test]
 fn test_gen_occ_cut_circle_big_corner_2() {
-    let pts = vec![Vec3::ZERO, Vec3::new(1.0, 0.0, 0.0),
-                   Vec3::new(1.0, 1.0, 0.0), Vec3::new(0.0, 1.0, 0.0)];
+    let pts = vec![
+        Vec3::ZERO,
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ];
     let fradius = vec![1.5, 0.0, 0.0, 0.0];
     gen_occ_wire(&pts, &fradius);
 }
 
 #[test]
 fn test_gen_occ_concave() {
-    let pts = vec![Vec3::ZERO, Vec3::new(0.5, 0.5, 0.0), Vec3::new(1.0, 0.0, 0.0),
-                   Vec3::new(1.0, 1.0, 0.0), Vec3::new(0.0, 1.0, 0.0)];
+    let pts = vec![
+        Vec3::ZERO,
+        Vec3::new(0.5, 0.5, 0.0),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ];
     let fradius = vec![0.0, 0.25, 0.0, 0.0, 0.0];
     gen_occ_wire(&pts, &fradius);
 }
 
 #[test]
 fn test_gen_occ_concave_big() {
-    let pts = vec![Vec3::ZERO, Vec3::new(0.5, 0.5, 0.0), Vec3::new(1.0, 0.0, 0.0),
-                   Vec3::new(1.0, 1.0, 0.0), Vec3::new(0.0, 1.0, 0.0)];
+    let pts = vec![
+        Vec3::ZERO,
+        Vec3::new(0.5, 0.5, 0.0),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ];
     let fradius = vec![0.0, 1.5, 0.0, 0.0, 0.0];
     gen_occ_wire(&pts, &fradius);
 }
 
 #[test]
 fn test_complex_circe() {
-    let parts = vec!(
-        pline_closed![(268.621, -355.708, 0.0),
-(268.621, -355.708, 0.0),
-(-122.01, 1733.97, 0.0),
-(-539.001, 268.39, 0.0),
-(0.0, 0.0, 0.0),
-(0.003, -0.002, 0.0),
-(0.0, 0.0, 0.792),
-(-621.874, -748.901, 0.0),
-(-621.874, -748.901, 0.0),
-(-621.874, -748.901, 0.0),
-(-621.874, -748.901, 0.792)],
-        pline_closed![(-122.01, 1733.97, 0.0),
-(268.62, -355.704, 0.792),
-(-703.78, -310.749, 0.0)]
-    );
+    let parts = vec![
+        pline_closed![
+            (268.621, -355.708, 0.0),
+            (268.621, -355.708, 0.0),
+            (-122.01, 1733.97, 0.0),
+            (-539.001, 268.39, 0.0),
+            (0.0, 0.0, 0.0),
+            (0.003, -0.002, 0.0),
+            (0.0, 0.0, 0.792),
+            (-621.874, -748.901, 0.0),
+            (-621.874, -748.901, 0.0),
+            (-621.874, -748.901, 0.0),
+            (-621.874, -748.901, 0.792)
+        ],
+        pline_closed![
+            (-122.01, 1733.97, 0.0),
+            (268.62, -355.704, 0.792),
+            (-703.78, -310.749, 0.0)
+        ],
+    ];
     println!("polyline: {}", to_debug_json_str(&parts[0]));
     println!("polyline: {}", to_debug_json_str(&parts[1]));
 
@@ -285,22 +337,77 @@ fn test_complex_circe() {
 
 #[test]
 fn test_complex_half_circle() {
-    let pts = vec![Vec3::new(233.5, 0.0, 0.0), Vec3::new(222.0, 233.5, 0.0),
-                   Vec3::new(-233.5, 233.5, 0.0),
-                   Vec3::new(-233.5, 0.0, 0.0)];
+    let pts = vec![
+        Vec3::new(233.5, 0.0, 0.0),
+        Vec3::new(222.0, 233.5, 0.0),
+        Vec3::new(-233.5, 233.5, 0.0),
+        Vec3::new(-233.5, 0.0, 0.0),
+    ];
     let fradius = vec![0.0, 233.5, 233.5, 0.0];
     gen_occ_wire(&pts, &fradius);
-        // .expect("test_complex_half_circle failed");
+    // .expect("test_complex_half_circle failed");
+}
+
+#[test]
+fn test_complex_half_circle_1() {
+    let pts = vec![
+        Vec3::new(233.5, 0.0, 0.0),
+        Vec3::new(222.0, 233.5, 0.0),
+        Vec3::new(-233.5, 233.5, 0.0),
+        Vec3::new(-233.5, 0.0, 0.0),
+    ];
+    let fradius = vec![0.0, 150.0, 150.0, 0.0];
+    gen_occ_wire(&pts, &fradius);
+    // .expect("test_complex_half_circle failed");
+}
+
+#[test]
+fn test_complex_1() {
+    let tmp_pts = vec![
+        [0.000, 0.000, 0.000],
+        [0.000, 15337.730, 0.000],
+        [-30432.971, 19187.180, 0.000],
+        [-34251.980, 4332.510, 0.000],
+        [-38584.891, 5526.540, 0.000],
+        [-36528.699, 13400.760, 0.000],
+        [-29829.340, 18021.330, 0.000],
+        [-11801.380, 30455.260, 0.000],
+        [631.700, 12426.700, 0.000],
+        [4267.570, 7155.040, 0.000],
+        [4486.860, 758.430, 0.000],
+    ];
+    let pts = tmp_pts
+        .iter()
+        .map(|x| Vec3::new(x[0], x[1], x[2]))
+        .collect::<Vec<_>>();
+    let fradius = vec![
+        0.0,
+        17400.0,
+        17400.0,
+        0.0,
+        0.0,
+        21900.0,
+        0.0,
+        21900.0,
+        0.0,
+        21900.0,
+        0.0,
+    ];
+    gen_occ_wire(&pts, &fradius);
+    // .expect("test_complex_half_circle failed");
 }
 
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire_test(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
         return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
     }
     let mut edges = vec![];
     let len = pts.len();
-    let pts = pts.iter().map(|t| DVec3::new(t.x as f64, t.y as f64, 0.0)).collect::<Vec<_>>();
+    let pts = pts
+        .iter()
+        .map(|t| DVec3::new(t.x as f64, t.y as f64, 0.0))
+        .collect::<Vec<_>>();
     let has_fradius = fradius_vec.iter().any(|x| *x > 0.0);
     //如果没有fradius，直接简单的返回wire
     if !has_fradius {
@@ -311,52 +418,67 @@ pub fn gen_occ_wire_test(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Res
         }
     } else {
         let mut polyline = Polyline::new_closed();
-        let mut parts = vec![];
+        let mut neg_parts = vec![];
         let mut is_concave = false;
         for i in 0..len {
             //如果当前点有fradius，其实是前一个点的bulge
             let fradius = fradius_vec[i] as f64;
             let last = pts[(i + len - 1) % len];
             let pt = pts[i];
-            polyline.add(pt.x as f64, pt.y as f64, 0.0);
             //如果fradius > 0.0，需要检查wind 方向
-            if fradius > 0.0 {
-                let next = pts[(i + 1) % len];
-                let v1 = (pt - last).normalize();
-                let v2 = (next - pt).normalize();
-                let mut prev_last = pts[(i + len - 2) % len];
-                let mut v0 = (last - prev_last).normalize();
-                if (1.0 - v0.dot(v1).abs()).abs() < 0.01 {
-                    prev_last = pts[(i + len - 3) % len];
-                    dbg!(prev_last);
-                    v0 = (last - prev_last).normalize();
-                }
+            let next = pts[(i + 1) % len];
+            let v1 = (pt - last).normalize();
+            let v2 = (next - pt).normalize();
+            let mut prev_last = pts[(i + len - 2) % len];
+            let mut v0 = (last - prev_last).normalize();
+            if (1.0 - v0.dot(v1).abs()).abs() < 0.01 {
+                prev_last = pts[(i + len - 3) % len];
+                dbg!(prev_last);
+                v0 = (last - prev_last).normalize();
+            }
 
-                let mut wind_sig =  1.0;
-                if  (v0.cross(v1).z * v1.cross(v2).z) < 0.0{
-                    is_concave = !is_concave;
-                }
+            let mut wind_sig = 1.0;
+            //是否发生反转
+            let check_v = (v0.cross(v1).normalize_or_zero().z * v1.cross(v2).normalize_or_zero().z);
+            let check_parallel = v1.dot(v2).abs();
+            // dbg!(check_v);
+            // dbg!(check_parallel);
+            if check_parallel < 0.99 && check_v < -0.1 {
+                is_concave = !is_concave;
+            }
+            dbg!((i, pt, is_concave));
+            // if is_concave {
+            //     dbg!((fradius));
+            //     dbg!((v0.cross(v1).z * v1.cross(v2).z));
+            // }
+            if fradius > 0.0 {
                 if is_concave {
-                    dbg!(pt);
+                    add_fillet_spline(&mut polyline, pt, -v1, v2, fradius);
+                }else{
+                    let counter_clock = v1.cross(v2).z > 0.0;
+                    let mut counter_sig = if counter_clock { 1.0 } else { -1.0 };
+                    let neg_part = gen_fillet_spline(pt, -v1, v2, fradius, counter_sig * wind_sig);
+                    neg_parts.push((neg_part, false));
+                    polyline.add(pt.x, pt.y, 0.0);
                 }
-                let counter_clock = v1.cross(v2).z > 0.0;
-                // dbg!((prev_cc, counter_clock));
-                let mut counter_sig = if counter_clock { 1.0  } else { -1.0 };
-                let part = gen_fillet_spline(pt, -v1, v2, fradius, counter_sig * wind_sig);
-                dbg!(parts.len());
-                parts.push((part, is_concave));
+            }else{
+                polyline.add(pt.x, pt.y, 0.0);
             }
         }
 
         println!("polyline: {}", to_debug_json_str(&polyline));
         let mut i = 0;
-        parts.retain(|(part, union)|{
-            let mut result = polyline.boolean(part,
-                                              if *union { BooleanOp::Or } else { BooleanOp::Not });
+        neg_parts.retain(|(part, union)| {
+            let mut result = polyline.boolean(
+                part,
+                if *union {
+                    BooleanOp::Or
+                } else {
+                    BooleanOp::Not
+                },
+            );
             i += 1;
-            dbg!((union, i));
             if !result.pos_plines.is_empty() {
-                // dbg!(&result.pos_plines);
                 polyline = result.pos_plines.remove(0).pline;
                 println!("{i}: {}", to_debug_json_str(&polyline));
                 false
@@ -365,37 +487,6 @@ pub fn gen_occ_wire_test(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Res
                 true
             }
         });
-        dbg!(parts.len());
-        let mut i = 0;
-        parts.retain(|(part, union)|{
-            let mut result = polyline.boolean(part,
-                                              if *union { BooleanOp::Or } else { BooleanOp::Not });
-            // dbg!((union, i));
-            i += 1;
-            if !result.pos_plines.is_empty() {
-                // dbg!(&result.pos_plines);
-                polyline = result.pos_plines.remove(0).pline;
-                println!("{i}: {}", to_debug_json_str(&polyline));
-                false
-            } else {
-                println!("part: {}", to_debug_json_str(&part));
-                dbg!("boolean failed");
-                true
-            }
-        });
-        // for (i, (part, union)) in parts.into_iter().enumerate() {
-        //     let mut result = polyline.boolean(&part,
-        //                                       if union { BooleanOp::Or } else { BooleanOp::Not });
-        //     dbg!((union, i));
-        //     if !result.pos_plines.is_empty() {
-        //         // dbg!(&result.pos_plines);
-        //         polyline = result.pos_plines.remove(0).pline;
-        //         println!("{i}: {}", to_debug_json_str(&polyline));
-        //     } else {
-        //         dbg!("boolean failed");
-        //     }
-        // }
-
         println!("booleaned: {}", to_debug_json_str(&polyline));
     }
 
@@ -403,12 +494,84 @@ pub fn gen_occ_wire_test(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Res
     // Ok(Wire::from_edges(&edges))
 }
 
+#[test]
+fn test_convex_hull() {
+    //去除有问题的点，在凸包里面的点需要排除
+
+    let poly = Polygon::new(
+        LineString::from(vec![
+            (0.0, 0.0),
+            (5.05, -174.83),
+            (-133.47, 146.39),
+            (113.89, -100.97),
+            (-207.33, 37.55),
+            (-32.5, 32.5),
+        ]),
+        vec![],
+    );
+
+    let hull = poly.convex_hull();
+
+    dbg!(hull.interiors());
+    dbg!(hull.exterior());
+}
+
+#[inline]
+pub fn remove_wrong_vertices(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> Vec<(Vec3, f32)> {
+    let mut result = pts
+        .iter()
+        .zip(fradius_vec.iter())
+        .map(|(p, f)| (p.truncate().extend(0.0), *f))
+        .collect::<Vec<_>>();
+    //
+    let mut coords = pts
+        .iter()
+        .map(|p| coord!(x: p.x,y: p.y))
+        .collect::<Vec<_>>();
+    // for (c, f) in coords.iter().zip(fradius_vec.iter()) {
+    //     map.insert(c, *f);
+    // }
+    let poly = Polygon::new(LineString::new(coords.clone()), vec![]);
+    let hull = poly.convex_hull();
+    let exterior = hull.exterior();
+    let mut keep = coords
+        .into_iter()
+        .enumerate()
+        .map(|(indx, c)| {
+            exterior.contains(&c) || fradius_vec.get(indx).map(|x| *x != 0.0).unwrap_or(false)
+        })
+        .collect::<Vec<bool>>();
+    let mut iter = keep.iter();
+    result.retain(|_| *iter.next().unwrap());
+    result
+}
+
+pub fn check_wire_ok(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> bool {
+    let mut polyline = Polyline::new_closed();
+    for i in 0..pts.len() {
+        let c_pt = pts[i].as_dvec3();
+        polyline.add(c_pt.x, c_pt.y, 0.0.into());
+    }
+    let intrs = global_self_intersects(&polyline, &polyline.create_approx_aabb_index());
+    // dbg!(intrs.basic_intersects.len());
+    // dbg!(intrs.overlapping_intersects.len());
+
+    intrs.basic_intersects.len() == 0 && intrs.overlapping_intersects.len() == 0
+}
+
 ///生成occ的wire
 #[cfg(feature = "occ")]
-pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
+pub fn gen_occ_wire_old(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Wire> {
     if pts.len() < 3 {
-        return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
+        return Err(anyhow!("wire 顶点数量不够，小于3。"));
     }
+
+    // let new_pts = remove_wrong_vertices(pts, fradius_vec);
+    // dbg!(&new_pts);
+    if !check_wire_ok(pts, fradius_vec) {
+        return Err(anyhow!("wire 有自相交。"));
+    }
+
     let mut edges = vec![];
     let ll = pts.len();
     let mut verts: Vec<DVec3> = vec![];
@@ -452,6 +615,7 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             let mid_pt = (p0 + p1) / 2.0;
             let mid_dir = (cur_pt - mid_pt).normalize();
             let transit_pt = mid_pt + mid_dir * d;
+            // dbg!((pa_dist, b_len));
             if pa_dist - b_len > 0.01 {
                 verts.push(p0.truncate().extend(0.0));
             }
@@ -474,8 +638,11 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
         }
         let v_len = verts.len();
         if v_len == 0 {
-            dbg!(pts);
-            dbg!(fradius_vec);
+            #[cfg(debug_assertions)]
+            {
+                dbg!(pts);
+                dbg!(fradius_vec);
+            }
             return Err(anyhow!(" verts are empty"));
         }
         let mut pre_vert = verts[0].clone();
@@ -485,16 +652,15 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             if pre_vert.distance(cur_vert) > 1.0 {
                 if circle_indexs.len() > 0 && j == circle_indexs[0] {
                     let next_vert = verts[(j + 1) % v_len];
-                    edges.push(Edge::arc(
-                        pre_vert,
-                        cur_vert,
-                        next_vert,
-                    ));
+                    edges.push(Edge::arc(pre_vert, cur_vert, next_vert));
+                    // dbg!((pre_vert,
+                    //     cur_vert,
+                    //     next_vert));
                     pre_vert = next_vert.clone();
                     circle_indexs.remove(0);
                     j += 1;
                 } else {
-                    // wire.push_back(builder::line(&pre_vert, cur_vert));
+                    // dbg!((pre_vert, cur_vert));
                     edges.push(Edge::segment(pre_vert, cur_vert));
                     pre_vert = cur_vert.clone();
                 }
@@ -531,8 +697,6 @@ pub fn gen_wire_test(
         //以 c_pt 为圆心， r为半径，算出两个端点
         let p_dir = (p_pt - c_pt).normalize();
         let n_dir = (n_pt - c_pt).normalize();
-        let r_p_pt = c_pt + p_dir * r;
-        let r_n_pt = c_pt + n_dir * r;
         // dbg!((p_dir, n_dir));
         let angle = n_dir.angle_between(p_dir);
         let bulge = angle.signum() * ((PI as f64 - angle.abs()) / 4.0).tan();
@@ -547,8 +711,6 @@ pub fn gen_wire_test(
             dbg!(c_pt);
             dbg!(p_len);
         }
-
-        // polyline.add(pts[i].x as f64, pts[i].y as f64, bulge);
     }
 
     let polyline = polyline.arcs_to_approx_lines(1e-1).unwrap();
@@ -580,8 +742,8 @@ fn global_self_intersects<T>(
     polyline: &Polyline<T>,
     aabb_index: &StaticAABB2DIndex<T>,
 ) -> PlineIntersectsCollection<T>
-    where
-        T: Real,
+where
+    T: Real,
 {
     let mut intrs = Vec::new();
     let mut overlapping_intrs = Vec::new();
@@ -608,23 +770,11 @@ fn test_gen_circle() {
         (0.0, 0.5, 0.0)
     );
 
-    let arc_cut1 = pline_closed!(
-        (0.0, 0.5, 0.0),
-        (0.25, 0.25, -0.4142135),
-        (0.25, 0.75, 0.0)
-    );
-    let arc_cut2 = pline_closed!(
-        (0.25, 0.25, 0.0),
-        (0.5, 0.0, 0.0),
-        (0.75, 0.25, -0.4142135)
-    );
-    let arc_cut3 = pline_closed![(0.75, 0.25, 0.0),
-(1.0, 0.5, 0.0),
-(0.75, 0.75, -0.4142135)];
+    let arc_cut1 = pline_closed!((0.0, 0.5, 0.0), (0.25, 0.25, -0.4142135), (0.25, 0.75, 0.0));
+    let arc_cut2 = pline_closed!((0.25, 0.25, 0.0), (0.5, 0.0, 0.0), (0.75, 0.25, -0.4142135));
+    let arc_cut3 = pline_closed![(0.75, 0.25, 0.0), (1.0, 0.5, 0.0), (0.75, 0.75, -0.4142135)];
 
-    let arc_cut4 = pline_closed![(0.75, 0.75, 0.0),
-(0.5, 1.0, 0.0),
-(0.25, 0.75, -0.4142135)];
+    let arc_cut4 = pline_closed![(0.75, 0.75, 0.0), (0.5, 1.0, 0.0), (0.25, 0.75, -0.4142135)];
 
     let mut cuts = vec![arc_cut1, arc_cut2, arc_cut3, arc_cut4];
     for cut in cuts {
@@ -637,7 +787,6 @@ fn test_gen_circle() {
         }
     }
 }
-
 
 #[test]
 fn test_concave_circle() {
@@ -649,23 +798,11 @@ fn test_concave_circle() {
         (0.0, 0.5, 0.0)
     );
 
-    let arc_cut1 = pline_closed!(
-        (0.0, 0.5, 0.0),
-        (0.25, 0.25, -0.4142135),
-        (0.25, 0.75, 0.0)
-    );
-    let arc_cut2 = pline_closed!(
-        (0.25, 0.25, 0.0),
-        (0.5, 0.0, 0.0),
-        (0.75, 0.25, -0.4142135)
-    );
-    let arc_cut3 = pline_closed![(0.75, 0.25, 0.0),
-(1.0, 0.5, 0.0),
-(0.75, 0.75, -0.4142135)];
+    let arc_cut1 = pline_closed!((0.0, 0.5, 0.0), (0.25, 0.25, -0.4142135), (0.25, 0.75, 0.0));
+    let arc_cut2 = pline_closed!((0.25, 0.25, 0.0), (0.5, 0.0, 0.0), (0.75, 0.25, -0.4142135));
+    let arc_cut3 = pline_closed![(0.75, 0.25, 0.0), (1.0, 0.5, 0.0), (0.75, 0.75, -0.4142135)];
 
-    let arc_cut4 = pline_closed![(0.75, 0.75, 0.0),
-(0.5, 1.0, 0.0),
-(0.25, 0.75, -0.4142135)];
+    let arc_cut4 = pline_closed![(0.75, 0.75, 0.0), (0.5, 1.0, 0.0), (0.25, 0.75, -0.4142135)];
 
     let mut cuts = vec![arc_cut1, arc_cut2, arc_cut3, arc_cut4];
     for cut in cuts {
@@ -679,8 +816,10 @@ fn test_concave_circle() {
     }
 }
 
-
-pub fn gen_wire_new(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<truck_modeling::Wire> {
+pub fn gen_wire_new(
+    pts: &Vec<Vec3>,
+    fradius_vec: &Vec<f32>,
+) -> anyhow::Result<truck_modeling::Wire> {
     use cavalier_contours::polyline::*;
     use cgmath::prelude::*;
     use truck_modeling::{builder, Vertex, Wire};
@@ -885,7 +1024,7 @@ pub fn gen_wire(
 ) -> anyhow::Result<truck_modeling::Wire> {
     use truck_modeling::{builder, Vertex, Wire};
     if input_pts.len() < 3 || input_fradius_vec.len() != input_pts.len() {
-        return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
+        return Err(anyhow!("wire 顶点数量不够，小于3。"));
     }
     let t_pts = input_pts
         .into_iter()
@@ -1013,24 +1152,60 @@ pub fn gen_wire(
     Ok(wire)
 }
 
-// if !i.bulge_is_zero() {
-// dbg!(i.bulge);
-// let h_angle = 2.0 * i.bulge;
-// let vec = pt - prev_vert.point();
-// // dbg!(&vec);
-// let v = vec.normalize();
-// let new_v = Basis2::from_angle(Rad(-h_angle)).rotate_vector(v.truncate());
-// let s = i.bulge.abs() * vec.magnitude() / 2.0;
-// dbg!(s);
-// let transit = prev_vert.point() + vec / 2.0 + new_v.extend(0.0) * s;
+#[test]
+pub fn test_check_wire_25688_45293() {
+    let data = vec![
+        [0.0, 0.0, 480.0],
+        [4.46, -173.52, 480.0],
+        [-132.5, 145.48, 480.0],
+        [112.98, -100.0, 480.0],
+        [-206.02, 36.96, 480.0],
+        [-32.5, 32.5, 480.0],
+    ];
+    let pts: Vec<Vec3> = data
+        .iter()
+        .map(|x| Vec3::new(x[0], x[1], x[2]))
+        .collect::<Vec<_>>();
+    let fradius_vec = vec![0.0, 33.37, 33.37, 33.37, 33.37, 0.0];
 
-// // dbg!(prev_vert.point());
-// // dbg!(vert.point());
+    assert_eq!(check_wire_ok(&pts, &fradius_vec), false);
+}
 
-// wire.push_back(builder::circle_arc(
-//     &prev_vert,
-//     &vert,
-//     Point3::new(transit.x, transit.y, 0.0),
-// ));
-// wire.push_back(builder::line(&prev_vert, &vert));
-// }
+#[test]
+pub fn test_check_wire_25688_45261() {
+    let data = vec![
+        [-23350, 0, 0],
+        [-22200, 23350, 0],
+        [23350, 23350, 0],
+        [23350, 0, 0],
+    ];
+    let pts: Vec<Vec3> = data
+        .iter()
+        .map(|x| Vec3::new(x[0] as f32, x[1] as f32, x[2] as f32))
+        .collect::<Vec<_>>();
+    let fradius_vec = vec![0.0, 23350.0, 23350.0, 0.0];
+
+    assert_eq!(check_wire_ok(&pts, &fradius_vec), true);
+    gen_occ_wire(&pts, &fradius_vec).unwrap();
+}
+
+#[test]
+pub fn test_check_wire_25688_72092() {
+    let data = vec![
+        [0.0, 0.0, 0.0],
+        [0.0, 8188.92, 0.0],
+        [-12620.42, 18627.24, 0.0],
+        [-20663.97, 17091.12, 0.0],
+        [-22737.08, 22684.93, 0.0],
+        [7196.01, 29736.53, 0.0],
+        [5884.46, -987.96, 0.0],
+    ];
+    let pts: Vec<Vec3> = data
+        .iter()
+        .map(|x| Vec3::new(x[0] as f32, x[1] as f32, x[2] as f32))
+        .collect::<Vec<_>>();
+    let fradius_vec = vec![0.0, 17400.0, 17400.0, 0.0, 0.0, 23300.0, 0.0];
+
+    assert_eq!(check_wire_ok(&pts, &fradius_vec), true);
+    gen_occ_wire(&pts, &fradius_vec).unwrap();
+}

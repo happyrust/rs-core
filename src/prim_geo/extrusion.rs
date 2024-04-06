@@ -106,14 +106,23 @@ impl BrepShapeTrait for Extrusion {
             return Err(anyhow!("Extrusion params not valid."));
         }
         let wire = if let CurveType::Spline(thick) = self.cur_type {
-            gen_occ_spline_wire(&self.verts, thick)?
+            gen_occ_spline_wire(&self.verts, thick)
         } else {
-            gen_occ_wire(&self.verts, &self.fradius_vec)?
+            gen_occ_wire(&self.verts, &self.fradius_vec)
         };
-        Ok(OccSharedShape::new(wire
-            .to_face()
-            .extrude(DVec3::new(0., 0.0, self.height as _))
-            .into_shape()))
+        match wire {
+            Err(e) => {
+                dbg!(&e);
+                dbg!(self);
+                return Err(anyhow!("Extrusion gen_occ_shape error:{}", e));
+            }
+            Ok(w) => {
+                Ok(OccSharedShape::new(w
+                    .to_face()
+                    .extrude(DVec3::new(0., 0.0, self.height as _))
+                    .into_shape()))
+            }
+        }
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {

@@ -12,6 +12,7 @@ use crate::pdms_types::PdmsGenericType;
 pub struct TubiInstQuery {
     #[serde(alias = "id")]
     pub refno: RefU64,
+    pub generic: Option<String>,
     pub world_aabb: Aabb,
     pub world_trans: Transform,
     pub geo_hash: String,
@@ -21,7 +22,7 @@ pub async fn query_tubi_insts_by_brans(bran_refnos: &[RefU64]) -> anyhow::Result
     let pes: String = bran_refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
     let mut response = SUL_DB
         .query(format!(r#"
-             select in.id as refno, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
+             select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
                 from  array::flatten([{}]->tubi_relate) where leave.id != none
              "#, pes))
         .await?;
@@ -35,7 +36,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<T
     let mut response = SUL_DB
         .query(format!(r#"
         array::group(array::complement(select value
-        (select in.id as refno, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
+        (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
                 from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
              "#, pes))
@@ -83,19 +84,19 @@ pub struct GeomPtsQuery {
     #[serde(alias = "id")]
     pub refno: RefU64,
     pub world_trans: Transform,
-    pub pts_group: Vec<(Transform, Vec<Vec3>)>,
+    pub pts_group: Vec<(Transform, Option<Vec<Vec3>>)>,
 }
 
-pub async fn query_insts(refnos: &[RefU64]) -> anyhow::Result<Vec<GeomInstQuery>> {
+pub async fn query_insts(refnos: impl IntoIterator<Item = &RefU64>) -> anyhow::Result<Vec<GeomInstQuery>> {
     let pes = refnos
-        .iter()
+        .into_iter()
         .map(|x| x.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
     let mut response = SUL_DB
         .query(format!(r#"
                     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if neg_refnos == none {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos') }} else {{ [{{ "geo_hash": meta::id(in.id) }}] }} as insts
+            if (!booled) && (neg_refnos == none) {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos')  }} as insts
             from [{}]->inst_relate[0] where aabb.d != none
             "#, pes))
         .await

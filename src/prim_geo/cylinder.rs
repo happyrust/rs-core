@@ -381,8 +381,8 @@ impl BrepShapeTrait for SCylinder {
                 * DMat4::from_axis_angle(DVec3::Y, -(self.top_shear_angles[0].to_radians() as f64))
                 * DMat4::from_axis_angle(DVec3::X, (self.top_shear_angles[1].to_radians() as f64))
                 * scale_mat;
-            let btm_circe = circle.transformed_by_gmat(&transform_btm);
-            let top_circle = circle.transformed_by_gmat(&transform_top);
+            let btm_circe = circle.transformed_by_gmat(&transform_btm)?;
+            let top_circle = circle.transformed_by_gmat(&transform_top)?;
 
             Ok(OccSharedShape::new(Solid::loft([btm_circe, top_circle].iter()).into()))
         } else {
