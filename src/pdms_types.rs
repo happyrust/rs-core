@@ -211,6 +211,8 @@ pub enum PdmsGenericType {
     SCTN,
     WALL,
     STWALL,
+    CWALL,
+    GWALL,
     GENSEC,
     HANG,
     HANDRA,

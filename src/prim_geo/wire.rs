@@ -9,9 +9,9 @@ use cavalier_contours::polyline::*;
 use cavalier_contours::static_aabb2d_index::StaticAABB2DIndex;
 use cgmath::Basis2;
 use geo::convex_hull::{graham_hull, quick_hull};
-use geo::LineString;
-use geo::Polygon;
+use geo::{Line, LinesIter, Orient, Polygon, Winding};
 use geo::{coord, Contains, ConvexHull, IsConvex};
+use geo::{line_string, point, Intersects, LineString};
 use glam::{DVec2, DVec3, Quat, Vec3};
 use nalgebra::ComplexField;
 use serde_derive::{Deserialize, Serialize};
@@ -21,7 +21,7 @@ use cavalier_contours::core::math::bulge_from_angle;
 use cavalier_contours::pline_closed;
 use cavalier_contours::polyline::internal::pline_boolean::polyline_boolean;
 use clap::builder::TypedValueParser;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::f32::consts::PI;
 
 #[cfg(feature = "occ")]
@@ -175,7 +175,8 @@ pub fn to_debug_json_str(pline: &Polyline) -> String {
         pline.is_closed(),
         pline
             .iter_vertexes()
-            .map(|v| format!("[{:.3}, {:.3}, {:.3}]", v.x, v.y, v.bulge))
+            // .map(|v| format!("[{:.3}, {:.3}, {:.3}]", v.x, v.y, v.bulge))
+            .map(|v| format!("[{}, {}, {}]", v.x, v.y, v.bulge))
             .collect::<Vec<_>>()
             .join(",\n        ")
     )
@@ -186,20 +187,23 @@ pub fn to_debug_json_str(pline: &Polyline) -> String {
 fn gen_fillet_spline(pt: DVec3, d1: DVec3, d2: DVec3, r: f64, sig_num: f64) -> Polyline {
     let mut pline = Polyline::new_closed();
     let angle = d1.angle_between(d2);
-    if angle.abs() < 0.001 { return  pline; }
+    if angle.abs() < 0.001 {
+        return pline;
+    }
     // dbg!(angle.to_degrees());
     let bulge = f64_trunc_3(bulge_from_angle(PI as f64 - angle)) * sig_num;
-    // dbg!(bulge);
+    dbg!(bulge);
 
     let l = r / (angle / 2.0).tan();
     let p0 = pt + d1 * l;
     let p2 = pt + d2 * l;
     // let bulge = 0.3998724443344795;
-    pline.add(p0.x, p0.y, bulge);
-    pline.add(p2.x, p2.y, 0.0);
-    pline.add(pt.x, pt.y, 0.0);
+    pline.add(f64_round(p0.x), f64_round(p0.y), bulge);
+    pline.add(f64_round(p2.x), f64_round(p2.y), 0.0);
+    pline.add(f64_round(pt.x), f64_round(pt.y), 0.0);
     // dbg!(&pline);
-    println!("pline: {}", to_debug_json_str(&pline));
+    // #[cfg(debug_assertions)]
+    // println!("pline: {}", to_debug_json_str(&pline));
     pline
 }
 
@@ -413,29 +417,55 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
         .iter()
         .map(|t| DVec3::new(t.x as f64, t.y as f64, 0.0))
         .collect::<Vec<_>>();
-    let aabb = Aabb::from_points(&pts.iter().map(|pt| Point::new(pt.x as f32, pt.y as f32)).collect::<Vec<_>>());
-    let aabb_center = aabb.center();
+    let aabb = Aabb::from_points(
+        &pts.iter()
+            .map(|pt| Point::new(pt.x as f32, pt.y as f32))
+            .collect::<Vec<_>>(),
+    );
+    // let aabb_center = aabb.center();
     let has_fradius = fradius_vec.iter().any(|x| *x > 0.0);
+    let mut polyline = Polyline::new_closed();
+
     //如果没有fradius，直接简单的返回wire
     if !has_fradius {
         for i in 0..len {
             let pt = pts[i];
-            let next = pts[(i + 1) % len];
-            edges.push(Edge::segment(pt, next));
+            // edges.push(Edge::segment(pt, next));
+            polyline.add(pt.x, pt.y, 0.0);
         }
     } else {
-        let mut polyline = Polyline::new_closed();
         let mut neg_parts = vec![];
-        let mut is_concave = false;
+
+        let mut tmp_polyline = Polyline::new_closed();
+        for i in 0..len {
+            let pt = pts[i];
+            // edges.push(Edge::segment(pt, next));
+            tmp_polyline.add(pt.x, pt.y, 0.0);
+        }
+        let intrs = global_self_intersects(&tmp_polyline, &tmp_polyline.create_approx_aabb_index());
+        // dbg!(&intrs.basic_intersects);
+        let exclude_indx_set: HashSet<usize> = intrs.basic_intersects.iter().map(|x| x.start_index1+1).collect();
+        // dbg!(&exclude_indx_set);
+        // dbg!(intrs.overlapping_intersects.len());
+
+
+        //需要将自相交的先排除在外
+        let polyon = Polygon::new(
+            LineString::from(pts.iter().enumerate()
+                .filter(|(i, _)| !exclude_indx_set.contains(i))
+                .map(|(_, p)| (p.x, p.y)).collect::<Vec<_>>()),
+            vec![],
+        );
+        // dbg!(&polyon);
+        let hull = polyon.convex_hull();
+        // dbg!(hull.exterior());
+        let mut pos_equal_eps = 0.0001;
+        // dbg!(hull.exterior());
         for i in 0..len {
             //如果当前点有fradius，其实是前一个点的bulge
             let fradius = fradius_vec[i] as f64;
             let last = pts[(i + len - 1) % len];
             let pt = pts[i];
-            //todo 加入自动过滤，过滤突变的点
-            // if pt.x > 100_000.0 || pt.y > 100_000.0 {
-            //     continue;
-            // }
             //如果fradius > 0.0，需要检查wind 方向
             let next = pts[(i + 1) % len];
             let v1 = (pt - last).normalize();
@@ -449,104 +479,124 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
             }
 
             let wind_sig = 1.0;
-            //是否发生反转
-            let check_v = (v0.cross(v1).normalize_or_zero().z * v1.cross(v2).normalize_or_zero().z);
-            let check_parallel = v1.dot(v2).abs();
-            // dbg!(check_v);
-            // dbg!(check_parallel);
-            if check_parallel < 0.99 && check_v < -0.1 {
-                is_concave = !is_concave;
+            let mut is_concave = false;
+            let cur_pt = point!(x: pt.x, y: pt.y);
+            if !hull.exterior().contains(&cur_pt) {
+                //(pt - last)
+                is_concave = true;
             }
-            // dbg!((i, pt, is_concave, fradius));
-            // if is_concave {
-            //     dbg!((fradius));
-            //     dbg!((v0.cross(v1).z * v1.cross(v2).z));
-            // }
+            #[cfg(debug_assertions)]
+            dbg!((i, pt, is_concave, fradius));
             if fradius > 0.0 {
+                let counter_clock = v1.cross(v2).z > 0.0;
+                let mut counter_sig = if counter_clock { 1.0 } else { -1.0 };
                 if is_concave {
                     // add_fillet_spline(&mut polyline, pt, -v1, v2, fradius);
                     let angle = (-v1).angle_between(v2);
-                    if angle.abs() < 0.001 { continue; }
+                    if angle.abs() < 0.001 {
+                        continue;
+                    }
                     let l = fradius / (angle / 2.0).tan();
                     let d1 = (pt - last).length();
                     let d2 = (next - pt).length();
                     // dbg!((l, d1, d2));
                     let extent = aabb.extents().magnitude() as f64;
-                    if l > extent  {
+                    if l > extent {
                         dbg!((l, extent));
                         continue;
                     }
-                    let p0 =  pt + (-v1) * l ;
-                    let p2 =  pt + v2 * l;
-                    let bulge = f64_trunc_3(bulge_from_angle(PI as f64 - angle));
-                    polyline.add(p0.x, p0.y, bulge);
+                    let p0 = pt + (-v1) * l;
+                    let p2 = pt + v2 * l;
+                    let bulge =
+                        counter_sig * wind_sig * f64_trunc_3(bulge_from_angle(PI as f64 - angle));
+                    polyline.add(f64_round(p0.x), f64_round(p0.y), bulge);
                     if (l - d1).abs() > 0.01 {
-                        polyline.add(p2.x, p2.y, 0.0);
+                        polyline.add(f64_round(p2.x), f64_round(p2.y), 0.0);
                     }
-
                 } else {
-                    let counter_clock = v1.cross(v2).z > 0.0;
-                    let mut counter_sig = if counter_clock { 1.0 } else { -1.0 };
                     let neg_part = gen_fillet_spline(pt, -v1, v2, fradius, counter_sig * wind_sig);
                     neg_parts.push(neg_part);
-                    polyline.add(pt.x, pt.y, 0.0);
+                    polyline.add(f64_round(pt.x), f64_round(pt.y), 0.0);
                 }
             } else {
-                polyline.add(pt.x, pt.y, 0.0);
+                polyline.add(f64_round(pt.x), f64_round(pt.y), 0.0);
             }
         }
         let mut i = 0;
+        if let Some(new_poly) = polyline.remove_repeat_pos(0.05) {
+            dbg!("Found duplicate points");
+            polyline = new_poly;
+        }
+        #[cfg(debug_assertions)]
         println!("origin polyline: {}", to_debug_json_str(&polyline));
-
         for neg in neg_parts {
+            #[cfg(debug_assertions)]
             println!(
                 "neg {i}: {}, {}",
                 to_debug_json_str(&polyline),
                 to_debug_json_str(&neg)
             );
+            dbg!(pos_equal_eps);
             let mut result = polyline_boolean(
                 &polyline,
                 &neg,
                 BooleanOp::Not,
                 &PlineBooleanOptions {
                     pline1_aabb_index: None,
-                    pos_equal_eps: 0.0001,
+                    pos_equal_eps,
                 },
             );
+            if result.pos_plines.is_empty() {
+                dbg!("cut failed: ", pos_equal_eps);
+                pos_equal_eps = 0.0001;
+                result = polyline_boolean(
+                    &polyline,
+                    &neg,
+                    BooleanOp::Not,
+                    &PlineBooleanOptions {
+                        pline1_aabb_index: None,
+                        pos_equal_eps,
+                    },
+                );
+            }
             // dbg!(result.pos_plines.len());
             // dbg!(&result.result_info);
             if !result.pos_plines.is_empty() {
                 polyline = result.pos_plines.remove(0).pline;
+                // for p in &mut polyline.vertex_data{
+                //     p.x = f64_round(p.x);
+                //     p.y = f64_round(p.y);
+                //     p.bulge = f64_round(p.bulge);
+                // }
                 // println!("{i}: {}", to_debug_json_str(&polyline));
             } else {
                 dbg!("cut failed");
             }
             i += 1;
         }
-        // let pos_tol = polyline.path_length() * 0.0001;
-        // dbg!(pos_tol);
-        if let Some(new_poly) = polyline.remove_repeat_pos(0.05) {
-            polyline = new_poly;
-        }
-        println!("boolean: {}", to_debug_json_str(&polyline));
+    }
 
-        for (p, q) in polyline.iter_segments() {
-            if p.bulge.abs() < 0.0001 {
-                edges.push(Edge::segment(
-                    DVec3::new(p.x, p.y, 0.0),
-                    DVec3::new(q.x, q.y, 0.0),
-                ));
-            } else {
-                let m = seg_midpoint(p, q);
-                // dbg!((p,m,q));
-                edges.push(Edge::arc(
-                    DVec3::new(p.x, p.y, 0.0),
-                    DVec3::new(m.x, m.y, 0.0),
-                    DVec3::new(q.x, q.y, 0.0),
-                ));
-            }
+    if let Some(new_poly) = polyline.remove_repeat_pos(0.05) {
+        polyline = new_poly;
+    }
+    #[cfg(debug_assertions)]
+    println!("boolean: {}", to_debug_json_str(&polyline));
+
+    for (p, q) in polyline.iter_segments() {
+        if p.bulge.abs() < 0.0001 {
+            edges.push(Edge::segment(
+                DVec3::new(p.x, p.y, 0.0),
+                DVec3::new(q.x, q.y, 0.0),
+            ));
+        } else {
+            let m = seg_midpoint(p, q);
+            // dbg!((p,m,q));
+            edges.push(Edge::arc(
+                DVec3::new(p.x, p.y, 0.0),
+                DVec3::new(m.x, m.y, 0.0),
+                DVec3::new(q.x, q.y, 0.0),
+            ));
         }
-        // dbg!(edges.len());
     }
 
     Ok(Wire::from_edges(&edges))
@@ -699,73 +749,6 @@ pub fn gen_occ_wire_old(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Resu
     Ok(Wire::from_edges(&edges))
 }
 
-pub fn gen_wire_test(
-    pts: &Vec<Vec3>,
-    fradius_vec: &Vec<f32>,
-) -> anyhow::Result<truck_modeling::Wire> {
-    use cavalier_contours::polyline::*;
-    use cgmath::prelude::*;
-    use truck_modeling::{builder, Vertex, Wire};
-    if pts.len() < 3 || fradius_vec.len() != pts.len() {
-        return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
-    }
-    let mut polyline = Polyline::new_closed();
-    for i in 0..pts.len() {
-        let r = fradius_vec[i] as f64;
-        if r.abs() < 0.01 {
-            polyline.add(pts[i].x as f64, pts[i].y as f64, 0.0);
-            continue;
-        }
-        dbg!(r);
-        let c_pt = pts[i].as_dvec3().truncate();
-        let p_pt = pts[(i + pts.len() - 1) % pts.len()].as_dvec3().truncate();
-        let n_pt = pts[(i + 1) % pts.len()].as_dvec3().truncate();
-        let p_len = p_pt.distance(c_pt);
-        let n_len = p_pt.distance(c_pt);
-        //以 c_pt 为圆心， r为半径，算出两个端点
-        let p_dir = (p_pt - c_pt).normalize();
-        let n_dir = (n_pt - c_pt).normalize();
-        // dbg!((p_dir, n_dir));
-        let angle = n_dir.angle_between(p_dir);
-        let bulge = angle.signum() * ((PI as f64 - angle.abs()) / 4.0).tan();
-        let bulge = f64_ceil_3(bulge);
-        dbg!(bulge);
-
-        dbg!(p_len);
-        if p_len - r >= 0.01 {
-            polyline.add(p_pt.x, p_pt.y, bulge);
-            polyline.add(n_pt.x, n_pt.y, 0.0);
-        } else {
-            dbg!(c_pt);
-            dbg!(p_len);
-        }
-    }
-
-    let polyline = polyline.arcs_to_approx_lines(1e-1).unwrap();
-    let new_polyline = if let Some(p) = polyline.remove_redundant(0.01) {
-        p
-    } else {
-        polyline
-    };
-
-    let mut wire = Wire::new();
-    let first_vert = builder::vertex(Point3::new(new_polyline[0].x, new_polyline[0].y, 0.0));
-    let mut prev_vert = first_vert.clone();
-    let count = new_polyline.vertex_count();
-    for (index, (i, j)) in new_polyline.iter_segments().into_iter().enumerate() {
-        let pt = Point3::new(j.x, j.y, 0.0);
-        let vert = if index == count - 1 {
-            first_vert.clone()
-        } else {
-            builder::vertex(pt)
-        };
-        wire.push_back(builder::line(&prev_vert, &vert));
-        prev_vert = vert;
-    }
-
-    return Ok(wire);
-}
-
 fn global_self_intersects<T>(
     polyline: &Polyline<T>,
     aabb_index: &StaticAABB2DIndex<T>,
@@ -842,206 +825,6 @@ fn test_concave_circle() {
             dbg!("cut failed");
         }
     }
-}
-
-pub fn gen_wire_new(
-    pts: &Vec<Vec3>,
-    fradius_vec: &Vec<f32>,
-) -> anyhow::Result<truck_modeling::Wire> {
-    use cavalier_contours::polyline::*;
-    use cgmath::prelude::*;
-    use truck_modeling::{builder, Vertex, Wire};
-    if pts.len() < 3 || fradius_vec.len() != pts.len() {
-        return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
-    }
-
-    //todo 先计算 hull
-    // let mut geo_pts = vec![];
-    // for pt in pts {
-    //     geo_pts.push(coord! { x: pt.x as f64, y: pt.y as f64 });
-    // }
-    // let res = graham_hull(&mut geo_pts, false);
-    // dbg!(&res);
-    // assert!(res.is_strictly_ccw_convex());
-
-    let mut pline = Polyline::new_closed();
-    // let mut prev_angle = 0.0;
-
-    let mut a1 = vec![];
-    let mut a2 = vec![];
-    for i in 0..pts.len() {
-        let c_pt = pts[i].as_dvec3().truncate();
-        let p_pt = pts[(i + pts.len() - 1) % pts.len()].as_dvec3().truncate();
-        let n_pt = pts[(i + 1) % pts.len()].as_dvec3().truncate();
-        let p_dir = (p_pt - c_pt).normalize();
-        let n_dir = (n_pt - c_pt).normalize();
-        let angle = p_dir.angle_between(n_dir);
-        dbg!(angle.to_degrees());
-        if angle.sin().abs() > 0.01 {
-            if angle > 0.0 {
-                a1.push(i);
-            } else {
-                a2.push(i);
-            }
-        }
-
-        pline.add(pts[i].x as f64, pts[i].y as f64, 0.0);
-    }
-    let has_concave = a1.len() * a2.len() != 0;
-    dbg!(has_concave);
-    //先只处理只有一种凹的多边形的情况
-    let ci = if has_concave {
-        if a1.len() < a2.len() {
-            a1
-        } else {
-            a2
-        }
-    } else {
-        vec![]
-    };
-
-    // dbg!(&fradius_vec);
-    //如果是凹的，需要使用 or 运算
-    //如果是凸的，需要使用 not 运算
-
-    dbg!(pline.orientation());
-    //这里是有交点，但是凹的边不一定是有交点的
-    //有交集的情况需要特殊处理
-    let mut concave_pline = Polyline::new_closed();
-    // let mut concave_neg_pline = Polyline::new_closed();
-    // let pline_as_lines = pline.arcs_to_approx_lines(1e-2).unwrap();
-    // let intrs = global_self_intersects(&pline_as_lines, &pline_as_lines.create_approx_aabb_index());
-    // // dbg!(&intrs);
-    // let mut concave_indexes = intrs
-    //     .basic_intersects
-    //     .iter()
-    //     .map(|x| x.start_index1)
-    //     .collect::<BTreeSet<_>>();
-
-    if !ci.is_empty() {
-        dbg!(&ci);
-        pline.clear();
-        for i in 0..pts.len() {
-            if !ci.contains(&i) {
-                pline.add(pts[i].x as f64, pts[i].y as f64, 0.0);
-            }
-        }
-        let first = (ci[0] - 1 + pts.len()) % pts.len();
-        dbg!(first);
-        concave_pline.add(pts[first].x as f64, pts[first].y as f64, 0.0);
-        for idx in ci.iter() {
-            concave_pline.add(pts[*idx].x as f64, pts[*idx].y as f64, 0.0);
-        }
-        let last = (ci[ci.len() - 1] + 1 + pts.len()) % pts.len();
-        dbg!(last);
-        concave_pline.add(pts[last].x as f64, pts[last].y as f64, 0.0);
-    }
-
-    dbg!(&concave_pline);
-    // assert_eq!(intrs.basic_intersects.len(), 0);
-    // assert_eq!(intrs.overlapping_intersects.len(), 0);
-
-    for (i, &r) in fradius_vec.into_iter().enumerate() {
-        let r = r as f64;
-        if r.abs() < 0.01 {
-            continue;
-        }
-        let is_concave = ci.contains(&i);
-        dbg!(is_concave);
-        dbg!(r);
-        let c_pt = pts[i].as_dvec3().truncate();
-        let p_pt = pts[(i + pts.len() - 1) % pts.len()].as_dvec3().truncate();
-        let n_pt = pts[(i + 1) % pts.len()].as_dvec3().truncate();
-        //以 c_pt 为圆心， r为半径，算出两个端点
-        let p_dir = (p_pt - c_pt).normalize();
-        let n_dir = (n_pt - c_pt).normalize();
-
-        let angle = n_dir.angle_between(p_dir);
-        dbg!(angle.to_degrees());
-        let b_len = r / (angle.abs() / 2.0).tan();
-        let p_pt = c_pt + p_dir * b_len;
-        let n_pt = c_pt + n_dir * b_len;
-        // dbg!((p_dir, n_dir));
-
-        // dbg!((angle / 4.0).tan());
-        let bulge = angle.signum() * ((PI as f64 - angle.abs()) / 4.0).tan();
-        // let bulge = f64_ceil_2(bulge);
-        dbg!(bulge);
-
-        let flag = if n_dir.extend(0.0).cross(p_dir.extend(0.0)).z > 0.0 {
-            1.0
-        } else {
-            -1.0
-        };
-        //如果是凹的，这里应该会发生变化
-        dbg!(flag);
-
-        let mut cut_pline = Polyline::new_closed();
-        cut_pline.add(p_pt.x, p_pt.y, 0.0);
-        cut_pline.add(c_pt.x, c_pt.y, 0.0);
-        cut_pline.add(n_pt.x, n_pt.y, -bulge);
-        dbg!(cut_pline.orientation());
-        // dbg!(cut_pline.area());
-        // dbg!(&cut_pline);
-        // cut_pline.arcs_to_approx_lines(error_distance = 0.01);
-        let pline_as_lines = cut_pline.arcs_to_approx_lines(1e-1).unwrap();
-        dbg!(pline_as_lines.vertex_count());
-        // dbg!(pline_as_lines.area());
-        // cut_pline.add(n_pt.x, n_pt.y, 0.0);
-        // 如果判断目前这里是凹还是凸
-
-        if is_concave {
-            dbg!(i);
-            let mut result = concave_pline.boolean(&pline_as_lines, BooleanOp::Not);
-            if result.pos_plines.len() != 0 {
-                dbg!("concave cut  success");
-                concave_pline = result.pos_plines.remove(0).pline;
-            } else {
-                dbg!("concave cut failed");
-            }
-        } else {
-            let mut result = pline.boolean(&pline_as_lines, BooleanOp::Not);
-            if result.pos_plines.len() != 0 {
-                dbg!("boolean success");
-                pline = result.pos_plines.remove(0).pline;
-                // break;
-            }
-        }
-    }
-    let mut result = pline.boolean(&concave_pline, BooleanOp::Not);
-    if result.pos_plines.len() != 0 {
-        dbg!("final boolean success");
-        pline = result.pos_plines.remove(0).pline;
-        // break;
-    }
-    let mut pline = if let Some(p) = pline.remove_redundant(0.01) {
-        p
-    } else {
-        pline
-    };
-    // let pline = concave_pline;
-    dbg!(pline.orientation());
-    let new_polyline = pline.arcs_to_approx_lines(1e-1).unwrap();
-    dbg!(new_polyline.vertex_count());
-    // dbg!(&pts);
-    // dbg!(&fradius_vec);
-    let mut wire = Wire::new();
-
-    //将polyline 转换成wire
-    let first_vert = builder::vertex(Point3::new(new_polyline[0].x, new_polyline[0].y, 0.0));
-    let mut prev_vert = first_vert.clone();
-    let count = new_polyline.vertex_count();
-    for (index, (i, j)) in new_polyline.iter_segments().into_iter().enumerate() {
-        let pt = Point3::new(j.x, j.y, 0.0);
-        let vert = if index == count - 1 {
-            first_vert.clone()
-        } else {
-            builder::vertex(pt)
-        };
-        wire.push_back(builder::line(&prev_vert, &vert));
-        prev_vert = vert;
-    }
-    Ok(wire)
 }
 
 ///可以使用 cut 的办法
@@ -1121,15 +904,6 @@ pub fn gen_wire(
             let mid_pt = (p0 + p1) / 2.0;
             let mid_dir = (cur_pt - mid_pt).normalize();
             let transit_pt = mid_pt + mid_dir * d;
-            // dbg!(pa_dist);
-
-            // dbg!((pa_dist - b_len));
-            // dbg!((pb_dist - b_len));
-
-            // if (pa_dist - b_len < -0.1)  || (pb_dist - b_len) < -0.1{
-            //     verts.push(builder::vertex(pt));
-            //     continue;
-            // }
 
             if pa_dist - b_len > 0.01 {
                 verts.push(builder::vertex(vec3_round_2(p0).point3_without_z()));

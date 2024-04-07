@@ -108,6 +108,14 @@ pub fn f64_round_3(v: f64) -> f64 {
     (v * 1000.0).round() / 1000.0f64 //以防止溢出
 }
 
+
+
+#[inline]
+pub fn f64_round(v: f64) -> f64 {
+    // (v * 10000.0).round() / 10000.0f64 //以防止溢出
+    v
+}
+
 #[inline]
 pub fn f64_round_2(v: f64) -> f64 {
     (v * 100.0).round() / 100.0f64 //以防止溢出
@@ -126,6 +134,11 @@ pub fn f64_ceil_3(v: f64) -> f64 {
 #[inline]
 pub fn f64_trunc_3(v: f64) -> f64 {
     ((v * 1000.0) as i64) as f64 / 1000.0f64 //以防止溢出
+}
+
+#[inline]
+pub fn f64_trunc_4(v: f64) -> f64 {
+    ((v * 10000.0) as i64) as f64 / 10000.0f64
 }
 
 #[inline]

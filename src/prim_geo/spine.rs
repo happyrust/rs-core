@@ -7,6 +7,7 @@ use std::f32::consts::PI;
 
 
 use bevy_transform::prelude::*;
+use crate::RefU64;
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 
 #[derive(Component, Default, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
@@ -21,6 +22,7 @@ pub enum SpineCurveType {
 
 #[derive(Component, Debug, Default, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Spine3D {
+    pub refno: RefU64,
     pub pt0: Vec3,
     pub pt1: Vec3,
     pub thru_pt: Vec3,

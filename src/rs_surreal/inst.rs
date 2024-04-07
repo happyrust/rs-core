@@ -96,8 +96,8 @@ pub async fn query_insts(refnos: impl IntoIterator<Item = &RefU64>) -> anyhow::R
     let mut response = SUL_DB
         .query(format!(r#"
                     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if (!booled) && (neg_refnos == none) {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos')  }} as insts
-            from [{}]->inst_relate[0] where aabb.d != none
+            if neg_refnos != none && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos')  }} as insts
+            from array::flatten([{}]->inst_relate) where aabb.d != none
             "#, pes))
         .await
         .unwrap();

@@ -429,6 +429,7 @@ pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
                     _ => SpineCurveType::UNKNOWN,
                 };
                 paths.push(Spine3D {
+                    refno: att2.get_refno().unwrap_or_default(),
                     pt0,
                     pt1,
                     thru_pt: mid_pt,
