@@ -191,6 +191,11 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, Vec<String>
     Ok(map)
 }
 
+/// 通过owner 查询他所有子节点所属的房间 todo
+pub async fn query_room_name_from_owners(owner: Vec<RefU64>) -> anyhow::Result<HashMap<RefU64, String>> {
+    Ok(HashMap::new())
+}
+
 /// 正则匹配是否满足房间命名规则
 fn match_room_name(room_name: &str) -> bool {
     let regex = Regex::new(r"^[A-Z]\d{3}$").unwrap();
