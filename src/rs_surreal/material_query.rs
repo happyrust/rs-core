@@ -708,7 +708,7 @@ pub struct MaterialYkEquiListData {
     #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
     pub equi_name: String,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub pos: Option<f32>,
     pub floor_height: String,
 }
@@ -718,7 +718,7 @@ impl MaterialYkEquiListData {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("仪控设备位号".to_string()).or_insert(self.equi_name);
-        map.entry("所在房间号".to_string()).or_insert(self.room_code);
+        map.entry("所在房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("设备绝对标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
         map.entry("设备相对楼板标高".to_string()).or_insert(self.floor_height);
 
@@ -742,7 +742,7 @@ pub async fn get_yk_equi_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
         let sql = format!(r#"select
         id,
         fn::default_name($this.id) as equi_name,
-        '' as room_code,
+        fn::room_code($this.id)[0] as room_code,
         fn::get_world_pos($this.id)[0][2] as pos, // 坐标 z
         '' as floor_height
         from {}"#, refnos_str);
@@ -899,7 +899,7 @@ pub struct MaterialTxTxsbData {
     pub equi_name: String,
     pub ptre_desc: String,
     pub belong_factory: String,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub x: Option<f32>,
     pub y: Option<f32>,
     pub z: Option<f32>,
@@ -913,7 +913,7 @@ impl MaterialTxTxsbData {
         map.entry("设备位号".to_string()).or_insert(self.equi_name);
         map.entry("设备名称".to_string()).or_insert(self.ptre_desc);
         map.entry("所属厂房的编号".to_string()).or_insert(self.belong_factory);
-        map.entry("房间号".to_string()).or_insert(self.room_code);
+        map.entry("房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("全局坐标X".to_string()).or_insert(self.x.unwrap_or(0.0).to_string());
         map.entry("全局坐标Y".to_string()).or_insert(self.y.unwrap_or(0.0).to_string());
         map.entry("全局坐标Z".to_string()).or_insert(self.z.unwrap_or(0.0).to_string());
@@ -945,7 +945,7 @@ pub async fn get_tx_txsb_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
             fn::default_name(owner) as equi_name,
             string::slice(if refno.CATR.refno.PRTREF.desc == NONE {{ '/' }} else {{ refno.CATR.refno.PRTREF.desc }},1) as ptre_desc, // 设备名称
             string::slice(string::split(array::at(refno.REFNO->pe_owner.out->pe_owner.out.name,0),'-')[0],1,3) as belong_factory, // 所属厂房编号
-            '' as room_code,
+            fn::room_code($this.id)[0] as room_code,
             fn::get_world_pos($this.id)[0][0] as x, // 坐标 x
             fn::get_world_pos($this.id)[0][1] as y, // 坐标 y
             fn::get_world_pos($this.id)[0][2] as z, // 坐标 z
@@ -970,7 +970,7 @@ pub struct MaterialSbListData {
     pub name: String,
     pub pos: Option<f32>,
     pub length: Option<f32>,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub boxs: Vec<Vec<String>>,
 }
 
@@ -988,7 +988,7 @@ impl MaterialSbListData {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("设备位号".to_string()).or_insert(self.name);
-        map.entry("所在房间".to_string()).or_insert(self.room_code);
+        map.entry("所在房间".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("轨道长度".to_string()).or_insert(self.length.unwrap_or(0.0).to_string());
         map.entry("安装标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
 
@@ -1012,7 +1012,7 @@ pub async fn get_sb_dzcl_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
         let sql = format!(r#"select
             id,
             fn::default_name($this.id) as name,
-            '' as room_code,
+            fn::room_code($this.id)[0] as room_code,
             fn::find_group_sube_children($this.id) as boxs
             from {}"#, refnos_str);
         let mut response = db
@@ -1053,7 +1053,7 @@ pub struct MaterialNtValvData {
     #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
     pub name: String,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub bran_name: String,
     pub valv_size: Vec<f32>,
     pub material: String,
@@ -1065,7 +1065,7 @@ impl MaterialNtValvData {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("阀门位号".to_string()).or_insert(self.name);
-        map.entry("所在房间号".to_string()).or_insert(self.room_code);
+        map.entry("所在房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("阀门归属".to_string()).or_insert(self.bran_name);
         map.entry("阀门尺寸".to_string()).or_insert(serde_json::to_string(&self.valv_size).unwrap_or("[]".to_string()));
         map.entry("阀门材质".to_string()).or_insert(self.material);
@@ -1090,7 +1090,7 @@ pub async fn get_nt_valv_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
         let sql = format!(r#"select
             id,
             fn::default_name($this.id) as name,
-            '' as room_code,
+            fn::room_code($this.id)[0] as room_code,
             (->pe_owner.out->pe_owner.in.refno.NAME)[0] as bran_name,
             [if refno.DESP[1] == NONE {{ 0 }} else {{ refno.DESP[1] }},if refno.DESP[2] == NONE {{ 0 }} else {{ refno.DESP[2] }},
             if refno.DESP[5] == NONE {{ 0 }} else {{ refno.DESP[5] }}] as valv_size,
