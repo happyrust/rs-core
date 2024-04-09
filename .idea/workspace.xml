@@ -22,17 +22,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Modify wire calculation and improve calibration&#10;&#10;The commit enriches wire calculation and calibration methods. Code has been optimized to manage exceptions more accurately. Debug and println commands have been cleansed for better code readability. In addition, the implementation now includes automated filtering of points, removal of locations, and improved vector normalization. Several tests have also been incorporated to ensure appropriate coverage for the modifications.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Update test query, schema syntax and import changes&#10;&#10;Test query in the suite has been updated. Changes have been made in 'group_by_cata_hash.surql', 'query_full_attmap_by_refno.surql' schemas. BTreeMap has been imported in 'pdms_types.rs'. All these changes aim to optimize the test suites and query structures of the system.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/point.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/point.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_full_attmap_by_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_full_attmap_by_refno.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -709,7 +702,7 @@
       <workItem from="1712385559241" duration="11368000" />
       <workItem from="1712413725615" duration="34993000" />
       <workItem from="1712567127334" duration="701000" />
-      <workItem from="1712568043086" duration="6210000" />
+      <workItem from="1712568043086" duration="9300000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1054,7 +1047,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="290" />
+    <option name="localTasksCounter" value="291" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1097,7 +1090,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="add get_design_dbnos" />
     <MESSAGE value="fix by using try_wire_homotopy to generate snout" />
     <MESSAGE value="update" />
     <MESSAGE value="Remove db_number module and update various files&#10;&#10;This commit encompasses the removal of the entire 'db_number' module, which is no longer necessary. Updates were made to several files, including 'prim_geo/snout.rs', '.idea/workspace.xml', 'pdms_types.rs', and '.idea/.gitignore'. Base64 dependency version has been updated, and some debug lines were commented out for better readability." />
@@ -1122,7 +1114,8 @@
     <MESSAGE value="fix wire cal" />
     <MESSAGE value="Improve wire calculation and calibrations&#10;&#10;This commit focuses on enhancing the wire calculation and calibration methods. Debugging statements have been streamlined for efficiency and areas of the code have been modified to handle edge cases more effectively. This includes addition of aabb center, automated filtering of points, location removal, and improving vector normalization. Unnecessary debug and println lines have also been removed to clean up the code. Furthermore, several tests were added to verify and provide coverage on the updated parts of the code." />
     <MESSAGE value="Modify wire calculation and improve calibration&#10;&#10;The commit enriches wire calculation and calibration methods. Code has been optimized to manage exceptions more accurately. Debug and println commands have been cleansed for better code readability. In addition, the implementation now includes automated filtering of points, removal of locations, and improved vector normalization. Several tests have also been incorporated to ensure appropriate coverage for the modifications." />
-    <option name="LAST_COMMIT_MESSAGE" value="" />
+    <MESSAGE value="Update test query, schema syntax and import changes&#10;&#10;Test query in the suite has been updated. Changes have been made in 'group_by_cata_hash.surql', 'query_full_attmap_by_refno.surql' schemas. BTreeMap has been imported in 'pdms_types.rs'. All these changes aim to optimize the test suites and query structures of the system." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update test query, schema syntax and import changes&#10;&#10;Test query in the suite has been updated. Changes have been made in 'group_by_cata_hash.surql', 'query_full_attmap_by_refno.surql' schemas. BTreeMap has been imported in 'pdms_types.rs'. All these changes aim to optimize the test suites and query structures of the system." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

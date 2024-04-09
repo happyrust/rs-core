@@ -41,11 +41,12 @@ pub async fn get_mdb_world_site_ele_nodes(
     module: DBType,
 ) -> anyhow::Result<Vec<EleTreeNode>> {
     let db_type: u8 = module.into();
+    // let $dbnos = array::intersect((select value CURD.refno.DBNO from only MDB where NAME=$mdb limit 1), select value DBNO from DB where STYP=$db_type); \
     let mut response = SUL_DB
         .query(" \
-        let $dbnos = array::intersect((select value CURD.refno.DBNO from only MDB where NAME=$mdb limit 1), select value DBNO from DB where STYP=$db_type); \
+        let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1; \
         let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o)); \
-        let $b = array::flatten(select value (select value in.* from (select * from <-pe_owner order by order_num) where in.id!=none) from $a ); \
+        let $b = array::flatten(select value (select value in.* from (select * from <-pe_owner order by order_num) where in.id!=none and in.noun='SITE') from $a); \
         select refno, noun, name, owner, array::len(select value in from <-pe_owner) as children_count from $b
         ")
         .bind(("mdb", mdb))
@@ -68,9 +69,9 @@ pub async fn get_mdb_world_site_pes(
     let db_type: u8 = module.into();
     let mut response = SUL_DB
         .query(" \
-        let $dbnos = array::intersect((select value CURD.refno.DBNO from only MDB where NAME=$mdb limit 1), select value DBNO from DB where STYP=$db_type); \
+        let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1; \
         let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o)); \
-        array::flatten(select value (select value in.* from (select * from <-pe_owner order by order_num) where in.id!=none) from $a )")
+        array::flatten(select value (select value in.* from (select * from <-pe_owner order by order_num) where in.id!=none and in.noun='SITE') from $a)")
         .bind(("mdb", mdb))
         .bind(("db_type", db_type))
         .await?;
