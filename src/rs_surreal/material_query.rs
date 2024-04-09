@@ -710,7 +710,7 @@ pub struct MaterialYkEquiListData {
     pub equi_name: String,
     pub room_code: Option<String>,
     pub pos: Option<f32>,
-    pub floor_height: String,
+    pub floor_height: Option<f32>,
 }
 
 impl MaterialYkEquiListData {
@@ -720,8 +720,7 @@ impl MaterialYkEquiListData {
         map.entry("仪控设备位号".to_string()).or_insert(self.equi_name);
         map.entry("所在房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("设备绝对标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
-        map.entry("设备相对楼板标高".to_string()).or_insert(self.floor_height);
-
+        map.entry("设备相对楼板标高".to_string()).or_insert(self.floor_height.unwrap_or(0.0).to_string());
         map
     }
 }
@@ -744,7 +743,7 @@ pub async fn get_yk_equi_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
         fn::default_name($this.id) as equi_name,
         fn::room_code($this.id)[0] as room_code,
         fn::get_world_pos($this.id)[0][2] as pos, // 坐标 z
-        '' as floor_height
+        (->nearest_relate.dist)[0] as floor_height
         from {}"#, refnos_str);
         let mut response = db
             .query(sql)
