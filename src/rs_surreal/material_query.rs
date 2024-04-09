@@ -71,7 +71,7 @@ pub struct MaterialGyValvList {
     #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
     pub valv_name: String,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub valv_belong: String,
     pub valv_length: Option<f32>,
     pub valv_weight: Option<f32>,
@@ -87,7 +87,7 @@ impl MaterialGyValvList {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("阀门位号".to_string()).or_insert(self.valv_name.to_string());
-        map.entry("所在房间号".to_string()).or_insert(self.room_code.to_string());
+        map.entry("所在房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("阀门归属".to_string()).or_insert(self.valv_belong.to_string());
         // 没有的给个默认值
         let valv_length = self.valv_length.map_or("0".to_string(), |x| x.to_string());
@@ -112,7 +112,7 @@ pub struct MaterialGyEquiList {
     #[serde(serialize_with = "ser_refno_as_str")]
     pub id: RefU64,
     pub name: String,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub nozz_name: Vec<String>,
     pub nozz_pos: Vec<Vec<f32>>,
     pub nozz_cref: Vec<String>,
@@ -124,7 +124,7 @@ impl MaterialGyEquiList {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("设备位号".to_string()).or_insert(self.name.to_string());
-        map.entry("所在房间号".to_string()).or_insert(self.room_code.to_string());
+        map.entry("所在房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("管口号".to_string()).or_insert(serde_json::to_string(&self.nozz_name).unwrap_or("[]".to_string()));
         map.entry("管口坐标".to_string()).or_insert(serde_json::to_string(&self.nozz_pos).unwrap_or("[]".to_string()));
         map.entry("相连管道编号".to_string()).or_insert(serde_json::to_string(&self.nozz_cref).unwrap_or("[]".to_string()));
@@ -266,7 +266,7 @@ pub struct MaterialDqMaterialList {
     pub project_num: Option<String>,
     pub project_name: Option<String>,
     pub major: String,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub name: String,
     pub pos: Option<f32>,
     pub bran_type: Option<String>,
@@ -303,6 +303,7 @@ impl MaterialDqMaterialList {
         map.entry("元件等级名称".to_string()).or_insert(self.spre.clone().unwrap_or("".to_string()));
         map.entry("子项名称".to_string()).or_insert(self.project_name.unwrap_or("".to_string()));
         map.entry("专业".to_string()).or_insert(self.major);
+        map.entry("房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("托盘段号".to_string()).or_insert(self.name);
         map.entry("托盘标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
         map.entry("托盘类型".to_string()).or_insert(self.bran_type.unwrap_or("".to_string()));
@@ -335,7 +336,7 @@ pub struct MaterialDqMaterialListStru {
     pub project_num: Option<String>,
     pub project_name: Option<String>,
     pub major: String,
-    pub room_code: String,
+    pub room_code: Option<String>,
     pub pos: Option<f32>,
     pub material: Option<String>,
     pub width: Option<f32>,
@@ -371,6 +372,7 @@ impl MaterialDqMaterialListStru {
         map.entry("元件等级名称".to_string()).or_insert(self.spre.clone().unwrap_or("".to_string()));
         map.entry("子项名称".to_string()).or_insert(self.project_name.unwrap_or("".to_string()));
         map.entry("专业".to_string()).or_insert(self.major);
+        map.entry("房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map.entry("托盘标高".to_string()).or_insert(self.pos.unwrap_or(0.0).to_string());
         map.entry("材质".to_string()).or_insert(self.material.unwrap_or("".to_string()));
         map.entry("托盘支吊架名称".to_string()).or_insert(self.supp_name.unwrap_or("".to_string()));
@@ -474,7 +476,7 @@ pub async fn get_gy_valv_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         let sql = format!(r#"select
         id,
         fn::default_name(id) as valv_name, // 阀门位号
-        '' as room_code, // 房间号 todo
+        fn::room_code($this.id)[0] as room_code, // 房间号
         string::split(string::slice(array::at(->pe_owner.out.name,0),1),'-')[0] as valv_belong, // 阀门归属
         if refno.SPRE.refno.CATR.refno.PARA[1] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[1] }} * 2 as valv_length, // 阀门长度
         if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) != "R" {{ refno.SPRE.refno.CATR.refno.PARA[10] }} else if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) == "R" {{ refno.SPRE.refno.CATR.refno.PARA[14] }} else {{ 0 }} as valv_weight, // 阀门重量
@@ -508,7 +510,7 @@ pub async fn get_gy_equi_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         let sql = format!(r#"select
         id,
         string::slice(refno.NAME,1) as name, // 设备位号
-        '' as room_code, // 房间号 todo
+        fn::room_code($this.id)[0] as room_code, // 房间号
         fn::default_names(array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in])) as nozz_name, // 管口号
         array::clump(array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe.refno.POS,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in.refno.POS]),3) as nozz_pos, // 管口坐标
 
@@ -543,7 +545,7 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
         if string::contains(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'MCT') || string::contains(fn::default_name(fn::find_ancestor_type($this.id,"ZONE")[0]),'MSUP')  {{ '主托盘' }} else {{ '次托盘' }} as major,//专业
         fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC as project_name, //子项名称
-        '' as room_code,
+        fn::room_code($this.id)[0] as room_code,
         fn::default_name($this.id) as name,// 托盘段号
         refno.HPOS[2] as pos, // 托盘标高
         //<-pe_owner[where in.noun!='ATTA'] order by order_num,
@@ -579,7 +581,7 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
         fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC as project_name, //子项名称
         '支吊架' as major,//专业
-        '' as room_code, // 房间号 todo
+        fn::room_code($this.id)[0] as room_code, // 房间号
         fn::default_name($this.id) as supp_name, // 托盘支吊架名称
         '碳钢Q355' as material,  //材质
         if (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0] == NONE {{ '' }}
@@ -606,7 +608,7 @@ pub async fn get_dq_bran_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
             string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].NAME,'-')[0],2) as project_num, //子项号
             fn::find_ancestor_type($this.id,"SITE")[0].NAME.DESC as project_name, //子项名称
             '主托盘接地' as major,//专业
-            '' as room_code, // 房间号 todo
+            fn::room_code($this.id)[0] as room_code, // 房间号
             fn::default_name($this.id) as name, // 托盘段号
             math::fixed(refno.POS[2],3) as pos,
             '裸铜缆' as material,  //材质
@@ -658,7 +660,7 @@ pub struct MaterialYkInstData {
     pub id: RefU64,
     pub name: String,
     pub pipe_name: Option<String>,
-    pub room_code: String,
+    pub room_code: Option<String>,
 }
 
 impl MaterialYkInstData {
@@ -667,7 +669,7 @@ impl MaterialYkInstData {
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
         map.entry("传感器标识".to_string()).or_insert(self.name);
         map.entry("对应根阀编号".to_string()).or_insert(self.pipe_name.unwrap_or("".to_string()));
-        map.entry("房间号".to_string()).or_insert(self.room_code);
+        map.entry("房间号".to_string()).or_insert(self.room_code.unwrap_or("".to_string()));
         map
     }
 }
@@ -689,7 +691,7 @@ pub async fn get_yk_inst_pipe(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
         id,
         fn::default_name($this.id) as name,
         fn::find_pipe_bran($this.id)[0][0] as pipe_name,
-        '' as room_code
+        fn::room_code($this.id)[0] as room_code
         from {}"#, refnos_str);
         let mut response = db
             .query(sql)
@@ -1135,6 +1137,9 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
         .await?;
     let response = db
         .query(include_str!("material_list/fn_get_world_pos.surql"))
+        .await?;
+    let response = db
+        .query(include_str!("schemas/fn_query_room_code.surql"))
         .await?;
     Ok(())
 }

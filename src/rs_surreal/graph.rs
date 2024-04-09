@@ -27,7 +27,6 @@ pub async fn query_filter_deep_children(
     nouns: Vec<String>,
 ) -> anyhow::Result<Vec<RefU64>> {
     let end_noun = super::get_type_name(refno).await?;
-    // dbg!(&end_noun);
     let nouns_str = nouns
         .iter()
         .map(|s| format!("'{s}'"))
@@ -35,16 +34,11 @@ pub async fn query_filter_deep_children(
         .join(",");
     let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
     if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
-        // dbg!(&relate_sql);
         let sql = format!(
             "select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno})) where noun in [{nouns_str}]",
         );
-        // dbg!(&sql);
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
-            // let execution_time = stats.execution_time;
-            // dbg!(&execution_time);
-            // let s: Vec<RefU64> = result?;
             return Ok(result);
         }
     }
