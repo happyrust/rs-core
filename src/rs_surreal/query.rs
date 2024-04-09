@@ -229,7 +229,7 @@ pub async fn get_named_attmap_with_uda(
     //获得uda的 map
     let o: SurlValue = response.take(0)?;
     let mut named_attmap: NamedAttrMap = o.into();
-    let uda_kvs: Vec<NamedAttrMap> = response.take(2)?;
+    let uda_kvs: Vec<NamedAttrMap> = response.take(1)?;
     // dbg!(&uda_kvs);
     for map in uda_kvs {
         let k = map.get("u").unwrap().get_val_as_string();
@@ -250,7 +250,7 @@ pub async fn get_named_attmap_with_uda(
         }
         named_attmap.insert(uname.to_owned(), v);
     }
-    let overwrite_kvs: Vec<NamedAttrMap> = response.take(3)?;
+    let overwrite_kvs: Vec<NamedAttrMap> = response.take(2)?;
     // dbg!(&overite_kvs);
     for map in overwrite_kvs {
         let k = map.get("u").unwrap().get_val_as_string();
