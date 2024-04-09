@@ -9,9 +9,9 @@ use cavalier_contours::polyline::*;
 use cavalier_contours::static_aabb2d_index::StaticAABB2DIndex;
 use cgmath::Basis2;
 use geo::convex_hull::{graham_hull, quick_hull};
-use geo::{Line, LinesIter, Orient, Polygon, Winding};
 use geo::{coord, Contains, ConvexHull, IsConvex};
 use geo::{line_string, point, Intersects, LineString};
+use geo::{Line, LinesIter, Orient, Polygon, RemoveRepeatedPoints, Winding};
 use glam::{DVec2, DVec3, Quat, Vec3};
 use nalgebra::ComplexField;
 use serde_derive::{Deserialize, Serialize};
@@ -184,26 +184,35 @@ pub fn to_debug_json_str(pline: &Polyline) -> String {
 
 //todo 是否需要考虑wind方向
 #[inline]
-fn gen_fillet_spline(pt: DVec3, d1: DVec3, d2: DVec3, r: f64, sig_num: f64) -> Polyline {
+fn gen_fillet_spline(
+    pt: DVec3,
+    last_pt: DVec3,
+    next_pt: DVec3,
+    d1: DVec3,
+    d2: DVec3,
+    r: f64,
+    sig_num: f64,
+) -> Polyline {
     let mut pline = Polyline::new_closed();
     let angle = d1.angle_between(d2);
     if angle.abs() < 0.001 {
         return pline;
     }
-    // dbg!(angle.to_degrees());
+    //f64_trunc_3
     let bulge = f64_trunc_3(bulge_from_angle(PI as f64 - angle)) * sig_num;
-    dbg!(bulge);
-
+    // dbg!(bulge);
     let l = r / (angle / 2.0).tan();
-    let p0 = pt + d1 * l;
-    let p2 = pt + d2 * l;
-    // let bulge = 0.3998724443344795;
-    pline.add(f64_round(p0.x), f64_round(p0.y), bulge);
-    pline.add(f64_round(p2.x), f64_round(p2.y), 0.0);
-    pline.add(f64_round(pt.x), f64_round(pt.y), 0.0);
-    // dbg!(&pline);
-    // #[cfg(debug_assertions)]
-    // println!("pline: {}", to_debug_json_str(&pline));
+    let mut p0 = pt + d1 * l;
+    let mut p2 = pt + d2 * l;
+    if last_pt.distance(p0).abs() < 0.01 {
+        p0 = last_pt;
+    }
+    if next_pt.distance(p2).abs() < 0.01 {
+        p2 = next_pt;
+    }
+    pline.add((p0.x), (p0.y), bulge);
+    pline.add((p2.x), (p2.y), 0.0);
+    pline.add((pt.x), (pt.y), 0.0);
     pline
 }
 
@@ -425,46 +434,50 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
     // let aabb_center = aabb.center();
     let has_fradius = fradius_vec.iter().any(|x| *x > 0.0);
     let mut polyline = Polyline::new_closed();
+    for i in 0..len {
+        let pt = pts[i];
+        // edges.push(Edge::segment(pt, next));
+        polyline.add(pt.x, pt.y, 0.0);
+    }
+    let intrs = global_self_intersects(&polyline, &polyline.create_approx_aabb_index());
+    dbg!(&intrs.basic_intersects);
+    let self_intersect_indexes =
+        intrs.basic_intersects.into_iter()
+            .map(|x| [x.start_index1, x.start_index2])
+            .flatten()
+            .collect::<HashSet<_>>();
 
-    //如果没有fradius，直接简单的返回wire
-    if !has_fradius {
-        for i in 0..len {
-            let pt = pts[i];
-            // edges.push(Edge::segment(pt, next));
-            polyline.add(pt.x, pt.y, 0.0);
-        }
-    } else {
+    if has_fradius {
+        //重新开始收集polyline
+        polyline = Polyline::new_closed();
         let mut neg_parts = vec![];
-
-        let mut tmp_polyline = Polyline::new_closed();
-        for i in 0..len {
-            let pt = pts[i];
-            // edges.push(Edge::segment(pt, next));
-            tmp_polyline.add(pt.x, pt.y, 0.0);
-        }
-        let intrs = global_self_intersects(&tmp_polyline, &tmp_polyline.create_approx_aabb_index());
-        // dbg!(&intrs.basic_intersects);
-        let exclude_indx_set: HashSet<usize> = intrs.basic_intersects.iter().map(|x| x.start_index1+1).collect();
-        // dbg!(&exclude_indx_set);
-        // dbg!(intrs.overlapping_intersects.len());
-
-
         //需要将自相交的先排除在外
-        let polyon = Polygon::new(
-            LineString::from(pts.iter().enumerate()
-                .filter(|(i, _)| !exclude_indx_set.contains(i))
-                .map(|(_, p)| (p.x, p.y)).collect::<Vec<_>>()),
-            vec![],
-        );
-        // dbg!(&polyon);
-        let hull = polyon.convex_hull();
-        // dbg!(hull.exterior());
+        let mut line_string = LineString::new(vec![]);
+        // line_string.0.dedup();
+        let mut hashset = HashSet::new();
+        for pt in &pts {
+            let coord = coord!(x: pt.x, y: pt.y);
+            let str = format!("{:.3}, {:.3}", pt.x, pt.y);
+            if !hashset.contains(&str) {
+                line_string.0.push(coord);
+            }
+            hashset.insert(str);
+        }
+        let mut polyon = Polygon::new(line_string, vec![]);
+        // dbg!(polyon.exterior());
+        let ccw_signum = if polyon.exterior().is_ccw() {
+            1.0
+        } else {
+            -1.0
+        };
+        // dbg!(ccw_signum);
+        let mut is_concave = false;
         let mut pos_equal_eps = 0.0001;
-        // dbg!(hull.exterior());
         for i in 0..len {
             //如果当前点有fradius，其实是前一个点的bulge
             let fradius = fradius_vec[i] as f64;
-            let last = pts[(i + len - 1) % len];
+            let last_index = (i + len - 1) % len;
+            let last = pts[last_index];
             let pt = pts[i];
             //如果fradius > 0.0，需要检查wind 方向
             let next = pts[(i + 1) % len];
@@ -477,21 +490,24 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                 // dbg!(prev_last);
                 v0 = (last - prev_last).normalize();
             }
-
-            let wind_sig = 1.0;
-            let mut is_concave = false;
-            let cur_pt = point!(x: pt.x, y: pt.y);
-            if !hull.exterior().contains(&cur_pt) {
-                //(pt - last)
-                is_concave = true;
+            let mut cur_ccw_sig = if v1.cross(v2).z > 0.0 { 1.0 } else { -1.0 };
+            //如果v1 v2 方向相同，则继续沿用之前的 is_concave
+            if v1.dot(v2) > 0.99 {
+            } else if v1.dot(v2) < -0.99 {
+                //如果v1 v2 方向相反，则取之前的!is_concave
+                is_concave = !is_concave;
+            } else {
+                is_concave = ccw_signum * cur_ccw_sig < 0.0;
             }
             #[cfg(debug_assertions)]
             dbg!((i, pt, is_concave, fradius));
             if fradius > 0.0 {
-                let counter_clock = v1.cross(v2).z > 0.0;
-                let mut counter_sig = if counter_clock { 1.0 } else { -1.0 };
-                if is_concave {
-                    // add_fillet_spline(&mut polyline, pt, -v1, v2, fradius);
+                // let is_interior = !hull.exterior().contains(&point!(x: pt.x, y: pt.y));
+                // dbg!(is_interior);
+                let maybe_self_intersect = self_intersect_indexes.contains(&last_index)
+                        || self_intersect_indexes.contains(&i);
+                // dbg!(maybe_self_intersect);
+                if is_concave || maybe_self_intersect {
                     let angle = (-v1).angle_between(v2);
                     if angle.abs() < 0.001 {
                         continue;
@@ -505,26 +521,39 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                         dbg!((l, extent));
                         continue;
                     }
-                    let p0 = pt + (-v1) * l;
-                    let p2 = pt + v2 * l;
-                    let bulge =
-                        counter_sig * wind_sig * f64_trunc_3(bulge_from_angle(PI as f64 - angle));
-                    polyline.add(f64_round(p0.x), f64_round(p0.y), bulge);
-                    if (l - d1).abs() > 0.01 {
-                        polyline.add(f64_round(p2.x), f64_round(p2.y), 0.0);
+                    let mut p0 = pt + (-v1) * l;
+                    let mut p2 = pt + v2 * l;
+                    if last.distance(p0).abs() < 0.01 {
+                        p0 = last;
                     }
+                    if next.distance(p2).abs() < 0.01 {
+                        p2 = next;
+                    }
+                    let bulge = cur_ccw_sig * f64_trunc_3(bulge_from_angle(PI as f64 - angle));
+                    if let Some(polyline_latest_pt) = polyline.vertex_data.last(){
+                       let last_pt = DVec3::new(polyline_latest_pt.x, polyline_latest_pt.y, 0.0);
+                        if last_pt.distance(p0).abs() < 0.01 {
+                            polyline.vertex_data.pop();
+                        }
+                    }
+                    polyline.add(f64_round(p0.x), f64_round(p0.y), bulge);
+                    // if (l - d1).abs() > 0.01 {
+                        polyline.add(f64_round(p2.x), f64_round(p2.y), 0.0);
+                    // }
                 } else {
-                    let neg_part = gen_fillet_spline(pt, -v1, v2, fradius, counter_sig * wind_sig);
+                    let neg_part = gen_fillet_spline(pt, last, next, -v1, v2, fradius, cur_ccw_sig);
                     neg_parts.push(neg_part);
                     polyline.add(f64_round(pt.x), f64_round(pt.y), 0.0);
                 }
             } else {
                 polyline.add(f64_round(pt.x), f64_round(pt.y), 0.0);
             }
+            #[cfg(debug_assertions)]
+            println!("Add pt {i}: {}", to_debug_json_str(&polyline));
         }
         let mut i = 0;
         if let Some(new_poly) = polyline.remove_repeat_pos(0.05) {
-            dbg!("Found duplicate points");
+            // dbg!("Found duplicate points");
             polyline = new_poly;
         }
         #[cfg(debug_assertions)]
@@ -536,7 +565,7 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                 to_debug_json_str(&polyline),
                 to_debug_json_str(&neg)
             );
-            dbg!(pos_equal_eps);
+            // dbg!(pos_equal_eps);
             let mut result = polyline_boolean(
                 &polyline,
                 &neg,
@@ -560,9 +589,9 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
                 );
             }
             // dbg!(result.pos_plines.len());
-            // dbg!(&result.result_info);
+            // dbg!(&result);
             if !result.pos_plines.is_empty() {
-                polyline = result.pos_plines.remove(0).pline;
+                polyline = result.pos_plines.pop().unwrap().pline;
                 // for p in &mut polyline.vertex_data{
                 //     p.x = f64_round(p.x);
                 //     p.y = f64_round(p.y);
@@ -581,6 +610,9 @@ pub fn gen_occ_wire(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<W
     }
     #[cfg(debug_assertions)]
     println!("boolean: {}", to_debug_json_str(&polyline));
+
+    // let intrs = global_self_intersects(&polyline, &polyline.create_approx_aabb_index());
+    // dbg!(&intrs);
 
     for (p, q) in polyline.iter_segments() {
         if p.bulge.abs() < 0.0001 {

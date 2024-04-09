@@ -28,8 +28,8 @@ pub async fn query_arrive_leave_points(refnos: impl IntoIterator<Item = &RefU64>
              select value [
                     in,
                     world_trans.d,
-                    (select * from out.ptset.d where number=$parent.in.refno.ARRI)[0],
-                    (select * from out.ptset.d where number=$parent.in.refno.LEAV)[0]
+                    (select * from object::values(out.ptset) where number=$parent.in.refno.ARRI)[0],
+                    (select * from object::values(out.ptset) where number=$parent.in.refno.LEAV)[0]
                 ]
               from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']]->inst_relate) where world_trans.d!=none
              "#, pes))

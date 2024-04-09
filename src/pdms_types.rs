@@ -17,7 +17,7 @@ use sea_orm::entity::prelude::*;
 use sea_query::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{DisplayFromStr, serde_as};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display, Pointer};
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
@@ -36,6 +36,7 @@ use opencascade::primitives::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
 use crate::geometry::{EleInstGeo, EleInstGeosData};
+use crate::parsed_data::CateAxisParam;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -540,6 +541,7 @@ pub struct CataHashRefnoKV {
     #[serde(default)]
     pub group_refnos: Vec<RefU64>,
     pub exist_inst: bool,
+    pub ptset: Option<BTreeMap<i32, CateAxisParam>>,
 }
 
 #[serde_as]

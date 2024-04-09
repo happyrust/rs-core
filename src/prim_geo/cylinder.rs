@@ -351,6 +351,7 @@ impl BrepShapeTrait for SCylinder {
     ///引用限制大小
     fn apply_limit_by_size(&mut self, l: f32) {
         self.phei = self.phei.min(l);
+        // dbg!(self.phei);
         self.pdia = self.pdia.min(l);
     }
 

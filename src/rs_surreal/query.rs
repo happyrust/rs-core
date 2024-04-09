@@ -10,6 +10,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
 use dashmap::DashMap;
+use crate::parsed_data::CateAxisParam;
 use crate::tool::db_tool::db1_dehash;
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -234,28 +235,28 @@ pub async fn get_named_attmap_with_uda(
         let k = map.get("u").unwrap().get_val_as_string();
         let splits = k.split("::").collect::<Vec<_>>();
         let uname = splits[0];
-        if uname == ":NONE" || uname.is_empty() {
+        if uname == ":NONE" || uname == ":unset" || uname.is_empty() {
             continue;
         }
         let utype = splits[1];
         // dbg!((uname, utype));
-        let v = map.get("v").unwrap().clone();
+        let mut v = map.get("v").unwrap().clone();
         if matches!(&v, NamedAttrValue::InvalidType) {
             if default_unset {
-                named_attmap.insert(uname.to_owned(), NamedAttrValue::InvalidType);
+                v = NamedAttrValue::InvalidType;
             } else {
-                named_attmap.insert(uname.to_owned(), NamedAttrValue::get_default_val(utype));
+                v = NamedAttrValue::get_default_val(utype);
             }
-        } else {
-            named_attmap.insert(uname.to_owned(), v);
         }
+        named_attmap.insert(uname.to_owned(), v);
     }
-    let overite_kvs: Vec<NamedAttrMap> = response.take(3)?;
+    let overwrite_kvs: Vec<NamedAttrMap> = response.take(3)?;
     // dbg!(&overite_kvs);
-    for map in overite_kvs {
+    for map in overwrite_kvs {
         let k = map.get("u").unwrap().get_val_as_string();
+        if k == "NONE" || k == "unset" { continue; }
         let v = map.get("v").unwrap().clone();
-        named_attmap.insert(k, v);
+        named_attmap.insert(format!(":{k}"), v);
     }
     Ok(named_attmap)
 }
@@ -392,17 +393,18 @@ pub async fn query_group_by_cata_hash(
         .query(include_str!("schemas/group_by_cata_hash.surql"))
         .bind(("refnos", keys))
         .await?;
-    let d: Vec<KV<(String, bool), Vec<RefU64>>> = response.take(1)?;
+    let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> = response.take(1)?;
     let map = d
         .into_iter()
         .map(|KV {
-                  k: (cata_hash, exist_inst),
+                  k: (cata_hash, exist_inst, ptset),
                   v: group_refnos
               }| {
             (cata_hash.clone(), CataHashRefnoKV {
                 cata_hash,
                 group_refnos,
                 exist_inst,
+                ptset
             })
         })
         .collect();

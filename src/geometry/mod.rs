@@ -115,26 +115,27 @@ impl EleGeosInfo {
     pub fn gen_sur_json(&self, vec3_map: &mut HashMap<u64, String>) -> String {
         let id = self.id_str();
         // 变换到世界坐标系中，方便计算
-        let mut pt_hashes: Vec<String> = vec![];
-        // dbg!(&self.ptset_map);
-        for (_, p) in &self.ptset_map {
-            let pts_hash = RsVec3(self.world_transform * p.pt).gen_hash();
-            pt_hashes.push(format!("vec3:⟨{}⟩", pts_hash));
-            if !vec3_map.contains_key(&pts_hash) {
-                vec3_map.insert(pts_hash, serde_json::to_string(&p).unwrap());
-            }
-        }
-        let ptset = pt_hashes.join(",");
+        // let mut pt_hashes: Vec<String> = vec![];
+        // // dbg!(&self.ptset_map);
+        // for (_, p) in &self.ptset_map {
+        //     let pts_hash = RsVec3(self.world_transform * p.pt).gen_hash();
+        //     pt_hashes.push(format!("vec3:⟨{}⟩", pts_hash));
+        //     if !vec3_map.contains_key(&pts_hash) {
+        //         vec3_map.insert(pts_hash, serde_json::to_string(&p).unwrap());
+        //     }
+        // }
+        // let ptset = pt_hashes.join(",");
         let mut json = serde_json::to_string_pretty(&serde_json::json!({
             "visible": self.visible,
             "generic_type": self.generic_type,
+            "ptset": self.ptset_map,
         }))
         .unwrap();
 
         json.remove(json.len() - 1);
         json.push_str(",");
         json.push_str(&format!(r#""id": inst_info:⟨{}⟩, "#, id));
-        json.push_str(&format!(r#""ptset": [{}] "#, ptset));
+        // json.push_str(&format!(r#""ptset": [{}] "#, ptset));
         json.push_str("}");
         json
     }
