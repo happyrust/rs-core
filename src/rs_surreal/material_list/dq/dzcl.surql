@@ -5,7 +5,7 @@ string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num,
 string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
 if string::contains(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'MCT')
 || string::contains(fn::find_ancestor_type($this.id,"ZONE")[0].refno.NAME,'MSUP')  { '主托盘' } else { '次托盘' } as major,//专业
-'' as room_code,
+fn::room_code($this.id)[0] as room_code,
 string::slice(refno.NAME,1) as name,// 托盘段号
 refno.HPOS[2] as pos, // 托盘标高
 //<-pe_owner[where in.noun!='ATTA'] order by order_num,
