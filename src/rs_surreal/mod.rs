@@ -11,6 +11,8 @@ pub mod inst;
 
 pub mod point;
 
+pub mod function;
+
 
 
 pub use query::*;

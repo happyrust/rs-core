@@ -53,13 +53,17 @@ pub async fn get_mdb_world_site_ele_nodes(
         .bind(("db_type", db_type))
         .await?;
     // dbg!(&response);
-    let nodes: Vec<EleTreeNode> = response.take(3)?;
+    let mut nodes: Vec<EleTreeNode> = response.take(3)?;
+    for (i, node) in nodes.iter_mut().enumerate() {
+        if node.name.is_empty() {
+            node.name = format!("SITE {}", i+1);
+        }
+    }
     dbg!(nodes.len());
     //检查名称，如果没有给名字的，需要给上默认值, todo 后续如果是删除了又增加，名称后面的数字可能会继续增加
     Ok(nodes)
 }
 
-// //let $dbnos = select value CURD.refno.DBNO from only MDB where NAME="/ALL" limit 1
 //通过surql查询pe数据
 #[cached(result = true)]
 pub async fn get_mdb_world_site_pes(

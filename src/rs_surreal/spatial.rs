@@ -44,15 +44,30 @@ use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_vec_str};
 //     pub is_tubi: bool,
 // }
 
-pub fn cal_axis_ori(v: DVec3) -> DQuat {
-    let ref_dir = if v.dot(DVec3::NEG_Z).abs() > 0.999 {
-        DVec3::NEG_Y
+pub fn cal_ori_by_z_axis(v: DVec3, neg: bool) -> DQuat {
+    let mut ref_dir = if v.dot(DVec3::NEG_Z).abs() > 0.999 {
+        DVec3::Y
     }else{
-        DVec3::NEG_Z
+        DVec3::Z
     };
+    if neg {
+        ref_dir = -ref_dir;
+    }
     let y_dir = v.cross(ref_dir).normalize();
     let x_dir = y_dir.cross(v).normalize();
     let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, v));
+    rotation
+}
+
+pub fn cal_ori_by_y_axis(v: DVec3) -> DQuat {
+    let ref_dir = if v.dot(DVec3::NEG_Z).abs() > 0.999 {
+        DVec3::Y
+    }else{
+        DVec3::Z
+    };
+    let z_dir = ref_dir.cross(v).normalize();
+    let x_dir = v.cross(z_dir).normalize();
+    let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, v, z_dir));
     rotation
 }
 
@@ -167,22 +182,17 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 }
                 //有 cref 的时候，需要保持方向和 cref 一致
                 if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
-                    // let y_axis = opdir;
-                    // let z_axis = DMat3::from_quat(rotation).z_axis;
-                    // let x_axis = y_axis.cross(z_axis).normalize();
-                    // let dmat3 = DMat3::from_cols(x_axis, y_axis, z_axis);
-                    quat = cal_axis_ori(opdir);
+                    quat = cal_ori_by_z_axis(opdir, true);
                     // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat));
                 }
             }
-            // dbg!(has_cut_back);
         }
         //todo fix 处理 posl的计算
         if att.contains_key("POSL") {
             let pos_line = att.get_str("POSL").unwrap_or("NA");
             let pos_line = if pos_line.is_empty() { "NA" } else { pos_line };
             let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
-            // dbg!(pos_line);
+            dbg!(pos_line);
             //plin里的位置偏移
             let mut plin_pos = DVec3::ZERO;
             let mut pline_plax = DVec3::X;
@@ -223,25 +233,27 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     }
                 }
             }
-            let y_axis = if att.contains_key("YDIR") {
+            let axis_dir = if att.contains_key("YDIR") {
                 att.get_dvec3("YDIR").unwrap_or_default()
             } else {
-                DVec3::Z
+                //和LMIRROR 有关系
+                if is_lmirror { -pline_plax } else { pline_plax }
             };
-            //和LMIRROR 有关系
-            let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
-            let x_axis = y_axis.cross(z_axis).normalize();
+            // dbg!(axis_dir);
             let posl_quat = if fixed_posl_ori {
                 DQuat::IDENTITY
             } else {
-                DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
+                cal_ori_by_z_axis(axis_dir, false)
             };
-            // dbg!((x_axis, y_axis, z_axis));
+
             let new_quat = posl_quat * quat;
+            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat));
             translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
 
             //没有POSL时，需要使用cutback的方向
+            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
             rotation = rotation * new_quat;
+            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
             if pos_line == "unset" && has_cut_back {
                 // dbg!(has_cut_back);
                 //need to perpendicular to the Y axis

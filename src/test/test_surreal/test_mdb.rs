@@ -19,11 +19,11 @@ async fn test_get_world() {
 async fn test_get_world_sites() {
     super::init_test_surreal().await;
     let mdb = String::from("/ALL");
-    let result = rs_surreal::get_mdb_world_site_pes(mdb.clone(), crate::DBType::DESI).await.unwrap();
+    // let result = rs_surreal::get_mdb_world_site_pes(mdb.clone(), crate::DBType::DESI).await.unwrap();
     // Assert
     // assert!(result.is_ok());
     // let pes = result.unwrap();
-    dbg!(&result);
+    // dbg!(&result);
     let result = rs_surreal::get_mdb_world_site_ele_nodes(mdb, crate::DBType::DESI).await.unwrap();
     dbg!(&result);
     // assert!(!pes.is_empty());

@@ -291,7 +291,7 @@ impl SweepSolid {
             let p = Vec3::new(verts[i][0], verts[i][1], 0.0);
             points.push(p);
         }
-        let mut wire = wire::gen_occ_wire(&points, &profile.frads)?;
+        let mut wire = wire::gen_occ_wires(&points, &profile.frads)?.pop().unwrap();
         let translation = Mat4::from_translation(offset_pt);
         let r_trans_mat = Mat4::from_translation(r_translation);
         let beta_mat = Mat4::from_mat3(Mat3::from_quat(beta_rot));

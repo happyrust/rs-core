@@ -160,7 +160,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
     }
     let mut response = SUL_DB
         .query(format!(
-            "select value name from [{}]",
+            "select value fn::default_name(id) from [{}]",
             refno_fields.join(",")
         ))
         .await?;

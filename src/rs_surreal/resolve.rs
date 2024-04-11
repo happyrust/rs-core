@@ -1,4 +1,5 @@
 use std::{collections::HashMap, str::FromStr};
+use std::collections::HashSet;
 
 use crate::{
     math::polish_notation::Stack, tiny_expr::expr_eval::interp, tool::float_tool::f64_round_3,
@@ -9,12 +10,25 @@ use derive_more::{Deref, DerefMut};
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use tokio::sync::RwLock;
+use crate::pdms_types::PdmsGenericType;
 
 //生成模型的中间过程中产生的伪属性，需要保存下来
 //使用once_cell, 初始化一个dashmap, 后面去修改用这个dashmap来保存NamedAttMap
 //加上tokio的读写锁，保证线程安全
 pub static HASH_PSEUDO_ATT_MAPS: Lazy<RwLock<HashMap<String, NamedAttrMap>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
+
+static COMPATIBLE_UNIT_MAP: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("INT", ["DIST"].into());
+    m.insert("DIST", ["INT"].into());
+    m
+});
+
+#[inline]
+pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
+    COMPATIBLE_UNIT_MAP.get(unit_a).map(|x| x.contains(unit_b)).unwrap_or(false)
+}
 
 pub const INTERNAL_PDMS_EXPRESS: [&'static str; 22] = [
     "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "NOT", "AND", "OR", "ATAN", "ACOS",
@@ -252,11 +266,6 @@ pub fn eval_str_to_f64(
                     //判断target_refno是否在pseudo_map，如果有，取出这里的值
                     if let Some(am) = pseudo_map.get(&pe.cata_hash) {
                         if let Some(v) = am.map.get(c1) {
-                            // if target_refno.get_1() == 46990 {
-                            //     dbg!(c1);
-                            //     dbg!(am);
-                            //     dbg!(v.get_val_as_string());
-                            // }
                             return v.get_val_as_string();
                         }
                     }
@@ -279,9 +288,9 @@ pub fn eval_str_to_f64(
             let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
             let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
             let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
-            let unit_type =  context.get(&key_type).unwrap_or_default();
-            // dbg!(&unit_type);
-            if (!unit_type.is_empty() && unit_type != dtse_unit) {
+            let unit_type = context.get(&key_type).unwrap_or_default();
+            if (!unit_type.is_empty() && unit_type != dtse_unit) && !check_unit_compatible(dtse_unit, &unit_type){
+                dbg!((&unit_type, dtse_unit));
                 return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
             } else {
                 let v = context
@@ -301,6 +310,7 @@ pub fn eval_str_to_f64(
         })?
             .trim()
             .to_string();
+        // dbg!(&new_exp);
     }
 
     let mut new_exp = new_exp
@@ -395,8 +405,6 @@ pub fn eval_str_to_f64(
                 found_replaced = true;
             } else if is_some_param {
                 // 匹配到没有别的嵌套，比如 cos(DESP[1])，这种应该cos(DESP[1])整体结果为 0
-
-
                 if dtse_unit == "DIST" {
                     result_exp = result_exp.replace(s, "NaN");
                     let re = Regex::new(r"\w+\(NaN\)").unwrap();

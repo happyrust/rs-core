@@ -184,7 +184,7 @@ pub mod geo_params_data {
     use crate::prim_geo::sphere::Sphere;
     use crate::prim_geo::sweep_solid::SweepSolid;
     use crate::rvm_types::RvmShapeTypeData;
-    use crate::shape::pdms_shape::{BrepShapeTrait, RsVec3};
+    use crate::shape::pdms_shape::{BrepShapeTrait, RsVec3, VerifiedShape};
 
     #[derive(Clone, Serialize, Deserialize, Debug, Default)]
     pub enum CateGeoParam {
@@ -242,6 +242,29 @@ pub mod geo_params_data {
         PrimPolyhedron(Polyhedron),
         PrimLoft(SweepSolid),
         CompoundShape,
+    }
+
+    impl VerifiedShape for PdmsGeoParam {
+        fn check_valid(&self) -> bool {
+            match self {
+                PdmsGeoParam::PrimBox(s) => s.check_valid(),
+                PdmsGeoParam::PrimLSnout(s) => s.check_valid(),
+                PdmsGeoParam::PrimDish(s) => s.check_valid(),
+                PdmsGeoParam::PrimSphere(s) => s.check_valid(),
+                PdmsGeoParam::PrimCTorus(s) => s.check_valid(),
+                PdmsGeoParam::PrimRTorus(s) => s.check_valid(),
+                PdmsGeoParam::PrimPyramid(s) => s.check_valid(),
+                PdmsGeoParam::PrimLPyramid(s) => s.check_valid(),
+                PdmsGeoParam::PrimSCylinder(s) => s.check_valid(),
+                PdmsGeoParam::PrimLCylinder(s) => s.check_valid(),
+                PdmsGeoParam::PrimRevolution(s) => s.check_valid(),
+                PdmsGeoParam::PrimExtrusion(s) => s.check_valid(),
+                PdmsGeoParam::PrimPolyhedron(s) => s.check_valid(),
+                PdmsGeoParam::PrimLoft(s) => s.check_valid(),
+                PdmsGeoParam::CompoundShape => false,
+                _ => false,
+            }
+        }
     }
 
     impl PdmsGeoParam {
@@ -311,6 +334,9 @@ pub mod geo_params_data {
 
         #[cfg(feature = "occ")]
         pub fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+            if !self.check_valid() {
+                return Err(anyhow!("Invalid shape"));
+            }
             match self {
                 PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape(),
                 PdmsGeoParam::PrimLCylinder(s) => s.gen_occ_shape(),
@@ -553,6 +579,7 @@ pub struct CateExtrusionParam {
     rkyv::Serialize,
 )]
 pub struct SannData {
+    pub refno: RefU64,
     pub xy: Vec2,
     pub dxy: Vec2,
     pub paxis: Option<CateAxisParam>,
@@ -579,6 +606,7 @@ pub struct SannData {
     rkyv::Serialize,
 )]
 pub struct SProfileData {
+    pub refno: RefU64,
     pub verts: Vec<Vec2>,
     pub frads: Vec<f32>,
     pub normal_axis: Vec3,
@@ -599,6 +627,7 @@ pub struct SProfileData {
     rkyv::Serialize,
 )]
 pub struct SRectData {
+    pub refno: RefU64,
     pub center: Vec2,
     pub size: Vec2,
     pub dxy: Vec2,
@@ -612,6 +641,7 @@ impl SRectData{
         let c = self.center + self.dxy;
         let h = self.size/2.0;
         SProfileData{
+            refno: self.refno,
             verts: vec![c - h, c + Vec2::new(h.x, -h.y), c + h, c + Vec2::new(-h.x, h.y) ],
             frads: vec![0.0; 4],
             normal_axis: self.normal_axis,
@@ -642,6 +672,15 @@ pub enum CateProfileParam {
 }
 
 impl CateProfileParam {
+
+    pub fn get_refno(&self) -> Option<RefU64>{
+        match self {
+            CateProfileParam::UNKOWN => None,
+            CateProfileParam::SPRO(s) => Some(s.refno),
+            CateProfileParam::SANN(s) => Some(s.refno),
+            CateProfileParam::SREC(s) => Some(s.refno),
+        }
+    }
 
     pub fn get_plax(&self) -> Vec3{
         match self {

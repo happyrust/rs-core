@@ -132,13 +132,13 @@ impl BrepShapeTrait for Revolution {
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        let wire = gen_occ_wire(&self.verts, &self.fradius_vec)?;
+        let wires = gen_occ_wires(&self.verts, &self.fradius_vec)?;
         let angle = if abs_diff_eq!(self.angle, 360.0, epsilon = 0.01) {
             360.0
         } else {
             self.angle as f64
         };
-        let r = wire.to_face().revolve(
+        let r = Face::from_wires(&wires)?.revolve(
             self.rot_pt.as_dvec3(),
             self.rot_dir.as_dvec3(),
             Some(angle.degrees()),
