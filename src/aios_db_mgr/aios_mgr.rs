@@ -11,7 +11,7 @@ use sqlx::{MySql, Pool};
 use sqlx::pool::PoolOptions;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
-use crate::table_const::PUHUA_MATERIAL_DATABASE;
+use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
 use crate::pe::SPdmsElement;
 use crate::test::test_surreal::{init_surreal_with_signin, init_test_surreal};
 
@@ -159,6 +159,16 @@ impl PdmsDataInterface for AiosDBMgr {
 }
 
 impl AiosDBMgr {
+    ///获得默认的连接字符串
+    pub fn default_conn_str(&self) -> String {
+        let d = &self.db_option;
+        let user = d.user.as_str();
+        let pwd = urlencoding::encode(&d.password);
+        let ip = d.ip.as_str();
+        let port = d.port.as_str();
+        format!("mysql://{user}:{pwd}@{ip}:{port}")
+    }
+
     pub fn puhua_conn_str(&self) -> String {
         let d = &self.db_option;
         let user = d.puhua_database_user.as_str();
@@ -166,6 +176,19 @@ impl AiosDBMgr {
         let ip = d.puhua_database_ip.as_str();
         format!("mysql://{user}:{pwd}@{ip}")
     }
+
+    /// 获取项目配置信息pool
+    pub async fn get_global_pool(&self) -> anyhow::Result<Pool<MySql>> {
+        let connection_str = self.default_conn_str();
+        let url = &format!("{connection_str}/{}", GLOBAL_DATABASE);
+        PoolOptions::new()
+            .max_connections(500)
+            .acquire_timeout(Duration::from_secs(10 * 60))
+            .connect(url)
+            .await
+            .map_err({ |x| anyhow::anyhow!(x.to_string()) })
+    }
+
     /// 获取外部的数据库
     pub async fn get_puhua_pool(&self) -> anyhow::Result<Pool<MySql>> {
         let conn = self.puhua_conn_str();
