@@ -22,27 +22,16 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Add new function file, refactor schemas and property values &#10;&#10;A new function file `common.surql` was introduced. Query in `query_full_attmap_by_refno.surql` was updated to improve retrieval of specific property values. Changes also include enhancements in workspace configuration and settings.">
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/function.rs" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Remove test_gen_wire_3.step file&#10;&#10;This commit removes the step file related to the 3D test generation of wire. The file was cluttering the directory and its use was no longer necessary for current and future project operations. All project operations continue to function as expected without this file.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/point.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/point.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_gen_wire_3.step" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/dir_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/dir_tool.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/float_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/float_tool.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/math_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/math_tool.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -164,8 +153,15 @@
     "Cargo.Test test::test_surreal::test_room::test_save_room_data.executor": "Run",
     "Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor": "Run",
     "Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori_by_line_axis.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU.executor": "Run",
     "Cargo.Test test::test_sync2::test_gen_att_type_structs.executor": "Run",
     "Cargo.Test test::test_sync2::test_parse.executor": "Run",
+    "Cargo.Test tool::math_tool::test_convert_to_dir_string.executor": "Run",
     "Cargo.check.executor": "Run",
     "Project.color": "011c4a",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
@@ -211,7 +207,7 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test prim_geo::wire::test_occ_wire_hole">
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU">
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -229,8 +225,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test prim_geo::wire::test_occ_wire_hole" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib prim_geo::wire::test_occ_wire_hole -- --exact" />
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -246,8 +242,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_att_by_refno" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_att_by_refno -- --exact" />
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -263,8 +259,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_geom::test_query_la_points" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_geom::test_query_la_points -- --exact" />
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -280,8 +276,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_mdb::test_get_world_sites" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_mdb::test_get_world_sites -- --exact" />
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -297,8 +293,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_query_transform" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+    <configuration name="Test tool::math_tool::test_convert_to_dir_string" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib tool::math_tool::test_convert_to_dir_string -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -334,19 +330,19 @@
     <list>
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Test prim_geo::wire::test_occ_wire_hole" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_la_points" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world_sites" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
+      <item itemvalue="Cargo.Test tool::math_tool::test_convert_to_dir_string" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Cargo.Test prim_geo::wire::test_occ_wire_hole" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_la_points" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world_sites" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING" />
+        <item itemvalue="Cargo.Test tool::math_tool::test_convert_to_dir_string" />
       </list>
     </recent_temporary>
   </component>
@@ -729,7 +725,8 @@
       <workItem from="1712766953898" duration="4628000" />
       <workItem from="1712775192323" duration="2378000" />
       <workItem from="1712808066283" duration="3733000" />
-      <workItem from="1712822222571" duration="9350000" />
+      <workItem from="1712822222571" duration="9447000" />
+      <workItem from="1712895694357" duration="19802000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1074,7 +1071,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="294" />
+    <option name="localTasksCounter" value="295" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1117,7 +1114,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Update codebase to optimize geometry and shape transformations&#10;&#10;The codebase is updated to improve the geometry and shape transformations in project. This involves refactoring the code in multiple files including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs' and many others. The changes primarily streamline the method calls and namespaces used for geometric shapes and transformations, and also adjust tolerance handling in 'cylinder.rs'. Some deprecated code segments are removed for more readability and efficiency." />
     <MESSAGE value="变更" />
     <MESSAGE value="Refactor geometry and shape transformations codebase&#10;&#10;Refactoring involved multiple changes across source files, including 'src/shape/pdms_shape.rs', 'src/prim_geo/lpyramid.rs', 'src/prim_geo/snout.rs', and others. The changes result in improved geometry and shape transformations, including a more efficient handling of tolerance attributes in 'cylinder.rs'. Redundant code segments have also been removed for efficiency and readability." />
     <MESSAGE value="Update feature flag and clean up geometry primitives&#10;&#10;Updated feature flags from &quot;opencascade_rs&quot; to &quot;occ&quot; for consistency. Also, code for geometry primitives like Cube, Cylinder, Torus, etc., has been cleaned up. This involved creating a new module &quot;basic&quot;, introducing Arc for shared structures and replacing Shape structures with OccSharedShape where needed." />
@@ -1142,7 +1138,8 @@
     <MESSAGE value="Update schema syntax and query optimization &#10;&#10;Revised query syntax in 'query_full_attmap_by_refno.surql' and 'mdb.rs' for improved performance. Adjustments specifically target retrieving DBNO and UDNA values. These adjustments aim to enhance system efficiency." />
     <MESSAGE value="Refactor queries and schemas for performance improvement &#10;&#10;Updated the syntax for 'query_full_attmap_by_refno.surql' and made necessary changes in 'mdb.rs' to optimize query performance. Key focus was on efficient retrieval of DBNO and UDNA values, contributing to the overall system efficiency." />
     <MESSAGE value="Add new function file, refactor schemas and property values &#10;&#10;A new function file `common.surql` was introduced. Query in `query_full_attmap_by_refno.surql` was updated to improve retrieval of specific property values. Changes also include enhancements in workspace configuration and settings." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add new function file, refactor schemas and property values &#10;&#10;A new function file `common.surql` was introduced. Query in `query_full_attmap_by_refno.surql` was updated to improve retrieval of specific property values. Changes also include enhancements in workspace configuration and settings." />
+    <MESSAGE value="Remove test_gen_wire_3.step file&#10;&#10;This commit removes the step file related to the 3D test generation of wire. The file was cluttering the directory and its use was no longer necessary for current and future project operations. All project operations continue to function as expected without this file." />
+    <option name="LAST_COMMIT_MESSAGE" value="Remove test_gen_wire_3.step file&#10;&#10;This commit removes the step file related to the 3D test generation of wire. The file was cluttering the directory and its use was no longer necessary for current and future project operations. All project operations continue to function as expected without this file." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

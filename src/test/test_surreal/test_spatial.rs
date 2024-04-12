@@ -25,16 +25,99 @@ fn test_cal_ori(v: DVec3) {
     dbg!(math_tool::quat_to_pdms_ori_xyz_str(&rotation.as_quat()));
 }
 
+#[cfg(test)]
+mod test_transform {
+    use glam::{DVec3, Mat3};
+    use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis, RefU64, rs_surreal};
+    use crate::test::test_surreal::init_test_surreal;
+    use crate::tool::dir_tool::parse_ori_str_to_mat;
+    use crate::tool::math_tool;
+    use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str};
+
+    //sctn 等等
+    #[test]
+    fn test_cal_ori_by_line_axis() {
+
+        //Y方向始终在X Z 方向
+        let tests = [
+            "Y is X and Z is Z",  // X is -Y
+            "Y is X and Z is -Z", // X is Y
+            "Y is Z and Z is Y",
+            "Y is Z and Z is -Y",
+            "Y is Z and Z is X",
+            "Y is Z and Z is -X",
+            "Y is X 45 Z and Z is -Y 45 Z",
+            "Y is X 45 Z and Z is Y 45 Z",
+            "Y is X 45 Z and Z is X 45 -Z",
+            "Y is -X 45 Z and Z is -X 45 -Z",
+            "Y is Z and Z is -Y 31 -X"
+        ];
+        let oris = tests.into_iter().map(|x| parse_ori_str_to_mat(x).unwrap()).collect::<Vec<_>>();
+        dbg!(&oris);
+
+        for ori in oris {
+            let extru_dir = ori.z_axis.as_dvec3();
+            dbg!(to_pdms_dvec_str(&extru_dir));
+            let quat = cal_ori_by_extru_axis(extru_dir, false);
+            dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+        }
+    }
+
+    async fn test_transform(refno: RefU64, assert_ori: &str){
+        let transform = rs_surreal::get_world_transform(refno)
+            .await
+            .unwrap().unwrap();
+        dbg!(transform);
+        let rot_mat = Mat3::from_quat(transform.rotation);
+        dbg!(rot_mat);
+        let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
+        dbg!(&ori_str);
+        assert_eq!(ori_str, assert_ori);
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_JLDATU() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
+        test_transform("17496/137181".into(), "Y is Z and Z is -Y 34.6032 -X").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_GENSEC() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        test_transform("24384/28745".into(), "Y is -X 31 Y and Z is Z").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_PLDATU() -> anyhow::Result<()> {
+        init_test_surreal().await;
+
+        test_transform("24384/28752".into(), "Y is -Y 31 -X 0.0307 Z and Z is X 31 -Y").await;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_FIXING() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        test_transform("24384/28753".into(), "-Y 31 -X 0.0307 Z and Z is Y 31 X 89.9693 Z").await;
+        Ok(())
+    }
+
+}
+
 #[tokio::test]
 async fn test_query_transform() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
     // //X
-    // test_print_ori("Y is -X 14 -Y and Z is Y 14 -X");
+    test_print_ori("Y is -X 14 -Y and Z is Y 14 -X");
     // //Y
-    // test_print_ori("Y is -Y 14 X and Z is -X 14 -Y");
+    test_print_ori("Y is -Y 14 X and Z is -X 14 -Y");
     // //Z
-    // test_print_ori("Y is Y 14 -X and Z is Z");
+    test_print_ori("Y is Y 14 -X and Z is Z");
 
     // test_cal_ori(DVec3::X);
     // test_cal_ori(DVec3::NEG_X);

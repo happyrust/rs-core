@@ -2,6 +2,11 @@ use crate::tool::direction_parse::{parse_expr_to_dir, parse_rotation_struct, AXI
 use anyhow::anyhow;
 use glam::{Mat3, Quat};
 
+#[inline]
+pub fn parse_ori_str_to_mat(ori_str: &str) -> anyhow::Result<Mat3> {
+    parse_ori_str_to_quat(ori_str).map(|q| Mat3::from_quat(q))
+}
+
 //Y is N and Z is U
 pub fn parse_ori_str_to_quat(ori_str: &str) -> anyhow::Result<Quat> {
     let dir_strs = ori_str.split(" and ").collect::<Vec<_>>();

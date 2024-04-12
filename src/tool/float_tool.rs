@@ -108,6 +108,11 @@ pub fn f64_round_3(v: f64) -> f64 {
     (v * 1000.0).round() / 1000.0f64 //以防止溢出
 }
 
+#[inline]
+pub fn f64_round_4(v: f64) -> f64 {
+    (v * 10000.0).round() / 10000.0f64 //以防止溢出
+}
+
 
 
 #[inline]

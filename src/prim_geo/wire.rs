@@ -707,7 +707,6 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                     },
                 );
             }
-            dbg!(&result);
             if !result.pos_plines.is_empty() {
                 polyline = result.pos_plines.pop().unwrap().pline;
             } else {

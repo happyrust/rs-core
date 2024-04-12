@@ -1,5 +1,7 @@
 use crate::room::room::GLOBAL_AABB_TREE;
+use futures::future::{BoxFuture, FutureExt};
 use crate::tool::math_tool;
+use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_vec_str};
 use crate::{
     accel_tree::acceleration_tree::QueryRay,
     consts::HAS_PLIN_TYPES,
@@ -12,73 +14,88 @@ use crate::{
     },
     NamedAttrMap, RefU64, SUL_DB,
 };
+use anyhow::anyhow;
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
 use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
-use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
+use glam::{DMat3, DMat4, DQuat, DVec3, Mat3, Mat4, Quat, Vec3};
 use parry3d::bounding_volume::Aabb;
 use parry3d::query::Ray;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::{collections::HashSet, f32::consts::E, time::Instant};
-use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_vec_str};
 
-// #[derive(Serialize, Deserialize, Debug)]
-// pub struct GeomInstQuery{
-//     #[serde(alias="id")]
-//     pub refno: RefU64,
-//     pub world_aabb: Aabb,
-//     pub world_trans: Transform,
-//     pub insts: Vec<ModelHashInst>,
-// }
-//
-// #[serde_as]
-// #[derive(Serialize, Deserialize, Debug, Default)]
-// pub struct ModelHashInst {
-//     #[serde_as(as = "DisplayFromStr")]
-//     pub geo_hash: u64,
-//     pub transform: Transform,
-//     #[serde(default)]
-//     pub is_tubi: bool,
-// }
-
-pub fn cal_ori_by_z_axis(v: DVec3, neg: bool) -> DQuat {
-    let mut ref_dir = if v.dot(DVec3::NEG_Z).abs() > 0.999 {
+pub fn cal_ori_by_z_axis(v: DVec3, neg: bool, ref_as_xdir: bool) -> DQuat {
+    let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::Y
-    }else{
+    } else {
         DVec3::Z
     };
     if neg {
         ref_dir = -ref_dir;
     }
-    let y_dir = v.cross(ref_dir).normalize();
-    let x_dir = y_dir.cross(v).normalize();
+    let (x_dir, y_dir) = if ref_as_xdir {
+        let y_dir = v.cross(ref_dir).normalize();
+        let x_dir = y_dir.cross(v).normalize();
+        (x_dir, y_dir)
+    } else {
+        let x_dir = ref_dir.cross(v).normalize();
+        let y_dir = v.cross(x_dir).normalize();
+        (x_dir, y_dir)
+    };
     let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, v));
     rotation
 }
 
-pub fn cal_ori_by_y_axis(v: DVec3) -> DQuat {
-    let ref_dir = if v.dot(DVec3::NEG_Z).abs() > 0.999 {
-        DVec3::Y
-    }else{
+pub fn cal_ori_by_extru_axis(v: DVec3, neg: bool) -> DQuat {
+    let mut y_ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
+        DVec3::X
+    } else {
         DVec3::Z
     };
-    let z_dir = ref_dir.cross(v).normalize();
-    let x_dir = v.cross(z_dir).normalize();
-    let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, v, z_dir));
+    if neg {
+        y_ref_dir = -y_ref_dir;
+    }
+
+    let x_dir = y_ref_dir.cross(v).normalize();
+    let y_dir = v.cross(x_dir).normalize();
+    let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, v));
     rotation
+}
+
+
+
+pub async fn get_spline_pts(refno: RefU64) -> anyhow::Result<Vec<DVec3>> {
+    let mut response = SUL_DB.query(
+        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only pe:{}", refno)).await?;
+    let pts: Vec<DVec3> = response.take(0)?;
+    Ok(pts)
+}
+
+pub async fn get_spline_line_dir(refno: RefU64) -> anyhow::Result<DVec3> {
+    let mut response = SUL_DB.query(
+        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only pe:{}", refno)).await?;
+    let pts: Vec<DVec3> = response.take(0)?;
+    if pts.len() == 2 {
+        return Ok((pts[1] - pts[0]).normalize());
+    }
+    Err(anyhow!("没有找到两个点"))
+}
+
+#[cached(result = true)]
+pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transform>> {
+    get_world_mat4(refno).await.map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
 
 //获得世界坐标系
 ///使用cache，需要从db manager里移除出来
 ///获得世界坐标系, 需要缓存数据，如果已经存在数据了，直接获取
-#[async_recursion]
-pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transform>> {
+#[cached(result = true)]
+pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
     ancestors.reverse();
-    // dbg!(&ancestors);
     let mut rotation = DQuat::IDENTITY;
     let mut translation = DVec3::ZERO;
 
@@ -97,6 +114,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             let result = cal_zdis_pkdi_in_section(owner, pkdi, zdist).await;
             pos += result.1;
             quat *= result.0;
+
+            translation = translation + rotation * pos;
+            rotation = rotation * quat;
+            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
+            continue;
         }
 
         if att.contains_key("NPOS") {
@@ -112,14 +134,9 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
         } else {
             let (l_poss, l_pose) = if owner_is_gensec {
                 //找到spine，获取spine的两个顶点
-                let mut response = SUL_DB.query(
-                    format!("select value <-pe_owner[where in.noun='SPINE'].in<-pe_owner.in.refno.POS from only pe:{}", owner)).await?;
-                let pts: Vec<f64> = response.take(0)?;
-                if pts.len() == 6 {
-                    (
-                        Some(DVec3::new(pts[0], pts[1], pts[2])),
-                        Some(DVec3::new(pts[3], pts[4], pts[5])),
-                    )
+                let pts: Vec<DVec3> = get_spline_pts(owner).await?;
+                if pts.len() == 2 {
+                    (Some(pts[0]), Some(pts[1]))
                 } else {
                     (None, None)
                 }
@@ -128,21 +145,13 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             };
             if let (Some(poss), Some(pose)) = (l_poss, l_pose) {
                 need_bangle = true;
-                let extru_dir = (pose - poss).normalize();
-                if !extru_dir.is_normalized() {
+                let z_axis = (pose - poss).normalize();
+                // dbg!(z_axis);
+                if !z_axis.is_normalized() {
                     return Ok(None);
                 }
-                let d = extru_dir.dot(DVec3::Z).abs();
-
-                let ref_axis = if abs_diff_eq!(1.0, d) {
-                    DVec3::Y
-                } else {
-                    //need to figure out the axis?
-                    DVec3::Z
-                };
-                let mut p_axis = ref_axis.cross(extru_dir).normalize();
-                let mut y_axis = extru_dir.cross(p_axis).normalize();
-                quat = DQuat::from_mat3(&DMat3::from_cols(p_axis, y_axis, extru_dir));
+                quat = cal_ori_by_z_axis(z_axis, true, true);
+                // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
             }
         }
 
@@ -150,12 +159,8 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
         if need_bangle || att.contains_key("BANG") {
             quat = quat * DQuat::from_rotation_z(bangle.to_radians());
         }
-        //固定方位，不会怎旋转方向，但是会移动
-        let fixed_posl_ori = att.get_type_str() == "ENDATU";
-
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
         let c_ref = att.get_foreign_refno("CREF").unwrap_or_default();
-
         let mut cut_dir = DVec3::Y;
         let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
@@ -164,7 +169,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             cut_dir = att.get_dvec3("CUTP").unwrap_or(cut_dir);
             let cut_len = att.get_f64("CUTB").unwrap_or_default();
             if let Ok(c_att) = super::get_named_attmap(c_ref).await {
-                let c_t = get_world_transform(c_ref).await?.unwrap_or_default();
+                let c_t = Box::pin(get_world_transform(c_ref)).await?.unwrap_or_default();
                 if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
                     let w_poss = c_t.translation.as_dvec3();
                     let axis = pose - poss;
@@ -182,7 +187,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 }
                 //有 cref 的时候，需要保持方向和 cref 一致
                 if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
-                    quat = cal_ori_by_z_axis(opdir, true);
+                    quat = cal_ori_by_z_axis(opdir, true, true);
                     // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat));
                 }
             }
@@ -199,10 +204,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
             let owner = att.get_owner();
             // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
             let mut is_lmirror = false;
-            let ance_result =
+            let ancestor_refnos =
                 crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec())
                     .await?;
-            if let Some(plin_owner) = ance_result.into_iter().next() {
+            dbg!(&ancestor_refnos);
+            if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
                     .unwrap_or_default();
@@ -233,21 +239,32 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                     }
                 }
             }
-            let axis_dir = if att.contains_key("YDIR") {
-                att.get_dvec3("YDIR").unwrap_or_default()
+            let y_axis = if att.contains_key("YDIR") {
+                //忽略X方向的偏移，投影到 YZ 平面
+                let mut  v = att.get_dvec3("YDIR").unwrap_or_default();
+                v.x = 0.0;
+                if v.length() == 0.0 {
+                    DVec3::Z
+                } else{
+                    v.normalize()
+                }
             } else {
                 //和LMIRROR 有关系
-                if is_lmirror { -pline_plax } else { pline_plax }
+                if is_lmirror {
+                    -pline_plax
+                } else {
+                    pline_plax
+                }
             };
-            // dbg!(axis_dir);
-            let posl_quat = if fixed_posl_ori {
-                DQuat::IDENTITY
-            } else {
-                cal_ori_by_z_axis(axis_dir, false)
+            dbg!(y_axis);
+            let posl_quat = {
+                let z_axis = DVec3::X;
+                let x_axis = y_axis.cross(z_axis).normalize();
+                DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
             };
-
+            dbg!(dquat_to_pdms_ori_xyz_str(&posl_quat));
             let new_quat = posl_quat * quat;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat));
+            dbg!(dquat_to_pdms_ori_xyz_str(&new_quat));
             translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
 
             //没有POSL时，需要使用cutback的方向
@@ -271,9 +288,11 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
                 // dbg!(new_mat);
                 rotation = DQuat::from_mat3(&new_mat);
             }
+            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
         } else {
             translation = translation + rotation * pos;
             rotation = rotation * quat;
+            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
         }
 
         let trans = Transform {
@@ -296,11 +315,12 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
     if rotation.is_nan() || translation.is_nan() {
         return Ok(None);
     }
-    Ok(Some(Transform {
-        rotation: rotation.as_quat(),
-        translation: translation.as_vec3(),
-        scale: Vec3::ONE,
-    }))
+    // Ok(Some(Transform {
+    //     rotation: rotation.as_quat(),
+    //     translation: translation.as_vec3(),
+    //     scale: Vec3::ONE,
+    // }))
+    Ok(Some(DMat4::from_rotation_translation(rotation, translation)))
 }
 
 ///查询形集PLIN的值，todo 需要做缓存优化
@@ -314,7 +334,7 @@ pub async fn query_pline(refno: RefU64, jusl: String) -> anyhow::Result<Option<P
         return Ok(None);
     }
     let c_refnos = crate::get_children_refnos(psref).await.unwrap_or_default();
-    // dbg!(&c_refnos);
+    dbg!(&c_refnos);
     for c_refno in c_refnos {
         let a = crate::get_named_attmap(c_refno).await?;
         let Some(p_key) = a.get_as_string("PKEY") else {
@@ -379,8 +399,14 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
         if tmp_dist > cur_len || i == lens.len() - 1 {
             match path {
                 SweepPath3D::Line(l) => {
-                    let mut dir = (l.end - l.start).normalize().as_dvec3();
+                    // dbg!(&l);
+                    // let mut dir = (l.end - l.start).normalize().as_dvec3();
+                    let mut dir = get_spline_line_dir(refno).await.unwrap_or_default();
+                    quat = cal_ori_by_extru_axis(dir, false);
+                    dir = DMat3::from_quat(quat).z_axis;
                     pos += dir * tmp_dist + l.start.as_dvec3();
+                    dbg!(dir);
+                    dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat));
                     break;
                 }
                 SweepPath3D::SpineArc(arc) => {

@@ -93,6 +93,7 @@ pub async fn query_insts(refnos: impl IntoIterator<Item = &RefU64>) -> anyhow::R
         .map(|x| x.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
+    //and out.meshed
     let mut response = SUL_DB
         .query(format!(r#"
                     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
