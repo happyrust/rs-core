@@ -1,7 +1,6 @@
 DEFINE FUNCTION fn::room_code($pe:record) {
     let $noun = $pe.refno.TYPE;
     let $uda_room = (select value v from type::thing('ATT_UDA', meta::id($pe)).udas where u.NAME='/ROOM_NO');
- // return $noun;
     return
     // EQUI可能有两层
     if $noun == 'EQUI' && array::len($uda_room) == 0 {
