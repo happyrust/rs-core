@@ -231,7 +231,7 @@ impl AccelerationTree {
                 let Ok(mesh) = PlantMesh::des_mesh_file(&format!("assets/meshes/{}.mesh", inst.geo_hash)) else {
                     continue;
                 };
-                dbg!(mesh.vertices.len());
+                // dbg!(mesh.vertices.len());
                 if mesh.vertices.is_empty() {
                     continue;
                 }

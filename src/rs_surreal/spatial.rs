@@ -399,9 +399,10 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
         if tmp_dist > cur_len || i == lens.len() - 1 {
             match path {
                 SweepPath3D::Line(l) => {
-                    // dbg!(&l);
-                    // let mut dir = (l.end - l.start).normalize().as_dvec3();
-                    let mut dir = get_spline_line_dir(refno).await.unwrap_or_default();
+                    let mut dir = get_spline_line_dir(refno).await.unwrap_or_default().normalize_or_zero();
+                    if dir.length() == 0.0 {
+                        dir = (l.end - l.start).normalize().as_dvec3();
+                    }
                     quat = cal_ori_by_extru_axis(dir, false);
                     dir = DMat3::from_quat(quat).z_axis;
                     pos += dir * tmp_dist + l.start.as_dvec3();
