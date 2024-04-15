@@ -32,4 +32,6 @@ pub trait PdmsDataInterface {
     async fn get_prev(&self,refno:RefU64) -> anyhow::Result<RefU64>;
     /// 获取pdms树中，指定节点同层级的下一个
     async fn get_next(&self,refno:RefU64) -> anyhow::Result<RefU64>;
+    /// 获取房间号,包括BRAN以及EQUI
+    async fn get_room_code(&self,refno:RefU64) -> anyhow::Result<Option<String>>;
 }

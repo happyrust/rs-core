@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde_derive::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::{
@@ -191,9 +192,24 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, Vec<String>
     Ok(map)
 }
 
-/// 通过owner 查询他所有子节点所属的房间 todo
-pub async fn query_room_name_from_owners(owner: Vec<RefU64>) -> anyhow::Result<HashMap<RefU64, String>> {
-    Ok(HashMap::new())
+/// 查询多个refno所属的房间号，bran和equi也适用
+pub async fn query_room_name_from_refnos(owner: Vec<RefU64>) -> anyhow::Result<HashMap<RefU64, String>> {
+    #[derive(Debug, Serialize, Deserialize)]
+    struct RoomNameQueryRequest {
+        pub id: RefU64,
+        pub room: Option<String>,
+    }
+
+    let owners = owner.into_iter().map(|o| o.to_pe_key()).collect::<Vec<String>>();
+    let sql = format!("select id,fn::room_code(id)[0] as room from {}", serde_json::to_string(&owners).unwrap_or("[]".to_string()));
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let result: Vec<RoomNameQueryRequest> = response.take(0)?;
+    let r = result
+        .into_iter()
+        .map(|x| (x.id, x.room.unwrap_or("".to_string()))).collect::<HashMap<RefU64, String>>();
+    Ok(r)
 }
 
 /// 正则匹配是否满足房间命名规则

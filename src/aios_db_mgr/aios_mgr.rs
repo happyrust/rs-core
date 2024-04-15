@@ -150,11 +150,21 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_prev(&self, refno: RefU64) -> anyhow::Result<RefU64> {
-        get_next_prev(refno,false).await
+        get_next_prev(refno, false).await
     }
 
     async fn get_next(&self, refno: RefU64) -> anyhow::Result<RefU64> {
-        get_next_prev(refno,true).await
+        get_next_prev(refno, true).await
+    }
+
+    async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {
+        let sql = format!("
+        return fn::room_code({})[0];
+        ", refno.to_pe_key());
+        let mut response = SUL_DB
+            .query(sql)
+            .await?;
+        Ok(response.take(0)?)
     }
 }
 
@@ -218,4 +228,6 @@ async fn test_get_world() {
     dbg!(&name);
     let transform = mgr.get_world_transform(RefU64::from_str("24383/67335").unwrap()).await.unwrap();
     dbg!(&transform);
+    let room = mgr.get_room_code(RefU64::from_str("24384/24804").unwrap()).await.unwrap();
+    dbg!(&room);
 }
