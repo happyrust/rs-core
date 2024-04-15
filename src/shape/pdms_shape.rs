@@ -107,12 +107,15 @@ impl PlantMesh {
     }
 
     #[inline]
-    pub fn get_tri_mesh(&self, trans: Mat4) -> TriMesh {
+    pub fn get_tri_mesh(&self, trans: Mat4) -> Option<TriMesh> {
         self.get_tri_mesh_with_flag(trans, TriMeshFlags::default())
     }
 
     #[inline]
-    pub fn get_tri_mesh_with_flag(&self, trans: Mat4, flag: TriMeshFlags) -> TriMesh {
+    pub fn get_tri_mesh_with_flag(&self, trans: Mat4, flag: TriMeshFlags) -> Option<TriMesh> {
+        if self.indices.len() < 3 {
+            return None;
+        }
         let mut points: Vec<Point<f32>> = vec![];
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
@@ -123,7 +126,7 @@ impl PlantMesh {
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        TriMesh::with_flags(points, indices, flag)
+        Some(TriMesh::with_flags(points, indices, flag))
     }
 
     ///计算aabb

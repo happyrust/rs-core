@@ -11,6 +11,23 @@ DEFINE FUNCTION fn::hvac_mat_id($pe: record){
     return type::thing('hvac_mat', <int>array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 3));
 };
 
+//获得材质数组，包含检查保温层等级
+DEFINE FUNCTION fn::hvac_mats($pe: record){
+    let $ispec = fn::get_ipara($pe)[0];
+    let $mat_id = fn::hvac_mat_number($pe);
+    return if $ispec > 0 {
+        return if $mat_id == 6 {
+           return [fn::hvac_mat_name($pe), '防火材料'];
+        } else {
+           return [fn::hvac_mat_name($pe), '保温材料'];
+        };
+    } else {
+        return [fn::hvac_mat_number($pe)];
+    };
+};
+
+
+
 DEFINE FUNCTION fn::hvac_number($pe: record){
     let $v = (select value <int>v from type::thing('ATT_UDA', meta::id($pe)).udas where u.NAME='/H-SECTCODE')[0];
     return if $v == none {
@@ -21,7 +38,7 @@ DEFINE FUNCTION fn::hvac_number($pe: record){
 };
 
 DEFINE FUNCTION fn::hvac_bran_name_splits($pe: record){
-    return (select value string::split((->pe_owner->pe.name)[0], '-') from $pe)[0];
+    return array::complement((select value string::split((->pe_owner->pe.name)[0], '-') from $pe)[0], ['']);
 };
 
 DEFINE FUNCTION fn::hvac_zone_name_splits($pe: record){
@@ -63,12 +80,27 @@ DEFINE FUNCTION fn::hvac_width($pe: record){
     return $pe.refno.DESP[1];
 };
 
+DEFINE FUNCTION fn::hvac_width2($pe: record){
+    return $pe.refno.DESP[3];
+};
+
 DEFINE FUNCTION fn::hvac_height($pe: record){
     return $pe.refno.DESP[2];
 };
 
+DEFINE FUNCTION fn::hvac_height2($pe: record){
+    return $pe.refno.DESP[3];
+};
+
 DEFINE FUNCTION fn::hvac_len($pe: record){
     return $pe.refno.DESP[5];
+};
+
+
+DEFINE FUNCTION fn::hvac_thks($pe: record, $chk_type: option<string>){
+    let $ispec = fn::get_ipara($pe)[0];
+    let $t = $ispec / 2.0;
+    return [fn::hvac_thk($pe, $chk_type), $t];
 };
 
 DEFINE FUNCTION fn::hvac_thk($pe: record, $chk_type: option<string>){
@@ -232,15 +264,15 @@ DEFINE FUNCTION fn::prev_stype_is_mesh($pe:record) {
 };
 
 //next
-DEFINE FUNCTION fn::stype_is_fjfd($pe:record) {
+DEFINE FUNCTION fn::next_stype_is_fjfd($pe:record) {
     return fn::next_stype($pe) == 614823;
 };
 
-DEFINE FUNCTION fn::stype_is_damp($pe:record) {
+DEFINE FUNCTION fn::next_stype_is_damp($pe:record) {
     return fn::next_stype($pe) == 855877;
 };
 
-DEFINE FUNCTION fn::stype_is_mesh($pe:record) {
+DEFINE FUNCTION fn::next_stype_is_mesh($pe:record) {
     return fn::next_stype($pe) == 702904;
 };
 

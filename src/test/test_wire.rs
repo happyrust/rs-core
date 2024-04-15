@@ -100,6 +100,47 @@ fn test_gen_wire_25688_45339() {
 }
 
 #[test]
+fn test_gen_wire_24381_154722() {
+    let data = vec![
+        [0.0, 0.0, 0.0],
+        [0.0, 138.92, 0.0],
+        [318.13, 60.72, 0.0],
+        [318.92, 98.94, 0.0],
+    ];
+    let pts: Vec<Vec3> = data
+        .iter()
+        .map(|x| Vec3::new(x[0] as f32, x[1] as f32, x[2] as f32))
+        .collect::<Vec<_>>();
+    let fradius_vec = vec![0.0, 0.0, 0.0, 0.0];
+    gen_wire_shape(&pts, &fradius_vec, "24381_154722".into());
+}
+
+#[test]
+fn test_gen_wire_25688_71674() {
+    let data: Vec<Vec<f64>> = vec![
+        vec![0.0, 0.0, 0.0],
+        vec![0.0, 15337.73, 0.0],
+        vec![-30432.97, 19187.18, 0.0],
+        vec![-34251.98, 4332.51, 0.0],
+        vec![-38584.89, 5526.54, 0.0],
+        vec![-36528.7, 13400.76, 0.0],
+        vec![-29829.34, 18021.33, 0.0],
+        vec![-11801.38, 30455.26, 0.0],
+        vec![631.7, 12426.7, 0.0],
+        vec![4267.57, 7155.04, 0.0],
+        vec![4486.86, 758.43, 0.0],
+    ];
+    let pts: Vec<Vec3> = data
+        .iter()
+        .map(|x| Vec3::new(x[0] as f32, x[1] as f32, x[2] as f32))
+        .collect::<Vec<_>>();
+    let fradius_vec = vec![
+        0.0, 17400.0, 17400.0, 0.0, 0.0, 21900.0, 0.0, 21900.0, 0.0, 21900.0, 0.0,
+    ];
+    gen_wire_shape(&pts, &fradius_vec, "25688_71674".into());
+}
+
+#[test]
 fn test_occ_wire_hole() {
     use opencascade::primitives::IntoShape;
     let mut polyline: Polyline<f64> = pline_closed![

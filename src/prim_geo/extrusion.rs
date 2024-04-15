@@ -108,7 +108,7 @@ impl BrepShapeTrait for Extrusion {
         let face = if let CurveType::Spline(thick) = self.cur_type {
             gen_occ_spline_wire(&self.verts, thick).map(|x| x.to_face())
         } else {
-            gen_occ_wires(&self.verts, &self.fradius_vec).map(|x| Face::from_wires(&x).unwrap())
+            gen_occ_wires(&self.verts, &self.fradius_vec).map(|x| Face::from_wires(&x)).flatten()
         };
         match face {
             Err(e) => {

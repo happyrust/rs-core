@@ -110,7 +110,6 @@ fn test_gen_wire_2() {
 }
 
 
-
 #[test]
 fn test_gen_wire_3() {
     let pts = vec![

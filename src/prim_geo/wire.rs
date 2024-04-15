@@ -467,10 +467,10 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                 }
                 let mut p0 = pt + (-v1) * l;
                 let mut p2 = pt + v2 * l;
-                if last.distance(p0).abs() < remove_pos_tol {
+                if last.distance(p0) < remove_pos_tol {
                     p0 = last;
                 }
-                if next.distance(p2).abs() < remove_pos_tol {
+                if next.distance(p2) < remove_pos_tol {
                     p2 = next;
                 }
                 let v1 = (pt - last).normalize();
@@ -481,7 +481,10 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                 // dbg!((i, pt, bulge, p0, p2));
                 if let Some(l_pt) = polyline.vertex_data.last() {
                     let last_pt = DVec3::new(l_pt.x, l_pt.y, 0.0);
-                    if last_pt.distance(p0).abs() < remove_pos_tol {
+                    let pt_win = polyline.winding_number(Vector2::new(pt.x, pt.y));
+                    let t = last_pt.distance(p0).abs() / last_pt.length();
+                    if t < remove_pos_tol {
+                        dbg!(t);
                         polyline.vertex_data.pop();
                     }
                 }
@@ -490,20 +493,10 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
             } else {
                 if let Some(l_pt) = polyline.vertex_data.last() {
                     let last_pt = DVec3::new(l_pt.x, l_pt.y, 0.0);
-                    if last_pt.distance(pt).abs() < remove_pos_tol {
+                    if last_pt.distance(pt) < 0.1 {
                         polyline.vertex_data.pop();
                     }
                 }
-                //需要检查 pt是否已经在 polyline上了
-                // if !polyline.is_empty(){
-                //     let pt_win = polyline.winding_number(Vector2::new(pt.x, pt.y));
-                //     // dbg!((i, pt_win));
-                //     //在线上，直接忽略跳过
-                //     if pt_win == 0{
-                //         dbg!(pt);
-                //         continue;
-                //     }
-                // }
                 polyline.add(pt.x, pt.y, 0.0);
             }
         }
@@ -578,7 +571,8 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
     let mut interior_union_poly = Polyline::new_closed();
     let mut pos_equal_eps = 0.001;
     let remove_pos_tol = 0.1;
-    if has_fradius {
+    // if has_fradius
+    {
         //重新开始收集polyline
         polyline = Polyline::new_closed();
         let mut neg_parts = vec![];
@@ -664,8 +658,19 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                     let p0_win = polyline.winding_number(Vector2::new(p0.x, p0.y));
                     let p2_win = polyline.winding_number(Vector2::new(p2.x, p2.y));
                     dbg!((p0_win, p2_win, maybe_self_intersect));
-                    let inside = (p0_win != 0 && p2_win != 0);
-                    dbg!(inside);
+                    let p0_inside = if ccw_signum == 1.0 {
+                        p0_win == 1
+                    }else{
+                        p0_win == -1
+                    };
+                    let p2_inside = if ccw_signum == 1.0 {
+                        p2_win == 1
+                    }else{
+                        p2_win == -1
+                    };
+                    let inside = (p0_inside && p2_inside);
+                    #[cfg(debug_assertions)]
+                    dbg!(p0_inside, p2_inside);
 
                     let mut union_poly = Polyline::new_closed();
                     let mut same_pt = false;
@@ -677,6 +682,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                             } else {
                                 same_pt = true;
                             }
+                            #[cfg(debug_assertions)]
                             dbg!(same_pt);
                         }
                     } else {
@@ -694,32 +700,42 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
 
                     #[cfg(debug_assertions)]
                     println!("Adding pt {i}: {}", to_debug_json_str(&union_poly));
-                    if !inside {
-                        let op = BooleanOp::Or;
-                        let mut result = polyline_boolean(
-                            &polyline,
-                            &union_poly,
-                            op,
-                            &PlineBooleanOptions {
-                                pline1_aabb_index: None,
-                                pos_equal_eps,
-                            },
-                        );
-                        dbg!(result.result_info);
-                        dbg!(result.pos_plines.len());
-                        if (!result.pos_plines.is_empty() && result.result_info == BooleanResultInfo::Intersected) {
-                            // unioned = true;
-                            polyline = result.pos_plines.pop().unwrap().pline;
-                        } else {
-                            dbg!(result.result_info);
-                            //如果不能union 直接加入到 polyline中
+                    if !inside  {
+                        if (p0_win * p2_win == 0) && ((p0_win + p2_win) != 0) {
                             if same_pt {
                                 polyline.vertex_data.pop();
                             }
                             polyline.add((p0.x), (p0.y), bulge);
                             polyline.add((p2.x), (p2.y), 0.0);
                             add_line_pt = true;
+                        }else{
+                            let op = BooleanOp::Or;
+                            let mut result = polyline_boolean(
+                                &polyline,
+                                &union_poly,
+                                op,
+                                &PlineBooleanOptions {
+                                    pline1_aabb_index: None,
+                                    pos_equal_eps,
+                                },
+                            );
+                            // dbg!(result.result_info);
+                            // dbg!(result.pos_plines.len());
+                            if (!result.pos_plines.is_empty() && result.result_info == BooleanResultInfo::Intersected) {
+                                // unioned = true;
+                                polyline = result.pos_plines.pop().unwrap().pline;
+                            } else {
+                                // dbg!(result.result_info);
+                                //如果不能union 直接加入到 polyline中
+                                if same_pt {
+                                    polyline.vertex_data.pop();
+                                }
+                                polyline.add((p0.x), (p0.y), bulge);
+                                polyline.add((p2.x), (p2.y), 0.0);
+                                add_line_pt = true;
+                            }
                         }
+
                         if let Some(new_poly) = polyline.remove_repeat_pos(remove_pos_tol) {
                             polyline = new_poly;
                         }
@@ -739,7 +755,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                                 pos_equal_eps,
                             },
                         );
-                        dbg!(result.result_info);
+                        // dbg!(result.result_info);
                         if !result.pos_plines.is_empty() {
                             interior_union_poly = result.pos_plines.pop().unwrap().pline;
                         } else {
@@ -761,11 +777,11 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 } else {
                     let neg_part = gen_fillet_spline(pt, last, next, -v1, v2, fradius, cur_ccw_sig);
                     neg_parts.push(neg_part);
-                    polyline.add((pt.x), (pt.y), 0.0);
+                    polyline.add(f64_round_4(pt.x), f64_round_4(pt.y), 0.0);
                     add_line_pt = true;
                 }
             } else {
-                polyline.add((pt.x), (pt.y), 0.0);
+                polyline.add(f64_round_4(pt.x), f64_round_4(pt.y), 0.0);
                 add_line_pt = true;
             }
             if let Some(new_poly) = polyline.remove_repeat_pos(remove_pos_tol) {
@@ -777,7 +793,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
             if vert_len >= 3 && add_line_pt {
                 let mut intrs =
                     global_self_intersects(&polyline, &polyline.create_approx_aabb_index());
-                dbg!(&intrs);
+                // dbg!(&intrs);
                 let mut need_remove = false;
                 if let Some(intr) = intrs.basic_intersects.pop() {
                     if polyline.vertex_data.last().unwrap().bulge_is_zero()
@@ -787,11 +803,11 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                         need_remove = true;
                     }
                 }
+                let vert = polyline.vertex_data[vert_len - 1];
+                let prev_vert = polyline.vertex_data[vert_len - 2];
+                let next_vert = polyline.vertex_data[0];
                 //如果这里的角度太小，直接跳过这个要插入的点，属于突变点
                 if !need_remove {
-                    let vert = polyline.vertex_data[vert_len - 1];
-                    let prev_vert = polyline.vertex_data[vert_len - 2];
-                    let next_vert = polyline.vertex_data[0];
                     if prev_vert.bulge_is_zero() {
                         // dbg!((prev_vert, vert, next_vert));
                         let v1 = (prev_vert.pos() - vert.pos()).normalize();
@@ -805,7 +821,14 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 }
                 if need_remove {
                     poly_last_vert = polyline.vertex_data.pop();
-                    dbg!(poly_last_vert);
+                    // dbg!(poly_last_vert);
+                    if !has_fradius {
+                        let mut neg_part = Polyline::new_closed();
+                        neg_part.add_vertex(prev_vert);
+                        neg_part.add_vertex(vert);
+                        neg_part.add_vertex(next_vert);
+                        neg_parts.push(neg_part);
+                    }
                 }
             }
             for v in &mut polyline.vertex_data{
@@ -907,7 +930,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
         }
         wires.push(Wire::from_edges(&edges));
     }
-    let face = Face::from_wires(&wires).unwrap();
+    let face = Face::from_wires(&wires)?;
     Ok(wires)
 }
 

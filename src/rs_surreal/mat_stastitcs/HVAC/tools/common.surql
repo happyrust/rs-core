@@ -21,7 +21,7 @@ DEFINE FUNCTION fn::prev_or_next_is_type($pe:record,$type:string){
     (select value (array::any(select value in.noun==$type from ->pe_owner->pe<-pe_owner where order_num in [array::first($parent->pe_owner.order_num) - 1, array::first($parent->pe_owner.order_num) + 1] )) from $pe)[0]
 };
 
-DEFINE FUNCTION fn::pre_is_type($pe:record,$type:string) {
+DEFINE FUNCTION fn::pre_is_type($pe:record, $type:string) {
     return (select value (select value in.noun==$type from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe limit 1)[0];
 };
 

@@ -236,7 +236,9 @@ impl AccelerationTree {
                     continue;
                 }
                 let trans = g.world_trans * inst.transform;
-                let tri_mesh = mesh.get_tri_mesh(trans.compute_matrix());
+                let Some(tri_mesh) = mesh.get_tri_mesh(trans.compute_matrix()) else {
+                    continue;
+                };
                 meshes.push(tri_mesh);
             }
         }
