@@ -66,6 +66,9 @@ pub async fn get_mdb_world_site_pes(
     module: DBType,
 ) -> anyhow::Result<Vec<SPdmsElement>> {
     let db_type: u8 = module.into();
+    // let sql = format!("let $dbnos = array::intersect((select value CURD.refno.DBNO from only MDB where NAME={} limit 1), select value DBNO from DB where STYP={}); \
+    //     let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o)); \
+    //     array::flatten(select value (select value in.* from (select * from <-pe_owner order by order_num) where in.id!=none) from $a )",mdb,db_type);
     let mut response = SUL_DB
         .query(" \
         let $dbnos = array::intersect((select value CURD.refno.DBNO from only MDB where NAME=$mdb limit 1), select value DBNO from DB where STYP=$db_type); \
@@ -74,6 +77,9 @@ pub async fn get_mdb_world_site_pes(
         .bind(("mdb", mdb))
         .bind(("db_type", db_type))
         .await?;
+    // let mut response = SUL_DB
+    //     .query(sql)
+    //     .await?;
     let pe: Vec<SPdmsElement> = response.take(2)?;
     Ok(pe)
 }

@@ -5,10 +5,10 @@ DEFINE FUNCTION fn::room_code($pe:record) {
     // EQUI可能有两层
     if $noun == 'EQUI' && array::len($uda_room) == 0 {
         return array::distinct([
-        select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id,
-        select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in<-pe_pwner.id])[0]
+        array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id),[NONE]),
+        array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in<-pe_pwner.id),[NONE])])[0]
     } else if  $noun == 'BRAN' && array::len($uda_room) == 0 {
-        return select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id
+        return array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id), [none])
     } else if array::len($uda_room) == 0 {
         return select value (<-room_relate.room_num)[0] from $pe
     } else {

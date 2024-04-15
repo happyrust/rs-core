@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
+use serde_with::serde_as;
 use tokio::sync::RwLock;
-
+use serde_with::DisplayFromStr;
 use crate::{
     accel_tree::acceleration_tree::{AccelerationTree, RStarBoundingBox},
     SUL_DB, RefU64,
@@ -194,8 +195,10 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, Vec<String>
 
 /// 查询多个refno所属的房间号，bran和equi也适用
 pub async fn query_room_name_from_refnos(owner: Vec<RefU64>) -> anyhow::Result<HashMap<RefU64, String>> {
+    #[serde_as]
     #[derive(Debug, Serialize, Deserialize)]
     struct RoomNameQueryRequest {
+        #[serde_as(as = "DisplayFromStr")]
         pub id: RefU64,
         pub room: Option<String>,
     }
