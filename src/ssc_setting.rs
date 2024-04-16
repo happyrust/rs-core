@@ -1,15 +1,18 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use anyhow::anyhow;
 use crate::types::*;
 use bevy_ecs::system::Resource;
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
 use dashmap::DashMap;
 use serde::{Serialize, Deserialize};
-use crate::{DBType, get_mdb_world_site_pes};
+use crate::{DBType, get_mdb_world_site_pes, insert_into_table, SUL_DB};
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
+use crate::table_const::PDMS_MAJOR;
 use crate::test::test_surreal::init_test_surreal;
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
 
 #[derive(Resource, Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct SiteData {
@@ -41,6 +44,15 @@ pub struct PdmsMajor {
     pub zone: HashMap<RefU64, String>,
 }
 
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+pub struct PdmsMajorValue {
+    #[serde_as(as = "DisplayFromStr")]
+    pub id: RefU64,
+    pub noun: String,
+    pub major: String,
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SiteExcelData {
     pub code: Option<String>,
@@ -62,6 +74,8 @@ impl SiteExcelData {
 
 /// 设置site和zone所属的专业
 pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
+    // 读取专业配置表
+    let major_codes = get_room_level_from_excel_refactor()?.pdms_name_code_map;
     // 找到所有的site和zone
     let mut site_children_map = HashMap::new();
     let sites = get_mdb_world_site_pes(format!("/{}", aios_mgr.db_option.mdb_name), DBType::DESI).await?;
@@ -74,8 +88,6 @@ pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
         }
         site_name_map.entry(site.refno).or_insert(site.name);
     }
-    // 读取专业配置表
-    let major_codes = get_room_level_from_excel_refactor()?.pdms_name_code_map;
     // 给site和zone赋上对应的code
     let mut result = Vec::new();
     for codes in major_codes.into_iter().rev() {
@@ -83,24 +95,37 @@ pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
         for site in site_children_map.keys() {
             let Some(site_name) = site_name_map.get(site) else { continue; };
             if site_name.contains(&codes.site_name) {
-                let mut zone_majors = HashMap::new();
+                // let mut zone_majors = HashMap::new();
+                result.push(PdmsMajorValue {
+                    id: *site,
+                    noun: "SITE".to_string(),
+                    major: codes.site_code.clone(),
+                });
                 // 给zone赋值
                 for (major_name, major_code) in &codes.zone_map {
                     for zone in site_children_map.get(&site).unwrap() {
                         if zone.name.contains(major_name) {
-                            zone_majors.entry(zone.refno).or_insert(major_code.clone());
+                            // zone_majors.entry(zone.refno).or_insert(major_code.clone());
+                            result.push(PdmsMajorValue {
+                                id: zone.refno,
+                                noun: zone.noun.clone(),
+                                major: major_code.clone(),
+                            })
                         }
                     }
                 }
-                result.push(PdmsMajor {
-                    site: *site,
-                    major: codes.site_code.clone(),
-                    zone: zone_majors,
-                })
+                // 方便测试查看使用
+                // result.push(PdmsMajor {
+                //     site: *site,
+                //     major: codes.site_code.clone(),
+                //     zone: zone_majors,
+                // })
             }
         }
     }
-    dbg!(&result);
+    // 将分配好的专业代码保存到数据库中
+    let json = serde_json::to_string(&result)?;
+    insert_into_table(&SUL_DB, PDMS_MAJOR, &json).await?;
     Ok(())
 }
 
