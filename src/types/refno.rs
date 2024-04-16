@@ -239,6 +239,11 @@ impl RefU64 {
         format!("pe:{}", &self.to_string())
     }
 
+    #[inline]
+    pub fn to_pbs_key(&self) -> String {
+        format!("pbs:{}", &self.to_string())
+    }
+
     pub fn to_type_key(&self,noun:&str) -> String {
         format!("{}:{}", noun,&self.to_string())
     }

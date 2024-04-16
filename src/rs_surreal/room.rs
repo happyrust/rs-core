@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
@@ -176,7 +176,7 @@ async fn calculate_room(room_refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
 /// 查询项目的所有房间
 ///
 /// 返回值: k 厂房 v 房间编号
-pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, Vec<String>>> {
+pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<String>>> {
     let mut map = HashMap::new();
     let mut response = SUL_DB
         .query(include_str!("schemas/query_all_room.surql"))
@@ -185,9 +185,10 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, Vec<String>
     for r in results.clone() {
         for room in r {
             let split = room.split("-").collect::<Vec<_>>();
+            let Some(first) = split.first() else { continue; };
             let Some(last) = split.last() else { continue; };
             if !match_room_name(last) { continue; };
-            map.entry(last[..1].to_string()).or_insert_with(Vec::new).push(last.to_string());
+            map.entry(first[1..].to_string()).or_insert_with(BTreeSet::new).insert(last.to_string());
         }
     }
     Ok(map)

@@ -3,10 +3,12 @@ DEFINE FUNCTION fn::room_code($pe:record) {
     let $uda_room = (select value v from type::thing('ATT_UDA', meta::id($pe)).udas where u.NAME='/ROOM_NO');
     return
     // EQUI可能有两层
-    if $noun == 'EQUI' && array::len($uda_room) == 0 {
-        return array::distinct([
+    if ($noun == 'EQUI'|| $noun == 'STRU' || $noun == 'REST') && array::len($uda_room) == 0 {
+        return array::distinct(
+            (array::flatten([
         array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id),[NONE]),
-        array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in<-pe_pwner.id),[NONE])])[0]
+        array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in<-pe_owner.in.id),[NONE])
+        ])))
     } else if  $noun == 'BRAN' && array::len($uda_room) == 0 {
         return array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id), [none])
     } else if array::len($uda_room) == 0 {

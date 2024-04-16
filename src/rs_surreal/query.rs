@@ -394,3 +394,15 @@ pub async fn insert_into_table(db: &Surreal<Any>, table: &str, value: &str) -> a
     db.query(format!("insert into {} {}", table, value)).await?;
     Ok(())
 }
+
+/// 批量插入relate数据，需要事先定义好每一条relate语句，并放到集合中
+pub async fn insert_relate_to_table(db: &Surreal<Any>, value: Vec<String>) -> anyhow::Result<()> {
+    if value.is_empty() { return Ok(()); }
+    let mut sql = String::new();
+    for v in value {
+        sql.push_str(&format!("{} ;", v));
+    }
+    sql.remove(sql.len() - 1);
+    db.query(sql).await?;
+    Ok(())
+}
