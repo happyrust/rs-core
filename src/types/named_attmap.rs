@@ -11,7 +11,7 @@ use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
 use crate::types::attmap::AttrMap;
 use crate::types::named_attvalue::NamedAttrValue;
-use crate::{get_default_pdms_db_info, AttrVal, RefI32Tuple, RefU64, SurlValue};
+use crate::{get_default_pdms_db_info, AttrVal, RefI32Tuple, RefU64, SurlValue, SurlStrand};
 use bevy_ecs::component::Component;
 use bevy_reflect::{DynamicStruct, Reflect};
 use derive_more::{Deref, DerefMut};
@@ -24,7 +24,7 @@ use sea_query::{Alias, MysqlQueryBuilder};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use surrealdb::sql::{Strand, Thing};
+use surrealdb::sql::{Thing};
 
 ///带名称的属性map
 #[derive(
@@ -52,7 +52,8 @@ impl From<SurlValue> for NamedAttrMap {
         let mut map = BTreeMap::default();
         //需要根据类型来判断转换成相应的类型
         if let surrealdb::sql::Value::Object(o) = s {
-            if let Some(SurlValue::Strand(Strand(type_name))) = o.get("TYPE") {
+            if let Some(SurlValue::Strand(name)) = o.get("TYPE") {
+                let type_name = name.as_str();
                 let db_info = get_default_pdms_db_info();
                 if let Some(m) = db_info.named_attr_info_map.get(type_name) {
                     for (k, v) in o.0 {

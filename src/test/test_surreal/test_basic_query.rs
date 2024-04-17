@@ -141,6 +141,18 @@ from $refnos
     Ok(())
 }
 
+
+#[tokio::test]
+async fn test_query_attmap() -> anyhow::Result<()> {
+    super::init_test_surreal().await;
+
+    let refno = "17496/171646".into();
+    let attmap = rs_surreal::get_ui_named_attmap(refno)
+        .await
+        .unwrap();
+    dbg!(attmap);
+}
+
 #[tokio::test]
 async fn test_query_cata() -> anyhow::Result<()> {
     super::init_test_surreal().await;

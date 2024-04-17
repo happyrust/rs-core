@@ -32,6 +32,7 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
 pub type SurlValue = surrealdb::sql::Value;
+pub type SurlStrand = surrealdb::sql::Strand;
 pub static SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
 //Error
