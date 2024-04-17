@@ -526,8 +526,10 @@ async fn query_all_zone_with_major(db: &Surreal<Any>) -> anyhow::Result<Vec<Pdms
 /// 保存房间下节点所属的专业
 pub async fn set_pbs_node() -> anyhow::Result<()> {
     let zones = query_all_zone_with_major(&SUL_DB).await?;
+    let len = zones.len();
     // 查找zone下所有需要进行pbs计算的节点
-    for zone in zones {
+    for (idx, zone) in zones.iter().enumerate() {
+        println!("正在处理 zone: {} ,目前第 {} 个,总共 {} 个", zone.id, idx, len);
         // 找到所有需要处理的节点
         let nodes = query_ele_filter_deep_children(zone.id, vec!["BRAN".to_string(),
                                                                  "EQUI".to_string(), "STRU".to_string(), "REST".to_string()]).await?;
