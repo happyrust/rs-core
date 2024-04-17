@@ -68,15 +68,15 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 
 //todo 增加LOD的实现
 #[derive(
-    Serialize,
-    Deserialize,
-    Component,
-    Debug,
-    Default,
-    Clone,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Serialize,
+Deserialize,
+Component,
+Debug,
+Default,
+Clone,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
@@ -87,9 +87,8 @@ pub struct PlantMesh {
 }
 
 impl PlantMesh {
-
     #[cfg(feature = "occ")]
-    pub fn gen_occ_mesh(shape: &Shape, tol: f64) -> anyhow::Result<Self>{
+    pub fn gen_occ_mesh(shape: &Shape, tol: f64) -> anyhow::Result<Self> {
         let mut aabb = Aabb::new_invalid();
         let mesh = shape.mesh_with_tolerance(tol)?;
         let vertices = mesh.vertices.iter().map(|&x| x.as_vec3()).collect::<Vec<_>>();
@@ -102,17 +101,17 @@ impl PlantMesh {
             vertices,
             normals: mesh.normals.iter().map(|&x| x.as_vec3()).collect(),
             wire_vertices: vec![],
-            aabb: Some(aabb)
+            aabb: Some(aabb),
         })
     }
 
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> Option<TriMesh> {
-        self.get_tri_mesh_with_flag(trans, TriMeshFlags::default())
+        self.get_tri_mesh_with_flag(Vec3::ONE,TriMeshFlags::default())
     }
 
     #[inline]
-    pub fn get_tri_mesh_with_flag(&self, trans: Mat4, flag: TriMeshFlags) -> Option<TriMesh> {
+    pub fn get_tri_mesh_with_flag(&self, s: Vec3, flag: TriMeshFlags) -> Option<TriMesh> {
         if self.indices.len() < 3 {
             return None;
         }
@@ -120,12 +119,22 @@ impl PlantMesh {
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
         self.vertices.iter().for_each(|p| {
-            let new_pt = trans.transform_point3(*p);
+            let new_pt = Vec3::new(p.x * s.x, p.y * s.y, p.z * s.z);
             points.push(new_pt.into())
         });
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
+        // let mut i = 0;
+        // for c in self.indices.chunks(3) {
+        //     for p in c {
+        //         let new_pt = trans.transform_point3(self.vertices[*p as usize]);
+        //         points.push(new_pt.into());
+        //     }
+        //     indices.push([3*i, 3*i+1, 3*i+2]);
+        //     i += 1;
+        // }
+
         Some(TriMesh::with_flags(points, indices, flag))
     }
 
@@ -198,7 +207,7 @@ impl PlantMesh {
 
     #[inline]
     pub fn ser_to_file(&self, file_path: &dyn AsRef<Path>) -> anyhow::Result<()> {
-        let bytes =  rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec();
+        let bytes = rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec();
         let mut file = File::create(file_path).unwrap();
         file.write_all(&bytes)?;
         Ok(())
@@ -249,18 +258,18 @@ impl PlantMesh {
                     "v {:.3} {:.3} {:.3}\n",
                     vd[0] as f32, vd[1] as f32, vd[2] as f32
                 )
-                .as_ref(),
+                    .as_ref(),
             )?;
         }
         buffer.write_all(b"# Polygonal face element\n")?;
         for id in self.indices.chunks(3) {
             if reverse {
                 buffer.write_all(
-                    format!("f {} {} {}\n", id[2] + 1, id[1] + 1, id[0] + 1,).as_ref(),
+                    format!("f {} {} {}\n", id[2] + 1, id[1] + 1, id[0] + 1, ).as_ref(),
                 )?;
             } else {
                 buffer.write_all(
-                    format!("f {} {} {}\n", id[0] + 1, id[1] + 1, id[2] + 1,).as_ref(),
+                    format!("f {} {} {}\n", id[0] + 1, id[1] + 1, id[2] + 1, ).as_ref(),
                 )?;
             }
         }
@@ -280,21 +289,21 @@ pub const MAX_SIZE_TOL: f32 = 1.0e5;
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Deref,
-    DerefMut,
-    Clone,
-    Default,
-    Debug,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
+Serialize,
+Deserialize,
+Deref,
+DerefMut,
+Clone,
+Default,
+Debug,
 )]
 pub struct RsVec3(pub Vec3);
 
-impl RsVec3{
-    pub fn gen_hash(&self) -> u64{
+impl RsVec3 {
+    pub fn gen_hash(&self) -> u64 {
         let mut hasher = DefaultHasher::default();
         self.hash(&mut hasher);
         hasher.finish()
@@ -423,7 +432,6 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
 
     #[cfg(feature = "occ")]
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
-
         let geo_hash = self.hash_unit_mesh_params();
 
         let shape = self.gen_occ_shape()?;
@@ -476,7 +484,7 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
                 Point::<f32>::new(c[0] as f32, c[1] as f32, c[2] as f32),
                 Vector::<f32>::new(d[0] as f32, d[1] as f32, d[2] as f32),
             );
-            let tolerance = self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64 ;
+            let tolerance = self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64;
             let meshed_shape = brep.triangulation(tolerance);
             let mut polygon_mesh = meshed_shape.to_polygon();
             if polygon_mesh.positions().is_empty() {

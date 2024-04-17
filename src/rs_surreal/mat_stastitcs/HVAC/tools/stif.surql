@@ -182,4 +182,25 @@ DEFINE FUNCTION fn::cal_stif_wei_str($pe: record) {
 
 
 
+DEFINE FUNCTION fn::cal_stif_sctn_STIF($pe: record) {
+    return string::concat('L', fn::hvac_fl_width($pe), 'X', fn::hvac_fl_width2($pe), 'X', fn::hvac_fl_width3($pe) );
+};
+
+DEFINE FUNCTION fn::cal_stif_len_STIF($pe: record) {
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    return if $is_circle {
+        return ( fn::hvac_width($pe)  + fn::hvac_fl_width($pe) * 2.0 ) * 3.14 / 1000.0;
+    } else {
+        return ( fn::hvac_width($pe) + fn::hvac_height($pe) + fn::hvac_fl_width($pe) * 2.0 ) * 2.0 / 1000.0;
+    };
+};
+
+//加强筋型材
+DEFINE FUNCTION fn::cal_stif_wei_STIF($pe: record) {
+    return math::fixed( fn::cal_stif_len_STIF($pe) *
+        ( fn::hvac_fl_width($pe) + fn::hvac_fl_width2($pe) - fn::hvac_fl_width3($pe) ) *
+        fn::hvac_fl_width3($pe) * 0.00785, 2);
+};
+
+
 

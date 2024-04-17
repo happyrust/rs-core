@@ -32,7 +32,7 @@ use parry2d::math::Point;
 use truck_modeling::builder;
 
 #[derive(
-Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub enum CurveType {
     Fill,
@@ -427,7 +427,8 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
         .map(|t| DVec3::new(t.x as f64, t.y as f64, 0.0))
         .collect::<Vec<_>>();
     let aabb = Aabb::from_points(
-        &dpts.iter()
+        &dpts
+            .iter()
             .map(|pt| Point::new(pt.x as f32, pt.y as f32))
             .collect::<Vec<_>>(),
     );
@@ -484,7 +485,7 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                     let pt_win = polyline.winding_number(Vector2::new(pt.x, pt.y));
                     let t = last_pt.distance(p0).abs() / last_pt.length();
                     if t < remove_pos_tol {
-                        dbg!(t);
+                        // dbg!(t);
                         polyline.vertex_data.pop();
                     }
                 }
@@ -493,7 +494,9 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
             } else {
                 if let Some(l_pt) = polyline.vertex_data.last() {
                     let last_pt = DVec3::new(l_pt.x, l_pt.y, 0.0);
-                    if last_pt.distance(pt) < 0.1 {
+                    let t = last_pt.distance(pt).abs() / last_pt.length();
+                    if t < remove_pos_tol {
+                        // dbg!(t);
                         polyline.vertex_data.pop();
                     }
                 }
@@ -512,7 +515,9 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
     let mut wires = vec![];
     if intrs.basic_intersects.is_empty() {
         for ply in [polyline] {
-            if ply.is_empty() { continue; }
+            if ply.is_empty() {
+                continue;
+            }
             let mut edges = vec![];
             for (p, q) in ply.iter_segments() {
                 if p.bulge.abs() < 0.0001 {
@@ -531,8 +536,8 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
             }
             wires.push(Wire::from_edges(&edges));
         }
-    }else{
-        dbg!(&intrs);
+    } else {
+        // dbg!(&intrs);
         wires = gen_occ_special_wires(&pts, &fradius_vec)?;
     }
     Ok(wires)
@@ -657,15 +662,16 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                     let bulge = cur_ccw_sig * f64_trunc_3(bulge_from_angle(PI as f64 - angle));
                     let p0_win = polyline.winding_number(Vector2::new(p0.x, p0.y));
                     let p2_win = polyline.winding_number(Vector2::new(p2.x, p2.y));
+                    #[cfg(debug_assertions)]
                     dbg!((p0_win, p2_win, maybe_self_intersect));
                     let p0_inside = if ccw_signum == 1.0 {
                         p0_win == 1
-                    }else{
+                    } else {
                         p0_win == -1
                     };
                     let p2_inside = if ccw_signum == 1.0 {
                         p2_win == 1
-                    }else{
+                    } else {
                         p2_win == -1
                     };
                     let inside = (p0_inside && p2_inside);
@@ -700,7 +706,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
 
                     #[cfg(debug_assertions)]
                     println!("Adding pt {i}: {}", to_debug_json_str(&union_poly));
-                    if !inside  {
+                    if !inside {
                         if (p0_win * p2_win == 0) && ((p0_win + p2_win) != 0) {
                             if same_pt {
                                 polyline.vertex_data.pop();
@@ -708,7 +714,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                             polyline.add((p0.x), (p0.y), bulge);
                             polyline.add((p2.x), (p2.y), 0.0);
                             add_line_pt = true;
-                        }else{
+                        } else {
                             let op = BooleanOp::Or;
                             let mut result = polyline_boolean(
                                 &polyline,
@@ -721,7 +727,9 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                             );
                             // dbg!(result.result_info);
                             // dbg!(result.pos_plines.len());
-                            if (!result.pos_plines.is_empty() && result.result_info == BooleanResultInfo::Intersected) {
+                            if (!result.pos_plines.is_empty()
+                                && result.result_info == BooleanResultInfo::Intersected)
+                            {
                                 // unioned = true;
                                 polyline = result.pos_plines.pop().unwrap().pline;
                             } else {
@@ -770,7 +778,9 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                             "interior union polyline: {}",
                             to_debug_json_str(&interior_union_poly)
                         );
-                        if let Some(new_poly) = interior_union_poly.remove_repeat_pos(remove_pos_tol) {
+                        if let Some(new_poly) =
+                            interior_union_poly.remove_repeat_pos(remove_pos_tol)
+                        {
                             interior_union_poly = new_poly;
                         }
                     }
@@ -798,7 +808,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 if let Some(intr) = intrs.basic_intersects.pop() {
                     if polyline.vertex_data.last().unwrap().bulge_is_zero()
                         && (intr.start_index2 == polyline.vertex_data.len() - 1
-                        || intr.start_index2 == polyline.vertex_data.len() - 2)
+                            || intr.start_index2 == polyline.vertex_data.len() - 2)
                     {
                         need_remove = true;
                     }
@@ -831,7 +841,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                     }
                 }
             }
-            for v in &mut polyline.vertex_data{
+            for v in &mut polyline.vertex_data {
                 v.x = f64_round_4(v.x);
                 v.y = f64_round_4(v.y);
                 v.bulge = f64_round_4(v.bulge);
@@ -864,7 +874,11 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 },
             );
             if result.pos_plines.is_empty() {
-                dbg!("cut failed: ", pos_equal_eps);
+                dbg!(
+                    "cut failed: {}, {}",
+                    to_debug_json_str(&polyline),
+                    to_debug_json_str(&neg)
+                );
                 pos_equal_eps = 0.0001;
                 result = polyline_boolean(
                     &polyline,
@@ -900,7 +914,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
     }
 
     #[cfg(debug_assertions)]
-    if !interior_union_poly.is_empty(){
+    if !interior_union_poly.is_empty() {
         println!(
             "final interior union polyline: {}",
             to_debug_json_str(&interior_union_poly)
@@ -910,8 +924,10 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
     #[cfg(debug_assertions)]
     println!("boolean: {}", to_debug_json_str(&polyline));
     let mut wires = vec![];
-    for ply in [polyline, interior_union_poly]{
-        if ply.is_empty() { continue; }
+    for ply in [polyline, interior_union_poly] {
+        if ply.is_empty() {
+            continue;
+        }
         let mut edges = vec![];
         for (p, q) in ply.iter_segments() {
             if p.bulge.abs() < 0.0001 {
@@ -934,7 +950,6 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
     Ok(wires)
 }
 
-
 pub fn check_wire_ok(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> bool {
     let mut polyline = Polyline::new_closed();
     for i in 0..pts.len() {
@@ -952,8 +967,8 @@ fn global_self_intersects<T>(
     polyline: &Polyline<T>,
     aabb_index: &StaticAABB2DIndex<T>,
 ) -> PlineIntersectsCollection<T>
-    where
-        T: Real,
+where
+    T: Real,
 {
     let mut intrs = Vec::new();
     let mut overlapping_intrs = Vec::new();

@@ -47,10 +47,13 @@ pub async fn define_fullname_index() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn define_pe_name_index() -> anyhow::Result<()> {
+pub async fn define_pe_index() -> anyhow::Result<()> {
     //针对一些特殊的表，需要先创建表，定义索引
     SUL_DB
-        .query(r#"DEFINE index pe_name_index ON TABLE pe COLUMNS name;
+        .query(r#"
+        DEFINE index pe_name_index ON TABLE pe COLUMNS name;
+        DEFINE index pe_refno_index ON TABLE pe COLUMNS refno;
+        DEFINE index pe_refno_index ON TABLE pe COLUMNS cata_hash;
                 "#)
         .await
         .unwrap();

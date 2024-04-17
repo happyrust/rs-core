@@ -84,6 +84,7 @@ pub struct GeomPtsQuery {
     #[serde(alias = "id")]
     pub refno: RefU64,
     pub world_trans: Transform,
+    pub world_aabb: Aabb,
     pub pts_group: Vec<(Transform, Option<Vec<Vec3>>)>,
 }
 

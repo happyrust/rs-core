@@ -227,20 +227,44 @@ DEFINE FUNCTION fn::hvac_fl_type($pe: record) {
     return fn::into_str($pe.refno.DESP[57]);
 };
 
+DEFINE FUNCTION fn::hvac_fl_type2($pe: record) {
+    return fn::into_str($pe.refno.DESP[58]);
+};
+
+DEFINE FUNCTION fn::hvac_fl_type3($pe: record) {
+    return fn::into_str($pe.refno.DESP[59]);
+};
+
 DEFINE FUNCTION fn::hvac_fl_spec($pe: record) {
     return $pe.refno.DESP[67];
 };
 
-DEFINE FUNCTION fn::hvac_fl_type_spec($pe: record) {
-    return string::concat(fn::hvac_fl_type($pe), string::slice(<string> fn::hvac_fl_spec($pe), 0, -1));
+DEFINE FUNCTION fn::hvac_fl_spec2($pe: record) {
+    return $pe.refno.DESP[68];
 };
+
+DEFINE FUNCTION fn::hvac_fl_spec3($pe: record) {
+    return $pe.refno.DESP[69];
+};
+
+DEFINE FUNCTION fn::hvac_fl_type_spec($pe: record, $num: option<int>) {
+    return if $num == none || $num == 1 {
+        return string::concat(fn::hvac_fl_type($pe), string::slice(<string> fn::hvac_fl_spec($pe), 0, -1));
+    } else if $num == 2 {
+        return string::concat(fn::hvac_fl_type2($pe), string::slice(<string> fn::hvac_fl_spec2($pe), 0, -1));
+    } else if $num == 3 {
+        return string::concat(fn::hvac_fl_type3($pe), string::slice(<string> fn::hvac_fl_spec3($pe), 0, -1));
+    };
+};
+
+
 
 DEFINE FUNCTION fn::hvac_shape_fl_type($pe: record) {
     return string::concat(fn::hvac_shape($pe), fn::hvac_fl_type($pe));
 };
 
-DEFINE FUNCTION fn::hvac_fl_name($pe: record) {
-    let $f = fn::hvac_fl_type_spec($pe);
+DEFINE FUNCTION fn::hvac_fl_name($pe: record, $num: option<int>) {
+    let $f = fn::hvac_fl_type_spec($pe, $num);
     let $n = (select value type from fl_table where code = $f)[0];
     return if $n == none {
         "unset"
@@ -297,12 +321,61 @@ DEFINE FUNCTION fn::hvac_fl_len($pe: record) {
     };
 };
 
+DEFINE FUNCTION fn::hvac_fl_len_THRE_single($pe: record, $n: option<int>) {
+     let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+     return if $is_circle {
+            return ( fn::hvac_width($pe, $n)  + fn::hvac_fl_width($pe, $n) * 2.0 ) * 3.14 / 1000.0;
+        } else {
+            return ( fn::hvac_width($pe, $n) + fn::hvac_height($pe, $n) + fn::hvac_fl_width($pe, $n) * 2.0 ) * 2.0 / 1000.0;
+        };
+};
 
-DEFINE FUNCTION fn::hvac_fl_wei($pe: record) {
-    let $f = fn::hvac_fl_type_spec($pe);
+//THRE的法兰长度
+DEFINE FUNCTION fn::hvac_fl_len_THRE($pe: record, $n: option<int>) {
+     let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+     let $d1 = if $is_circle {
+            return ( fn::hvac_width($pe)  + fn::hvac_fl_width($pe) * 2.0 ) * 3.14 / 1000.0;
+        } else {
+            return ( fn::hvac_width($pe) + fn::hvac_height($pe) + fn::hvac_fl_width($pe) * 2.0 ) * 2.0 / 1000.0;
+        };
+    let $d2 = if $is_circle {
+                return ( fn::hvac_width2($pe)  + fn::hvac_fl_width2($pe) * 2.0 ) * 3.14 / 1000.0;
+            } else {
+                return ( fn::hvac_width2($pe) + fn::hvac_height2($pe) + fn::hvac_fl_width2($pe) * 2.0 ) * 2.0 / 1000.0;
+            };
+
+    let $d3 = if $is_circle {
+                return ( fn::hvac_width3($pe)  + fn::hvac_fl_width3($pe) * 2.0 ) * 3.14 / 1000.0;
+            } else {
+                return ( fn::hvac_width3($pe) + fn::hvac_height3($pe) + fn::hvac_fl_width3($pe) * 2.0 ) * 2.0 / 1000.0;
+            };
+
+     return [math::fixed($d1, 2), math::fixed($d2, 2), math::fixed($d3, 2)];
+};
+
+
+DEFINE FUNCTION fn::hvac_fl_name_THRE($pe: record) {
+      return [fn::hvac_fl_name($pe, 1), fn::hvac_fl_name($pe, 2), fn::hvac_fl_name($pe, 3)];
+};
+
+
+DEFINE FUNCTION fn::hvac_fl_wei($pe: record, $num: option<int>) {
+    let $f = fn::hvac_fl_type_spec($pe, $num);
     let $scale = (select value weight_scale from fl_table where code = $f)[0];
     return fn::hvac_fl_len($pe) * ( if $scale == none { 0.0 } else { $scale } );
 };
 
 
+
+DEFINE FUNCTION fn::hvac_fl_len_TRNS($pe: record) {
+     return if fn::hvac_height2_is_DIAM($pe) {
+            let $d1 = ( fn::hvac_width($pe) + fn::hvac_height($pe) + fn::hvac_fl_width($pe) * 2.0 ) * 2.0 / 1000.0;
+            let $d2 = ( fn::hvac_width2($pe) + fn::hvac_fl_width2($pe) * 2.0 ) * 3.14 / 1000.0;
+            return [math::fixed($d1, 2) ,  math::fixed($d2, 2)];
+        } else {
+            let $d1 = ( fn::hvac_width2($pe) + fn::hvac_fl_width2($pe) * 2.0 ) * 3.14 / 1000.0;
+            let $d2 = ( fn::hvac_width($pe) + fn::hvac_height($pe) + fn::hvac_fl_width($pe) * 2.0 ) * 2.0 / 1000.0;
+            return [math::fixed($d1, 2) ,  math::fixed($d2, 2)];
+        };
+}
 

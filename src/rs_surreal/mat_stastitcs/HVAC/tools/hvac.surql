@@ -11,6 +11,10 @@ DEFINE FUNCTION fn::hvac_mat_id($pe: record){
     return type::thing('hvac_mat', <int>array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 3));
 };
 
+DEFINE FUNCTION fn::hvac_system($pe: record){
+    return array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 1);
+};
+
 //获得材质数组，包含检查保温层等级
 DEFINE FUNCTION fn::hvac_mats($pe: record){
     let $ispec = fn::get_ipara($pe)[0];
@@ -22,7 +26,7 @@ DEFINE FUNCTION fn::hvac_mats($pe: record){
            return [fn::hvac_mat_name($pe), '保温材料'];
         };
     } else {
-        return [fn::hvac_mat_number($pe)];
+        return [fn::hvac_mat_name($pe)];
     };
 };
 
@@ -76,20 +80,87 @@ DEFINE FUNCTION fn::shape_name($pe: record){
 };
 
 
-DEFINE FUNCTION fn::hvac_width($pe: record){
-    return $pe.refno.DESP[1];
+DEFINE FUNCTION fn::hvac_width_format($pe: record){
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    return if $is_circle {
+        return string::concat('φ', $pe.refno.DESP[1]);
+    } else {
+        return fn::hvac_width($pe);
+    };
 };
+
+DEFINE FUNCTION fn::hvac_height_format($pe: record){
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    return if $is_circle {
+        return '-';
+    } else {
+        return  fn::hvac_height($pe);
+    };
+};
+
+DEFINE FUNCTION fn::hvac_width_three($pe: record){
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    return if $is_circle {
+            return [string::concat('φ', fn::hvac_width($pe)), string::concat( 'φ', fn::hvac_width2($pe) ),
+                string::concat( 'φ', fn::hvac_width3($pe)) ];
+        } else {
+            return [fn::hvac_width($pe), fn::hvac_width2($pe), fn::hvac_width3($pe)];
+        };
+};
+
+DEFINE FUNCTION fn::hvac_height_three($pe: record){
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    return if $is_circle {
+            return ['-', '-', '-'];
+        } else {
+            return  [fn::hvac_height($pe), fn::hvac_height2($pe), fn::hvac_height3($pe)];
+        };
+};
+
+DEFINE FUNCTION fn::hvac_width($pe: record, $n: option<int>){
+    return if $n == none || $n == 1 {
+        return $pe.refno.DESP[1];
+    } else if $n == 2 {
+        return fn::hvac_width2($pe);
+    } else if $n == 3 {
+        return fn::hvac_width3($pe);
+    };
+};
+
 
 DEFINE FUNCTION fn::hvac_width2($pe: record){
     return $pe.refno.DESP[3];
 };
 
-DEFINE FUNCTION fn::hvac_height($pe: record){
-    return $pe.refno.DESP[2];
+DEFINE FUNCTION fn::hvac_width3($pe: record){
+    return $pe.refno.DESP[40];
+};
+
+
+DEFINE FUNCTION fn::hvac_height($pe: record, $n: option<int>){
+    return if $n == none || $n == 1 {
+        return $pe.refno.DESP[2];
+    } else if $n == 2 {
+        return fn::hvac_height2($pe);
+    } else if $n == 3 {
+        return fn::hvac_height3($pe);
+    };
+};
+
+DEFINE FUNCTION fn::hvac_height_is_DIAM($pe: record){
+    return fn::hvac_height($pe) == 788296;
 };
 
 DEFINE FUNCTION fn::hvac_height2($pe: record){
-    return $pe.refno.DESP[3];
+    return $pe.refno.DESP[4];
+};
+
+DEFINE FUNCTION fn::hvac_height2_is_DIAM($pe: record){
+    return fn::hvac_height2($pe) == 788296;
+};
+
+DEFINE FUNCTION fn::hvac_height3($pe: record){
+    return $pe.refno.DESP[41];
 };
 
 DEFINE FUNCTION fn::hvac_len($pe: record){
@@ -97,10 +168,37 @@ DEFINE FUNCTION fn::hvac_len($pe: record){
 };
 
 
+DEFINE FUNCTION fn::hvac_fl_width($pe: record, $n: option<int>){
+    return if $n == none || $n == 1 {
+        return $pe.refno.DESP[20];
+    } else if $n == 2 {
+        return fn::hvac_fl_width2($pe);
+    } else if $n == 3 {
+        return fn::hvac_fl_width3($pe);
+    };
+};
+
+
+DEFINE FUNCTION fn::hvac_fl_width2($pe: record){
+    return $pe.refno.DESP[23];
+};
+
+DEFINE FUNCTION fn::hvac_fl_width3($pe: record){
+    return $pe.refno.DESP[26];
+};
+
+
 DEFINE FUNCTION fn::hvac_thks($pe: record, $chk_type: option<string>){
     let $ispec = fn::get_ipara($pe)[0];
     let $t = $ispec / 2.0;
-    return [fn::hvac_thk($pe, $chk_type), $t];
+    let $pd = fn::pre_is_type($pe, 'DAMP');
+    let $nd = fn::next_is_type($pe, 'DAMP');
+    return if $pd || $nd {
+        return [fn::hvac_thk($pe, $chk_type), $t, 3];
+    } else {
+        return [fn::hvac_thk($pe, $chk_type), $t];
+    };
+
 };
 
 DEFINE FUNCTION fn::hvac_thk($pe: record, $chk_type: option<string>){
@@ -122,36 +220,32 @@ DEFINE FUNCTION fn::duct_area($pe: record){
     return $pe.refno.DESP[80];
 };
 
-DEFINE FUNCTION fn::hvac_duct_area_format($pe: record, $chk_type: option<string>){
-    let $area = fn::duct_area($pe) / 1000000;
-    return if $chk_type == "DAMP" {
-          let $mat = fn::hvac_mat_number($pe);
-          let $p_type = fn::prev_type($pe);
-          let $n_type = fn::next_type($pe);
-          return if $mat == 6 && ( $p_type == "DAMP" || $n_type == "DAMP" ) {
-                let $new_area = fn::height($pe) * fn::width($pe) * 150 / 1000000;
-                return [$area, '', $new_area];
-          } else {
-              return $area;
-          };
+
+DEFINE FUNCTION fn::hvac_duct_areas($pe: record, $chk_type: option<string>){
+    let $ispec = fn::get_ipara($pe)[0];
+    let $area = fn::hvac_duct_area_format($pe, $chk_type);
+    return if $ispec > 0 {
+       return [ $area, $area ];
     } else {
-        return $area;
+       return [ $area ];
     };
 };
+
+
 
 DEFINE FUNCTION fn::duct_weight($pe: record){
     return $pe.refno.DESP[84];
 };
 
 DEFINE FUNCTION fn::hvac_duct_weight_format($pe: record, $chk_type: option<string>){
-    let $weight = fn::duct_weight($pe);
+    let $weight = math::fixed(fn::duct_weight($pe), 2);
     return if $chk_type == "DAMP" {
           let $mat = fn::hvac_mat_number($pe);
-          let $p_type = fn::prev_type($pe);
-          let $n_type = fn::next_type($pe);
-          return if $mat == 6 && ( $p_type == "DAMP" || $n_type == "DAMP" ) {
-                let $new_weight = ( fn::height($pe) * fn::width($pe) * fn::hvac_thk($pe) * 150 * 7.85 ) / 1000000;
-                return [$weight, '', $new_weight];
+          let $pd = fn::pre_is_type($pe, 'DAMP');
+           let $nd = fn::next_is_type($pe, 'DAMP');
+           return if $mat == 6 && ( $pd || $nd ) {
+                let $new_weight = (fn::height($pe) * fn::width($pe) * fn::hvac_thk($pe) * 150 * 7.85 ) / 1000000;
+                return [$weight, '', math::fixed($new_weight, 2)];
           } else {
               return $weight;
           };
@@ -230,11 +324,26 @@ DEFINE FUNCTION fn::stype($pe:record) {
 };
 
 DEFINE FUNCTION fn::prev_stype($pe:record) {
-    return fn::stype(fn::prev_pe($pe));
+    let $p = fn::prev_pe($pe);
+    return if $p == none {
+        return 'unset';
+    } else {
+         return fn::stype($p);
+    };
 };
 
 DEFINE FUNCTION fn::next_stype($pe:record) {
-    return fn::stype(fn::next_pe($pe));
+    let $n = fn::next_pe($pe);
+    return if $n == none {
+        return 'unset';
+    } else {
+            return fn::stype($n);
+    };
+};
+
+//C_Stype="DESP[1] OF CREF"
+DEFINE FUNCTION fn::c_stype($pe:record) {
+    return $pe.refno.CREF.refno.DESP[0];
 };
 
 //cur
@@ -268,6 +377,11 @@ DEFINE FUNCTION fn::next_stype_is_fjfd($pe:record) {
     return fn::next_stype($pe) == 614823;
 };
 
+
+DEFINE FUNCTION fn::c_stype_is_fjfd($pe:record) {
+    return fn::c_stype($pe) == 614823;
+};
+
 DEFINE FUNCTION fn::next_stype_is_damp($pe:record) {
     return fn::next_stype($pe) == 855877;
 };
@@ -276,3 +390,21 @@ DEFINE FUNCTION fn::next_stype_is_mesh($pe:record) {
     return fn::next_stype($pe) == 702904;
 };
 
+
+DEFINE FUNCTION fn::hvac_duct_area_format($pe: record, $chk_type: option<string>){
+    // 1000000
+    let $area = math::fixed(fn::duct_area($pe) , 2);
+    return if $chk_type == "DAMP" {
+          let $mat = fn::hvac_mat_number($pe);
+          let $pd = fn::pre_is_type($pe, 'DAMP');
+          let $nd = fn::next_is_type($pe, 'DAMP');
+          return if $mat == 6 && ( $pd || $nd ) {
+                let $new_area = fn::height($pe) * fn::width($pe) * 150 / 1000000;
+                return [$area, '', math::fixed($new_area, 2)];
+          } else {
+              return $area;
+          };
+    } else {
+        return $area;
+    };
+};
