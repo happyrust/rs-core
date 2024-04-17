@@ -9,6 +9,7 @@ use crate::{
     accel_tree::acceleration_tree::{AccelerationTree, RStarBoundingBox},
     SUL_DB, RefU64,
 };
+use std::str::FromStr;
 use crate::test::test_surreal::{init_surreal_with_signin, init_test_surreal};
 
 //或者改成第一次，需要去加载，后续就不用了
@@ -213,6 +214,35 @@ pub async fn query_room_name_from_refnos(owner: Vec<RefU64>) -> anyhow::Result<H
     let r = result
         .into_iter()
         .map(|x| (x.id, x.room.unwrap_or("".to_string()))).collect::<HashMap<RefU64, String>>();
+    Ok(r)
+}
+
+/// 查找设备和阀门所属的楼板
+pub async fn query_equi_or_valv_belong_floors(refnos: Vec<RefU64>) -> anyhow::Result<HashMap<RefU64, (String, f32)>> {
+    #[serde_as]
+    #[derive(Serialize, Deserialize, Debug)]
+    struct BelongFloorResponse {
+        #[serde_as(as = "DisplayFromStr")]
+        pub id: RefU64,
+        pub floor: Option<String>,
+        pub height: Option<f32>,
+    }
+
+    let refnos = refnos.into_iter()
+        .map(|refno| refno.to_pe_key())
+        .collect::<Vec<_>>();
+    let request = serde_json::to_string(&refnos)?;
+    let sql = format!("select id,(->nearest_relate.out.REFNO)[0] as floor,(->nearest_relate.dist)[0] as height from {}", request);
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let result: Vec<BelongFloorResponse> = response.take(0)?;
+    let r = result
+        .into_iter()
+        .map(|x| (x.id,
+                  (x.floor.map_or("".to_string(), |x| RefU64::from_str(&x).unwrap().to_pdms_str()),
+                   x.height.unwrap_or(0.0))))
+        .collect::<HashMap<RefU64, (String, f32)>>();
     Ok(r)
 }
 

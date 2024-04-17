@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
-use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_next_prev, get_world, NamedAttrMap, RefU64, SUL_DB, SurlValue};
+use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_world, NamedAttrMap, RefU64, SUL_DB, SurlValue};
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
@@ -53,7 +53,7 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
-        get_named_attmap(refno).await
+        get_named_attmap_with_uda(refno, false).await
     }
 
     async fn get_children(&self, refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {

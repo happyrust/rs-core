@@ -205,7 +205,6 @@ pub async fn get_named_attmap_with_uda(
     let o: SurlValue = response.take(0)?;
     let mut named_attmap: NamedAttrMap = o.into();
     let uda_kvs: Vec<NamedAttrMap> = response.take(2)?;
-    // dbg!(&uda_kvs);
     for map in uda_kvs {
         let k = map.get("u").unwrap().get_val_as_string();
         let splits = k.split("::").collect::<Vec<_>>();
@@ -214,7 +213,6 @@ pub async fn get_named_attmap_with_uda(
             continue;
         }
         let utype = splits[1];
-        // dbg!((uname, utype));
         let v = map.get("v").unwrap().clone();
         if matches!(&v, NamedAttrValue::InvalidType) {
             if default_unset {
@@ -227,7 +225,6 @@ pub async fn get_named_attmap_with_uda(
         }
     }
     let overite_kvs: Vec<NamedAttrMap> = response.take(3)?;
-    // dbg!(&overite_kvs);
     for map in overite_kvs {
         let k = map.get("u").unwrap().get_val_as_string();
         let v = map.get("v").unwrap().clone();
