@@ -21,6 +21,7 @@ select
     fn::washer_type_THRE(id) as washer_type,
     fn::washer_len_THRE(id) as washer_len,
 
+    '-' as other_type,
     '-' as other_qty,
     '-' as stud,
 

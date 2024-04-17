@@ -19,6 +19,12 @@ select
     fn::hvac_fl_wei(id) as fl_wei,
     fn::common_washer_types(id) as washer_type,
 
+    fn::hvac_bolt_qtys_1(id) as bolt_qty,
+
+    '-' as other_type,
+    '-' as other_qty,
+    '-' as stud,
+
     fn::hvac_bolt_qtys_1(id) as nut_qty,  //螺母数量
     fn::hvac_washer_bolt_qtys_1(id) as washer_qty,
 

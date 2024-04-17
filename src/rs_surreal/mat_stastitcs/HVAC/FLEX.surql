@@ -1,7 +1,7 @@
 //FLEX
 select
     fn::refno(id) as id,
-    string::concat(fn::shape_name(id), "软连接") as stiff_name,
+    string::concat(fn::shape_name(id), "软连接") as description,
    fn::hvac_seg_code(id) as seg_code,
    fn::hvac_sub_code(id) as sub_code,
    fn::hvac_mats(id) as material,
@@ -22,8 +22,10 @@ select
     fn::common_washer_types(id) as washer_type,
     fn::common_washer_len(id) as washer_len,
 
-    '-' as other_qty,
-    '-' as stud,
+    fn::hvac_bolt_qtys_THRE(id) as bolt_qty,
+   '-' as other_type,
+   '-' as other_qty,
+   '-' as stud,
 
     fn::hvac_bolt_qtys_THRE(id) as nut_qty,  //螺母数量
     fn::hvac_washer_bolt_qtys_THRE(id) as washer_qty,  //垫片数量

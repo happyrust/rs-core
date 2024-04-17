@@ -107,11 +107,11 @@ impl PlantMesh {
 
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> Option<TriMesh> {
-        self.get_tri_mesh_with_flag(Vec3::ONE,TriMeshFlags::default())
+        self.get_tri_mesh_with_flag(trans, TriMeshFlags::default())
     }
 
     #[inline]
-    pub fn get_tri_mesh_with_flag(&self, s: Vec3, flag: TriMeshFlags) -> Option<TriMesh> {
+    pub fn get_tri_mesh_with_flag(&self, trans: Mat4, flag: TriMeshFlags) -> Option<TriMesh> {
         if self.indices.len() < 3 {
             return None;
         }
@@ -119,22 +119,12 @@ impl PlantMesh {
         let mut indices: Vec<[u32; 3]> = vec![];
         //如果 数量太大，需要使用LOD的模型去做碰撞检测
         self.vertices.iter().for_each(|p| {
-            let new_pt = Vec3::new(p.x * s.x, p.y * s.y, p.z * s.z);
+            let new_pt = trans.transform_point3(*p);
             points.push(new_pt.into())
         });
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        // let mut i = 0;
-        // for c in self.indices.chunks(3) {
-        //     for p in c {
-        //         let new_pt = trans.transform_point3(self.vertices[*p as usize]);
-        //         points.push(new_pt.into());
-        //     }
-        //     indices.push([3*i, 3*i+1, 3*i+2]);
-        //     i += 1;
-        // }
-
         Some(TriMesh::with_flags(points, indices, flag))
     }
 

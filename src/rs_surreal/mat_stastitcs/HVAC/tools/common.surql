@@ -16,6 +16,9 @@ DEFINE FUNCTION fn::into_str($desp: float) {
     };
 };
 
+DEFINE FUNCTION fn::type($pe:record) {
+    return $pe.noun;
+};
 
 // 判断上一个或下一个节点是否为 $type类型
 DEFINE FUNCTION fn::prev_or_next_is_type($pe:record,$type:string){
@@ -55,7 +58,12 @@ DEFINE FUNCTION fn::next_type($pe:record) {
 
 // 获取ipara
 DEFINE FUNCTION fn::get_ipara($pe:record) {
-    return (select value (select value CATR.refno.PARA from only owner.refno.ISPE<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE' and $parent.owner.refno.TEMP >=refno.ANSW and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.* where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1) from $pe)[0];
+    let $ispe = owner.refno.ISPE;
+    return if $ispe == none {
+        return [0];
+    } else {
+        return (select value (select value CATR.refno.PARA from only $ispe<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE' and $parent.owner.refno.TEMP >=refno.ANSW and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.* where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1) from $pe)[0];
+    };
 };
 
 

@@ -142,9 +142,9 @@ DEFINE FUNCTION fn::hvac_washer_bolt_qtys_THRE($pe: record) {
 
 DEFINE FUNCTION fn::hvac_bolt_qtys_TRNS($pe: record) {
     let $pd = fn::pre_is_type($pe, 'DAMP');
-        let $nd = fn::next_is_type($pe, 'DAMP');
-        let $pm = fn::pre_is_type($pe, 'MESH');
-        let $nm = fn::next_is_type($pe, 'MESH');
+    let $nd = fn::next_is_type($pe, 'DAMP');
+    let $pm = fn::pre_is_type($pe, 'MESH');
+    let $nm = fn::next_is_type($pe, 'MESH');
 
     let $r1 =  if $pd || $pm {
                      return 1.0;
@@ -176,4 +176,34 @@ DEFINE FUNCTION fn::hvac_bolt_qtys_TRNS($pe: record) {
 DEFINE FUNCTION fn::hvac_washer_bolt_qtys_TRNS($pe: record) {
     let $b = fn::hvac_bolt_qtys_TRNS($pe);
     return [$b[0] * 2, $b[1] * 2];
+};
+
+DEFINE FUNCTION fn::hvac_bolt_qtys_OFST($pe: record) {
+    let $pd = fn::pre_is_type($pe, 'DAMP');
+    let $nd = fn::next_is_type($pe, 'DAMP');
+    let $pm = fn::pre_is_type($pe, 'MESH');
+    let $nm = fn::next_is_type($pe, 'MESH');
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    let $ratio = if ($pd || $pm) && ($nd || $nm) {
+                return 4.0;
+            } else if ($pd || $pm) && ( (!$nd) && (!$nm) ) {
+                return 3.0;
+            } else if ((!$pd) && (!$pm)) && ($nd || $nm) {
+                return 3.0;
+            } else if ((!$pd) && (!$pm)) && ( (!$nd) && (!$nm) ) {
+                return 2.0;
+            } else {
+                return 0.0;
+            };
+
+    return if $is_circle {
+        let $a = fn::hvac_fl_len_OFST($pe);
+        let $d1 = fn::cal_number_formula_2($a);
+        return math::round($d1 * $ratio);
+
+    } else {
+        let $d1 = fn::cal_number_formula_1($pe);
+        return math::round($d1 * $ratio / 4.0);  // 相当于 1.0 0.75 0.75 0.5
+    };
+
 };

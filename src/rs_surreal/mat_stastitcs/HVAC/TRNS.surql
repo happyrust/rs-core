@@ -22,8 +22,9 @@ select
     fn::washer_type_TRNS(id) as washer_type,
     fn::washer_len_TRNS(id) as washer_len,
 
-    fn::hvac_bolt_qtys_TRNS(id) as bolt_qty,  //螺母数量
+    fn::hvac_bolt_qtys_TRNS(id) as bolt_qty,  //螺栓数量
 
+    '-' as other_type,
     '-' as other_qty,
     '-' as stud,
 

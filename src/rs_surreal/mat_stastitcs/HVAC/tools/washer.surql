@@ -56,9 +56,9 @@ DEFINE FUNCTION fn::common_washer_len($pe: record) {
     };
 
     return  if $is_circle {
-               return ((fn::hvac_fl_len($pe)) / 1000.0 ) * 8.0 * $ratio;
+               return math::fixed( ((fn::hvac_fl_len($pe)) / 1000.0 ) * 8.0 * $ratio, 2);
            } else {
-               return fn::hvac_fl_len($pe) * $ratio;
+               return math::fixed(fn::hvac_fl_len($pe) * $ratio, 2);
            };
 };
 
@@ -184,10 +184,10 @@ DEFINE FUNCTION fn::washer_type_TRNS($pe: record) {
 
 DEFINE FUNCTION fn::washer_len_TRNS($pe: record) {
     let $pd = fn::pre_is_type($pe, 'DAMP');
-        let $nd = fn::next_is_type($pe, 'DAMP');
-        let $pm = fn::pre_is_type($pe, 'MESH');
-        let $nm = fn::next_is_type($pe, 'MESH');
-        let $len = fn::hvac_fl_len_TRNS($pe);
+    let $nd = fn::next_is_type($pe, 'DAMP');
+    let $pm = fn::pre_is_type($pe, 'MESH');
+    let $nm = fn::next_is_type($pe, 'MESH');
+    let $len = fn::hvac_fl_len_TRNS($pe);
 
     return if fn::hvac_height2_is_DIAM($pe) {
         let $d1 = if $pd || $pm {
@@ -215,3 +215,5 @@ DEFINE FUNCTION fn::washer_len_TRNS($pe: record) {
          return [math::fixed($d1, 2), math::fixed($d2, 2)];
     };
 };
+
+

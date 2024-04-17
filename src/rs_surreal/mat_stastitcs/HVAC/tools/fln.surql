@@ -377,5 +377,17 @@ DEFINE FUNCTION fn::hvac_fl_len_TRNS($pe: record) {
             let $d2 = ( fn::hvac_width($pe) + fn::hvac_height($pe) + fn::hvac_fl_width($pe) * 2.0 ) * 2.0 / 1000.0;
             return [math::fixed($d1, 2) ,  math::fixed($d2, 2)];
         };
-}
+};
+
+
+
+
+DEFINE FUNCTION fn::hvac_fl_len_OFST($pe: record) {
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+     return if $is_circle {
+            return math::fixed(fn::cal_len_formula_4(), 2);
+        } else {
+            return math::fixed(fn::cal_len_formula_3(), 2);
+        };
+};
 

@@ -197,7 +197,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             let pos_line = att.get_str("POSL").unwrap_or("NA");
             let pos_line = if pos_line.is_empty() { "NA" } else { pos_line };
             let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
-            dbg!(pos_line);
+            // dbg!(pos_line);
             //plin里的位置偏移
             let mut plin_pos = DVec3::ZERO;
             let mut pline_plax = DVec3::X;
@@ -207,7 +207,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             let ancestor_refnos =
                 crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec())
                     .await?;
-            dbg!(&ancestor_refnos);
+            // dbg!(&ancestor_refnos);
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
@@ -256,15 +256,15 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                     pline_plax
                 }
             };
-            dbg!(y_axis);
+            // dbg!(y_axis);
             let posl_quat = {
                 let z_axis = DVec3::X;
                 let x_axis = y_axis.cross(z_axis).normalize();
                 DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
             };
-            dbg!(dquat_to_pdms_ori_xyz_str(&posl_quat));
+            // dbg!(dquat_to_pdms_ori_xyz_str(&posl_quat));
             let new_quat = posl_quat * quat;
-            dbg!(dquat_to_pdms_ori_xyz_str(&new_quat));
+            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat));
             translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
 
             //没有POSL时，需要使用cutback的方向
@@ -334,7 +334,7 @@ pub async fn query_pline(refno: RefU64, jusl: String) -> anyhow::Result<Option<P
         return Ok(None);
     }
     let c_refnos = crate::get_children_refnos(psref).await.unwrap_or_default();
-    dbg!(&c_refnos);
+    // dbg!(&c_refnos);
     for c_refno in c_refnos {
         let a = crate::get_named_attmap(c_refno).await?;
         let Some(p_key) = a.get_as_string("PKEY") else {
@@ -406,8 +406,8 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
                     quat = cal_ori_by_extru_axis(dir, false);
                     dir = DMat3::from_quat(quat).z_axis;
                     pos += dir * tmp_dist + l.start.as_dvec3();
-                    dbg!(dir);
-                    dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat));
+                    // dbg!(dir);
+                    // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat));
                     break;
                 }
                 SweepPath3D::SpineArc(arc) => {

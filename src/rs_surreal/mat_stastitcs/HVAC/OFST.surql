@@ -22,12 +22,14 @@ select
     fn::common_washer_types(id) as washer_type,
     fn::common_washer_len(id) as washer_len,
 
-    '-' as other_qty,
-    '-' as stud,
+   fn::hvac_bolt_qtys_OFST(id) as bolt_qty,
 
-    fn::hvac_bolt_qtys_THRE(id) as nut_qty,  //螺母数量
-    fn::hvac_washer_bolt_qtys_THRE(id) as washer_qty,  //垫片数量
+   '-' as other_type,
+   '-' as other_qty,
+   '-' as stud,
 
+    fn::hvac_bolt_qtys_OFST(id) as nut_qty,  //螺母数量
+    [fn::hvac_bolt_qtys_OFST(id)*2, fn::hvac_bolt_qtys_OFST(id)*2] as washer_qty,  //垫片数量
 
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no

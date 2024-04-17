@@ -55,14 +55,8 @@ pub fn get_uda_index(hash: u32) -> Option<u32> {
 #[inline]
 pub fn db1_dehash(hash: u32) -> String {
     let mut result = String::new();
-    if GLOBAL_UDA_NAME_MAP.contains_key(&hash) {
-        return GLOBAL_UDA_NAME_MAP.get(&hash).unwrap().to_string();
-    }
     if hash > 0x171FAD39 {
-        // UDA的情况
-        // println!("uda index {:?}", get_uda_index(hash));
         let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
-        // println!("Init k: {:#4X}", k);
         result.push(':');
         for _i in 0..6 {
             if k <= 0 {
@@ -70,7 +64,6 @@ pub fn db1_dehash(hash: u32) -> String {
             }
             result.push((k % 64 + 32) as u8 as char);
             k /= 64;
-            // println!("k: {:#4X}", k);
         }
     } else {
         if hash <= 0x81BF1 {
@@ -100,12 +93,6 @@ pub fn db1_hash_i32(hash_str: &str) -> i32 {
 //todo 处理出错的情况
 #[inline]
 pub fn db1_hash(hash_str: &str) -> u32 {
-    // if ALIAS_ATT_NAME_MAP.contains_key(hash_str) {
-    //     return *ALIAS_ATT_NAME_MAP.get(hash_str).unwrap();
-    // }
-    if GLOBAL_UDA_UKEY_MAP.contains_key(hash_str) {
-        return *GLOBAL_UDA_UKEY_MAP.get(hash_str).unwrap();
-    }
     let chars = hash_str.as_bytes();
     if chars.len() < 1 {
         return 0; //出错的暂时用0 表达
@@ -117,7 +104,6 @@ pub fn db1_hash(hash_str: &str) -> u32 {
         i -= 1;
     }
     val.saturating_add_unsigned(0x81BF1) as u32
-    // 0x81BF1 + val as u32
 }
 
 #[inline]

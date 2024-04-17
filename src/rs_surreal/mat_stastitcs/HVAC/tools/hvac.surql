@@ -80,21 +80,25 @@ DEFINE FUNCTION fn::shape_name($pe: record){
 };
 
 
-DEFINE FUNCTION fn::hvac_width_format($pe: record){
+//获得风管宽度数组
+DEFINE FUNCTION fn::hvac_width_format($pe: record, $n: option<int>){
     let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    let $w = fn::hvac_width($pe, $n);
     return if $is_circle {
-        return string::concat('φ', $pe.refno.DESP[1]);
+        return string::concat('φ', $w);
     } else {
-        return fn::hvac_width($pe);
+        return $w;
     };
 };
 
-DEFINE FUNCTION fn::hvac_height_format($pe: record){
+//获得风管高度数组
+DEFINE FUNCTION fn::hvac_height_format($pe: record, $n: option<int>){
     let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    let $h = fn::hvac_height($pe, $n);
     return if $is_circle {
         return '-';
     } else {
-        return  fn::hvac_height($pe);
+        return $h;
     };
 };
 
@@ -165,6 +169,28 @@ DEFINE FUNCTION fn::hvac_height3($pe: record){
 
 DEFINE FUNCTION fn::hvac_len($pe: record){
     return $pe.refno.DESP[5];
+};
+
+DEFINE FUNCTION fn::hvac_a_len($pe: record){
+    return $pe.refno.DESP[14];
+};
+
+DEFINE FUNCTION fn::hvac_len_A($pe: record){
+    let $type = fn::type($pe);
+    return if $type == 'BRCO' {
+        return $pe.refno.DESP[45];
+    } else {
+        return $pe.refno.DESP[14];
+    };
+};
+
+DEFINE FUNCTION fn::hvac_len_L($pe: record){
+    let $type = fn::type($pe);
+    return if $type == 'BRCO' {
+        return $pe.refno.DESP[18];
+    } else {
+        return $pe.refno.DESP[16];
+    };
 };
 
 
@@ -307,7 +333,7 @@ DEFINE FUNCTION fn::hvac_mat($pe: record){
 };
 
 DEFINE FUNCTION fn::hvac_mat_name($pe: record){
-    let $m = (select value desc from fn::hvac_mat_id($pe))[0];
+    let $m = (return fn::hvac_mat_id($pe).desc);
     return if $m == none {
         return "unset";
     } else {
@@ -320,7 +346,7 @@ DEFINE FUNCTION fn::hvac_mat_name($pe: record){
 
 //暂时返回数字
 DEFINE FUNCTION fn::stype($pe:record) {
-    return $pe.refno.DESP[0];
+    return parse::hash::hash_to_str($pe.refno.DESP[0]);
 };
 
 DEFINE FUNCTION fn::prev_stype($pe:record) {
@@ -337,7 +363,7 @@ DEFINE FUNCTION fn::next_stype($pe:record) {
     return if $n == none {
         return 'unset';
     } else {
-            return fn::stype($n);
+       return fn::stype($n);
     };
 };
 
@@ -348,53 +374,53 @@ DEFINE FUNCTION fn::c_stype($pe:record) {
 
 //cur
 DEFINE FUNCTION fn::stype_is_fjfd($pe:record) {
-    return fn::stype($pe) == 614823;
+    return fn::stype($pe) == 'FJFD';
 };
 
 DEFINE FUNCTION fn::stype_is_damp($pe:record) {
-    return fn::stype($pe) == 855877;
+    return fn::stype($pe) == 'DAMP';
 };
 
 DEFINE FUNCTION fn::stype_is_mesh($pe:record) {
-    return fn::stype($pe) == 702904;
+    return fn::stype($pe) == 'MESH';
 };
 
 //prev
 DEFINE FUNCTION fn::prev_stype_is_fjfd($pe:record) {
-    return fn::prev_stype($pe) == 614823;
+    return fn::prev_stype($pe) == 'FJFD';
 };
 
 DEFINE FUNCTION fn::prev_stype_is_damp($pe:record) {
-    return fn::prev_stype($pe) == 855877;
+    return fn::prev_stype($pe) == 'DAMP';
 };
 
 DEFINE FUNCTION fn::prev_stype_is_mesh($pe:record) {
-    return fn::prev_stype($pe) == 702904;
+    return fn::prev_stype($pe) == 'MESH';
 };
 
 //next
 DEFINE FUNCTION fn::next_stype_is_fjfd($pe:record) {
-    return fn::next_stype($pe) == 614823;
+    return fn::next_stype($pe) == FJFD';
 };
 
 
 DEFINE FUNCTION fn::c_stype_is_fjfd($pe:record) {
-    return fn::c_stype($pe) == 614823;
+    return fn::c_stype($pe) == FJFD';
 };
 
 DEFINE FUNCTION fn::next_stype_is_damp($pe:record) {
-    return fn::next_stype($pe) == 855877;
+    return fn::next_stype($pe) == 'DAMP';
 };
 
 DEFINE FUNCTION fn::next_stype_is_mesh($pe:record) {
-    return fn::next_stype($pe) == 702904;
+    return fn::next_stype($pe) == 'MESH';
 };
 
 
 DEFINE FUNCTION fn::hvac_duct_area_format($pe: record, $chk_type: option<string>){
     // 1000000
     let $area = math::fixed(fn::duct_area($pe) , 2);
-    return if $chk_type == "DAMP" {
+    return if $chk_type == 'DAMP' {
           let $mat = fn::hvac_mat_number($pe);
           let $pd = fn::pre_is_type($pe, 'DAMP');
           let $nd = fn::next_is_type($pe, 'DAMP');
