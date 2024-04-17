@@ -528,127 +528,232 @@ pub async fn set_pbs_node() -> anyhow::Result<()> {
     let zones = query_all_zone_with_major(&SUL_DB).await?;
     // 查找zone下所有需要进行pbs计算的节点
     for zone in zones {
-        let mut result = Vec::new();
-        let mut relate_result = Vec::new();
+        // 找到所有需要处理的节点
         let nodes = query_ele_filter_deep_children(zone.id, vec!["BRAN".to_string(),
                                                                  "EQUI".to_string(), "STRU".to_string(), "REST".to_string()]).await?;
-        // // 处理bran
-        // let brans = nodes.iter().filter(|node| node.noun == "BRAN").collect::<Vec<_>>();
-        // let bran_refnos = brans.iter().map(|bran| bran.refno).collect::<Vec<_>>();
-        // let pdms_nodes = query_pbs_pdms_node(bran_refnos).await?;
-        // for (idx, node) in pdms_nodes.iter().enumerate() {
-        //     // 没有房间号的就跳过
-        //     if node.room_code.is_none() { continue; };
-        //     let room_code = node.room_code.clone().unwrap();
-        //     let owner = hash_str(&format!("{}{}", room_code, zone.major));
-        //     result.push(SPdmsElement {
-        //         id: node.id.to_pbs_key(),
-        //         refno: node.id,
-        //         owner: RefU64(owner),
-        //         name: node.name.clone(),
-        //         noun: node.noun.clone(),
-        //         dbnum: 0,
-        //         e3d_version: 0,
-        //         version_tag: None,
-        //         status_tag: None,
-        //         cata_hash: "".to_string(),
-        //         lock: false,
-        //         deleted: false,
-        //     });
-        //     relate_result.push(PBSRelate {
-        //         in_refno: node.id.to_pbs_key(),
-        //         out_refno: RefU64(owner).to_pbs_key(),
-        //         order_num: idx as u32,
-        //     }.to_surreal_relate(&PBS_OWNER));
-        //     // 存放children
-        //     for (child_idx, child) in node.children.iter().enumerate() {
-        //         result.push(child.clone());
-        //         relate_result.push(PBSRelate {
-        //             in_refno: child.id.clone(),
-        //             out_refno: child.owner.to_pbs_key(),
-        //             order_num: child_idx as u32,
-        //         }.to_surreal_relate(&PBS_OWNER));
-        //     }
-        // }
-        // // 保存树节点
-        // let ele_json = serde_json::to_string(&result)?;
-        // insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-        // // 保存 relate
-        // insert_relate_to_table(&SUL_DB, relate_result).await?;
-        //
-        // result.clear();
-        // let mut relate_result = Vec::new();
-        //
-        // // 处理equi
-        // let equis = nodes.iter().filter(|node| node.noun == "EQUI").collect::<Vec<_>>();
-        // let equi_refnos = equis.iter().map(|bran| bran.refno).collect::<Vec<_>>();
-        // let pdms_nodes = query_pbs_pdms_node(equi_refnos).await?;
-        // // 收集sube
-        // let mut subes = Vec::new();
-        // for node in &pdms_nodes {
-        //     for child in &node.children {
-        //         if child.noun != "SUBE".to_string() { continue; };
-        //         subes.push(child.refno);
-        //     }
-        // }
-        // // 查询sube的children
-        // let sube_children = query_children_by_refnos(subes).await?;
-        // // 将equi节点放到pbs中
-        // for (idx, node) in pdms_nodes.iter().enumerate() {
-        //     // 没有房间号的就跳过
-        //     if node.room_code.is_none() { continue; };
-        //     let room_code = node.room_code.clone().unwrap();
-        //     let owner = hash_str(&format!("{}{}", room_code, zone.major));
-        //     result.push(SPdmsElement {
-        //         id: node.id.to_pbs_key(),
-        //         refno: node.id,
-        //         owner: RefU64(owner),
-        //         name: node.name.clone(),
-        //         noun: node.noun.clone(),
-        //         dbnum: 0,
-        //         e3d_version: 0,
-        //         version_tag: None,
-        //         status_tag: None,
-        //         cata_hash: "".to_string(),
-        //         lock: false,
-        //         deleted: false,
-        //     });
-        //     relate_result.push(PBSRelate {
-        //         in_refno: node.id.to_pbs_key(),
-        //         out_refno: RefU64(owner).to_pbs_key(),
-        //         order_num: idx as u32,
-        //     }.to_surreal_relate(&PBS_OWNER));
-        //     // 存放children
-        //     for (child_idx, child) in node.children.iter().enumerate() {
-        //         result.push(child.clone());
-        //         relate_result.push(PBSRelate {
-        //             in_refno: child.id.clone(),
-        //             out_refno: child.owner.to_pbs_key(),
-        //             order_num: child_idx as u32,
-        //         }.to_surreal_relate(&PBS_OWNER));
-        //         // 将sube的children放到pbs中的sube下
-        //         if child.noun == "SUBE".to_string() {
-        //             let Some(sube_children) = sube_children.get(&child.refno) else { continue; };
-        //             for (sube_idx, sube) in sube_children.iter().enumerate() {
-        //                 result.push(sube.clone());
-        //                 relate_result.push(PBSRelate {
-        //                     in_refno: sube.id.clone(),
-        //                     out_refno: sube.owner.to_pbs_key(),
-        //                     order_num: sube_idx as u32,
-        //                 }.to_surreal_relate(&PBS_OWNER));
-        //             }
-        //         }
-        //     }
-        // }
-        // // 保存树节点
-        // let ele_json = serde_json::to_string(&result)?;
-        // insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-        // // 保存 relate
-        // insert_relate_to_table(&SUL_DB, relate_result).await?;
-        //
-        // result.clear();
-        // let mut relate_result = Vec::new();
+        // 处理bran
+        set_pbs_bran_node(&nodes, &zone).await?;
+        // 处理equi
+        set_pbs_equi_node(&nodes, &zone).await?;
         // 处理支吊架
+        set_pbs_supp_node(&nodes, &zone).await?;
+    }
+    Ok(())
+}
+
+/// 保存房间下bran相关的节点
+async fn set_pbs_bran_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> anyhow::Result<()> {
+    let mut result = Vec::new();
+    let mut relate_result = Vec::new();
+    // 查找bran相关的pdms树的数据
+    let brans = nodes.iter().filter(|node| node.noun == "BRAN").collect::<Vec<_>>();
+    let bran_refnos = brans.iter().map(|bran| bran.refno).collect::<Vec<_>>();
+    let pdms_nodes = query_pbs_pdms_node(bran_refnos).await?;
+    for (idx, node) in pdms_nodes.iter().enumerate() {
+        // 没有房间号的就跳过
+        if node.room_code.is_none() { continue; };
+        let room_code = node.room_code.clone().unwrap();
+        let owner = hash_str(&format!("{}{}", room_code, zone.major));
+        result.push(SPdmsElement {
+            id: node.id.to_pbs_key(),
+            refno: node.id,
+            owner: RefU64(owner),
+            name: node.name.clone(),
+            noun: node.noun.clone(),
+            dbnum: 0,
+            e3d_version: 0,
+            version_tag: None,
+            status_tag: None,
+            cata_hash: "".to_string(),
+            lock: false,
+            deleted: false,
+        });
+        relate_result.push(PBSRelate {
+            in_refno: node.id.to_pbs_key(),
+            out_refno: RefU64(owner).to_pbs_key(),
+            order_num: idx as u32,
+        }.to_surreal_relate(&PBS_OWNER));
+        // 存放children
+        for (child_idx, child) in node.children.iter().enumerate() {
+            result.push(child.clone());
+            relate_result.push(PBSRelate {
+                in_refno: child.id.clone(),
+                out_refno: child.owner.to_pbs_key(),
+                order_num: child_idx as u32,
+            }.to_surreal_relate(&PBS_OWNER));
+        }
+    }
+    // 保存树节点
+    let ele_json = serde_json::to_string(&result)?;
+    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
+    // 保存 relate
+    insert_relate_to_table(&SUL_DB, relate_result).await
+}
+
+/// 保存房间下equi相关的节点
+async fn set_pbs_equi_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> anyhow::Result<()> {
+    let mut result = Vec::new();
+    let mut relate_result = Vec::new();
+    // 查找equi相关的pdms树的数据
+    let equis = nodes.iter().filter(|node| node.noun == "EQUI").collect::<Vec<_>>();
+    let equi_refnos = equis.iter().map(|bran| bran.refno).collect::<Vec<_>>();
+    let pdms_nodes = query_pbs_pdms_node(equi_refnos).await?;
+    // 收集sube
+    let mut subes = Vec::new();
+    for node in &pdms_nodes {
+        for child in &node.children {
+            if child.noun != "SUBE".to_string() { continue; };
+            subes.push(child.refno);
+        }
+    }
+    // 查询sube的children
+    let sube_children = query_children_by_refnos(subes).await?;
+    // 将equi节点放到pbs中
+    for (idx, node) in pdms_nodes.iter().enumerate() {
+        // 没有房间号的就跳过
+        if node.room_code.is_none() { continue; };
+        let room_code = node.room_code.clone().unwrap();
+        let owner = hash_str(&format!("{}{}", room_code, zone.major));
+        result.push(SPdmsElement {
+            id: node.id.to_pbs_key(),
+            refno: node.id,
+            owner: RefU64(owner),
+            name: node.name.clone(),
+            noun: node.noun.clone(),
+            dbnum: 0,
+            e3d_version: 0,
+            version_tag: None,
+            status_tag: None,
+            cata_hash: "".to_string(),
+            lock: false,
+            deleted: false,
+        });
+        relate_result.push(PBSRelate {
+            in_refno: node.id.to_pbs_key(),
+            out_refno: RefU64(owner).to_pbs_key(),
+            order_num: idx as u32,
+        }.to_surreal_relate(&PBS_OWNER));
+        // 存放children
+        for (child_idx, child) in node.children.iter().enumerate() {
+            result.push(child.clone());
+            relate_result.push(PBSRelate {
+                in_refno: child.id.clone(),
+                out_refno: child.owner.to_pbs_key(),
+                order_num: child_idx as u32,
+            }.to_surreal_relate(&PBS_OWNER));
+            // 将sube的children放到pbs中的sube下
+            if child.noun == "SUBE".to_string() {
+                let Some(sube_children) = sube_children.get(&child.refno) else { continue; };
+                for (sube_idx, sube) in sube_children.iter().enumerate() {
+                    result.push(sube.clone());
+                    relate_result.push(PBSRelate {
+                        in_refno: sube.id.clone(),
+                        out_refno: sube.owner.to_pbs_key(),
+                        order_num: sube_idx as u32,
+                    }.to_surreal_relate(&PBS_OWNER));
+                }
+            }
+        }
+    }
+    // 保存树节点
+    let ele_json = serde_json::to_string(&result)?;
+    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
+    // 保存 relate
+    insert_relate_to_table(&SUL_DB, relate_result).await
+}
+
+/// 保存房间下supp相关的节点
+async fn set_pbs_supp_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> anyhow::Result<()> {
+    let mut result = Vec::new();
+    let mut relate_result = Vec::new();
+    // 这几个支架下面只有STRU，不需要找REST
+    if zone.major == "HVACSU".to_string() || zone.major == "ELEMSU".to_string() || zone.major == "ELELSU".to_string() {
+        let supps = nodes.iter().filter(|node| node.noun == "STRU").collect::<Vec<_>>();
+        let supp_refnos = supps.iter().map(|bran| bran.refno).collect::<Vec<_>>();
+        let pdms_nodes = query_pbs_pdms_node(supp_refnos).await?;
+        // 收集 FRMW
+        let mut frmws = Vec::new();
+        for node in &pdms_nodes {
+            for child in &node.children {
+                if child.noun != "FRMW".to_string() { continue; };
+                frmws.push(child.refno);
+            }
+        }
+        // 查询 FRMW 和 HANG的children
+        let frmw_children = query_children_by_refnos(frmws).await?;
+        for (idx, supp) in pdms_nodes.iter().enumerate() {
+            if supp.room_code.is_none() { continue; };
+            let room_code = supp.room_code.clone().unwrap();
+            let owner = hash_str(&format!("{}{}", room_code, zone.major));
+            // 存放 STRU
+            result.push(SPdmsElement {
+                id: supp.id.to_pbs_key(),
+                refno: supp.id,
+                owner: RefU64(owner),
+                name: supp.noun.clone(),
+                noun: supp.noun.clone(),
+                dbnum: 0,
+                e3d_version: 0,
+                version_tag: None,
+                status_tag: None,
+                cata_hash: "".to_string(),
+                lock: false,
+                deleted: false,
+            });
+            relate_result.push(PBSRelate {
+                in_refno: supp.id.to_pbs_key(),
+                out_refno: RefU64(owner).to_pbs_key(),
+                order_num: 0,
+            }.to_surreal_relate(&PBS_OWNER));
+            // 存放children
+            for (child_idx, child) in supp.children.iter().enumerate() {
+                result.push(SPdmsElement {
+                    id: child.refno.to_pe_key(),
+                    refno: child.refno,
+                    owner: child.owner,
+                    name: child.name.clone(),
+                    noun: child.noun.clone(),
+                    dbnum: 0,
+                    e3d_version: 0,
+                    version_tag: None,
+                    status_tag: None,
+                    cata_hash: child.cata_hash.clone(),
+                    lock: false,
+                    deleted: false,
+                });
+                relate_result.push(PBSRelate {
+                    in_refno: child.refno.to_pe_key(),
+                    out_refno: child.owner.to_pbs_key(),
+                    order_num: child_idx as u32,
+                }.to_surreal_relate(&PBS_OWNER));
+                // 将FRMW的children放到pbs中的sube下
+                if child.noun == "FRMW".to_string() {
+                    let Some(children) = frmw_children.get(&child.refno) else { continue; };
+                    for (supp_idx, supp) in children.iter().enumerate() {
+                        result.push(SPdmsElement {
+                            id: supp.refno.to_pe_key(),
+                            refno: supp.refno,
+                            owner: supp.owner,
+                            name: supp.name.clone(),
+                            noun: supp.noun.clone(),
+                            dbnum: 0,
+                            e3d_version: 0,
+                            version_tag: None,
+                            status_tag: None,
+                            cata_hash: supp.cata_hash.clone(),
+                            lock: false,
+                            deleted: false,
+                        });
+                        relate_result.push(PBSRelate {
+                            in_refno: supp.refno.to_pe_key(),
+                            out_refno: supp.owner.to_pbs_key(),
+                            order_num: supp_idx as u32,
+                        }.to_surreal_relate(&PBS_OWNER));
+                    }
+                }
+            }
+        }
+    } else {
         let supps = nodes.iter().filter(|node| node.noun == "STRU" || node.noun == "REST").collect::<Vec<_>>();
         let supp_refnos = supps.iter().map(|bran| bran.refno).collect::<Vec<_>>();
         let pdms_nodes = query_pbs_pdms_node(supp_refnos).await?;
@@ -663,7 +768,6 @@ pub async fn set_pbs_node() -> anyhow::Result<()> {
             }
         }
         // 查询 FRMW 和 HANG的children
-        let hangs = vec![RefU64::from_str("24383/68567").unwrap()];
         let hang_children = query_children_by_refnos(hangs).await?;
         for (idx, supp) in pdms_nodes.iter().enumerate() {
             if supp.room_code.is_none() { continue; };
@@ -764,13 +868,12 @@ pub async fn set_pbs_node() -> anyhow::Result<()> {
                 }
             }
         }
-        // 保存树节点
-        let ele_json = serde_json::to_string(&result)?;
-        insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-        // 保存 relate
-        insert_relate_to_table(&SUL_DB, relate_result).await?;
     }
-    Ok(())
+    // 保存树节点
+    let ele_json = serde_json::to_string(&result)?;
+    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
+    // 保存 relate
+    insert_relate_to_table(&SUL_DB, relate_result).await
 }
 
 /// pbs下重新划分的pdms树节点，bran equi等
@@ -819,6 +922,7 @@ async fn query_children_by_refnos(refnos: Vec<RefU64>) -> anyhow::Result<HashMap
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    set_pdms_major_code(&aios_mgr).await?;
     set_pbs_fixed_node().await?;
     let rooms = set_pbs_room_node().await?;
     set_pbs_room_major_node(&rooms).await?;
