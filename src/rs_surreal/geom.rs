@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
+use smol_str::ToSmolStr;
 use truck_polymesh::stl::IntoStlIterator;
 use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
 use crate::test::test_surreal::init_test_surreal;
@@ -131,6 +132,31 @@ pub async fn query_bran_children_point_map(refno: RefU64) -> anyhow::Result<Vec<
         .await?;
     let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
     Ok(result.into_iter().map(|r| r.into_point_map()).collect())
+}
+
+/// 查询参考号对应的点集
+pub async fn query_point_map(refno: RefU64) -> anyhow::Result<Option<InstPointMap>> {
+    let sql = format!("
+    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num from {};", refno.to_pe_key());
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let mut result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
+    if result.is_empty() { return Ok(None); }
+    Ok(Some(result.remove(0).into_point_map()))
+}
+
+/// 查询多个参考号对应的点集
+pub async fn query_refnos_point_map(refnos: Vec<RefU64>) -> anyhow::Result<HashMap<RefU64, InstPointMap>> {
+    let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
+    let sql = format!("
+    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
+    in {};", serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
+    Ok(result.into_iter().map(|r| (r.id, r.into_point_map())).collect())
 }
 
 

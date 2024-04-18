@@ -14,6 +14,8 @@ use surrealdb::engine::remote::ws::Client;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use truck_polymesh::Attributes;
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -352,6 +354,24 @@ pub async fn query_group_by_cata_hash(
         })
         .collect();
     Ok(map)
+}
+
+#[serde_as]
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct PdmsSpreName {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    pub foreign_refno: Option<String>,
+    pub name: Option<String>,
+}
+
+/// 查询多个参考号外键对应的name，暂时只支持SPRE这种一层外键的
+pub async fn query_foreign_refnos(refnos: Vec<RefU64>, foreign_type: &str) -> anyhow::Result<Vec<PdmsSpreName>> {
+    let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
+    let sql = format!("select id, refno.{} as foreign_refno,refno.{}.refno.NAME as name from {};", &foreign_type, &foreign_type, serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
+    let mut response = SUL_DB.query(sql).await?;
+    let result: Vec<PdmsSpreName> = response.take(0)?;
+    Ok(result)
 }
 
 pub async fn query_single_by_paths(

@@ -36,6 +36,21 @@ impl AiosDBMgr {
         init_surreal_with_signin(&self.db_option).await?;
         Ok(SUL_DB.clone())
     }
+
+    /// 获取所属房间的顶标高和底标高
+    pub async fn query_own_room_panel_elevations(&self,refno: RefU64) -> anyhow::Result<(f32, f32)> {
+        let sql = format!("return fn::room_top_height({});
+                        return fn::room_height({});", refno.to_pe_key(), refno.to_pe_key());
+        let mut response = SUL_DB
+            .query(sql)
+            .await?;
+        let min: Vec<f32> = response.take(0).unwrap_or(vec![]);
+        let max: Vec<f32> = response.take(1).unwrap_or(vec![]);
+        let min = min.get(0).map_or(0.0,|x| *x);
+        let max = max.get(0).map_or(0.0,|x| *x);
+        Ok((min, max))
+    }
+
 }
 
 #[async_trait]
