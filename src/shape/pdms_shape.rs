@@ -21,6 +21,7 @@ use parry3d::shape::{TriMesh, TriMeshFlags};
 use std::io::BufWriter;
 use std::path::Path;
 use std::vec;
+#[cfg(feature = "render")]
 use bevy_render::render_asset::RenderAssetUsages;
 #[cfg(feature = "truck")]
 use truck_base::bounding_box::BoundingBox;

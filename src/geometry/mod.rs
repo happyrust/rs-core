@@ -11,10 +11,14 @@ use nalgebra::Point3;
 use std::fs::File;
 use std::path::Path;
 use serde_with::serde_as;
+#[cfg(feature = "render")]
 use bevy_render::mesh::{Indices, Mesh};
+#[cfg(feature = "render")]
 use bevy_render::mesh::PrimitiveTopology::TriangleList;
+#[cfg(feature = "render")]
 use bevy_render::render_asset::RenderAssetUsages;
 use std::io::Write;
+use dashmap::DashSet;
 use crate::prim_geo::basic::{BOXI_GEO_HASH, TUBI_GEO_HASH};
 use crate::{gen_bytes_hash, RefU64};
 use crate::parsed_data::CateAxisParam;
@@ -196,6 +200,8 @@ pub struct ShapeInstancesData {
     ///保存所有用到的的ngmr数据
     #[serde(skip)]
     pub ngmr_relate_map: HashMap<RefU64, Vec<RefU64>>,
+
+    // pub insterted_ids: DashSet<RefU64>
 }
 
 /// shape instances 的管理方法
@@ -454,6 +460,7 @@ impl Clone for PlantGeoData {
 
 
 impl PlantGeoData {
+
     ///返回三角模型 （tri_mesh, AABB）
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {

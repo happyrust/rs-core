@@ -9,8 +9,7 @@ use surrealdb::sql::Thing;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
 pub struct SPdmsElement {
-    //todo 用来作为sql的主键
-    pub id: String,
+    //指向具体的类型
     pub refno: RefU64,
     pub owner: RefU64,
     pub name: String,
@@ -34,7 +33,6 @@ pub struct SPdmsElement {
 impl SPdmsElement {
     pub fn gen_sur_json(&self) -> String {
         let mut json_string = to_string_pretty(&json!({
-            "id": self.id,
             "name": self.name,
             "noun": self.noun,
             "dbnum": self.dbnum,
@@ -49,11 +47,11 @@ impl SPdmsElement {
         json_string.remove(json_string.len() - 1);
         json_string.push_str(",");
         json_string.push_str(&format!(
-            r#""refno": {}:{},"#,
-            &self.noun,
-            self.refno.to_string()
+            r#""refno": {},"#,
+            self.refno.to_table_key(&self.noun)
         ));
-        json_string.push_str(&format!(r#""owner": pe:{}"#, self.owner.to_string()));
+        json_string.push_str(&format!(r#""id": {},"#, self.refno.to_pe_key()));
+        json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
         json_string.push_str("}");
         // println!("json string: {}", &json_string);
         json_string

@@ -26,6 +26,7 @@ pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
         .query(include_str!("schemas/query_pe_by_refno.surql"))
         .bind(("refno", refno.to_string()))
         .await?;
+    dbg!(&response);
     let pe: Option<SPdmsElement> = response.take(0)?;
     Ok(pe)
 }

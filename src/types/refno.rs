@@ -44,7 +44,7 @@ impl Serialize for RefU64 {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 enum RefnoVariant {
-    // Thing(Thing),
+    Thing(Thing),
     Str(String),
     Num(u64),
 }
@@ -56,7 +56,7 @@ impl<'de> Deserialize<'de> for RefU64 {
     {
         if let Ok(s) = RefnoVariant::deserialize(deserializer) {
             match s {
-                // RefnoVariant::Thing(s) => Ok(s.into()),
+                RefnoVariant::Thing(s) => Ok(s.into()),
                 RefnoVariant::Str(s) => Self::from_str(s.as_str())
                     .map_err(|_| serde::de::Error::custom("refno parse string error")),
                 RefnoVariant::Num(d) => Ok(Self(d)),
@@ -70,8 +70,6 @@ impl<'de> Deserialize<'de> for RefU64 {
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // let s = s.replace('⟨', "")
-        //     .replace('⟩', "");
         let ts = s.split(['=', ':']).skip(1).next().unwrap_or(s);
         let nums = ts
             .split(['_', '/'])
@@ -91,7 +89,7 @@ impl FromStr for RefU64 {
 
 impl From<Thing> for RefU64 {
     fn from(thing: Thing) -> Self {
-        thing.id.to_string().as_str().into()
+        thing.id.to_raw().as_str().into()
     }
 }
 
@@ -242,8 +240,14 @@ impl RefU64 {
 
     #[inline]
     pub fn to_pe_key(&self) -> String {
-        format!("pe:{}", &self.to_string())
+        self.to_table_key("pe")
     }
+
+    #[inline]
+    pub fn to_table_key(&self, tbl: &str) -> String {
+        format!("{tbl}:⟨{}⟩", &self.to_string())
+    }
+
     #[inline]
     pub fn to_pe_thing(&self) -> Thing {
         ("pe".to_owned(), self.to_string()).into()

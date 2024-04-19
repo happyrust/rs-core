@@ -8,8 +8,7 @@ use crate::pdms_types::*;
 #[tokio::test]
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    // let pe = rs_surreal::get_pe("17496/254421".into()).await.unwrap();
-    let refno = "17496_105691".into();
+    let refno = "13292_92".into();
     let pe = rs_surreal::get_pe(refno)
         .await
         .unwrap();
@@ -20,7 +19,7 @@ async fn test_query_pe_by_refno() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let refno: RefU64 = "17496/171238".into();
+    let refno: RefU64 = "13292_116".into();
     let type_name = rs_surreal::get_type_name(refno)
         .await
         .unwrap_or_default();

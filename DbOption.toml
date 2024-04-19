@@ -52,7 +52,7 @@ v_ip = "localhost"
 #v_ip = "50c170h624.zicp.vip"
 v_user = "root"
 v_password = ""
-v_port = "8003"
+v_port = "8002"
 #v_port = "38389"
 
 pe_chunk = 5000
