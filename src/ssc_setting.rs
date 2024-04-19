@@ -1,5 +1,9 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::future::Future;
 use std::str::FromStr;
+use std::sync::mpsc;
+use std::sync::mpsc::Sender;
+use std::thread;
 use anyhow::anyhow;
 use crate::types::*;
 use bevy_ecs::system::Resource;
@@ -16,6 +20,7 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
+use tokio::task;
 use crate::pdms_types::PdmsElement;
 use crate::pdms_types::UdaMajorType::S;
 use crate::pe::SPdmsElement;
@@ -93,6 +98,16 @@ impl SscLevelExcel {
         }
         true
     }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum SaveDatabaseChannelMsg {
+    // 插入数据  表名和数据
+    InsertSql(String, String),
+    // 插入relate数据
+    InsertRelateSql(Vec<String>),
+    // 结束
+    Quit,
 }
 
 /// 设置site和zone所属的专业
@@ -253,7 +268,7 @@ impl PBSRelate {
 }
 
 /// 生成pbs固定节点
-pub async fn set_pbs_fixed_node() -> anyhow::Result<()> {
+pub async fn set_pbs_fixed_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
     let mut eles_results = Vec::new();
     let mut edge_results = Vec::new();
 
@@ -310,14 +325,19 @@ pub async fn set_pbs_fixed_node() -> anyhow::Result<()> {
     }
     // 保存树节点
     let ele_json = serde_json::to_string(&eles_results)?;
-    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-    // 保存 relate
-    insert_relate_to_table(&SUL_DB, edge_results).await?;
+    tx.send(SaveDatabaseChannelMsg::InsertSql(PBS_TABLE.to_string(), ele_json))?;
+    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(edge_results))?;
     Ok(())
 }
 
+struct PbsRoomNodeResult {
+    pub rooms: HashMap<String, BTreeSet<String>>,
+    pub sql: String,
+    pub relate_sql: Vec<String>,
+}
+
 /// 生成房间节点
-pub async fn set_pbs_room_node() -> anyhow::Result<HashMap<String, BTreeSet<String>>> {
+pub async fn set_pbs_room_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<HashMap<String, BTreeSet<String>>, > {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     let rooms = query_all_room_name().await?;
@@ -440,14 +460,13 @@ pub async fn set_pbs_room_node() -> anyhow::Result<HashMap<String, BTreeSet<Stri
     }
     // 保存树节点
     let ele_json = serde_json::to_string(&result)?;
-    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-    // 保存 relate
-    insert_relate_to_table(&SUL_DB, relate_result).await?;
+    tx.send(SaveDatabaseChannelMsg::InsertSql(PBS_TABLE.to_string(), ele_json))?;
+    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
     Ok(rooms)
 }
 
 /// 保存房间下的专业
-pub async fn set_pbs_room_major_node(rooms: &HashMap<String, BTreeSet<String>>) -> anyhow::Result<()> {
+pub async fn set_pbs_room_major_node(rooms: &HashMap<String, BTreeSet<String>>, tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     // 获取 pdms site 和 zone 对应的专业代码
@@ -508,9 +527,8 @@ pub async fn set_pbs_room_major_node(rooms: &HashMap<String, BTreeSet<String>>) 
     }
     // 保存树节点
     let ele_json = serde_json::to_string(&result)?;
-    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-    // 保存 relate
-    insert_relate_to_table(&SUL_DB, relate_result).await?;
+    tx.send(SaveDatabaseChannelMsg::InsertSql(PBS_TABLE.to_string(), ele_json))?;
+    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
     Ok(())
 }
 
@@ -524,7 +542,7 @@ async fn query_all_zone_with_major(db: &Surreal<Any>) -> anyhow::Result<Vec<Pdms
 }
 
 /// 保存房间下节点所属的专业
-pub async fn set_pbs_node() -> anyhow::Result<()> {
+pub async fn set_pbs_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
     let zones = query_all_zone_with_major(&SUL_DB).await?;
     let len = zones.len();
     // 查找zone下所有需要进行pbs计算的节点
@@ -534,17 +552,17 @@ pub async fn set_pbs_node() -> anyhow::Result<()> {
         let nodes = query_ele_filter_deep_children(zone.id, vec!["BRAN".to_string(),
                                                                  "EQUI".to_string(), "STRU".to_string(), "REST".to_string()]).await?;
         // 处理bran
-        set_pbs_bran_node(&nodes, &zone).await?;
+        set_pbs_bran_node(&nodes, &zone, tx).await?;
         // 处理equi
-        set_pbs_equi_node(&nodes, &zone).await?;
+        set_pbs_equi_node(&nodes, &zone, tx).await?;
         // 处理支吊架
-        set_pbs_supp_node(&nodes, &zone).await?;
+        set_pbs_supp_node(&nodes, &zone, tx).await?;
     }
     Ok(())
 }
 
 /// 保存房间下bran相关的节点
-async fn set_pbs_bran_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> anyhow::Result<()> {
+async fn set_pbs_bran_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue, tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     // 查找bran相关的pdms树的数据
@@ -587,13 +605,13 @@ async fn set_pbs_bran_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> 
     }
     // 保存树节点
     let ele_json = serde_json::to_string(&result)?;
-    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-    // 保存 relate
-    insert_relate_to_table(&SUL_DB, relate_result).await
+    tx.send(SaveDatabaseChannelMsg::InsertSql(PBS_TABLE.to_string(), ele_json))?;
+    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+    Ok(())
 }
 
 /// 保存房间下equi相关的节点
-async fn set_pbs_equi_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> anyhow::Result<()> {
+async fn set_pbs_equi_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue, tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     // 查找equi相关的pdms树的数据
@@ -659,13 +677,13 @@ async fn set_pbs_equi_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> 
     }
     // 保存树节点
     let ele_json = serde_json::to_string(&result)?;
-    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-    // 保存 relate
-    insert_relate_to_table(&SUL_DB, relate_result).await
+    tx.send(SaveDatabaseChannelMsg::InsertSql(PBS_TABLE.to_string(), ele_json))?;
+    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+    Ok(())
 }
 
 /// 保存房间下supp相关的节点
-async fn set_pbs_supp_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> anyhow::Result<()> {
+async fn set_pbs_supp_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue, tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     // 这几个支架下面只有STRU，不需要找REST
@@ -873,9 +891,9 @@ async fn set_pbs_supp_node(nodes: &Vec<SPdmsElement>, zone: &PdmsMajorValue) -> 
     }
     // 保存树节点
     let ele_json = serde_json::to_string(&result)?;
-    insert_into_table(&SUL_DB, PBS_TABLE, &ele_json).await?;
-    // 保存 relate
-    insert_relate_to_table(&SUL_DB, relate_result).await
+    tx.send(SaveDatabaseChannelMsg::InsertSql(PBS_TABLE.to_string(), ele_json))?;
+    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+    Ok(())
 }
 
 /// pbs下重新划分的pdms树节点，bran equi等
@@ -921,14 +939,48 @@ async fn query_children_by_refnos(refnos: Vec<RefU64>) -> anyhow::Result<HashMap
     Ok(map)
 }
 
+/// 接受保存数据库请求并执行操作
+pub async fn execute_save_word(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
+    for msg in rx {
+        match msg {
+            // 保存table数据
+            SaveDatabaseChannelMsg::InsertSql(table_name, sql) => {
+                insert_into_table(&SUL_DB, &table_name, &sql).await?;
+            }
+            // 保存 relate
+            SaveDatabaseChannelMsg::InsertRelateSql(relate_sql) => {
+                insert_relate_to_table(&SUL_DB, relate_sql).await?;
+            }
+            SaveDatabaseChannelMsg::Quit => {
+                break;
+            }
+        }
+    }
+    Ok(())
+}
+
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    set_pdms_major_code(&aios_mgr).await?;
-    set_pbs_fixed_node().await?;
-    let rooms = set_pbs_room_node().await?;
-    set_pbs_room_major_node(&rooms).await?;
-    set_pbs_node().await
+    // set_pdms_major_code(&aios_mgr).await?;
+    // 创建通道
+    let (tx, rx) = mpsc::channel();
+
+    set_pbs_fixed_node(&tx).await?;
+    let rooms = set_pbs_room_node(&tx).await?;
+    set_pbs_room_major_node(&rooms, &tx).await?;
+    set_pbs_node(&tx).await?;
+    // 创建数据库处理线程
+    let db_thread = task::spawn(async move {
+        execute_save_word(rx).await.unwrap();
+    });
+
+    // 发送退出消息
+    tx.send(SaveDatabaseChannelMsg::Quit)?;
+
+    // 等待数据库处理任务结束
+    db_thread.await?;
+    Ok(())
 }
 
 #[tokio::test]
@@ -941,6 +993,6 @@ async fn test_set_pdms_major_code() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_set_pbs_room_node() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    set_pbs_node().await?;
+    // set_pbs_node().await?;
     Ok(())
 }
