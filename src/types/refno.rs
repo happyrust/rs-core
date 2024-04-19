@@ -43,7 +43,8 @@ impl Serialize for RefU64 {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-enum StringOrU64 {
+enum RefnoVariant {
+    // Thing(Thing),
     Str(String),
     Num(u64),
 }
@@ -53,11 +54,12 @@ impl<'de> Deserialize<'de> for RefU64 {
     where
         D: Deserializer<'de>,
     {
-        if let Ok(s) = StringOrU64::deserialize(deserializer) {
+        if let Ok(s) = RefnoVariant::deserialize(deserializer) {
             match s {
-                StringOrU64::Str(s) => Self::from_str(s.as_str())
-                    .map_err(|_| serde::de::Error::custom("refno parse error")),
-                StringOrU64::Num(d) => Ok(Self(d)),
+                // RefnoVariant::Thing(s) => Ok(s.into()),
+                RefnoVariant::Str(s) => Self::from_str(s.as_str())
+                    .map_err(|_| serde::de::Error::custom("refno parse string error")),
+                RefnoVariant::Num(d) => Ok(Self(d)),
             }
         } else {
             return Err(serde::de::Error::custom("refno parse error"));
@@ -68,6 +70,8 @@ impl<'de> Deserialize<'de> for RefU64 {
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // let s = s.replace('⟨', "")
+        //     .replace('⟩', "");
         let ts = s.split(['=', ':']).skip(1).next().unwrap_or(s);
         let nums = ts
             .split(['_', '/'])

@@ -348,7 +348,7 @@ DEFINE FUNCTION fn::hvac_mat_name($pe: record){
 
 //暂时返回数字
 DEFINE FUNCTION fn::stype($pe:record) {
-    return $pe.refno.DESP[0];
+    return parse::hash::hash_to_str($pe.refno.DESP[0]);
 };
 
 DEFINE FUNCTION fn::prev_stype($pe:record) {
@@ -376,46 +376,46 @@ DEFINE FUNCTION fn::c_stype($pe:record) {
 
 //cur
 DEFINE FUNCTION fn::stype_is_fjfd($pe:record) {
-    return fn::stype($pe) == 614823;
+    return fn::stype($pe) == 'FJFD';
 };
 
 DEFINE FUNCTION fn::stype_is_damp($pe:record) {
-    return fn::stype($pe) == 855877;
+    return fn::stype($pe) == 'DAMP';
 };
 
 DEFINE FUNCTION fn::stype_is_mesh($pe:record) {
-    return fn::stype($pe) == 702904;
+    return fn::stype($pe) == 'MESH';
 };
 
 //prev
 DEFINE FUNCTION fn::prev_stype_is_fjfd($pe:record) {
-    return fn::prev_stype($pe) == 614823;
+    return fn::prev_stype($pe) == 'FJFD';
 };
 
 DEFINE FUNCTION fn::prev_stype_is_damp($pe:record) {
-    return fn::prev_stype($pe) == 855877;
+    return fn::prev_stype($pe) == 'DAMP';
 };
 
 DEFINE FUNCTION fn::prev_stype_is_mesh($pe:record) {
-    return fn::prev_stype($pe) == 702904;
+    return fn::prev_stype($pe) == 'MESH';
 };
 
 //next
 DEFINE FUNCTION fn::next_stype_is_fjfd($pe:record) {
-    return fn::next_stype($pe) == 614823;
+    return fn::next_stype($pe) == FJFD';
 };
 
 
 DEFINE FUNCTION fn::c_stype_is_fjfd($pe:record) {
-    return fn::c_stype($pe) == 614823;
+    return fn::c_stype($pe) == FJFD';
 };
 
 DEFINE FUNCTION fn::next_stype_is_damp($pe:record) {
-    return fn::next_stype($pe) == 855877;
+    return fn::next_stype($pe) == 'DAMP';
 };
 
 DEFINE FUNCTION fn::next_stype_is_mesh($pe:record) {
-    return fn::next_stype($pe) == 702904;
+    return fn::next_stype($pe) == 'MESH';
 };
 
 

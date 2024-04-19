@@ -1,5 +1,4 @@
 use crate::parsed_data::geo_params_data::CateGeoParam;
-use crate::tool::math_tool::quat_to_pdms_ori_xyz_str;
 use crate::types::*;
 use crate::prim_geo::ctorus::SCTorus;
 use crate::prim_geo::cylinder::SCylinder;
@@ -324,10 +323,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(axis.number);
             let mut dir = axis.dir.is_normalized().then(|| axis.dir).unwrap_or(axis.dir_flag * Vec3::Y);
             let translation = (dir * d.dist_to_btm + axis.pt);
-            // if d.refno == "23984/89344".into() {
-            //     dbg!(translation);
-            //     dbg!(&d);
-            // }
             let phei = d.dist_to_top - d.dist_to_btm;
             if phei < 0.0 {
                 dir = -dir;
@@ -379,7 +374,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 let mut rot2 = Quat::IDENTITY;
                 if d.y_shear.abs() > d.x_shear.abs() {
                     //todo 旋转到长轴即可
-                    // let theta = Vec3::X.angle_between(Vec3::new( ));
                     let t = if z_axis.z > 0.01 {
                         -1.0
                     } else if z_axis.z < -0.01 {
@@ -531,7 +525,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 height: d.height,
                 ..Default::default()
             });
-            // dbg!(z_dir);
             let rotation = Quat::from_mat3(&Mat3::from_cols(paax_dir, pbax_dir, z_dir));
             let translation = rotation * Vec3::new(d.x, d.y, d.z) + pa.pt;
             let transform = Transform {

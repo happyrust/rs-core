@@ -15,6 +15,7 @@
     <cargoProject file="$PROJECT_DIR$/Cargo.toml">
       <package file="$PROJECT_DIR$">
         <feature name="default" />
+        <feature name="truck" />
       </package>
     </cargoProject>
   </component>
@@ -22,34 +23,39 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="local">
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run.bat" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update to latest surreal">
+      <change afterPath="$PROJECT_DIR$/.cargo/config.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/BEND.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/BEND.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/BRCO.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/BRCO.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/CAP.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/CAP.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/FLEX.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/FLEX.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/OFST.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/OFST.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STIF.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STIF.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STRT.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/STRT.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/TAPE.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/TAPE.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/THRE.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/THRE.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/TRNS.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/TRNS.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/formula.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/formula.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/len.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/len.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/run_tool_defines.bat" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/run_tool_defines.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/test.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/common.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/ctorus.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/cylinder.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/dish.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/dish.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/extrusion.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/facet.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/facet.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/lpyramid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/polyhedron.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/polyhedron.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/pyramid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/revolution.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/revolution.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/rtorus.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sbox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sbox.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/snout.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/snout.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sphere.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sphere.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/BRCO.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/BRCO.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_shape.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -120,114 +126,118 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Batch.run (1).executor": "Run",
-    "Batch.run.executor": "Run",
-    "Batch.run_defines (1).executor": "Run",
-    "Batch.run_defines.executor": "Run",
-    "Batch.run_tool_defines.executor": "Run",
-    "Cargo.Run aios_core.executor": "Run",
-    "Cargo.Test orm::BOX::test_reflect.executor": "Run",
-    "Cargo.Test orm::diff_data::test_query_diff.executor": "Run",
-    "Cargo.Test orm::pdms_element::test_ele_reflect.executor": "Run",
-    "Cargo.Test orm::sql::test_do_op_reflect_sql.executor": "Run",
-    "Cargo.Test orm::test_do_op_reflect.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_check_wire.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_check_wire_17496_254047.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_check_wire_25688_45261.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_check_wire_25688_72092.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_complex_1.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_complex_2.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_complex_circe.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_complex_half_circle.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_complex_half_circle_1.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_convex_hull.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_circle.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_occ_circle.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_occ_circle_part.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_occ_cire.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_occ_concave.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_occ_concave_big.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_occ_cut_circle_big_corner_2.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_gen_occ_reverse_circle.executor": "Run",
-    "Cargo.Test prim_geo::wire::test_occ_wire_hole.executor": "Run",
-    "Cargo.Test test::test_refno::test_des_refno.executor": "Run",
-    "Cargo.Test test::test_rotation::test_rotation_complex.executor": "Run",
-    "Cargo.Test test::test_schema::test_gen_att_schema.executor": "Run",
-    "Cargo.Test test::test_schema::test_gen_schema_from_json.executor": "Run",
-    "Cargo.Test test::test_shape::test_gen_wire_1.executor": "Run",
-    "Cargo.Test test::test_shape::test_gen_wire_2.executor": "Run",
-    "Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor": "Run",
-    "Cargo.Test test::test_sql::test_table::test_create_table.executor": "Run",
-    "Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno.executor": "Run",
-    "Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor": "Run",
-    "Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor": "Run",
-    "Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor": "Run",
-    "Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor": "Run",
-    "Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor": "Run",
-    "Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor": "Run",
-    "Cargo.Test test::test_surreal::test_mdb::test_get_world.executor": "Run",
-    "Cargo.Test test::test_surreal::test_mdb::test_get_world_sites.executor": "Run",
-    "Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash.executor": "Run",
-    "Cargo.Test test::test_surreal::test_room::test_save_room_data.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori_by_line_axis.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU.executor": "Run",
-    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU.executor": "Run",
-    "Cargo.Test test::test_sync2::test_gen_att_type_structs.executor": "Run",
-    "Cargo.Test test::test_sync2::test_parse.executor": "Run",
-    "Cargo.Test test::test_wire::test_gen_wire_24381_154722.executor": "Run",
-    "Cargo.Test test::test_wire::test_gen_wire_25688_45293.executor": "Run",
-    "Cargo.Test test::test_wire::test_gen_wire_25688_45314.executor": "Run",
-    "Cargo.Test test::test_wire::test_gen_wire_25688_45331.executor": "Run",
-    "Cargo.Test test::test_wire::test_gen_wire_25688_45339.executor": "Run",
-    "Cargo.Test test::test_wire::test_gen_wire_25688_71674.executor": "Run",
-    "Cargo.Test test::test_wire::test_occ_wire_overlap_tolerance.executor": "Run",
-    "Cargo.Test tool::math_tool::test_convert_to_dir_string.executor": "Run",
-    "Cargo.check.executor": "Run",
-    "Project.color": "011c4a",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "RunOnceActivity.rust.reset.selective.auto.import": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "test-surreal-1.5",
-    "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core/src/rs_surreal/schemas/functions",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
-    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
-    "org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs": "true",
-    "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs": "true",
-    "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs": "true",
-    "org.rust.first.attach.projects": "true",
-    "org.rust.first.attach.projects.stats": "true",
-    "org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs": "true",
-    "org.rust.hideToolchainNotifications": "true",
-    "settings.editor.selected.configurable": "advanced.settings",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Batch.cargo-clif test_query_transform.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run (1).executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run_defines (1).executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run_defines.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run_tool_defines.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.未命名.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Run aios_core.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test orm::BOX::test_reflect.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test orm::diff_data::test_query_diff.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test orm::pdms_element::test_ele_reflect.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test orm::sql::test_do_op_reflect_sql.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test orm::test_do_op_reflect.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_check_wire.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_check_wire_17496_254047.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_check_wire_25688_45261.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_check_wire_25688_72092.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_complex_1.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_complex_2.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_complex_circe.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_complex_half_circle.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_complex_half_circle_1.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_convex_hull.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_circle.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle_part.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_occ_cire.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_occ_concave.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_occ_concave_big.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_occ_cut_circle_big_corner_2.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_gen_occ_reverse_circle.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test prim_geo::wire::test_occ_wire_hole.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_refno::test_des_refno.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_rotation::test_rotation_complex.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_schema::test_gen_att_schema.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_schema::test_gen_schema_from_json.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_shape::test_gen_wire_1.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_shape::test_gen_wire_2.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_sql::test_table::test_create_table.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_attmap.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world_sites.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_room::test_save_room_data.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori_by_line_axis.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_sync2::test_gen_att_type_structs.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_sync2::test_parse.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_gen_wire_24381_154722.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_34950.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45293.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45314.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45331.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45339.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_71674.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_wire::test_occ_wire_overlap_tolerance.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test tool::math_tool::test_convert_to_dir_string.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.check.executor&quot;: &quot;Run&quot;,
+    &quot;Project.color&quot;: &quot;011c4a&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;test-surreal-1.5&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs&quot;: &quot;true&quot;,
+    &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs&quot;: &quot;true&quot;,
+    &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs&quot;: &quot;true&quot;,
+    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
+    &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
+    &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
+    &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core" />
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC\tools" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas\functions" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC" />
-      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC\tools" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\basic" />
-      <recent name="$PROJECT_DIR$" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs" />
@@ -236,31 +246,13 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Batch.run">
-    <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_query_transform">
+    <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas\functions" />
+      <option name="WORKING_DIRECTORY" value="./" />
       <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run.bat" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="run_defines (1)" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs/HVAC" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run_defines.bat" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="run_defines" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs/HVAC/tools" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run_defines.bat" />
+      <option name="SCRIPT_NAME" value="cargo-clif test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
@@ -290,8 +282,59 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_wire::test_gen_wire_24381_154722" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_wire::test_gen_wire_24381_154722 -- --exact" />
+    <configuration name="Test test::test_surreal::test_spatial::test_query_transform" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_wire::test_gen_wire_25688_34950" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_wire::test_gen_wire_25688_34950 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -325,21 +368,22 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Batch.run" />
-      <item itemvalue="Batch.run_defines (1)" />
+      <item itemvalue="Batch.cargo-clif test_query_transform" />
       <item itemvalue="Batch.run_tool_defines" />
-      <item itemvalue="Batch.run_defines" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Test test::test_wire::test_gen_wire_24381_154722" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
+      <item itemvalue="Cargo.Test test::test_wire::test_gen_wire_25688_34950" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Batch.run" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
         <item itemvalue="Batch.run_tool_defines" />
-        <item itemvalue="Batch.run_defines (1)" />
-        <item itemvalue="Batch.run_defines" />
-        <item itemvalue="Cargo.Test test::test_wire::test_gen_wire_24381_154722" />
+        <item itemvalue="Cargo.Test test::test_wire::test_gen_wire_25688_34950" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
       </list>
     </recent_temporary>
   </component>
@@ -730,7 +774,17 @@
       <workItem from="1713184264675" duration="45276000" />
       <workItem from="1713333658603" duration="1724000" />
       <workItem from="1713336787417" duration="3686000" />
-      <workItem from="1713341316938" duration="5336000" />
+      <workItem from="1713341316938" duration="8978000" />
+      <workItem from="1713370196851" duration="16587000" />
+      <workItem from="1713429399376" duration="843000" />
+      <workItem from="1713440604675" duration="429000" />
+      <workItem from="1713454539953" duration="2112000" />
+      <workItem from="1713503323780" duration="4933000" />
+      <workItem from="1713519660609" duration="82000" />
+      <workItem from="1713519757910" duration="231000" />
+      <workItem from="1713520006865" duration="59000" />
+      <workItem from="1713520177255" duration="95000" />
+      <workItem from="1713520376920" duration="2390000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1075,7 +1129,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="300" />
+    <option name="localTasksCounter" value="301" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1118,7 +1172,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Refactor geometry primitives computation and cleanup&#10;&#10;Updated the computation in lpyramid.rs and cleanup in category.rs to prevent single-point situations. Maximized division result to 0.001 for better reliability. Fixed minor spacing issues for consistency and readability. Slight adjustments were made in workspace.xml, primarily changes related to Cargo and test settings." />
     <MESSAGE value="Update geometry computation and cleanup code&#10;&#10;Refactored geometry primitives computation in lpyramid.rs and did cleanup in category.rs to avoid single-point situations. Optimized division result for better reliability and made minor formatting adjustments for readability. Modifications were also made in workspace.xml mainly in relation to Cargo and test settings." />
     <MESSAGE value="Refactor geometry computation and tidy up the code&#10;&#10;This commit includes code refactoring for the computation of geometry primitives in the lpyramid.rs file. It also addresses cleaning up in category.rs to prevent single-point scenarios. The division result was optimized for improved reliability and readability-enhancing formatting adjustments were applied. Changes in workspace.xml related mainly to Cargo and test settings." />
     <MESSAGE value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
@@ -1143,7 +1196,8 @@
     <MESSAGE value="Refactor washer code and update various files&#10;&#10;Revised washer functions in the 'washer.surql' file for better code clarity and efficiency. Multiple test cases have been added in 'test_wire.rs'. Minor adjustments were also made to 'pdms_shape.rs' to improve mesh handling, and various '.surql' and other files have been updated to enhance overall clarity and functionality." />
     <MESSAGE value="Update HVAC functions and optimize code formatting&#10;&#10;Multiple updates have been made to the HVAC functions, including generating new mesh files and modifying existing ones for shape representation and statistics calculation. Several code blocks have also been reformatted for better readability. These changes improve the reliability of HVAC computations and the overall code quality." />
     <MESSAGE value="local" />
-    <option name="LAST_COMMIT_MESSAGE" value="local" />
+    <MESSAGE value="update to latest surreal" />
+    <option name="LAST_COMMIT_MESSAGE" value="update to latest surreal" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

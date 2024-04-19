@@ -4,7 +4,12 @@ use std::hash::Hash;
 use std::sync::Arc;
 use glam::{DVec3, Mat3, Quat, Vec3};
 use bevy_ecs::prelude::*;
+#[cfg(feature = "truck")]
 use truck_modeling::{Shell};
+#[cfg(feature = "truck")]
+use truck_modeling::builder::*;
+#[cfg(feature = "truck")]
+use truck_modeling::builder::*;
 use crate::types::attmap::AttrMap;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -101,10 +106,10 @@ impl BrepShapeTrait for SRTorus {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
                                                               self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
-            use truck_modeling::*;
             let _circle_origin = self.paax_pt.point3();
             let z_axis = self.paax_dir.normalize().vector3();
             let y_axis = torus_info.rot_axis.vector3();
@@ -202,8 +207,8 @@ impl BrepShapeTrait for RTorus {
     }
 
     ///生成brep模型，是否需要存储key points
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
         //旋转圆心在中间
         let h = self.height as f64;
         let d = (self.rout - self.rins) as f64;

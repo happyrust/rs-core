@@ -1,5 +1,7 @@
 use glam::Vec3;
+#[cfg(feature = "truck")]
 use truck_base::cgmath64::Vector3;
+#[cfg(feature = "truck")]
 use truck_modeling::{builder, Shell};
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -39,6 +41,7 @@ impl BrepShapeTrait for SBox {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() { return None; }
         let v = builder::vertex((self.center - self.size / 2.0).point3());

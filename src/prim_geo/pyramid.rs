@@ -1,8 +1,12 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+#[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
+#[cfg(feature = "truck")]
+use truck_modeling::builder::*;
 use glam::{DVec3, Vec3};
+#[cfg(feature = "truck")]
 use truck_modeling::builder::try_attach_plane;
 use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -84,8 +88,8 @@ impl BrepShapeTrait for Pyramid {
     }
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
 
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp as f64 / 2.0).max(0.001);

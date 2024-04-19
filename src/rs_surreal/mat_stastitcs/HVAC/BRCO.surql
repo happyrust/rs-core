@@ -25,12 +25,12 @@ DEFINE FUNCTION fn::data_BRCO($pes: array<record>) {
        fn::common_washer_types(id) as washer_type,
        fn::common_washer_len(id) as washer_len,
 
-       fn::hvac_bolt_qtys_THRE(id) as bolt_qty,
+       fn::hvac_bolt_qtys_BRCO(id) as bolt_qty,
       '-' as other_type,
       '-' as other_qty,
       '-' as stud,
 
-       fn::hvac_bolt_qtys_THRE(id) as nut_qty,  //螺母数量
+       fn::hvac_bolt_qtys_BRCO(id) as nut_qty,  //螺母数量
        fn::hvac_washer_bolt_qtys_THRE(id) as washer_qty,  //垫片数量
 
 

@@ -1,17 +1,20 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::EPSILON;
 use std::hash::Hasher;
-
+#[cfg(feature = "truck")]
+use truck_modeling::builder::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
+#[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
-use std::sync::Arc;
+#[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
+#[cfg(feature = "truck")]
 use truck_modeling::Shell;
 
 use bevy_ecs::prelude::*;
@@ -119,8 +122,8 @@ impl BrepShapeTrait for LSnout {
         Ok(OccSharedShape::new(Solid::loft_with_points(circles.iter(), verts.iter()).into()))
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
         let rt = (self.ptdm / 2.0).max(0.01);
         let rb = (self.pbdm / 2.0).max(0.01);
 

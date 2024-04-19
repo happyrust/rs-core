@@ -9,12 +9,16 @@ use anyhow::anyhow;
 use glam::DVec3;
 use nalgebra::ComplexField;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
+#[cfg(feature = "truck")]
 use truck_modeling::{Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, LEN_TOL, RsVec3, VerifiedShape};
+#[cfg(feature = "truck")]
+use crate::shape::pdms_shape::BrepMathTrait;
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 
 use bevy_ecs::prelude::*;
@@ -155,8 +159,8 @@ impl BrepShapeTrait for Dish {
         0.001 * self.pdia.max(1.0)
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
         let r = self.pdia / 2.0;
         let mut h = self.pheig;
         //是个椭圆, 先暂时按圆来处理，然后再拉伸

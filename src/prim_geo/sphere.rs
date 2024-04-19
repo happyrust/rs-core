@@ -2,7 +2,12 @@ use glam::Vec3;
 use hexasphere::shapes::IcoSphere;
 use std::f64::consts::PI;
 use std::sync::Arc;
+#[cfg(feature = "truck")]
 use truck_modeling::Shell;
+#[cfg(feature = "truck")]
+use truck_modeling::*;
+#[cfg(feature = "truck")]
+use truck_base::cgmath64::{Point3, Rad, Vector3};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::basic::*;
@@ -53,9 +58,8 @@ impl BrepShapeTrait for Sphere {
     }
 
     //由于geom kernel还不支持fixed point ，暂时不用这个shell去生成mesh
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_base::cgmath64::{Point3, Rad, Vector3};
-        use truck_modeling::*;
         let vertex = builder::vertex(Point3::new(0.0, 0.0, 1.0));
         let wire = builder::rsweep(&vertex, Point3::origin(), Vector3::unit_y(), Rad(PI));
         let shell = builder::rsweep(&wire, Point3::origin(), Vector3::unit_z(), Rad(PI * 2.0));

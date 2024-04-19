@@ -13,14 +13,17 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
 use crate::prim_geo::basic::*;
 use crate::prim_geo::helper::cal_ref_axis;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
+#[cfg(feature = "truck")]
+use crate::shape::pdms_shape::BrepMathTrait;
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use crate::NamedAttrMap;
 #[cfg(feature = "occ")]
 use opencascade::workplane::Workplane;
-use crate::prim_geo::wire::gen_wire;
+#[cfg(feature = "truck")]
+use truck_modeling::*;
 
 
 ///元件库里的LCylinder
@@ -158,8 +161,8 @@ impl BrepShapeTrait for LCylinder {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
         if !self.check_valid() { return None; }
 
         let dir = self.paxi_dir.normalize();
@@ -283,8 +286,8 @@ impl BrepShapeTrait for SCylinder {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::*;
         let dir = self.paxi_dir.normalize();
         let dir = Vec3::Z;
         let r = self.pdia / 2.0;

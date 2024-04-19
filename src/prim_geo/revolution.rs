@@ -1,32 +1,32 @@
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+#[cfg(feature = "occ")]
+use crate::prim_geo::basic::OccSharedShape;
 use crate::prim_geo::wire::*;
-use crate::shape::pdms_shape::PlantMesh;
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, VerifiedShape};
+#[cfg(feature = "truck")]
+use crate::shape::pdms_shape::BrepMathTrait;
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use approx::abs_diff_eq;
 use approx::AbsDiffEq;
-use std::collections::hash_map::DefaultHasher;
-use std::f32::consts::PI;
-use std::hash::{Hash, Hasher};
-use std::sync::Arc;
-use truck_meshalgo::prelude::*;
-
 use glam::{Vec2, Vec3};
 #[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 use serde::{Deserialize, Serialize};
-use truck_modeling::Curve;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+#[cfg(feature = "truck")]
+use truck_meshalgo::prelude::*;
+#[cfg(feature = "truck")]
+use truck_modeling::{builder, Surface};
+#[cfg(feature = "truck")]
 use truck_stepio::out;
-use truck_topology::compress::CompressedSolid;
-#[cfg(feature = "occ")]
-use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(
-Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Revolution {
     pub verts: Vec<Vec3>,
@@ -68,9 +68,8 @@ impl BrepShapeTrait for Revolution {
 
     ///revolve 有些问题，暂时用manifold来代替
     ///如果是沿自己的一条边旋转，需要弄清楚为啥三角化出来的不对
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::{builder, Surface};
-
         if !self.check_valid() {
             return None;
         }
@@ -110,7 +109,7 @@ impl BrepShapeTrait for Revolution {
                             ..Default::default()
                         },
                     )
-                        .to_string();
+                    .to_string();
                     let mut step_file = std::fs::File::create(&output_step_file).unwrap();
                     std::io::Write::write_all(&mut step_file, step_string.as_ref()).unwrap();
 
@@ -177,9 +176,11 @@ impl BrepShapeTrait for Revolution {
     }
 
     ///使用manifold生成拉身体的mesh
-    #[cfg(feature = "gen_model")]
+    #[cfg(all(feature = "gen_model", feature = "truck"))]
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
+        #[cfg(feature = "truck")]
         use truck_meshalgo::prelude::*;
+        #[cfg(feature = "truck")]
         use truck_modeling::{builder, Shell, Surface, Wire};
         if !self.check_valid() {
             return None;

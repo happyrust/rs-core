@@ -4,6 +4,7 @@ use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+#[cfg(feature = "truck")]
 use truck_modeling::Shell;
 
 #[derive(
@@ -72,6 +73,7 @@ impl BrepShapeTrait for Facet {
         Vec3::ONE
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
         None
     }

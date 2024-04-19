@@ -1,6 +1,6 @@
 [package]
 name = "aios_core"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -9,7 +9,7 @@ default = ["render", "gen_model", "occ"]
 occ = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 manifold = ["dep:manifold-sys"]
-truck = []
+truck = ["dep:truck-base", "dep:truck-geotrait", "dep:truck-geometry", "dep:truck-polymesh", "dep:truck-topology", "dep:truck-modeling", "dep:truck-meshalgo", "dep:truck-stepio"]
 gen_model = ["manifold"]
 debug = []
 
@@ -42,7 +42,6 @@ bitflags = "2.4.0"
 ordered-float = "4.2.0"
 phf = { version = "0.11.2", features = ["macros"] }
 derivative = "2.2.0"
-erased-serde = "0.3.22"
 dyn-clone = "1.0.9"
 #axum-login = { version = "0.4.1"}
 rstar = { path = "../rstar/rstar", features = ["serde"] }
@@ -56,23 +55,21 @@ bevy_reflect = { path = "../bevy/crates/bevy_reflect"}
 bevy_render = { path = "../bevy/crates/bevy_render", optional = true}
 
 base64 = "0.22.0"
-serde-name = "0.2.1"
 serde = { version = "1.0.133", features = ["derive"] }
 serde_derive = "1.0.133"
 serde_json = { version = "1.0" }
 hash32 = "0.3.0"
 bincode = "1.3.3"
 clap = { version = "^4.0", features = ["derive"] }
-hex = "0.4.3"
 
-truck-base = { version = "0.4.0", path = "../truck/truck-base" }
-truck-geotrait = { version = "0.3.0", path = "../truck/truck-geotrait"}
-truck-geometry = { version = "0.4.0", path = "../truck/truck-geometry" }
-truck-polymesh = { version = "0.5.0", path = "../truck/truck-polymesh" }
-truck-topology = { version = "0.5.0", path = "../truck/truck-topology" }
-truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" }
-truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo"}
-truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio"}
+truck-base = { version = "0.4.0", path = "../truck/truck-base", optional = true }
+truck-geotrait = { version = "0.3.0", path = "../truck/truck-geotrait" , optional = true }
+truck-geometry = { version = "0.4.0", path = "../truck/truck-geometry" , optional = true }
+truck-polymesh = { version = "0.5.0", path = "../truck/truck-polymesh" , optional = true }
+truck-topology = { version = "0.5.0", path = "../truck/truck-topology" , optional = true }
+truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" , optional = true }
+truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo", optional = true }
+truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio", optional = true }
 rkyv = { version = "0.7.42", features=["hashbrown"] }
 serde_with = "3.3.0"
 
@@ -86,12 +83,7 @@ jsonxf = "1.1.1"
 once_cell = "1.18.0"
 #sea-orm = { version = "0.12.4"}
 urlencoding = "2.1.3"
-syn = { version = "2.0.38", features = ["extra-traits", "full"] }
-quote = "1.0.33"
-proc-macro2 = "1.0.69"
-rust-format = "0.3.4"
 chrono = "0.4.31"
-custom_debug = "0.5.1"
 
 surrealdb = { path = "../../surrealdb/lib", default-features = false, features = ["protocol-ws"]}
 num-traits = "0.2.17"

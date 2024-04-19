@@ -1,10 +1,12 @@
 use std::collections::hash_map::DefaultHasher;
-
+#[cfg(feature = "truck")]
+use truck_modeling::builder::*;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use glam::{DVec3, Vec3};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
@@ -82,9 +84,8 @@ impl BrepShapeTrait for LPyramid {
     }
 
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        use truck_modeling::builder::*;
-        use truck_modeling::*;
 
         //todo 需要解决这里的homotopy问题，能兼容point 和 line的情况
         let tx = (self.pbtp as f64 / 2.0).max(0.001);

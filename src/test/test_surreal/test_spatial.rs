@@ -28,7 +28,7 @@ fn test_cal_ori(v: DVec3) {
 #[cfg(test)]
 mod test_transform {
     use glam::{DVec3, Mat3};
-    use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis, RefU64, rs_surreal};
+    use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, RefU64, rs_surreal};
     use crate::test::test_surreal::init_test_surreal;
     use crate::tool::dir_tool::parse_ori_str_to_mat;
     use crate::tool::math_tool;
@@ -136,7 +136,7 @@ async fn test_query_transform() -> anyhow::Result<()> {
 
 
 
-    let transform = rs_surreal::get_world_transform("24383/92203".into())
+    let transform = rs_surreal::get_world_transform("17496/202374".into())
         .await
         .unwrap().unwrap();
     dbg!(transform);

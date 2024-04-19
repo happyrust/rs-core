@@ -1,4 +1,6 @@
-use crate::shape::pdms_shape::{BrepMathTrait, LEN_TOL};
+#[cfg(feature = "truck")]
+use crate::shape::pdms_shape::BrepMathTrait;
+use crate::shape::pdms_shape::LEN_TOL;
 use crate::tool::float_tool::*;
 use crate::tool::float_tool::{cal_vec2_hash_string, cal_xy_hash_string, vec3_round_2};
 use anyhow::anyhow;
@@ -15,8 +17,8 @@ use geo::{Line, LinesIter, Orient, Polygon, RemoveRepeatedPoints, Winding};
 use glam::{DVec2, DVec3, Quat, Vec3};
 use nalgebra::ComplexField;
 use serde_derive::{Deserialize, Serialize};
+#[cfg(feature = "truck")]
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
-
 use cavalier_contours::core::math::{angle, bulge_from_angle, Vector2};
 use cavalier_contours::pline_closed;
 use cavalier_contours::polyline::internal::pline_boolean::polyline_boolean;
@@ -29,6 +31,7 @@ use crate::prim_geo::basic::OccSharedShape;
 use opencascade::primitives::{Edge, Face, Wire};
 use parry2d::bounding_volume::Aabb;
 use parry2d::math::Point;
+#[cfg(feature = "truck")]
 use truck_modeling::builder;
 
 #[derive(
@@ -51,6 +54,7 @@ pub fn cal_circus_center(pt0: Vec3, pt1: Vec3, pt2: Vec3) -> Vec3 {
     pt0 + u * vec0 + v * vec1
 }
 
+#[cfg(feature = "truck")]
 pub fn circus_center(pt0: Point3, pt1: Point3, pt2: Point3) -> Point3 {
     let vec0 = pt1 - pt0;
     let vec1 = pt2 - pt0;
@@ -107,11 +111,13 @@ pub fn gen_occ_spline_wire(verts: &Vec<Vec3>, thick: f32) -> anyhow::Result<Wire
     Ok(Wire::from_edges(&edges))
 }
 
+#[cfg(feature = "truck")]
 ///生成truck的wire
 pub fn gen_spline_wire(
     input_verts: &Vec<Vec3>,
     thick: f32,
 ) -> anyhow::Result<truck_modeling::Wire> {
+    #[cfg(feature = "truck")]
     use truck_modeling::{builder, Wire};
     if input_verts.len() != 3 {
         return Err(anyhow!("SPINE number is not 3".to_string())); //先假定必须有三个
@@ -468,6 +474,7 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                 }
                 let mut p0 = pt + (-v1) * l;
                 let mut p2 = pt + v2 * l;
+                // dbg!(last.distance(p0));
                 if last.distance(p0) < remove_pos_tol {
                     p0 = last;
                 }
@@ -483,7 +490,7 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                 if let Some(l_pt) = polyline.vertex_data.last() {
                     let last_pt = DVec3::new(l_pt.x, l_pt.y, 0.0);
                     let pt_win = polyline.winding_number(Vector2::new(pt.x, pt.y));
-                    let t = last_pt.distance(p0).abs() / last_pt.length();
+                    let t = last_pt.distance(p0).abs();
                     if t < remove_pos_tol {
                         // dbg!(t);
                         polyline.vertex_data.pop();
@@ -494,7 +501,7 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
             } else {
                 if let Some(l_pt) = polyline.vertex_data.last() {
                     let last_pt = DVec3::new(l_pt.x, l_pt.y, 0.0);
-                    let t = last_pt.distance(pt).abs() / last_pt.length();
+                    let t = last_pt.distance(pt).abs();
                     if t < remove_pos_tol {
                         // dbg!(t);
                         polyline.vertex_data.pop();
@@ -512,6 +519,7 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
     println!("First try: {}", to_debug_json_str(&polyline));
 
     let intrs = global_self_intersects(&polyline, &polyline.create_approx_aabb_index());
+    // dbg!(&intrs);
     let mut wires = vec![];
     if intrs.basic_intersects.is_empty() {
         for ply in [polyline] {
@@ -879,7 +887,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                     to_debug_json_str(&polyline),
                     to_debug_json_str(&neg)
                 );
-                pos_equal_eps = 0.0001;
+                pos_equal_eps = 0.001;
                 result = polyline_boolean(
                     &polyline,
                     &neg,
@@ -981,7 +989,7 @@ where
         }
     };
 
-    visit_global_self_intersects(polyline, aabb_index, &mut visitor, T::from(1e-5).unwrap());
+    visit_global_self_intersects(polyline, aabb_index, &mut visitor, T::from(0.01).unwrap());
 
     PlineIntersectsCollection::new(intrs, overlapping_intrs)
 }
@@ -1043,10 +1051,12 @@ fn test_concave_circle() {
 
 ///可以使用 cut 的办法
 /// 根据顶点信息和fradius半径，生成wire
+#[cfg(feature = "truck")]
 pub fn gen_wire(
     input_pts: &Vec<Vec3>,
     input_fradius_vec: &Vec<f32>,
 ) -> anyhow::Result<truck_modeling::Wire> {
+    #[cfg(feature = "truck")]
     use truck_modeling::{builder, Vertex, Wire};
     if input_pts.len() < 3 || input_fradius_vec.len() != input_pts.len() {
         return Err(anyhow!("wire 顶点数量不够，小于3。"));

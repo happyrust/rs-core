@@ -1,9 +1,10 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 use std::hash::Hash;
-use std::sync::Arc;
-use anyhow::anyhow;
+#[cfg(feature = "truck")]
+use truck_modeling::builder::*;
 use bevy_ecs::prelude::*;
+#[cfg(feature = "truck")]
 use truck_modeling::{Shell};
 use bevy_transform::prelude::Transform;
 use glam::{DVec2, DVec3, Quat, Vec3};
@@ -12,7 +13,9 @@ use serde::{Serialize, Deserialize};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::attmap::AttrMap;
 use crate::prim_geo::helper::{RotateInfo};
-use crate::shape::pdms_shape::{BrepMathTrait, BrepShapeTrait, RsVec3, VerifiedShape};
+#[cfg(feature = "truck")]
+use crate::shape::pdms_shape::BrepMathTrait;
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 use crate::tool::float_tool::hash_f32;
 use crate::NamedAttrMap;
 
@@ -99,8 +102,8 @@ impl BrepShapeTrait for SCTorus {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
                                                               self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
             let circle_origin = self.paax_pt.point3();
@@ -185,8 +188,8 @@ impl BrepShapeTrait for CTorus {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
-        use truck_modeling::*;
         let radius = ((self.rout - self.rins) / 2.0) as f64;
         if radius <= 0.0 { return None; }
         let circle_origin = Point3::new(self.rins as f64 + radius, 0.0, 0.0);

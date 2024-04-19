@@ -1,16 +1,13 @@
 use anyhow::anyhow;
-
 use std::collections::hash_map::DefaultHasher;
-
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
-
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use glam::{DVec3, Vec2, Vec3};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
+#[cfg(feature = "truck")]
 use truck_modeling::{builder, Shell, Surface, Wire};
-
 #[cfg(feature = "gen_model")]
 use crate::csg::manifold::*;
 
@@ -64,6 +61,7 @@ impl BrepShapeTrait for Extrusion {
         Box::new(self.clone())
     }
 
+    #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<Shell> {
         if !self.check_valid() {
             return None;
@@ -170,10 +168,9 @@ impl BrepShapeTrait for Extrusion {
     }
 
     ///使用manifold生成拉身体的mesh
-    #[cfg(feature = "gen_model")]
+    #[cfg(feature = "truck")]
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
-        use truck_meshalgo::prelude::*;
-        use truck_modeling::{builder, Shell, Surface, Wire};
+
         if !self.check_valid() {
             return None;
         }
@@ -219,7 +216,7 @@ impl BrepShapeTrait for Extrusion {
     }
 }
 
-#[cfg(feature = "occ")]
+#[cfg(feature = "truck")]
 #[test]
 fn test_circle_fradius() {
     let ext = Extrusion {

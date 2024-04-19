@@ -18,6 +18,8 @@ pub struct DbOption {
     pub sync_localdb: Option<bool>,
     #[clap(long)]
     pub incr_sync: bool,
+    // #[clap(long)]
+    // pub replace_insert: Option<bool>,
     #[clap(long, default_value="10_0000")]
     pub sync_chunk_size: Option<u32>,
 

@@ -151,6 +151,11 @@ async fn test_query_attmap() -> anyhow::Result<()> {
         .await
         .unwrap();
     dbg!(attmap);
+
+    let world = rs_surreal::get_world_refno("/ALL".into()).await.unwrap();
+    dbg!(world);
+
+    Ok(())
 }
 
 #[tokio::test]

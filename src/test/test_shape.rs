@@ -1,12 +1,16 @@
 use glam::Vec3;
+#[cfg(feature = "truck")]
 use truck_modeling::builder;
+#[cfg(feature = "truck")]
 use truck_stepio::out;
 
 use crate::prim_geo::revolution::Revolution;
 use crate::prim_geo::sbox::SBox;
+#[cfg(feature = "truck")]
 use crate::prim_geo::wire::gen_wire;
 use crate::shape::pdms_shape::BrepShapeTrait;
 
+#[cfg(feature = "truck")]
 #[test]
 fn test_key_pts() {
 
@@ -20,6 +24,7 @@ fn test_key_pts() {
 
 
 
+#[cfg(feature = "truck")]
 #[test]
 fn test_gen_wire_0() {
     let pts = vec![
@@ -49,6 +54,7 @@ fn test_gen_wire_0() {
 
 }
 
+#[cfg(feature = "truck")]
 #[test]
 fn test_gen_wire_1() {
     let pts = vec![
@@ -79,7 +85,7 @@ fn test_gen_wire_1() {
 }
 
 
-
+#[cfg(feature = "truck")]
 #[test]
 fn test_gen_wire_2() {
     let pts = vec![
@@ -110,6 +116,7 @@ fn test_gen_wire_2() {
 }
 
 
+#[cfg(feature = "truck")]
 #[test]
 fn test_gen_wire_3() {
     let pts = vec![

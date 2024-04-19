@@ -22,9 +22,13 @@ use std::io::BufWriter;
 use std::path::Path;
 use std::vec;
 use bevy_render::render_asset::RenderAssetUsages;
+#[cfg(feature = "truck")]
 use truck_base::bounding_box::BoundingBox;
+#[cfg(feature = "truck")]
 use truck_base::cgmath64::{Matrix4, Point3, Vector3, Vector4};
+#[cfg(feature = "truck")]
 use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
+#[cfg(feature = "truck")]
 use truck_modeling::{Curve, Shell};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -44,6 +48,7 @@ pub trait VerifiedShape {
     }
 }
 
+#[cfg(feature = "truck")]
 #[inline]
 pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
     let mut bdd_box = BoundingBox::new();
@@ -322,6 +327,7 @@ impl From<Vec3> for RsVec3 {
     }
 }
 
+#[cfg(feature = "truck")]
 impl From<Point3> for RsVec3 {
     fn from(value: Point3) -> Self {
         Self(Vec3::new(value.x as f32, value.y as f32, value.z as f32))
@@ -337,6 +343,7 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
     //拷贝函数
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait>;
 
+    #[cfg(feature = "truck")]
     ///生成shell
     fn gen_brep_shell(&self) -> Option<Shell> {
         return None;
@@ -540,6 +547,7 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
 
 impl_downcast!(BrepShapeTrait);
 
+#[cfg(feature = "truck")]
 pub trait BrepMathTrait {
     fn vector3(&self) -> Vector3;
     fn vector4(&self) -> Vector4;
@@ -547,6 +555,7 @@ pub trait BrepMathTrait {
     fn point3_without_z(&self) -> Point3;
 }
 
+#[cfg(feature = "truck")]
 impl BrepMathTrait for Vec3 {
     #[inline]
     fn vector3(&self) -> Vector3 {
@@ -573,6 +582,7 @@ impl BrepMathTrait for Vec3 {
     }
 }
 
+#[cfg(feature = "truck")]
 impl BrepMathTrait for Vec4 {
     #[inline]
     fn vector3(&self) -> Vector3 {
@@ -605,6 +615,7 @@ pub trait BevyMathTrait {
     fn array(&self) -> [f32; 3];
 }
 
+#[cfg(feature = "truck")]
 impl BevyMathTrait for Vector3 {
     #[inline]
     fn vec3(&self) -> Vec3 {
@@ -617,6 +628,7 @@ impl BevyMathTrait for Vector3 {
     }
 }
 
+#[cfg(feature = "truck")]
 impl BevyMathTrait for Point3 {
     #[inline]
     fn vec3(&self) -> Vec3 {
@@ -629,6 +641,8 @@ impl BevyMathTrait for Point3 {
     }
 }
 
+
+#[cfg(feature = "truck")]
 #[inline]
 pub fn convert_to_cg_matrix4(m: &Mat4) -> Matrix4 {
     Matrix4::from_cols(
