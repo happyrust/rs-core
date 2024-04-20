@@ -58,7 +58,7 @@ DEFINE FUNCTION fn::next_type($pe:record) {
 
 // 获取ipara
 DEFINE FUNCTION fn::get_ipara($pe:record) {
-    let $ispe = owner.refno.ISPE;
+    let $ispe = $pe.owner.refno.ISPE;
     return if $ispe == none {
         return [0];
     } else {

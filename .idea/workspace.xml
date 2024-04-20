@@ -23,18 +23,11 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Add truck feature and implement conditional compilation&#10;&#10;This update contains changes aimed at adding the &quot;truck&quot; feature to the project. Conditional compilation has been implemented for this feature to ensure the correct execution of code blocks when the feature is enabled. Additionally, some unnecessary imports and functions in certain files have been removed to improve code clean-up and efficiency.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DbOption.toml" beforeDir="false" afterPath="$PROJECT_DIR$/DbOption.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/noun_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/noun_graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_pe_by_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_pe_by_refno.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_by_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_by_refno.surql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -765,7 +758,8 @@
       <workItem from="1713520177255" duration="95000" />
       <workItem from="1713520376920" duration="5312000" />
       <workItem from="1713551976562" duration="1031000" />
-      <workItem from="1713556422005" duration="2323000" />
+      <workItem from="1713556422005" duration="4810000" />
+      <workItem from="1713637471767" duration="598000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1110,7 +1104,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="302" />
+    <option name="localTasksCounter" value="303" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1153,7 +1147,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Refactor geometry computation and tidy up the code&#10;&#10;This commit includes code refactoring for the computation of geometry primitives in the lpyramid.rs file. It also addresses cleaning up in category.rs to prevent single-point scenarios. The division result was optimized for improved reliability and readability-enhancing formatting adjustments were applied. Changes in workspace.xml related mainly to Cargo and test settings." />
     <MESSAGE value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
     <MESSAGE value="Update geometry handling logic in category.rs and resolve.rs&#10;&#10;This commit refines geometry computation in category.rs and increases iteration limits in resolve.rs. It simplifies the logic in category.rs to enhance readability, while enhancing error resiliency in resolve.rs. Changes to workspace.xml pertain to updating group and task settings." />
     <MESSAGE value="Add HVAC calculations and update geometry definition in pdms_shape.rs&#10;&#10;This update includes HVAC-related calculations in new SurQL files and adjusts the geometry definition in pdms_shape.rs. Target architecture conditions and additional functions are introduced for differentiating WASM from non-WASM builds. The commit also includes several new files contributing to HVAC computation logic, as well as a batch file for running the database scripts." />
@@ -1178,7 +1171,8 @@
     <MESSAGE value="local" />
     <MESSAGE value="update to latest surreal" />
     <MESSAGE value="Add truck feature and implement conditional compilation&#10;&#10;This update contains changes aimed at adding the &quot;truck&quot; feature to the project. Conditional compilation has been implemented for this feature to ensure the correct execution of code blocks when the feature is enabled. Additionally, some unnecessary imports and functions in certain files have been removed to improve code clean-up and efficiency." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add truck feature and implement conditional compilation&#10;&#10;This update contains changes aimed at adding the &quot;truck&quot; feature to the project. Conditional compilation has been implemented for this feature to ensure the correct execution of code blocks when the feature is enabled. Additionally, some unnecessary imports and functions in certain files have been removed to improve code clean-up and efficiency." />
+    <MESSAGE value="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module." />
+    <option name="LAST_COMMIT_MESSAGE" value="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

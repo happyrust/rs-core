@@ -10,6 +10,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
 use dashmap::DashMap;
+use cached::Cached;
 use crate::parsed_data::CateAxisParam;
 use crate::tool::db_tool::db1_dehash;
 
@@ -358,17 +359,16 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
 
 ///获得children
 #[cached(result = true)]
-pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+pub async fn get_children_refnos(refno: RefU64,/* clear_cache: bool*/) -> anyhow::Result<Vec<RefU64>> {
+    // if clear_cache
+    {
+        GET_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
+    }
     let mut response = SUL_DB
         .query(include_str!("schemas/query_children_by_refno.surql"))
         .bind(("refno", refno.to_string()))
         .await?;
-    let id: Option<String> = response.take(0)?;
-    // dbg!(&id);
-    if id.is_none() {
-        return Err(anyhow::anyhow!("{refno} not exist"));
-    }
-    let refnos: Vec<RefU64> = response.take(1)?;
+    let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
 }
 
