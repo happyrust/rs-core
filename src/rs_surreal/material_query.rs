@@ -3,7 +3,7 @@ use std::ptr::eq;
 use std::str::FromStr;
 use config::{Config, File};
 use parry3d::partitioning::QbvhDataGenerator;
-use crate::{connect_surdb, get_children_pes, get_pe, query_filter_deep_children, RefU64, SUL_DB, SurlValue};
+use crate::{connect_surdb, get_children_pes, get_pe, query_ele_filter_deep_children, query_filter_deep_children, RefU64, SUL_DB, SurlValue};
 use serde::{Serialize, Deserialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::key::thing::Thing;
@@ -14,6 +14,8 @@ use crate::rs_surreal::table_const::GY_DZCL;
 use surrealdb::engine::any::Any;
 use crate::test::test_surreal::init_test_surreal;
 use crate::pdms_types::{ser_refno_as_str, de_refno_from_key_str};
+use serde_with::serde_as;
+use serde_with::DisplayFromStr;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialGyDataBend {
@@ -134,90 +136,65 @@ impl MaterialGyEquiList {
 }
 
 /// 通风 风管管段
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialTfHavcList {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+    #[serde_as(as = "DisplayFromStr")]
     pub id: RefU64,
-    #[serde(rename = "Bolt_Qty")]
     #[serde(default)]
-    pub bolt_qty: String,
-    #[serde(rename = "Description")]
+    pub bolt_qty: f32,
     #[serde(default)]
-    pub desc: String,
-    #[serde(rename = "Duct_Area")]
+    pub description: String,
     #[serde(default)]
-    pub duct_area: String,
-    #[serde(rename = "Duct_Wei")]
+    pub duct_area: Vec<f32>,
     #[serde(default)]
-    pub duct_wei: String,
-    #[serde(rename = "FL_Len")]
+    pub duct_weight: f32,
     #[serde(default)]
-    pub fl_len: String,
-    #[serde(rename = "FL_Type")]
+    pub fl_len: f32,
     #[serde(default)]
     pub fl_type: String,
-    #[serde(rename = "FL_Wei")]
-    pub fl_wei: String,
-    #[serde(rename = "Height")]
     #[serde(default)]
-    pub height: String,
-    #[serde(rename = "Length")]
-    pub length: String,
-    #[serde(rename = "Material")]
+    pub fl_wei: f32,
     #[serde(default)]
-    pub material: String,
-    #[serde(rename = "Nut_Qty")]
+    pub height: f32,
     #[serde(default)]
-    pub nut_qty: String,
-    #[serde(rename = "Other_Qty")]
+    pub length: f32,
+    #[serde(default)]
+    pub material: Vec<String>,
+    #[serde(default)]
+    pub nut_qty: f32,
     #[serde(default)]
     pub other_qty: String,
-    #[serde(rename = "Other_Type")]
     #[serde(default)]
     pub other_type: String,
-    #[serde(rename = "Pressure")]
     #[serde(default)]
     pub pressure: String,
-    #[serde(rename = "Room_No")]
     #[serde(default)]
-    pub room_no: String,
-    #[serde(rename = "Seg_Code")]
+    pub room_no: Option<String>,
     #[serde(default)]
     pub seg_code: String,
-    #[serde(rename = "Stif_Len")]
     #[serde(default)]
-    pub stif_len: String,
-    #[serde(rename = "Stif_Sctn")]
+    pub stif_len: f32,
     #[serde(default)]
     pub stif_sctn: String,
-    #[serde(rename = "Stif_Wei")]
     #[serde(default)]
-    pub stif_wei: String,
-    #[serde(rename = "Stud")]
+    pub stif_wei: f32,
     #[serde(default)]
     pub stud: String,
-    #[serde(rename = "Sub_Code")]
     #[serde(default)]
     pub sub_code: String,
-    #[serde(rename = "System")]
     #[serde(default)]
     pub system: String,
-    #[serde(rename = "Wall_Thk")]
     #[serde(default)]
-    pub wall_thk: String,
-    #[serde(rename = "Washer_Len")]
+    pub wall_thk: Vec<f32>,
     #[serde(default)]
-    pub washer_len: String,
-    #[serde(rename = "Washer_Type")]
+    pub washer_len: f32,
     #[serde(default)]
-    pub washer_type: String,
-    #[serde(rename = "Washer_Qty")]
+    pub washer_type: Vec<String>,
     #[serde(default)]
-    pub washer_qty: String,
-    #[serde(rename = "Width")]
+    pub washer_qty: f32,
     #[serde(default)]
-    pub width: String,
+    pub width: f32,
 }
 
 impl MaterialTfHavcList {
@@ -225,32 +202,32 @@ impl MaterialTfHavcList {
     pub fn into_hashmap(self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         map.entry("参考号".to_string()).or_insert(self.id.to_pdms_str());
-        map.entry("描述".to_string()).or_insert(self.desc);
+        map.entry("描述".to_string()).or_insert(self.description);
         map.entry("管段编号".to_string()).or_insert(self.seg_code);
         map.entry("子项号".to_string()).or_insert(self.sub_code);
-        map.entry("材质".to_string()).or_insert(self.material);
+        map.entry("材质".to_string()).or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
-        map.entry("风管长度".to_string()).or_insert(self.length);
-        map.entry("风管宽度".to_string()).or_insert(self.width);
-        map.entry("风管高度".to_string()).or_insert(self.height);
-        map.entry("风管壁厚".to_string()).or_insert(self.wall_thk);
-        map.entry("风管面积".to_string()).or_insert(self.duct_area);
-        map.entry("风管重量".to_string()).or_insert(self.duct_wei);
+        map.entry("风管长度".to_string()).or_insert(self.length.to_string());
+        map.entry("风管宽度".to_string()).or_insert(self.width.to_string());
+        map.entry("风管高度".to_string()).or_insert(self.height.to_string());
+        map.entry("风管壁厚".to_string()).or_insert(serde_json::to_string(&self.wall_thk).unwrap_or("[]".to_string()));
+        map.entry("风管面积".to_string()).or_insert(serde_json::to_string(&self.duct_area).unwrap_or("[]".to_string()));
+        map.entry("风管重量".to_string()).or_insert(self.duct_weight.to_string());
         map.entry("加强筋型材".to_string()).or_insert(self.stif_sctn);
-        map.entry("加强筋长度".to_string()).or_insert(self.stif_len);
-        map.entry("加强筋重量".to_string()).or_insert(self.stif_wei);
+        map.entry("加强筋长度".to_string()).or_insert(self.stif_len.to_string());
+        map.entry("加强筋重量".to_string()).or_insert(self.stif_wei.to_string());
         map.entry("法兰规格".to_string()).or_insert(self.fl_type);
-        map.entry("法兰长度".to_string()).or_insert(self.fl_len);
-        map.entry("法兰重量".to_string()).or_insert(self.fl_wei);
-        map.entry("垫圈类型".to_string()).or_insert(self.washer_type);
-        map.entry("垫圈长度".to_string()).or_insert(self.washer_len);
-        map.entry("螺栓数量".to_string()).or_insert(self.bolt_qty);
+        map.entry("法兰长度".to_string()).or_insert(self.fl_len.to_string());
+        map.entry("法兰重量".to_string()).or_insert(self.fl_wei.to_string());
+        map.entry("垫圈类型".to_string()).or_insert(serde_json::to_string(&self.washer_type).unwrap_or("[]".to_string()));
+        map.entry("垫圈长度".to_string()).or_insert(self.washer_len.to_string());
+        map.entry("螺栓数量".to_string()).or_insert(self.bolt_qty.to_string());
         map.entry("其它材料类型".to_string()).or_insert(self.other_type);
         map.entry("其它材料数量".to_string()).or_insert(self.other_qty);
         map.entry("螺杆".to_string()).or_insert(self.stud);
-        map.entry("螺母数量".to_string()).or_insert(self.nut_qty);
-        map.entry("螺母数量_2".to_string()).or_insert(self.washer_qty);
-        map.entry("所在房间号".to_string()).or_insert(self.room_no);
+        map.entry("螺母数量".to_string()).or_insert(self.nut_qty.to_string());
+        map.entry("螺母数量_2".to_string()).or_insert(self.washer_qty.to_string());
+        map.entry("所在房间号".to_string()).or_insert(self.room_no.unwrap_or("".to_string()));
         map.entry("系统".to_string()).or_insert(self.system);
         map
     }
@@ -1105,6 +1082,71 @@ pub async fn get_nt_valv_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
     Ok(data)
 }
 
+/// 通风 风管管段
+pub async fn get_tf_hvac_material(db: &Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialTfHavcList>> {
+    let mut data = Vec::new();
+    for refno in refnos {
+        let Some(pe) = get_pe(refno).await? else { continue; };
+        // 如果是site，则需要过滤 site的 name
+        if pe.noun == "SITE".to_string() {
+            if !pe.name.contains("HVAC") { continue; };
+            let refnos = query_ele_filter_deep_children(refno, vec!["BEND".to_string(), "BRCO".to_string(), "CAP".to_string(), "FLEX".to_string(), "OFST".to_string(), "STIF".to_string(), "STRT".to_string(), "TAPE".to_string(), "THRE".to_string(), "TRNS".to_string()]).await?;
+            // STRT
+            let strts = refnos.iter().filter(|x| x.noun == "STRT".to_string()).map(|x| x.refno).collect::<Vec<_>>();
+            let mut result = get_tf_hvac_strt_data(db, strts).await?;
+            data.append(&mut result);
+        }
+    }
+    Ok(data)
+}
+
+/// 获取 通风 风管管段 strt的数据
+async fn get_tf_hvac_strt_data(db: &Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::Result<Vec<MaterialTfHavcList>> {
+    if refnos.is_empty() { return Ok(vec![]); };
+    let mut data = Vec::new();
+    let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
+    for refno in refnos {
+        let sql = format!("select
+    fn::refno(id) as id,
+    string::concat(fn::shape_name(id), '直管') as description,
+    fn::hvac_seg_code(id) as seg_code,
+    fn::hvac_sub_code(id) as sub_code,
+    fn::hvac_mats(id) as material,
+    fn::hvac_pressure(id) as pressure,
+    fn::hvac_len(id) as length,
+    fn::hvac_width_format(id) as width,
+    fn::hvac_height_format(id) as height,
+    fn::hvac_thks(id, 'DAMP') as wall_thk,
+    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
+    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
+    fn::cal_stif_sctn_str(id) as stif_sctn,
+    fn::cal_stif_len_str(id) as stif_len,
+    fn::cal_stif_wei_str(id) as stif_wei,
+    fn::hvac_fl_name(id) as fl_type,
+    fn::hvac_fl_len(id) as fl_len,
+    fn::hvac_fl_wei(id) as fl_wei,
+
+    fn::common_washer_types(id) as washer_type,
+    fn::common_washer_len(id) as washer_len,
+    fn::hvac_bolt_qty(id) as bolt_qty,
+
+    '-' as other_qty,
+    '-' as stud,
+
+    fn::hvac_bolt_qty(id) as nut_qty,  //螺母数量
+    fn::hvac_bolt_qty(id) * 2 as washer_qty,
+
+    fn::get_room_number(id) as room_no,
+    fn::hvac_system(id) as system
+	from {};", serde_json::to_string(&refno).unwrap_or("[]".to_string()));
+        let mut response = db.query(sql).await?;
+        dbg!(&refno);
+        let mut result: Vec<MaterialTfHavcList> = response.take(0).unwrap();
+        data.append(&mut result);
+    }
+    Ok(data)
+}
+
 /// 提前运行定义好的方法
 pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     let response = db
@@ -1140,6 +1182,14 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     let response = db
         .query(include_str!("schemas/fn_query_room_code.surql"))
         .await?;
+    db.query(include_str!("tools/bolt.surql")).await?;
+    db.query(include_str!("tools/common.surql")).await?;
+    db.query(include_str!("tools/fln.surql")).await?;
+    db.query(include_str!("tools/formula.surql")).await?;
+    db.query(include_str!("tools/hvac.surql")).await?;
+    db.query(include_str!("tools/len.surql")).await?;
+    db.query(include_str!("tools/stif.surql")).await?;
+    db.query(include_str!("tools/washer.surql")).await?;
     Ok(())
 }
 
