@@ -89,7 +89,7 @@ DEFINE FUNCTION fn::hvac_width_format($pe: record, $n: option<int>){
     return if $is_circle {
         return string::concat('φ', $w);
     } else {
-        return $w;
+        return string::replace(<string>$w,'f','');
     };
 };
 
@@ -100,7 +100,7 @@ DEFINE FUNCTION fn::hvac_height_format($pe: record, $n: option<int>){
     return if $is_circle {
         return '-';
     } else {
-        return $h;
+        return string::replace(<string>$h,'f','');
     };
 };
 
@@ -335,16 +335,13 @@ DEFINE FUNCTION fn::hvac_mat($pe: record){
 };
 
 DEFINE FUNCTION fn::hvac_mat_name($pe: record){
-    let $m = (return fn::hvac_mat_id($pe).desc);
+    let $m = (return fn::hvac_mat_id($pe).name);
     return if $m == none {
         return "unset";
     } else {
         return $m;
     };
 };
-
-
-
 
 //暂时返回数字
 DEFINE FUNCTION fn::stype($pe:record) {

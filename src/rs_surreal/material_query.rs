@@ -156,7 +156,7 @@ pub struct MaterialTfHavcList {
     #[serde(default)]
     pub fl_wei: f32,
     #[serde(default)]
-    pub height: f32,
+    pub height: String,
     #[serde(default)]
     pub length: f32,
     #[serde(default)]
@@ -194,7 +194,7 @@ pub struct MaterialTfHavcList {
     #[serde(default)]
     pub washer_qty: f32,
     #[serde(default)]
-    pub width: f32,
+    pub width: String,
 }
 
 impl MaterialTfHavcList {
@@ -208,8 +208,8 @@ impl MaterialTfHavcList {
         map.entry("材质".to_string()).or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
         map.entry("风管长度".to_string()).or_insert(self.length.to_string());
-        map.entry("风管宽度".to_string()).or_insert(self.width.to_string());
-        map.entry("风管高度".to_string()).or_insert(self.height.to_string());
+        map.entry("风管宽度".to_string()).or_insert(self.width);
+        map.entry("风管高度".to_string()).or_insert(self.height);
         map.entry("风管壁厚".to_string()).or_insert(serde_json::to_string(&self.wall_thk).unwrap_or("[]".to_string()));
         map.entry("风管面积".to_string()).or_insert(serde_json::to_string(&self.duct_area).unwrap_or("[]".to_string()));
         map.entry("风管重量".to_string()).or_insert(self.duct_weight.to_string());
@@ -1105,8 +1105,7 @@ async fn get_tf_hvac_strt_data(db: &Surreal<Any>, refnos: Vec<RefU64>) -> anyhow
     if refnos.is_empty() { return Ok(vec![]); };
     let mut data = Vec::new();
     let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
-    for refno in refnos {
-        let sql = format!("select
+    let sql = format!("select
     fn::refno(id) as id,
     string::concat(fn::shape_name(id), '直管') as description,
     fn::hvac_seg_code(id) as seg_code,
@@ -1138,12 +1137,10 @@ async fn get_tf_hvac_strt_data(db: &Surreal<Any>, refnos: Vec<RefU64>) -> anyhow
 
     fn::get_room_number(id) as room_no,
     fn::hvac_system(id) as system
-	from {};", serde_json::to_string(&refno).unwrap_or("[]".to_string()));
-        let mut response = db.query(sql).await?;
-        dbg!(&refno);
-        let mut result: Vec<MaterialTfHavcList> = response.take(0).unwrap();
-        data.append(&mut result);
-    }
+	from {};", serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
+    let mut response = db.query(sql).await?;
+    let mut result: Vec<MaterialTfHavcList> = response.take(0).unwrap();
+    data.append(&mut result);
     Ok(data)
 }
 
