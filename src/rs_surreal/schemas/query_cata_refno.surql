@@ -1,2 +1,0 @@
---通过传递refno，查询CATR
-select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]] from only type::thing("pe", $refno) limit 1;

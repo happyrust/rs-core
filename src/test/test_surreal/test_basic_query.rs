@@ -1,17 +1,15 @@
+use crate::pdms_types::*;
 use crate::SUL_DB;
-use crate::{NamedAttrMap, RefU64, rs_surreal};
+use crate::{rs_surreal, NamedAttrMap, RefU64};
 use glam::Vec3;
 use std::sync::Arc;
 use surrealdb::sql::Thing;
-use crate::pdms_types::*;
 
 #[tokio::test]
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let refno = "13292_92".into();
-    let pe = rs_surreal::get_pe(refno)
-        .await
-        .unwrap();
+    let pe = rs_surreal::get_pe(refno).await.unwrap();
     dbg!(pe);
     Ok(())
 }
@@ -19,18 +17,12 @@ async fn test_query_pe_by_refno() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let refno: RefU64 = "13292_116".into();
-    let type_name = rs_surreal::get_type_name(refno)
-        .await
-        .unwrap_or_default();
+    let refno: RefU64 = "17496_171659".into();
+    let type_name = rs_surreal::get_type_name(refno).await.unwrap_or_default();
     dbg!(&type_name);
-    let ancestor = rs_surreal::get_ancestor(refno)
-        .await
-        .unwrap();
+    let ancestor = rs_surreal::get_ancestor(refno).await.unwrap();
     dbg!(ancestor);
-    let ancestor_maps = rs_surreal::get_ancestor_attmaps(refno)
-        .await
-        .unwrap();
+    let ancestor_maps = rs_surreal::get_ancestor_attmaps(refno).await.unwrap();
     dbg!(ancestor_maps);
     Ok(())
 }
@@ -60,17 +52,25 @@ async fn test_query_att_by_refno() {
     super::init_test_surreal().await;
     // let attmap = rs_surreal::get_named_attmap("25688/53371".into()).await;
     // dbg!(attmap);
-    let attmap = rs_surreal::get_named_attmap_with_uda("24383/66460".into(), true).await.unwrap();
+    let attmap = rs_surreal::get_named_attmap_with_uda("24383/66460".into(), true)
+        .await
+        .unwrap();
     dbg!(attmap);
 }
 
 #[tokio::test]
 async fn test_get_siblings_by_refno() {
     super::init_test_surreal().await;
-    let refnos = rs_surreal::get_siblings("17496/258778".into()).await.unwrap();
+    let refnos = rs_surreal::get_siblings("17496/258778".into())
+        .await
+        .unwrap();
     dbg!(refnos);
-    let next = rs_surreal::get_next_prev("17496/258778".into(), true).await.unwrap();
-    let prev = rs_surreal::get_next_prev("17496/258778".into(), false).await.unwrap();
+    let next = rs_surreal::get_next_prev("17496/258778".into(), true)
+        .await
+        .unwrap();
+    let prev = rs_surreal::get_next_prev("17496/258778".into(), false)
+        .await
+        .unwrap();
     dbg!((next, prev));
 }
 
@@ -79,25 +79,21 @@ async fn test_query_children() {
     super::init_test_surreal().await;
     // let refnos = rs_surreal::get_children_refnos("9304_0".into()).await;
     // dbg!(refnos);
-    let nodes = rs_surreal::get_children_ele_nodes("17496_256208".into()).await.unwrap();
+    let nodes = rs_surreal::get_children_ele_nodes("17496_256208".into())
+        .await
+        .unwrap();
     dbg!(nodes);
+
+    let children = rs_surreal::get_children_refnos("17496_256208".into()).await.unwrap();
+    dbg!(children);
 }
 
 #[tokio::test]
 async fn test_query_children_att() {
     super::init_test_surreal().await;
-    // let children_atts = rs_surreal::get_children_named_attmaps("17496_171555".into()).await;
-    // dbg!(children_atts);
-    // let children_pes = rs_surreal::get_children_pes("17496_171555".into()).await;
-    // dbg!(children_pes);
-    // let children_atts = rs_surreal::get_children_named_attmaps("13244/142143".into())
-    //     .await
-    //     .unwrap();
-    // dbg!(children_atts);
-
-    let children_pes = rs_surreal::query_filter_children("24384_30869".into(), &GENRAL_NEG_NOUN_NAMES).await;
+    let children_pes =
+        rs_surreal::query_filter_children("17496/195273".into(), &GENRAL_NEG_NOUN_NAMES).await;
     dbg!(children_pes);
-
 }
 
 #[tokio::test]
@@ -114,8 +110,6 @@ async fn test_query_custom() -> anyhow::Result<()> {
     dbg!(owner);
     Ok(())
 }
-
-
 
 #[tokio::test]
 async fn test_query_custom_bend() -> anyhow::Result<()> {
@@ -140,15 +134,12 @@ from $refnos
     Ok(())
 }
 
-
 #[tokio::test]
 async fn test_query_attmap() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
-    let refno = "17496/171646".into();
-    let attmap = rs_surreal::get_ui_named_attmap(refno)
-        .await
-        .unwrap();
+    let refno = "17496/269118".into();
+    let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
 
     let world = rs_surreal::get_world_refno("/ALL".into()).await.unwrap();
@@ -162,28 +153,18 @@ async fn test_query_cata() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
     let refno = "17496/171646".into();
-    let cat_refno = rs_surreal::get_cat_refno(refno)
-        .await
-        .unwrap();
+    let cat_refno = rs_surreal::get_cat_refno(refno).await.unwrap();
     dbg!(cat_refno);
     // get_cat_attmap
-    let cat_attmap = rs_surreal::get_cat_attmap(refno)
-        .await
-        .unwrap();
+    let cat_attmap = rs_surreal::get_cat_attmap(refno).await.unwrap();
     dbg!(cat_attmap);
 
     let refno = "17496/171647".into();
-    let cat_refno = rs_surreal::get_cat_refno(refno)
-        .await
-        .unwrap();
+    let cat_refno = rs_surreal::get_cat_refno(refno).await.unwrap();
     dbg!(cat_refno);
     // get_cat_attmap
-    let cat_attmap = rs_surreal::get_cat_attmap(refno)
-        .await
-        .unwrap();
+    let cat_attmap = rs_surreal::get_cat_attmap(refno).await.unwrap();
     dbg!(cat_attmap);
-
-
 
     Ok(())
 }
@@ -191,10 +172,9 @@ async fn test_query_cata() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_path() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let cat_refno =
-        rs_surreal::query_single_by_paths("15194/5835".into(), &["->GMRE"], &[])
-            .await
-            .unwrap();
+    let cat_refno = rs_surreal::query_single_by_paths("15194/5835".into(), &["->GMRE"], &[])
+        .await
+        .unwrap();
     dbg!(cat_refno);
     Ok(())
 }
@@ -202,13 +182,10 @@ async fn test_query_path() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_paths() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let cat_refno = rs_surreal::query_single_by_paths(
-        "15194/5835".into(),
-        &["->GMRE", "->GMSR"],
-        &["id"],
-    )
-    .await
-    .unwrap();
+    let cat_refno =
+        rs_surreal::query_single_by_paths("15194/5835".into(), &["->GMRE", "->GMSR"], &["id"])
+            .await
+            .unwrap();
     dbg!(cat_refno);
     Ok(())
 }

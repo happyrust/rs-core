@@ -1,2 +1,0 @@
-select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, 
-    array::len(select value id from in<-pe_owner) as children_count from (select * from (type::thing("pe", $refno))<-pe_owner order by order_num)

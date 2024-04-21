@@ -521,12 +521,12 @@ impl NamedAttrMap {
         };
 
         sjson.remove(sjson.len() - 1);
-        sjson.push_str(&format!(",REFNO: pe:{},", refno.to_string()));
+        sjson.push_str(&format!(",REFNO: {},", refno.to_pe_key()));
         for (key, val) in record_map.into_iter() {
             if val.is_unset() && excludes.contains(&key.as_str()) {
                 continue;
             }
-            sjson.push_str(&format!(r#""{}": pe:{},"#, key, val));
+            sjson.push_str(&format!(r#""{}": {},"#, key, val.to_pe_key()));
         }
         for (key, val) in records_map.into_iter() {
             if val.is_empty() && excludes.contains(&key.as_str()) {

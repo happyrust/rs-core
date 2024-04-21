@@ -18,7 +18,7 @@ pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec
         return Ok(vec![refno]);
     }
     if types[0] == "BRAN" || types[0] == "HANG" {
-        let children_refnos = super::get_children_refnos(refno).await?;
+        let children_refnos = super::get_children_refnos(refno, ).await?;
         return Ok(children_refnos);
     }
     let branch_refnos = super::query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await?;

@@ -23,11 +23,34 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Optimize query for children refnos and update variable assignments&#10;&#10;Refactored the method to fetch children refnos by removing unnecessary checks and optimizing query implementations. Also updated variable assignments in HVAC's common.surql for better code readability. Minor changes were made to the workspace.xml file.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/geom.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_by_refno.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_by_refno.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/do_relate_pe.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/old.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_ancestor_attmaps_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_ancestor_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_attmap_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_attmap_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_nodes_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_pes_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_full_attmap_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_graph.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_pe_by_refno.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -142,6 +165,7 @@
     &quot;Cargo.Test test::test_shape::test_gen_wire_2.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_sql::test_table::test_create_table.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_attmap.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
@@ -218,13 +242,22 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_query_transform">
+  <component name="RunManager" selected="Batch.run">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="WORKING_DIRECTORY" value="./" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SCRIPT_NAME" value="cargo-clif test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/schemas/functions" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run.bat" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
@@ -254,59 +287,42 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_ancestor_by_refno -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_surreal::test_mdb::test_get_world_sites" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_mdb::test_get_world_sites -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Test test::test_surreal::test_spatial::test_query_transform" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_wire::test_gen_wire_25688_34950" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_wire::test_gen_wire_25688_34950 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -341,21 +357,21 @@
     </configuration>
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
+      <item itemvalue="Batch.run" />
       <item itemvalue="Batch.run_tool_defines" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world_sites" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
-      <item itemvalue="Cargo.Test test::test_wire::test_gen_wire_25688_34950" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Batch.run" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world_sites" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
         <item itemvalue="Batch.run_tool_defines" />
-        <item itemvalue="Cargo.Test test::test_wire::test_gen_wire_25688_34950" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
       </list>
     </recent_temporary>
   </component>
@@ -759,7 +775,10 @@
       <workItem from="1713520376920" duration="5312000" />
       <workItem from="1713551976562" duration="1031000" />
       <workItem from="1713556422005" duration="4810000" />
-      <workItem from="1713637471767" duration="598000" />
+      <workItem from="1713637471767" duration="3516000" />
+      <workItem from="1713675651051" duration="8106000" />
+      <workItem from="1713704370338" duration="286000" />
+      <workItem from="1713707195647" duration="2748000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1104,7 +1123,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="303" />
+    <option name="localTasksCounter" value="304" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1147,7 +1166,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Simplify and refactor geometry computations in category.rs&#10;&#10;This commit optimizes the geometry computations in category.rs by simplifying the logic and refactoring the existing code. Changes include removing unnecessary variables and duplicated code, reducing the complexity of if-else conditions, and introducing LCylinder for better manageability. Minor adjustments in workspace.xml for Cargo and test settings were also made." />
     <MESSAGE value="Update geometry handling logic in category.rs and resolve.rs&#10;&#10;This commit refines geometry computation in category.rs and increases iteration limits in resolve.rs. It simplifies the logic in category.rs to enhance readability, while enhancing error resiliency in resolve.rs. Changes to workspace.xml pertain to updating group and task settings." />
     <MESSAGE value="Add HVAC calculations and update geometry definition in pdms_shape.rs&#10;&#10;This update includes HVAC-related calculations in new SurQL files and adjusts the geometry definition in pdms_shape.rs. Target architecture conditions and additional functions are introduced for differentiating WASM from non-WASM builds. The commit also includes several new files contributing to HVAC computation logic, as well as a batch file for running the database scripts." />
     <MESSAGE value="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts." />
@@ -1172,7 +1190,8 @@
     <MESSAGE value="update to latest surreal" />
     <MESSAGE value="Add truck feature and implement conditional compilation&#10;&#10;This update contains changes aimed at adding the &quot;truck&quot; feature to the project. Conditional compilation has been implemented for this feature to ensure the correct execution of code blocks when the feature is enabled. Additionally, some unnecessary imports and functions in certain files have been removed to improve code clean-up and efficiency." />
     <MESSAGE value="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module." />
-    <option name="LAST_COMMIT_MESSAGE" value="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module." />
+    <MESSAGE value="Optimize query for children refnos and update variable assignments&#10;&#10;Refactored the method to fetch children refnos by removing unnecessary checks and optimizing query implementations. Also updated variable assignments in HVAC's common.surql for better code readability. Minor changes were made to the workspace.xml file." />
+    <option name="LAST_COMMIT_MESSAGE" value="Optimize query for children refnos and update variable assignments&#10;&#10;Refactored the method to fetch children refnos by removing unnecessary checks and optimizing query implementations. Also updated variable assignments in HVAC's common.surql for better code readability. Minor changes were made to the workspace.xml file." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

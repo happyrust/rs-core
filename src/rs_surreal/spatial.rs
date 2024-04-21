@@ -104,6 +104,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 #[cached(result = true)]
 pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
+    // dbg!(&ancestors);
     ancestors.reverse();
     let mut rotation = DQuat::IDENTITY;
     let mut translation = DVec3::ZERO;
@@ -322,23 +323,11 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
         if trans.is_nan() {
             return Ok(None);
         }
-        //将rotation 还原为角度
-        #[cfg(feature = "debug")]
-        {
-            // let rot_mat = Mat3::from_quat(rotation);
-            // let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
-            // println!("{} : {:?}", refno.to_string(), (translation, ori_str));
-        }
     }
 
     if rotation.is_nan() || translation.is_nan() {
         return Ok(None);
     }
-    // Ok(Some(Transform {
-    //     rotation: rotation.as_quat(),
-    //     translation: translation.as_vec3(),
-    //     scale: Vec3::ONE,
-    // }))
     Ok(Some(DMat4::from_rotation_translation(
         rotation,
         translation,
@@ -469,7 +458,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
 }
 
 pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
-    let children_refs = super::get_children_refnos(refno).await?;
+    let children_refs = super::get_children_refnos(refno, ).await?;
     let mut paths = vec![];
     for x in children_refs {
         let type_name = super::get_type_name(x).await?;
@@ -478,6 +467,9 @@ pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
         }
         let spine_att = super::get_named_attmap(x).await?;
         let children_atts = super::get_children_named_attmaps(x).await?;
+        if children_atts.is_empty() {
+            return Ok(vec![]);
+        }
         if (children_atts.len() - 1) % 2 == 0 {
             for i in 0..(children_atts.len() - 1) / 2 {
                 let att1 = &(children_atts[2 * i]);

@@ -2,14 +2,13 @@ use crate::noun_graph::*;
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::types::*;
-use crate::{NamedAttrMap, RefU64, rs_surreal};
-use crate::{SUL_DB, SurlValue};
+use crate::{rs_surreal, NamedAttrMap, RefU64};
+use crate::{SurlValue, SUL_DB};
+use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use surrealdb::method::Stats;
-use cached::proc_macro::cached;
-
 
 #[inline]
 #[cached(result = true)]
@@ -30,8 +29,9 @@ pub async fn query_filter_deep_children(
     let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
     let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
     if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
+        let pe_key = refno.to_pe_key();
         let sql = format!(
-            "select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno})) where noun in [{nouns_str}]",
+            "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
         );
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
@@ -51,9 +51,10 @@ pub async fn query_deep_children_filter_inst(
     let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
     let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
     if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
+        let pe_key = refno.to_pe_key();
         let mut sql = format!(
-            r#"select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno}))
-             where  noun in [{nouns_str}]"#,
+            r#"select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key}))
+             where noun in [{nouns_str}]"#,
         );
         if filter {
             sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
@@ -101,15 +102,15 @@ pub async fn query_filter_ancestors(
     let start_noun = super::get_type_name(refno).await?;
     // dbg!(&start_noun);
     let nouns_str = nouns
-            .iter()
-            .map(|s| format!("'{s}'"))
-            .collect::<Vec<_>>()
-            .join(",");
+        .iter()
+        .map(|s| format!("'{s}'"))
+        .collect::<Vec<_>>()
+        .join(",");
     let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
-    if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun,  &nouns_slice) {
-        // dbg!(&relate_sql);
+    if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun, &nouns_slice) {
+        let pe_key = refno.to_pe_key();
         let sql = format!(
-            "select value refno from array::flatten(object::values(select {relate_sql} from only pe:{refno})) where noun in [{nouns_str}]",
+            "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key}) where noun in [{nouns_str}]",
         );
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
