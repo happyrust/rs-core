@@ -1749,6 +1749,18 @@ impl Into<PdmsElement> for EleTreeNode {
     }
 }
 
+impl From<PdmsElement> for EleTreeNode {
+    fn from(value: PdmsElement) -> Self {
+        EleTreeNode {
+            refno: value.refno,
+            noun: value.noun,
+            name: value.name,
+            owner: value.owner,
+            children_count: value.children_count,
+        }
+    }
+}
+
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]
     fn get_refno(&self) -> RefU64 {

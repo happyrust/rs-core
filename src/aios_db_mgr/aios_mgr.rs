@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
-use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_world, NamedAttrMap, RefU64, SUL_DB, SurlValue};
+use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world, NamedAttrMap, RefU64, SUL_DB, SurlValue};
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
@@ -38,7 +38,7 @@ impl AiosDBMgr {
     }
 
     /// 获取所属房间的顶标高和底标高
-    pub async fn query_own_room_panel_elevations(&self,refno: RefU64) -> anyhow::Result<(f32, f32)> {
+    pub async fn query_own_room_panel_elevations(&self, refno: RefU64) -> anyhow::Result<(f32, f32)> {
         let sql = format!("return fn::room_top_height({});
                         return fn::room_height({});", refno.to_pe_key(), refno.to_pe_key());
         let mut response = SUL_DB
@@ -46,25 +46,22 @@ impl AiosDBMgr {
             .await?;
         let min: Vec<f32> = response.take(0).unwrap_or(vec![]);
         let max: Vec<f32> = response.take(1).unwrap_or(vec![]);
-        let min = min.get(0).map_or(0.0,|x| *x);
-        let max = max.get(0).map_or(0.0,|x| *x);
+        let min = min.get(0).map_or(0.0, |x| *x);
+        let max = max.get(0).map_or(0.0, |x| *x);
         Ok((min, max))
     }
-
 }
 
 #[async_trait]
 impl PdmsDataInterface for AiosDBMgr {
     async fn get_world(&self, mdb_name: &str) -> anyhow::Result<Option<PdmsElement>> {
         let Some(world) = get_world(format!("/{}", mdb_name)).await? else { return Ok(None); };
-        Ok(Some(PdmsElement {
-            refno: world.refno,
-            owner: world.owner,
-            name: world.name,
-            noun: world.noun,
-            version: 0,
-            children_count: 1,
-        }))
+        Ok(Some(PdmsElement::from(world)))
+    }
+
+    async fn get_pdms_element(&self, refno: RefU64) -> anyhow::Result<Option<PdmsElement>> {
+        let Some(pe) = get_pe(refno).await? else { return Ok(None); };
+        Ok(Some(PdmsElement::from(pe)))
     }
 
     async fn get_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
@@ -224,6 +221,17 @@ impl AiosDBMgr {
             .connect(url)
             .await
             .map_err({ |x| anyhow::anyhow!(x.to_string()) })
+    }
+
+    /// 获取指定节点附近最近的 own_filter_types
+    pub async fn query_around_owner_within_radius(&self,
+                                                  refno: RefU64,
+                                                  is_aabb: bool,
+                                                  offset: Option<f32>,
+                                                  nearest: bool,
+                                                  own_filter_types: &[&str]) -> anyhow::Result<Vec<RefU64>> {
+        // todo
+        Ok(vec![])
     }
 }
 

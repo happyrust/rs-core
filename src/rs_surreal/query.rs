@@ -368,7 +368,7 @@ pub struct PdmsSpreName {
 /// 查询多个参考号外键对应的name，暂时只支持SPRE这种一层外键的
 pub async fn query_foreign_refnos(refnos: Vec<RefU64>, foreign_type: &str) -> anyhow::Result<Vec<PdmsSpreName>> {
     let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
-    let sql = format!("select id, refno.{} as foreign_refno,refno.{}.refno.NAME as name from {};", &foreign_type, &foreign_type, serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
+    let sql = format!("select refno, refno.{} as foreign_refno,refno.{}.refno.NAME as name from {};", &foreign_type, &foreign_type, serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
     let mut response = SUL_DB.query(sql).await?;
     let result: Vec<PdmsSpreName> = response.take(0)?;
     Ok(result)
