@@ -150,7 +150,10 @@ DEFINE FUNCTION fn::washer_len_THRE($pe: record) {
                         } else if (!$nd) && (!$nm) {
                             return ( $len[2] + fn::hvac_fl_width($pe, 3) * 4.0 / 1000.0 ) / 2.0;
                         };
-        return [$d1, $d2, $d3];
+        let $r1 = if $d1 != NONE { $d1 } else { 0 };
+        let $r2 = if $d2 != NONE { $d2 } else { 0 };
+        let $r3 = if $d3 != NONE { $d3 } else { 0 };
+        return [$r1, $r2, $r3];
     } else {
         let $d1 = if $pd || $pm {
             return $len[0];
@@ -167,7 +170,10 @@ DEFINE FUNCTION fn::washer_len_THRE($pe: record) {
         } else if (!$nd) && (!$nm) {
             return $len[2] / 2.0;
         };
-        return [$d1, $d2, $d3];
+        let $r1 = if $d1 != NONE { $d1 } else { 0 };
+        let $r2 = if $d2 != NONE { $d2 } else { 0 };
+        let $r3 = if $d3 != NONE { $d3 } else { 0 };
+        return [$r1, $r2, $r3];
     };
 };
 
