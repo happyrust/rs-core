@@ -222,4 +222,84 @@ DEFINE FUNCTION fn::washer_len_TRNS($pe: record) {
     };
 };
 
+DEFINE FUNCTION fn::washer_len_BEND($pe: record) {
+    let $mat_id = meta::id(fn::hvac_mat_id($pe));
+    if $mat_id == 6 {
+        return [0.0];
+    };
+    let $pf = fn::prev_stype_is_fjfd($pe);
+    let $nf = fn::next_stype_is_fjfd($pe);
 
+    let $pd = fn::pre_is_type($pe, 'DAMP');
+    let $nd = fn::next_is_type($pe, 'DAMP');
+    let $pm = fn::pre_is_type($pe, 'MESH');
+    let $nm = fn::next_is_type($pe, 'MESH');
+
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+
+    let $fl_len = fn::hvac_fl_len($pe);
+    let $fl_width = if $pe.refno.DESP[20] != NONE { $pe.refno.DESP[20] } else { 0 };
+
+    //return $is_circle;
+    //return [$fl_len,$fl_width,!$pd , !$pm , !$nd , !$nm];
+    //return [($fl_len + ( ($fl_width * 8 ) / 1000 ))/ 2];
+    let $first = if !$is_circle {
+        return if $pf && $nf {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 ));
+        } else if $pf && !$nf {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000)) / 2 ;
+        } else if $pf && !$pd && !$pm {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 ))/ 4;
+        } else if (($pd && !$pf) || $pm) && $nf {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 ))/ 2;
+        } else if (($pd && !$pf) || $pm) && (($nd && !$nf) || $nm) {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 ));
+        } else if ($pd && !$pm) && (($nd && !$nf) || $nm) {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 )) * 0.75;
+        } else if (($pd && !$pf) || $pm) && !$nm {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 )) * 0.75;
+        } else if !$pd && !$pm && !$nd && !$nm {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 ))/ 2;
+        }
+    } else {
+        return if $pf && $nf {
+            return $fl_len;
+        } else if $pf && !$nf {
+            return $fl_len / 2;
+        } else if $pf && !$pd && !$pm {
+            return $fl_len / 4;
+        } else if (($pd && !$pf) || $pm) && $nf {
+            return $fl_len / 2;
+        } else if (($pd && !$pf) || $pm) && (($nd && !$nf) || $nm) {
+            return $fl_len;
+        } else if ($pd && !$pm) && (($nd && !$nf) || $nm) {
+            return $fl_len * 0.75;
+        } else if (($pd && !$pf) || $pm) && !$nm {
+            return $fl_len * 0.75;
+        } else if !$pd && !$pm && !$nd && !$nm {
+            return $fl_len / 2;
+        }
+     };
+    let $second =  if !$is_circle {
+        return if $pf && !$nd && !$nm {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000)) / 4;
+        } else if $pf && (($nd && $nf) || $nm) {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 ))/ 2;
+        } else if !$pf && $nf {
+            return ($fl_len + ( ($fl_width * 8 ) / 1000 ))/ 2;
+        }
+    } else {
+        return if $pf && !$nd && !$nm {
+            return $fl_len / 4;
+        } else if $pf && (($nd && $nf) || $nm) {
+            return $fl_len / 2;
+        } else if !$pf && $nf {
+            return $fl_len / 2;
+        }
+    };
+
+    let $r1 = if $first != NONE { math::fixed($first,2) } else { 0 };
+    let $r2 = if $second != NONE { math::fixed($second,2) } else { 0 };
+
+    return [$r1,$r2];
+};

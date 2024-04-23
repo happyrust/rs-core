@@ -207,3 +207,34 @@ DEFINE FUNCTION fn::hvac_bolt_qtys_OFST($pe: record) {
     };
 
 };
+
+DEFINE FUNCTION fn::hvac_bolt_qtys_BEND($pe: record) {
+    let $mat_id = meta::id(fn::hvac_mat_id($pe));
+    if $mat_id == 6 {
+        return 0.0;
+    };
+    let $angle = if $pe.refno.DESP[7] == NONE { 0 } else { $pe.refno.DESP[7] } ;
+    let $width = if $pe.refno.DESP[1] == NONE { 0 } else { $pe.refno.DESP[1] } ;
+    let $height = if $pe.refno.DESP[2] == NONE { 0 } else { $pe.refno.DESP[2] } ;
+    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+    //return [$angle,$width,$height,$is_circle];
+
+    return if !$is_circle {
+        if $angle > 60 && $height > 500 && $height <= 1000 {
+            return 3;
+        } else if $angle > 60 && $height > 1000 && $height <= 1500 {
+            return 6;
+        } else if $angle > 60 && $height > 1500 {
+            return 9;
+        } else if $angle > 30 && $angle <=60 && $width < 600 && $height > 500 && $height <= 1000 {
+            return 3;
+        } else if $angle > 30 && $angle <=60 && $width < 600 && $height > 1000 && $height <= 1500 {
+            return 6;
+        } else if $angle > 30 && $angle <=60 && $width < 600 && $height > 1000 && $height <= 1500 {
+            return 9;
+        }
+    } else {
+
+    };
+};
+
