@@ -216,25 +216,83 @@ DEFINE FUNCTION fn::hvac_bolt_qtys_BEND($pe: record) {
     let $angle = if $pe.refno.DESP[7] == NONE { 0 } else { $pe.refno.DESP[7] } ;
     let $width = if $pe.refno.DESP[1] == NONE { 0 } else { $pe.refno.DESP[1] } ;
     let $height = if $pe.refno.DESP[2] == NONE { 0 } else { $pe.refno.DESP[2] } ;
-    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
-    //return [$angle,$width,$height,$is_circle];
 
-    return if !$is_circle {
-        if $angle > 60 && $height > 500 && $height <= 1000 {
-            return 3;
-        } else if $angle > 60 && $height > 1000 && $height <= 1500 {
-            return 6;
-        } else if $angle > 60 && $height > 1500 {
-            return 9;
-        } else if $angle > 30 && $angle <=60 && $width < 600 && $height > 500 && $height <= 1000 {
-            return 3;
-        } else if $angle > 30 && $angle <=60 && $width < 600 && $height > 1000 && $height <= 1500 {
-            return 6;
-        } else if $angle > 30 && $angle <=60 && $width < 600 && $height > 1000 && $height <= 1500 {
-            return 9;
-        }
+    return if $angle > 30 && $height > 500 && $height <= 1000 {
+        return 3;
+    } else if $angle > 30 && $height > 1000 && $height <= 1500 {
+        return 6;
+    } else if $angle > 30 && $height > 1500 {
+        return 9;
     } else {
-
-    };
+        0
+    }
 };
+
+DEFINE FUNCTION fn::hvac_nut_qty_BEND($pe: record) {
+    let $mat_id = meta::id(fn::hvac_mat_id($pe));
+    if $mat_id == 6 {
+        return 0.0;
+    };
+
+    let $angle = if $pe.refno.DESP[7] == NONE { 0 } else { $pe.refno.DESP[7] } ;
+    let $width = if $pe.refno.DESP[1] == NONE { 0 } else { $pe.refno.DESP[1] } ;
+    let $height = if $pe.refno.DESP[2] == NONE { 0 } else { $pe.refno.DESP[2] } ;
+    let $bolt_qty = fn::hvac_bolt_qtys_BEND($pe);
+
+    return if $angle > 60 && $width < 900 && $height > 500 && $height <= 1000 {
+        return $bolt_qty;
+    } else if $angle > 60 && $width < 900 && $height > 1000 && $height <= 1500 {
+        return $bolt_qty;
+    } else if $angle > 60 && $width < 900 && $height > 1500 {
+        return $bolt_qty;
+    } else if $angle > 60 && $width >= 900 && $width < 1400 && $height > 500 && $height <= 1000 {
+        return 11;
+    } else if $angle > 60 && $width >= 900 && $width < 1400 && $height > 1000 && $height <= 1500 {
+        return 10;
+    } else if $angle > 60 && $width >= 900 && $width < 1400 && $height > 1500 {
+        return 13;
+    } else if $angle > 60 && $width >= 1400 && $width < 2000 && $height > 500 && $height <= 1000 {
+        return 19;
+    } else if $angle > 60 && $width >= 1400 && $width < 2000 && $height > 1000 && $height <= 1500 {
+        return 14;
+    } else if $angle > 60 && $width >= 2000 && $height > 500 && $height <= 1000 {
+        return 27;
+    } else if $angle > 60 && $width >= 2000 && $height > 1000 && $height <= 1500 {
+        return 18;
+    } else if $angle > 60 && $width >= 2000 && $height > 1500 {
+        return 21;
+    } else if $angle > 30 && $angle <= 60 && $width < 600 && $height > 500 && $height <= 1000 {
+        return 3;
+    } else if $angle > 30 && $angle <= 60 && $width < 600 && $height > 1000 && $height <= 1500 {
+        return 6;
+    } else if $angle > 30 && $angle <= 60 && $width < 600 && $height > 1500 {
+        return 11;
+    } else if $angle > 30 && $angle <= 60 && $width >= 600 && $width < 900 && $height > 1500 {
+        return 10;
+    } else if $angle > 30 && $angle <= 60 && $width >= 600 && $width < 900 && $height > 1500 {
+        return 13;
+    } else if $angle > 30 && $angle <= 60 && $width >= 900 && $width < 1200 && $height > 500 && $height <= 1000 {
+        return 11;
+    } else if $angle > 30 && $angle <= 60 && $width >= 900 && $width < 1200 && $height > 1000 && $height <= 1500 {
+        return 14;
+    } else if $angle > 30 && $angle <= 60 && $width >= 900 && $width < 1200 && $height >= 1500 {
+        return 17;
+    } else if $angle > 30 && $angle <= 60 && $width >= 1200 && $width < 1500 && $height > 500 &&$height <= 1000 {
+        return 27;
+    } else if $angle > 30 && $angle <= 60 && $width >= 1200 && $width < 1500 && $height > 1000 &&$height <= 1500 {
+        return 18;
+    } else if $angle > 30 && $angle <= 60 && $width >= 1200 && $width < 1500 && $height > 1500 {
+        return 21;
+    } else if $angle > 30 && $angle <= 60 && $width >= 1500 && $height <= 1000 {
+        return 35;
+    } else if $angle > 30 && $angle <= 60 && $width >= 1500 && $height > 1000 && $height <= 1500 {
+        return 22;
+    } else if $angle > 30 && $angle <= 60 && $width >= 1500 && $height > 1500 {
+        return 25;
+    } else {
+        0
+    }
+
+};
+
 

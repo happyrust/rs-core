@@ -1495,7 +1495,7 @@ async fn get_tf_hvac_bend_data(db: &Surreal<Any>, refnos: Vec<RefU64>) -> anyhow
     fn::common_washer_types(id) as washer_type,
     fn::washer_len_BEND(id) as washer_len,
 
-    fn::hvac_bolt_qtys_1(id) as nut_qty,  //螺母数量
+    fn::hvac_nut_qty_BEND((id) as nut_qty,  //螺母数量
     if fn::hvac_bolt_qtys_1(id) != NONE {{
         [fn::hvac_bolt_qtys_1(id)[0] * 2,fn::hvac_bolt_qtys_1(id)[1] * 2] }} else {{ [0] }} as washer_qty,
 
