@@ -2,9 +2,7 @@ DEFINE FUNCTION fn::ancestor($r: record) {
     return if $r.id == none {
         return [];
     } else {
-        return array::flatten(object::values(SELECT [id] as f0, ->pe_owner->(? AS f1)->pe_owner->
-        (? AS f2)->pe_owner->(? AS f3)->pe_owner->(? AS f4)->pe_owner->
-        (? AS f5)->pe_owner->(? AS f6)->pe_owner->(? AS f7)->pe_owner->(? AS f8)->pe_owner->(? AS f9) from only $r));
+        return array::flatten(object::values(SELECT [id] as f0, ->pe_owner->(? AS f1)->pe_owner->(? AS f2)->pe_owner->(? AS f3)->pe_owner->(? AS f4)->pe_owner->(? AS f5)->pe_owner->(? AS f6)->pe_owner->(? AS f7)->pe_owner->(? AS f8)->pe_owner->(? AS f9) from only $r));
     };
 };
 

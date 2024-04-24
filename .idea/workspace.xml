@@ -24,33 +24,35 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Optimize query for children refnos and update variable assignments&#10;&#10;Refactored the method to fetch children refnos by removing unnecessary checks and optimizing query implementations. Also updated variable assignments in HVAC's common.surql for better code readability. Minor changes were made to the workspace.xml file.">
+      <change afterPath="$PROJECT_DIR$/src/db/mod.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/petgraph/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DbOption.toml" beforeDir="false" afterPath="$PROJECT_DIR$/DbOption.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/basic/tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/basic/tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cache/mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cache/mgr.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/spine.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/spine.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/geom.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/do_relate_pe.surql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/group_by_cata_hash.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/old.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_ancestor_attmaps_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_ancestor_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_attmap_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_attmap.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_cata_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_attmap_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_nodes_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_children_pes_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_full_attmap_by_refno.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_graph.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/query_pe_by_refno.surql" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_mdb.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/math_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/math_tool.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -138,6 +140,7 @@
     &quot;Cargo.Test orm::pdms_element::test_ele_reflect.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::sql::test_do_op_reflect_sql.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::test_do_op_reflect.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test petgraph::test_serde.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test prim_geo::wire::test_check_wire.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test prim_geo::wire::test_check_wire_17496_254047.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test prim_geo::wire::test_check_wire_25688_45261.executor&quot;: &quot;Run&quot;,
@@ -172,6 +175,7 @@
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_graph::test_petgraph_search.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world.executor&quot;: &quot;Run&quot;,
@@ -261,20 +265,28 @@
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="run_tool_defines" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/mat_stastitcs/HVAC/tools" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run_tool_defines.bat" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="build " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="false" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test petgraph::test_serde" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib petgraph::test_serde -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
@@ -304,8 +316,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_mdb::test_get_world_sites" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_mdb::test_get_world_sites -- --exact" />
+    <configuration name="Test test::test_surreal::test_graph::test_petgraph_search" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_graph::test_petgraph_search -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -321,8 +333,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_query_transform" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+    <configuration name="Test test::test_surreal::test_mdb::test_get_world_sites" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_mdb::test_get_world_sites -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -358,20 +370,20 @@
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
       <item itemvalue="Batch.run" />
-      <item itemvalue="Batch.run_tool_defines" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Test petgraph::test_serde" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_petgraph_search" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno" />
       <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world_sites" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Batch.run" />
+        <item itemvalue="Cargo.Test petgraph::test_serde" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_graph::test_petgraph_search" />
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno" />
         <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world_sites" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_query_transform" />
-        <item itemvalue="Batch.run_tool_defines" />
       </list>
     </recent_temporary>
   </component>
@@ -779,6 +791,10 @@
       <workItem from="1713675651051" duration="8106000" />
       <workItem from="1713704370338" duration="286000" />
       <workItem from="1713707195647" duration="2748000" />
+      <workItem from="1713711890156" duration="3554000" />
+      <workItem from="1713757224472" duration="16843000" />
+      <workItem from="1713864541744" duration="1636000" />
+      <workItem from="1713885088896" duration="10971000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1123,7 +1139,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="304" />
+    <option name="localTasksCounter" value="305" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1191,7 +1207,7 @@
     <MESSAGE value="Add truck feature and implement conditional compilation&#10;&#10;This update contains changes aimed at adding the &quot;truck&quot; feature to the project. Conditional compilation has been implemented for this feature to ensure the correct execution of code blocks when the feature is enabled. Additionally, some unnecessary imports and functions in certain files have been removed to improve code clean-up and efficiency." />
     <MESSAGE value="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module." />
     <MESSAGE value="Optimize query for children refnos and update variable assignments&#10;&#10;Refactored the method to fetch children refnos by removing unnecessary checks and optimizing query implementations. Also updated variable assignments in HVAC's common.surql for better code readability. Minor changes were made to the workspace.xml file." />
-    <option name="LAST_COMMIT_MESSAGE" value="Optimize query for children refnos and update variable assignments&#10;&#10;Refactored the method to fetch children refnos by removing unnecessary checks and optimizing query implementations. Also updated variable assignments in HVAC's common.surql for better code readability. Minor changes were made to the workspace.xml file." />
+    <option name="LAST_COMMIT_MESSAGE" value="" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

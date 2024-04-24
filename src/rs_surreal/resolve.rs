@@ -1,6 +1,7 @@
-use std::{collections::HashMap, str::FromStr};
 use std::collections::HashSet;
+use std::{collections::HashMap, str::FromStr};
 
+use crate::pdms_types::PdmsGenericType;
 use crate::{
     math::polish_notation::Stack, tiny_expr::expr_eval::interp, tool::float_tool::f64_round_3,
     NamedAttrMap, NamedAttrValue, RefU64,
@@ -10,7 +11,6 @@ use derive_more::{Deref, DerefMut};
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use tokio::sync::RwLock;
-use crate::pdms_types::PdmsGenericType;
 
 //生成模型的中间过程中产生的伪属性，需要保存下来
 //使用once_cell, 初始化一个dashmap, 后面去修改用这个dashmap来保存NamedAttMap
@@ -27,7 +27,10 @@ static COMPATIBLE_UNIT_MAP: Lazy<HashMap<&'static str, HashSet<&'static str>>> =
 
 #[inline]
 pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
-    COMPATIBLE_UNIT_MAP.get(unit_a).map(|x| x.contains(unit_b)).unwrap_or(false)
+    COMPATIBLE_UNIT_MAP
+        .get(unit_a)
+        .map(|x| x.contains(unit_b))
+        .unwrap_or(false)
 }
 
 pub const INTERNAL_PDMS_EXPRESS: [&'static str; 22] = [
@@ -242,7 +245,7 @@ pub fn eval_str_to_f64(
             // dbg!(input_expr);
             let expr_val = "".to_string();
             #[cfg(not(target_arch = "wasm32"))]
-                let expr_val = tokio::task::block_in_place(|| {
+            let expr_val = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async move {
                     //如果是直段，直接取当前的参考号
                     let target_refno = match c2 {
@@ -283,13 +286,17 @@ pub fn eval_str_to_f64(
     // 相当于要递归去求值
     let rpro_re = Regex::new(r"(RPRO)\s+([a-zA-Z0-9]+)").unwrap();
     if new_exp.contains("RPRO") {
+        // dbg!(&new_exp);
         let mut found_dtse_mismatch = false;
         new_exp = replace_all_result(&rpro_re, &new_exp, |caps: &Captures| {
             let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
             let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
             let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
             let unit_type = context.get(&key_type).unwrap_or_default();
-            if (!unit_type.is_empty() && unit_type != dtse_unit) && !check_unit_compatible(dtse_unit, &unit_type){
+            if (!unit_type.is_empty() && unit_type != dtse_unit)
+                && !check_unit_compatible(dtse_unit, &unit_type)
+            {
+                #[cfg(debug_assertions)]
                 dbg!((&unit_type, dtse_unit));
                 return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
             } else {
@@ -297,9 +304,15 @@ pub fn eval_str_to_f64(
                     .get(&key)
                     .map(|x| x.to_string())
                     .unwrap_or("0".to_string());
+                context.insert(format!("EXPR_HAS_DEFAULT"), "true");
                 if let Ok(t) = eval_str_to_f64(&v, &context, "DIST") {
                     Ok(t.to_string())
                 } else {
+                    context.context.remove("EXPR_HAS_DEFAULT");
+                    // dbg!(context
+                    //     .get(&default_key)
+                    //     .map(|x| x.to_string())
+                    //     .unwrap_or("0".to_string()));
                     //use default value
                     Ok(context
                         .get(&default_key)
@@ -308,9 +321,13 @@ pub fn eval_str_to_f64(
                 }
             }
         })?
-            .trim()
-            .to_string();
+        .trim()
+        .to_string();
         // dbg!(&new_exp);
+        if let Ok(s) = new_exp.parse::<f64>() {
+            // dbg!(s);
+            return Ok(s);
+        }
     }
 
     let mut new_exp = new_exp
@@ -348,7 +365,7 @@ pub fn eval_str_to_f64(
                     .map(|x| x.floor().to_string())
                     .unwrap_or_default()
             )
-                .into();
+            .into();
             let is_uda = k.starts_with(":");
             if is_uda && !uda_context_added {
                 let refno_str = context.get("RS_DES_REFNO").unwrap();
@@ -356,7 +373,7 @@ pub fn eval_str_to_f64(
                 // dbg!(&k);
                 let uda_map = NamedAttrMap::default();
                 #[cfg(not(target_arch = "wasm32"))]
-                    let uda_map = tokio::task::block_in_place(|| {
+                let uda_map = tokio::task::block_in_place(|| {
                     tokio::runtime::Handle::current().block_on(async move {
                         let d = crate::get_named_attmap_with_uda(refno, false)
                             .await
@@ -405,7 +422,10 @@ pub fn eval_str_to_f64(
                 found_replaced = true;
             } else if is_some_param {
                 // 匹配到没有别的嵌套，比如 cos(DESP[1])，这种应该cos(DESP[1])整体结果为 0
-                if dtse_unit == "DIST" {
+                // dbg!(&result_exp);
+                let hash_fallback_value =
+                    context.get("EXPR_HAS_DEFAULT").unwrap_or_default() == "true";
+                if dtse_unit == "DIST" && (!hash_fallback_value) {
                     result_exp = result_exp.replace(s, "NaN");
                     let re = Regex::new(r"\w+\(NaN\)").unwrap();
                     result_exp = re.replace_all(&result_exp, "0.0").to_string();
@@ -537,7 +557,8 @@ pub fn eval_str_to_f64(
                     &input_expr
                 )))
             } else {
-                println!("输入表达式 : {}", &input_expr);
+                #[cfg(debug_assertions)]
+                println!("输入表达式有误 : {}", &input_expr);
                 // dbg!(&context);
                 // println!("计算后表达式 : {}", &result_string);
                 // let refno_str = context.get("RS_CATR_REFNO").unwrap().as_str();

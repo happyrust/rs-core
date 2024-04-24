@@ -1,5 +1,6 @@
 use crate::options::DbOption;
 use config::{Config, File};
+use crate::function::define_common_functions;
 use crate::SUL_DB;
 
 pub mod test_mdb;
@@ -41,4 +42,5 @@ pub async fn init_test_surreal() {
         .use_db(&db_option.project_name)
         .await
         .unwrap();
+    define_common_functions().await.unwrap();
 }

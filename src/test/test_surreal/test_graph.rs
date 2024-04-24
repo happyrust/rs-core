@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use petgraph::algo::all_simple_paths;
 use petgraph::graph::Graph;
 use petgraph::graph::NodeIndex;
@@ -7,9 +8,24 @@ use crate::graph::*;
 use crate::noun_graph::gen_noun_incoming_relate_sql;
 use crate::noun_graph::gen_noun_outcoming_relate_sql;
 use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
+use crate::petgraph::PetRefnoGraph;
+use crate::tool::db_tool::db1_hash;
 
 #[test]
-fn test_petgraph() {
+fn test_petgraph_search() {
+    let path = r#"E:\RustProject\new\gen-model\assets\pg\1112.pg"#;
+    let graph = PetRefnoGraph::load(path).unwrap();
+    dbg!(graph.node_indices.len());
+    let target_hashes = ["PAVE"].iter().map(|x| db1_hash(x)).collect::<HashSet<_>>();
+    let search = graph.search_path_refnos("17496_248588".into(), |hash|{
+        target_hashes.contains(&hash)
+    }).unwrap();
+
+    dbg!(&search.len());
+}
+
+#[test]
+fn test_petgraph_noun_path() {
     // 创建一个有向图
     let mut graph = DiGraphMap::new();
     let node_a = graph.add_node("A");

@@ -200,8 +200,6 @@ pub struct ShapeInstancesData {
     ///保存所有用到的的ngmr数据
     #[serde(skip)]
     pub ngmr_relate_map: HashMap<RefU64, Vec<RefU64>>,
-
-    // pub insterted_ids: DashSet<RefU64>
 }
 
 /// shape instances 的管理方法

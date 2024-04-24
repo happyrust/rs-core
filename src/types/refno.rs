@@ -49,6 +49,7 @@ enum RefnoVariant {
     Num(u64),
 }
 
+
 impl<'de> Deserialize<'de> for RefU64 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -207,15 +208,15 @@ impl Into<Vec<u8>> for RefU64 {
     }
 }
 
-impl BytesTrait for RefU64 {
-    fn to_bytes(&self) -> anyhow::Result<Vec<u8>> {
-        Ok(self.0.to_be_bytes().to_vec().into())
-    }
-
-    fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        Ok(Self(u64::from_be_bytes(bytes[..8].try_into()?)))
-    }
-}
+// impl BytesTrait for RefU64 {
+//     fn to_bytes(&self) -> anyhow::Result<Vec<u8>> {
+//         Ok(self.0.to_be_bytes().to_vec().into())
+//     }
+//
+//     fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+//         Ok(Self(u64::from_be_bytes(bytes[..8].try_into()?)))
+//     }
+// }
 
 impl Display for RefU64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -244,8 +245,14 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_inst_relate_key(&self) -> String {
+        self.to_table_key("inst_relate")
+    }
+
+    #[inline]
     pub fn to_table_key(&self, tbl: &str) -> String {
-        format!("{tbl}:⟨{}⟩", &self.to_string())
+        // format!("{tbl}:⟨{}⟩", &self.to_string())
+        format!("{tbl}:{}", &self.to_string())
     }
 
     #[inline]

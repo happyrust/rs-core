@@ -33,6 +33,7 @@ pub async fn query_filter_deep_children(
         let sql = format!(
             "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
         );
+        // println!("sql is {}", &sql);
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
             return Ok(result);
@@ -110,7 +111,7 @@ pub async fn query_filter_ancestors(
     if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun, &nouns_slice) {
         let pe_key = refno.to_pe_key();
         let sql = format!(
-            "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key}) where noun in [{nouns_str}]",
+            "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
         );
         let mut response = SUL_DB.query(&sql).with_stats().await?;
         if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {

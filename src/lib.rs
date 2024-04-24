@@ -78,6 +78,10 @@ pub mod math;
 
 pub mod file_helper;
 
+pub mod petgraph;
+
+pub mod db;
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod spatial;
 

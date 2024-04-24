@@ -47,6 +47,22 @@ fn test_gen_wire_25688_45314() {
 }
 
 #[test]
+fn test_gen_wire_24384_23612() {
+    let data = vec![
+        [23350, 0, 0],
+        [22200, 23350, 0],
+        [-23350, 23350, 0],
+        [-23350, 0, 0],
+    ];
+    let pts: Vec<Vec3> = data
+        .iter()
+        .map(|x| Vec3::new(x[0] as f32, x[1] as f32, x[2] as f32))
+        .collect::<Vec<_>>();
+    let fradius_vec = vec![0.0, 23350.0, 23350.0, 0.0];
+    gen_wire_shape(&pts, &fradius_vec, "25688_45314".into());
+}
+
+#[test]
 fn test_gen_wire_25688_45331() {
     let data = vec![
         [0.0, 0.0, 480.0],

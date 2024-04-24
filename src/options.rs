@@ -1,10 +1,12 @@
-use serde::{Serialize, Deserialize};
-use clap::Parser;
+use std::path::{Path, PathBuf};
 
+use crate::RefU64;
+use clap::Parser;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
-    #[clap(long, default_value="false")]
+    #[clap(long, default_value = "false")]
     pub enable_log: bool,
     #[clap(long)]
     pub total_sync: bool,
@@ -12,7 +14,7 @@ pub struct DbOption {
     pub sync_graph_db: Option<bool>,
     #[clap(long)]
     pub sync_tidb: Option<bool>,
-    #[clap(long, default_value="true")]
+    #[clap(long, default_value = "true")]
     pub sync_versioned: Option<bool>,
     #[clap(long)]
     pub sync_localdb: Option<bool>,
@@ -20,7 +22,7 @@ pub struct DbOption {
     pub incr_sync: bool,
     // #[clap(long)]
     // pub replace_insert: Option<bool>,
-    #[clap(long, default_value="10_0000")]
+    #[clap(long, default_value = "10_0000")]
     pub sync_chunk_size: Option<u32>,
 
     #[clap(long)]
@@ -69,6 +71,8 @@ pub struct DbOption {
     #[clap(long, default_value = "12.1SP4Projects")]
     pub project_path: String,
     pub included_projects: Vec<String>,
+    //覆盖project的目录名
+    pub project_dirs: Option<Vec<String>>,
     #[clap(skip)]
     pub included_db_files: Option<Vec<String>>,
     #[clap(long)]
@@ -96,6 +100,10 @@ pub struct DbOption {
     pub debug_refno_types: Vec<String>,
     #[clap(long)]
     pub replace_mesh: bool,
+    #[clap(long)]
+    pub gen_mesh: bool,
+    #[clap(long)]
+    pub save_db: Option<bool>,
     #[clap(long)]
     pub need_sync_refno_basic: bool,
     #[clap(long)]
@@ -141,7 +149,7 @@ pub struct DbOption {
     #[clap(short)]
     pub only_sync_sys: bool,
     #[clap(long)]
-    pub plat_url:String,
+    pub plat_url: String,
     #[clap(long)]
     pub puhua_database_ip: String,
     #[clap(long)]
@@ -150,8 +158,37 @@ pub struct DbOption {
     pub puhua_database_password: String,
 }
 
+impl DbOption {
+    #[inline]
+    pub fn get_project_path(&self, project: &str) -> Option<PathBuf> {
+        let mut data_dir = Path::new(&self.project_path);
+        if self.project_dirs.is_none() {
+            Some(data_dir.join(project))
+        } else {
+            let index = self.included_projects.iter().position(|x| x == project)?;
+            Some(data_dir.join(&self.project_dirs.as_ref().unwrap()[index]))
+        }
+    }
 
-impl DbOption{
+    #[inline]
+    pub fn get_project_dir_names(&self) -> &Vec<String> {
+        self.project_dirs
+            .as_ref()
+            .unwrap_or(&self.included_projects)
+    }
+
+    #[inline]
+    pub fn is_save_db(&self) -> bool {
+        self.save_db.unwrap_or(true)
+    }
+
+    #[inline]
+    pub fn get_debug_refnos(&self) -> Vec<RefU64> {
+        self.debug_root_refnos
+            .as_ref()
+            .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
+            .unwrap_or_default()
+    }
 
     #[inline]
     pub fn get_version_db_conn_str(&self) -> String {

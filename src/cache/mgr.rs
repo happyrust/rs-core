@@ -23,6 +23,18 @@ pub const CACHE_SLED_NAME: &'static str = "cache.rdb";
 const TABLE: TableDefinition<u64, &[u8]> = TableDefinition::new("my_data");
 
 
+// pub trait BytesTrait: Sized + bincode::Decode + bincode::Encode {
+//     fn to_bytes(&self) -> anyhow::Result<Vec<u8>>{
+//         let config = bincode::config::standard();
+//         Ok(bincode::encode_to_vec(&self, config)?.into())
+//     }
+//     fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self>{
+//         let config = bincode::config::standard();
+//         let (s, _): (Self, usize) = bincode::decode_from_slice(bytes, config)?;
+//         Ok(s)
+//     }
+// }
+
 pub trait BytesTrait: Sized + Serialize + DeserializeOwned {
     fn to_bytes(&self) -> anyhow::Result<Vec<u8>>{
         Ok(bincode::serialize(&self)?.into())
@@ -72,20 +84,20 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
     }
 
     pub fn save_to_file(&self, path: &str) -> anyhow::Result<bool>{
-        let bytes = bincode::serialize(&self.map)?;
-        let mut file = std::fs::File::create(path)?;
-        file.write_all(&bytes);
+        // let bytes = bincode::serialize(&self.map)?;
+        // let mut file = std::fs::File::create(path)?;
+        // file.write_all(&bytes);
         Ok(true)
     }
 
     pub fn load_map_from_file(&self, path: &str) -> anyhow::Result<bool>{
-        let mut file = std::fs::File::open(path)?;
-        let mut bytes = vec![];
-        file.read_to_end(&mut bytes)?;
-        let map = bincode::deserialize::<DashMap<RefU64, T>>(&bytes)?;
-        for (k, v) in map.into_iter() {
-            self.map.insert(k, v);
-        }
+        // let mut file = std::fs::File::open(path)?;
+        // let mut bytes = vec![];
+        // file.read_to_end(&mut bytes)?;
+        // let map = bincode::deserialize::<DashMap<RefU64, T>>(&bytes)?;
+        // for (k, v) in map.into_iter() {
+        //     self.map.insert(k, v);
+        // }
         Ok(true)
     }
 

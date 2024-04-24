@@ -521,7 +521,7 @@ impl NamedAttrMap {
         };
 
         sjson.remove(sjson.len() - 1);
-        sjson.push_str(&format!(",REFNO: {},", refno.to_pe_key()));
+        sjson.push_str(&format!(r#", "REFNO": {}, "#, refno.to_pe_key()));
         for (key, val) in record_map.into_iter() {
             if val.is_unset() && excludes.contains(&key.as_str()) {
                 continue;
@@ -597,14 +597,10 @@ impl NamedAttrMap {
             sjson.push_str(&format!(r#", "udas": [{}]"#, uda_json_vec.join(",")));
         }
         sjson.push_str("}");
-
-        // if refno.get_1() == 124126 {
-        //     println!("uda sjon: {}", sjson);
-        // }
-
         Some(sjson)
     }
 
+    #[inline]
     pub fn get_matrix(&self) -> Option<Affine3A> {
         let mut affine = Affine3A::IDENTITY;
         let pos = self.get_f32_vec("POS")?;
@@ -823,12 +819,8 @@ impl NamedAttrMap {
                     }
                 }
                 _ => {
-                    let ang = self.get_f32_vec("ORI")?;
-                    let mat = glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
-                        * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-                        * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32);
-
-                    quat = Quat::from_mat3(&mat);
+                    let angs = self.get_vec3("ORI")?;
+                    quat = angles_to_ori(angs)?;
                 }
             }
         }

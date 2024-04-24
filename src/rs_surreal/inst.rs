@@ -1,11 +1,11 @@
-use bevy_transform::components::Transform;
-use glam::Vec3;
-use serde_derive::{Deserialize, Serialize};
-use crate::{RefU64, SUL_DB};
-use serde_with::serde_as;
-use parry3d::bounding_volume::Aabb;
 use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
+use crate::{RefU64, SUL_DB};
+use bevy_transform::components::Transform;
+use glam::Vec3;
+use parry3d::bounding_volume::Aabb;
+use serde_derive::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,21 +18,34 @@ pub struct TubiInstQuery {
     pub geo_hash: String,
 }
 
-pub async fn query_tubi_insts_by_brans(bran_refnos: &[RefU64]) -> anyhow::Result<Vec<TubiInstQuery>> {
-    let pes: String = bran_refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
-    let mut response = SUL_DB
-        .query(format!(r#"
+pub async fn query_tubi_insts_by_brans(
+    bran_refnos: &[RefU64],
+) -> anyhow::Result<Vec<TubiInstQuery>> {
+    let pes: String = bran_refnos
+        .iter()
+        .map(|x| x.to_pe_key())
+        .collect::<Vec<_>>()
+        .join(",");
+    let sql = format!(
+        r#"
              select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
                 from  array::flatten([{}]->tubi_relate) where leave.id != none
-             "#, pes))
-        .await?;
+             "#,
+        pes
+    );
+    // println!("Query tubi insts: {}", &sql);
+    let mut response = SUL_DB.query(&sql).await?;
 
     let r = response.take::<Vec<TubiInstQuery>>(0)?;
     Ok(r)
 }
 
 pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<TubiInstQuery>> {
-    let pes: String = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
+    let pes: String = refnos
+        .iter()
+        .map(|x| x.to_pe_key())
+        .collect::<Vec<_>>()
+        .join(",");
     let mut response = SUL_DB
         .query(format!(r#"
         array::group(array::complement(select value
@@ -78,7 +91,6 @@ pub struct GeomInstQuery {
     pub pts: Option<Vec<Vec3>>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeomPtsQuery {
     #[serde(alias = "id")]
@@ -88,7 +100,9 @@ pub struct GeomPtsQuery {
     pub pts_group: Vec<(Transform, Option<Vec<Vec3>>)>,
 }
 
-pub async fn query_insts(refnos: impl IntoIterator<Item = &RefU64>) -> anyhow::Result<Vec<GeomInstQuery>> {
+pub async fn query_insts(
+    refnos: impl IntoIterator<Item = &RefU64>,
+) -> anyhow::Result<Vec<GeomInstQuery>> {
     let pes = refnos
         .into_iter()
         .map(|x| x.to_pe_key())
@@ -107,6 +121,3 @@ pub async fn query_insts(refnos: impl IntoIterator<Item = &RefU64>) -> anyhow::R
 
     Ok(geom_insts)
 }
-
-
-

@@ -2,6 +2,7 @@ use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode};
 use crate::pe::SPdmsElement;
 use crate::tool::db_tool::db1_dehash;
+use crate::tool::math_tool::*;
 use crate::types::*;
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
@@ -11,8 +12,6 @@ use dashmap::DashMap;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
-use std::f32::consts::E;
-use std::sync::Mutex;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -54,6 +53,16 @@ pub async fn get_ancestor(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
         .bind(("refno", refno.to_string()))
         .await?;
     let s = response.take::<Vec<RefU64>>(0);
+    Ok(s?)
+}
+
+#[cached(result = true)]
+pub async fn get_ancestor_types(refno: RefU64) -> anyhow::Result<Vec<String>> {
+    let mut response = SUL_DB
+        .query("fn::ancestor(type::thing('pe', $refno)).noun;")
+        .bind(("refno", refno.to_string()))
+        .await?;
+    let s = response.take::<Vec<String>>(0);
     Ok(s?)
 }
 
@@ -110,6 +119,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
     let mut keys = vec![];
     let mut unset_keys = vec![];
     let mut new_desp = None;
+    let mut tuples = vec![];
     for (k, v) in &attmap.map {
         if k == "REFNO" {
             continue;
@@ -121,6 +131,18 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     keys.push(k.to_owned());
                 } else {
                     unset_keys.push(k.to_owned());
+                }
+            }
+            NamedAttrValue::Vec3Type(d) => {
+                if k == "ORI" {
+                    tuples.push((
+                        k.clone(),
+                        NamedAttrValue::StringType(dquat_to_pdms_ori_xyz_str(
+                            &angles_to_dori(*d).unwrap_or_default(),
+                        )),
+                    ));
+                } else if k.contains("POS") {
+                    tuples.push((k.clone(), NamedAttrValue::StringType(vec3_to_xyz_str(*d))));
                 }
             }
             NamedAttrValue::F32VecType(d) => {
@@ -147,10 +169,15 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
         attmap.insert("DESP".to_owned(), NamedAttrValue::StringArrayType(new_desp));
         attmap.remove("UNIPAR");
     }
+
+    for (k, v) in tuples {
+        attmap.insert(k, v);
+    }
+
     let mut response = SUL_DB
         .query(format!(
-            // "select value fn::default_full_name(id) from [{}]",
-            "select value name from [{}]",
+            "select value fn::default_full_name(id) from [{}]",
+            // "select value name from [{}]",
             refno_fields.join(",")
         ))
         .await?;
@@ -215,7 +242,7 @@ pub async fn get_named_attmap_with_uda(
         .query(r#"
             --通过传递refno，查询属性值
     -- select fn::default_full_name(REFNO), * from only (type::thing("pe", $refno)).refno;
-    select REFNO.name as NAME, * from only (type::thing("pe", $refno)).refno fetch pe;
+    select fn::default_full_name(REFNO) as NAME, * from only (type::thing("pe", $refno)).refno fetch pe;
     select string::concat(string::concat(string::concat(':', if UDNA==none || string::len(UDNA)==0 { DYUDNA } else { UDNA }), '::'), UTYP) as u, DFLT as v from UDA where !UHIDE and (type::thing("pe", $refno)).noun in ELEL;
     -- uda 单独做个查询？
     select if  u.UDNA==none || string::len( u.UDNA)==0 { u.DYUDNA } else { u.UDNA } as u, v from (type::thing("ATT_UDA", $refno)).udas;
@@ -263,8 +290,8 @@ pub async fn get_named_attmap_with_uda(
 pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
     let mut response = SUL_DB
         .query(r#"
-            select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR]
-            [where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]] from only type::thing("pe", $refno) limit 1;
+            select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]]
+            from only type::thing("pe", $refno) limit 1;
         "#)
         .bind(("refno", refno.to_string()))
         .await?;
@@ -291,7 +318,7 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 #[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
     let mut response = SUL_DB
-        .query("(select in.* from (type::thing('pe', $refno))<-pe_owner")
+        .query("select value in.refno.* from (type::thing('pe', $refno))<-pe_owner")
         .bind(("refno", refno.to_string()))
         .await?;
     let o: SurlValue = response.take(0)?;
@@ -359,15 +386,31 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
     Ok(nodes)
 }
 
-pub async fn clear_all_cache(refno: RefU64){
+pub async fn clear_all_caches(refno: RefU64) {
+    GET_ANCESTOR.lock().await.cache_remove(&refno);
+    GET_PE.lock().await.cache_remove(&refno);
+    GET_TYPE_NAME.lock().await.cache_remove(&refno);
+    GET_SIBLINGS.lock().await.cache_remove(&refno);
+    GET_NAMED_ATTMAP.lock().await.cache_remove(&refno);
+    GET_NAMED_ATTMAP_WITH_UDA
+        .lock()
+        .await
+        .cache_remove(&(refno, true));
+    GET_NAMED_ATTMAP_WITH_UDA
+        .lock()
+        .await
+        .cache_remove(&(refno, false));
     GET_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
+    GET_CHILDREN_NAMED_ATTMAPS.lock().await.cache_remove(&refno);
+    GET_CAT_ATTMAP.lock().await.cache_remove(&refno);
+    GET_CAT_REFNO.lock().await.cache_remove(&refno);
+    GET_UI_NAMED_ATTMAP.lock().await.cache_remove(&refno);
+    GET_CHILDREN_PES.lock().await.cache_remove(&refno);
 }
 
 ///获得children
 #[cached(result = true)]
-pub async fn get_children_refnos(
-    refno: RefU64,
-) -> anyhow::Result<Vec<RefU64>> {
+pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let mut response = SUL_DB
         .query("select value in from type::thing('pe', $refno)<-pe_owner")
         .bind(("refno", refno.to_string()))

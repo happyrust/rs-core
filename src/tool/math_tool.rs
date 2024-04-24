@@ -194,6 +194,11 @@ pub fn quat_to_pdms_ori_str(rot: &Quat) -> String {
 }
 
 #[inline]
+pub fn vec3_to_xyz_str(pos: Vec3) -> String {
+    format!("X {:.3}mm, Y {:.3}mm, Z {:.3}mm", pos[0], pos[1], pos[2])
+}
+
+#[inline]
 pub fn quat_to_pdms_ori_xyz_str(rot: &Quat) -> String {
     let rot = DMat3::from_quat((*rot).as_dquat());
     let y_axis = &rot.y_axis;
@@ -221,22 +226,37 @@ pub fn dquat_to_pdms_ori_xyz_str(rot: &DQuat) -> String {
     )
 }
 
+#[inline]
+pub fn angles_to_ori(angs: Vec3) -> Option<Quat> {
+    let mat = Mat3::from_rotation_z(angs[2].to_radians())
+        * Mat3::from_rotation_y(angs[1].to_radians())
+        * Mat3::from_rotation_x(angs[0].to_radians());
+    Some(Quat::from_mat3(&mat))
+}
+
+#[inline]
+pub fn angles_to_dori(angs: Vec3) -> Option<DQuat> {
+    let mat = DMat3::from_rotation_z((angs[2] as f64).to_radians())
+        * DMat3::from_rotation_y((angs[1] as f64).to_radians())
+        * DMat3::from_rotation_x((angs[0] as f64).to_radians());
+    Some(DQuat::from_mat3(&mat))
+}
 
 #[test]
 fn test_convert_to_dir_string() {
-
-    let v = DVec3::new(-0.5150378973276237,
-                      -0.8571671240513605,
-                      0.0005357142014608308);
+    let v = DVec3::new(
+        -0.5150378973276237,
+        -0.8571671240513605,
+        0.0005357142014608308,
+    );
 
     // dbg!(convert_to_xyz(&to_pdms_dvec_str(&v)));
 
-    let v = DVec3::new( 0.00027591317024652014,
-                        0.0004591967205145638,
-                        0.9999998565051292);
+    let v = DVec3::new(
+        0.00027591317024652014,
+        0.0004591967205145638,
+        0.9999998565051292,
+    );
 
     dbg!(convert_to_xyz(&to_pdms_dvec_str(&v)));
-
-
-
 }

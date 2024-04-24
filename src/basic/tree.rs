@@ -10,33 +10,33 @@ use crate::RefU64;
 
 impl PdmsTree {
     pub fn serialize_to_bin_file(&self, db_code: u32) -> bool {
-        let mut file = File::create(format!("PdmsTree_{}.bin", db_code)).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
-        file.write_all(serialized.as_slice()).unwrap();
+        // let mut file = File::create(format!("PdmsTree_{}.bin", db_code)).unwrap();
+        // let serialized = bincode::serialize(&self).unwrap();
+        // file.write_all(serialized.as_slice()).unwrap();
         true
     }
 
     pub fn serialize_to_bin_file_with_name(&self, name: &str, db_code: u32) -> bool {
-        let mut file = File::create(format!("{name}_{db_code}.bin")).unwrap();
-        let serialized = bincode::serialize(&self).unwrap();
-        file.write_all(serialized.as_slice()).unwrap();
+        // let mut file = File::create(format!("{name}_{db_code}.bin")).unwrap();
+        // let serialized = bincode::serialize(&self).unwrap();
+        // file.write_all(serialized.as_slice()).unwrap();
         true
     }
 
-    pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
-        let mut file = File::open(format!("PdmsTree_{}.bin", db_code))?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        let r = bincode::deserialize(buf.as_slice())?;
-        Ok(r)
-    }
-    pub fn deserialize_from_bin_file_with_name(name: &str, db_code: u32) -> anyhow::Result<Self> {
-        let mut file = File::open(format!("{name}_{db_code}.bin"))?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        let r = bincode::deserialize(buf.as_slice())?;
-        Ok(r)
-    }
+    // pub fn deserialize_from_bin_file(db_code: u32) -> anyhow::Result<Self> {
+    //     // let mut file = File::open(format!("PdmsTree_{}.bin", db_code))?;
+    //     // let mut buf: Vec<u8> = Vec::new();
+    //     // file.read_to_end(&mut buf).ok();
+    //     // let r = bincode::deserialize(buf.as_slice())?;
+    //     Ok(r)
+    // }
+    // pub fn deserialize_from_bin_file_with_name(name: &str, db_code: u32) -> anyhow::Result<Self> {
+    //     // let mut file = File::open(format!("{name}_{db_code}.bin"))?;
+    //     // let mut buf: Vec<u8> = Vec::new();
+    //     // file.read_to_end(&mut buf).ok();
+    //     // let r = bincode::deserialize(buf.as_slice())?;
+    //     Ok(r)
+    // }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]

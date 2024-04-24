@@ -70,6 +70,7 @@ pub fn cal_ori_by_extru_axis(v: DVec3, neg: bool) -> DQuat {
 
     let x_dir = y_ref_dir.cross(v).normalize();
     let y_dir = v.cross(x_dir).normalize();
+    // dbg!((y_ref_dir, x_dir, y_dir, v));
     let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, v));
     rotation
 }
@@ -125,8 +126,15 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             pos += result.1;
             quat *= result.0;
 
+            let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
+            if att.contains_key("BANG") {
+                quat = quat * DQuat::from_rotation_z(bangle.to_radians());
+            }
+            // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
             translation = translation + rotation * pos;
-            rotation = rotation * quat;
+            // dbg!(translation);
+            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
+            rotation = quat;
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
             continue;
         }
@@ -155,6 +163,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                 (att.get_dposs(), att.get_dpose())
             };
             if let (Some(poss), Some(pose)) = (l_poss, l_pose) {
+                // dbg!((l_poss, l_pose));
                 need_bangle = true;
                 let z_axis = (pose - poss).normalize();
                 // dbg!(z_axis);
@@ -167,8 +176,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                 } else {
                     cal_ori_by_z_axis_ref_y(z_axis)
                 };
-
-                // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+                dbg!(dquat_to_pdms_ori_xyz_str(&quat));
             }
         }
 
@@ -385,6 +393,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
     let mut pos = DVec3::default();
     let mut quat = DQuat::IDENTITY;
     let mut spline_paths = get_spline_path(refno).await.unwrap_or_default();
+
     let mut sweep_paths = spline_paths
         .iter()
         .map(|x| x.generate_paths().0)
@@ -396,6 +405,10 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
     if spline_paths.is_empty() {
         return (quat, pos);
     }
+    let world_mat4 = Box::pin(get_world_mat4(refno))
+        .await
+        .unwrap_or_default()
+        .unwrap_or_default();
     let mut tmp_dist = zdis as f64;
     let mut tmp_porp = pkdi.clamp(0.0, 1.0);
     let start_len = (total_len * tmp_porp) as f64;
@@ -410,18 +423,30 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
         if tmp_dist > cur_len || i == lens.len() - 1 {
             match path {
                 SweepPath3D::Line(l) => {
-                    let mut dir = get_spline_line_dir(refno)
+                    let mut z_dir = get_spline_line_dir(refno)
                         .await
                         .unwrap_or_default()
                         .normalize_or_zero();
-                    if dir.length() == 0.0 {
-                        dir = (l.end - l.start).normalize().as_dvec3();
+                    // dbg!(z_dir);
+                    if z_dir.length() == 0.0 {
+                        z_dir = DVec3::Z;
+                        let mut y_dir = world_mat4.z_axis.truncate();
+                        if y_dir.normalize().dot(DVec3::Z).abs() > 0.999 {
+                            y_dir = DVec3::X
+                        };
+                        let x_dir = y_dir.cross(z_dir).normalize();
+                        quat = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, z_dir));
+                    } else {
+                        quat = cal_ori_by_extru_axis(z_dir, false);
+                        z_dir = DMat3::from_quat(quat).z_axis;
+
+                        let (_, w_quat, _) = world_mat4.to_scale_rotation_translation();
+                        quat = w_quat * quat;
                     }
-                    quat = cal_ori_by_extru_axis(dir, false);
-                    dir = DMat3::from_quat(quat).z_axis;
-                    pos += dir * tmp_dist + l.start.as_dvec3();
+
+                    pos += z_dir * tmp_dist + l.start.as_dvec3();
                     // dbg!(dir);
-                    // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat));
+                    // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
                     break;
                 }
                 SweepPath3D::SpineArc(arc) => {
@@ -458,7 +483,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
 }
 
 pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
-    let children_refs = super::get_children_refnos(refno, ).await?;
+    let children_refs = super::get_children_refnos(refno).await?;
     let mut paths = vec![];
     for x in children_refs {
         let type_name = super::get_type_name(x).await?;

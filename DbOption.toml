@@ -19,6 +19,7 @@ project_code = 1516
 module = "DESI"
 #是否生成模型数据
 gen_model = true
+gen_mesh = false
 mesh_tol_ratio = 3.0
 apply_boolean_operation = true
 #是否生成房间树
@@ -52,7 +53,7 @@ v_ip = "localhost"
 #v_ip = "50c170h624.zicp.vip"
 v_user = "root"
 v_password = ""
-v_port = "8002"
+v_port = "8003"
 #v_port = "38389"
 
 pe_chunk = 5000

@@ -25,6 +25,7 @@ use cavalier_contours::polyline::internal::pline_boolean::polyline_boolean;
 use clap::builder::TypedValueParser;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::f32::consts::PI;
+use std::panic::AssertUnwindSafe;
 
 use crate::prim_geo::basic::OccSharedShape;
 #[cfg(feature = "occ")]
@@ -35,7 +36,7 @@ use parry2d::math::Point;
 use truck_modeling::builder;
 
 #[derive(
-    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub enum CurveType {
     Fill,
@@ -475,6 +476,7 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                 let mut p0 = pt + (-v1) * l;
                 let mut p2 = pt + v2 * l;
                 // dbg!(last.distance(p0));
+                // dbg!(next.distance(p2));
                 if last.distance(p0) < remove_pos_tol {
                     p0 = last;
                 }
@@ -484,9 +486,13 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
                 let v1 = (pt - last).normalize();
                 let v2 = (next - pt).normalize();
                 let mut cur_ccw_sig = if v1.cross(v2).z > 0.0 { 1.0 } else { -1.0 };
-                let bulge = cur_ccw_sig * f64_trunc_3(bulge_from_angle(PI as f64 - angle));
+                let bulge = cur_ccw_sig * bulge_from_angle(PI as f64 - angle);
+                if bulge.abs() < 0.001 {
+                    dbg!((i, pt, bulge, p0, p2));
+                    polyline.add(pt.x, pt.y, 0.0);
+                    continue;
+                }
                 // #[cfg(debug_assertions)]
-                // dbg!((i, pt, bulge, p0, p2));
                 if let Some(l_pt) = polyline.vertex_data.last() {
                     let last_pt = DVec3::new(l_pt.x, l_pt.y, 0.0);
                     let pt_win = polyline.winding_number(Vector2::new(pt.x, pt.y));
@@ -518,8 +524,13 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
     #[cfg(debug_assertions)]
     println!("First try: {}", to_debug_json_str(&polyline));
 
-    let intrs = global_self_intersects(&polyline, &polyline.create_approx_aabb_index());
-    // dbg!(&intrs);
+    let Ok(intrs) =
+        std::panic::catch_unwind((|| {
+            global_self_intersects(&polyline, &polyline.create_approx_aabb_index())
+        }))
+        else {
+            return Err(anyhow!("Self intersect check failed"));
+        };
     let mut wires = vec![];
     if intrs.basic_intersects.is_empty() {
         for ply in [polyline] {
@@ -545,6 +556,7 @@ pub fn gen_occ_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<
             wires.push(Wire::from_edges(&edges));
         }
     } else {
+        dbg!(&intrs.basic_intersects.len());
         // dbg!(&intrs);
         wires = gen_occ_special_wires(&pts, &fradius_vec)?;
     }
@@ -629,8 +641,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
             }
             let mut cur_ccw_sig = if v1.cross(v2).z > 0.0 { 1.0 } else { -1.0 };
             //如果v1 v2 方向相同，则继续沿用之前的 is_concave
-            if v1.dot(v2) > 0.99 {
-            } else if v1.dot(v2) < -0.99 {
+            if v1.dot(v2) > 0.99 {} else if v1.dot(v2) < -0.99 {
                 //如果v1 v2 方向相反，则取之前的!is_concave
                 is_concave = !is_concave;
             } else {
@@ -816,7 +827,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 if let Some(intr) = intrs.basic_intersects.pop() {
                     if polyline.vertex_data.last().unwrap().bulge_is_zero()
                         && (intr.start_index2 == polyline.vertex_data.len() - 1
-                            || intr.start_index2 == polyline.vertex_data.len() - 2)
+                        || intr.start_index2 == polyline.vertex_data.len() - 2)
                     {
                         need_remove = true;
                     }
@@ -882,7 +893,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 },
             );
             if result.pos_plines.is_empty() {
-                dbg!(
+                println!(
                     "cut failed: {}, {}",
                     to_debug_json_str(&polyline),
                     to_debug_json_str(&neg)
@@ -975,8 +986,8 @@ fn global_self_intersects<T>(
     polyline: &Polyline<T>,
     aabb_index: &StaticAABB2DIndex<T>,
 ) -> PlineIntersectsCollection<T>
-where
-    T: Real,
+    where
+        T: Real,
 {
     let mut intrs = Vec::new();
     let mut overlapping_intrs = Vec::new();

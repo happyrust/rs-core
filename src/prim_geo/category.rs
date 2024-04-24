@@ -514,7 +514,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 empty = true;
             }
             if empty{
-                dbg!((d.refno, paax_dir, pbax_dir, z_dir));
+                // dbg!((d.refno, paax_dir, pbax_dir, z_dir));
             }
             z_dir = paax_dir
                 .cross(pbax_dir)

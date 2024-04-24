@@ -204,19 +204,20 @@ impl AccelerationTree {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn serialize_to_bin_file(&self) -> anyhow::Result<bool> {
         // let mut file = File::create(format!(r"accel_tree.bin{}", "")).unwrap();
-        let mut file = File::create("accel_tree.bin")?;
-        let serialized = bincode::serialize(&self)?;
-        file.write_all(serialized.as_slice())?;
+        // let mut file = File::create("accel_tree.bin")?;
+        // let serialized = bincode::serialize(&self)?;
+        // file.write_all(serialized.as_slice())?;
         Ok(true)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn load_from_bin_file(&self) -> anyhow::Result<Self> {
-        let mut file = File::open("accel_tree.bin").unwrap();
-        let mut buf: Vec<u8> = Vec::new();
-        let _ = file.read_to_end(&mut buf);
-        Ok(bincode::deserialize(&buf)?)
-    }
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn load_from_bin_file(&self) -> anyhow::Result<Self> {
+    //     let mut file = File::open("accel_tree.bin").unwrap();
+    //     let mut buf: Vec<u8> = Vec::new();
+    //     let _ = file.read_to_end(&mut buf);
+    //     let (r, _) = bincode::decode_from_slice(&buf, bincode::config::standard())?;
+    //     Ok(r)
+    // }
 
     pub async fn get_tri_mesh(&self, refno: RefU64) -> Option<Ref<RefU64, Vec<TriMesh>>> {
         if let Some(r) = self.mesh_cache.get(&refno)  {

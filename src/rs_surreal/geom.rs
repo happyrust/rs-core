@@ -11,25 +11,37 @@ use std::sync::Mutex;
 
 ///通过surql查询pe数据
 #[cached(result = true)]
-pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_deep_visible_inst_refnos(
+    refno: RefU64,
+    include_neg: bool,
+) -> anyhow::Result<Vec<RefU64>> {
     let types = super::get_self_and_owner_type_name(refno).await?;
     // dbg!(&types);
     if types[1] == "BRAN" || types[1] == "HANG" {
         return Ok(vec![refno]);
     }
     if types[0] == "BRAN" || types[0] == "HANG" {
-        let children_refnos = super::get_children_refnos(refno, ).await?;
+        let children_refnos = super::get_children_refnos(refno).await?;
         return Ok(children_refnos);
     }
-    let branch_refnos = super::query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await?;
+    //按照所允许的层级关系去遍历？
+    let branch_refnos =
+        super::query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await?;
     // dbg!(&branch_refnos);
 
     let mut target_refnos = super::query_multi_children_refnos(&branch_refnos).await?;
 
-    let visible_refnos = super::query_filter_deep_children(refno, VISBILE_GEO_NOUNS.map(String::from).to_vec()).await?;
+    let visible_refnos =
+        super::query_filter_deep_children(refno, VISBILE_GEO_NOUNS.map(String::from).to_vec())
+            .await?;
     // dbg!(&visible_refnos);
 
+    let neg_refnos =
+        super::query_filter_deep_children(refno, TOTAL_NEG_NOUN_NAMES.map(String::from).to_vec())
+            .await?;
+
     target_refnos.extend(visible_refnos);
+    target_refnos.extend(neg_refnos);
     Ok(target_refnos)
 }
 
@@ -76,12 +88,15 @@ pub async fn query_refno_has_pos_neg_map(
         _ => &TOTAL_NEG_NOUN_NAMES.as_slice(),
     };
     //查询元件库下的负实体组合
-    let refnos = query_filter_deep_children(refno, nouns.iter().map(|&x| x.to_string()).collect()).await.unwrap();
+    let refnos = query_filter_deep_children(refno, nouns.iter().map(|&x| x.to_string()).collect())
+        .await
+        .unwrap();
     //使用SUL_DB通过这些参考号反过来query查找父节点
     let sql = format!(
          "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
          refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
      );
+    // println!("sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     let mut result = HashMap::new();
     if let Ok(r) = response.take::<Vec<RefnoHasNegPosInfo>>(0) {
@@ -90,7 +105,6 @@ pub async fn query_refno_has_pos_neg_map(
         }
     }
     Ok(result)
-
 }
 
 /// 查询具有正负实体映射关系的参考号集合
@@ -105,7 +119,6 @@ pub async fn query_refnos_has_pos_neg_map(
     refno: &[RefU64],
     is_cata: Option<bool>,
 ) -> anyhow::Result<HashMap<RefU64, Vec<RefU64>>> {
-    
     let mut result = HashMap::new();
     for &refno in refno {
         let mut map = query_refno_has_pos_neg_map(refno, is_cata).await?;
@@ -113,4 +126,3 @@ pub async fn query_refnos_has_pos_neg_map(
     }
     Ok(result)
 }
-
