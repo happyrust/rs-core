@@ -7,15 +7,29 @@ DEFINE FUNCTION fn::ancestor($r: record) {
 };
 
 
+DEFINE FUNCTION fn::default_name(
+    $pe: record,
+) {
+    return (select value (if name='' {string::join(" ", noun, <string> (array::first(->pe_owner.id[1])+1) ) } else { name } ) from $pe)[0];
+};
+
+DEFINE FUNCTION fn::default_names(
+    $pes: array<record>,
+) {
+    return (select value (if name='' {string::join(" ", noun, <string> (array::first(->pe_owner.id[1])+1) ) } else { name } ) from $pes);
+};
+
+
 DEFINE FUNCTION fn::default_full_name($r: record) {
-    return if !$r.is_default_name {
+    return if $r.name != '' && $r.name != none {
         return $r.name;
-    } else if !$r.owner.is_default_name {
-        return string::concat($r.name, " OF ", $r.owner.noun, ' ', $r.owner.name);
+    } else if $r.owner.name != '' && $r.owner.name != none {
+        return string::concat(fn::default_name($r), " OF ", $r.owner.noun, ' ', $r.owner.name);
     } else {
         let $a = fn::ancestor($r);
-        let $b = array::find_index($a.is_default_name, false);
+        let $b = array::len($a) - array::find_index(array::reverse($a).name, '');
         let $i = array::slice($a, 0, $b);
-        return string::concat(array::join($i.name, " OF "), " OF ", $a[$b].noun, ' ', $a[$b].name);
+        let $c = $b + 1;
+        return string::concat(array::join(fn::default_names($i), " OF "), " OF ", $a[$c].noun, ' ', $a[$c].name);
     };
 };

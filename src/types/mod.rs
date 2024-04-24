@@ -12,6 +12,8 @@ pub mod pe;
 pub mod rs_transform;
 pub mod hash;
 
+pub mod table;
+
 use glam::u32;
 pub use refno::*;
 

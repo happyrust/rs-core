@@ -12,6 +12,9 @@ use dashmap::DashMap;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
+use itertools::Itertools;
+use crate::table::ToTable;
+use crate::types::table;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -27,6 +30,15 @@ pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
         .bind(("refno", refno.to_string()))
         .await?;
     let pe: Option<SPdmsElement> = response.take(0)?;
+    Ok(pe)
+}
+
+pub async fn get_default_name(refno: RefU64) -> anyhow::Result<Option<String>> {
+    let mut response = SUL_DB
+        .query("fn::default_name(type::thing('pe', $refno));")
+        .bind(("refno", refno.to_string()))
+        .await?;
+    let pe: Option<String> = response.take(0)?;
     Ok(pe)
 }
 
@@ -86,7 +98,17 @@ pub async fn get_type_name(refno: RefU64) -> anyhow::Result<String> {
         .bind(("refno", refno.to_string()))
         .await?;
     let type_name: Option<String> = response.take(0)?;
-    Ok(type_name.unwrap_or_default())
+    Ok(type_name.unwrap_or("unset".to_owned()))
+}
+
+pub async fn get_type_names(refnos: &[RefU64]) -> anyhow::Result<Vec<String>> {
+    // let pe_keys = refnos.to_table_key("pe");
+    let pe_keys = refnos.iter().map(|x| x.to_pe_key()).join(",");
+    let mut response = SUL_DB
+        .query(format!(r#"select value noun from [{}]"#, pe_keys))
+        .await?;
+    let type_names: Vec<String> = response.take(0)?;
+    Ok(type_names)
 }
 
 #[cached(result = true)]
@@ -318,7 +340,7 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 #[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
     let mut response = SUL_DB
-        .query("select value in.refno.* from (type::thing('pe', $refno))<-pe_owner")
+        .query("select value in.refno.* from (type::thing('pe', $refno))<-pe_owner where in.id!=none")
         .bind(("refno", refno.to_string()))
         .await?;
     let o: SurlValue = response.take(0)?;
@@ -331,7 +353,7 @@ pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<Nam
 #[cached(result = true)]
 pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>> {
     let mut response = SUL_DB
-        .query(r#"select value in.* from type::thing("pe", $refno)<-pe_owner"#)
+        .query(r#"select value in.* from type::thing("pe", $refno)<-pe_owner where in.id!=none"#)
         .bind(("refno", refno.to_string()))
         .await?;
     let pes: Vec<SPdmsElement> = response.take(0)?;
@@ -345,10 +367,10 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
         .collect::<Vec<_>>()
         .join(",");
     let sql = if types.is_empty() {
-        format!(r#"select value in from {}<-pe_owner"#, refno.to_pe_key())
+        format!(r#"select value in from {}<-pe_owner where in.id!=none"#, refno.to_pe_key())
     } else {
         format!(
-            r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] "#,
+            r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] where in.id!=none"#,
             refno.to_pe_key()
         )
     };

@@ -37,6 +37,7 @@ use opencascade::primitives::*;
 use sea_query::*;
 use crate::geometry::{EleInstGeo, EleInstGeosData};
 use crate::parsed_data::CateAxisParam;
+use crate::pe::SPdmsElement;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -486,6 +487,7 @@ impl Into<PdmsElement> for EleTreeNode {
         }
     }
 }
+
 
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]

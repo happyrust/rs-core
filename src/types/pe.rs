@@ -12,8 +12,6 @@ pub struct SPdmsElement {
     pub refno: RefU64,
     pub owner: RefU64,
     pub name: String,
-    //是否是默认名称, 如果时默认名称更新时，需要update到具体的名称
-    pub is_default_name: bool,
     pub noun: String,
     pub dbnum: i32,
     pub e3d_version: i32,
@@ -28,13 +26,13 @@ pub struct SPdmsElement {
     pub cata_hash: String,
     ///锁定模型
     pub lock: bool,
+    pub deleted: bool,
 }
 
 impl SPdmsElement {
     pub fn gen_sur_json(&self) -> String {
         let mut json_string = to_string_pretty(&json!({
             "name": self.name,
-            "is_default_name": self.is_default_name,
             "noun": self.noun,
             "dbnum": self.dbnum,
             "e3d_version": self.e3d_version,
@@ -42,6 +40,7 @@ impl SPdmsElement {
             "status_tag": self.status_tag,
             "cata_hash": self.cata_hash,
             "lock": self.lock,
+            "deleted": self.deleted,
         }))
         .unwrap();
         json_string.remove(json_string.len() - 1);
@@ -53,7 +52,6 @@ impl SPdmsElement {
         json_string.push_str(&format!(r#""id": {},"#, self.refno.to_pe_key()));
         json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
         json_string.push_str("}");
-        // println!("json string: {}", &json_string);
         json_string
     }
 
