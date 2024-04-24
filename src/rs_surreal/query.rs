@@ -370,11 +370,11 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
         format!(r#"select value in from {}<-pe_owner where in.id!=none"#, refno.to_pe_key())
     } else {
         format!(
-            r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] where in.id!=none"#,
+            r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] and in.id!=none"#,
             refno.to_pe_key()
         )
     };
-    // dbg!(&sql);
+    // println!("query_filter_children: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let pes: Vec<RefU64> = response.take(0)?;
     Ok(pes)
@@ -384,12 +384,12 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
 pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
     let mut response = SUL_DB
         .query(r#"
-            select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner,
-                array::len(select value id from in<-pe_owner) as children_count from (type::thing("pe", $refno))<-pe_owner
+            select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
+                 array::len(select value id from <-pe_owner) as children_count from (type::thing("pe", $refno))<-pe_owner
         "#)
         .bind(("refno", refno.to_string()))
         .await?;
-    let mut nodes: Vec<EleTreeNode> = response.take(0)?;
+    let mut nodes: Vec<EleTreeNode> = response.take(0).unwrap();
     //检查名称，如果没有给名字的，需要给上默认值, todo 后续如果是删除了又增加，名称后面的数字可能会继续增加
     let mut hashmap: HashMap<&str, i32> = HashMap::new();
     for node in &mut nodes {

@@ -698,11 +698,10 @@ impl BrepShapeTrait for SweepSolid {
     fn get_trans(&self) -> bevy_transform::prelude::Transform {
         match &self.profile {
             CateProfileParam::SANN(_p) => {
-                let translation = Vec3::ZERO;
                 return bevy_transform::prelude::Transform {
                     rotation: Quat::IDENTITY,
                     scale: self.get_scaled_vec3(),
-                    translation,
+                    translation: Vec3::ZERO,
                 };
             }
             CateProfileParam::SPRO(_) | CateProfileParam::SREC(_) => {

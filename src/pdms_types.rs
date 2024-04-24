@@ -59,8 +59,7 @@ pub const GNERAL_LOOP_NOUN_NAMES: [&'static str; 2] = ["PLOO", "LOOP"];
 
 ///负实体基本体的种类
 pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
-    "NSCY",
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV", "NSCY"
 ];
 
 ///元件库的负实体类型
@@ -124,7 +123,7 @@ pub const VISBILE_GEO_NOUNS: [&'static str; 38] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "EXTR", "REVO",
     "FLOOR", "PANE", 
     "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
-    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL","SCTN", "NOZZ",
+    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL","SCTN", "NOZZ"
 ];
 
 
@@ -446,6 +445,11 @@ pub trait PdmsNodeTrait {
     fn get_children_count(&self) -> usize {
         0
     }
+
+    #[inline]
+    fn get_order(&self) -> usize {
+        0
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -454,7 +458,9 @@ pub struct EleTreeNode {
     pub noun: String,
     pub name: String,
     pub owner: RefU64,
-    pub children_count: usize,
+    #[serde(default)]
+    pub order: u16,
+    pub children_count: u16,
 }
 
 impl EleTreeNode {
@@ -463,27 +469,16 @@ impl EleTreeNode {
         noun: String,
         name: String,
         owner: RefU64,
-        children_count: usize,
+        order: u16,
+        children_count: u16,
     ) -> Self {
         Self {
             refno,
             noun,
             name,
             owner,
+            order,
             children_count,
-        }
-    }
-}
-
-impl Into<PdmsElement> for EleTreeNode {
-    fn into(self) -> PdmsElement {
-        PdmsElement {
-            refno: self.refno,
-            owner: self.owner,
-            name: self.name,
-            noun: self.noun,
-            version: 0,
-            children_count: self.children_count,
         }
     }
 }
@@ -512,7 +507,12 @@ impl PdmsNodeTrait for EleTreeNode {
 
     #[inline]
     fn get_children_count(&self) -> usize {
-        self.children_count
+        self.children_count as _
+    }
+
+    #[inline]
+    fn get_order(&self) -> usize {
+        self.order as _
     }
 }
 

@@ -23,13 +23,13 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor query and variable assignments in geom.rs and common.surql&#10;&#10;Optimized the method for fetching children refnos by removing unnecessary checks in geom.rs. Refactored variable assignments in common.surql inside HVAC's section for improved code readability. Made minor edits in workspace.xml. Additional minor changes were made across multiple files to facilitate the above improvements.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Modify query functions and update variable assignments&#10;&#10;Tweaked &quot;get_children_named_attmaps&quot; and &quot;get_children_pes&quot; in query.rs to exclude non-existent records. Revised variable assignments in the common.surql file for better readability. Also, removed the unused attribute &quot;is_default_name&quot; from pe.rs.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/spine.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/spine.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -772,7 +772,7 @@
       <workItem from="1713757224472" duration="16843000" />
       <workItem from="1713864541744" duration="1636000" />
       <workItem from="1713885088896" duration="11731000" />
-      <workItem from="1713944474156" duration="4001000" />
+      <workItem from="1713944474156" duration="5804000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1117,7 +1117,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="306" />
+    <option name="localTasksCounter" value="307" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1160,7 +1160,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Add HVAC calculations and update geometry definition in pdms_shape.rs&#10;&#10;This update includes HVAC-related calculations in new SurQL files and adjusts the geometry definition in pdms_shape.rs. Target architecture conditions and additional functions are introduced for differentiating WASM from non-WASM builds. The commit also includes several new files contributing to HVAC computation logic, as well as a batch file for running the database scripts." />
     <MESSAGE value="Update geometry definition and add HVAC calculations&#10;&#10;The code has been updated to include HVAC-related calculations in new SurQL files and make adjustments to the geometry definition in pdms_shape.rs. Several new files contributing to HVAC computation logic are added, while distinguishing WASM from non-WASM builds through target architecture condition checks. Additionally, a new batch file is created for running the database scripts." />
     <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization" />
     <MESSAGE value="Refactor attribute value handling and improve SQL queries&#10;&#10;Made adjustments to the handling of the 'RefU64Type' in 'NamedAttrValue' to improve string representation. Optimized SQL queries in 'graph.rs' by revising criteria and introduced 'inst.rs' for query helper functions. In addition, a minor update was made in 'pdms_types.rs' to include an empty vector initialization handling and improved performance." />
@@ -1185,7 +1184,8 @@
     <MESSAGE value="Minor code adjustments and refno updates&#10;&#10;Updated refno values in test files, made minor code adjustments to improve readability and efficiency, and updated DbOption.toml v_port setting for updated service port. Also, included optional rendering feature conditionally in shape module." />
     <MESSAGE value="Optimize query for children refnos and update variable assignments&#10;&#10;Refactored the method to fetch children refnos by removing unnecessary checks and optimizing query implementations. Also updated variable assignments in HVAC's common.surql for better code readability. Minor changes were made to the workspace.xml file." />
     <MESSAGE value="Refactor query and variable assignments in geom.rs and common.surql&#10;&#10;Optimized the method for fetching children refnos by removing unnecessary checks in geom.rs. Refactored variable assignments in common.surql inside HVAC's section for improved code readability. Made minor edits in workspace.xml. Additional minor changes were made across multiple files to facilitate the above improvements." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor query and variable assignments in geom.rs and common.surql&#10;&#10;Optimized the method for fetching children refnos by removing unnecessary checks in geom.rs. Refactored variable assignments in common.surql inside HVAC's section for improved code readability. Made minor edits in workspace.xml. Additional minor changes were made across multiple files to facilitate the above improvements." />
+    <MESSAGE value="Modify query functions and update variable assignments&#10;&#10;Tweaked &quot;get_children_named_attmaps&quot; and &quot;get_children_pes&quot; in query.rs to exclude non-existent records. Revised variable assignments in the common.surql file for better readability. Also, removed the unused attribute &quot;is_default_name&quot; from pe.rs." />
+    <option name="LAST_COMMIT_MESSAGE" value="Modify query functions and update variable assignments&#10;&#10;Tweaked &quot;get_children_named_attmaps&quot; and &quot;get_children_pes&quot; in query.rs to exclude non-existent records. Revised variable assignments in the common.surql file for better readability. Also, removed the unused attribute &quot;is_default_name&quot; from pe.rs." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -160,7 +160,7 @@ impl Spine3D {
             }
             SpineCurveType::CENT => {}
             SpineCurveType::LINE => {
-                // transform.translation = self.pt0;
+                transform.translation = self.pt0;
                 let extru = self.pt1 - self.pt0;
                 let extru_dir = extru.normalize();
                 let d = extru_dir.dot(pref_axis).abs();

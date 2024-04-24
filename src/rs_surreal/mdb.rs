@@ -53,6 +53,7 @@ pub async fn get_mdb_world_site_ele_nodes(
     // dbg!(&response);
     let mut nodes: Vec<EleTreeNode> = response.take(2)?;
     for (i, node) in nodes.iter_mut().enumerate() {
+        node.order = i as _;
         if node.name.is_empty() {
             node.name = format!("SITE {}", i+1);
         }
