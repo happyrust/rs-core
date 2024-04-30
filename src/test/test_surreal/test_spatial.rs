@@ -64,22 +64,30 @@ mod test_transform {
     }
 
     async fn test_transform(refno: RefU64, assert_ori: &str){
-        let transform = rs_surreal::get_world_transform(refno)
+        let transform = rs_surreal::get_world_mat4(refno)
             .await
             .unwrap().unwrap();
-        dbg!(transform);
-        let rot_mat = Mat3::from_quat(transform.rotation);
-        dbg!(rot_mat);
-        let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
-        dbg!(&ori_str);
+        let (scale, rot, translation) = transform.to_scale_rotation_translation();
+
+        dbg!(translation);
+        dbg!(dquat_to_pdms_ori_xyz_str(&rot));
+
+
+        // let rot_mat = Mat3::from_quat(transform.rotation);
+        // dbg!(rot_mat);
+        // let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
+        // dbg!(&ori_str);
         // assert_eq!(ori_str, assert_ori);
     }
 
     #[tokio::test]
     async fn test_query_transform_JLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
-        test_transform("17496/137181".into(), "Y is Z and Z is -Y 34.6032 -X").await;
+        // test_transform("17496/268322".into(), "Y is -Y and Z is -Z").await;
+        // test_transform("17496/268326".into(), "Y is -Y and Z is -Z").await;
+        test_transform("25688/48820".into(), "Y is Z and Z is X 33.955 Y").await;
+        // test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
+        // test_transform("17496/137181".into(), "Y is Z and Z is -Y 34.6032 -X").await;
         Ok(())
     }
 
@@ -87,6 +95,13 @@ mod test_transform {
     async fn test_query_transform_BOX() -> anyhow::Result<()> {
         init_test_surreal().await;
         test_transform("17496/171666".into(), "Y is -X 5 -Y 40 -Z and Z is -X 5 -Y 50 Z").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_SPINE() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        test_transform("17496/268345".into(), "Y is X 89.891 Z and Z is -X 0.1089 Z").await;
         Ok(())
     }
 
@@ -101,7 +116,9 @@ mod test_transform {
     async fn test_query_transform_PLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
 
-        test_transform("24384/28752".into(), "Y is -Y 31 -X 0.0307 Z and Z is X 31 -Y").await;
+        // test_transform("24384/28752".into(), "Y is -Y 31 -X 0.0307 Z and Z is X 31 -Y").await;
+        test_transform("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
+        test_transform("25688/48821".into(), "Y is X 33.955 Y and Z is Y 33.955 -X").await;
 
         Ok(())
     }

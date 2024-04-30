@@ -2,15 +2,15 @@ use crate::parsed_data::{CateProfileParam, SProfileData, SannData};
 use crate::prim_geo::spine::*;
 use crate::prim_geo::wire;
 #[cfg(feature = "truck")]
-use crate::shape::pdms_shape::{ BrepMathTrait, convert_to_cg_matrix4};
-use crate::shape::pdms_shape::{
-    BrepShapeTrait, VerifiedShape, ANGLE_RAD_F64_TOL,
-};
+use crate::shape::pdms_shape::{convert_to_cg_matrix4, BrepMathTrait};
+use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape, ANGLE_RAD_F64_TOL};
 use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_ori_str};
 use anyhow::anyhow;
 use approx::abs_diff_ne;
 use bevy_ecs::prelude::*;
 use bevy_math::prelude::*;
+use cavalier_contours::core::math::bulge_from_angle;
+use cavalier_contours::polyline::{seg_midpoint, PlineSourceMut, Polyline, PlineSource};
 use glam::*;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -27,22 +27,25 @@ use opencascade::angle::ToAngle;
 use opencascade::primitives::*;
 #[cfg(feature = "truck")]
 use truck_base::cgmath64::*;
+use crate::prim_geo::wire::polyline_to_debug_json_str;
 
 ///含有两边方向的，扫描体
 #[derive(
-    Component,
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Component,
+Debug,
+Clone,
+Serialize,
+Deserialize,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct SweepSolid {
     pub profile: CateProfileParam,
-    pub drns: DVec3,
-    pub drne: DVec3,
+    #[serde(default)]
+    pub drns_rot: DQuat,
+    #[serde(default)]
+    pub drne_rot: DQuat,
     pub bangle: f32,
     pub plax: Vec3,
     pub extrude_dir: DVec3,
@@ -59,16 +62,12 @@ impl SweepSolid {
 
     #[inline]
     pub fn is_drns_sloped(&self) -> bool {
-        let dot_s = self.drns.dot(self.extrude_dir);
-        abs_diff_ne!(dot_s.abs(), 1.0, epsilon = 0.001)
-            && abs_diff_ne!(dot_s.abs(), 0.0, epsilon = 0.001)
+        self.drns_rot.to_axis_angle().1.abs() > ANGLE_RAD_F64_TOL
     }
 
     #[inline]
     pub fn is_drne_sloped(&self) -> bool {
-        let dot_e = self.drne.dot(self.extrude_dir);
-        abs_diff_ne!(dot_e.abs(), 1.0, epsilon = 0.001)
-            && abs_diff_ne!(dot_e.abs(), 0.0, epsilon = 0.001)
+        self.drne_rot.to_axis_angle().1.abs() > ANGLE_RAD_F64_TOL
     }
 
     #[cfg(feature = "occ")]
@@ -85,6 +84,8 @@ impl SweepSolid {
             r1 = r2 + (sann.drad - sann.dwid - sann.pwidth) as f64;
             r2 = r2 + sann.drad as f64;
         };
+        // dbg!((r1, r2));
+        // dbg!(&self);
         let angle = sann.pangle.to_radians() as f64;
         let mut offset_pt = DVec3::ZERO;
         let mut rot_mat = DMat3::IDENTITY;
@@ -104,7 +105,7 @@ impl SweepSolid {
                     z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
-                // dbg!((x_axis, y_axis, z_axis));
+                dbg!((x_axis, y_axis, z_axis));
                 rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as _);
                 rot_mat =
@@ -125,15 +126,43 @@ impl SweepSolid {
         let p3 = DVec3::new(r2 * angle.cos(), r2 * angle.sin(), 0.0);
         let p4 = DVec3::new(r1 * angle.cos(), r1 * angle.sin(), 0.0);
 
-        // let center_pt = DVec3::ZERO;
         // dbg!((p1, p2, p3, p4));
-        //todo 需要坐错误处理
-        let mut wire = Wire::from_edges(&vec![
-            Edge::segment(p1, p2),
-            Edge::arc(p2, DVec3::new(0.0, r2, 0.0), p3),
-            Edge::segment(p3, p4),
-            Edge::arc(p4, DVec3::new(0.0, r1, 0.0), p1),
-        ]);
+        let mut polyline = Polyline::new_closed();
+        let bulge = bulge_from_angle(angle);
+        if r1 < 0.0001 {
+            polyline.add(p2.x, p2.y, bulge);
+            polyline.add(p3.x, p3.y, 0.0);
+            // Wire::from_edges(&vec![
+            //     Edge::segment(p1, p3),
+            //     Edge::arc(p2, DVec3::new(0.0, r2, 0.0), p1),
+            // ])
+        } else {
+            polyline.add(p1.x, p1.y, 0.0);
+            polyline.add(p2.x, p2.y, bulge);
+            polyline.add(p3.x, p3.y, -bulge);
+            polyline.add(p4.x, p4.y, 0.0);
+        };
+
+        println!("Sweep polyline is {}", polyline_to_debug_json_str(&polyline));
+
+        let mut edges = vec![];
+        for (p, q) in polyline.iter_segments() {
+            if p.bulge.abs() < 0.0001 {
+                edges.push(Edge::segment(
+                    DVec3::new(p.x, p.y, 0.0),
+                    DVec3::new(q.x, q.y, 0.0),
+                ));
+            } else {
+                let m = seg_midpoint(p, q);
+                edges.push(Edge::arc(
+                    DVec3::new(p.x, p.y, 0.0),
+                    DVec3::new(m.x, m.y, 0.0),
+                    DVec3::new(q.x, q.y, 0.0),
+                ));
+            }
+        }
+        let mut wire = Wire::from_edges(&edges);
+
         let offset = offset_pt + DVec3::new(origin.x, origin.y, 0.0);
         let translation = DMat4::from_translation(offset);
         let r_trans_mat = DMat4::from_translation(r_translation);
@@ -141,6 +170,7 @@ impl SweepSolid {
         let m = DMat3::from_quat(beta_rot);
         let beta_mat = DMat4::from_mat3(m);
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
+        // dbg!(final_mat);
 
         Ok(wire.transformed_by_gmat(&final_mat)?)
     }
@@ -391,8 +421,6 @@ impl Default for SweepSolid {
     fn default() -> Self {
         Self {
             profile: CateProfileParam::UNKOWN,
-            drns: Default::default(),
-            drne: Default::default(),
             bangle: 0.0,
             plax: Vec3::Z,
             extrude_dir: DVec3::Z,
@@ -567,15 +595,14 @@ impl BrepShapeTrait for SweepSolid {
 
         if let Some(mut wire) = profile_wire {
             //check if valid
-            if self.drns.is_nan() || self.drne.is_nan() {
-                return Err(anyhow!("drns or drne is nan"));
-            }
+            // if self.drns.is_nan() || self.drne.is_nan() {
+            //     return Err(anyhow!("drns or drne is nan"));
+            // }
 
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
                     let rot_angle = arc.angle;
                     let rot_axis = if arc.clock_wise { -DVec3::Z } else { DVec3::Z };
-                    // let axis = Axis::new(Vec3::ZERO, rot_axis);
                     let r =
                         wire.to_face()
                             .revolve(DVec3::ZERO, rot_axis, Some(rot_angle.radians()));
@@ -583,59 +610,67 @@ impl BrepShapeTrait for SweepSolid {
                 }
                 SweepPath3D::Line(l) => {
                     let mut wires = vec![];
-                    let mut transform_btm = DMat4::IDENTITY;
-                    let mut transform_top = DMat4::IDENTITY;
-                    if self.drns.is_normalized() && self.is_drns_sloped() {
-                        // println!("drns {:?}  is sloped", self.drns);
-                        let mut x_angle = self.drns.angle_between(DVec3::X);
-                        let x = x_angle.sin().abs();
-                        if x < ANGLE_RAD_F64_TOL {
-                            return Err(anyhow!("drns is aligned to x"));
-                        }
-                        let scale_x = 1.0 / x;
+                    // let mut transform_btm = DMat4::from_quat(self.drns_rot);
+                    // let mut transform_top = DMat4::from_quat(self.drne_rot);
 
-                        let mut y_angle = self.drns.angle_between(DVec3::Y);
-                        let y = y_angle.sin().abs();
-                        if y < ANGLE_RAD_F64_TOL {
-                            return Err(anyhow!("drns is aligned to y"));
-                        }
-                        let scale_y = 1.0 / y;
-                        let rot_x = FRAC_PI_2 - x_angle;
-                        let rot_y = FRAC_PI_2 - y_angle;
-                        // dbg!((x_angle, rot_x, rot_y));
+                    let mut transform_btm = DMat4::default();
+                    let mut transform_top = DMat4::default();
 
-                        let rotation =
-                            DMat4::from_rotation_y(rot_x) * DMat4::from_rotation_x(rot_y);
-                        transform_btm =
-                            rotation * DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
-                    }
-                    if self.drne.is_normalized() && self.is_drne_sloped() {
-                        // println!("drne {:?}  is sloped", self.drne);
-                        let mut x_angle = (-self.drne).angle_between(DVec3::X);
-                        let rot_x = (FRAC_PI_2 - x_angle);
-                        let x = x_angle.sin().abs();
-                        if x < ANGLE_RAD_F64_TOL {
-                            return Err(anyhow!("drne is aligned to x"));
-                        }
-                        let scale_x = 1.0 / x;
+                    //在实际中，是以X轴为主轴
+                    // if self.is_drns_sloped() {
+                    //     let drns = self.drns.unwrap();
+                    //     // println!("drns {:?}  is sloped", self.drns);
+                    //     let mut x_angle = drns.angle_between(DVec3::X);
+                    //     let rot_x_angle = FRAC_PI_2 - x_angle;
+                    //     let x = x_angle.sin().abs();
+                    //     if x < ANGLE_RAD_F64_TOL {
+                    //         return Err(anyhow!("drns is aligned to x"));
+                    //     }
+                    //     let scale_x = 1.0 / x;
+                    //
+                    //     let mut y_angle = drns.angle_between(DVec3::Y);
+                    //     let y = y_angle.sin().abs();
+                    //     if y < ANGLE_RAD_F64_TOL {
+                    //         return Err(anyhow!("drns is aligned to y"));
+                    //     }
+                    //     let scale_y = 1.0 / y;
+                    //
+                    //     let rot_y_angle = FRAC_PI_2 - y_angle;
+                    //
+                    //     // dbg!((x_angle, rot_x_angle, rot_y_angle, scale_x, scale_y));
+                    //
+                    //     let rotation =
+                    //         DMat4::from_rotation_y(rot_x_angle) * DMat4::from_rotation_x(rot_y_angle);
+                    //     // transform_btm =
+                    //     //     rotation * DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
+                    // }
+                    // if self.is_drne_sloped() {
+                    //     // println!("drne {:?}  is sloped", self.drne);
+                    //     let drne = self.drne.unwrap();
+                    //     let mut x_angle = (-drne).angle_between(DVec3::X);
+                    //     let rot_x = (FRAC_PI_2 - x_angle);
+                    //     let x = x_angle.sin().abs();
+                    //     if x < ANGLE_RAD_F64_TOL {
+                    //         return Err(anyhow!("drne is aligned to x"));
+                    //     }
+                    //     let scale_x = 1.0 / x;
+                    //
+                    //     let mut y_angle = (-drne).angle_between(DVec3::Y);
+                    //     let rot_y = (FRAC_PI_2 - y_angle);
+                    //     let y = y_angle.sin().abs();
+                    //     if y < ANGLE_RAD_F64_TOL {
+                    //         return Err(anyhow!("drne is aligned to y"));
+                    //     }
+                    //     let scale_y = 1.0 / y;
+                    //     //todo need to fix, why above -0.7 is not correct
+                    //     // dbg!((x_angle, rot_x, rot_y, scale_x, scale_y));
+                    //
+                    //     let rotation =
+                    //         DMat4::from_rotation_y(rot_x) * DMat4::from_rotation_x(rot_y);
+                    //     // transform_top =
+                    //     //     rotation * DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
+                    // }
 
-                        let mut y_angle = (-self.drne).angle_between(DVec3::Y);
-                        let rot_y = (FRAC_PI_2 - y_angle);
-                        let y = y_angle.sin().abs();
-                        if y < ANGLE_RAD_F64_TOL {
-                            return Err(anyhow!("drne is aligned to y"));
-                        }
-                        let scale_y = 1.0 / y;
-                        //todo need to fix, why above -0.7 is not correct
-                        // dbg!((x_angle, rot_x, rot_y, scale_x, scale_y));
-
-                        let rotation =
-                            DMat4::from_rotation_y(rot_x) * DMat4::from_rotation_x(rot_y);
-                        transform_top =
-                            rotation * DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
-                    }
-                    // transform_top =
-                    //     DMat4::from_translation(DVec3::new(0.0, 0.0, l.length() as f64)) * transform_top;
                     transform_top.w_axis = DVec4::new(0.0, 0.0, l.length() as f64, 1.0);
                     wires.push(wire.transformed_by_gmat(&transform_btm)?);
                     if let Some(mut top_wire) = top_profile_wire {

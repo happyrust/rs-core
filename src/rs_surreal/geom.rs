@@ -13,7 +13,6 @@ use std::sync::Mutex;
 #[cached(result = true)]
 pub async fn query_deep_visible_inst_refnos(
     refno: RefU64,
-    include_neg: bool,
 ) -> anyhow::Result<Vec<RefU64>> {
     let types = super::get_self_and_owner_type_name(refno).await?;
     // dbg!(&types);
@@ -34,15 +33,18 @@ pub async fn query_deep_visible_inst_refnos(
     let visible_refnos =
         super::query_filter_deep_children(refno, VISBILE_GEO_NOUNS.map(String::from).to_vec())
             .await?;
-    // dbg!(&visible_refnos);
-
-    let neg_refnos =
-        super::query_filter_deep_children(refno, TOTAL_NEG_NOUN_NAMES.map(String::from).to_vec())
-            .await?;
-
     target_refnos.extend(visible_refnos);
-    target_refnos.extend(neg_refnos);
     Ok(target_refnos)
+}
+
+#[cached(result = true)]
+pub async fn query_deep_neg_inst_refnos(
+    refno: RefU64,
+) -> anyhow::Result<Vec<RefU64>> {
+    let neg_refnos =
+            super::query_filter_deep_children(refno, TOTAL_NEG_NOUN_NAMES.map(String::from).to_vec())
+                .await?;
+    Ok(neg_refnos)
 }
 
 //leave_or_arrive: true: leave, false: arrive

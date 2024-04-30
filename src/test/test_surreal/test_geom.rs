@@ -8,11 +8,11 @@ use surrealdb::sql::Thing;
 async fn test_query_inst_refnos() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let mut time = Instant::now();
-    let refnos = rs_surreal::query_deep_visible_inst_refnos("17496_248588".into(), false)
+    let refnos = rs_surreal::query_deep_visible_inst_refnos("17496_296344".into())
         .await
         .unwrap();
     dbg!(time.elapsed().as_secs_f32());
-    // dbg!(refnos);
+    dbg!(refnos);
     Ok(())
 }
 

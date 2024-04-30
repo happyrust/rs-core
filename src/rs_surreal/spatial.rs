@@ -113,17 +113,22 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
     for atts in ancestors.windows(2) {
         let o_att = &atts[0];
         let att = &atts[1];
+        let cur_type = att.get_type_str();
         let refno = att.get_refno().unwrap_or_default();
         let owner = o_att.get_refno_or_default();
+
         let mut pos = att.get_position().unwrap_or_default().as_dvec3();
         // dbg!(pos);
         let mut quat = DQuat::IDENTITY;
         //土建特殊情况的一些处理
-        if att.contains_key("ZDIS") {
+        if att.contains_key("ZDIS") && (!att.contains_key("POSL")) {
             let zdist = att.get_f32("ZDIS").unwrap_or_default();
             let pkdi = att.get_f32("PKDI").unwrap_or_default();
+            // let o_poss = o_att.get_poss().unwrap_or_default().as_dvec3();
+            // let o_pos = o_att.get_position().unwrap_or_default().as_dvec3();
+            //zdis 起点应该是从poss 开始，所以这里需要加上这个偏移
             let result = cal_zdis_pkdi_in_section(owner, pkdi, zdist).await;
-            pos += result.1;
+            pos += (result.1) ;
             quat *= result.0;
 
             let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
@@ -131,6 +136,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
             }
             // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+            // dbg!(translation);
             translation = translation + rotation * pos;
             // dbg!(translation);
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
@@ -176,7 +182,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                 } else {
                     cal_ori_by_z_axis_ref_y(z_axis)
                 };
-                dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+                // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
             }
         }
 
@@ -266,32 +272,43 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                     }
                 }
             }
-            let y_axis = if att.contains_key("YDIR") {
-                //忽略X方向的偏移，投影到 YZ 平面
-                let mut v = att.get_dvec3("YDIR").unwrap_or_default();
-                v.x = 0.0;
-                if v.length() == 0.0 {
-                    DVec3::Z
-                } else {
-                    v.normalize()
-                }
+            let mut z_axis = if is_lmirror {
+                -pline_plax
             } else {
-                //和LMIRROR 有关系
-                if is_lmirror {
-                    -pline_plax
-                } else {
-                    pline_plax
+                pline_plax
+            };
+            if att.contains_key("YDIR") {
+                //忽略X方向的偏移，投影到 YZ 平面
+                if let Some(v) = att.get_dvec3("YDIR"){
+                    //x 有值就代表需要使用自定义哦的YDIR
+                    if v.y != 0.0{
+                        // y_axis = if v.length() == 0.0 {
+                        //     DVec3::Z
+                        // } else {
+                        //     v.normalize()
+                        // };
+                        z_axis = v.normalize();
+                    }
+                }
+            }
+            // dbg!(z_axis);
+            let new_quat = {
+                // let z_axis = pos_draw_dir.unwrap_or(DVec3::X);
+                // let z_axis = DVec3::X;
+                // let x_axis = z_axis.cross(z_axis).normalize();
+                // DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
+                if cur_type == "FITT" {
+
+                    let zdist = att.get_f32("ZDIS").unwrap_or_default() as f64;
+                    pos += zdist * DVec3::Z;
+                    let y_axis = DVec3::NEG_Z;
+                    let x_axis = y_axis.cross(z_axis).normalize();
+                    // dbg!((x_axis, y_axis, z_axis));
+                    DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
+                }else {
+                    cal_ori_by_z_axis_ref_y(z_axis) * quat
                 }
             };
-            // dbg!(y_axis);
-            let posl_quat = {
-                // let z_axis = pos_draw_dir.unwrap_or(DVec3::X);
-                let z_axis = DVec3::X;
-                let x_axis = y_axis.cross(z_axis).normalize();
-                DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
-            };
-            // dbg!(dquat_to_pdms_ori_xyz_str(&posl_quat));
-            let new_quat = posl_quat * quat;
             // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat));
             translation += rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
 
@@ -392,7 +409,7 @@ pub async fn query_pline(refno: RefU64, jusl: String) -> anyhow::Result<Option<P
 pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (DQuat, DVec3) {
     let mut pos = DVec3::default();
     let mut quat = DQuat::IDENTITY;
-    let mut spline_paths = get_spline_path(refno).await.unwrap_or_default();
+    let mut spline_paths = get_spline_path(refno).await.unwrap();
 
     let mut sweep_paths = spline_paths
         .iter()
@@ -402,6 +419,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
     let lens: Vec<f32> = sweep_paths.iter().map(|x| x.length()).collect::<Vec<_>>();
     let total_len: f32 = lens.iter().sum();
     // dbg!(&spline_paths);
+    // dbg!(&sweep_paths);
     if spline_paths.is_empty() {
         return (quat, pos);
     }
@@ -427,7 +445,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
                         .await
                         .unwrap_or_default()
                         .normalize_or_zero();
-                    // dbg!(z_dir);
+                    // dbg!(&l);
                     if z_dir.length() == 0.0 {
                         z_dir = DVec3::Z;
                         let mut y_dir = world_mat4.z_axis.truncate();
@@ -444,7 +462,10 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
                         quat = w_quat * quat;
                     }
 
-                    pos += z_dir * tmp_dist + l.start.as_dvec3();
+                    let spine = &spline_paths[i];
+                    // dbg!(spine);
+                    //l 的数据都是从0开始的，所以这里不需要加上 start
+                    pos += z_dir * tmp_dist + spine.pt0.as_dvec3();
                     // dbg!(dir);
                     // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
                     break;
@@ -467,12 +488,14 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
                         pos = arc_center + arc_radius * DVec3::new(theta.cos(), theta.sin(), 0.0);
                         let y_axis = DVec3::Z;
                         let mut x_axis = (arc_center - pos).normalize();
-                        if arc.clock_wise {
-                            x_axis = -x_axis;
-                        }
+                        // dbg!(x_axis);
+                        // if arc.clock_wise {
+                        //     x_axis = -x_axis;
+                        // }
+                        // dbg!(arc.clock_wise);
                         let z_axis = x_axis.cross(y_axis).normalize();
                         quat = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
-                        // dbg!(quat_to_pdms_ori_str(&quat));
+                        // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
                     }
                 }
                 _ => {}
@@ -483,76 +506,68 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
 }
 
 pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
-    let children_refs = super::get_children_refnos(refno).await?;
+    let type_name = crate::get_type_name(refno).await?;
+    // dbg!(&type_name);
     let mut paths = vec![];
-    for x in children_refs {
-        let type_name = super::get_type_name(x).await?;
-        if type_name != "SPINE" {
-            continue;
-        }
-        let spine_att = super::get_named_attmap(x).await?;
-        let children_atts = super::get_children_named_attmaps(x).await?;
-        if children_atts.is_empty() {
-            return Ok(vec![]);
-        }
-        if (children_atts.len() - 1) % 2 == 0 {
-            for i in 0..(children_atts.len() - 1) / 2 {
-                let att1 = &(children_atts[2 * i]);
-                let att2 = &(children_atts[2 * i + 1]);
-                let att3 = &(children_atts[2 * i + 2]);
-                let pt0 = att1.get_position().unwrap_or_default();
-                let pt1 = att3.get_position().unwrap_or_default();
-                let mid_pt = att2.get_position().unwrap_or_default();
-                let cur_type_str = att2.get_str("CURTYP").unwrap_or("unset");
-                let curve_type = match cur_type_str {
-                    "CENT" => SpineCurveType::CENT,
-                    "THRU" => SpineCurveType::THRU,
-                    _ => SpineCurveType::UNKNOWN,
-                };
-                paths.push(Spine3D {
-                    refno: att2.get_refno().unwrap_or_default(),
-                    pt0,
-                    pt1,
-                    thru_pt: mid_pt,
-                    center_pt: mid_pt,
-                    cond_pos: att2.get_vec3("CPOS").unwrap_or_default(),
-                    curve_type,
-                    preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
-                    radius: att2.get_f32("RADI").unwrap_or_default(),
-                });
+    if type_name == "GENSEC" || type_name == "WALL" {
+        let children_refs = crate::get_children_refnos(refno).await.unwrap_or_default();
+        // dbg!(&children_refs);
+        for &x in children_refs.iter() {
+            let spine_att = crate::get_named_attmap(x).await?;
+            // dbg!(&spine_att.get_type_str());
+            if spine_att.get_type_str() != "SPINE" {
+                continue;
             }
-        } else if children_atts.len() == 2 {
-            let att1 = &children_atts[0];
-            let att2 = &children_atts[1];
-            let pt0 = att1.get_position().unwrap_or_default();
-            let pt1 = att2.get_position().unwrap_or_default();
-            if att1.get_type_str() == "POINSP" && att2.get_type_str() == "POINSP" {
-                paths.push(Spine3D {
-                    pt0,
-                    pt1,
-                    curve_type: SpineCurveType::LINE,
-                    preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
-                    ..Default::default()
-                });
+            let ch_atts = crate::get_children_named_attmaps(x).await.unwrap_or_default();
+            let len = ch_atts.len();
+            if len < 1 { continue; }
+
+            let mut i = 0;
+            while i < ch_atts.len() - 1 {
+                let att1 = &ch_atts[i];
+                let t1 = att1.get_type_str();
+                let att2 = &ch_atts[(i+1)%len];
+                let t2 = att2.get_type_str();
+                if t1 == "POINSP" && t2 == "POINSP" {
+                    paths.push(Spine3D {
+                        refno: att1.get_refno().unwrap(),
+                        pt0: att1.get_position().unwrap_or_default(),
+                        pt1: att2.get_position().unwrap_or_default(),
+                        curve_type: SpineCurveType::LINE,
+                        preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
+                        ..Default::default()
+                    });
+                    // dbg!(&paths);
+                    i += 1;
+                } else if t1 == "POINSP" && t2 == "CURVE" {
+                    let att3 = &ch_atts[(i+2)%len];
+                    let pt0 = att1.get_position().unwrap_or_default();
+                    let pt1 = att3.get_position().unwrap_or_default();
+                    let mid_pt = att2.get_position().unwrap_or_default();
+                    let cur_type_str = att2.get_str("CURTYP").unwrap_or("unset");
+                    let curve_type = match cur_type_str {
+                        "CENT" => { SpineCurveType::CENT }
+                        "THRU" => { SpineCurveType::THRU }
+                        _ => { SpineCurveType::UNKNOWN }
+                    };
+                    paths.push(Spine3D {
+                        refno: att2.get_refno().unwrap(),
+                        pt0,
+                        pt1,
+                        thru_pt: mid_pt,
+                        center_pt: mid_pt,
+                        cond_pos: att2.get_vec3("CPOS").unwrap_or_default(),
+                        curve_type,
+                        preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
+                        radius: att2.get_f32("RAD").unwrap_or_default(),
+                    });
+                    i += 2;
+                }
             }
         }
     }
 
-    //考虑sctn这种直接拉升出来的情况
-    if paths.is_empty() {
-        let att = super::get_named_attmap(refno).await?;
-        if let Some(poss) = att.get_poss()
-            && let Some(pose) = att.get_pose()
-        {
-            paths.push(Spine3D {
-                pt0: poss,
-                pt1: pose,
-                curve_type: SpineCurveType::LINE,
-                preferred_dir: Vec3::Z,
-                ..Default::default()
-            });
-        }
-    }
+    // dbg!(&paths);
 
     Ok(paths)
 }

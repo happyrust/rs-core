@@ -1,15 +1,15 @@
-use std::collections::HashSet;
-use petgraph::algo::all_simple_paths;
-use petgraph::graph::Graph;
-use petgraph::graph::NodeIndex;
-use petgraph::graphmap::DiGraphMap;
-use petgraph::graphmap::GraphMap;
 use crate::graph::*;
 use crate::noun_graph::gen_noun_incoming_relate_sql;
 use crate::noun_graph::gen_noun_outcoming_relate_sql;
 use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
 use crate::petgraph::PetRefnoGraph;
 use crate::tool::db_tool::db1_hash;
+use petgraph::algo::all_simple_paths;
+use petgraph::graph::Graph;
+use petgraph::graph::NodeIndex;
+use petgraph::graphmap::DiGraphMap;
+use petgraph::graphmap::GraphMap;
+use std::collections::HashSet;
 
 #[test]
 fn test_petgraph_search() {
@@ -17,9 +17,9 @@ fn test_petgraph_search() {
     let graph = PetRefnoGraph::load(path).unwrap();
     dbg!(graph.node_indices.len());
     let target_hashes = ["PAVE"].iter().map(|x| db1_hash(x)).collect::<HashSet<_>>();
-    let search = graph.search_path_refnos("17496_248588".into(), |hash|{
-        target_hashes.contains(&hash)
-    }).unwrap();
+    let search = graph
+        .search_path_refnos("17496_248588".into(), |hash| target_hashes.contains(&hash))
+        .unwrap();
 
     dbg!(&search.len());
 }
@@ -69,11 +69,18 @@ fn test_petgraph_noun_path() {
 #[tokio::test]
 async fn test_query_refnos_skip_inst() -> anyhow::Result<()> {
     super::init_test_surreal().await;
-    let refno = "24384/24828".into(); // Replace with your desired refno value
+    let refno = "24384/24828".into();
 
     // let result = query_filter_deep_children(refno, crate::pdms_types::VISBILE_GEO_NOUNS.map(String::from).to_vec() ).await?;
     // dbg!(&result);
-    let result = query_deep_children_filter_inst(refno, crate::pdms_types::VISBILE_GEO_NOUNS.map(String::from).to_vec(), true).await?;
+    let result = query_deep_children_filter_inst(
+        refno,
+        crate::pdms_types::VISBILE_GEO_NOUNS
+            .map(String::from)
+            .to_vec(),
+        true,
+    )
+    .await?;
     dbg!(&result);
 
     Ok(())
@@ -84,12 +91,14 @@ async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let refno = "17496/171102".into(); // Replace with your desired refno value
     let result = query_filter_all_bran_hangs(refno).await?;
+    dbg!(&result.len());
+
+    let result = query_filter_deep_children(
+        refno,
+        CATA_WITHOUT_REUSE_GEO_NAMES.map(String::from).to_vec(),
+    )
+    .await?;
     dbg!(&result);
-
-    let result = query_filter_deep_children(refno, CATA_WITHOUT_REUSE_GEO_NAMES.map(String::from).to_vec()).await?;
-    dbg!(&result);
-
-
 
     let refno = "17496/171180".into(); // Replace with your desired refno value
     let result = query_filter_all_bran_hangs(refno).await?;
@@ -105,7 +114,10 @@ async fn test_query_ancestor_filter() -> anyhow::Result<()> {
     super::init_test_surreal().await;
     let refno = "25688/7957".into();
     // let type_name = crate::get_type_name(refno).await?;
-    let target = crate::query_filter_ancestors(refno, vec!["STWALL".to_string(), "ZONE".to_string()]).await.unwrap();
+    let target =
+        crate::query_filter_ancestors(refno, vec!["STWALL".to_string(), "ZONE".to_string()])
+            .await
+            .unwrap();
     dbg!(target);
     Ok(())
 }

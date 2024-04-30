@@ -228,7 +228,6 @@ impl ShapeInstancesData {
                 }],
                 aabb: Some(unit_cyli_aabb),
                 type_name: "TUBI".to_string(),
-                ptset_map: Default::default(),
             },
         );
         self.insert_geos_data(
@@ -251,7 +250,6 @@ impl ShapeInstancesData {
                 }],
                 aabb: Some(unit_box_aabb),
                 type_name: "BOXI".to_string(),
-                ptset_map: Default::default(),
             },
         );
     }
@@ -524,9 +522,6 @@ pub struct EleInstGeosData {
 
     pub aabb: Option<Aabb>,
     pub type_name: String,
-
-    #[serde(skip)]
-    pub ptset_map: BTreeMap<i32, CateAxisParam>,
 }
 
 impl EleInstGeosData {
@@ -546,7 +541,7 @@ impl EleInstGeosData {
             "id": self.inst_key.clone(),
             "type_name": self.type_name,
             "aabb": self.aabb,
-            "ptset_map": self.ptset_map,
+            // "ptset_map": self.ptset_map,
             "insts": self.insts,
         }))
         .unwrap();

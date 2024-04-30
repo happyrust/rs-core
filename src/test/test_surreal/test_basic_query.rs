@@ -138,12 +138,12 @@ from $refnos
 async fn test_query_attmap() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
-    let refno = "17496/269118".into();
+    let refno = "17496/201377".into();
     let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
 
-    let world = rs_surreal::get_world_refno("/ALL".into()).await.unwrap();
-    dbg!(world);
+    // let world = rs_surreal::get_world_refno("/ALL".into()).await.unwrap();
+    // dbg!(world);
 
     Ok(())
 }

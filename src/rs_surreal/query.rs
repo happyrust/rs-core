@@ -1,20 +1,20 @@
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode};
 use crate::pe::SPdmsElement;
+use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
-use crate::types::*;
+use crate::types::table;
+use crate::{types::*, graph::QUERY_DEEP_CHILDREN_REFNOS};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
 use cached::Cached;
 use dashmap::DashMap;
 use indexmap::IndexMap;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
-use itertools::Itertools;
-use crate::table::ToTable;
-use crate::types::table;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -340,7 +340,9 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 #[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
     let mut response = SUL_DB
-        .query("select value in.refno.* from (type::thing('pe', $refno))<-pe_owner where in.id!=none")
+        .query(
+            "select value in.refno.* from (type::thing('pe', $refno))<-pe_owner where in.id!=none",
+        )
         .bind(("refno", refno.to_string()))
         .await?;
     let o: SurlValue = response.take(0)?;
@@ -367,7 +369,10 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
         .collect::<Vec<_>>()
         .join(",");
     let sql = if types.is_empty() {
-        format!(r#"select value in from {}<-pe_owner where in.id!=none"#, refno.to_pe_key())
+        format!(
+            r#"select value in from {}<-pe_owner where in.id!=none"#,
+            refno.to_pe_key()
+        )
     } else {
         format!(
             r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] and in.id!=none"#,
@@ -385,11 +390,11 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
     let mut response = SUL_DB
         .query(r#"
             select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
-                 array::len(select value id from <-pe_owner) as children_count from (type::thing("pe", $refno))<-pe_owner
+                 array::len(in<-pe_owner) as children_count from (type::thing("pe", $refno))<-pe_owner
         "#)
         .bind(("refno", refno.to_string()))
         .await?;
-    let mut nodes: Vec<EleTreeNode> = response.take(0).unwrap();
+    let mut nodes: Vec<EleTreeNode> = response.take(0)?;
     //检查名称，如果没有给名字的，需要给上默认值, todo 后续如果是删除了又增加，名称后面的数字可能会继续增加
     let mut hashmap: HashMap<&str, i32> = HashMap::new();
     for node in &mut nodes {
@@ -410,6 +415,7 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
 
 pub async fn clear_all_caches(refno: RefU64) {
     GET_ANCESTOR.lock().await.cache_remove(&refno);
+    QUERY_DEEP_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_PE.lock().await.cache_remove(&refno);
     GET_TYPE_NAME.lock().await.cache_remove(&refno);
     GET_SIBLINGS.lock().await.cache_remove(&refno);
@@ -466,7 +472,7 @@ pub async fn query_group_by_cata_hash(
         .query(r#"
             let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from $refnos);
             select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
-                 (->inst_relate->inst_info)[0].ptset] as k, array::group(id) as v from $a group by k;
+                 type::thing('inst_info', cata_hash).ptset] as k, array::group(id) as v from $a group by k;
         "#)
         .bind(("refnos", keys))
         .await?;

@@ -99,12 +99,15 @@ pub fn gen_noun_outcoming_relate_sql(start_noun: &str, filter_nouns: &[&str]) ->
 
 /// 获取与指定终止名词相关的路径，传入的参数是终止名词和过滤名词列表
 pub fn gen_noun_incoming_relate_sql(end_noun: &str, filter_nouns: &[&str]) -> Option<String> {
-    let paths = filter_nouns
+    let mut paths = filter_nouns
         .into_iter()
         .map(|n| {
             find_noun_path(n, end_noun)
                 .into_iter()
-                .map(|x: Vec<String>| x.into_iter().rev().collect::<Vec<_>>())
+                .map(|x: Vec<String>| {
+                    let mut v = x.into_iter().rev().collect::<Vec<_>>();
+                    v
+                })
                 .collect::<Vec<_>>()
         })
         .filter(|x| !x.is_empty())

@@ -7,16 +7,25 @@ DEFINE FUNCTION fn::ancestor($r: record) {
 };
 
 
+
+DEFINE FUNCTION fn::order(
+    $pe: record,
+) {
+    return if array::first($pe->pe_owner.id[1]) == none { 0 } else { array::first($pe->pe_owner.id[1]) };
+};
+
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
-    return (select value (if name='' {string::join(" ", noun, <string> (array::first(->pe_owner.id[1])+1) ) } else { name } ) from $pe)[0];
+    return (select value (if name='' {string::join(" ", noun, <string> (
+        fn::order($pe) + 1) ) } else { name } ) from $pe)[0];
 };
 
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
-    return (select value (if name='' {string::join(" ", noun, <string> (array::first(->pe_owner.id[1])+1) ) } else { name } ) from $pes);
+    return (select value (if name='' {string::join(" ", noun,<string> (
+       fn::order(id) + 1) ) } else { name } ) from $pes);
 };
 
 

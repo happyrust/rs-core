@@ -461,6 +461,8 @@ pub struct EleTreeNode {
     #[serde(default)]
     pub order: u16,
     pub children_count: u16,
+    #[serde(default)]
+    pub deleted: bool,
 }
 
 impl EleTreeNode {
@@ -471,6 +473,7 @@ impl EleTreeNode {
         owner: RefU64,
         order: u16,
         children_count: u16,
+        deleted: bool,
     ) -> Self {
         Self {
             refno,
@@ -479,6 +482,7 @@ impl EleTreeNode {
             owner,
             order,
             children_count,
+            deleted
         }
     }
 }

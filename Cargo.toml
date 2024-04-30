@@ -22,7 +22,7 @@ strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25"
 smol_str = { version = "0.2.0", features = ["serde"] }
 glam = { version = "0.25.0", features = ["serde", "rkyv"]}
-id_tree = { version = "1.8.0", features = ["serde_support"] }
+id_tree = { path = "../id-tree", features = ["serde_support"] }
 dashmap = { version = "5.2.0", features = ["serde"] }
 hexasphere = "10.0.0"
 anyhow = "1.0.57"
@@ -75,7 +75,7 @@ serde_with = "3.3.0"
 
 
 geo = "0.28.0"
-cavalier_contours ={ path = "../cavalier_contours/cavalier_contours"}
+cavalier_contours ={ path = "../cavalier_contours/cavalier_contours", features = ["serde"]}
 indexmap = { version="2.0.0", features=["serde"] }
 pretty-hex = "0.4.0"
 once_cell_serde = "1.17.1"

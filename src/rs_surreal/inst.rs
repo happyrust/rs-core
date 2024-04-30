@@ -108,16 +108,17 @@ pub async fn query_insts(
         .map(|x| x.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
-    //and out.meshed
-    let mut response = SUL_DB
-        .query(format!(r#"
+
+    let sql = format!(r#"
                     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
             if neg_refnos != none && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos')  }} as insts
-            from array::flatten([{}]->inst_relate) where aabb.d != none
-            "#, pes))
-        .await
-        .unwrap();
-    let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
+            from array::flatten([{pes}]->inst_relate) where aabb.d != none
+            "#);
+    // println!("Query insts: {}", &sql);
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let mut geom_insts: Vec<GeomInstQuery> = response.take(0).unwrap();
 
     Ok(geom_insts)
 }

@@ -1,13 +1,48 @@
 use crate::prim_geo::basic::OccSharedShape;
-use crate::prim_geo::wire::{gen_occ_wires, to_debug_json_str};
+use crate::prim_geo::wire::{gen_occ_wires, gen_polyline, polyline_to_debug_json_str};
 use crate::shape::pdms_shape::PlantMesh;
-use crate::RefU64;
-use cavalier_contours::pline_closed;
-use cavalier_contours::polyline::{seg_midpoint, BooleanOp, PlineSource, Polyline};
+use crate::{RefU64, SUL_DB};
+use cavalier_contours::{pline_closed, polyline};
+use cavalier_contours::polyline::{seg_midpoint, BooleanOp, PlineSource, Polyline, PlineVertex};
 use geo::{ConvexHull, LineString, Polygon};
 use glam::{DVec3, Vec3};
 use opencascade::primitives::{Edge, Face, IntoShape, Wire};
 use std::fmt::format;
+use crate::test::test_surreal::init_test_surreal;
+
+pub async fn test_wire_from_loop(refno: RefU64){
+
+    let mut response = SUL_DB.query(format!(r#"
+        select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD]  from {}<-pe_owner
+    "#, refno.to_pe_key())).await.unwrap();
+    let mut points: Vec<DVec3> = response.take(0).unwrap();
+
+    gen_polyline(&points);
+}
+
+pub async fn test_wire_from_floor(refno: RefU64){
+
+}
+
+
+#[tokio::test]
+pub async fn test_wire_by_loop() {
+    init_test_surreal().await;
+    //方向为逆时针, 有自相交，第一条相交边为直线，第二条相交边为弧线
+    // test_wire_from_loop("17496/229991".into()).await;
+    //方向为逆时针
+    // test_wire_from_loop("25688/72074".into()).await;
+    // 顺时针，第一条相交边为弧线，第二条相交边为直线，有自相交， 然后有弧线和弧线的相交
+    test_wire_from_loop("24381/34882".into()).await;
+
+    //特殊情况，有很多相交点
+    // test_wire_from_loop("25688/71809".into()).await;
+    // test_wire_from_loop("17496/230100".into()).await;
+    // test_wire_from_loop("17496/230145".into()).await;
+    //方向为顺时针
+    // test_wire_from_loop("25688/72300".into()).await;
+
+}
 
 fn gen_wire_shape(pts: &Vec<Vec3>, fradius: &Vec<f32>, refno: RefU64) {
     let wires = gen_occ_wires(pts, fradius).unwrap();
@@ -281,7 +316,7 @@ fn test_occ_wire_overlap_tolerance() {
     if !result.pos_plines.is_empty() {
         dbg!(&result.pos_plines);
         let p = result.pos_plines.remove(0).pline;
-        println!("final: {}", to_debug_json_str(&p));
+        println!("final: {}", polyline_to_debug_json_str(&p));
     } else {
         dbg!("cut failed");
     }

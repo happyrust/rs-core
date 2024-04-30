@@ -34,6 +34,56 @@ pub struct Spine3D {
 }
 
 
+impl Spine3D {
+
+    //获取两端的方向，如果是直线段，就是直线的方向，如果是圆弧，就是切线的方向
+    pub fn get_dir(&self, start_or_end: bool) -> Vec3 {
+        match self.curve_type {
+
+            SpineCurveType::LINE => {
+                if start_or_end {
+                    (self.pt1 - self.pt0).normalize_or_zero()
+                } else {
+                    (self.pt0 - self.pt1).normalize_or_zero()
+                }
+            }
+            SpineCurveType::THRU => {
+                let center = circum_center(self.pt0, self.pt1, self.thru_pt);
+                let vec0 = self.pt0 - center;
+                let vec1 = self.pt1 - center;
+                let angle = (PI - vec0.angle_between(vec1)) * 2.0;
+                let axis = vec1.cross(vec0).normalize();
+                let dir = if start_or_end {
+                    vec0
+                } else {
+                    vec1
+                };
+                let rot = Quat::from_rotation_arc(Vec3::Z, axis);
+                rot.mul_vec3(dir)
+            }
+            SpineCurveType::CENT => {
+                let center = self.center_pt;
+                let vec0 = self.pt0 - center;
+                let vec1 = self.pt1 - center;
+                let angle = (PI - vec0.angle_between(vec1)) * 2.0;
+                let axis = vec1.cross(vec0).normalize();
+                let dir = if start_or_end {
+                    vec0
+                } else {
+                    vec1
+                };
+                let rot = Quat::from_rotation_arc(Vec3::Z, axis);
+                rot.mul_vec3(dir)
+            }
+            SpineCurveType::UNKNOWN => {
+                Vec3::Z
+            }
+
+        }
+    }
+}
+
+
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub enum SweepPath3D {
@@ -96,8 +146,12 @@ impl Line3D {
     }
 
     #[inline]
-    pub fn dir(&self) -> Vec3{
-        (self.end - self.start).normalize_or_zero()
+    pub fn get_dir(&self, start_or_end: bool) -> Vec3{
+        if start_or_end {
+            (self.end - self.start).normalize_or_zero()
+        } else {
+            (self.start - self.end).normalize_or_zero()
+        }
     }
 }
 

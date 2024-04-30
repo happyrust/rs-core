@@ -6,6 +6,7 @@ use crate::{rs_surreal, NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use surrealdb::method::Stats;
@@ -16,12 +17,45 @@ pub async fn query_filter_all_bran_hangs(refno: RefU64) -> anyhow::Result<Vec<Re
     query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await
 }
 
+#[cached(result = true)]
+pub async fn query_deep_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+    let pe_key = refno.to_pe_key();
+    let sql = format!(
+        r#"
+             return array::flatten( object::values( select
+                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only {pe_key} ) );
+            "#
+    );
+    // println!("query_deep_children_refnos is: {}", &sql);
+    let mut response = SUL_DB.query(&sql).await.unwrap();
+    let refnos: Vec<RefU64> = response.take(0)?;
+    Ok(refnos)
+}
+
+pub async fn query_filter_deep_children(
+    refno: RefU64,
+    nouns: Vec<String>,
+) -> anyhow::Result<Vec<RefU64>> {
+    // let pe_key = refno.to_pe_key();
+    let refnos = query_deep_children_refnos(refno).await?;
+    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
+    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
+    let sql = format!(r#"select value id from [{pe_keys}] where noun in [{nouns_str}]"#);
+    // println!("sql is {}", &sql);
+    let mut response = SUL_DB.query(&sql).with_stats().await.unwrap();
+    if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
+        return Ok(result);
+    }
+    Ok(vec![])
+}
+
 /// Represents the SQL query used to retrieve values from a database.
 /// The query is constructed dynamically based on the provided parameters.
 /// It selects the `refno` values from a flattened array of objects,
 /// where the `noun` values match the specified list of nouns.
 #[cached(result = true)]
-pub async fn query_filter_deep_children(
+pub async fn query_filter_deep_children_by_path(
     refno: RefU64,
     nouns: Vec<String>,
 ) -> anyhow::Result<Vec<RefU64>> {
@@ -50,20 +84,21 @@ pub async fn query_deep_children_filter_inst(
 ) -> anyhow::Result<Vec<RefU64>> {
     let end_noun = super::get_type_name(refno).await?;
     let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
-    let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
-    if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
-        let pe_key = refno.to_pe_key();
-        let mut sql = format!(
-            r#"select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key}))
-             where noun in [{nouns_str}]"#,
-        );
-        if filter {
-            sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
-        }
-        let mut response = SUL_DB.query(&sql).with_stats().await?;
-        if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
-            return Ok(result);
-        }
+    let pe_key = refno.to_pe_key();
+    let mut sql = format!(
+        r#"
+            let $a = array::flatten( object::values( select
+                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only {pe_key} ) );
+
+            select value refno from $a where noun in [{nouns_str}]"#,
+    );
+    if filter {
+        sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
+    }
+    let mut response = SUL_DB.query(&sql).with_stats().await?;
+    if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(1) {
+        return Ok(result);
     }
     Ok(vec![])
 }
