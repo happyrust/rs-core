@@ -29,11 +29,11 @@ pub async fn test_wire_from_floor(refno: RefU64){
 pub async fn test_wire_by_loop() {
     init_test_surreal().await;
     //方向为逆时针, 有自相交，第一条相交边为直线，第二条相交边为弧线
-    // test_wire_from_loop("17496/229991".into()).await;
+    test_wire_from_loop("17496/229991".into()).await;
     //方向为逆时针
     // test_wire_from_loop("25688/72074".into()).await;
     // 顺时针，第一条相交边为弧线，第二条相交边为直线，有自相交， 然后有弧线和弧线的相交
-    test_wire_from_loop("24381/34882".into()).await;
+    // test_wire_from_loop("24381/34882".into()).await;
 
     //特殊情况，有很多相交点
     // test_wire_from_loop("25688/71809".into()).await;

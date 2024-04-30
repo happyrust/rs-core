@@ -463,15 +463,27 @@ pub fn resolve_intersection(
         let mut tmp_polyline = Polyline::new_closed();
         tmp_polyline.add(polyline[si_0].x, polyline[si_0].y, 0.0);
         tmp_polyline.add(point.x, point.y, 0.0);
-        tmp_polyline.add(polyline[si_1].x, polyline[si_1].y, 0.0);
-        let use_start = tmp_polyline.orientation() == ori;
-        //需要将交点插入这里置换出新的 polyline
-        //这里需要重新计算弧度
+        tmp_polyline.add(polyline[next_si_1].x, polyline[next_si_1].y, 0.0);
+        let use_start = tmp_polyline.orientation() != ori;
+        dbg!(use_start);
+
         let r = seg_split(polyline[si_1], polyline[next_si_1], point, 0.01);
-        if use_start {
-            new_polyline[si_1] = r.updated_start;
-        } else {
-            new_polyline[si_1] = r.split_vertex;
+        dbg!(&r);
+        //直接就和端点重合了
+        if r.split_vertex.bulge == 0.0 {
+            println!("first arc, second line, same end point, remove between {} .. {}", next_si_0, si_1);
+            new_polyline.vertex_data.drain(next_si_0..si_1);
+        }else{
+            if use_start {
+                new_polyline[si_1] = r.updated_start;
+                new_polyline[si_0] = r.split_vertex;
+                println!("first arc, second line , use arc start: {}, line use split start: {} ", si_1, si_0);
+            } else {
+                new_polyline[next_si_0] = r.split_vertex;
+                new_polyline[si_1] = r.split_vertex;
+                println!("first arc, second line , use split remove between {} .. {}", next_si_0, si_1);
+                new_polyline.vertex_data.drain(next_si_0..si_1);
+            }
         }
     } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge == 0.0 {
         let mut tmp_polyline = Polyline::new_closed();
@@ -496,9 +508,7 @@ pub fn resolve_intersection(
             } else {
                 new_polyline[si_0] = r.split_vertex;
                 new_polyline[next_si_1] = r.split_vertex;
-                // new_polyline.vertex_data.drain(next_si_0..si_1);
                 println!("first arc, second line , {} and {} use split", si_0, next_si_1);
-                // new_polyline[si_0] = r.split_vertex;
             }
         }
     } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge != 0.0 {

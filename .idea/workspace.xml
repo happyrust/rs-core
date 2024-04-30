@@ -37,27 +37,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Refactor `pdms_types` and queries in `query.rs`  &#10;&#10;Updated `pdms_types.rs` for cleaner list declarations and added 'get_order' function. Refactored querying functions in `query.rs` for efficient record extraction and made minor adjustments in the `EleTreeNode` structure.">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="重构了代码的导入逻辑，优化了代码格式化，拓展了测试用例，优化了函数 query_group_cata_hash 的实现，增加了函数 query_deep_neg_inst_refnos，优化了函数 get_world_mat4，优化了函数 get_world_transform，修复了函数 query_deep_visible_inst_refnos，增强了函数 get_children_named_attmaps。">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DbOption.toml" beforeDir="false" afterPath="$PROJECT_DIR$/DbOption.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/noun_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/noun_graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/spine.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/spine.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/geom.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test_wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_wire.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -808,7 +790,7 @@
       <workItem from="1713984729447" duration="5135000" />
       <workItem from="1714034928362" duration="23371000" />
       <workItem from="1714124603602" duration="2837000" />
-      <workItem from="1714145736155" duration="35296000" />
+      <workItem from="1714145736155" duration="36121000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1153,7 +1135,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="308" />
+    <option name="localTasksCounter" value="309" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1196,8 +1178,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="Add GeomPtsQuery structure in inst.rs&#10;&#10;Introduced a new structure, GeomPtsQuery, in inst.rs, which contains reference number, world transform, and a vector of points group data. The structure has been marked to support serialization, deserialization and debugging functionalities." />
-    <MESSAGE value="fix wire cal" />
     <MESSAGE value="Improve wire calculation and calibrations&#10;&#10;This commit focuses on enhancing the wire calculation and calibration methods. Debugging statements have been streamlined for efficiency and areas of the code have been modified to handle edge cases more effectively. This includes addition of aabb center, automated filtering of points, location removal, and improving vector normalization. Unnecessary debug and println lines have also been removed to clean up the code. Furthermore, several tests were added to verify and provide coverage on the updated parts of the code." />
     <MESSAGE value="Modify wire calculation and improve calibration&#10;&#10;The commit enriches wire calculation and calibration methods. Code has been optimized to manage exceptions more accurately. Debug and println commands have been cleansed for better code readability. In addition, the implementation now includes automated filtering of points, removal of locations, and improved vector normalization. Several tests have also been incorporated to ensure appropriate coverage for the modifications." />
     <MESSAGE value="Update test query, schema syntax and import changes&#10;&#10;Test query in the suite has been updated. Changes have been made in 'group_by_cata_hash.surql', 'query_full_attmap_by_refno.surql' schemas. BTreeMap has been imported in 'pdms_types.rs'. All these changes aim to optimize the test suites and query structures of the system." />
@@ -1221,7 +1201,9 @@
     <MESSAGE value="优化SweepSolid和Wire相关代码，包含更多的功能和调整代码结构；添加对Spine3D计算两端方向的方法；优化test_spatial，test_surreal和test_query_group测试文件；改进了query模块和geom模块的部分函数。" />
     <MESSAGE value="重构了代码的组织结构，并添加新的函数：添加了更改了文档中测试部分代码，可以实现图的搜索路径，增加了对查询测试的功能，对抽象化数据类型进行了更新，增加了成功取出已删除节点功能，对含有两端方向的扫描体进行了功能增强，并能生成多个轮廓，增加了在空间中查询转换组，增加了查询深度可见实例引用编号，增加了能解析位置属性位置的功能。" />
     <MESSAGE value="Updated surreal test and query functionality, added 'deleted' field in EleTreeNode, and improved the code structure in sweep_solid.rs. Added get_dir method in Spine3D and refactored transformation implementation in various tests." />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated surreal test and query functionality, added 'deleted' field in EleTreeNode, and improved the code structure in sweep_solid.rs. Added get_dir method in Spine3D and refactored transformation implementation in various tests." />
+    <MESSAGE value="Refactored code for clarity and spacing, updated and expanded methods and added new functions in various areas including: test_query_group.rs for hashmap, querying deep visible refnos, test_spatial.rs for transforming querying, primitives/spine.rs for Spine3D, sweep_solid.rs for implementing sweep solid. Added boolean &quot;deleted&quot; in pdms_types. Multiple changes to test_graph.rs including refactoring import order, variable assignments and function calls." />
+    <MESSAGE value="重构了代码的导入逻辑，优化了代码格式化，拓展了测试用例，优化了函数 query_group_cata_hash 的实现，增加了函数 query_deep_neg_inst_refnos，优化了函数 get_world_mat4，优化了函数 get_world_transform，修复了函数 query_deep_visible_inst_refnos，增强了函数 get_children_named_attmaps。" />
+    <option name="LAST_COMMIT_MESSAGE" value="重构了代码的导入逻辑，优化了代码格式化，拓展了测试用例，优化了函数 query_group_cata_hash 的实现，增加了函数 query_deep_neg_inst_refnos，优化了函数 get_world_mat4，优化了函数 get_world_transform，修复了函数 query_deep_visible_inst_refnos，增强了函数 get_children_named_attmaps。" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
