@@ -8,6 +8,20 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Mutex;
+use glam::Vec3;
+
+///获得当前参考号对应的loops （例如Panel下的loops，可能有多个）
+pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)>{
+    let mut response = SUL_DB.query(format!(r#"
+        select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
+            (select value in from {0}<-pe_owner where in.noun in ["LOOP", "PLOO"]);
+        array::complement((select value refno.HEIG from [ (select value in.id from only {0}<-pe_owner where in.noun in ["LOOP", "PLOO"] limit 1), {0}]), [none])[0];
+    "#, refno.to_pe_key())).await.unwrap();
+    let points: Vec<Vec<Vec3>> = response.take(0)?;
+    let height: Option<f32> = response.take(1)?;
+
+    Ok((points, height.unwrap_or_default()))
+}
 
 ///通过surql查询pe数据
 #[cached(result = true)]

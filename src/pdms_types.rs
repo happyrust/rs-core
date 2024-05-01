@@ -55,7 +55,8 @@ pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
 ];
 
 ///有loop的几何体
-pub const GNERAL_LOOP_NOUN_NAMES: [&'static str; 2] = ["PLOO", "LOOP"];
+pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] =
+    ["AEXTR" , "NXTR" , "EXTR" , "PANE" , "FLOOR" , "SCREED" , "GWALL", "NREV" ,"REVO"];
 
 ///负实体基本体的种类
 pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [

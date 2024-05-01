@@ -134,6 +134,7 @@ mod test_transform {
     async fn test_query_transform_FIT() -> anyhow::Result<()> {
         init_test_surreal().await;
         test_transform("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
+        test_transform("17496/202352".into(), "Y is X and Z is -Y").await;
         Ok(())
     }
 

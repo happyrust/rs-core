@@ -468,8 +468,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 return None;
             }
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
-                verts: d.verts.clone(),
-                fradius_vec: d.frads.clone(),
+                verts: vec![d.verts.clone()],
                 angle: d.angle,
                 ..Default::default()
             });
@@ -520,8 +519,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .cross(pbax_dir)
                 .try_normalize().unwrap_or(Vec3::Z);
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
-                verts: d.verts.clone(),
-                fradius_vec: d.frads.clone(),
+                verts: vec![d.verts.clone()],
                 height: d.height,
                 ..Default::default()
             });

@@ -15,13 +15,29 @@ pub async fn test_wire_from_loop(refno: RefU64){
     let mut response = SUL_DB.query(format!(r#"
         select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD]  from {}<-pe_owner
     "#, refno.to_pe_key())).await.unwrap();
-    let mut points: Vec<DVec3> = response.take(0).unwrap();
+    let points: Vec<Vec3> = response.take(0).unwrap();
 
     gen_polyline(&points);
 }
 
-pub async fn test_wire_from_floor(refno: RefU64){
+pub async fn test_wire_from_floor_panel(refno: RefU64){
 
+    let mut response = SUL_DB.query(format!(r#"
+        select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
+            (select value in from {}<-pe_owner)
+    "#, refno.to_pe_key())).await.unwrap();
+    let points: Vec<Vec<Vec3>> = response.take(0).unwrap();
+    dbg!(&points);
+
+    gen_occ_wires(&points).unwrap();
+
+}
+
+#[tokio::test]
+pub async fn test_wire_by_panel() {
+    init_test_surreal().await;
+
+    test_wire_from_floor_panel("17496_231673".into()).await;
 }
 
 
@@ -29,11 +45,16 @@ pub async fn test_wire_from_floor(refno: RefU64){
 pub async fn test_wire_by_loop() {
     init_test_surreal().await;
     //方向为逆时针, 有自相交，第一条相交边为直线，第二条相交边为弧线
-    test_wire_from_loop("17496/229991".into()).await;
+    // test_wire_from_loop("17496/229991".into()).await;
+    // test_wire_from_loop("17496/253665".into()).await;
     //方向为逆时针
     // test_wire_from_loop("25688/72074".into()).await;
     // 顺时针，第一条相交边为弧线，第二条相交边为直线，有自相交， 然后有弧线和弧线的相交
     // test_wire_from_loop("24381/34882".into()).await;
+
+    //生成一个圆
+    //17496/231666
+    test_wire_from_loop("17496/231666".into()).await;
 
     //特殊情况，有很多相交点
     // test_wire_from_loop("25688/71809".into()).await;
@@ -45,13 +66,13 @@ pub async fn test_wire_by_loop() {
 }
 
 fn gen_wire_shape(pts: &Vec<Vec3>, fradius: &Vec<f32>, refno: RefU64) {
-    let wires = gen_occ_wires(pts, fradius).unwrap();
-    let shape = Face::from_wires(&wires)
-        .unwrap()
-        .extrude(DVec3::new(0., 0.0, 100.0))
-        .into_shape();
-
-    shape.write_step(format!("{refno}.step")).unwrap();
+    // let wires = gen_occ_wires(pts, fradius).unwrap();
+    // let shape = Face::from_wires(&wires)
+    //     .unwrap()
+    //     .extrude(DVec3::new(0., 0.0, 100.0))
+    //     .into_shape();
+    //
+    // shape.write_step(format!("{refno}.step")).unwrap();
 
     // match PlantMesh::gen_occ_mesh(&shape, 78.0) {
     //     Ok(mesh) => {

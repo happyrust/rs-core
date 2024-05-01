@@ -6,7 +6,7 @@ use crate::prim_geo::basic::OccSharedShape;
 use crate::prim_geo::wire::*;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
-use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
+use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, VerifiedShape, TRI_TOL};
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use approx::abs_diff_eq;
 use approx::AbsDiffEq;
@@ -29,8 +29,7 @@ use truck_stepio::out;
     Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Revolution {
-    pub verts: Vec<Vec3>,
-    pub fradius_vec: Vec<f32>,
+    pub verts: Vec<Vec<Vec3>>,
     pub angle: f32,
     pub rot_dir: Vec3,
     pub rot_pt: Vec3,
@@ -39,15 +38,7 @@ pub struct Revolution {
 impl Default for Revolution {
     fn default() -> Self {
         Self {
-            verts: vec![
-                Vec3::ZERO,
-                Vec3::new(2.0, 0.0, 0.0),
-                Vec3::new(2.0, 1.0, 0.0),
-                Vec3::new(1.0, 1.0, 0.0),
-                Vec3::new(1.0, 2.0, 0.0),
-                Vec3::new(0.0, 2.0, 0.0),
-            ],
-            fradius_vec: vec![0.0; 6],
+            verts: vec![],
             angle: 90.0,
             rot_dir: Vec3::X,   //默认绕X轴旋转
             rot_pt: Vec3::ZERO, //默认旋转点
@@ -131,7 +122,7 @@ impl BrepShapeTrait for Revolution {
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        let wires = gen_occ_wires(&self.verts, &self.fradius_vec)?;
+        let wires = gen_occ_wires(&self.verts)?;
         let angle = if abs_diff_eq!(self.angle, 360.0, epsilon = 0.01) {
             360.0
         } else {
@@ -147,7 +138,7 @@ impl BrepShapeTrait for Revolution {
 
     fn hash_unit_mesh_params(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
-        self.verts.iter().for_each(|v| {
+        self.verts.iter().flatten().for_each(|v| {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
         });
         "Revolution".hash(&mut hasher);
@@ -165,6 +156,7 @@ impl BrepShapeTrait for Revolution {
         let pts = self
             .verts
             .iter()
+            .flatten()
             .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
             .collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);

@@ -325,10 +325,10 @@ impl SweepSolid {
         }
         let mut points = vec![];
         for i in 0..len {
-            let p = Vec3::new(verts[i][0], verts[i][1], 0.0);
+            let p = Vec3::new(verts[i][0], verts[i][1], profile.frads[i]);
             points.push(p);
         }
-        let mut wire = wire::gen_occ_wires(&points, &profile.frads)?
+        let mut wire = wire::gen_occ_wires(&vec![points])?
             .pop()
             .ok_or(anyhow!("无法生成wire。"))?;
         let translation = Mat4::from_translation(offset_pt);

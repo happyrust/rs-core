@@ -33,8 +33,9 @@ use crate::prim_geo::basic::OccSharedShape;
     rkyv::Serialize,
 )]
 pub struct Extrusion {
-    pub verts: Vec<Vec3>,
-    pub fradius_vec: Vec<f32>,
+    //xy 为坐标，z为倒角切半径
+    pub verts: Vec<Vec<Vec3>>,
+    // pub fradius_vec: Vec<f32>,
     pub height: f32,
     pub cur_type: CurveType,
 }
@@ -43,7 +44,6 @@ impl Default for Extrusion {
     fn default() -> Self {
         Self {
             verts: vec![],
-            fradius_vec: vec![],
             height: 100.0,
             cur_type: CurveType::Fill,
         }
@@ -100,13 +100,13 @@ impl BrepShapeTrait for Extrusion {
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        if !self.check_valid() || self.verts.len() < 3 {
+        if self.verts.len() == 0 || self.verts[0].len() < 3 {
             return Err(anyhow!("Extrusion params not valid."));
         }
         let face = if let CurveType::Spline(thick) = self.cur_type {
             gen_occ_spline_wire(&self.verts, thick).map(|x| x.to_face())
         } else {
-            gen_occ_wires(&self.verts, &self.fradius_vec).map(|x| Face::from_wires(&x)).flatten()
+            gen_occ_wires(&self.verts).map(|x| Face::from_wires(&x)).flatten()
         };
         match face {
             Err(e) => {
@@ -125,11 +125,8 @@ impl BrepShapeTrait for Extrusion {
 
     fn hash_unit_mesh_params(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
-        self.verts.iter().for_each(|v| {
+        self.verts.iter().flatten().for_each(|v| {
             hash_vec3::<DefaultHasher>(v, &mut hasher);
-        });
-        self.fradius_vec.iter().for_each(|v| {
-            hash_f32::<DefaultHasher>(*v, &mut hasher);
         });
         "Extrusion".hash(&mut hasher);
         hasher.finish()
@@ -139,7 +136,6 @@ impl BrepShapeTrait for Extrusion {
         let unit = Self {
             verts: self.verts.clone(),
             height: 100.0, //开放一点大小,不然三角化出来的不对
-            fradius_vec: self.fradius_vec.clone(),
             cur_type: self.cur_type.clone(),
             ..Default::default()
         };
@@ -157,6 +153,7 @@ impl BrepShapeTrait for Extrusion {
         let pts = self
             .verts
             .iter()
+            .flatten()
             .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
             .collect::<Vec<_>>();
         let profile_aabb = Aabb::from_points(&pts);

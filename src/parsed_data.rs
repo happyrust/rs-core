@@ -563,7 +563,6 @@ pub struct CateExtrusionParam {
     pub centre_line_flag: bool,
     pub tube_flag: bool,
     pub refno: RefU64,
-    pub frads: Vec<f32>,
 }
 
 //structural annulus
@@ -826,7 +825,6 @@ pub struct CateRevolutionParam {
     pub pb: Option<CateAxisParam>,
     pub angle: f32,
     pub verts: Vec<Vec3>,
-    pub frads: Vec<f32>,
     pub x: f32,
     pub y: f32,
     pub z: f32,

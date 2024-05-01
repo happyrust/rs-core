@@ -114,6 +114,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
         let o_att = &atts[0];
         let att = &atts[1];
         let cur_type = att.get_type_str();
+        let ower_type = o_att.get_type_str();
         let refno = att.get_refno().unwrap_or_default();
         let owner = o_att.get_refno_or_default();
 
@@ -150,7 +151,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             pos += npos.as_dvec3();
         }
 
-        let owner_is_gensec = o_att.get_type() == "GENSEC";
+        let owner_is_gensec = ower_type == "GENSEC";
         let quat_v = att.get_rotation();
         let mut need_bangle = false;
         let mut pos_draw_dir = None;
@@ -291,19 +292,18 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                     }
                 }
             }
-            // dbg!(z_axis);
             let new_quat = {
-                // let z_axis = pos_draw_dir.unwrap_or(DVec3::X);
-                // let z_axis = DVec3::X;
-                // let x_axis = z_axis.cross(z_axis).normalize();
-                // DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
                 if cur_type == "FITT" {
-
+                    dbg!(z_axis);
                     let zdist = att.get_f32("ZDIS").unwrap_or_default() as f64;
                     pos += zdist * DVec3::Z;
-                    let y_axis = DVec3::NEG_Z;
+                    let y_axis = if ower_type.contains("WALL") {
+                        DVec3::Z
+                    } else{
+                        DVec3::NEG_Z
+                    };
                     let x_axis = y_axis.cross(z_axis).normalize();
-                    // dbg!((x_axis, y_axis, z_axis));
+                    dbg!((x_axis, y_axis, z_axis));
                     DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
                 }else {
                     cal_ori_by_z_axis_ref_y(z_axis) * quat
