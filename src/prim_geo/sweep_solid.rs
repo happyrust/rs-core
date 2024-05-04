@@ -6,11 +6,11 @@ use crate::shape::pdms_shape::{convert_to_cg_matrix4, BrepMathTrait};
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape, ANGLE_RAD_F64_TOL};
 use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_ori_str};
 use anyhow::anyhow;
-use approx::abs_diff_ne;
+use approx::{abs_diff_eq, abs_diff_ne};
 use bevy_ecs::prelude::*;
 use bevy_math::prelude::*;
 use cavalier_contours::core::math::bulge_from_angle;
-use cavalier_contours::polyline::{seg_midpoint, PlineSourceMut, Polyline, PlineSource};
+use cavalier_contours::polyline::{seg_midpoint, PlineSource, PlineSourceMut, Polyline};
 use glam::*;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -21,31 +21,29 @@ use std::sync::Arc;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
+use crate::prim_geo::wire::polyline_to_debug_json_str;
 #[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 #[cfg(feature = "truck")]
 use truck_base::cgmath64::*;
-use crate::prim_geo::wire::polyline_to_debug_json_str;
 
 ///含有两边方向的，扫描体
 #[derive(
-Component,
-Debug,
-Clone,
-Serialize,
-Deserialize,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Component,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct SweepSolid {
     pub profile: CateProfileParam,
-    #[serde(default)]
-    pub drns_rot: DQuat,
-    #[serde(default)]
-    pub drne_rot: DQuat,
+    pub drns: Option<DVec3>,
+    pub drne: Option<DVec3>,
     pub bangle: f32,
     pub plax: Vec3,
     pub extrude_dir: DVec3,
@@ -62,12 +60,41 @@ impl SweepSolid {
 
     #[inline]
     pub fn is_drns_sloped(&self) -> bool {
-        self.drns_rot.to_axis_angle().1.abs() > ANGLE_RAD_F64_TOL
+        self.drns
+            .map(|v| abs_diff_ne!(v.z, 1.0, epsilon = 0.001))
+            .unwrap_or(false)
     }
 
     #[inline]
     pub fn is_drne_sloped(&self) -> bool {
-        self.drne_rot.to_axis_angle().1.abs() > ANGLE_RAD_F64_TOL
+        self.drne
+            .map(|v| abs_diff_ne!(v.z, 1.0, epsilon = 0.001))
+            .unwrap_or(false)
+    }
+
+    //获得drns/drne的面的旋转矩阵
+    pub fn get_face_mat4(&self, is_start: bool) -> DMat4 {
+        let axis = if is_start {
+            DVec3::Z
+        } else {
+           DVec3::NEG_Z
+        };
+        let dir = if is_start {
+            self.drns.unwrap_or(axis)
+        } else {
+            self.drne.unwrap_or(axis)
+        };
+
+        let angle_x = axis.angle_between(DVec3::new(dir.x, 0.0, dir.z));
+        let angle_y = axis.angle_between(DVec3::new(0.0, dir.y, dir.z));
+        // let angle_y = 10.0f64.to_radians();
+        let scale = DVec3::new(1.0 / angle_x.cos(), 1.0 / angle_y.cos(), 1.0);
+        // dbg!((angle_x.to_degrees(), angle_y.to_degrees(), scale));
+        let rot = DQuat::from_axis_angle(DVec3::Y, angle_x) * DQuat::from_axis_angle(DVec3::X, angle_y);
+        // let mut mat = DMat4::from_rotation_y(angle_x) * DMat4::from_rotation_x(angle_y);
+        // DMat4::from_scale(scale) *
+        // DMat4::from_rotation_x(1.0f64.to_radians())
+        DMat4::from_scale_rotation_translation(scale, rot, DVec3::ZERO)
     }
 
     #[cfg(feature = "occ")]
@@ -143,7 +170,10 @@ impl SweepSolid {
             polyline.add(p4.x, p4.y, 0.0);
         };
 
-        println!("Sweep polyline is {}", polyline_to_debug_json_str(&polyline));
+        println!(
+            "Sweep polyline is {}",
+            polyline_to_debug_json_str(&polyline)
+        );
 
         let mut edges = vec![];
         for (p, q) in polyline.iter_segments() {
@@ -610,68 +640,11 @@ impl BrepShapeTrait for SweepSolid {
                 }
                 SweepPath3D::Line(l) => {
                     let mut wires = vec![];
-                    // let mut transform_btm = DMat4::from_quat(self.drns_rot);
-                    // let mut transform_top = DMat4::from_quat(self.drne_rot);
+                    let mut transform_btm = self.get_face_mat4(true);
+                    let mut transform_top = self.get_face_mat4(false);
+                    let mut transform_top = DMat4::IDENTITY;
 
-                    let mut transform_btm = DMat4::default();
-                    let mut transform_top = DMat4::default();
-
-                    //在实际中，是以X轴为主轴
-                    // if self.is_drns_sloped() {
-                    //     let drns = self.drns.unwrap();
-                    //     // println!("drns {:?}  is sloped", self.drns);
-                    //     let mut x_angle = drns.angle_between(DVec3::X);
-                    //     let rot_x_angle = FRAC_PI_2 - x_angle;
-                    //     let x = x_angle.sin().abs();
-                    //     if x < ANGLE_RAD_F64_TOL {
-                    //         return Err(anyhow!("drns is aligned to x"));
-                    //     }
-                    //     let scale_x = 1.0 / x;
-                    //
-                    //     let mut y_angle = drns.angle_between(DVec3::Y);
-                    //     let y = y_angle.sin().abs();
-                    //     if y < ANGLE_RAD_F64_TOL {
-                    //         return Err(anyhow!("drns is aligned to y"));
-                    //     }
-                    //     let scale_y = 1.0 / y;
-                    //
-                    //     let rot_y_angle = FRAC_PI_2 - y_angle;
-                    //
-                    //     // dbg!((x_angle, rot_x_angle, rot_y_angle, scale_x, scale_y));
-                    //
-                    //     let rotation =
-                    //         DMat4::from_rotation_y(rot_x_angle) * DMat4::from_rotation_x(rot_y_angle);
-                    //     // transform_btm =
-                    //     //     rotation * DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
-                    // }
-                    // if self.is_drne_sloped() {
-                    //     // println!("drne {:?}  is sloped", self.drne);
-                    //     let drne = self.drne.unwrap();
-                    //     let mut x_angle = (-drne).angle_between(DVec3::X);
-                    //     let rot_x = (FRAC_PI_2 - x_angle);
-                    //     let x = x_angle.sin().abs();
-                    //     if x < ANGLE_RAD_F64_TOL {
-                    //         return Err(anyhow!("drne is aligned to x"));
-                    //     }
-                    //     let scale_x = 1.0 / x;
-                    //
-                    //     let mut y_angle = (-drne).angle_between(DVec3::Y);
-                    //     let rot_y = (FRAC_PI_2 - y_angle);
-                    //     let y = y_angle.sin().abs();
-                    //     if y < ANGLE_RAD_F64_TOL {
-                    //         return Err(anyhow!("drne is aligned to y"));
-                    //     }
-                    //     let scale_y = 1.0 / y;
-                    //     //todo need to fix, why above -0.7 is not correct
-                    //     // dbg!((x_angle, rot_x, rot_y, scale_x, scale_y));
-                    //
-                    //     let rotation =
-                    //         DMat4::from_rotation_y(rot_x) * DMat4::from_rotation_x(rot_y);
-                    //     // transform_top =
-                    //     //     rotation * DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
-                    // }
-
-                    transform_top.w_axis = DVec4::new(0.0, 0.0, l.length() as f64, 1.0);
+                    transform_top =  transform_top * DMat4::from_translation(DVec3::Z * l.length() as f64);
                     wires.push(wire.transformed_by_gmat(&transform_btm)?);
                     if let Some(mut top_wire) = top_profile_wire {
                         wires.push(top_wire.transformed_by_gmat(&transform_top)?);
@@ -762,4 +735,34 @@ impl BrepShapeTrait for SweepSolid {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimLoft(self.clone()))
     }
+}
+
+fn cal_end_face_rot(current_rot: DQuat, extru_dir: DVec3, face_dir: Option<DVec3>) -> DMat4 {
+    let mut mat = DMat4::IDENTITY;
+    if let Some(mut fd) = face_dir {
+        let dir = current_rot.mul_vec3(extru_dir);
+        //求两者之间的夹角，如果是负数，就是反方向
+        let angle = dir.angle_between(fd);
+        //如果超过90度，就是反方向
+        if angle.abs() > std::f32::consts::FRAC_PI_2 as _ {
+            fd = -fd;
+        }
+        // dbg!(angle);
+        let dir_x = DVec3::new(dir.x, 0.0, dir.z).normalize();
+        let fd_x = DVec3::new(fd.x, 0.0, fd.z).normalize();
+        let angle_x = dir_x.angle_between(fd_x);
+        let scale_x = 1.0 / angle_x.cos();
+
+        let dir_y = DVec3::new(0.0, dir.y, dir.z).normalize();
+        let fd_y = DVec3::new(0.0, fd.y, fd.z).normalize();
+        let angle_y = dir_y.angle_between(fd_y);
+        let scale_y = 1.0 / angle_y.cos();
+
+        mat = DMat4::from_scale_rotation_translation(
+            DVec3::new(scale_x, scale_y, 1.0),
+            DQuat::IDENTITY,
+            DVec3::ZERO,
+        );
+    }
+    mat
 }

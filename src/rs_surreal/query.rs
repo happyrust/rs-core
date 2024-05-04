@@ -163,7 +163,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                             &angles_to_dori(*d).unwrap_or_default(),
                         )),
                     ));
-                } else if k.contains("POS") {
+                } else {
                     tuples.push((k.clone(), NamedAttrValue::StringType(vec3_to_xyz_str(*d))));
                 }
             }
@@ -446,6 +446,8 @@ pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
 }
+
+
 
 pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Vec<RefU64>> {
     let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();

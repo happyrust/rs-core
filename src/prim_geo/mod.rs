@@ -24,6 +24,9 @@ pub mod line;
 
 pub mod basic;
 
+pub mod profile;
+
+use dashmap::DashMap;
 pub use sbox::*;
 pub use sphere::*;
 pub use cylinder::*;
@@ -39,5 +42,9 @@ pub use facet::*;
 pub use sweep_solid::*;
 pub use tubing::*;
 pub use polyhedron::*;
+use crate::prim_geo::category::CateBrepShape;
+use crate::RefU64;
+
+pub type CateBrepShapeMap = DashMap<RefU64, Vec<CateBrepShape>>;
 
 

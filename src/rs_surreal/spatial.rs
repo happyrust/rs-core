@@ -105,7 +105,6 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 #[cached(result = true)]
 pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
-    // dbg!(&ancestors);
     ancestors.reverse();
     let mut rotation = DQuat::IDENTITY;
     let mut translation = DVec3::ZERO;
@@ -125,8 +124,6 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
         if att.contains_key("ZDIS") && (!att.contains_key("POSL")) {
             let zdist = att.get_f32("ZDIS").unwrap_or_default();
             let pkdi = att.get_f32("PKDI").unwrap_or_default();
-            // let o_poss = o_att.get_poss().unwrap_or_default().as_dvec3();
-            // let o_pos = o_att.get_position().unwrap_or_default().as_dvec3();
             //zdis 起点应该是从poss 开始，所以这里需要加上这个偏移
             let result = cal_zdis_pkdi_in_section(owner, pkdi, zdist).await;
             pos += (result.1) ;
@@ -136,8 +133,6 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             if att.contains_key("BANG") {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
             }
-            // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
-            // dbg!(translation);
             translation = translation + rotation * pos;
             // dbg!(translation);
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
@@ -279,15 +274,8 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                 pline_plax
             };
             if att.contains_key("YDIR") {
-                //忽略X方向的偏移，投影到 YZ 平面
                 if let Some(v) = att.get_dvec3("YDIR"){
-                    //x 有值就代表需要使用自定义哦的YDIR
                     if v.y != 0.0{
-                        // y_axis = if v.length() == 0.0 {
-                        //     DVec3::Z
-                        // } else {
-                        //     v.normalize()
-                        // };
                         z_axis = v.normalize();
                     }
                 }
@@ -303,7 +291,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                         DVec3::NEG_Z
                     };
                     let x_axis = y_axis.cross(z_axis).normalize();
-                    dbg!((x_axis, y_axis, z_axis));
+                    // dbg!((x_axis, y_axis, z_axis));
                     DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
                 }else {
                     cal_ori_by_z_axis_ref_y(z_axis) * quat
@@ -317,8 +305,6 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             rotation = rotation * new_quat;
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
             if pos_line == "unset" && has_cut_back {
-                // dbg!(has_cut_back);
-                //need to perpendicular to the Y axis
                 let mat3 = DMat3::from_quat(rotation);
                 let y_axis = mat3.y_axis;
                 let ref_axis = cut_dir;
@@ -330,14 +316,21 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
                 let x_axis = y_axis.cross(ref_axis).normalize();
                 let z_axis = x_axis.cross(y_axis).normalize();
                 let new_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
-                // dbg!(new_mat);
                 rotation = DQuat::from_mat3(&new_mat);
             }
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
         } else {
             translation = translation + rotation * pos;
             rotation = rotation * quat;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
+            if let Some(v) = att.get_dvec3("YDIR")  {
+                let y_ref_axis = v.normalize();
+                // dbg!(y_ref_axis);
+                let m = DMat3::from_quat(rotation);
+                let z_axis = m.z_axis;
+                let x_axis = y_ref_axis.cross(z_axis).normalize();
+                let y_axis = z_axis.cross(x_axis).normalize();
+                rotation = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
+            }
         }
 
         let trans = Transform {

@@ -32,7 +32,7 @@ mod test_transform {
     use crate::test::test_surreal::init_test_surreal;
     use crate::tool::dir_tool::parse_ori_str_to_mat;
     use crate::tool::math_tool;
-    use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str};
+    use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, vec3_to_xyz_str};
 
     //sctn 等等
     #[test]
@@ -71,13 +71,36 @@ mod test_transform {
 
         dbg!(translation);
         dbg!(dquat_to_pdms_ori_xyz_str(&rot));
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_DRNS_DRNE() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        let refno = "17496/202374".into();
+        let mat = crate::get_world_mat4(refno).await?.unwrap();
+        let spine_att = crate::get_named_attmap(refno).await?;
+        let drns = spine_att.get_dvec3("DRNS").unwrap();
+        let drne = spine_att.get_dvec3("DRNE").unwrap();
+
+        let mat_inv = mat.inverse();
+        let local_drns = mat_inv.transform_vector3(drns);
+        let local_drne = mat_inv.transform_vector3(drne);
+        dbg!(to_pdms_dvec_str(&local_drns));
+        dbg!(to_pdms_dvec_str(&local_drne));
+
+        let angle_x = (local_drns.x / local_drns.z).atan();
+        let angle_y = (local_drns.y / local_drns.z).atan();
+        let scale_drns = DVec3::new(1.0 / angle_x.cos(), 1.0/ angle_y.cos(), 1.0);
+
+        let angle_x = (local_drne.x / local_drne.z).atan();
+        let angle_y = (local_drne.y / local_drne.z).atan();
+        let scale_drne = DVec3::new(1.0 / angle_x.cos(), 1.0/ angle_y.cos(), 1.0);
+
+        dbg!(scale_drns);
+        dbg!(scale_drne);
 
 
-        // let rot_mat = Mat3::from_quat(transform.rotation);
-        // dbg!(rot_mat);
-        // let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
-        // dbg!(&ori_str);
-        // assert_eq!(ori_str, assert_ori);
+        Ok(())
     }
 
     #[tokio::test]
@@ -92,18 +115,19 @@ mod test_transform {
     }
 
     #[tokio::test]
+    async fn test_query_transform_SPINE() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        test_transform("17496/268345".into(), "Y is X 89.891 Z and Z is -X 0.1089 Z").await;
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_query_transform_BOX() -> anyhow::Result<()> {
         init_test_surreal().await;
         test_transform("17496/171666".into(), "Y is -X 5 -Y 40 -Z and Z is -X 5 -Y 50 Z").await;
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_query_transform_SPINE() -> anyhow::Result<()> {
-        init_test_surreal().await;
-        test_transform("17496/268345".into(), "Y is X 89.891 Z and Z is -X 0.1089 Z").await;
-        Ok(())
-    }
 
     #[tokio::test]
     async fn test_query_transform_GENSEC() -> anyhow::Result<()> {

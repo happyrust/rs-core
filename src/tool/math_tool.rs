@@ -1,7 +1,8 @@
+use std::f32::consts::FRAC_PI_2;
 use crate::shape::pdms_shape::{ANGLE_RAD_F64_TOL, ANGLE_RAD_TOL};
 use crate::tool::float_tool::*;
 use approx::{abs_diff_eq, abs_diff_ne};
-use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
+use glam::{DMat3, DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -102,19 +103,19 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
             return x_str.to_string();
         }
 
-        if angle < 0.0 {
-            angle = 90.0 + angle;
-            if angle > 45.0 {
-                let angle = 90.0 - angle;
-                return format!("{x_str} {} {y_str}", f64_round_4(angle));
-            } else {
-                return format!("{y_str} {} {x_str}", f64_round_4(angle));
-            }
-        }
-        if angle > 45.0 {
-            let angle = 90.0 - angle;
-            return format!("{y_str} {} {x_str}", f64_round_4(angle));
-        }
+        // if angle < 0.0 {
+        //     angle = 90.0 + angle;
+        //     if angle > 45.0 {
+        //         let angle = 90.0 - angle;
+        //         return format!("{x_str} {} {y_str}", f64_round_4(angle));
+        //     } else {
+        //         return format!("{y_str} {} {x_str}", f64_round_4(angle));
+        //     }
+        // }
+        // if angle > 45.0 {
+        //     let angle = 90.0 - angle;
+        //     return format!("{y_str} {} {x_str}", f64_round_4(angle));
+        // }
 
         if angle.is_nan() {
             return "unset".to_string();
@@ -260,3 +261,5 @@ fn test_convert_to_dir_string() {
 
     dbg!(convert_to_xyz(&to_pdms_dvec_str(&v)));
 }
+
+
