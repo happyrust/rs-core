@@ -420,6 +420,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
         .await
         .unwrap_or_default()
         .unwrap_or_default();
+    let (_, w_quat, _) = world_mat4.to_scale_rotation_translation();
     let mut tmp_dist = zdis as f64;
     let mut tmp_porp = pkdi.clamp(0.0, 1.0);
     let start_len = (total_len * tmp_porp) as f64;
@@ -451,7 +452,6 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
                         quat = cal_ori_by_extru_axis(z_dir, false);
                         z_dir = DMat3::from_quat(quat).z_axis;
 
-                        let (_, w_quat, _) = world_mat4.to_scale_rotation_translation();
                         quat = w_quat * quat;
                     }
 
@@ -482,13 +482,15 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
                         let y_axis = DVec3::Z;
                         let mut x_axis = (arc_center - pos).normalize();
                         // dbg!(x_axis);
-                        // if arc.clock_wise {
-                        //     x_axis = -x_axis;
-                        // }
+                        if arc.clock_wise {
+                            x_axis = -x_axis;
+                        }
                         // dbg!(arc.clock_wise);
                         let z_axis = x_axis.cross(y_axis).normalize();
+                        // dbg!((x_axis, y_axis, z_axis));
                         quat = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
                         // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+                        quat = w_quat * quat;
                     }
                 }
                 _ => {}

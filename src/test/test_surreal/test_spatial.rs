@@ -106,9 +106,9 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_JLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
-        // test_transform("17496/268322".into(), "Y is -Y and Z is -Z").await;
+        test_transform("17496/182538".into(), "Y is Z and Z is -Y 24.584 X").await;
         // test_transform("17496/268326".into(), "Y is -Y and Z is -Z").await;
-        test_transform("25688/48820".into(), "Y is Z and Z is X 33.955 Y").await;
+        // test_transform("25688/48820".into(), "Y is Z and Z is X 33.955 Y").await;
         // test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
         // test_transform("17496/137181".into(), "Y is Z and Z is -Y 34.6032 -X").await;
         Ok(())

@@ -103,15 +103,15 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
             return x_str.to_string();
         }
 
-        // if angle < 0.0 {
-        //     angle = 90.0 + angle;
-        //     if angle > 45.0 {
-        //         let angle = 90.0 - angle;
-        //         return format!("{x_str} {} {y_str}", f64_round_4(angle));
-        //     } else {
-        //         return format!("{y_str} {} {x_str}", f64_round_4(angle));
-        //     }
-        // }
+        if angle < 0.0 {
+            angle = 90.0 + angle;
+            // if angle > 45.0 {
+            //     let angle = 90.0 - angle;
+            //     return format!("{x_str} {} {y_str}", f64_round_4(angle));
+            // } else {
+                return format!("{y_str} {} {x_str}", f64_round_4(angle));
+            // }
+        }
         // if angle > 45.0 {
         //     let angle = 90.0 - angle;
         //     return format!("{y_str} {} {x_str}", f64_round_4(angle));

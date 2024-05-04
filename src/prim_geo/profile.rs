@@ -31,7 +31,7 @@ pub async fn create_profile_geos(refno: RefU64,
     let inv_mat = crate::get_world_mat4(refno).await?.unwrap_or_default().inverse();
     let mut drns = att.get_dvec3("DRNS").map(|x| inv_mat.transform_vector3(x.normalize()));
     let mut drne = att.get_dvec3("DRNE").map(|x| inv_mat.transform_vector3(x.normalize()));
-    // dbg!((drns, drne));
+    dbg!((drns, drne));
     let parent_refno = att.get_owner();
     let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" {
         let children_refnos = crate::query_filter_children(refno, &["SPINE"]).await.unwrap_or_default();
@@ -40,9 +40,6 @@ pub async fn create_profile_geos(refno: RefU64,
             let spine_att = crate::get_named_attmap(spine_refno).await?;
             let spine_mat = crate::get_world_mat4(spine_refno).await?.unwrap_or_default();
             let inv_mat = spine_mat.inverse();
-            // if spine_att.get_type_str() != "SPINE" {
-            //     continue;
-            // }
             //如果是墙，会有这两个属性
             drns = spine_att.get_dvec3("DRNS").map(|x| inv_mat.transform_vector3(x.normalize()));
             if drns.is_some()  && drns.unwrap().is_nan(){
@@ -147,7 +144,6 @@ pub async fn create_profile_geos(refno: RefU64,
         }
     } else {
         for spine in spine_paths {
-
             for (i, geom) in geos.iter().enumerate() {
                 if let CateGeoParam::Profile(profile) = geom {
                     plax = profile.get_plax();

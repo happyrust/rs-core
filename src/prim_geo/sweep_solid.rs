@@ -85,15 +85,15 @@ impl SweepSolid {
             self.drne.unwrap_or(axis)
         };
 
-        let angle_x = axis.angle_between(DVec3::new(dir.x, 0.0, dir.z));
-        let angle_y = axis.angle_between(DVec3::new(0.0, dir.y, dir.z));
-        // let angle_y = 10.0f64.to_radians();
-        let scale = DVec3::new(1.0 / angle_x.cos(), 1.0 / angle_y.cos(), 1.0);
-        // dbg!((angle_x.to_degrees(), angle_y.to_degrees(), scale));
+        let mut angle_x = axis.angle_between(DVec3::new(dir.x, 0.0, dir.z));
+        let mut angle_y = axis.angle_between(DVec3::new(0.0, dir.y, dir.z));
+        if !is_start {
+            angle_x = -angle_x;
+            angle_y = -angle_y;
+        }
+        let scale = DVec3::new(1.0 / angle_x.cos().abs(), 1.0 / angle_y.cos().abs(), 1.0);
+        dbg!((angle_x.to_degrees(), angle_y.to_degrees(), scale));
         let rot = DQuat::from_axis_angle(DVec3::Y, angle_x) * DQuat::from_axis_angle(DVec3::X, angle_y);
-        // let mut mat = DMat4::from_rotation_y(angle_x) * DMat4::from_rotation_x(angle_y);
-        // DMat4::from_scale(scale) *
-        // DMat4::from_rotation_x(1.0f64.to_radians())
         DMat4::from_scale_rotation_translation(scale, rot, DVec3::ZERO)
     }
 
@@ -642,9 +642,9 @@ impl BrepShapeTrait for SweepSolid {
                     let mut wires = vec![];
                     let mut transform_btm = self.get_face_mat4(true);
                     let mut transform_top = self.get_face_mat4(false);
-                    let mut transform_top = DMat4::IDENTITY;
 
-                    transform_top =  transform_top * DMat4::from_translation(DVec3::Z * l.length() as f64);
+                    // transform_top.z_axis = DVec4::new(0.0, 0.0, l.length() as f64, 1.0);
+                    transform_top =  DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
                     wires.push(wire.transformed_by_gmat(&transform_btm)?);
                     if let Some(mut top_wire) = top_profile_wire {
                         wires.push(top_wire.transformed_by_gmat(&transform_top)?);
