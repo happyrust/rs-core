@@ -28,17 +28,22 @@ pub async fn create_profile_geos(refno: RefU64,
     let type_name = att.get_type_str();
     let mut plax = Vec3::Z;
     let mut extrude_dir = DVec3::Z;
-    let inv_mat = crate::get_world_mat4(refno).await?.unwrap_or_default().inverse();
-    let mut drns = att.get_dvec3("DRNS").map(|x| inv_mat.transform_vector3(x.normalize()));
-    let mut drne = att.get_dvec3("DRNE").map(|x| inv_mat.transform_vector3(x.normalize()));
-    dbg!((drns, drne));
+    let mat = crate::get_world_mat4(refno, true).await?.unwrap_or_default();
+    dbg!(&mat);
+    let (_, rot, _) = mat.to_scale_rotation_translation();
+    dbg!(dquat_to_pdms_ori_xyz_str(&rot));
+    let inv_quat = rot.inverse();
+    // dbg!((refno, att.get_dvec3("DRNS"), att.get_dvec3("DRNE")));
+    let mut drns = att.get_dvec3("DRNS").map(|x| inv_quat.mul_vec3(x.normalize()));
+    let mut drne = att.get_dvec3("DRNE").map(|x| inv_quat.mul_vec3(x.normalize()));
+    dbg!((refno, drns, drne));
     let parent_refno = att.get_owner();
     let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" {
         let children_refnos = crate::query_filter_children(refno, &["SPINE"]).await.unwrap_or_default();
         let mut paths = vec![];
         for &spine_refno in children_refnos.iter() {
             let spine_att = crate::get_named_attmap(spine_refno).await?;
-            let spine_mat = crate::get_world_mat4(spine_refno).await?.unwrap_or_default();
+            let spine_mat = crate::get_world_mat4(spine_refno, true).await?.unwrap_or_default();
             let inv_mat = spine_mat.inverse();
             //如果是墙，会有这两个属性
             drns = spine_att.get_dvec3("DRNS").map(|x| inv_mat.transform_vector3(x.normalize()));

@@ -64,7 +64,7 @@ mod test_transform {
     }
 
     async fn test_transform(refno: RefU64, assert_ori: &str){
-        let transform = rs_surreal::get_world_mat4(refno)
+        let transform = rs_surreal::get_world_mat4(refno, false)
             .await
             .unwrap().unwrap();
         let (scale, rot, translation) = transform.to_scale_rotation_translation();
@@ -111,6 +111,14 @@ mod test_transform {
         // test_transform("25688/48820".into(), "Y is Z and Z is X 33.955 Y").await;
         // test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
         // test_transform("17496/137181".into(), "Y is Z and Z is -Y 34.6032 -X").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_SCTN() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        test_transform("24381/48637".into(), " Y is -Z and Z is X 39.23 Y").await;
+        // test_transform("24381/77310".into(), "Y is Z and Z is Y 43 -X").await;
         Ok(())
     }
 
@@ -162,12 +170,7 @@ mod test_transform {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_query_transform_SCTN() -> anyhow::Result<()> {
-        init_test_surreal().await;
-        test_transform("24381/77310".into(), "Y is Z and Z is Y 43 -X").await;
-        Ok(())
-    }
+
 
 }
 

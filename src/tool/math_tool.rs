@@ -105,6 +105,9 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
 
         if angle < 0.0 {
             angle = 90.0 + angle;
+            if abs_diff_eq!(angle, 0.0, epsilon=0.01) {
+                return y_str.to_string();
+            }
             // if angle > 45.0 {
             //     let angle = 90.0 - angle;
             //     return format!("{x_str} {} {y_str}", f64_round_4(angle));
@@ -121,6 +124,9 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
             return "unset".to_string();
         }
 
+        if abs_diff_eq!(angle, 0.0, epsilon=0.01) {
+            return x_str.to_string();
+        }
         return format!("{x_str} {} {y_str}", f64_round_4(angle));
     }
 

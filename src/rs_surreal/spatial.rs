@@ -94,7 +94,7 @@ pub async fn get_spline_line_dir(refno: RefU64) -> anyhow::Result<DVec3> {
 
 #[cached(result = true)]
 pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transform>> {
-    get_world_mat4(refno)
+    get_world_mat4(refno, false)
         .await
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
@@ -103,19 +103,26 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 ///使用cache，需要从db manager里移除出来
 ///获得世界坐标系, 需要缓存数据，如果已经存在数据了，直接获取
 #[cached(result = true)]
-pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
+pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Option<DMat4>> {
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
+    if ancestors.len() <= 1 {
+        return Ok(Some(DMat4::IDENTITY));
+    }
     ancestors.reverse();
     let mut rotation = DQuat::IDENTITY;
     let mut translation = DVec3::ZERO;
+    let mut prev_mat4 = DMat4::IDENTITY;
+    let mut mat4 = DMat4::IDENTITY;
 
+    let mut owner = refno;
     for atts in ancestors.windows(2) {
         let o_att = &atts[0];
         let att = &atts[1];
         let cur_type = att.get_type_str();
         let ower_type = o_att.get_type_str();
         let refno = att.get_refno().unwrap_or_default();
-        let owner = o_att.get_refno_or_default();
+        owner = o_att.get_refno_or_default();
+        prev_mat4 = mat4;
 
         let mut pos = att.get_position().unwrap_or_default().as_dvec3();
         // dbg!(pos);
@@ -230,7 +237,7 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             //plin里的位置偏移
             let mut plin_pos = DVec3::ZERO;
             let mut pline_plax = DVec3::X;
-            let owner = att.get_owner();
+            // let owner = att.get_owner();
             // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
             let mut is_lmirror = false;
             let ancestor_refnos =
@@ -333,23 +340,18 @@ pub async fn get_world_mat4(refno: RefU64) -> anyhow::Result<Option<DMat4>> {
             }
         }
 
-        let trans = Transform {
-            rotation: rotation.as_quat(),
-            translation: translation.as_vec3(),
-            scale: Vec3::ONE,
-        };
-        if trans.is_nan() {
-            return Ok(None);
-        }
+        mat4 = DMat4::from_rotation_translation(rotation, translation);
     }
 
     if rotation.is_nan() || translation.is_nan() {
         return Ok(None);
     }
-    Ok(Some(DMat4::from_rotation_translation(
-        rotation,
-        translation,
-    )))
+
+    if is_local {
+        mat4 = prev_mat4.inverse() * mat4;
+    }
+
+    Ok(Some(mat4))
 }
 
 ///查询形集PLIN的值，todo 需要做缓存优化
@@ -416,7 +418,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
     if spline_paths.is_empty() {
         return (quat, pos);
     }
-    let world_mat4 = Box::pin(get_world_mat4(refno))
+    let world_mat4 = Box::pin(get_world_mat4(refno, false))
         .await
         .unwrap_or_default()
         .unwrap_or_default();

@@ -31,14 +31,14 @@ use truck_base::cgmath64::*;
 
 ///含有两边方向的，扫描体
 #[derive(
-    Component,
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Component,
+Debug,
+Clone,
+Serialize,
+Deserialize,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct SweepSolid {
     pub profile: CateProfileParam,
@@ -75,24 +75,34 @@ impl SweepSolid {
     //获得drns/drne的面的旋转矩阵
     pub fn get_face_mat4(&self, is_start: bool) -> DMat4 {
         let axis = if is_start {
+            if self.drns.is_none() { return DMat4::IDENTITY; }
             DVec3::Z
         } else {
-           DVec3::NEG_Z
+            if self.drne.is_none() { return DMat4::IDENTITY; }
+            DVec3::NEG_Z
         };
         let dir = if is_start {
-            self.drns.unwrap_or(axis)
+            self.drns.unwrap()
         } else {
-            self.drne.unwrap_or(axis)
+            self.drne.unwrap()
         };
 
-        let mut angle_x = axis.angle_between(DVec3::new(dir.x, 0.0, dir.z));
-        let mut angle_y = axis.angle_between(DVec3::new(0.0, dir.y, dir.z));
+        if dir.z.abs() < 0.1 {
+            return DMat4::IDENTITY;
+        }
+
+        let mut angle_x = (dir.x / dir.z).atan();
+        let mut angle_y = (dir.y / dir.z).atan();
         if !is_start {
             angle_x = -angle_x;
             angle_y = -angle_y;
         }
+        //这里这个角度限制，应该用 h/2 / l 去计算，这里暂时给45°
+        if angle_x.abs() - 0.01 >= FRAC_PI_4 || angle_y.abs() >= FRAC_PI_4 {
+            return DMat4::IDENTITY;
+        }
         let scale = DVec3::new(1.0 / angle_x.cos().abs(), 1.0 / angle_y.cos().abs(), 1.0);
-        dbg!((angle_x.to_degrees(), angle_y.to_degrees(), scale));
+        dbg!((dir, angle_x.to_degrees(), angle_y.to_degrees(), scale));
         let rot = DQuat::from_axis_angle(DVec3::Y, angle_x) * DQuat::from_axis_angle(DVec3::X, angle_y);
         DMat4::from_scale_rotation_translation(scale, rot, DVec3::ZERO)
     }
@@ -644,7 +654,7 @@ impl BrepShapeTrait for SweepSolid {
                     let mut transform_top = self.get_face_mat4(false);
 
                     // transform_top.z_axis = DVec4::new(0.0, 0.0, l.length() as f64, 1.0);
-                    transform_top =  DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
+                    transform_top = DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
                     wires.push(wire.transformed_by_gmat(&transform_btm)?);
                     if let Some(mut top_wire) = top_profile_wire {
                         wires.push(top_wire.transformed_by_gmat(&transform_top)?);
