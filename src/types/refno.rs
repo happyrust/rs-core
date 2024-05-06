@@ -245,14 +245,28 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_pe_versioned_key(&self, version: i32) -> String {
+        format!("pe_v:{}_{}", &self.to_string(), version)
+    }
+
+    #[inline]
     pub fn to_inst_relate_key(&self) -> String {
         self.to_table_key("inst_relate")
     }
 
     #[inline]
+    pub fn to_inst_relate_versioned_key(&self, version: i32) -> String {
+        format!("inst_relate:{}_{}", &self.to_string(), version)
+    }
+
+    #[inline]
     pub fn to_table_key(&self, tbl: &str) -> String {
-        // format!("{tbl}:⟨{}⟩", &self.to_string())
         format!("{tbl}:{}", &self.to_string())
+    }
+
+    #[inline]
+    pub fn to_versioned_table_key(&self, tbl: &str, version: i32) -> String {
+        format!("{tbl}_v:{}_{}", &self.to_string(), version)
     }
 
     #[inline]

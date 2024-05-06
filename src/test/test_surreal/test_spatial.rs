@@ -77,7 +77,7 @@ mod test_transform {
     async fn test_query_transform_DRNS_DRNE() -> anyhow::Result<()> {
         init_test_surreal().await;
         let refno = "17496/202374".into();
-        let mat = crate::get_world_mat4(refno).await?.unwrap();
+        let mat = crate::get_world_mat4(refno, true).await?.unwrap();
         let spine_att = crate::get_named_attmap(refno).await?;
         let drns = spine_att.get_dvec3("DRNS").unwrap();
         let drne = spine_att.get_dvec3("DRNE").unwrap();

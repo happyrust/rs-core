@@ -163,8 +163,14 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                             &angles_to_dori(*d).unwrap_or_default(),
                         )),
                     ));
-                } else {
+                } else if k.contains("POS") {
                     tuples.push((k.clone(), NamedAttrValue::StringType(vec3_to_xyz_str(*d))));
+                } else {
+                    //默认是方向
+                    tuples.push((
+                        k.clone(),
+                        NamedAttrValue::StringType(convert_to_xyz(&to_pdms_dvec_str(&d.as_dvec3()))),
+                    ));
                 }
             }
             NamedAttrValue::F32VecType(d) => {

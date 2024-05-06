@@ -42,3 +42,29 @@ DEFINE FUNCTION fn::default_full_name($r: record) {
         return string::concat(array::join(fn::default_names($i), " OF "), " OF ", $a[$c].noun, ' ', $a[$c].name);
     };
 };
+
+
+//备份数据到版本管理table中去
+DEFINE FUNCTION fn::backup_atts_and_pes(
+    $pes: array<record>,
+) {
+    for $pe in $pes {
+        let $a = (select * omit id from $pe)[0];
+        let $b = (select * omit id from $pe.refno)[0];
+        let $c = (select * omit id, in from $pe->inst_relate)[0];
+        if $a != none {
+            let $id = string::concat(meta::id($a.refno), '_', $a.e3d_version);
+            let $att_id = type::thing(string::concat($a.noun, '_history'), $id);
+            let $pe_id = type::thing('pe_history', $id);
+            update $pe_id content $a;
+            update $pe_id set refno=$att_id;
+            update $att_id content $b;
+
+            if $c.out != none && ($pe_id->inst_relate_history == none || array::len($pe_id->inst_relate_history) == 0) {
+                relate $pe_id->inst_relate_history->($c.out) content $c;
+                delete type::thing('inst_relate', meta::id($a.refno));
+            }
+        }
+    };
+};
+

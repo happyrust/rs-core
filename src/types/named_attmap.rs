@@ -57,6 +57,10 @@ impl From<SurlValue> for NamedAttrMap {
                 let db_info = get_default_pdms_db_info();
                 if let Some(m) = db_info.named_attr_info_map.get(type_name) {
                     for (k, v) in o.0 {
+                        if k == "VERSION"{
+                            map.insert(k.clone(), NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()));
+                            continue;
+                        }
                         let default_val = if k == "REFNO" || k == "OWNER" {
                             AttrVal::RefU64Type(Default::default())
                         } else if k == "TYPE" {
@@ -141,6 +145,7 @@ impl From<SurlValue> for NamedAttrMap {
                         map.insert(k.clone(), named_value);
                     }
                 }
+
             }
         }
         Self { map }

@@ -10,6 +10,20 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Mutex;
 use glam::Vec3;
 
+
+pub fn get_inst_relate_keys(refnos: &[RefU64]) -> String {
+    if !refnos.is_empty() {
+        let pes = refnos
+            .iter()
+            .map(|x| x.to_pe_key())
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("array::flatten([{pes}]->inst_relate)")
+    } else {
+        "inst_relate".to_string()
+    }
+}
+
 ///获得当前参考号对应的loops （例如Panel下的loops，可能有多个）
 pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)>{
     let mut response = SUL_DB.query(format!(r#"

@@ -12,6 +12,7 @@ manifold = ["dep:manifold-sys"]
 truck = ["dep:truck-base", "dep:truck-geotrait", "dep:truck-geometry", "dep:truck-polymesh", "dep:truck-topology", "dep:truck-modeling", "dep:truck-meshalgo", "dep:truck-stepio"]
 gen_model = ["manifold"]
 debug = []
+debug_wire = []
 
 # [lib]
 # name = "rs_core"

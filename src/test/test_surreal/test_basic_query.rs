@@ -50,12 +50,12 @@ async fn test_query_wtrans_by_refno() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_att_by_refno() {
     super::init_test_surreal().await;
-    // let attmap = rs_surreal::get_named_attmap("25688/53371".into()).await;
-    // dbg!(attmap);
-    let attmap = rs_surreal::get_named_attmap_with_uda("24383/66460".into(), true)
-        .await
-        .unwrap();
+    let attmap = rs_surreal::get_named_attmap("17496/172037".into()).await;
     dbg!(attmap);
+    // let attmap = rs_surreal::get_named_attmap_with_uda("24383/66460".into(), true)
+    //     .await
+    //     .unwrap();
+    // dbg!(attmap);
 }
 
 #[tokio::test]
@@ -138,7 +138,7 @@ from $refnos
 async fn test_query_attmap() -> anyhow::Result<()> {
     super::init_test_surreal().await;
 
-    let refno = "17496/201377".into();
+    let refno = "24381/48635".into();
     let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
 

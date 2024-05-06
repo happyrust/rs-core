@@ -29,14 +29,14 @@ pub async fn create_profile_geos(refno: RefU64,
     let mut plax = Vec3::Z;
     let mut extrude_dir = DVec3::Z;
     let mat = crate::get_world_mat4(refno, true).await?.unwrap_or_default();
-    dbg!(&mat);
+    // dbg!(&mat);
     let (_, rot, _) = mat.to_scale_rotation_translation();
-    dbg!(dquat_to_pdms_ori_xyz_str(&rot));
+    // dbg!(dquat_to_pdms_ori_xyz_str(&rot));
     let inv_quat = rot.inverse();
     // dbg!((refno, att.get_dvec3("DRNS"), att.get_dvec3("DRNE")));
     let mut drns = att.get_dvec3("DRNS").map(|x| inv_quat.mul_vec3(x.normalize()));
     let mut drne = att.get_dvec3("DRNE").map(|x| inv_quat.mul_vec3(x.normalize()));
-    dbg!((refno, drns, drne));
+    // dbg!((refno, drns, drne));
     let parent_refno = att.get_owner();
     let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" {
         let children_refnos = crate::query_filter_children(refno, &["SPINE"]).await.unwrap_or_default();

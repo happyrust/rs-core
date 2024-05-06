@@ -76,8 +76,7 @@ pub enum GeoBasicType {
 #[serde_as]
 pub struct EleGeosInfo {
     pub refno: RefU64,
-    //有哪一些 geo insts 组成
-    //也可以通过edge 来组合
+    pub version: i32,
     #[serde(default)]
     pub cata_hash: Option<String>,
     //记录对应的元件库参考号
@@ -107,28 +106,20 @@ pub struct EleGeosInfo {
 
 impl EleGeosInfo {
 
-    pub fn id(&self) -> u64 {
-        self.cata_hash.as_ref().map(|x| x.parse().ok()).flatten().unwrap_or(*self.refno)
-    }
-
+    ///结合 version 和 refno 生成唯一的id
+    #[inline]
     pub fn id_str(&self) -> String {
-        self.cata_hash.clone().unwrap_or(self.refno.to_string())
+        let hash = self.cata_hash.clone().unwrap_or(self.refno.to_string());
+        if hash.contains("_") {
+            format!("{}_{}", hash, self.version)
+        } else {
+            hash
+        }
     }
 
     ///生成surreal的json文件
     pub fn gen_sur_json(&self, vec3_map: &mut HashMap<u64, String>) -> String {
         let id = self.id_str();
-        // 变换到世界坐标系中，方便计算
-        // let mut pt_hashes: Vec<String> = vec![];
-        // // dbg!(&self.ptset_map);
-        // for (_, p) in &self.ptset_map {
-        //     let pts_hash = RsVec3(self.world_transform * p.pt).gen_hash();
-        //     pt_hashes.push(format!("vec3:⟨{}⟩", pts_hash));
-        //     if !vec3_map.contains_key(&pts_hash) {
-        //         vec3_map.insert(pts_hash, serde_json::to_string(&p).unwrap());
-        //     }
-        // }
-        // let ptset = pt_hashes.join(",");
         let mut json = serde_json::to_string_pretty(&serde_json::json!({
             "visible": self.visible,
             "generic_type": self.generic_type,
@@ -147,10 +138,11 @@ impl EleGeosInfo {
     ///获取几何体数据的string key
     #[inline]
     pub fn get_inst_key(&self) -> String {
-        if let Some(c) = &self.cata_hash {
-            return c.clone();
-        }
-        self.refno.to_string()
+        // if let Some(c) = &self.cata_hash {
+        //     return c.clone();
+        // }
+        // self.refno.to_string()
+        self.id_str()
     }
 
     ///获取几何体数据的u64 key
@@ -525,10 +517,6 @@ pub struct EleInstGeosData {
 }
 
 impl EleInstGeosData {
-
-    // pub fn id(&self) -> u64 {
-    //     self.inst_key.parse().unwrap_or(*self.refno)
-    // }
 
     #[inline]
     pub fn id(&self) -> String {

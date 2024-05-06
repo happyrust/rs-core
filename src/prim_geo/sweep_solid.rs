@@ -98,11 +98,11 @@ impl SweepSolid {
             angle_y = -angle_y;
         }
         //这里这个角度限制，应该用 h/2 / l 去计算，这里暂时给45°
-        if angle_x.abs() - 0.01 >= FRAC_PI_4 || angle_y.abs() >= FRAC_PI_4 {
+        if angle_x.abs() - 0.01 >= FRAC_PI_2 || angle_y.abs() - 0.01 >= FRAC_PI_2 {
             return DMat4::IDENTITY;
         }
         let scale = DVec3::new(1.0 / angle_x.cos().abs(), 1.0 / angle_y.cos().abs(), 1.0);
-        dbg!((dir, angle_x.to_degrees(), angle_y.to_degrees(), scale));
+        // dbg!((dir, angle_x.to_degrees(), angle_y.to_degrees(), scale));
         let rot = DQuat::from_axis_angle(DVec3::Y, angle_x) * DQuat::from_axis_angle(DVec3::X, angle_y);
         DMat4::from_scale_rotation_translation(scale, rot, DVec3::ZERO)
     }

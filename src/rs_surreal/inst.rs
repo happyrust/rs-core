@@ -1,6 +1,6 @@
 use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
-use crate::{RefU64, SUL_DB};
+use crate::{get_inst_relate_keys, RefU64, SUL_DB};
 use bevy_transform::components::Transform;
 use glam::Vec3;
 use parry3d::bounding_volume::Aabb;
@@ -55,7 +55,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<T
              "#, pes))
         .await?;
 
-    let r = response.take::<Vec<TubiInstQuery>>(0).unwrap();
+    let r = response.take::<Vec<TubiInstQuery>>(0)?;
     Ok(r)
 }
 
@@ -103,16 +103,13 @@ pub struct GeomPtsQuery {
 pub async fn query_insts(
     refnos: impl IntoIterator<Item = &RefU64>,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
-    let pes = refnos
-        .into_iter()
-        .map(|x| x.to_pe_key())
-        .collect::<Vec<_>>()
-        .join(",");
+    let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
+    let inst_keys = get_inst_relate_keys(&refnos);
 
     let sql = format!(r#"
                     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
             if neg_refnos != none && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos')  }} as insts
-            from array::flatten([{pes}]->inst_relate) where aabb.d != none
+            from {inst_keys} where aabb.d != none
             "#);
     // println!("Query insts: {}", &sql);
     let mut response = SUL_DB
