@@ -169,10 +169,6 @@ impl SweepSolid {
         if r1 < 0.0001 {
             polyline.add(p2.x, p2.y, bulge);
             polyline.add(p3.x, p3.y, 0.0);
-            // Wire::from_edges(&vec![
-            //     Edge::segment(p1, p3),
-            //     Edge::arc(p2, DVec3::new(0.0, r2, 0.0), p1),
-            // ])
         } else {
             polyline.add(p1.x, p1.y, 0.0);
             polyline.add(p2.x, p2.y, bulge);
@@ -180,12 +176,14 @@ impl SweepSolid {
             polyline.add(p4.x, p4.y, 0.0);
         };
 
+        #[cfg(debug_assertions)]
         println!(
             "Sweep polyline is {}",
             polyline_to_debug_json_str(&polyline)
         );
 
         let mut edges = vec![];
+        let mut cnt = 0;
         for (p, q) in polyline.iter_segments() {
             if p.bulge.abs() < 0.0001 {
                 edges.push(Edge::segment(
@@ -200,8 +198,13 @@ impl SweepSolid {
                     DVec3::new(q.x, q.y, 0.0),
                 ));
             }
+            cnt += 1;
         }
-        let mut wire = Wire::from_edges(&edges);
+        if cnt <= 1 {
+            return Err(anyhow!("无法生成线框"));
+        }
+
+        let mut wire = Wire::from_edges(&edges)?;
 
         let offset = offset_pt + DVec3::new(origin.x, origin.y, 0.0);
         let translation = DMat4::from_translation(offset);
@@ -652,6 +655,9 @@ impl BrepShapeTrait for SweepSolid {
                     let mut wires = vec![];
                     let mut transform_btm = self.get_face_mat4(true);
                     let mut transform_top = self.get_face_mat4(false);
+
+                    // let mut transform_btm = DMat4::IDENTITY;
+                    // let mut transform_top = DMat4::IDENTITY;
 
                     // transform_top.z_axis = DVec4::new(0.0, 0.0, l.length() as f64, 1.0);
                     transform_top = DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;

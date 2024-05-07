@@ -1,4 +1,5 @@
 use crate::prim_geo::basic::OccSharedShape;
+#[cfg(feature = "occ")]
 use crate::prim_geo::wire::{gen_occ_wires, gen_polyline, polyline_to_debug_json_str};
 use crate::shape::pdms_shape::PlantMesh;
 use crate::{RefU64, SUL_DB};
@@ -32,6 +33,21 @@ pub async fn test_wire_from_floor_panel(refno: RefU64){
     gen_occ_wires(&points).unwrap();
 
 }
+
+#[test]
+pub fn test_bad_wire(){
+    let points: Vec<Vec<Vec3>> = vec![
+        vec![Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0)]
+    ];
+    match gen_occ_wires(&points) {
+        Ok(_) => {
+        }
+        Err(e) => {
+            dbg!(e);
+        }
+    }
+}
+
 
 #[tokio::test]
 pub async fn test_wire_by_panel() {
@@ -283,7 +299,7 @@ fn test_occ_wire_hole() {
                 ));
             }
         }
-        wires.push(Wire::from_edges(&edges));
+        wires.push(Wire::from_edges(&edges).unwrap());
     }
     let shape = OccSharedShape::new(
         Face::from_wires(&wires)

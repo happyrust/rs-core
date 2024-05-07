@@ -113,7 +113,7 @@ pub fn gen_occ_spline_wire(loops: &Vec<Vec<Vec3>>, thick: f32) -> anyhow::Result
         Edge::segment(p3, p0),
     ];
 
-    Ok(Wire::from_edges(&edges))
+    Ok(Wire::from_edges(&edges)?)
 }
 
 #[cfg(feature = "truck")]
@@ -759,6 +759,7 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
 
     let mut wires = vec![];
     let mut edges = vec![];
+    let mut seg_count = 0;
     for (p, q) in pos_poly.iter_segments() {
         if p.bulge.abs() < 0.001 {
             edges.push(Edge::segment(
@@ -773,8 +774,12 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
                 DVec3::new(q.x, q.y, 0.0),
             ));
         }
+        seg_count += 1;
     }
-    wires.push(Wire::from_edges(&edges));
+    if seg_count < 1 {
+        return Err(anyhow!("生成的线段数量小于1"));
+    }
+    wires.push(Wire::from_edges(&edges)?);
     Ok(wires)
 }
 
@@ -1179,7 +1184,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 ));
             }
         }
-        wires.push(Wire::from_edges(&edges));
+        wires.push(Wire::from_edges(&edges)?);
     }
     let face = Face::from_wires(&wires)?;
     Ok(wires)

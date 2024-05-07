@@ -132,7 +132,7 @@ impl BrepShapeTrait for Dish {
         // let edge1 = Edge::arc_with_tangent(p1, tangent, p2);
         let edge1 = Edge::arc_with_tangent(p1, tangent, p2);
         let edge2 = Edge::segment(p2, p0);
-        let wire = Wire::from_edges([&edge0, &edge1, &edge2]);
+        let wire = Wire::from_edges([&edge0, &edge1, &edge2])?;
         let shape = wire.to_face().revolve(p0, rot_axis, Some(opencascade::angle::Angle::Degrees(360.0))).into_shape();
 
         // let mut sketch = Sketch::new(c.as_dvec3(), Workplane::new(ref_axis , rot_axis));

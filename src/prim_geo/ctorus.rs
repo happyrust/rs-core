@@ -223,7 +223,7 @@ impl BrepShapeTrait for CTorus {
         let r2 = (self.rout - self.rins) as f64 / 2.0;
 
         let center = DVec2::new(r1, 0.0);
-        let face = Workplane::xz().translated(center.extend(0.0)).circle(0.0, 0.0, r2).to_face();
+        let face = Workplane::xz().translated(center.extend(0.0)).circle(0.0, 0.0, r2).unwrap().to_face();
         let r = face.revolve(DVec3::ZERO, DVec3::Z, Some(self.angle.degrees()));
         return Ok(OccSharedShape::new(r.into_shape()));
     }

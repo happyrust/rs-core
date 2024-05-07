@@ -159,9 +159,15 @@ pub struct DbOption {
 
 
     pub room_key_word: Option<String>,
+    // pub geom_live: Option<bool>,
+
 }
 
 impl DbOption {
+    // #[inline]
+    // pub fn is_geom_live(&self) -> bool {
+    //     self.geom_live.unwrap_or(false)
+    // }
 
     #[inline]
     pub fn get_room_key_word(&self) -> String {

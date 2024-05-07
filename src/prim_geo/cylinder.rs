@@ -366,7 +366,7 @@ impl BrepShapeTrait for SCylinder {
             let r = self.pdia as f64 / 2.0;
             let center = DVec3::ZERO;
             let ext_len = self.phei as f64;
-            let mut circle = Workplane::xy().circle(0.0, 0.0, r);
+            let mut circle = Workplane::xy().circle(0.0, 0.0, r)?;
 
             //还是要和extrude 区分出来
             let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;

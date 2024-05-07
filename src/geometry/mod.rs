@@ -110,11 +110,11 @@ impl EleGeosInfo {
     ///结合 version 和 refno 生成唯一的id
     #[inline]
     pub fn id_str(&self) -> String {
-        let hash = self.cata_hash.clone().unwrap_or(self.refno.to_string());
-        if hash.contains("_") {
-            format!("{}_{}", hash, self.version)
+        let hash = self.cata_hash.clone();
+        if hash.is_none() || hash.as_ref().unwrap().is_empty() || hash.as_ref().unwrap().contains("_") {
+            format!("{}_{}", self.refno.to_string(), self.version)
         } else {
-            hash
+            hash.clone().unwrap()
         }
     }
 

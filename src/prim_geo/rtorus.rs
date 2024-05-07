@@ -148,7 +148,7 @@ impl BrepShapeTrait for SRTorus {
             let bottom = Edge::segment(p3, p4);
             let left = Edge::segment(p4, p1);
 
-            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
+            let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
             let center = torus_info.center;
             let r = wire.to_face().revolve(center.as_dvec3(), -y_axis, Some(torus_info.angle.degrees()));
             return Ok(OccSharedShape::new(r.into_shape()));
@@ -239,7 +239,7 @@ impl BrepShapeTrait for RTorus {
         let bottom = Edge::segment(p3, p4);
         let left = Edge::segment(p4, p1);
 
-        let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter());
+        let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
         let r = wire.to_face().revolve(DVec3::ZERO, DVec3::Z, Some(self.angle.degrees()));
         return Ok(r.into_shape().into());
     }
