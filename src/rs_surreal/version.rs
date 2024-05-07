@@ -6,7 +6,6 @@ pub async fn backup_att_and_pe_to_history_tables(refnos: &[RefU64]) -> anyhow::R
     let sql = format!("fn::backup_atts_and_pes([{}])", pe_keys);
     println!("sql is {}", &sql);
     let response = SUL_DB.query(&sql).await.unwrap();
-    dbg!(&response);
-
+    // dbg!(&response);
     Ok(())
 }

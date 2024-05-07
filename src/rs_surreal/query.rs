@@ -420,12 +420,18 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
 }
 
 pub async fn clear_all_caches(refno: RefU64) {
+    // crate::GET_WORLD_TRANSFORM.lock().await.cache_remove(&refno);
+    // crate::GET_WORLD_MAT4.lock().await.cache_remove(&(refno, true));
+    // crate::GET_WORLD_MAT4.lock().await.cache_remove(&(refno, false));
+    // crate::GET_WORLD_TRANSFORM.lock().await.cache_clear();
+    // crate::GET_WORLD_MAT4.lock().await.cache_clear();
     GET_ANCESTOR.lock().await.cache_remove(&refno);
     QUERY_DEEP_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_PE.lock().await.cache_remove(&refno);
     GET_TYPE_NAME.lock().await.cache_remove(&refno);
     GET_SIBLINGS.lock().await.cache_remove(&refno);
     GET_NAMED_ATTMAP.lock().await.cache_remove(&refno);
+    GET_ANCESTOR_ATTMAPS.lock().await.cache_remove(&refno);
     GET_NAMED_ATTMAP_WITH_UDA
         .lock()
         .await

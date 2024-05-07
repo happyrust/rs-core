@@ -101,6 +101,7 @@ pub struct EleGeosInfo {
 
     pub neg_refnos: Vec<RefU64>,
     pub has_cata_neg: bool,
+    pub is_solid: bool,
 }
 
 
