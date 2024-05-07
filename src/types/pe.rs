@@ -9,8 +9,6 @@ use crate::pdms_types::PdmsElement;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
 pub struct SPdmsElement {
-    #[serde(default, skip_deserializing)]
-    pub id: String,
     //指向具体的类型
     pub refno: RefU64,
     pub owner: RefU64,

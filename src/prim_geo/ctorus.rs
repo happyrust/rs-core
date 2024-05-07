@@ -25,6 +25,7 @@ use opencascade::primitives::{Shape, Wire};
 use opencascade::angle::ToAngle;
 #[cfg(feature = "occ")]
 use opencascade::primitives::IntoShape;
+#[cfg(feature = "occ")]
 use opencascade::workplane::Workplane;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;

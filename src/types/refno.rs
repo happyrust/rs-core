@@ -245,6 +245,11 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_pe_thing(&self) -> Thing {
+        ("pe".to_string(), self.to_string()).into()
+    }
+
+    #[inline]
     pub fn to_pe_versioned_key(&self, version: i32) -> String {
         format!("pe_v:{}_{}", &self.to_string(), version)
     }
@@ -252,6 +257,11 @@ impl RefU64 {
     #[inline]
     pub fn to_pbs_key(&self) -> String {
         format!("pbs:{}", &self.to_string())
+    }
+
+    #[inline]
+    pub fn to_pbs_thing(&self) -> Thing {
+        ("pbs".to_string(), self.to_string()).into()
     }
 
     pub fn to_type_key(&self,noun:&str) -> String {
@@ -278,10 +288,6 @@ impl RefU64 {
         format!("{tbl}_v:{}_{}", &self.to_string(), version)
     }
 
-    #[inline]
-    pub fn to_pe_thing(&self) -> Thing {
-        ("pe".to_owned(), self.to_string()).into()
-    }
 
     #[inline]
     pub fn get_0(&self) -> u32 {

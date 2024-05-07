@@ -28,6 +28,7 @@ use std::panic::AssertUnwindSafe;
 #[cfg(feature = "truck")]
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
 
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 #[cfg(feature = "occ")]
 use opencascade::primitives::{Edge, Face, Wire};

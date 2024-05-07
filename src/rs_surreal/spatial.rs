@@ -289,7 +289,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             }
             let new_quat = {
                 if cur_type == "FITT" {
-                    dbg!(z_axis);
+                    // dbg!(z_axis);
                     let zdist = att.get_f32("ZDIS").unwrap_or_default() as f64;
                     pos += zdist * DVec3::Z;
                     let y_axis = if ower_type.contains("WALL") {

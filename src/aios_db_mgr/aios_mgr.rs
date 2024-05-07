@@ -7,13 +7,32 @@ use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_named_attmap_
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
+#[cfg(feature = "sql")]
 use sqlx::{MySql, Pool};
+#[cfg(feature = "sql")]
 use sqlx::pool::PoolOptions;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
 use crate::pe::SPdmsElement;
-use crate::test::test_surreal::{init_surreal_with_signin, init_test_surreal};
+use surrealdb::opt::auth::Root;
+
+pub async fn init_surreal_with_signin(db_option:&DbOption) -> anyhow::Result<()> {
+    SUL_DB
+        .connect(db_option.get_version_db_conn_str())
+        .with_capacity(1000)
+        .await?;
+    SUL_DB
+        .use_ns(&db_option.project_code)
+        .use_db(&db_option.project_name)
+        .await?;
+    SUL_DB
+        .signin(Root {
+            username: &db_option.v_user,
+            password: &db_option.v_password,
+        }).await?;
+    Ok(())
+}
 
 pub struct AiosDBMgr {
     pub db_option: DbOption,
@@ -199,6 +218,7 @@ impl AiosDBMgr {
         format!("mysql://{user}:{pwd}@{ip}")
     }
 
+    #[cfg(feature = "sql")]
     /// 获取项目配置信息pool
     pub async fn get_global_pool(&self) -> anyhow::Result<Pool<MySql>> {
         let connection_str = self.default_conn_str();
@@ -212,6 +232,7 @@ impl AiosDBMgr {
     }
 
     /// 获取外部的数据库
+    #[cfg(feature = "sql")]
     pub async fn get_puhua_pool(&self) -> anyhow::Result<Pool<MySql>> {
         let conn = self.puhua_conn_str();
         let url = &format!("{conn}/{}", PUHUA_MATERIAL_DATABASE);
@@ -220,19 +241,9 @@ impl AiosDBMgr {
             .acquire_timeout(Duration::from_secs(10 * 60))
             .connect(url)
             .await
-            .map_err({ |x| anyhow::anyhow!(x.to_string()) })
+            .map_err({cle |x| anyhow::anyhow!(x.to_string()) })
     }
 
-    /// 获取指定节点附近最近的 own_filter_types
-    pub async fn query_around_owner_within_radius(&self,
-                                                  refno: RefU64,
-                                                  is_aabb: bool,
-                                                  offset: Option<f32>,
-                                                  nearest: bool,
-                                                  own_filter_types: &[&str]) -> anyhow::Result<Vec<RefU64>> {
-        // todo
-        Ok(vec![])
-    }
 }
 
 #[tokio::test]

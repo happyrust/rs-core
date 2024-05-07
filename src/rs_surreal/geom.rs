@@ -11,7 +11,7 @@ use std::str::FromStr;
 use std::sync::Mutex;
 use smol_str::ToSmolStr;
 use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
-use crate::test::test_surreal::init_test_surreal;
+// use crate::test::test_surreal::init_test_surreal;
 use glam::Vec3;
 
 
@@ -197,11 +197,11 @@ pub async fn query_refnos_point_map(refnos: Vec<RefU64>) -> anyhow::Result<HashM
 }
 
 
-#[tokio::test]
-async fn test_query_bran_children_point_map() -> anyhow::Result<()> {
-    init_test_surreal().await;
-    let refno = RefU64::from_str("24383/67331").unwrap();
-    let r = query_bran_children_point_map(refno).await?;
-    dbg!(&r);
-    Ok(())
-}
+// #[tokio::test]
+// async fn test_query_bran_children_point_map() -> anyhow::Result<()> {
+//     init_test_surreal().await;
+//     let refno = RefU64::from_str("24383/67331").unwrap();
+//     let r = query_bran_children_point_map(refno).await?;
+//     dbg!(&r);
+//     Ok(())
+// }
