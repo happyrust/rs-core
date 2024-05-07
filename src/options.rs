@@ -156,9 +156,18 @@ pub struct DbOption {
     pub puhua_database_user: String,
     #[clap(long)]
     pub puhua_database_password: String,
+
+
+    pub room_key_word: Option<String>,
 }
 
 impl DbOption {
+
+    #[inline]
+    pub fn get_room_key_word(&self) -> String {
+        self.room_key_word.clone().unwrap_or("-RM".to_string())
+    }
+
     #[inline]
     pub fn get_project_path(&self, project: &str) -> Option<PathBuf> {
         let mut data_dir = Path::new(&self.project_path);

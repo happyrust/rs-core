@@ -10,7 +10,6 @@ use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
 use smol_str::ToSmolStr;
-use truck_polymesh::stl::IntoStlIterator;
 use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
 use crate::test::test_surreal::init_test_surreal;
 use glam::Vec3;
@@ -48,7 +47,6 @@ pub async fn query_deep_visible_inst_refnos(
     refno: RefU64,
 ) -> anyhow::Result<Vec<RefU64>> {
     let types = super::get_self_and_owner_type_name(refno).await?;
-    // dbg!(&types);
     if types[1] == "BRAN" || types[1] == "HANG" {
         return Ok(vec![refno]);
     }
@@ -59,7 +57,6 @@ pub async fn query_deep_visible_inst_refnos(
     //按照所允许的层级关系去遍历？
     let branch_refnos =
         super::query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await?;
-    // dbg!(&branch_refnos);
 
     let mut target_refnos = super::query_multi_children_refnos(&branch_refnos).await?;
 

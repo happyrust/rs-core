@@ -10,7 +10,7 @@ use bevy_ecs::system::Resource;
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
 use dashmap::DashMap;
 use serde::{Serialize, Deserialize};
-use crate::{DBType, get_mdb_world_site_pes, insert_into_table, insert_relate_to_table, query_all_room_name, query_ele_filter_deep_children, SUL_DB};
+use crate::{DBType, get_mdb_world_site_pes, insert_into_table, insert_relate_to_table, query_ele_filter_deep_children, SUL_DB};
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
@@ -24,6 +24,7 @@ use tokio::task;
 use crate::pdms_types::PdmsElement;
 use crate::pdms_types::UdaMajorType::S;
 use crate::pe::SPdmsElement;
+use crate::room::algorithm::query_all_room_name;
 use crate::tool::hash_tool::{hash_str, hash_two_str};
 
 #[derive(Resource, Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
@@ -940,7 +941,7 @@ async fn query_children_by_refnos(refnos: Vec<RefU64>) -> anyhow::Result<HashMap
 }
 
 /// 接受保存数据库请求并执行操作
-pub async fn execute_save_word(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
+pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
     for msg in rx {
         match msg {
             // 保存table数据
@@ -962,7 +963,6 @@ pub async fn execute_save_word(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> an
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    // set_pdms_major_code(&aios_mgr).await?;
     // 创建通道
     let (tx, rx) = mpsc::channel();
 
@@ -972,7 +972,7 @@ async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     set_pbs_node(&tx).await?;
     // 创建数据库处理线程
     let db_thread = task::spawn(async move {
-        execute_save_word(rx).await.unwrap();
+        execute_save_pbs(rx).await.unwrap();
     });
 
     // 发送退出消息

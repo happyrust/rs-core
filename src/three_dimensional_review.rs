@@ -10,7 +10,7 @@ use bevy_ecs::prelude::Event;
 
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
-pub struct ThreeDimensionalModelDataCrate {
+pub struct ReviewModelData {
     #[serde(rename = "id", alias="KeyValue")]
     pub key_value: String,
     #[serde(rename = "ProjCode")]

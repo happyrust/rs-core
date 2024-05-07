@@ -180,7 +180,11 @@ async fn calculate_room(room_refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
 pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<String>>> {
     let mut map = HashMap::new();
     let mut response = SUL_DB
-        .query(include_str!("schemas/query_all_room.surql"))
+        // .query(include_str!("schemas/query_all_room.surql"))
+        .query(r#"
+            select value (array::concat(REFNO<-pe_owner.in<-pe_owner.in<-pe_owner[where in.refno.NAME != NONE && in.noun == 'FRMW'].in.refno.NAME)) from (
+            select REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH'));
+        "#)
         .await?;
     let results: Vec<Vec<String>> = response.take(0)?;
     for r in results.clone() {

@@ -50,6 +50,24 @@ pub async fn query_filter_deep_children(
     Ok(vec![])
 }
 
+///深度查询
+#[cached(result = true)]
+pub async fn query_ele_filter_deep_children(
+    refno: RefU64,
+    nouns: Vec<String>,
+) -> anyhow::Result<Vec<SPdmsElement>> {
+    let refnos = query_deep_children_refnos(refno).await?;
+    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
+    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
+    let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
+    // println!("sql is {}", &sql);
+    let mut response = SUL_DB.query(&sql).with_stats().await.unwrap();
+    if let Some((stats, Ok(result))) = response.take::<Vec<SPdmsElement>>(0) {
+        return Ok(result);
+    }
+    Ok(vec![])
+}
+
 /// Represents the SQL query used to retrieve values from a database.
 /// The query is constructed dynamically based on the provided parameters.
 /// It selects the `refno` values from a flattened array of objects,

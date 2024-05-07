@@ -4,7 +4,7 @@ use crate::pe::SPdmsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
-use crate::types::table;
+use serde_with::DisplayFromStr;
 use crate::{types::*, graph::QUERY_DEEP_CHILDREN_REFNOS};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
@@ -15,6 +15,9 @@ use indexmap::IndexMap;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
+use serde_with::serde_as;
+use surrealdb::engine::any::Any;
+use surrealdb::Surreal;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 struct KV<K, V> {
@@ -252,10 +255,10 @@ pub async fn get_next_prev(refno: RefU64, next: bool) -> anyhow::Result<RefU64> 
         .position(|x| *x == refno)
         .unwrap_or_default();
     if next {
-        Ok(siblings.get(pos + 1).unwrap_or_default())
+        Ok(siblings.get(pos + 1).cloned().unwrap_or_default())
     } else {
         if pos == 0 { return Ok(Default::default()); }
-        Ok(siblings.get(pos - 1).unwrap_or_default())
+        Ok(siblings.get(pos - 1).cloned().unwrap_or_default())
     }
 }
 
@@ -420,10 +423,8 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
 
 pub async fn clear_all_caches(refno: RefU64) {
     // crate::GET_WORLD_TRANSFORM.lock().await.cache_remove(&refno);
-    // crate::GET_WORLD_MAT4.lock().await.cache_remove(&(refno, true));
-    // crate::GET_WORLD_MAT4.lock().await.cache_remove(&(refno, false));
-    // crate::GET_WORLD_TRANSFORM.lock().await.cache_clear();
-    // crate::GET_WORLD_MAT4.lock().await.cache_clear();
+    crate::GET_WORLD_TRANSFORM.lock().await.cache_clear();
+    crate::GET_WORLD_MAT4.lock().await.cache_clear();
     GET_ANCESTOR.lock().await.cache_remove(&refno);
     QUERY_DEEP_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_PE.lock().await.cache_remove(&refno);

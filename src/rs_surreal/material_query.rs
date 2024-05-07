@@ -13,14 +13,14 @@ use crate::pe::SPdmsElement;
 use crate::rs_surreal::table_const::GY_DZCL;
 use surrealdb::engine::any::Any;
 use crate::test::test_surreal::init_test_surreal;
-use crate::pdms_types::{ser_refno_as_str, de_refno_from_key_str};
+use crate::pdms_types::{ser_refno_as_str};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialGyDataBend {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub code: String,
     pub noun: String,
@@ -41,8 +41,8 @@ impl MaterialGyDataBend {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialGyData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub code: String,
     pub noun: String,
@@ -69,8 +69,8 @@ impl MaterialGyData {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialGyValvList {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub valv_name: String,
     pub room_code: Option<String>,
@@ -110,8 +110,8 @@ impl MaterialGyValvList {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialGyEquiList {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub name: String,
     pub room_code: Option<String>,
@@ -432,8 +432,8 @@ impl MaterialTfHavcFlexList {
 /// 电气 托盘及接地
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialDqMaterialList {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub num: Option<String>,
     pub project_num: Option<String>,
@@ -502,8 +502,8 @@ impl MaterialDqMaterialList {
 /// 电气 托盘及接地
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialDqMaterialListStru {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub num: Option<String>,
     pub project_num: Option<String>,
@@ -828,8 +828,8 @@ pub async fn get_yk_dzcl_list(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialYkInstData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub name: String,
     pub pipe_name: Option<String>,
@@ -877,8 +877,8 @@ pub async fn get_yk_inst_pipe(db: Surreal<Any>, refnos: Vec<RefU64>) -> anyhow::
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialYkEquiListData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub equi_name: String,
     pub room_code: Option<String>,
@@ -930,8 +930,8 @@ pub async fn get_yk_equi_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
 /// 给排水 大宗材料
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialGpsDzclData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub code: String,
     pub noun: String,
@@ -1065,8 +1065,8 @@ pub async fn get_gps_dzcl_material(db: Surreal<Any>, refnos: Vec<RefU64>) -> any
 /// 设备专业 通信系统
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialTxTxsbData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub equi_name: String,
     pub ptre_desc: String,
@@ -1136,8 +1136,8 @@ pub async fn get_tx_txsb_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
 /// 设备专业 大宗材料
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialSbListData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub name: String,
     pub pos: Option<f32>,
@@ -1148,8 +1148,8 @@ pub struct MaterialSbListData {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialSubeData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub refno: RefU64,
     pub pos: Option<f32>,
     pub length: Option<f32>,
@@ -1221,8 +1221,8 @@ pub async fn get_sb_dzcl_list_material(db: Surreal<Any>, refnos: Vec<RefU64>) ->
 /// 暖通 阀门清单
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialNtValvData {
-    #[serde(deserialize_with = "de_refno_from_key_str")]
-    #[serde(serialize_with = "ser_refno_as_str")]
+
+
     pub id: RefU64,
     pub name: String,
     pub room_code: Option<String>,

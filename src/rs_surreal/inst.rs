@@ -29,7 +29,7 @@ pub async fn query_tubi_insts_by_brans(
     let sql = format!(
         r#"
              select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
-                from  array::flatten([{}]->tubi_relate) where leave.id != none
+                from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
              "#,
         pes
     );
@@ -51,7 +51,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<T
         array::group(array::complement(select value
         (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
-                from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
+                from [{}] where owner.noun in ['BRAN', 'HANG'] and aabb.d!=none, [none]))
              "#, pes))
         .await?;
 

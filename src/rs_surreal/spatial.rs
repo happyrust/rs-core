@@ -92,7 +92,7 @@ pub async fn get_spline_line_dir(refno: RefU64) -> anyhow::Result<DVec3> {
     Err(anyhow!("没有找到两个点"))
 }
 
-// #[cached(result = true)]
+#[cached(result = true)]
 pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transform>> {
     get_world_mat4(refno, false)
         .await
@@ -102,7 +102,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 //获得世界坐标系
 ///使用cache，需要从db manager里移除出来
 ///获得世界坐标系, 需要缓存数据，如果已经存在数据了，直接获取
-// #[cached(result = true)]
+#[cached(result = true)]
 pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Option<DMat4>> {
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
     if ancestors.len() <= 1 {

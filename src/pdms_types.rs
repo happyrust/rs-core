@@ -494,7 +494,7 @@ impl EleTreeNode {
             name: self.name,
             noun: self.noun,
             version: 0,
-            children_count: self.children_count,
+            children_count: self.children_count as _,
         }
     }
 }
@@ -507,7 +507,9 @@ impl From<PdmsElement> for EleTreeNode {
             noun: value.noun,
             name: value.name,
             owner: value.owner,
-            children_count: value.children_count,
+            order: 0,
+            children_count: value.children_count as _,
+            deleted: false,
         }
     }
 }

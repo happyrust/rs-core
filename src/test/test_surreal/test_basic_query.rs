@@ -52,10 +52,8 @@ async fn test_query_att_by_refno() {
     super::init_test_surreal().await;
     let attmap = rs_surreal::get_named_attmap("17496/172037".into()).await;
     dbg!(attmap);
-    // let attmap = rs_surreal::get_named_attmap_with_uda("24383/66460".into(), true)
-    //     .await
-    //     .unwrap();
-    // dbg!(attmap);
+    let eles = rs_surreal::get_children_pes("24383/74426".into()).await;
+    dbg!(eles);
 }
 
 #[tokio::test]
