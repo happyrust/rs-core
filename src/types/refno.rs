@@ -250,6 +250,15 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_pbs_key(&self) -> String {
+        format!("pbs:{}", &self.to_string())
+    }
+
+    pub fn to_type_key(&self,noun:&str) -> String {
+        format!("{}:{}", noun,&self.to_string())
+    }
+
+    #[inline]
     pub fn to_inst_relate_key(&self) -> String {
         self.to_table_key("inst_relate")
     }
@@ -340,6 +349,10 @@ impl RefU64 {
             .filter_map(|refno| Self::from_str(refno).ok())
             .collect()
     }
+    /// 转换为pdms的形式
+    pub fn to_pdms_str(&self) -> String {
+        format!("{}/{}", self.get_0(), self.get_1())
+    }
 }
 
 ///pdms的参考号
@@ -396,11 +409,11 @@ impl RefI32Tuple {
 
     #[inline]
     pub fn get_0(&self) -> i32 {
-        self.0 .0
+        self.0.0
     }
 
     #[inline]
     pub fn get_1(&self) -> i32 {
-        self.0 .1
+        self.0.1
     }
 }

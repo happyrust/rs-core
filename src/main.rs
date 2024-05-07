@@ -23,4 +23,17 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[test]
+fn get_noun_hash() {
+    let noun = "UDA";
+    let hash = db1_hash(noun);
+    dbg!(hash);
+    let hashes = [582073, 640481, 919399];
+    for hash in hashes {
+        let str = db1_dehash(hash);
+        dbg!(&hash);
+        dbg!(str);
+    }
+}
+
 //todo 提供一个 http 的接口返回数据吗？

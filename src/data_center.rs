@@ -51,6 +51,8 @@ pub struct DataCenterInstance {
     pub project_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub operate: Option<String>,
     pub version: String,
     pub attributes: Vec<DataCenterAttr>,
 }
@@ -94,6 +96,8 @@ pub enum AttrValue {
     AttrVec3(Vec3),
     AttrVec3Array(Vec<Vec3>),
     AttrMap(HashMap<String, Vec<String>>),
+    AttrVecVecStringMap(HashMap<String, Vec<Vec<String>>>),
+    AttrMapFloat(HashMap<String, f32>),
     AttrMapFloatArray(HashMap<String, Vec<f32>>),
     AttrItemArray(Vec<ItemValue>),
 }
@@ -135,6 +139,12 @@ impl Into<String> for AttrValue {
                 serde_json::to_string(&a).unwrap_or("[]".to_string())
             }
             AttrValue::AttrMap(a) => {
+                serde_json::to_string(&a).unwrap_or("{}".to_string())
+            }
+            AttrValue::AttrVecVecStringMap(a) => {
+                serde_json::to_string(&a).unwrap_or("{}".to_string())
+            }
+            AttrValue::AttrMapFloat(a) => {
                 serde_json::to_string(&a).unwrap_or("{}".to_string())
             }
             AttrValue::AttrMapFloatArray(a) => {
@@ -301,8 +311,8 @@ pub struct SendHoleDataFormData {
     #[serde(rename = "files")]
     pub files: Vec<DataCenterFile>,
     #[serde(rename = "ModelData")]
-    // pub model_data: Vec<Vec<(RefU64,String)>>,
-    pub model_data: HoleWallBoardVec,
+    pub model_data: Vec<Vec<(RefU64,String)>>,
+    // pub model_data: HoleWallBoardVec,
 }
 
 //墙板列表
@@ -373,6 +383,23 @@ pub struct CableWeight {
     pub tray_weight: String,
     /// 电缆线重
     pub cable_weight: String,
+}
+
+
+//接收创建虚拟孔洞流程的结构体
+#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ForwardHoleData {
+    pub title: String,
+    //孔洞或埋件的key
+    pub hole_keys: Vec<String>,
+    pub embed_keys: Vec<String>,
+    pub jd_name: String,
+    pub sh_name: String,
+    pub sd_name: String,
+    // #[serde(default)]
+    // pub sz_name: String,
+    pub human_code: String,
+    pub memo: String,
 }
 
 #[test]

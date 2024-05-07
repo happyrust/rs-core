@@ -122,7 +122,7 @@ pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
 
 pub const VISBILE_GEO_NOUNS: [&'static str; 38] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "EXTR", "REVO",
-    "FLOOR", "PANE", 
+    "FLOOR", "PANE",
     "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
     "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL","SCTN", "NOZZ"
 ];
@@ -152,18 +152,18 @@ pub mod string {
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Display,
-        S: Serializer,
+        where
+            T: Display,
+            S: Serializer,
     {
         serializer.collect_str(value)
     }
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-    where
-        T: FromStr,
-        T::Err: Display,
-        D: Deserializer<'de>,
+        where
+            T: FromStr,
+            T::Err: Display,
+            D: Deserializer<'de>,
     {
         String::deserialize(deserializer)?
             .parse()
@@ -233,24 +233,24 @@ pub enum PdmsGenericType {
 }
 
 fn de_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     s.parse::<u64>().map_err(de::Error::custom)
 }
 
 fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     RefU64::from_str(&s).map_err(de::Error::custom)
 }
 
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer).unwrap_or_default();
     Ok(serde_json::from_str::<HashSet<String>>(s.as_str())
@@ -261,8 +261,8 @@ where
 }
 
 pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     let set = refnos
         .into_iter()
@@ -273,15 +273,15 @@ where
 }
 
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     s.serialize_str((*id).to_string().as_str())
 }
 
 pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
+    where
+        S: Serializer,
 {
     s.serialize_str(refno.to_string().as_str())
 }
@@ -486,8 +486,31 @@ impl EleTreeNode {
             deleted
         }
     }
+
+    pub fn into_handle_struct(self) -> PdmsElementHandle {
+        PdmsElementHandle {
+            refno: self.refno.to_pdms_str(),
+            owner: self.owner.to_pdms_str(),
+            name: self.name,
+            noun: self.noun,
+            version: 0,
+            children_count: self.children_count,
+        }
+    }
 }
 
+
+impl From<PdmsElement> for EleTreeNode {
+    fn from(value: PdmsElement) -> Self {
+        EleTreeNode {
+            refno: value.refno,
+            noun: value.noun,
+            name: value.name,
+            owner: value.owner,
+            children_count: value.children_count,
+        }
+    }
+}
 
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]
@@ -616,6 +639,30 @@ impl PdmsElement {
             NamedAttrValue::IntegerType(self.children_count as i32),
         ]
     }
+    /// 转为对外接口的结构体
+    pub fn into_handle_struct(self) -> PdmsElementHandle {
+        PdmsElementHandle {
+            refno: self.refno.to_pdms_str(),
+            owner: self.owner.to_pdms_str(),
+            name: self.name,
+            noun: self.noun,
+            version: self.version,
+            children_count: self.children_count,
+        }
+    }
+}
+
+impl From<SPdmsElement> for PdmsElement {
+    fn from(value: SPdmsElement) -> Self {
+        Self {
+            refno: value.refno,
+            owner: value.owner,
+            name: value.name,
+            noun: value.noun,
+            version: 0,
+            children_count: 0,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
@@ -640,6 +687,18 @@ pub struct PdmsNodeId(pub NodeId);
 pub struct DbnoVersion {
     pub dbno: u32,
     pub version: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PdmsElementHandle {
+    pub refno: String,
+    pub owner: String,
+    pub name: String,
+    pub noun: String,
+    #[serde(default)]
+    pub version: u32,
+    #[serde(default)]
+    pub children_count: usize,
 }
 
 #[test]
@@ -860,17 +919,17 @@ pub struct PdmsRefno {
 pub type AiosStrHash = u32;
 
 #[derive(
-    Debug,
-    Clone,
-    Default,
-    Serialize,
-    Deserialize,
-    PartialEq,
-    Eq,
-    Hash,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+Debug,
+Clone,
+Default,
+Serialize,
+Deserialize,
+PartialEq,
+Eq,
+Hash,
+rkyv::Archive,
+rkyv::Deserialize,
+rkyv::Serialize,
 )]
 pub struct AiosStr(pub String);
 

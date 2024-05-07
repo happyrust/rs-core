@@ -1,0 +1,56 @@
+// 螺栓数量
+DEFINE FUNCTION fn::tape_bolt_count($pe:record) {
+    let $hvac_shape = fn::hvac_shape($pe);
+    let $width = $pe.refno.DESP[1];
+    let $width_2 = $pe.refno.DESP[3];
+    let $height = $pe.refno.DESP[2];
+    let $height_2 = $pe.refno.DESP[4];
+    let $flan_width = $pe.refno.DESP[20];
+    let $flan_width_2 = $pe.refno.DESP[23];
+    let $flan_length = string::split(array::first(fn::tape_flan_length($pe)).length,',');
+
+    let $pre_length =
+    // ('[Prev_Type]' EQ 'DAMP') OR ('[Prev_Type]' EQ 'MESH')
+    if $hvac_shape == 'RECT' && (fn::b_pre_type($pe,'DAMP') || fn::b_pre_type($pe,'MESH')) {
+        ((($width + $flan_width * 2 + 75 ) / 150) + (($height + $flan_width * 2 + 75) / 150 ) - 2) *2
+    }
+    // ('[Prev_Type]' NE 'DAMP') AND ('[Prev_Type]' NE 'MESH')
+    else if $hvac_shape == 'RECT' && (!fn::b_pre_type($pe,'DAMP') && !fn::b_pre_type($pe,'MESH')) {
+        (($width + $flan_width * 2 + 75 ) / 150) + (($height + $flan_width * 2 + 75) / 150 ) - 2
+    }
+    // ('[Prev_Type]' EQ 'DAMP') OR ('[Prev_Type]' EQ 'MESH')
+    else if $hvac_shape == 'CIRC' && (fn::b_pre_type($pe,'DAMP') || fn::b_pre_type($pe,'MESH')) {
+        (<float>$flan_length[0].length + 75) / 150
+    }
+    // ('[Prev_Type]' NE 'DAMP') AND ('[Prev_Type]' NE 'MESH')
+    else if $hvac_shape == 'CIRC' && (!fn::b_pre_type($pe,'DAMP') && !fn::b_pre_type($pe,'MESH')) {
+        (<float>$flan_length[0].length + 75) / 150 / 2
+    } else {
+        0
+    };
+
+    let $next_length =
+    // ('[Next_Type]' EQ 'DAMP') OR ('[Next_Type]' EQ 'MESH')
+    if $hvac_shape == 'RECT' && (fn::b_next_type($pe,'DAMP') || fn::b_next_type($pe,'MESH')) {
+        ((($width + $flan_width * 2 + 75 ) / 150) + (($height + $flan_width * 2 + 75) / 150 ) - 2) *2
+    }
+    // ('[Next_Type]' NE 'DAMP') AND ('[Next_Type]' NE 'MESH')
+    else if $hvac_shape == 'RECT' && (!fn::b_next_type($pe,'DAMP') && !fn::b_next_type($pe,'MESH')) {
+        (($width + $flan_width_2 * 2 + 75 ) / 150) + (($height_2 + $flan_width_2 * 2 + 75) / 150 ) - 2
+    }
+    // ('[Next_Type]' EQ 'DAMP') OR ('[Next_Type]' EQ 'MESH')
+    else if $hvac_shape == 'CIRC' && (fn::b_next_type($pe,'DAMP') || fn::b_next_type($pe,'MESH')) {
+        (<float>$flan_length[0].length + 75) / 150
+    }
+    //('[Next_Type]' NE 'DAMP') AND ('[Next_Type]' NE 'MESH')
+    else if $hvac_shape == 'CIRC' && (!fn::b_next_type($pe,'DAMP') && !fn::b_next_type($pe,'MESH')) {
+        (<float>$flan_length[0].length + 75) / 150 / 2
+    } else {
+        0
+    };
+
+    return string::replace(string::concat(<string>$pre_length,',',<string>$next_length),'f','')
+};
+
+
+// return fn::tape_gask_length(pe:24381_76894)

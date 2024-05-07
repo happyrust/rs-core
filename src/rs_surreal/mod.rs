@@ -6,6 +6,9 @@ pub mod mdb;
 pub mod uda;
 pub mod resolve;
 pub mod index;
+pub mod material_query;
+pub mod datacenter_query;
+mod table_const;
 
 pub mod inst;
 

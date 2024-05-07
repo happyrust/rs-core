@@ -1,5 +1,6 @@
 use crate::options::DbOption;
 use config::{Config, File};
+use surrealdb::opt::auth::Root;
 use crate::function::define_common_functions;
 use crate::SUL_DB;
 
@@ -43,4 +44,21 @@ pub async fn init_test_surreal() {
         .await
         .unwrap();
     define_common_functions().await.unwrap();
+}
+
+pub async fn init_surreal_with_signin(db_option:&DbOption) -> anyhow::Result<()> {
+    SUL_DB
+        .connect(db_option.get_version_db_conn_str())
+        .with_capacity(1000)
+        .await?;
+    SUL_DB
+        .use_ns(&db_option.project_code)
+        .use_db(&db_option.project_name)
+        .await?;
+    SUL_DB
+        .signin(Root {
+        username: &db_option.v_user,
+        password: &db_option.v_password,
+    }).await?;
+    Ok(())
 }

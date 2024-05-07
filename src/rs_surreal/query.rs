@@ -251,12 +251,11 @@ pub async fn get_next_prev(refno: RefU64, next: bool) -> anyhow::Result<RefU64> 
         .iter()
         .position(|x| *x == refno)
         .unwrap_or_default();
-    if pos == 0 {
-        Ok(Default::default())
-    } else if next {
-        Ok(siblings[pos + 1])
+    if next {
+        Ok(siblings.get(pos + 1).unwrap_or_default())
     } else {
-        Ok(siblings[pos - 1])
+        if pos == 0 { return Ok(Default::default()); }
+        Ok(siblings.get(pos - 1).unwrap_or_default())
     }
 }
 
@@ -514,6 +513,24 @@ pub async fn query_group_by_cata_hash(
     Ok(map)
 }
 
+#[serde_as]
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct PdmsSpreName {
+    #[serde_as(as = "DisplayFromStr")]
+    pub refno: RefU64,
+    pub foreign_refno: Option<String>,
+    pub name: Option<String>,
+}
+
+/// 查询多个参考号外键对应的name，暂时只支持SPRE这种一层外键的
+pub async fn query_foreign_refnos(refnos: Vec<RefU64>, foreign_type: &str) -> anyhow::Result<Vec<PdmsSpreName>> {
+    let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
+    let sql = format!("select refno, refno.{} as foreign_refno,refno.{}.refno.NAME as name from {};", &foreign_type, &foreign_type, serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
+    let mut response = SUL_DB.query(sql).await?;
+    let result: Vec<PdmsSpreName> = response.take(0)?;
+    Ok(result)
+}
+
 pub async fn query_single_by_paths(
     refno: RefU64,
     paths: &[&str],
@@ -556,4 +573,23 @@ pub async fn query_refnos_by_type(noun: &str) -> anyhow::Result<Vec<RefU64>> {
         .await?;
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
+}
+
+
+/// 插入数据
+pub async fn insert_into_table(db: &Surreal<Any>, table: &str, value: &str) -> anyhow::Result<()> {
+    db.query(format!("insert into {} {}", table, value)).await?;
+    Ok(())
+}
+
+/// 批量插入relate数据，需要事先定义好每一条relate语句，并放到集合中
+pub async fn insert_relate_to_table(db: &Surreal<Any>, value: Vec<String>) -> anyhow::Result<()> {
+    if value.is_empty() { return Ok(()); }
+    let mut sql = String::new();
+    for v in value {
+        sql.push_str(&format!("{} ;", v));
+    }
+    sql.remove(sql.len() - 1);
+    db.query(sql).await?;
+    Ok(())
 }
