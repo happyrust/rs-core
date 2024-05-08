@@ -1,12 +1,11 @@
-pub mod test_attrmap;
+pub mod test_attmap;
 pub mod test_shape;
 
+#[cfg(feature = "occ")]
 pub mod test_wire;
 
 pub mod test_schema;
 
-// pub mod test_sql;
-// pub mod test_sync2;
 
 pub mod test_refno;
 

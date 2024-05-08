@@ -224,7 +224,7 @@ impl AccelerationTree {
             return Some(r);
         }
         let geom_insts = crate::query_insts(&[refno]).await.ok()?;
-        dbg!(geom_insts.len());
+        // dbg!(geom_insts.len());
         let mut meshes = vec![];
         for g in geom_insts {
             // dbg!(&g);

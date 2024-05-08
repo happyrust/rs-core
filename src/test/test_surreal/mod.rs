@@ -43,6 +43,11 @@ pub async fn init_test_surreal() {
         .use_db(&db_option.project_name)
         .await
         .unwrap();
+    SUL_DB
+        .signin(Root {
+            username: &db_option.v_user,
+            password: &db_option.v_password,
+        }).await.unwrap();
     define_common_functions().await.unwrap();
 }
 

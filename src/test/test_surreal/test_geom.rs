@@ -1,4 +1,4 @@
-use crate::{rs_surreal, tool::math_tool::quat_to_pdms_ori_xyz_str};
+use crate::{RefU64, rs_surreal, tool::math_tool::quat_to_pdms_ori_xyz_str};
 
 use std::{sync::Arc, time::Instant};
 use glam::Quat;
@@ -13,6 +13,17 @@ async fn test_query_inst_refnos() -> anyhow::Result<()> {
         .unwrap();
     dbg!(time.elapsed().as_secs_f32());
     dbg!(refnos);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_query_instance() -> anyhow::Result<()> {
+    super::init_test_surreal().await;
+    let refno: RefU64 = "25688_48848".into();
+    let insts = rs_surreal::query_insts(&[refno])
+        .await
+        .unwrap();
+    dbg!(insts);
     Ok(())
 }
 

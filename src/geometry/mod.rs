@@ -98,8 +98,6 @@ pub struct EleGeosInfo {
 
     #[serde(skip, default)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
-
-    pub neg_refnos: Vec<RefU64>,
     pub has_cata_neg: bool,
     pub is_solid: bool,
 }
@@ -192,7 +190,7 @@ pub struct ShapeInstancesData {
 
     ///保存所有用到的的ngmr数据
     #[serde(skip)]
-    pub ngmr_relate_map: HashMap<RefU64, Vec<RefU64>>,
+    pub neg_relate_map: HashMap<RefU64, Vec<RefU64>>,
 }
 
 /// shape instances 的管理方法
@@ -252,7 +250,7 @@ impl ShapeInstancesData {
         self.inst_info_map.clear();
         self.inst_geos_map.clear();
         self.inst_tubi_map.clear();
-        self.ngmr_relate_map.clear();
+        self.neg_relate_map.clear();
     }
 
     #[inline]
@@ -352,14 +350,21 @@ impl ShapeInstancesData {
         self.inst_info_map.insert(refno, info);
     }
 
+    ///插入 ngmr 数据
     #[inline]
     pub fn insert_ngmr(&mut self, refno: RefU64, owners: Vec<RefU64>) {
         for owner in owners {
-            let mut d = self.ngmr_relate_map.entry(owner).or_insert_with(Vec::new);
+            let mut d = self.neg_relate_map.entry(owner).or_insert_with(Vec::new);
             if !d.contains(&refno) {
                 d.push(refno);
             }
         }
+    }
+
+    ///插入neg数据
+    #[inline]
+    pub fn insert_negs(&mut self, refno: RefU64, negs: &[RefU64]) {
+        self.neg_relate_map.entry(refno).or_insert_with(Vec::new).extend(negs);
     }
 
     #[inline]

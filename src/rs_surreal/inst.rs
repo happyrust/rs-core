@@ -108,10 +108,10 @@ pub async fn query_insts(
 
     let sql = format!(r#"
                     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if neg_refnos != none && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos')  }} as insts
+            if (in<-neg_relate)[0] != none && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where trans.d != none and geo_type='Pos')  }} as insts
             from {inst_keys} where aabb.d != none
             "#);
-    // println!("Query insts: {}", &sql);
+    println!("Query insts: {}", &sql);
     let mut response = SUL_DB
         .query(sql)
         .await?;
