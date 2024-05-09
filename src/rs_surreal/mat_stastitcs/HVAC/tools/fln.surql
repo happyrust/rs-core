@@ -287,6 +287,7 @@ DEFINE FUNCTION fn::hvac_prev_flw($pe: record) {
 };
 
 
+
 DEFINE FUNCTION fn::hvac_fl_len($pe: record) {
     let $f = fn::hvac_shape_fl_type($pe);
     let $m = fn::hvac_mat_id($pe);
@@ -319,6 +320,10 @@ DEFINE FUNCTION fn::hvac_fl_len($pe: record) {
             0
          };
     };
+};
+
+DEFINE FUNCTION fn::hvac_fl_len_format($pe: record) {
+   return math::fixed(fn::hvac_fl_len($pe), 2);
 };
 
 DEFINE FUNCTION fn::hvac_fl_len_THRE_single($pe: record, $n: option<int>) {
@@ -359,13 +364,16 @@ DEFINE FUNCTION fn::hvac_fl_name_THRE($pe: record) {
 };
 
 
+
 DEFINE FUNCTION fn::hvac_fl_wei($pe: record, $num: option<int>) {
     let $f = fn::hvac_fl_type_spec($pe, $num);
     let $scale = (select value weight_scale from fl_table where code = $f)[0];
     return fn::hvac_fl_len($pe) * ( if $scale == none { 0.0 } else { $scale } );
 };
 
-
+DEFINE FUNCTION fn::hvac_fl_wei_format($pe: record) {
+   return math::fixed(fn::hvac_fl_wei($pe), 2);
+};
 
 DEFINE FUNCTION fn::hvac_fl_len_TRNS($pe: record) {
      return if fn::hvac_height2_is_DIAM($pe) {

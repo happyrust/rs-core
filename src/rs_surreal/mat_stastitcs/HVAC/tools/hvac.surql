@@ -173,6 +173,10 @@ DEFINE FUNCTION fn::hvac_len($pe: record){
     return $pe.refno.DESP[5];
 };
 
+DEFINE FUNCTION fn::hvac_len_format($pe: record){
+    return math::fixed(fn::hvac_len($pe), 2);
+};
+
 DEFINE FUNCTION fn::hvac_a_len($pe: record){
     return $pe.refno.DESP[14];
 };
