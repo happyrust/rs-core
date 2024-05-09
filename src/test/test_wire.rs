@@ -103,6 +103,23 @@ fn gen_wire_shape(pts: &Vec<Vec3>, fradius: &Vec<f32>, refno: RefU64) {
 }
 
 #[test]
+fn test_gen_wire_1() {
+    let pts = vec![
+        [0.0, 0.0, 0.0],
+        [0.0, 52200.0, 0.0],
+        [12900.0, 52200.0, 0.0],
+        [12900.0, 40240.46875, 0.0],
+        [16318.63948, 36574.4296875, 0.0],
+        [16318.63948, 36574.4296875, 0.0],
+        [-1500.0, 18600.0, 25500.0],
+        [16167.299, -0.0099, 0.0],
+    ];
+
+    let pts: Vec<Vec3> = pts.into_iter().map(|pt| Vec3::from(pt)).collect();
+    gen_occ_wires(&vec![pts]).unwrap();
+}
+
+#[test]
 fn test_gen_wire_25688_45314() {
     let data = vec![
         [23350, 0, 0],

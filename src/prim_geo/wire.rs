@@ -609,23 +609,38 @@ pub fn resolve_basic_intersection(
 //如果有两个以上的PLOO，需要执行boolean operation
 ///根据传进去的参数生成 Polyline, x, y 为坐标，z 为bulge
 pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
-    let len = pts.len();
+    if pts.len() < 3 {
+        return Err(anyhow!("wire 顶点数量不够，小于3。"));
+    }
+    let mut new_pts = vec![pts[0].as_dvec3()];
+    //第一遍就应该去掉重复的点
+    for i in 1..pts.len(){
+        let pt = pts[i].truncate();
+        let pre_pt = pts[(i-1)].truncate();
+        if pt.distance(pre_pt) < 0.1 {
+            dbg!(pt);
+            continue;
+        }
+        new_pts.push(pts[i].as_dvec3());
+    }
+
+    let len = new_pts.len();
     if len < 3 {
         return Err(anyhow!("wire 顶点数量不够，小于3。"));
     }
     let mut polyline = Polyline::new_closed();
     let remove_pos_tol = 0.1;
 
-    let pts = pts.iter().map(|x| x.as_dvec3()).collect::<Vec<_>>();
+    // let n_pts = pts.iter().map(|x| x.as_dvec3()).collect::<Vec<_>>();
     for i in 0..len {
-        let pt = pts[i];
+        let pt = new_pts[i];
         let fradius = pt.z;
         if pt.z > 0.0 {
             let last_index = (i + len - 1) % len;
             let mut cur_pt = pt.truncate();
-            let mut last = pts[last_index].truncate();
+            let mut last = new_pts[last_index].truncate();
             //如果fradius > 0.0，需要检查wind 方向
-            let mut next = pts[(i + 1) % len].truncate();
+            let mut next = new_pts[(i + 1) % len].truncate();
 
             let mut v1 = (cur_pt - last).normalize();
             let mut v2 = (next - cur_pt).normalize();

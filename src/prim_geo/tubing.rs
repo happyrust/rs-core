@@ -34,6 +34,7 @@ pub struct PdmsTubing {
     pub leave_ref_dir: Option<Vec3>,
     pub desire_arrive_dir: Vec3,
     pub tubi_size: TubiSize,
+    pub index: usize,
 }
 
 // remove the _from and _to
@@ -115,6 +116,16 @@ pub enum TubiSize {
     BoxSize((f32, f32)),
 }
 
+impl ToString for TubiSize {
+    fn to_string(&self) -> String{
+        match self {
+            TubiSize::None => "unset".to_string(),
+            TubiSize::BoreSize(d) => d.to_string(),
+            TubiSize::BoxSize((w, h)) => format!("{},{}", w, h),
+        }
+    }
+}
+
 impl PdmsTubing {
     ///获得方向
     #[inline]
@@ -125,12 +136,11 @@ impl PdmsTubing {
     /// 是否方向是ok的
     #[inline]
     pub fn is_dir_ok(&self) -> bool {
-        // return true;
         let a = self.desire_leave_dir.normalize_or_zero();
         let b = -self.desire_arrive_dir.normalize_or_zero();
         let c = self.get_dir();
-        abs_diff_eq!(a.dot(c).abs(), 1.0, epsilon = 0.01)
-            && abs_diff_eq!(b.dot(c).abs(), 1.0, epsilon = 0.01)
+        abs_diff_eq!(a.dot(c), 1.0, epsilon = 0.01)
+            && abs_diff_eq!(b.dot(c), 1.0, epsilon = 0.01)
     }
 
     /// 获得tubi的transform

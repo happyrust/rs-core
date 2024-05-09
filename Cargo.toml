@@ -5,7 +5,7 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = [] #"occ", "gen_model"
+default = ["occ", "gen_model"] #"occ", "gen_model"
 occ = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 manifold = ["dep:manifold-sys"]
@@ -23,13 +23,13 @@ sql = []
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25"
 smol_str = { version = "0.2.0", features = ["serde"] }
-glam = { version = "0.25.0", features = ["serde", "rkyv"]}
+glam = { version = "0.27.0", features = ["serde", "rkyv"]}
 id_tree = { path = "../id-tree", features = ["serde_support"] }
-dashmap = { version = "5.2.0", features = ["serde"] }
-hexasphere = "10.0.0"
+dashmap = { version = "5.5.3", features = ["serde"] }
+hexasphere = "12.0.0"
 anyhow = "1.0.57"
 lyon = "1.0.0"
-nalgebra = { path="../nalgebra", features = ["serde", "rkyv", "glam025", "convert-glam025"] }
+nalgebra = { path="../nalgebra", features = ["serde", "rkyv", "glam027", "convert-glam027"] }
 parry3d = { path="../parry/crates/parry3d", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 parry2d = { path="../parry/crates/parry2d", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 approx = "0.5.1"
