@@ -57,6 +57,11 @@ DEFINE FUNCTION fn::next_type($pe:record) {
 };
 
 
+DEFINE FUNCTION fn::children($pe:record) {
+    return (select value <-pe_owner.in from $pe)[0];;
+};
+
+
 // 获取ipara
 DEFINE FUNCTION fn::get_ipara($pe:record) {
     let $ispe = $pe.owner.refno.ISPE;

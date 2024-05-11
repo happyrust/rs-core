@@ -1,9 +1,11 @@
-use std::f32::consts::FRAC_PI_2;
 use crate::shape::pdms_shape::{ANGLE_RAD_F64_TOL, ANGLE_RAD_TOL};
 use crate::tool::float_tool::*;
 use approx::{abs_diff_eq, abs_diff_ne};
 use glam::{DMat3, DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
+use std::f32::consts::FRAC_PI_2;
+
+use super::direction_parse::parse_expr_to_dir;
 
 lazy_static! {
     pub static ref AXIS_VEC_TUPLES: [(glam::Vec3, &'static str); 6] = {
@@ -82,19 +84,19 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         if abs_diff_eq!(v.x, 0.0, epsilon = tol) {
             x = v.y;
             y = v.z;
-            angle = (y / x).atan().to_degrees();
+            angle = (y / x).atan().to_degrees().abs();
             x_str = if x > 0.0 { "N" } else { "S" };
             y_str = if y > 0.0 { "U" } else { "D" };
         } else if abs_diff_eq!(v.y, 0.0, epsilon = tol) {
             x = v.x;
             y = v.z;
-            angle = (y / x).atan().to_degrees();
+            angle = (y / x).atan().to_degrees().abs();
             x_str = if x > 0.0 { "E" } else { "W" };
             y_str = if y > 0.0 { "U" } else { "D" };
         } else if abs_diff_eq!(v.z, 0.0, epsilon = tol) {
             x = v.x;
             y = v.y;
-            angle = (y / x).atan().to_degrees();
+            angle = (y / x).atan().to_degrees().abs();
             x_str = if x > 0.0 { "E" } else { "W" };
             y_str = if y > 0.0 { "N" } else { "S" };
         }
@@ -103,30 +105,51 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
             return x_str.to_string();
         }
 
-        if angle < 0.0 {
-            angle = 90.0 + angle;
-            if abs_diff_eq!(angle, 0.0, epsilon=0.01) {
-                return y_str.to_string();
-            }
-            // if angle > 45.0 {
-            //     let angle = 90.0 - angle;
-            //     return format!("{x_str} {} {y_str}", f64_round_4(angle));
-            // } else {
-                return format!("{y_str} {} {x_str}", f64_round_4(angle));
-            // }
+        // dbg!(angle);
+        if angle > 90.0 && angle <= 180.0 {
+            angle = 180.0 - angle;
+            x_str = neg_dir_str(x_str);
+        } else if angle < -90.0 && angle >= -180.0 {
+            angle += 180.0;
+            x_str = neg_dir_str(x_str);
         }
-        // if angle > 45.0 {
-        //     let angle = 90.0 - angle;
-        //     return format!("{y_str} {} {x_str}", f64_round_4(angle));
+
+        //如果angle < 0.0,则需要转换为正数, 负轴应该转移到终点轴
+        // if angle < 0.0 {
+        //     angle = -angle;
+        //     if abs_diff_eq!(angle, 0.0, epsilon = 0.01) {
+        //         return y_str.to_string();
+        //     }
+        //     //执行一个坐标轴的旋转180°转换
+        //     let y_str = neg_dir_str(y_str);
+
+        //     return format!("{x_str} {} {y_str}", f64_round_4(angle));
         // }
 
         if angle.is_nan() {
             return "unset".to_string();
         }
 
-        if abs_diff_eq!(angle, 0.0, epsilon=0.01) {
+        if abs_diff_eq!(angle, 0.0, epsilon = 0.01) {
             return x_str.to_string();
         }
+
+        dbg!(format!("{x_str} {} {y_str}", f64_round_4(angle)));
+        // if angle < 45.0 {
+        //     if x_str == "U" || x_str == "D" {
+        //         return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
+        //     }
+        // } else
+        if angle > 45.0 {
+            if y_str != "U" && y_str != "D" {
+                return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
+            }
+        } else if angle == 45.0 {
+            if x_str.contains("Y") && y_str.contains("X") {
+                return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
+            }
+        }
+
         return format!("{x_str} {} {y_str}", f64_round_4(angle));
     }
 
@@ -146,6 +169,19 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
     }
 
     format!("{part_str} {} {z_str}", f64_round_4(theta))
+}
+
+fn neg_dir_str(y_str: &str) -> &str {
+    let y_str = match y_str {
+        "N" => "S",
+        "S" => "N",
+        "U" => "D",
+        "D" => "U",
+        "E" => "W",
+        "W" => "E",
+        _ => "unset",
+    };
+    y_str
 }
 
 #[inline]
@@ -268,4 +304,19 @@ fn test_convert_to_dir_string() {
     dbg!(convert_to_xyz(&to_pdms_dvec_str(&v)));
 }
 
+fn assert_vec3_to_str(input: &str, assert_str: &str) {
+    // let v_str = "X 120 Y"; // -X 60 Y
+    let v = parse_expr_to_dir(input).unwrap();
+    let new_v_str = convert_to_xyz(&to_pdms_dvec_str(&v));
+    dbg!(&new_v_str);
+    assert_eq!(assert_str, new_v_str);
+}
 
+#[test]
+fn test_vec3_to_str() {
+    assert_vec3_to_str("X 120 Y", "Y 30 -X");
+    assert_vec3_to_str("X 45 Y", "X 45 Y");
+    assert_vec3_to_str("Y 45 X", "X 45 Y");
+    assert_vec3_to_str("Z 60 Y", "Y 30 Z");
+    assert_vec3_to_str("Z 30 Y", "Y 60 Z");
+}

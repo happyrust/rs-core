@@ -1,5 +1,6 @@
 //CAP
-select
+DEFINE FUNCTION fn::collect_CAP($pes: array<record>) {
+    return select
     fn::refno(id) as id,
     string::concat(fn::shape_name(id), "封头") as description,
     fn::hvac_seg_code(id) as seg_code,
@@ -27,5 +28,5 @@ select
     fn::get_room_number(id) as room_no
 
 
-
-from pe:24381_58359;
+   from $pes;
+}

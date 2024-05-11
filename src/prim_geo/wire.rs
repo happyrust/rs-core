@@ -427,7 +427,6 @@ fn test_complex_2() {
     // .expect("test_complex_half_circle failed");
 }
 
-
 #[inline]
 fn seg_split(
     v1: PlineVertex,
@@ -459,7 +458,7 @@ pub fn resolve_overlap_intersection(
     let si_1 = intersect.start_index2;
     let next_si_1 = (si_1 + 1) % verts_len;
     let point = intersect.point1;
-    let mut r = seg_split(polyline[si_1], polyline[next_si_1], point, 0.01);
+    let r = seg_split(polyline[si_1], polyline[next_si_1], point, 0.01);
     // dbg!(&r);
     new_polyline[si_1] = r.updated_start;
     new_polyline[next_si_1] = r.split_vertex;
@@ -470,7 +469,6 @@ pub fn resolve_overlap_intersection(
         return Ok((new_polyline, false));
     }
 
-    // new_polyline.vertex_data.drain(next_si_0..si_1);
     if let Some(r) = new_polyline.remove_repeat_pos(0.01) {
         new_polyline = r;
     }
@@ -487,14 +485,15 @@ pub fn resolve_basic_intersection(
     let verts_len = polyline.vertex_data.len();
     //优先处理和直线的相交情况
     let si_0 = intersect.start_index1;
-    let next_si_0 = (si_0 + 1) % verts_len;
-    let si_1 = intersect.start_index2;
+    let mut next_si_0 = (si_0 + 1) % verts_len;
+    let mut si_1 = intersect.start_index2;
     let next_si_1 = (si_1 + 1) % verts_len;
     let point = intersect.point;
 
     if polyline[si_0].bulge == 0.0 && polyline[si_1].bulge == 0.0 {
         new_polyline[si_1] = PlineVertex::new(point.x, point.y, 0.0);
     } else if polyline[si_0].bulge == 0.0 && polyline[si_1].bulge != 0.0 {
+        //如果点和端点重合，直接砍掉
         let mut tmp_polyline = Polyline::new_closed();
         tmp_polyline.add(polyline[si_0].x, polyline[si_0].y, 0.0);
         tmp_polyline.add(point.x, point.y, 0.0);
@@ -506,33 +505,34 @@ pub fn resolve_basic_intersection(
         let r = seg_split(polyline[si_1], polyline[next_si_1], point, 0.01);
         #[cfg(feature = "debug_wire")]
         dbg!(&r);
-        //直接就和端点重合了
         if r.split_vertex.bulge == 0.0 {
+            //直接就和端点重合了
+            if si_0 == 0 {
+                next_si_0 = verts_len;
+            }
             #[cfg(feature = "debug_wire")]
             println!(
                 "first arc, second line, same end point, remove between {} .. {}",
+                next_si_1, next_si_0
+            );
+            new_polyline.vertex_data.drain(next_si_1..next_si_0);
+        } else if use_start {
+            new_polyline[si_1] = r.updated_start;
+            new_polyline[si_0] = r.split_vertex;
+            #[cfg(feature = "debug_wire")]
+            println!(
+                "first arc, second line , use arc start: {}, line use split start: {} ",
+                si_1, si_0
+            );
+        } else {
+            new_polyline[next_si_0] = r.split_vertex;
+            new_polyline[si_1] = r.split_vertex;
+            #[cfg(feature = "debug_wire")]
+            println!(
+                "first arc, second line , use split remove between {} .. {}",
                 next_si_0, si_1
             );
             new_polyline.vertex_data.drain(next_si_0..si_1);
-        } else {
-            if use_start {
-                new_polyline[si_1] = r.updated_start;
-                new_polyline[si_0] = r.split_vertex;
-                #[cfg(feature = "debug_wire")]
-                println!(
-                    "first arc, second line , use arc start: {}, line use split start: {} ",
-                    si_1, si_0
-                );
-            } else {
-                new_polyline[next_si_0] = r.split_vertex;
-                new_polyline[si_1] = r.split_vertex;
-                #[cfg(feature = "debug_wire")]
-                println!(
-                    "first arc, second line , use split remove between {} .. {}",
-                    next_si_0, si_1
-                );
-                new_polyline.vertex_data.drain(next_si_0..si_1);
-            }
         }
     } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge == 0.0 {
         let mut tmp_polyline = Polyline::new_closed();
@@ -614,11 +614,11 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     }
     let mut new_pts = vec![pts[0].as_dvec3()];
     //第一遍就应该去掉重复的点
-    for i in 1..pts.len(){
+    for i in 1..pts.len() {
         let pt = pts[i].truncate();
-        let pre_pt = pts[(i-1)].truncate();
+        let pre_pt = pts[(i - 1)].truncate();
         if pt.distance(pre_pt) < 0.1 {
-            dbg!(pt);
+            // dbg!(pt);
             continue;
         }
         new_pts.push(pts[i].as_dvec3());
@@ -631,7 +631,6 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     let mut polyline = Polyline::new_closed();
     let remove_pos_tol = 0.1;
 
-    // let n_pts = pts.iter().map(|x| x.as_dvec3()).collect::<Vec<_>>();
     for i in 0..len {
         let pt = new_pts[i];
         let fradius = pt.z;
@@ -730,6 +729,8 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
             "After resolve overlap Polyline: {}",
             polyline_to_debug_json_str(&final_polyline)
         );
+        //这里需要重新求是否有相交
+        intrs = global_self_intersects(&final_polyline, &final_polyline.create_approx_aabb_index());
     }
 
     let basic_inter_len = intrs.basic_intersects.len();
@@ -765,12 +766,15 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
     for pts in loops.iter().skip(1) {
         let neg = gen_polyline(pts)?;
         let mut r = pos_poly.boolean(&neg, BooleanOp::Not);
-        if r.pos_plines.len() > 0{
+        if r.pos_plines.len() > 0 {
             pos_poly = r.pos_plines.remove(0).pline;
         }
     }
     #[cfg(feature = "debug_wire")]
-    println!("final occ polyline: {}", polyline_to_debug_json_str(&pos_poly));
+    println!(
+        "final occ polyline: {}",
+        polyline_to_debug_json_str(&pos_poly)
+    );
 
     let mut wires = vec![];
     let mut edges = vec![];

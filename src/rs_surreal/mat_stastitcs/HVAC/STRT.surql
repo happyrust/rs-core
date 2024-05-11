@@ -1,5 +1,5 @@
 //STRT
-DEFINE FUNCTION fn::collect_strt($pes: array<record>) {
+DEFINE FUNCTION fn::collect_STRT($pes: array<record>) {
     return select
         fn::refno(id) as id,
         string::concat(fn::shape_name(id), "直管") as description,

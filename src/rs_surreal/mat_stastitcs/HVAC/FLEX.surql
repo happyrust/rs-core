@@ -1,5 +1,6 @@
 //FLEX
-select
+DEFINE FUNCTION fn::collect_FLEX($pes: array<record>) {
+    return select
     fn::refno(id) as id,
     string::concat(fn::shape_name(id), "软连接") as description,
    fn::hvac_seg_code(id) as seg_code,
@@ -34,6 +35,5 @@ select
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
 
-
-
-from pe:24381_47029;
+    from $pes;
+}

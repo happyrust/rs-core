@@ -63,16 +63,11 @@ pub async fn get_mdb_world_site_ele_nodes(
     Ok(nodes)
 }
 
-//通过surql查询pe数据
-#[cached(result = true)]
-pub async fn get_mdb_world_site_pes(
+pub async fn create_mdb_world_site_pes_table(
     mdb: String,
     module: DBType,
-) -> anyhow::Result<Vec<SPdmsElement>> {
+) -> anyhow::Result<bool> {
     let db_type: u8 = module.into();
-    // let sql = format!("let $dbnos = array::intersect((select value CURD.refno.DBNO from only MDB where NAME={} limit 1), select value DBNO from DB where STYP={}); \
-    //     let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o)); \
-    //     array::flatten(select value (select value in.* from (select * from <-pe_owner order by order_num) where in.id!=none) from $a )",mdb,db_type);
     let mut response = SUL_DB
         .query(r#"
             let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
@@ -82,9 +77,33 @@ pub async fn get_mdb_world_site_pes(
         .bind(("mdb", mdb))
         .bind(("db_type", db_type))
         .await?;
-    // let mut response = SUL_DB
-    //     .query(sql)
-    //     .await?;
+    let sites: Vec<SPdmsElement> = response.take(2)?;
+    if sites.is_empty() { return Ok(false); }
+    let mut relate_sql = String::new();
+    let mdb_world = sites[0].owner.to_pe_key();
+    for (i, site) in sites.into_iter().enumerate(){
+        relate_sql.push_str(&format!("relate {}->site_relate:[{}, {i}]->{};", site.refno.to_pe_key(), &mdb_world, &mdb_world));
+    }
+
+    Ok(true)
+}
+
+//通过surql查询pe数据
+#[cached(result = true)]
+pub async fn get_mdb_world_site_pes(
+    mdb: String,
+    module: DBType,
+) -> anyhow::Result<Vec<SPdmsElement>> {
+    let db_type: u8 = module.into();
+    let mut response = SUL_DB
+        .query(r#"
+            let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
+            let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o));
+            array::flatten(select value in.* from $a<-pe_owner[? in.noun='SITE'])
+        "#)
+        .bind(("mdb", mdb))
+        .bind(("db_type", db_type))
+        .await?;
     let pe: Vec<SPdmsElement> = response.take(2)?;
     Ok(pe)
 }

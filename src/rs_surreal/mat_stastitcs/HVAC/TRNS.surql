@@ -1,4 +1,5 @@
-//TRANS
+//TRNS
+DEFINE FUNCTION fn::collect_TRNS($pes: array<record>) {
 select
     fn::refno(id) as id,
    '天圆地方' as description,
@@ -35,6 +36,5 @@ select
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
 
-
-
-from pe:24381_100864;
+    from $pes;
+}

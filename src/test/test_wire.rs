@@ -2,27 +2,32 @@ use crate::prim_geo::basic::OccSharedShape;
 #[cfg(feature = "occ")]
 use crate::prim_geo::wire::{gen_occ_wires, gen_polyline, polyline_to_debug_json_str};
 use crate::shape::pdms_shape::PlantMesh;
+use crate::test::test_surreal::init_test_surreal;
 use crate::{RefU64, SUL_DB};
+use cavalier_contours::polyline::{seg_midpoint, BooleanOp, PlineSource, PlineVertex, Polyline};
 use cavalier_contours::{pline_closed, polyline};
-use cavalier_contours::polyline::{seg_midpoint, BooleanOp, PlineSource, Polyline, PlineVertex};
 use geo::{ConvexHull, LineString, Polygon};
 use glam::{DVec3, Vec3};
 use opencascade::primitives::{Edge, Face, IntoShape, Wire};
 use std::fmt::format;
-use crate::test::test_surreal::init_test_surreal;
 
-pub async fn test_wire_from_loop(refno: RefU64){
-
-    let mut response = SUL_DB.query(format!(r#"
+pub async fn test_wire_from_loop(refno: RefU64) {
+    let mut response = SUL_DB
+        .query(format!(
+            r#"
         select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD]  from {}<-pe_owner
-    "#, refno.to_pe_key())).await.unwrap();
+    "#,
+            refno.to_pe_key()
+        ))
+        .await
+        .unwrap();
     let points: Vec<Vec3> = response.take(0).unwrap();
 
-    gen_polyline(&points);
+    let pline = gen_polyline(&points).unwrap();
+    println!("{}", polyline_to_debug_json_str(&pline));
 }
 
-pub async fn test_wire_from_floor_panel(refno: RefU64){
-
+pub async fn test_wire_from_floor_panel(refno: RefU64) {
     let mut response = SUL_DB.query(format!(r#"
         select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
             (select value in from {}<-pe_owner)
@@ -31,23 +36,22 @@ pub async fn test_wire_from_floor_panel(refno: RefU64){
     dbg!(&points);
 
     gen_occ_wires(&points).unwrap();
-
 }
 
 #[test]
-pub fn test_bad_wire(){
-    let points: Vec<Vec<Vec3>> = vec![
-        vec![Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0)]
-    ];
+pub fn test_bad_wire() {
+    let points: Vec<Vec<Vec3>> = vec![vec![
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 0.0),
+    ]];
     match gen_occ_wires(&points) {
-        Ok(_) => {
-        }
+        Ok(_) => {}
         Err(e) => {
             dbg!(e);
         }
     }
 }
-
 
 #[tokio::test]
 pub async fn test_wire_by_panel() {
@@ -56,6 +60,12 @@ pub async fn test_wire_by_panel() {
     test_wire_from_floor_panel("17496_231673".into()).await;
 }
 
+// 弧形墙的测试
+#[tokio::test]
+pub async fn test_wire_25688_45049() {
+    init_test_surreal().await;
+    test_wire_from_loop("25688/45049".into()).await;
+}
 
 #[tokio::test]
 pub async fn test_wire_by_loop() {
@@ -78,7 +88,6 @@ pub async fn test_wire_by_loop() {
     // test_wire_from_loop("17496/230145".into()).await;
     //方向为顺时针
     // test_wire_from_loop("25688/72300".into()).await;
-
 }
 
 fn gen_wire_shape(pts: &Vec<Vec3>, fradius: &Vec<f32>, refno: RefU64) {

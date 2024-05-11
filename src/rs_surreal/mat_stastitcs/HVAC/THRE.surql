@@ -1,5 +1,6 @@
 //THRE
-select
+DEFINE FUNCTION fn::collect_THRE($pes: array<record>) {
+    return select
     fn::refno(id) as id,
     string::concat(fn::shape_name(id), "三通管") as description,
     fn::hvac_seg_code(id) as seg_code,
@@ -32,6 +33,5 @@ select
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
 
-
-
-from pe:24381_100861;
+    from $pes;
+}
