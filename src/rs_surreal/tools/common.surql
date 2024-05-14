@@ -35,27 +35,6 @@ DEFINE FUNCTION fn::cref_is_type($pe:record, $type:string) {
     return $pe.refno.CREF.TYPE == $type;
 };
 
-DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
-    return (select value (select value in.noun==$type from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe limit 1)[0];
-};
-
-DEFINE FUNCTION fn::prev_pe($pe:record) {
-    return (select value in from $pe->pe_owner->pe<-pe_owner where order_num = array::first($pe->pe_owner.order_num) - 1)[0];
-};
-
-DEFINE FUNCTION fn::next_pe($pe:record) {
-    return (select value in from $pe->pe_owner->pe<-pe_owner where order_num = array::first($pe->pe_owner.order_num) + 1)[0];
-};
-
-DEFINE FUNCTION fn::prev_type($pe:record) {
-    return (select value in.noun from $pe->pe_owner->pe<-pe_owner where order_num = array::first($pe->pe_owner.order_num) - 1)[0];
-};
-
-DEFINE FUNCTION fn::next_type($pe:record) {
-    return (select value in.noun from $pe->pe_owner->pe<-pe_owner where order_num = array::first($pe->pe_owner.order_num) - 1)[0];
-};
-
-
 // 获取ipara
 DEFINE FUNCTION fn::get_ipara($pe:record) {
     let $ispe = $pe.owner.refno.ISPE;

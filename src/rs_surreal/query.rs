@@ -1,11 +1,11 @@
+use crate::consts::MAX_INSERT_LENGTH;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode};
 use crate::pe::SPdmsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
-use serde_with::DisplayFromStr;
-use crate::{types::*, graph::QUERY_DEEP_CHILDREN_REFNOS};
+use crate::{graph::QUERY_DEEP_CHILDREN_REFNOS, types::*};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
@@ -14,8 +14,9 @@ use dashmap::DashMap;
 use indexmap::IndexMap;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
 use serde_with::serde_as;
+use serde_with::DisplayFromStr;
+use std::collections::{BTreeMap, HashMap};
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
@@ -172,7 +173,9 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     //默认是方向
                     tuples.push((
                         k.clone(),
-                        NamedAttrValue::StringType(convert_to_xyz(&to_pdms_dvec_str(&d.as_dvec3()))),
+                        NamedAttrValue::StringType(convert_to_xyz(&to_pdms_dvec_str(
+                            &d.as_dvec3(),
+                        ))),
                     ));
                 }
             }
@@ -257,7 +260,9 @@ pub async fn get_next_prev(refno: RefU64, next: bool) -> anyhow::Result<RefU64> 
     if next {
         Ok(siblings.get(pos + 1).cloned().unwrap_or_default())
     } else {
-        if pos == 0 { return Ok(Default::default()); }
+        if pos == 0 {
+            return Ok(Default::default());
+        }
         Ok(siblings.get(pos - 1).cloned().unwrap_or_default())
     }
 }
@@ -459,8 +464,6 @@ pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     Ok(refnos)
 }
 
-
-
 pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Vec<RefU64>> {
     let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
     let mut response = SUL_DB
@@ -524,9 +527,20 @@ pub struct PdmsSpreName {
 }
 
 /// 查询多个参考号外键对应的name，暂时只支持SPRE这种一层外键的
-pub async fn query_foreign_refnos(refnos: Vec<RefU64>, foreign_type: &str) -> anyhow::Result<Vec<PdmsSpreName>> {
-    let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
-    let sql = format!("select refno, refno.{} as foreign_refno,refno.{}.refno.NAME as name from {};", &foreign_type, &foreign_type, serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
+pub async fn query_foreign_refnos(
+    refnos: Vec<RefU64>,
+    foreign_type: &str,
+) -> anyhow::Result<Vec<PdmsSpreName>> {
+    let refnos = refnos
+        .into_iter()
+        .map(|refno| refno.to_pe_key())
+        .collect::<Vec<_>>();
+    let sql = format!(
+        "select refno, refno.{} as foreign_refno,refno.{}.refno.NAME as name from {};",
+        &foreign_type,
+        &foreign_type,
+        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+    );
     let mut response = SUL_DB.query(sql).await?;
     let result: Vec<PdmsSpreName> = response.take(0)?;
     Ok(result)
@@ -576,16 +590,32 @@ pub async fn query_refnos_by_type(noun: &str) -> anyhow::Result<Vec<RefU64>> {
     Ok(refnos)
 }
 
-
 /// 插入数据
 pub async fn insert_into_table(db: &Surreal<Any>, table: &str, value: &str) -> anyhow::Result<()> {
     db.query(format!("insert into {} {}", table, value)).await?;
     Ok(())
 }
 
+pub async fn insert_into_table_with_chunks<T>(
+    db: &Surreal<Any>,
+    table: &str,
+    value: Vec<T>,
+) -> anyhow::Result<()>
+where
+    T: Sized + Serialize,
+{
+    for r in value.chunks(MAX_INSERT_LENGTH) {
+        let json = serde_json::to_string(r)?;
+        db.query(format!("insert into {} {}", table, json)).await?;
+    }
+    Ok(())
+}
+
 /// 批量插入relate数据，需要事先定义好每一条relate语句，并放到集合中
 pub async fn insert_relate_to_table(db: &Surreal<Any>, value: Vec<String>) -> anyhow::Result<()> {
-    if value.is_empty() { return Ok(()); }
+    if value.is_empty() {
+        return Ok(());
+    }
     let mut sql = String::new();
     for v in value {
         sql.push_str(&format!("{} ;", v));

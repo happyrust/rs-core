@@ -39,8 +39,8 @@ DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
 };
 
 DEFINE FUNCTION fn::prev_pe($pe:record) {
-    let $a = ($pe->pe_owner.id[1])[0] - 1;
-    return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
+    let $a = ($pe->pe_owner.id[1])[0];
+    return select value (out<-pe_owner[$a -1].in) from only $pe->pe_owner limit 1;
 };
 
 DEFINE FUNCTION fn::next_pe($pe:record) {
