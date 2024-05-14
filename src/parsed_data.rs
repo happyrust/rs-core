@@ -1,50 +1,11 @@
-use std::collections::BTreeMap;
 use bevy_transform::prelude::Transform;
+use std::collections::BTreeMap;
 
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::types::*;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct DesignPipeRequest {
-    // pub name: String,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct DesignComponentRequest {
-    pub name: String,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct DesignBranRequest {
-    pub name: String,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct RefnosRequest {
-    pub name: String,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct Refnos {
-    pub refnos: Vec<String>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct DesignPipe {
-    pub name: String,
-    pub refno: String,
-    pub brans: Vec<DesignBran>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct DesignBran {
-    pub name: String,
-    pub refno: String,
-    pub components: Vec<CateGeomsInfo>,
-}
 
 ///元件库的集合信息
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -56,8 +17,6 @@ pub struct CateGeomsInfo {
     pub n_geometries: Vec<CateGeoParam>,
     pub axis_map: BTreeMap<i32, CateAxisParam>,
 }
-
-
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Dataset {
@@ -119,42 +78,40 @@ pub struct GmseParamData {
     Debug,
 )]
 pub struct CateAxisParam {
-
     pub refno: RefU64,
     pub number: i32,
     pub pt: Vec3,
-    pub dir: Vec3,
+    pub dir: Option<Vec3>,
     pub dir_flag: f32,
-    pub ref_dir: Vec3,
+    pub ref_dir: Option<Vec3>,
     pub pbore: f32,
     pub pwidth: f32,
     pub pheight: f32,
     pub pconnect: String,
 }
 
-impl CateAxisParam{
-    pub fn transformed(&self, trans: &Transform) -> Self{
+impl CateAxisParam {
+    pub fn transformed(&self, trans: &Transform) -> Self {
         let mut axis = self.clone();
         axis.pt = trans.transform_point(axis.pt);
-        axis.dir = trans.transform_vec3(axis.dir);
-        // axis.ref_dir = trans.transform_vec3(axis.ref_dir);
+        axis.dir = axis.dir.map(|d| trans.transform_vec3(d));
         axis
     }
 
-    pub fn transform(&mut self, trans: &Transform){
+    pub fn transform(&mut self, trans: &Transform) {
         self.pt = trans.transform_point(self.pt);
-        self.dir = trans.transform_vec3(self.dir);
-        // self.ref_dir = trans.transform_vec3(self.ref_dir);
+        // self.dir = trans.transform_vec3(self.dir);
+        self.dir = self.dir.map(|d| trans.transform_vec3(d));
     }
 }
 
 impl Default for CateAxisParam {
-    fn default() -> Self{
-        Self{
+    fn default() -> Self {
+        Self {
             refno: Default::default(),
             number: 0,
             pt: Default::default(),
-            dir: Vec3::Y,
+            dir: Some(Vec3::Y),
             dir_flag: 1.0,
             ref_dir: Default::default(),
             pbore: 0.0,
@@ -166,16 +123,11 @@ impl Default for CateAxisParam {
 }
 
 pub mod geo_params_data {
-    use anyhow::anyhow;
-    use crate::prim_geo::ctorus::CTorus;
-    use crate::prim_geo::{cylinder::*, LPyramid};
-    use crate::prim_geo::dish::Dish;
-    use crate::prim_geo::extrusion::Extrusion;
-    #[cfg(feature = "occ")]
-    use opencascade::primitives::*;
-    use serde_derive::{Deserialize, Serialize};
     #[cfg(feature = "occ")]
     use crate::prim_geo::basic::OccSharedShape;
+    use crate::prim_geo::ctorus::CTorus;
+    use crate::prim_geo::dish::Dish;
+    use crate::prim_geo::extrusion::Extrusion;
     use crate::prim_geo::polyhedron::Polyhedron;
     use crate::prim_geo::pyramid::Pyramid;
     use crate::prim_geo::revolution::Revolution;
@@ -184,8 +136,13 @@ pub mod geo_params_data {
     use crate::prim_geo::snout::LSnout;
     use crate::prim_geo::sphere::Sphere;
     use crate::prim_geo::sweep_solid::SweepSolid;
+    use crate::prim_geo::{cylinder::*, LPyramid};
     use crate::rvm_types::RvmShapeTypeData;
     use crate::shape::pdms_shape::{BrepShapeTrait, RsVec3, VerifiedShape};
+    use anyhow::anyhow;
+    #[cfg(feature = "occ")]
+    use opencascade::primitives::*;
+    use serde_derive::{Deserialize, Serialize};
 
     #[derive(Clone, Serialize, Deserialize, Debug, Default)]
     pub enum CateGeoParam {
@@ -294,20 +251,48 @@ pub mod geo_params_data {
         pub fn convert_to_unit_param(&self) -> Self {
             use std::any::Any;
             match self {
-                PdmsGeoParam::PrimBox(s) => PdmsGeoParam::PrimBox(*s.gen_unit_shape().downcast::<SBox>().unwrap()),
-                PdmsGeoParam::PrimLSnout(s) => PdmsGeoParam::PrimLSnout(*s.gen_unit_shape().downcast::<LSnout>().unwrap()),
-                PdmsGeoParam::PrimDish(s) => PdmsGeoParam::PrimDish(*s.gen_unit_shape().downcast::<Dish>().unwrap()),
-                PdmsGeoParam::PrimSphere(s) => PdmsGeoParam::PrimSphere(*s.gen_unit_shape().downcast::<Sphere>().unwrap()),
-                PdmsGeoParam::PrimCTorus(s) => PdmsGeoParam::PrimCTorus(*s.gen_unit_shape().downcast::<CTorus>().unwrap()),
-                PdmsGeoParam::PrimRTorus(s) => PdmsGeoParam::PrimRTorus(*s.gen_unit_shape().downcast::<RTorus>().unwrap()),
-                PdmsGeoParam::PrimPyramid(s) => PdmsGeoParam::PrimPyramid(*s.gen_unit_shape().downcast::<Pyramid>().unwrap()),
-                PdmsGeoParam::PrimLPyramid(s) => PdmsGeoParam::PrimLPyramid(*s.gen_unit_shape().downcast::<LPyramid>().unwrap()),
-                PdmsGeoParam::PrimSCylinder(s) => PdmsGeoParam::PrimSCylinder(*s.gen_unit_shape().downcast::<SCylinder>().unwrap()),
-                PdmsGeoParam::PrimLCylinder(s) => PdmsGeoParam::PrimLCylinder(*s.gen_unit_shape().downcast::<LCylinder>().unwrap()),
-                PdmsGeoParam::PrimRevolution(s) => PdmsGeoParam::PrimRevolution(*s.gen_unit_shape().downcast::<Revolution>().unwrap()),
-                PdmsGeoParam::PrimExtrusion(s) => PdmsGeoParam::PrimExtrusion(*s.gen_unit_shape().downcast::<Extrusion>().unwrap()),
-                PdmsGeoParam::PrimPolyhedron(s) => PdmsGeoParam::PrimPolyhedron(*s.gen_unit_shape().downcast::<Polyhedron>().unwrap()),
-                PdmsGeoParam::PrimLoft(s) => PdmsGeoParam::PrimLoft(*s.gen_unit_shape().downcast::<SweepSolid>().unwrap()),
+                PdmsGeoParam::PrimBox(s) => {
+                    PdmsGeoParam::PrimBox(*s.gen_unit_shape().downcast::<SBox>().unwrap())
+                }
+                PdmsGeoParam::PrimLSnout(s) => {
+                    PdmsGeoParam::PrimLSnout(*s.gen_unit_shape().downcast::<LSnout>().unwrap())
+                }
+                PdmsGeoParam::PrimDish(s) => {
+                    PdmsGeoParam::PrimDish(*s.gen_unit_shape().downcast::<Dish>().unwrap())
+                }
+                PdmsGeoParam::PrimSphere(s) => {
+                    PdmsGeoParam::PrimSphere(*s.gen_unit_shape().downcast::<Sphere>().unwrap())
+                }
+                PdmsGeoParam::PrimCTorus(s) => {
+                    PdmsGeoParam::PrimCTorus(*s.gen_unit_shape().downcast::<CTorus>().unwrap())
+                }
+                PdmsGeoParam::PrimRTorus(s) => {
+                    PdmsGeoParam::PrimRTorus(*s.gen_unit_shape().downcast::<RTorus>().unwrap())
+                }
+                PdmsGeoParam::PrimPyramid(s) => {
+                    PdmsGeoParam::PrimPyramid(*s.gen_unit_shape().downcast::<Pyramid>().unwrap())
+                }
+                PdmsGeoParam::PrimLPyramid(s) => {
+                    PdmsGeoParam::PrimLPyramid(*s.gen_unit_shape().downcast::<LPyramid>().unwrap())
+                }
+                PdmsGeoParam::PrimSCylinder(s) => PdmsGeoParam::PrimSCylinder(
+                    *s.gen_unit_shape().downcast::<SCylinder>().unwrap(),
+                ),
+                PdmsGeoParam::PrimLCylinder(s) => PdmsGeoParam::PrimLCylinder(
+                    *s.gen_unit_shape().downcast::<LCylinder>().unwrap(),
+                ),
+                PdmsGeoParam::PrimRevolution(s) => PdmsGeoParam::PrimRevolution(
+                    *s.gen_unit_shape().downcast::<Revolution>().unwrap(),
+                ),
+                PdmsGeoParam::PrimExtrusion(s) => PdmsGeoParam::PrimExtrusion(
+                    *s.gen_unit_shape().downcast::<Extrusion>().unwrap(),
+                ),
+                PdmsGeoParam::PrimPolyhedron(s) => PdmsGeoParam::PrimPolyhedron(
+                    *s.gen_unit_shape().downcast::<Polyhedron>().unwrap(),
+                ),
+                PdmsGeoParam::PrimLoft(s) => {
+                    PdmsGeoParam::PrimLoft(*s.gen_unit_shape().downcast::<SweepSolid>().unwrap())
+                }
                 PdmsGeoParam::CompoundShape => PdmsGeoParam::CompoundShape,
                 _ => PdmsGeoParam::Unknown,
             }
@@ -636,13 +621,18 @@ pub struct SRectData {
     pub plin_axis: Vec3,
 }
 
-impl SRectData{
-    pub fn convert_to_spro(&self) -> SProfileData{
+impl SRectData {
+    pub fn convert_to_spro(&self) -> SProfileData {
         let c = self.center + self.dxy;
-        let h = self.size/2.0;
-        SProfileData{
+        let h = self.size / 2.0;
+        SProfileData {
             refno: self.refno,
-            verts: vec![c - h, c + Vec2::new(h.x, -h.y), c + h, c + Vec2::new(-h.x, h.y) ],
+            verts: vec![
+                c - h,
+                c + Vec2::new(h.x, -h.y),
+                c + h,
+                c + Vec2::new(-h.x, h.y),
+            ],
             frads: vec![0.0; 4],
             normal_axis: self.normal_axis,
             plin_pos: self.plin_pos,
@@ -672,8 +662,7 @@ pub enum CateProfileParam {
 }
 
 impl CateProfileParam {
-
-    pub fn get_refno(&self) -> Option<RefU64>{
+    pub fn get_refno(&self) -> Option<RefU64> {
         match self {
             CateProfileParam::UNKOWN => None,
             CateProfileParam::SPRO(s) => Some(s.refno),
@@ -682,11 +671,13 @@ impl CateProfileParam {
         }
     }
 
-    pub fn get_plax(&self) -> Vec3{
+    pub fn get_plax(&self) -> Vec3 {
         match self {
             CateProfileParam::UNKOWN => Vec3::Y,
             CateProfileParam::SPRO(s) => s.normal_axis.normalize(),
-            CateProfileParam::SANN(s) => s.paxis.as_ref().map(|x| x.dir).unwrap_or(Vec3::Y),
+            CateProfileParam::SANN(s) => {
+                s.paxis.as_ref().map(|x| x.dir).flatten().unwrap_or(Vec3::Y)
+            }
             CateProfileParam::SREC(s) => s.normal_axis.normalize(),
         }
     }
@@ -707,8 +698,8 @@ impl CateProfileParam {
                 Some(Aabb::from_points(&pts))
             }
             CateProfileParam::SREC(s) => Some(Aabb::new(
-                nalgebra::Point2::from(s.center + s.dxy - s.size/2.0),
-                nalgebra::Point2::from(s.center + s.dxy + s.size/2.0),
+                nalgebra::Point2::from(s.center + s.dxy - s.size / 2.0),
+                nalgebra::Point2::from(s.center + s.dxy + s.size / 2.0),
             )),
         }
     }

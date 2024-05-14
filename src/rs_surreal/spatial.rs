@@ -127,6 +127,8 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         let mut pos = att.get_position().unwrap_or_default().as_dvec3();
         // dbg!(pos);
         let mut quat = DQuat::IDENTITY;
+        let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
+        let has_bang = att.contains_key("BANG");
         //土建特殊情况的一些处理
         if att.contains_key("ZDIS") && (!att.contains_key("POSL")) {
             let zdist = att.get_f32("ZDIS").unwrap_or_default();
@@ -135,9 +137,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             let result = cal_zdis_pkdi_in_section(owner, pkdi, zdist).await;
             pos += (result.1) ;
             quat *= result.0;
-
-            let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
-            if att.contains_key("BANG") {
+            if has_bang {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
             }
             translation = translation + rotation * pos;
@@ -189,8 +189,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             }
         }
 
-        let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
-        if need_bangle || att.contains_key("BANG") {
+        if need_bangle || has_bang {
             quat = quat * DQuat::from_rotation_z(bangle.to_radians());
         }
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
@@ -233,17 +232,14 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             let pos_line = att.get_str("POSL").unwrap_or("NA");
             let pos_line = if pos_line.is_empty() { "NA" } else { pos_line };
             let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
-            // dbg!(pos_line);
             //plin里的位置偏移
             let mut plin_pos = DVec3::ZERO;
             let mut pline_plax = DVec3::X;
-            // let owner = att.get_owner();
             // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
             let mut is_lmirror = false;
             let ancestor_refnos =
                 crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec())
                     .await?;
-            // dbg!(&ancestor_refnos);
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
@@ -292,11 +288,9 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     // dbg!(z_axis);
                     let zdist = att.get_f32("ZDIS").unwrap_or_default() as f64;
                     pos += zdist * DVec3::Z;
-                    let y_axis = if ower_type.contains("WALL") {
-                        DVec3::Z
-                    } else{
-                        DVec3::NEG_Z
-                    };
+                    //受到bang的影响，需要变换
+                    //绕着z轴旋转
+                    let y_axis = DQuat::from_axis_angle(z_axis, bangle.to_radians()) * DVec3::Z;
                     let x_axis = y_axis.cross(z_axis).normalize();
                     // dbg!((x_axis, y_axis, z_axis));
                     DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))

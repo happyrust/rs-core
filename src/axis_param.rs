@@ -8,7 +8,8 @@ impl Neg for CateAxisParam {
 
     fn neg(self) -> Self::Output {
         Self {
-            dir: Vec3::new(-self.dir[0].clone(), -self.dir[1].clone(), -self.dir[2].clone()),
+            // dir: Vec3::new(-self.dir[0].clone(), -self.dir[1].clone(), -self.dir[2].clone()),
+            dir: self.dir.map(|x| -x),
             dir_flag: -1.0,
             ..self.clone()
         }
@@ -19,7 +20,7 @@ impl CateAxisParam {
     pub fn zero() -> Self {
         Self {
             pt: Vec3::ZERO,
-            dir: Vec3::ZERO,
+            dir: None,
             pconnect: "".to_string(),
             ..Default::default()
         }
@@ -28,7 +29,7 @@ impl CateAxisParam {
     pub fn x() -> Self {
         Self {
             pt: Vec3::ZERO,
-            dir: Vec3::X,
+            dir: Some(Vec3::X),
             pconnect: "".to_string(),
             ..Default::default()
         }
@@ -37,7 +38,7 @@ impl CateAxisParam {
     pub fn y() -> Self {
         Self {
             pt: Vec3::ZERO,
-            dir: Vec3::Y,
+            dir: Some(Vec3::Y),
             pconnect: "".to_string(),
             ..Default::default()
         }
@@ -46,7 +47,7 @@ impl CateAxisParam {
     pub fn z() -> Self {
         Self {
             pt: Vec3::ZERO,
-            dir: Vec3::Z,
+            dir: Some(Vec3::Z),
             pconnect: "".to_string(),
             ..Default::default()
         }

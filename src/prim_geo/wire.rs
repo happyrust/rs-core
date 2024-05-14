@@ -613,6 +613,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         return Err(anyhow!("wire 顶点数量不够，小于3。"));
     }
     let mut new_pts = vec![pts[0].as_dvec3()];
+    let mut has_frad = false;
     //第一遍就应该去掉重复的点
     for i in 1..pts.len() {
         let pt = pts[i].truncate();
@@ -620,6 +621,10 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         if pt.distance(pre_pt) < 0.1 {
             // dbg!(pt);
             continue;
+        }
+
+        if pts[i].z > 0.0 {
+            has_frad = true;
         }
         new_pts.push(pts[i].as_dvec3());
     }
@@ -671,10 +676,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
             // let mut cur_ccw_sig = if v1.extend(0.0).cross(v2.extend(0.0)).z > 0.0 { 1.0 } else { -1.0 };
             let cur_ccw_sig = -angle.signum();
             let bulge = cur_ccw_sig * bulge_from_angle(PI as f64 - angle.abs());
-            // let mut tmp_polyline = Polyline::new_closed();
             if bulge.abs() < 0.001 {
-                // dbg!((i, pt, bulge, p0, p2));
-                // tmp_polyline.add(pt.x, pt.y, 0.0);
                 continue;
             }
             polyline.add(p0.x, p0.y, bulge);
@@ -704,6 +706,8 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     let overlap_inter_len = intrs.overlapping_intersects.len();
     if basic_inter_len == 0 && overlap_inter_len == 0 {
         return Ok(polyline);
+    } else if !has_frad{
+        return Err(anyhow!("有相交的线段，但是没有fillet radius，设定wire为错误wire。"));
     }
     #[cfg(feature = "debug_wire")]
     dbg!(&intrs);

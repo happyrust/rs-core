@@ -296,9 +296,9 @@ pub fn eval_str_to_f64(
             if (!unit_type.is_empty() && unit_type != dtse_unit)
                 && !check_unit_compatible(dtse_unit, &unit_type)
             {
-                #[cfg(debug_assertions)]
-                dbg!((&unit_type, dtse_unit));
-                return Err(anyhow::anyhow!("DTSE 表达式有问题，可能单位不一致"));
+                #[cfg(feature = "debug_expr")]
+                dbg!((&new_exp, &unit_type, dtse_unit));
+                return Err(anyhow::anyhow!("DTSE 表达式 {new_exp} 有问题，可能单位不一致"));
             } else {
                 let v = context
                     .get(&key)

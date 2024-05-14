@@ -38,6 +38,7 @@ use sea_query::*;
 use crate::geometry::{EleInstGeo, EleInstGeosData};
 use crate::parsed_data::CateAxisParam;
 use crate::pe::SPdmsElement;
+use surrealdb::sql::Thing;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -421,10 +422,15 @@ fn test_ele_geo_instance_serialize_deserialize() {
     // dbg!(&data);
 }
 
-pub trait PdmsNodeTrait {
+pub trait PdmsNodeTrait: Default {
     #[inline]
     fn get_refno(&self) -> RefU64 {
         RefU64::default()
+    }
+
+    #[inline]
+    fn get_id(&self) -> Option<&Thing> {
+        None
     }
 
     #[inline]

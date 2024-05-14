@@ -70,7 +70,9 @@ mod test_transform {
         let (scale, rot, translation) = transform.to_scale_rotation_translation();
 
         dbg!(translation);
-        dbg!(dquat_to_pdms_ori_xyz_str(&rot));
+        let ori_str = dquat_to_pdms_ori_xyz_str(&rot);
+        dbg!(&ori_str);
+        assert_eq!(ori_str, assert_ori);
     }
 
     #[tokio::test]
@@ -167,6 +169,8 @@ mod test_transform {
         init_test_surreal().await;
         test_transform("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
         test_transform("17496/202352".into(), "Y is X and Z is -Y").await;
+        test_transform("24381/38388".into(), "Y is -X 13 Y and Z is Y 13 X").await;
+        test_transform("17496/106463".into(), "Y is X 25 -Y and Z is -Y 25 -X").await;
         Ok(())
     }
 
