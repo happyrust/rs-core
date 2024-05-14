@@ -8,6 +8,8 @@ use aios_core::{
 };
 use anyhow::Ok;
 use glam::{Mat3, Quat};
+use aios_core::aios_db_mgr::aios_mgr::AiosDBMgr;
+use aios_core::material_query::save_all_material_data;
 use aios_core::room::room::load_aabb_tree;
 
 #[tokio::main]
@@ -20,6 +22,8 @@ async fn main() -> anyhow::Result<()> {
     dbg!(db1_hash("DAMP"));
     dbg!(db1_hash("MESH"));
 
+    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    save_all_material_data().await?;
     Ok(())
 }
 

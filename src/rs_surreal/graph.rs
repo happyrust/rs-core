@@ -1,3 +1,4 @@
+use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::noun_graph::*;
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
@@ -9,6 +10,7 @@ use indexmap::IndexMap;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::str::FromStr;
 use surrealdb::method::Stats;
 
 #[inline]
@@ -173,4 +175,13 @@ pub async fn query_filter_ancestors(
         }
     }
     Ok(vec![])
+}
+
+#[tokio::test]
+async fn test_query_filter_deep_children() -> anyhow::Result<()> {
+    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    let refno = RefU64::from_str("24383/73927").unwrap();
+    let equis = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+    dbg!(&equis.len());
+    Ok(())
 }
