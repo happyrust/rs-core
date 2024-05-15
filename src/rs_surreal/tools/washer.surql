@@ -34,10 +34,11 @@ DEFINE FUNCTION fn::common_washer_type_single($pe: record, $prev_or_next: bool) 
 
 DEFINE FUNCTION fn::common_washer_len($pe: record) {
     let $mat_id = meta::id(fn::hvac_mat_id($pe));
-    if $mat_id == 6 {
+    return if $mat_id == 6 {
         return 0.0;
-    };
+    } else {
     let $is_circle = fn::hvac_shape($pe) == 'CIRC';
+
     let $pd = fn::pre_is_type($pe, 'DAMP');
     let $nd = fn::next_is_type($pe, 'DAMP');
     let $pm = fn::pre_is_type($pe, 'MESH');
@@ -53,6 +54,8 @@ DEFINE FUNCTION fn::common_washer_len($pe: record) {
        return  0.75;
     } else if ((!$pd) && (!$pm)) && ((!$nd) && (!$nm) ) {
        return  0.5;
+    } else {
+        0
     };
 
     return  if $is_circle {
@@ -60,6 +63,7 @@ DEFINE FUNCTION fn::common_washer_len($pe: record) {
            } else {
                return math::fixed(fn::hvac_fl_len($pe) * $ratio, 2);
            };
+    };
 };
 
 
@@ -224,9 +228,9 @@ DEFINE FUNCTION fn::washer_len_TRNS($pe: record) {
 
 DEFINE FUNCTION fn::washer_len_BEND($pe: record) {
     let $mat_id = meta::id(fn::hvac_mat_id($pe));
-    if $mat_id == 6 {
+    return if $mat_id == 6 {
         return [0.0];
-    };
+    } else {
     let $pf = fn::prev_stype_is_fjfd($pe);
     let $nf = fn::next_stype_is_fjfd($pe);
 
@@ -302,4 +306,5 @@ DEFINE FUNCTION fn::washer_len_BEND($pe: record) {
     let $r2 = if $second != NONE { math::fixed($second,2) } else { 0 };
 
     return [$r1,$r2];
+    };
 };

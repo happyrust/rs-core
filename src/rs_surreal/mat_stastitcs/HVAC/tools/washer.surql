@@ -1,35 +1,4 @@
 
-DEFINE FUNCTION fn::common_washer_len($pe: record) {
-    let $mat_id = meta::id(fn::hvac_mat_id($pe));
-    if $mat_id == 6 {
-        return 0.0;
-    };
-    let $is_circle = fn::hvac_shape($pe) == 'CIRC';
-    let $pd = fn::pre_is_type($pe, 'DAMP');
-    let $nd = fn::next_is_type($pe, 'DAMP');
-    let $pm = fn::pre_is_type($pe, 'MESH');
-    let $nm = fn::next_is_type($pe, 'MESH');
-    let $pf = fn::prev_stype_is_fjfd($pe);
-    let $nf = fn::next_stype_is_fjfd($pe);
-
-    let $ratio = if (($pd && (!$pf)) ||  $pm ) && (($nd && (!$nf)) ||  $nm ) {
-       return 1.0;
-    } else if ((!$pd) && (!$pm)) && (($nd && (!$nf)) ||  $nm ) {
-       return  0.75;
-    } else if (($pd) && (!$pf)) || (($pd && (!$nf)) ||  $nm ) {
-       return  0.75;
-    } else if ((!$pd) && (!$pm)) && ((!$nd) && (!$nm) ) {
-       return  0.5;
-    };
-
-    return  if $is_circle {
-               return math::fixed( ((fn::hvac_fl_len($pe)) / 1000.0 ) * 8.0 * $ratio, 2);
-           } else {
-               return math::fixed(fn::hvac_fl_len($pe) * $ratio, 2);
-           };
-};
-
-
 DEFINE FUNCTION fn::washer_type_CAP($pe: record) {
     let $pf = fn::prev_stype_is_fjfd($pe);
     return if $pf {

@@ -1,9 +1,9 @@
 //适用于STRT
 DEFINE FUNCTION fn::hvac_bolt_qty($pe: record) {
        let $mat_id = meta::id(fn::hvac_mat_id($pe));
-       if $mat_id == 6 {
+       return if $mat_id == 6 {
            return 0.0;
-       };
+       } else {
        let $is_circle = fn::hvac_shape($pe) == 'CIRC';
        let $pd = fn::pre_is_type($pe, 'DAMP');
        let $nd = fn::next_is_type($pe, 'DAMP');
@@ -37,6 +37,7 @@ DEFINE FUNCTION fn::hvac_bolt_qty($pe: record) {
             return (math::round((fn::hvac_width($pe) + fn::hvac_fl_width($pe)) / 150.0 + 1.5 ) +
                                                                 math::round((fn::hvac_height($pe) + fn::hvac_fl_width($pe)) / 150.0 + 1.5 )) * $ratio;
        };
+       }
 };
 
 
@@ -44,9 +45,9 @@ DEFINE FUNCTION fn::hvac_bolt_qty($pe: record) {
 //适用于TAPE
 DEFINE FUNCTION fn::hvac_bolt_qtys_1($pe: record) {
        let $mat_id = meta::id(fn::hvac_mat_id($pe));
-       if $mat_id == 6 {
+       return if $mat_id == 6 {
            return 0.0;
-       };
+       } else {
        let $is_circle = fn::hvac_shape($pe) == 'CIRC';
        let $pd = fn::pre_is_type($pe, 'DAMP');
        let $nd = fn::next_is_type($pe, 'DAMP');
@@ -83,6 +84,7 @@ DEFINE FUNCTION fn::hvac_bolt_qtys_1($pe: record) {
                                      + math::round( (fn::hvac_height2($pe) + (fn::hvac_fl_width2($pe) * 2.0) + 75.0) / 150.0 )  - 2);
               };
            return [$d1, $d2];
+       };
        };
 };
 
