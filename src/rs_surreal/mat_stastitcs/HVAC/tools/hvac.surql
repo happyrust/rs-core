@@ -17,22 +17,6 @@ DEFINE FUNCTION fn::hvac_system($pe: record){
     return array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 1);
 };
 
-//获得材质数组，包含检查保温层等级
-DEFINE FUNCTION fn::hvac_mats($pe: record){
-    let $ispec = fn::get_ipara($pe)[0];
-    let $mat_id = fn::hvac_mat_number($pe);
-    return if $ispec > 0 {
-        return if $mat_id == 6 {
-           return [fn::hvac_mat_name($pe), '防火材料'];
-        } else {
-           return [fn::hvac_mat_name($pe), '保温材料'];
-        };
-    } else {
-        return [fn::hvac_mat_name($pe)];
-    };
-};
-
-
 
 DEFINE FUNCTION fn::hvac_number($pe: record){
     let $v = (select value <int>v from type::thing('ATT_UDA', meta::id($pe)).udas where u.NAME='/H-SECTCODE')[0];
@@ -220,18 +204,6 @@ DEFINE FUNCTION fn::hvac_fl_width3($pe: record){
 };
 
 
-DEFINE FUNCTION fn::hvac_thks($pe: record, $chk_type: option<string>){
-    let $ispec = fn::get_ipara($pe)[0];
-    let $t = $ispec / 2.0;
-    let $pd = fn::pre_is_type($pe, 'DAMP');
-    let $nd = fn::next_is_type($pe, 'DAMP');
-    return if $pd || $nd {
-        return [fn::hvac_thk($pe, $chk_type), $t, 3];
-    } else {
-        return [fn::hvac_thk($pe, $chk_type), $t];
-    };
-
-};
 
 DEFINE FUNCTION fn::hvac_thk($pe: record, $chk_type: option<string>){
     return if $chk_type == "DAMP" {
@@ -337,18 +309,6 @@ DEFINE FUNCTION fn::hvac_mat($pe: record){
         return $m;
     };
 };
-
-DEFINE FUNCTION fn::hvac_mat_name($pe: record){
-    let $m = (return fn::hvac_mat_id($pe).desc);
-    return if $m == none {
-        return "unset";
-    } else {
-        return $m;
-    };
-};
-
-
-
 
 //暂时返回数字
 DEFINE FUNCTION fn::stype($pe:record) {

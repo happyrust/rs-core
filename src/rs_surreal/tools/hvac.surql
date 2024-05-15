@@ -215,17 +215,19 @@ DEFINE FUNCTION fn::hvac_fl_width3($pe: record){
     return $pe.refno.DESP[26];
 };
 
-
+//获得材质数组，包含检查保温层等级
 DEFINE FUNCTION fn::hvac_thks($pe: record, $chk_type: option<string>){
     let $ispec = fn::get_ipara($pe)[0];
-    let $t = $ispec / 2.0;
-    let $pd = fn::pre_is_type($pe, 'DAMP');
-    let $nd = fn::next_is_type($pe, 'DAMP');
-    return if $pd || $nd {
-        return [fn::hvac_thk($pe, $chk_type), $t, 3];
-    } else {
-        return [fn::hvac_thk($pe, $chk_type), $t];
-    };
+    return if $ispec == NONE { return 0; } else {
+        let $t = $ispec / 2.0;
+        let $pd = fn::pre_is_type($pe, 'DAMP');
+        let $nd = fn::next_is_type($pe, 'DAMP');
+        return if $pd || $nd {
+            return [fn::hvac_thk($pe, $chk_type), $t, 3];
+        } else {
+            return [fn::hvac_thk($pe, $chk_type), $t];
+        };
+    }
 
 };
 
@@ -335,7 +337,7 @@ DEFINE FUNCTION fn::hvac_mat($pe: record){
 };
 
 DEFINE FUNCTION fn::hvac_mat_name($pe: record){
-    let $m = (return fn::hvac_mat_id($pe).name);
+    let $m = (return fn::hvac_mat_id($pe).code);
     return if $m == none {
         return "unset";
     } else {
