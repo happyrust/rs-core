@@ -118,10 +118,16 @@ pub enum TubiSize {
 
 impl ToString for TubiSize {
     fn to_string(&self) -> String{
+        serde_json::to_string(&self.to_vec()).unwrap_or_default()
+    }
+}
+
+impl TubiSize{
+    pub fn to_vec(&self) -> Vec<f32> {
         match self {
-            TubiSize::None => "unset".to_string(),
-            TubiSize::BoreSize(d) => d.to_string(),
-            TubiSize::BoxSize((w, h)) => format!("{},{}", w, h),
+            TubiSize::None => vec![],
+            TubiSize::BoreSize(d) => vec![*d],
+            TubiSize::BoxSize((w, h)) => vec![*w, *h],
         }
     }
 }

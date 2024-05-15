@@ -58,7 +58,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .map(|d| d.normalize_or_zero())
                 .unwrap_or(pb.dir_flag * Vec3::Y);
 
-            let pcax_dir = pb
+            let pcax_dir = pc
                 .dir
                 .map(|d| d.normalize_or_zero())
                 .unwrap_or(pc.dir_flag * Vec3::X);
