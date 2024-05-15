@@ -1,7 +1,11 @@
 use crate::options::DbOption;
 use crate::pe::SPdmsElement;
 use crate::rs_surreal::table_const::GY_DZCL;
-use crate::{connect_surdb, get_children_pes, get_pe, insert_into_table, query_ele_filter_deep_children, query_filter_deep_children, NamedAttrValue, RefU64, SurlValue, SUL_DB, insert_into_table_with_chunks};
+use crate::{
+    connect_surdb, get_children_pes, get_pe, insert_into_table, insert_into_table_with_chunks,
+    query_ele_filter_deep_children, query_filter_deep_children, NamedAttrValue, RefU64, SurlValue,
+    SUL_DB,
+};
 use config::{Config, File};
 use parry3d::partitioning::QbvhDataGenerator;
 use serde::{Deserialize, Serialize};
@@ -33,6 +37,9 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
     let sites = query_all_site_with_major().await?;
     // 处理所有专业表单的数据
     for site in sites {
+        if site.major != "V".to_string() {
+            continue;
+        };
         dbg!(&site);
         match site.major.as_str() {
             // 工艺
@@ -42,13 +49,17 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
                 match get_gy_dzcl(SUL_DB.clone(), vec![site.id]).await {
                     Ok((r, tubi_r)) => {
                         let task = task::spawn(async move {
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_list", r).await {
+                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_list", r)
+                                .await
+                            {
                                 Ok(_) => {}
                                 Err(e) => {
                                     dbg!(&e.to_string());
                                 }
                             }
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_list", tubi_r).await {
+                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_list", tubi_r)
+                                .await
+                            {
                                 Ok(_) => {}
                                 Err(e) => {
                                     dbg!(&e.to_string());
@@ -66,7 +77,9 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
                 match get_gy_equi_list(SUL_DB.clone(), vec![site.id]).await {
                     Ok(r) => {
                         let task = task::spawn(async move {
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_equi", r).await {
+                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_equi", r)
+                                .await
+                            {
                                 Ok(_) => {}
                                 Err(e) => {
                                     dbg!(&e.to_string());
@@ -84,7 +97,9 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
                 match get_gy_valv_list(SUL_DB.clone(), vec![site.id]).await {
                     Ok(r) => {
                         let task = task::spawn(async move {
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_valv", r).await {
+                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_valv", r)
+                                .await
+                            {
                                 Ok(_) => {}
                                 Err(e) => {
                                     dbg!(&e.to_string());
@@ -140,12 +155,16 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
             // 通风
             "V" => {
                 // 风管管段
-                // let r = get_tf_hvac_material(&SUL_DB, vec![site.id]).await?;
-                // let json = serde_json::to_string(&r)?;
-                // tx.send(SaveDatabaseChannelMsg::InsertSql(
-                //     "material_hvac_pipe".to_string(),
-                //     json,
-                // ))?;
+                let r = get_tf_hvac_material(&SUL_DB, vec![site.id]).await?;
+                let task = task::spawn(async move {
+                    match insert_into_table_with_chunks(&SUL_DB, "material_hvac_pipe", r).await {
+                        Ok(_) => {}
+                        Err(e) => {
+                            dbg!(&e.to_string());
+                        }
+                    }
+                });
+                handles.push(task);
             }
             // 电气
             "E" => {
@@ -162,7 +181,8 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
                 });
                 handles.push(task);
                 let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_elec_list", str_r).await {
+                    match insert_into_table_with_chunks(&SUL_DB, "material_elec_list", str_r).await
+                    {
                         Ok(_) => {}
                         Err(e) => {
                             dbg!(&e.to_string());
