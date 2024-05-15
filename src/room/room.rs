@@ -11,6 +11,9 @@ use crate::{
 pub static GLOBAL_AABB_TREE: Lazy<RwLock<AccelerationTree>> =
     Lazy::new(|| RwLock::new(AccelerationTree::default()));
 
+pub static GLOBAL_ROOM_AABB_TREE: Lazy<RwLock<AccelerationTree>> =
+    Lazy::new(|| RwLock::new(AccelerationTree::default()));
+
 // 不要每次都加载，需要检查缓存，如果缓存有，就不用从数据库里刷新了
 pub async fn load_aabb_tree() -> anyhow::Result<bool> {
 
@@ -49,4 +52,50 @@ pub async fn load_aabb_tree() -> anyhow::Result<bool> {
 
     Ok(true)
 }
+
+pub async fn load_room_aabb_tree() -> anyhow::Result<bool> {
+
+    {
+        if !GLOBAL_ROOM_AABB_TREE.read().await.is_empty(){
+            return Ok(true);
+        }
+    }
+    //如果有缓存文件，直接读取缓存文件
+    //测试分页查询
+    let mut rstar_objs = vec![];
+    let mut offset = 0;
+
+    let page_count = 1000;
+    loop {
+        //需要过滤
+        let sql = format!(
+            // "select (select out as refno, aabb.d.* as aabb, in.noun as noun from only out->inst_relate limit 1) from room_panel_relate where aabb.d!=none and aabb.d.mins[0] < 1000000 start {} limit {page_count}",
+            "select value (select in as refno, aabb.d.* as aabb, in.noun as noun from only out->inst_relate where aabb.d!=none and aabb.d.mins[0] < 1000000 limit 1 ) from room_panel_relate where out->inst_relate start {offset} limit {page_count}"
+
+        );
+        let mut response = SUL_DB.query(&sql).await?;
+        let refno_aabbs: Vec<Option<RStarBoundingBox>> = response.take(0).unwrap();
+        if refno_aabbs.is_empty() {
+            break;
+        }
+        for r in refno_aabbs{
+            if let Some(r) = r{
+                rstar_objs.push(r);
+            }
+        }
+        // rstar_objs.extend(refno_aabbs.iter().filter_map(|x| x.clone()));
+        offset += page_count;
+    }
+    dbg!(rstar_objs.len());
+
+    //存储在全局变量里, 每次都重新加载，还是就用数据文件来表达？当做资源来加载，不用每次都去加载
+    //加个时间戳，来表达是不是最新的rtree
+    let tree = AccelerationTree::load(rstar_objs);
+    // tree.serialize_to_bin_file();
+    *GLOBAL_ROOM_AABB_TREE.write().await = tree;
+
+    Ok(true)
+}
+
+
 
