@@ -429,10 +429,9 @@ impl PbsElement {
 }
 
 impl PdmsNodeTrait for PbsElement {
-
     #[inline]
-    fn get_children_count(&self) -> usize {
-        self.children_cnt
+    fn get_id(&self) -> Option<&Thing> {
+        Some(&self.id)
     }
 
     #[inline]
@@ -441,8 +440,8 @@ impl PdmsNodeTrait for PbsElement {
     }
 
     #[inline]
-    fn get_id(&self) -> Option<&Thing> {
-        Some(&self.id)
+    fn get_children_count(&self) -> usize {
+        self.children_cnt
     }
 }
 
