@@ -337,7 +337,7 @@ DEFINE FUNCTION fn::hvac_mat($pe: record){
 };
 
 DEFINE FUNCTION fn::hvac_mat_name($pe: record){
-    let $m = (return fn::hvac_mat_id($pe).name);
+    let $m = (return fn::hvac_mat_id($pe).code);
     return if $m == none {
         return "unset";
     } else {

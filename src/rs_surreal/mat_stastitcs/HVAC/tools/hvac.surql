@@ -310,18 +310,6 @@ DEFINE FUNCTION fn::hvac_mat($pe: record){
     };
 };
 
-DEFINE FUNCTION fn::hvac_mat_name($pe: record){
-    let $m = (return fn::hvac_mat_id($pe).desc);
-    return if $m == none {
-        return "unset";
-    } else {
-        return $m;
-    };
-};
-
-
-
-
 //暂时返回数字
 DEFINE FUNCTION fn::stype($pe:record) {
     return $pe.refno.DESP[0];
