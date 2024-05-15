@@ -110,8 +110,11 @@ impl BrepShapeTrait for Extrusion {
         };
         match face {
             Err(e) => {
-                dbg!(&e);
-                dbg!(self);
+                #[cfg(feature = "debug_wire")]
+                {
+                    dbg!(&e);
+                    dbg!(self);
+                }
                 return Err(anyhow!("Extrusion gen_occ_shape error:{}", e));
             }
             Ok(f) => {

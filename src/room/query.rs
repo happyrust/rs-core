@@ -1,0 +1,75 @@
+use glam::Vec3;
+use nalgebra::Point3;
+use parry3d::bounding_volume::Aabb;
+use parry3d::math::Isometry;
+use parry3d::query::PointQuery;
+use parry3d::shape::TriMeshFlags;
+use crate::accel_tree::acceleration_tree::RStarBoundingBox;
+use crate::{query_insts, RefU64, SUL_DB};
+use crate::room::data::RoomElement;
+use crate::room::room::{GLOBAL_AABB_TREE, load_aabb_tree};
+use crate::shape::pdms_shape::PlantMesh;
+
+pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<String>> {
+    let Some(refno) = query_room_panel_by_point(point).await? else {
+        return Ok(None);
+    };
+    let mut response = SUL_DB.query(format!(
+        r#"
+            select value room_num from only {}<-room_panel_relate limit 1;
+        "#,
+        refno.to_pe_key()
+    )).await?;
+    // dbg!(&response);
+    let room_number: Option<String> = response.take(0)?;
+    dbg!(&room_number);
+    Ok(room_number)
+}
+
+//传进来的是世界坐标系下的点
+pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<RefU64>> {
+    //通过rtree 找到所在的几个房间可能
+    load_aabb_tree().await.unwrap();
+    let pt: Point3<f32> = point.into();
+    let point_aabb = Aabb::new(pt, pt);
+    let read = GLOBAL_AABB_TREE.read().await;
+    let mut contains_query = read
+        .locate_intersecting_bounds(&point_aabb)
+        .collect::<Vec<_>>();
+
+    // dbg!(&contains_query);
+    let refnos = contains_query.iter().map(|r| r.refno).collect::<Vec<_>>();
+    let insts = query_insts(&refnos).await?;
+    // dbg!(&insts);
+    for RStarBoundingBox{
+        refno,
+        aabb,
+        ..
+    } in contains_query{
+        let Some(geom_inst) = insts.iter().find(|x| x.refno == *refno) else {
+            continue;
+        };
+        for inst in &geom_inst.insts {
+            if (aabb.mins[0] > 1000000.0) {
+                return continue;
+            }
+            let Ok(mesh) =
+                PlantMesh::des_mesh_file(&format!("assets/meshes/{}.mesh", inst.geo_hash))
+                else {
+                    continue;
+                };
+            let Some(mut tri_mesh) = mesh.get_tri_mesh_with_flag(
+                (geom_inst.world_trans * inst.transform).compute_matrix(),
+                TriMeshFlags::ORIENTED,
+            ) else {
+                continue;
+            };
+            if tri_mesh.contains_point(&Isometry::identity(), &pt){
+                // dbg!(refno);
+                return Ok(Some(*refno));
+            }
+        }
+    }
+
+    Ok(None)
+}

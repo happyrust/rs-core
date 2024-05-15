@@ -27,7 +27,7 @@ pub mod test_uda;
 
 
 
-pub async fn init_test_surreal() {
+pub async fn init_test_surreal() -> DbOption {
     let s = Config::builder()
         .add_source(File::with_name("DbOption"))
         .build()
@@ -49,5 +49,6 @@ pub async fn init_test_surreal() {
             password: &db_option.v_password,
         }).await.unwrap();
     define_common_functions().await.unwrap();
+    db_option
 }
 

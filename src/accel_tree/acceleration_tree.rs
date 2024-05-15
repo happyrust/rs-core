@@ -32,7 +32,7 @@ impl RStarBoundingBox {
         Self {
             aabb,
             refno,
-            noun: todo!(),
+            noun: "UNSET".to_string(),
         }
     }
 
@@ -43,7 +43,7 @@ impl RStarBoundingBox {
         Self {
             aabb: Aabb::new(min.into(), max.into()),
             refno,
-            noun: todo!(),
+            noun: "UNSET".to_string(),
         }
     }
 }
@@ -182,22 +182,22 @@ impl AccelerationTree {
     pub fn locate_intersecting_bounds<'a>(
         &'a self,
         bounds: &Aabb,
-    ) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
+    ) -> impl Iterator<Item=&RStarBoundingBox> + 'a {
         self.tree
             .locate_in_envelope_intersecting(&rstar::AABB::from_corners(
                 [bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                 [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]],
             ))
-            .map(|bb| (bb.refno, bb.aabb))
+            .map(|bb| bb)
     }
 
-    pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
+    pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=&RStarBoundingBox> + 'a {
         self.tree
             .locate_in_envelope(&rstar::AABB::from_corners(
                 [bounds.mins[0], bounds.mins[1], bounds.mins[2]],
                 [bounds.maxs[0], bounds.maxs[1], bounds.maxs[2]],
             ))
-            .map(|bb| (bb.refno, bb.aabb))
+            .map(|bb| bb)
     }
 
     //后面可以用数据库存储加载

@@ -15,7 +15,8 @@ pub mod test_hash;
 
 pub mod test_serde;
 
-pub mod test_spatial_caculation;
+pub mod test_spatial_calculation;
+
 
 
 #[cfg(not(target_arch = "wasm32"))]
