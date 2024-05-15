@@ -232,7 +232,6 @@ impl AiosDBMgr {
     }
 
     /// 获取外部的数据库
-    #[cfg(feature = "sql")]
     pub async fn get_puhua_pool(&self) -> anyhow::Result<Pool<MySql>> {
         let conn = self.puhua_conn_str();
         let url = &format!("{conn}/{}", PUHUA_MATERIAL_DATABASE);
@@ -241,7 +240,7 @@ impl AiosDBMgr {
             .acquire_timeout(Duration::from_secs(10 * 60))
             .connect(url)
             .await
-            .map_err({cle |x| anyhow::anyhow!(x.to_string()) })
+            .map_err({ |x| anyhow::anyhow!(x.to_string()) })
     }
 
 }
