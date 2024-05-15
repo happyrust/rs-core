@@ -256,7 +256,7 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
         }
     }
     // 等待保存线程完成
-    dbg!("查询完毕，等待数据库保存完成");
+    println!("查询完毕，等待数据库保存完成");
     futures::prelude::future::join_all(handles).await;
     Ok(())
 }
@@ -2392,7 +2392,6 @@ async fn get_tf_hvac_brco_data(
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>();
-    dbg!(&refnos);
     let sql = format!(
         "select
       fn::refno(id) as id,
