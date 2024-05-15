@@ -69,6 +69,17 @@ impl AiosDBMgr {
         let max = max.get(0).map_or(0.0, |x| *x);
         Ok((min, max))
     }
+
+    /// 获取指定节点附近最近的 own_filter_types
+    pub async fn query_around_owner_within_radius(&self,
+                                                  refno: RefU64,
+                                                  is_aabb: bool,
+                                                  offset: Option<f32>,
+                                                  nearest: bool,
+                                                  own_filter_types: &[&str]) -> anyhow::Result<Vec<RefU64>> {
+        // todo
+        Ok(vec![])
+    }
 }
 
 #[async_trait]

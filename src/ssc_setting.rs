@@ -65,7 +65,6 @@ pub struct PdmsMajor {
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PbsMajorValue {
-    #[serde_as(as = "DisplayFromStr")]
     pub id: RefU64,
     pub noun: String,
     pub major: String,
@@ -636,6 +635,15 @@ pub async fn set_pbs_room_major_node(
     ))?;
     tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
     Ok(())
+}
+
+/// 获取所有赋过专业值的site
+pub async fn query_all_site_with_major() -> anyhow::Result<Vec<PbsMajorValue>> {
+    let mut response = SUL_DB
+        .query("select * from pdms_major where noun == 'SITE';")
+        .await?;
+    let result: Vec<PbsMajorValue> = response.take(0)?;
+    Ok(result)
 }
 
 /// 获取所有赋过专业值的zone
