@@ -1,43 +1,43 @@
 use crate::cache::mgr::BytesTrait;
 use crate::consts::*;
+use crate::geometry::{EleInstGeo, EleInstGeosData};
+#[cfg(feature = "sea-orm")]
+use crate::orm::*;
+use crate::parsed_data::CateAxisParam;
+use crate::pe::SPdmsElement;
+use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
+use crate::types::attmap::AttrMap;
+use crate::types::attval::{AttrVal, AttrValAql};
+use crate::types::named_attvalue::NamedAttrValue;
 pub use crate::types::*;
 use bevy_ecs::prelude::*;
 use bevy_math::*;
 use bevy_reflect::Reflect;
+#[cfg(feature = "render")]
+use bevy_render::prelude::*;
 use bevy_transform::prelude::*;
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
 use id_tree::NodeId;
 use itertools::Itertools;
+#[cfg(feature = "occ")]
+use opencascade::primitives::*;
 use parry3d::bounding_volume::Aabb;
 #[cfg(feature = "sea-orm")]
 use sea_orm::entity::prelude::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
+#[cfg(feature = "sea-orm")]
+use sea_query::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use serde_with::{DisplayFromStr, serde_as};
+use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display, Pointer};
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::string::ToString;
-#[cfg(feature = "sea-orm")]
-use crate::orm::*;
-use crate::shape::pdms_shape::BrepShapeTrait;
-use crate::types::attmap::AttrMap;
-use crate::types::attval::{AttrVal, AttrValAql};
-use crate::types::named_attvalue::NamedAttrValue;
-#[cfg(feature = "render")]
-use bevy_render::prelude::*;
-#[cfg(feature = "occ")]
-use opencascade::primitives::*;
-#[cfg(feature = "sea-orm")]
-use sea_query::*;
-use crate::geometry::{EleInstGeo, EleInstGeosData};
-use crate::parsed_data::CateAxisParam;
-use crate::pe::SPdmsElement;
 use surrealdb::sql::Thing;
 
 ///控制pdms显示的深度层级
@@ -51,17 +51,19 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
 pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE",
-     "NBOX", "NCYL", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV"
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX", "NCYL",
+    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV",
 ];
 
 ///有loop的几何体
-pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] =
-    ["AEXTR" , "NXTR" , "EXTR" , "PANE" , "FLOOR" , "SCREED" , "GWALL", "NREV" ,"REVO"];
+pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
+    "AEXTR", "NXTR", "EXTR", "PANE", "FLOOR", "SCREED", "GWALL", "NREV", "REVO",
+];
 
 ///负实体基本体的种类
 pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV", "NSCY"
+    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
+    "NSCY",
 ];
 
 ///元件库的负实体类型
@@ -91,8 +93,8 @@ pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
 
 pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 31] = [
     "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO",
-    "SSLC", "SPRO", "SANN", "BOXI", "TUBE", "SREC", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT",
-    "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE",
+    "SSLC", "SPRO", "SANN", "BOXI", "TUBE", "SREC", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY",
+    "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE",
 ];
 
 ///可能会与ngmr发生作用的类型
@@ -123,11 +125,10 @@ pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
 
 pub const VISBILE_GEO_NOUNS: [&'static str; 38] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "EXTR", "REVO",
-    "FLOOR", "PANE",
-    "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
-    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL","SCTN", "NOZZ"
+    "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI",
+    "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ",
+    "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
 ];
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub enum SjusType {
@@ -153,18 +154,18 @@ pub mod string {
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            T: Display,
-            S: Serializer,
+    where
+        T: Display,
+        S: Serializer,
     {
         serializer.collect_str(value)
     }
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-        where
-            T: FromStr,
-            T::Err: Display,
-            D: Deserializer<'de>,
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
     {
         String::deserialize(deserializer)?
             .parse()
@@ -182,8 +183,6 @@ pub struct DifferenceValue {
 
 pub const DEFAULT_NOUNS: [NounHash; 4] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
 pub const DEFAULT_NAMED_NOUNS: [&'static str; 4] = ["TYPE", "NAME", "REFNO", "OWNER"];
-
-
 
 #[repr(C)]
 #[derive(
@@ -234,24 +233,24 @@ pub enum PdmsGenericType {
 }
 
 fn de_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     s.parse::<u64>().map_err(de::Error::custom)
 }
 
 fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     RefU64::from_str(&s).map_err(de::Error::custom)
 }
 
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer).unwrap_or_default();
     Ok(serde_json::from_str::<HashSet<String>>(s.as_str())
@@ -262,8 +261,8 @@ fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Er
 }
 
 pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     let set = refnos
         .into_iter()
@@ -274,15 +273,15 @@ pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S:
 }
 
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str((*id).to_string().as_str())
 }
 
 pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(refno.to_string().as_str())
 }
@@ -489,7 +488,7 @@ impl EleTreeNode {
             owner,
             order,
             children_count,
-            deleted
+            deleted,
         }
     }
 
@@ -504,7 +503,6 @@ impl EleTreeNode {
         }
     }
 }
-
 
 impl From<PdmsElement> for EleTreeNode {
     fn from(value: PdmsElement) -> Self {
@@ -656,6 +654,19 @@ impl PdmsElement {
             noun: self.noun,
             version: self.version,
             children_count: self.children_count,
+        }
+    }
+}
+
+impl From<EleTreeNode> for PdmsElement {
+    fn from(value: EleTreeNode) -> Self {
+        Self {
+            refno: value.refno,
+            owner: value.owner,
+            name: value.name,
+            noun: value.noun,
+            version: 0,
+            children_count: value.children_count as usize,
         }
     }
 }
@@ -927,17 +938,17 @@ pub struct PdmsRefno {
 pub type AiosStrHash = u32;
 
 #[derive(
-Debug,
-Clone,
-Default,
-Serialize,
-Deserialize,
-PartialEq,
-Eq,
-Hash,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Debug,
+    Clone,
+    Default,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Hash,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct AiosStr(pub String);
 

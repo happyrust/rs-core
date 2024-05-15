@@ -69,6 +69,17 @@ impl AiosDBMgr {
         let max = max.get(0).map_or(0.0, |x| *x);
         Ok((min, max))
     }
+
+    /// 获取指定节点附近最近的 own_filter_types
+    pub async fn query_around_owner_within_radius(&self,
+                                                  refno: RefU64,
+                                                  is_aabb: bool,
+                                                  offset: Option<f32>,
+                                                  nearest: bool,
+                                                  own_filter_types: &[&str]) -> anyhow::Result<Vec<RefU64>> {
+        // todo
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
@@ -232,7 +243,6 @@ impl AiosDBMgr {
     }
 
     /// 获取外部的数据库
-    #[cfg(feature = "sql")]
     pub async fn get_puhua_pool(&self) -> anyhow::Result<Pool<MySql>> {
         let conn = self.puhua_conn_str();
         let url = &format!("{conn}/{}", PUHUA_MATERIAL_DATABASE);
@@ -241,7 +251,7 @@ impl AiosDBMgr {
             .acquire_timeout(Duration::from_secs(10 * 60))
             .connect(url)
             .await
-            .map_err({cle |x| anyhow::anyhow!(x.to_string()) })
+            .map_err({ |x| anyhow::anyhow!(x.to_string()) })
     }
 
 }
