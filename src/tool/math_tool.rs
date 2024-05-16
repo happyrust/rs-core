@@ -4,6 +4,7 @@ use approx::{abs_diff_eq, abs_diff_ne};
 use glam::{DMat3, DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
 use std::f32::consts::FRAC_PI_2;
+use crate::tool::dir_tool::parse_ori_str_to_quat;
 
 use super::direction_parse::parse_expr_to_dir;
 
@@ -104,8 +105,6 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         if angle.abs() < tol {
             return x_str.to_string();
         }
-
-        // dbg!(angle);
         if angle > 90.0 && angle <= 180.0 {
             angle = 180.0 - angle;
             x_str = neg_dir_str(x_str);
@@ -113,19 +112,6 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
             angle += 180.0;
             x_str = neg_dir_str(x_str);
         }
-
-        //如果angle < 0.0,则需要转换为正数, 负轴应该转移到终点轴
-        // if angle < 0.0 {
-        //     angle = -angle;
-        //     if abs_diff_eq!(angle, 0.0, epsilon = 0.01) {
-        //         return y_str.to_string();
-        //     }
-        //     //执行一个坐标轴的旋转180°转换
-        //     let y_str = neg_dir_str(y_str);
-
-        //     return format!("{x_str} {} {y_str}", f64_round_4(angle));
-        // }
-
         if angle.is_nan() {
             return "unset".to_string();
         }
@@ -133,13 +119,6 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         if abs_diff_eq!(angle, 0.0, epsilon = 0.01) {
             return x_str.to_string();
         }
-
-        // dbg!(format!("{x_str} {} {y_str}", f64_round_4(angle)));
-        // if angle < 45.0 {
-        //     if x_str == "U" || x_str == "D" {
-        //         return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
-        //     }
-        // } else
         if angle > 45.0 {
             if y_str != "U" && y_str != "D" {
                 return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
@@ -149,7 +128,6 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
                 return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
             }
         }
-
         return format!("{x_str} {} {y_str}", f64_round_4(angle));
     }
 
@@ -284,6 +262,20 @@ pub fn angles_to_dori(angs: Vec3) -> Option<DQuat> {
         * DMat3::from_rotation_x((angs[0] as f64).to_radians());
     Some(DQuat::from_mat3(&mat))
 }
+
+pub fn cal_end_points(center: DVec3, ori_str: &str, len: f64) -> Option<[DVec3; 2]> {
+    let dir = parse_ori_str_to_quat(ori_str).ok()?.as_dquat() * DVec3::Y;
+    let start = center - dir * len / 2.0;
+    let end = center + dir * len / 2.0;
+    Some([start, end])
+}
+
+#[test]
+fn test_cal_end_points() {
+    let pts = cal_end_points(DVec3::new( 44200.0,-18050.0,10293.0), "Y is N and Z is Z", 900.0).unwrap();
+    dbg!(pts);
+}
+
 
 #[test]
 fn test_convert_to_dir_string() {
