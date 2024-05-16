@@ -50,6 +50,7 @@ pub fn signed_axis(input: &str) -> IResult<&str, (Option<&str>, &str)> {
 }
 
 use nom::number::complete::double;
+use crate::tool::math_tool::convert_to_xyz;
 
 pub fn parse_angle(input: &str) -> IResult<&str, f64> {
     alt((
@@ -95,7 +96,7 @@ pub fn parse_rotation_struct(input: &str) -> IResult<&str, RotationStruct> {
 
 ///解析expression到direction
 pub fn parse_expr_to_dir(expr: &str) -> Option<DVec3> {
-    let expr = expr.replace(" ", "");
+    let expr = convert_to_xyz(expr).replace(" ", "");
     // dbg!(&expr);
     if let Ok((_, rs)) = parse_rotation_struct(&expr) {
         // dbg!(&rs);
