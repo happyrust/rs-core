@@ -21,6 +21,7 @@ pub mod aios_db_mgr;
 pub mod basic;
 
 pub mod bevy_types;
+pub mod error;
 pub mod cache;
 pub mod consts;
 pub mod table_const;
