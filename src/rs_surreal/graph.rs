@@ -1,16 +1,22 @@
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+use crate::error::{init_deserialize_error, init_query_error, HandleError};
 use crate::noun_graph::*;
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::types::*;
 use crate::{rs_surreal, NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
+use anyhow::anyhow;
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use itertools::Itertools;
+use parry3d::simba::scalar::SupersetOf;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fs::{File, OpenOptions};
 use std::str::FromStr;
+use log::LevelFilter;
+use simplelog::{CombinedLogger, Config, WriteLogger};
 use surrealdb::method::Stats;
 
 #[inline]
@@ -30,9 +36,23 @@ pub async fn query_deep_children_refnos(refno: RefU64) -> anyhow::Result<Vec<Ref
             "#
     );
     // println!("query_deep_children_refnos is: {}", &sql);
-    let mut response = SUL_DB.query(&sql).await.unwrap();
-    let refnos: Vec<RefU64> = response.take(0)?;
-    Ok(refnos)
+    return match SUL_DB.query(&sql).await {
+        Ok(mut response) => match response.take::<Vec<RefU64>>(0) {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                init_deserialize_error(
+                    "Vec<RefU64>",
+                    &e,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
+            }
+        },
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            Err(anyhow!(e.to_string()))
+        }
+    };
 }
 
 pub async fn query_filter_deep_children(
@@ -45,9 +65,16 @@ pub async fn query_filter_deep_children(
     let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
     let sql = format!(r#"select value id from [{pe_keys}] where noun in [{nouns_str}]"#);
     // println!("sql is {}", &sql);
-    let mut response = SUL_DB.query(&sql).with_stats().await.unwrap();
-    if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
-        return Ok(result);
+    match SUL_DB.query(&sql).with_stats().await {
+        Ok(mut response) => {
+            if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
+                return Ok(result);
+            }
+        }
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            return Err(anyhow!(e.to_string()));
+        }
     }
     Ok(vec![])
 }
@@ -179,6 +206,14 @@ pub async fn query_filter_ancestors(
 
 #[tokio::test]
 async fn test_query_filter_deep_children() -> anyhow::Result<()> {
+    // 配置日志文件
+    let log_file = OpenOptions::new().create(true).append(true).open("error.log")?;
+    // 初始化日志系统
+    CombinedLogger::init(vec![WriteLogger::new(
+        LevelFilter::Error,
+        Config::default(),
+        log_file,
+    )]).unwrap();
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
     let refno = RefU64::from_str("24383/73927").unwrap();
     let equis = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;

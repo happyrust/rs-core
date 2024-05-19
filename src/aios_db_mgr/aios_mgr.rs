@@ -253,7 +253,6 @@ impl AiosDBMgr {
             .await
             .map_err({ |x| anyhow::anyhow!(x.to_string()) })
     }
-
 }
 
 #[tokio::test]

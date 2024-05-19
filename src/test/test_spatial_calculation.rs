@@ -21,4 +21,6 @@ async fn test_query_room_by_point(point: Vec3) {
     let result = query_room_number_by_point(point).await.unwrap();
     dbg!(&result);
     println!("query_room_number_by_point花费时间: {} ms", time.elapsed().as_millis());
+
+
 }

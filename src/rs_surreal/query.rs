@@ -1,6 +1,6 @@
 use crate::consts::MAX_INSERT_LENGTH;
 use crate::parsed_data::CateAxisParam;
-use crate::pdms_types::{CataHashRefnoKV, EleTreeNode};
+use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
@@ -623,4 +623,34 @@ pub async fn insert_relate_to_table(db: &Surreal<Any>, value: Vec<String>) -> an
     sql.remove(sql.len() - 1);
     db.query(sql).await?;
     Ok(())
+}
+
+/// 通过name查询参考号
+pub async fn query_refnos_from_names(
+    db: &Surreal<Any>,
+    names: &Vec<String>,
+) -> anyhow::Result<HashMap<String, PdmsElement>> {
+    // 如果name不带 '/' 就加上 '/'
+    let names = names
+        .into_iter()
+        .map(|name| {
+            if name.starts_with("/") {
+                name.to_string()
+            } else {
+                format!("/{}", name)
+            }
+        })
+        .collect::<Vec<_>>();
+    let names = serde_json::to_string(&names)?;
+    let sql = format!(
+        "select refno,name,noun,owner,0 as children_count , 0 as version, 0 as order from pe where name in {}",
+        names
+    );
+    let mut r = db.query(sql).await?;
+    let eles: Vec<EleTreeNode> = r.take(0)?;
+    let mut map = HashMap::new();
+    for ele in eles {
+        map.entry(ele.name.clone()).or_insert(ele.into());
+    }
+    Ok(map)
 }

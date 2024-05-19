@@ -22,7 +22,6 @@ pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<St
     )).await?;
     // dbg!(&response);
     let room_number: Option<String> = response.take(0)?;
-    dbg!(&room_number);
     Ok(room_number)
 }
 
