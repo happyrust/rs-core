@@ -18,6 +18,8 @@ pub mod function;
 
 pub mod version;
 
+pub mod e3d_db;
+
 
 
 pub use query::*;
@@ -30,6 +32,7 @@ pub use resolve::*;
 pub use index::*;
 pub use inst::*;
 pub use point::*;
+pub use e3d_db::*;
 // pub use room::*;
 
 use once_cell::sync::Lazy;
