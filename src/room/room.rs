@@ -42,7 +42,7 @@ pub async fn load_aabb_tree() -> anyhow::Result<bool> {
         rstar_objs.extend(refno_aabbs);
         offset += page_count;
     }
-    dbg!(rstar_objs.len());
+    // dbg!(rstar_objs.len());
 
     //存储在全局变量里, 每次都重新加载，还是就用数据文件来表达？当做资源来加载，不用每次都去加载
     //加个时间戳，来表达是不是最新的rtree

@@ -10,7 +10,7 @@ replace_dbs = true
 sync_chunk_size = 100_0000
 
 #项目设置
-project_path = "/Users/dongpengcheng/Documents/models/e3d_models"
+project_path = "D:/AVEVA/Projects/E3D2.1"
 included_projects = ["AvevaMarineSample" , "AvevaCatalogue", "SCB", "ZDJ"]
 # included_projects = ["AvevaCatalogue"]
 mdb_name = "ALL"
