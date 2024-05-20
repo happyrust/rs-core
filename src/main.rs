@@ -20,6 +20,7 @@ async fn main() -> anyhow::Result<()> {
     dbg!(db1_hash("FJFD"));
     dbg!(db1_hash("DAMP"));
     dbg!(db1_hash("MESH"));
+    dbg!(db1_dehash(0x743F49));
 
     Ok(())
 }

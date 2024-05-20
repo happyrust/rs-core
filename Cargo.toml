@@ -22,6 +22,7 @@ sql = []
 [dependencies]
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25"
+deku = "0.16.0"
 smol_str = { version = "0.2.0", features = ["serde"] }
 glam = { version = "0.27.0", features = ["serde", "rkyv"]}
 id_tree = { path = "../id-tree", features = ["serde_support"] }

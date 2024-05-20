@@ -259,6 +259,7 @@ pub fn eval_str_to_f64(
                         "NEXT" => crate::get_next_prev(refno, true).await.unwrap_or_default(),
                         _ => c2.into(),
                     };
+                    // dbg!(target_refno);
                     let pe = crate::get_pe(target_refno)
                         .await
                         .unwrap_or_default()
