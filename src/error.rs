@@ -18,10 +18,11 @@ pub enum HandleError {
         connection_name: String,
         connection_url: String,
     },
-    #[error("Failed to deserialize {struct_name} ;\n Error Message: {msg} ;\n  at {position}")]
+    #[error("Failed to deserialize {struct_name} ;\n Error Message: {msg} ;\n SQL:{sql};  at {position}")]
     DeserializeErr {
         struct_name: String,
         msg: String,
+        sql: String,
         position: String,
     },
     // 查询为空异常
@@ -46,17 +47,18 @@ pub fn init_query_error<E: ToString>(sql: &str, error_msg: E, position: &str) {
         msg: error_msg.to_string(),
         position: position.to_string(),
     }
-    .init_log();
+        .init_log();
 }
 
 /// 将 deserialize error注册到日志中
-pub fn init_deserialize_error<E: ToString>(struct_name: &str, error_msg: E, position: &str) {
+pub fn init_deserialize_error<E: ToString>(struct_name: &str, error_msg: E, sql: &str, position: &str) {
     HandleError::DeserializeErr {
         struct_name: struct_name.to_string(),
         msg: error_msg.to_string(),
+        sql: sql.to_string(),
         position: position.to_string(),
     }
-    .init_log();
+        .init_log();
 }
 
 /// 将查询为空注册到日志中
@@ -90,7 +92,7 @@ fn test_err() -> anyhow::Result<()> {
         Config::default(),
         log_file,
     )])
-    .unwrap();
+        .unwrap();
 
     // create_error()?;
     let json = "[]";

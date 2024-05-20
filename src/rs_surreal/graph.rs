@@ -43,6 +43,7 @@ pub async fn query_deep_children_refnos(refno: RefU64) -> anyhow::Result<Vec<Ref
                 init_deserialize_error(
                     "Vec<RefU64>",
                     &e,
+                    &sql,
                     &std::panic::Location::caller().to_string(),
                 );
                 Err(anyhow!(e.to_string()))
