@@ -7,18 +7,18 @@ use thiserror::Error;
 
 #[derive(Debug, Error, Clone)]
 pub enum HandleError {
-    #[error("Query Error SQL: {sql} ,\n  Error Message: {msg} ,\n  at {position}")]
+    #[error("Query Error SQL: {sql} ;\n  Error Message: {msg} ;\n  at {position}")]
     QueryErr {
         sql: String,
         msg: String,
         position: String,
     },
-    #[error("Failed to connection {connection_name} ,\n connection_url is {connection_url}")]
+    #[error("Failed to connection {connection_name} ;\n connection_url is {connection_url}")]
     ConnectionErr {
         connection_name: String,
         connection_url: String,
     },
-    #[error("Failed to deserialize {struct_name} ,\n Error Message: {msg} ,\n  at {position}")]
+    #[error("Failed to deserialize {struct_name} ;\n Error Message: {msg} ;\n  at {position}")]
     DeserializeErr {
         struct_name: String,
         msg: String,
@@ -27,6 +27,8 @@ pub enum HandleError {
     // 查询为空异常
     #[error("Query Null: {0}")]
     QueryNullErr(String),
+    #[error("Failed to save: {0}")]
+    SaveDatabaseErr(String),
     #[error("Invalid Error: {0}")]
     InvalidErr(String),
 }
@@ -60,6 +62,11 @@ pub fn init_deserialize_error<E: ToString>(struct_name: &str, error_msg: E, posi
 /// 将查询为空注册到日志中
 pub fn init_query_null_error(sql: &str) {
     HandleError::QueryNullErr(sql.to_string()).init_log()
+}
+
+/// 将保存到数据库中错误注册到日志中
+pub fn init_save_database_error(sql: &str) {
+    HandleError::SaveDatabaseErr(sql.to_string()).init_log()
 }
 
 fn create_error() -> Result<(), HandleError> {

@@ -16,7 +16,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::str::FromStr;
 use log::LevelFilter;
-use simplelog::{CombinedLogger, Config, WriteLogger};
+use simplelog::{ColorChoice, CombinedLogger, Config, TerminalMode, TermLogger, WriteLogger};
 use surrealdb::method::Stats;
 
 #[inline]
@@ -209,11 +209,12 @@ async fn test_query_filter_deep_children() -> anyhow::Result<()> {
     // 配置日志文件
     let log_file = OpenOptions::new().create(true).append(true).open("error.log")?;
     // 初始化日志系统
-    CombinedLogger::init(vec![WriteLogger::new(
-        LevelFilter::Error,
-        Config::default(),
-        log_file,
-    )]).unwrap();
+    CombinedLogger::init(
+        vec![
+            TermLogger::new(LevelFilter::Error, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
+            WriteLogger::new(LevelFilter::Error, Config::default(), log_file),
+        ]
+    ).unwrap();
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
     let refno = RefU64::from_str("24383/73927").unwrap();
     let equis = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
