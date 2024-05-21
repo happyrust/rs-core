@@ -100,6 +100,7 @@ pub struct GeomPtsQuery {
     pub pts_group: Vec<(Transform, Option<Vec<Vec3>>)>,
 }
 
+//todo 需要按分块去加载显示
 pub async fn query_insts(
     refnos: impl IntoIterator<Item = &RefU64>,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {

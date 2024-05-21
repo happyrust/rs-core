@@ -68,6 +68,12 @@ pub async fn test_wire_25688_45049() {
 }
 
 #[tokio::test]
+pub async fn test_wire_17496_171545() {
+    init_test_surreal().await;
+    test_wire_from_loop("17496/171545".into()).await;
+}
+
+#[tokio::test]
 pub async fn test_wire_by_loop() {
     init_test_surreal().await;
     //方向为逆时针, 有自相交，第一条相交边为直线，第二条相交边为弧线

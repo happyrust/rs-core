@@ -93,10 +93,10 @@ impl SweepSolid {
 
         let mut angle_x = (dir.x / dir.z).atan();
         let mut angle_y = (dir.y / dir.z).atan();
-        if !is_start {
-            angle_x = -angle_x;
-            angle_y = -angle_y;
-        }
+        // if !is_start {
+        //     angle_x = -angle_x;
+        //     angle_y = -angle_y;
+        // }
         //这里这个角度限制，应该用 h/2 / l 去计算，这里暂时给45°
         if angle_x.abs() - 0.01 >= FRAC_PI_2 || angle_y.abs() - 0.01 >= FRAC_PI_2 {
             return DMat4::IDENTITY;
@@ -176,7 +176,7 @@ impl SweepSolid {
             polyline.add(p4.x, p4.y, 0.0);
         };
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "debug_wire")]
         println!(
             "Sweep polyline is {}",
             polyline_to_debug_json_str(&polyline)
@@ -213,7 +213,6 @@ impl SweepSolid {
         let m = DMat3::from_quat(beta_rot);
         let beta_mat = DMat4::from_mat3(m);
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
-        // dbg!(final_mat);
 
         Ok(wire.transformed_by_gmat(&final_mat)?)
     }
@@ -637,11 +636,6 @@ impl BrepShapeTrait for SweepSolid {
         };
 
         if let Some(mut wire) = profile_wire {
-            //check if valid
-            // if self.drns.is_nan() || self.drne.is_nan() {
-            //     return Err(anyhow!("drns or drne is nan"));
-            // }
-
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
                     let rot_angle = arc.angle;
@@ -655,11 +649,6 @@ impl BrepShapeTrait for SweepSolid {
                     let mut wires = vec![];
                     let mut transform_btm = self.get_face_mat4(true);
                     let mut transform_top = self.get_face_mat4(false);
-
-                    // let mut transform_btm = DMat4::IDENTITY;
-                    // let mut transform_top = DMat4::IDENTITY;
-
-                    // transform_top.z_axis = DVec4::new(0.0, 0.0, l.length() as f64, 1.0);
                     transform_top = DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
                     wires.push(wire.transformed_by_gmat(&transform_btm)?);
                     if let Some(mut top_wire) = top_profile_wire {
