@@ -17,7 +17,7 @@ pub struct DbOption {
     #[clap(long, default_value = "true")]
     pub sync_versioned: Option<bool>,
     #[clap(long)]
-    pub sync_localdb: Option<bool>,
+    pub sync_live: Option<bool>,
     #[clap(long)]
     pub incr_sync: bool,
     // #[clap(long)]
