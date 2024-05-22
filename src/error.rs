@@ -26,12 +26,21 @@ pub enum HandleError {
         position: String,
     },
     // 查询为空异常
-    #[error("Query Null: {0}")]
-    QueryNullErr(String),
-    #[error("Failed to save: {0}")]
-    SaveDatabaseErr(String),
-    #[error("Invalid Error: {0}")]
-    InvalidErr(String),
+    #[error("Query Null: {0} , at {position}")]
+    QueryNullErr {
+        sql: String,
+        position: String,
+    },
+    #[error("Failed to save: {0} , at {position}")]
+    SaveDatabaseErr {
+        sql: String,
+        position: String,
+    },
+    #[error("Invalid Error: {0} \n , at {position}")]
+    InvalidErr {
+        msg: String,
+        position: String,
+    },
 }
 
 impl HandleError {
@@ -62,13 +71,19 @@ pub fn init_deserialize_error<E: ToString>(struct_name: &str, error_msg: E, sql:
 }
 
 /// 将查询为空注册到日志中
-pub fn init_query_null_error(sql: &str) {
-    HandleError::QueryNullErr(sql.to_string()).init_log()
+pub fn init_query_null_error(sql: &str, position: &str) {
+    HandleError::QueryNullErr {
+        sql: sql.to_string(),
+        position: position.to_string(),
+    }.init_log()
 }
 
 /// 将保存到数据库中错误注册到日志中
-pub fn init_save_database_error(sql: &str) {
-    HandleError::SaveDatabaseErr(sql.to_string()).init_log()
+pub fn init_save_database_error(sql: &str, position: &str) {
+    HandleError::SaveDatabaseErr {
+        sql: sql.to_string(),
+        position: position.to_string(),
+    }.init_log()
 }
 
 fn create_error() -> Result<(), HandleError> {
