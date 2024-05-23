@@ -184,7 +184,8 @@ impl PdmsTubing {
 
         let translation = match self.tubi_size {
             TubiSize::BoreSize(_) => self.start_pt,
-            TubiSize::BoxSize(_) => self.start_pt + (leave_dir * 0.5),
+            TubiSize::BoxSize(_) => self.start_pt + (v * 0.5),
+            // TubiSize::BoxSize(_) => self.start_pt,
             _ => self.start_pt,
         };
 
