@@ -128,6 +128,9 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
                 return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
             }
         }
+        if angle == 90.0 {
+            return y_str.to_string();
+        }
         return format!("{x_str} {} {y_str}", f64_round_4(angle));
     }
 
@@ -144,6 +147,10 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
     }
     if theta < tol {
         return format!("{part_str}");
+    }
+
+    if theta == 90.0 {
+        return z_str.to_string();
     }
 
     format!("{part_str} {} {z_str}", f64_round_4(theta))
