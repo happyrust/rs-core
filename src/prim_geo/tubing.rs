@@ -165,17 +165,19 @@ impl PdmsTubing {
         }
         let scale = match self.tubi_size {
             TubiSize::BoreSize(bore) => Vec3::new(bore, bore, len),
-            TubiSize::BoxSize((w, h)) => Vec3::new(w, len, h),
+            TubiSize::BoxSize((w, h)) => Vec3::new(w, h, len),
             _ => Vec3::ONE,
         };
         //统一都用Z轴为参考轴的方法
         let rotation = if let Some(ref_dir) = self.leave_ref_dir && !is_bore {
-            let ydir = leave_dir;
-            let zdir = ref_dir;
+            let ydir = ref_dir;
+            let zdir = leave_dir;
             let xdir = ydir.cross(zdir).normalize_or_zero();
+            // dbg!((xdir, ydir, zdir));
             let rot = Quat::from_mat3(&Mat3::from_cols(xdir, ydir, zdir));
-            // dbg!(quat_to_pdms_ori_xyz_str(&rot));
+            dbg!(quat_to_pdms_ori_xyz_str(&rot));
             rot
+            // Quat::IDENTITY
         } else {
             Quat::from_rotation_arc(Vec3::Z, leave_dir)
         };
