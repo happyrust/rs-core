@@ -242,6 +242,7 @@ impl AiosDBMgr {
             .map_err({ |x| anyhow::anyhow!(x.to_string()) })
     }
 
+    #[cfg(feature = "sql")]
     /// 获取外部的数据库
     pub async fn get_puhua_pool(&self) -> anyhow::Result<Pool<MySql>> {
         let conn = self.puhua_conn_str();
@@ -253,24 +254,4 @@ impl AiosDBMgr {
             .await
             .map_err({ |x| anyhow::anyhow!(x.to_string()) })
     }
-}
-
-#[tokio::test]
-async fn test_get_world() {
-    let mgr = AiosDBMgr::init_from_db_option().await.unwrap();
-    let data = mgr.get_world("/ALL").await.unwrap();
-    let data = mgr.get_ele_from_name("/1WCC0294").await.unwrap();
-    dbg!(&data);
-    let attr = mgr.get_spre_attr(RefU64::from_str("24383/67331").unwrap()).await.unwrap();
-    dbg!(&attr);
-    let attr = mgr.get_catr_attr(RefU64::from_str("24383/67350").unwrap()).await.unwrap();
-    dbg!(&attr);
-    let attr = mgr.get_foreign_attr(RefU64::from_str("24383/67331").unwrap(), "HSTU").await.unwrap();
-    dbg!(&attr);
-    let name = mgr.get_name(RefU64::from_str("24383/67331").unwrap()).await.unwrap();
-    dbg!(&name);
-    let transform = mgr.get_world_transform(RefU64::from_str("24383/67335").unwrap()).await.unwrap();
-    dbg!(&transform);
-    let room = mgr.get_room_code(RefU64::from_str("24384/24804").unwrap()).await.unwrap();
-    dbg!(&room);
 }

@@ -13,6 +13,7 @@ truck = ["dep:truck-base", "dep:truck-geotrait", "dep:truck-geometry", "dep:truc
 gen_model = ["manifold"]
 debug_expr = []
 debug_wire = []
+web = ["render"]
 sql = []
 
 # [lib]

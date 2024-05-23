@@ -70,6 +70,7 @@ pub mod noun_graph;
 
 pub mod data_state;
 
+#[cfg(not(feature = "web"))]
 pub mod test;
 
 #[cfg(feature = "sea-orm")]
