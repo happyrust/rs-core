@@ -93,9 +93,9 @@ pub struct DbOption {
     #[clap(skip)]
     pub debug_root_refnos: Option<Vec<String>>,
     #[clap(skip)]
-    pub room_root_refnos: Option<Vec<String>>,
+    pub manual_sync_refnos: Option<Vec<String>>,
     #[clap(skip)]
-    pub debug_branch_refno: Option<String>,
+    pub room_root_refnos: Option<Vec<String>>,
     #[clap(skip)]
     pub debug_refno_types: Vec<String>,
     #[clap(long)]
@@ -200,6 +200,14 @@ impl DbOption {
     #[inline]
     pub fn get_debug_refnos(&self) -> Vec<RefU64> {
         self.debug_root_refnos
+            .as_ref()
+            .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
+            .unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn get_manual_sync_refnos(&self) -> Vec<RefU64> {
+        self.manual_sync_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
             .unwrap_or_default()

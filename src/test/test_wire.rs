@@ -66,6 +66,13 @@ pub async fn test_wire_25688_45049() {
     init_test_surreal().await;
     test_wire_from_loop("25688/45049".into()).await;
 }
+//
+
+#[tokio::test]
+pub async fn test_wire_17496_269393() {
+    init_test_surreal().await;
+    test_wire_from_loop("17496/269393".into()).await;
+}
 
 #[tokio::test]
 pub async fn test_wire_17496_171545() {
