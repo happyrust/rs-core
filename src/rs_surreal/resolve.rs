@@ -27,7 +27,7 @@ static COMPATIBLE_UNIT_MAP: Lazy<HashMap<&'static str, HashSet<&'static str>>> =
 
 #[inline]
 pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
-    COMPATIBLE_UNIT_MAP
+    unit_a == unit_b || COMPATIBLE_UNIT_MAP
         .get(unit_a)
         .map(|x| x.contains(unit_b))
         .unwrap_or(false)
@@ -288,18 +288,19 @@ pub fn eval_str_to_f64(
     // 相当于要递归去求值
     let rpro_re = Regex::new(r"(RPRO)\s+([a-zA-Z0-9]+)").unwrap();
     if new_exp.contains("RPRO") {
-        // dbg!(&new_exp);
+        #[cfg(feature = "debug_expr")]
+        dbg!(&new_exp);
         let mut found_dtse_mismatch = false;
         new_exp = replace_all_result(&rpro_re, &new_exp, |caps: &Captures| {
             let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
             let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
             let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
             let unit_type = context.get(&key_type).unwrap_or_default();
+            #[cfg(feature = "debug_expr")]
+            dbg!((&new_exp, &unit_type, dtse_unit));
             if (!unit_type.is_empty() && unit_type != dtse_unit)
                 && !check_unit_compatible(dtse_unit, &unit_type)
             {
-                #[cfg(feature = "debug_expr")]
-                dbg!((&new_exp, &unit_type, dtse_unit));
                 return Err(anyhow::anyhow!("DTSE 表达式 {new_exp} 有问题，可能单位不一致"));
             } else {
                 let v = context
@@ -307,7 +308,11 @@ pub fn eval_str_to_f64(
                     .map(|x| x.to_string())
                     .unwrap_or("0".to_string());
                 context.insert(format!("EXPR_HAS_DEFAULT"), "true");
+                #[cfg(feature = "debug_expr")]
+                dbg!(&v);
                 if let Ok(t) = eval_str_to_f64(&v, &context, "DIST") {
+                    #[cfg(feature = "debug_expr")]
+                    dbg!(t);
                     Ok(t.to_string())
                 } else {
                     context.context.remove("EXPR_HAS_DEFAULT");
@@ -321,11 +326,13 @@ pub fn eval_str_to_f64(
                         .map(|x| x.to_string())
                         .unwrap_or("0".to_string()))
                 }
+
             }
         })?
         .trim()
         .to_string();
-        // dbg!(&new_exp);
+        #[cfg(feature = "debug_expr")]
+        dbg!(&new_exp);
         if let Ok(s) = new_exp.parse::<f64>() {
             // dbg!(s);
             return Ok(s);
