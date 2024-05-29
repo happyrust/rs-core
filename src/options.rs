@@ -102,6 +102,8 @@ pub struct DbOption {
     pub replace_mesh: bool,
     #[clap(long)]
     pub gen_mesh: bool,
+    #[clap(skip)]
+    pub gen_material: Option<bool>,
     #[clap(long)]
     pub save_db: Option<bool>,
     #[clap(long)]

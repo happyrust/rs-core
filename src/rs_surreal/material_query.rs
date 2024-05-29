@@ -20,13 +20,15 @@ use surrealdb::Surreal;
 // use crate::test::test_surreal::init_test_surreal;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::pdms_types::ser_refno_as_str;
-use crate::ssc_setting::{execute_save_pbs, query_all_site_with_major, SaveDatabaseChannelMsg};
+use crate::ssc_setting::{execute_save_pbs, query_all_site_with_major, SaveDatabaseChannelMsg, set_pdms_major_code};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use tokio::task;
 
 /// 保存所有的材料表单数据
-pub async fn save_all_material_data() -> anyhow::Result<()> {
+pub async fn save_all_material_data(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
+    // 生成专业代码
+    set_pdms_major_code(&aios_mgr).await?;
     // 提前跑已经创建surreal的方法
     if let Err(e) = define_surreal_functions(SUL_DB.clone()).await {
         dbg!(e.to_string());
@@ -37,10 +39,6 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
     let sites = query_all_site_with_major().await?;
     // 处理所有专业表单的数据
     for site in sites {
-        if site.major != "V".to_string() {
-            continue;
-        };
-        dbg!(&site);
         match site.major.as_str() {
             // 工艺
             "T" => {
@@ -222,7 +220,7 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
                 handles.push(task);
             }
             // 设备
-            "SB" => {
+            "EQUI" => {
                 // 大宗材料
                 println!("设备专业-大宗材料");
                 let r = get_sb_dzcl_list_material(SUL_DB.clone(), vec![site.id]).await?;
@@ -994,7 +992,7 @@ pub async fn get_gy_dzcl(
                 "COUP".to_string(),
             ],
         )
-        .await?;
+            .await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -1262,7 +1260,7 @@ pub async fn get_yk_dzcl_list(
                 "BEND".to_string(),
             ],
         )
-        .await?;
+            .await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -1884,7 +1882,7 @@ pub async fn get_tf_hvac_material(
                     "TRNS".to_string(),
                 ],
             )
-            .await?;
+                .await?;
             // STRT
             let strts = refnos
                 .iter()
@@ -2661,6 +2659,6 @@ fn filter_equi_children(datas: Vec<Vec<Vec<String>>>) -> Vec<Vec<String>> {
 #[tokio::test]
 async fn test_save_all_material_data() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    save_all_material_data().await?;
+    save_all_material_data(&aios_mgr).await?;
     Ok(())
 }
