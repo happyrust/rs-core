@@ -52,6 +52,7 @@ pub async fn save_dq_material(
             #[cfg(feature = "sql")]
             {
                 let Ok(pool) = aios_mgr.get_project_pool().await else {
+                    dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {

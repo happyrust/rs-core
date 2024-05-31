@@ -36,66 +36,67 @@ pub async fn save_all_material_data(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> 
     let sites = query_all_site_with_major().await?;
     // 处理所有专业表单的数据
     for site in sites {
+        dbg!(&site.id);
         match site.major.as_str() {
             // 工艺
             "T" => {
                 // 大宗材料
                 println!("工艺布置专业-大宗材料");
-                save_gy_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_gy_material_dzcl(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
                 // 设备清单
                 println!("工艺布置专业-设备清单");
-                save_gy_material_equi(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_gy_material_equi(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
                 // 阀门清单
                 println!("工艺布置专业-阀门清单");
-                save_gy_material_valv(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_gy_material_valv(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             // 仪控
             "I" => {
                 // 大宗材料
                 println!("仪控专业-大宗材料");
-                save_yk_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_yk_material_dzcl(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
                 // 仪表管道
                 println!("仪控专业-仪表管道");
-                save_yk_material_pipe(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_yk_material_pipe(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
                 // 设备清单
                 println!("仪控专业-设备清单");
-                save_yk_material_equi(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_yk_material_equi(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             // 通风
             "V" => {
                 // 风管管段
                 println!("通风专业-风管管段");
-                save_tf_material_hvac(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_tf_material_hvac(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             // 电气
             "E" => {
                 // 托盘及接地
                 println!("电气专业-托盘及接地");
-                save_dq_material(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_dq_material(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             // 通信
             "TX" => {
                 // 通信系统
                 println!("通信专业-通信系统");
-                save_tx_material_equi(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_tx_material_equi(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             // 给排水
             "W" => {
                 // 大宗材料
                 println!("给排水专业-大宗材料");
-                save_gps_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_gps_material_dzcl(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             // 设备
             "EQUI" => {
                 // 大宗材料
                 println!("设备专业-大宗材料");
-                save_sb_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_sb_material_dzcl(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             // 暖通
             "N" => {
                 // 阀门清单
                 println!("暖通专业-阀门清单");
-                save_nt_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
+                save_nt_material_dzcl(site.id, SUL_DB.clone(), aios_mgr, &mut handles).await;
             }
             _ => {}
         }

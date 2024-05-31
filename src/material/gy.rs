@@ -41,10 +41,11 @@ pub async fn save_gy_material_dzcl(
             #[cfg(feature = "sql")]
             {
                 let Ok(pool) = aios_mgr.get_project_pool().await else {
+                    dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
-                    let table_name = "工艺布置专业_阀门清单".to_string();
+                    let table_name = "工艺布置专业_大宗材料".to_string();
                     let table_field = vec![
                         "参考号".to_string(),
                         "编码".to_string(),
@@ -142,6 +143,7 @@ pub async fn save_gy_material_equi(
             #[cfg(feature = "sql")]
             {
                 let Ok(pool) = aios_mgr.get_project_pool().await else {
+                    dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
@@ -214,6 +216,7 @@ pub async fn save_gy_material_valv(
             #[cfg(feature = "sql")]
             {
                 let Ok(pool) = aios_mgr.get_project_pool().await else {
+                    dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
