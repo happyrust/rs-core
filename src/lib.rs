@@ -81,6 +81,7 @@ pub mod types;
 
 pub mod room;
 pub mod math;
+pub mod material;
 
 pub mod file_helper;
 

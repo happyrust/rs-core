@@ -1,34 +1,37 @@
-use crate::options::DbOption;
-use crate::pe::SPdmsElement;
-use crate::rs_surreal::table_const::GY_DZCL;
+use crate::material::dq::save_dq_material;
+use crate::material::gps::save_gps_material_dzcl;
+use crate::material::gy::*;
+use crate::material::nt::save_nt_material_dzcl;
+use crate::material::sb::save_sb_material_dzcl;
+use crate::material::tf::save_tf_material_hvac;
+use crate::material::tx::save_tx_material_equi;
+use crate::material::yk::*;
 use crate::{
-    connect_surdb, get_children_pes, get_pe, insert_into_table, insert_into_table_with_chunks,
-    query_ele_filter_deep_children, query_filter_deep_children, NamedAttrValue, RefU64, SurlValue,
+    get_children_pes, get_pe, insert_into_table_with_chunks,
+    query_ele_filter_deep_children, query_filter_deep_children, NamedAttrValue, RefU64, 
     SUL_DB,
 };
-use config::{Config, File};
-use parry3d::partitioning::QbvhDataGenerator;
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::ptr::eq;
-use std::str::FromStr;
-use std::sync::mpsc;
+use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xls};
 use surrealdb::engine::any::Any;
-use surrealdb::engine::remote::ws::{Client, Ws};
-use surrealdb::key::thing::Thing;
 use surrealdb::Surreal;
-// use crate::test::test_surreal::init_test_surreal;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
-use crate::pdms_types::ser_refno_as_str;
-use crate::ssc_setting::{execute_save_pbs, query_all_site_with_major, SaveDatabaseChannelMsg, set_pdms_major_code};
+use crate::ssc_setting::{
+    query_all_site_with_major, set_pdms_major_code ,
+};
 use serde_with::serde_as;
 use serde_with::DisplayFromStr;
+use sqlx::{Executor, MySql, Pool};
+use surrealdb::sql::Thing;
 use tokio::task;
 
 /// 保存所有的材料表单数据
 pub async fn save_all_material_data(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
     // 生成专业代码
     set_pdms_major_code(&aios_mgr).await?;
+    let Ok(pool) = aios_mgr.get_project_pool().await else { return Ok(());};
     // 提前跑已经创建surreal的方法
     if let Err(e) = define_surreal_functions(SUL_DB.clone()).await {
         dbg!(e.to_string());
@@ -44,210 +47,61 @@ pub async fn save_all_material_data(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> 
             "T" => {
                 // 大宗材料
                 println!("工艺布置专业-大宗材料");
-                match get_gy_dzcl(SUL_DB.clone(), vec![site.id]).await {
-                    Ok((r, tubi_r)) => {
-                        let task = task::spawn(async move {
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_list", r)
-                                .await
-                            {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    dbg!(&e.to_string());
-                                }
-                            }
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_list", tubi_r)
-                                .await
-                            {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    dbg!(&e.to_string());
-                                }
-                            }
-                        });
-                        handles.push(task);
-                    }
-                    Err(e) => {
-                        dbg!(&e.to_string());
-                    }
-                }
+                save_gy_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
                 // 设备清单
                 println!("工艺布置专业-设备清单");
-                match get_gy_equi_list(SUL_DB.clone(), vec![site.id]).await {
-                    Ok(r) => {
-                        let task = task::spawn(async move {
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_equi", r)
-                                .await
-                            {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    dbg!(&e.to_string());
-                                }
-                            }
-                        });
-                        handles.push(task);
-                    }
-                    Err(e) => {
-                        dbg!(&e.to_string());
-                    }
-                }
+                save_gy_material_equi(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
                 // 阀门清单
                 println!("工艺布置专业-阀门清单");
-                match get_gy_valv_list(SUL_DB.clone(), vec![site.id]).await {
-                    Ok(r) => {
-                        let task = task::spawn(async move {
-                            match insert_into_table_with_chunks(&SUL_DB, "material_gy_valv", r)
-                                .await
-                            {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    dbg!(&e.to_string());
-                                }
-                            }
-                        });
-                        handles.push(task);
-                    }
-                    Err(e) => {
-                        dbg!(&e.to_string());
-                    }
-                }
+                save_gy_material_valv(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
             }
             // 仪控
             "I" => {
                 // 大宗材料
                 println!("仪控专业-大宗材料");
-                let r = get_yk_dzcl_list(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_inst_list", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_yk_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
                 // 仪表管道
                 println!("仪控专业-仪表管道");
-                let r = get_yk_inst_pipe(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_inst_pipe", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_yk_material_pipe(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
                 // 设备清单
                 println!("仪控专业-设备清单");
-                let r = get_yk_equi_list_material(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_inst_equi", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_yk_material_equi(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
             }
             // 通风
             "V" => {
                 // 风管管段
-                let r = get_tf_hvac_material(&SUL_DB, vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_hvac_pipe", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                println!("通风专业-风管管段");
+                save_tf_material_hvac(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await; 
             }
             // 电气
             "E" => {
                 // 托盘及接地
                 println!("电气专业-托盘及接地");
-                let (r, str_r) = get_dq_bran_list(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_elec_list", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_elec_list", str_r).await
-                    {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_dq_material(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await; 
             }
             // 通信
             "TX" => {
                 // 通信系统
                 println!("通信专业-通信系统");
-                let r = get_tx_txsb_list_material(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_tx_list", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_tx_material_equi(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
             }
             // 给排水
             "W" => {
                 // 大宗材料
                 println!("给排水专业-大宗材料");
-                let r = get_gps_dzcl_material(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_gps_list", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_gps_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
             }
             // 设备
             "EQUI" => {
                 // 大宗材料
                 println!("设备专业-大宗材料");
-                let r = get_sb_dzcl_list_material(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_sb_list", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_sb_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
             }
             // 暖通
             "N" => {
                 // 阀门清单
                 println!("暖通专业-阀门清单");
-                let r = get_nt_valv_list_material(SUL_DB.clone(), vec![site.id]).await?;
-                let task = task::spawn(async move {
-                    match insert_into_table_with_chunks(&SUL_DB, "material_nt_valv", r).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(&e.to_string());
-                        }
-                    }
-                });
-                handles.push(task);
+                save_nt_material_dzcl(site.id,SUL_DB.clone(),aios_mgr,&mut handles).await;
             }
 
             _ => {}
@@ -259,7 +113,7 @@ pub async fn save_all_material_data(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> 
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialGyDataBend {
     pub id: RefU64,
     pub code: String,
@@ -281,7 +135,7 @@ impl MaterialGyDataBend {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialGyData {
     pub id: RefU64,
     pub code: String,
@@ -309,7 +163,7 @@ impl MaterialGyData {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialGyValvList {
     pub id: RefU64,
     pub valv_name: String,
@@ -358,7 +212,7 @@ impl MaterialGyValvList {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialGyEquiList {
     pub id: RefU64,
     pub name: String,
@@ -743,7 +597,7 @@ impl MaterialTfHavcFlexList {
 }
 
 /// 电气 托盘及接地
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialDqMaterialList {
     pub id: RefU64,
     pub num: Option<String>,
@@ -833,7 +687,7 @@ impl MaterialDqMaterialList {
 }
 
 /// 电气 托盘及接地
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialDqMaterialListStru {
     pub id: RefU64,
     pub num: Option<String>,
@@ -992,7 +846,7 @@ pub async fn get_gy_dzcl(
                 "COUP".to_string(),
             ],
         )
-            .await?;
+        .await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -1260,7 +1114,7 @@ pub async fn get_yk_dzcl_list(
                 "BEND".to_string(),
             ],
         )
-            .await?;
+        .await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -1282,7 +1136,7 @@ pub async fn get_yk_dzcl_list(
     Ok(data)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialYkInstData {
     pub id: RefU64,
     pub name: String,
@@ -1344,7 +1198,7 @@ pub async fn get_yk_inst_pipe(
     Ok(data)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialYkEquiListData {
     pub id: RefU64,
     pub equi_name: String,
@@ -1412,7 +1266,7 @@ pub async fn get_yk_equi_list_material(
 }
 
 /// 给排水 大宗材料
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialGpsDzclData {
     pub id: RefU64,
     pub code: String,
@@ -1447,8 +1301,9 @@ impl MaterialGpsDzclData {
 pub async fn get_gps_dzcl_material(
     db: Surreal<Any>,
     refnos: Vec<RefU64>,
-) -> anyhow::Result<Vec<MaterialGpsDzclData>> {
+) -> anyhow::Result<(Vec<MaterialGpsDzclData>, Vec<MaterialGpsDzclData>)> {
     let mut data = Vec::new();
+    let mut tubi_data = Vec::new();
     for refno in refnos {
         let Some(pe) = get_pe(refno).await? else {
             continue;
@@ -1502,7 +1357,7 @@ pub async fn get_gps_dzcl_material(
         let mut response = db.query(sql).await?;
         let mut result: Vec<Vec<MaterialGpsDzclData>> = response.take(0)?;
         for mut d in result {
-            data.append(&mut d);
+            tubi_data.append(&mut d);
         }
         // 查询elbo的数据
         let refnos = query_filter_deep_children(refno, vec!["ELBO".to_string()]).await?;
@@ -1583,11 +1438,11 @@ pub async fn get_gps_dzcl_material(
         let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
         data.append(&mut result);
     }
-    Ok(data)
+    Ok((data, tubi_data))
 }
 
 /// 设备专业 通信系统
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialTxTxsbData {
     pub id: RefU64,
     pub equi_name: String,
@@ -1676,14 +1531,14 @@ pub async fn get_tx_txsb_list_material(
 }
 
 /// 设备专业 大宗材料
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialSbListData {
     pub id: RefU64,
     pub name: String,
     pub pos: Option<f32>,
     pub length: Option<f32>,
     pub room_code: Option<String>,
-    pub boxs: Vec<Vec<String>>,
+    pub boxs: Vec<Vec<Thing>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1760,7 +1615,7 @@ pub async fn get_sb_dzcl_list_material(
             r#"select
             (id.REFNO->pe_owner.out->pe_owner.out.refno)[0][0] as refno,
             array::max(array::max([XLEN,YLEN,ZLEN])) as length,
-            array::max(POS[2]) as pos
+            array::max(id.REFNO->inst_relate.world_trans.d.translation[2])[0] as pos
             from {}"#,
             serde_json::to_string(&equi_children).unwrap_or("[]".to_string())
         );
@@ -1780,7 +1635,7 @@ pub async fn get_sb_dzcl_list_material(
 }
 
 /// 暖通 阀门清单
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Clone, Serialize, Deserialize)]
 pub struct MaterialNtValvData {
     pub id: RefU64,
     pub name: String,
@@ -1882,7 +1737,7 @@ pub async fn get_tf_hvac_material(
                     "TRNS".to_string(),
                 ],
             )
-                .await?;
+            .await?;
             // STRT
             let strts = refnos
                 .iter()
@@ -2638,15 +2493,75 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn filter_equi_children(datas: Vec<Vec<Vec<String>>>) -> Vec<Vec<String>> {
+#[cfg(feature = "sql")]
+async fn create_table_sql(
+    pool: &Pool<MySql>,
+    table_name: &str,
+    fileds: &Vec<String>,
+) -> anyhow::Result<()> {
+    // 生成创建表sql
+    let mut create_table_sql = format!("CREATE TABLE IF NOT EXISTS {table_name} ( ");
+    for k in fileds {
+        if k.as_str() == "参考号" {
+            create_table_sql.push_str(format!("`{}` VARCHAR(50) NOT NULL ,", k).as_str())
+        } else {
+            create_table_sql.push_str(format!("`{}` VARCHAR(255),", k).as_str())
+        }
+    }
+    create_table_sql.remove(create_table_sql.len() - 1);
+    create_table_sql.push_str(")");
+    // 创建表
+    let mut conn = pool.acquire().await?;
+    conn.execute(create_table_sql.clone().as_str()).await?;
+    Ok(())
+}
+
+/// 保存材料表单数据
+#[cfg(feature = "sql")]
+async fn save_material_value(
+    pool: &Pool<MySql>,
+    table_name: &str,
+    filed: &Vec<String>,
+    data: Vec<HashMap<String, String>>,
+) -> anyhow::Result<()> {
+    let mut sql = format!("INSERT IGNORE INTO `{}` (", table_name);
+    for f in filed {
+        sql.push_str(format!("`{}`,", f).as_str());
+    }
+    sql.remove(sql.len() - 1);
+    // 放入值
+    sql.push_str(") VALUES ");
+    for d in data {
+        sql.push_str("(");
+        for f in filed {
+            let value = d.get(f).map_or("".to_string(), |x| x.to_string());
+            sql.push_str(format!("'{}' ,", value).as_str());
+        }
+        sql.remove(sql.len() - 1);
+        sql.push_str("),")
+    }
+    sql.remove(sql.len() - 1);
+    let mut conn = pool.acquire().await?;
+    match conn.execute(sql.clone().as_str()).await {
+        Ok(_) => Ok(()),
+        Err(_e) => Err(anyhow!(sql)),
+    }
+}
+
+fn filter_equi_children(datas: Vec<Vec<Vec<Thing>>>) -> Vec<Vec<String>> {
     let mut result = Vec::new();
     for data in datas {
         let filtered_data: Vec<Vec<String>> = data
             .into_iter()
-            .filter(|inner_vec| inner_vec.iter().all(|s| s.starts_with("BOX:")))
+            .filter(|inner_vec| inner_vec.iter().all(|s| s.tb == "BOX"))
             .filter(|inner_vec| {
                 let count = inner_vec.iter().count();
                 count == 3 || count == 4
+            })
+            .map(|vec| {
+                vec.iter()
+                    .map(|thing| format!("BOX:{}", thing.id.to_string()))
+                    .collect::<Vec<String>>()
             })
             .collect();
         if !filtered_data.is_empty() {
@@ -2655,6 +2570,28 @@ fn filter_equi_children(datas: Vec<Vec<Vec<String>>>) -> Vec<Vec<String>> {
     }
     result
 }
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct DqMaterial {
+    #[serde(rename = "元件等级名称")]
+    pub catr_name: Option<String>,
+    #[serde(rename = "标准号")]
+    pub stander_num: Option<String>,
+    #[serde(rename = "物项代码")]
+    pub code: Option<String>,
+    #[serde(rename = "名称")]
+    pub name: Option<String>,
+    #[serde(rename = "DESIGNATION")]
+    pub desc: Option<String>,
+    #[serde(rename = "单位")]
+    pub unit: Option<String>,
+    #[serde(rename = "数量")]
+    pub count: Option<String>,
+    #[serde(rename = "质保等级")]
+    pub level: Option<String>,
+}
+
+
 
 #[tokio::test]
 async fn test_save_all_material_data() -> anyhow::Result<()> {

@@ -274,6 +274,18 @@ impl AiosDBMgr {
     }
 
     #[cfg(feature = "sql")]
+    /// 获取项目pool
+    pub async fn get_project_pool(&self) -> anyhow::Result<Pool<MySql>> {
+        let connection_str = self.default_conn_str();
+        let url = &format!("{connection_str}/{}", self.db_option.project_name);
+        PoolOptions::new()
+            .max_connections(500)
+            .acquire_timeout(Duration::from_secs(10 * 60))
+            .connect(url)
+            .await
+            .map_err({ |x| anyhow::anyhow!(x.to_string()) })
+    }
+
     /// 获取外部的数据库
     #[cfg(feature = "sql")]
     pub async fn get_puhua_pool(&self) -> anyhow::Result<Pool<MySql>> {
