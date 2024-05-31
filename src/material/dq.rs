@@ -1,6 +1,8 @@
 #[cfg(feature = "sql")]
 use super::query::create_table_sql;
+#[cfg(feature = "sql")]
 use super::query::save_material_value;
+
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::{
     get_children_pes, get_pe, insert_into_table_with_chunks, query_filter_deep_children, RefU64,

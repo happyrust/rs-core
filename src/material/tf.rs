@@ -1,5 +1,6 @@
 #[cfg(feature = "sql")]
 use super::query::create_table_sql;
+#[cfg(feature = "sql")]
 use super::query::save_material_value;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::{

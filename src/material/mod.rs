@@ -26,7 +26,6 @@ pub(crate) mod query;
 pub async fn save_all_material_data(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
     // 生成专业代码
     set_pdms_major_code(&aios_mgr).await?;
-    let Ok(pool) = aios_mgr.get_project_pool().await else { return Ok(());};
     // 提前跑已经创建surreal的方法
     if let Err(e) = define_surreal_functions(SUL_DB.clone()).await {
         dbg!(e.to_string());

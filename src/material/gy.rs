@@ -1,5 +1,6 @@
 #[cfg(feature = "sql")]
 use super::query::create_table_sql;
+#[cfg(feature = "sql")]
 use super::query::{save_material_data_to_mysql, save_two_material_data_to_mysql};
 use crate::aios_db_mgr::aios_mgr::{self, AiosDBMgr};
 use crate::{get_pe, insert_into_table_with_chunks, query_filter_deep_children, RefU64};
