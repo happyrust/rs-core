@@ -216,7 +216,7 @@ pub async fn get_room_level_from_excel_refactor() -> anyhow::Result<SscMajorCode
     let mut workbook: Xlsx<_> = open_workbook("resource/专业分类.xlsx")?;
     dbg!("加载专业分类.xlsx 成功");
     let range = workbook
-        .worksheet_range("Sheet2")?;
+        .worksheet_range("Sheet2").unwrap()?;
     dbg!("打开Sheet2成功");
 
     let mut iter = RangeDeserializerBuilder::new().from_range(&range)?;
@@ -319,7 +319,7 @@ pub async fn set_pbs_fixed_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::
 
     let mut workbook: Xlsx<_> = open_workbook("resource/ssc_level.xlsx")?;
     let range = workbook
-        .worksheet_range("Sheet1")?;
+        .worksheet_range("Sheet1").unwrap()?;
 
     let mut iter = RangeDeserializerBuilder::new().from_range(&range)?;
     let mut idx = 0;

@@ -130,7 +130,7 @@ pub async fn save_dq_material(
 fn read_dq_material_excel() -> anyhow::Result<HashMap<String, Vec<DqMaterial>>> {
     let mut map = HashMap::new();
     let mut workbook: Xls<_> = open_workbook("resource/电气专业大宗材料属性对应关系表.xls")?;
-    let range = workbook.worksheet_range("电气专业大宗材料属性对应关系表")?;
+    let range = workbook.worksheet_range("电气专业大宗材料属性对应关系表").unwrap()?;
 
     let mut iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
