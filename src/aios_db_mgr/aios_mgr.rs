@@ -1,23 +1,26 @@
-use std::str::FromStr;
-use std::time::Duration;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
-use crate::{AttrMap, get_children_ele_nodes, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world, NamedAttrMap, RefU64, SUL_DB, SurlValue};
+use crate::pe::SPdmsElement;
+use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
+use crate::{
+    get_children_ele_nodes, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe,
+    get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB,
+};
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
 #[cfg(feature = "sql")]
-use sqlx::{MySql, Pool};
-#[cfg(feature = "sql")]
 use sqlx::pool::PoolOptions;
+#[cfg(feature = "sql")]
+use sqlx::{MySql, Pool};
+use std::str::FromStr;
+use std::time::Duration;
 use surrealdb::engine::any::Any;
-use surrealdb::Surreal;
-use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
-use crate::pe::SPdmsElement;
 use surrealdb::opt::auth::Root;
+use surrealdb::Surreal;
 
-pub async fn init_surreal_with_signin(db_option:&DbOption) -> anyhow::Result<()> {
+pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()> {
     SUL_DB
         .connect(db_option.get_version_db_conn_str())
         .with_capacity(1000)
@@ -30,7 +33,8 @@ pub async fn init_surreal_with_signin(db_option:&DbOption) -> anyhow::Result<()>
         .signin(Root {
             username: &db_option.v_user,
             password: &db_option.v_password,
-        }).await?;
+        })
+        .await?;
     Ok(())
 }
 
@@ -45,10 +49,13 @@ impl AiosDBMgr {
             .build()
             .unwrap();
         let db_option: DbOption = s.try_deserialize().unwrap();
-        init_surreal_with_signin(&db_option).await?;
-        Ok(Self {
-            db_option,
-        })
+        match init_surreal_with_signin(&db_option).await {
+            Ok(_) => {}
+            Err(e) => {
+                dbg!(&e.to_string());
+            }
+        }
+        Ok(Self { db_option })
     }
 
     pub async fn get_surreal_db(&self) -> anyhow::Result<Surreal<Any>> {
@@ -57,12 +64,17 @@ impl AiosDBMgr {
     }
 
     /// 获取所属房间的顶标高和底标高
-    pub async fn query_own_room_panel_elevations(&self, refno: RefU64) -> anyhow::Result<(f32, f32)> {
-        let sql = format!("return fn::room_top_height({});
-                        return fn::room_height({});", refno.to_pe_key(), refno.to_pe_key());
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+    pub async fn query_own_room_panel_elevations(
+        &self,
+        refno: RefU64,
+    ) -> anyhow::Result<(f32, f32)> {
+        let sql = format!(
+            "return fn::room_top_height({});
+                        return fn::room_height({});",
+            refno.to_pe_key(),
+            refno.to_pe_key()
+        );
+        let mut response = SUL_DB.query(sql).await?;
         let min: Vec<f32> = response.take(0).unwrap_or(vec![]);
         let max: Vec<f32> = response.take(1).unwrap_or(vec![]);
         let min = min.get(0).map_or(0.0, |x| *x);
@@ -71,12 +83,14 @@ impl AiosDBMgr {
     }
 
     /// 获取指定节点附近最近的 own_filter_types
-    pub async fn query_around_owner_within_radius(&self,
-                                                  refno: RefU64,
-                                                  is_aabb: bool,
-                                                  offset: Option<f32>,
-                                                  nearest: bool,
-                                                  own_filter_types: &[&str]) -> anyhow::Result<Vec<RefU64>> {
+    pub async fn query_around_owner_within_radius(
+        &self,
+        refno: RefU64,
+        is_aabb: bool,
+        offset: Option<f32>,
+        nearest: bool,
+        own_filter_types: &[&str],
+    ) -> anyhow::Result<Vec<RefU64>> {
         // todo
         Ok(vec![])
     }
@@ -85,12 +99,16 @@ impl AiosDBMgr {
 #[async_trait]
 impl PdmsDataInterface for AiosDBMgr {
     async fn get_world(&self, mdb_name: &str) -> anyhow::Result<Option<PdmsElement>> {
-        let Some(world) = get_world(format!("/{}", mdb_name)).await? else { return Ok(None); };
+        let Some(world) = get_world(format!("/{}", mdb_name)).await? else {
+            return Ok(None);
+        };
         Ok(Some(PdmsElement::from(world)))
     }
 
     async fn get_pdms_element(&self, refno: RefU64) -> anyhow::Result<Option<PdmsElement>> {
-        let Some(pe) = get_pe(refno).await? else { return Ok(None); };
+        let Some(pe) = get_pe(refno).await? else {
+            return Ok(None);
+        };
         Ok(Some(PdmsElement::from(pe)))
     }
 
@@ -108,21 +126,23 @@ impl PdmsDataInterface for AiosDBMgr {
         owner.refno.ISPE<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
         and $parent.owner.refno.TEMP >=refno.ANSW and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.*
         where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1) from pe:{};", refno.to_string());
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+        let mut response = SUL_DB.query(sql).await?;
         let result: Vec<Vec<f32>> = response.take(0).unwrap_or(vec![]);
         Ok(result.into_iter().flatten().collect())
     }
 
     async fn get_ele_from_name(&self, name: &str) -> anyhow::Result<Option<PdmsElement>> {
-        let name = if name.starts_with("/") { name.to_string() } else { format!("/{}", name) };
+        let name = if name.starts_with("/") {
+            name.to_string()
+        } else {
+            format!("/{}", name)
+        };
         let sql = format!("select * from pe where name = '{}';", name);
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+        let mut response = SUL_DB.query(sql).await?;
         let pe: Option<SPdmsElement> = response.take(0)?;
-        if pe.is_none() { return Ok(None); };
+        if pe.is_none() {
+            return Ok(None);
+        };
         let pe = pe.unwrap();
         Ok(Some(PdmsElement {
             refno: pe.refno,
@@ -136,34 +156,45 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_spre_attr(&self, refno: RefU64) -> anyhow::Result<Option<NamedAttrMap>> {
         let sql = format!("(select * from {}.refno.SPRE.refno)[0]", refno.to_pe_key());
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+        let mut response = SUL_DB.query(sql).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
-        if named_attmap.map.is_empty() { return Ok(None); };
+        if named_attmap.map.is_empty() {
+            return Ok(None);
+        };
         Ok(Some(named_attmap))
     }
 
     async fn get_catr_attr(&self, refno: RefU64) -> anyhow::Result<Option<NamedAttrMap>> {
-        let sql = format!("(select * from {}.refno.SPRE.refno.CATR.refno)[0]", refno.to_pe_key());
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+        let sql = format!(
+            "(select * from {}.refno.SPRE.refno.CATR.refno)[0]",
+            refno.to_pe_key()
+        );
+        let mut response = SUL_DB.query(sql).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
-        if named_attmap.map.is_empty() { return Ok(None); };
+        if named_attmap.map.is_empty() {
+            return Ok(None);
+        };
         Ok(Some(named_attmap))
     }
 
-    async fn get_foreign_attr(&self, refno: RefU64, foreign_type: &str) -> anyhow::Result<Option<NamedAttrMap>> {
-        let sql = format!("(select * from {}.refno.{}.refno)[0]", refno.to_pe_key(), foreign_type);
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+    async fn get_foreign_attr(
+        &self,
+        refno: RefU64,
+        foreign_type: &str,
+    ) -> anyhow::Result<Option<NamedAttrMap>> {
+        let sql = format!(
+            "(select * from {}.refno.{}.refno)[0]",
+            refno.to_pe_key(),
+            foreign_type
+        );
+        let mut response = SUL_DB.query(sql).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
-        if named_attmap.map.is_empty() { return Ok(None); };
+        if named_attmap.map.is_empty() {
+            return Ok(None);
+        };
         Ok(Some(named_attmap))
     }
 
@@ -173,20 +204,19 @@ impl PdmsDataInterface for AiosDBMgr {
         <string> (array::find_index(select value order_num from ->pe_owner->pe<-pe_owner[where <-pe[where noun=$parent.noun]]
         order by order_num, ->pe_owner[0].order_num) + 1) ) }} else {{ name }} ) from {})[0];
         ", refno.to_pe_key());
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+        let mut response = SUL_DB.query(sql).await?;
         let o: Option<String> = response.take(0)?;
         Ok(o.unwrap_or("".to_string()))
     }
 
     async fn get_world_transform(&self, refno: RefU64) -> anyhow::Result<Option<Transform>> {
-        let sql = format!("
+        let sql = format!(
+            "
         (select (->inst_relate.world_trans.d)[0] as length from {})[0].length;
-        ", refno.to_pe_key());
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+        ",
+            refno.to_pe_key()
+        );
+        let mut response = SUL_DB.query(sql).await?;
         let transform: Option<Transform> = response.take(0)?;
         Ok(transform)
     }
@@ -200,12 +230,13 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {
-        let sql = format!("
+        let sql = format!(
+            "
         return fn::room_code({})[0];
-        ", refno.to_pe_key());
-        let mut response = SUL_DB
-            .query(sql)
-            .await?;
+        ",
+            refno.to_pe_key()
+        );
+        let mut response = SUL_DB.query(sql).await?;
         Ok(response.take(0)?)
     }
 }
@@ -243,7 +274,20 @@ impl AiosDBMgr {
     }
 
     #[cfg(feature = "sql")]
+    /// 获取项目pool
+    pub async fn get_project_pool(&self) -> anyhow::Result<Pool<MySql>> {
+        let connection_str = self.default_conn_str();
+        let url = &format!("{connection_str}/{}", self.db_option.project_name);
+        PoolOptions::new()
+            .max_connections(500)
+            .acquire_timeout(Duration::from_secs(10 * 60))
+            .connect(url)
+            .await
+            .map_err({ |x| anyhow::anyhow!(x.to_string()) })
+    }
+
     /// 获取外部的数据库
+    #[cfg(feature = "sql")]
     pub async fn get_puhua_pool(&self) -> anyhow::Result<Pool<MySql>> {
         let conn = self.puhua_conn_str();
         let url = &format!("{conn}/{}", PUHUA_MATERIAL_DATABASE);
