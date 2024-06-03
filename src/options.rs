@@ -157,10 +157,10 @@ pub struct DbOption {
     #[clap(long)]
     pub puhua_database_password: String,
 
-
     pub room_key_word: Option<String>,
-    // pub geom_live: Option<bool>,
 
+    pub meshes_path: Option<String>,
+    // pub geom_live: Option<bool>,
 }
 
 impl DbOption {
@@ -183,6 +183,18 @@ impl DbOption {
             let index = self.included_projects.iter().position(|x| x == project)?;
             Some(data_dir.join(&self.project_dirs.as_ref().unwrap()[index]))
         }
+    }
+
+    pub fn get_meshes_path(&self) -> PathBuf {
+        let pathbuf = self
+            .meshes_path
+            .as_ref()
+            .map(|x| Path::new(x).to_path_buf())
+            .unwrap_or("assets/meshes".into());
+        if !pathbuf.exists() {
+            std::fs::create_dir_all(&pathbuf).unwrap();
+        }
+        pathbuf
     }
 
     #[inline]

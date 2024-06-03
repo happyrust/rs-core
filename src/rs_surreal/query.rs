@@ -365,6 +365,7 @@ pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<Nam
     Ok(named_attmaps)
 }
 
+///获取所有子孙的参考号
 #[cached(result = true)]
 pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>> {
     let mut response = SUL_DB
@@ -375,6 +376,18 @@ pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>
     Ok(pes)
 }
 
+///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
+pub async fn get_all_children_refnos(
+    refnos: impl IntoIterator<Item = &RefU64>,
+) -> anyhow::Result<Vec<RefU64>> {
+    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
+    let sql = format!("array::flatten(select value in from [{pe_keys}]<-pe_owner)");
+    let mut response = SUL_DB.query(sql).await?;
+    let refnos: Vec<RefU64> = response.take(0)?;
+    Ok(refnos)
+}
+
+///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
 pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Result<Vec<RefU64>> {
     let nouns_str = types
         .iter()
@@ -398,6 +411,7 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
     Ok(pes)
 }
 
+///传入一个负数的参考号数组，返回一个数组，包含所有子孙的EleTreeNode
 #[cached(result = true)]
 pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
     let mut response = SUL_DB

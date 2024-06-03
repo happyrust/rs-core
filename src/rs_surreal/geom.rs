@@ -1,3 +1,4 @@
+use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
 use crate::pdms_types::*;
 use crate::pe::SPdmsElement;
 use crate::{query_filter_deep_children, types::*};
@@ -6,30 +7,29 @@ use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
-use smol_str::ToSmolStr;
-use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
 // use crate::test::test_surreal::init_test_surreal;
 use glam::Vec3;
 
-
+//获得参考号对应的inst keys
 pub fn get_inst_relate_keys(refnos: &[RefU64]) -> String {
     if !refnos.is_empty() {
-        let pes = refnos
+        refnos
             .iter()
-            .map(|x| x.to_pe_key())
+            .map(|x| x.to_inst_relate_key())
             .collect::<Vec<_>>()
-            .join(",");
-        format!("array::flatten([{pes}]->inst_relate)")
+            .join(",")
+        // format!("array::flatten([{pes}]->inst_relate)")
     } else {
         "inst_relate".to_string()
     }
 }
 
 ///获得当前参考号对应的loops （例如Panel下的loops，可能有多个）
-pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)>{
+pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)> {
     let mut response = SUL_DB.query(format!(r#"
         select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
             (select value in from {0}<-pe_owner where in.noun in ["LOOP", "PLOO"]);
@@ -43,9 +43,7 @@ pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Ve
 
 ///通过surql查询pe数据
 #[cached(result = true)]
-pub async fn query_deep_visible_inst_refnos(
-    refno: RefU64,
-) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let types = super::get_self_and_owner_type_name(refno).await?;
     if types[1] == "BRAN" || types[1] == "HANG" {
         return Ok(vec![refno]);
@@ -68,12 +66,10 @@ pub async fn query_deep_visible_inst_refnos(
 }
 
 #[cached(result = true)]
-pub async fn query_deep_neg_inst_refnos(
-    refno: RefU64,
-) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_deep_neg_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let neg_refnos =
-            super::query_filter_deep_children(refno, TOTAL_NEG_NOUN_NAMES.map(String::from).to_vec())
-                .await?;
+        super::query_filter_deep_children(refno, TOTAL_NEG_NOUN_NAMES.map(String::from).to_vec())
+            .await?;
     Ok(neg_refnos)
 }
 
@@ -161,12 +157,13 @@ pub async fn query_refnos_has_pos_neg_map(
 
 /// 查询bran下所有元件的点集
 pub async fn query_bran_children_point_map(refno: RefU64) -> anyhow::Result<Vec<InstPointMap>> {
-    let sql = format!("
+    let sql = format!(
+        "
     select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
-    from pe:{}<-pe_owner order by order_num;", refno.to_string());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    from pe:{}<-pe_owner order by order_num;",
+        refno.to_string()
+    );
+    let mut response = SUL_DB.query(sql).await?;
     let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
     Ok(result.into_iter().map(|r| r.into_point_map()).collect())
 }
@@ -175,27 +172,35 @@ pub async fn query_bran_children_point_map(refno: RefU64) -> anyhow::Result<Vec<
 pub async fn query_point_map(refno: RefU64) -> anyhow::Result<Option<InstPointMap>> {
     let sql = format!("
     select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num from {};", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let mut result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
-    if result.is_empty() { return Ok(None); }
+    if result.is_empty() {
+        return Ok(None);
+    }
     Ok(Some(result.remove(0).into_point_map()))
 }
 
 /// 查询多个参考号对应的点集
-pub async fn query_refnos_point_map(refnos: Vec<RefU64>) -> anyhow::Result<HashMap<RefU64, InstPointMap>> {
-    let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).collect::<Vec<_>>();
-    let sql = format!("
+pub async fn query_refnos_point_map(
+    refnos: Vec<RefU64>,
+) -> anyhow::Result<HashMap<RefU64, InstPointMap>> {
+    let refnos = refnos
+        .into_iter()
+        .map(|refno| refno.to_pe_key())
+        .collect::<Vec<_>>();
+    let sql = format!(
+        "
     select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
-    in {};", serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    in {};",
+        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+    );
+    let mut response = SUL_DB.query(sql).await?;
     let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
-    Ok(result.into_iter().map(|r| (r.id, r.into_point_map())).collect())
+    Ok(result
+        .into_iter()
+        .map(|r| (r.id, r.into_point_map()))
+        .collect())
 }
-
 
 // #[tokio::test]
 // async fn test_query_bran_children_point_map() -> anyhow::Result<()> {
