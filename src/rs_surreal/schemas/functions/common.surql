@@ -60,10 +60,18 @@ DEFINE FUNCTION fn::backup_atts_and_pes(
             update $pe_id set refno=$att_id;
             update $att_id content $b;
 
+            //备份 inst_relate
             if $c.out != none && ($pe_id->inst_relate_history == none || array::len($pe_id->inst_relate_history) == 0) {
                 relate $pe_id->inst_relate_history->($c.out) content $c;
                 delete type::thing('inst_relate', meta::id($a.refno));
+            };
+
+            //备份 tubi_relate, 先暂时只删除，备份需要赋予版本号才行
+            if $a.noun == "BRAN" || $a.noun == "HANG" {
+                //let $t = (select * omit id, in from $pe->tubi_relate)[0];
+                delete $pe->tubi_relate;
             }
+
         }
     };
 };
