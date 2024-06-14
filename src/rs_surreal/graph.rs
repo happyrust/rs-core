@@ -60,7 +60,6 @@ pub async fn query_filter_deep_children(
     refno: RefU64,
     nouns: Vec<String>,
 ) -> anyhow::Result<Vec<RefU64>> {
-    // let pe_key = refno.to_pe_key();
     let refnos = query_deep_children_refnos(refno).await?;
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);

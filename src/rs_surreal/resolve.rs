@@ -27,7 +27,7 @@ static COMPATIBLE_UNIT_MAP: Lazy<HashMap<&'static str, HashSet<&'static str>>> =
 
 #[inline]
 pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
-    unit_a == unit_b || COMPATIBLE_UNIT_MAP
+    unit_a == unit_b || (unit_a == "REAL" || unit_b == "REAL") || COMPATIBLE_UNIT_MAP
         .get(unit_a)
         .map(|x| x.contains(unit_b))
         .unwrap_or(false)
@@ -296,13 +296,15 @@ pub fn eval_str_to_f64(
             let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
             let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
             let unit_type = context.get(&key_type).unwrap_or_default();
-            #[cfg(feature = "debug_expr")]
-            dbg!((&new_exp, &unit_type, dtse_unit));
             if (!unit_type.is_empty() && unit_type != dtse_unit)
                 && !check_unit_compatible(dtse_unit, &unit_type)
             {
+                #[cfg(feature = "debug_expr")]
+                dbg!((&new_exp, &unit_type, dtse_unit));
                 return Err(anyhow::anyhow!("DTSE 表达式 {new_exp} 有问题，可能单位不一致"));
             } else {
+                #[cfg(feature = "debug_expr")]
+                dbg!((&new_exp, &unit_type, dtse_unit));
                 let v = context
                     .get(&key)
                     .map(|x| x.to_string())

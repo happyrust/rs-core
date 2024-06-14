@@ -114,7 +114,7 @@ pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
     let mut response = SUL_DB
         .query(
             " \
-            let $f = (select value CURD.refno.DBNO from only MDB where NAME=$mdb limit 1)[0]; \
+            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME=$mdb limit 1)[0]; \
             (select value REFNO.* from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         )
         .bind(("mdb", mdb))
@@ -135,7 +135,7 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefU64> {
     let mut response = SUL_DB
         .query(
             " \
-            let $f = (select value CURD.refno.DBNO from only MDB where NAME=$mdb limit 1)[0]; \
+            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME=$mdb limit 1)[0]; \
             (select value REFNO from WORL where REFNO.dbnum=$f limit 1)[0]",
         )
         .bind(("mdb", mdb_name))
