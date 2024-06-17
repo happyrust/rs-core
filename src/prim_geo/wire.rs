@@ -693,8 +693,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
 
     //需要和初始的方向保持一致，如果是顺时针，那么要选择顺时针方向的交叉点
     let orientation = polyline.orientation();
-    #[cfg(feature = "debug_wire")]
-    dbg!(orientation);
+
 
     let Ok(mut intrs) = std::panic::catch_unwind(
         (|| global_self_intersects(&polyline, &polyline.create_approx_aabb_index())),
@@ -704,6 +703,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
 
     let basic_inter_len = intrs.basic_intersects.len();
     let overlap_inter_len = intrs.overlapping_intersects.len();
+    let mut need_trim = basic_inter_len !=0 || overlap_inter_len != 0;
     if basic_inter_len == 0 && overlap_inter_len == 0 {
         return Ok(polyline);
     } else if !has_frad{
@@ -713,6 +713,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     dbg!(&intrs);
     let mut final_polyline = polyline.clone();
     let mut need_break = false;
+
     let mut overlap_index = 0;
     while let Some(intersect) = intrs.overlapping_intersects.get(0) {
         #[cfg(feature = "debug_wire")]
@@ -751,12 +752,14 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         }
         basic_index += 1;
     }
-
     #[cfg(feature = "debug_wire")]
-    println!(
-        "final polyline: {}",
-        polyline_to_debug_json_str(&final_polyline)
-    );
+    if need_trim{
+        dbg!(orientation);
+        println!(
+            "final polyline: {}",
+            polyline_to_debug_json_str(&final_polyline)
+        );
+    }
     Ok(final_polyline)
 }
 
@@ -774,11 +777,11 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
             pos_poly = r.pos_plines.remove(0).pline;
         }
     }
-    #[cfg(feature = "debug_wire")]
-    println!(
-        "final occ polyline: {}",
-        polyline_to_debug_json_str(&pos_poly)
-    );
+    // #[cfg(feature = "debug_wire")]
+    // println!(
+    //     "final occ polyline: {}",
+    //     polyline_to_debug_json_str(&pos_poly)
+    // );
 
     let mut wires = vec![];
     let mut edges = vec![];

@@ -25,9 +25,13 @@ static COMPATIBLE_UNIT_MAP: Lazy<HashMap<&'static str, HashSet<&'static str>>> =
     m
 });
 
+//todo 收集所有的种类，不在这里面的为NONE
 #[inline]
 pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
-    unit_a == unit_b || (unit_a == "REAL" || unit_b == "REAL") || COMPATIBLE_UNIT_MAP
+    unit_a == unit_b
+        || (unit_a == "REAL" || unit_b == "REAL")
+        || (unit_a == "NUME" || unit_b == "NUME")
+        || COMPATIBLE_UNIT_MAP
         .get(unit_a)
         .map(|x| x.contains(unit_b))
         .unwrap_or(false)
@@ -202,6 +206,7 @@ pub async fn get_or_create_cata_context(
             }
         }
     }
+    // dbg!(&context);
     Ok(context)
 }
 

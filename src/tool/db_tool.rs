@@ -336,7 +336,8 @@ pub fn decode_chars_data(input: &[u8]) -> (String, bool) {
     }
     res.extend_from_slice(&input[prev_pos..]);
 
-    (String::from_utf8_lossy(&res).to_string(), contains_chi)
+    let r = String::from_utf8_lossy(&res).to_string();
+    (r, contains_chi)
 }
 
 #[test]

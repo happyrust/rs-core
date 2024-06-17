@@ -63,26 +63,19 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .map(|d| d.normalize_or_zero())
                 .unwrap_or(pc.dir_flag * Vec3::X);
             let z_axis = paax_dir;
-            let mut y_axis = pcax_dir;
-
-            // let z_axis = pa
-            //     .dir
-            //     .is_normalized()
-            //     .then(|| pa.dir)
-            //     .unwrap_or(pa.dir_flag * Vec3::Z);
-
-            // let mut y_axis = pc
-            //     .dir
-            //     .is_normalized()
-            //     .then(|| pc.dir)
-            //     .unwrap_or(pc.dir_flag * Vec3::X);
+            let mut x_axis = pbax_dir;
             //Y轴如果如果在第二象限和第四象限，需要反向
-            if y_axis.y < 0.0 {
-                y_axis = -y_axis;
+            if x_axis.y < 0.0 {
+                x_axis = -x_axis;
             }
             //fix 防止出现向量不能组成坐标轴的问题，暂时忽略X轴的输入
             //但是偏移还是要用pa pb pc的方向
-            let x_axis = y_axis.cross(z_axis).normalize_or_zero();
+            // let x_axis = x_axis.cross(z_axis).normalize_or_zero();
+
+            let y_axis = z_axis.cross(x_axis).normalize_or_zero();
+            if !y_axis.is_normalized(){
+                return None;
+            }
 
             //需要转换成CTorus
             let pyramid = LPyramid {
@@ -453,6 +446,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             } else {
                 let y_axis = ref_axis;
                 let x_axis = y_axis.cross(z_axis).normalize_or_zero();
+                if !x_axis.is_normalized(){
+                    return None;
+                }
                 Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
             };
             let translation = z_axis * (d.dist_to_btm as f32) + axis.pt;
@@ -540,7 +536,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             });
 
-            //rotation *
             let translation = pa.pt + xyz_pt;
             let transform = Transform {
                 rotation,
@@ -565,6 +560,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(pa.number);
             pts.push(pb.number);
+            dbg!(d);
 
             //如果有一个轴为0
             let paax_dir = pa
@@ -588,7 +584,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if empty {
                 // dbg!((d.refno, paax_dir, pbax_dir, z_dir));
             }
-            z_dir = paax_dir.cross(pbax_dir).try_normalize().unwrap_or(Vec3::Z);
+            z_dir = paax_dir.cross(pbax_dir).normalize_or_zero();
+            if !z_dir.is_normalized(){
+                return None;
+            }
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
                 verts: vec![d.verts.clone()],
                 height: d.height,
