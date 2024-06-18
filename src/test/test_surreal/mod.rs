@@ -25,6 +25,7 @@ pub mod test_geom;
 
 pub mod test_uda;
 
+pub mod test_pbs;
 
 
 pub async fn init_test_surreal() -> DbOption {

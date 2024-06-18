@@ -2,6 +2,7 @@ use deku::bitvec::*;
 use deku::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use deku::ctx::Endian;
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
 pub const PAGE_SIZE: usize = 0x800;
@@ -152,8 +153,10 @@ pub struct RefnoIndexPage {
 
 }
 
+
 //DekuWrite
-#[derive(Debug, PartialEq, DekuRead)]
+#[derive(Derivative, PartialEq, DekuRead)]
+#[derivative(Debug)]
 #[deku(endian = "big")]
 pub struct IndexPageData {
     pub page_type: i32,
@@ -163,8 +166,9 @@ pub struct IndexPageData {
     pub unknowns: [u32; 3],
     pub pfno: u32,
 
-    #[deku(reader = "read_refno_data_loc(deku::rest)")]
+    #[deku(reader = "read_refno_data_loc(deku::rest, *level)")]
     pub refno_locs: Vec<RefnoDataLoc>,
+    #[derivative(Debug = "ignore")]
     #[deku(count = "deku::rest.len()/8")]
     pub remain_zero_bytes: Vec<u8>,   //剩余的余量bytes
 }
@@ -179,9 +183,17 @@ impl IndexPageData{
 }
 
 
-fn read_refno_data_loc(rest:&BitSlice<u8, Msb0>,) -> Result<(&BitSlice<u8, Msb0>, Vec<RefnoDataLoc>), DekuError> {
+//如果 level 为 2，格式还有点不一样
+fn read_refno_data_loc(mut rest: &BitSlice<u8, Msb0>, level: u32) -> Result<(&BitSlice<u8, Msb0>, Vec<RefnoDataLoc>), DekuError> {
     let mut vec = Vec::new();
-    let mut rest = rest;
+    if level == 2 {
+        //4 个未知数
+        //80 00 00 01 80 00 00 01 00 00 7D 3E 00 00 00 01
+        rest = u32::read(rest, ())?.0;
+        rest = u32::read(rest, ())?.0;
+        rest = u32::read(rest, ())?.0;
+        rest = u32::read(rest, ())?.0;
+    }
     loop {
         let (next_rest, peek) = u32::read(rest, ())?;
         if peek == 0x0 {
@@ -195,7 +207,7 @@ fn read_refno_data_loc(rest:&BitSlice<u8, Msb0>,) -> Result<(&BitSlice<u8, Msb0>
     Ok((rest, vec))
 }
 
-fn read_refno_index_pgid(rest:&BitSlice<u8, Msb0>,) -> Result<(&BitSlice<u8, Msb0>, Vec<RefnoIndexPgId>), DekuError> {
+fn read_refno_index_pgid(rest: &BitSlice<u8, Msb0>) -> Result<(&BitSlice<u8, Msb0>, Vec<RefnoIndexPgId>), DekuError> {
     let mut pgids = Vec::new();
     let mut rest = rest;
     loop {
@@ -210,7 +222,6 @@ fn read_refno_index_pgid(rest:&BitSlice<u8, Msb0>,) -> Result<(&BitSlice<u8, Msb
     }
     Ok((rest, pgids))
 }
-
 
 //todo 需要处理跨页的数据
 #[derive(Clone, Debug, PartialEq, Default, DekuRead, DekuWrite)]

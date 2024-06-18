@@ -9,6 +9,8 @@ pub mod spatial;
 mod table_const;
 pub mod uda;
 
+pub mod pbs;
+
 pub mod inst;
 
 pub mod point;
@@ -30,7 +32,7 @@ pub use query::*;
 pub use resolve::*;
 pub use spatial::*;
 pub use uda::*;
-// pub use room::*;
+pub use pbs::*;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::any::Any;

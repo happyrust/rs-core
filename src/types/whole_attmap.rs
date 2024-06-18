@@ -9,7 +9,7 @@ use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct WholeAttMap {
-    pub implicit_attmap: NamedAttrMap,
+    pub attmap: NamedAttrMap,
     pub explicit_attmap: NamedAttrMap,
 }
 
@@ -20,7 +20,7 @@ impl WholeAttMap {
                 //&& EXPR_ATT_SET.contains(&(db1_hash(&noun)) as _))
                 if info.offset > 0 {
                     let v = self.explicit_attmap.map.remove(&(noun)).unwrap();
-                    self.implicit_attmap.insert(noun, v);
+                    self.attmap.insert(noun, v);
                 }
             }
         }
@@ -55,7 +55,7 @@ impl WholeAttMap {
     /// 将隐式属性和显示属性放到一个attrmap中
     #[inline]
     pub fn change_implicit_explicit_into_attr(self) -> NamedAttrMap {
-        let mut map = self.implicit_attmap;
+        let mut map = self.attmap;
         for (k, v) in self.explicit_attmap.map {
             map.insert(k, v);
         }
@@ -72,7 +72,7 @@ impl WholeAttMap {
     /// 将隐式属性和显示属性放到一个attrmap中
     #[inline]
     pub fn merge(&self) -> NamedAttrMap {
-        let mut map = self.implicit_attmap.clone();
+        let mut map = self.attmap.clone();
         for (k, v) in &self.explicit_attmap.map {
             if !map.contains_key(k) {
                 map.insert(k.clone(), v.clone());
