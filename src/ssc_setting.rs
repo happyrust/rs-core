@@ -297,11 +297,11 @@ struct PBSRelate {
 }
 
 impl PBSRelate {
-    pub fn to_surreal_relate(self, relate_name: &str) -> String {
+    pub fn to_surreal_relate(self, table: &str) -> String {
         format!(
             "relate {}->{}:{}->{}",
             self.in_id.to_raw(),
-            relate_name,
+            table,
             self.order_num,
             self.out_id.to_raw()
         )
@@ -1046,7 +1046,7 @@ async fn query_pbs_room_nodes(refnos: &[RefU64]) -> anyhow::Result<Vec<PBSRoomNo
     let sql = format!(
         r#"
         select type::thing('pbs',meta::id(id)) as id,name,noun,fn::room_code(id)[0] as room_code,
-            (select name, noun, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner from (select value in from <-pe_owner)) as children from [{}]
+            (select name, noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner from (select value in from <-pe_owner)) as children from [{}]
         "#,
         refnos
     );
@@ -1065,7 +1065,7 @@ async fn query_pbs_children_by_refnos(
     let mut map = HashMap::new();
     let pes = refnos.into_iter().map(|refno| refno.to_pe_key()).join(",");
     let sql = format!(
-        r#"select name, noun, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner  from array::flatten(select value in from [{}]<-pe_owner)"#,
+        r#"select name, noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner  from array::flatten(select value in from [{}]<-pe_owner)"#,
         pes
     );
     let mut response = SUL_DB.query(sql).await?;
@@ -1088,9 +1088,7 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
                 insert_into_table(&SUL_DB, &table_name, &sql).await?;
             }
             SaveDatabaseChannelMsg::InsertPbsElements(table, eles) => {
-                // SUL_DB.create()
                 let json = eles.iter().map(|x| x.gen_sur_json()).join(",");
-                // println!("json is {}", &json);
                 SUL_DB
                     .query(format!("insert into {} [{}];", table, json))
                     .await
