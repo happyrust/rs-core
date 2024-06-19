@@ -5,5 +5,8 @@ pub async fn define_common_functions() -> anyhow::Result<()> {
     SUL_DB
         .query(include_str!("schemas/functions/common.surql"))
         .await?;
+    SUL_DB
+        .query(include_str!("schemas/fn_query_room_code.surql"))
+        .await?;
     Ok(())
 }
