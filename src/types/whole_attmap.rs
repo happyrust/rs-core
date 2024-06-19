@@ -14,6 +14,11 @@ pub struct WholeAttMap {
 }
 
 impl WholeAttMap {
+
+    pub fn att_map(&self) -> &NamedAttrMap{
+        &self.attmap
+    }
+
     pub fn refine(mut self, info_map: &DashMap<String, AttrInfo>) -> Self {
         for (noun, _v) in self.explicit_attmap.clone().map {
             if let Some(info) = info_map.get(&noun) {

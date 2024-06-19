@@ -38,15 +38,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix PYRA 计算的方位错误，cross不出来的方向需要返回None">
-      <change afterPath="$PROJECT_DIR$/DbOption_ams.toml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/pbs.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/test_surreal/test_pbs.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/run.bat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DbOption.toml" beforeDir="false" afterPath="$PROJECT_DIR$/DbOption.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parse/page.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parse/page.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tool/hash_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/hash_tool.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types/whole_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/whole_attmap.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -68,7 +63,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="wire" />
+        <entry key="$PROJECT_DIR$" value="1.1" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -222,7 +217,7 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "1.3",
-    "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core",
+    "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core/src/rs_surreal/schemas",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -245,11 +240,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas" />
       <recent name="E:\RustProject\new\new-crates\aios-core" />
       <recent name="E:\RustProject\new\new-crates\aios-core\assets" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\prim_geo" />
-      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC\tools" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs" />
@@ -258,13 +253,22 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children">
+  <component name="RunManager" selected="Batch.run">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="WORKING_DIRECTORY" value="./" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SCRIPT_NAME" value="cargo-clif test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run.bat" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
@@ -336,23 +340,6 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_wire::test_wire_17496_171545" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_wire::test_wire_17496_171545 -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Test test::test_wire::test_wire_17496_269393" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib test::test_wire::test_wire_17496_269393 -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -389,21 +376,21 @@
     </configuration>
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
+      <item itemvalue="Batch.run" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test ssc_setting::test_set_pbs_fixed_node" />
       <item itemvalue="Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children" />
       <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world" />
-      <item itemvalue="Cargo.Test test::test_wire::test_wire_17496_171545" />
       <item itemvalue="Cargo.Test test::test_wire::test_wire_17496_269393" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Batch.run" />
         <item itemvalue="Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children" />
         <item itemvalue="Cargo.Test ssc_setting::test_set_pbs_fixed_node" />
         <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world" />
         <item itemvalue="Cargo.Test test::test_wire::test_wire_17496_269393" />
-        <item itemvalue="Cargo.Test test::test_wire::test_wire_17496_171545" />
       </list>
     </recent_temporary>
   </component>
