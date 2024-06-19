@@ -22,13 +22,8 @@ use surrealdb::Surreal;
 use surrealdb::sql::Thing;
 use crate::ssc_setting::PbsElement;
 
-#[derive(Clone, Debug, Default, Deserialize)]
-struct KV<K, V> {
-    k: K,
-    v: V,
-}
 
-///通过surql查询pe数据
+///查询pbs children 数据
 pub async fn get_children_pbs_nodes(id: &Thing) -> anyhow::Result<Vec<PbsElement>> {
     let sql = format!("select *, array::len(<-pbs_owner) as children_cnt from (select value in from pbs:⟨{}⟩<-pbs_owner);", id.id.to_raw());
     // dbg!(&sql);
