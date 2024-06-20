@@ -299,9 +299,10 @@ struct PBSRelate {
 impl PBSRelate {
     pub fn to_surreal_relate(self, table: &str) -> String {
         format!(
-            "relate {}->{}:{}->{}",
+            "relate {}->{}:[{},{}]->{}",
             self.in_id.to_raw(),
             table,
+            self.out_id.to_raw(),
             self.order_num,
             self.out_id.to_raw()
         )
@@ -451,6 +452,7 @@ pub async fn set_pbs_room_node(
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     let rooms = query_all_room_name().await?;
+    dbg!(&rooms.len());
     let mut name_set = HashSet::new();
     name_set.insert("一号机组".to_string());
     let first_jizhu: Thing = ("pbs".to_string(), PbsElement::id("一号机组").to_string()).into();
@@ -458,6 +460,7 @@ pub async fn set_pbs_room_node(
     for (factory_idx, (factory, room)) in rooms.clone().into_iter().enumerate() {
         let factory_hash = PbsElement::id(&factory).to_string();
         let factory_id: Thing = ("pbs".to_string(), factory_hash).into();
+        dbg!(&factory_id);
         // 存放厂房
         result.push(PbsElement {
             id: factory_id.clone(),
@@ -1046,7 +1049,10 @@ async fn query_pbs_room_nodes(refnos: &[RefU64]) -> anyhow::Result<Vec<PBSRoomNo
     let sql = format!(
         r#"
         select type::thing('pbs',meta::id(id)) as id,name,noun,fn::room_code(id)[0] as room_code,
-            (select name, noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner from (select value in from <-pe_owner)) as children from [{}]
+            (select default_name(id), noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner,
+            array::len(<-pe_owner) as children_cnt from (select value in from <-pe_owner)
+            ) as children
+            from [{}]
         "#,
         refnos
     );
@@ -1065,16 +1071,13 @@ async fn query_pbs_children_by_refnos(
     let mut map = HashMap::new();
     let pes = refnos.into_iter().map(|refno| refno.to_pe_key()).join(",");
     let sql = format!(
-        r#"select name, noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner  from array::flatten(select value in from [{}]<-pe_owner)"#,
+        r#"select fn::default_name(id) as name, noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner, array::len(<-pe_owner) as children_cnt  from array::flatten(select value in from [{}]<-pe_owner)"#,
         pes
     );
     let mut response = SUL_DB.query(sql).await?;
-    let result: Vec<Vec<PbsElement>> = response.take(0)?;
+    let result: Vec<PbsElement> = response.take(0)?;
     for r in result {
-        if r.is_empty() {
-            continue;
-        };
-        map.entry(r[0].owner.clone().into()).or_insert(r);
+        map.entry(r.owner.clone().into()).or_insert_with(Vec::new).push(r);
     }
     Ok(map)
 }
@@ -1108,9 +1111,10 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
 
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
-    AiosDBMgr::init_from_db_option().await?;
+    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
     // 创建通道
     let (tx, rx) = mpsc::channel();
+    // set_pdms_major_code(&aios_mgr).await?;
 
     set_pbs_fixed_node(&tx).await?;
     let rooms = set_pbs_room_node(&tx).await?;
@@ -1132,7 +1136,7 @@ async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_set_pdms_major_code() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    set_pdms_major_code(&aios_mgr).await?;
+
     Ok(())
 }
 
