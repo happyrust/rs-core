@@ -225,14 +225,10 @@ impl BrepShapeTrait for LCylinder {
 
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
-//
 pub struct SCylinder {
     pub paxi_expr: String,
     pub paxi_pt: Vec3,
-    //A Axis point
-    pub paxi_dir: Vec3,   //A Axis Direction
-
-    // pub pdis: f32,
+    pub paxi_dir: Vec3,
     //dist to bottom
     pub phei: f32,
     // height
@@ -243,7 +239,6 @@ pub struct SCylinder {
     pub top_shear_angles: [f32; 2],
     // y shear
     pub negative: bool,
-
     pub center_in_mid: bool,
 }
 
@@ -381,6 +376,7 @@ impl BrepShapeTrait for SCylinder {
             // dbg!(&self.top_shear_angles);
             let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
             let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
+            let scale_mat = DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
             let transform_top = DMat4::from_translation(dir * ext_len as f64)
                 * DMat4::from_axis_angle(DVec3::Y, -(self.top_shear_angles[0].to_radians() as f64))
                 * DMat4::from_axis_angle(DVec3::X, (self.top_shear_angles[1].to_radians() as f64))

@@ -41,6 +41,7 @@ pub struct CateBrepShape {
 pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
     match geom {
         CateGeoParam::Pyramid(d) => {
+            // dbg!(d);
             let pa = d.pa.as_ref()?;
             let pb = d.pb.as_ref()?;
             let pc = d.pc.as_ref()?;
@@ -64,17 +65,26 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .unwrap_or(pc.dir_flag * Vec3::X);
             let z_axis = paax_dir;
             let mut x_axis = pbax_dir;
-            //Y轴如果如果在第二象限和第四象限，需要反向
-            if x_axis.y < 0.0 {
-                x_axis = -x_axis;
-            }
-            //fix 防止出现向量不能组成坐标轴的问题，暂时忽略X轴的输入
-            //但是偏移还是要用pa pb pc的方向
-            // let x_axis = x_axis.cross(z_axis).normalize_or_zero();
-
-            let y_axis = z_axis.cross(x_axis).normalize_or_zero();
-            if !y_axis.is_normalized(){
-                return None;
+            let mut y_axis = pcax_dir;
+            //X轴如果如果在第二象限和第四象限，需要反向 ?
+            // if x_axis.y < 0.0 {
+            //     x_axis = -x_axis;
+            // }
+            let mut ref_axis = z_axis.cross(x_axis).normalize_or_zero();
+            //如果求不出来y，就要按 z_axis 和 x_axis 结合，需要变通的去求方位
+            if !ref_axis.is_normalized(){
+                // x_axis = y_axis.cross(z_axis).normalize_or_zero();
+                x_axis = z_axis.cross(Vec3::Z).normalize_or_zero();
+                y_axis = z_axis.cross(x_axis).normalize_or_zero();
+                if !x_axis.is_normalized(){
+                    println!("Pyramid 求方位失败。{:?}", (x_axis, y_axis, z_axis));
+                    return None;
+                }
+                // dbg!((x_axis, y_axis, z_axis));
+            }else{
+                y_axis = ref_axis;
+                x_axis = y_axis.cross(z_axis).normalize_or_zero();
+                // dbg!((x_axis, y_axis, z_axis));
             }
 
             //需要转换成CTorus
@@ -560,8 +570,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(pa.number);
             pts.push(pb.number);
-            dbg!(d);
-
+            // dbg!(d);
             //如果有一个轴为0
             let paax_dir = pa
                 .dir
