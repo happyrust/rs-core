@@ -151,9 +151,9 @@ impl BrepShapeTrait for LPyramid {
         let ty = (self.pctp / 2.0).max(0.001) as f64;
         let bx = (self.pbbt / 2.0).max(0.001) as f64;
         let by = (self.pcbt / 2.0).max(0.001) as f64;
-        let ox = self.pbof as f64 * DVec2::new(self.pbax_dir.x as _, self.pbax_dir.y as _);
-        let oy = self.pcof as f64 * DVec2::new(self.pcax_dir.x as _, self.pcax_dir.y as _);
-        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
+        //这里需要按照实际的变换方位来计算
+        let ox = self.pbof as f64 * self.pbax_dir.truncate().as_dvec2();
+        let oy = self.pcof as f64 * self.pcax_dir.truncate().as_dvec2();
 
         let offset = ox + oy;
         let offset_3d = DVec3::new(offset.x as _, offset.y as _, 0.0);

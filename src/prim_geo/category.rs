@@ -66,27 +66,27 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let z_axis = paax_dir;
             let mut x_axis = pbax_dir;
             let mut y_axis = pcax_dir;
-            //X轴如果如果在第二象限和第四象限，需要反向 ?
-            // if x_axis.y < 0.0 {
-            //     x_axis = -x_axis;
-            // }
-            let mut ref_axis = z_axis.cross(x_axis).normalize_or_zero();
-            //如果求不出来y，就要按 z_axis 和 x_axis 结合，需要变通的去求方位
-            if !ref_axis.is_normalized(){
-                // x_axis = y_axis.cross(z_axis).normalize_or_zero();
-                x_axis = z_axis.cross(Vec3::Z).normalize_or_zero();
-                y_axis = z_axis.cross(x_axis).normalize_or_zero();
-                if !x_axis.is_normalized(){
-                    println!("Pyramid 求方位失败。{:?}", (x_axis, y_axis, z_axis));
-                    return None;
+            let mut rotation = Quat::IDENTITY;
+            let tmp_axis = z_axis.cross(Vec3::Z).normalize_or_zero();
+            // 有发生旋转，如果没有旋转，直接使用默认坐标系
+            if tmp_axis.is_normalized(){
+                let mut ref_axis = z_axis.cross(x_axis).normalize_or_zero();
+                //如果求不出来y，就要按 z_axis 和 x_axis 结合，需要变通的去求方位
+                if !ref_axis.is_normalized(){
+                    x_axis = tmp_axis;
+                    y_axis = z_axis.cross(x_axis).normalize_or_zero();
+                    if !x_axis.is_normalized(){
+                        println!("Pyramid 求方位失败。{:?}", (x_axis, y_axis, z_axis));
+                        return None;
+                    }
+                    // dbg!((x_axis, y_axis, z_axis));
+                }else{
+                    y_axis = ref_axis;
+                    x_axis = y_axis.cross(z_axis).normalize_or_zero();
+                    // dbg!((x_axis, y_axis, z_axis));
                 }
-                // dbg!((x_axis, y_axis, z_axis));
-            }else{
-                y_axis = ref_axis;
-                x_axis = y_axis.cross(z_axis).normalize_or_zero();
-                // dbg!((x_axis, y_axis, z_axis));
+                rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             }
-
             //需要转换成CTorus
             let pyramid = LPyramid {
                 pbax_pt: pb.pt,
@@ -107,7 +107,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             };
             //需要偏移到 btm
             let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt;
-            let rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 refno: d.refno,
