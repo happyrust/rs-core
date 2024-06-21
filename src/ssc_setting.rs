@@ -1140,6 +1140,7 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    set_pdms_major_code(&aios_mgr).await?;
     let mut handles = vec![];
     set_pbs_fixed_node(&mut handles).await?;
     let rooms = set_pbs_room_node(&mut handles).await?;
