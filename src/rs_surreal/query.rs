@@ -2,6 +2,7 @@ use crate::consts::MAX_INSERT_LENGTH;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
+use crate::ssc_setting::PbsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
@@ -607,6 +608,18 @@ pub async fn query_refnos_by_type(noun: &str) -> anyhow::Result<Vec<RefU64>> {
 /// 插入数据
 pub async fn insert_into_table(db: &Surreal<Any>, table: &str, value: &str) -> anyhow::Result<()> {
     db.query(format!("insert into {} {}", table, value)).await?;
+    Ok(())
+}
+
+pub async fn insert_pe_into_table_with_chunks(
+    db: &Surreal<Any>,
+    table: &str,
+    value: Vec<PbsElement>,
+) -> anyhow::Result<()> {
+    for r in value.chunks(MAX_INSERT_LENGTH) {
+        let json = r.iter().map(|x| x.gen_sur_json()).join(",");
+        db.query(format!("insert into {} [{}]", table, json)).await?;
+    }
     Ok(())
 }
 

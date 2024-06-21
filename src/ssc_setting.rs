@@ -8,10 +8,7 @@ use crate::room::algorithm::query_all_room_name;
 use crate::table_const::{PBS_OWNER, PBS_TABLE, PDMS_MAJOR};
 use crate::tool::hash_tool::{hash_str, hash_two_str};
 use crate::types::*;
-use crate::{
-    get_mdb_world_site_pes, insert_into_table, insert_relate_to_table,
-    query_ele_filter_deep_children, query_filter_deep_children, DBType, SUL_DB,
-};
+use crate::{get_mdb_world_site_pes, insert_into_table, insert_into_table_with_chunks, insert_relate_to_table, query_ele_filter_deep_children, query_filter_deep_children, DBType, SUL_DB, insert_pe_into_table_with_chunks};
 use anyhow::anyhow;
 use bevy_ecs::system::Resource;
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
@@ -31,6 +28,7 @@ use surrealdb::engine::any::Any;
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 use tokio::task;
+use tokio::task::JoinHandle;
 
 #[derive(Resource, Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct SiteData {
@@ -313,7 +311,7 @@ pub static PBS_ROOT_ID: Lazy<Thing> = Lazy::new(|| Thing::from(("pbs", "0")));
 pub const PBS_STR: &'static str = "PBS";
 
 /// 生成pbs固定节点
-pub async fn set_pbs_fixed_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
+pub async fn set_pbs_fixed_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Result<()> {
     let mut eles = Vec::new();
     let mut edge_results = Vec::new();
 
@@ -361,12 +359,16 @@ pub async fn set_pbs_fixed_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::
         }
     }
     // 保存树节点
-    // let ele_json = serde_json::to_string(&eles_results)?;
-    tx.send(SaveDatabaseChannelMsg::InsertPbsElements(
-        PBS_TABLE.to_string(),
-        eles,
-    ))?;
-    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(edge_results))?;
+    let task = tokio::task::spawn(async move {
+        dbg!(&eles.len());
+        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, eles).await {
+            dbg!(&e.to_string());
+        }
+        if let Err(e) = insert_relate_to_table(&SUL_DB, edge_results).await {
+            dbg!(&e.to_string());
+        }
+    });
+    handles.push(task);
     Ok(())
 }
 
@@ -447,12 +449,11 @@ impl PdmsNodeTrait for PbsElement {
 
 /// 生成房间节点
 pub async fn set_pbs_room_node(
-    tx: &Sender<SaveDatabaseChannelMsg>,
+    mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<HashMap<String, BTreeSet<String>>> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     let rooms = query_all_room_name().await?;
-    dbg!(&rooms.len());
     let mut name_set = HashSet::new();
     name_set.insert("一号机组".to_string());
     let first_jizhu: Thing = ("pbs".to_string(), PbsElement::id("一号机组").to_string()).into();
@@ -460,7 +461,6 @@ pub async fn set_pbs_room_node(
     for (factory_idx, (factory, room)) in rooms.clone().into_iter().enumerate() {
         let factory_hash = PbsElement::id(&factory).to_string();
         let factory_id: Thing = ("pbs".to_string(), factory_hash).into();
-        dbg!(&factory_id);
         // 存放厂房
         result.push(PbsElement {
             id: factory_id.clone(),
@@ -557,19 +557,22 @@ pub async fn set_pbs_room_node(
         }
     }
     // 保存树节点
-    // let ele_json = serde_json::to_string(&result)?;
-    tx.send(SaveDatabaseChannelMsg::InsertPbsElements(
-        PBS_TABLE.to_string(),
-        result,
-    ))?;
-    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+    let task = tokio::task::spawn(async move {
+        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+            dbg!(&e.to_string());
+        }
+        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+            dbg!(&e.to_string());
+        }
+    });
+    handles.push(task);
     Ok(rooms)
 }
 
 /// 保存房间下的专业
 pub async fn set_pbs_room_major_node(
     rooms: &HashMap<String, BTreeSet<String>>,
-    tx: &Sender<SaveDatabaseChannelMsg>,
+    mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
@@ -627,13 +630,15 @@ pub async fn set_pbs_room_major_node(
         }
     }
     // 保存树节点
-    // let ele_json = serde_json::to_string(&result)?;
-    // tx.send(SaveDatabaseChannelMsg::InsertSql(PBS_TABLE.to_string(), ele_json))?;
-    tx.send(SaveDatabaseChannelMsg::InsertPbsElements(
-        PBS_TABLE.to_string(),
-        result,
-    ))?;
-    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+    let task = tokio::task::spawn(async move {
+        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+            dbg!(&e.to_string());
+        }
+        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+            dbg!(&e.to_string());
+        }
+    });
+    handles.push(task);
     Ok(())
 }
 
@@ -656,7 +661,7 @@ async fn query_all_zone_with_major() -> anyhow::Result<Vec<PbsMajorValue>> {
 }
 
 /// 保存房间下节点所属的专业
-pub async fn set_pbs_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
+pub async fn set_pbs_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Result<()> {
     let zones = query_all_zone_with_major().await?;
     let len = zones.len();
     // 查找zone下所有需要进行pbs计算的节点
@@ -670,14 +675,14 @@ pub async fn set_pbs_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result
         //                                                          "EQUI".to_string(), "STRU".to_string(), "REST".to_string()]).await?;
         let bran_refnos = query_filter_deep_children(zone.id, vec!["BRAN".to_string()]).await?;
         // 处理bran
-        set_pbs_bran_node(&bran_refnos, &zone, tx).await?;
+        set_pbs_bran_node(&bran_refnos, &zone, &mut handles).await?;
         // 处理equi
         let equi_refnos = query_filter_deep_children(zone.id, vec!["EQUI".to_string()]).await?;
-        set_pbs_equi_node(&equi_refnos, &zone, tx).await?;
+        set_pbs_equi_node(&equi_refnos, &zone, &mut handles).await?;
         // 处理支吊架
         let stru_refnos = query_filter_deep_children(zone.id, vec!["STRU".to_string()]).await?;
         let rest_refnos = query_filter_deep_children(zone.id, vec!["REST".to_string()]).await?;
-        set_pbs_supp_and_stru_node(&stru_refnos, &rest_refnos, &zone, tx).await?;
+        set_pbs_supp_and_stru_node(&stru_refnos, &rest_refnos, &zone, &mut handles).await?;
     }
     Ok(())
 }
@@ -686,7 +691,7 @@ pub async fn set_pbs_node(tx: &Sender<SaveDatabaseChannelMsg>) -> anyhow::Result
 async fn set_pbs_bran_node(
     refnos: &[RefU64],
     zone: &PbsMajorValue,
-    tx: &Sender<SaveDatabaseChannelMsg>,
+    mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
@@ -729,11 +734,16 @@ async fn set_pbs_bran_node(
             result.push(child);
         }
     }
-    tx.send(SaveDatabaseChannelMsg::InsertPbsElements(
-        PBS_TABLE.to_string(),
-        result,
-    ))?;
-    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+
+    let task = tokio::task::spawn(async move {
+        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+            dbg!(&e.to_string());
+        }
+        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+            dbg!(&e.to_string());
+        }
+    });
+    handles.push(task);
     Ok(())
 }
 
@@ -741,7 +751,7 @@ async fn set_pbs_bran_node(
 async fn set_pbs_equi_node(
     refnos: &[RefU64],
     zone: &PbsMajorValue,
-    tx: &Sender<SaveDatabaseChannelMsg>,
+    mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
@@ -819,11 +829,15 @@ async fn set_pbs_equi_node(
             result.push(child);
         }
     }
-    tx.send(SaveDatabaseChannelMsg::InsertPbsElements(
-        PBS_TABLE.to_string(),
-        result,
-    ))?;
-    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+    let task = tokio::task::spawn(async move {
+        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+            dbg!(&e.to_string());
+        }
+        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+            dbg!(&e.to_string());
+        }
+    });
+    handles.push(task);
     Ok(())
 }
 
@@ -832,7 +846,7 @@ async fn set_pbs_supp_and_stru_node(
     stru_refnos: &[RefU64],
     rest_refnos: &[RefU64],
     zone: &PbsMajorValue,
-    tx: &Sender<SaveDatabaseChannelMsg>,
+    mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
@@ -911,8 +925,6 @@ async fn set_pbs_supp_and_stru_node(
             }
         }
     } else {
-        //         let supps = nodes.iter().filter(|node| node.noun == "STRU" || node.noun == "REST").collect::<Vec<_>>();
-        //         let supp_refnos = supps.iter().map(|bran| bran.refno).collect::<Vec<_>>();
         let mut refnos = stru_refnos.to_vec();
         refnos.extend(rest_refnos);
         let pdms_nodes = query_pbs_room_nodes(&refnos).await?;
@@ -925,7 +937,7 @@ async fn set_pbs_supp_and_stru_node(
                 if child.noun.as_deref() != Some("FRMW") && child.noun.as_deref() != Some("HANG") {
                     continue;
                 };
-                if let Some(refno) = child.refno{
+                if let Some(refno) = child.refno {
                     hangs.push(refno);
                 }
             }
@@ -980,11 +992,7 @@ async fn set_pbs_supp_and_stru_node(
                 PBSRelate {
                     in_id: cur_id.clone(),
                     out_id: node_id.clone(),
-                    order_num: if supp.noun.as_str() == "STRU" {
-                        0
-                    } else {
-                        1
-                    },
+                    order_num: if supp.noun.as_str() == "STRU" { 0 } else { 1 },
                 }
                 .to_surreal_relate(&PBS_OWNER),
             );
@@ -1021,11 +1029,15 @@ async fn set_pbs_supp_and_stru_node(
             }
         }
     }
-    tx.send(SaveDatabaseChannelMsg::InsertPbsElements(
-        PBS_TABLE.to_string(),
-        result,
-    ))?;
-    tx.send(SaveDatabaseChannelMsg::InsertRelateSql(relate_result))?;
+    let task = tokio::task::spawn(async move {
+        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+            dbg!(&e.to_string());
+        }
+        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+            dbg!(&e.to_string());
+        }
+    });
+    handles.push(task);
     Ok(())
 }
 
@@ -1049,7 +1061,7 @@ async fn query_pbs_room_nodes(refnos: &[RefU64]) -> anyhow::Result<Vec<PBSRoomNo
     let sql = format!(
         r#"
         select type::thing('pbs',meta::id(id)) as id,name,noun,fn::room_code(id)[0] as room_code,
-            (select default_name(id), noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner,
+            (select fn::default_name(id) as name, noun, refno, type::thing('pbs',meta::id(id)) as id, type::thing('pbs',meta::id(owner)) as owner,
             array::len(<-pe_owner) as children_cnt from (select value in from <-pe_owner)
             ) as children
             from [{}]
@@ -1077,18 +1089,24 @@ async fn query_pbs_children_by_refnos(
     let mut response = SUL_DB.query(sql).await?;
     let result: Vec<PbsElement> = response.take(0)?;
     for r in result {
-        map.entry(r.owner.clone().into()).or_insert_with(Vec::new).push(r);
+        map.entry(r.owner.clone().into())
+            .or_insert_with(Vec::new)
+            .push(r);
     }
     Ok(map)
 }
 
 /// 接受保存数据库请求并执行操作
 pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> anyhow::Result<()> {
+    // let mut handles = vec![];
     for msg in rx {
+        // let task = tokio::task::spawn(async move {
         match msg {
             // 保存table数据
             SaveDatabaseChannelMsg::InsertSql(table_name, sql) => {
-                insert_into_table(&SUL_DB, &table_name, &sql).await?;
+                if let Err(e) = insert_into_table(&SUL_DB, &table_name, &sql).await {
+                    dbg!(&e.to_string());
+                }
             }
             SaveDatabaseChannelMsg::InsertPbsElements(table, eles) => {
                 let json = eles.iter().map(|x| x.gen_sur_json()).join(",");
@@ -1099,37 +1117,30 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
             }
             // 保存 relate
             SaveDatabaseChannelMsg::InsertRelateSql(relate_sql) => {
-                insert_relate_to_table(&SUL_DB, relate_sql).await?;
+                if let Err(e) = insert_relate_to_table(&SUL_DB, relate_sql).await {
+                    dbg!(&e.to_string());
+                }
             }
             SaveDatabaseChannelMsg::Quit => {
-                break;
+                continue;
             }
         }
+        // });
+        // handles.push(task);
     }
+    // futures::future::join_all(handles).await;
     Ok(())
 }
 
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    // 创建通道
-    let (tx, rx) = mpsc::channel();
-    // set_pdms_major_code(&aios_mgr).await?;
-
-    set_pbs_fixed_node(&tx).await?;
-    let rooms = set_pbs_room_node(&tx).await?;
-    set_pbs_room_major_node(&rooms, &tx).await?;
-    set_pbs_node(&tx).await?;
-    // 创建数据库处理线程
-    let db_thread = task::spawn(async move {
-        execute_save_pbs(rx).await.unwrap();
-    });
-
-    // 发送退出消息
-    tx.send(SaveDatabaseChannelMsg::Quit)?;
-
-    // 等待数据库处理任务结束
-    db_thread.await?;
+    let mut handles = vec![];
+    set_pbs_fixed_node(&mut handles).await?;
+    let rooms = set_pbs_room_node(&mut handles).await?;
+    set_pbs_room_major_node(&rooms, &mut handles).await?;
+    set_pbs_node(&mut handles).await?;
+    futures::future::join_all(handles).await;
     Ok(())
 }
 
