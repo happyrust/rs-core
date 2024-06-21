@@ -256,7 +256,7 @@ impl RefU64 {
 
     #[inline]
     pub fn to_pbs_key(&self) -> String {
-        format!("pbs:{}", &self.to_string())
+        format!("pbs:{}", &self.0.to_string())
     }
 
     #[inline]
