@@ -9,12 +9,18 @@ use crate::{
     SUL_DB, RefU64,
 };
 use std::str::FromStr;
+use crate::pdms_types::RoomNodes;
 
+#[derive(Serialize,Deseriazlie,Default,Clone,Hash)]
+pub struct RoomInfo {
+    pub refno :RefU64,
+    pub name: String,
+}
 
 /// 查询项目的所有房间
 ///
 /// 返回值: k 厂房 v 房间编号
-pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<String>>> {
+pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<RoomNodes>>> {
     let mut map = HashMap::new();
     let mut response = SUL_DB
         .query(r#"

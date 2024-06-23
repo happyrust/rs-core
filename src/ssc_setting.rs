@@ -8,7 +8,11 @@ use crate::room::algorithm::query_all_room_name;
 use crate::table_const::{PBS_OWNER, PBS_TABLE, PDMS_MAJOR};
 use crate::tool::hash_tool::{hash_str, hash_two_str};
 use crate::types::*;
-use crate::{get_mdb_world_site_pes, insert_into_table, insert_into_table_with_chunks, insert_relate_to_table, query_ele_filter_deep_children, query_filter_deep_children, DBType, SUL_DB, insert_pe_into_table_with_chunks};
+use crate::{
+    get_mdb_world_site_pes, insert_into_table, insert_into_table_with_chunks,
+    insert_pe_into_table_with_chunks, insert_relate_to_table, query_ele_filter_deep_children,
+    query_filter_deep_children, DBType, SUL_DB,
+};
 use anyhow::anyhow;
 use bevy_ecs::system::Resource;
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
@@ -986,6 +990,7 @@ async fn set_pbs_supp_and_stru_node(
                 owner: node_id.clone(),
                 name: supp.noun.clone(),
                 noun: Some(supp.noun.clone()),
+                refno: Some(supp.id),
                 ..Default::default()
             });
             relate_result.push(
@@ -1135,6 +1140,7 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    set_pdms_major_code(&aios_mgr).await?;
     let mut handles = vec![];
     set_pbs_fixed_node(&mut handles).await?;
     let rooms = set_pbs_room_node(&mut handles).await?;

@@ -18,6 +18,8 @@ use std::str::FromStr;
 use log::LevelFilter;
 use simplelog::{ColorChoice, CombinedLogger, Config, TerminalMode, TermLogger, WriteLogger};
 use surrealdb::method::Stats;
+use surrealdb::sql::Thing;
+use crate::ssc_setting::PbsElement;
 
 #[inline]
 #[cached(result = true)]
@@ -35,9 +37,38 @@ pub async fn query_deep_children_refnos(refno: RefU64) -> anyhow::Result<Vec<Ref
                    from only {pe_key} ) );
             "#
     );
-    // println!("query_deep_children_refnos is: {}", &sql);
     return match SUL_DB.query(&sql).await {
         Ok(mut response) => match response.take::<Vec<RefU64>>(0) {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                init_deserialize_error(
+                    "Vec<RefU64>",
+                    &e,
+                    &sql,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
+            }
+        },
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            Err(anyhow!(e.to_string()))
+        }
+    };
+}
+
+#[cached(result = true)]
+pub async fn query_deep_children_refnos_pbs(refno: Thing) -> anyhow::Result<Vec<Thing>> {
+    let pe_key = refno.to_string();
+    let sql = format!(
+        r#"
+             return array::flatten( object::values( select
+                  [id] as p0, <-pbs_owner<-(? as p1)<-pbs_owner<-(? as p2)<-pbs_owner<-(? as p3)<-pbs_owner<-(? as p4)<-pbs_owner<-(? as p5)<-pbs_owner<-(? as p6)<-pbs_owner<-(? as p7)<-pbs_owner<-(? as p8)<-pbs_owner<-(? as p9)<-pbs_owner<-(? as p10)<-pbs_owner<-(? as p11)
+                   from only {pe_key} ) );
+            "#
+    );
+    return match SUL_DB.query(&sql).await {
+        Ok(mut response) => match response.take::<Vec<Thing>>(0) {
             Ok(data) => Ok(data),
             Err(e) => {
                 init_deserialize_error(
@@ -68,6 +99,29 @@ pub async fn query_filter_deep_children(
     match SUL_DB.query(&sql).with_stats().await {
         Ok(mut response) => {
             if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
+                return Ok(result);
+            }
+        }
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            return Err(anyhow!(e.to_string()));
+        }
+    }
+    Ok(vec![])
+}
+
+pub async fn query_ele_filter_deep_children_pbs(
+    refno: Thing,
+    nouns: Vec<String>,
+) -> anyhow::Result<Vec<PbsElement>> {
+    let refnos = query_deep_children_refnos_pbs(refno).await?;
+    let pe_keys = refnos.into_iter().join(",");
+    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
+    let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
+    // println!("sql is {}", &sql);
+    match SUL_DB.query(&sql).with_stats().await {
+        Ok(mut response) => {
+            if let Some((stats, Ok(result))) = response.take::<Vec<PbsElement>>(0) {
                 return Ok(result);
             }
         }

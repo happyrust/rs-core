@@ -137,6 +137,7 @@ pub async fn get_self_and_owner_type_name(refno: RefU64) -> anyhow::Result<Vec<S
     Ok(type_name)
 }
 
+
 ///查询的数据把 refno->name，换成名称
 #[cached(result = true)]
 pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
