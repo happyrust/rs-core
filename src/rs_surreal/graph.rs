@@ -123,7 +123,7 @@ pub async fn query_filter_deep_children_by_path(
     Ok(vec![])
 }
 
-#[cached(result = true)]
+// #[cached(result = true)]
 pub async fn query_deep_children_filter_inst(
     refno: RefU64,
     nouns: Vec<String>,
@@ -143,14 +143,14 @@ pub async fn query_deep_children_filter_inst(
     if filter {
         sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
     }
-    let mut response = SUL_DB.query(&sql).with_stats().await?;
-    if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(1) {
-        return Ok(result);
-    }
-    Ok(vec![])
+    // println!("query_deep_children_filter_inst sql is: {}", &sql);
+    let mut response = SUL_DB.query(&sql).await?;
+    // dbg!(&response);
+    let result: Vec<RefU64> = response.take(1)?;
+    Ok(result)
 }
 
-#[cached(result = true)]
+// #[cached(result = true)]
 pub async fn query_multi_filter_deep_children(
     refnos: Vec<RefU64>,
     nouns: Vec<String>,
@@ -163,7 +163,7 @@ pub async fn query_multi_filter_deep_children(
     Ok(result)
 }
 
-#[cached(result = true)]
+// #[cached(result = true)]
 pub async fn query_multi_deep_children_filter_inst(
     refnos: Vec<RefU64>,
     nouns: Vec<String>,

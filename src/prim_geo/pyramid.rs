@@ -81,7 +81,6 @@ impl VerifiedShape for Pyramid {
     }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for Pyramid {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())

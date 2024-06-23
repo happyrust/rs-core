@@ -51,7 +51,6 @@ impl AsRef<Shape> for OccSharedShape {
 #[cfg(feature = "occ")]
 impl AsMut<Shape> for OccSharedShape {
     fn as_mut(&mut self) -> &mut Shape {
-        // &mut self.0
         Arc::get_mut(&mut self.0).unwrap()
     }
 }
