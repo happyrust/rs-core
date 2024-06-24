@@ -128,10 +128,12 @@ impl PlantMesh {
             let new_pt = trans.transform_point3(*p);
             points.push(new_pt.into())
         });
+        // dbg!(&self.indices);
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        Some(TriMesh::with_flags(points, indices, flag))
+        let mut tri_mesh = TriMesh::with_flags(points, indices, flag);
+        Some(tri_mesh)
     }
 
     ///计算aabb

@@ -1,6 +1,7 @@
 #![feature(let_chains)]
 #![feature(trivial_bounds)]
 #![feature(result_flattening)]
+#![allow(warnings)]
 
 use dashmap::DashMap;
 #[allow(unused_mut)]

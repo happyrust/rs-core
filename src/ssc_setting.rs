@@ -516,7 +516,7 @@ pub async fn set_pbs_room_node(
         // 存放层位以及房间信息
         let mut level_map = HashSet::new();
         for (idx, r) in room.into_iter().enumerate() {
-            let level = r[1..2].to_string(); // 房间号第二位就是层位,之前已经做过长度的判断，所以直接切片
+            let level = r.room_name[1..2].to_string(); // 房间号第二位就是层位,之前已经做过长度的判断，所以直接切片
             let Ok(level_num) = level.parse::<u32>() else {
                 continue;
             };
@@ -542,12 +542,12 @@ pub async fn set_pbs_room_node(
                 level_map.insert(level);
             }
             // 房间
-            let room_hash = PbsElement::id(&r).to_string();
+            let room_hash = PbsElement::id(&r.room_name).to_string();
             let room_id: Thing = ("pbs".to_string(), room_hash.clone()).into();
             result.push(PbsElement {
                 id: room_id.clone(),
                 owner: level_id.clone(),
-                name: r,
+                name: r.room_name.clone(),
                 ..Default::default()
             });
             relate_result.push(
@@ -570,7 +570,8 @@ pub async fn set_pbs_room_node(
         }
     });
     handles.push(task);
-    Ok(rooms)
+    // Ok(rooms)
+    Ok(Default::default())
 }
 
 /// 保存房间下的专业

@@ -16,7 +16,6 @@ pub static GLOBAL_ROOM_AABB_TREE: Lazy<RwLock<AccelerationTree>> =
 
 // 不要每次都加载，需要检查缓存，如果缓存有，就不用从数据库里刷新了
 pub async fn load_aabb_tree() -> anyhow::Result<bool> {
-
     {
         if !GLOBAL_AABB_TREE.read().await.is_empty(){
             return Ok(true);
@@ -31,7 +30,7 @@ pub async fn load_aabb_tree() -> anyhow::Result<bool> {
     loop {
         //需要过滤
         let sql = format!(
-            "select in as refno, aabb.d.* as aabb, in.noun as noun from inst_relate where aabb.d!=none and aabb.d.mins[0] < 1000000 start {} limit {page_count}",
+            "select in as refno, aabb.d.* as aabb, in.noun as noun from inst_relate where aabb.d!=none and aabb.d.mins[0] < 1000000 and solid start {} limit {page_count}",
             offset
         );
         let mut response = SUL_DB.query(&sql).await?;
@@ -69,7 +68,6 @@ pub async fn load_room_aabb_tree() -> anyhow::Result<bool> {
     loop {
         //需要过滤
         let sql = format!(
-            // "select (select out as refno, aabb.d.* as aabb, in.noun as noun from only out->inst_relate limit 1) from room_panel_relate where aabb.d!=none and aabb.d.mins[0] < 1000000 start {} limit {page_count}",
             "select value (select in as refno, aabb.d.* as aabb, in.noun as noun from only out->inst_relate where aabb.d!=none and aabb.d.mins[0] < 1000000 limit 1 ) from room_panel_relate where out->inst_relate start {offset} limit {page_count}"
 
         );
