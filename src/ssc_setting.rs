@@ -542,7 +542,8 @@ pub async fn set_pbs_room_node(
                 level_map.insert(level);
             }
             // 房间
-            let room_id: Thing = r.refno.to_pbs_thing();
+            let room_hash = PbsElement::id(&r.name).to_string();
+            let room_id: Thing = ("pbs".to_string(), room_hash).into();
             result.push(PbsElement {
                 id: room_id.clone(),
                 owner: level_id.clone(),

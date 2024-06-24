@@ -38,7 +38,7 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
            let $f = select value (REFNO<-pe_owner.in<-pe_owner.in<-pe_owner[where in.refno.NAME != NONE && in.noun == 'FRMW'].in.refno.id )
             from (select REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH'));
 
-            return select id ,NAME as name from array::flatten($f);
+            return select id as refno ,NAME as name from array::flatten($f);
         "#)
         .await?;
     let results: Vec<RoomInfo> = response.take(1)?;
@@ -57,7 +57,7 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
         map.entry(first[1..].to_string())
             .or_insert_with(BTreeSet::new)
             .insert(RoomInfo {
-                name: room,
+                name: last.to_string(),
                 refno: r.refno,
             });
     }
