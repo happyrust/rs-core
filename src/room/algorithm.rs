@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use crate::pdms_types::RoomNodes;
 use crate::{RefU64, SUL_DB};
 use once_cell::sync::Lazy;
@@ -9,43 +10,58 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::str::FromStr;
 use tokio::sync::RwLock;
 
-#[derive(Serialize, Deserialize, Default, Clone, Hash)]
+#[derive(Serialize, Deserialize, Default, Clone, Hash,Eq,PartialEq)]
 pub struct RoomInfo {
-    pub refno: RefU64,
     pub name: String,
+    pub refno: RefU64,
+}
+
+impl Ord for RoomInfo {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for RoomInfo {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 /// 查询项目的所有房间
 ///
 /// 返回值: k 厂房 v 房间编号
-pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<RoomNodes>>> {
+pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<RoomInfo>>> {
     let mut map = HashMap::new();
     let mut response = SUL_DB
         .query(r#"
-            select value (array::concat(REFNO<-pe_owner.in<-pe_owner.in<-pe_owner[where in.refno.NAME != NONE && in.noun == 'FRMW'].in.refno.NAME)) from (
-            select REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH'));
+           let $f = select value (REFNO<-pe_owner.in<-pe_owner.in<-pe_owner[where in.refno.NAME != NONE && in.noun == 'FRMW'].in.refno.id )
+            from (select REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH'));
+
+            return select id as refno ,NAME as name from array::flatten($f);
         "#)
         .await?;
-    let results: Vec<Vec<String>> = response.take(0)?;
+    let results: Vec<RoomInfo> = response.take(1)?;
     for r in results.clone() {
-        for room in r {
-            let split = room.split("-").collect::<Vec<_>>();
-            let Some(first) = split.first() else {
-                continue;
-            };
-            let Some(last) = split.last() else {
-                continue;
-            };
-            if !match_room_name(last) {
-                continue;
-            };
-            map.entry(first[1..].to_string())
-                .or_insert_with(BTreeSet::new)
-                .insert(last.to_string());
-        }
+        let room = r.name;
+        let split = room.split("-").collect::<Vec<_>>();
+        let Some(first) = split.first() else {
+            continue;
+        };
+        let Some(last) = split.last() else {
+            continue;
+        };
+        if !match_room_name(last) {
+            continue;
+        };
+        map.entry(first[1..].to_string())
+            .or_insert_with(BTreeSet::new)
+            .insert(RoomInfo {
+                name: last.to_string(),
+                refno: r.refno,
+            });
     }
-    Ok(Default::default())
-    // Ok(map)
+    Ok(map)
 }
 
 /// 查询多个refno所属的房间号，bran和equi也适用

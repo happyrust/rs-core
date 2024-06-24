@@ -4,7 +4,7 @@ use crate::options::DbOption;
 use crate::pdms_types::UdaMajorType::S;
 use crate::pdms_types::{PdmsElement, PdmsNodeTrait};
 use crate::pe::SPdmsElement;
-use crate::room::algorithm::query_all_room_name;
+use crate::room::algorithm::{query_all_room_name, RoomInfo};
 use crate::table_const::{PBS_OWNER, PBS_TABLE, PDMS_MAJOR};
 use crate::tool::hash_tool::{hash_str, hash_two_str};
 use crate::types::*;
@@ -454,7 +454,7 @@ impl PdmsNodeTrait for PbsElement {
 /// 生成房间节点
 pub async fn set_pbs_room_node(
     mut handles: &mut Vec<JoinHandle<()>>,
-) -> anyhow::Result<HashMap<String, BTreeSet<String>>> {
+) -> anyhow::Result<HashMap<String, BTreeSet<RoomInfo>>> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
     let rooms = query_all_room_name().await?;
@@ -516,7 +516,7 @@ pub async fn set_pbs_room_node(
         // 存放层位以及房间信息
         let mut level_map = HashSet::new();
         for (idx, r) in room.into_iter().enumerate() {
-            let level = r.room_name[1..2].to_string(); // 房间号第二位就是层位,之前已经做过长度的判断，所以直接切片
+            let level = r.name[1..2].to_string(); // 房间号第二位就是层位,之前已经做过长度的判断，所以直接切片
             let Ok(level_num) = level.parse::<u32>() else {
                 continue;
             };
@@ -542,12 +542,14 @@ pub async fn set_pbs_room_node(
                 level_map.insert(level);
             }
             // 房间
-            let room_hash = PbsElement::id(&r.room_name).to_string();
-            let room_id: Thing = ("pbs".to_string(), room_hash.clone()).into();
+            let room_hash = PbsElement::id(&r.name).to_string();
+            let room_id: Thing = ("pbs".to_string(), room_hash).into();
             result.push(PbsElement {
                 id: room_id.clone(),
                 owner: level_id.clone(),
-                name: r.room_name.clone(),
+                name: r.name,
+                refno: Some(r.refno),
+                noun: Some("FRMW".to_string()),
                 ..Default::default()
             });
             relate_result.push(
@@ -570,13 +572,12 @@ pub async fn set_pbs_room_node(
         }
     });
     handles.push(task);
-    // Ok(rooms)
-    Ok(Default::default())
+    Ok(rooms)
 }
 
 /// 保存房间下的专业
 pub async fn set_pbs_room_major_node(
-    rooms: &HashMap<String, BTreeSet<String>>,
+    rooms: &HashMap<String, BTreeSet<RoomInfo>>,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
     let mut result = Vec::new();
@@ -586,11 +587,12 @@ pub async fn set_pbs_room_major_node(
     let major_map = pdms_level.name_map;
     for (_, room) in rooms {
         for r in room {
+            let r = r.name.clone();
             // site 下的专业
             for (site_idx, (site_name, zones)) in pdms_level.level.iter().enumerate() {
-                let site_hash = PbsElement::id(&format!("{}{}", r, site_name)).to_string();
+                let site_hash = PbsElement::id(&format!("{}{}", &r, site_name)).to_string();
                 let site_id: Thing = ("pbs".to_string(), site_hash).into();
-                let room_hash = PbsElement::id(r).to_string();
+                let room_hash = PbsElement::id(&r).to_string();
                 let room_id: Thing = ("pbs".to_string(), room_hash).into();
                 let Some(site_major) = major_map.get(site_name) else {
                     continue;
