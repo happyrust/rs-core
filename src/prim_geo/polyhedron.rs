@@ -12,12 +12,14 @@ use opencascade::{Axis, Edge, OCCShape, Vertex, Wire};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use opencascade::primitives::{Face, Shell, Wire};
 #[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
 #[cfg(feature = "truck")]
 use truck_modeling::builder::*;
 #[cfg(feature = "truck")]
 use truck_modeling::Face;
+use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(
     Component,
@@ -92,7 +94,6 @@ impl BrepShapeTrait for Polyhedron {
             .flatten()
             .collect();
         let profile_aabb = parry3d::bounding_volume::Aabb::from_points(&pts);
-        // dbg!(0.01 * profile_aabb.bounding_sphere().radius.max(1.0));
         0.01 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 
@@ -106,6 +107,21 @@ impl BrepShapeTrait for Polyhedron {
         }
         let shell: Shell = faces.into();
         Some(shell)
+    }
+
+    #[cfg(feature = "occ")]
+    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+        let mut faces = vec![];
+        for polygon in &self.polygons {
+            // dbg!(polygon);
+            let wire = Wire::from_ordered_points(polygon.verts.iter().map(|x| x.as_dvec3()))?;
+            // dbg!("here1");
+            let face = Face::from_wire(&wire);
+            faces.push(face);
+        }
+        // dbg!(&faces.len());
+        let shell = Shell::from_faces(faces)?;
+        Ok(OccSharedShape::new(shell.into()))
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {

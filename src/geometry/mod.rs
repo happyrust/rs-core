@@ -207,7 +207,6 @@ impl ShapeInstancesData {
                 insts: vec![EleInstGeo {
                     geo_hash: TUBI_GEO_HASH,
                     refno: Default::default(),
-                    owner_pos_refnos: Default::default(),
                     geo_param: PdmsGeoParam::PrimSCylinder(SCylinder::default()),
                     pts: vec![],
                     aabb: Some(unit_cyli_aabb),
@@ -229,7 +228,6 @@ impl ShapeInstancesData {
                 insts: vec![EleInstGeo {
                     geo_hash: BOXI_GEO_HASH,
                     refno: Default::default(),
-                    owner_pos_refnos: Default::default(),
                     geo_param: PdmsGeoParam::PrimBox(SBox::default()),
                     pts: vec![],
                     aabb: Some(unit_box_aabb),
@@ -565,75 +563,6 @@ impl EleInstGeosData {
             .iter()
             .any(|x| x.geo_type == GeoBasicType::CataCrossNeg)
     }
-
-    ///返回ngmr的组合shape和owner pos refno
-    #[cfg(feature = "occ")]
-    pub fn gen_ngmr_occ_shapes(&self, transform: &Transform) -> Vec<(Vec<RefU64>, OccSharedShape)> {
-        let ngmr_shapes: Vec<_> = self
-            .insts
-            .iter()
-            .filter(|x| x.geo_type == GeoBasicType::CataCrossNeg)
-            .filter_map(|x| {
-                if let Ok(mut s) = x.gen_occ_shape() {
-                    s.as_mut().transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
-                    Some((own_pos_refnos, s))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        ngmr_shapes
-    }
-
-    ///返回新的shape，如果只有负实体，需要返回对应正实体的参考号
-    #[cfg(feature = "occ")]
-    pub fn gen_occ_shape(&self, transform: &Transform) -> Option<(OccSharedShape, Vec<RefU64>)> {
-        let mut neg_shapes: Vec<(OccSharedShape, Vec<RefU64>)> = self
-            .insts
-            .iter()
-            .filter(|x| x.geo_type == GeoBasicType::Neg)
-            .filter_map(|x| {
-                if let Ok(mut s) = x.gen_occ_shape() {
-                    s.as_mut().transform_by_mat(&transform.compute_matrix().as_dmat4());
-                    let own_pos_refnos = x.owner_pos_refnos.clone().into_iter().collect();
-                    Some((s, own_pos_refnos))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        //如果出现负实体，只会出现一个？暂时这么处理
-        if neg_shapes.len() >= 1 {
-            return neg_shapes.pop();
-        }
-
-        let mut pos_shapes: HashMap<RefU64, OccSharedShape> = self
-            .insts
-            .iter()
-            .filter(|x| x.geo_type == GeoBasicType::Pos)
-            .filter_map(|x| {
-                if let Ok(s) = x.gen_occ_shape() {
-                    Some((x.refno, s))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        //执行cut 运算
-        for cate_neg_inst in self.insts.iter().filter(|x| x.is_cata_neg()) {
-            cate_neg_inst.owner_pos_refnos.iter().for_each(|r| {
-                if let Some(pos_shape) = pos_shapes.get_mut(r) {
-                    if let Ok(neg_shape) = cate_neg_inst.gen_occ_shape() {
-                        *pos_shape = pos_shape.subtract(&neg_shape).into_shape().into();
-                    }
-                }
-            });
-        }
-        let mut compound: Shape = opencascade::primitives::Compound::from_shapes(pos_shapes.values()).into();
-        compound.transform_by_mat(&transform.compute_matrix().as_dmat4());
-        Some((compound.into(), vec![]))
-    }
 }
 
 ///分拆的基本体信息, 应该是不需要复用的
@@ -654,9 +583,6 @@ pub struct EleInstGeo {
     pub geo_hash: u64,
     ///对应几何体参考号
     pub refno: RefU64,
-    ///如果是负实体, 指定它的附属正实体参考号
-    #[serde(default)]
-    pub owner_pos_refnos: HashSet<RefU64>,
     ///几何参数数据
     #[serde(default)]
     pub geo_param: PdmsGeoParam,
