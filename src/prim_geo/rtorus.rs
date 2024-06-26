@@ -134,7 +134,7 @@ impl BrepShapeTrait for SRTorus {
                                                               self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
             let z_axis = self.paax_dir.normalize().as_dvec3();
             let y_axis = torus_info.rot_axis.as_dvec3();
-            let x_axis = z_axis.cross(y_axis);
+            let x_axis = y_axis.cross(z_axis);
             let h = self.pheig as f64;
             let d = self.pdia as f64;
             let pt = self.paax_pt.as_dvec3();
@@ -150,7 +150,7 @@ impl BrepShapeTrait for SRTorus {
 
             let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
             let center = torus_info.center;
-            let r = wire.to_face().revolve(center.as_dvec3(), -y_axis, Some(torus_info.angle.degrees()));
+            let r = wire.to_face().revolve(center.as_dvec3(), y_axis, Some(torus_info.angle.degrees()));
             return Ok(OccSharedShape::new(r.into_shape()));
         }
 

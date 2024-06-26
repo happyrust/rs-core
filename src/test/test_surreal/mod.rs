@@ -1,9 +1,8 @@
 use crate::options::DbOption;
 use config::{Config, File};
-use surrealdb::opt::auth::Root;
 use crate::function::define_common_functions;
 use crate::SUL_DB;
-
+use surrealdb::opt::auth::Root;
 pub mod test_mdb;
 pub mod test_query_fuzzy;
 

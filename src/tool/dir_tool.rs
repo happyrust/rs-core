@@ -83,6 +83,10 @@ fn test_parse_vector() {
     let test_str = "Y45-Z";
     let res = parse_expr_to_dir(test_str);
     println!("test_str: {:?}", res);
+
+    let test_str = "X ( 36 ) Z";
+    let res = parse_expr_to_dir(test_str);
+    println!("test_str: {:?}", res);
     //Z DESIGN PARAM 14Y
 }
 

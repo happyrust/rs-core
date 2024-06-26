@@ -52,7 +52,7 @@ impl SCTorus {
             ctorus.angle = torus_info.angle;
             ctorus.rins = torus_info.radius - self.pdia / 2.0;
             ctorus.rout = torus_info.radius + self.pdia / 2.0;
-            let z_axis = -torus_info.rot_axis.normalize();
+            let z_axis = torus_info.rot_axis.normalize();
             let mut x_axis = (self.pbax_pt - torus_info.center).normalize();
             let translation = torus_info.center;
             // dbg!(torus_info.center);
@@ -132,18 +132,6 @@ impl BrepShapeTrait for SCTorus {
         points
     }
 
-    // #[cfg(feature = "occ")]
-    // fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-    //     if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
-    //         let circle = Wire::circle(torus_info.radius as _, self.paax_pt.as_dvec3(), -self.paax_dir.as_dvec3());
-    //         let center = torus_info.center;
-    //         let r = circle.to_face().revolve(center.as_dvec3(),
-    //                                          torus_info.rot_axis.as_dvec3(), Some(torus_info.angle.radians()));
-    //         return Ok(OccSharedShape::new(r.into()));
-    //     }
-    //     Err(anyhow!("SCTorus参数错误，无法生成Shape"))
-    // }
-
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -208,14 +196,6 @@ impl BrepShapeTrait for CTorus {
         }
         None
     }
-
-    // #[cfg(feature = "occ")]
-    // fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-    //     let r1 = (self.rins + self.rout) as f64 / 2.0;
-    //     let r2 = (self.rout - self.rins) as f64 / 2.0;
-    //     let angle = self.angle.to_radians() as f64;
-    //     Ok(Shape::torus().radius_1(r1).radius_2(r2).z_angle(angle).z_axis(DVec3::Z).build().into_shape().into())
-    // }
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
