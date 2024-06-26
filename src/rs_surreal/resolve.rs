@@ -271,8 +271,8 @@ pub fn eval_str_to_f64(
                         .unwrap_or_default();
                     // dbg!(&pe);
                     let pseudo_map = HASH_PSEUDO_ATT_MAPS.read().await;
-                    #[cfg(feature = "debug_expr")]
-                    dbg!(&pseudo_map);
+                    // #[cfg(feature = "debug_expr")]
+                    // dbg!(&pseudo_map);
                     //判断target_refno是否在pseudo_map，如果有，取出这里的值
                     if let Some(am) = pseudo_map.get(&pe.cata_hash) {
                         if let Some(v) = am.map.get(c1) {

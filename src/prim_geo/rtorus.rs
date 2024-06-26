@@ -76,7 +76,7 @@ impl SRTorus {
             rtorus.height = self.pheig;
             rtorus.rins = torus_info.radius - self.pdia / 2.0;
             rtorus.rout = torus_info.radius + self.pdia / 2.0;
-            let z_axis = -torus_info.rot_axis.normalize();
+            let z_axis = torus_info.rot_axis.normalize();
             let x_axis = (self.pbax_pt - torus_info.center).normalize();
             let y_axis = z_axis.cross(x_axis).normalize();
             let translation = torus_info.center;
@@ -132,12 +132,12 @@ impl BrepShapeTrait for SRTorus {
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir, self.paax_pt,
                                                               self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
-            let z_axis = self.paax_dir.normalize().as_dvec3();
+            let z_axis = self.pbax_dir.normalize().as_dvec3();
             let y_axis = torus_info.rot_axis.as_dvec3();
             let x_axis = y_axis.cross(z_axis);
             let h = self.pheig as f64;
             let d = self.pdia as f64;
-            let pt = self.paax_pt.as_dvec3();
+            let pt = self.pbax_pt.as_dvec3();
             let p1 = (pt - y_axis * h / 2.0 - x_axis * d / 2.0).into();
             let p2 = (pt + y_axis * h / 2.0 - x_axis * d / 2.0).into();
             let p3 = (pt + y_axis * h / 2.0 + x_axis * d / 2.0).into();
@@ -150,7 +150,8 @@ impl BrepShapeTrait for SRTorus {
 
             let wire = Wire::from_edges([&top, &right, &bottom, &left].into_iter())?;
             let center = torus_info.center;
-            let r = wire.to_face().revolve(center.as_dvec3(), y_axis, Some(torus_info.angle.degrees()));
+            let angle = -torus_info.angle;
+            let r = wire.to_face().revolve(center.as_dvec3(), y_axis, Some(angle.degrees()));
             return Ok(OccSharedShape::new(r.into_shape()));
         }
 
