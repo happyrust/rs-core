@@ -159,7 +159,7 @@ pub struct DbOption {
     #[clap(long)]
     pub puhua_database_password: String,
 
-    pub room_key_word: Option<String>,
+    pub room_key_word: Option<Vec<String>>,
 
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
@@ -172,8 +172,8 @@ impl DbOption {
     // }
 
     #[inline]
-    pub fn get_room_key_word(&self) -> String {
-        self.room_key_word.clone().unwrap_or("-RM".to_string())
+    pub fn get_room_key_word(&self) -> Vec<String> {
+        self.room_key_word.clone().unwrap_or(vec!["-RM".to_string()])
     }
 
     #[inline]

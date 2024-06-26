@@ -132,7 +132,7 @@ pub async fn query_equi_or_valv_belong_floors(
 }
 
 /// 正则匹配是否满足房间命名规则
-fn match_room_name(room_name: &str) -> bool {
+pub fn match_room_name(room_name: &str) -> bool {
     let regex = Regex::new(r"^[A-Z]\d{3}$").unwrap();
     regex.is_match(room_name)
 }
