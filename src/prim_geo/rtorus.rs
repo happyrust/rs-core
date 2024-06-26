@@ -71,6 +71,7 @@ impl SRTorus {
     pub fn convert_to_rtorus(&self) -> Option<(RTorus, Transform)> {
         if let Some(torus_info) = RotateInfo::cal_rotate_info(self.paax_dir,
                                                               self.paax_pt, self.pbax_dir, self.pbax_pt, self.pdia / 2.0) {
+            // dbg!(&torus_info);
             let mut rtorus = RTorus::default();
             rtorus.angle = torus_info.angle;
             rtorus.height = self.pheig;
@@ -176,10 +177,10 @@ impl From<AttrMap> for SRTorus {
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
 pub struct RTorus {
-    pub rins: f32,
     //内圆半径
-    pub rout: f32,
+    pub rins: f32,
     //外圆半径
+    pub rout: f32,
     pub height: f32,
     pub angle: f32,  //旋转角度
 }
@@ -198,7 +199,7 @@ impl Default for RTorus {
 impl VerifiedShape for RTorus {
     #[inline]
     fn check_valid(&self) -> bool {
-        self.rout > 0.0 && self.angle.abs() > 0.0 && (self.rout - self.rins) > f32::EPSILON && self.height > f32::EPSILON
+        self.rout > 0.0 && self.rins > 0.0 && self.angle.abs() > 0.0 && (self.rout - self.rins) > f32::EPSILON && self.height > f32::EPSILON
     }
 }
 

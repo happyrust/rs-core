@@ -229,7 +229,7 @@ impl RotateInfo {
         let c_dir = pb_2d.rotate(Vec2::from_angle(PI/2.0));
         let r = if let Some(f_pt) = ray_a.intersect(&ray_b){
             // dbg!(f_pt);
-            let r = f_pt.length() * (angle/2.0).tan();
+            let r = f_pt.length() * (PI/2.0 - angle/2.0).tan();
             r
         }else{
             // dbg!("not intersect");
