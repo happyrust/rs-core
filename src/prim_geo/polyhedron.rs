@@ -12,6 +12,7 @@ use opencascade::{Axis, Edge, OCCShape, Vertex, Wire};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+#[cfg(feature = "occ")]
 use opencascade::primitives::{Face, Shell, Wire};
 #[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
@@ -19,6 +20,7 @@ use truck_meshalgo::prelude::*;
 use truck_modeling::builder::*;
 #[cfg(feature = "truck")]
 use truck_modeling::Face;
+#[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 
 #[derive(
