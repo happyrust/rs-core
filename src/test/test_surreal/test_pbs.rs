@@ -6,7 +6,7 @@ use surrealdb::sql::Thing;
 
 #[tokio::test]
 async fn test_query_pbs_children() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let id = Thing::from(("pbs", "2433251624132273407"));
     let children = rs_surreal::get_children_pbs_nodes(&id).await.unwrap();
     dbg!(children);

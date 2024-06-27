@@ -68,7 +68,7 @@ fn test_petgraph_noun_path() {
 
 #[tokio::test]
 async fn test_query_refnos_skip_inst() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refno = "24384/24828".into();
 
     // let result = query_filter_deep_children(refno, crate::pdms_types::VISBILE_GEO_NOUNS.map(String::from).to_vec() ).await?;
@@ -88,7 +88,7 @@ async fn test_query_refnos_skip_inst() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refno = "17496/171102".into(); // Replace with your desired refno value
     let result = query_filter_all_bran_hangs(refno).await?;
     dbg!(&result.len());
@@ -111,7 +111,7 @@ async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_ancestor_filter() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refno = "25688/7957".into();
     // let type_name = crate::get_type_name(refno).await?;
     let target =

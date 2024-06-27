@@ -4,7 +4,7 @@ use crate::rs_surreal;
 
 #[tokio::test]
 async fn test_get_world() {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let mdb = String::from("/ALL");
     let result = rs_surreal::get_world(mdb).await;
     // Assert
@@ -17,7 +17,7 @@ async fn test_get_world() {
 
 #[tokio::test]
 async fn test_get_world_sites() {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let mdb = String::from("/ALL");
     let world = rs_surreal::get_world(mdb.clone()).await.unwrap().unwrap();
     assert_eq!(&world.noun, "WORL");

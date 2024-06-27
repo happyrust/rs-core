@@ -7,7 +7,7 @@ use surrealdb::sql::Thing;
 
 #[tokio::test]
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refno = "13292_92".into();
     let pe = rs_surreal::get_pe(refno).await.unwrap();
     dbg!(pe);
@@ -16,7 +16,7 @@ async fn test_query_pe_by_refno() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refno: RefU64 = "17496_171659".into();
     let type_name = rs_surreal::get_type_name(refno).await.unwrap_or_default();
     dbg!(&type_name);
@@ -29,7 +29,7 @@ async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_wtrans_by_refno() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     // let wtrans = mgr.get_world_transform("17496_118635".into()).await.unwrap();
     // dbg!(wtrans);
     //todo fix POSL attribute
@@ -49,7 +49,7 @@ async fn test_query_wtrans_by_refno() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_att_by_refno() {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let attmap = rs_surreal::get_named_attmap("17496/172037".into()).await;
     dbg!(attmap);
     let eles = rs_surreal::get_children_pes("24383/74426".into()).await;
@@ -58,7 +58,7 @@ async fn test_query_att_by_refno() {
 
 #[tokio::test]
 async fn test_get_siblings_by_refno() {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refnos = rs_surreal::get_siblings("17496/258778".into())
         .await
         .unwrap();
@@ -74,7 +74,7 @@ async fn test_get_siblings_by_refno() {
 
 #[tokio::test]
 async fn test_query_children() {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     // let refnos = rs_surreal::get_children_refnos("9304_0".into()).await;
     // dbg!(refnos);
     let nodes = rs_surreal::get_children_ele_nodes("17496_256208".into())
@@ -88,7 +88,7 @@ async fn test_query_children() {
 
 #[tokio::test]
 async fn test_query_children_att() {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let children_pes =
         rs_surreal::query_filter_children("17496/195273".into(), &GENRAL_NEG_NOUN_NAMES).await;
     dbg!(children_pes);
@@ -96,7 +96,7 @@ async fn test_query_children_att() {
 
 #[tokio::test]
 async fn test_query_custom() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let mut response = SUL_DB
         .query(r#"(select owner, owner.noun as o_noun from type::thing("pe", $refno) )[0]"#)
         .bind(("refno", "17496_171555"))
@@ -111,7 +111,7 @@ async fn test_query_custom() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_custom_bend() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let mut response = SUL_DB
         .query(r#"
         select
@@ -134,7 +134,7 @@ from $refnos
 
 #[tokio::test]
 async fn test_query_attmap() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
 
     let refno = "24381/48635".into();
     let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
@@ -148,7 +148,7 @@ async fn test_query_attmap() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_cata() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
 
 
 
@@ -176,7 +176,7 @@ async fn test_query_cata() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_path() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let cat_refno = rs_surreal::query_single_by_paths("15194/5835".into(), &["->GMRE"], &[])
         .await
         .unwrap();
@@ -186,7 +186,7 @@ async fn test_query_path() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_paths() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let cat_refno =
         rs_surreal::query_single_by_paths("15194/5835".into(), &["->GMRE", "->GMSR"], &["id"])
             .await
@@ -197,7 +197,7 @@ async fn test_query_paths() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_record_link() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
 
     let str1 = r#"
             {

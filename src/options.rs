@@ -99,7 +99,7 @@ pub struct DbOption {
     #[clap(skip)]
     pub debug_refno_types: Vec<String>,
     #[clap(long)]
-    pub replace_mesh: bool,
+    pub replace_mesh: Option<bool>,
     #[clap(long)]
     pub gen_mesh: bool,
     #[clap(skip)]
@@ -170,6 +170,11 @@ impl DbOption {
     // pub fn is_geom_live(&self) -> bool {
     //     self.geom_live.unwrap_or(false)
     // }
+
+    #[inline]
+    pub fn is_replace_mesh(&self) -> bool{
+        self.replace_mesh.unwrap_or(false)
+    }
 
     #[inline]
     pub fn get_room_key_word(&self) -> Vec<String> {
