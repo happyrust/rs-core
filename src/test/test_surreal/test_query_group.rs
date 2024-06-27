@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 #[tokio::test]
 async fn test_group_cata_hash() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refnos: Vec<RefU64> = vec!["24383/73928".into()];
 
     let r = crate::query_multi_deep_children_filter_inst(

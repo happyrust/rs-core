@@ -4,7 +4,7 @@ use crate::rs_surreal;
 
 #[tokio::test]
 async fn test_query_uda_name() {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let hash = 397059875;
     let refno = crate::uda::get_uda_refno(hash).await.unwrap();
     dbg!(refno);

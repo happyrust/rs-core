@@ -7,7 +7,7 @@ use crate::room::data::RoomElement;
 
 #[tokio::test]
 async fn test_load_rooms() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     // let tree = rs_surreal::load_aabb_tree()
     //     .await
     //     .unwrap();
@@ -18,7 +18,7 @@ async fn test_load_rooms() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_save_room_data() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let d = RoomElement{
         name: "ROOM-1".to_string(),
         ..Default::default()

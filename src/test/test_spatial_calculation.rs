@@ -1,7 +1,7 @@
 use glam::Vec3;
 use crate::room::query::*;
 use crate::rs_surreal;
-use crate::test::test_surreal::init_test_surreal;
+use crate::init_test_surreal;
 
 #[tokio::test]
 async fn test_query_point_room() -> anyhow::Result<()> {

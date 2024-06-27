@@ -29,7 +29,7 @@ fn test_cal_ori(v: DVec3) {
 mod test_transform {
     use glam::{DVec3, Mat3};
     use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, RefU64, rs_surreal};
-    use crate::test::test_surreal::init_test_surreal;
+    use crate::init_test_surreal;
     use crate::tool::dir_tool::parse_ori_str_to_mat;
     use crate::tool::math_tool;
     use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, vec3_to_xyz_str};
@@ -180,7 +180,7 @@ mod test_transform {
 
 #[tokio::test]
 async fn test_query_transform() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
 
     // //X
     test_print_ori("Y is -X 14 -Y and Z is Y 14 -X");
@@ -229,7 +229,7 @@ async fn test_query_transform() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_fixing() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let transform = rs_surreal::get_world_transform("25688_43205".into())
         .await
         .unwrap().unwrap();
@@ -243,7 +243,7 @@ async fn test_query_fixing() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_nearest_along() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     load_aabb_tree().await.unwrap();
     let nearest = rs_surreal::query_neareast_along_axis("24383/66745".into(), Vec3::NEG_Z, "FLOOR")
         .await

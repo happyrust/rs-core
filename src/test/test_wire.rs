@@ -2,7 +2,6 @@ use crate::prim_geo::basic::OccSharedShape;
 #[cfg(feature = "occ")]
 use crate::prim_geo::wire::{gen_occ_wires, gen_polyline, polyline_to_debug_json_str};
 use crate::shape::pdms_shape::PlantMesh;
-use crate::test::test_surreal::init_test_surreal;
 use crate::{RefU64, SUL_DB};
 use cavalier_contours::polyline::{seg_midpoint, BooleanOp, PlineSource, PlineVertex, Polyline};
 use cavalier_contours::{pline_closed, polyline};
@@ -10,7 +9,7 @@ use geo::{ConvexHull, LineString, Polygon};
 use glam::{DVec3, Vec3};
 use opencascade::primitives::{Edge, Face, IntoShape, Wire};
 use std::fmt::format;
-
+use crate::init_test_surreal;
 pub async fn test_wire_from_loop(refno: RefU64) {
     let mut response = SUL_DB
         .query(format!(

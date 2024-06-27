@@ -6,7 +6,7 @@ use surrealdb::sql::Thing;
 
 #[tokio::test]
 async fn test_query_inst_refnos() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let mut time = Instant::now();
     let refnos = rs_surreal::query_deep_visible_inst_refnos("17496_296344".into())
         .await
@@ -18,7 +18,7 @@ async fn test_query_inst_refnos() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_instance() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let refno: RefU64 = "25688_48848".into();
     let insts = rs_surreal::query_insts(&[refno])
         .await
@@ -29,7 +29,7 @@ async fn test_query_instance() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_pos_neg() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let mut time = Instant::now();
     let refnos = crate::geom::query_refno_has_pos_neg_map("24381/36945".into(), Some(false))
         .await
@@ -54,7 +54,7 @@ fn test_quat() {
 
 #[tokio::test]
 async fn test_query_la_points() -> anyhow::Result<()> {
-    super::init_test_surreal().await;
+    crate::init_test_surreal().await;
     let result = crate::point::query_arrive_leave_points_by_cata_hash(&[
         "24381_105223".into(), "24381_105231".into()])
         .await
