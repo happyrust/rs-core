@@ -27,28 +27,4 @@ pub mod test_uda;
 pub mod test_pbs;
 
 
-pub async fn init_test_surreal() -> DbOption {
-    let s = Config::builder()
-        .add_source(File::with_name("DbOption"))
-        .build()
-        .unwrap();
-    let db_option: DbOption = s.try_deserialize().unwrap();
-    SUL_DB
-        .connect(db_option.get_version_db_conn_str())
-        .with_capacity(1000)
-        .await
-        .unwrap();
-    SUL_DB
-        .use_ns(&db_option.project_code)
-        .use_db(&db_option.project_name)
-        .await
-        .unwrap();
-    SUL_DB
-        .signin(Root {
-            username: &db_option.v_user,
-            password: &db_option.v_password,
-        }).await.unwrap();
-    define_common_functions().await.unwrap();
-    db_option
-}
 
