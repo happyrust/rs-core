@@ -94,6 +94,7 @@ pub struct DbOption {
     pub debug_print_world_transform: bool,
     #[clap(skip)]
     pub debug_root_refnos: Option<Vec<String>>,
+    pub gen_using_spref_refnos: Option<Vec<String>>,
     #[clap(skip)]
     pub manual_sync_refnos: Option<Vec<String>>,
     #[clap(skip)]

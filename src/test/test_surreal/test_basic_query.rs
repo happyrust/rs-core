@@ -15,6 +15,15 @@ async fn test_query_pe_by_refno() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+async fn test_build_spre_relates() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    rs_surreal::build_cate_relate(false).await?;
+    let refnos = rs_surreal::query_ele_refnos_by_spres(&["13245/660780".into()]).await?;
+    dbg!(refnos);
+    Ok(())
+}
+
+#[tokio::test]
 async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
     let refno: RefU64 = "17496_171659".into();
