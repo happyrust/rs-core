@@ -33,6 +33,7 @@ use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 use tokio::task;
 use tokio::task::JoinHandle;
+use regex::Regex;
 
 #[derive(Resource, Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct SiteData {
@@ -125,8 +126,13 @@ pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
     let major_codes = get_room_level_from_excel_refactor().await?.name_code_map;
     // 找到所有的site和zone
     let mut site_children_map = HashMap::new();
+    let mdb = if aios_mgr.db_option.mdb_name.starts_with("/") {
+        aios_mgr.db_option.mdb_name.clone()
+    } else {
+        format!("/{}", aios_mgr.db_option.mdb_name)
+    };
     let sites =
-        get_mdb_world_site_pes(format!("/{}", aios_mgr.db_option.mdb_name), DBType::DESI).await?;
+        get_mdb_world_site_pes(mdb, DBType::DESI).await?;
     let mut site_name_map = HashMap::new();
     for site in sites {
         let Ok(children) = aios_mgr.get_children(site.refno).await else {
@@ -357,7 +363,7 @@ pub async fn set_pbs_fixed_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow
                     out_id: owner.clone(),
                     order_num: idx,
                 }
-                .to_surreal_relate(&PBS_OWNER),
+                    .to_surreal_relate(&PBS_OWNER),
             );
             idx += 1;
         }
@@ -420,7 +426,7 @@ impl PbsElement {
             "noun": self.noun,
             "children_cnt": self.children_cnt,
         }))
-        .unwrap();
+            .unwrap();
         json_string
     }
 
@@ -478,7 +484,7 @@ pub async fn set_pbs_room_node(
                 out_id: first_jizhu.clone(),
                 order_num: factory_idx as u32,
             }
-            .to_surreal_relate(&PBS_OWNER),
+                .to_surreal_relate(&PBS_OWNER),
         );
         // 存放厂房下 安装层位 和 安装分区 两个固定节点
         let install_level = PbsElement::id(&format!("{}安装层位", factory)).to_string(); //将厂房放在一起hash，否则不同厂房的这两个节点会重复
@@ -497,7 +503,7 @@ pub async fn set_pbs_room_node(
                 out_id: factory_id.clone(),
                 order_num: 0,
             }
-            .to_surreal_relate(&PBS_OWNER),
+                .to_surreal_relate(&PBS_OWNER),
         );
         result.push(PbsElement {
             id: install_area_id.clone(),
@@ -511,7 +517,7 @@ pub async fn set_pbs_room_node(
                 out_id: factory_id.clone(),
                 order_num: 1,
             }
-            .to_surreal_relate(&PBS_OWNER),
+                .to_surreal_relate(&PBS_OWNER),
         );
         // 存放层位以及房间信息
         let mut level_map = HashSet::new();
@@ -537,7 +543,7 @@ pub async fn set_pbs_room_node(
                         out_id: install_level_id.clone(),
                         order_num: level_num,
                     }
-                    .to_surreal_relate(&PBS_OWNER),
+                        .to_surreal_relate(&PBS_OWNER),
                 );
                 level_map.insert(level);
             }
@@ -558,7 +564,7 @@ pub async fn set_pbs_room_node(
                     out_id: level_id.clone(),
                     order_num: idx as u32,
                 }
-                .to_surreal_relate(&PBS_OWNER),
+                    .to_surreal_relate(&PBS_OWNER),
             );
         }
     }
@@ -609,7 +615,7 @@ pub async fn set_pbs_room_major_node(
                         out_id: room_id.clone(),
                         order_num: site_idx as u32,
                     }
-                    .to_surreal_relate(&PBS_OWNER),
+                        .to_surreal_relate(&PBS_OWNER),
                 );
                 // 专业下的子专业
                 for (zone_idx, zone) in zones.iter().enumerate() {
@@ -630,7 +636,7 @@ pub async fn set_pbs_room_major_node(
                             out_id: site_id.clone(),
                             order_num: zone_idx as u32,
                         }
-                        .to_surreal_relate(&PBS_OWNER),
+                            .to_surreal_relate(&PBS_OWNER),
                     );
                 }
             }
@@ -677,6 +683,7 @@ pub async fn set_pbs_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Resu
             "正在处理 zone: {} ,目前第 {} 个,总共 {} 个",
             zone.id, idx, len
         );
+        // if zone.id != RefU64::from_str("24383/68481").unwrap() { continue; };
         // 找到所有需要处理的节点
         // let nodes = query_ele_filter_deep_children(zone.id, vec!["BRAN".to_string(),
         //                                                          "EQUI".to_string(), "STRU".to_string(), "REST".to_string()]).await?;
@@ -689,6 +696,7 @@ pub async fn set_pbs_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Resu
         // 处理支吊架
         let stru_refnos = query_filter_deep_children(zone.id, vec!["STRU".to_string()]).await?;
         let rest_refnos = query_filter_deep_children(zone.id, vec!["REST".to_string()]).await?;
+        // dbg!(&rest_refnos.len());
         set_pbs_supp_and_stru_node(&stru_refnos, &rest_refnos, &zone, &mut handles).await?;
     }
     Ok(())
@@ -726,7 +734,7 @@ async fn set_pbs_bran_node(
                 out_id: owner_id.clone(),
                 order_num: idx as u32,
             }
-            .to_surreal_relate(&PBS_OWNER),
+                .to_surreal_relate(&PBS_OWNER),
         );
         // 存放children
         for (child_idx, child) in node.children.into_iter().enumerate() {
@@ -736,7 +744,7 @@ async fn set_pbs_bran_node(
                     out_id: child.owner.clone(),
                     order_num: child_idx as u32,
                 }
-                .to_surreal_relate(&PBS_OWNER),
+                    .to_surreal_relate(&PBS_OWNER),
             );
             result.push(child);
         }
@@ -802,7 +810,7 @@ async fn set_pbs_equi_node(
                 out_id: owner_id.clone(),
                 order_num: idx as u32,
             }
-            .to_surreal_relate(&PBS_OWNER),
+                .to_surreal_relate(&PBS_OWNER),
         );
         // 存放children
         for (child_idx, child) in node.children.into_iter().enumerate() {
@@ -812,7 +820,7 @@ async fn set_pbs_equi_node(
                     out_id: child.owner.clone(),
                     order_num: child_idx as u32,
                 }
-                .to_surreal_relate(&PBS_OWNER),
+                    .to_surreal_relate(&PBS_OWNER),
             );
             // 将sube的children放到pbs中的sube下
             if child.noun.as_deref() == Some("SUBE")
@@ -829,7 +837,7 @@ async fn set_pbs_equi_node(
                             out_id: sube.owner.clone(),
                             order_num: sube_idx as u32,
                         }
-                        .to_surreal_relate(&PBS_OWNER),
+                            .to_surreal_relate(&PBS_OWNER),
                     );
                 }
             }
@@ -897,7 +905,7 @@ async fn set_pbs_supp_and_stru_node(
                     out_id: owner_id.clone(),
                     order_num: idx as u32,
                 }
-                .to_surreal_relate(&PBS_OWNER),
+                    .to_surreal_relate(&PBS_OWNER),
             );
             // 存放children
             for (child_idx, child) in node.children.iter().enumerate() {
@@ -908,7 +916,7 @@ async fn set_pbs_supp_and_stru_node(
                         out_id: node_id.clone(),
                         order_num: child_idx as u32,
                     }
-                    .to_surreal_relate(&PBS_OWNER),
+                        .to_surreal_relate(&PBS_OWNER),
                 );
                 // 将FRMW的children放到pbs中的sube下
                 if child.noun.as_deref() == Some("FRMW")
@@ -925,7 +933,7 @@ async fn set_pbs_supp_and_stru_node(
                                 out_id: frmw.owner.clone(),
                                 order_num: supp_idx as u32,
                             }
-                            .to_surreal_relate(&PBS_OWNER),
+                                .to_surreal_relate(&PBS_OWNER),
                         );
                     }
                 }
@@ -952,19 +960,24 @@ async fn set_pbs_supp_and_stru_node(
         // 查询 FRMW 和 HANG的children
         let hang_children = query_pbs_children_by_refnos(&hangs).await?;
         for (idx, supp) in pdms_nodes.iter().enumerate() {
+            // if supp.id != RefU64::from_str("24383/69071").unwrap() {
+            //     continue;
+            // }
             if supp.room_code.is_none() {
                 continue;
             };
             let room_code = supp.room_code.clone().unwrap();
-            let supp_fixed_name_split = supp.name[1..]
-                .to_string()
-                .split("/")
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            let Some(supp_fixed_name) = supp_fixed_name_split.last() else {
-                continue;
-            };
-            let fixed_hash = PbsElement::id(supp_fixed_name);
+            // let supp_fixed_name_split = supp.name[1..]
+            //     .to_string()
+            //     .split("/")
+            //     .map(|x| x.to_string())
+            //     .collect::<Vec<_>>();
+            // let Some(supp_fixed_name) = supp_fixed_name_split.last() else {
+            //     continue;
+            // };
+
+            let Some(supp_fixed_name) = find_supp_fix_room_code(&supp.name) else { continue; };
+            let fixed_hash = PbsElement::id(&supp_fixed_name);
             let node_id: Thing = ("pbs".to_string(), fixed_hash.to_string()).into();
             let owner = PbsElement::id(&format!("{}{}", room_code, zone.major)).to_string();
             let owner_id: Thing = ("pbs".to_string(), owner).into();
@@ -982,7 +995,7 @@ async fn set_pbs_supp_and_stru_node(
                         out_id: owner_id.clone(),
                         order_num: idx as u32,
                     }
-                    .to_surreal_relate(&PBS_OWNER),
+                        .to_surreal_relate(&PBS_OWNER),
                 );
                 supp_owner_map.insert(fixed_hash);
             }
@@ -1002,7 +1015,7 @@ async fn set_pbs_supp_and_stru_node(
                     out_id: node_id.clone(),
                     order_num: if supp.noun.as_str() == "STRU" { 0 } else { 1 },
                 }
-                .to_surreal_relate(&PBS_OWNER),
+                    .to_surreal_relate(&PBS_OWNER),
             );
             // 存放children
             for (child_idx, child) in supp.children.iter().enumerate() {
@@ -1013,7 +1026,7 @@ async fn set_pbs_supp_and_stru_node(
                         out_id: child.owner.clone(),
                         order_num: child_idx as u32,
                     }
-                    .to_surreal_relate(&PBS_OWNER),
+                        .to_surreal_relate(&PBS_OWNER),
                 );
                 // 将FRMW/HANG的children放到pbs中的sube下
                 if child.noun.as_deref() == Some("FRMW") || child.noun.as_deref() == Some("HANG") {
@@ -1029,7 +1042,7 @@ async fn set_pbs_supp_and_stru_node(
                                     out_id: supp.owner.clone(),
                                     order_num: supp_idx as u32,
                                 }
-                                .to_surreal_relate(&PBS_OWNER),
+                                    .to_surreal_relate(&PBS_OWNER),
                             );
                         }
                     }
@@ -1138,6 +1151,15 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
     }
     // futures::future::join_all(handles).await;
     Ok(())
+}
+
+/// 找到支吊架名称中的房间号 + 流水号
+fn find_supp_fix_room_code(name: &str) -> Option<String> {
+    let re = Regex::new(r"[A-Za-z]\d{3}\.\d{3}").unwrap();
+    match re.find(name) {
+        Some(mat) => Some(mat.as_str().to_string()),
+        None => None,
+    }
 }
 
 #[tokio::test]
