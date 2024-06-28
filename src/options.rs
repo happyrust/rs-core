@@ -20,6 +20,8 @@ pub struct DbOption {
     pub sync_live: Option<bool>,
     #[clap(long)]
     pub incr_sync: bool,
+    #[clap(long)]
+    pub sync_only_sys: Option<bool>,
     // #[clap(long)]
     // pub replace_insert: Option<bool>,
     #[clap(long, default_value = "10_0000")]
