@@ -46,13 +46,15 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<T
         .map(|x| x.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
-    let mut response = SUL_DB
-        .query(format!(r#"
+    let sql = format!(r#"
         array::group(array::complement(select value
         (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
-                from [{}] where owner.noun in ['BRAN', 'HANG'] and aabb.d!=none, [none]))
-             "#, pes))
+                from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
+             "#, pes);
+    // println!("Sql query_tubi_insts_by_flow: {}", &sql);
+    let mut response = SUL_DB
+        .query(sql)
         .await?;
 
     let r = response.take::<Vec<TubiInstQuery>>(0)?;
