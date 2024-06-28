@@ -26,7 +26,7 @@ pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()
         .with_capacity(1000)
         .await?;
     SUL_DB
-        .use_ns(&db_option.project_code)
+        .use_ns(&db_option.surreal_ns)
         .use_db(&db_option.project_name)
         .await?;
     SUL_DB

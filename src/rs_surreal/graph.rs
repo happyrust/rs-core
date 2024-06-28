@@ -1,8 +1,9 @@
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::error::{init_deserialize_error, init_query_error, HandleError};
 use crate::noun_graph::*;
-use crate::pdms_types::EleTreeNode;
+use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
+use crate::ssc_setting::PbsElement;
 use crate::types::*;
 use crate::{rs_surreal, NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
@@ -10,16 +11,15 @@ use anyhow::anyhow;
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use itertools::Itertools;
+use log::LevelFilter;
 use parry3d::simba::scalar::SupersetOf;
 use serde::{Deserialize, Serialize};
+use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode, WriteLogger};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::str::FromStr;
-use log::LevelFilter;
-use simplelog::{ColorChoice, CombinedLogger, Config, TerminalMode, TermLogger, WriteLogger};
 use surrealdb::method::Stats;
 use surrealdb::sql::Thing;
-use crate::ssc_setting::PbsElement;
 
 #[inline]
 #[cached(result = true)]
@@ -258,17 +258,65 @@ pub async fn query_filter_ancestors(
     Ok(vec![])
 }
 
+/// 查找选中节点以下的uda type
+pub async fn get_uda_type_refnos_from_select_refnos(
+    select_refnos: Vec<RefU64>,
+    uda_type: &str,
+    base_type: &str,
+) -> anyhow::Result<Vec<PdmsElement>> {
+    let mut result = vec![];
+    let uda_type = if uda_type.starts_with(":") {
+        uda_type[1..].to_string()
+    } else {
+        uda_type.to_string()
+    };
+    for select_refno in select_refnos {
+        let Ok(refnos) =
+            query_filter_deep_children(select_refno, vec![base_type.to_string()]).await
+        else {
+            continue;
+        };
+        let refnos_str = refnos
+            .into_iter()
+            .map(|refno| refno.to_pe_key())
+            .collect::<Vec<String>>()
+            .join(",");
+        let sql = format!("let $ukey = select UKEY from UDET where DYUDNA = '{}';
+        select refno,fn::default_name(id) as name,noun,owner,0 as children_count , 0 as version, 0 as order from [{}] where refno.TYPEX = $ukey;",&uda_type,refnos_str);
+        match SUL_DB.query(&sql).await {
+            Ok(mut response) => {
+                let Ok(mut query_r) = response.take::<Vec<PdmsElement>>(0) else {
+                    continue;
+                };
+                result.append(&mut query_r);
+            }
+            Err(e) => {
+                init_query_error(&sql, e, &std::panic::Location::caller().to_string());
+                continue;
+            }
+        }
+    }
+    Ok(result)
+}
+
 #[tokio::test]
 async fn test_query_filter_deep_children() -> anyhow::Result<()> {
     // 配置日志文件
-    let log_file = OpenOptions::new().create(true).append(true).open("error.log")?;
+    let log_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("error.log")?;
     // 初始化日志系统
-    CombinedLogger::init(
-        vec![
-            TermLogger::new(LevelFilter::Error, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-            WriteLogger::new(LevelFilter::Error, Config::default(), log_file),
-        ]
-    ).unwrap();
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            LevelFilter::Error,
+            Config::default(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(LevelFilter::Error, Config::default(), log_file),
+    ])
+    .unwrap();
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
     let refno = RefU64::from_str("24383/73927").unwrap();
     let equis = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;

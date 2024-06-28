@@ -185,7 +185,7 @@ pub async fn init_test_surreal() -> DbOption {
         .await
         .unwrap();
     SUL_DB
-        .use_ns(&db_option.project_code)
+        .use_ns(&db_option.surreal_ns)
         .use_db(&db_option.project_name)
         .await
         .unwrap();
