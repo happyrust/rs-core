@@ -59,10 +59,13 @@ pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn query_ele_refnos_by_spres(spre: &[RefU64]) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_ele_refnos_by_spres(spres: &[RefU64]) -> anyhow::Result<Vec<RefU64>> {
+    if spres.is_empty() {
+        return Ok(vec![]);
+    }
     let sql = format!(r#"
         array::flatten(select value <-cate_relate.in from  [{}])
-        "#, spre.into_iter().map(|x| x.to_pe_key()).join(","));
+        "#, spres.into_iter().map(|x| x.to_pe_key()).join(","));
     let mut response = SUL_DB
         .query(sql)
         .await?;

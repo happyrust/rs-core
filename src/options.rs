@@ -177,7 +177,7 @@ impl DbOption {
     // }
 
     #[inline]
-    pub fn is_replace_mesh(&self) -> bool{
+    pub fn is_replace_mesh(&self) -> bool {
         self.replace_mesh.unwrap_or(false)
     }
 
@@ -222,11 +222,31 @@ impl DbOption {
     }
 
     #[inline]
-    pub fn get_debug_refnos(&self) -> Vec<RefU64> {
-        self.debug_root_refnos
+    pub async fn get_all_debug_refnos(&self) -> Vec<RefU64> {
+        let mut refnos = self.debug_root_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        //还要补充使用了gen_using_spref_refnos的模型
+        let mut debug_spref_refnos = self
+            .gen_using_spref_refnos
+            .as_ref()
+            .map(|x| {
+                x.iter()
+                    .map(|x| x.as_str().into())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let using_debug_spref_ele_refnos = if !debug_spref_refnos.is_empty() {
+            let refnos = crate::query_ele_refnos_by_spres(&debug_spref_refnos)
+                .await
+                .unwrap();
+            refnos
+        } else {
+            vec![]
+        };
+        refnos.extend(using_debug_spref_ele_refnos);
+        refnos
     }
 
     #[inline]
