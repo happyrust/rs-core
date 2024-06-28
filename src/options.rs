@@ -86,6 +86,8 @@ pub struct DbOption {
     #[clap(long)]
     pub project_code: String,
     #[clap(skip)]
+    pub surreal_ns: String,
+    #[clap(skip)]
     pub manual_db_nums: Option<Vec<i32>>,
     #[clap(long)]
     pub reset_mdb_project: Option<bool>,
