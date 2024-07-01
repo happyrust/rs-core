@@ -35,7 +35,8 @@ pub fn get_all_types_has(att_type: &str) -> Vec<String> {
 
 /// 创建所有的元件库的 relate 关系
 pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
-    let all_spres = get_all_types_has("SPRE");
+    dbg!("build cate_relate");
+    let all_spres = get_all_types_has("SPRE").into_iter().map(|x| format!("'{}'",x)).join(",");
     // dbg!(&all_spres);
     let mut sql = if replace_exist{
         "delete cate_relate;".to_string()
@@ -48,11 +49,13 @@ pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
             for $table in [{}] {{
                 for $e in (select REFNO, SPRE from type::table($table)) {{
                     let $id = type::thing("cate_relate", meta::id($e.REFNO));
-                    relate ($e.REFNO)->$id->($e.SPRE);
+                    if $e.SPRE != NONE {{
+                        relate ($e.REFNO)->cate_relate->($e.SPRE);
+                    }}
                 }}
             }}
         }}
-    "#, all_spres.join(",")));
+    "#, all_spres));
     let mut response = SUL_DB
         .query(sql)
         .await?;
