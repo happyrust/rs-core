@@ -281,14 +281,20 @@ pub async fn get_uda_type_refnos_from_select_refnos(
             .map(|refno| refno.to_pe_key())
             .collect::<Vec<String>>()
             .join(",");
-        let sql = format!("let $ukey = select UKEY from UDET where DYUDNA = '{}';
-        select refno,fn::default_name(id) as name,noun,owner,0 as children_count , 0 as version, 0 as order from [{}] where refno.TYPEX = $ukey;",&uda_type,refnos_str);
+        let sql = format!("let $ukey = select value UKEY from UDET where DYUDNA = '{}';
+        select refno,fn::default_name(id) as name,noun,owner,0 as children_count from [{}] where refno.TYPEX in $ukey;",&uda_type,refnos_str);
         match SUL_DB.query(&sql).await {
             Ok(mut response) => {
-                let Ok(mut query_r) = response.take::<Vec<PdmsElement>>(0) else {
-                    continue;
-                };
-                result.append(&mut query_r);
+                match response.take::<Vec<EleTreeNode>>(1) {
+                    Ok(query_r) => {
+                        let mut query_r = query_r.into_iter().map(|x| x.into()).collect();
+                        result.append(&mut query_r);
+                    }
+                    Err(e) => {
+                        dbg!(&e.to_string());
+                        init_deserialize_error("Vec<EleTreeNode>",e,&sql,&std::panic::Location::caller().to_string());
+                    }
+                }
             }
             Err(e) => {
                 init_query_error(&sql, e, &std::panic::Location::caller().to_string());
@@ -298,6 +304,10 @@ pub async fn get_uda_type_refnos_from_select_refnos(
     }
     Ok(result)
 }
+
+// pub async fn query_room_name_from_supp_aql(select_refnos: Vec<RefU64>,) -> anyhow::Result<HashMap<RefU64,String>> {
+//
+// }
 
 #[tokio::test]
 async fn test_query_filter_deep_children() -> anyhow::Result<()> {
