@@ -4,6 +4,8 @@ pub mod graph;
 pub mod index;
 pub mod mdb;
 pub mod query;
+
+pub mod cate;
 pub mod resolve;
 pub mod spatial;
 mod table_const;
@@ -29,6 +31,7 @@ pub use inst::*;
 pub use mdb::*;
 pub use point::*;
 pub use query::*;
+pub use cate::*;
 pub use resolve::*;
 pub use spatial::*;
 pub use uda::*;
