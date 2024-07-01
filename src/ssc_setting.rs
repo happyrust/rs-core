@@ -1154,7 +1154,7 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
 }
 
 /// 找到支吊架名称中的房间号 + 流水号
-fn find_supp_fix_room_code(name: &str) -> Option<String> {
+pub fn find_supp_fix_room_code(name: &str) -> Option<String> {
     let re = Regex::new(r"[A-Za-z]\d{3}\.\d{3}").unwrap();
     match re.find(name) {
         Some(mat) => Some(mat.as_str().to_string()),
