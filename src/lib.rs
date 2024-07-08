@@ -94,6 +94,8 @@ pub mod db;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod spatial;
 
+pub mod dblist;
+
 pub use crate::types::*;
 pub use rs_surreal::*;
 

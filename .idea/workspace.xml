@@ -37,12 +37,12 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix PYRA 计算的方位错误，cross不出来的方向需要返回None">
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/run.bat" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix debug refnos">
+      <change afterPath="$PROJECT_DIR$/src/dblist/mod.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/dblist/parse.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tool/hash_tool.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tool/hash_tool.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/whole_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/whole_attmap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/uda.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/uda.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,7 +63,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="1.1" />
+        <entry key="$PROJECT_DIR$" value="1.3" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -101,9 +101,6 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
-  </component>
-  <component name="PerforceDirect.Settings">
-    <option name="CHARSET" value="无" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
@@ -166,12 +163,14 @@
     "Cargo.Test test::test_spatial_calculation::test_query_point_room.executor": "Run",
     "Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor": "Run",
     "Cargo.Test test::test_sql::test_table::test_create_table.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_build_spre_relates.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_attmap.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor": "Run",
+    "Cargo.Test test::test_surreal::test_geom::test_query_inst_refnos.executor": "Run",
     "Cargo.Test test::test_surreal::test_geom::test_query_instance.executor": "Run",
     "Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor": "Run",
     "Cargo.Test test::test_surreal::test_graph::test_petgraph_search.executor": "Run",
@@ -216,7 +215,7 @@
     "WebServerToolWindowFactoryState": "false",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "1.3",
+    "git-widget-placeholder": "dblist",
     "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core/src/rs_surreal/schemas",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -227,6 +226,7 @@
     "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
     "org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs": "true",
     "org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/room/query.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/rs_surreal/cate.rs": "true",
     "org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/rs_surreal/pbs.rs": "true",
     "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs": "true",
     "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs": "true",
@@ -253,22 +253,13 @@
       <recent name="$PROJECT_DIR$/src/room" />
     </key>
   </component>
-  <component name="RunManager" selected="Batch.run">
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_basic_query::test_build_spre_relates">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="WORKING_DIRECTORY" value="./" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SCRIPT_NAME" value="cargo-clif test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run.bat" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
@@ -289,8 +280,25 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test ssc_setting::test_set_pbs_fixed_node" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib ssc_setting::test_set_pbs_fixed_node -- --exact" />
+    <configuration name="Test test::test_surreal::test_basic_query::test_build_spre_relates" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_build_spre_relates -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_surreal::test_geom::test_query_inst_refnos" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_geom::test_query_inst_refnos -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -376,21 +384,21 @@
     </configuration>
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
-      <item itemvalue="Batch.run" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Test ssc_setting::test_set_pbs_fixed_node" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_build_spre_relates" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_inst_refnos" />
       <item itemvalue="Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children" />
       <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world" />
       <item itemvalue="Cargo.Test test::test_wire::test_wire_17496_269393" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Batch.run" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children" />
-        <item itemvalue="Cargo.Test ssc_setting::test_set_pbs_fixed_node" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_build_spre_relates" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_geom::test_query_inst_refnos" />
         <item itemvalue="Cargo.Test test::test_wire::test_wire_17496_269393" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_mdb::test_get_world" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children" />
       </list>
     </recent_temporary>
   </component>
@@ -840,6 +848,8 @@
       <workItem from="1718551875058" duration="2269000" />
       <workItem from="1718614620734" duration="2230000" />
       <workItem from="1718695901419" duration="4434000" />
+      <workItem from="1719553878512" duration="9582000" />
+      <workItem from="1720235151270" duration="3109000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1184,7 +1194,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="345" />
+    <option name="localTasksCounter" value="352" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1212,7 +1222,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="1.3" />
+                        <option value="dblist" />
                       </list>
                     </value>
                   </entry>
@@ -1227,13 +1237,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="(1) 修改了HVAC/material文件夹下的BEND.surql和THRE.surql文件中的数据查询逻辑，对查询结构进行了优化和调整，使用函数代替select进行数据查询。&#10;(2) 对run.defines.bat文件中的import命令进行了添加和更新，增加了新的查询对象并优化了查询数据库的连接方式。&#10;(3) 更新了src/rs_surreal/mdb.rs文件，创建新的函数，更新查询逻辑.&#10;(4) 在schemas/functions文件夹中添加create_mdb_sites.surql文件，定义新的函数用于更有效地查询场地数据。&#10;(5) 新增collect.surql文件用于收集材料统计数据.&#10;(6) 在HVAC文件夹下新增了相关文件，定义了新的数据查询函数.&#10;(7) 调整了math_tool.rs文件中的一些数学计算方法，并进行了测试用例的修改和调整.&#10;(8) 修改了HVAC/tools/common.surql文件，增加了新的查询函数.&#10;(9) 修复src/prim_geo/wire.rs文件中的一些未使用的变量，提升代码质量." />
-    <MESSAGE value="(1) 优化部分代码结构，注释掉部分debugger行，增强模块性 (math_tool.rs, pdms_types.rs, tree.rs, wire.rs, resolve.rs, test_spatial.rs, category.rs, axis_param.rs, spatial.rs)&#10;(2) 对tool/math_tool.rs文件中的调试打印语句进行了注释，并在Cargo.toml中增加了debug_expr特性&#10;(3) 在src/basic/tree.rs与src/rs_surreal/resolve.rs中进行了调试特性重构&#10;(4) 在src/pdms_types.rs中为PdmsNodeTrait 新增 get_id 方法&#10;(5) 在rs_surreal/spatial.rs中修改了对轴信息的处理，使得其可以根据BANG参数调整轴方向&#10;(6) 对pdms_types.rs文件以及axis_param.rs文件中的可选拓展方向逻辑进行了修正和优化&#10;(7) 对category.rs中各种几何体生成的逻辑进行了关键修改，尤其是对于POSA属性的理解与处理&#10;(8) 修改commit.rs中一些错误的数据类型定义，优化some与none的处理&#10;(9) 在test_spatial.rs中增加测试用例，对rotation的处理调整为转动方向的形式 &#10;(10) 根据上述改动，同步修改了相关的测试用例并增加了必要的测试用例进行验证。" />
-    <MESSAGE value="(1) 注释掉了src/rs_surreal/mod.rs中的material_query模块引用。&#10;(2) 在src/prim_geo/category.rs中修改了pcax_dir的定义。&#10;(3) 在src/prim_geo/tubing.rs中为TubiSize增添了to_vec方法，并且修改了原有的to_string方法。" />
-    <MESSAGE value="(1) 修改了初始化测试函数，返回DbOption&#10;(2) 重命名和移动了空间计算测试的位置，更改为查询模块，并增加了相关函数&#10;(3) 修改&quot;acceleration_tree&quot;，返回更改后的&quot;RStarBoundingBox&quot; &#10;(4) 加入空间计算测试，测试查询点房间数量&#10;(5) 在&quot;room/algorithm&quot;中删除无用的代码&#10;(6) 在&quot;room&quot;模块" />
-    <MESSAGE value="(1) 在'room.rs'中引入新的全局变量'GLOBAL_ROOM_AABB_TREE'并实现函数'load_room_aabb_tree'用于加载房间的加速树&#10;(2) 在'query.rs'中从'GLOBAL_AABB_TREE'改为'GLOBAL_ROOM_AABB_TREE'&#10;(3) 在'test_spatial_calculation.rs'测试文件中添加查询房间号的时间性能测试&#10;(4) 在'ssc_setting.rs'中重新定义PbsElement结构的方法，将'get_id'和'get_children_count'方法位置互换" />
-    <MESSAGE value="在'src/test/test_spatial_calculation.rs'中添加了一个新的异步函数'test_query_room_by_point'，用于测试通过坐标点查询房间号的函数，并增加了两个测试用例。" />
-    <MESSAGE value="(1) 在math_tool.rs中引入了dir_tool::parse_ori_str_to_quat函数。&#10;(2) 删除了多余的注释和调试语句。&#10;(3) 新增了名为cal_end_points的函数并添加了相应的测试用例。&#10;(4) 在direction_parse.rs中引入了math_tool::convert_to_xyz函数，并在parse_expr_to_dir函数中使用了它。" />
     <MESSAGE value="(1) 新增了文件`src/rs_surreal/e3d_db.rs`，包含查询数据库最大版本的方法&#10;(2) 对`src/types/pe.rs`文件做出修改，移除了`cata_hash`的`serde(skip)`标记&#10;(3) 对`Cargo.toml`文件做出修改，添加了`deku`依赖&#10;(4) 修改了`src/rs_surreal/resolve.rs`文件，添加了一个调试语句&#10;(5) 修改了`src/rs_surreal/mod.rs`文件，发布了`e3d_db`模块&#10;(6) 新增了`src/parse/page.rs`文件，包含了很多关于数据库页面解析的结构和方法&#10;(7) 新增了`src/parse/mod.rs`文件，发布了`page`模块&#10;(8) 修改了`src/lib.rs`文件，引入了`parse`模块&#10;(9) 修改了`src/main.rs`文件，添加了一个调试语句" />
     <MESSAGE value="注释掉了版本文件中的打印sql语句以优化代码结构" />
     <MESSAGE value="(1) 在src/room/room.rs文件中，注释掉了一行调试代码`dbg!(rstar_objs.len())`&#10;(2) 在DbOption.toml文件中，修改了project_path的路径值为&quot;D:/AVEVA/Projects/E3D2.1&quot;" />
@@ -1252,7 +1255,14 @@
     <MESSAGE value="在common.surql脚本中增加了备份功能：(1) 当$pe_id-&gt;inst_relate_history为空时，将$c.out的内容添加到$pe_id-&gt;inst_relate_history；(2) 删除与$" />
     <MESSAGE value="fix 表达式计算时，如果为REAL，应该都默认兼容" />
     <MESSAGE value="fix PYRA 计算的方位错误，cross不出来的方向需要返回None" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix PYRA 计算的方位错误，cross不出来的方向需要返回None" />
+    <MESSAGE value="move test surreal" />
+    <MESSAGE value="test dll" />
+    <MESSAGE value="WIP refactor test" />
+    <MESSAGE value="add  sync_only_sys" />
+    <MESSAGE value="fix 显示房间内模型，未加载直段" />
+    <MESSAGE value="fix add  build_spre_relates" />
+    <MESSAGE value="fix debug refnos" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix debug refnos" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
