@@ -37,7 +37,7 @@ pub async fn get_uda_refno(hash: i32) -> Option<RefU64> {
         .bind(("i", index.unwrap_or_default()))
         .await
     {
-        let result: Option<RefU64> = response.take(1).unwrap();
+        let result: Option<RefU64> = response.take(1).ok()?;
         return result;
     }
     None

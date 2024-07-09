@@ -35,7 +35,7 @@ pub fn get_all_types_has(att_type: &str) -> Vec<String> {
 
 /// 创建所有的元件库的 relate 关系
 pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
-    dbg!("build cate_relate");
+    // dbg!("build cate_relate");
     let all_spres = get_all_types_has("SPRE").into_iter().map(|x| format!("'{}'",x)).join(",");
     // dbg!(&all_spres);
     let mut sql = if replace_exist{

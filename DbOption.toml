@@ -16,6 +16,7 @@ included_projects = ["AvevaMarineSample" , "AvevaCatalogue", "SCB", "ZDJ"]
 mdb_name = "ALL"
 project_name = "AvevaMarineSample"
 project_code = 1516
+surreal_ns = 1516
 module = "DESI"
 #是否生成模型数据
 gen_model = true
