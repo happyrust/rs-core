@@ -79,6 +79,7 @@ const ATT_PRAD: i32 = db1_hash_const("PRAD") as i32;
 const ATT_DRAD: i32 = db1_hash_const("DRAD") as i32;
 const ATT_PWID: i32 = db1_hash_const("PWID") as i32;
 const ATT_PANG: i32 = 0xA5E2F;
+const ATT_BANG: i32 = db1_hash_const("BANG") as i32;
 
 const IMP_PAXI: i32 = 0xB146F;
 const IMP_PZAXI: i32 = 0x585259;
@@ -129,7 +130,7 @@ lazy_static! {
         s.insert(ATT_POFF);s.insert(ATT_DX);s.insert(ATT_DY);s.insert(ATT_DY);
         s.insert(ATT_PXTS);s.insert(ATT_PYTS);s.insert(ATT_PXBS);s.insert(ATT_PYBS);
         s.insert(ATT_PRAD);s.insert(ATT_PWID);s.insert(ATT_DRAD);s.insert(ATT_ALLANG);
-        s.insert(ATT_PZAXI);s.insert(ATT_PANG);
+        s.insert(ATT_PZAXI);s.insert(ATT_PANG);s.insert(ATT_BANG);
 
         s.insert(IMP_PAXI);s.insert(IMP_PCON);s.insert(IMP_PDIS);s.insert(IMP_PBOR);
         s.insert(IMP_PDIA);s.insert(IMP_PHEI);s.insert(IMP_PTDI);s.insert(IMP_PTDM);

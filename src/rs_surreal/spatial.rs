@@ -120,7 +120,6 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         let att = &atts[1];
         let cur_type = att.get_type_str();
         let ower_type = o_att.get_type_str();
-        let refno = att.get_refno().unwrap_or_default();
         owner = o_att.get_refno_or_default();
         prev_mat4 = mat4;
 
@@ -166,11 +165,14 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         }
 
         let owner_is_gensec = ower_type == "GENSEC";
-        let quat_v = att.get_rotation();
+        let quat_v = att.get_rotation().unwrap_or_default();
         let mut need_bangle = false;
         let mut pos_draw_dir = None;
-        if !owner_is_gensec && quat_v.is_some() {
-            quat = quat_v.unwrap().as_dquat();
+        // if cur_type == "TMPL" {
+        //     dbg!(quat_v);
+        // }
+        if !owner_is_gensec || cur_type == "TMPL" {
+            quat = quat_v.as_dquat();
         } else {
             let (l_poss, l_pose) = if owner_is_gensec {
                 //找到spine，获取spine的两个顶点
