@@ -787,7 +787,7 @@
         "default_val": {
           "IntegerType": 0
         },
-        "att_type": "INTEGER"
+        "att_type": "DOUBLE"
       },
       "259665096": {
         "name": "UNIPAR",
@@ -101555,7 +101555,7 @@
         "default_val": {
           "IntegerType": 0
         },
-        "att_type": "INTEGER"
+        "att_type": "DOUBLE"
       },
       "CUTP": {
         "name": "CUTP",

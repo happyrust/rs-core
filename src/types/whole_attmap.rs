@@ -20,14 +20,17 @@ impl WholeAttMap {
     }
 
     pub fn refine(mut self, info_map: &DashMap<String, AttrInfo>) -> Self {
-        for (noun, _v) in self.explicit_attmap.clone().map {
-            if let Some(info) = info_map.get(&noun) {
-                //&& EXPR_ATT_SET.contains(&(db1_hash(&noun)) as _))
+        let mut remove_list = vec![];
+        for (noun, v) in self.explicit_attmap.map.iter() {
+            if let Some(info) = info_map.get(noun) {
+                self.attmap.insert(noun.clone(), v.clone());
                 if info.offset > 0 {
-                    let v = self.explicit_attmap.map.remove(&(noun)).unwrap();
-                    self.attmap.insert(noun, v);
+                    remove_list.push(noun.clone());
                 }
             }
+        }
+        for noun in remove_list {
+            self.explicit_attmap.map.remove(&noun);
         }
         self
     }

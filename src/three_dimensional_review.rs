@@ -158,7 +158,7 @@ pub struct VagueSearchExportRequest {
 }
 
 ///显示范围内所有模型
-#[derive(Component, Clone, Debug, Default, Serialize, Deserialize, Event)]
+#[derive(Event, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ShowModelInRangeEvent{
     pub refno:RefU64,
     pub range:f32,
@@ -176,7 +176,7 @@ pub struct ReviewBluePrint {
 
 
 ///得到编校审上传图纸Event
-#[derive(Component, Clone, Debug, Default, Event, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Event, Serialize, Deserialize)]
 pub struct GetBluePrintEvent {
     pub filter_type: String,
     pub filter_value: String,
