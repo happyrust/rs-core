@@ -118,6 +118,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
     for atts in ancestors.windows(2) {
         let o_att = &atts[0];
         let att = &atts[1];
+        let cur_refno = att.get_refno_or_default();
         let cur_type = att.get_type_str();
         let ower_type = o_att.get_type_str();
         owner = o_att.get_refno_or_default();
@@ -131,8 +132,18 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         //土建特殊情况的一些处理
         if att.contains_key("ZDIS") {
             if cur_type == "ENDATU" {
+                //需要判断是第几个ENDATU
+                let endatu_index: Option<u32> = crate::get_index_by_noun_in_parent(owner, cur_refno, Some("ENDATU")).await.unwrap();
+                let section_end = if endatu_index == Some(0) {
+                    Some(SectionEnd::START)
+                } else if endatu_index == Some(1){
+                    Some(SectionEnd::END)
+                } else {
+                    None
+                };
+                // dbg!(&section_end);
                 let result = cal_zdis_pkdi_in_section(owner, 0.0,
-                                                      att.get_f32("ZDIS").unwrap_or_default(), Some(SectionEnd::START)).await;
+                                                      att.get_f32("ZDIS").unwrap_or_default(), section_end).await;
                 // dbg!(&result);
                 //单独做POSL的处理
                 pos += result.1;
@@ -408,6 +419,7 @@ pub async fn query_pline(refno: RefU64, jusl: String) -> anyhow::Result<Option<P
     Ok(None)
 }
 
+#[derive(Debug)]
 pub enum SectionEnd{
     START,
     END,
@@ -479,7 +491,7 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32, secti
                             pos = spine.pt0.as_dvec3();
                         }
                         Some(SectionEnd::END) => {
-                            quat = cal_ori_by_z_axis_ref_x(z_dir, false);
+                            quat = cal_ori_by_z_axis_ref_x(z_dir, true);
                             // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
                             pos = spine.pt1.as_dvec3();
                         }
