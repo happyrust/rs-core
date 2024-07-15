@@ -3,10 +3,17 @@ use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::save_material_value;
 use crate::aios_db_mgr::aios_mgr::{self, AiosDBMgr};
+use crate::aios_db_mgr::PdmsDataInterface;
+use crate::material::get_refnos_belong_major;
 use crate::material::gy::MaterialGyData;
-use crate::{get_pe, insert_into_table_with_chunks, query_filter_deep_children, RefU64};
+use crate::pe::SPdmsElement;
+use crate::{
+    get_pe, insert_into_table_with_chunks, query_filter_ancestors, query_filter_deep_children,
+    RefU64,
+};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::str::FromStr;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
@@ -382,4 +389,97 @@ pub async fn get_yk_equi_list_material(
         data.append(&mut result);
     }
     Ok(data)
+}
+
+/// 查找仪控管段所属工艺管道的根阀
+pub async fn query_yk_bran_belong_gy_valv_name(
+    mut bran: RefU64,
+    aios_mgr: &AiosDBMgr,
+) -> anyhow::Result<Option<SPdmsElement>> {
+    loop {
+        // 获取href
+        let Some(href) = aios_mgr.get_foreign_attr(bran, "HREF").await? else {
+            break;
+        };
+        let Some(href_refno) = href.get_refno() else {
+            break;
+        };
+        // 判断 href 是 bran还是 valv
+        match href.get_type_str() {
+            // 如果是bran就继续想上找href
+            "BRAN" => {
+                bran = href_refno;
+            }
+            // 如果是valv，判断该valv是否属于工艺专业，如果属于则返回valv，如果不属于则返回None
+            "VALV" => {
+                let major = get_refnos_belong_major(&vec![href_refno]).await?;
+                let Some(major) = major.get(&href_refno) else {
+                    break;
+                };
+                if major.major == "T".to_string() {
+                    return get_pe(href_refno).await;
+                } else {
+                    return Ok(None);
+                }
+            }
+            &_ => {
+                break;
+            }
+        }
+    }
+    Ok(None)
+}
+
+/// 查找仪控管段所属工艺管道或设备
+pub async fn query_yk_bran_belong_gy_pipe_name(
+    mut bran: RefU64,
+    aios_mgr: &AiosDBMgr,
+) -> anyhow::Result<Option<SPdmsElement>> {
+    loop {
+        // 获取href
+        let Some(href) = aios_mgr.get_foreign_attr(bran, "HREF").await? else {
+            break;
+        };
+        let Some(href_refno) = href.get_refno() else {
+            break;
+        };
+        // 判断 href 是 bran还是nozz
+        match href.get_type_str() {
+            // 如果是nozz，直接返回所属equi
+            "NOZZ" => {
+                let equi = query_filter_ancestors(href_refno, vec!["EQUI".to_string()]).await?;
+                if equi.is_empty() {
+                    break;
+                };
+                return get_pe(equi[0]).await;
+            }
+            // 如果是bran，判断该bran是否属于工艺专业，若是则返回对应的pipe，若不是，则继续向上找href
+            "BRAN" => {
+                let major = get_refnos_belong_major(&vec![href_refno]).await?;
+                let Some(major) = major.get(&href_refno) else {
+                    break;
+                };
+                if major.major == "T".to_string() {
+                    return get_pe(href.get_owner()).await;
+                } else {
+                    bran = href_refno;
+                }
+            }
+            &_ => {
+                break;
+            }
+        }
+    }
+    Ok(None)
+}
+
+#[tokio::test]
+async fn test_query_yk_bran_belong_gy_pipe_name() -> anyhow::Result<()> {
+    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    let refno = RefU64::from_str("24381/177397").unwrap();
+    let r = query_yk_bran_belong_gy_valv_name(refno, &aios_mgr).await?;
+    dbg!(&r);
+    let r = query_yk_bran_belong_gy_pipe_name(refno, &aios_mgr).await?;
+    dbg!(&r);
+    Ok(())
 }
