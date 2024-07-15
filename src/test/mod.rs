@@ -18,6 +18,7 @@ pub mod test_serde;
 pub mod test_spatial_calculation;
 
 
+pub mod test_parse_dir;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_surreal;

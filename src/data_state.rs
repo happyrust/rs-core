@@ -13,7 +13,7 @@ pub struct RefnoStatusInfo {
     pub note: String,
 }
 
-#[derive(Component, Event, Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Event, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct SetStateEvent {
     pub refnos: Vec<RefU64>,
     pub state_data: RefnoStatusInfo,

@@ -29,7 +29,7 @@ pub struct FloodingHoleVec {
 }
 
 ///导出水淹计算stp需要用到的数据
-#[derive(Component, Clone, Debug, Default, Event, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Event, Deserialize, Serialize)]
 pub struct ExportFloodingStpEvent {
     ///文件名
     pub file_name: String,
@@ -95,7 +95,7 @@ impl ExportFloodingStpEvent {
 }
 
 ///将水淹计算保存到图数据库
-#[derive(Component, Clone, Debug, Default, Event, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Event, Deserialize, Serialize)]
 pub struct FloodingStpToArangodb {
     pub _key: String,
     //文件名
@@ -109,7 +109,7 @@ pub struct FloodingStpToArangodb {
 }
 
 ///将数据库中的数据组织成资源，导出历史记录时使用
-#[derive(Component, Resource, Clone, Debug, Default, Event, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Resource, Deserialize, Serialize)]
 pub struct FloodingStpToArangodbVec {
     pub data: Vec<FloodingStpToArangodb>,
 }

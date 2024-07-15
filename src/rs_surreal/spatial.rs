@@ -176,14 +176,14 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         }
 
         let owner_is_gensec = ower_type == "GENSEC";
-        let quat_v = att.get_rotation().unwrap_or_default();
+        let quat_v = att.get_rotation();
         let mut need_bangle = false;
         let mut pos_draw_dir = None;
         // if cur_type == "TMPL" {
         //     dbg!(quat_v);
         // }
-        if !owner_is_gensec || cur_type == "TMPL" {
-            quat = quat_v.as_dquat();
+        if (!owner_is_gensec && quat_v.is_some() ) || (owner_is_gensec && cur_type == "TMPL")  {
+            quat = quat_v.unwrap_or_default().as_dquat();
         } else {
             let (l_poss, l_pose) = if owner_is_gensec {
                 //找到spine，获取spine的两个顶点
@@ -198,6 +198,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             };
             if let (Some(poss), Some(pose)) = (l_poss, l_pose) {
                 // dbg!((l_poss, l_pose));
+                // dbg!(&att);
                 need_bangle = true;
                 let z_axis = (pose - poss).normalize();
                 // dbg!(z_axis);
@@ -215,6 +216,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         }
 
         if need_bangle || has_bang {
+            // dbg!(bangle);
             quat = quat * DQuat::from_rotation_z(bangle.to_radians());
         }
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
