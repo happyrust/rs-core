@@ -216,6 +216,24 @@ impl NamedAttrMap {
         v
     }
 
+    pub fn pe(&self, dbnum: i32) -> SPdmsElement{
+        let owner = self.get_refno_by_att_or_default("OWNER");
+        let noun = self.get_type();
+        let name = self.get_string("NAME").unwrap_or_default();
+
+        let ele = SPdmsElement {
+            refno,
+            owner,
+            name,
+            noun,
+            dbnum,
+            cata_hash: self.cal_cata_hash(),
+            e3d_version: self.get_e3d_version(),
+            ..Default::default()
+        };
+        ele
+    }
+
     #[inline]
     pub fn is_neg(&self) -> bool {
         TOTAL_NEG_NOUN_NAMES.contains(&self.get_type_str())
@@ -551,7 +569,7 @@ impl NamedAttrMap {
         sjson.remove(sjson.len() - 1);
         sjson.push_str("}");
 
-        Some(sjson)
+        Some(normalize_sql_string(sjson))
     }
 
     pub fn gen_sur_json_uda(&self, excludes: &[&str]) -> Option<String> {
