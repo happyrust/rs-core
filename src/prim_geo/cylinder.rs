@@ -275,7 +275,6 @@ impl VerifiedShape for SCylinder {
     }
 }
 
-//#[typetag::serde]
 impl BrepShapeTrait for SCylinder {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
@@ -356,10 +355,8 @@ impl BrepShapeTrait for SCylinder {
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         if self.is_sscl() {
-            let dir = self.paxi_dir.normalize();
             let dir = DVec3::Z;
             let r = self.pdia as f64 / 2.0;
-            let center = DVec3::ZERO;
             let ext_len = self.phei as f64;
             let mut circle = Workplane::xy().circle(0.0, 0.0, r)?;
 

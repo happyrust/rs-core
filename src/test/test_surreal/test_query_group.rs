@@ -31,3 +31,18 @@ async fn test_group_cata_hash() -> anyhow::Result<()> {
     // dbg!(&group);
     Ok(())
 }
+
+#[tokio::test]
+async fn test_query_deep_children_spre() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    let refno: RefU64 = "16387/64917".into();
+    let should_be_none = crate::query_deep_children_refnos_filter_spre(refno, false).await.unwrap();
+    assert_eq!(should_be_none.len(), 0);
+
+    // 16507/4480
+    let refno: RefU64 = "16507/4480".into();
+    let result = crate::query_deep_children_refnos_filter_spre(refno, false).await.unwrap();
+    assert_eq!(result.is_empty(), false);
+
+    Ok(())
+}

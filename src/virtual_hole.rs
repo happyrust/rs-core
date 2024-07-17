@@ -123,7 +123,7 @@ pub struct ShowReviewerDataVec {
 }
 
 //绘制虚拟孔洞埋件需要的数据
-#[derive(Resource, Clone, Debug, Default,Serialize,Deserialize, Event)]
+#[derive(Clone, Debug, Default,Serialize,Deserialize, Event)]
 pub struct HoleGeoData {
     //图数据库的key
     pub key: String,

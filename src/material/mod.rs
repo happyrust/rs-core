@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
@@ -10,7 +11,8 @@ use crate::material::tf::save_tf_material_hvac;
 use crate::material::tx::save_tx_material_equi;
 use crate::material::yk::{save_yk_material_dzcl, save_yk_material_equi, save_yk_material_pipe};
 use crate::ssc_setting::{query_all_site_with_major, set_pdms_major_code};
-use crate::SUL_DB;
+use crate::{query_filter_ancestors, RefU64, SUL_DB};
+use crate::pdms_user::RefnoMajor;
 
 pub mod dq;
 pub mod gy;
@@ -155,4 +157,30 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     db.query(include_str!("../rs_surreal/tools/stif.surql")).await?;
     db.query(include_str!("../rs_surreal/tools/washer.surql")).await?;
     Ok(())
+}
+
+/// 查询节点属于哪个专业和专业下的具体分类
+pub async fn get_refnos_belong_major(
+    refnos: &Vec<RefU64>,
+) -> anyhow::Result<HashMap<RefU64, RefnoMajor>> {
+    let mut result = HashMap::new();
+    for refno in refnos {
+        // 向上找到zone
+        let zone = query_filter_ancestors(*refno, vec!["ZONE".to_string()]).await?;
+        if zone.is_empty() { continue; };
+        let zone = zone[0];
+        // 找zone和site对应的专业
+        let sql = format!("select value major from type::thing('pdms_major',meta::id({}));
+        select value major from type::thing('pdms_major',meta::id((select value ->pe_owner.out.refno from {})[0][0]));", zone.to_pe_key(), zone.to_pe_key());
+        let Ok(mut response) = SUL_DB.query(sql).await else { continue; };
+        let zone_major: Vec<String> = response.take(0)?;
+        let site_major: Vec<String> = response.take(1)?;
+        if zone_major.is_empty() || site_major.is_empty() { continue; };
+        result.entry(*refno).or_insert(RefnoMajor {
+            refno: refno.to_pdms_str(),
+            major: site_major[0].clone(),
+            major_classify: zone_major[0].clone(),
+        });
+    }
+    Ok(result)
 }

@@ -118,9 +118,9 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
     for atts in ancestors.windows(2) {
         let o_att = &atts[0];
         let att = &atts[1];
+        let cur_refno = att.get_refno_or_default();
         let cur_type = att.get_type_str();
         let ower_type = o_att.get_type_str();
-        let refno = att.get_refno().unwrap_or_default();
         owner = o_att.get_refno_or_default();
         prev_mat4 = mat4;
 
@@ -130,22 +130,44 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
         let has_bang = att.contains_key("BANG");
         //土建特殊情况的一些处理
-        if att.contains_key("ZDIS") && (!att.contains_key("POSL")) {
-            let zdist = att.get_f32("ZDIS").unwrap_or_default();
-            let pkdi = att.get_f32("PKDI").unwrap_or_default();
-            //zdis 起点应该是从poss 开始，所以这里需要加上这个偏移
-            let result = cal_zdis_pkdi_in_section(owner, pkdi, zdist).await;
-            pos += (result.1) ;
-            quat *= result.0;
-            if has_bang {
-                quat = quat * DQuat::from_rotation_z(bangle.to_radians());
+        if att.contains_key("ZDIS") {
+            if cur_type == "ENDATU" {
+                //需要判断是第几个ENDATU
+                let endatu_index: Option<u32> = crate::get_index_by_noun_in_parent(owner, cur_refno, Some("ENDATU")).await.unwrap();
+                let section_end = if endatu_index == Some(0) {
+                    Some(SectionEnd::START)
+                } else if endatu_index == Some(1){
+                    Some(SectionEnd::END)
+                } else {
+                    None
+                };
+                // dbg!(&section_end);
+                let result = cal_zdis_pkdi_in_section(owner, 0.0,
+                                                      att.get_f32("ZDIS").unwrap_or_default(), section_end).await;
+                // dbg!(&result);
+                //单独做POSL的处理
+                pos += result.1;
+                quat = result.0;
+                translation = translation + rotation * pos;
+                rotation = quat;
+                mat4 = DMat4::from_rotation_translation(rotation, translation);
+                continue;
+            }else if !att.contains_key("POSL"){
+                let zdist = att.get_f32("ZDIS").unwrap_or_default();
+                let pkdi = att.get_f32("PKDI").unwrap_or_default();
+                //zdis 起点应该是从poss 开始，所以这里需要加上这个偏移
+                let result = cal_zdis_pkdi_in_section(owner, pkdi, zdist, None).await;
+                pos += result.1 ;
+                quat = result.0;
+                if has_bang {
+                    quat = quat * DQuat::from_rotation_z(bangle.to_radians());
+                }
+                translation = translation + rotation * pos;
+                rotation = quat;
+                mat4 = DMat4::from_rotation_translation(rotation, translation);
+                // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
+                continue;
             }
-            translation = translation + rotation * pos;
-            // dbg!(translation);
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
-            rotation = quat;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation));
-            continue;
         }
 
         if att.contains_key("NPOS") {
@@ -157,8 +179,11 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         let quat_v = att.get_rotation();
         let mut need_bangle = false;
         let mut pos_draw_dir = None;
-        if !owner_is_gensec && quat_v.is_some() {
-            quat = quat_v.unwrap().as_dquat();
+        // if cur_type == "TMPL" {
+        //     dbg!(quat_v);
+        // }
+        if (!owner_is_gensec && quat_v.is_some() ) || (owner_is_gensec && cur_type == "TMPL")  {
+            quat = quat_v.unwrap_or_default().as_dquat();
         } else {
             let (l_poss, l_pose) = if owner_is_gensec {
                 //找到spine，获取spine的两个顶点
@@ -173,6 +198,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             };
             if let (Some(poss), Some(pose)) = (l_poss, l_pose) {
                 // dbg!((l_poss, l_pose));
+                // dbg!(&att);
                 need_bangle = true;
                 let z_axis = (pose - poss).normalize();
                 // dbg!(z_axis);
@@ -190,6 +216,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         }
 
         if need_bangle || has_bang {
+            // dbg!(bangle);
             quat = quat * DQuat::from_rotation_z(bangle.to_radians());
         }
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
@@ -394,8 +421,14 @@ pub async fn query_pline(refno: RefU64, jusl: String) -> anyhow::Result<Option<P
     Ok(None)
 }
 
+#[derive(Debug)]
+pub enum SectionEnd{
+    START,
+    END,
+}
+
 /// 计算ZDIS和PKDI, refno 是有这个SPLINE属性或者SCTN这种的参考号
-pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (DQuat, DVec3) {
+pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32, section_end: Option<SectionEnd>) -> (DQuat, DVec3) {
     let mut pos = DVec3::default();
     let mut quat = DQuat::IDENTITY;
     let mut spline_paths = get_spline_path(refno).await.unwrap();
@@ -446,17 +479,30 @@ pub async fn cal_zdis_pkdi_in_section(refno: RefU64, pkdi: f32, zdis: f32) -> (D
                         quat = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, z_dir));
                     } else {
                         quat = cal_ori_by_extru_axis(z_dir, false);
+                        // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
                         z_dir = DMat3::from_quat(quat).z_axis;
-
                         quat = w_quat * quat;
                     }
 
                     let spine = &spline_paths[i];
-                    // dbg!(spine);
-                    //l 的数据都是从0开始的，所以这里不需要加上 start
-                    pos += z_dir * tmp_dist + spine.pt0.as_dvec3();
-                    // dbg!(dir);
+                    match section_end {
+                        Some(SectionEnd::START) => {
+                            quat = cal_ori_by_z_axis_ref_x(z_dir, false);
+                            quat = w_quat * quat;
+                            // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+                            pos = spine.pt0.as_dvec3();
+                        }
+                        Some(SectionEnd::END) => {
+                            quat = cal_ori_by_z_axis_ref_x(z_dir, true);
+                            // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+                            pos = spine.pt1.as_dvec3();
+                        }
+                        _ => {
+                            pos += z_dir * tmp_dist + spine.pt0.as_dvec3();
+                        }
+                    }
                     // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+                    // dbg!(pos);
                     break;
                 }
                 SweepPath3D::SpineArc(arc) => {

@@ -25,11 +25,11 @@ pub async fn get_uda_refno(hash: i32) -> Option<RefU64> {
         .query(
             r#"
             let $a = select value id from only UDA where UKEY=$key limit 1;
-            if $a {
+            return if $a {
                 return $a;
             } else {
                 return (select value id from (select * from UDA where string::contains(UDNA, $name) order by UKEY))[$i];
-            }
+            };
             "#,
         )
         .bind(("key", hash))
@@ -37,7 +37,7 @@ pub async fn get_uda_refno(hash: i32) -> Option<RefU64> {
         .bind(("i", index.unwrap_or_default()))
         .await
     {
-        let result: Option<RefU64> = response.take(1).unwrap();
+        let result: Option<RefU64> = response.take(1).ok()?;
         return result;
     }
     None
@@ -68,7 +68,7 @@ pub async fn get_uda_name(hash: i32) -> Option<String> {
         .bind(("i", index.unwrap_or_default()))
         .await
     {
-        let result: Option<String> = response.take(1).unwrap();
+        let result: Option<String> = response.take(1).ok()?;
         return result;
     }
     None

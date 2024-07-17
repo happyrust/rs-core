@@ -177,6 +177,29 @@ pub async fn query_filter_deep_children_by_path(
     Ok(vec![])
 }
 
+//过滤spre 和 catr 不能同时为空的类型,
+pub async fn query_deep_children_refnos_filter_spre(
+    refno: RefU64,
+    filter: bool,
+) -> anyhow::Result<Vec<RefU64>> {
+    let pe_key = refno.to_pe_key();
+    let mut sql = format!(
+        r#"
+            let $a = array::flatten( object::values( select
+                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only {pe_key} ) );
+
+            select value id from $a.refno where SPRE.id !=none || CATR.id != none
+        "#,
+    );
+    if filter {
+        sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
+    }
+    let mut response = SUL_DB.query(&sql).await?;
+    let result: Vec<RefU64> = response.take(1)?;
+    Ok(result)
+}
+
 // #[cached(result = true)]
 pub async fn query_deep_children_filter_inst(
     refno: RefU64,
@@ -226,6 +249,18 @@ pub async fn query_multi_deep_children_filter_inst(
     let mut result = HashSet::new();
     for refno in refnos {
         let mut children = query_deep_children_filter_inst(refno, nouns.clone(), filter).await?;
+        result.extend(children.drain(..));
+    }
+    Ok(result)
+}
+
+pub async fn query_multi_deep_children_filter_spre(
+    refnos: Vec<RefU64>,
+    filter: bool,
+) -> anyhow::Result<HashSet<RefU64>> {
+    let mut result = HashSet::new();
+    for refno in refnos {
+        let mut children = query_deep_children_refnos_filter_spre(refno, filter).await?;
         result.extend(children.drain(..));
     }
     Ok(result)
@@ -281,14 +316,20 @@ pub async fn get_uda_type_refnos_from_select_refnos(
             .map(|refno| refno.to_pe_key())
             .collect::<Vec<String>>()
             .join(",");
-        let sql = format!("let $ukey = select UKEY from UDET where DYUDNA = '{}';
-        select refno,fn::default_name(id) as name,noun,owner,0 as children_count , 0 as version, 0 as order from [{}] where refno.TYPEX = $ukey;",&uda_type,refnos_str);
+        let sql = format!("let $ukey = select value UKEY from UDET where DYUDNA = '{}';
+        select refno,fn::default_name(id) as name,noun,owner,0 as children_count from [{}] where refno.TYPEX in $ukey;",&uda_type,refnos_str);
         match SUL_DB.query(&sql).await {
             Ok(mut response) => {
-                let Ok(mut query_r) = response.take::<Vec<PdmsElement>>(0) else {
-                    continue;
-                };
-                result.append(&mut query_r);
+                match response.take::<Vec<EleTreeNode>>(1) {
+                    Ok(query_r) => {
+                        let mut query_r = query_r.into_iter().map(|x| x.into()).collect();
+                        result.append(&mut query_r);
+                    }
+                    Err(e) => {
+                        dbg!(&e.to_string());
+                        init_deserialize_error("Vec<EleTreeNode>",e,&sql,&std::panic::Location::caller().to_string());
+                    }
+                }
             }
             Err(e) => {
                 init_query_error(&sql, e, &std::panic::Location::caller().to_string());
@@ -298,6 +339,10 @@ pub async fn get_uda_type_refnos_from_select_refnos(
     }
     Ok(result)
 }
+
+// pub async fn query_room_name_from_supp_aql(select_refnos: Vec<RefU64>,) -> anyhow::Result<HashMap<RefU64,String>> {
+//
+// }
 
 #[tokio::test]
 async fn test_query_filter_deep_children() -> anyhow::Result<()> {

@@ -78,7 +78,6 @@ impl Spine3D {
             SpineCurveType::UNKNOWN => {
                 Vec3::Z
             }
-
         }
     }
 }

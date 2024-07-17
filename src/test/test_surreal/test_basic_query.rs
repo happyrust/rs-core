@@ -37,6 +37,18 @@ async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+async fn test_query_index_of_parent() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    let parent: RefU64 = "17496_273491".into();
+    let refno : RefU64 = "17496_273497".into();
+    let no_type_filter_index = rs_surreal::get_index_by_noun_in_parent(parent, refno, None).await.unwrap();
+    dbg!(no_type_filter_index);
+    let ENDATU_filter_index = rs_surreal::get_index_by_noun_in_parent(parent, refno, Some("ENDATU")).await.unwrap();
+    dbg!(ENDATU_filter_index);
+    Ok(())
+}
+
+#[tokio::test]
 async fn test_query_wtrans_by_refno() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
     // let wtrans = mgr.get_world_transform("17496_118635".into()).await.unwrap();

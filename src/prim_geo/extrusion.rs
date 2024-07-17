@@ -35,7 +35,6 @@ use crate::prim_geo::basic::OccSharedShape;
 pub struct Extrusion {
     //xy 为坐标，z为倒角切半径
     pub verts: Vec<Vec<Vec3>>,
-    // pub fradius_vec: Vec<f32>,
     pub height: f32,
     pub cur_type: CurveType,
 }

@@ -137,6 +137,33 @@ pub async fn get_self_and_owner_type_name(refno: RefU64) -> anyhow::Result<Vec<S
     Ok(type_name)
 }
 
+///在父节点下的index, noun 有值时按照 noun 过滤
+pub async fn get_index_by_noun_in_parent(
+    parent: RefU64,
+    refno: RefU64,
+    noun: Option<&str>,
+) -> anyhow::Result<Option<u32>> {
+    let sql = format!(
+        r#"
+        array::find_index((select value in.id from {}<-pe_owner {}), {})
+    "#,
+        parent.to_pe_key(),
+        if let Some(noun) = noun {
+            format!("where in.noun='{}'", noun)
+        } else {
+            "".to_owned()
+        },
+        refno.to_pe_key()
+    );
+    // println!("sql is {}", &sql);
+
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    // dbg!(&response);
+    let type_name: Option<u32> = response.take(0)?;
+    Ok(type_name)
+}
 
 ///查询的数据把 refno->name，换成名称
 #[cached(result = true)]
@@ -619,7 +646,8 @@ pub async fn insert_pe_into_table_with_chunks(
 ) -> anyhow::Result<()> {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = r.iter().map(|x| x.gen_sur_json()).join(",");
-        db.query(format!("insert into {} [{}]", table, json)).await?;
+        db.query(format!("insert into {} [{}]", table, json))
+            .await?;
     }
     Ok(())
 }
