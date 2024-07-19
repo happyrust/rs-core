@@ -295,7 +295,6 @@ pub fn eval_str_to_f64(
     if new_exp.contains("RPRO") {
         #[cfg(feature = "debug_expr")]
         dbg!(&new_exp);
-        let mut found_dtse_mismatch = false;
         new_exp = replace_all_result(&rpro_re, &new_exp, |caps: &Captures| {
             let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
             let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();

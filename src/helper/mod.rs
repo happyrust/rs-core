@@ -22,6 +22,11 @@ pub fn parse_to_i32(input: &[u8]) -> i32 {
 }
 
 #[inline]
+pub fn try_parse_to_i32(input: &[u8]) -> anyhow::Result<i32> {
+    Ok(i32::from_be_bytes(input.try_into()?))
+}
+
+#[inline]
 pub fn parse_to_u32(input: &[u8]) -> u32 {
     u32::from_be_bytes(input.try_into().unwrap())
 }
@@ -75,5 +80,13 @@ pub fn parse_to_f32_arr(input: &[u8], num: usize) -> Vec<f64> {
     data
 }
 
+//去掉不符合条件的 \\u0002 这种，替换成空字符串
+#[inline]
+pub fn normalize_sql_string(sql: &str) -> String {
+    regex::Regex::new(r"\\u[0-9a-fA-F]{4}")
+        .unwrap()
+        .replace_all(&sql, "")
+        .to_string()
+}
 
 

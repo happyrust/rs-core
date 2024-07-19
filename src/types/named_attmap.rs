@@ -25,6 +25,8 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use surrealdb::sql::{Thing};
+use crate::pe::SPdmsElement;
+use crate::helper::normalize_sql_string;
 
 ///带名称的属性map
 #[derive(
@@ -57,7 +59,7 @@ impl From<SurlValue> for NamedAttrMap {
                 let db_info = get_default_pdms_db_info();
                 if let Some(m) = db_info.named_attr_info_map.get(type_name) {
                     for (k, v) in o.0 {
-                        if k == "VERSION"{
+                        if k == "VERSION" {
                             map.insert(k.clone(), NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()));
                             continue;
                         }
@@ -145,7 +147,6 @@ impl From<SurlValue> for NamedAttrMap {
                         map.insert(k.clone(), named_value);
                     }
                 }
-
             }
         }
         Self { map }
@@ -216,7 +217,8 @@ impl NamedAttrMap {
         v
     }
 
-    pub fn pe(&self, dbnum: i32) -> SPdmsElement{
+    pub fn pe(&self, dbnum: i32) -> SPdmsElement {
+        let refno = self.get_refno_or_default();
         let owner = self.get_refno_by_att_or_default("OWNER");
         let noun = self.get_type();
         let name = self.get_string("NAME").unwrap_or_default();
@@ -228,7 +230,7 @@ impl NamedAttrMap {
             noun,
             dbnum,
             cata_hash: self.cal_cata_hash(),
-            e3d_version: self.get_e3d_version(),
+            e3d_version: self.pgno(),
             ..Default::default()
         };
         ele
@@ -258,6 +260,13 @@ impl NamedAttrMap {
     #[inline]
     pub fn get_e3d_version(&self) -> i32 {
         self.get_i32("VERSION").unwrap_or_default()
+    }
+
+
+    //PGNO
+    #[inline]
+    pub fn pgno(&self) -> i32 {
+        self.get_i32("PGNO").unwrap_or_default()
     }
 
     pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap, NamedAttrMap) {
@@ -401,6 +410,11 @@ impl NamedAttrMap {
     }
 
     #[inline]
+    pub fn history_id(&self) -> String {
+        format!("{}:{}_{}", self.get_type(), self.get_refno_or_default(), self.pgno())
+    }
+
+    #[inline]
     pub fn get_refno_or_default(&self) -> RefU64 {
         self.get_refno().unwrap_or_default()
     }
@@ -409,9 +423,10 @@ impl NamedAttrMap {
     pub fn get_refno(&self) -> Option<RefU64> {
         if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("REFNO") {
             return Some(*d);
-        } else if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("refno") {
-            return Some(*d);
         }
+        // else if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("refno") {
+        //     return Some(*d);
+        // }
         None
     }
 
@@ -505,16 +520,20 @@ impl NamedAttrMap {
     }
 
     pub fn gen_sur_json(&self) -> Option<String> {
-        self.gen_sur_json_exclude(&[])
+        self.gen_sur_json_exclude(&[], None)
     }
 
-    pub fn gen_sur_json_exclude(&self, excludes: &[&str]) -> Option<String> {
+    pub fn gen_sur_json_with_id(&self, id: String) -> Option<String> {
+        self.gen_sur_json_exclude(&[], Some(id))
+    }
+
+    pub fn gen_sur_json_exclude(&self, excludes: &[&str], id: Option<String>) -> Option<String> {
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         let mut record_map: IndexMap<String, RefU64> = IndexMap::new();
         let mut records_map: IndexMap<String, Vec<RefU64>> = IndexMap::new();
         let type_name = self.get_type();
-        let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
-        map.insert("id".into(), refno.to_string().into());
+        let refno = self.get_refno_or_default();
+        map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
         map.insert("TYPE".into(), type_name.into());
 
         for (key, val) in self.map.clone().into_iter() {
@@ -569,7 +588,7 @@ impl NamedAttrMap {
         sjson.remove(sjson.len() - 1);
         sjson.push_str("}");
 
-        Some(normalize_sql_string(sjson))
+        Some(normalize_sql_string(&sjson))
     }
 
     pub fn gen_sur_json_uda(&self, excludes: &[&str]) -> Option<String> {
@@ -733,7 +752,7 @@ impl NamedAttrMap {
 
     #[inline]
     pub fn get_dposs(&self) -> Option<DVec3> {
-       self.get_poss().map(|v| DVec3::from(v))
+        self.get_poss().map(|v| DVec3::from(v))
     }
 
     #[inline]
@@ -916,7 +935,7 @@ impl NamedAttrMap {
         replace: bool,
     ) -> anyhow::Result<()>
     where
-        I: IntoIterator<Item = Self>,
+        I: IntoIterator<Item=Self>,
     {
         let sqls = Self::gen_insert_many_sql(atts, replace)?;
         for sql in sqls {
@@ -929,7 +948,7 @@ impl NamedAttrMap {
     #[cfg(feature = "sea-orm")]
     pub fn gen_insert_many_sql<I>(atts: I, replace: bool) -> anyhow::Result<Vec<String>>
     where
-        I: IntoIterator<Item = Self>,
+        I: IntoIterator<Item=Self>,
     {
         ///按照类型重新划分组
         let mut grouped_map: BTreeMap<String, Vec<Self>> = BTreeMap::new();

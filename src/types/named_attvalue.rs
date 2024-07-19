@@ -39,6 +39,7 @@ pub enum NamedAttrValue {
     WordType(String),
     RefU64Type(RefU64),
     RefU64Array(Vec<RefU64>),
+    LongType(i64),
 }
 
 #[cfg(feature = "sea-orm")]
