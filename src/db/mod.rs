@@ -18,7 +18,6 @@ pub struct DbBasicData {
 pub struct EleDataEntry {
     pub pos: usize,
     pub noun_hash: i32,
-    pub version: u32,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

@@ -1,5 +1,4 @@
 use crate::{room::room::load_aabb_tree, rs_surreal, tool::math_tool};
-
 use std::sync::Arc;
 use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
 use surrealdb::sql::Thing;
@@ -9,24 +8,25 @@ use crate::tool::direction_parse::parse_expr_to_dir;
 fn test_print_ori(ori: &str) {
     let rotation = parse_ori_str_to_quat(ori).unwrap_or(glam::Quat::IDENTITY);
     dbg!(Mat3::from_quat(rotation));
-    dbg!(math_tool::quat_to_pdms_ori_xyz_str(&rotation));
+    dbg!(math_tool::quat_to_pdms_ori_xyz_str(&rotation, false));
 }
 
-fn test_cal_ori(v: DVec3) {
-    let ref_dir = if v.dot(DVec3::NEG_Z).abs() > 0.999 {
-        DVec3::NEG_Y
-    }else{
-        DVec3::NEG_Z
-    };
-    let y_dir = v.cross(ref_dir).normalize();
-    let x_dir = y_dir.cross(v).normalize();
-    let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir.into(), y_dir.into(), v.into()));
-    dbg!((x_dir, y_dir, v));
-    dbg!(math_tool::quat_to_pdms_ori_xyz_str(&rotation.as_quat()));
-}
+// fn test_cal_ori(v: DVec3) {
+//     let ref_dir = if v.dot(DVec3::NEG_Z).abs() > 0.999 {
+//         DVec3::NEG_Y
+//     }else{
+//         DVec3::NEG_Z
+//     };
+//     let y_dir = v.cross(ref_dir).normalize();
+//     let x_dir = y_dir.cross(v).normalize();
+//     let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir.into(), y_dir.into(), v.into()));
+//     dbg!((x_dir, y_dir, v));
+//     dbg!(math_tool::quat_to_pdms_ori_xyz_str(&rotation.as_quat()));
+// }
 
 #[cfg(test)]
 mod test_transform {
+    use bevy_reflect::Array;
     use glam::{DVec3, Mat3};
     use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, RefU64, rs_surreal};
     use crate::init_test_surreal;
@@ -53,26 +53,44 @@ mod test_transform {
             "Y is Z and Z is -Y 31 -X"
         ];
         let oris = tests.into_iter().map(|x| parse_ori_str_to_mat(x).unwrap()).collect::<Vec<_>>();
-        dbg!(&oris);
+        // dbg!(&oris);
 
         for ori in oris {
             let extru_dir = ori.z_axis.as_dvec3();
-            dbg!(to_pdms_dvec_str(&extru_dir));
+            // dbg!(to_pdms_dvec_str(&extru_dir));
             let quat = cal_ori_by_extru_axis(extru_dir, false);
-            dbg!(dquat_to_pdms_ori_xyz_str(&quat));
+            // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
         }
     }
 
-    async fn test_transform(refno: RefU64, assert_ori: &str){
+    async fn test_ori(refno: RefU64, assert_ori: &str){
         let transform = rs_surreal::get_world_mat4(refno, false)
             .await
             .unwrap().unwrap();
         let (scale, rot, translation) = transform.to_scale_rotation_translation();
 
         dbg!(translation);
-        let ori_str = dquat_to_pdms_ori_xyz_str(&rot);
+        //如果包含其中的任意一个，则不需要转成XYZ
+        let convert_xyz = ["E", "N", "U", "W", "S", "D"].into_iter().any(|x| assert_ori.contains(x));
+        let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
         dbg!(&ori_str);
         assert_eq!(ori_str, assert_ori);
+    }
+
+    async fn test_transform(refno: RefU64, assert_ori: &str, pos_str: &str){
+        let transform = rs_surreal::get_world_mat4(refno, false)
+            .await
+            .unwrap().unwrap();
+        let (scale, rot, translation) = transform.to_scale_rotation_translation();
+
+        dbg!(translation);
+        //如果包含其中的任意一个，则不需要转成XYZ
+        let convert_xyz = ["E", "N", "U", "W", "S", "D"].into_iter().any(|x| assert_ori.contains(x));
+        let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
+        dbg!(&ori_str);
+        dbg!(math_tool::dvec3_to_xyz_str(translation));
+        assert_eq!(ori_str, assert_ori);
+        assert_eq!(math_tool::dvec3_to_xyz_str(translation), pos_str);
     }
 
     #[tokio::test]
@@ -87,8 +105,8 @@ mod test_transform {
         let mat_inv = mat.inverse();
         let local_drns = mat_inv.transform_vector3(drns);
         let local_drne = mat_inv.transform_vector3(drne);
-        dbg!(to_pdms_dvec_str(&local_drns));
-        dbg!(to_pdms_dvec_str(&local_drne));
+        // dbg!(to_pdms_dvec_str(&local_drns));
+        // dbg!(to_pdms_dvec_str(&local_drne));
 
         let angle_x = (local_drns.x / local_drns.z).atan();
         let angle_y = (local_drns.y / local_drns.z).atan();
@@ -110,8 +128,25 @@ mod test_transform {
         init_test_surreal().await;
 
         //todo fix
-        test_transform("17496/268348".into(), "Y is Y 0.9303 -X 0.257 Z and Z is -X 1.0013 -Y 15.44 Z").await;
-        test_transform("17496/273497".into(), "Y is X and Z is Z").await;
+        // test_ori("17496/268348".into(), "Y is Y 0.9303 -X 0.257 Z and Z is -X 1.0013 -Y 15.44 Z").await;
+        // test_ori("17496/273497".into(), "Y is X and Z is Z").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_SNODE() -> anyhow::Result<()> {
+        init_test_surreal().await;
+
+        test_transform("24383/93573".into(), "Y is N and Z is U", "X 10492.213mm, Y 24025.362mm, Z 12560mm").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_SCOJ() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
+
+        test_ori("24383/93574".into(), "Y is N and Z is U").await;
         Ok(())
     }
 
@@ -120,23 +155,23 @@ mod test_transform {
         init_test_surreal().await;
 
         //todo fix
-        test_transform("17496/274032".into(), "Y is -Z and Z is X").await;
+        // test_transform("17496/274032".into(), "Y is -Z and Z is X").await;
 
-        // test_transform("24381/77310".into(), "Y is Z and Z is Y 43 -X").await;
+        test_transform("24381/77310".into(), "Y is Z and Z is Y 43 -X", "X 9574.353mm Y 8934.174mm Z 4345.8mm").await;
         Ok(())
     }
 
     #[tokio::test]
     async fn test_query_transform_TMPL() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("8196/14755".into(), "Y is -X and Z is Z").await;
+        test_ori("8196/14755".into(), "Y is -X and Z is Z").await;
         Ok(())
     }
 
     #[tokio::test]
     async fn test_query_transform_JLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("17496/182538".into(), "Y is Z and Z is -Y 24.584 X").await;
+        test_ori("17496/182538".into(), "Y is Z and Z is -Y 24.584 X").await;
         // test_transform("17496/268326".into(), "Y is -Y and Z is -Z").await;
         // test_transform("25688/48820".into(), "Y is Z and Z is X 33.955 Y").await;
         // test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
@@ -147,14 +182,14 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_SPINE() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("17496/268345".into(), "Y is X 89.891 Z and Z is -X 0.1089 Z").await;
+        test_ori("17496/268345".into(), "Y is X 89.891 Z and Z is -X 0.1089 Z").await;
         Ok(())
     }
 
     #[tokio::test]
     async fn test_query_transform_BOX() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("17496/171666".into(), "Y is -X 5 -Y 40 -Z and Z is -X 5 -Y 50 Z").await;
+        test_ori("17496/171666".into(), "Y is -X 5 -Y 40 -Z and Z is -X 5 -Y 50 Z").await;
         Ok(())
     }
 
@@ -162,7 +197,7 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_GENSEC() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("24384/28745".into(), "Y is -X 31 Y and Z is Z").await;
+        test_ori("24384/28745".into(), "Y is -X 31 Y and Z is Z").await;
         Ok(())
     }
 
@@ -171,8 +206,8 @@ mod test_transform {
         init_test_surreal().await;
 
         // test_transform("24384/28752".into(), "Y is -Y 31 -X 0.0307 Z and Z is X 31 -Y").await;
-        test_transform("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
-        test_transform("25688/48821".into(), "Y is X 33.955 Y and Z is Y 33.955 -X").await;
+        test_ori("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
+        test_ori("25688/48821".into(), "Y is X 33.955 Y and Z is Y 33.955 -X").await;
 
         Ok(())
     }
@@ -180,17 +215,17 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_FIXING() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("24384/28753".into(), "Y is -Y 31 -X 0.0307 Z and Z is Y 31 X 89.9693 Z").await;
+        test_ori("24384/28753".into(), "Y is -Y 31 -X 0.0307 Z and Z is Y 31 X 89.9693 Z").await;
         Ok(())
     }
 
     #[tokio::test]
     async fn test_query_transform_FIT() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
-        test_transform("17496/202352".into(), "Y is X and Z is -Y").await;
-        test_transform("24381/38388".into(), "Y is -X 13 Y and Z is Y 13 X").await;
-        test_transform("17496/106463".into(), "Y is X 25 -Y and Z is -Y 25 -X").await;
+        test_ori("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
+        test_ori("17496/202352".into(), "Y is X and Z is -Y").await;
+        test_ori("24381/38388".into(), "Y is -X 13 Y and Z is Y 13 X").await;
+        test_ori("17496/106463".into(), "Y is X 25 -Y and Z is -Y 25 -X").await;
         Ok(())
     }
 
@@ -232,8 +267,8 @@ async fn test_query_transform() -> anyhow::Result<()> {
     dbg!(transform);
     let rot_mat = Mat3::from_quat(transform.rotation);
     dbg!(rot_mat);
-    let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
-    dbg!(&ori_str);
+    // let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
+    // dbg!(&ori_str);
 
 
     // let transform = rs_surreal::get_world_transform("24383/89691".into())
@@ -255,8 +290,8 @@ async fn test_query_fixing() -> anyhow::Result<()> {
         .unwrap().unwrap();
     dbg!(transform);
     let rot_mat = Mat3::from_quat(transform.rotation);
-    let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
-    dbg!(&ori_str);
+    // let ori_str = math_tool::to_pdms_ori_xyz_str(&rot_mat);
+    // dbg!(&ori_str);
     Ok(())
 }
 

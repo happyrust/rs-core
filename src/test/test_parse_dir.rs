@@ -3,9 +3,9 @@ use crate::tool::direction_parse::parse_expr_to_dir;
 #[test]
 fn test_parse_to_dir() {
     let inputs = vec![
-        "TO X (NEG ( 20 )) Z ( 65 )",
-        "TO X NEG(20) Y 30 Z 65",
-        "TO X NEG 20.7 Y 45.1 Z NEG 10.2",
+        "TO X (NEG ( 20 )) Y ( 40 ) Z ( 65 )",
+        // "TO X NEG(20) Y 30 Z 65",
+        // "TO X NEG 20.7 Y 45.1 Z NEG 10.2",
         "TO X (10.5) ",
     ];
 

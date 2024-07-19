@@ -97,8 +97,8 @@ pub fn parse_rotation_struct(input: &str) -> IResult<&str, RotationStruct> {
 
 ///解析expression到direction
 pub fn parse_expr_to_dir(expr: &str) -> Option<DVec3> {
-    if let Ok(to_dir) = parse_to_direction(expr) {
-        return to_dir.1;
+    if let Ok(to_dir) = parse_to_direction(expr, None) {
+        return to_dir;
     }
 
     let expr = convert_to_xyz(expr).replace(" ", "");

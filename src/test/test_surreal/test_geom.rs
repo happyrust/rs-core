@@ -19,7 +19,7 @@ async fn test_query_inst_refnos() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_instance() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
-    let refno: RefU64 = "25688_48848".into();
+    let refno: RefU64 = "16389_8737".into();
     let insts = rs_surreal::query_insts(&[refno])
         .await
         .unwrap();
@@ -48,7 +48,7 @@ async fn test_query_pos_neg() -> anyhow::Result<()> {
 #[test]
 fn test_quat() {
     let q = Quat::from_xyzw(0., 0., 1., 0.);
-    dbg!(quat_to_pdms_ori_xyz_str(&q));
+    dbg!(quat_to_pdms_ori_xyz_str(&q, false));
 }
 
 

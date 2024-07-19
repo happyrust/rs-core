@@ -15,12 +15,9 @@ pub struct SPdmsElement {
     pub name: String,
     pub noun: String,
     pub dbnum: i32,
-    pub e3d_version: i32,
-    ///大版本号
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version_tag: Option<String>,
     ///小版本号
+    pub pgno: i32,
+
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_tag: Option<String>,
@@ -42,8 +39,7 @@ impl SPdmsElement {
             "name": self.name,
             "noun": self.noun,
             "dbnum": self.dbnum,
-            "e3d_version": self.e3d_version,
-            "version_tag": self.version_tag,
+            "pgno": self.pgno,
             "status_tag": self.status_tag,
             "cata_hash": self.cata_hash,
             "lock": self.lock,
