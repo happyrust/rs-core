@@ -231,15 +231,26 @@ impl NamedAttrMap {
         self.get_string_or_default("NAME")
     }
 
+    // #[inline]
+    // pub fn set_e3d_version(&mut self, v: i32) {
+    //     self.map
+    //         .insert("VERSION".into(), NamedAttrValue::IntegerType(v));
+    // }
+
     #[inline]
-    pub fn set_e3d_version(&mut self, v: i32) {
+    pub fn set_pgno(&mut self, v: i32) {
         self.map
-            .insert("VERSION".into(), NamedAttrValue::IntegerType(v));
+            .insert("PGNO".into(), NamedAttrValue::IntegerType(v));
+    }
+
+    #[inline]
+    pub fn pgno(&self) -> i32 {
+        self.get_i32("PGNO").unwrap_or_default()
     }
 
     #[inline]
     pub fn get_e3d_version(&self) -> i32 {
-        self.get_i32("VERSION").unwrap_or_default()
+        self.pgno()
     }
 
     pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap, NamedAttrMap) {

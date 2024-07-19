@@ -34,7 +34,6 @@ use crate::prim_geo::basic::OccSharedShape;
 use opencascade::primitives::{Edge, Face, Wire};
 use parry2d::bounding_volume::Aabb;
 use parry2d::math::Point;
-use surrealdb::key::root::all::new;
 #[cfg(feature = "truck")]
 use truck_modeling::builder;
 
@@ -694,7 +693,6 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     //需要和初始的方向保持一致，如果是顺时针，那么要选择顺时针方向的交叉点
     let orientation = polyline.orientation();
 
-
     let Ok(mut intrs) = std::panic::catch_unwind(
         (|| global_self_intersects(&polyline, &polyline.create_approx_aabb_index())),
     ) else {
@@ -703,11 +701,13 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
 
     let basic_inter_len = intrs.basic_intersects.len();
     let overlap_inter_len = intrs.overlapping_intersects.len();
-    let mut need_trim = basic_inter_len !=0 || overlap_inter_len != 0;
+    let mut need_trim = basic_inter_len != 0 || overlap_inter_len != 0;
     if basic_inter_len == 0 && overlap_inter_len == 0 {
         return Ok(polyline);
-    } else if !has_frad{
-        return Err(anyhow!("有相交的线段，但是没有fillet radius，设定wire为错误wire。"));
+    } else if !has_frad {
+        return Err(anyhow!(
+            "有相交的线段，但是没有fillet radius，设定wire为错误wire。"
+        ));
     }
     #[cfg(feature = "debug_wire")]
     dbg!(&intrs);
@@ -753,7 +753,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         basic_index += 1;
     }
     #[cfg(feature = "debug_wire")]
-    if need_trim{
+    if need_trim {
         dbg!(orientation);
         println!(
             "final polyline: {}",

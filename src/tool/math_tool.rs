@@ -128,11 +128,11 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         }
         if angle > 45.0 {
             if y_str != "U" && y_str != "D" {
-                return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
+                return format!("{y_str} {:.3} {x_str}", f64_round_4(90.0 - angle));
             }
         } else if angle == 45.0 {
             if x_str.contains("Y") && y_str.contains("X") {
-                return format!("{y_str} {} {x_str}", f64_round_4(90.0 - angle));
+                return format!("{y_str} {:.3} {x_str}", f64_round_4(90.0 - angle));
             }
         }
         if angle == 90.0 {
@@ -248,6 +248,17 @@ pub fn vec3_to_xyz_str(pos: Vec3) -> String {
         f32_round_3(pos[2])
     )
 }
+
+#[inline]
+pub fn dvec3_to_xyz_str(pos: DVec3) -> String {
+    format!(
+        "X {}mm Y {}mm Z {}mm",
+        f64_round_3(pos[0]),
+        f64_round_3(pos[1]),
+        f64_round_3(pos[2])
+    )
+}
+
 // #[inline]
 // pub fn vec3_to_xyz_str(pos: Vec3) -> String {
 //     format!(

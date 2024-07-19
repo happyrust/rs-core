@@ -379,16 +379,17 @@ pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
 
 #[cached(result = true)]
 pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
+    let sql = format!(
+        r#"
+        (select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]].refno.*
+        from only {} limit 1 fetch SCOM)[0] "#, refno.to_pe_key());
+    // dbg!(&sql);
+    // println!("sql is {}", &sql);
     let mut response = SUL_DB
-        .query(r#"
-            (select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR,
-                refno.SPRE.refno.CATR, refno.CATR][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]].refno.*
-            from only type::thing("pe", $refno) limit 1 fetch SCOM)[0];
-        "#)
-        .bind(("refno", refno.to_string()))
+        .query(&sql)
         .await?;
+    // dbg!(&response);
     let o: SurlValue = response.take(0)?;
-    // dbg!(&o);
     let named_attmap: NamedAttrMap = o.into();
     Ok(named_attmap)
 }
