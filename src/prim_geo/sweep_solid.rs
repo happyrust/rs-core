@@ -92,7 +92,7 @@ impl SweepSolid {
         }
 
         let mut angle_x = (dir.x / dir.z).atan();
-        let mut angle_y = (dir.y / dir.z).atan();
+        let mut angle_y = -(dir.y / dir.z).atan();
         // if !is_start {
         //     angle_x = -angle_x;
         //     angle_y = -angle_y;

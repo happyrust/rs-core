@@ -7,7 +7,7 @@ use manifold_sys::bindings::*;
 use crate::shape::pdms_shape::PlantMesh;
 use derive_more::{Deref, DerefMut};
 use parry3d::bounding_volume::Aabb;
-use crate::tool::float_tool::{f32_round_3, f64_round_3};
+use crate::tool::float_tool::*;
 
 #[derive(Clone, Deref, DerefMut)]
 pub struct ManifoldSimplePolygonRust {
@@ -212,9 +212,13 @@ impl From<(&PlantMesh, &DMat4)> for ManifoldMeshRust {
             let mut verts: Vec<f32> = Vec::with_capacity(m.vertices.len() * 3);
             for v in m.vertices.clone() {
                 let pt = t.transform_point3(glam::DVec3::from(v));
-                verts.push(f64_round_3(pt[0]) as _);
-                verts.push(f64_round_3(pt[1]) as _);
-                verts.push(f64_round_3(pt[2]) as _);
+                // verts.push(f64_round_3(pt[0]) as _);
+                // verts.push(f64_round_3(pt[1]) as _);
+                // verts.push(f64_round_3(pt[2]) as _);
+
+                verts.push(f64_round_1(pt[0]) as _);
+                verts.push(f64_round_1(pt[1]) as _);
+                verts.push(f64_round_1(pt[2]) as _);
             }
             manifold_meshgl(mesh.ptr as _,
                             verts.as_ptr() as _, m.vertices.len(), 3,
@@ -229,10 +233,15 @@ impl From<&PlantMesh> for ManifoldMeshRust {
         unsafe {
             let mesh = ManifoldMeshRust::new();
             let mut verts = Vec::with_capacity(m.vertices.len() * 3);
+            //todo 是否要根据包围盒的大小来判断用哪个等级的round
             for v in m.vertices.clone() {
-                verts.push(f32_round_3(v[0]));
-                verts.push(f32_round_3(v[1]));
-                verts.push(f32_round_3(v[2]));
+                // verts.push(f32_round_3(v[0]));
+                // verts.push(f32_round_3(v[1]));
+                // verts.push(f32_round_3(v[2]));
+
+                verts.push(f32_round_1(v[0]));
+                verts.push(f32_round_1(v[1]));
+                verts.push(f32_round_1(v[2]));
             }
             manifold_meshgl(mesh.ptr as _,
                             verts.as_ptr() as _, m.vertices.len(), 3,

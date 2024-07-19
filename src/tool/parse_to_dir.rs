@@ -1,32 +1,35 @@
+use anyhow::anyhow;
 use glam::{DVec3, Vec3};
 use nom::branch::alt;
-use nom::bytes::complete::tag;
+use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::space0;
-use nom::combinator::{map_res, opt};
+use nom::combinator::{map_res, opt, recognize};
 use nom::number::complete::float;
 use nom::sequence::{delimited, preceded};
 use nom::IResult;
+use crate::{CataContext, eval_str_to_f64};
 
 #[derive(Debug, PartialEq)]
 pub struct Coordinate {
-    x: Option<f32>,
-    y: Option<f32>,
-    z: Option<f32>,
+    x: Option<(String, bool)>,
+    y: Option<(String, bool)>,
+    z: Option<(String, bool)>,
 }
 
 impl Coordinate {
     pub fn get_dir(&self) -> Option<DVec3> {
-        let v = DVec3::new(
-            self.x.unwrap_or(0.0) as f64,
-            self.y.unwrap_or(0.0) as f64,
-            self.z.unwrap_or(0.0) as f64,
-        )
-        .normalize_or_zero();
-        if v.is_normalized() {
-            Some(v)
-        } else {
-            None
-        }
+        // let v = DVec3::new(
+        //     self.x.unwrap_or(0.0) as f64,
+        //     self.y.unwrap_or(0.0) as f64,
+        //     self.z.unwrap_or(0.0) as f64,
+        // )
+        // .normalize_or_zero();
+        // if v.is_normalized() {
+        //     Some(v)
+        // } else {
+        //     None
+        // }
+        None
     }
 }
 
@@ -42,32 +45,42 @@ where
     delimited(space0, inner, space0)
 }
 
-fn parse_float(input: &str) -> IResult<&str, f32> {
-    float(input)
+fn parse_pos_expr(input: &str) -> IResult<&str, (String, bool)> {
+    let (input, content) = recognize(take_until(")"))(input)?;
+    // let (input, _) = tag(")")(input)?;
+    Ok((input, (content.trim().to_string(), false)))
 }
 
-fn parse_neg_float(input: &str) -> IResult<&str, f32> {
+// fn parse_bracket_content(input: &str) -> IResult<&str, String> {
+//     let (input, _) = tag("(");
+//     let (input, content) = recognize(take_until(")"))(input)?;
+//     let (input, _) = tag(")")(input)?;
+//     Ok((input, content.replace(" ", "")))
+// }
+
+fn parse_neg_pos_expr(input: &str) -> IResult<&str, (String, bool)> {
+    //这里也有可能是表达式，也有可能是数值，所以需要先都当作string处理
     map_res(
         preceded(
             ws(tag("NEG")),
-            delimited(opt(ws(tag("("))), ws(parse_float), opt(ws(tag(")")))),
+            delimited(ws(tag("(")), ws(parse_pos_expr), ws(tag(")"))),
         ),
-        |n| Ok::<_, ()>(-n),
+        |n| Ok::<_, ()>((n.0, true)),
     )(input)
 }
 
-fn parse_coordinate_value(input: &str) -> IResult<&str, f32> {
+fn parse_coordinate_value(input: &str) -> IResult<&str, (String, bool)> {
     alt((
-        delimited(opt(ws(tag("("))), parse_neg_float, opt(ws(tag(")")))),
-        delimited(opt(ws(tag("("))), ws(parse_float), opt(ws(tag(")")))),
+        delimited(opt(ws(tag("("))), parse_neg_pos_expr, opt(ws(tag(")")))),
+        delimited(opt(ws(tag("("))), ws(parse_pos_expr), opt(ws(tag(")")))),
     ))(input)
 }
 
-fn parse_axis_value(axis: &'static str) -> impl Fn(&str) -> IResult<&str, (String, f32)> {
+fn parse_axis_value(axis: &'static str) -> impl Fn(&str) -> IResult<&str, (String, String, bool)> {
     move |input: &str| {
         let (input, _) = ws(tag(axis))(input)?;
-        let (input, value) = parse_coordinate_value(input)?;
-        Ok((input, (axis.to_string(), value)))
+        let (input, (value, is_neg)) = parse_coordinate_value(input)?;
+        Ok((input, (axis.to_string(), value, is_neg)))
     }
 }
 
@@ -83,11 +96,11 @@ fn parse_coordinate(input: &str) -> IResult<&str, Coordinate> {
         y: None,
         z: None,
     };
-    for (axis, value) in values {
+    for (axis, value, is_neg) in values {
         match axis.as_str() {
-            "X" => coord.x = Some(value),
-            "Y" => coord.y = Some(value),
-            "Z" => coord.z = Some(value),
+            "X" => coord.x = Some((value, is_neg)),
+            "Y" => coord.y = Some((value, is_neg)),
+            "Z" => coord.z = Some((value, is_neg)),
             _ => {}
         }
     }
@@ -95,9 +108,40 @@ fn parse_coordinate(input: &str) -> IResult<&str, Coordinate> {
     Ok((input, coord))
 }
 
-pub fn parse_to_direction(input: &str) -> IResult<&str, Option<DVec3>> {
-    let (input, _) = ws(tag("TO"))(input)?;
-    let (input, coordinate) = parse_coordinate(input)?;
+pub fn parse_to_direction(input: &str, context: Option<&CataContext>) -> anyhow::Result<Option<DVec3>> {
+    let (remaining_input, _) = ws(tag("TO"))(input).map_err(|_| anyhow!("Parsing failed!"))?;
+    // dbg!(input);
+    let (remaining_input, coordinate) = parse_coordinate(remaining_input).map_err(|_| anyhow!("Parsing failed!"))?;
+    // dbg!(&coordinate);
+    let mut dir = DVec3::ZERO;
+    let has_context = context.is_some();
+    if let Some((s, neg)) = &coordinate.x{
+        if let Ok(v) = s.parse::<f64>(){
+            dir.x = if *neg { -v } else { v } ;
+        } else if has_context && let Ok(v) = eval_str_to_f64(s, context.unwrap(), ""){
+            dir.x = if *neg { -v } else { v } ;
+        }else{
+            return Ok(None);
+        }
+    }
+    if let Some((s, neg)) = &coordinate.y{
+        if let Ok(v) = s.parse::<f64>(){
+            dir.y = if *neg { -v } else { v } ;
+        } else if has_context && let Ok(v) = eval_str_to_f64(s, context.unwrap(), ""){
+            dir.y = if *neg { -v } else { v } ;
+        }else{
+            return Ok(None);
+        }
+    }
+    if let Some((s, neg)) = &coordinate.z{
+        if let Ok(v) = s.parse::<f64>(){
+            dir.z = if *neg { -v } else { v } ;
+        } else if has_context && let Ok(v) = eval_str_to_f64(s, context.unwrap(), ""){
+            dir.z = if *neg { -v } else { v } ;
+        }else{
+            return Ok(None);
+        }
+    }
 
-    Ok((input, coordinate.get_dir()))
+    Ok(Some(dir.normalize_or_zero()))
 }

@@ -73,6 +73,20 @@ pub async fn get_ancestor(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     Ok(s?)
 }
 
+// #[cached(result = true)]
+pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefU64>> {
+    let sql = format!(
+        r#"select value id from only pe where name="/{}" limit 1;"#,
+        name
+    );
+    println!("sql is {}", &sql);
+    let mut response = SUL_DB
+        .query(sql)
+        .await?;
+    let s = response.take::<Option<RefU64>>(0);
+    Ok(s?)
+}
+
 #[cached(result = true)]
 pub async fn get_ancestor_types(refno: RefU64) -> anyhow::Result<Vec<String>> {
     let mut response = SUL_DB
@@ -193,7 +207,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     tuples.push((
                         k.clone(),
                         NamedAttrValue::StringType(dquat_to_pdms_ori_xyz_str(
-                            &angles_to_dori(*d).unwrap_or_default(),
+                            &angles_to_dori(*d).unwrap_or_default(), false
                         )),
                     ));
                 } else if k.contains("POS") {
@@ -203,7 +217,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     tuples.push((
                         k.clone(),
                         NamedAttrValue::StringType(convert_to_xyz(&to_pdms_dvec_str(
-                            &d.as_dvec3(),
+                            &d.as_dvec3(), false
                         ))),
                     ));
                 }

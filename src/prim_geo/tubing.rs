@@ -179,7 +179,12 @@ impl PdmsTubing {
             rot
             // Quat::IDENTITY
         } else {
-            Quat::from_rotation_arc(Vec3::Z, leave_dir)
+            if is_bore {
+                //圆柱体是以Z方向做的拉伸，后面如果要和e3d一致，还需要还原到以Y方向拉伸
+                Quat::from_rotation_arc(Vec3::Z, leave_dir)
+            }else{
+                Quat::from_rotation_arc(Vec3::Y, leave_dir)
+            }
         };
 
         let translation = match self.tubi_size {

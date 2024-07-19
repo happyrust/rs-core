@@ -1,10 +1,10 @@
 use crate::shape::pdms_shape::{ANGLE_RAD_F64_TOL, ANGLE_RAD_TOL};
+use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::float_tool::*;
 use approx::{abs_diff_eq, abs_diff_ne};
 use glam::{DMat3, DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
 use lazy_static::lazy_static;
 use std::f32::consts::FRAC_PI_2;
-use crate::tool::dir_tool::parse_ori_str_to_quat;
 
 use super::direction_parse::parse_expr_to_dir;
 
@@ -55,18 +55,25 @@ pub fn convert_to_xyz(s: &str) -> String {
         .replace("D", "-Z")
 }
 
-pub fn to_pdms_vec_xyz_str(vec: &Vec3) -> String {
-    convert_to_xyz(&to_pdms_vec_str(vec))
+pub fn to_pdms_vec_xyz_str(vec: &Vec3, convert_xyz: bool) -> String {
+    convert_to_xyz(&to_pdms_vec_str(vec, convert_xyz))
 }
 
-pub fn to_pdms_vec_str(vec: &Vec3) -> String {
-    to_pdms_dvec_str(&vec.as_dvec3())
+pub fn to_pdms_vec_str(vec: &Vec3, convert_xyz: bool) -> String {
+    to_pdms_dvec_str(&vec.as_dvec3(), convert_xyz)
 }
 
 pub const DVEC_STR_ANGLE_RAD_F64_TOL: f64 = 0.0000001;
 
-pub fn to_pdms_dvec_str(v: &DVec3) -> String {
-    to_pdms_dvec_str_with_tol(v, DVEC_STR_ANGLE_RAD_F64_TOL)
+
+#[inline]
+pub fn to_pdms_dvec_str(v: &DVec3, convert_xyz: bool) -> String {
+    let result = to_pdms_dvec_str_with_tol(v, DVEC_STR_ANGLE_RAD_F64_TOL);
+    if convert_xyz{
+        return convert_to_xyz(&result);
+    }else{
+        return result;
+    }
 }
 
 pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
@@ -131,12 +138,12 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         if angle == 90.0 {
             return y_str.to_string();
         }
-        return format!("{x_str} {} {y_str}", f64_round_4(angle));
+        return format!("{x_str} {:.3} {y_str}", f64_round_4(angle));
     }
 
     //2个象限的组合, 最后一个留给Z轴
     let plane_vec = DVec3::new(v.x, v.y, 0.0);
-    let part_str = to_pdms_dvec_str(&plane_vec);
+    let part_str = to_pdms_dvec_str(&plane_vec, false);
     let l = plane_vec.length();
     let mut theta = (v.z / l).atan().to_degrees();
     let mut z_str = "U";
@@ -153,7 +160,7 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         return z_str.to_string();
     }
 
-    format!("{part_str} {} {z_str}", f64_round_4(theta))
+    format!("{part_str} {:.3} {z_str}", f64_round_4(theta))
 }
 
 fn neg_dir_str(y_str: &str) -> &str {
@@ -170,45 +177,45 @@ fn neg_dir_str(y_str: &str) -> &str {
 }
 
 #[inline]
-pub fn to_pdms_ori_str(rot: &Mat3) -> String {
+pub fn to_pdms_ori_str(rot: &Mat3, convert_xyz: bool) -> String {
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
 
     format!(
         "Y is {:.3} and Z is {:.3}",
-        to_pdms_vec_str(y_axis),
-        to_pdms_vec_str(z_axis)
+        to_pdms_vec_str(y_axis, convert_xyz),
+        to_pdms_vec_str(z_axis, convert_xyz)
     )
 }
 
 #[inline]
-pub fn to_pdms_dori_xyz_str(rot: &DMat3) -> String {
+pub fn to_pdms_dori_xyz_str(rot: &DMat3, convert_xyz: bool) -> String {
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
     // let s = to_pdms_dvec_str(y_axis);
     //讲s里面的 "E" 替换成 "X", "N" 替换成 "Y", "U" 替换成 "Z", "W" 替换成 "-X", "S" 替换成 "-Y", "D" 替换成 "-Z"
     format!(
         "Y is {} and Z is {}",
-        convert_to_xyz(&to_pdms_dvec_str(y_axis)),
-        convert_to_xyz(&to_pdms_dvec_str(z_axis))
+        convert_to_xyz(&to_pdms_dvec_str(y_axis, convert_xyz)),
+        convert_to_xyz(&to_pdms_dvec_str(z_axis, convert_xyz))
     )
 }
 
 #[inline]
-pub fn to_pdms_ori_xyz_str(rot: &Mat3) -> String {
+pub fn to_pdms_ori_xyz_str(rot: &Mat3, convert_xyz: bool) -> String {
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
-    let s = to_pdms_vec_str(y_axis);
+    let s = to_pdms_vec_str(y_axis, convert_xyz);
     //讲s里面的 "E" 替换成 "X", "N" 替换成 "Y", "U" 替换成 "Z", "W" 替换成 "-X", "S" 替换成 "-Y", "D" 替换成 "-Z"
     format!(
         "Y is {} and Z is {}",
-        convert_to_xyz(&to_pdms_vec_str(y_axis)),
-        convert_to_xyz(&to_pdms_vec_str(z_axis))
+        to_pdms_vec_str(y_axis, convert_xyz),
+        to_pdms_vec_str(z_axis, convert_xyz)
     )
 }
 
 #[inline]
-pub fn quat_to_pdms_ori_str(rot: &Quat) -> String {
+pub fn quat_to_pdms_ori_str(rot: &Quat, convert_xyz: bool) -> String {
     let rot = Mat3::from_quat(*rot);
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
@@ -216,18 +223,43 @@ pub fn quat_to_pdms_ori_str(rot: &Quat) -> String {
     // "E".to_string()
     format!(
         "Y is {} and Z is {}",
-        to_pdms_vec_str(y_axis),
-        to_pdms_vec_str(z_axis)
+        to_pdms_vec_str(y_axis, convert_xyz),
+        to_pdms_vec_str(z_axis, convert_xyz)
     )
 }
 
 #[inline]
-pub fn vec3_to_xyz_str(pos: Vec3) -> String {
-    format!("X {:.3}mm, Y {:.3}mm, Z {:.3}mm", pos[0], pos[1], pos[2])
+fn format_f32(num: f32) -> String {
+    if num.fract() == 0.0 {
+        // 如果是整数，只显示整数部分
+        format!("{}", num as i32)
+    } else {
+        // 如果有小数，保留三位小数
+        format!("{:.3}", num)
+    }
 }
 
 #[inline]
-pub fn quat_to_pdms_ori_xyz_str(rot: &Quat) -> String {
+pub fn vec3_to_xyz_str(pos: Vec3) -> String {
+    format!(
+        "X {}mm, Y {}mm, Z {}mm",
+        f32_round_3(pos[0]),
+        f32_round_3(pos[1]),
+        f32_round_3(pos[2])
+    )
+}
+// #[inline]
+// pub fn vec3_to_xyz_str(pos: Vec3) -> String {
+//     format!(
+//         "X {}mm, Y {}mm, Z {}mm",
+//         format_f32(pos[0]),
+//         format_f32(pos[1]),
+//         format_f32(pos[2])
+//     )
+// }
+
+#[inline]
+pub fn quat_to_pdms_ori_xyz_str(rot: &Quat, convert_xyz: bool) -> String {
     let rot = DMat3::from_quat((*rot).as_dquat());
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
@@ -235,13 +267,13 @@ pub fn quat_to_pdms_ori_xyz_str(rot: &Quat) -> String {
     // "E".to_string()
     format!(
         "Y is {} and Z is {}",
-        convert_to_xyz(&to_pdms_dvec_str(y_axis)),
-        convert_to_xyz(&to_pdms_dvec_str(z_axis))
+        to_pdms_dvec_str(&y_axis, convert_xyz),
+        to_pdms_dvec_str(&z_axis, convert_xyz)
     )
 }
 
 #[inline]
-pub fn dquat_to_pdms_ori_xyz_str(rot: &DQuat) -> String {
+pub fn dquat_to_pdms_ori_xyz_str(rot: &DQuat, convert_xyz: bool) -> String {
     let rot = DMat3::from_quat(*rot);
     let y_axis = &rot.y_axis;
     let z_axis = &rot.z_axis;
@@ -249,8 +281,8 @@ pub fn dquat_to_pdms_ori_xyz_str(rot: &DQuat) -> String {
     // "E".to_string()
     format!(
         "Y is {} and Z is {}",
-        convert_to_xyz(&to_pdms_dvec_str(&y_axis)),
-        convert_to_xyz(&to_pdms_dvec_str(&z_axis))
+        to_pdms_dvec_str(&y_axis, convert_xyz),
+        to_pdms_dvec_str(&z_axis, convert_xyz)
     )
 }
 
@@ -279,10 +311,14 @@ pub fn cal_end_points(center: DVec3, ori_str: &str, len: f64) -> Option<[DVec3; 
 
 #[test]
 fn test_cal_end_points() {
-    let pts = cal_end_points(DVec3::new( 44200.0,-18050.0,10293.0), "Y is N and Z is Z", 900.0).unwrap();
+    let pts = cal_end_points(
+        DVec3::new(44200.0, -18050.0, 10293.0),
+        "Y is N and Z is Z",
+        900.0,
+    )
+    .unwrap();
     dbg!(pts);
 }
-
 
 #[test]
 fn test_convert_to_dir_string() {
@@ -300,13 +336,13 @@ fn test_convert_to_dir_string() {
         0.9999998565051292,
     );
 
-    dbg!(convert_to_xyz(&to_pdms_dvec_str(&v)));
+    dbg!(to_pdms_dvec_str(&v, true));
 }
 
 fn assert_vec3_to_str(input: &str, assert_str: &str) {
     // let v_str = "X 120 Y"; // -X 60 Y
     let v = parse_expr_to_dir(input).unwrap();
-    let new_v_str = convert_to_xyz(&to_pdms_dvec_str(&v));
+    let new_v_str = to_pdms_dvec_str(&v, true);
     dbg!(&new_v_str);
     assert_eq!(assert_str, new_v_str);
 }
