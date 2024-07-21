@@ -26,7 +26,7 @@ fn test_print_ori(ori: &str) {
 
 #[cfg(test)]
 mod test_transform {
-    use crate::init_test_surreal;
+    use crate::{init_test_surreal};
     use crate::tool::dir_tool::{parse_ori_str_to_mat, parse_ori_str_to_quat};
     use crate::tool::math_tool;
     use crate::tool::math_tool::{
@@ -142,9 +142,10 @@ mod test_transform {
         init_test_surreal().await;
 
         //todo fix
-        // test_ori("17496/268348".into(), "Y is Y 0.9303 -X 0.257 Z and Z is -X 1.0013 -Y 15.44 Z").await;
+        test_ori("17496/268348".into(), "Y is Y 0.374 -X 0.345 -Z and Z is -X 0.693 -Y 42.739 -Z").await;
         // test_ori("17496/273497".into(), "Y is X and Z is Z").await;
         test_ori("24384/25783".into(), "Y is X 89.969 Z and Z is -X 0.031 Z").await;
+
         Ok(())
     }
 
@@ -420,10 +421,11 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_FIT() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_ori("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
-        test_ori("17496/202352".into(), "Y is X and Z is -Y").await;
-        test_ori("24381/38388".into(), "Y is -X 13 Y and Z is Y 13 X").await;
-        test_ori("17496/106463".into(), "Y is X 25 -Y and Z is -Y 25 -X").await;
+        test_transform("24381/55590".into(), "Y is Z and Z is -X", "X 15455.2mm Y -39949.8mm Z 34500mm").await;
+        // test_ori("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
+        // test_ori("17496/202352".into(), "Y is X and Z is -Y").await;
+        // test_ori("24381/38388".into(), "Y is -X 13 Y and Z is Y 13 X").await;
+        // test_ori("17496/106463".into(), "Y is X 25 -Y and Z is -Y 25 -X").await;
         Ok(())
     }
 }

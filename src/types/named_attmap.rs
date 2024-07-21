@@ -231,11 +231,6 @@ impl NamedAttrMap {
         self.get_string_or_default("NAME")
     }
 
-    // #[inline]
-    // pub fn set_e3d_version(&mut self, v: i32) {
-    //     self.map
-    //         .insert("VERSION".into(), NamedAttrValue::IntegerType(v));
-    // }
 
     #[inline]
     pub fn get_dir(&self) -> Option<DVec3> {
