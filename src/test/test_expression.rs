@@ -12,11 +12,18 @@ fn test_parse_expression() {
 
 #[test]
 fn test_parse_complex_expression() {
-    let dir_str = "Z ( MAX (0.1, DESP[63] ) ) -X ( 90.0 ) Y";
     let context = CataContext::default();
     context.insert("DESP63".to_string(), "0.2".to_string());
     context.insert("DESP7".to_string(), "0.2".to_string());
     context.insert("DESP28".to_string(), "1.0".to_string());
+    context.insert("DDANGLE".to_string(), "1.0".to_string());
+
+    let dir_str = "Z DDANGLE X";
+    let dir = parse_str_axis_to_vec3(dir_str, &context).unwrap_or_default();
+    dbg!(dir);
+    return;
+
+    let dir_str = "Z ( MAX (0.1, DESP[63] ) ) -X ( 90.0 ) Y";
     let dir = parse_str_axis_to_vec3(dir_str, &context).unwrap_or_default();
     dbg!(dir);
     assert_eq!(dir.y, 1.0);

@@ -55,7 +55,7 @@ pub fn cal_ori_by_z_axis_refx(v: DVec3) -> DQuat {
         DVec3::NEG_Z
     };
     ref_dir = ref_dir * v.z.signum();
-    dbg!(ref_dir);
+    // dbg!(ref_dir);
 
     let y_dir = v.cross(ref_dir).normalize();
     let x_dir = y_dir.cross(v).normalize();

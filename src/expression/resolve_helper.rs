@@ -504,7 +504,7 @@ pub fn parse_str_axis_to_vec3(
         not_single = true;
         let mut is_three = false;
 
-        let re = Regex::new(r"(-?[X|Y|Z])\s\((.*)\)\s(-?[X|Y|Z])\s\((.*)\)\s(-?[X|Y|Z])").unwrap();
+        let re = Regex::new(r"(-?[X|Y|Z])\s(.*)\s(-?[X|Y|Z])\s(.*)\s(-?[X|Y|Z])").unwrap();
         for caps in re.captures_iter(&dir_str) {
             // dbg!(&caps);
             if caps.len() == 6 {
@@ -524,9 +524,9 @@ pub fn parse_str_axis_to_vec3(
         if !is_three {
             // dbg!(is_three);
             // dbg!(&dir_str);
-            let re = Regex::new(r"(-?[X|Y|Z])\s\((.*)\)\s(-?[X|Y|Z])").unwrap();
+            let re = Regex::new(r"(-?[X|Y|Z])\s(.*)\s(-?[X|Y|Z])").unwrap();
             for caps in re.captures_iter(&dir_str) {
-                dbg!(&caps);
+                // dbg!(&caps);
                 if caps.len() == 4 {
                     let val_str = caps[2].to_string();
                     // dbg!(&val_str);

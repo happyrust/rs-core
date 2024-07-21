@@ -230,11 +230,11 @@ fn replace_all_result<E>(
 pub fn prepare_eval_str(input: &str) -> String {
     input
         .replace("IFTRUE", "if")
-        .replace("LT", "<")
-        .replace("GT", ">")
-        .replace("LE", "<=")
-        .replace("GE", ">=")
-        .replace("EQ", "==")
+        .replace(" LT ", "<")
+        .replace(" GT ", ">")
+        .replace(" LE ", "<=")
+        .replace(" GE ", ">=")
+        .replace(" EQ ", "==")
         .replace("ATTRIB", "")
         .replace("DESIGN PARAM", "DESP")
         .replace("DESIGN PARA", "DESP")
