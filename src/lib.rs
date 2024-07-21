@@ -96,6 +96,8 @@ pub mod spatial;
 
 pub mod dblist;
 
+pub mod expression;
+
 pub use crate::types::*;
 pub use rs_surreal::*;
 

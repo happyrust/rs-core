@@ -87,6 +87,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 }
                 rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             }
+            // dbg!((x_axis, y_axis, z_axis));
             //需要转换成CTorus
             let pyramid = LPyramid {
                 pbax_pt: pb.pt,
@@ -105,6 +106,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pbof: d.x_offset,
                 pcof: d.y_offset,
             };
+            // dbg!(&pyramid);
             //需要偏移到 btm
             let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);

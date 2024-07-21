@@ -21,7 +21,6 @@ use crate::prim_geo::sphere::Sphere;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32};
 use crate::tool::float_tool::{hash_f32, hash_f64_slice};
-use crate::tool::math_tool::cal_mat3_by_zdir;
 use crate::types::attval::AttrVal;
 use crate::ref64vec::RefU64Vec;
 
@@ -585,45 +584,6 @@ impl AttrMap {
             return Some(Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32));
         }
         None
-    }
-
-    #[inline]
-    pub fn get_rotation(&self) -> Option<Quat> {
-        let type_name = self.get_type();
-        let mut quat = Quat::IDENTITY;
-        if self.contains_attr_name("ZDIR") {
-            let axis_dir = self.get_dvec3("ZDIR").unwrap_or_default().normalize();
-            if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
-            }
-        } else if self.contains_attr_name("OPDI") {
-            //PJOI 的方向
-            let axis_dir = self.get_dvec3("OPDI").unwrap_or_default().normalize();
-            if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
-                // dbg!(quat_to_pdms_ori_str(&quat));
-            }
-        } else {
-            match type_name {
-                "CMPF" | "PFIT" => {
-                    let sjus = self.get_str("SJUS").unwrap_or("unset");
-                    //unset 和 UBOT 一样的效果
-                    //DTOP, DCEN, DBOT
-                    if sjus.starts_with("D") {
-                        quat = Quat::from_mat3(&Mat3::from_cols(Vec3::X, Vec3::NEG_Y, Vec3::NEG_Z));
-                    }
-                }
-                _ => {
-                    let ang = self.get_f32_vec("ORI")?;
-                    let mat = glam::f32::Mat3::from_rotation_z(ang[2].to_radians() as f32)
-                        * glam::f32::Mat3::from_rotation_y(ang[1].to_radians() as f32)
-                        * glam::f32::Mat3::from_rotation_x(ang[0].to_radians() as f32);
-
-                    quat = Quat::from_mat3(&mat);
-                }
-            }
-        }
-        return Some(quat);
     }
 
     pub fn get_matrix(&self) -> Option<Affine3A> {

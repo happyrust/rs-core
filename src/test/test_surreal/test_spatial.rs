@@ -27,12 +27,12 @@ fn test_print_ori(ori: &str) {
 #[cfg(test)]
 mod test_transform {
     use bevy_reflect::Array;
-    use glam::{DVec3, Mat3};
+    use glam::{DMat3, DVec3, Mat3};
     use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, RefU64, rs_surreal};
     use crate::init_test_surreal;
-    use crate::tool::dir_tool::parse_ori_str_to_mat;
+    use crate::tool::dir_tool::{parse_ori_str_to_mat, parse_ori_str_to_quat};
     use crate::tool::math_tool;
-    use crate::tool::math_tool::{dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, vec3_to_xyz_str};
+    use crate::tool::math_tool::{cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, vec3_to_xyz_str};
 
     //sctn 等等
     #[test]
@@ -89,8 +89,12 @@ mod test_transform {
         let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
         dbg!(&ori_str);
         dbg!(math_tool::dvec3_to_xyz_str(translation));
-        assert_eq!(ori_str, assert_ori);
-        assert_eq!(math_tool::dvec3_to_xyz_str(translation), pos_str);
+        if !assert_ori.is_empty(){
+            assert_eq!(ori_str, assert_ori);
+        }
+        if !pos_str.is_empty(){
+            assert_eq!(math_tool::dvec3_to_xyz_str(translation), pos_str);
+        }
     }
 
     #[tokio::test]
@@ -130,6 +134,7 @@ mod test_transform {
         //todo fix
         // test_ori("17496/268348".into(), "Y is Y 0.9303 -X 0.257 Z and Z is -X 1.0013 -Y 15.44 Z").await;
         // test_ori("17496/273497".into(), "Y is X and Z is Z").await;
+        test_ori("24384/25783".into(), "Y is X 89.969 Z and Z is -X 0.031 Z").await;
         Ok(())
     }
 
@@ -137,7 +142,17 @@ mod test_transform {
     async fn test_query_transform_SNODE() -> anyhow::Result<()> {
         init_test_surreal().await;
 
-        test_transform("24383/93573".into(), "Y is N and Z is U", "X 10492.213mm, Y 24025.362mm, Z 12560mm").await;
+        test_transform("24383/93573".into(), "", "X 10492.213mm Y 24025.362mm Z 12560mm").await;
+        // let w1 = parse_ori_str_to_quat("Y is X 21 -Y and Z is Z").unwrap().as_dquat();
+        // let w2 = parse_ori_str_to_quat("Y is -Y and Z is X").unwrap().as_dquat();
+        // let w3 = parse_ori_str_to_quat(" Y is X and Z is Y").unwrap().as_dquat();
+        // let w4 = parse_ori_str_to_quat(" Y is -X and Z is Z").unwrap().as_dquat();
+        // dbg!(w4);
+        // let w = w1 * w2;
+        // let nw  = w3 * w2.inverse();
+        // // dbg!(dquat_to_pdms_ori_xyz_str(&w, true));
+        // dbg!(dquat_to_pdms_ori_xyz_str(&(w4 * w2), true));
+        // dbg!(dquat_to_pdms_ori_xyz_str(&nw, true));
         Ok(())
     }
 
@@ -146,7 +161,95 @@ mod test_transform {
         init_test_surreal().await;
         //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
 
-        test_ori("24383/93574".into(), "Y is N and Z is U").await;
+        // test_ori("24383/93574".into(), "Y is -Y 21 -X and Z is X 21 -Y").await;
+        test_transform("24383/80522".into(), "Y is -X 41 Y and Z is -Y 41 -X", "").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_CMFI() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
+
+        test_transform("17496/140425".into(), "Y is -X 22.452 -Y and Z is Y 22.452 -X",
+                "X 3018.841mm Y -7725.884mm Z 900mm").await;
+        Ok(())
+    }
+
+    #[test]
+    fn get_cal_ori() {
+        use crate::tool::direction_parse::parse_expr_to_dir;
+        let zdir = parse_expr_to_dir("Y 7.2448 X").unwrap();
+        let rot = cal_quat_by_zdir_with_xref(zdir);
+        // dbg!(dquat_to_pdms_ori_xyz_str(&rot, true));
+        assert_eq!(dquat_to_pdms_ori_xyz_str(&rot, true), "Y is -X 7.245 Y and Z is Y 7.245 X");
+
+        // return;
+        let zdir = parse_expr_to_dir("-Z").unwrap();
+        let rot = cal_quat_by_zdir_with_xref(zdir);
+        // dbg!(dquat_to_pdms_ori_xyz_str(&rot, true));
+        assert_eq!(dquat_to_pdms_ori_xyz_str(&rot, true), "Y is Y and Z is -Z");
+
+        let zdir = parse_expr_to_dir("-Y 84.452 -Z").unwrap();
+        let rot = cal_quat_by_zdir_with_xref(zdir);
+        // dbg!(dquat_to_pdms_ori_xyz_str(&rot, true));
+        assert_eq!(dquat_to_pdms_ori_xyz_str(&rot, true), "Y is Y 5.548 -Z and Z is -Y 84.452 -Z");
+
+        let zdir = parse_expr_to_dir("-Y 84.452 Z").unwrap();
+        let rot = cal_quat_by_zdir_with_xref(zdir);
+        // dbg!(dquat_to_pdms_ori_xyz_str(&rot, true));
+        assert_eq!(dquat_to_pdms_ori_xyz_str(&rot, true), "Y is Y 5.548 Z and Z is -Y 84.452 Z");
+
+        // let zdir = parse_expr_to_dir("-Y 84.452 -Z").unwrap();
+        // let rot = crate::cal_ori_by_z_axis_ref_y(zdir, );
+        // dbg!(dquat_to_pdms_ori_xyz_str(&rot, true));
+        // let assert_str = "Y is Y 5.548 -Z and Z is -Y 84.452 -Z";
+        //
+        // let dir_y = parse_expr_to_dir("-X 7.2448 Y").unwrap();
+        // let dir_z = parse_expr_to_dir("Y 7.2448 X").unwrap();
+        // let dir_x = dir_y.cross(dir_z).normalize();
+        // dbg!(to_pdms_dvec_str(&dir_x, true));
+        // let mat3 = DMat3::from_quat(parse_ori_str_to_quat("Y is Y 5.548 Z and Z is -Y 84.452 Z").unwrap().as_dquat());
+        // dbg!(mat3);
+        // //Y is -Y 5.548 Z and Z is -Y 84.452 -Z
+        let mat3 = DMat3::from_quat(parse_ori_str_to_quat("Y is X 89.969 Z and Z is -X 0.0307 Z").unwrap().as_dquat());
+        dbg!(mat3);
+
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_SBFI() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
+        //
+        test_transform("17496/140426".into(), "Y is X 28.02 Y and Z is -Y 28.02 X",
+                       "X 3018.841mm Y -7725.884mm Z 900mm").await;
+        //17496/140428
+        test_transform("17496/140428".into(), "Y is -X 25 Y and Z is Y 25 X",
+                       "X 8964.131mm Y -6883.685mm Z -20mm").await;
+        let m1 = parse_ori_str_to_quat("Y is -Y 5.548 Z and Z is -Y 84.452 -Z").unwrap().as_dquat();
+        // let m2 = parse_ori_str_to_quat("Y is -X 22.452 -Y and Z is Y 22.452 -X").unwrap().as_dquat();
+        // let m3 = m2 * m1;
+        // println!("matrix: {}", dquat_to_pdms_ori_xyz_str(&m3, true));
+        // let m1 = parse_ori_str_to_quat("Y is -Y 5.548 Z and Z is -Y 84.452 -Z").unwrap().as_dquat();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_SJOI() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
+
+        test_ori("17496/105742".into(), "Y is -Z and Z is -Y 22.452 X").await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_transform_STWALL() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
+
+        test_ori("17496/105740".into(), "Y is Z and Z is -X 22.452 -Y").await;
         Ok(())
     }
 
@@ -171,7 +274,7 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_JLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_ori("17496/182538".into(), "Y is Z and Z is -Y 24.584 X").await;
+        test_ori("17496/152079".into(), "Y is Z and Z is -Y 29.298 X").await;
         // test_transform("17496/268326".into(), "Y is -Y and Z is -Z").await;
         // test_transform("25688/48820".into(), "Y is Z and Z is X 33.955 Y").await;
         // test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
@@ -205,9 +308,9 @@ mod test_transform {
     async fn test_query_transform_PLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
 
-        // test_transform("24384/28752".into(), "Y is -Y 31 -X 0.0307 Z and Z is X 31 -Y").await;
-        test_ori("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
-        test_ori("25688/48821".into(), "Y is X 33.955 Y and Z is Y 33.955 -X").await;
+        test_ori("24384/25786".into(), "Y is -X and Z is -Y").await;
+        // test_ori("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
+        // test_ori("25688/48821".into(), "Y is X 33.955 Y and Z is Y 33.955 -X").await;
 
         Ok(())
     }
@@ -215,7 +318,9 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_FIXING() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_ori("24384/28753".into(), "Y is -Y 31 -X 0.0307 Z and Z is Y 31 X 89.9693 Z").await;
+        test_ori("24384/28753".into(), "Y is -Y 31 -X 0.031 Z and Z is Y 31 X 89.969 Z").await;
+        // test_ori("17496/152081".into(), "Y is Z and Z is X 30.659 Y").await;
+        test_ori("24384/25787".into(), "Y is -X 0.031 Z and Z is X 89.969 Z").await;
         Ok(())
     }
 

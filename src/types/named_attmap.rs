@@ -11,11 +11,11 @@ use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
 use crate::types::attmap::AttrMap;
 use crate::types::named_attvalue::NamedAttrValue;
-use crate::{get_default_pdms_db_info, AttrVal, RefI32Tuple, RefU64, SurlValue, SurlStrand};
+use crate::{get_default_pdms_db_info, AttrVal, RefI32Tuple, RefU64, SurlValue, SurlStrand, cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_y, cal_ori_by_z_axis_ref_x};
 use bevy_ecs::component::Component;
 use bevy_reflect::{DynamicStruct, Reflect};
 use derive_more::{Deref, DerefMut};
-use glam::{Affine3A, DVec3, Mat3, Mat4, Quat, Vec3};
+use glam::{Affine3A, DMat3, DQuat, DVec3, Mat3, Mat4, Quat, Vec3};
 use indexmap::IndexMap;
 #[cfg(feature = "sea-orm")]
 use sea_orm::{ConnectionTrait, DatabaseConnection};
@@ -236,6 +236,15 @@ impl NamedAttrMap {
     //     self.map
     //         .insert("VERSION".into(), NamedAttrValue::IntegerType(v));
     // }
+
+    #[inline]
+    pub fn get_dir(&self) -> Option<DVec3> {
+        if let Some(end) = self.get_dpose() && let Some(start) = self.get_dposs() {
+            Some((end - start).normalize())
+        }else{
+            None
+        }
+    }
 
     #[inline]
     pub fn set_pgno(&mut self, v: i32) {
@@ -810,19 +819,20 @@ impl NamedAttrMap {
     }
 
     #[inline]
-    pub fn get_rotation(&self) -> Option<Quat> {
+    pub fn get_rotation(&self) -> Option<DQuat> {
         let type_name = self.get_type_str();
-        let mut quat = Quat::IDENTITY;
+        let mut quat = DQuat::IDENTITY;
         if self.contains_key("ZDIR") {
             let axis_dir = self.get_dvec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
+                quat = cal_quat_by_zdir_with_xref(axis_dir);
+                // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             }
         } else if self.contains_key("OPDI") {
             //PJOI 的方向
             let axis_dir = self.get_dvec3("OPDI").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = Quat::from_mat3(&(cal_mat3_by_zdir(axis_dir).as_mat3()));
+                quat = cal_quat_by_zdir_with_xref(axis_dir);
             }
         } else {
             match type_name {
@@ -831,11 +841,11 @@ impl NamedAttrMap {
                     //unset 和 UBOT 一样的效果
                     //DTOP, DCEN, DBOT
                     if sjus.starts_with("D") {
-                        quat = Quat::from_mat3(&Mat3::from_cols(Vec3::X, Vec3::NEG_Y, Vec3::NEG_Z));
+                        quat = DQuat::from_mat3(&DMat3::from_cols(DVec3::X, DVec3::NEG_Y, DVec3::NEG_Z));
                     }
                 }
                 _ => {
-                    let angs = self.get_vec3("ORI")?;
+                    let angs = self.get_dvec3("ORI")?;
                     quat = angles_to_ori(angs)?;
                 }
             }

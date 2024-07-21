@@ -32,9 +32,9 @@ pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
         || (unit_a == "REAL" || unit_b == "REAL")
         || (unit_a == "NUME" || unit_b == "NUME")
         || COMPATIBLE_UNIT_MAP
-        .get(unit_a)
-        .map(|x| x.contains(unit_b))
-        .unwrap_or(false)
+            .get(unit_a)
+            .map(|x| x.contains(unit_b))
+            .unwrap_or(false)
 }
 
 pub const INTERNAL_PDMS_EXPRESS: [&'static str; 22] = [
@@ -227,6 +227,19 @@ fn replace_all_result<E>(
     Ok(new)
 }
 
+pub fn prepare_eval_str(input: &str) -> String {
+    input
+        .replace("IFTRUE", "if")
+        .replace("LT", "<")
+        .replace("GT", ">")
+        .replace("LE", "<=")
+        .replace("GE", ">=")
+        .replace("EQ", "==")
+        .replace("ATTRIB", "")
+        .replace("DESIGN PARAM", "DESP")
+        .replace("DESIGN PARA", "DESP")
+}
+
 ///评估表达式的值
 pub fn eval_str_to_f64(
     input_expr: &str,
@@ -236,19 +249,19 @@ pub fn eval_str_to_f64(
     if input_expr.is_empty() || input_expr == "UNSET" {
         return Ok(0.0);
     }
-    let refno_str = context.get("RS_DES_REFNO").unwrap();
-    let refno = RefU64::from_str(refno_str.as_str()).unwrap();
+    let refno = context
+        .get("RS_DES_REFNO")
+        .and_then(|x| RefU64::from_str(x.as_str()).ok())
+        .unwrap_or_default();
     //处理引用的情况 OF 的情况, 如果需要获取 att value，还是需要用数据库去获取值
-    let mut new_exp = input_expr.replace("ATTRIB", "");
-    if input_expr.contains(" OF ") {
+    let mut new_exp = prepare_eval_str(input_expr);
+    if new_exp.contains(" OF ") {
         let re = Regex::new(r"([A-Z\s]+) OF (PREV|NEXT|\d+/\d+)").unwrap();
-        for caps in re.captures_iter(&input_expr) {
+        for caps in re.captures_iter(&new_exp.clone()) {
             let s = &caps[0];
             let c1 = caps.get(1).map_or("", |m| m.as_str());
             let c2 = caps.get(2).map_or("", |m| m.as_str());
             let is_tubi = context.is_tubi();
-            // dbg!(input_expr);
-            let expr_val = "".to_string();
             #[cfg(not(target_arch = "wasm32"))]
             let expr_val = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async move {
@@ -306,7 +319,9 @@ pub fn eval_str_to_f64(
             {
                 #[cfg(feature = "debug_expr")]
                 dbg!((&new_exp, &unit_type, dtse_unit));
-                return Err(anyhow::anyhow!("DTSE 表达式 {new_exp} 有问题，可能单位不一致"));
+                return Err(anyhow::anyhow!(
+                    "DTSE 表达式 {new_exp} 有问题，可能单位不一致"
+                ));
             } else {
                 #[cfg(feature = "debug_expr")]
                 dbg!((&new_exp, &unit_type, dtse_unit));
@@ -323,17 +338,11 @@ pub fn eval_str_to_f64(
                     Ok(t.to_string())
                 } else {
                     context.context.remove("EXPR_HAS_DEFAULT");
-                    // dbg!(context
-                    //     .get(&default_key)
-                    //     .map(|x| x.to_string())
-                    //     .unwrap_or("0".to_string()));
-                    //use default value
                     Ok(context
                         .get(&default_key)
                         .map(|x| x.to_string())
                         .unwrap_or("0".to_string()))
                 }
-
             }
         })?
         .trim()
@@ -346,9 +355,9 @@ pub fn eval_str_to_f64(
         }
     }
 
-    let mut new_exp = new_exp
-        .replace("DESIGN PARAM", "DESP")
-        .replace("DESIGN PARA", "DESP");
+    // let mut new_exp = new_exp
+    //     .replace("DESIGN PARAM", "DESP")
+    //     .replace("DESIGN PARA", "DESP");
     let mut result_exp = new_exp.clone();
     //默认两次
     let mut found_replaced = false;
@@ -564,10 +573,14 @@ pub fn eval_str_to_f64(
         }
         result_string.push_str(" ");
     }
-    match interp(&result_string.to_lowercase()) {
+    let final_expr = result_string.to_lowercase();
+    // dbg!(&final_expr);
+    match interp(&final_expr) {
         Ok(val) => Ok(f64_round_3(val).into()),
         Err(_) => {
-            return if let Ok(mut stack) = Stack::init(&result_string) {
+            return if let Ok(mut val) = evalexpr::eval(&final_expr)  {
+                return Ok(f64_round_3(val.as_float()?).into());
+            } else if let Ok(mut stack) = Stack::init(&final_expr) {
                 stack.eval().ok_or(anyhow::anyhow!(format!(
                     "后缀表达式求解失败 {}",
                     &input_expr

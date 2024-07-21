@@ -22,3 +22,5 @@ pub mod test_parse_dir;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_surreal;
+
+pub mod test_expression;
