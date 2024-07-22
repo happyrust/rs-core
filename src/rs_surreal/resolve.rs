@@ -573,8 +573,10 @@ pub fn eval_str_to_f64(
         }
         result_string.push_str(" ");
     }
-    let final_expr = result_string.to_lowercase();
-    // dbg!(&final_expr);
+    //排除两个连续的负号的情况
+    let final_expr = result_string.to_lowercase().replace("--", "");
+    #[cfg(feature = "debug_expr")]
+    dbg!(&final_expr);
     match interp(&final_expr) {
         Ok(val) => Ok(f64_round_3(val).into()),
         Err(_) => {

@@ -3,10 +3,19 @@ use crate::tool::math_tool;
 use crate::tool::math_tool::{
     cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_vec_str,
 };
-use crate::{accel_tree::acceleration_tree::QueryRay, consts::HAS_PLIN_TYPES, pdms_data::{PlinParam, PlinParamData}, prim_geo::spine::{Spine3D, SpineCurveType, SweepPath3D}, shape::pdms_shape::LEN_TOL, tool::{
-    direction_parse::parse_expr_to_dir,
-    math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str},
-}, NamedAttrMap, RefU64, SUL_DB, get_named_attmap};
+use crate::{
+    accel_tree::acceleration_tree::QueryRay,
+    consts::HAS_PLIN_TYPES,
+    get_named_attmap,
+    pdms_data::{PlinParam, PlinParamData},
+    prim_geo::spine::{Spine3D, SpineCurveType, SweepPath3D},
+    shape::pdms_shape::LEN_TOL,
+    tool::{
+        direction_parse::parse_expr_to_dir,
+        math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str},
+    },
+    NamedAttrMap, RefU64, SUL_DB,
+};
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
@@ -54,6 +63,27 @@ pub fn cal_ori_by_opdir(v: DVec3) -> DQuat {
     rotation
 }
 
+///通过ydir 计算方位 , 跟z轴这个参考轴有关系
+pub fn cal_ori_by_ydir(mut y_ref_axis: DVec3, z_dir: DVec3) -> DQuat {
+    if z_dir.y.abs() > 0.999 {
+        if y_ref_axis.y.abs() > 0.0001 {
+            y_ref_axis.y = 0.0;
+            y_ref_axis = y_ref_axis.normalize();
+        }
+    } else if z_dir.x.abs() > 0.999 {
+        if y_ref_axis.x.abs() > 0.0001 {
+            y_ref_axis.x = 0.0;
+            y_ref_axis = y_ref_axis.normalize();
+        }
+    }
+    dbg!(y_ref_axis);
+    // let z_dir = DVec3::Y;
+    let x_dir = y_ref_axis.cross(z_dir).normalize();
+    let y_dir = z_dir.cross(x_dir).normalize();
+
+    let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, z_dir));
+    rotation
+}
 
 pub fn cal_spine_ori(v: DVec3, y_ref_dir: DVec3) -> DQuat {
     let x_dir = y_ref_dir.cross(v).normalize();
@@ -66,8 +96,7 @@ pub fn cal_spine_ori(v: DVec3, y_ref_dir: DVec3) -> DQuat {
 pub fn cal_ori_by_z_axis_refx(v: DVec3) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::NEG_Y
-    }
-    else {
+    } else {
         DVec3::NEG_Z
     };
     ref_dir = ref_dir * v.z.signum();
@@ -264,6 +293,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         }
 
         let quat_v = att.get_rotation();
+        let has_rot = quat_v.is_some();
         let mut need_bangle = false;
         //特殊处理的类型
         if (!owner_is_gensec && quat_v.is_some()) || (owner_is_gensec && cur_type == "TMPL") {
@@ -291,18 +321,19 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
         //直接在世界坐标系下求坐标，跳过局部求解
         //有 cref 的时候，需要保持方向和 cref 一致
+        let ydir_axis = att.get_dvec3("YDIR");
+        let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default() ;
         let mut contains_opdir = false;
+        let mut delta_vec = att.get_dvec3("DELP").unwrap_or_default();
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
             quat = cal_ori_by_opdir(opdir);
             // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             contains_opdir = true;
-            let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
-            // let offset = rotation * quat * delta_vec;
-            // dbg!(delta_vec);
-            // translation += offset;
-            pos += delta_vec;
+            if pos_line.is_empty(){
+                pos += delta_vec;
+            }
         }
-        if att.contains_key("CUTB") && !contains_opdir {
+        if att.contains_key("CUTB") && !contains_opdir && !has_rot {
             cut_dir = att.get_dvec3("CUTP").unwrap_or(cut_dir);
             has_cut_back = true;
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
@@ -327,14 +358,10 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 }
             }
         }
-        if has_bang {
-            quat = quat * DQuat::from_rotation_z(bangle.to_radians());
-            // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
-        }
-        let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or("NA");
-        //todo fix 处理 posl的计算
-        if att.contains_key("POSL") && !pos_line.is_empty() {
 
+
+        //todo fix 处理 posl的计算
+        if !pos_line.is_empty() {
             //plin里的位置偏移
             let mut plin_pos = DVec3::ZERO;
             let mut pline_plax = DVec3::X;
@@ -374,8 +401,8 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     }
                 }
             }
-            let mut z_axis = if is_lmirror { -pline_plax } else { pline_plax };
-            let mut new_quat = {
+            let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
+            let new_quat = {
                 if cur_type == "FITT" {
                     //受到bang的影响，需要变换
                     //绕着z轴旋转
@@ -387,42 +414,34 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     cal_ori_by_z_axis_ref_y(z_axis) * quat
                 }
             };
-            if att.contains_key("YDIR") {
-                if let Some(v) = att.get_dvec3("YDIR") {
-                    let mut y_axis = v.normalize();
-                    // dbg!(y_axis);
-                    let z_axis = DVec3::X;
-                    //如果X方向有值，这需要重新设置y_axis
-                    if y_axis.x.abs() > 0.0001 {
-                        if y_axis.y.abs() > 0.0001 {
-                            y_axis = DVec3::Y;
-                        } else {
-                            y_axis = DVec3::Z;
-                        }
-                    };
-                    let x_axis = y_axis.cross(z_axis).normalize();
-                    new_quat = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
-                }
+            //处理有YDIR的情况
+            if let Some(v) = ydir_axis {
+                dbg!((v, z_axis));
+                quat = cal_ori_by_ydir(v.normalize(), z_axis);
+                dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             }
-            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
-            translation += rotation * (pos + plin_pos) ; //+ rotation * new_quat * delta_vec;
+            if has_bang {
+                quat = quat * DQuat::from_rotation_z(bangle.to_radians());
+            }
+            let offset = rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
+            // dbg!(offset);
+            translation += offset;
             rotation = rotation * new_quat;
         } else {
-            // dbg!(rotation * pos);
+            if let Some(v) = ydir_axis {
+                let z_axis = DVec3::X;
+                dbg!((v, z_axis));
+                quat = cal_ori_by_ydir(v.normalize(), z_axis);
+                dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
+            }
+            if has_bang {
+                quat = quat * DQuat::from_rotation_z(bangle.to_radians());
+            }
             translation = translation + rotation * pos;
             // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
             rotation = rotation * quat;
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
-            if let Some(v) = att.get_dvec3("YDIR") {
-                let y_ref_axis = v.normalize();
-                // dbg!(y_ref_axis);
-                let m = DMat3::from_quat(rotation);
-                let z_axis = m.z_axis;
-                let x_axis = y_ref_axis.cross(z_axis).normalize();
-                let y_axis = z_axis.cross(x_axis).normalize();
-                rotation = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
-            }
         }
 
         if has_cut_back {
@@ -430,15 +449,12 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             let x_axis = DVec3::Z;
             let z_axis = if cut_dir.z.abs() > 0.0001 {
                 DVec3::X
-            }else{
+            } else {
                 cut_dir
             };
             let y_axis = z_axis.cross(x_axis).normalize();
             let mat = DMat3::from_cols(x_axis, y_axis, z_axis);
-            // dbg!(dquat_to_pdms_ori_xyz_str(&DQuat::from_mat3(&mat), true));
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
             rotation = rotation * DQuat::from_mat3(&mat);
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
         }
 
         mat4 = DMat4::from_rotation_translation(rotation, translation);
@@ -518,7 +534,7 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
     let mut quat = DQuat::IDENTITY;
     //默认只有一个
     let mut spline_paths = get_spline_path(refno).await?;
-    if spline_paths.is_empty(){
+    if spline_paths.is_empty() {
         return Ok(None);
     }
     let spine_ydir = spline_paths[0].preferred_dir.as_dvec3();
@@ -527,7 +543,8 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
     let lens: Vec<f32> = sweep_paths.iter().map(|x| x.length()).collect::<Vec<_>>();
     let total_len: f32 = lens.iter().sum();
     let world_mat4 = Box::pin(get_world_mat4(refno, false))
-        .await?.unwrap_or_default();
+        .await?
+        .unwrap_or_default();
     let (_, w_quat, _) = world_mat4.to_scale_rotation_translation();
     let mut tmp_dist = zdis as f64;
     let mut tmp_porp = pkdi.clamp(0.0, 1.0);
@@ -557,12 +574,12 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
                         quat = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, z_dir));
                     } else {
                         // quat = cal_ori_by_extru_axis(z_dir, false);
-                        dbg!(spine_ydir);
+                        // dbg!(spine_ydir);
                         quat = cal_spine_ori(z_dir, spine_ydir);
                         z_dir = DMat3::from_quat(quat).z_axis;
                         quat = w_quat * quat;
                     }
-                    dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
+                    // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
                     let spine = &spline_paths[i];
                     match section_end {
                         Some(SectionEnd::START) => {

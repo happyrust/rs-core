@@ -364,6 +364,7 @@ pub fn resolve_axis(
     let mut ref_dir = Vec3::ZERO;
     let mut pos = Vec3::ZERO;
     let re = Regex::new(r"^(-?)P(P?)\s?(\d+)$").unwrap();
+    // dbg!(dir_str);
     if re.is_match(dir_str) {
         if let Some(caps) = re.captures(dir_str) {
             // dbg!(&caps);
@@ -526,7 +527,8 @@ pub fn parse_str_axis_to_vec3(
             // dbg!(&dir_str);
             let re = Regex::new(r"(-?[X|Y|Z])\s(.*)\s(-?[X|Y|Z])").unwrap();
             for caps in re.captures_iter(&dir_str) {
-                // dbg!(&caps);
+                #[cfg(feature = "debug_expr")]
+                dbg!(&caps);
                 if caps.len() == 4 {
                     let val_str = caps[2].to_string();
                     // dbg!(&val_str);

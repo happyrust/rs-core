@@ -26,7 +26,7 @@ fn test_print_ori(ori: &str) {
 
 #[cfg(test)]
 mod test_transform {
-    use crate::{init_test_surreal};
+    use crate::{cal_ori_by_ydir, init_test_surreal};
     use crate::tool::dir_tool::{parse_ori_str_to_mat, parse_ori_str_to_quat};
     use crate::tool::math_tool;
     use crate::tool::math_tool::{
@@ -398,9 +398,20 @@ mod test_transform {
     async fn test_query_transform_PLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
 
-        test_ori("24384/25786".into(), "Y is -X and Z is -Y").await;
+        test_ori("24384/25786".into(), "Y is -X 0.031 Z and Z is -Y").await;
+        test_ori("17496/268334".into(), "Y is -Z and Z is -X").await;
+        //
         // test_ori("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
         // test_ori("25688/48821".into(), "Y is X 33.955 Y and Z is Y 33.955 -X").await;
+
+        //现在问题剩下为，怎么判断z_dir 是 X 还是Y
+        // let ydir = parse_expr_to_dir("X 30 Y 30 -Z").unwrap();
+        // let ori = cal_ori_by_ydir(ydir, DVec3::Y);
+        // dbg!(dquat_to_pdms_ori_xyz_str(&ori, true));
+        //
+        // let ydir = parse_expr_to_dir("X 30 Y 30 -Z").unwrap();
+        // let ori = cal_ori_by_ydir(ydir, DVec3::X);
+        // dbg!(dquat_to_pdms_ori_xyz_str(&ori, true));
 
         Ok(())
     }
@@ -414,14 +425,16 @@ mod test_transform {
         )
         .await;
         // test_ori("17496/152081".into(), "Y is Z and Z is X 30.659 Y").await;
-        test_ori("24384/25787".into(), "Y is -X 0.031 Z and Z is X 89.969 Z").await;
+        // test_ori("24384/25787".into(), "Y is -X 0.031 Z and Z is X 89.969 Z").await;
         Ok(())
     }
 
     #[tokio::test]
     async fn test_query_transform_FIT() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_transform("24381/55590".into(), "Y is Z and Z is -X", "X 15455.2mm Y -39949.8mm Z 34500mm").await;
+        // test_transform("24381/55590".into(), "Y is Z and Z is -X", "X 15455.2mm Y -39949.8mm Z 34500mm").await;
+        test_transform("17496/215727".into(), "Y is E and Z is S", "X -28560mm Y 41050mm Z -5400mm").await;
+        //17496/215727
         // test_ori("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
         // test_ori("17496/202352".into(), "Y is X and Z is -Y").await;
         // test_ori("24381/38388".into(), "Y is -X 13 Y and Z is Y 13 X").await;

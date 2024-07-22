@@ -62,7 +62,7 @@ pub fn to_pdms_vec_str(vec: &Vec3, convert_xyz: bool) -> String {
     to_pdms_dvec_str(&vec.as_dvec3(), convert_xyz)
 }
 
-pub const DVEC_STR_ANGLE_RAD_F64_TOL: f64 = 0.00000001;
+pub const DVEC_STR_ANGLE_RAD_F64_TOL: f64 = 0.0000001;
 
 #[inline]
 pub fn to_pdms_dvec_str(v: &DVec3, convert_xyz: bool) -> String {
