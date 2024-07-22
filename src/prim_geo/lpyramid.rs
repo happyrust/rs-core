@@ -152,11 +152,12 @@ impl BrepShapeTrait for LPyramid {
         let bx = (self.pbbt / 2.0).max(0.001) as f64;
         let by = (self.pcbt / 2.0).max(0.001) as f64;
         //这里需要按照实际的变换方位来计算
-        let ox = self.pbof as f64 * self.pbax_dir.truncate().as_dvec2();
-        let oy = self.pcof as f64 * self.pcax_dir.truncate().as_dvec2();
-
-        let offset = ox + oy;
-        let offset_3d = DVec3::new(offset.x as _, offset.y as _, 0.0);
+        let ox = self.pbof as f64 * DVec3::X  ;// * self.pbax_dir.truncate().as_dvec2();
+        let oy = self.pcof as f64 * DVec3::Y ; //* self.pcax_dir.truncate().as_dvec2();
+        // dbg!((ox, oy));
+        let offset_3d = ox + oy;
+        // let offset_3d = DVec3::new(offset.x as _, offset.y as _, 0.0);
+        // dbg!(offset_3d);
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
         let mut polys = vec![];
@@ -169,7 +170,7 @@ impl BrepShapeTrait for LPyramid {
             DVec3::new(-tx, ty, h2) + offset_3d,
         ];
         if tx + ty < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(offset.x, offset.y, h2)));
+            verts.push(Vertex::new(DVec3::new(offset_3d.x, offset_3d.y, h2)));
         } else {
             polys.push(Wire::from_ordered_points(pts)?);
         }
@@ -181,7 +182,7 @@ impl BrepShapeTrait for LPyramid {
             DVec3::new(-bx, by, -h2) ,
         ];
         if bx + by < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(-offset.x, -offset.y, -h2)));
+            verts.push(Vertex::new(DVec3::new(-offset_3d.x, -offset_3d.y, -h2)));
         } else {
             polys.push(Wire::from_ordered_points(pts)?);
         }

@@ -1,5 +1,5 @@
 use std::alloc::{alloc, Layout};
-use std::panic;
+use std::{mem, panic};
 
 use glam::{DMat4, Mat4, Vec2, Vec3};
 use itertools::Itertools;
@@ -13,7 +13,6 @@ use crate::tool::float_tool::*;
 pub struct ManifoldSimplePolygonRust {
     pub ptr: *mut ManifoldSimplePolygon,
 }
-
 
 
 impl ManifoldSimplePolygonRust {
@@ -92,7 +91,7 @@ pub struct ManifoldRust {
     pub ptr: *mut ManifoldManifold,
 }
 
-unsafe impl Send for ManifoldRust{}
+unsafe impl Send for ManifoldRust {}
 
 impl ManifoldRust {
     pub fn new() -> Self {
@@ -104,6 +103,10 @@ impl ManifoldRust {
                 ptr,
             }
         }
+    }
+
+    pub fn convert_to_manifold(plant_mesh: PlantMesh, mat4: DMat4, more_precsion: bool) -> Self {
+        Self::from_mesh(&ManifoldMeshRust::convert_to_manifold_mesh(plant_mesh, mat4, more_precsion))
     }
 
     pub fn from_mesh(m: &ManifoldMeshRust) -> Self {
@@ -201,32 +204,58 @@ impl ManifoldMeshRust {
         }
     }
 
-}
-
-impl From<(&PlantMesh, &DMat4)> for ManifoldMeshRust {
-    fn from(c: (&PlantMesh, &DMat4)) -> Self {
-        let m = c.0;
-        let t = c.1;
+    pub fn convert_to_manifold_mesh(mut plant_mesh: PlantMesh, mat4: DMat4, ceil_or_trunc: bool) -> Self {
         unsafe {
             let mesh = ManifoldMeshRust::new();
-            let mut verts: Vec<f32> = Vec::with_capacity(m.vertices.len() * 3);
-            for v in m.vertices.clone() {
-                let pt = t.transform_point3(glam::DVec3::from(v));
-                // verts.push(f64_round_3(pt[0]) as _);
-                // verts.push(f64_round_3(pt[1]) as _);
-                // verts.push(f64_round_3(pt[2]) as _);
-
-                verts.push(f64_round_1(pt[0]) as _);
-                verts.push(f64_round_1(pt[1]) as _);
-                verts.push(f64_round_1(pt[2]) as _);
+            let len = plant_mesh.vertices.len();
+            let mut verts: Vec<f32> = Vec::with_capacity(len * 3);
+            for v in mem::take(&mut plant_mesh.vertices) {
+                let pt = mat4.transform_point3(glam::DVec3::from(v));
+                if ceil_or_trunc {
+                    verts.push((num_traits::signum(pt[0]) * f64_round_2(pt[0].abs())) as f32);
+                    verts.push( (num_traits::signum(pt[1]) * f64_round_2(pt[1].abs())) as f32);
+                    verts.push((num_traits::signum(pt[2]) * f64_round_2(pt[2].abs())) as f32);
+                } else {
+                    verts.push(f64_trunc_1(pt[0]) as _);
+                    verts.push(f64_trunc_1(pt[1]) as _);
+                    verts.push(f64_trunc_1(pt[2]) as _);
+                }
             }
             manifold_meshgl(mesh.ptr as _,
-                            verts.as_ptr() as _, m.vertices.len(), 3,
-                            m.indices.as_ptr() as _, m.indices.len() / 3);
+                            verts.as_ptr() as _, len, 3,
+                            plant_mesh.indices.as_ptr() as _, plant_mesh.indices.len() / 3);
             mesh
         }
     }
 }
+//负实体的模型应该更大一些
+//正实体的模型更小一些
+
+
+// impl From<(&PlantMesh, &DMat4)> for ManifoldMeshRust {
+//     fn from(c: (&PlantMesh, &DMat4)) -> Self {
+//         let m = c.0;
+//         let t = c.1;
+//         unsafe {
+//             let mesh = ManifoldMeshRust::new();
+//             let mut verts: Vec<f32> = Vec::with_capacity(m.vertices.len() * 3);
+//             for v in m.vertices.clone() {
+//                 let pt = t.transform_point3(glam::DVec3::from(v));
+//                 // verts.push(f64_round_3(pt[0]) as _);
+//                 // verts.push(f64_round_3(pt[1]) as _);
+//                 // verts.push(f64_round_3(pt[2]) as _);
+//
+//                 verts.push(f64_round_1(pt[0]) as _);
+//                 verts.push(f64_round_1(pt[1]) as _);
+//                 verts.push(f64_round_1(pt[2]) as _);
+//             }
+//             manifold_meshgl(mesh.ptr as _,
+//                             verts.as_ptr() as _, m.vertices.len(), 3,
+//                             m.indices.as_ptr() as _, m.indices.len() / 3);
+//             mesh
+//         }
+//     }
+// }
 
 impl From<&PlantMesh> for ManifoldMeshRust {
     fn from(m: &PlantMesh) -> Self {
@@ -265,19 +294,19 @@ impl From<PlantMesh> for ManifoldRust {
     }
 }
 
-impl From<(&PlantMesh, &DMat4)> for ManifoldRust {
-    fn from(m: (&PlantMesh, &DMat4)) -> Self {
-        unsafe {
-            let mesh: ManifoldMeshRust = m.into();
-            Self::from_mesh(&mesh)
-        }
-    }
-}
-impl From<ManifoldRust> for PlantMesh {
-    fn from(m: ManifoldRust) -> Self {
-        (&m).into()
-    }
-}
+// impl From<(&PlantMesh, &DMat4)> for ManifoldRust {
+//     fn from(m: (&PlantMesh, &DMat4)) -> Self {
+//         unsafe {
+//             let mesh: ManifoldMeshRust = m.into();
+//             Self::from_mesh(&mesh)
+//         }
+//     }
+// }
+// impl From<ManifoldRust> for PlantMesh {
+//     fn from(m: ManifoldRust) -> Self {
+//         (&m).into()
+//     }
+// }
 
 impl From<&ManifoldRust> for PlantMesh {
     fn from(m: &ManifoldRust) -> Self {

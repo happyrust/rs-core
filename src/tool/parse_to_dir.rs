@@ -38,7 +38,7 @@ pub struct Direction {
     coordinate: Coordinate,
 }
 
-fn ws<'a, F: 'a, O>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O>
+pub fn ws<'a, F: 'a, O>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O>
 where
     F: FnMut(&'a str) -> IResult<&'a str, O>,
 {
@@ -107,6 +107,30 @@ fn parse_coordinate(input: &str) -> IResult<&str, Coordinate> {
 
     Ok((input, coord))
 }
+
+// fn parse_axis_dir(input: &str) -> IResult<&str, Coordinate> {
+//     let (input, values) = nom::multi::many0(alt((
+//         parse_axis_value("X"),
+//         parse_axis_value("Y"),
+//         parse_axis_value("Z"),
+//     )))(input)?;
+//
+//     let mut coord = Coordinate {
+//         x: None,
+//         y: None,
+//         z: None,
+//     };
+//     for (axis, value, is_neg) in values {
+//         match axis.as_str() {
+//             "X" => coord.x = Some((value, is_neg)),
+//             "Y" => coord.y = Some((value, is_neg)),
+//             "Z" => coord.z = Some((value, is_neg)),
+//             _ => {}
+//         }
+//     }
+//
+//     Ok((input, coord))
+// }
 
 pub fn parse_to_direction(input: &str, context: Option<&CataContext>) -> anyhow::Result<Option<DVec3>> {
     let (remaining_input, _) = ws(tag("TO"))(input).map_err(|_| anyhow!("Parsing failed!"))?;

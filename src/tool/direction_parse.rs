@@ -61,8 +61,7 @@ pub fn parse_angle(input: &str) -> IResult<&str, f64> {
 }
 
 fn parse_axis_rotation(input: &str) -> IResult<&str, Rotation> {
-    let (input, angle) = parse_angle(input).unwrap();
-    // dbg!(input);
+    let (input, angle) = parse_angle(input)?;
     let (input, axis) = recognize(signed_axis)(input)?;
     Ok((input, Rotation{
         axis: *AXISES_MAP.get(axis).unwrap(),

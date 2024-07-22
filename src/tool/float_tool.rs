@@ -151,6 +151,13 @@ pub fn f64_round_1(v: f64) -> f64 {
     (v * 10.0).round() / 10.0f64 //以防止溢出
 }
 
+pub fn f64_trunc_1(v: f64) -> f64 {
+    (v * 10.0).trunc() / 10.0f64 //以防止溢出
+}
+
+pub fn f64_trunc_2(v: f64) -> f64 {
+    (v * 100.0).trunc() / 100.0f64 //以防止溢出
+}
 
 #[inline]
 pub fn dvec3_round_3(v: DVec3) -> DVec3 {

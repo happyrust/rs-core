@@ -30,11 +30,14 @@ pub fn get_inst_relate_keys(refnos: &[RefU64]) -> String {
 
 ///获得当前参考号对应的loops （例如Panel下的loops，可能有多个）
 pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)> {
-    let mut response = SUL_DB.query(format!(r#"
+    let sql = format!(
+        r#"
         select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
             (select value in from {0}<-pe_owner where in.noun in ["LOOP", "PLOO"]);
         array::complement((select value refno.HEIG from [ (select value in.id from only {0}<-pe_owner where in.noun in ["LOOP", "PLOO"] limit 1), {0}]), [none])[0];
-    "#, refno.to_pe_key())).await.unwrap();
+        "#, refno.to_pe_key());
+    // println!("sql is {}", &sql);
+    let mut response = SUL_DB.query(&sql).await.unwrap();
     let points: Vec<Vec<Vec3>> = response.take(0)?;
     let height: Option<f32> = response.take(1)?;
 

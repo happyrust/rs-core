@@ -31,20 +31,19 @@ lazy_static! {
     };
 }
 
-pub fn cal_mat3_by_zdir(zdir: DVec3) -> DMat3 {
-    let quat = DQuat::from_rotation_arc(DVec3::Z, zdir);
-    let mut m = DMat3::from_quat(quat);
-    if abs_diff_ne!(m.y_axis.z.abs(), 1.0, epsilon = ANGLE_RAD_TOL as f64) {
-        m.y_axis.z = 0.0;
-        m.y_axis = m.y_axis.normalize();
-        m.x_axis = m.y_axis.cross(m.z_axis).normalize();
-    } else if m.y_axis.z < 0.0 {
-        m.y_axis.z = 1.0;
-        m.y_axis = m.y_axis.normalize();
-        m.x_axis = m.y_axis.cross(m.z_axis).normalize();
-    }
-    m
+//x轴作为参考轴去当目标轴
+pub fn cal_quat_by_zdir_with_xref(zdir: DVec3) -> DQuat {
+    let mut xdir = if zdir.z.abs() < 1.0e-5 {
+        -DVec3::Z * zdir.x.signum()
+    } else {
+        DVec3::X * zdir.z.signum()
+    };
+    let ydir = zdir.cross(xdir).normalize();
+    xdir = ydir.cross(zdir).normalize();
+    let mat3 = DMat3::from_cols(xdir, ydir, zdir);
+    DQuat::from_mat3(&mat3)
 }
+
 
 pub fn convert_to_xyz(s: &str) -> String {
     s.replace("E", "X")
@@ -65,13 +64,12 @@ pub fn to_pdms_vec_str(vec: &Vec3, convert_xyz: bool) -> String {
 
 pub const DVEC_STR_ANGLE_RAD_F64_TOL: f64 = 0.0000001;
 
-
 #[inline]
 pub fn to_pdms_dvec_str(v: &DVec3, convert_xyz: bool) -> String {
     let result = to_pdms_dvec_str_with_tol(v, DVEC_STR_ANGLE_RAD_F64_TOL);
-    if convert_xyz{
+    if convert_xyz {
         return convert_to_xyz(&result);
-    }else{
+    } else {
         return result;
     }
 }
@@ -83,7 +81,10 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         }
     }
     //1个象限的组合
-    if abs_diff_eq!(v.x * v.y * v.z, 0.0, epsilon = tol) {
+    if abs_diff_eq!(v.x, 0.0, epsilon = tol)
+        || abs_diff_eq!(v.y, 0.0, epsilon = tol)
+        || abs_diff_eq!(v.z, 0.0, epsilon = tol)
+    {
         let mut x = 0.0;
         let mut y = 0.0;
         let mut x_str = "";
@@ -128,17 +129,17 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         }
         if angle > 45.0 {
             if y_str != "U" && y_str != "D" {
-                return format!("{y_str} {:.3} {x_str}", f64_round_4(90.0 - angle));
+                return format!("{y_str} {} {x_str}", f64_round_3(90.0 - angle));
             }
         } else if angle == 45.0 {
             if x_str.contains("Y") && y_str.contains("X") {
-                return format!("{y_str} {:.3} {x_str}", f64_round_4(90.0 - angle));
+                return format!("{y_str} {} {x_str}", f64_round_3(90.0 - angle));
             }
         }
         if angle == 90.0 {
             return y_str.to_string();
         }
-        return format!("{x_str} {:.3} {y_str}", f64_round_4(angle));
+        return format!("{x_str} {} {y_str}", f64_round_3(angle));
     }
 
     //2个象限的组合, 最后一个留给Z轴
@@ -160,7 +161,7 @@ pub fn to_pdms_dvec_str_with_tol(v: &DVec3, tol: f64) -> String {
         return z_str.to_string();
     }
 
-    format!("{part_str} {:.3} {z_str}", f64_round_4(theta))
+    format!("{part_str} {} {z_str}", f64_round_3(theta))
 }
 
 fn neg_dir_str(y_str: &str) -> &str {
@@ -298,11 +299,11 @@ pub fn dquat_to_pdms_ori_xyz_str(rot: &DQuat, convert_xyz: bool) -> String {
 }
 
 #[inline]
-pub fn angles_to_ori(angs: Vec3) -> Option<Quat> {
-    let mat = Mat3::from_rotation_z(angs[2].to_radians())
-        * Mat3::from_rotation_y(angs[1].to_radians())
-        * Mat3::from_rotation_x(angs[0].to_radians());
-    Some(Quat::from_mat3(&mat))
+pub fn angles_to_ori(angs: DVec3) -> Option<DQuat> {
+    let mat = DMat3::from_rotation_z(angs[2].to_radians())
+        * DMat3::from_rotation_y(angs[1].to_radians())
+        * DMat3::from_rotation_x(angs[0].to_radians());
+    Some(DQuat::from_mat3(&mat))
 }
 
 #[inline]
