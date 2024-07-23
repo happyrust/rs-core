@@ -230,7 +230,7 @@ impl NamedAttrMap {
             noun,
             dbnum,
             cata_hash: self.cal_cata_hash(),
-            e3d_version: self.pgno(),
+            pgno: self.pgno(),
             ..Default::default()
         };
         ele
@@ -267,16 +267,11 @@ impl NamedAttrMap {
             .insert("PGNO".into(), NamedAttrValue::IntegerType(v));
     }
 
-    #[inline]
-    pub fn pgno(&self) -> i32 {
-        self.get_i32("PGNO").unwrap_or_default()
-    }
 
     #[inline]
     pub fn get_e3d_version(&self) -> i32 {
         self.pgno()
     }
-
 
     //PGNO
     #[inline]

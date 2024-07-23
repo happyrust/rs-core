@@ -31,7 +31,7 @@ impl SPdmsElement {
 
     #[inline]
     pub fn history_id(&self) -> String {
-        format!("pe:{}_{}", self.refno, self.e3d_version)
+        format!("pe:{}_{}", self.refno, self.pgno)
     }
 
     pub fn gen_sur_json(&self, id: Option<String>) -> String {
