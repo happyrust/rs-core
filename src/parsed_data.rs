@@ -63,7 +63,9 @@ pub struct GmseParamData {
 
     /// plin 数据
     pub plin_pos: Vec2,
-    pub plin_plax: Vec3,
+    pub plin_axis: Option<Vec3>,
+    pub plax: Option<Vec3>,
+    pub na_axis: Option<Vec3>,
 }
 
 ///需要存储到数据库中
@@ -576,6 +578,8 @@ pub struct SannData {
 
     pub plin_pos: Vec2,
     pub plin_axis: Vec3,
+    pub plax: Vec3,
+    pub na_axis: Vec3,
 }
 
 ///一般的由顶点组成的截面信息
@@ -594,9 +598,10 @@ pub struct SProfileData {
     pub refno: RefU64,
     pub verts: Vec<Vec2>,
     pub frads: Vec<f32>,
-    pub normal_axis: Vec3,
+    pub plax: Vec3,
     pub plin_pos: Vec2,
     pub plin_axis: Vec3,
+    pub na_axis: Vec3,
 }
 
 ///一般的由顶点组成的截面信息
@@ -616,9 +621,10 @@ pub struct SRectData {
     pub center: Vec2,
     pub size: Vec2,
     pub dxy: Vec2,
-    pub normal_axis: Vec3,
+    pub plax: Vec3,
     pub plin_pos: Vec2,
     pub plin_axis: Vec3,
+    pub na_axis: Vec3,
 }
 
 impl SRectData {
@@ -634,9 +640,10 @@ impl SRectData {
                 c + Vec2::new(-h.x, h.y),
             ],
             frads: vec![0.0; 4],
-            normal_axis: self.normal_axis,
+            plax: self.plax,
             plin_pos: self.plin_pos,
             plin_axis: self.plin_axis,
+            na_axis: self.na_axis
         }
     }
 }
@@ -674,11 +681,12 @@ impl CateProfileParam {
     pub fn get_plax(&self) -> Vec3 {
         match self {
             CateProfileParam::UNKOWN => Vec3::Y,
-            CateProfileParam::SPRO(s) => s.normal_axis.normalize(),
+            CateProfileParam::SPRO(s) => s.plax,
             CateProfileParam::SANN(s) => {
-                s.paxis.as_ref().map(|x| x.dir).flatten().unwrap_or(Vec3::Y)
+                // s.paxis.as_ref().map(|x| x.dir).flatten().unwrap_or(Vec3::Y)
+                s.plax
             }
-            CateProfileParam::SREC(s) => s.normal_axis.normalize(),
+            CateProfileParam::SREC(s) => s.plax,
         }
     }
 

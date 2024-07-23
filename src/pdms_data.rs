@@ -100,6 +100,8 @@ pub struct GmParam {
     pub centre_line_flag: bool,
     pub visible_flag: bool,
     pub frads: Vec<String>,
+
+    pub plax: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

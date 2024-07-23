@@ -19,6 +19,10 @@ impl WholeAttMap {
         &self.attmap
     }
 
+    pub fn att_map_mut(&mut self) -> &mut NamedAttrMap{
+        &mut self.attmap
+    }
+
     pub fn refine(mut self, info_map: &DashMap<String, AttrInfo>) -> Self {
         let mut remove_list = vec![];
         for (noun, v) in self.explicit_attmap.map.iter() {

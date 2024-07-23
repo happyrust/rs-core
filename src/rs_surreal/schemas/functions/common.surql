@@ -53,7 +53,7 @@ DEFINE FUNCTION fn::backup_atts_and_pes(
         let $b = (select * omit id from $pe.refno)[0];
         let $c = (select * omit id, in from $pe->inst_relate)[0];
         if $a != none {
-            let $id = string::concat(meta::id($a.refno), '_', $a.e3d_version);
+            let $id = string::concat(meta::id($a.refno), '_', $a.pgno);
             let $att_id = type::thing(string::concat($a.noun, '_history'), $id);
             let $pe_id = type::thing('pe_history', $id);
             update $pe_id content $a;

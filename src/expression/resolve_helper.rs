@@ -100,23 +100,26 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                 refno: gmse.refno,
                 xy: Vec2::new(gmse.verts[0][0], gmse.verts[0][1]),
                 dxy: Vec2::new(gmse.dxy[0][0], gmse.dxy[0][1]),
-                paxis: (gmse.paxises[0].clone()),
+                paxis: gmse.paxises[0].clone(),
                 pangle: gmse.pang as f32,
                 pradius: gmse.prad as f32,
                 pwidth: gmse.pwid as f32,
-                drad: gmse.drad as f32,
+                drad: gmse.drad,
                 dwid: gmse.dwid as f32,
                 plin_pos: gmse.plin_pos,
-                plin_axis: gmse.plin_plax,
+                plin_axis: gmse.plin_axis.unwrap_or(Vec3::Y),
+                plax: gmse.plax.unwrap_or(Vec3::Y),
+                na_axis: gmse.na_axis.unwrap_or(Vec3::Y),
             })),
             "SPRO" => {
                 CateGeoParam::Profile(CateProfileParam::SPRO(SProfileData {
                     refno: gmse.refno,
                     verts: gmse.verts.iter().map(|x| x.truncate()).collect(),
                     frads: gmse.frads.clone(),
-                    normal_axis: gmse.paxises[0].as_ref().map(|x| x.dir).flatten().unwrap_or(Vec3::Z),
+                    plax: gmse.plax.unwrap_or(Vec3::Y),
                     plin_pos: gmse.plin_pos,
-                    plin_axis: gmse.plin_plax,
+                    plin_axis: gmse.plin_axis.unwrap_or(Vec3::Y),
+                    na_axis: gmse.na_axis.unwrap_or(Vec3::Y),
                 }))
             }
             "SREC" => {
@@ -125,9 +128,10 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                     center: Vec2::new(gmse.xyz[0], gmse.xyz[1]),
                     size: Vec2::new(gmse.lengths[0], gmse.lengths[1]),
                     dxy: gmse.dxy[0],
-                    normal_axis: gmse.paxises[0].as_ref().map(|x| x.dir).flatten().unwrap_or(Vec3::Z),
+                    plax: gmse.plax.unwrap_or(Vec3::Y),
                     plin_pos: gmse.plin_pos,
-                    plin_axis: gmse.plin_plax,
+                    plin_axis: gmse.plin_axis.unwrap_or(Vec3::Y),
+                    na_axis: gmse.na_axis.unwrap_or(Vec3::Y),
                 }))
             }
             "BOXI" => CateGeoParam::BoxImplied(CateBoxImpliedParam {

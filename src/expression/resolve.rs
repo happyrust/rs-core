@@ -35,6 +35,7 @@ pub fn resolve_gms(
     des_refno: RefU64,
     gmse_raw_paras: &[GmParam],
     jusl_param: &Option<PlinParam>,
+    na_plin_param: &Option<PlinParam>,
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
 ) -> Vec<CateGeoParam> {
@@ -47,7 +48,7 @@ pub fn resolve_gms(
                     return None;
                 }
                 let r = resolve_paragon_gm_params(des_refno, &g,
-                                                  jusl_param, context, axis_param_map);
+                                                  jusl_param, na_plin_param, context, axis_param_map);
                 return match r {
                     Ok(v) => {
                         Some(v)
@@ -70,10 +71,11 @@ pub fn resolve_paragon_gm_params(
     des_refno: RefU64,
     gm_param: &GmParam,
     jusl_param: &Option<PlinParam>,
+    na_plin_param: &Option<PlinParam>,
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
 ) -> anyhow::Result<CateGeoParam> {
-    match resolve_gmse_params(gm_param, jusl_param, context, axis_param_map) {
+    match resolve_gmse_params(gm_param, jusl_param, na_plin_param, context, axis_param_map) {
         Ok(gm_data) => {
             panic::catch_unwind(|| {
                 resolve_to_cate_geo_params(&gm_data)
@@ -180,6 +182,7 @@ pub fn resolve_paragon_gm_params(
 pub fn resolve_gmse_params(
     gm: &GmParam,
     jusl_param: &Option<PlinParam>,
+    na_plin_param: &Option<PlinParam>,
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
 ) -> anyhow::Result<GmseParamData> {
@@ -286,8 +289,11 @@ pub fn resolve_gmse_params(
         }
     }
     let mut plin_pos = Vec2::ZERO;
-    let mut plin_plax = Vec3::X;
+    let mut plin_axis = None;
+    let mut plax = None;
+    let mut na_axis = None;
     if let Some(jusl) = jusl_param {
+        // dbg!(jusl);
         //直接把 jusl_dxy加上
         plin_pos = Vec2::new(eval_str_to_f32_or_default(&jusl.vxy[0], context,  "DIST"),
                              eval_str_to_f32_or_default(&jusl.vxy[1], context,  "DIST"))
@@ -295,7 +301,21 @@ pub fn resolve_gmse_params(
                         eval_str_to_f32_or_default(&jusl.dxy[1], context,  "DIST"));
 
         if let Ok(dir) =  parse_str_axis_to_vec3(&jusl.plax, context){
-            plin_plax = dir;
+            plin_axis = Some(dir);
+            // dbg!(plin_axis);
+        }
+    }
+    if let Some(na_plin) = na_plin_param{
+        if let Ok(dir) =  parse_str_axis_to_vec3(&na_plin.plax, context){
+            na_axis = Some(dir);
+            // dbg!(na_axis);
+        }
+    }
+
+    if let Some(p) = &gm.plax{
+        if let Ok(dir) =  parse_str_axis_to_vec3(p, context){
+            plax = Some(dir);
+            // dbg!(plax);
         }
     }
     let type_name = gm.gm_type.clone();
@@ -324,7 +344,9 @@ pub fn resolve_gmse_params(
         paxises,
         centre_line_flag: gm.centre_line_flag,
         tube_flag: gm.visible_flag,
-        plin_plax,
+        plin_axis,
+        plax,
+        na_axis
     })
 }
 

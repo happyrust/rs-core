@@ -31,14 +31,14 @@ use truck_base::cgmath64::*;
 
 ///含有两边方向的，扫描体
 #[derive(
-Component,
-Debug,
-Clone,
-Serialize,
-Deserialize,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Component,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct SweepSolid {
     pub profile: CateProfileParam,
@@ -75,10 +75,14 @@ impl SweepSolid {
     //获得drns/drne的面的旋转矩阵
     pub fn get_face_mat4(&self, is_start: bool) -> DMat4 {
         let axis = if is_start {
-            if self.drns.is_none() { return DMat4::IDENTITY; }
+            if self.drns.is_none() {
+                return DMat4::IDENTITY;
+            }
             DVec3::Z
         } else {
-            if self.drne.is_none() { return DMat4::IDENTITY; }
+            if self.drne.is_none() {
+                return DMat4::IDENTITY;
+            }
             DVec3::NEG_Z
         };
         let dir = if is_start {
@@ -86,24 +90,19 @@ impl SweepSolid {
         } else {
             self.drne.unwrap()
         };
-
         if dir.z.abs() < 0.1 {
             return DMat4::IDENTITY;
         }
-
         let mut angle_x = (dir.x / dir.z).atan();
         let mut angle_y = -(dir.y / dir.z).atan();
-        // if !is_start {
-        //     angle_x = -angle_x;
-        //     angle_y = -angle_y;
-        // }
         //这里这个角度限制，应该用 h/2 / l 去计算，这里暂时给45°
         if angle_x.abs() - 0.01 >= FRAC_PI_2 || angle_y.abs() - 0.01 >= FRAC_PI_2 {
             return DMat4::IDENTITY;
         }
         let scale = DVec3::new(1.0 / angle_x.cos().abs(), 1.0 / angle_y.cos().abs(), 1.0);
         // dbg!((dir, angle_x.to_degrees(), angle_y.to_degrees(), scale));
-        let rot = DQuat::from_axis_angle(DVec3::Y, angle_x) * DQuat::from_axis_angle(DVec3::X, angle_y);
+        let rot =
+            DQuat::from_axis_angle(DVec3::Y, angle_x) * DQuat::from_axis_angle(DVec3::X, angle_y);
         DMat4::from_scale_rotation_translation(scale, rot, DVec3::ZERO)
     }
 
@@ -150,11 +149,14 @@ impl SweepSolid {
             }
 
             SweepPath3D::Line(d) => {
-                rot_mat =
-                    DMat3::from_quat(DQuat::from_rotation_arc(self.plax.as_dvec3(), DVec3::Y));
+                // rot_mat =
+                //     DMat3::from_quat(DQuat::from_rotation_arc(self.plax.as_dvec3(), DVec3::Y));
                 if d.is_spine {
                     dbg!(self.bangle.to_radians());
                     beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as _);
+                }
+                {
+                    rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(sann.na_axis.as_dvec3(), self.plax.as_dvec3()));
                 }
             }
         }
@@ -334,19 +336,21 @@ impl SweepSolid {
         let verts = &profile.verts;
         let len = verts.len();
 
-        let mut offset_pt = Vec3::ZERO;
-        let mut rot_mat = Mat3::IDENTITY;
-        let mut beta_rot = Quat::IDENTITY;
-        let mut r_translation = Vec3::ZERO;
+        let mut offset_pt = DVec3::ZERO;
+        let mut rot_mat = DMat3::IDENTITY;
+        let mut beta_rot = DQuat::IDENTITY;
+        let mut r_translation = DVec3::ZERO;
         let plin_pos = profile.plin_pos;
         // dbg!(&profile);
-        offset_pt.x = -plin_pos.x;
-        offset_pt.y = -plin_pos.y;
+        // dbg!(&plin_pos);
+        offset_pt.x = -plin_pos.x as f64;
+        offset_pt.y = -plin_pos.y as f64;
+
         match &self.path {
             SweepPath3D::SpineArc(d) => {
-                let y_axis = d.pref_axis;
-                let mut z_axis = self.plax;
-                r_translation.x = d.radius;
+                let y_axis = d.pref_axis.as_dvec3();
+                let mut z_axis = self.plax.as_dvec3();
+                r_translation.x = d.radius as f64;
                 if d.clock_wise {
                     z_axis = -z_axis;
                 }
@@ -355,14 +359,17 @@ impl SweepSolid {
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
                 //旋转到期望的平面
-                rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
-                beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
+                rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
+                beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as f64);
             }
             SweepPath3D::Line(d) => {
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
+                // rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
                 if d.is_spine {
-                    beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
+                    beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
                 }
+
+                rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(profile.na_axis.as_dvec3(), self.plax.as_dvec3()));
+                // dbg!((profile.na_axis, self.plax));
             }
         }
         let mut points = vec![];
@@ -373,13 +380,14 @@ impl SweepSolid {
         let mut wire = wire::gen_occ_wires(&vec![points])?
             .pop()
             .ok_or(anyhow!("无法生成wire。"))?;
-        let translation = Mat4::from_translation(offset_pt);
-        let r_trans_mat = Mat4::from_translation(r_translation);
-        let beta_mat = Mat4::from_mat3(Mat3::from_quat(beta_rot));
-        let local_mat = Mat4::from_mat3(rot_mat);
+        let translation = DMat4::from_translation(offset_pt);
+        let r_trans_mat = DMat4::from_translation(r_translation);
+        let beta_mat = DMat4::from_mat3(DMat3::from_quat(beta_rot));
+        let local_mat = DMat4::from_mat3(rot_mat);
+        // dbg!(local_mat);
         let final_mat = r_trans_mat * beta_mat * local_mat * translation;
 
-        Ok(wire.transformed_by_gmat(&final_mat.as_dmat4())?)
+        Ok(wire.transformed_by_gmat(&final_mat)?)
     }
 
     ///计算SPRO的face
@@ -464,7 +472,7 @@ impl Default for SweepSolid {
         Self {
             profile: CateProfileParam::UNKOWN,
             bangle: 0.0,
-            plax: Vec3::Z,
+            plax: Vec3::Y,
             extrude_dir: DVec3::Z,
             ..Default::default()
         }
@@ -649,7 +657,8 @@ impl BrepShapeTrait for SweepSolid {
                     let mut wires = vec![];
                     let mut transform_btm = self.get_face_mat4(true);
                     let mut transform_top = self.get_face_mat4(false);
-                    transform_top = DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
+                    transform_top =
+                        DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
                     wires.push(wire.transformed_by_gmat(&transform_btm)?);
                     if let Some(mut top_wire) = top_profile_wire {
                         wires.push(top_wire.transformed_by_gmat(&transform_top)?);

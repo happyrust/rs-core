@@ -26,7 +26,7 @@ pub async fn create_profile_geos(refno: RefU64,
     if geos.len() == 0 { return Ok(false); }
     let att = crate::get_named_attmap(refno).await?;
     let type_name = att.get_type_str();
-    let mut plax = Vec3::Z;
+    let mut plax = Vec3::Y;
     let mut extrude_dir = DVec3::Z;
     let mat = crate::get_world_mat4(refno, true).await?.unwrap_or_default();
     // dbg!(&mat);

@@ -74,18 +74,24 @@ pub fn resolve_cata_comp(
     let jusl_param = if let Some(plin) = cur_context.get("JUSL") {
         if scom_info.plin_map.contains_key(plin.as_str()) {
             Some(scom_info.plin_map.get(plin.as_str()).unwrap().clone())
-        } else if scom_info.plin_map.contains_key("NA") {
-            Some(scom_info.plin_map.get("NA").unwrap().clone())
-        } else {
+        }  else {
             None
         }
     } else {
         None
     };
+
+    let na_plin_param = if scom_info.plin_map.contains_key("NA") {
+        Some(scom_info.plin_map.get("NA").unwrap().clone())
+    }else{
+        None
+    };
+
     let geometries = resolve_gms(
         des_refno,
         &scom_info.gm_params,
         &jusl_param,
+        &na_plin_param,
         &cur_context,
         &axis_param_map,
     );
@@ -95,6 +101,7 @@ pub fn resolve_cata_comp(
         des_refno,
         &scom_info.ngm_params,
         &jusl_param,
+        &na_plin_param,
         &cur_context,
         &axis_param_map,
     );
@@ -207,12 +214,12 @@ pub fn get_axis_param(attr_map: &NamedAttrMap) -> Option<AxisParam> {
 
 ///获得gmse的params
 pub async fn query_gm_param(
-    a: &NamedAttrMap,
+    att: &NamedAttrMap,
     is_spro: bool,
 ) -> Option<GmParam> {
     // dbg!(a);
-    let mut paxises = a.get_attr_strings_without_default(&["PAXI", "PAAX", "PBAX", "PCAX"]);
-    if let Some(val) = a.get_val("PTS") {
+    let mut paxises = att.get_attr_strings_without_default(&["PAXI", "PAAX", "PBAX", "PCAX"]);
+    if let Some(val) = att.get_val("PTS") {
         match val {
             NamedAttrValue::IntArrayType(v) => {
                 for s in v {
@@ -222,16 +229,16 @@ pub async fn query_gm_param(
             _ => {}
         }
     }
-    if let Some(v) = a.get_as_string("PLAX") {
+    if let Some(v) = att.get_as_string("PLAX") {
         paxises.push((v));
     }
-    let centre_line_flag = a.get_bool("CLFL").unwrap_or(false);
-    let tube_flag = a.get_bool("TUFL").unwrap_or(false);
+    let centre_line_flag = att.get_bool("CLFL").unwrap_or(false);
+    let tube_flag = att.get_bool("TUFL").unwrap_or(false);
     let mut verts = vec![];
     let mut frads = vec![];
     let mut dxy = vec![];
-    let refno = a.get_refno().unwrap_or_default();
-    let type_name = a.get_type_str();
+    let refno = att.get_refno().unwrap_or_default();
+    let type_name = att.get_type_str();
     if type_name == "SEXT" || type_name == "NSEX" || type_name == "SREV" || type_name == "NSRE" {
         //先暂时不考虑负实体
         let children = crate::get_children_named_attmaps(refno).await.ok()?;
@@ -274,40 +281,41 @@ pub async fn query_gm_param(
             }
         } else {
             verts.push([
-                (a.get_as_string("PX").unwrap_or_default()),
-                (a.get_as_string("PY").unwrap_or_default()),
-                (a.get_as_string("PZ").unwrap_or_default()),
+                (att.get_as_string("PX").unwrap_or_default()),
+                (att.get_as_string("PY").unwrap_or_default()),
+                (att.get_as_string("PZ").unwrap_or_default()),
             ]);
-            frads.push((a.get_as_string("PRAD").unwrap_or_default()));
+            frads.push((att.get_as_string("PRAD").unwrap_or_default()));
             dxy.push([
-                (a.get_as_string("DX").unwrap_or_default()),
-                (a.get_as_string("DY").unwrap_or_default()),
+                (att.get_as_string("DX").unwrap_or_default()),
+                (att.get_as_string("DY").unwrap_or_default()),
             ]);
         }
     }
 
     Some(GmParam {
-        refno: a.get_refno().unwrap_or_default(),
-        gm_type: a.get_type_str().to_owned(),
-        prad: (a.get_as_string("PRAD").unwrap_or_default()),
-        pang: (a.get_as_string("PANG").unwrap_or_default()),
-        pwid: (a.get_as_string("PWID").unwrap_or_default()),
-        diameters: a.get_attr_strings(&["PDIA", "PBDM", "PTDM", "DIAM"]),
-        distances: a.get_attr_strings(&["PDIS", "PBDI", "PTDI"]),
-        shears: a.get_attr_strings(&["PXTS", "PYTS", "PXBS", "PYBS"]),
-        phei: (a.get_as_string("PHEI").unwrap_or_default()),
-        offset: (a.get_as_string("POFF").unwrap_or_default()),
-        lengths: a.get_attr_strings(&["PXLE", "PYLE", "PZLE"]),
-        xyz: a.get_attr_strings(&[
+        refno: att.get_refno().unwrap_or_default(),
+        gm_type: att.get_type_str().to_owned(),
+        prad: (att.get_as_string("PRAD").unwrap_or_default()),
+        pang: (att.get_as_string("PANG").unwrap_or_default()),
+        pwid: (att.get_as_string("PWID").unwrap_or_default()),
+        diameters: att.get_attr_strings(&["PDIA", "PBDM", "PTDM", "DIAM"]),
+        distances: att.get_attr_strings(&["PDIS", "PBDI", "PTDI"]),
+        shears: att.get_attr_strings(&["PXTS", "PYTS", "PXBS", "PYBS"]),
+        phei: (att.get_as_string("PHEI").unwrap_or_default()),
+        offset: (att.get_as_string("POFF").unwrap_or_default()),
+        lengths: att.get_attr_strings(&["PXLE", "PYLE", "PZLE"]),
+        xyz: att.get_attr_strings(&[
             "PX", "PY", "PZ", "PBBT", "PCBT", "PBTP", "PCTP", "PBOF", "PCOF",
         ]),
         verts,
         frads,
         dxy,
-        drad: (a.get_as_string("DRAD").unwrap_or_default()),
-        dwid: (a.get_as_string("DWID").unwrap_or_default()),
+        drad: (att.get_as_string("DRAD").unwrap_or_default()),
+        dwid: (att.get_as_string("DWID").unwrap_or_default()),
         paxises, // 先pa_axis, 后pb_axis
         centre_line_flag,
         visible_flag: tube_flag,
+        plax: att.get_as_string("PLAX"),
     })
 }
