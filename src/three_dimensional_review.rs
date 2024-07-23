@@ -158,7 +158,7 @@ pub struct VagueSearchExportRequest {
 }
 
 ///显示范围内所有模型
-#[derive(Event, Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, Event)]
 pub struct ShowModelInRangeEvent{
     pub refno:RefU64,
     pub range:f32,

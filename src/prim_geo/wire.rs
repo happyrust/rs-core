@@ -887,8 +887,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
             }
             let mut cur_ccw_sig = if v1.cross(v2).z > 0.0 { 1.0 } else { -1.0 };
             //如果v1 v2 方向相同，则继续沿用之前的 is_concave
-            if v1.dot(v2) > 0.99 {
-            } else if v1.dot(v2) < -0.99 {
+            if v1.dot(v2) > 0.99 {} else if v1.dot(v2) < -0.99 {
                 //如果v1 v2 方向相反，则取之前的!is_concave
                 is_concave = !is_concave;
             } else {
@@ -1074,7 +1073,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 if let Some(intr) = intrs.basic_intersects.pop() {
                     if polyline.vertex_data.last().unwrap().bulge_is_zero()
                         && (intr.start_index2 == polyline.vertex_data.len() - 1
-                            || intr.start_index2 == polyline.vertex_data.len() - 2)
+                        || intr.start_index2 == polyline.vertex_data.len() - 2)
                     {
                         need_remove = true;
                     }

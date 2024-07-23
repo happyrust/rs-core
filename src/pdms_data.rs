@@ -124,32 +124,43 @@ pub struct AxisParam {
 }
 
 /// 增量更新的数据操作
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NewDataOperate {
-    Modify = 0,
-    Increase = 1,
-    Delete = 2,
-    Invalid,
+#[derive(Debug, Clone, Serialize, Deserialize, strum_macros::Display, strum_macros::EnumString)]
+pub enum DataOperation {
+    Modified = 0,
+    Added = 1,
+    Deleted = 2,
+    Invalid = 3,
 }
 
-impl From<i32> for NewDataOperate {
+impl From<i32> for DataOperation {
     fn from(v: i32) -> Self {
         match v {
-            0 => { Self::Modify }
-            1 => { Self::Increase }
-            2 => { Self::Delete }
+            0 => { Self::Modified }
+            1 => { Self::Added }
+            2 => { Self::Deleted }
             _ => { Self::Invalid }
         }
     }
 }
 
-impl NewDataOperate {
+impl Into<i32> for DataOperation {
+    fn into(self) -> i32 {
+        match self {
+            DataOperation::Modified => 0,
+            DataOperation::Added => 1,
+            DataOperation::Deleted => 2,
+            DataOperation::Invalid => 3,
+        }
+    }
+}
+
+impl DataOperation {
     pub fn into_str(self) -> String {
         match self {
-            NewDataOperate::Modify => { "修改".to_string() }
-            NewDataOperate::Increase => { "新增".to_string() }
-            NewDataOperate::Delete => { "删除".to_string() }
-            NewDataOperate::Invalid => { "未定义".to_string() }
+            DataOperation::Modified => { "修改".to_string() }
+            DataOperation::Added => { "新增".to_string() }
+            DataOperation::Deleted => { "删除".to_string() }
+            DataOperation::Invalid => { "未定义".to_string() }
         }
     }
 }
@@ -158,7 +169,7 @@ impl NewDataOperate {
 pub struct IncrementData {
     pub refno: RefU64,
     pub attr_data_map: AttrMap,
-    pub state: NewDataOperate,
+    pub state: DataOperation,
     pub version: u32,
 }
 

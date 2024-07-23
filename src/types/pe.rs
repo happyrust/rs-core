@@ -28,7 +28,13 @@ pub struct SPdmsElement {
 }
 
 impl SPdmsElement {
-    pub fn gen_sur_json(&self) -> String {
+
+    #[inline]
+    pub fn history_id(&self) -> String {
+        format!("pe:{}_{}", self.refno, self.pgno)
+    }
+
+    pub fn gen_sur_json(&self, id: Option<String>) -> String {
         let mut json_string = to_string_pretty(&json!({
             "name": self.name,
             "noun": self.noun,
@@ -46,7 +52,7 @@ impl SPdmsElement {
             r#""refno": {},"#,
             self.refno.to_table_key(&self.noun)
         ));
-        json_string.push_str(&format!(r#""id": {},"#, self.refno.to_pe_key()));
+        json_string.push_str(&format!(r#""id": {},"#, id.unwrap_or(self.refno.to_pe_key())));
         json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
         json_string.push_str("}");
         json_string

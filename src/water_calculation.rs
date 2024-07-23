@@ -109,7 +109,7 @@ pub struct FloodingStpToArangodb {
 }
 
 ///将数据库中的数据组织成资源，导出历史记录时使用
-#[derive(Clone, Debug, Default, Resource, Deserialize, Serialize)]
+#[derive(Resource, Clone, Debug, Default, Event, Deserialize, Serialize)]
 pub struct FloodingStpToArangodbVec {
     pub data: Vec<FloodingStpToArangodb>,
 }
