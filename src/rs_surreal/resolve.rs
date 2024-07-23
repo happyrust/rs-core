@@ -32,14 +32,15 @@ pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
         || (unit_a == "REAL" || unit_b == "REAL")
         || (unit_a == "NUME" || unit_b == "NUME")
         || COMPATIBLE_UNIT_MAP
-            .get(unit_a)
-            .map(|x| x.contains(unit_b))
-            .unwrap_or(false)
+        .get(unit_a)
+        .map(|x| x.contains(unit_b))
+        .unwrap_or(false)
 }
 
-pub const INTERNAL_PDMS_EXPRESS: [&'static str; 22] = [
+pub const INTERNAL_PDMS_EXPRESS: [&'static str; 27] = [
     "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "NOT", "AND", "OR", "ATAN", "ACOS",
-    "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN",
+    "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN", "TIMES", "MULT", "DIV",
+    "ADD", "MINUS"
 ];
 
 /// 元件库表达式相关的参数
@@ -249,6 +250,8 @@ pub fn eval_str_to_f64(
     if input_expr.is_empty() || input_expr == "UNSET" {
         return Ok(0.0);
     }
+    #[cfg(feature = "debug_expr")]
+    dbg!(&input_expr);
     let refno = context
         .get("RS_DES_REFNO")
         .and_then(|x| RefU64::from_str(x.as_str()).ok())
@@ -299,6 +302,9 @@ pub fn eval_str_to_f64(
         }
     }
 
+    #[cfg(feature = "debug_expr")]
+    dbg!(&new_exp);
+
     //说明：匹配带小数的情况 PARA[1.1]
     let re =
         Regex::new(r"(:?[A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]))\s*\]?)?").unwrap();
@@ -306,8 +312,6 @@ pub fn eval_str_to_f64(
     // 相当于要递归去求值
     let rpro_re = Regex::new(r"(RPRO)\s+([a-zA-Z0-9]+)").unwrap();
     if new_exp.contains("RPRO") {
-        #[cfg(feature = "debug_expr")]
-        dbg!(&new_exp);
         new_exp = replace_all_result(&rpro_re, &new_exp, |caps: &Captures| {
             let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
             let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
@@ -344,8 +348,8 @@ pub fn eval_str_to_f64(
                 }
             }
         })?
-        .trim()
-        .to_string();
+            .trim()
+            .to_string();
         #[cfg(feature = "debug_expr")]
         dbg!(&new_exp);
         if let Ok(s) = new_exp.parse::<f64>() {
@@ -353,10 +357,6 @@ pub fn eval_str_to_f64(
             return Ok(s);
         }
     }
-
-    // let mut new_exp = new_exp
-    //     .replace("DESIGN PARAM", "DESP")
-    //     .replace("DESIGN PARA", "DESP");
     let mut result_exp = new_exp.clone();
     //默认两次
     let mut found_replaced = false;
@@ -373,7 +373,6 @@ pub fn eval_str_to_f64(
             let mut para_name = caps.get(1).map_or("", |m| m.as_str());
             let c2 = caps.get(2).map_or("", |m| m.as_str());
             let c3 = caps.get(3).map_or("", |m| m.as_str());
-
             //处理掉PARA 和 PARAM的区别
             let is_some_param = para_name_re.is_match(para_name);
             if is_some_param {
@@ -389,7 +388,7 @@ pub fn eval_str_to_f64(
                     .map(|x| x.floor().to_string())
                     .unwrap_or_default()
             )
-            .into();
+                .into();
             let is_uda = k.starts_with(":");
             if is_uda && !uda_context_added {
                 let refno_str = context.get("RS_DES_REFNO").unwrap();
@@ -492,7 +491,6 @@ pub fn eval_str_to_f64(
         }
         found_replaced = false;
     }
-    // dbg!(&result_exp);
     let seg_strs: Vec<String> = result_exp
         .split_whitespace()
         .map(|x| x.trim().into())
@@ -507,6 +505,8 @@ pub fn eval_str_to_f64(
         match upper_s.as_str() {
             "TIMES" | "MULT" => p_vals.push("*".to_string()),
             "DIV" => p_vals.push("/".to_string()),
+            "ADD" => p_vals.push("+".to_string()),
+            "MINUS" => p_vals.push("-".to_string()),
             "DDHEIGHT" => p_vals.push(context.get("DDHEIGHT").unwrap().to_string()),
             "DDRADIUS" => p_vals.push(context.get("DDRADIUS").unwrap().to_string()),
             "DDANGLE" => p_vals.push(context.get("DDANGLE").unwrap().to_string()),
@@ -573,13 +573,13 @@ pub fn eval_str_to_f64(
         result_string.push_str(" ");
     }
     //排除两个连续的负号的情况
-    let final_expr = result_string.to_lowercase().replace("--", "");
+    let final_expr = result_string.trim().to_lowercase().replace("--", "");
     #[cfg(feature = "debug_expr")]
     dbg!(&final_expr);
     match interp(&final_expr) {
         Ok(val) => Ok(f64_round_3(val).into()),
         Err(_) => {
-            return if let Ok(mut val) = evalexpr::eval(&final_expr)  {
+            return if let Ok(mut val) = evalexpr::eval(&final_expr) {
                 return Ok(f64_round_3(val.as_float()?).into());
             } else if let Ok(mut stack) = Stack::init(&final_expr) {
                 stack.eval().ok_or(anyhow::anyhow!(format!(

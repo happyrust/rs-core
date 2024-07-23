@@ -364,13 +364,15 @@ pub async fn get_named_attmap_with_uda(
     Ok(named_attmap)
 }
 
+pub const CATR_QUERY_STR: &'static str = "refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE, refno.SPRE.refno.CATR, refno.CATR";
+
 #[cached(result = true)]
 pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
     let mut response = SUL_DB
-        .query(r#"
-            select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]]
+        .query(format!(r#"
+            select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]]
             from only type::thing("pe", $refno) limit 1;
-        "#)
+        "#))
         .bind(("refno", refno.to_string()))
         .await?;
     let r: Option<RefU64> = response.take(0)?;
@@ -381,7 +383,7 @@ pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
 pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(
         r#"
-        (select value [refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.CATR][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]].refno.*
+        (select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]].refno.*
         from only {} limit 1 fetch SCOM)[0] "#, refno.to_pe_key());
     // dbg!(&sql);
     // println!("sql is {}", &sql);

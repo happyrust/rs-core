@@ -186,6 +186,9 @@ pub fn resolve_gmse_params(
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
 ) -> anyhow::Result<GmseParamData> {
+    // if gm.refno == "13245_892211".into(){
+    //     dbg!(gm);
+    // }
     let angle = context.get(DDANGLE_STR).unwrap().parse::<f32>().unwrap_or(0.0).to_radians();
     let radius = context.get(DDRADIUS_STR).unwrap().parse::<f32>().unwrap_or(0.0);
     let height = context.get(DDHEIGHT_STR).unwrap().parse::<f32>().unwrap_or(0.0);

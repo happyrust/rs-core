@@ -116,12 +116,13 @@ impl SweepSolid {
         mut r1: f64,
         mut r2: f64,
     ) -> anyhow::Result<Wire> {
-        if !is_btm {
-            r1 = r2 + (sann.drad - sann.dwid - sann.pwidth) as f64;
-            r2 = r2 + sann.drad as f64;
-        };
         // dbg!((r1, r2));
-        // dbg!(&self);
+        // if !is_btm {
+        //     r1 = r2 + (sann.drad - sann.dwid - sann.pwidth) as f64;
+        //     r2 = r2 + sann.drad as f64;
+        // };
+        // dbg!((r1, r2));
+        // dbg!(&sann);
         let angle = sann.pangle.to_radians() as f64;
         let mut offset_pt = DVec3::ZERO;
         let mut rot_mat = DMat3::IDENTITY;
@@ -156,7 +157,10 @@ impl SweepSolid {
                     beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as _);
                 }
                 {
-                    rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(sann.na_axis.as_dvec3(), self.plax.as_dvec3()));
+                    rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
+                        sann.na_axis.as_dvec3(),
+                        self.plax.as_dvec3(),
+                    ));
                 }
             }
         }
@@ -168,14 +172,16 @@ impl SweepSolid {
         // dbg!((p1, p2, p3, p4));
         let mut polyline = Polyline::new_closed();
         let bulge = bulge_from_angle(angle);
+        // dbg!(angle);
+        // dbg!(bulge);
         if r1 < 0.0001 {
             polyline.add(p2.x, p2.y, bulge);
             polyline.add(p3.x, p3.y, 0.0);
         } else {
             polyline.add(p1.x, p1.y, 0.0);
             polyline.add(p2.x, p2.y, bulge);
-            polyline.add(p3.x, p3.y, -bulge);
-            polyline.add(p4.x, p4.y, 0.0);
+            polyline.add(p3.x, p3.y, 0.0);
+            polyline.add(p4.x, p4.y, -bulge);
         };
 
         #[cfg(feature = "debug_wire")]
@@ -205,7 +211,6 @@ impl SweepSolid {
         if cnt <= 1 {
             return Err(anyhow!("无法生成线框"));
         }
-
         let mut wire = Wire::from_edges(&edges)?;
 
         let offset = offset_pt + DVec3::new(origin.x, origin.y, 0.0);
@@ -368,7 +373,10 @@ impl SweepSolid {
                     beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
                 }
 
-                rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(profile.na_axis.as_dvec3(), self.plax.as_dvec3()));
+                rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
+                    profile.na_axis.as_dvec3(),
+                    self.plax.as_dvec3(),
+                ));
                 // dbg!((profile.na_axis, self.plax));
             }
         }
@@ -619,15 +627,24 @@ impl BrepShapeTrait for SweepSolid {
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         let mut is_sann = false;
+        let mut found_full_sann = false;
+        let mut new_sann = None;
         let (profile_wire, top_profile_wire) = match &self.profile {
+            //可能出现直接一个圆环面，就带过了，所以这里需要判断是否为360°，分成两半，然后合在一起
             CateProfileParam::SANN(p) => {
-                let w = p.pwidth as f64;
-                let r = p.pradius as f64;
+                found_full_sann = p.pangle >= 360.0;
+                if found_full_sann {
+                    let mut sann = p.clone();
+                    sann.pangle = 180.0;
+                    new_sann = Some(sann);
+                }
+                let w = (p.pwidth + p.dwid) as f64;
+                let r = (p.pradius + p.drad) as f64;
                 let r1 = r - w;
                 let r2 = r;
                 let origin = (p.xy + p.dxy).as_dvec2();
-                let wire_btm = self.gen_occ_sann_wire(origin, p, true, r1, r2).ok();
-                let wire_top = self.gen_occ_sann_wire(origin, p, false, r1, r2).ok();
+                let wire_btm = self.gen_occ_sann_wire(origin, new_sann.as_ref().unwrap_or(p), true, r1, r2).ok();
+                let wire_top = self.gen_occ_sann_wire(origin, new_sann.as_ref().unwrap_or(p), false, r1, r2).ok();
                 is_sann = true;
                 (wire_btm, wire_top)
             }
@@ -642,7 +659,18 @@ impl BrepShapeTrait for SweepSolid {
             }
             _ => (None, None),
         };
-
+        // dbg!(found_full_sann);
+        let other_half_shape = if found_full_sann{
+            let mut new_data = self.clone();
+            if let CateProfileParam::SANN(ref mut sann) = &mut new_data.profile{
+                sann.pangle = -180.0;
+            }
+            // dbg!(&new_data);
+            new_data.gen_occ_shape().ok()
+        } else {
+            None
+        };
+        // dbg!(other_half_shape.is_some());
         if let Some(mut wire) = profile_wire {
             match &self.path {
                 SweepPath3D::SpineArc(arc) => {
@@ -651,7 +679,12 @@ impl BrepShapeTrait for SweepSolid {
                     let r =
                         wire.to_face()
                             .revolve(DVec3::ZERO, rot_axis, Some(rot_angle.radians()));
-                    return Ok(r.into_shape().into());
+                    let shape = r.into_shape();
+                    if let Some(other_half) = other_half_shape{
+                        let mut new_shape = shape.union(&other_half).shape;
+                        return Ok(new_shape.into());
+                    }
+                    return Ok(shape.into_shape().into());
                 }
                 SweepPath3D::Line(l) => {
                     let mut wires = vec![];
@@ -665,11 +698,16 @@ impl BrepShapeTrait for SweepSolid {
                     } else {
                         wires.push(wire.transformed_by_gmat(&transform_top)?);
                     }
-
-                    return Ok(Solid::loft(wires.iter()).into_shape().into());
+                    let shape = Solid::loft(wires.iter()).into_shape();
+                    if let Some(other_half) = other_half_shape{
+                        let mut new_shape = shape.union(&other_half).shape;
+                        return Ok(new_shape.into());
+                    }
+                    return Ok(shape.into_shape().into());
                 }
             }
         }
+        dbg!(self);
 
         return Err(anyhow!("SweepSolid 生成错误"));
     }

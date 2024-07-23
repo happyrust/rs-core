@@ -48,7 +48,9 @@ impl Default for Revolution {
 
 impl VerifiedShape for Revolution {
     fn check_valid(&self) -> bool {
-        self.angle.abs() > std::f32::EPSILON
+        //add some other restrictions
+        true
+        // self.angle.abs() > std::f32::EPSILON
     }
 }
 
@@ -123,11 +125,12 @@ impl BrepShapeTrait for Revolution {
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         let wires = gen_occ_wires(&self.verts)?;
-        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon = 0.01) {
+        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon = 0.01) || self.angle > 360.0 || self.angle == 0.0 {
             360.0
         } else {
             self.angle as f64
         };
+        dbg!(angle);
         let r = Face::from_wires(&wires)?.revolve(
             self.rot_pt.as_dvec3(),
             self.rot_dir.as_dvec3(),

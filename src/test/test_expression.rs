@@ -21,7 +21,6 @@ fn test_parse_complex_expression() {
     let dir_str = "Z DDANGLE X";
     let dir = parse_str_axis_to_vec3(dir_str, &context).unwrap_or_default();
     dbg!(dir);
-    return;
 
     let dir_str = "Z ( MAX (0.1, DESP[63] ) ) -X ( 90.0 ) Y";
     let dir = parse_str_axis_to_vec3(dir_str, &context).unwrap_or_default();
@@ -31,6 +30,11 @@ fn test_parse_complex_expression() {
     let test_if = "if(0.0==1.0, 1.0, 2.0+5.0)";
     use evalexpr::*;
     dbg!(eval(test_if));
+
+    // min (500,3000)
+    let mut test_if = "min (500,3000) ";
+    let result = eval_str_to_f64(test_if, &context, "").unwrap();
+    dbg!(result);
 
     let mut test_if = "( IFTRUE (DESP[7] LT 0, DESP[28] / 2, -1 * DESP[28] / 2 ))";
     let result = eval_str_to_f64(test_if, &context, "").unwrap();

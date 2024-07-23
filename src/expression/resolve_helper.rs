@@ -306,20 +306,23 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                 centre_line_flag: gmse.centre_line_flag,
                 tube_flag: gmse.tube_flag,
             }),
-            "SREV" | "NSRE" => CateGeoParam::Revolution(CateRevolutionParam {
-                refno: gmse.refno,
-                pa: (gmse.paxises[0].clone()),
-                pb: (gmse.paxises[1].clone()),
-                angle: gmse.pang,
-                verts: gmse.verts.iter().zip(gmse.frads.iter()).map(|(v, d)| {
-                    Vec3::new(v[0], v[1], *d)
-                }).collect(),
-                x: gmse.xyz[0],
-                y: gmse.xyz[1],
-                z: gmse.xyz[2],
-                centre_line_flag: gmse.centre_line_flag,
-                tube_flag: gmse.tube_flag,
-            }),
+            "SREV" | "NSRE" => {
+                // dbg!(gmse);
+                CateGeoParam::Revolution(CateRevolutionParam {
+                    refno: gmse.refno,
+                    pa: (gmse.paxises[0].clone()),
+                    pb: (gmse.paxises[1].clone()),
+                    angle: gmse.pang,
+                    verts: gmse.verts.iter().zip(gmse.frads.iter()).map(|(v, d)| {
+                        Vec3::new(v[0], v[1], *d)
+                    }).collect(),
+                    x: gmse.xyz[0],
+                    y: gmse.xyz[1],
+                    z: gmse.xyz[2],
+                    centre_line_flag: gmse.centre_line_flag,
+                    tube_flag: gmse.tube_flag,
+                })
+            }
             "SRTO" | "NSRT" => {
                 // 截面为矩形的弯管
                 CateGeoParam::RectTorus(CateRectTorusParam {
@@ -385,7 +388,7 @@ pub fn resolve_axis(
                     resolve_axis_param(&scom.axis_params[indx], scom, context);
                 let flag = if is_neg { -1.0 } else { 1.0 };
                 dir = flag * axis.dir.unwrap_or_default();
-                if !is_pp{
+                if !is_pp {
                     pos = axis.pt;
                 }
             } else {
@@ -497,7 +500,7 @@ pub fn parse_str_axis_to_vec3(
     if pdir.starts_with("TO") {
         // dbg!(pdir);
         let v = parse_to_direction(pdir, Some(context))?.unwrap_or_default();
-            // .(anyhow::anyhow!(format!("方向字符串: {} 不正确。", pdir)))?;
+        // .(anyhow::anyhow!(format!("方向字符串: {} 不正确。", pdir)))?;
         // dbg!(v);
         return Ok(v.as_vec3());
     }
