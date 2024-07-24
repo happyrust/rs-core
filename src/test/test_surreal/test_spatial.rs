@@ -283,7 +283,8 @@ mod test_transform {
         // SJOI 里的CUTP，如果有CUTP，x轴必须为Z轴，如果CUTP轴为(-)Z轴了，z轴改为X，
 
         // test_ori("24381/178547".into(), "Y is Y 27.581 X and Z is -X 27.581 Y").await;
-        test_transform("24381/178550".into(), "Y is -X 27.581 Y and Z is -Y 27.581 -X", "X 12850.226mm Y 24922.073mm Z -4194.68mm").await;
+        // test_transform("24381/178550".into(), "Y is -X 27.581 Y and Z is -Y 27.581 -X", "X 12850.226mm Y 24922.073mm Z -4194.68mm").await;
+        test_transform("23713/2442".into(), "Y is -X and Z is Z", "X 1971.3mm Y 3179mm Z -88.9mm").await;
         // let m1 = parse_ori_str_to_quat("Y is X and Z is Y").unwrap();
         // let m2 = parse_ori_str_to_quat("Y is -Y 27.581 -X and Z is Z").unwrap();
         // let m3 = m2 * m1;

@@ -122,12 +122,15 @@ pub async fn query_refno_has_pos_neg_map(
     let refnos = query_filter_deep_children(refno, nouns.iter().map(|&x| x.to_string()).collect())
         .await
         .unwrap();
+    if refnos.is_empty(){
+        return Ok(HashMap::new());
+    }
     //使用SUL_DB通过这些参考号反过来query查找父节点
     let sql = format!(
          "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
          refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
      );
-    // println!("sql is {}", &sql);
+    // println!("query_refno_has_pos_neg_map sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     let mut result = HashMap::new();
     if let Ok(r) = response.take::<Vec<RefnoHasNegPosInfo>>(0) {

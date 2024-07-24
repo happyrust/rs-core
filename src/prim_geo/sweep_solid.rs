@@ -707,7 +707,6 @@ impl BrepShapeTrait for SweepSolid {
                 }
             }
         }
-        dbg!(self);
 
         return Err(anyhow!("SweepSolid 生成错误"));
     }

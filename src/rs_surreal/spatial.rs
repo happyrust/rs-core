@@ -256,7 +256,10 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     continue;
                 } else {
                     if let Some(owner_dir) = o_att.get_dir() {
+                        dbg!(owner_dir);
+                        dbg!(translation);
                         translation += owner_dir * zdist as f64;
+                        dbg!(translation);
                     }
                 }
             }
@@ -316,7 +319,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
 
         //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
         let c_ref = att.get_foreign_refno("CREF").unwrap_or_default();
-        let mut cut_dir = DVec3::Y;
+        let mut cut_dir = DVec3::Z;
         let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
         //直接在世界坐标系下求坐标，跳过局部求解
@@ -333,10 +336,11 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 pos += delta_vec;
             }
         }
-        if att.contains_key("CUTB") && !contains_opdir && !has_rot {
+        //todo 准备测试多个的案例
+        if att.contains_key("CUTB") && !contains_opdir && !has_rot && cur_type != "SJOI" {
             cut_dir = att.get_dvec3("CUTP").unwrap_or(cut_dir);
             has_cut_back = true;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
+            dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
             let cut_len = att.get_f64("CUTB").unwrap_or_default();
             if let Ok(c_att) = super::get_named_attmap(c_ref).await {
                 let c_t = Box::pin(get_world_transform(c_ref))
@@ -345,6 +349,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
                     let w_poss = c_t.translation.as_dvec3();
                     let axis = pose - poss;
+                    //判断是否是垂直连接，如果是垂直连接，CUTP 要求是 Z方向才能起作用，这个时候，translation 的值为
                     let len = axis.length() as f64;
                     let w_pose = (w_poss + c_t.rotation.as_dquat() * DVec3::Z * len);
                     let dist_s = translation.distance(w_poss);
@@ -414,25 +419,28 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     cal_ori_by_z_axis_ref_y(z_axis) * quat
                 }
             };
+            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
             //处理有YDIR的情况
             if let Some(v) = ydir_axis {
-                dbg!((v, z_axis));
+                // dbg!((v, z_axis));
                 quat = cal_ori_by_ydir(v.normalize(), z_axis);
-                dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
+                // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             }
             if has_bang {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
             }
+            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
             let offset = rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
             // dbg!(offset);
             translation += offset;
             rotation = rotation * new_quat;
+            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
         } else {
             if let Some(v) = ydir_axis {
                 let z_axis = DVec3::X;
-                dbg!((v, z_axis));
+                // dbg!((v, z_axis));
                 quat = cal_ori_by_ydir(v.normalize(), z_axis);
-                dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
+                // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             }
             if has_bang {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
@@ -444,7 +452,8 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
         }
 
-        if has_cut_back {
+        //先排除"SJOI"
+        if has_cut_back && cur_type != "SJOI" {
             // dbg!(cut_dir);
             let x_axis = DVec3::Z;
             let z_axis = if cut_dir.z.abs() > 0.0001 {
