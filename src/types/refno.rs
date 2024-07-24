@@ -49,7 +49,6 @@ enum RefnoVariant {
     Num(u64),
 }
 
-
 impl<'de> Deserialize<'de> for RefU64 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -85,8 +84,6 @@ impl FromStr for RefU64 {
         }
     }
 }
-
-
 
 impl From<Thing> for RefU64 {
     fn from(thing: Thing) -> Self {
@@ -264,8 +261,8 @@ impl RefU64 {
         ("pbs".to_string(), self.to_string()).into()
     }
 
-    pub fn to_type_key(&self,noun:&str) -> String {
-        format!("{}:{}", noun,&self.to_string())
+    pub fn to_type_key(&self, noun: &str) -> String {
+        format!("{}:{}", noun, &self.to_string())
     }
 
     #[inline]
@@ -274,7 +271,7 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn to_inst_relate_versioned_key(&self, version: i32) -> String {
+    pub fn to_inst_relate_history_key(&self, version: i32) -> String {
         format!("inst_relate:{}_{}", &self.to_string(), version)
     }
 
@@ -284,10 +281,9 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn to_versioned_table_key(&self, tbl: &str, version: i32) -> String {
+    pub fn to_table_history_key(&self, tbl: &str, version: i32) -> String {
         format!("{tbl}_v:{}_{}", &self.to_string(), version)
     }
-
 
     #[inline]
     pub fn get_0(&self) -> u32 {
@@ -415,11 +411,11 @@ impl RefI32Tuple {
 
     #[inline]
     pub fn get_0(&self) -> i32 {
-        self.0.0
+        self.0 .0
     }
 
     #[inline]
     pub fn get_1(&self) -> i32 {
-        self.0.1
+        self.0 .1
     }
 }

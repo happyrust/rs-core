@@ -1,7 +1,7 @@
-use crate::{RefU64, rs_surreal, tool::math_tool::quat_to_pdms_ori_xyz_str};
+use crate::{rs_surreal, tool::math_tool::quat_to_pdms_ori_xyz_str, RefU64};
 
-use std::{sync::Arc, time::Instant};
 use glam::Quat;
+use std::{sync::Arc, time::Instant};
 use surrealdb::sql::Thing;
 
 #[tokio::test]
@@ -19,11 +19,16 @@ async fn test_query_inst_refnos() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_instance() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
+
     let refno: RefU64 = "16389_8737".into();
-    let insts = rs_surreal::query_insts(&[refno])
-        .await
-        .unwrap();
-    dbg!(insts);
+    // let insts = rs_surreal::query_history_insts(&[(refno, )])).await.unwrap();
+    // dbg!(insts);
+
+    // let refno: RefU64 = "16389_8737".into();
+    // let insts = rs_surreal::query_insts(&[refno])
+    //     .await
+    //     .unwrap();
+    // dbg!(insts);
     Ok(())
 }
 
@@ -51,14 +56,15 @@ fn test_quat() {
     dbg!(quat_to_pdms_ori_xyz_str(&q, false));
 }
 
-
 #[tokio::test]
 async fn test_query_la_points() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
     let result = crate::point::query_arrive_leave_points_by_cata_hash(&[
-        "24381_105223".into(), "24381_105231".into()])
-        .await
-        .unwrap();
+        "24381_105223".into(),
+        "24381_105231".into(),
+    ])
+    .await
+    .unwrap();
 
     dbg!(result);
     Ok(())

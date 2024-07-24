@@ -76,7 +76,7 @@ pub fn cal_ori_by_ydir(mut y_ref_axis: DVec3, z_dir: DVec3) -> DQuat {
             y_ref_axis = y_ref_axis.normalize();
         }
     }
-    dbg!(y_ref_axis);
+    // dbg!(y_ref_axis);
     // let z_dir = DVec3::Y;
     let x_dir = y_ref_axis.cross(z_dir).normalize();
     let y_dir = z_dir.cross(x_dir).normalize();
@@ -256,10 +256,10 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     continue;
                 } else {
                     if let Some(owner_dir) = o_att.get_dir() {
-                        dbg!(owner_dir);
-                        dbg!(translation);
+                        // dbg!(owner_dir);
+                        // dbg!(translation);
                         translation += owner_dir * zdist as f64;
-                        dbg!(translation);
+                        // dbg!(translation);
                     }
                 }
             }
@@ -325,14 +325,14 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         //直接在世界坐标系下求坐标，跳过局部求解
         //有 cref 的时候，需要保持方向和 cref 一致
         let ydir_axis = att.get_dvec3("YDIR");
-        let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default() ;
+        let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
         let mut contains_opdir = false;
         let mut delta_vec = att.get_dvec3("DELP").unwrap_or_default();
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
             quat = cal_ori_by_opdir(opdir);
             // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             contains_opdir = true;
-            if pos_line.is_empty(){
+            if pos_line.is_empty() {
                 pos += delta_vec;
             }
         }
@@ -363,7 +363,6 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 }
             }
         }
-
 
         //todo fix 处理 posl的计算
         if !pos_line.is_empty() {

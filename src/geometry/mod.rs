@@ -188,7 +188,7 @@ pub struct ShapeInstancesData {
     pub neg_relate_map: HashMap<RefU64, Vec<RefU64>>,
 
     ///并保存所有ngmr的连接关系
-    pub ngmr_neg_relate_map: HashMap<RefU64, Vec<RefU64>>,
+    pub ngmr_neg_relate_map: HashMap<RefU64, Vec<(RefU64, RefU64)>>,
 }
 
 /// shape instances 的管理方法
@@ -348,11 +348,12 @@ impl ShapeInstancesData {
 
     ///插入 ngmr 数据
     #[inline]
-    pub fn insert_ngmr(&mut self, refno: RefU64, owners: Vec<RefU64>) {
+    pub fn insert_ngmr(&mut self, ele_refno: RefU64, owners: Vec<RefU64>, ngmr_geom_refno: RefU64) {
         for owner in owners {
             let mut d = self.ngmr_neg_relate_map.entry(owner).or_insert_with(Vec::new);
-            if !d.contains(&refno) {
-                d.push(refno);
+            if !d.contains(&(ele_refno, ngmr_geom_refno)) {
+                //这里应该是一个组合，所以不会重复，既有design 的参考号，也有元件库几何体的参考号
+                d.push((ele_refno, ngmr_geom_refno));
             }
         }
     }
