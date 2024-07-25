@@ -267,6 +267,12 @@ impl NamedAttrMap {
             .insert("PGNO".into(), NamedAttrValue::IntegerType(v));
     }
 
+    #[inline]
+    pub fn set_sesno(&mut self, v: i32) {
+        self.map
+            .insert("SESNO".into(), NamedAttrValue::IntegerType(v));
+    }
+
 
     #[inline]
     pub fn get_e3d_version(&self) -> i32 {
@@ -277,6 +283,11 @@ impl NamedAttrMap {
     #[inline]
     pub fn pgno(&self) -> i32 {
         self.get_i32("PGNO").unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn sesno(&self) -> i32 {
+        self.get_i32("SESNO").unwrap_or_default()
     }
 
     pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap, NamedAttrMap) {
