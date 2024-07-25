@@ -76,7 +76,7 @@ pub enum GeoBasicType {
 #[serde_as]
 pub struct EleGeosInfo {
     pub refno: RefU64,
-    pub version: i32,
+    pub pgno: i32,
     #[serde(default)]
     pub cata_hash: Option<String>,
     //记录对应的元件库参考号
@@ -110,7 +110,7 @@ impl EleGeosInfo {
     pub fn id_str(&self) -> String {
         let hash = self.cata_hash.clone();
         if hash.is_none() || hash.as_ref().unwrap().is_empty() || hash.as_ref().unwrap().contains("_") {
-            format!("{}_{}", self.refno.to_string(), self.version)
+            format!("{}_{}", self.refno.to_string(), self.pgno)
         } else {
             hash.clone().unwrap()
         }
@@ -129,7 +129,6 @@ impl EleGeosInfo {
         json.remove(json.len() - 1);
         json.push_str(",");
         json.push_str(&format!(r#""id": inst_info:⟨{}⟩, "#, id));
-        // json.push_str(&format!(r#""ptset": [{}] "#, ptset));
         json.push_str("}");
         json
     }
@@ -137,10 +136,6 @@ impl EleGeosInfo {
     ///获取几何体数据的string key
     #[inline]
     pub fn get_inst_key(&self) -> String {
-        // if let Some(c) = &self.cata_hash {
-        //     return c.clone();
-        // }
-        // self.refno.to_string()
         self.id_str()
     }
 
@@ -188,9 +183,12 @@ pub struct ShapeInstancesData {
     ///保存instance几何数据
     pub inst_geos_map: HashMap<String, EleInstGeosData>,
 
-    ///保存所有用到的的ngmr数据
+    ///保存所有用到的的neg连接关系
     #[serde(skip)]
     pub neg_relate_map: HashMap<RefU64, Vec<RefU64>>,
+
+    ///并保存所有ngmr的连接关系
+    pub ngmr_neg_relate_map: HashMap<RefU64, Vec<(RefU64, RefU64)>>,
 }
 
 /// shape instances 的管理方法
@@ -350,11 +348,12 @@ impl ShapeInstancesData {
 
     ///插入 ngmr 数据
     #[inline]
-    pub fn insert_ngmr(&mut self, refno: RefU64, owners: Vec<RefU64>) {
+    pub fn insert_ngmr(&mut self, ele_refno: RefU64, owners: Vec<RefU64>, ngmr_geom_refno: RefU64) {
         for owner in owners {
-            let mut d = self.neg_relate_map.entry(owner).or_insert_with(Vec::new);
-            if !d.contains(&refno) {
-                d.push(refno);
+            let mut d = self.ngmr_neg_relate_map.entry(owner).or_insert_with(Vec::new);
+            if !d.contains(&(ele_refno, ngmr_geom_refno)) {
+                //这里应该是一个组合，所以不会重复，既有design 的参考号，也有元件库几何体的参考号
+                d.push((ele_refno, ngmr_geom_refno));
             }
         }
     }
@@ -511,7 +510,6 @@ impl PlantGeoData {
     Resource,
 )]
 pub struct EleInstGeosData {
-    #[serde(rename = "_key", alias = "id")]
     pub inst_key: String,
     pub refno: RefU64,
     pub insts: Vec<EleInstGeo>,
@@ -533,7 +531,6 @@ impl EleInstGeosData {
             "id": self.inst_key.clone(),
             "type_name": self.type_name,
             "aabb": self.aabb,
-            // "ptset_map": self.ptset_map,
             "insts": self.insts,
         }))
         .unwrap();

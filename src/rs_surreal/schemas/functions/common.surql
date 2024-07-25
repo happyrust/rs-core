@@ -71,8 +71,7 @@ DEFINE FUNCTION fn::backup_atts_and_pes(
                 //let $t = (select * omit id, in from $pe->tubi_relate)[0];
                 delete $pe->tubi_relate;
             }
-
         }
-    };
+    }
 };
 
