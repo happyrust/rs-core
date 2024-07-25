@@ -7,7 +7,7 @@ fn test_des() {
   "cata_hash": "13292_0",
   "dbnum": 5100,
   "deleted": false,
-  "pgno": 114,
+  "sesno": 114,
   "id": "pe:13292_0",
   "lock": false,
   "name": "/*",

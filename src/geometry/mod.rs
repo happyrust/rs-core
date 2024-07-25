@@ -76,7 +76,7 @@ pub enum GeoBasicType {
 #[serde_as]
 pub struct EleGeosInfo {
     pub refno: RefU64,
-    pub pgno: i32,
+    pub sesno: i32,
     #[serde(default)]
     pub cata_hash: Option<String>,
     //记录对应的元件库参考号
@@ -110,7 +110,7 @@ impl EleGeosInfo {
     pub fn id_str(&self) -> String {
         let hash = self.cata_hash.clone();
         if hash.is_none() || hash.as_ref().unwrap().is_empty() || hash.as_ref().unwrap().contains("_") {
-            format!("{}_{}", self.refno.to_string(), self.pgno)
+            format!("{}_{}", self.refno.to_string(), self.sesno)
         } else {
             hash.clone().unwrap()
         }

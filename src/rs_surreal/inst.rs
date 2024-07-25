@@ -128,7 +128,7 @@ pub async fn query_insts(
     Ok(geom_insts)
 }
 
-/// 根据(refno, pgno)查询历史的insts
+/// 根据(refno, sesno)查询历史的insts
 // todo 生成一个测试案例
 pub async fn query_history_insts(
     refnos: impl IntoIterator<Item = &(RefU64, u32)>,

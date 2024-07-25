@@ -16,7 +16,7 @@ pub struct SPdmsElement {
     pub noun: String,
     pub dbnum: i32,
     ///小版本号
-    pub pgno: i32,
+    pub sesno: i32,
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -31,7 +31,7 @@ impl SPdmsElement {
 
     #[inline]
     pub fn history_id(&self) -> String {
-        format!("pe:{}_{}", self.refno, self.pgno)
+        format!("pe:{}_{}", self.refno, self.sesno)
     }
 
     pub fn gen_sur_json(&self, id: Option<String>) -> String {
@@ -39,7 +39,7 @@ impl SPdmsElement {
             "name": self.name,
             "noun": self.noun,
             "dbnum": self.dbnum,
-            "pgno": self.pgno,
+            "sesno": self.sesno,
             "status_tag": self.status_tag,
             "cata_hash": self.cata_hash,
             "lock": self.lock,

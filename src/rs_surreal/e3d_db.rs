@@ -24,7 +24,7 @@ use surrealdb::Surreal;
 pub async fn query_db_max_version(db_num: u32) -> anyhow::Result<u32> {
     let mut response = SUL_DB
         .query(format!(
-            r#"object::values((select math::max(pgno) from pe where dbnum={db_num} group all)[0])[0];"#,
+            r#"object::values((select math::max(sesno) from pe where dbnum={db_num} group all)[0])[0];"#,
         ))
         .await?;
     let max_version: Option<u32> = response.take(0)?;

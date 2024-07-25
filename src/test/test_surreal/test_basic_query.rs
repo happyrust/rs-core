@@ -229,7 +229,7 @@ async fn test_query_record_link() -> anyhow::Result<()> {
     "name": "/1AR07WW0002R",
     "noun": "FITT",
     "dbnum": 1112,
-    "pgno": 0,
+    "sesno": 0,
     "cata_hash": "110329119932332",
     "lock": false
 }
@@ -243,7 +243,7 @@ async fn test_query_record_link() -> anyhow::Result<()> {
         "name": "/1AR07WW0002R",
         "noun": "TEST",
         "dbnum": 1112,
-        "pgno": 0,
+        "sesno": 0,
         "cata_hash": "110329119932332",
         "lock": false
     }
