@@ -88,7 +88,7 @@ pub struct DbOption {
     #[clap(skip)]
     pub surreal_ns: String,
     #[clap(skip)]
-    pub manual_db_nums: Option<Vec<i32>>,
+    pub manual_db_nums: Option<Vec<u32>>,
     #[clap(long)]
     pub reset_mdb_project: Option<bool>,
 

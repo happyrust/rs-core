@@ -50,7 +50,7 @@ pub async fn get_default_name(refno: RefU64) -> anyhow::Result<Option<String>> {
 }
 
 #[cached(result = true)]
-pub async fn get_design_dbnos(mdb_name: String) -> anyhow::Result<Vec<i32>> {
+pub async fn get_design_dbnos(mdb_name: String) -> anyhow::Result<Vec<u32>> {
     let mdb = if mdb_name.starts_with("/") {
         mdb_name
     } else {
@@ -60,7 +60,7 @@ pub async fn get_design_dbnos(mdb_name: String) -> anyhow::Result<Vec<i32>> {
         .query("select value (select value DBNO from CURD.refno.* where STYP=1) from only MDB where NAME=$mdb limit 1")
         .bind(("mdb", mdb))
         .await?;
-    let dbnos: Vec<i32> = response.take(0)?;
+    let dbnos: Vec<u32> = response.take(0)?;
     Ok(dbnos)
 }
 
@@ -188,7 +188,7 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
     let mut new_desp = None;
     let mut tuples = vec![];
     for (k, v) in &attmap.map {
-        if k == "REFNO" {
+        if k == "REFNO" || k == "UNIPAR" {
             continue;
         }
         match v {

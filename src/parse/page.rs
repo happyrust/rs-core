@@ -1,13 +1,16 @@
 use deku::bitvec::*;
 use deku::prelude::*;
 use std::convert::{TryFrom, TryInto};
+use crate::RefU64;
 use deku::ctx::Endian;
-use derivative::Derivative;
 use serde::{Deserialize, Serialize};
+use derivative::Derivative;
+use chrono::DateTime;
+use chrono::Utc;
+use chrono::TimeZone;
 
 pub const PAGE_SIZE: usize = 0x800;
 
-// By default, it uses the system endianness, but can be overwritten
 #[derive(Default, Clone, Debug, PartialEq, DekuRead, DekuWrite, Serialize, Deserialize)]
 #[deku(endian = "big")]
 pub struct PdmsHeader {
@@ -17,27 +20,13 @@ pub struct PdmsHeader {
     pub unknown_1: [i32; 5],  //然后是 00 00 00 01
     pub noun: i32,
     pub unknown_2: i32, // 0xFF FF FF FF
-    pub page_no: u32,
+    pub latest_ses_pgno: u32,
     pub ext_no: u32,
 
-    // field_a: u8,
-    // #[deku(bits = "7")]
-    // field_b: u8,
-    // #[deku(bits = "1")]
-    // field_c: u8,
-    // #[deku(endian = "big")]
-    // field_d: u16,
-    // #[deku(bits = "2")]
-    // field_e: u8,
-    // field_f: FieldF,
-    // num_items: u8,
-    // #[deku(count = "num_items", endian = "big")]
-    // items: Vec<u16>,
-    // array: [i32; 1],
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct DbPageBasicInfo{
+pub struct DbPageBasicInfo {
     pub pdms_header: PdmsHeader,
     pub latest_ses_pageno: u32,
     pub latest_ses_data: SessionPageData,
@@ -48,8 +37,10 @@ pub struct DbPageBasicInfo{
 
 ///会话层的定位信息
 #[derive(Default, Clone, Debug, PartialEq, DekuRead, DekuWrite, Serialize, Deserialize)]
-#[deku(endian = "big")] // By default it uses the system endianness, but can be overwritten
+#[deku(endian = "big")]
 pub struct SessionPageData {
+    #[deku(skip, default = "0")]
+    pub pgno: usize,
     pub page_type: i32,
     pub last_ses_pageno: i32,
     pub last_ses_extno: i32,
@@ -57,19 +48,112 @@ pub struct SessionPageData {
     pub sesno: i32,
     pub unknown_0: i32,  // 0xFF FF FF FF
 
-    pub cur_ses_pageno: u32,
-    pub cur_ses_extno: u32,
+    //最后一页的页号
+    pub end_pgno: u32,
+    pub end_extno: u32,
 
     pub index_root_pageno: u32,
     pub index_root_extno: u32,
-    pub claim_root_pageno: u32,
-    pub claim_root_extno: u32,
+    pub claim_pageno: u32,
+    pub claim_extno: u32,
+
+    pub unknown_1: i32,
+    pub unknown_2: i32,
+
+    pub year: u32,
+    pub month: u32,
+    pub hours: u32,
+    pub seconds: u32,
+
+    pub unknown_u32: [i32; 13],
+    pub name_words_len: u32,
+    #[deku(count = "name_words_len * 4")]
+    pub name_bytes: Vec<u8>,
+    #[deku(count = "(9 - name_words_len) * 4")]
+    pub empty_bytes: Vec<u8>,
+
+    pub comments_words_len: u32,
+    #[deku(count = "comments_words_len * 4")]
+    pub comments_bytes: Vec<u8>,
+
+    #[deku(count = "deku::rest.len()/8")]
+    pub remain_bytes: Vec<u8>,   //剩余的余量bytes
+}
+
+impl SessionPageData {
+
+    #[inline]
+    pub fn get_id(&self, project: &str, dbnum: i32) -> String {
+        format!("{}_{}_{:0>6}", project, dbnum, self.sesno)
+    }
+
+    // pub fn gen_sur_json(&self, project: &str, dbnum: i32) -> String{
+    //     //id 需要拿 sesno 和 dbnum 组合？还是和文件名组合？
+    //     let id = self.get_id(project, dbnum);
+    //     let mut json = serde_json::json!({
+    //         "id": id,
+    //         "sesno": self.sesno,
+    //         "pgno": self.pgno,
+    //         "dbnum": dbnum,
+    //         "index_pgno": self.index_root_pageno,
+    //         "claim_pgno": self.claim_pageno,
+    //         "end_pgno": self.end_pgno,
+    //         "computer_name": self.get_computer_name(),
+    //         "comments": self.get_comments_name(),
+    //         "date": self.get_timestamp().to_rfc3339(),
+    //     });
+    //     json.to_string()
+    // }
+
+    #[inline]
+    pub fn get_timestamp(&self) -> DateTime<Utc> {
+        let year = self.year;
+        let month = self.month;
+        let days = self.hours / 24;
+        let hours = self.hours % 24;
+        let minutes = self.seconds / 60;
+        let seconds = self.seconds % 60;
+        Utc.with_ymd_and_hms(year as i32, month as u32, days, hours as u32, minutes, seconds).latest().unwrap()
+    }
+
+
+    // #[inline]
+    // pub fn get_computer_name(&self) -> String {
+    //     if self.name_words_len == 0 {
+    //         return String::new();
+    //     }
+    //     //去掉后面为 0 的 bytes
+    //     let i = (self.name_words_len as usize - 1) * 4;
+    //     // dbg!(&self.name_bytes[i as usize..]);
+    //     let rpos = self.name_bytes[i..].into_iter().rev().position(|&x| x != 0).unwrap_or(0);
+    //     // dbg!(rpos);
+    //     decode_chars_data(&self.name_bytes[..(i+4-rpos)]).0
+    // }
+
+    // #[inline]
+    // pub fn get_comments_name(&self) -> String {
+    //     if self.comments_words_len == 0 {
+    //         return String::new();
+    //     }
+    //     //去掉后面为 0 的 bytes
+    //     let i = (self.comments_words_len as usize - 1) * 4;
+    //     // dbg!(&self.comments_bytes[i as usize..]);
+    //     let rpos = self.comments_bytes[i..].into_iter().rev().position(|&x| x != 0).unwrap_or(0);
+    //     // dbg!(rpos);
+    //     decode_chars_data(&self.comments_bytes[..(i+4-rpos)]).0
+    // }
+    //
+    // //是否需要要检测有无变化？先拿到最新的数据试试看里面的参考号，和之前的比有无变化
+    // pub fn get_session_saved_refnos() {
+    //
+    // }
+
 }
 
 ///内含有的几个index part，名称表等等
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
-#[deku(endian = "big")] // By default it uses the system endianness, but can be overwritten
-pub struct SesIndexsData {
+#[deku(endian = "big")]
+pub struct SesIndexesData {
     #[deku(assert_eq = "0x3")]
     pub page_type: i32,
     pub last_ses_pageno: u32,
@@ -88,7 +172,7 @@ pub struct SesIndexsData {
 }
 
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
-#[deku(endian = "big")] // By default it uses the system endianness, but can be overwritten
+#[deku(endian = "big")]
 pub struct RefnoIndexPgId {
     pub refno_0: u32,
     pub refno_1: u32,
@@ -123,17 +207,31 @@ pub struct RootIndexPage {
 
 
 ///Index 里的数据条目
-#[derive(Debug, PartialEq, DekuRead, DekuWrite)]
-#[deku(endian = "big")] // By default it uses the system endianness, but can be overwritten
+#[derive(Debug, PartialEq, DekuRead, DekuWrite, Clone)]
+#[deku(endian = "big")]
 pub struct RefnoDataLoc {
     pub refno_0: u32,
     pub refno_1: u32,
-    pub page_no: u32,
+    pub pgno: u32,
     #[deku(bits = "20")]
     pub offset: u32,
     #[deku(bits = "12")]
     pub other: u16,
 }
+
+impl RefnoDataLoc {
+
+    #[inline]
+    pub fn get_refno(&self) -> RefU64 {
+        RefU64::from_two_nums(self.refno_0, self.refno_1)
+    }
+
+    #[inline]
+    pub fn get_att_offset(&self) -> u64 {
+        self.pgno as u64 * 0x800 + self.offset as u64 * 2
+    }
+}
+
 
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
 pub struct RefnoIndexPage {
@@ -148,11 +246,10 @@ pub struct RefnoIndexPage {
     #[deku(endian = "big")]
     pub pfno: u32,   //还需要搞的清楚一点，这个值到底怎么来的
 
-    #[deku(reader = "read_refno_index_pgid(deku::rest)")]
+    #[deku(reader = "read_refno_index_pgid(deku::rest, )")]
     pub data_locs: Vec<RefnoIndexPgId>,
 
 }
-
 
 //DekuWrite
 #[derive(Derivative, PartialEq, DekuRead)]
@@ -173,13 +270,11 @@ pub struct IndexPageData {
     pub remain_zero_bytes: Vec<u8>,   //剩余的余量bytes
 }
 
-impl IndexPageData{
-
+impl IndexPageData {
     #[inline]
-    pub fn get_max_pgno(&self) -> u32{
-        self.refno_locs.iter().map(|x| x.page_no).max().unwrap_or_default()
+    pub fn get_max_pgno(&self) -> u32 {
+        self.refno_locs.iter().map(|x| x.pgno).max().unwrap_or_default()
     }
-
 }
 
 
@@ -223,6 +318,7 @@ fn read_refno_index_pgid(rest: &BitSlice<u8, Msb0>) -> Result<(&BitSlice<u8, Msb
     Ok((rest, pgids))
 }
 
+
 //todo 需要处理跨页的数据
 #[derive(Clone, Debug, PartialEq, Default, DekuRead, DekuWrite)]
 #[deku(ctx = "_endian: Endian")]
@@ -235,7 +331,7 @@ pub struct EleMembers {
     pub refno: (u32, u32),
     #[deku(endian = "big")]
     pub unknown_0: (u32, u32),
-    #[deku(count="(len-4)/2")]
+    #[deku(count = "(len-4)/2")]
     #[deku(endian = "big")]
     pub children: Vec<(u32, u32)>,
 }
@@ -282,12 +378,10 @@ pub struct EleRawData {
     pub explicit_data: Option<Vec<u8>>,
 }
 
-impl EleRawData {
-
-}
+impl EleRawData {}
 
 
-fn read_members(rest:&BitSlice<u8, Msb0>,) -> Result<(&BitSlice<u8, Msb0>, Option<EleMembers>), DekuError> {
+fn read_members(rest: &BitSlice<u8, Msb0>) -> Result<(&BitSlice<u8, Msb0>, Option<EleMembers>), DekuError> {
     let (_next_rest, peek) = u16::read(rest, Endian::Big)?;
     if peek != 0x2 {
         return Ok((rest, None));
@@ -296,7 +390,7 @@ fn read_members(rest:&BitSlice<u8, Msb0>,) -> Result<(&BitSlice<u8, Msb0>, Optio
     Ok((next_rest, Some(membs)))
 }
 
-fn read_eles(rest:&BitSlice<u8, Msb0>,) -> Result<(&BitSlice<u8, Msb0>, Vec<EleRawData>), DekuError> {
+fn read_eles(rest: &BitSlice<u8, Msb0>) -> Result<(&BitSlice<u8, Msb0>, Vec<EleRawData>), DekuError> {
     let mut vec = Vec::new();
     let mut rest = rest;
     loop {
