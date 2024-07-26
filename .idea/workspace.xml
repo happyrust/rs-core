@@ -37,8 +37,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix ngmr calculation">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix joint transform calculation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -287,7 +289,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PJOI">
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -348,23 +350,6 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_PJOI" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_PJOI -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -384,6 +369,23 @@
     </configuration>
     <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -420,19 +422,19 @@
       <item itemvalue="Batch.cargo-clif test_query_transform" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PJOI" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
       <item itemvalue="Cargo.Test test::test_expression::test_parse_complex_expression" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PJOI" />
         <item itemvalue="Cargo.Test test::test_expression::test_parse_complex_expression" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING" />
       </list>
     </recent_temporary>
   </component>
@@ -897,6 +899,10 @@
       <workItem from="1721753857240" duration="5805000" />
       <workItem from="1721804542076" duration="2630000" />
       <workItem from="1721843103983" duration="1973000" />
+      <workItem from="1721963752824" duration="1453000" />
+      <workItem from="1721968552197" duration="2623000" />
+      <workItem from="1721984056746" duration="8881000" />
+      <workItem from="1722018843829" duration="1671000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1241,7 +1247,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="368" />
+    <option name="localTasksCounter" value="372" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1285,9 +1291,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix PYRA 计算的方位错误，cross不出来的方向需要返回None" />
-    <MESSAGE value="move test surreal" />
-    <MESSAGE value="test dll" />
     <MESSAGE value="WIP refactor test" />
     <MESSAGE value="add  sync_only_sys" />
     <MESSAGE value="fix 显示房间内模型，未加载直段" />
@@ -1310,14 +1313,17 @@
     <MESSAGE value="fix query catr" />
     <MESSAGE value="fix backup history use pgno" />
     <MESSAGE value="fix ngmr calculation" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix ngmr calculation" />
+    <MESSAGE value="update" />
+    <MESSAGE value="fix increment update" />
+    <MESSAGE value="fix joint transform calculation" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix joint transform calculation" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/rs_surreal/query.rs</url>
-          <line>625</line>
+          <line>627</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">

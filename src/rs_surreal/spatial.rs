@@ -228,6 +228,9 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     let c_t = Box::pin(get_world_transform(c_ref))
                                 .await?
                                 .unwrap_or_default();
+                    let o_t = Box::pin(get_world_transform(o_att.get_owner()))
+                        .await?
+                        .unwrap_or_default();
                     let jlin_offset = c_t.rotation.as_dquat() * jlin_pos;
                     dbg!(jlin_offset);
                     let c_axis = c_t.rotation.as_dquat() * DVec3::Z;
@@ -235,16 +238,23 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     let c_wpos = c_t.translation.as_dvec3() + jlin_offset;
                     dbg!(c_wpos);
                     // 是沿着附属的梁的轴方向再平移
-                    let z_axis = rotation * DVec3::Z;
+                    let z_axis = o_t.rotation.as_dquat() * DVec3::Z;
                     dbg!(z_axis);
                     // 取cref 对应构件的PLIN的位置
                     //如果垂直了，CUTP就是失效，不用考虑加冗余
-                    translation = DVec3::new(c_wpos.x, c_wpos.y, translation.z);
-                    //如果 jlin_axis 和 z_axis 垂直
-                    let perpendicular = z_axis.dot(c_axis).abs() < 0.001;
-                    if !perpendicular && cut_dir.z.abs() > 0.001 {
-                        translation += z_axis * cut_len;
+                    let same_plane = c_axis.dot(cut_dir).abs() > 0.001;
+                    if same_plane{
+                        dbg!(o_t.translation);
+                        let delta = (c_wpos - o_t.translation.as_dvec3()).dot(z_axis);
+                        dbg!(delta);
+                        translation = o_t.translation.as_dvec3() + delta * z_axis;
                         dbg!(translation);
+                        //如果 jlin_axis 和 z_axis 垂直
+                        let perpendicular = z_axis.dot(c_axis).abs() < 0.001;
+                        if !perpendicular {
+                            translation += z_axis * cut_len;
+                            dbg!(translation);
+                        }
                     }
                 }
             }

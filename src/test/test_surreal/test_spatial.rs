@@ -297,6 +297,7 @@ mod test_transform {
         // SJOI 里的CUTP，如果有CUTP，x轴必须为Z轴，如果CUTP轴为(-)Z轴了，z轴改为X，
 
         test_transform("23713/2430".into(), "Y is -X and Z is Z", "X 1982.3mm Y 2786.6mm Z -100.2mm").await;
+        test_transform("23713/2699".into(), "Y is Z and Z is X", "X 3000.1mm Y 4786.6mm Z -18.6mm").await;
         return Ok(());
         //with cutplane
         let sjoi_strs = vec![
