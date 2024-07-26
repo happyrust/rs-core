@@ -75,6 +75,11 @@ impl AttrMap {
         GENRAL_POS_NOUN_NAMES.contains(&self.get_type())
     }
 
+    #[inline]
+    pub fn is_joint_type(&self) -> bool {
+        JOINT_TYPES.contains(&self.get_type())
+    }
+
     ///是否为空
     #[inline]
     pub fn is_empty(&self) -> bool {

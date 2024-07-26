@@ -245,6 +245,12 @@ impl NamedAttrMap {
         TOTAL_NEG_NOUN_NAMES.contains(&self.get_type_str())
     }
 
+    ///是否是joint类型（需要单独计算方位）
+    #[inline]
+    pub fn is_joint_type(&self) -> bool {
+        JOINT_TYPES.contains(&self.get_type_str())
+    }
+
     #[inline]
     pub fn get_name(&self) -> Option<String> {
         self.get_string("NAME")
@@ -449,9 +455,6 @@ impl NamedAttrMap {
         if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("REFNO") {
             return Some(*d);
         }
-        // else if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("refno") {
-        //     return Some(*d);
-        // }
         None
     }
 

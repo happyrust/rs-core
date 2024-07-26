@@ -210,6 +210,45 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             pos_extru_dir = Some((end - start).normalize());
             // dbg!(pos_extru_dir);
         }
+        let is_joint = att.is_joint_type();
+        if is_joint{
+            let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
+            let cut_len = att.get_f64("CUTB").unwrap_or_default();
+            dbg!(&cut_dir);
+            //先判断是否有cref
+            //如果CUTP 没有z分量，则不考虑这些
+            if  let Some(c_ref) = att.get_foreign_refno("CREF") &&
+                let Ok(c_att) = super::get_named_attmap(c_ref).await {
+                let jline = c_att.get_str("JLIN").map(|x| x.trim()).unwrap_or("NA");
+                dbg!(jline);
+                if let Ok(Some(param)) = query_pline(c_ref, jline.into()).await {
+                    let jlin_pos = param.pt;
+                    let jlin_plax = param.plax;
+                    dbg!((&jlin_pos, &jlin_plax));
+                    let c_t = Box::pin(get_world_transform(c_ref))
+                                .await?
+                                .unwrap_or_default();
+                    let jlin_offset = c_t.rotation.as_dquat() * jlin_pos;
+                    dbg!(jlin_offset);
+                    let c_axis = c_t.rotation.as_dquat() * DVec3::Z;
+                    dbg!(c_axis);
+                    let c_wpos = c_t.translation.as_dvec3() + jlin_offset;
+                    dbg!(c_wpos);
+                    // 是沿着附属的梁的轴方向再平移
+                    let z_axis = rotation * DVec3::Z;
+                    dbg!(z_axis);
+                    // 取cref 对应构件的PLIN的位置
+                    //如果垂直了，CUTP就是失效，不用考虑加冗余
+                    translation = DVec3::new(c_wpos.x, c_wpos.y, translation.z);
+                    //如果 jlin_axis 和 z_axis 垂直
+                    let perpendicular = z_axis.dot(c_axis).abs() < 0.001;
+                    if !perpendicular && cut_dir.z.abs() > 0.001 {
+                        translation += z_axis * cut_len;
+                        dbg!(translation);
+                    }
+                }
+            }
+        }
         if att.contains_key("ZDIS") {
             if cur_type == "ENDATU" {
                 //需要判断是第几个ENDATU
@@ -337,32 +376,32 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             }
         }
         //todo 准备测试多个的案例
-        if att.contains_key("CUTB") && !contains_opdir && !has_rot && cur_type != "SJOI" {
-            cut_dir = att.get_dvec3("CUTP").unwrap_or(cut_dir);
-            has_cut_back = true;
-            dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
-            let cut_len = att.get_f64("CUTB").unwrap_or_default();
-            if let Ok(c_att) = super::get_named_attmap(c_ref).await {
-                let c_t = Box::pin(get_world_transform(c_ref))
-                    .await?
-                    .unwrap_or_default();
-                if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
-                    let w_poss = c_t.translation.as_dvec3();
-                    let axis = pose - poss;
-                    //判断是否是垂直连接，如果是垂直连接，CUTP 要求是 Z方向才能起作用，这个时候，translation 的值为
-                    let len = axis.length() as f64;
-                    let w_pose = (w_poss + c_t.rotation.as_dquat() * DVec3::Z * len);
-                    let dist_s = translation.distance(w_poss);
-                    let dist_e = translation.distance(w_pose);
-                    //取离node最近的点
-                    if dist_s < dist_e {
-                        translation = w_poss - cut_dir * cut_len;
-                    } else {
-                        translation = w_pose - cut_dir * cut_len;
-                    }
-                }
-            }
-        }
+        // if att.contains_key("CUTB") && !contains_opdir && !has_rot && cur_type != "SJOI" {
+        //     cut_dir = att.get_dvec3("CUTP").unwrap_or(cut_dir);
+        //     has_cut_back = true;
+        //     dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
+        //     let cut_len = att.get_f64("CUTB").unwrap_or_default();
+        //     if let Ok(c_att) = super::get_named_attmap(c_ref).await {
+        //         let c_t = Box::pin(get_world_transform(c_ref))
+        //             .await?
+        //             .unwrap_or_default();
+        //         if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
+        //             let w_poss = c_t.translation.as_dvec3();
+        //             let axis = pose - poss;
+        //             //判断是否是垂直连接，如果是垂直连接，CUTP 要求是 Z方向才能起作用，这个时候，translation 的值为
+        //             let len = axis.length() as f64;
+        //             let w_pose = (w_poss + c_t.rotation.as_dquat() * DVec3::Z * len);
+        //             let dist_s = translation.distance(w_poss);
+        //             let dist_e = translation.distance(w_pose);
+        //             //取离node最近的点
+        //             if dist_s < dist_e {
+        //                 translation = w_poss - cut_dir * cut_len;
+        //             } else {
+        //                 translation = w_pose - cut_dir * cut_len;
+        //             }
+        //         }
+        //     }
+        // }
 
         //todo fix 处理 posl的计算
         if !pos_line.is_empty() {
@@ -430,7 +469,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             }
             // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
             let offset = rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
-            // dbg!(offset);
+            dbg!(offset);
             translation += offset;
             rotation = rotation * new_quat;
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));

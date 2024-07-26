@@ -78,6 +78,10 @@ pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 26] = [
     "NSEX", "NSRE",
 ];
 
+pub const JOINT_TYPES: [&'static str; 2] = [
+    "SJOI", "PJOI"
+];
+
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
     "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV",
