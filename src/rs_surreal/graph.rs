@@ -319,18 +319,21 @@ pub async fn get_uda_type_refnos_from_select_refnos(
         let sql = format!("let $ukey = select value UKEY from UDET where DYUDNA = '{}';
         select refno,fn::default_name(id) as name,noun,owner,0 as children_count from [{}] where refno.TYPEX in $ukey;",&uda_type,refnos_str);
         match SUL_DB.query(&sql).await {
-            Ok(mut response) => {
-                match response.take::<Vec<EleTreeNode>>(1) {
-                    Ok(query_r) => {
-                        let mut query_r = query_r.into_iter().map(|x| x.into()).collect();
-                        result.append(&mut query_r);
-                    }
-                    Err(e) => {
-                        dbg!(&e.to_string());
-                        init_deserialize_error("Vec<EleTreeNode>",e,&sql,&std::panic::Location::caller().to_string());
-                    }
+            Ok(mut response) => match response.take::<Vec<EleTreeNode>>(1) {
+                Ok(query_r) => {
+                    let mut query_r = query_r.into_iter().map(|x| x.into()).collect();
+                    result.append(&mut query_r);
                 }
-            }
+                Err(e) => {
+                    dbg!(&e.to_string());
+                    init_deserialize_error(
+                        "Vec<EleTreeNode>",
+                        e,
+                        &sql,
+                        &std::panic::Location::caller().to_string(),
+                    );
+                }
+            },
             Err(e) => {
                 init_query_error(&sql, e, &std::panic::Location::caller().to_string());
                 continue;

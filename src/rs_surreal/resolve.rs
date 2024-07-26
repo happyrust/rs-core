@@ -32,15 +32,15 @@ pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
         || (unit_a == "REAL" || unit_b == "REAL")
         || (unit_a == "NUME" || unit_b == "NUME")
         || COMPATIBLE_UNIT_MAP
-        .get(unit_a)
-        .map(|x| x.contains(unit_b))
-        .unwrap_or(false)
+            .get(unit_a)
+            .map(|x| x.contains(unit_b))
+            .unwrap_or(false)
 }
 
 pub const INTERNAL_PDMS_EXPRESS: [&'static str; 27] = [
     "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "NOT", "AND", "OR", "ATAN", "ACOS",
     "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN", "TIMES", "MULT", "DIV",
-    "ADD", "MINUS"
+    "ADD", "MINUS",
 ];
 
 /// 元件库表达式相关的参数
@@ -348,8 +348,8 @@ pub fn eval_str_to_f64(
                 }
             }
         })?
-            .trim()
-            .to_string();
+        .trim()
+        .to_string();
         #[cfg(feature = "debug_expr")]
         dbg!(&new_exp);
         if let Ok(s) = new_exp.parse::<f64>() {
@@ -388,7 +388,7 @@ pub fn eval_str_to_f64(
                     .map(|x| x.floor().to_string())
                     .unwrap_or_default()
             )
-                .into();
+            .into();
             let is_uda = k.starts_with(":");
             if is_uda && !uda_context_added {
                 let refno_str = context.get("RS_DES_REFNO").unwrap();
@@ -506,7 +506,7 @@ pub fn eval_str_to_f64(
             "TIMES" | "MULT" => p_vals.push("*".to_string()),
             "DIV" => p_vals.push("/".to_string()),
             "ADD" => p_vals.push("+".to_string()),
-            "MINUS" => p_vals.push("-".to_string()),
+            "SUBTRACT" => p_vals.push("-".to_string()),
             "DDHEIGHT" => p_vals.push(context.get("DDHEIGHT").unwrap().to_string()),
             "DDRADIUS" => p_vals.push(context.get("DDRADIUS").unwrap().to_string()),
             "DDANGLE" => p_vals.push(context.get("DDANGLE").unwrap().to_string()),

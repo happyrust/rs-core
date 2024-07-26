@@ -1,8 +1,7 @@
-
-use smol_str::SmolStr;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::float_tool::{f32_round_3, f64_round_3};
-
+use smol_str::SmolStr;
+use std::borrow::Cow;
 pub mod table;
 pub use table::*;
 
@@ -31,7 +30,6 @@ pub fn parse_to_u32(input: &[u8]) -> u32 {
     u32::from_be_bytes(input.try_into().unwrap())
 }
 
-
 #[inline]
 pub fn parse_to_f32(input: &[u8]) -> f32 {
     f32_round_3(f32::from_be_bytes(input.try_into().unwrap()))
@@ -45,7 +43,6 @@ pub fn parse_to_f64(input: &[u8]) -> f64 {
         0.0
     };
 }
-
 
 #[inline]
 pub fn convert_u32_to_noun(input: &[u8]) -> SmolStr {
@@ -70,7 +67,6 @@ pub fn parse_to_i32_vec(input: &[u8], num: usize) -> Vec<i32> {
     data
 }
 
-
 #[inline]
 pub fn parse_to_f32_arr(input: &[u8], num: usize) -> Vec<f64> {
     let mut data = vec![];
@@ -89,4 +85,11 @@ pub fn normalize_sql_string(sql: &str) -> String {
         .to_string()
 }
 
-
+///添加 “/”
+pub fn to_e3d_name(name: &str) -> Cow<'_, str> {
+    if name.starts_with('/') {
+        Cow::Borrowed(name)
+    } else {
+        Cow::Owned(format!("/{name}"))
+    }
+}

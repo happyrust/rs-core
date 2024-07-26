@@ -1,3 +1,4 @@
+use super::get_mdb_db_nums;
 use crate::consts::MAX_INSERT_LENGTH;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
@@ -6,6 +7,7 @@ use crate::ssc_setting::PbsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
+use crate::DBType;
 use crate::{graph::QUERY_DEEP_CHILDREN_REFNOS, types::*};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
@@ -80,9 +82,7 @@ pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefU64>> {
         name
     );
     println!("sql is {}", &sql);
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let s = response.take::<Option<RefU64>>(0);
     Ok(s?)
 }
@@ -171,9 +171,7 @@ pub async fn get_index_by_noun_in_parent(
     );
     // println!("sql is {}", &sql);
 
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     // dbg!(&response);
     let type_name: Option<u32> = response.take(0)?;
     Ok(type_name)
@@ -207,7 +205,8 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     tuples.push((
                         k.clone(),
                         NamedAttrValue::StringType(dquat_to_pdms_ori_xyz_str(
-                            &angles_to_dori(*d).unwrap_or_default(), false
+                            &angles_to_dori(*d).unwrap_or_default(),
+                            false,
                         )),
                     ));
                 } else if k.contains("POS") {
@@ -217,7 +216,8 @@ pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> 
                     tuples.push((
                         k.clone(),
                         NamedAttrValue::StringType(convert_to_xyz(&to_pdms_dvec_str(
-                            &d.as_dvec3(), false
+                            &d.as_dvec3(),
+                            false,
                         ))),
                     ));
                 }
@@ -369,10 +369,12 @@ pub const CATR_QUERY_STR: &'static str = "refno.CATR.refno.CATR, refno.CATR.refn
 #[cached(result = true)]
 pub async fn get_cat_refno(refno: RefU64) -> anyhow::Result<Option<RefU64>> {
     let mut response = SUL_DB
-        .query(format!(r#"
+        .query(format!(
+            r#"
             select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]]
             from only type::thing("pe", $refno) limit 1;
-        "#))
+        "#
+        ))
         .bind(("refno", refno.to_string()))
         .await?;
     let r: Option<RefU64> = response.take(0)?;
@@ -384,12 +386,12 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(
         r#"
         (select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]].refno.*
-        from only {} limit 1 fetch SCOM)[0] "#, refno.to_pe_key());
+        from only {} limit 1 fetch SCOM)[0] "#,
+        refno.to_pe_key()
+    );
     // dbg!(&sql);
     // println!("sql is {}", &sql);
-    let mut response = SUL_DB
-        .query(&sql)
-        .await?;
+    let mut response = SUL_DB.query(&sql).await?;
     // dbg!(&response);
     let o: SurlValue = response.take(0)?;
     let named_attmap: NamedAttrMap = o.into();
@@ -726,4 +728,22 @@ pub async fn query_refnos_from_names(
         map.entry(ele.name.clone()).or_insert(ele.into());
     }
     Ok(map)
+}
+
+///查找所有同类型的参考号, 需要限制范围
+pub async fn query_same_refnos_by_type(
+    refno: RefU64,
+    mdb: String,
+    module: DBType,
+) -> anyhow::Result<Vec<RefU64>> {
+    let dbnums = get_mdb_db_nums(mdb, module).await?;
+    let sql = format!(
+        r#"select value id from type::table({}.noun) where REFNO.dbnum in [{}]"#,
+        refno.to_pe_key(),
+        dbnums.iter().map(|x| x.to_string()).join(",")
+    );
+    // println!("query_same_refnos_by_type sql: {}", &sql);
+    let mut response = SUL_DB.query(sql).await?;
+    let refnos: Vec<RefU64> = response.take(0)?;
+    Ok(refnos)
 }

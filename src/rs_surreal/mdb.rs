@@ -1,6 +1,6 @@
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
-use crate::types::*;
+use crate::{helper, types::*};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
@@ -55,7 +55,7 @@ pub async fn get_mdb_world_site_ele_nodes(
     for (i, node) in nodes.iter_mut().enumerate() {
         node.order = i as _;
         if node.name.is_empty() {
-            node.name = format!("SITE {}", i+1);
+            node.name = format!("SITE {}", i + 1);
         }
     }
     // dbg!(nodes.len());
@@ -63,10 +63,7 @@ pub async fn get_mdb_world_site_ele_nodes(
     Ok(nodes)
 }
 
-pub async fn create_mdb_world_site_pes_table(
-    mdb: String,
-    module: DBType,
-) -> anyhow::Result<bool> {
+pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> anyhow::Result<bool> {
     let db_type: u8 = module.into();
     let mut response = SUL_DB
         .query(r#"
@@ -78,17 +75,39 @@ pub async fn create_mdb_world_site_pes_table(
         .bind(("db_type", db_type))
         .await?;
     let sites: Vec<SPdmsElement> = response.take(2)?;
-    if sites.is_empty() { return Ok(false); }
+    if sites.is_empty() {
+        return Ok(false);
+    }
     let mut relate_sql = String::new();
     let mdb_world = sites[0].owner.to_pe_key();
-    for (i, site) in sites.into_iter().enumerate(){
-        relate_sql.push_str(&format!("relate {}->site_relate:[{}, {i}]->{};", site.refno.to_pe_key(), &mdb_world, &mdb_world));
+    for (i, site) in sites.into_iter().enumerate() {
+        relate_sql.push_str(&format!(
+            "relate {}->site_relate:[{}, {i}]->{};",
+            site.refno.to_pe_key(),
+            &mdb_world,
+            &mdb_world
+        ));
     }
 
     Ok(true)
 }
 
-//通过surql查询pe数据
+#[cached(result = true)]
+pub async fn get_mdb_db_nums(mdb: String, module: DBType) -> anyhow::Result<Vec<u32>> {
+    let db_type: u8 = module.into();
+    let mdb = crate::helper::to_e3d_name(&mdb);
+    let mut response = SUL_DB
+        .query(r#"
+            select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1
+        "#)
+        .bind(("mdb", mdb))
+        .bind(("db_type", db_type))
+        .await?;
+    let pe: Vec<u32> = response.take(0)?;
+    Ok(pe)
+}
+
+///查询mdb的world下的所有pe
 #[cached(result = true)]
 pub async fn get_mdb_world_site_pes(
     mdb: String,

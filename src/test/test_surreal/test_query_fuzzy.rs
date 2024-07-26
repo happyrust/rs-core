@@ -1,4 +1,4 @@
-
+use crate::{get_db_option, get_default_pdms_db_info, query_same_refnos_by_type, RefU64};
 
 ///获得branch下的所有托臂
 #[tokio::test]
@@ -11,3 +11,17 @@ async fn test_query_support_arms() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn test_query_same_refnos() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    let refno: RefU64 = "17496/274055".into();
+    let db_option = get_db_option();
+    let same_refnos =
+        query_same_refnos_by_type(refno, db_option.mdb_name.clone(), crate::DBType::DESI).await?;
+    dbg!(&same_refnos);
+
+    Ok(())
+}
+
+//query_same_refnos_by_type
