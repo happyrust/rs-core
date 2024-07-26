@@ -37,13 +37,8 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix backup history use pgno">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix ngmr calculation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_geom.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -901,7 +896,7 @@
       <workItem from="1721550032463" duration="42719000" />
       <workItem from="1721753857240" duration="5805000" />
       <workItem from="1721804542076" duration="2630000" />
-      <workItem from="1721843103983" duration="641000" />
+      <workItem from="1721843103983" duration="1973000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1246,7 +1241,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="367" />
+    <option name="localTasksCounter" value="368" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1290,7 +1285,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix 表达式计算时，如果为REAL，应该都默认兼容" />
     <MESSAGE value="fix PYRA 计算的方位错误，cross不出来的方向需要返回None" />
     <MESSAGE value="move test surreal" />
     <MESSAGE value="test dll" />
@@ -1315,7 +1309,8 @@
     <MESSAGE value="fix pgno" />
     <MESSAGE value="fix query catr" />
     <MESSAGE value="fix backup history use pgno" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix backup history use pgno" />
+    <MESSAGE value="fix ngmr calculation" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix ngmr calculation" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
