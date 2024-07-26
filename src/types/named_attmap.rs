@@ -63,6 +63,9 @@ impl From<SurlValue> for NamedAttrMap {
                         if k == "PGNO" {
                             map.insert(k.clone(), NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()));
                             continue;
+                        } else if k == "SESNO" {
+                            map.insert(k.clone(), NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()));
+                            continue;
                         }
                         let default_val = if k == "REFNO" || k == "OWNER" {
                             AttrVal::RefU64Type(Default::default())
@@ -231,7 +234,7 @@ impl NamedAttrMap {
             noun,
             dbnum,
             cata_hash: self.cal_cata_hash(),
-            pgno: self.pgno(),
+            sesno: self.sesno(),
             ..Default::default()
         };
         ele
@@ -268,16 +271,27 @@ impl NamedAttrMap {
             .insert("PGNO".into(), NamedAttrValue::IntegerType(v));
     }
 
+    #[inline]
+    pub fn set_sesno(&mut self, v: i32) {
+        self.map
+            .insert("SESNO".into(), NamedAttrValue::IntegerType(v));
+    }
+
 
     #[inline]
     pub fn get_e3d_version(&self) -> i32 {
-        self.pgno()
+        self.sesno()
     }
 
     //PGNO
     #[inline]
     pub fn pgno(&self) -> i32 {
         self.get_i32("PGNO").unwrap_or_default()
+    }
+
+    #[inline]
+    pub fn sesno(&self) -> i32 {
+        self.get_i32("SESNO").unwrap_or_default()
     }
 
     pub fn split_to_default_groups(&self) -> (NamedAttrMap, NamedAttrMap, NamedAttrMap) {
@@ -422,7 +436,7 @@ impl NamedAttrMap {
 
     #[inline]
     pub fn history_id(&self) -> String {
-        format!("{}:{}_{}", self.get_type(), self.get_refno_or_default(), self.pgno())
+        format!("{}:{}_{}", self.get_type(), self.get_refno_or_default(), self.sesno())
     }
 
     #[inline]

@@ -25,7 +25,7 @@ pub struct Model {
     pub name: String,
     pub noun: String,
     pub dbnum: i32,
-    pub pgno: i32,
+    pub sesno: i32,
     ///大版本号
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
