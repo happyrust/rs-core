@@ -60,7 +60,7 @@ pub async fn connect_surdb(
     Ok(())
 }
 
-pub fn convert_to_sql_str_array(nouns: &Vec<String>) -> String {
+pub fn convert_to_sql_str_array(nouns: &[&str]) -> String {
     let nouns_str = nouns
         .iter()
         .map(|s| format!("'{s}'"))

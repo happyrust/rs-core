@@ -747,3 +747,14 @@ pub async fn query_same_refnos_by_type(
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
 }
+
+
+pub async fn query_types(refnos: &[RefU64]) -> anyhow::Result<Vec<Option<String>>> {
+    let sql = format!(
+        r#"select value noun from [{}]"#,
+        refnos.iter().map(|x| x.to_pe_key()).join(",")
+    );
+    let mut response = SUL_DB.query(sql).await?;
+    let type_names: Vec<Option<String>> = response.take(0)?;
+    Ok(type_names)
+}

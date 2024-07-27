@@ -466,17 +466,17 @@ pub async fn get_tf_hvac_material(
             };
             let refnos = query_ele_filter_deep_children(
                 refno,
-                vec![
-                    "BEND".to_string(),
-                    "BRCO".to_string(),
-                    "CAP".to_string(),
-                    "FLEX".to_string(),
-                    "OFST".to_string(),
-                    "STIF".to_string(),
-                    "STRT".to_string(),
-                    "TAPE".to_string(),
-                    "THRE".to_string(),
-                    "TRNS".to_string(),
+                &[
+                    "BEND",
+                    "BRCO",
+                    "CAP",
+                    "FLEX",
+                    "OFST",
+                    "STIF",
+                    "STRT",
+                    "TAPE",
+                    "THRE",
+                    "TRNS",
                 ],
             )
             .await?;

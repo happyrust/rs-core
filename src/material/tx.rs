@@ -103,7 +103,7 @@ pub async fn get_tx_txsb_list_material(
                 continue;
             };
             // 查询 EQUI 的数据
-            let refnos = query_filter_deep_children(refno, vec!["ELCONN".to_string()]).await?;
+            let refnos = query_filter_deep_children(refno, &["ELCONN"]).await?;
             let refnos_str = serde_json::to_string(
                 &refnos
                     .into_iter()

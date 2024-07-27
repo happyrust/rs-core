@@ -57,12 +57,12 @@ pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec
     }
     //按照所允许的层级关系去遍历？
     let branch_refnos =
-        super::query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await?;
+        super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
 
     let mut target_refnos = super::query_multi_children_refnos(&branch_refnos).await?;
 
     let visible_refnos =
-        super::query_filter_deep_children(refno, VISBILE_GEO_NOUNS.map(String::from).to_vec())
+        super::query_filter_deep_children(refno, &VISBILE_GEO_NOUNS)
             .await?;
     target_refnos.extend(visible_refnos);
     Ok(target_refnos)
@@ -71,7 +71,7 @@ pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec
 #[cached(result = true)]
 pub async fn query_deep_neg_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let neg_refnos =
-        super::query_filter_deep_children(refno, TOTAL_NEG_NOUN_NAMES.map(String::from).to_vec())
+        super::query_filter_deep_children(refno, &TOTAL_NEG_NOUN_NAMES)
             .await?;
     Ok(neg_refnos)
 }
@@ -119,7 +119,7 @@ pub async fn query_refno_has_pos_neg_map(
         _ => &TOTAL_NEG_NOUN_NAMES.as_slice(),
     };
     //查询元件库下的负实体组合
-    let refnos = query_filter_deep_children(refno, nouns.iter().map(|&x| x.to_string()).collect())
+    let refnos = query_filter_deep_children(refno, nouns)
         .await
         .unwrap();
     if refnos.is_empty(){

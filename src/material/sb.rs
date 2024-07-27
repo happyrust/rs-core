@@ -129,7 +129,7 @@ pub async fn get_sb_dzcl_list_material(
             };
         }
         // 查询 EQUI 的数据
-        let refnos = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["EQUI"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()

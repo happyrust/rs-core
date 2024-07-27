@@ -22,7 +22,12 @@ fn test_parse_complex_expression() {
     let dir = parse_str_axis_to_vec3(dir_str, &context).unwrap_or_default();
     dbg!(dir);
 
-    let dir_str = "Z ( MAX (0.1, DESP[63] ) ) -X ( 90.0 ) Y";
+    let str = "( MAX (0.1, DESP[63 ] ) )";
+    let d = eval_str_to_f64(str, &context,"").unwrap_or_default();
+    dbg!(d);
+    assert_eq!(d, 0.2);
+
+    let dir_str = "Z ( MAX (0.1, DESP[63 ] ) ) -X ( 90.0 ) Y";
     let dir = parse_str_axis_to_vec3(dir_str, &context).unwrap_or_default();
     dbg!(dir);
     assert_eq!(dir.y, 1.0);

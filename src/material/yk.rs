@@ -232,12 +232,12 @@ pub async fn get_yk_dzcl_list(
         // 查询bend的数据
         let refnos = query_filter_deep_children(
             refno,
-            vec![
-                "VALV".to_string(),
-                "TEE".to_string(),
-                "COUP".to_string(),
-                "INST".to_string(),
-                "BEND".to_string(),
+            &[
+                "VALV",
+                "TEE",
+                "COUP",
+                "INST",
+                "BEND",
             ],
         )
         .await?;
@@ -301,7 +301,7 @@ pub async fn get_yk_inst_pipe(
             };
         }
         // 查询 inst 的数据
-        let refnos = query_filter_deep_children(refno, vec!["INST".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["INST"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -367,7 +367,7 @@ pub async fn get_yk_equi_list_material(
             };
         }
         // 查询 EQUI 的数据
-        let refnos = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["EQUI"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -447,7 +447,7 @@ pub async fn query_yk_bran_belong_gy_pipe_name(
         match href.get_type_str() {
             // 如果是nozz，直接返回所属equi
             "NOZZ" => {
-                let equi = query_filter_ancestors(href_refno, vec!["EQUI".to_string()]).await?;
+                let equi = query_filter_ancestors(href_refno, &["EQUI"]).await?;
                 if equi.is_empty() {
                     break;
                 };

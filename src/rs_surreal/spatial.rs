@@ -421,7 +421,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
             let mut is_lmirror = false;
             let ancestor_refnos =
-                crate::query_filter_ancestors(owner, HAS_PLIN_TYPES.map(String::from).to_vec())
+                crate::query_filter_ancestors(owner, &HAS_PLIN_TYPES)
                     .await?;
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
@@ -479,7 +479,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             }
             // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
             let offset = rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
-            dbg!(offset);
+            // dbg!(offset);
             translation += offset;
             rotation = rotation * new_quat;
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));

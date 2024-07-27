@@ -8,8 +8,8 @@ async fn test_group_cata_hash() -> anyhow::Result<()> {
     let refnos: Vec<RefU64> = vec!["24383/73928".into()];
 
     let r = crate::query_multi_deep_children_filter_inst(
-        refnos.clone(),
-        vec!["BRAN".into(), "HANG".into()],
+        &refnos,
+        &["BRAN", "HANG"],
         false,
     )
         .await

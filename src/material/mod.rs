@@ -166,7 +166,7 @@ pub async fn get_refnos_belong_major(
     let mut result = HashMap::new();
     for refno in refnos {
         // 向上找到zone
-        let zone = query_filter_ancestors(*refno, vec!["ZONE".to_string()]).await?;
+        let zone = query_filter_ancestors(*refno, &["ZONE"]).await?;
         if zone.is_empty() { continue; };
         let zone = zone[0];
         // 找zone和site对应的专业

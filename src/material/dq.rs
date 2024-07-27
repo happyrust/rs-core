@@ -395,7 +395,7 @@ pub async fn get_dq_bran_list(
             };
         }
         // 查询电气托盘的数据
-        let refnos = query_filter_deep_children(refno, vec!["BRAN".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -439,7 +439,7 @@ pub async fn get_dq_bran_list(
             if zone.name.contains("MTGD") {
                 continue;
             };
-            let refnos = query_filter_deep_children(refno, vec!["STRU".to_string()]).await?;
+            let refnos = query_filter_deep_children(refno, &["STRU"]).await?;
             let refnos_str = serde_json::to_string(
                 &refnos
                     .into_iter()
@@ -473,7 +473,7 @@ pub async fn get_dq_bran_list(
             if !zone.name.contains("MTGD") {
                 continue;
             };
-            let refnos = query_filter_deep_children(refno, vec!["GENSEC".to_string()]).await?;
+            let refnos = query_filter_deep_children(refno, &["GENSEC"]).await?;
             let refnos_str = serde_json::to_string(
                 &refnos
                     .into_iter()

@@ -5,7 +5,7 @@ use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::ssc_setting::PbsElement;
 use crate::types::*;
-use crate::{rs_surreal, NamedAttrMap, RefU64};
+use crate::{rs_surreal, NamedAttrMap, RefU64, query_types};
 use crate::{SurlValue, SUL_DB};
 use anyhow::anyhow;
 use cached::proc_macro::cached;
@@ -24,7 +24,7 @@ use surrealdb::sql::Thing;
 #[inline]
 #[cached(result = true)]
 pub async fn query_filter_all_bran_hangs(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
-    query_filter_deep_children(refno, vec!["BRAN".into(), "HANG".into()]).await
+    query_filter_deep_children(refno, &["BRAN", "HANG"]).await
 }
 
 #[cached(result = true)]
@@ -89,11 +89,11 @@ pub async fn query_deep_children_refnos_pbs(refno: Thing) -> anyhow::Result<Vec<
 
 pub async fn query_filter_deep_children(
     refno: RefU64,
-    nouns: Vec<String>,
+    nouns: &[&str],
 ) -> anyhow::Result<Vec<RefU64>> {
     let refnos = query_deep_children_refnos(refno).await?;
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let sql = format!(r#"select value id from [{pe_keys}] where noun in [{nouns_str}]"#);
     // println!("query_filter_deep_children sql is {}", &sql);
     match SUL_DB.query(&sql).with_stats().await {
@@ -112,11 +112,11 @@ pub async fn query_filter_deep_children(
 
 pub async fn query_ele_filter_deep_children_pbs(
     refno: Thing,
-    nouns: Vec<String>,
+    nouns: &[&str],
 ) -> anyhow::Result<Vec<PbsElement>> {
     let refnos = query_deep_children_refnos_pbs(refno).await?;
     let pe_keys = refnos.into_iter().join(",");
-    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
     // println!("sql is {}", &sql);
     match SUL_DB.query(&sql).with_stats().await {
@@ -134,14 +134,13 @@ pub async fn query_ele_filter_deep_children_pbs(
 }
 
 ///深度查询
-#[cached(result = true)]
 pub async fn query_ele_filter_deep_children(
     refno: RefU64,
-    nouns: Vec<String>,
+    nouns: &[&str],
 ) -> anyhow::Result<Vec<SPdmsElement>> {
     let refnos = query_deep_children_refnos(refno).await?;
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
     // println!("sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).with_stats().await.unwrap();
@@ -155,15 +154,13 @@ pub async fn query_ele_filter_deep_children(
 /// The query is constructed dynamically based on the provided parameters.
 /// It selects the `refno` values from a flattened array of objects,
 /// where the `noun` values match the specified list of nouns.
-#[cached(result = true)]
 pub async fn query_filter_deep_children_by_path(
     refno: RefU64,
-    nouns: Vec<String>,
+    nouns: &[&str],
 ) -> anyhow::Result<Vec<RefU64>> {
     let end_noun = super::get_type_name(refno).await?;
-    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
-    let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
-    if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, &nouns_slice) {
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+    if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, nouns) {
         let pe_key = refno.to_pe_key();
         let sql = format!(
             "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
@@ -201,13 +198,12 @@ pub async fn query_deep_children_refnos_filter_spre(
 }
 
 // #[cached(result = true)]
-pub async fn query_deep_children_filter_inst(
+async fn query_deep_children_filter_inst(
     refno: RefU64,
-    nouns: Vec<String>,
+    nouns: &[&str],
     filter: bool,
 ) -> anyhow::Result<Vec<RefU64>> {
-    let end_noun = super::get_type_name(refno).await?;
-    let nouns_str = rs_surreal::convert_to_sql_str_array(&nouns);
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let pe_key = refno.to_pe_key();
     let mut sql = format!(
         r#"
@@ -227,14 +223,13 @@ pub async fn query_deep_children_filter_inst(
     Ok(result)
 }
 
-// #[cached(result = true)]
 pub async fn query_multi_filter_deep_children(
-    refnos: Vec<RefU64>,
-    nouns: Vec<String>,
+    refnos: &[RefU64],
+    nouns: &[&str],
 ) -> anyhow::Result<HashSet<RefU64>> {
     let mut result = HashSet::new();
-    for refno in refnos {
-        let mut children = query_filter_deep_children(refno, nouns.clone()).await?;
+    for &refno in refnos {
+        let mut children = query_filter_deep_children(refno, nouns).await?;
         result.extend(children.drain(..));
     }
     Ok(result)
@@ -242,13 +237,36 @@ pub async fn query_multi_filter_deep_children(
 
 // #[cached(result = true)]
 pub async fn query_multi_deep_children_filter_inst(
-    refnos: Vec<RefU64>,
-    nouns: Vec<String>,
+    refnos: &[RefU64],
+    nouns: &[&str],
     filter: bool,
 ) -> anyhow::Result<HashSet<RefU64>> {
+    if refnos.is_empty(){
+        return Ok(Default::default());
+    }
     let mut result = HashSet::new();
+    // let mut skip_set = HashSet::new();
+    // let refno_nouns = query_types(refnos).await?;
+    // for (refno, refno_noun) in refnos.iter().zip(refno_nouns) {
     for refno in refnos {
-        let mut children = query_deep_children_filter_inst(refno, nouns.clone(), filter).await?;
+        // if let Some(r_noun) = &refno_noun {
+        //     if skip_set.contains(r_noun) {
+        //         continue;
+        //     }
+        //     // //检查是否有和nouns有path往来
+        //     let exist_path = nouns.iter().any(|child| r_noun == child ||
+        //         !find_noun_path(child, r_noun).is_empty());
+        //     // dbg!(exist_path);
+        //     if !exist_path {
+        //         skip_set.insert(r_noun.to_owned());
+        //         continue;
+        //     }
+        // }else{
+        //     continue;
+        // }
+        //需要先过滤一遍，是否和nouns 的类型有path
+        // let refno_types = query_types(&refnos).await?;
+        let mut children = query_deep_children_filter_inst(*refno, nouns, filter).await?;
         result.extend(children.drain(..));
     }
     Ok(result)
@@ -266,10 +284,9 @@ pub async fn query_multi_deep_children_filter_spre(
     Ok(result)
 }
 
-#[cached(result = true)]
 pub async fn query_filter_ancestors(
     refno: RefU64,
-    nouns: Vec<String>,
+    nouns: &[&str],
 ) -> anyhow::Result<Vec<RefU64>> {
     let start_noun = super::get_type_name(refno).await?;
     // dbg!(&start_noun);
@@ -278,8 +295,7 @@ pub async fn query_filter_ancestors(
         .map(|s| format!("'{s}'"))
         .collect::<Vec<_>>()
         .join(",");
-    let nouns_slice = nouns.iter().map(String::as_str).collect::<Vec<_>>();
-    if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun, &nouns_slice) {
+    if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun, nouns) {
         let pe_key = refno.to_pe_key();
         let sql = format!(
             "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
@@ -307,7 +323,7 @@ pub async fn get_uda_type_refnos_from_select_refnos(
     };
     for select_refno in select_refnos {
         let Ok(refnos) =
-            query_filter_deep_children(select_refno, vec![base_type.to_string()]).await
+            query_filter_deep_children(select_refno, &[base_type]).await
         else {
             continue;
         };
@@ -367,7 +383,7 @@ async fn test_query_filter_deep_children() -> anyhow::Result<()> {
     .unwrap();
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
     let refno = RefU64::from_str("24383/73927").unwrap();
-    let equis = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+    let equis = query_filter_deep_children(refno, &["EQUI"]).await?;
     dbg!(&equis.len());
     Ok(())
 }

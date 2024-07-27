@@ -122,7 +122,7 @@ pub async fn get_nt_valv_list_material(
             };
         }
         // 查询 DAMP 的数据
-        let refnos = query_filter_deep_children(refno, vec!["DAMP".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["DAMP"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()

@@ -158,7 +158,7 @@ pub async fn get_gps_dzcl_material(
             };
         }
         // 查询 BEND 的数据
-        let refnos = query_filter_deep_children(refno, vec!["BEND".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["BEND"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -180,7 +180,7 @@ pub async fn get_gps_dzcl_material(
         let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
         data.append(&mut result);
         // 查询tubi的数据
-        let refnos = query_filter_deep_children(refno, vec!["BRAN".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -203,7 +203,7 @@ pub async fn get_gps_dzcl_material(
             tubi_data.append(&mut d);
         }
         // 查询elbo的数据
-        let refnos = query_filter_deep_children(refno, vec!["ELBO".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["ELBO"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -222,7 +222,7 @@ pub async fn get_gps_dzcl_material(
         let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
         data.append(&mut result);
         // 查询flan的数据
-        let refnos = query_filter_deep_children(refno, vec!["FLAN".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["FLAN"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -242,7 +242,7 @@ pub async fn get_gps_dzcl_material(
         let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
         data.append(&mut result);
         // 查询redu的数据
-        let refnos = query_filter_deep_children(refno, vec!["REDU".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["REDU"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -262,7 +262,7 @@ pub async fn get_gps_dzcl_material(
         let mut result: Vec<MaterialGpsDzclData> = response.take(0)?;
         data.append(&mut result);
         // 查询tee的数据
-        let refnos = query_filter_deep_children(refno, vec!["TEE".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["TEE"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()

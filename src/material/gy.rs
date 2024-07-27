@@ -418,7 +418,7 @@ pub async fn get_gy_dzcl(
             };
         }
         // 查询bend的数据
-        let refnos = query_filter_deep_children(refno, vec!["BEND".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["BEND"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -438,7 +438,7 @@ pub async fn get_gy_dzcl(
         let mut result: Vec<MaterialGyDataBend> = response.take(0)?;
         tubi_data.append(&mut result);
         // 查询tubi数据
-        let refnos = query_filter_deep_children(refno, vec!["BRAN".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -463,15 +463,15 @@ pub async fn get_gy_dzcl(
         // 查询 elbo,tee,flan,gask,olet,redu,cap,couplig
         let refnos = query_filter_deep_children(
             refno,
-            vec![
-                "ELBO".to_string(),
-                "TEE".to_string(),
-                "FLAN".to_string(),
-                "GASK".to_string(),
-                "OLET".to_string(),
-                "REDU".to_string(),
-                "CAP".to_string(),
-                "COUP".to_string(),
+            &[
+                "ELBO",
+                "TEE",
+                "FLAN",
+                "GASK",
+                "OLET",
+                "REDU",
+                "CAP",
+                "COUP",
             ],
         )
         .await?;
@@ -516,7 +516,7 @@ pub async fn get_gy_valv_list(
         }
         // 查询阀门的数据
         let refnos =
-            query_filter_deep_children(refno, vec!["VALV".to_string(), "INST".to_string()]).await?;
+            query_filter_deep_children(refno, &["VALV", "INST"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()
@@ -562,7 +562,7 @@ pub async fn get_gy_equi_list(
             };
         }
         // 查询设备的数据
-        let refnos = query_filter_deep_children(refno, vec!["EQUI".to_string()]).await?;
+        let refnos = query_filter_deep_children(refno, &["EQUI"]).await?;
         let refnos_str = serde_json::to_string(
             &refnos
                 .into_iter()

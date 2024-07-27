@@ -687,15 +687,15 @@ pub async fn set_pbs_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Resu
         // 找到所有需要处理的节点
         // let nodes = query_ele_filter_deep_children(zone.id, vec!["BRAN".to_string(),
         //                                                          "EQUI".to_string(), "STRU".to_string(), "REST".to_string()]).await?;
-        let bran_refnos = query_filter_deep_children(zone.id, vec!["BRAN".to_string()]).await?;
+        let bran_refnos = query_filter_deep_children(zone.id, &["BRAN"]).await?;
         // 处理bran
         set_pbs_bran_node(&bran_refnos, &zone, &mut handles).await?;
         // 处理equi
-        let equi_refnos = query_filter_deep_children(zone.id, vec!["EQUI".to_string()]).await?;
+        let equi_refnos = query_filter_deep_children(zone.id, &["EQUI"]).await?;
         set_pbs_equi_node(&equi_refnos, &zone, &mut handles).await?;
         // 处理支吊架
-        let stru_refnos = query_filter_deep_children(zone.id, vec!["STRU".to_string()]).await?;
-        let rest_refnos = query_filter_deep_children(zone.id, vec!["REST".to_string()]).await?;
+        let stru_refnos = query_filter_deep_children(zone.id, &["STRU"]).await?;
+        let rest_refnos = query_filter_deep_children(zone.id, &["REST"]).await?;
         // dbg!(&rest_refnos.len());
         set_pbs_supp_and_stru_node(&stru_refnos, &rest_refnos, &zone, &mut handles).await?;
     }

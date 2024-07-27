@@ -66,25 +66,6 @@ fn test_petgraph_noun_path() {
     }
 }
 
-#[tokio::test]
-async fn test_query_refnos_skip_inst() -> anyhow::Result<()> {
-    crate::init_test_surreal().await;
-    let refno = "24384/24828".into();
-
-    // let result = query_filter_deep_children(refno, crate::pdms_types::VISBILE_GEO_NOUNS.map(String::from).to_vec() ).await?;
-    // dbg!(&result);
-    let result = query_deep_children_filter_inst(
-        refno,
-        crate::pdms_types::VISBILE_GEO_NOUNS
-            .map(String::from)
-            .to_vec(),
-        true,
-    )
-    .await?;
-    dbg!(&result);
-
-    Ok(())
-}
 
 #[tokio::test]
 async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
@@ -95,7 +76,7 @@ async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
 
     let result = query_filter_deep_children(
         refno,
-        CATA_WITHOUT_REUSE_GEO_NAMES.map(String::from).to_vec(),
+        &CATA_WITHOUT_REUSE_GEO_NAMES,
     )
     .await?;
     dbg!(&result);
@@ -115,7 +96,7 @@ async fn test_query_ancestor_filter() -> anyhow::Result<()> {
     let refno = "25688/7957".into();
     // let type_name = crate::get_type_name(refno).await?;
     let target =
-        crate::query_filter_ancestors(refno, vec!["STWALL".to_string(), "ZONE".to_string()])
+        crate::query_filter_ancestors(refno, &["STWALL", "ZONE"])
             .await
             .unwrap();
     dbg!(target);
