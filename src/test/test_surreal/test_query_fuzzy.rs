@@ -1,4 +1,4 @@
-use crate::{get_db_option, get_default_pdms_db_info, query_filter_deep_children, query_same_refnos_by_type, query_types, RefU64};
+use crate::{get_db_option, get_default_pdms_db_info, query_types, RefU64};
 
 ///获得branch下的所有托臂
 #[tokio::test]
@@ -17,9 +17,14 @@ async fn test_query_same_refnos() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
     let refno: RefU64 = "17496/274055".into();
     let db_option = get_db_option();
-    let same_refnos =
-        query_same_refnos_by_type(refno, db_option.mdb_name.clone(), crate::DBType::DESI).await?;
-    dbg!(&same_refnos);
+    // let same_refnos = query_same_type_refnos(
+    //     refno,
+    //     db_option.mdb_name.clone(),
+    //     crate::DBType::DESI,
+    //     false,
+    // )
+    // .await?;
+    // dbg!(&same_refnos);
 
     let types = query_types(&same_refnos).await?;
     dbg!(&types[..10]);
@@ -47,14 +52,15 @@ async fn test_query_same_refnos() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_query_deep_children() -> anyhow::Result<()> {
-    use crate::query_multi_deep_children_filter_inst;
     use crate::pdms_types::GNERAL_LOOP_OWNER_NOUN_NAMES;
+    use crate::query_multi_deep_children_filter_inst;
     crate::init_test_surreal().await;
     let refno: RefU64 = "17496/274056".into();
-    let deep = query_multi_deep_children_filter_inst(&[refno], &GNERAL_LOOP_OWNER_NOUN_NAMES, false).await?;
+    let deep =
+        query_multi_deep_children_filter_inst(&[refno], &GNERAL_LOOP_OWNER_NOUN_NAMES, false)
+            .await?;
 
     dbg!(deep);
-
 
     Ok(())
 }

@@ -7,7 +7,7 @@ use crate::ssc_setting::PbsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
-use crate::DBType;
+use crate::{get_db_option, DBType};
 use crate::{graph::QUERY_DEEP_CHILDREN_REFNOS, types::*};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
@@ -641,11 +641,14 @@ pub async fn query_single_by_paths(
 }
 
 ///通过类型过滤所有的参考号
-pub async fn query_refnos_by_type(noun: &str) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<Vec<RefU64>> {
+    let mdb = get_db_option().mdb_name.clone();
+    let dbnums = get_mdb_db_nums(mdb, module).await?;
     let mut response = SUL_DB
         .query(format!(
-            r#"select value meta::id(id) from {}"#,
-            noun.to_uppercase()
+            r#"select value meta::id(id) from {} where dbnum in [{}]"#,
+            noun.to_uppercase(),
+            dbnums.iter().map(|x| x.to_string()).join(",")
         ))
         .await?;
     let refnos: Vec<RefU64> = response.take(0)?;
@@ -731,23 +734,26 @@ pub async fn query_refnos_from_names(
 }
 
 ///查找所有同类型的参考号, 需要限制范围
-pub async fn query_same_refnos_by_type(
+pub async fn query_same_type_refnos(
     refno: RefU64,
     mdb: String,
     module: DBType,
+    get_owner: bool,
 ) -> anyhow::Result<Vec<RefU64>> {
     let dbnums = get_mdb_db_nums(mdb, module).await?;
-    let sql = format!(
+    let mut sql = format!(
         r#"select value id from type::table({}.noun) where REFNO.dbnum in [{}]"#,
         refno.to_pe_key(),
         dbnums.iter().map(|x| x.to_string()).join(",")
     );
+    if get_owner {
+        sql = sql.replace("value id", "value owner");
+    }
     // println!("query_same_refnos_by_type sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
 }
-
 
 pub async fn query_types(refnos: &[RefU64]) -> anyhow::Result<Vec<Option<String>>> {
     let sql = format!(

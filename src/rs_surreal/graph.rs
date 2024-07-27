@@ -245,25 +245,25 @@ pub async fn query_multi_deep_children_filter_inst(
         return Ok(Default::default());
     }
     let mut result = HashSet::new();
-    // let mut skip_set = HashSet::new();
-    // let refno_nouns = query_types(refnos).await?;
-    // for (refno, refno_noun) in refnos.iter().zip(refno_nouns) {
-    for refno in refnos {
-        // if let Some(r_noun) = &refno_noun {
-        //     if skip_set.contains(r_noun) {
-        //         continue;
-        //     }
-        //     // //检查是否有和nouns有path往来
-        //     let exist_path = nouns.iter().any(|child| r_noun == child ||
-        //         !find_noun_path(child, r_noun).is_empty());
-        //     // dbg!(exist_path);
-        //     if !exist_path {
-        //         skip_set.insert(r_noun.to_owned());
-        //         continue;
-        //     }
-        // }else{
-        //     continue;
-        // }
+    let mut skip_set = HashSet::new();
+    let refno_nouns = query_types(refnos).await?;
+    for (refno, refno_noun) in refnos.iter().zip(refno_nouns) {
+        // for refno in refnos {
+        if let Some(r_noun) = &refno_noun {
+            if skip_set.contains(r_noun) {
+                continue;
+            }
+            // //检查是否有和nouns有path往来
+            let exist_path = nouns.iter().any(|child| r_noun == child ||
+                !find_noun_path(child, r_noun).is_empty());
+            // dbg!(exist_path);
+            if !exist_path {
+                skip_set.insert(r_noun.to_owned());
+                continue;
+            }
+        }else{
+            continue;
+        }
         //需要先过滤一遍，是否和nouns 的类型有path
         // let refno_types = query_types(&refnos).await?;
         let mut children = query_deep_children_filter_inst(*refno, nouns, filter).await?;

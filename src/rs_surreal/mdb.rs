@@ -98,12 +98,14 @@ pub async fn get_mdb_db_nums(mdb: String, module: DBType) -> anyhow::Result<Vec<
     let mdb = crate::helper::to_e3d_name(&mdb);
     let mut response = SUL_DB
         .query(r#"
-            select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1
+            let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
+            select value dbnum from (select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
+                from WORL where REFNO.dbnum in $dbnos order by o);
         "#)
         .bind(("mdb", mdb))
         .bind(("db_type", db_type))
         .await?;
-    let pe: Vec<u32> = response.take(0)?;
+    let pe: Vec<u32> = response.take(1)?;
     Ok(pe)
 }
 
