@@ -1,4 +1,4 @@
-use super::get_mdb_db_nums;
+use super::query_mdb_db_nums;
 use crate::consts::MAX_INSERT_LENGTH;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
@@ -47,21 +47,6 @@ pub async fn get_default_name(refno: RefU64) -> anyhow::Result<Option<String>> {
         .await?;
     let pe: Option<String> = response.take(0)?;
     Ok(pe)
-}
-
-#[cached(result = true)]
-pub async fn get_design_dbnos(mdb_name: String) -> anyhow::Result<Vec<u32>> {
-    let mdb = if mdb_name.starts_with("/") {
-        mdb_name
-    } else {
-        format!("/{}", mdb_name)
-    };
-    let mut response = SUL_DB
-        .query("select value (select value DBNO from CURD.refno.* where STYP=1) from only MDB where NAME=$mdb limit 1")
-        .bind(("mdb", mdb))
-        .await?;
-    let dbnos: Vec<u32> = response.take(0)?;
-    Ok(dbnos)
 }
 
 ///查询到祖先节点列表
@@ -642,8 +627,7 @@ pub async fn query_single_by_paths(
 
 ///通过类型过滤所有的参考号
 pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<Vec<RefU64>> {
-    let mdb = get_db_option().mdb_name.clone();
-    let dbnums = get_mdb_db_nums(mdb, module).await?;
+    let dbnums = query_mdb_db_nums(module).await?;
     let mut response = SUL_DB
         .query(format!(
             r#"select value meta::id(id) from {} where dbnum in [{}]"#,
@@ -740,7 +724,7 @@ pub async fn query_same_type_refnos(
     module: DBType,
     get_owner: bool,
 ) -> anyhow::Result<Vec<RefU64>> {
-    let dbnums = get_mdb_db_nums(mdb, module).await?;
+    let dbnums = query_mdb_db_nums(module).await?;
     let mut sql = format!(
         r#"select value id from type::table({}.noun) where REFNO.dbnum in [{}]"#,
         refno.to_pe_key(),

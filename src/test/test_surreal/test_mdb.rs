@@ -19,7 +19,7 @@ async fn test_get_world_sites() {
     let mdb = String::from("/ALL");
     let world = rs_surreal::get_world(mdb.clone()).await.unwrap().unwrap();
     assert_eq!(&world.noun, "WORL");
-    let result = rs_surreal::get_mdb_db_nums(mdb.clone(), crate::DBType::DESI)
+    let result = rs_surreal::query_mdb_db_nums(crate::DBType::DESI)
         .await
         .unwrap();
     dbg!(&result);

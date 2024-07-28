@@ -26,8 +26,8 @@ async fn test_query_same_refnos() -> anyhow::Result<()> {
     // .await?;
     // dbg!(&same_refnos);
 
-    let types = query_types(&same_refnos).await?;
-    dbg!(&types[..10]);
+    // let types = query_types(&same_refnos).await?;
+    // dbg!(&types[..10]);
 
     // let r = crate::query_multi_deep_children_filter_inst(
     //     &same_refnos[0..20],

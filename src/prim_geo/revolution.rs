@@ -130,7 +130,7 @@ impl BrepShapeTrait for Revolution {
         } else {
             self.angle as f64
         };
-        dbg!(angle);
+        // dbg!(angle);
         let r = Face::from_wires(&wires)?.revolve(
             self.rot_pt.as_dvec3(),
             self.rot_dir.as_dvec3(),

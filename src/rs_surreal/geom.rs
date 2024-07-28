@@ -36,7 +36,7 @@ pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Ve
             (select value in from {0}<-pe_owner where in.noun in ["LOOP", "PLOO"]);
         array::complement((select value refno.HEIG from [ (select value in.id from only {0}<-pe_owner where in.noun in ["LOOP", "PLOO"] limit 1), {0}]), [none])[0];
         "#, refno.to_pe_key());
-    // println!("sql is {}", &sql);
+    // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await.unwrap();
     let points: Vec<Vec<Vec3>> = response.take(0)?;
     let height: Option<f32> = response.take(1)?;
@@ -206,6 +206,17 @@ pub async fn query_refnos_point_map(
         .into_iter()
         .map(|r| (r.id, r.into_point_map()))
         .collect())
+}
+
+///通过geo hash 查询参考号
+pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefU64>> {
+    let sql = format!(
+        "array::flatten(select value in<-inst_relate.in from inst_geo:⟨{}⟩<-geo_relate);",
+        id
+    );
+    let mut response = SUL_DB.query(&sql).await?;
+    let result: Vec<RefU64> = response.take(0)?;
+    Ok(result)
 }
 
 // #[tokio::test]

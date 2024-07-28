@@ -142,7 +142,7 @@ impl SweepSolid {
                     z_axis = -z_axis;
                 }
                 let x_axis = y_axis.cross(z_axis).normalize();
-                dbg!((x_axis, y_axis, z_axis));
+                // dbg!((x_axis, y_axis, z_axis));
                 rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
                 beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as _);
                 rot_mat =
@@ -150,10 +150,8 @@ impl SweepSolid {
             }
 
             SweepPath3D::Line(d) => {
-                // rot_mat =
-                //     DMat3::from_quat(DQuat::from_rotation_arc(self.plax.as_dvec3(), DVec3::Y));
                 if d.is_spine {
-                    dbg!(self.bangle.to_radians());
+                    // dbg!(self.bangle.to_radians());
                     beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as _);
                 }
                 {
@@ -199,6 +197,9 @@ impl SweepSolid {
                     DVec3::new(q.x, q.y, 0.0),
                 ));
             } else {
+                if p.pos().fuzzy_eq(q.pos()){
+                    return Err(anyhow!("无法生成SANN线框: {:?}", self));
+                }
                 let m = seg_midpoint(p, q);
                 edges.push(Edge::arc(
                     DVec3::new(p.x, p.y, 0.0),
@@ -368,16 +369,13 @@ impl SweepSolid {
                 beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as f64);
             }
             SweepPath3D::Line(d) => {
-                // rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
                 if d.is_spine {
                     beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
                 }
-
                 rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
                     profile.na_axis.as_dvec3(),
                     self.plax.as_dvec3(),
                 ));
-                // dbg!((profile.na_axis, self.plax));
             }
         }
         let mut points = vec![];
@@ -390,6 +388,7 @@ impl SweepSolid {
             .ok_or(anyhow!("无法生成wire。"))?;
         let translation = DMat4::from_translation(offset_pt);
         let r_trans_mat = DMat4::from_translation(r_translation);
+        //因为spine有可能是弧线，需要提前旋转面
         let beta_mat = DMat4::from_mat3(DMat3::from_quat(beta_rot));
         let local_mat = DMat4::from_mat3(rot_mat);
         // dbg!(local_mat);

@@ -705,9 +705,36 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     if basic_inter_len == 0 && overlap_inter_len == 0 {
         return Ok(polyline);
     } else if !has_frad {
+        // dbg!(&intrs.basic_intersects);
+        let removed_idx = intrs.basic_intersects.iter().map(|x| x.start_index1)
+            .collect::<HashSet<usize>>();
+        // for int in &intrs.basic_intersects{
+        // polyline.vertex_data.retain(|&_, index| !removed_idx.contains(&index));
+        // }
+        let mut new_polyline = Polyline::new_closed();
+        new_polyline.vertex_data = polyline.vertex_data.clone().into_iter()
+            .enumerate()
+            .filter(|(index, _)| !removed_idx.contains(index))
+            .map(|(_, value)| value)
+            .collect();
+
+        if let Ok(mut new_intrs) = std::panic::catch_unwind(
+            (|| global_self_intersects(&new_polyline, &new_polyline.create_approx_aabb_index())),
+        )  {
+            let basic_inter_len = new_intrs.basic_intersects.len();
+            let overlap_inter_len = new_intrs.overlapping_intersects.len();
+            if basic_inter_len == 0 && overlap_inter_len == 0 {
+                return Ok(new_polyline);
+            } else {
+                println!("有问题的wire: {}", polyline_to_debug_json_str(&polyline));
+                return Err(anyhow!(
+                    "有相交没有fillet的线段。修复失败"
+                ));
+            }
+        };
         return Err(anyhow!(
-            "有相交的线段，但是没有fillet radius，设定wire为错误wire。"
-        ));
+                "有相交没有fillet的线段。修复失败"
+            ));
     }
     #[cfg(feature = "debug_wire")]
     dbg!(&intrs);
@@ -813,7 +840,7 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
 pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow::Result<Vec<Wire>> {
     use cavalier_contours::core::math::Vector2;
     if pts.len() < 3 {
-        return Err(anyhow!("Extrusion 的wire 顶点数量不够，小于3。"));
+        return Err(anyhow!("wire 顶点数量不够，小于3。"));
     }
     let len = pts.len();
     let pts = pts

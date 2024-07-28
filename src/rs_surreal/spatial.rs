@@ -1,8 +1,6 @@
 use crate::room::room::GLOBAL_AABB_TREE;
 use crate::tool::math_tool;
-use crate::tool::math_tool::{
-    cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_vec_str,
-};
+use crate::tool::math_tool::{cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str};
 use crate::{
     accel_tree::acceleration_tree::QueryRay,
     consts::HAS_PLIN_TYPES,
@@ -30,7 +28,20 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::{collections::HashSet, f32::consts::E, time::Instant};
 
-pub fn cal_ori_by_z_axis_ref_x(v: DVec3, neg: bool) -> DQuat {
+pub fn cal_ori_by_z_axis_ref_x(v: DVec3) -> DQuat {
+    let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
+        DVec3::Y
+    }  else {
+        DVec3::Z
+    };
+    let y_dir = v.cross(ref_dir).normalize();
+    let x_dir = y_dir.cross(v).normalize();
+
+    let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, v));
+    rotation
+}
+
+pub fn cal_spine_ori_by_z_axis_ref_x(v: DVec3, neg: bool) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::Y
     } else if v.normalize().dot(DVec3::Z).abs() < 0.001 {
@@ -50,12 +61,11 @@ pub fn cal_ori_by_z_axis_ref_x(v: DVec3, neg: bool) -> DQuat {
 }
 
 pub fn cal_ori_by_opdir(v: DVec3) -> DQuat {
-    let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
-        DVec3::Y
+    let ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
+        DVec3::NEG_Y * v.z.signum()
     } else {
         DVec3::Z
     };
-    ref_dir = ref_dir * v.z.signum();
     let y_dir = v.cross(ref_dir).normalize();
     let x_dir = y_dir.cross(v).normalize();
 
@@ -93,21 +103,6 @@ pub fn cal_spine_ori(v: DVec3, y_ref_dir: DVec3) -> DQuat {
     rotation
 }
 
-pub fn cal_ori_by_z_axis_refx(v: DVec3) -> DQuat {
-    let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
-        DVec3::NEG_Y
-    } else {
-        DVec3::NEG_Z
-    };
-    ref_dir = ref_dir * v.z.signum();
-    // dbg!(ref_dir);
-
-    let y_dir = v.cross(ref_dir).normalize();
-    let x_dir = y_dir.cross(v).normalize();
-
-    let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, v));
-    rotation
-}
 
 pub fn cal_ori_by_z_axis_ref_y(v: DVec3) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
@@ -138,6 +133,29 @@ pub fn cal_ori_by_extru_axis(v: DVec3, neg: bool) -> DQuat {
     // dbg!((y_ref_dir, x_dir, y_dir, v));
     let rotation = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, v));
     rotation
+}
+
+///根据CUTP 和 轴方向，来计算JOINT的方位
+pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat{
+    // let cutp = parse_expr_to_dir("Y 36.85 -X").unwrap();
+    // let axis_dir = parse_expr_to_dir("Y 36.85 -X").unwrap();
+    let mut y_axis = cutp.cross(axis_dir).normalize();
+    let d = cutp.dot(axis_dir).abs();
+    // dbg!(d);
+    if d > 0.99{
+        y_axis = DVec3::Z;
+    }
+    let x_axis = axis_dir;
+    let z_axis = x_axis.cross(y_axis).normalize();
+    // let ref_axis = axis_dir.cross(y_axis).normalize();
+    // let z_axis = y_axis.cross(ref_axis).normalize();
+    // let x_axis = y_axis.cross(z_axis).normalize();
+    // dbg!(z_axis);
+    // dbg!(to_pdms_dvec_str(&z_axis, true));
+    // // dbg!(to_pdms_dvec_str(&ref_axis, true));
+    // dbg!(to_pdms_dvec_str(&y_axis, true));
+    // dbg!(to_pdms_dvec_str(&x_axis, true));
+    DQuat::from_mat3(&DMat3::from_cols(x_axis.into(), y_axis.into(), z_axis.into()))
 }
 
 pub async fn get_spline_pts(refno: RefU64) -> anyhow::Result<Vec<DVec3>> {
@@ -192,12 +210,18 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         let mut pos = att.get_position().unwrap_or_default().as_dvec3();
         // dbg!(pos);
         let mut quat = DQuat::IDENTITY;
-        let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
-        let has_bang = att.contains_key("BANG");
+        let mut is_world_quat = false;
+        let mut bangle = att.get_f32("BANG").unwrap_or_default() as f64;
+        let mut apply_bang = att.contains_key("BANG") && bangle != 0.0;
+        if cur_type == "GENSEC" {
+            apply_bang = false;
+        }
         //土建特殊情况的一些处理
         let owner_is_gensec = ower_type == "GENSEC";
         let mut pos_extru_dir: Option<DVec3> = None;
         if owner_is_gensec {
+            // bangle = o_att.get_f32("BANG").unwrap_or_default() as f64;
+            // apply_bang = true;
             //找到spine，获取spine的两个顶点
             if let Ok(pts) = get_spline_pts(owner).await {
                 if pts.len() == 2 {
@@ -210,53 +234,57 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             pos_extru_dir = Some((end - start).normalize());
             // dbg!(pos_extru_dir);
         }
-        let is_joint = att.is_joint_type();
-        if is_joint{
-            let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
+        let is_sjoi = cur_type == "SJOI";
+        let has_cut_dir = att.contains_key("CUTP");
+        let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
+        if is_sjoi {
             let cut_len = att.get_f64("CUTB").unwrap_or_default();
-            dbg!(&cut_dir);
+            // dbg!(&cut_dir);
             //先判断是否有cref
             //如果CUTP 没有z分量，则不考虑这些
-            if  let Some(c_ref) = att.get_foreign_refno("CREF") &&
-                let Ok(c_att) = super::get_named_attmap(c_ref).await {
+            if let Some(c_ref) = att.get_foreign_refno("CREF")
+                && let Ok(c_att) = get_named_attmap(c_ref).await
+            {
                 let jline = c_att.get_str("JLIN").map(|x| x.trim()).unwrap_or("NA");
-                dbg!(jline);
+                // dbg!(jline);
                 if let Ok(Some(param)) = query_pline(c_ref, jline.into()).await {
                     let jlin_pos = param.pt;
                     let jlin_plax = param.plax;
-                    dbg!((&jlin_pos, &jlin_plax));
+                    // dbg!((&jlin_pos, &jlin_plax));
                     let c_t = Box::pin(get_world_transform(c_ref))
-                                .await?
-                                .unwrap_or_default();
+                        .await?
+                        .unwrap_or_default();
                     let o_t = Box::pin(get_world_transform(o_att.get_owner()))
                         .await?
                         .unwrap_or_default();
                     let jlin_offset = c_t.rotation.as_dquat() * jlin_pos;
-                    dbg!(jlin_offset);
+                    // dbg!(jlin_offset);
                     let c_axis = c_t.rotation.as_dquat() * DVec3::Z;
-                    dbg!(c_axis);
+                    // dbg!(c_axis);
                     let c_wpos = c_t.translation.as_dvec3() + jlin_offset;
-                    dbg!(c_wpos);
+                    // dbg!(c_wpos);
                     // 是沿着附属的梁的轴方向再平移
                     let z_axis = o_t.rotation.as_dquat() * DVec3::Z;
-                    dbg!(z_axis);
+                    // dbg!(z_axis);
                     // 取cref 对应构件的PLIN的位置
                     //如果垂直了，CUTP就是失效，不用考虑加冗余
                     let same_plane = c_axis.dot(cut_dir).abs() > 0.001;
-                    if same_plane{
-                        dbg!(o_t.translation);
+                    if same_plane {
+                        // dbg!(o_t.translation);
                         let delta = (c_wpos - o_t.translation.as_dvec3()).dot(z_axis);
-                        dbg!(delta);
+                        // dbg!(delta);
                         translation = o_t.translation.as_dvec3() + delta * z_axis;
-                        dbg!(translation);
+                        // dbg!(translation);
                         //如果 jlin_axis 和 z_axis 垂直
                         let perpendicular = z_axis.dot(c_axis).abs() < 0.001;
                         if !perpendicular {
                             translation += z_axis * cut_len;
-                            dbg!(translation);
+                            // dbg!(translation);
                         }
                     }
                 }
+            }else{
+
             }
         }
         if att.contains_key("ZDIS") {
@@ -313,39 +341,14 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 }
             }
         }
-        //对于SCOJ，需要取子节点的最后一个节点的Cutplane 方向作为z 方向?
-        //特殊处理的类型
-        if cur_type == "SCOJ" {
-            //需要取子节点的最后一个节点的Cutplane 方向作为z 方向
-            //SUBJ
-            // let children_atts = crate::get_children_named_attmaps(cur_refno).await?;
-            // if !children_atts.is_empty() {
-            //     let last_child = children_atts.last().unwrap();
-            // let z_dir = last_child.get_dvec3("CUTP").unwrap_or(DVec3::Z);
-            let z_dir = DVec3::X;
-            // let c_ref = last_child.get_foreign_refno("CREF").unwrap_or_default();
-            //获得其起始点
-            // if let Ok(c_att) = super::get_named_attmap(c_ref).await {
-            //     if let Some(poss) = c_att.get_dposs(){
-            let sctn_att = &ancestors[index - 1];
-            //         dbg!(&sctn_att);
-            let sctn_dir = sctn_att.get_dir().unwrap_or(DVec3::Z);
-            let x_dir = sctn_dir.cross(z_dir).normalize();
-            // dbg!(sctn_dir);
-            //         let new_v = poss - sctn_att.get_dposs().unwrap_or_default();
-            //         let delta = new_v.dot(sctn_dir);
-            //         dbg!(delta);
-            //获得次梁的矩阵，然后求出其z轴 和 Y轴组成的面， 将dposs 投影到z轴即可
-            //position，应该就是求交点，两根线的交点？还是线和面的交点
-            //对于SCOJ，次梁的Z轴即是
-            quat = DQuat::from_mat3(&DMat3::from_cols(x_dir, sctn_dir, z_dir));
-        } else if att.contains_key("NPOS") {
+        if att.contains_key("NPOS") {
             let npos = att.get_vec3("NPOS").unwrap_or_default();
+            // dbg!(npos);
             pos += npos.as_dvec3();
+            // dbg!(pos);
         }
 
         let quat_v = att.get_rotation();
-        let has_rot = quat_v.is_some();
         let mut need_bangle = false;
         //特殊处理的类型
         if (!owner_is_gensec && quat_v.is_some()) || (owner_is_gensec && cur_type == "TMPL") {
@@ -357,7 +360,8 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     return Ok(None);
                 }
                 if owner_is_gensec {
-                    quat = cal_ori_by_z_axis_ref_x(z_axis, true);
+                    //todo 待测试特殊情况
+                    quat = cal_spine_ori_by_z_axis_ref_x(z_axis, true);
                 } else {
                     //跳过是owner sctn或者 WALL 的计算
                     quat = cal_ori_by_z_axis_ref_y(z_axis);
@@ -366,52 +370,21 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             }
         }
 
-        //对于有CUTB的情况，需要直接对齐过去, 不需要在这里计算
-        let c_ref = att.get_foreign_refno("CREF").unwrap_or_default();
-        let mut cut_dir = DVec3::Z;
-        let mut has_cut_back = false;
         //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
         //直接在世界坐标系下求坐标，跳过局部求解
         //有 cref 的时候，需要保持方向和 cref 一致
         let ydir_axis = att.get_dvec3("YDIR");
         let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
-        let mut contains_opdir = false;
-        let mut delta_vec = att.get_dvec3("DELP").unwrap_or_default();
+        let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
+        let mut has_opdir = false;
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
             quat = cal_ori_by_opdir(opdir);
+            has_opdir = true;
             // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
-            contains_opdir = true;
             if pos_line.is_empty() {
                 pos += delta_vec;
             }
         }
-        //todo 准备测试多个的案例
-        // if att.contains_key("CUTB") && !contains_opdir && !has_rot && cur_type != "SJOI" {
-        //     cut_dir = att.get_dvec3("CUTP").unwrap_or(cut_dir);
-        //     has_cut_back = true;
-        //     dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
-        //     let cut_len = att.get_f64("CUTB").unwrap_or_default();
-        //     if let Ok(c_att) = super::get_named_attmap(c_ref).await {
-        //         let c_t = Box::pin(get_world_transform(c_ref))
-        //             .await?
-        //             .unwrap_or_default();
-        //         if let (Some(poss), Some(pose)) = (c_att.get_poss(), c_att.get_pose()) {
-        //             let w_poss = c_t.translation.as_dvec3();
-        //             let axis = pose - poss;
-        //             //判断是否是垂直连接，如果是垂直连接，CUTP 要求是 Z方向才能起作用，这个时候，translation 的值为
-        //             let len = axis.length() as f64;
-        //             let w_pose = (w_poss + c_t.rotation.as_dquat() * DVec3::Z * len);
-        //             let dist_s = translation.distance(w_poss);
-        //             let dist_e = translation.distance(w_pose);
-        //             //取离node最近的点
-        //             if dist_s < dist_e {
-        //                 translation = w_poss - cut_dir * cut_len;
-        //             } else {
-        //                 translation = w_pose - cut_dir * cut_len;
-        //             }
-        //         }
-        //     }
-        // }
 
         //todo fix 处理 posl的计算
         if !pos_line.is_empty() {
@@ -420,9 +393,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             let mut pline_plax = DVec3::X;
             // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
             let mut is_lmirror = false;
-            let ancestor_refnos =
-                crate::query_filter_ancestors(owner, &HAS_PLIN_TYPES)
-                    .await?;
+            let ancestor_refnos = crate::query_filter_ancestors(owner, &HAS_PLIN_TYPES).await?;
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
@@ -463,6 +434,8 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     let x_axis = y_axis.cross(z_axis).normalize();
                     // dbg!((x_axis, y_axis, z_axis));
                     DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
+                } else if cur_type == "SCOJ" {
+                    cal_ori_by_z_axis_ref_x(z_axis) * quat
                 } else {
                     cal_ori_by_z_axis_ref_y(z_axis) * quat
                 }
@@ -474,7 +447,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 quat = cal_ori_by_ydir(v.normalize(), z_axis);
                 // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             }
-            if has_bang {
+            if apply_bang {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
             }
             // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
@@ -490,28 +463,34 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 quat = cal_ori_by_ydir(v.normalize(), z_axis);
                 // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             }
-            if has_bang {
+            if apply_bang {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
             }
+            //先排除"SJOI"
+            if has_cut_dir && !has_opdir {
+                // dbg!(cut_dir);
+                let mat3 = DMat3::from_quat(rotation);
+                // dbg!((mat3.z_axis, cut_dir));
+                quat = cal_cutp_ori(mat3.z_axis, cut_dir);
+                is_world_quat = true;
+                //需要检查cut_dir是否满足要求
+                // let x_axis = DVec3::Z;
+                // let z_axis = if cut_dir.z.abs() > 0.0001 {
+                //     DVec3::X
+                // } else {
+                //     cut_dir
+                // };
+                // let y_axis = z_axis.cross(x_axis).normalize();
+                // let mat = DMat3::from_cols(x_axis, y_axis, z_axis);
+                // rotation = rotation * DQuat::from_mat3(&mat);
+            }
             translation = translation + rotation * pos;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
+            if is_world_quat {
+                rotation =  quat;
+            } else{
+                rotation = rotation * quat;
+            }
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
-            rotation = rotation * quat;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
-        }
-
-        //先排除"SJOI"
-        if has_cut_back && cur_type != "SJOI" {
-            // dbg!(cut_dir);
-            let x_axis = DVec3::Z;
-            let z_axis = if cut_dir.z.abs() > 0.0001 {
-                DVec3::X
-            } else {
-                cut_dir
-            };
-            let y_axis = z_axis.cross(x_axis).normalize();
-            let mat = DMat3::from_cols(x_axis, y_axis, z_axis);
-            rotation = rotation * DQuat::from_mat3(&mat);
         }
 
         mat4 = DMat4::from_rotation_translation(rotation, translation);

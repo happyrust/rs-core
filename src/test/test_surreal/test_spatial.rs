@@ -1,4 +1,4 @@
-use crate::tool::dir_tool::parse_ori_str_to_quat;
+use crate::tool::dir_tool::*;
 use crate::tool::direction_parse::parse_expr_to_dir;
 use crate::{room::room::load_aabb_tree, rs_surreal, tool::math_tool};
 use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
@@ -26,16 +26,14 @@ fn test_print_ori(ori: &str) {
 
 #[cfg(test)]
 mod test_transform {
-    use crate::{cal_ori_by_ydir, init_test_surreal};
     use crate::tool::dir_tool::{parse_ori_str_to_mat, parse_ori_str_to_quat};
-    use crate::tool::math_tool;
-    use crate::tool::math_tool::{
-        cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, vec3_to_xyz_str,
-    };
-    use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal, RefU64};
-    use bevy_reflect::Array;
-    use glam::{DMat3, DVec3, Mat3};
     use crate::tool::direction_parse::parse_expr_to_dir;
+    use crate::tool::math_tool;
+    use crate::tool::math_tool::{cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, dvec3_to_xyz_str, to_pdms_dvec_str, vec3_to_xyz_str};
+    use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal, RefU64};
+    use crate::{cal_ori_by_ydir, init_test_surreal};
+    use bevy_reflect::Array;
+    use glam::{DMat3, DQuat, DVec3, Mat3};
 
     //sctn 等等
     #[test]
@@ -142,7 +140,11 @@ mod test_transform {
         init_test_surreal().await;
 
         //todo fix
-        test_ori("17496/268348".into(), "Y is Y 0.374 -X 0.345 -Z and Z is -X 0.693 -Y 42.739 -Z").await;
+        test_ori(
+            "17496/268348".into(),
+            "Y is Y 0.374 -X 0.345 -Z and Z is -X 0.693 -Y 42.739 -Z",
+        )
+        .await;
         // test_ori("17496/273497".into(), "Y is X and Z is Z").await;
         test_ori("24384/25783".into(), "Y is X 89.969 Z and Z is -X 0.031 Z").await;
 
@@ -177,8 +179,8 @@ mod test_transform {
         init_test_surreal().await;
         //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
 
-        // test_ori("24383/93574".into(), "Y is -Y 21 -X and Z is X 21 -Y").await;
-        test_transform("24383/80522".into(), "Y is -X 41 Y and Z is -Y 41 -X", "").await;
+        test_transform("17496/172030".into(), "Y is X and Z is Y", "X -42531.5mm Y 11821mm Z 26008mm").await;
+        // test_transform("24383/80522".into(), "Y is -X 41 Y and Z is -Y 41 -X", "").await;
         Ok(())
     }
 
@@ -278,11 +280,25 @@ mod test_transform {
     }
 
     #[tokio::test]
+    async fn test_query_transform_PNODE() -> anyhow::Result<()> {
+        init_test_surreal().await;
+
+        test_transform(
+            "17496/172032".into(),
+            "",
+            "X -42531.5mm Y 11821mm Z 25908mm",
+        )
+        .await;
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_query_transform_PJOI() -> anyhow::Result<()> {
         init_test_surreal().await;
-        // SJOI 里的CUTP，如果有CUTP，x轴必须为Z轴，如果CUTP轴为(-)Z轴了，z轴改为X，
 
-        // test_ori("24381/178547".into(), "Y is Y 27.581 X and Z is -X 27.581 Y").await;
+        //PJOI里有OPDI
+        // test_transform("17496/172033".into(), "Y is Y and Z is -Z", "X -42531.5mm Y 11821mm Z 25908mm").await;
+        test_transform("17496/274161".into(), "Y is -Y and Z is Z", "X 153mm Y -248.5mm Z 35mm").await;
         // test_transform("24381/178550".into(), "Y is -X 27.581 Y and Z is -Y 27.581 -X", "X 12850.226mm Y 24922.073mm Z -4194.68mm").await;
         // let m1 = parse_ori_str_to_quat("Y is X and Z is Y").unwrap();
         // let m2 = parse_ori_str_to_quat("Y is -Y 27.581 -X and Z is Z").unwrap();
@@ -293,26 +309,73 @@ mod test_transform {
 
     #[tokio::test]
     async fn test_query_transform_SJOI() -> anyhow::Result<()> {
+        use crate::tool::dir_tool::*;
         init_test_surreal().await;
         // SJOI 里的CUTP，如果有CUTP，x轴必须为Z轴，如果CUTP轴为(-)Z轴了，z轴改为X，
-
-        test_transform("23713/2430".into(), "Y is -X and Z is Z", "X 1982.3mm Y 2786.6mm Z -100.2mm").await;
-        test_transform("23713/2699".into(), "Y is Z and Z is X", "X 3000.1mm Y 4786.6mm Z -18.6mm").await;
-        return Ok(());
+        test_transform(
+            "17496/274158".into(),
+            "Y is Z and Z is Y",
+            "X 175mm Y -233.5mm Z -25mm",
+        )
+            .await;
+        // test_transform(
+        //     "23713/2430".into(),
+        //     "Y is -X and Z is Z",
+        //     "X 1982.3mm Y 2786.6mm Z -100.2mm",
+        // )
+        // .await;
+        // test_transform(
+        //     "23713/2699".into(),
+        //     "Y is Z and Z is X",
+        //     "X 3000.1mm Y 4786.6mm Z -18.6mm",
+        // )
+        // .await;
+        // return Ok(());
         //with cutplane
-        let sjoi_strs = vec![
-            "Y is -X 22.452 -Y and Z is -Y 22.452 X",
-            "Y is -X 20 -Y and Z is -Y 20 X",
-            "Y is -X 20 Y and Z is -Y 20 -X",
-            "Y is -Y and Z is X",
-            "Y is -X and Z is -Y",
-            "Y is X and Z is Y",
-            "Y is Y 30.484 X and Z is -X 30.484 Y",
+        // let sjoi_strs = vec![
+        //     "Y is -X 22.452 -Y and Z is -Y 22.452 X",
+        //     "Y is -X 20 -Y and Z is -Y 20 X",
+        //     "Y is -X 20 Y and Z is -Y 20 -X",
+        //     "Y is -Y and Z is X",
+        //     "Y is -X and Z is -Y",
+        //     "Y is X and Z is Y",
+        //     "Y is Y 30.484 X and Z is -X 30.484 Y",
+        // ];
+        // for s in sjoi_strs {
+        //     let m = DMat3::from_quat(parse_ori_str_to_quat(s).unwrap().as_dquat());
+        //     dbg!(m.x_axis);
+        // }
+        let test_cases = vec![
+            // ("Y 36.85 -X", "Z 30 Y", "Y is -X 36.85 -Y 19.099 Z and Z is X 36.85 Y 70.901 Z"),
+            // ("Y 36.85 -X", "Z", "Y is -X 36.85 -Y and Z is Z"),
+            // ("Y 36.85 X", "Z", "Y is -X 36.85 Y and Z is Z"),
+            // ("Y 36.85 X", "Y 36.85 X", "Y is Z and Z is X 36.85 -Y"),
+            // ("Y 36.85 X", "Y 36.85 X", "Y is Z and Z is X 36.85 -Y"),
+            ("-X", "-X", "Y is Z and Z is Y"),
         ];
-        for s in sjoi_strs {
-            let m = DMat3::from_quat(parse_ori_str_to_quat(s).unwrap().as_dquat());
-            dbg!(m.x_axis);
+        for (cutp, axis_dir, result) in test_cases{
+            let cutp = parse_expr_to_dir(cutp).unwrap();
+            let axis_dir = parse_expr_to_dir(axis_dir).unwrap();
+            let assert_mat = parse_ori_str_to_dmat3(result).unwrap();
+            // dbg!(to_pdms_dvec_str(&assert_mat.x_axis,true));
+            //cal_cutp_ori
+            let ori = crate::cal_cutp_ori(cutp, axis_dir);
+            let mat3 = DMat3::from_quat(ori);
+            let delta = mat3 * assert_mat.inverse();
+            let ori_str = dquat_to_pdms_ori_xyz_str(&ori, true);
+            dbg!(&ori_str);
+            assert!(delta.determinant() > 0.99);
         }
+        // let ori1 = parse_ori_str_to_quat(" Y is -X 36.85 -Y 77.573 Z and Z is X 36.85 Y 12.427 Z")
+        //     .unwrap()
+        //     .as_dquat();
+        // let ori2 = parse_ori_str_to_quat(" Y is -X 36.85 -Y and Z is Z")
+        //     .unwrap()
+        //     .as_dquat();
+        // let ori = ori2.inverse() * ori1;
+        // //ori1 = ori2 * xxx;
+        // // dbg!(DMat3::from_quat(ori));
+        // dbg!(dquat_to_pdms_ori_xyz_str(&ori, true));
 
         Ok(())
     }
@@ -332,12 +395,7 @@ mod test_transform {
 
         //todo fix
         // test_transform("17496/274032".into(), "Y is -Z and Z is X").await;
-        test_transform(
-            "24381/178543".into(),
-            "Y is -Y 27.581 -X and Z is Z",
-            "",
-        )
-            .await;
+        test_transform("24381/178543".into(), "Y is -Y 27.581 -X and Z is Z", "").await;
 
         // test_transform(
         //     "24381/77310".into(),
@@ -434,7 +492,12 @@ mod test_transform {
     async fn test_query_transform_FIT() -> anyhow::Result<()> {
         init_test_surreal().await;
         // test_transform("24381/55590".into(), "Y is Z and Z is -X", "X 15455.2mm Y -39949.8mm Z 34500mm").await;
-        test_transform("17496/215727".into(), "Y is E and Z is S", "X -28560mm Y 41050mm Z -5400mm").await;
+        test_transform(
+            "17496/215727".into(),
+            "Y is E and Z is S",
+            "X -28560mm Y 41050mm Z -5400mm",
+        )
+        .await;
         //17496/215727
         // test_ori("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
         // test_ori("17496/202352".into(), "Y is X and Z is -Y").await;

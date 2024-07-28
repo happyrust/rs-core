@@ -182,6 +182,11 @@ impl DbOption {
     }
 
     #[inline]
+    pub fn is_gen_mesh_or_model(&self) -> bool {
+        self.gen_mesh || self.gen_model
+    }
+
+    #[inline]
     pub fn get_room_key_word(&self) -> Vec<String> {
         self.room_key_word.clone().unwrap_or(vec!["-RM".to_string()])
     }

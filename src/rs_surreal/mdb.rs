@@ -1,6 +1,6 @@
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
-use crate::{helper, types::*};
+use crate::{get_db_option, helper, types::*};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
@@ -93,9 +93,10 @@ pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> any
 }
 
 #[cached(result = true)]
-pub async fn get_mdb_db_nums(mdb: String, module: DBType) -> anyhow::Result<Vec<u32>> {
+pub async fn query_mdb_db_nums(module: DBType) -> anyhow::Result<Vec<u32>> {
     let db_type: u8 = module.into();
-    let mdb = crate::helper::to_e3d_name(&mdb);
+    let mdb = &get_db_option().mdb_name;
+    let mdb = crate::helper::to_e3d_name(mdb);
     let mut response = SUL_DB
         .query(r#"
             let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
