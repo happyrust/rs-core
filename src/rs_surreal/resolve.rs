@@ -266,39 +266,41 @@ pub fn eval_str_to_f64(
             let c2 = caps.get(2).map_or("", |m| m.as_str());
             let is_tubi = context.is_tubi();
             #[cfg(not(target_arch = "wasm32"))]
-            let expr_val = tokio::task::block_in_place(|| {
-                tokio::runtime::Handle::current().block_on(async move {
-                    //如果是直段，直接取当前的参考号
-                    let target_refno = match c2 {
-                        "PREV" => {
-                            if is_tubi {
-                                refno
-                            } else {
-                                crate::get_next_prev(refno, false).await.unwrap_or_default()
+            {
+                let expr_val = tokio::task::block_in_place(|| {
+                    tokio::runtime::Handle::current().block_on(async move {
+                        //如果是直段，直接取当前的参考号
+                        let target_refno = match c2 {
+                            "PREV" => {
+                                if is_tubi {
+                                    refno
+                                } else {
+                                    crate::get_next_prev(refno, false).await.unwrap_or_default()
+                                }
+                            }
+                            "NEXT" => crate::get_next_prev(refno, true).await.unwrap_or_default(),
+                            _ => c2.into(),
+                        };
+                        // dbg!(target_refno);
+                        let pe = crate::get_pe(target_refno)
+                            .await
+                            .unwrap_or_default()
+                            .unwrap_or_default();
+                        // dbg!(&pe);
+                        let pseudo_map = HASH_PSEUDO_ATT_MAPS.read().await;
+                        // #[cfg(feature = "debug_expr")]
+                        // dbg!(&pseudo_map);
+                        //判断target_refno是否在pseudo_map，如果有，取出这里的值
+                        if let Some(am) = pseudo_map.get(&pe.cata_hash) {
+                            if let Some(v) = am.map.get(c1) {
+                                return v.get_val_as_string();
                             }
                         }
-                        "NEXT" => crate::get_next_prev(refno, true).await.unwrap_or_default(),
-                        _ => c2.into(),
-                    };
-                    // dbg!(target_refno);
-                    let pe = crate::get_pe(target_refno)
-                        .await
-                        .unwrap_or_default()
-                        .unwrap_or_default();
-                    // dbg!(&pe);
-                    let pseudo_map = HASH_PSEUDO_ATT_MAPS.read().await;
-                    // #[cfg(feature = "debug_expr")]
-                    // dbg!(&pseudo_map);
-                    //判断target_refno是否在pseudo_map，如果有，取出这里的值
-                    if let Some(am) = pseudo_map.get(&pe.cata_hash) {
-                        if let Some(v) = am.map.get(c1) {
-                            return v.get_val_as_string();
-                        }
-                    }
-                    "0".to_owned()
-                })
-            });
-            new_exp = new_exp.replace(s, expr_val.as_str());
+                        "0".to_owned()
+                    })
+                });
+                new_exp = new_exp.replace(s, expr_val.as_str());
+            }
         }
     }
 

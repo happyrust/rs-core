@@ -22,21 +22,31 @@ use std::collections::{BTreeMap, HashMap};
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
-pub fn get_all_types_has(att_type: &str) -> Vec<String> {
+#[cached]
+pub fn get_all_types_as_sql_string(att_types: Vec<String>) -> String {
+    get_all_types_has(att_types)
+        .into_iter().map(|x| format!("'{}'",x)).join(",")
+}
+
+#[cached]
+pub fn get_all_types_has(att_types: Vec<String>) -> Vec<String> {
     let info = get_default_pdms_db_info();
-    let spre_hash = db1_hash(att_type) as i32;
-    let types = info.noun_attr_info_map
-        .iter()
-        .filter(|k| k.value().contains_key(&spre_hash))
-        .map(|k| db1_dehash(*k.key() as u32))
-        .collect();
-    types
+    let mut result = vec![];
+    for att_type in &att_types{
+        let spre_hash = db1_hash(att_type) as i32;
+        let types = info.noun_attr_info_map
+            .iter()
+            .filter(|k| k.value().contains_key(&spre_hash))
+            .map(|k| db1_dehash(*k.key() as u32))
+            .collect::<Vec<String>>();
+        result.extend(types);
+    }
+    result
 }
 
 /// 创建所有的元件库的 relate 关系
 pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
-    // dbg!("build cate_relate");
-    let all_spres = get_all_types_has("SPRE").into_iter().map(|x| format!("'{}'",x)).join(",");
+    let all_cate_types = get_all_types_as_sql_string(vec!["SPRE".to_string(), "CATR".to_string()]);
     // dbg!(&all_spres);
     let mut sql = if replace_exist{
         "delete cate_relate;".to_string()
@@ -62,7 +72,7 @@ pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
                     }}
             }}
         }}
-    "#, all_spres));
+    "#, all_cate_types));
     let mut response = SUL_DB
         .query(sql)
         .await?;

@@ -15,6 +15,34 @@ pub static NOUN_GRAPH: Lazy<DiGraph<u32, u32>> = Lazy::new(|| {
     graph
 });
 
+pub fn is_owner_type(child_noun: &str, own_noun: &str) -> bool {
+    let Some(child_node) = NOUN_GRAPH
+        .node_indices()
+        .find(|i| NOUN_GRAPH[*i] == db1_hash(child_noun))
+    else {
+        return false;
+    };
+    let Some(own_node) = NOUN_GRAPH
+        .node_indices()
+        .find(|i| NOUN_GRAPH[*i] == db1_hash(own_noun))
+    else {
+        return false;
+    };
+    let mut paths = petgraph::algo::all_simple_paths::<Vec<NodeIndex<u32>>, &DiGraph<u32, u32>>(
+        &NOUN_GRAPH,
+        child_node,
+        own_node,
+        0,
+        None,
+    );
+    while let Some(path) = paths.next() {
+        if path.len() == 2 {
+            return true;
+        }
+    }
+    false
+}
+
 //指定起始的和目标noun node, 传入的参数是noun name, 通过 db1_hash 找到对应的node，找到经过的路径的noun， 使用all_simple_paths
 pub fn find_noun_path(start_noun: &str, end_noun: &str) -> Vec<Vec<String>> {
     // dbg!(start_noun);
@@ -149,6 +177,16 @@ pub fn gen_noun_incoming_relate_sql(end_noun: &str, filter_nouns: &[&str]) -> Op
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    pub fn test_is_owner() {
+        // put some values into your NOUN_GRAPH for testing.
+        // NOUN_GRAPH.add_node(...);
+
+        assert_eq!(is_owner_type("ELBO", "BRAN"), true);
+        assert_eq!(is_owner_type("BRAN", "PIPE"), true);
+        // add as many test cases as you need
+    }
 
     #[test]
     fn test_find_path() {

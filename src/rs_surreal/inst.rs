@@ -117,7 +117,7 @@ pub async fn query_insts(
     let sql = format!(
         r#"
     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if ( (in<-neg_relate)[0] != none || (in<-ngmr_relate)[0] != none ) && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where visible && trans.d != none && geo_type='Pos')  }} as insts
+            if ( (in<-neg_relate)[0] != none || (in<-ngmr_relate)[0] != none ) && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts
             from {inst_keys} where aabb.d != none
             "#
     );

@@ -528,40 +528,44 @@ pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Ve
 pub async fn query_group_by_cata_hash(
     refnos: impl IntoIterator<Item = &RefU64>,
 ) -> anyhow::Result<DashMap<String, CataHashRefnoKV>> {
+    let mut result_map = DashMap::new();
     let keys = refnos
         .into_iter()
         .map(|x| x.to_pe_thing())
         .collect::<Vec<_>>();
-    let mut response = SUL_DB
-        .query(r#"
+    for chunk in keys.chunks(200){
+        let mut response = SUL_DB
+            .query(r#"
             let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from $refnos);
             select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
                  type::thing('inst_info', cata_hash).ptset] as k, array::group(id) as v from $a group by k;
         "#)
-        .bind(("refnos", keys))
-        .await?;
-    let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
-        response.take(1)?;
-    let map = d
-        .into_iter()
-        .map(
-            |KV {
-                 k: (cata_hash, exist_inst, ptset),
-                 v: group_refnos,
-             }| {
-                (
-                    cata_hash.clone(),
-                    CataHashRefnoKV {
-                        cata_hash,
-                        group_refnos,
-                        exist_inst,
-                        ptset,
-                    },
-                )
-            },
-        )
-        .collect();
-    Ok(map)
+            .bind(("refnos", &chunk))
+            .await?;
+        let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
+            response.take(1)?;
+        let map = d
+            .into_iter()
+            .map(
+                |KV {
+                     k: (cata_hash, exist_inst, ptset),
+                     v: group_refnos,
+                 }| {
+                    (
+                        cata_hash.clone(),
+                        CataHashRefnoKV {
+                            cata_hash,
+                            group_refnos,
+                            exist_inst,
+                            ptset,
+                        },
+                    )
+                },
+            )
+            .collect::<DashMap<String, CataHashRefnoKV>>();
+        result_map.extend(map);
+    }
+    Ok(result_map)
 }
 
 #[serde_as]

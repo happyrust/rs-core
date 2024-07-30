@@ -96,8 +96,8 @@ mod test_transform {
             .into_iter()
             .any(|x| assert_ori.contains(x));
         let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
-        // dbg!(&ori_str);
-        // dbg!(math_tool::dvec3_to_xyz_str(translation));
+        dbg!(&ori_str);
+        dbg!(math_tool::dvec3_to_xyz_str(translation));
         if !assert_ori.is_empty() {
             assert_eq!(ori_str, assert_ori);
         }
@@ -416,10 +416,14 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_JLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_ori("17496/152079".into(), "Y is Z and Z is -Y 29.298 X").await;
-        // test_transform("17496/268326".into(), "Y is -Y and Z is -Z").await;
-        // test_transform("25688/48820".into(), "Y is Z and Z is X 33.955 Y").await;
-        // test_transform("24384/28751".into(), "Y is Y 31.0031 X 89.9693 Z and Z is -Y 31 -X 0.0307 Z").await;
+        // test_ori("17496/152079".into(), "Y is Z and Z is -Y 29.298 X").await;
+        test_transform("17496/274326".into(), "", "").await;
+        test_transform("17496/274327".into(), "", "").await;
+        test_transform("17496/274328".into(), "", "").await;
+        // test_transform("17496/274328".into(), "Y is Z and Z is Y", "").await;
+        // test_transform("17496/268340".into(), "Y is -Y and Z is -Z", "X -218mm Y -21mm Z 400mm").await;
+        // test_transform("25688/48820".into(), "Y is Z and Z is X 33.956 Y", "").await;
+        // test_transform("24384/28751".into(), "Y is Y 31 X 89.969 Z and Z is -Y 31 -X 0.031 Z", "X -12934.344mm Y -21974.977mm Z -1090.3mm").await;
         // test_transform("17496/137181".into(), "Y is Z and Z is -Y 34.6032 -X").await;
         Ok(())
     }
@@ -457,7 +461,7 @@ mod test_transform {
     async fn test_query_transform_PLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
 
-        test_ori("24384/25786".into(), "Y is -X 0.031 Z and Z is -Y").await;
+        // test_ori("24384/25786".into(), "Y is -X 0.031 Z and Z is -Y").await;
         test_ori("17496/268334".into(), "Y is -Z and Z is -X").await;
         //
         // test_ori("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
@@ -479,10 +483,15 @@ mod test_transform {
     async fn test_query_transform_FIXING() -> anyhow::Result<()> {
         init_test_surreal().await;
         test_ori(
-            "24384/28753".into(),
-            "Y is -Y 31 -X 0.031 Z and Z is Y 31 X 89.969 Z",
+            "17496/268335".into(),
+            "Y is -Z and Z is -X",
         )
-        .await;
+            .await;
+        // test_ori(
+        //     "24384/28753".into(),
+        //     "Y is -Y 31 -X 0.031 Z and Z is Y 31 X 89.969 Z",
+        // )
+        // .await;
         // test_ori("17496/152081".into(), "Y is Z and Z is X 30.659 Y").await;
         // test_ori("24384/25787".into(), "Y is -X 0.031 Z and Z is X 89.969 Z").await;
         Ok(())

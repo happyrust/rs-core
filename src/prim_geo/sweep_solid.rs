@@ -150,10 +150,10 @@ impl SweepSolid {
             }
 
             SweepPath3D::Line(d) => {
-                if d.is_spine {
-                    // dbg!(self.bangle.to_radians());
+                // if d.is_spine {
+                //     dbg!(self.bangle);
                     beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as _);
-                }
+                // }
                 {
                     rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
                         sann.na_axis.as_dvec3(),
@@ -369,9 +369,10 @@ impl SweepSolid {
                 beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as f64);
             }
             SweepPath3D::Line(d) => {
-                if d.is_spine {
-                    beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
-                }
+                // if d.is_spine {
+                // dbg!(self.bangle);
+                beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
+                // }
                 rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
                     profile.na_axis.as_dvec3(),
                     self.plax.as_dvec3(),

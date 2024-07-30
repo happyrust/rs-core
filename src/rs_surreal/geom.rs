@@ -55,6 +55,7 @@ pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec
         let children_refnos = super::get_children_refnos(refno).await?;
         return Ok(children_refnos);
     }
+    //TODO，这里可以采用ZONE作为中间层去加速这个过程
     //按照所允许的层级关系去遍历？
     let branch_refnos =
         super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
@@ -211,7 +212,7 @@ pub async fn query_refnos_point_map(
 ///通过geo hash 查询参考号
 pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefU64>> {
     let sql = format!(
-        "array::flatten(select value in<-inst_relate.in from inst_geo:⟨{}⟩<-geo_relate);",
+        "array::distinct(array::flatten(select value in<-inst_relate.in from inst_geo:⟨{}⟩<-geo_relate));",
         id
     );
     let mut response = SUL_DB.query(&sql).await?;

@@ -193,6 +193,12 @@ pub struct ShapeInstancesData {
 
 /// shape instances 的管理方法
 impl ShapeInstancesData {
+
+    pub fn is_empty(&self) -> bool {
+        self.inst_info_map.is_empty() && self.inst_geos_map.is_empty() && self.inst_tubi_map.is_empty()
+            && self.neg_relate_map.is_empty() && self.ngmr_neg_relate_map.is_empty()
+    }
+
     ///填充基本的形状
     pub fn fill_basic_shapes(&mut self) {
         let unit_cyli_aabb = Aabb::new(Point3::new(-0.5, -0.5, 0.0), Point3::new(0.5, 0.5, 1.0));

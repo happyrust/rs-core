@@ -726,6 +726,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
             if basic_inter_len == 0 && overlap_inter_len == 0 {
                 return Ok(new_polyline);
             } else {
+                #[cfg(feature="debug_wire")]
                 println!("有问题的wire: {}", polyline_to_debug_json_str(&polyline));
                 return Err(anyhow!(
                     "有相交没有fillet的线段。修复失败"

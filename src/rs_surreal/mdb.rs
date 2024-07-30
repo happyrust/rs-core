@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
+use itertools::Itertools;
 
 #[derive(IntoPrimitive, TryFromPrimitive, Clone, Copy, Hash, Eq, PartialEq, Debug)]
 #[repr(u8)]
@@ -91,6 +92,60 @@ pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> any
 
     Ok(true)
 }
+
+pub async fn query_type_refnos_by_dbnums(nouns: &[&str], dbnums: &[u32]) -> anyhow::Result<Vec<RefU64>> {
+    let mut result = vec![];
+    for noun in nouns{
+        let sql = if dbnums.is_empty() {
+            format!("select value id from {noun}")
+        } else {
+            format!("select value id from {noun} where REFNO.dbnum in [{}]",
+                    dbnums.into_iter().map(|x| x.to_string()).join(","))
+        };
+        let mut response = SUL_DB.query(&sql).await?;
+        let refnos: Vec<RefU64> = response.take(0)?;
+        result.extend(refnos);
+    }
+    Ok(result)
+}
+
+// #[cached(result = true)]
+pub async fn query_type_refnos_by_dbnum(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefU64>> {
+    let mut result = vec![];
+    for noun in nouns{
+        let sql = format!("select value id from {noun} where REFNO.dbnum={dbnum}");
+        let mut response = SUL_DB.query(&sql).await?;
+        let refnos: Vec<RefU64> = response.take(0)?;
+        result.extend(refnos);
+    }
+    Ok(result)
+}
+
+//额外检查SPRE  和 CATR 不能同时为空
+pub async fn query_use_cate_refnos_by_dbnum(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefU64>> {
+    let mut result = vec![];
+    for noun in nouns{
+        let sql = format!("select value id from {noun} where REFNO.dbnum={dbnum} and (SPRE != none or CATR != none)");
+        let mut response = SUL_DB.query(&sql).await?;
+        let refnos: Vec<RefU64> = response.take(0)?;
+        result.extend(refnos);
+    }
+    Ok(result)
+}
+
+//去掉父类型是BRAN 和 HANGER的
+// pub async fn query_type_refnos_by_dbnum_exclude_bran_hang(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefU64>> {
+//     let mut result = vec![];
+//     for noun in nouns {
+//         let sql = format!("select value id from {noun} where REFNO.dbnum={dbnum} and OWNER.noun not in ['BRAN', 'HANG']");
+//         let mut response = SUL_DB.query(&sql).await?;
+//         let refnos: Vec<RefU64> = response.take(0)?;
+//         result.extend(refnos);
+//     }
+//     Ok(result)
+// }
+
+
 
 #[cached(result = true)]
 pub async fn query_mdb_db_nums(module: DBType) -> anyhow::Result<Vec<u32>> {
