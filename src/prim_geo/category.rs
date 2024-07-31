@@ -303,11 +303,15 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
 
             let y_axis = z_dir.cross(x_axis).normalize_or_zero();
-            if y_axis.length() == 0.0 {
+            if !is_cone && y_axis.length() == 0.0 {
                 return None;
             }
 
-            let rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_dir));
+            let rotation = if is_cone {
+                Quat::from_rotation_arc(Vec3::Z, z_dir)
+            } else{
+                Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_dir))
+            };
             let transform = Transform {
                 rotation,
                 translation,

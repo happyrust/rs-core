@@ -150,10 +150,10 @@ impl SweepSolid {
             }
 
             SweepPath3D::Line(d) => {
-                // if d.is_spine {
-                //     dbg!(self.bangle);
+                if d.is_spine {
+                    //     dbg!(self.bangle);
                     beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as _);
-                // }
+                }
                 {
                     rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
                         sann.na_axis.as_dvec3(),
@@ -197,7 +197,7 @@ impl SweepSolid {
                     DVec3::new(q.x, q.y, 0.0),
                 ));
             } else {
-                if p.pos().fuzzy_eq(q.pos()){
+                if p.pos().fuzzy_eq(q.pos()) {
                     return Err(anyhow!("无法生成SANN线框: {:?}", self));
                 }
                 let m = seg_midpoint(p, q);
@@ -369,10 +369,10 @@ impl SweepSolid {
                 beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as f64);
             }
             SweepPath3D::Line(d) => {
-                // if d.is_spine {
-                // dbg!(self.bangle);
-                beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
-                // }
+                if d.is_spine {
+                    // dbg!(self.bangle);
+                    beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
+                }
                 rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
                     profile.na_axis.as_dvec3(),
                     self.plax.as_dvec3(),
@@ -643,8 +643,12 @@ impl BrepShapeTrait for SweepSolid {
                 let r1 = r - w;
                 let r2 = r;
                 let origin = (p.xy + p.dxy).as_dvec2();
-                let wire_btm = self.gen_occ_sann_wire(origin, new_sann.as_ref().unwrap_or(p), true, r1, r2).ok();
-                let wire_top = self.gen_occ_sann_wire(origin, new_sann.as_ref().unwrap_or(p), false, r1, r2).ok();
+                let wire_btm = self
+                    .gen_occ_sann_wire(origin, new_sann.as_ref().unwrap_or(p), true, r1, r2)
+                    .ok();
+                let wire_top = self
+                    .gen_occ_sann_wire(origin, new_sann.as_ref().unwrap_or(p), false, r1, r2)
+                    .ok();
                 is_sann = true;
                 (wire_btm, wire_top)
             }
@@ -660,9 +664,9 @@ impl BrepShapeTrait for SweepSolid {
             _ => (None, None),
         };
         // dbg!(found_full_sann);
-        let other_half_shape = if found_full_sann{
+        let other_half_shape = if found_full_sann {
             let mut new_data = self.clone();
-            if let CateProfileParam::SANN(ref mut sann) = &mut new_data.profile{
+            if let CateProfileParam::SANN(ref mut sann) = &mut new_data.profile {
                 sann.pangle = -180.0;
             }
             // dbg!(&new_data);
@@ -680,7 +684,7 @@ impl BrepShapeTrait for SweepSolid {
                         wire.to_face()
                             .revolve(DVec3::ZERO, rot_axis, Some(rot_angle.radians()));
                     let shape = r.into_shape();
-                    if let Some(other_half) = other_half_shape{
+                    if let Some(other_half) = other_half_shape {
                         let mut new_shape = shape.union(&other_half).shape;
                         return Ok(new_shape.into());
                     }
@@ -699,7 +703,7 @@ impl BrepShapeTrait for SweepSolid {
                         wires.push(wire.transformed_by_gmat(&transform_top)?);
                     }
                     let shape = Solid::loft(wires.iter()).into_shape();
-                    if let Some(other_half) = other_half_shape{
+                    if let Some(other_half) = other_half_shape {
                         let mut new_shape = shape.union(&other_half).shape;
                         return Ok(new_shape.into());
                     }

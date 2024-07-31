@@ -60,6 +60,7 @@ pub struct DbOption {
     pub replace_types: Option<Vec<String>>,
     #[clap(long)]
     pub gen_model: bool,
+    pub build_cate_relate: Option<bool>,
     #[clap(long)]
     pub mesh_tol_ratio: Option<f32>,
     #[clap(long)]
@@ -96,6 +97,7 @@ pub struct DbOption {
     pub debug_print_world_transform: bool,
     #[clap(skip)]
     pub debug_root_refnos: Option<Vec<String>>,
+    pub test_refno: Option<String>,
     pub gen_using_spref_refnos: Option<Vec<String>>,
     #[clap(skip)]
     pub manual_sync_refnos: Option<Vec<String>>,
@@ -175,6 +177,14 @@ impl DbOption {
     // pub fn is_geom_live(&self) -> bool {
     //     self.geom_live.unwrap_or(false)
     // }
+
+    pub fn get_test_refno(&self) -> Option<RefU64>{
+        self.test_refno.as_ref().map(|x| x.as_str().into())
+    }
+
+    pub fn build_cate_relate(&self) -> bool{
+        self.build_cate_relate.unwrap_or(false)
+    }
 
     #[inline]
     pub fn is_replace_mesh(&self) -> bool {

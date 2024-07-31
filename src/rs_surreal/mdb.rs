@@ -109,17 +109,31 @@ pub async fn query_type_refnos_by_dbnums(nouns: &[&str], dbnums: &[u32]) -> anyh
     Ok(result)
 }
 
-// #[cached(result = true)]
-pub async fn query_type_refnos_by_dbnum(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefU64>> {
+///通过dbnum过滤指定类型的参考号
+/// 通过has_children 指定是否需要有children，方便跳过一些不变要的节点
+/// todo 在属性里直接加上DBNO这个属性，而不是需要去pe里去取
+pub async fn query_type_refnos_by_dbnum(nouns: &[&str], dbnum: u32, has_children: Option<bool>) -> anyhow::Result<Vec<RefU64>> {
     let mut result = vec![];
     for noun in nouns{
-        let sql = format!("select value id from {noun} where REFNO.dbnum={dbnum}");
+        let sql = match has_children{
+            Some(true) => {
+                format!("select value id from {noun} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none")
+            }
+            Some(false) => {
+                format!("select value id from {noun} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none")
+            }
+            None => {
+                format!("select value id from {noun} where REFNO.dbnum={dbnum}")
+            }
+        };
+
         let mut response = SUL_DB.query(&sql).await?;
         let refnos: Vec<RefU64> = response.take(0)?;
         result.extend(refnos);
     }
     Ok(result)
 }
+
 
 //额外检查SPRE  和 CATR 不能同时为空
 pub async fn query_use_cate_refnos_by_dbnum(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefU64>> {

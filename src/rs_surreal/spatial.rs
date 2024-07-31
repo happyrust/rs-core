@@ -224,7 +224,8 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         let mut is_world_quat = false;
         let mut bangle = att.get_f32("BANG").unwrap_or_default() as f64;
         let mut apply_bang = att.contains_key("BANG") && bangle != 0.0;
-        if cur_type == "GENSEC" || cur_type == "SCTN" {
+        //只有GENSEC需要隐藏自己的方位
+        if cur_type == "GENSEC" {
             apply_bang = false;
         }
         //土建特殊情况的一些处理

@@ -29,7 +29,10 @@ mod test_transform {
     use crate::tool::dir_tool::{parse_ori_str_to_mat, parse_ori_str_to_quat};
     use crate::tool::direction_parse::parse_expr_to_dir;
     use crate::tool::math_tool;
-    use crate::tool::math_tool::{cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, dvec3_to_xyz_str, to_pdms_dvec_str, vec3_to_xyz_str};
+    use crate::tool::math_tool::{
+        cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, dvec3_to_xyz_str, to_pdms_dvec_str,
+        vec3_to_xyz_str,
+    };
     use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal, RefU64};
     use crate::{cal_ori_by_ydir, init_test_surreal};
     use bevy_reflect::Array;
@@ -179,7 +182,12 @@ mod test_transform {
         init_test_surreal().await;
         //如果是SCOJ, 需要获取两边的连接点，组合出来的方向位置
 
-        test_transform("17496/172030".into(), "Y is X and Z is Y", "X -42531.5mm Y 11821mm Z 26008mm").await;
+        test_transform(
+            "17496/172030".into(),
+            "Y is X and Z is Y",
+            "X -42531.5mm Y 11821mm Z 26008mm",
+        )
+        .await;
         // test_transform("24383/80522".into(), "Y is -X 41 Y and Z is -Y 41 -X", "").await;
         Ok(())
     }
@@ -298,7 +306,12 @@ mod test_transform {
 
         //PJOI里有OPDI
         // test_transform("17496/172033".into(), "Y is Y and Z is -Z", "X -42531.5mm Y 11821mm Z 25908mm").await;
-        test_transform("17496/274161".into(), "Y is -Y and Z is Z", "X 153mm Y -248.5mm Z 35mm").await;
+        test_transform(
+            "17496/274161".into(),
+            "Y is -Y and Z is Z",
+            "X 153mm Y -248.5mm Z 35mm",
+        )
+        .await;
         // test_transform("24381/178550".into(), "Y is -X 27.581 Y and Z is -Y 27.581 -X", "X 12850.226mm Y 24922.073mm Z -4194.68mm").await;
         // let m1 = parse_ori_str_to_quat("Y is X and Z is Y").unwrap();
         // let m2 = parse_ori_str_to_quat("Y is -Y 27.581 -X and Z is Z").unwrap();
@@ -311,13 +324,21 @@ mod test_transform {
     async fn test_query_transform_SJOI() -> anyhow::Result<()> {
         use crate::tool::dir_tool::*;
         init_test_surreal().await;
+
+        test_transform(
+            "23708/2475".into(),
+            "Y is -X and Z is Z",
+            "X 1971.3mm Y 3174mm Z -89mm",
+        )
+        .await;
+
         // SJOI 里的CUTP，如果有CUTP，x轴必须为Z轴，如果CUTP轴为(-)Z轴了，z轴改为X，
         test_transform(
             "17496/274158".into(),
             "Y is Z and Z is Y",
             "X 175mm Y -233.5mm Z -25mm",
         )
-            .await;
+        .await;
         // test_transform(
         //     "23713/2430".into(),
         //     "Y is -X and Z is Z",
@@ -353,7 +374,7 @@ mod test_transform {
             // ("Y 36.85 X", "Y 36.85 X", "Y is Z and Z is X 36.85 -Y"),
             ("-X", "-X", "Y is Z and Z is Y"),
         ];
-        for (cutp, axis_dir, result) in test_cases{
+        for (cutp, axis_dir, result) in test_cases {
             let cutp = parse_expr_to_dir(cutp).unwrap();
             let axis_dir = parse_expr_to_dir(axis_dir).unwrap();
             let assert_mat = parse_ori_str_to_dmat3(result).unwrap();
@@ -482,11 +503,7 @@ mod test_transform {
     #[tokio::test]
     async fn test_query_transform_FIXING() -> anyhow::Result<()> {
         init_test_surreal().await;
-        test_ori(
-            "17496/268335".into(),
-            "Y is -Z and Z is -X",
-        )
-            .await;
+        test_ori("17496/268335".into(), "Y is -Z and Z is -X").await;
         // test_ori(
         //     "24384/28753".into(),
         //     "Y is -Y 31 -X 0.031 Z and Z is Y 31 X 89.969 Z",

@@ -262,6 +262,11 @@ impl ShapeInstancesData {
         ready_refnos
     }
 
+    #[inline]
+    pub fn inst_cnt(&self) -> usize {
+        self.inst_info_map.len() + self.inst_tubi_map.len()
+    }
+
     pub fn merge_ref(&mut self, o: &Self) {
         for (k, v) in o.inst_info_map.clone() {
             self.insert_info(k, v);

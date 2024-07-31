@@ -258,12 +258,14 @@ pub fn eval_str_to_f64(
         .unwrap_or_default();
     //处理引用的情况 OF 的情况, 如果需要获取 att value，还是需要用数据库去获取值
     let mut new_exp = prepare_eval_str(input_expr);
+    #[cfg(feature = "debug_expr")]
+    dbg!(&new_exp);
     if new_exp.contains(" OF ") {
         let re = Regex::new(r"([A-Z\s]+) OF (PREV|NEXT|\d+/\d+)").unwrap();
         for caps in re.captures_iter(&new_exp.clone()) {
             let s = &caps[0];
-            let c1 = caps.get(1).map_or("", |m| m.as_str());
-            let c2 = caps.get(2).map_or("", |m| m.as_str());
+            let c1 = caps.get(1).map_or("", |m| m.as_str().trim());
+            let c2 = caps.get(2).map_or("", |m| m.as_str().trim());
             let is_tubi = context.is_tubi();
             #[cfg(not(target_arch = "wasm32"))]
             {

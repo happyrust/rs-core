@@ -411,10 +411,10 @@ pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
 pub async fn get_all_children_refnos(
-    refnos: impl IntoIterator<Item = &RefU64>,
+    refnos: impl IntoIterator<Item=&RefU64>,
 ) -> anyhow::Result<Vec<RefU64>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let sql = format!("array::flatten(select value in from [{pe_keys}]<-pe_owner)");
+    let sql = format!("array::flatten(select value in from [{pe_keys}]<-pe_owner where in.id!=none)");
     let mut response = SUL_DB.query(sql).await?;
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
@@ -450,7 +450,7 @@ pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTree
     let mut response = SUL_DB
         .query(r#"
             select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
-                 array::len(in<-pe_owner) as children_count from (type::thing("pe", $refno))<-pe_owner
+                 array::len(in<-pe_owner) as children_count from (type::thing("pe", $refno))<-pe_owner where in.id!=none
         "#)
         .bind(("refno", refno.to_string()))
         .await?;
@@ -504,7 +504,7 @@ pub async fn clear_all_caches(refno: RefU64) {
 #[cached(result = true)]
 pub async fn get_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
     let mut response = SUL_DB
-        .query("select value in from type::thing('pe', $refno)<-pe_owner")
+        .query("select value in from type::thing('pe', $refno)<-pe_owner  where in.id != NONE")
         .bind(("refno", refno.to_string()))
         .await?;
     let refnos: Vec<RefU64> = response.take(0)?;
@@ -515,7 +515,7 @@ pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Ve
     let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
     let mut response = SUL_DB
         .query(format!(
-            "array::flatten(select value in.id from [{}]<-pe_owner)",
+            "array::flatten(select value in.id from [{}]<-pe_owner where in.id != NONE)",
             refno_ids.join(",")
         ))
         .await?;
@@ -526,21 +526,21 @@ pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Ve
 ///按cata_hash 分组获得不同的参考号类型
 // #[cached(result = true)]
 pub async fn query_group_by_cata_hash(
-    refnos: impl IntoIterator<Item = &RefU64>,
+    refnos: impl IntoIterator<Item=&RefU64>,
 ) -> anyhow::Result<DashMap<String, CataHashRefnoKV>> {
-    let mut result_map = DashMap::new();
     let keys = refnos
         .into_iter()
         .map(|x| x.to_pe_thing())
         .collect::<Vec<_>>();
-    for chunk in keys.chunks(200){
+    let mut result_map: DashMap<String, CataHashRefnoKV> = DashMap::new();
+    for chunk in keys.chunks(20) {
         let mut response = SUL_DB
             .query(r#"
             let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from $refnos);
             select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
-                 type::thing('inst_info', cata_hash).ptset] as k, array::group(id) as v from $a group by k;
+                 type::thing('inst_info', cata_hash).ptset] as k, array::group(id) as v from $a where noun not in ["BRAN", "HANG"]  group by k;
         "#)
-            .bind(("refnos", &chunk))
+            .bind(("refnos", chunk))
             .await?;
         let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
             response.take(1)?;
@@ -563,7 +563,13 @@ pub async fn query_group_by_cata_hash(
                 },
             )
             .collect::<DashMap<String, CataHashRefnoKV>>();
-        result_map.extend(map);
+        for (k, v) in map {
+            if result_map.contains_key(&k) {
+                result_map.get_mut(&k).unwrap().group_refnos.extend(v.group_refnos);
+            } else {
+                result_map.insert(k, v);
+            }
+        }
     }
     Ok(result_map)
 }
