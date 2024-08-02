@@ -143,17 +143,14 @@ impl BrepShapeTrait for LPyramid {
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        use glam::DVec2;
-
-        let _z_pt = self.paax_pt.as_dvec3();
         //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0).max(0.001) as f64;
-        let ty = (self.pctp / 2.0).max(0.001) as f64;
-        let bx = (self.pbbt / 2.0).max(0.001) as f64;
-        let by = (self.pcbt / 2.0).max(0.001) as f64;
+        let tx = (self.pbtp / 2.0) as f64;
+        let ty = (self.pctp / 2.0) as f64;
+        let bx = (self.pbbt / 2.0) as f64;
+        let by = (self.pcbt / 2.0) as f64;
         //这里需要按照实际的变换方位来计算
-        let ox = self.pbof as f64 * DVec3::X  ;// * self.pbax_dir.truncate().as_dvec2();
-        let oy = self.pcof as f64 * DVec3::Y ; //* self.pcax_dir.truncate().as_dvec2();
+        let ox = self.pbof as f64 * self.pbax_dir.as_dvec3();
+        let oy = self.pcof as f64 * self.pcax_dir.as_dvec3();
         // dbg!((ox, oy));
         let offset_3d = ox + oy;
         // let offset_3d = DVec3::new(offset.x as _, offset.y as _, 0.0);
