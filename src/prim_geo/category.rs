@@ -303,11 +303,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
 
             let y_axis = z_dir.cross(x_axis).normalize_or_zero();
-            if !is_cone && y_axis.length() == 0.0 {
-                return None;
-            }
-
-            let rotation = if is_cone {
+            // if !is_cone && y_axis.length() == 0.0 {
+            //     return None;
+            // }
+            let rotation = if y_axis.length() == 0.0 {
                 Quat::from_rotation_arc(Vec3::Z, z_dir)
             } else{
                 Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_dir))
@@ -536,9 +535,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .normalize_or_zero()
                 .cross(pbax_dir.normalize_or_zero())
                 .normalize_or_zero();
-            if z_dir.length() == 0.0 {
+            if !z_dir.is_normalized() {
                 return None;
             }
+            //需要重新计算pbax dir，paax dir是一个主要的方向，这个不能变
+            let pbax_dir = z_dir.cross(paax_dir).normalize_or_zero();
             let mat3 = Mat3::from_cols(paax_dir, pbax_dir, z_dir);
             let rotation = Quat::from_mat3(&mat3);
             let xyz_pt = Vec3::new(d.x, d.y, d.z);
@@ -575,7 +576,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(pa.number);
             pts.push(pb.number);
-            // dbg!(d);
             //如果有一个轴为0
             let paax_dir = pa
                 .dir
@@ -585,23 +585,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .dir
                 .map(|d| d.normalize_or_zero())
                 .unwrap_or(pb.dir_flag * Vec3::Y);
-            let mut z_dir = Vec3::Z;
-            //默认参考轴线是Z轴
-            let mut empty = false;
-            if !pa.dir.is_none() {
-                // paax_dir = pbax_dir.cross(z_dir).try_normalize().unwrap_or(Vec3::Y);
-                empty = true;
-            } else if !pb.dir.is_none() {
-                // pbax_dir = z_dir.cross(paax_dir).try_normalize().unwrap_or(Vec3::X);
-                empty = true;
-            }
-            if empty {
-                // dbg!((d.refno, paax_dir, pbax_dir, z_dir));
-            }
-            z_dir = paax_dir.cross(pbax_dir).normalize_or_zero();
+            let mut z_dir = paax_dir.cross(pbax_dir).normalize_or_zero();
             if !z_dir.is_normalized(){
                 return None;
             }
+            let pbax_dir = z_dir.cross(paax_dir).normalize_or_zero();
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
                 verts: vec![d.verts.clone()],
                 height: d.height,

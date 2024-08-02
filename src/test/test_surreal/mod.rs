@@ -26,6 +26,8 @@ pub mod test_uda;
 
 pub mod test_pbs;
 
+pub mod test_scom_query;
+
 
 
 
