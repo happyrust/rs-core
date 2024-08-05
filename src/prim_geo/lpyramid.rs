@@ -144,10 +144,10 @@ impl BrepShapeTrait for LPyramid {
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0) as f64;
-        let ty = (self.pctp / 2.0) as f64;
-        let bx = (self.pbbt / 2.0) as f64;
-        let by = (self.pcbt / 2.0) as f64;
+        let tx = (self.pbtp / 2.0).max(0.001) as f64;
+        let ty = (self.pctp / 2.0).max(0.001) as f64;
+        let bx = (self.pbbt / 2.0).max(0.001) as f64;
+        let by = (self.pcbt / 2.0).max(0.001) as f64;
         //这里需要按照实际的变换方位来计算
         let ox = self.pbof as f64 * self.pbax_dir.as_dvec3();
         let oy = self.pcof as f64 * self.pcax_dir.as_dvec3();

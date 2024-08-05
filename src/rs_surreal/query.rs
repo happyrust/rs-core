@@ -515,7 +515,8 @@ pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Ve
     let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
     let mut response = SUL_DB
         .query(format!(
-            "array::flatten(select value in.id from [{}]<-pe_owner where in.id != NONE)",
+            // "array::flatten(select value in.id from [{}]<-pe_owner where in.id != NONE)",
+            "select value id from array::flatten(select value <-pe_owner.in from [{}]) where id != none",
             refno_ids.join(",")
         ))
         .await?;
