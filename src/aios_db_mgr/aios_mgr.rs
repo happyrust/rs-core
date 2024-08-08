@@ -200,9 +200,7 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_name(&self, refno: RefU64) -> anyhow::Result<String> {
         let sql = format!("
-        (select value (if name='' {{ string::concat(noun,
-        <string> (array::find_index(select value order_num from ->pe_owner->pe<-pe_owner[where <-pe[where noun=$parent.noun]]
-        order by order_num, ->pe_owner[0].order_num) + 1) ) }} else {{ name }} ) from {})[0];
+        return fn::default_name({});
         ", refno.to_pe_key());
         let mut response = SUL_DB.query(sql).await?;
         let o: Option<String> = response.take(0)?;

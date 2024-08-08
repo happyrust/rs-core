@@ -111,9 +111,9 @@ pub async fn save_all_material_data(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> 
 
 /// 提前运行定义好的方法
 pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
-    let response = db
-        .query(include_str!("../rs_surreal/material_list/default_name.surql"))
-        .await?;
+    // let response = db
+    //     .query(include_str!("../rs_surreal/material_list/default_name.surql"))
+    //     .await?;
     let response = db
         .query(include_str!("../rs_surreal/material_list/dq/fn_dq_bran_type.surql"))
         .await?;
