@@ -592,12 +592,12 @@ pub async fn query_foreign_refnos(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>().join(",");
     let sql = format!(
-        "select refno, refno.{} as foreign_refno,refno.{}.refno.NAME as name from {};",
+        "select refno, refno.{} as foreign_refno,refno.{}.refno.NAME as name from [{}];",
         &foreign_type,
         &foreign_type,
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+        refnos
     );
     let mut response = SUL_DB.query(sql).await?;
     let result: Vec<PdmsSpreName> = response.take(0)?;
