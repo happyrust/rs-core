@@ -616,8 +616,9 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     //第一遍就应该去掉重复的点
     for i in 1..pts.len() {
         let pt = pts[i].truncate();
-        let pre_pt = pts[(i - 1)].truncate();
-        if pt.distance(pre_pt) < 0.1 {
+        // let pre_pt = pts[(i - 1)].truncate();
+        let netx_pt = pts[(i + 1) % pts.len()].truncate();
+        if pt.distance(netx_pt) < 0.1 {
             // dbg!(pt);
             continue;
         }
