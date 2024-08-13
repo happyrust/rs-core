@@ -68,10 +68,8 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
 pub async fn query_room_name_from_refnos(
     owner: Vec<RefU64>,
 ) -> anyhow::Result<HashMap<RefU64, String>> {
-    #[serde_as]
     #[derive(Debug, Serialize, Deserialize)]
     struct RoomNameQueryRequest {
-        #[serde_as(as = "DisplayFromStr")]
         pub id: RefU64,
         pub room: Option<String>,
     }
