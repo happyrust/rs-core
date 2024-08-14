@@ -8,73 +8,73 @@ use sqlx::Executor;
 
 #[cfg(feature = "sql")]
 /// 将材料表单数据保存到mysql中
-pub async fn save_material_data_to_mysql(table_field:&Vec<String>,table_name:&str,
-                                        data_field:&Vec<String>,data:Vec<HashMap<String,String>>,
-                                        pool:Pool<MySql>) -> anyhow::Result<()> {
-        match create_table_sql(&pool, &table_name,table_field).await {
-            Ok(_) => {
-                // 保存到数据库
-                if !data.is_empty() {
-                    match save_material_value(
-                        &pool,
-                        &table_name,
-                        data_field,
-                        data,
-                    )
-                    .await{
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(e.to_string());
-                        }
-                    }
-                }
-            }
+pub async fn save_material_data_to_mysql(table_field: &Vec<String>, table_name: &str,
+                                         data_field: &Vec<String>, data: Vec<HashMap<String, String>>,
+                                         pool: Pool<MySql>) -> anyhow::Result<()> {
+    // match create_table_sql(&pool, &table_name,table_field).await {
+    //     Ok(_) => {
+    // 保存到数据库
+    if !data.is_empty() {
+        match save_material_value(
+            &pool,
+            &table_name,
+            data_field,
+            data,
+        )
+            .await {
+            Ok(_) => {}
             Err(e) => {
-                dbg!(&e.to_string());
+                dbg!(e.to_string());
             }
         }
-        Ok(())
+    }
+    //     }
+    //     Err(e) => {
+    //         dbg!(&e.to_string());
+    //     }
+    // }
+    Ok(())
 }
 
 #[cfg(feature = "sql")]
 /// 将两个不同结构的数据保存到mysql的同一张表中
-pub async fn save_two_material_data_to_mysql(table_field:&Vec<String>,table_name:&str,
-                                            data_field_1:&Vec<String>,data_1:Vec<HashMap<String,String>>,
-                                            data_field_2:&Vec<String>,data_2:Vec<HashMap<String,String>>,
-                                            pool:&Pool<MySql>) -> anyhow::Result<()> {
-    match create_table_sql(&pool,&table_name,table_field).await{
-            Ok(_) => {
-                // 保存到数据库
-                if !data_1.is_empty() {
-                    match save_material_value(
-                        &pool,
-                        &table_name,
-                        &data_field_1,
-                        data_1,
-                    ).await{
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(e.to_string());
-                        }
-                    }
-                }
-                if !data_2.is_empty() {
-                    match save_material_value(
-                        &pool,
-                        &table_name,
-                        data_field_2,
-                        data_2,
-                    ).await{
-                        Ok(_) => {}
-                        Err(e) => {
-                            dbg!(e.to_string());
-                        }
+pub async fn save_two_material_data_to_mysql(table_field: &Vec<String>, table_name: &str,
+                                             data_field_1: &Vec<String>, data_1: Vec<HashMap<String, String>>,
+                                             data_field_2: &Vec<String>, data_2: Vec<HashMap<String, String>>,
+                                             pool: &Pool<MySql>) -> anyhow::Result<()> {
+    match create_table_sql(&pool, &table_name, table_field).await {
+        Ok(_) => {
+            // 保存到数据库
+            if !data_1.is_empty() {
+                match save_material_value(
+                    &pool,
+                    &table_name,
+                    &data_field_1,
+                    data_1,
+                ).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        dbg!(e.to_string());
                     }
                 }
             }
-            Err(e) => {
-                dbg!(&e.to_string());
+            if !data_2.is_empty() {
+                match save_material_value(
+                    &pool,
+                    &table_name,
+                    data_field_2,
+                    data_2,
+                ).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        dbg!(e.to_string());
+                    }
+                }
             }
+        }
+        Err(e) => {
+            dbg!(&e.to_string());
+        }
     }
     Ok(())
 }
