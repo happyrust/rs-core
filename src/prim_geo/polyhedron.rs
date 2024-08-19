@@ -117,11 +117,9 @@ impl BrepShapeTrait for Polyhedron {
         for polygon in &self.polygons {
             // dbg!(polygon);
             let wire = Wire::from_ordered_points(polygon.verts.iter().map(|x| x.as_dvec3()))?;
-            // dbg!("here1");
-            let face = Face::from_wire(&wire);
+            let face = Face::from_wires(&[wire])?;
             faces.push(face);
         }
-        // dbg!(&faces.len());
         let shell = Shell::from_faces(faces)?;
         Ok(OccSharedShape::new(shell.into()))
     }
