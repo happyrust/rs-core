@@ -27,6 +27,7 @@ pub async fn save_yk_material_dzcl(
 ) {
     match get_yk_dzcl_list(db.clone(), vec![refno]).await {
         Ok(r) => {
+            if r.is_empty() { return; }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_inst_list", r_clone).await {
@@ -97,6 +98,7 @@ pub async fn save_yk_material_pipe(
 ) {
     match get_yk_inst_pipe(db.clone(), vec![refno]).await {
         Ok(r) => {
+            if r.is_empty() { return; }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_inst_pipe", r_clone).await {
@@ -159,6 +161,7 @@ pub async fn save_yk_material_equi(
 ) {
     match get_yk_equi_list_material(db.clone(), vec![refno]).await {
         Ok(r) => {
+            if r.is_empty() { return; }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_inst_equi", r_clone).await {
@@ -240,19 +243,18 @@ pub async fn get_yk_dzcl_list(
                 "BEND",
             ],
         )
-        .await?;
-        let refnos_str = serde_json::to_string(
+            .await?;
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
         id,
         if refno.SPRE.name != NONE {{ string::split(string::split(refno.SPRE.name,'/')[2],':')[0] }} else {{ ' ' }} as code ,// 编码
         refno.TYPE as noun
-        from {}"#,
+        from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -268,6 +270,8 @@ pub struct MaterialYkInstData {
     pub name: String,
     pub pipe_name: Option<String>,
     pub room_code: Option<String>,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialYkInstData {
@@ -302,19 +306,19 @@ pub async fn get_yk_inst_pipe(
         }
         // 查询 inst 的数据
         let refnos = query_filter_deep_children(refno, &["INST"]).await?;
-        let refnos_str = serde_json::to_string(
+        if refnos.is_empty() { return Ok(vec![]); }
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
         id,
         fn::default_name($this.id) as name,
         fn::find_gy_bran($this.id)[0][0] as pipe_name,
         fn::room_code($this.id)[0] as room_code
-        from {}"#,
+        from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -331,6 +335,8 @@ pub struct MaterialYkEquiListData {
     pub room_code: Option<String>,
     pub pos: Option<f32>,
     pub floor_height: Option<f32>,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialYkEquiListData {
@@ -368,12 +374,11 @@ pub async fn get_yk_equi_list_material(
         }
         // 查询 EQUI 的数据
         let refnos = query_filter_deep_children(refno, &["EQUI"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
         id,
@@ -381,7 +386,7 @@ pub async fn get_yk_equi_list_material(
         fn::room_code($this.id)[0] as room_code,
         fn::get_world_pos($this.id)[0][2] as pos, // 坐标 z
         (->nearest_relate.dist)[0] as floor_height
-        from {}"#,
+        from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;

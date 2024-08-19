@@ -23,6 +23,7 @@ pub async fn save_dq_material(
 ) {
     match get_dq_bran_list(db.clone(), vec![refno]).await {
         Ok((mut r, mut str_r)) => {
+
             let material_data = read_dq_material_excel().unwrap_or_default();
             get_dq_value_from_material(&material_data, &mut r);
             get_dq_value_from_material_stru(&material_data, &mut str_r);
@@ -30,25 +31,29 @@ pub async fn save_dq_material(
             let r_clone = r.clone();
             let str_r_clone = str_r.clone();
             let db_clone = db.clone();
-            let task = task::spawn(async move {
-                match insert_into_table_with_chunks(&db_clone, "material_elec_list", r_clone).await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        dbg!(&e.to_string());
+            if !r_clone.is_empty() {
+                let task = task::spawn(async move {
+                    match insert_into_table_with_chunks(&db_clone, "material_elec_list", r_clone).await
+                    {
+                        Ok(_) => {}
+                        Err(e) => {
+                            dbg!(&e.to_string());
+                        }
                     }
-                }
-            });
-            handles.push(task);
-            let task = task::spawn(async move {
-                match insert_into_table_with_chunks(&db, "material_elec_list", str_r_clone).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        dbg!(&e.to_string());
+                });
+                handles.push(task);
+            }
+            if !str_r_clone.is_empty() {
+                let task = task::spawn(async move {
+                    match insert_into_table_with_chunks(&db, "material_elec_list", str_r_clone).await {
+                        Ok(_) => {}
+                        Err(e) => {
+                            dbg!(&e.to_string());
+                        }
                     }
-                }
-            });
-            handles.push(task);
+                });
+                handles.push(task);
+            }
             #[cfg(feature = "sql")]
             {
                 let Ok(pool) = aios_mgr.get_project_pool().await else {
@@ -233,6 +238,8 @@ pub struct MaterialDqMaterialList {
     pub unit: Option<String>,
     #[serde(default)]
     pub count: Option<f32>,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialDqMaterialList {
@@ -322,6 +329,8 @@ pub struct MaterialDqMaterialListStru {
     pub unit: Option<String>,
     #[serde(default)]
     pub count: Option<String>,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialDqMaterialListStru {
@@ -396,12 +405,11 @@ pub async fn get_dq_bran_list(
         }
         // 查询电气托盘的数据
         let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
         id,
@@ -427,7 +435,7 @@ pub async fn get_dq_bran_list(
         (select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.NAME as spre,
         (select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.CATR.refno.NAME as catr,
         fn::dq_horizontal_or_vertical($this.id) as horizontal_or_vertical
-        from {}"#,
+        from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -440,12 +448,11 @@ pub async fn get_dq_bran_list(
                 continue;
             };
             let refnos = query_filter_deep_children(refno, &["STRU"]).await?;
-            let refnos_str = serde_json::to_string(
+            let refnos_str =
                 &refnos
                     .into_iter()
                     .map(|refno| refno.to_pe_key())
-                    .collect::<Vec<String>>(),
-            )?;
+                    .collect::<Vec<String>>().join(",");
             let sql = format!(
                 r#"select id,
         string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num, // 机组号
@@ -460,7 +467,7 @@ pub async fn get_dq_bran_list(
         (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0] as spre,
         (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.refno.CATR.refno.NAME)[0] as catr,
         '2' as count // 数量
-        from {}"#,
+        from [{}]"#,
                 refnos_str
             );
             let mut response = db.query(sql).await?;
@@ -474,12 +481,11 @@ pub async fn get_dq_bran_list(
                 continue;
             };
             let refnos = query_filter_deep_children(refno, &["GENSEC"]).await?;
-            let refnos_str = serde_json::to_string(
+            let refnos_str =
                 &refnos
                     .into_iter()
                     .map(|refno| refno.to_pe_key())
-                    .collect::<Vec<String>>(),
-            )?;
+                    .collect::<Vec<String>>().join(",");
             let sql = format!(
                 r#"select id,
             string::slice(fn::find_ancestor_type($this.id,"SITE")[0].NAME,1,1) as num, // 机组号
@@ -493,7 +499,7 @@ pub async fn get_dq_bran_list(
             refno.SPRE.refno.NAME as spre,
             refno.SPRE.refno.CATR.refno.NAME as catr,
             math::fixed(fn::vec3_distance(array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[0],array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[1]),2) as count
-            from {}"#,
+            from [{}]"#,
                 refnos_str
             );
             let mut response = db.query(sql).await?;

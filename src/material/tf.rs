@@ -23,6 +23,9 @@ pub async fn save_tf_material_hvac(
 ) {
     match get_tf_hvac_material(&db, vec![refno]).await {
         Ok(r) => {
+            if r.is_empty() {
+                return;
+            }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_hvac_pipe", r_clone).await {
@@ -467,16 +470,7 @@ pub async fn get_tf_hvac_material(
             let refnos = query_ele_filter_deep_children(
                 refno,
                 &[
-                    "BEND",
-                    "BRCO",
-                    "CAP",
-                    "FLEX",
-                    "OFST",
-                    "STIF",
-                    "STRT",
-                    "TAPE",
-                    "THRE",
-                    "TRNS",
+                    "BEND", "BRCO", "CAP", "FLEX", "OFST", "STIF", "STRT", "TAPE", "THRE", "TRNS",
                 ],
             )
             .await?;
@@ -577,7 +571,8 @@ async fn get_tf_hvac_strt_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
     fn::refno(id) as id,
@@ -612,8 +607,8 @@ async fn get_tf_hvac_strt_data(
 
     fn::get_room_number(id) as room_no,
     fn::hvac_system(id) as system
-	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+	from [{}];",
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
@@ -633,7 +628,8 @@ async fn get_tf_hvac_tape_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
     fn::refno(id) as id,
@@ -667,8 +663,8 @@ async fn get_tf_hvac_tape_data(
 
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
-	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+	from [{}];",
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
@@ -688,7 +684,8 @@ async fn get_tf_hvac_flex_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
 
     let sql = format!(
         "select
@@ -725,8 +722,8 @@ async fn get_tf_hvac_flex_data(
 
      fn::hvac_system(id) as system,
      fn::get_room_number(id) as room_no
-	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+	from [{}];",
+        refnos
     );
 
     let mut response = db.query(sql).await?;
@@ -747,7 +744,8 @@ async fn get_tf_hvac_bend_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!("select
     fn::refno(id) as id,
     string::concat(fn::shape_name(id), '变截面管') as description,
@@ -775,7 +773,7 @@ async fn get_tf_hvac_bend_data(
 
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
-	from {};", serde_json::to_string(&refnos).unwrap_or("[]".to_string()));
+	from [{}];", refnos);
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
     let r = change_hvac_result_to_map(result);
@@ -797,6 +795,7 @@ fn change_hvac_result_to_map(
             map.entry(chinese.to_string())
                 .or_insert(v.get_val_as_string());
         }
+        map.entry("version_tag".to_string()).or_insert("".to_string());
         result.push(map);
     }
     result
@@ -874,7 +873,8 @@ async fn get_tf_hvac_ofst_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
     fn::refno(id) as id,
@@ -910,8 +910,8 @@ async fn get_tf_hvac_ofst_data(
 
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
-	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+	from [{}];",
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
@@ -930,7 +930,8 @@ async fn get_tf_hvac_trns_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
         fn::refno(id) as id,
@@ -967,7 +968,7 @@ async fn get_tf_hvac_trns_data(
         fn::hvac_system(id) as system,
         fn::get_room_number(id) as room_no
 	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
@@ -986,7 +987,8 @@ async fn get_tf_hvac_brco_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
       fn::refno(id) as id,
@@ -1022,7 +1024,7 @@ async fn get_tf_hvac_brco_data(
        fn::hvac_system(id) as system,
        fn::get_room_number(id) as room_no
 	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
@@ -1041,7 +1043,8 @@ async fn get_tf_hvac_thre_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
     fn::refno(id) as id,
@@ -1074,8 +1077,8 @@ async fn get_tf_hvac_thre_data(
 
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
-	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+	from [{}];",
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
@@ -1094,7 +1097,8 @@ async fn get_tf_hvac_cap_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
     fn::refno(id) as id,
@@ -1122,8 +1126,8 @@ async fn get_tf_hvac_cap_data(
 
     fn::hvac_system(id) as system,
     fn::get_room_number(id) as room_no
-	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+	from [{}];",
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
@@ -1142,7 +1146,8 @@ async fn get_tf_hvac_stif_data(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select
     fn::refno(id) as id,
@@ -1176,8 +1181,8 @@ async fn get_tf_hvac_stif_data(
 
     fn::get_room_number(id) as room_no,
     fn::hvac_system(id) as system
-	from {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+	from [{}];",
+        refnos
     );
     let mut response = db.query(sql).await?;
     let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();

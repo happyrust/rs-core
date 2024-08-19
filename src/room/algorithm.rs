@@ -68,10 +68,8 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
 pub async fn query_room_name_from_refnos(
     owner: Vec<RefU64>,
 ) -> anyhow::Result<HashMap<RefU64, String>> {
-    #[serde_as]
     #[derive(Debug, Serialize, Deserialize)]
     struct RoomNameQueryRequest {
-        #[serde_as(as = "DisplayFromStr")]
         pub id: RefU64,
         pub room: Option<String>,
     }
@@ -79,10 +77,10 @@ pub async fn query_room_name_from_refnos(
     let owners = owner
         .into_iter()
         .map(|o| o.to_pe_key())
-        .collect::<Vec<String>>();
+        .collect::<Vec<String>>().join(",");
     let sql = format!(
-        "select id,fn::room_code(id)[0] as room from {}",
-        serde_json::to_string(&owners).unwrap_or("[]".to_string())
+        "select id,fn::room_code(id)[0] as room from [{}]",
+        owners
     );
     let mut response = SUL_DB.query(sql).await?;
     let result: Vec<RoomNameQueryRequest> = response.take(0)?;

@@ -20,6 +20,7 @@ pub async fn save_nt_material_dzcl(
 ) {
     match get_nt_valv_list_material(db.clone(), vec![refno]).await {
         Ok(r) => {
+            if r.is_empty() { return; }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_nt_valv", r_clone).await {
@@ -86,6 +87,8 @@ pub struct MaterialNtValvData {
     pub valv_size: Vec<f32>,
     pub material: String,
     pub valv_use: String,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialNtValvData {
@@ -123,12 +126,11 @@ pub async fn get_nt_valv_list_material(
         }
         // 查询 DAMP 的数据
         let refnos = query_filter_deep_children(refno, &["DAMP"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
             id,
@@ -139,7 +141,7 @@ pub async fn get_nt_valv_list_material(
             if refno.DESP[5] == NONE {{ 0 }} else {{ refno.DESP[5] }}] as valv_size,
             fn::get_valv_material($this.id) as material,
             if name == NONE {{ '' }} else {{ string::slice(name,-3) }} as valv_use
-            from {}"#,
+            from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;

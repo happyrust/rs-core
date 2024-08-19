@@ -20,6 +20,7 @@ pub async fn save_gps_material_dzcl(
 ) {
     match get_gps_dzcl_material(db.clone(), vec![refno]).await {
         Ok((r, tubi_r)) => {
+            if r.is_empty() { return; }
             let r_clone = r.clone();
             let tubi_r_clone = tubi_r.clone();
             let task = task::spawn(async move {
@@ -118,6 +119,8 @@ pub struct MaterialGpsDzclData {
     pub length: Option<f32>,
     pub thick: Option<f32>,
     pub count: Option<f32>,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialGpsDzclData {
@@ -159,12 +162,11 @@ pub async fn get_gps_dzcl_material(
         }
         // 查询 BEND 的数据
         let refnos = query_filter_deep_children(refno, &["BEND"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
         id,
@@ -173,7 +175,7 @@ pub async fn get_gps_dzcl_material(
         string::replace(<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[3] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[3] }},3),'f','') as radius, // 外径
         math::fixed(if refno.SPRE.refno.CATR.refno.PARA == NONE && refno.ANGL == NONE {{ 0 }}
         else {{ (refno.ANGL / 360) * 2 * 3.1415 * refno.SPRE.refno.CATR.refno.PARA[1] }},2) as count // 数量
-        from {}"#,
+        from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -181,12 +183,11 @@ pub async fn get_gps_dzcl_material(
         data.append(&mut result);
         // 查询tubi的数据
         let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select value (select leave as id,
         (select value ( if leave.refno.LSTU.refno.NAME != NONE {{ string::split(array::at(string::split(leave.refno.LSTU.name, '/'), 2), ':')[0] }} else if leave.refno.HSTU.refno.NAME != NONE {{
@@ -194,7 +195,7 @@ pub async fn get_gps_dzcl_material(
         }} else {{ '' }}  ) from $self)[0]  as code,
         'TUBI' as noun,
         string::replace(<string>math::fixed(if leave.refno.LSTU.refno.NAME != NONE {{ leave.refno.LSTU.refno.CATR.refno.PARA[1] }} else if leave.refno.HSTU.refno.NAME != NONE {{ leave.refno.HSTU.refno.CATR.refno.PARA[1] }} else {{ 0 }},3 ),'f','') as radius, // 外径
-        world_trans.d.scale[2] as count from ->tubi_relate) from {};"#,
+        world_trans.d.scale[2] as count from ->tubi_relate) from [{}];"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -204,18 +205,17 @@ pub async fn get_gps_dzcl_material(
         }
         // 查询elbo的数据
         let refnos = query_filter_deep_children(refno, &["ELBO"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select id,
         string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
         refno.TYPE as noun ,// 部件
         string::replace(<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[3] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[3] }},3),'f','') as radius // 外径
-        from {};"#,
+        from [{}];"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -223,19 +223,18 @@ pub async fn get_gps_dzcl_material(
         data.append(&mut result);
         // 查询flan的数据
         let refnos = query_filter_deep_children(refno, &["FLAN"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select id,
         string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
         refno.TYPE as noun ,// 部件
         string::replace(<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[6] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[6] }},3),'f','') as radius, // 外径
         math::fixed(if refno.SPRE.refno.CATR.refno.PARA[4] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[4] }},3) as thick // 厚度
-        from {};"#,
+        from [{}];"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -243,19 +242,18 @@ pub async fn get_gps_dzcl_material(
         data.append(&mut result);
         // 查询redu的数据
         let refnos = query_filter_deep_children(refno, &["REDU"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select id,
         string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
         refno.TYPE as noun ,// 部件
         string::replace(<string>array::join([math::fixed(if refno.SPRE.refno.CATR.refno.PARA[5] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[5] }},3),math::fixed(if refno.SPRE.refno.CATR.refno.PARA[6] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[6] }},3)],';'),'f','') as radius, // 外径
         math::fixed(if refno.SPRE.refno.CATR.refno.PARA[3] == NONE {{ 0 }} else {{ refno.SPRE.refno.CATR.refno.PARA[3] }},3) as length // 长度
-        from {};"#,
+        from [{}];"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -263,18 +261,17 @@ pub async fn get_gps_dzcl_material(
         data.append(&mut result);
         // 查询tee的数据
         let refnos = query_filter_deep_children(refno, &["TEE"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select id,
         string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
         refno.TYPE as noun, // 部件
         string::replace(<string>array::join([<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[6] != NONE {{ refno.SPRE.refno.CATR.refno.PARA[6] }} else {{ 0 }},3),<string>math::fixed(if refno.SPRE.refno.CATR.refno.PARA[7] != NONE {{ refno.SPRE.refno.CATR.refno.PARA[7] }} else {{ 0 }},3)],';'),'f','') as radius // 外径
-        from {};"#,
+        from [{}];"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;

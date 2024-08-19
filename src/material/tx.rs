@@ -22,6 +22,7 @@ pub async fn save_tx_material_equi(
 ) {
     match get_tx_txsb_list_material(db.clone(), vec![refno]).await {
         Ok(r) => {
+            if r.is_empty() { return; }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_tx_list", r_clone).await {
@@ -104,12 +105,11 @@ pub async fn get_tx_txsb_list_material(
             };
             // 查询 EQUI 的数据
             let refnos = query_filter_deep_children(refno, &["ELCONN"]).await?;
-            let refnos_str = serde_json::to_string(
+            let refnos_str =
                 &refnos
                     .into_iter()
                     .map(|refno| refno.to_pe_key())
-                    .collect::<Vec<String>>(),
-            )?;
+                    .collect::<Vec<String>>().join(",");
             let sql = format!(
                 r#"select
             id,
@@ -121,7 +121,7 @@ pub async fn get_tx_txsb_list_material(
             fn::get_world_pos($this.id)[0][1] as y, // 坐标 y
             fn::get_world_pos($this.id)[0][2] as z, // 坐标 z
             string::slice(refno.CATR.refno.PRTREF.refno.NAME,1) as ptre_name
-            from {}"#,
+            from [{}]"#,
                 refnos_str
             );
             let mut response = db.query(sql).await?;

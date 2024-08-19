@@ -21,6 +21,7 @@ pub async fn save_sb_material_dzcl(
 ) {
     match get_sb_dzcl_list_material(db.clone(), vec![refno]).await {
         Ok(r) => {
+            if r.is_empty() { return; }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_sb_list", r_clone).await {
@@ -87,6 +88,8 @@ pub struct MaterialTxTxsbData {
     pub y: Option<f32>,
     pub z: Option<f32>,
     pub ptre_name: String,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialTxTxsbData {
@@ -130,19 +133,18 @@ pub async fn get_sb_dzcl_list_material(
         }
         // 查询 EQUI 的数据
         let refnos = query_filter_deep_children(refno, &["EQUI"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
             id,
             fn::default_name($this.id) as name,
             fn::room_code($this.id)[0] as room_code,
             fn::find_group_sube_children($this.id) as boxs
-            from {}"#,
+            from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -158,13 +160,23 @@ pub async fn get_sb_dzcl_list_material(
             .map(|x| x.1.boxs.clone())
             .collect::<Vec<_>>();
         let equi_children = filter_equi_children(tray);
+        let formatted_string = format!(
+            "[{}]",
+            equi_children.iter()
+                .map(|inner_vec| format!(
+                    "[{}]",
+                    inner_vec.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(",")
+                ))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
         let sql = format!(
             r#"select
             (id.REFNO->pe_owner.out->pe_owner.out.refno)[0][0] as refno,
             array::max(array::max([XLEN,YLEN,ZLEN])) as length,
             array::max(id.REFNO->inst_relate.world_trans.d.translation[2])[0] as pos
             from {}"#,
-            serde_json::to_string(&equi_children).unwrap_or("[]".to_string())
+            formatted_string
         );
         let mut response = db.query(sql).await?;
         let result: Vec<MaterialSubeData> = response.take(0)?;
@@ -213,6 +225,8 @@ pub struct MaterialSbListData {
     pub length: Option<f32>,
     pub room_code: Option<String>,
     pub boxs: Vec<Vec<Thing>>,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

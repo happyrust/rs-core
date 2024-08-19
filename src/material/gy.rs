@@ -22,18 +22,22 @@ pub async fn save_gy_material_dzcl(
             let r_clone = r.clone();
             let tubi_r_clone = tubi_r.clone();
             let task = task::spawn(async move {
-                match insert_into_table_with_chunks(&db, "material_gy_list", r_clone).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        dbg!(&e.to_string());
+                if !r_clone.is_empty() {
+                    match insert_into_table_with_chunks(&db, "material_gy_list", r_clone).await {
+                        Ok(_) => {}
+                        Err(e) => {
+                            dbg!(&e.to_string());
+                        }
                     }
                 }
-                match insert_into_table_with_chunks(&db, "material_gy_list_tubi", tubi_r_clone)
-                    .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        dbg!(&e.to_string());
+                if !tubi_r_clone.is_empty() {
+                    match insert_into_table_with_chunks(&db, "material_gy_list_tubi", tubi_r_clone)
+                        .await
+                    {
+                        Ok(_) => {}
+                        Err(e) => {
+                            dbg!(&e.to_string());
+                        }
                     }
                 }
             });
@@ -98,7 +102,7 @@ pub async fn save_gy_material_dzcl(
                                     data_2,
                                     &pool,
                                 )
-                                .await
+                                    .await
                                 {
                                     Ok(_) => {}
                                     Err(e) => {
@@ -171,7 +175,7 @@ pub async fn save_gy_material_equi(
                                     data,
                                     pool,
                                 )
-                                .await
+                                    .await
                                 {
                                     Ok(_) => {}
                                     Err(e) => {
@@ -247,7 +251,7 @@ pub async fn save_gy_material_valv(
                                     data,
                                     pool,
                                 )
-                                .await
+                                    .await
                                 {
                                     Ok(_) => {}
                                     Err(e) => {
@@ -276,6 +280,8 @@ pub struct MaterialGyDataBend {
     pub code: String,
     pub noun: String,
     pub count: f32,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialGyDataBend {
@@ -297,6 +303,8 @@ pub struct MaterialGyData {
     pub id: RefU64,
     pub code: String,
     pub noun: String,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialGyData {
@@ -332,6 +340,8 @@ pub struct MaterialGyValvList {
     pub valv_y: Option<f32>,
     pub valv_z: Option<f32>,
     pub valv_supp: String,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialGyValvList {
@@ -377,6 +387,8 @@ pub struct MaterialGyEquiList {
     pub nozz_name: Vec<String>,
     pub nozz_pos: Vec<Vec<f32>>,
     pub nozz_cref: Vec<String>,
+    #[serde(default)]
+    pub version_tag: String,
 }
 
 impl MaterialGyEquiList {
@@ -419,19 +431,18 @@ pub async fn get_gy_dzcl(
         }
         // 查询bend的数据
         let refnos = query_filter_deep_children(refno, &["BEND"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
     id as id,
     string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
     refno.TYPE as noun, // 部件
     math::fixed((refno.ANGL / 360) * 2 * 3.1415 * refno.SPRE.refno.CATR.refno.PARA[1],2) as count // 长度
-    from {}"#,
+    from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -439,12 +450,11 @@ pub async fn get_gy_dzcl(
         tubi_data.append(&mut result);
         // 查询tubi数据
         let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"
     select value (select leave as id,
@@ -452,7 +462,7 @@ pub async fn get_gy_dzcl(
     string::split(array::at(string::split(leave.refno.HSTU.name, '/'), 2), ':')[0]
     }} else {{ '' }}  ) from $self)[0]  as code,
     'TUBI' as noun,
-    world_trans.d.scale[2] as count from ->tubi_relate) from {}"#,
+    world_trans.d.scale[2] as count from ->tubi_relate) from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -474,19 +484,18 @@ pub async fn get_gy_dzcl(
                 "COUP",
             ],
         )
-        .await?;
-        let refnos_str = serde_json::to_string(
+            .await?;
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
     id as id,
     string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
     refno.TYPE as noun // 部件
-    from {}"#,
+    from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -517,12 +526,11 @@ pub async fn get_gy_valv_list(
         // 查询阀门的数据
         let refnos =
             query_filter_deep_children(refno, &["VALV", "INST"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
         id,
@@ -535,7 +543,7 @@ pub async fn get_gy_valv_list(
         if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) != "R" {{ refno.SPRE.refno.CATR.refno.PARA[8] }} else if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) == "R" {{ refno.SPRE.refno.CATR.refno.PARA[12] }} else {{ 0 }} as valv_y, // 阀门重心Y
         if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) != "R" {{ refno.SPRE.refno.CATR.refno.PARA[9] }} else if refno.SPRE.refno.CATR.refno.NAME != NONE && string::slice(refno.SPRE.refno.CATR.refno.NAME,4,1) == "R" {{ refno.SPRE.refno.CATR.refno.PARA[13] }} else {{ 0 }} as valv_z, // 阀门重心Z
         fn::valv_b_supp(id) as valv_supp // 阀门支架
-        from {}"#,
+        from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
@@ -563,12 +571,11 @@ pub async fn get_gy_equi_list(
         }
         // 查询设备的数据
         let refnos = query_filter_deep_children(refno, &["EQUI"]).await?;
-        let refnos_str = serde_json::to_string(
+        let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>(),
-        )?;
+                .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
         id,
@@ -578,7 +585,7 @@ pub async fn get_gy_equi_list(
         array::clump(array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe.refno.POS,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in.refno.POS]),3) as nozz_pos, // 管口坐标
 
         (select value if (name == NONE) {{ '' }} else {{ string::slice(name, 1) }} from array::flatten([<-pe_owner[where in.noun='NOZZ']<-pe,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in])) as nozz_cref // 相连管道编号
-        from {}"#,
+        from [{}]"#,
             refnos_str
         );
         let mut response = db.query(sql).await?;
