@@ -444,6 +444,29 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
     Ok(pes)
 }
 
+///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
+pub async fn query_filter_children_atts(refno: RefU64, types: &[&str]) -> anyhow::Result<Vec<NamedAttrMap>> {
+    let nouns_str = types
+        .iter()
+        .map(|s| format!("'{s}'"))
+        .collect::<Vec<_>>()
+        .join(",");
+    let sql = if types.is_empty() {
+        format!(
+            r#"select value in.refno.* from {}<-pe_owner where in.id!=none"#,
+            refno.to_pe_key()
+        )
+    } else {
+        format!(
+            r#"select value in.refno.* from {}<-pe_owner where in.noun in [{nouns_str}] and in.id!=none"#,
+            refno.to_pe_key()
+        )
+    };
+    let mut response = SUL_DB.query(sql).await?;
+    let atts: Vec<NamedAttrMap> = response.take(0)?;
+    Ok(atts)
+}
+
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的EleTreeNode
 #[cached(result = true)]
 pub async fn get_children_ele_nodes(refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {

@@ -48195,7 +48195,7 @@
         "hash": 3832294,
         "offset": 0,
         "default_val": {
-          "ElementType": ""
+          "RefU64Array": []
         },
         "att_type": "ELEMENT"
       },
@@ -113053,9 +113053,9 @@
         "hash": 3832294,
         "offset": 0,
         "default_val": {
-          "ElementType": ""
+          "IntArrayType": []
         },
-        "att_type": "ELEMENT"
+        "att_type": "INTVEC"
       },
       "NAME": {
         "name": "NAME",

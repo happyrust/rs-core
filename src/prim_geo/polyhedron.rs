@@ -115,10 +115,11 @@ impl BrepShapeTrait for Polyhedron {
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
         let mut faces = vec![];
         for polygon in &self.polygons {
-            // dbg!(polygon);
-            let wire = Wire::from_ordered_points(polygon.verts.iter().map(|x| x.as_dvec3()))?;
-            let face = Face::from_wires(&[wire])?;
-            faces.push(face);
+            if let Ok(wire) = Wire::from_ordered_points(polygon.verts.iter().map(|x| x.as_dvec3())){
+                if let Ok(face) = Face::from_wires(&[wire]) {
+                    faces.push(face);
+                }
+            }
         }
         let shell = Shell::from_faces(faces)?;
         Ok(OccSharedShape::new(shell.into()))

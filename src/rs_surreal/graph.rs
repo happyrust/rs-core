@@ -110,6 +110,28 @@ pub async fn query_filter_deep_children(
     Ok(vec![])
 }
 
+pub async fn query_filter_deep_children_atts(
+    refno: RefU64,
+    nouns: &[&str],
+) -> anyhow::Result<Vec<NamedAttrMap>> {
+    let refnos = query_deep_children_refnos(refno).await?;
+    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+    let sql = format!(r#"select value refno.* from [{pe_keys}] where noun in [{nouns_str}]"#);
+    match SUL_DB.query(&sql).with_stats().await {
+        Ok(mut response) => {
+            if let Some((stats, Ok(result))) = response.take::<Vec<NamedAttrMap>>(0) {
+                return Ok(result);
+            }
+        }
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            return Err(anyhow!(e.to_string()));
+        }
+    }
+    Ok(vec![])
+}
+
 pub async fn query_ele_filter_deep_children_pbs(
     refno: Thing,
     nouns: &[&str],

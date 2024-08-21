@@ -714,6 +714,13 @@ impl NamedAttrMap {
         None
     }
 
+    pub fn get_refno_vec(&self, key: &str) -> Option<Vec<RefU64>> {
+        if let NamedAttrValue::RefU64Array(d) = self.get_val(key)? {
+            return Some(d.clone());
+        }
+        None
+    }
+
     ///生成具有几何属性的element的shape
     pub fn create_brep_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
         let type_noun = self.get_type_str();

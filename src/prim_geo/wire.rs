@@ -611,22 +611,35 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     if pts.len() < 3 {
         return Err(anyhow!("wire 顶点数量不够，小于3。"));
     }
-    let mut new_pts = vec![pts[0].as_dvec3()];
-    let mut has_frad = false;
+    let first_pt = pts[0].as_dvec3();
+    let mut has_frad = first_pt.z > 0.0;
+    let mut new_pts = vec![first_pt];
     //第一遍就应该去掉重复的点
-    for i in 1..pts.len() {
-        let pt = pts[i].truncate();
-        // let pre_pt = pts[(i - 1)].truncate();
-        let netx_pt = pts[(i + 1) % pts.len()].truncate();
-        if pt.distance(netx_pt) < 0.1 {
+    for i in 1..=pts.len() {
+        let cur_index = i % pts.len();
+        let pt = pts[cur_index].as_dvec3();
+        let last_index = new_pts.len() - 1;
+        let pre_pt = new_pts[last_index];
+        //需要检查第一个pt的合理性
+        if pt.truncate().distance(pre_pt.truncate()) < 0.1 {
             // dbg!(pt);
+            //需要区分哪个有fillet
+            if pt.z > 0.0 {
+                new_pts[last_index].z = pt.z as _;
+            }
+            //如果最后一个和第一个重合，那么需要去掉最后一个
+            if i == pts.len() {
+                new_pts.pop();
+            }
             continue;
         }
 
-        if pts[i].z > 0.0 {
+        if pt.z > 0.0 {
             has_frad = true;
         }
-        new_pts.push(pts[i].as_dvec3());
+        if i < pts.len(){
+            new_pts.push(pt);
+        }
     }
 
     let len = new_pts.len();
@@ -689,7 +702,20 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         polyline = new_poly;
     }
     #[cfg(feature = "debug_wire")]
-    println!("Polyline: {}", polyline_to_debug_json_str(&polyline));
+    {
+        dbg!(pts);
+        dbg!(new_pts);
+        println!("Polyline: {}", polyline_to_debug_json_str(&polyline));
+    }
+    //及一个检查是否有NAN的数据
+    for p in &polyline.vertex_data{
+
+
+        if p.bulge.is_nan() {
+            return Err(anyhow!("Found NAN buldge in polyline"));
+        }
+    }
+
 
     //需要和初始的方向保持一致，如果是顺时针，那么要选择顺时针方向的交叉点
     let orientation = polyline.orientation();

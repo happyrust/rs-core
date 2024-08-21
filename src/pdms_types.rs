@@ -50,9 +50,9 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX", "NCYL",
-    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV",
+    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV", "POLYHE"
 ];
 
 ///有loop的几何体
@@ -165,8 +165,8 @@ pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
     "SCTN", "NOZZ",
 ];
 
-pub const VISBILE_GEO_NOUNS: [&'static str; 38] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "EXTR", "REVO",
+pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE", "EXTR", "REVO",
     "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI",
     "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ",
     "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
