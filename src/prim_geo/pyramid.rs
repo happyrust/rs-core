@@ -179,7 +179,7 @@ impl BrepShapeTrait for Pyramid {
             polys.push(Wire::from_ordered_points(pts)?);
         }
 
-        Ok(OccSharedShape::new(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape()))
+        Ok(OccSharedShape::new(Solid::loft_with_points(polys.iter(), verts.iter())?.into_shape()))
     }
 
 

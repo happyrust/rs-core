@@ -184,7 +184,7 @@ impl BrepShapeTrait for LPyramid {
             polys.push(Wire::from_ordered_points(pts)?);
         }
 
-        Ok(OccSharedShape::new(Solid::loft_with_points(polys.iter(), verts.iter()).into_shape()))
+        Ok(OccSharedShape::new(Solid::loft_with_points(polys.iter(), verts.iter())?.into_shape()))
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {

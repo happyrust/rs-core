@@ -77,7 +77,7 @@ impl VerifiedShape for LSnout {
     #[inline]
     fn check_valid(&self) -> bool {
         //height 必须 >0， 小于0 的情况直接用变换矩阵
-        (self.ptdm >= 0.0 && self.pbdm >= 0.0) && (self.ptdi - self.pbdi) > f32::EPSILON
+        (self.ptdm >= 0.0 && self.pbdm >= 0.0 && (self.ptdm + self.pbdm) > 0.0) && (self.ptdi - self.pbdi) > f32::EPSILON
     }
 }
 
@@ -119,7 +119,7 @@ impl BrepShapeTrait for LSnout {
             circles.push(circle);
         }
 
-        Ok(OccSharedShape::new(Solid::loft_with_points(circles.iter(), verts.iter()).into()))
+        Ok(OccSharedShape::new(Solid::loft_with_points(circles.iter(), verts.iter())?.into()))
     }
 
     #[cfg(feature = "truck")]
