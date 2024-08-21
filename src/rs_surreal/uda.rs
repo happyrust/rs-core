@@ -18,7 +18,7 @@ pub async fn get_uda_refno(hash: i32) -> Option<RefU64> {
         return None;
     }
     let uda_hash_name = db1_dehash(hash as _);
-    let name = &uda_hash_name[1..];
+    let name = uda_hash_name[1..].to_string();
     let index = get_uda_index(hash as _);
     // dbg!(name, index);
     if let Ok(mut response) = SUL_DB
@@ -49,7 +49,7 @@ pub async fn get_uda_name(hash: i32) -> Option<String> {
         return None;
     }
     let uda_hash_name = db1_dehash(hash as _);
-    let name = &uda_hash_name[1..];
+    let name = uda_hash_name[1..].to_string();
     let index = get_uda_index(hash as _);
     // dbg!(name, index);
     if let Ok(mut response) = SUL_DB

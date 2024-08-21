@@ -35,6 +35,7 @@ use crate::prim_geo::basic::OccSharedShape;
 )]
 pub struct Polyhedron {
     pub polygons: Vec<Polygon>,
+    pub mesh: Option<PlantMesh>,
 }
 
 #[derive(

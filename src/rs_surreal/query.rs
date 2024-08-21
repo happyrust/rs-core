@@ -89,8 +89,8 @@ pub async fn get_ancestor_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttr
         .query("return fn::ancestor(type::thing('pe', $refno)).refno.*;")
         .bind(("refno", refno.to_string()))
         .await?;
-    let o: SurlValue = response.take(0)?;
-    let os: Vec<SurlValue> = o.try_into().unwrap();
+    let o: surrealdb::Value = response.take(0)?;
+    let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
     Ok(named_attmaps)
 }
@@ -263,8 +263,8 @@ pub async fn get_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
         .query(r#"(select * from (type::thing("pe", $refno)).refno)[0];"#)
         .bind(("refno", refno.to_string()))
         .await?;
-    let o: SurlValue = response.take(0)?;
-    let named_attmap: NamedAttrMap = o.into();
+    let o: surrealdb::Value = response.take(0)?;
+    let named_attmap: NamedAttrMap = o.into_inner().into();
     Ok(named_attmap)
 }
 
@@ -313,8 +313,8 @@ pub async fn get_named_attmap_with_uda(
         .bind(("refno", refno.to_string()))
         .await?;
     //获得uda的 map
-    let o: SurlValue = response.take(0)?;
-    let mut named_attmap: NamedAttrMap = o.into();
+    let o: surrealdb::Value = response.take(0)?;
+    let mut named_attmap: NamedAttrMap = o.into_inner().into();
     let uda_kvs: Vec<NamedAttrMap> = response.take(1)?;
     // dbg!(&uda_kvs);
     for map in uda_kvs {
@@ -378,8 +378,8 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
     // println!("sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     // dbg!(&response);
-    let o: SurlValue = response.take(0)?;
-    let named_attmap: NamedAttrMap = o.into();
+    let o: surrealdb::Value = response.take(0)?;
+    let named_attmap: NamedAttrMap = o.into_inner().into();
     Ok(named_attmap)
 }
 
@@ -391,9 +391,9 @@ pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<Nam
         )
         .bind(("refno", refno.to_string()))
         .await?;
-    let o: SurlValue = response.take(0)?;
+    let o: surrealdb::Value = response.take(0)?;
     // dbg!(&o);
-    let os: Vec<SurlValue> = o.try_into().unwrap();
+    let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
     Ok(named_attmaps)
 }
@@ -554,17 +554,20 @@ pub async fn query_group_by_cata_hash(
 ) -> anyhow::Result<DashMap<String, CataHashRefnoKV>> {
     let keys = refnos
         .into_iter()
-        .map(|x| x.to_pe_thing())
+        .map(|x| x.to_pe_key())
         .collect::<Vec<_>>();
     let mut result_map: DashMap<String, CataHashRefnoKV> = DashMap::new();
     for chunk in keys.chunks(20) {
-        let mut response = SUL_DB
-            .query(r#"
-            let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from $refnos);
+        let sql = format!(
+            r#"
+            let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}]);
             select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
                  type::thing('inst_info', cata_hash).ptset] as k, array::group(id) as v from $a where noun not in ["BRAN", "HANG"]  group by k;
-        "#)
-            .bind(("refnos", chunk))
+        "#,
+            chunk.join(",")
+        );
+        let mut response = SUL_DB
+            .query(&sql)
             .await?;
         let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
             response.take(1)?;
