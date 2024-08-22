@@ -41,12 +41,63 @@ impl Serialize for RefU64 {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Serialize)]
+// #[serde(untagged)]
 enum RefnoVariant {
-    Thing(Thing),
+    RefThing(Thing),
     Str(String),
     Num(u64),
+}
+
+impl<'de> Deserialize<'de> for RefnoVariant {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        use serde::de::Visitor;
+        use serde::de;
+        struct RefnoVariantVisitor;
+
+        impl<'de> Visitor<'de> for RefnoVariantVisitor {
+            type Value = RefnoVariant;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a Thing, a string, or an unsigned integer")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<RefnoVariant, E>
+            where
+                E: de::Error,
+            {
+                Ok(RefnoVariant::Str(value.to_owned()))
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<RefnoVariant, E>
+            where
+                E: de::Error,
+            {
+                Ok(RefnoVariant::Str(value))
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<RefnoVariant, E>
+            where
+                E: de::Error,
+            {
+                Ok(RefnoVariant::Num(value))
+            }
+
+            fn visit_map<A>(self, map: A) -> Result<RefnoVariant, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                // 尝试将map反序列化为Thing
+                let thing = Thing::deserialize(de::value::MapAccessDeserializer::new(map))?;
+                Ok(RefnoVariant::RefThing(thing))
+            }
+        }
+
+        deserializer.deserialize_any(RefnoVariantVisitor)
+    }
 }
 
 impl<'de> Deserialize<'de> for RefU64 {
@@ -56,7 +107,7 @@ impl<'de> Deserialize<'de> for RefU64 {
     {
         if let Ok(s) = RefnoVariant::deserialize(deserializer) {
             match s {
-                RefnoVariant::Thing(s) => Ok(s.into()),
+                RefnoVariant::RefThing(s) => Ok(s.into()),
                 RefnoVariant::Str(s) => Self::from_str(s.as_str())
                     .map_err(|_| serde::de::Error::custom("refno parse string error")),
                 RefnoVariant::Num(d) => Ok(Self(d)),
@@ -66,6 +117,30 @@ impl<'de> Deserialize<'de> for RefU64 {
         }
     }
 }
+
+// impl<'de> Deserialize<'de> for RefU64 {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//     {
+//         let string = RefnoVariant::deserialize(deserializer)?;
+//         // println!("RefU64: {}", &string);
+//         // let value = RefnoVariant::deserialize(deserializer).unwrap();
+//         // let thing = RefnoVariant::deserialize(deserializer).unwrap();
+//         // dbg!(&thing);
+//         Ok(Default::default())
+//         // // if let Ok(s) = RefnoVariant::deserialize(deserializer) {
+//         //     match s {
+//         //         RefnoVariant::Thing(s) => Ok(s.into()),
+//         //         RefnoVariant::Str(s) => Self::from_str(s.as_str())
+//         //             .map_err(|_| serde::de::Error::custom("refno parse string error")),
+//         //         RefnoVariant::Num(d) => Ok(Self(d)),
+//         //     }
+//         // } else {
+//         //     return Err(serde::de::Error::custom("refno parse error"));
+//         // }
+//     }
+// }
 
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;

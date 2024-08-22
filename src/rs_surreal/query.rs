@@ -32,9 +32,11 @@ struct KV<K, V> {
 ///通过surql查询pe数据
 #[cached(result = true)]
 pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
+    let sql = format!(
+        r#"select * omit id from only {} limit 1;"#, refno.to_pe_key()
+    );
     let mut response = SUL_DB
-        .query("(select * omit id from (type::thing('pe', $refno)))[0];")
-        .bind(("refno", refno.to_string()))
+        .query(sql)
         .await?;
     let pe: Option<SPdmsElement> = response.take(0)?;
     Ok(pe)

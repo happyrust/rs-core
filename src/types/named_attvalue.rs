@@ -7,13 +7,14 @@ use glam::{bool, f32, f64, i32, Vec3};
 use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 #[cfg(feature = "sea-orm")]
 use sea_query::Value as SeaValue;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
+use serde::Deserializer;
 
 ///新的属性数据结构
 #[derive(
     Serialize,
-    Deserialize,
+    // Deserialize,
     Clone,
     Debug,
     Component,
@@ -22,7 +23,7 @@ use serde_json::json;
     rkyv::Deserialize,
     rkyv::Serialize,
 )]
-#[serde(untagged)]
+// #[serde(untagged)]
 pub enum NamedAttrValue {
     #[default]
     InvalidType,
@@ -40,6 +41,143 @@ pub enum NamedAttrValue {
     RefU64Type(RefU64),
     RefU64Array(Vec<RefU64>),
     LongType(i64),
+}
+
+use serde::de::{self, Visitor, SeqAccess, MapAccess, EnumAccess};
+use std::fmt;
+use std::vec::Vec;
+
+impl<'de> Deserialize<'de> for NamedAttrValue {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        struct NamedAttrValueVisitor;
+
+        impl<'de> Visitor<'de> for NamedAttrValueVisitor {
+            type Value = NamedAttrValue;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a valid NamedAttrValue")
+            }
+
+            fn visit_i32<E>(self, value: i32) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(NamedAttrValue::IntegerType(value))
+            }
+
+            fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                if value >= i32::MIN as i64 && value <= i32::MAX as i64 {
+                    Ok(NamedAttrValue::IntegerType(value as i32))
+                } else {
+                    Ok(NamedAttrValue::LongType(value))
+                }
+            }
+
+            fn visit_f32<E>(self, value: f32) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(NamedAttrValue::F32Type(value))
+            }
+
+            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(NamedAttrValue::F32Type(value as f32))
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(NamedAttrValue::StringType(value.to_owned()))
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(NamedAttrValue::StringType(value))
+            }
+
+            fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(NamedAttrValue::BoolType(value))
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let _ = data;
+                Ok(NamedAttrValue::InvalidType)
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut vec = Vec::new();
+                let mut first_elem_type = None;
+                //在这里能不能直接判断类型
+                while let Some(elem) = seq.next_element::<serde_content::Value>()? {
+                    if first_elem_type.is_none() {
+                        first_elem_type = Some(match elem {
+                            serde_content::Value::Bool(_) => "bool",
+                            // serde_json::Value::Number(ref n) if n.is_i64() => "i64",
+                            // serde_json::Value::Number(ref n) if n.is_u64() => "u64",
+                            // serde_json::Value::Number(_) => "f64",
+                            // serde_json::Value::String(_) => "String",
+                            // serde_json::Value::Array(_) => "Array",
+                            // serde_json::Value::Object(_) => "Object",
+                            _ => "Object",
+                        });
+                    }
+                    vec.push(elem);
+                }
+
+                match first_elem_type {
+                    // Some("f64") => Ok(NamedAttrValue::F32VecType(
+                    //     vec.into_iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect()
+                    // )),
+                    // Some("String") => Ok(NamedAttrValue::StringArrayType(
+                    //     vec.into_iter().filter_map(|v| v.as_str().map(String::from)).collect()
+                    // )),
+                    // Some("bool") => Ok(NamedAttrValue::BoolArrayType(
+                    //     vec.into_iter().filter_map(|v| v.as_bool()).collect()
+                    // )),
+                    // Some("i64") => Ok(NamedAttrValue::IntArrayType(
+                    //     vec.into_iter().filter_map(|v| v.as_i64().map(|i| i as i32)).collect()
+                    // )),
+                    // // RefU64Array 可能需要特殊处理，这里仅作为示例
+                    // Some("Object") => Ok(NamedAttrValue::RefU64Array(
+                    //     vec.into_iter().filter_map(|v| RefU64::deserialize(v).ok()).collect()
+                    // )),
+                    _ => Err(de::Error::custom("Unsupported array type")),
+                }
+            }
+
+            fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+
+                let value = RefU64::deserialize(de::value::MapAccessDeserializer::new(map))?;
+                Ok(NamedAttrValue::RefU64Type(value))
+            }
+        }
+
+        deserializer.deserialize_any(NamedAttrValueVisitor)
+    }
 }
 
 #[cfg(feature = "sea-orm")]

@@ -53,6 +53,7 @@ calamine = "0.19.1"
 thiserror = "1.0.60"
 log = "0.4.21"
 simplelog = "0.12.2"
+serde-content = { path = "../serde-content", features = ["serde"] }
 
 
 bevy_transform = { path = "../bevy/crates/bevy_transform", features = ["serialize"] }

@@ -115,21 +115,27 @@ pub async fn query_filter_deep_children_atts(
     nouns: &[&str],
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
     let refnos = query_deep_children_refnos(refno).await?;
-    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let sql = format!(r#"select value refno.* from [{pe_keys}] where noun in [{nouns_str}]"#);
-    match SUL_DB.query(&sql).with_stats().await {
-        Ok(mut response) => {
-            if let Some((stats, Ok(result))) = response.take::<Vec<NamedAttrMap>>(0) {
-                return Ok(result);
+    let mut atts = vec![];
+    //需要使用chunk
+    for chunk in refnos.chunks(200) {
+        let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
+        let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+        let sql = format!(r#"select value refno.* from [{pe_keys}] where noun in [{nouns_str}]"#);
+        // println!("query_filter_deep_children_atts sql is {}", &sql);
+        match SUL_DB.query(&sql).with_stats().await {
+            Ok(mut response) => {
+                if let Some((stats, Ok(result))) = response.take::<Vec<NamedAttrMap>>(0) {
+                    // return Ok(result);
+                    atts.extend(result);
+                }
+            }
+            Err(e) => {
+                init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+                return Err(anyhow!(e.to_string()));
             }
         }
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            return Err(anyhow!(e.to_string()));
-        }
     }
-    Ok(vec![])
+    Ok(atts)
 }
 
 pub async fn query_ele_filter_deep_children_pbs(
