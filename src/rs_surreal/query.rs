@@ -465,8 +465,9 @@ pub async fn query_filter_children_atts(refno: RefU64, types: &[&str]) -> anyhow
         )
     };
     let mut response = SUL_DB.query(sql).await?;
-    let atts: Vec<NamedAttrMap> = response.take(0)?;
-    Ok(atts)
+    let value: surrealdb::Value = response.take(0)?;
+    let atts: Vec<surrealdb::sql::Value> = value.into_inner().try_into().unwrap();
+    Ok(atts.into_iter().map(|x| x.into()).collect())
 }
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的EleTreeNode

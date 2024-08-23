@@ -71,10 +71,24 @@ async fn test_query_wtrans_by_refno() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_att_by_refno() {
     crate::init_test_surreal().await;
-    let attmap = rs_surreal::get_named_attmap("17496/172037".into()).await;
+
+    let refno: RefU64 = "17496_292217".into();
+    // let sql = format!(
+    //     r#"select value refno.* from only {} limit 1;"#, refno.to_pe_key()
+    // );
+    // let mut response = SUL_DB
+    //     .query(sql)
+    //     .await.unwrap();
+    //
+    // let o: surrealdb::Value = response.take(0).unwrap();
+    // dbg!(&o);
+    // let named_attmap: NamedAttrMap = o.into_inner().into();
+    // dbg!(&named_attmap);
+
+    let attmap = rs_surreal::get_named_attmap(refno).await;
     dbg!(attmap);
-    let eles = rs_surreal::get_children_pes("24383/74426".into()).await;
-    dbg!(eles);
+    // let eles = rs_surreal::get_children_pes("24383/74426".into()).await;
+    // dbg!(eles);
 }
 
 #[tokio::test]

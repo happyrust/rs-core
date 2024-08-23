@@ -37,6 +37,7 @@ pub async fn query_deep_children_refnos(refno: RefU64) -> anyhow::Result<Vec<Ref
                    from only {pe_key} ) );
             "#
     );
+    // println!("query_deep_children_refnos sql is {}", &sql);
     return match SUL_DB.query(&sql).await {
         Ok(mut response) => match response.take::<Vec<RefU64>>(0) {
             Ok(data) => Ok(data),
@@ -115,6 +116,7 @@ pub async fn query_filter_deep_children_atts(
     nouns: &[&str],
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
     let refnos = query_deep_children_refnos(refno).await?;
+    // dbg!(refnos.len());
     let mut atts = vec![];
     //需要使用chunk
     for chunk in refnos.chunks(200) {
@@ -124,9 +126,10 @@ pub async fn query_filter_deep_children_atts(
         // println!("query_filter_deep_children_atts sql is {}", &sql);
         match SUL_DB.query(&sql).with_stats().await {
             Ok(mut response) => {
-                if let Some((stats, Ok(result))) = response.take::<Vec<NamedAttrMap>>(0) {
-                    // return Ok(result);
-                    atts.extend(result);
+                if let Some((stats, Ok(value))) = response.take::<surrealdb::Value>(0) {
+                    let result: Vec<surrealdb::sql::Value> = value.into_inner().try_into().unwrap();
+                    // dbg!(result.len());
+                    atts.extend(result.into_iter().map(|x| x.into()));
                 }
             }
             Err(e) => {
@@ -269,7 +272,7 @@ pub async fn query_multi_deep_children_filter_inst(
     nouns: &[&str],
     filter: bool,
 ) -> anyhow::Result<HashSet<RefU64>> {
-    if refnos.is_empty(){
+    if refnos.is_empty() {
         return Ok(Default::default());
     }
     let mut result = HashSet::new();
@@ -289,7 +292,7 @@ pub async fn query_multi_deep_children_filter_inst(
                 skip_set.insert(r_noun.to_owned());
                 continue;
             }
-        }else{
+        } else {
             continue;
         }
         //需要先过滤一遍，是否和nouns 的类型有path
@@ -313,6 +316,28 @@ pub async fn query_multi_deep_children_filter_spre(
 }
 
 pub async fn query_filter_ancestors(
+    refno: RefU64,
+    nouns: &[&str],
+) -> anyhow::Result<Vec<RefU64>> {
+    let start_noun = super::get_type_name(refno).await?;
+    // dbg!(&start_noun);
+    let nouns_str = nouns
+        .iter()
+        .map(|s| format!("'{s}'"))
+        .collect::<Vec<_>>()
+        .join(",");
+    let ancestors = super::get_ancestor(refno).await?;
+    let sql = format!(
+        "select value refno from [{}] where refno.TYPE in [{nouns_str}] or refno.TYPEX in [{nouns_str}]",
+        ancestors.iter().map(|x| x.to_pe_key()).join(","),
+    );
+    let mut response = SUL_DB.query(&sql).await?;
+    let reuslt: Vec<RefU64> = response.take(0)?;
+
+    Ok(reuslt)
+}
+
+pub async fn query_filter_ancestors_old(
     refno: RefU64,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<RefU64>> {
@@ -361,7 +386,7 @@ pub async fn get_uda_type_refnos_from_select_refnos(
             .collect::<Vec<String>>()
             .join(",");
         let sql = format!("let $ukey = select value UKEY from UDET where DYUDNA = '{}';
-        select refno,fn::default_name(id) as name,noun,owner,0 as children_count from [{}] where refno.TYPEX in $ukey;",&uda_type,refnos_str);
+        select refno,fn::default_name(id) as name,noun,owner,0 as children_count from [{}] where refno.TYPEX in $ukey;", &uda_type, refnos_str);
         match SUL_DB.query(&sql).await {
             Ok(mut response) => match response.take::<Vec<EleTreeNode>>(1) {
                 Ok(query_r) => {
@@ -408,7 +433,7 @@ async fn test_query_filter_deep_children() -> anyhow::Result<()> {
         ),
         WriteLogger::new(LevelFilter::Error, Config::default(), log_file),
     ])
-    .unwrap();
+        .unwrap();
     let aios_mgr = AiosDBMgr::init_from_db_option().await?;
     let refno = RefU64::from_str("24383/73927").unwrap();
     let equis = query_filter_deep_children(refno, &["EQUI"]).await?;

@@ -5,7 +5,7 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["occ", "gen_model","sql"] #"occ", "gen_model"
+default = [] #"occ", "gen_model", "sql"
 occ = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 manifold = ["dep:manifold-sys"]
@@ -93,7 +93,7 @@ once_cell = "1.18.0"
 urlencoding = "2.1.3"
 chrono = "0.4.31"
 
-surrealdb = { path = "../../surrealdb/lib", default-features = false, features = ["protocol-ws"]}
+surrealdb = { path = "../../surrealdb/sdk", default-features = false, features = ["protocol-ws"]}
 num-traits = "0.2.17"
 regex = "1.10.2"
 petgraph = { version = "0.6.4", features = ["serde-1"] }

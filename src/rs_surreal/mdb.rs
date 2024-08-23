@@ -126,7 +126,7 @@ pub async fn query_type_refnos_by_dbnum(nouns: &[&str], dbnum: u32, has_children
                 format!("select value id from {noun} where REFNO.dbnum={dbnum}")
             }
         };
-
+        // println!("query_type_refnos_by_dbnum sql: {}", sql);
         let mut response = SUL_DB.query(&sql).await?;
         let refnos: Vec<RefU64> = response.take(0)?;
         result.extend(refnos);

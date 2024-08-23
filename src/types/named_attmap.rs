@@ -146,6 +146,21 @@ impl From<SurlValue> for NamedAttrMap {
                                     NamedAttrValue::InvalidType
                                 }
                             }
+                            crate::AttrVal::RefU64Array(_) => {
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
+                                NamedAttrValue::RefU64Array(
+                                    v.into_iter()
+                                        .map(|x| {
+                                            if let SurlValue::Thing(id) = x {
+                                                id.into()
+                                            } else {
+                                                Default::default()
+                                            }
+                                        })
+                                        .collect(),
+                                )
+                            }
                             _ => NamedAttrValue::InvalidType,
                         };
                         map.insert(k.clone(), named_value);
