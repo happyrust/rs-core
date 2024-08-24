@@ -474,7 +474,6 @@ pub fn resolve_overlap_intersection(
     Ok((new_polyline, true))
 }
 
-// if true, still has more intersects
 pub fn resolve_basic_intersection(
     polyline: &Polyline,
     intersect: &PlineBasicIntersect<f64>,
@@ -514,6 +513,9 @@ pub fn resolve_basic_intersection(
                 "first arc, second line, same end point, remove between {} .. {}",
                 next_si_1, next_si_0
             );
+            if next_si_0 < next_si_1 {
+                return Err(anyhow!("Repair intersection wire failed."));
+            }
             new_polyline.vertex_data.drain(next_si_1..next_si_0);
         } else if use_start {
             new_polyline[si_1] = r.updated_start;
@@ -531,6 +533,9 @@ pub fn resolve_basic_intersection(
                 "first arc, second line , use split remove between {} .. {}",
                 next_si_0, si_1
             );
+            if si_1 < next_si_0 {
+                return Err(anyhow!("Repair intersection wire failed."));
+            }
             new_polyline.vertex_data.drain(next_si_0..si_1);
         }
     } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge == 0.0 {
