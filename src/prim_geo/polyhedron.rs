@@ -126,7 +126,7 @@ impl BrepShapeTrait for Polyhedron {
                 if let Ok(wire) = Wire::from_ordered_points(verts.iter().map(|x| x.as_dvec3())) {
                     wires.push(wire);
                 } else {
-                    println!("Failed to create wire from points: {:?}", polygon);
+                    // println!("Failed to create wire from points: {:?}", polygon);
                 }
             }
             if wires.is_empty() {
@@ -135,7 +135,7 @@ impl BrepShapeTrait for Polyhedron {
             if let Ok(face) = Face::from_wires(&wires) {
                 faces.push(face);
             } else {
-                println!("Failed to create face from wire: {:?}", polygon);
+                // println!("Failed to create face from wire: {:?}", polygon);
             }
         }
         let shell = Shell::from_faces(faces)?;
