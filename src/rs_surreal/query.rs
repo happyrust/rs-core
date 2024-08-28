@@ -310,7 +310,7 @@ pub async fn get_named_attmap_with_uda(
     select fn::default_full_name(REFNO) as NAME, * from only (type::thing("pe", $refno)).refno fetch pe;
     select string::concat(':', if UDNA==none || string::len(UDNA)==0 { DYUDNA } else { UDNA }) as u, DFLT as v, UTYP as t from UDA where !UHIDE and (type::thing("pe", $refno)).noun in ELEL;
     -- uda 单独做个查询？
-    select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 { u.DYUDNA } else { u.UDNA }) as u, u.UTYP as t, v from (type::thing("ATT_UDA", $refno)).udas;
+    select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 { u.DYUDNA } else { u.UDNA }) as u, u.UTYP as t, v from (type::thing("ATT_UDA", $refno)).udas where u.UTYP != none;
         "#)
         .bind(("refno", refno.to_string()))
         .await?;
