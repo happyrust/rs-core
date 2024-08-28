@@ -55,9 +55,9 @@ impl From<SurlValue> for NamedAttrMap {
         //需要根据类型来判断转换成相应的类型
         if let surrealdb::sql::Value::Object(o) = s {
             if let Some(SurlValue::Strand(name)) = o.get("TYPE") {
-                let type_name = name.as_str();
+                let type_name = name.to_string().clone();
                 let db_info = get_default_pdms_db_info();
-                if let Some(m) = db_info.named_attr_info_map.get(type_name) {
+                {
                     for (k, v) in o.0 {
                         //refno的页数号也要获取出来
                         if k == "PGNO" {
@@ -71,9 +71,14 @@ impl From<SurlValue> for NamedAttrMap {
                             AttrVal::RefU64Type(Default::default())
                         } else if k == "TYPE" {
                             AttrVal::StringType(Default::default())
-                        } else if let Some(val) = m.get(&k) {
-                            val.default_val.clone()
-                        } else {
+                        } else if let Some(val) =
+                            db_info.named_attr_info_map.get(&type_name).map(|m|
+                                m.get(&k).map(|x| x.value().clone()))
+                                .flatten() {
+                            val.default_val
+                        }
+                        //通过 UDA 去查询这个变量的类型
+                        else {
                             continue;
                         };
                         let named_value = match default_val {

@@ -129,12 +129,12 @@ impl rstar::SelectionFunction<RStarBoundingBox> for &QueryRay {
                     .cast_ray_and_get_normal(&Isometry::identity(), &self.ray, self.toi, self.solid);
             // dbg!(&inter);
             if let Some(ray_inter) = inter
-                && ray_inter.toi <= self.min_dist.get()
+                && ray_inter.time_of_impact <= self.min_dist.get()
             {
-                self.min_dist.set(ray_inter.toi);
+                self.min_dist.set(ray_inter.time_of_impact);
 
                 //找到更近的，清空之前的
-                if abs_diff_ne!(ray_inter.toi, self.toi) {
+                if abs_diff_ne!(ray_inter.time_of_impact, self.toi) {
                     self.min_refnos.borrow_mut().clear()
                 }
                 self.min_refnos.borrow_mut().insert(bbox.refno);

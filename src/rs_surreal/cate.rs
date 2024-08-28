@@ -58,7 +58,7 @@ pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
         if $a == none {{
             for $table in [{}] {{
                 for $e in (select REFNO, SPRE from type::table($table)) {{
-                    let $id = type::thing("cate_relate", meta::id($e.REFNO));
+                    let $id = type::thing("cate_relate", record::id($e.REFNO));
                     if $e.SPRE != NONE {{
                         relate ($e.REFNO)->$id->($e.SPRE);
                     }}
@@ -66,7 +66,7 @@ pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
             }};
 
             for $e in (select REFNO, CATR from type::table("SPCO")) {{
-                    let $id = type::thing("cate_relate", meta::id($e.REFNO));
+                    let $id = type::thing("cate_relate", record::id($e.REFNO));
                     if $e.CATR != NONE {{
                         relate ($e.REFNO)->$id->($e.CATR);
                     }}

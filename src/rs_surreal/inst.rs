@@ -28,7 +28,7 @@ pub async fn query_tubi_insts_by_brans(
         .join(",");
     let sql = format!(
         r#"
-             select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
+             select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash
                 from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
              "#,
         pes
@@ -49,7 +49,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<T
     let sql = format!(
         r#"
         array::group(array::complement(select value
-        (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, meta::id(out) as geo_hash
+        (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
                 from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
              "#,
@@ -117,7 +117,7 @@ pub async fn query_insts(
     let sql = format!(
         r#"
     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if ( (in<-neg_relate)[0] != none || (in<-ngmr_relate)[0] != none ) && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts
+            if ( (in<-neg_relate)[0] != none || (in<-ngmr_relate)[0] != none ) && $parent.booled {{ [{{ "geo_hash": record::id(in.id) }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts
             from {inst_keys} where aabb.d != none
             "#
     );
@@ -145,7 +145,7 @@ pub async fn query_history_insts(
     let sql = format!(
         r#"
     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if (in<-neg_relate)[0] != none && $parent.booled {{ [{{ "geo_hash": meta::id(in.id) }}] }} else {{ (select trans.d as transform, meta::id(out) as geo_hash from out->geo_relate where visible && trans.d != none && geo_type='Pos')  }} as insts
+            if (in<-neg_relate)[0] != none && $parent.booled {{ [{{ "geo_hash": record::id(in.id) }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && trans.d != none && geo_type='Pos')  }} as insts
             from {history_inst_keys} where aabb.d != none
             "#
     );

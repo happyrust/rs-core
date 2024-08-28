@@ -22,13 +22,13 @@ strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25"
 deku = "0.16.0"
 smol_str = { version = "0.2.0", features = ["serde"] }
-glam = { version = "0.27.0", features = ["serde", "rkyv"]}
+glam = { version = "0.28.0", features = ["serde", "rkyv"]}
 id_tree = { path = "../id-tree", features = ["serde_support"] }
 dashmap = { version = "5.5.3", features = ["serde"] }
-hexasphere = "12.0.0"
+hexasphere = "14.1.0"
 anyhow = "1.0.57"
 lyon = "1.0.0"
-nalgebra = { path="../nalgebra", features = ["serde", "rkyv", "glam027", "convert-glam027"] }
+nalgebra = { path="../nalgebra", features = ["serde", "rkyv", "glam028", "convert-glam028"] }
 parry3d = { path="../parry/crates/parry3d", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 parry2d = { path="../parry/crates/parry2d", features = ["serde-serialize", "rkyv", "rkyv-serialize"] }
 approx = "0.5.1"

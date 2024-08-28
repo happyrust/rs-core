@@ -21,6 +21,7 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::collections::{BTreeMap, HashMap};
 use surrealdb::engine::any::Any;
+use surrealdb::sql::Value;
 use surrealdb::Surreal;
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -306,47 +307,46 @@ pub async fn get_named_attmap_with_uda(
     let mut response = SUL_DB
         .query(r#"
             --通过传递refno，查询属性值
-    -- select fn::default_full_name(REFNO), * from only (type::thing("pe", $refno)).refno;
     select fn::default_full_name(REFNO) as NAME, * from only (type::thing("pe", $refno)).refno fetch pe;
-    select string::concat(string::concat(string::concat(':', if UDNA==none || string::len(UDNA)==0 { DYUDNA } else { UDNA }), '::'), UTYP) as u, DFLT as v from UDA where !UHIDE and (type::thing("pe", $refno)).noun in ELEL;
+    select string::concat(':', if UDNA==none || string::len(UDNA)==0 { DYUDNA } else { UDNA }) as u, DFLT as v, UTYP as t from UDA where !UHIDE and (type::thing("pe", $refno)).noun in ELEL;
     -- uda 单独做个查询？
-    select if  u.UDNA==none || string::len( u.UDNA)==0 { u.DYUDNA } else { u.UDNA } as u, v from (type::thing("ATT_UDA", $refno)).udas;
+    select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 { u.DYUDNA } else { u.UDNA }) as u, u.UTYP as t, v from (type::thing("ATT_UDA", $refno)).udas;
         "#)
         .bind(("refno", refno.to_string()))
         .await?;
     //获得uda的 map
     let o: surrealdb::Value = response.take(0)?;
     let mut named_attmap: NamedAttrMap = o.into_inner().into();
-    let uda_kvs: Vec<NamedAttrMap> = response.take(1)?;
+    let o: surrealdb::Value = response.take(1)?;
+    let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
+    let uda_kvs: Vec<surrealdb::sql::Object> = array.into_iter().map(|x| x.try_into().unwrap()).collect();
     // dbg!(&uda_kvs);
     for map in uda_kvs {
-        let k = map.get("u").unwrap().get_val_as_string();
-        let splits = k.split("::").collect::<Vec<_>>();
-        let uname = splits[0];
-        if uname == ":NONE" || uname == ":unset" || uname.is_empty() {
+        let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
+        let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
+        if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }
-        let utype = splits[1];
-        // dbg!((uname, utype));
+        //需要加入一个转换函数，将v转换成对应的类型
         let mut v = map.get("v").unwrap().clone();
-        if matches!(&v, NamedAttrValue::InvalidType) {
-            if default_unset {
-                v = NamedAttrValue::InvalidType;
-            } else {
-                v = NamedAttrValue::get_default_val(utype);
-            }
-        }
-        named_attmap.insert(uname.to_owned(), v);
+        let att_value = NamedAttrValue::from((utype.as_str(), v));
+        named_attmap.insert(uname, att_value);
     }
-    let overwrite_kvs: Vec<NamedAttrMap> = response.take(2)?;
-    // dbg!(&overite_kvs);
+    let o: surrealdb::Value = response.take(2)?;
+    let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
+    let overwrite_kvs: Vec<surrealdb::sql::Object> = array.into_iter().map(|x| x.try_into().unwrap()).collect();
+    // dbg!(&overwrite_kvs);
     for map in overwrite_kvs {
-        let k = map.get("u").unwrap().get_val_as_string();
-        if k == "NONE" || k == "unset" {
+        let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
+        let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
+        if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }
-        let v = map.get("v").unwrap().clone();
-        named_attmap.insert(format!(":{k}"), v);
+        //需要加入一个转换函数，将v转换成对应的类型
+        let mut v = map.get("v").unwrap().clone();
+        let att_value = NamedAttrValue::from((utype.as_str(), v));
+        // dbg!(&att_value);
+        named_attmap.insert(uname, att_value);
     }
     Ok(named_attmap)
 }
@@ -670,7 +670,7 @@ pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<
     let dbnums = query_mdb_db_nums(module).await?;
     let mut response = SUL_DB
         .query(format!(
-            r#"select value meta::id(id) from {} where dbnum in [{}]"#,
+            r#"select value record::id(id) from {} where dbnum in [{}]"#,
             noun.to_uppercase(),
             dbnums.iter().map(|x| x.to_string()).join(",")
         ))

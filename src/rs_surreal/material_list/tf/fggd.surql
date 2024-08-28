@@ -14,7 +14,7 @@ id as refno, // 参考号
 //owner.name,
 string::slice(owner.name, string::len(owner.name) - 4) as bran_seg_code, // 管段编号
 string::concat(string::split(owner.name,'-')[2],string::split(owner.name,'-')[5],
-// array::first(array::first((select value (select value v from only udas.* where u.NAME=='/H-SECTCODE' limit 1) from type::thing("ATT_UDA", meta::id(id)))))
+// array::first(array::first((select value (select value v from only udas.* where u.NAME=='/H-SECTCODE' limit 1) from type::thing("ATT_UDA", record::id(id)))))
 ) as bran_seg_code_split, // 管段编号
 array::first(fn::hvac_material($this.id)).r as mat,// 材质
 string::concat(array::at(string::split(owner.name,'-'),4),'P') as pressure_level, // 压力等级

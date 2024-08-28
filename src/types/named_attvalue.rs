@@ -7,9 +7,9 @@ use glam::{bool, f32, f64, i32, Vec3};
 use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 #[cfg(feature = "sea-orm")]
 use sea_query::Value as SeaValue;
+use serde::Deserializer;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use serde::Deserializer;
 
 ///新的属性数据结构
 #[derive(
@@ -43,14 +43,15 @@ pub enum NamedAttrValue {
     LongType(i64),
 }
 
-use serde::de::{self, Visitor, SeqAccess, MapAccess, EnumAccess};
+use serde::de::{self, EnumAccess, MapAccess, SeqAccess, Visitor};
 use std::fmt;
 use std::vec::Vec;
+use surrealdb::sql::Thing;
 
 impl<'de> Deserialize<'de> for NamedAttrValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: Deserializer<'de>
+        D: Deserializer<'de>,
     {
         struct NamedAttrValueVisitor;
 
@@ -170,7 +171,6 @@ impl<'de> Deserialize<'de> for NamedAttrValue {
             where
                 M: MapAccess<'de>,
             {
-
                 let value = RefU64::deserialize(de::value::MapAccessDeserializer::new(map))?;
                 Ok(NamedAttrValue::RefU64Type(value))
             }
@@ -202,6 +202,62 @@ impl Into<Value> for NamedAttrValue {
 
             _ => Value::String(None),
             // NamedAttrValue::InvalidType => {}
+        }
+    }
+}
+
+impl From<(&str, surrealdb::sql::Value)> for NamedAttrValue {
+    fn from(tuple: (&str, surrealdb::sql::Value)) -> Self {
+        let (tn, value) = tuple;
+        match value {
+            surrealdb::sql::Value::Number(val) => match tn {
+                "REAL" => NamedAttrValue::F32Type(val.as_float() as _),
+                _ => NamedAttrValue::IntegerType(val.as_int() as _),
+            },
+            surrealdb::sql::Value::Bool(val) => NamedAttrValue::BoolType(val),
+            surrealdb::sql::Value::Strand(val) => NamedAttrValue::StringType(val.as_string()),
+            surrealdb::sql::Value::Array(val) => match tn {
+                "REAL" | "DIR" | "POS" => NamedAttrValue::F32VecType(
+                    val.into_iter()
+                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_float() as f32)
+                        .collect(),
+                ),
+                "INT" => NamedAttrValue::IntArrayType(
+                    val.into_iter()
+                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_int() as _)
+                        .collect(),
+                ),
+                "BOOL" => NamedAttrValue::BoolArrayType(
+                    val.into_iter()
+                        .map(|x| bool::try_from(x).unwrap())
+                        .collect(),
+                ),
+                "TEXT" => NamedAttrValue::StringArrayType(
+                    val.into_iter()
+                        .map(|x| String::try_from(x).unwrap())
+                        .collect(),
+                ),
+
+                "REF" => NamedAttrValue::RefU64Array(
+                    val.into_iter()
+                        .map(|x| RefU64::from(x.record().unwrap()))
+                        .collect::<Vec<_>>()
+                ),
+
+                _ => NamedAttrValue::InvalidType,
+            },
+            surrealdb::sql::Value::Thing(val) => {
+               NamedAttrValue::RefU64Type(RefU64::from(val))
+            },
+            surrealdb::sql::Value::Object(val) => {
+                if let Some((key, v)) = val.into_iter().next(){
+                    (tn, v).into()
+                }else{
+                    NamedAttrValue::InvalidType
+                }
+
+            }
+            _ => NamedAttrValue::InvalidType,
         }
     }
 }
@@ -382,12 +438,10 @@ impl Into<serde_json::Value> for NamedAttrValue {
     fn into(self) -> serde_json::Value {
         match self {
             NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
-            NamedAttrValue::F32Type(d) => {
-                serde_json::Value::Number(
-                    serde_json::Number::from_f64(d as _)
-                        .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
-                )
-            }
+            NamedAttrValue::F32Type(d) => serde_json::Value::Number(
+                serde_json::Number::from_f64(d as _)
+                    .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
+            ),
             NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
             NamedAttrValue::StringType(s)
             | NamedAttrValue::WordType(s)
@@ -412,9 +466,7 @@ impl Into<serde_json::Value> for NamedAttrValue {
             NamedAttrValue::IntArrayType(d) => {
                 serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
             }
-            NamedAttrValue::RefU64Type(d) => {
-                d.to_string().into()
-            }
+            NamedAttrValue::RefU64Type(d) => d.to_string().into(),
             _ => serde_json::Value::Null,
         }
     }

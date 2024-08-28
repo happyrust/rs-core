@@ -171,7 +171,7 @@ from $refnos
 async fn test_query_attmap() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
 
-    let refno = "24381/48635".into();
+    let refno = "9304/2".into();
     let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
 

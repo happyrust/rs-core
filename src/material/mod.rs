@@ -170,8 +170,8 @@ pub async fn get_refnos_belong_major(
         if zone.is_empty() { continue; };
         let zone = zone[0];
         // 找zone和site对应的专业
-        let sql = format!("select value major from type::thing('pdms_major',meta::id({}));
-        select value major from type::thing('pdms_major',meta::id((select value ->pe_owner.out.refno from {})[0][0]));", zone.to_pe_key(), zone.to_pe_key());
+        let sql = format!("select value major from type::thing('pdms_major',record::id({}));
+        select value major from type::thing('pdms_major',record::id((select value ->pe_owner.out.refno from {})[0][0]));", zone.to_pe_key(), zone.to_pe_key());
         let Ok(mut response) = SUL_DB.query(sql).await else { continue; };
         let zone_major: Vec<String> = response.take(0)?;
         let site_major: Vec<String> = response.take(1)?;

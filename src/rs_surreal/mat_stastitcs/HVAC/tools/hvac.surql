@@ -19,7 +19,7 @@ DEFINE FUNCTION fn::hvac_system($pe: record){
 
 
 DEFINE FUNCTION fn::hvac_number($pe: record){
-    let $v = (select value <int>v from type::thing('ATT_UDA', meta::id($pe)).udas where u.NAME='/H-SECTCODE')[0];
+    let $v = (select value <int>v from type::thing('ATT_UDA', record::id($pe)).udas where u.NAME='/H-SECTCODE')[0];
     return if $v == none {
         return "unset";
     } else {

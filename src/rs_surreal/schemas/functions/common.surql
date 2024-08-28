@@ -53,7 +53,7 @@ DEFINE FUNCTION fn::backup_atts_and_pes(
         let $b = (select * omit id from $pe.refno)[0];
         let $c = (select * omit id, in from $pe->inst_relate)[0];
         if $a != none {
-            let $id = string::concat(meta::id($a.refno), '_', $a.sesno);
+            let $id = string::concat(record::id($a.refno), '_', $a.sesno);
             let $att_id = type::thing(string::concat($a.noun, '_history'), $id);
             let $pe_id = type::thing('pe_history', $id);
             update $pe_id content $a;
@@ -63,7 +63,7 @@ DEFINE FUNCTION fn::backup_atts_and_pes(
             //备份 inst_relate
             if $c.out != none && ($pe_id->inst_relate_history == none || array::len($pe_id->inst_relate_history) == 0) {
                 relate $pe_id->inst_relate_history->($c.out) content $c;
-                delete type::thing('inst_relate', meta::id($a.refno));
+                delete type::thing('inst_relate', record::id($a.refno));
             };
 
             //备份 tubi_relate, 先暂时只删除，备份需要赋予版本号才行
