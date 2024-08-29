@@ -121,9 +121,9 @@ pub async fn query_insts(
             from {inst_keys} where aabb.d != none
             "#
     );
-    // println!("Query insts: {}", &sql);
+    println!("Query insts: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
-    let mut geom_insts: Vec<GeomInstQuery> = response.take(0).unwrap();
+    let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
 
     Ok(geom_insts)
 }

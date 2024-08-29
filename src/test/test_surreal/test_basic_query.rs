@@ -4,6 +4,7 @@ use crate::{rs_surreal, NamedAttrMap, RefU64};
 use glam::Vec3;
 use std::sync::Arc;
 use surrealdb::sql::Thing;
+use crate::parsed_data::CateAxisParam;
 
 #[tokio::test]
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
@@ -175,8 +176,28 @@ async fn test_query_attmap() -> anyhow::Result<()> {
     let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
 
+    let children = rs_surreal::get_children_named_attmaps(refno).await.unwrap();
+    dbg!(&children);
+
     // let world = rs_surreal::get_world_refno("/ALL".into()).await.unwrap();
     // dbg!(world);
+
+    //select value ptset from inst_info limit 1
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_query_ptset() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    use std::collections::BTreeMap;
+    let sql = "select value ptset from inst_info limit 1";
+    let mut response = SUL_DB.query(sql).await?;
+    dbg!(&response);
+    let ptset: Option<BTreeMap<String, CateAxisParam>> = response.take(0).unwrap();
+    dbg!(ptset);
+
+    //select value ptset from inst_info limit 1
 
     Ok(())
 }

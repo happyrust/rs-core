@@ -387,15 +387,20 @@ pub async fn get_cat_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
 
 #[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<NamedAttrMap>> {
+    let sql = format!(
+        r#"select value in.refno.* from {}<-pe_owner where in.id!=none"#,
+        refno.to_pe_key()
+    );
+    println!("get_children_named_attmaps sql is {}", &sql);
     let mut response = SUL_DB
         .query(
-            "select value in.refno.* from (type::thing('pe', $refno))<-pe_owner where in.id!=none",
+            sql
         )
-        .bind(("refno", refno.to_string()))
         .await?;
     let o: surrealdb::Value = response.take(0)?;
     // dbg!(&o);
     let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
+    // dbg!(&os);
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
     Ok(named_attmaps)
 }
@@ -565,15 +570,22 @@ pub async fn query_group_by_cata_hash(
             r#"
             let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}]);
             select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
-                 type::thing('inst_info', cata_hash).ptset] as k, array::group(id) as v from $a where noun not in ["BRAN", "HANG"]  group by k;
+                    type::thing('inst_info', cata_hash).ptset] as k,
+                 array::group(id) as v
+            from $a where noun not in ["BRAN", "HANG"]  group by k;
         "#,
             chunk.join(",")
         );
+        println!("query_group_by_cata_hash sql is {}", &sql);
         let mut response = SUL_DB
             .query(&sql)
             .await?;
-        let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
-            response.take(1)?;
+        // let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
+        //     response.take(1).unwrap();
+        //TODO surreal bug, 在 surreal 存储的 map，不知道咋变成了 string
+        let d: Vec<KV<(String, bool, Option<BTreeMap<String, CateAxisParam>>), Vec<RefU64>>> =
+            response.take(1).unwrap();
+        // dbg!(&d);
         let map = d
             .into_iter()
             .map(
@@ -587,7 +599,7 @@ pub async fn query_group_by_cata_hash(
                             cata_hash,
                             group_refnos,
                             exist_inst,
-                            ptset,
+                            ptset: ptset.map(|x| x.into_iter().map(|(k, v)| (k.parse().unwrap(), v)).collect()),
                         },
                     )
                 },
@@ -648,21 +660,29 @@ pub async fn query_single_by_paths(
         };
         ps.push(str);
     }
-    let select_fieds = if fields.is_empty() {
-        "*".to_string()
-    } else {
-        fields.join(",")
-    };
+    // let select_fieds = if fields.is_empty() {
+    //     "*".to_string()
+    // } else {
+    //     fields.join(",")
+    // };
     let sql = format!(
-        r#"(select {} from (select value [{}] from only type::thing("pe", $refno)) where id != none)[0]"#,
-        select_fieds,
-        ps.join(",")
+        r#"(select value refno.* from (select value [{}] from only {}) where id != none)[0]"#,
+        ps.join(","),
+        refno.to_pe_key()
     );
     // #[cfg(debug_assertions)]
-    // println!("Sql is {}", sql);
-    let mut response = SUL_DB.query(sql).bind(("refno", refno.to_string())).await?;
-    let r: Option<NamedAttrMap> = response.take(0)?;
-    Ok(r.unwrap_or_default())
+    // println!("query_single_by_paths Sql is {}", sql);
+    let mut response = SUL_DB.query(sql).await?;
+    let r: surrealdb::Value = response.take(0)?;
+    // dbg!(&r);
+    let mut map: NamedAttrMap = r.into_inner().into();
+    // dbg!(&map);
+    //只保留 fileds 里的数据
+    if !fields.is_empty() {
+        map.retain(|k, _| fields.contains(&k.as_str()));
+    }
+    // dbg!(&map);
+    Ok(map)
 }
 
 ///通过类型过滤所有的参考号
