@@ -13,11 +13,22 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
 
+const FIELDS: [&str; 9] = [
+    "参考号",
+    "设备位号",
+    "设备名称",
+    "所属厂房的编号",
+    "房间号",
+    "全局坐标X",
+    "全局坐标Y",
+    "全局坐标Z",
+    "设备型号",
+];
+
 /// 通信专业 通信设备
 pub async fn save_tx_material_equi(
     refno: RefU64,
     db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) {
     match get_tx_txsb_list_material(db.clone(), vec![refno]).await {
@@ -35,31 +46,20 @@ pub async fn save_tx_material_equi(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
                     let table_name = "通信专业_通信系统".to_string();
-                    let filed = vec![
-                        "参考号".to_string(),
-                        "设备位号".to_string(),
-                        "设备名称".to_string(),
-                        "所属厂房的编号".to_string(),
-                        "房间号".to_string(),
-                        "全局坐标X".to_string(),
-                        "全局坐标Y".to_string(),
-                        "全局坐标Z".to_string(),
-                        "设备型号".to_string(),
-                    ];
-                    match create_table_sql(&pool, &table_name, &filed).await {
+                    match create_table_sql(&pool, &table_name, &FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
                                 let data = r
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &table_name, &filed, data).await {
+                                match save_material_value(&pool, &table_name, &FIELDS, data).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());

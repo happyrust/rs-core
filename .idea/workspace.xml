@@ -29,39 +29,24 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="add face filter">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 增加了测试函数 `test_query_ptset` 和相关的查询逻辑；&#10;(2) 修改了 `get_children_named_attmaps` 的 SQL 查询；&#10;(3) 修复了 `query_group_by_cata_hash` 返回结果中 map 键值类型的问题；&#10;(4) 更新了 `query_single_by_paths` 的 SQL 查询逻辑；&#10;(5) 调整了多余的注释和调试信息；&#10;(6) 修复了 `Polyline` 处理过程中节点过滤及相交校验逻辑；&#10;(7) 优化了生成 `Polyline` 的多边形布尔运算及相关异常处理；&#10;(8) 修正了 `Polyline` 相交处理中的浮点数比较逻辑。">
+      <change afterPath="$PROJECT_DIR$/src/test/test_material/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/material/dq.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/dq.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/gps.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/gps.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/gy.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/gy.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/material/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/cate.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/cate.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dzcl.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dzcl.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/fn_get_world_pos.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/fn_get_world_pos.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_bend.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_bend.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_flex.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_flex.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_ofst.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_ofst.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_tape.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_tape.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/bolt.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/bolt.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/washer.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/washer.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/uda.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/uda.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/nt.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/nt.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/sb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/sb.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/tf.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/tf.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/tx.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/tx.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/yk.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/yk.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_uda.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_uda.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -180,6 +165,8 @@
     "Cargo.Test test::test_expression::test_parse_axis_expression.executor": "Run",
     "Cargo.Test test::test_expression::test_parse_complex_expression.executor": "Run",
     "Cargo.Test test::test_expression::test_parse_expression.executor": "Run",
+    "Cargo.Test test::test_material::test_gen_ms.executor": "Run",
+    "Cargo.Test test::test_material::test_perform_multiplication_with_none.executor": "Run",
     "Cargo.Test test::test_parse_dir::test_1.executor": "Run",
     "Cargo.Test test::test_parse_dir::test_parse_dir.executor": "Run",
     "Cargo.Test test::test_parse_dir::test_parse_to_dir.executor": "Run",
@@ -201,6 +188,7 @@
     "Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_index_of_parent.executor": "Run",
     "Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_ptset.executor": "Run",
     "Cargo.Test test::test_surreal::test_geom::test_query_inst_refnos.executor": "Run",
     "Cargo.Test test::test_surreal::test_geom::test_query_instance.executor": "Run",
     "Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor": "Run",
@@ -319,7 +307,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap">
+  <component name="RunManager" selected="Cargo.Test test::test_material::test_perform_multiplication_with_none">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -346,8 +334,25 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_att_by_refno" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_att_by_refno -- --exact" />
+    <configuration name="Test test::test_material::test_gen_ms" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_material::test_gen_ms -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test::test_material::test_perform_multiplication_with_none" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_material::test_perform_multiplication_with_none -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -380,25 +385,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_pe_by_refno" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_pe_by_refno -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI -- --exact" />
+    <configuration name="Test test::test_surreal::test_basic_query::test_query_ptset" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_ptset -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -451,19 +439,19 @@
     <list>
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
+      <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
       <item itemvalue="Cargo.Test test::test_surreal::test_uda::test_query_uda_name" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
+        <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
         <item itemvalue="Cargo.Test test::test_surreal::test_uda::test_query_uda_name" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" />
       </list>
     </recent_temporary>
   </component>
@@ -946,7 +934,10 @@
       <workItem from="1724575616877" duration="2808000" />
       <workItem from="1724647055097" duration="1048000" />
       <workItem from="1724648555910" duration="8877000" />
-      <workItem from="1724867326224" duration="2940000" />
+      <workItem from="1724867326224" duration="4376000" />
+      <workItem from="1724917567677" duration="2744000" />
+      <workItem from="1724926086454" duration="33000" />
+      <workItem from="1725005605252" duration="6876000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1291,7 +1282,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="380" />
+    <option name="localTasksCounter" value="383" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1345,9 +1336,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="(1) 增加了对spre和catr类型过滤的处理函数query_deep_children_refnos_filter_spre和query_multi_deep_children_filter_spre。&#10;(2) 增加新的测试函数test_query_transform_TMPL和test_query_deep_children_spre。&#10;(3) 更新了src/consts.rs文件中的const常量，并在ATT列表中加入了新的常量ATT_BANG。&#10;(4) 调整了DbOption.toml文件中的同步文件配置和项目设置参数。&#10;(5) 修复了对SCylinder生成occ_shape的处理，移除多余步骤。" />
-    <MESSAGE value="(1) 修改了test_spatial.rs测试文件，增加了两个测试转换的用例&#10;(2) 在test_basic_query.rs测试文件中，增加了一个测试父节点索引的用例&#10;(3) 在query.rs文件中，添加了一个新的方法，用于获取父节点下的index&#10;(4) 在spatial.rs文件中，对于处理特殊情况的code部分进行了修正和扩充&#10;(5) 修改了数据库查询的部分代码，增加了条件筛选功能。" />
-    <MESSAGE value="(1) 优化了src/types/whole_attmap.rs中refine函数的逻辑，使用临时remove_list存储待移除的键，提高了效率；&#10;(2) 在src/test/mod.rs中增加了test_parse_dir模块的调用；&#10;(3) 修正了src/data_state.rs，src/virtual_hole.rs，src/three_dimensional_review.rs，src/water_calculation.rs中多个结构体的派生属性，移除了Component属性；&#10;(4) 新增了src/test/test_parse_dir.rs测试模块；&#10;(5) 提供了新的解析坐标的方式，并添加相应测试用例；&#10;(6) 修改了all_attr_info.json中部分属性的类型定义；&#10;(7) 对src/rs_surreal/spatial.rs中的矩阵计" />
     <MESSAGE value="(1) 优化了src/types/whole_attmap.rs中refine函数的逻辑，使用临时remove_list存储待移除的键，提高了效率；&#10;(2) 在src/test/mod.rs中增加了test_parse_dir模块的调用；&#10;(3) 修正了src/data_state.rs，src/virtual_hole.rs，src/three_dimensional_review.rs，src/water_calculation.rs中多个结构体的派生属性，移除了Component属性；&#10;(4) 新增了src/test/test_parse_dir.rs测试模块；&#10;(5) 提供了新的解析坐标的方式，并添加相应测试用例；&#10;(6) 修改了all_attr_info.json中部分属性的类型定义；&#10;(7) 对src/rs_surreal/spatial.rs中的矩阵计是GENSEC的情况提供特殊处理，增加了需要bangle转换的判断等；&#10;(8) 在src/tool/mod.rs中引入了新的解析模块parse_to_dir；&#10;(9) 新增了src/tool/parse_to_dir.rs，提供了新的解析坐标的函数；&#10;(10) 在src/tool/direction_parse.rs中的parse_expr_to_dir函数中添加了新的解析方式。" />
     <MESSAGE value="Refactored calculation of rotation angle in sweep_solid.rs and tubing.rs. Modified the round of vertices in manifold.rs. Updated testing scenarios in test_parse_dir.rs, and test_spatial.rs. Adjusted SQL query related to visible fields in inst.rs." />
     <MESSAGE value="change version to use pgno" />
@@ -1370,7 +1358,10 @@
     <MESSAGE value="fix wire" />
     <MESSAGE value="uncomment" />
     <MESSAGE value="add face filter" />
-    <option name="LAST_COMMIT_MESSAGE" value="add face filter" />
+    <MESSAGE value="(1) 修改 `acceleration_tree.rs` 中字段名以增加可读性。&#10;&#10;(2) 将 `hvac_mat_id` 调用中的 `meta::id` 修改为 `record::id`，提高一致性：&#10;&#10;    * 在 `washer.surql`。&#10;    * 在 `hvac.surql` 和 `hvac_old.surql`。&#10;    * 在 `fggd_bend.surql`，`fn_get_world_pos.surql` 和其他 HVAC 相关工具。&#10;&#10;(3) 修改 `test_basic_query.rs` 中的测试数据以适应新需求。&#10;&#10;(4) 增加测试逻辑在 `test_uda.rs` 中，以验证新的 UDA 功能。&#10;&#10;(5) 更新 `uda.rs` 中增加通用方法 `get_uda_prop_as_string` 并使用此方法获取 &quot;UDNA&quot; 和 &quot;UTYP&quot; 属性。&#10;&#10;(6) 更新 `.idea/workspace.xml` 以包含最新的项目配置。" />
+    <MESSAGE value="(1) 修改了&quot;ATT_UDA&quot;查询语句，增加了where条件，排除了UTYP为none的情况。" />
+    <MESSAGE value="(1) 增加了测试函数 `test_query_ptset` 和相关的查询逻辑；&#10;(2) 修改了 `get_children_named_attmaps` 的 SQL 查询；&#10;(3) 修复了 `query_group_by_cata_hash` 返回结果中 map 键值类型的问题；&#10;(4) 更新了 `query_single_by_paths` 的 SQL 查询逻辑；&#10;(5) 调整了多余的注释和调试信息；&#10;(6) 修复了 `Polyline` 处理过程中节点过滤及相交校验逻辑；&#10;(7) 优化了生成 `Polyline` 的多边形布尔运算及相关异常处理；&#10;(8) 修正了 `Polyline` 相交处理中的浮点数比较逻辑。" />
+    <option name="LAST_COMMIT_MESSAGE" value="(1) 增加了测试函数 `test_query_ptset` 和相关的查询逻辑；&#10;(2) 修改了 `get_children_named_attmaps` 的 SQL 查询；&#10;(3) 修复了 `query_group_by_cata_hash` 返回结果中 map 键值类型的问题；&#10;(4) 更新了 `query_single_by_paths` 的 SQL 查询逻辑；&#10;(5) 调整了多余的注释和调试信息；&#10;(6) 修复了 `Polyline` 处理过程中节点过滤及相交校验逻辑；&#10;(7) 优化了生成 `Polyline` 的多边形布尔运算及相关异常处理；&#10;(8) 修正了 `Polyline` 相交处理中的浮点数比较逻辑。" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

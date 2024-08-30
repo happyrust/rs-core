@@ -8,11 +8,7 @@ use crate::room::algorithm::{query_all_room_name, RoomInfo};
 use crate::table_const::{PBS_OWNER, PBS_TABLE, PDMS_MAJOR};
 use crate::tool::hash_tool::{hash_str, hash_two_str};
 use crate::types::*;
-use crate::{
-    get_mdb_world_site_pes, insert_into_table, insert_into_table_with_chunks,
-    insert_pe_into_table_with_chunks, insert_relate_to_table, query_ele_filter_deep_children,
-    query_filter_deep_children, DBType, SUL_DB,
-};
+use crate::{get_db_option, get_mdb_world_site_pes, insert_into_table, insert_into_table_with_chunks, insert_pe_into_table_with_chunks, insert_relate_to_table, query_ele_filter_deep_children, query_filter_deep_children, rs_surreal, DBType, SUL_DB};
 use anyhow::anyhow;
 use bevy_ecs::system::Resource;
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
@@ -119,6 +115,76 @@ pub enum SaveDatabaseChannelMsg {
     // 结束
     Quit,
 }
+
+/// 设置site和zone所属的专业
+pub async fn gen_pdms_major_table() -> anyhow::Result<()> {
+    // 读取专业配置表
+    let major_codes = get_room_level_from_excel_refactor().await?.name_code_map;
+    // 找到所有的site和zone
+    let mut site_children_map = HashMap::new();
+    let db_option = get_db_option();
+    let mdb = db_option.mdb_name();
+    let sites =
+        get_mdb_world_site_pes(mdb, DBType::DESI).await?;
+    let mut site_name_map = HashMap::new();
+    for site in sites {
+        let Ok(children) = rs_surreal::get_children_pes(site.refno).await else {
+            continue;
+        };
+        for child in children {
+            if child.noun != "ZONE".to_string() {
+                continue;
+            };
+            site_children_map
+                .entry(site.refno)
+                .or_insert_with(Vec::new)
+                .push(child);
+        }
+        site_name_map.entry(site.refno).or_insert(site.name);
+    }
+    // 给site和zone赋上对应的code
+    let mut result = Vec::new();
+    for codes in major_codes.into_iter().rev() {
+        // 给site赋值
+        for site in site_children_map.keys() {
+            let Some(site_name) = site_name_map.get(site) else {
+                continue;
+            };
+            if site_name.contains(&codes.site_name) {
+                // let mut zone_majors = HashMap::new();
+                result.push(PbsMajorValue {
+                    id: *site,
+                    noun: "SITE".to_string(),
+                    major: codes.site_code.clone(),
+                });
+                // 给zone赋值
+                for (major_name, major_code) in &codes.zone_map {
+                    for zone in site_children_map.get(&site).unwrap() {
+                        if zone.name.contains(major_name) {
+                            // zone_majors.entry(zone.refno).or_insert(major_code.clone());
+                            result.push(PbsMajorValue {
+                                id: zone.refno,
+                                noun: zone.noun.clone(),
+                                major: major_code.clone(),
+                            })
+                        }
+                    }
+                }
+                // 方便测试查看使用
+                // result.push(PdmsMajor {
+                //     site: *site,
+                //     major: codes.site_code.clone(),
+                //     zone: zone_majors,
+                // })
+            }
+        }
+    }
+    // 将分配好的专业代码保存到数据库中
+    let json = serde_json::to_string(&result)?;
+    insert_into_table(&SUL_DB, PDMS_MAJOR, &json).await?;
+    Ok(())
+}
+
 
 /// 设置site和zone所属的专业
 pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {

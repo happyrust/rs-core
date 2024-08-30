@@ -12,11 +12,20 @@ use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
 
+pub const FIELDS: [&str; 5] = [
+    "参考号",
+    "设备位号",
+    "所在房间",
+    "轨道长度",
+    "安装标高",
+];
+
+pub const TABLE: &'static str = "设备专业_大宗材料";
+
 /// 给排水专业 大宗材料
 pub async fn save_sb_material_dzcl(
     refno: RefU64,
     db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
     handles: &mut Vec<JoinHandle<()>>,
 ) {
     match get_sb_dzcl_list_material(db.clone(), vec![refno]).await {
@@ -34,27 +43,19 @@ pub async fn save_sb_material_dzcl(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
-                    let table_name = "设备专业_大宗材料".to_string();
-                    let filed = vec![
-                        "参考号".to_string(),
-                        "设备位号".to_string(),
-                        "所在房间".to_string(),
-                        "轨道长度".to_string(),
-                        "安装标高".to_string(),
-                    ];
-                    match create_table_sql(&pool, &table_name, &filed).await {
+                    match create_table_sql(&pool, TABLE, &FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
                                 let data = r
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &table_name, &filed, data).await {
+                                match save_material_value(&pool, TABLE, &FIELDS, data).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());

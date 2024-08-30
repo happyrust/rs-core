@@ -646,7 +646,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
             new_pts.push(pt);
         }
     }
-    dbg!(&new_pts);
+    // dbg!(&new_pts);
 
     let len = new_pts.len();
     if len < 3 {
@@ -741,9 +741,6 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
             .iter()
             .map(|x| x.start_index1)
             .collect::<HashSet<usize>>();
-        // for int in &intrs.basic_intersects{
-        // polyline.vertex_data.retain(|&_, index| !removed_idx.contains(&index));
-        // }
         let mut new_polyline = Polyline::new_closed();
         new_polyline.vertex_data = polyline
             .vertex_data

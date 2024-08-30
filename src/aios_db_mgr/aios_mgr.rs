@@ -3,10 +3,7 @@ use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
-use crate::{
-    get_children_ele_nodes, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe,
-    get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB,
-};
+use crate::{get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB};
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
@@ -241,8 +238,8 @@ impl PdmsDataInterface for AiosDBMgr {
 
 impl AiosDBMgr {
     ///获得默认的连接字符串
-    pub fn default_conn_str(&self) -> String {
-        let d = &self.db_option;
+    pub fn default_mysql_conn_str() -> String {
+        let d = get_db_option();
         let user = d.user.as_str();
         let pwd = urlencoding::encode(&d.password);
         let ip = d.ip.as_str();
@@ -260,8 +257,8 @@ impl AiosDBMgr {
 
     #[cfg(feature = "sql")]
     /// 获取项目配置信息pool
-    pub async fn get_global_pool(&self) -> anyhow::Result<Pool<MySql>> {
-        let connection_str = self.default_conn_str();
+    pub async fn get_global_pool() -> anyhow::Result<Pool<MySql>> {
+        let connection_str = Self::default_mysql_conn_str();
         let url = &format!("{connection_str}/{}", GLOBAL_DATABASE);
         PoolOptions::new()
             .max_connections(500)
@@ -273,8 +270,8 @@ impl AiosDBMgr {
 
     #[cfg(feature = "sql")]
     /// 获取项目pool
-    pub async fn get_project_pool(&self) -> anyhow::Result<Pool<MySql>> {
-        let connection_str = self.default_conn_str();
+    pub async fn get_project_pool() -> anyhow::Result<Pool<MySql>> {
+        let connection_str = Self::default_mysql_conn_str();
         let url = &format!("{connection_str}/{}", self.db_option.project_name);
         PoolOptions::new()
             .max_connections(500)

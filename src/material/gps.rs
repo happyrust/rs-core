@@ -11,11 +11,33 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
 
+pub const FIELDS: [&str; 18] = [
+    "参考号",
+    "物项编码",
+    "品名",
+    "SCH/LB（主）",
+    "SCH/LB（支）",
+    "制造形式",
+    "连接形式",
+    "材料牌号",
+    "材料标准",
+    "规格标准",
+    "RCC_M",
+    "质保等级",
+    "公称直径（主）",
+    "公称直径（支）",
+    "外径/Φ",
+    "长度",
+    "厚度",
+    "数量",
+];
+
+pub const TABLE: &'static str = "给排水专业_大宗材料";
+
 /// 给排水专业 大宗材料
 pub async fn save_gps_material_dzcl(
     refno: RefU64,
     db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) {
     match get_gps_dzcl_material(db.clone(), vec![refno]).await {
@@ -42,40 +64,19 @@ pub async fn save_gps_material_dzcl(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
-                    let table_name = "给排水专业_大宗材料".to_string();
-                    let filed = vec![
-                        "参考号".to_string(),
-                        "物项编码".to_string(),
-                        "品名".to_string(),
-                        "SCH/LB（主）".to_string(),
-                        "SCH/LB（支）".to_string(),
-                        "制造形式".to_string(),
-                        "连接形式".to_string(),
-                        "材料牌号".to_string(),
-                        "材料标准".to_string(),
-                        "规格标准".to_string(),
-                        "RCC_M".to_string(),
-                        "质保等级".to_string(),
-                        "公称直径（主）".to_string(),
-                        "公称直径（支）".to_string(),
-                        "外径/Φ".to_string(),
-                        "长度".to_string(),
-                        "厚度".to_string(),
-                        "数量".to_string(),
-                    ];
-                    match create_table_sql(&pool, &table_name, &filed).await {
+                    match create_table_sql(&pool, &table_name, &FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
                                 let data = r
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &table_name, &filed, data).await {
+                                match save_material_value(&pool, &table_name, &FIELDS, data).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());
@@ -87,7 +88,7 @@ pub async fn save_gps_material_dzcl(
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &table_name, &filed, data).await {
+                                match save_material_value(&pool, &table_name, &FIELDS, data).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());

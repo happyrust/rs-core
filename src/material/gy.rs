@@ -3,24 +3,73 @@ use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::{save_material_data_to_mysql, save_two_material_data_to_mysql};
 use crate::aios_db_mgr::aios_mgr::{self, AiosDBMgr};
-use crate::{get_pe, insert_into_table_with_chunks, query_filter_deep_children, RefU64};
+use crate::{get_pe, insert_into_table_with_chunks, query_filter_deep_children, RefU64, SUL_DB};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
 
+pub const FIELDS: [&str; 17] = [
+    "参考号",
+    "编码",
+    "类型",
+    "部件",
+    "公称直径（主）",
+    "公称直径（支）",
+    "材料",
+    "RCC_M",
+    "SCH/LB（主）",
+    "SCH/LB（支）",
+    "制造形式",
+    "连接形式",
+    "标准",
+    "单重（kg）",
+    "总重（kg）",
+    "数量",
+    "单位",
+];
+
+pub const TABLE: &'static str = "工艺布置专业_大宗材料";
+
+
+pub const EQ_FIELDS: [&'static str; 6] = [
+    "参考号",
+    "设备位号",
+    "所在房间号",
+    "管口号",
+    "管口坐标",
+    "相连管道编号",
+];
+pub const EQ_TABLE: &'static str = "工艺布置专业_设备清单";
+
+
+pub const VALVE_FIELDS: [&'static str; 10] = [
+    "参考号",
+    "阀门位号",
+    "所在房间号",
+    "阀门归属",
+    "阀门长度",
+    "阀门重量",
+    "阀门重心X",
+    "阀门重心Y",
+    "阀门重心Z",
+    "是否阀门支架",
+];
+pub const VALVE_TABLE: &'static str =  "工艺布置专业_阀门清单";
+
+
 /// 工艺专业 大宗材料
 pub async fn save_gy_material_dzcl(
     refno: RefU64,
-    db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
-    mut handles: &mut Vec<JoinHandle<()>>,
-) {
+) -> Vec<JoinHandle<()>>{
+    let db = SUL_DB.clone();
+    let mut handles = vec![];
     match get_gy_dzcl(db.clone(), vec![refno]).await {
         Ok((r, tubi_r)) => {
             let r_clone = r.clone();
             let tubi_r_clone = tubi_r.clone();
+            let db = db.clone();
             let task = task::spawn(async move {
                 if !r_clone.is_empty() {
                     match insert_into_table_with_chunks(&db, "material_gy_list", r_clone).await {
@@ -44,33 +93,12 @@ pub async fn save_gy_material_dzcl(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
-                    let table_name = "工艺布置专业_大宗材料".to_string();
-                    let table_field = vec![
-                        "参考号".to_string(),
-                        "编码".to_string(),
-                        "类型".to_string(),
-                        "部件".to_string(),
-                        "公称直径（主）".to_string(),
-                        "公称直径（支）".to_string(),
-                        "材料".to_string(),
-                        "RCC_M".to_string(),
-                        "SCH/LB（主）".to_string(),
-                        "SCH/LB（支）".to_string(),
-                        "制造形式".to_string(),
-                        "连接形式".to_string(),
-                        "标准".to_string(),
-                        "单重（kg）".to_string(),
-                        "总重（kg）".to_string(),
-                        "数量".to_string(),
-                        "单位".to_string(),
-                    ];
-
-                    match create_table_sql(&pool, &table_name, &table_field).await {
+                    match create_table_sql(&pool, &TABLE, &FIELDS).await {
                         Ok(_) => {
                             // 保存到数据库
                             if !r.is_empty() {
@@ -79,23 +107,23 @@ pub async fn save_gy_material_dzcl(
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
                                 let data_field_1 = vec![
-                                    "参考号".to_string(),
-                                    "编码".to_string(),
-                                    "类型".to_string(),
+                                    "参考号",
+                                    "编码",
+                                    "类型",
                                 ];
                                 let data_field_2 = vec![
-                                    "参考号".to_string(),
-                                    "编码".to_string(),
-                                    "类型".to_string(),
-                                    "数量".to_string(),
+                                    "参考号",
+                                    "编码",
+                                    "类型",
+                                    "数量",
                                 ];
                                 let data_2 = tubi_r
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
                                 match save_two_material_data_to_mysql(
-                                    &table_field,
-                                    &table_name,
+                                    &FIELDS,
+                                    &TABLE,
                                     &data_field_1,
                                     data_1,
                                     &data_field_2,
@@ -123,13 +151,15 @@ pub async fn save_gy_material_dzcl(
             dbg!(&e.to_string());
         }
     }
+
+    handles
 }
 
 /// 工艺专业 设备清单
 pub async fn save_gy_material_equi(
     refno: RefU64,
     db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
+    // aios_mgr: &AiosDBMgr,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) {
     match get_gy_equi_list(db.clone(), vec![refno]).await {
@@ -146,22 +176,14 @@ pub async fn save_gy_material_equi(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
-                    let filed = vec![
-                        "参考号".to_string(),
-                        "设备位号".to_string(),
-                        "所在房间号".to_string(),
-                        "管口号".to_string(),
-                        "管口坐标".to_string(),
-                        "相连管道编号".to_string(),
-                    ];
-                    let table_name = "工艺布置专业_设备清单".to_string();
 
-                    match create_table_sql(&pool, &table_name, &filed).await {
+
+                    match create_table_sql(&pool, &EQ_TABLE, &EQ_FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
                                 let data = r
@@ -169,9 +191,9 @@ pub async fn save_gy_material_equi(
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
                                 match save_material_data_to_mysql(
-                                    &filed,
-                                    &table_name,
-                                    &filed,
+                                    &EQ_FIELDS,
+                                    &EQ_TABLE,
+                                    &EQ_FIELDS,
                                     data,
                                     pool,
                                 )
@@ -202,7 +224,6 @@ pub async fn save_gy_material_equi(
 pub async fn save_gy_material_valv(
     refno: RefU64,
     db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) {
     match get_gy_valv_list(db.clone(), vec![refno]).await {
@@ -219,25 +240,13 @@ pub async fn save_gy_material_valv(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
-                    let filed = vec![
-                        "参考号".to_string(),
-                        "阀门位号".to_string(),
-                        "所在房间号".to_string(),
-                        "阀门归属".to_string(),
-                        "阀门长度".to_string(),
-                        "阀门重量".to_string(),
-                        "阀门重心X".to_string(),
-                        "阀门重心Y".to_string(),
-                        "阀门重心Z".to_string(),
-                        "是否阀门支架".to_string(),
-                    ];
-                    let table_name = "工艺布置专业_阀门清单".to_string();
-                    match create_table_sql(&pool, &table_name, &filed).await {
+
+                    match create_table_sql(&pool, &VALVE_TABLE, &VALVE_FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
                                 let data = r
@@ -245,9 +254,9 @@ pub async fn save_gy_material_valv(
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
                                 match save_material_data_to_mysql(
-                                    &filed,
-                                    &table_name,
-                                    &filed,
+                                    &VALVE_FIELDS,
+                                    &VALVE_TABLE,
+                                    &VALVE_FIELDS,
                                     data,
                                     pool,
                                 )
@@ -438,10 +447,10 @@ pub async fn get_gy_dzcl(
                 .collect::<Vec<String>>().join(",");
         let sql = format!(
             r#"select
-    id as id,
-    string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
-    refno.TYPE as noun, // 部件
-    math::fixed((refno.ANGL / 360) * 2 * 3.1415 * refno.SPRE.refno.CATR.refno.PARA[1],2) as count // 长度
+            id as id,
+            string::split(string::split(if refno.SPRE.name == NONE {{ "//:" }} else {{ refno.SPRE.name }},'/')[2],':')[0] as code, // 编码
+            refno.TYPE as noun, // 部件
+         math::fixed((refno.ANGL / 360) * 2 * 3.1415 * (refno.SPRE.refno.CATR.refno.PARA[1]?:0.0) ,2)  as count // 长度
     from [{}]"#,
             refnos_str
         );
@@ -465,6 +474,7 @@ pub async fn get_gy_dzcl(
     world_trans.d.scale[2] as count from ->tubi_relate) from [{}]"#,
             refnos_str
         );
+        // println!("get_gy_dzcl sql is {}", &sql);
         let mut response = db.query(sql).await?;
         let mut result: Vec<Vec<MaterialGyDataBend>> = response.take(0)?;
         if !result.is_empty() {

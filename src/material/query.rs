@@ -8,8 +8,8 @@ use sqlx::Executor;
 
 #[cfg(feature = "sql")]
 /// 将材料表单数据保存到mysql中
-pub async fn save_material_data_to_mysql(table_field: &Vec<String>, table_name: &str,
-                                         data_field: &Vec<String>, data: Vec<HashMap<String, String>>,
+pub async fn save_material_data_to_mysql(table_field: &[&str], table_name: &str,
+                                         data_field: &[&str], data: Vec<HashMap<String, String>>,
                                          pool: Pool<MySql>) -> anyhow::Result<()> {
     // match create_table_sql(&pool, &table_name,table_field).await {
     //     Ok(_) => {
@@ -38,9 +38,9 @@ pub async fn save_material_data_to_mysql(table_field: &Vec<String>, table_name: 
 
 #[cfg(feature = "sql")]
 /// 将两个不同结构的数据保存到mysql的同一张表中
-pub async fn save_two_material_data_to_mysql(table_field: &Vec<String>, table_name: &str,
-                                             data_field_1: &Vec<String>, data_1: Vec<HashMap<String, String>>,
-                                             data_field_2: &Vec<String>, data_2: Vec<HashMap<String, String>>,
+pub async fn save_two_material_data_to_mysql(table_field: &[&str], table_name: &str,
+                                             data_field_1: &[&str], data_1: Vec<HashMap<String, String>>,
+                                             data_field_2: &[&str], data_2: Vec<HashMap<String, String>>,
                                              pool: &Pool<MySql>) -> anyhow::Result<()> {
     match create_table_sql(&pool, &table_name, table_field).await {
         Ok(_) => {
@@ -83,12 +83,12 @@ pub async fn save_two_material_data_to_mysql(table_field: &Vec<String>, table_na
 pub(crate) async fn create_table_sql(
     pool: &Pool<MySql>,
     table_name: &str,
-    fileds: &Vec<String>,
+    fields: &[&str],
 ) -> anyhow::Result<()> {
     // 生成创建表sql
     let mut create_table_sql = format!("CREATE TABLE IF NOT EXISTS {table_name} ( ");
-    for k in fileds {
-        if k.as_str() == "参考号" {
+    for &k in fields {
+        if k == "参考号" {
             create_table_sql.push_str(format!("`{}` VARCHAR(50) NOT NULL ,", k).as_str())
         } else {
             create_table_sql.push_str(format!("`{}` VARCHAR(255),", k).as_str())
@@ -107,7 +107,7 @@ pub(crate) async fn create_table_sql(
 pub(crate) async fn save_material_value(
     pool: &Pool<MySql>,
     table_name: &str,
-    filed: &Vec<String>,
+    filed: &[&str],
     data: Vec<HashMap<String, String>>,
 ) -> anyhow::Result<()> {
     let mut sql = format!("INSERT IGNORE INTO `{}` (", table_name);

@@ -18,7 +18,6 @@ use tokio::task::{self, JoinHandle};
 pub async fn save_tf_material_hvac(
     refno: RefU64,
     db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) {
     match get_tf_hvac_material(&db, vec![refno]).await {
@@ -38,7 +37,7 @@ pub async fn save_tf_material_hvac(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };

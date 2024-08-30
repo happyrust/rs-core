@@ -24,3 +24,5 @@ pub mod test_parse_dir;
 pub mod test_surreal;
 
 pub mod test_expression;
+
+pub mod test_material;

@@ -197,6 +197,15 @@ impl DbOption {
     }
 
     #[inline]
+    pub fn mdb_name(&self) -> String {
+        if self.mdb_name.starts_with("/") {
+            self.mdb_name.clone()
+        } else {
+            format!("/{}", self.mdb_name)
+        }
+    }
+
+    #[inline]
     pub fn get_room_key_word(&self) -> Vec<String> {
         self.room_key_word.clone().unwrap_or(vec!["-RM".to_string()])
     }

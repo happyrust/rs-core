@@ -11,11 +11,22 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
 
+pub const FIELDS: [&str; 7] = [
+    "参考号",
+    "阀门位号",
+    "所在房间号",
+    "阀门归属",
+    "阀门尺寸",
+    "阀门材质",
+    "阀门功能",
+];
+
+pub const TABLE: &'static str = "暖通专业_阀门清单";
+
 /// 暖通专业 大宗材料
 pub async fn save_nt_material_dzcl(
     refno: RefU64,
     db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
     handles: &mut Vec<JoinHandle<()>>,
 ) {
     match get_nt_valv_list_material(db.clone(), vec![refno]).await {
@@ -33,29 +44,20 @@ pub async fn save_nt_material_dzcl(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
                     return;
                 };
                 let task = task::spawn(async move {
-                    let table_name = "暖通专业_阀门清单".to_string();
-                    let filed = vec![
-                        "参考号".to_string(),
-                        "阀门位号".to_string(),
-                        "所在房间号".to_string(),
-                        "阀门归属".to_string(),
-                        "阀门尺寸".to_string(),
-                        "阀门材质".to_string(),
-                        "阀门功能".to_string(),
-                    ];
-                    match create_table_sql(&pool, &table_name, &filed).await {
+
+                    match create_table_sql(&pool, &TABLE, &FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
                                 let data = r
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &table_name, &filed, data).await {
+                                match save_material_value(&pool, &TABLE, &FIELDS, data).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());
