@@ -391,7 +391,7 @@ pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<Nam
         r#"select value in.refno.* from {}<-pe_owner where in.id!=none"#,
         refno.to_pe_key()
     );
-    println!("get_children_named_attmaps sql is {}", &sql);
+    // println!("get_children_named_attmaps sql is {}", &sql);
     let mut response = SUL_DB
         .query(
             sql
@@ -576,7 +576,7 @@ pub async fn query_group_by_cata_hash(
         "#,
             chunk.join(",")
         );
-        println!("query_group_by_cata_hash sql is {}", &sql);
+        // println!("query_group_by_cata_hash sql is {}", &sql);
         let mut response = SUL_DB
             .query(&sql)
             .await?;

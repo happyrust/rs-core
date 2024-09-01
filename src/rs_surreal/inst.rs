@@ -2,7 +2,7 @@ use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
 use crate::{get_inst_relate_keys, RefU64, SUL_DB};
 use bevy_transform::components::Transform;
-use glam::Vec3;
+use glam::{DVec3, Vec3};
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -100,7 +100,7 @@ pub struct GeomPtsQuery {
     pub refno: RefU64,
     pub world_trans: Transform,
     pub world_aabb: Aabb,
-    pub pts_group: Vec<(Transform, Option<Vec<Vec3>>)>,
+    pub pts_group: Vec<(Transform, Option<Vec<DVec3>>)>,
 }
 
 //todo 需要按分块去加载显示
@@ -121,7 +121,7 @@ pub async fn query_insts(
             from {inst_keys} where aabb.d != none
             "#
     );
-    println!("Query insts: {}", &sql);
+    // println!("Query insts: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
 

@@ -10,7 +10,7 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
 
-pub const FIELDS: [&str; 17] = [
+pub const DZ_COLUMNS: [&str; 17] = [
     "参考号",
     "编码",
     "类型",
@@ -30,8 +30,9 @@ pub const FIELDS: [&str; 17] = [
     "单位",
 ];
 
-pub const TABLE: &'static str = "工艺布置专业_大宗材料";
+pub const DZ_FIELDS: [&str; 3] = ["refno", "code", "noun"];
 
+pub const TABLE: &'static str = "工艺布置专业_大宗材料";
 
 pub const EQ_FIELDS: [&'static str; 6] = [
     "参考号",
@@ -42,7 +43,6 @@ pub const EQ_FIELDS: [&'static str; 6] = [
     "相连管道编号",
 ];
 pub const EQ_TABLE: &'static str = "工艺布置专业_设备清单";
-
 
 pub const VALVE_FIELDS: [&'static str; 10] = [
     "参考号",
@@ -56,13 +56,10 @@ pub const VALVE_FIELDS: [&'static str; 10] = [
     "阀门重心Z",
     "是否阀门支架",
 ];
-pub const VALVE_TABLE: &'static str =  "工艺布置专业_阀门清单";
-
+pub const VALVE_TABLE: &'static str = "工艺布置专业_阀门清单";
 
 /// 工艺专业 大宗材料
-pub async fn save_gy_material_dzcl(
-    refno: RefU64,
-) -> Vec<JoinHandle<()>>{
+pub async fn save_gy_material_dzcl(refno: RefU64) -> Vec<JoinHandle<()>> {
     let db = SUL_DB.clone();
     let mut handles = vec![];
     match get_gy_dzcl(db.clone(), vec![refno]).await {
@@ -98,7 +95,7 @@ pub async fn save_gy_material_dzcl(
                     return;
                 };
                 let task = task::spawn(async move {
-                    match create_table_sql(&pool, &TABLE, &FIELDS).await {
+                    match create_table_sql(&pool, &TABLE, &DZ_COLUMNS).await {
                         Ok(_) => {
                             // 保存到数据库
                             if !r.is_empty() {
@@ -106,23 +103,14 @@ pub async fn save_gy_material_dzcl(
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
-                                let data_field_1 = vec![
-                                    "参考号",
-                                    "编码",
-                                    "类型",
-                                ];
-                                let data_field_2 = vec![
-                                    "参考号",
-                                    "编码",
-                                    "类型",
-                                    "数量",
-                                ];
+                                let data_field_1 = vec!["参考号", "编码", "类型"];
+                                let data_field_2 = vec!["参考号", "编码", "类型", "数量"];
                                 let data_2 = tubi_r
                                     .into_iter()
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
                                 match save_two_material_data_to_mysql(
-                                    &FIELDS,
+                                    &DZ_COLUMNS,
                                     &TABLE,
                                     &data_field_1,
                                     data_1,
@@ -130,7 +118,7 @@ pub async fn save_gy_material_dzcl(
                                     data_2,
                                     &pool,
                                 )
-                                    .await
+                                .await
                                 {
                                     Ok(_) => {}
                                     Err(e) => {
@@ -181,8 +169,6 @@ pub async fn save_gy_material_equi(
                     return;
                 };
                 let task = task::spawn(async move {
-
-
                     match create_table_sql(&pool, &EQ_TABLE, &EQ_FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
@@ -191,13 +177,9 @@ pub async fn save_gy_material_equi(
                                     .map(|x| x.into_hashmap())
                                     .collect::<Vec<HashMap<String, String>>>();
                                 match save_material_data_to_mysql(
-                                    &EQ_FIELDS,
-                                    &EQ_TABLE,
-                                    &EQ_FIELDS,
-                                    data,
-                                    pool,
+                                    &EQ_FIELDS, &EQ_TABLE, &EQ_FIELDS, data, pool,
                                 )
-                                    .await
+                                .await
                                 {
                                     Ok(_) => {}
                                     Err(e) => {
@@ -245,7 +227,6 @@ pub async fn save_gy_material_valv(
                     return;
                 };
                 let task = task::spawn(async move {
-
                     match create_table_sql(&pool, &VALVE_TABLE, &VALVE_FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
@@ -260,7 +241,7 @@ pub async fn save_gy_material_valv(
                                     data,
                                     pool,
                                 )
-                                    .await
+                                .await
                                 {
                                     Ok(_) => {}
                                     Err(e) => {
@@ -317,7 +298,12 @@ pub struct MaterialGyData {
 }
 
 impl MaterialGyData {
-    //// 将结构体转为HashMap
+    //转成行数据
+    pub fn convert_to_row(self) -> Vec<String> {
+        vec![self.id.to_pdms_str(), self.code, self.noun]
+    }
+
+    /// 将结构体转为HashMap
     pub fn into_hashmap(self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         map.entry("参考号".to_string())
@@ -440,11 +426,11 @@ pub async fn get_gy_dzcl(
         }
         // 查询bend的数据
         let refnos = query_filter_deep_children(refno, &["BEND"]).await?;
-        let refnos_str =
-            &refnos
-                .into_iter()
-                .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>().join(",");
+        let refnos_str = &refnos
+            .into_iter()
+            .map(|refno| refno.to_pe_key())
+            .collect::<Vec<String>>()
+            .join(",");
         let sql = format!(
             r#"select
             id as id,
@@ -459,11 +445,11 @@ pub async fn get_gy_dzcl(
         tubi_data.append(&mut result);
         // 查询tubi数据
         let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
-        let refnos_str =
-            &refnos
-                .into_iter()
-                .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>().join(",");
+        let refnos_str = &refnos
+            .into_iter()
+            .map(|refno| refno.to_pe_key())
+            .collect::<Vec<String>>()
+            .join(",");
         let sql = format!(
             r#"
     select value (select leave as id,
@@ -483,23 +469,14 @@ pub async fn get_gy_dzcl(
         // 查询 elbo,tee,flan,gask,olet,redu,cap,couplig
         let refnos = query_filter_deep_children(
             refno,
-            &[
-                "ELBO",
-                "TEE",
-                "FLAN",
-                "GASK",
-                "OLET",
-                "REDU",
-                "CAP",
-                "COUP",
-            ],
+            &["ELBO", "TEE", "FLAN", "GASK", "OLET", "REDU", "CAP", "COUP"],
         )
-            .await?;
-        let refnos_str =
-            &refnos
-                .into_iter()
-                .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>().join(",");
+        .await?;
+        let refnos_str = &refnos
+            .into_iter()
+            .map(|refno| refno.to_pe_key())
+            .collect::<Vec<String>>()
+            .join(",");
         let sql = format!(
             r#"select
     id as id,
@@ -534,13 +511,12 @@ pub async fn get_gy_valv_list(
             };
         }
         // 查询阀门的数据
-        let refnos =
-            query_filter_deep_children(refno, &["VALV", "INST"]).await?;
-        let refnos_str =
-            &refnos
-                .into_iter()
-                .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>().join(",");
+        let refnos = query_filter_deep_children(refno, &["VALV", "INST"]).await?;
+        let refnos_str = &refnos
+            .into_iter()
+            .map(|refno| refno.to_pe_key())
+            .collect::<Vec<String>>()
+            .join(",");
         let sql = format!(
             r#"select
         id,
@@ -581,11 +557,11 @@ pub async fn get_gy_equi_list(
         }
         // 查询设备的数据
         let refnos = query_filter_deep_children(refno, &["EQUI"]).await?;
-        let refnos_str =
-            &refnos
-                .into_iter()
-                .map(|refno| refno.to_pe_key())
-                .collect::<Vec<String>>().join(",");
+        let refnos_str = &refnos
+            .into_iter()
+            .map(|refno| refno.to_pe_key())
+            .collect::<Vec<String>>()
+            .join(",");
         let sql = format!(
             r#"select
         id,

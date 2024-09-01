@@ -1,5 +1,5 @@
 
-DEFINE FUNCTION fn::collect_mat_stastic($pe: record){
+DEFINE FUNCTION fn::collect_mat_statistic($pe: record){
     let $type = $pe.noun;
     let $o_type = $pe.owner.noun;
     let $oo_type = $pe.owner.owner.noun;

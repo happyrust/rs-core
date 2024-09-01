@@ -11,14 +11,17 @@ DEFINE FUNCTION fn::ancestor($r: record) {
 DEFINE FUNCTION fn::order(
     $pe: record,
 ) {
-    return if array::first($pe->pe_owner.id[1]) == none { 0 } else { array::first($pe->pe_owner.id[1]) };
+    if $pe.owner == none {
+        return none;
+    };
+    let $a = ($pe.owner<-pe_owner.in)[where noun=$pe.noun];
+    return array::find_index($a, $pe);
 };
 
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
-    return (select value (if name='' {string::join(" ", noun, <string> (
-        fn::order($pe) + 1) ) } else { name } ) from $pe)[0];
+    return (select value (if name='' {string::join(" ", noun, <string> (fn::order($pe) + 1) ) } else { name } ) from $pe)[0];
 };
 
 DEFINE FUNCTION fn::default_names(
@@ -74,4 +77,3 @@ DEFINE FUNCTION fn::backup_atts_and_pes(
         }
     }
 };
-

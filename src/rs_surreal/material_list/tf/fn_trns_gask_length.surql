@@ -6,9 +6,9 @@ DEFINE FUNCTION fn::trns_gask_length_pre($pe:record) {
     let $pre_b_damp = array::first(fn::b_pre_type($pe,'DAMP'));
     let $pre_b_mesh = array::first(fn::b_pre_type($pe,'MESH'));
 
-    let $height2 = fn::turn_deap_into_str($pe.refno.DESP[4]);
+    let $height2 = string::e3d_dehash($pe.refno.DESP[4]);
     let $height = $pe.refno.DESP[2];
-    let $height_str = fn::turn_deap_into_str($height);
+    let $height_str = string::e3d_dehash($height);
 
     return
     select if $height2 == 'DIAM' && ($pre_b_damp || $pre_b_mesh) {
@@ -37,9 +37,9 @@ DEFINE FUNCTION fn::trns_gask_length_next($pe:record) {
     let $next_b_damp = array::first(fn::b_next_type($pe,'DAMP'));
     let $next_b_mesh = array::first(fn::b_next_type($pe,'MESH'));
 
-    let $height2 = fn::turn_deap_into_str($pe.refno.DESP[4]);
+    let $height2 = string::e3d_dehash($pe.refno.DESP[4]);
     let $height = $pe.refno.DESP[2];
-    let $height_str = fn::turn_deap_into_str($height);
+    let $height_str = string::e3d_dehash($height);
 
     return
     select if $height2 == 'DIAM' && ($next_b_damp || $next_b_mesh) {
