@@ -214,7 +214,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
         let cur_refno = att.get_refno_or_default();
         let cur_type = att.get_type_str();
         // dbg!(cur_type);
-        let ower_type = o_att.get_type_str();
+        let owner_type = o_att.get_type_str();
         owner = o_att.get_refno_or_default();
         prev_mat4 = mat4;
 
@@ -229,7 +229,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             apply_bang = false;
         }
         //土建特殊情况的一些处理
-        let owner_is_gensec = ower_type == "GENSEC";
+        let owner_is_gensec = owner_type == "GENSEC";
         let mut pos_extru_dir: Option<DVec3> = None;
         if owner_is_gensec {
             //找到spine，获取spine的两个顶点
@@ -347,12 +347,8 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                     // mat4 = DMat4::from_rotation_translation(rotation, translation);
                     // continue;
                 } else {
-                    if let Some(owner_dir) = o_att.get_dir() {
-                        // dbg!(owner_dir);
-                        // dbg!(translation);
-                        translation += owner_dir * zdist as f64;
-                        // dbg!(translation);
-                    }
+                    translation += rotation * DVec3::Z * zdist as f64;
+                    // dbg!(translation);
                 }
             }
         }
@@ -448,7 +444,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 }
             }
             let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
-            let new_quat = {
+            let mut new_quat = {
                 if cur_type == "FITT" {
                     //受到bang的影响，需要变换
                     //绕着z轴旋转
@@ -465,12 +461,10 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
             //处理有YDIR的情况
             if let Some(v) = ydir_axis {
-                // dbg!((v, z_axis));
-                quat = cal_ori_by_ydir(v.normalize(), z_axis);
-                // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
+                new_quat = cal_ori_by_ydir(v.normalize(), z_axis);
             }
             if apply_bang {
-                quat = quat * DQuat::from_rotation_z(bangle.to_radians());
+                new_quat = new_quat * DQuat::from_rotation_z(bangle.to_radians());
             }
             // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
             let offset = rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
@@ -494,16 +488,6 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
                 // dbg!((mat3.z_axis, cut_dir));
                 quat = cal_cutp_ori(mat3.z_axis, cut_dir);
                 is_world_quat = true;
-                //需要检查cut_dir是否满足要求
-                // let x_axis = DVec3::Z;
-                // let z_axis = if cut_dir.z.abs() > 0.0001 {
-                //     DVec3::X
-                // } else {
-                //     cut_dir
-                // };
-                // let y_axis = z_axis.cross(x_axis).normalize();
-                // let mat = DMat3::from_cols(x_axis, y_axis, z_axis);
-                // rotation = rotation * DQuat::from_mat3(&mat);
             }
             translation = translation + rotation * pos;
             if is_world_quat {
@@ -511,7 +495,6 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
             } else{
                 rotation = rotation * quat;
             }
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
         }
 
         mat4 = DMat4::from_rotation_translation(rotation, translation);

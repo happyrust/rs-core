@@ -519,11 +519,19 @@ mod test_transform {
         init_test_surreal().await;
         // test_transform("24381/55590".into(), "Y is Z and Z is -X", "X 15455.2mm Y -39949.8mm Z 34500mm").await;
         test_transform(
-            "17496/215727".into(),
-            "Y is E and Z is S",
-            "X -28560mm Y 41050mm Z -5400mm",
+            "17496/496443".into(),
+            "Y is -Y and Z is -X",
+            "X -16831.5mm Y 96510mm Z 27375mm",
         )
         .await;
+
+        // test_transform(
+        //     "17496/215727".into(),
+        //     "Y is E and Z is S",
+        //     "X -28560mm Y 41050mm Z -5400mm",
+        // )
+        //     .await;
+
         //17496/215727
         // test_ori("24381/77311".into(), "Y is -Y 43 X and Z is Z").await;
         // test_ori("17496/202352".into(), "Y is X and Z is -Y").await;
