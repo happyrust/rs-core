@@ -77,7 +77,7 @@ impl Default for Pyramid {
 impl VerifiedShape for Pyramid {
     fn check_valid(&self) -> bool {
         // dbg!(self);
-        let size_flag = self.pbtp * self.pctp >= f32::EPSILON && self.pbbt * self.pcbt >= f32::EPSILON;
+        let size_flag = self.pbtp * self.pctp >= f32::EPSILON || self.pbbt * self.pcbt >= f32::EPSILON;
         if !size_flag {
             return false;
         }

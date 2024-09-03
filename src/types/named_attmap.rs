@@ -575,14 +575,80 @@ impl NamedAttrMap {
         self.gen_sur_json_exclude(&[], Some(id))
     }
 
+
+    pub fn gen_sur_json_with_sesno(&self, sesno: i32) -> Option<String> {
+        let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
+        let mut record_map: IndexMap<String, RefU64> = IndexMap::new();
+        let mut records_map: IndexMap<String, Vec<RefU64>> = IndexMap::new();
+        let type_name = self.get_type();
+        let refno = self.get_refno_or_default();
+        // map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
+        let id_str = format!("['{}',{}]", refno, sesno);
+        map.insert("TYPE".into(), type_name.into());
+
+
+        for (key, val) in self.map.clone().into_iter() {
+            //refno 单独处理
+            if key.starts_with("UDA:") || key.as_str() == "REFNO" {
+                continue;
+            }
+            if matches!(val, NamedAttrValue::RefU64Type(_))
+                || matches!(val, NamedAttrValue::ElementType(_))
+            {
+                record_map.insert(key, val.refno_value().unwrap_or_default());
+            } else if let NamedAttrValue::RefU64Array(refnos) = val {
+                records_map.insert(key, refnos);
+            } else {
+                map.insert(key, val.into());
+            }
+        }
+
+        //加上pe，去掉双引号
+        let Ok(mut sjson) = serde_json::to_string_pretty(&map) else {
+            dbg!(&self);
+            return None;
+        };
+
+        sjson.remove(sjson.len() - 1);
+        //后续是否需要指定 sesno，更新数据里的 引用数据
+        sjson.push_str(&format!(r#", "REFNO": pe_h:['{}',{}], "id": {}, "#, refno, sesno, id_str));
+        for (key, val) in record_map.into_iter() {
+            if val.is_unset() {
+                continue;
+            }
+            sjson.push_str(&format!(r#""{}": {},"#, key, val.to_pe_key()));
+        }
+        for (key, val) in records_map.into_iter() {
+            if val.is_empty() {
+                continue;
+            }
+            let s = format!(
+                r#""{}": [{}],"#,
+                key,
+                val.iter()
+                    .map(|r| r.to_pe_key())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            );
+            // dbg!(&s);
+            sjson.push_str(&s);
+        }
+        sjson.remove(sjson.len() - 1);
+        sjson.push_str("}");
+
+        Some(normalize_sql_string(&sjson))
+    }
+
     pub fn gen_sur_json_exclude(&self, excludes: &[&str], id: Option<String>) -> Option<String> {
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         let mut record_map: IndexMap<String, RefU64> = IndexMap::new();
         let mut records_map: IndexMap<String, Vec<RefU64>> = IndexMap::new();
         let type_name = self.get_type();
         let refno = self.get_refno_or_default();
-        map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
+        // map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
+        let id_str = id.unwrap_or(refno.to_string());
         map.insert("TYPE".into(), type_name.into());
+
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
@@ -611,7 +677,8 @@ impl NamedAttrMap {
         };
 
         sjson.remove(sjson.len() - 1);
-        sjson.push_str(&format!(r#", "REFNO": {}, "#, refno.to_pe_key()));
+        //后续是否需要指定 sesno，更新数据里的 引用数据
+        sjson.push_str(&format!(r#", "REFNO": {}, "id": {}, "#, refno.to_pe_key(), id_str));
         for (key, val) in record_map.into_iter() {
             if val.is_unset() && excludes.contains(&key.as_str()) {
                 continue;

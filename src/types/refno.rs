@@ -32,6 +32,31 @@ pub struct ParseRefU64Error;
 )]
 pub struct RefU64(pub u64);
 
+impl RefU64 {
+    // 自定义序列化方法
+    pub fn serialize_as_u64<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u64(self.0)
+    }
+
+    // 自定义反序列化方法
+    pub fn deserialize_from_u64<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = u64::deserialize(deserializer)?;
+        Ok(RefU64(value))
+    }
+}
+
+impl From<u64> for RefU64 {
+    fn from(d: u64) -> Self {
+        Self(d)
+    }
+}
+
 impl Serialize for RefU64 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -112,7 +137,7 @@ impl<'de> Deserialize<'de> for RefU64 {
                     .map_err(|_| serde::de::Error::custom("refno parse string error")),
                 RefnoVariant::Num(d) => Ok(Self(d)),
             }
-        } else {
+        } else  {
             return Err(serde::de::Error::custom("refno parse error"));
         }
     }
@@ -246,11 +271,12 @@ impl Debug for RefU64 {
     }
 }
 
-impl From<u64> for RefU64 {
-    fn from(d: u64) -> Self {
-        Self(d)
+impl Into<u64> for RefU64 {
+    fn into(self) -> u64 {
+        self.0
     }
 }
+
 
 impl From<&RefI32Tuple> for RefU64 {
     fn from(n: &RefI32Tuple) -> Self {

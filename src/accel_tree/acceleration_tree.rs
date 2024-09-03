@@ -18,16 +18,28 @@ use std::collections::HashMap;
 use parry3d::shape::TriMesh;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
+use serde_with::{serde_as, As, FromInto};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RStarBoundingBox {
     pub aabb: Aabb,
+    #[serde(serialize_with = "RefU64::serialize_as_u64")]
+    #[serde(deserialize_with = "RefU64::deserialize_from_u64")]
     pub refno: RefU64,
     //方便过滤
     pub noun: String,
 }
 
 impl RStarBoundingBox {
+
+    pub fn new(aabb: Aabb, refno: RefU64, noun: String) -> Self {
+        Self {
+            aabb,
+            refno,
+            noun,
+        }
+    }
+
     pub fn from_aabb(aabb: Aabb, refno: RefU64) -> Self {
         Self {
             aabb,
@@ -36,7 +48,7 @@ impl RStarBoundingBox {
         }
     }
 
-    pub fn new(min: Vec3, max: Vec3, transform: Mat4, refno: RefU64) -> Self {
+    pub fn from_min_max(min: Vec3, max: Vec3, transform: Mat4, refno: RefU64) -> Self {
         let min = transform.transform_point3(min);
         let max = transform.transform_point3(max);
 
@@ -63,9 +75,14 @@ impl rstar::PointDistance for RStarBoundingBox {
     }
 }
 
+#[serde_as]
 #[derive(Clone, Default, Serialize, Deserialize, Resource)]
 pub struct AccelerationTree {
     pub tree: rstar::RTree<RStarBoundingBox>,
+    //用来检查是否插入到了 Tree，如果遇到重复的，需要跳过
+    #[serde_as(as = "HashSet<FromInto<u64>>")]
+    ids: HashSet<RefU64>,
+    #[serde(skip)]
     mesh_cache: DashMap<RefU64, Vec<TriMesh>>,
 }
 
@@ -158,10 +175,22 @@ impl AccelerationTree {
         self.tree.size() == 0
     }
 
-    pub fn load(bounding_boxes: Vec<RStarBoundingBox>) -> Self {
+    /// 加载包围盒
+    pub fn load(mut bounding_boxes: Vec<RStarBoundingBox>) -> Self {
         Self {
             tree: rstar::RTree::bulk_load(bounding_boxes),
             ..Default::default()
+        }
+    }
+
+    /// 新加数据
+    pub fn update_aabbs(&mut self, bboxes: Vec<RStarBoundingBox>) {
+        //检查 refno 是否已经存在了，如果存在，先移除，再添加进去
+        for bbox in bboxes {
+            if self.ids.insert(bbox.refno) {
+                self.tree.remove(&bbox);
+            }
+            self.tree.insert(bbox);
         }
     }
 
@@ -191,6 +220,7 @@ impl AccelerationTree {
             .map(|bb| bb)
     }
 
+    /// 检查是否包含包围盒
     pub fn locate_contain_bounds<'a>(&'a self, bounds: &Aabb) -> impl Iterator<Item=&RStarBoundingBox> + 'a {
         self.tree
             .locate_in_envelope(&rstar::AABB::from_corners(
@@ -200,25 +230,28 @@ impl AccelerationTree {
             .map(|bb| bb)
     }
 
-    //后面可以用数据库存储加载
+    
+    //实现使用bincode序列化
     #[cfg(not(target_arch = "wasm32"))]
     pub fn serialize_to_bin_file(&self) -> anyhow::Result<bool> {
-        // let mut file = File::create(format!(r"accel_tree.bin{}", "")).unwrap();
-        // let mut file = File::create("accel_tree.bin")?;
-        // let serialized = bincode::serialize(&self)?;
-        // file.write_all(serialized.as_slice())?;
+        let mut file = File::create("accel_tree.bin")?;
+        let serialized = bincode::serialize(&self)?;
+        file.write_all(serialized.as_slice())?;
+
         Ok(true)
     }
 
-    // #[cfg(not(target_arch = "wasm32"))]
-    // pub fn load_from_bin_file(&self) -> anyhow::Result<Self> {
-    //     let mut file = File::open("accel_tree.bin").unwrap();
-    //     let mut buf: Vec<u8> = Vec::new();
-    //     let _ = file.read_to_end(&mut buf);
-    //     let (r, _) = bincode::decode_from_slice(&buf, bincode::config::standard())?;
-    //     Ok(r)
-    // }
+    /// 使用bincode反序列化
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn deserialize_from_bin_file() -> anyhow::Result<Self> {
+        let mut file = File::open("accel_tree.bin")?;
+        let mut buf: Vec<u8> = Vec::new();
+        let _ = file.read_to_end(&mut buf)?;
+        let r = bincode::deserialize(&buf).unwrap();
+        Ok(r)
+    }
 
+    /// 获取一个refno的mesh
     pub async fn get_tri_mesh(&self, refno: RefU64) -> Option<Ref<RefU64, Vec<TriMesh>>> {
         if let Some(r) = self.mesh_cache.get(&refno)  {
             return Some(r);

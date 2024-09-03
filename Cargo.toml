@@ -79,7 +79,7 @@ truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" , optiona
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo", optional = true }
 truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio", optional = true }
 rkyv = { version = "0.7.42", features=["hashbrown"] }
-serde_with = "3.3.0"
+serde_with = { version = "3.9.0", features = ["macros"] }
 
 
 geo = "0.28.0"

@@ -58,6 +58,32 @@ impl SPdmsElement {
         json_string
     }
 
+    pub fn gen_sur_json_with_sesno(&self, sesno: i32) -> String {
+        let mut json_string = to_string_pretty(&json!({
+            "name": self.name,
+            "noun": self.noun,
+            "dbnum": self.dbnum,
+            "sesno": self.sesno,
+            "status_tag": self.status_tag,
+            "cata_hash": self.cata_hash,
+            "lock": self.lock,
+            "deleted": self.deleted,
+        }))
+        .unwrap();
+        json_string.remove(json_string.len() - 1);
+        json_string.push_str(",");
+        json_string.push_str(&format!(
+            r#""refno": {}_H:['{}',{}], "#,
+            &self.noun,
+            self.refno,
+            sesno
+        ));
+        json_string.push_str(&format!(r#""id": ['{}',{}],"#, self.refno, sesno));
+        json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
+        json_string.push_str("}");
+        json_string
+    }
+
     #[inline]
     pub fn get_type_str(&self) -> &str {
         return self.noun.as_str();

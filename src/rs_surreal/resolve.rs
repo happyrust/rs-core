@@ -31,6 +31,7 @@ pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
     unit_a == unit_b
         || (unit_a == "REAL" || unit_b == "REAL")
         || (unit_a == "NUME" || unit_b == "NUME")
+        || (unit_a == "DATA" || unit_b == "DATA")
         || COMPATIBLE_UNIT_MAP
             .get(unit_a)
             .map(|x| x.contains(unit_b))
