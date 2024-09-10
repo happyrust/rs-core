@@ -60,6 +60,7 @@ pub async fn define_pe_index() -> anyhow::Result<()> {
         DEFINE index pe_refno_index ON TABLE pe COLUMNS refno;
         DEFINE index pe_cata_hash_index ON TABLE pe COLUMNS cata_hash;
         DEFINE index pe_dbnum_index ON TABLE pe COLUMNS dbnum;
+        DEFINE INDEX sesno_index ON TABLE pe COLUMNS sesno;
                 "#,
         )
         .await

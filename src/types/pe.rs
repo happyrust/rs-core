@@ -1,3 +1,4 @@
+use crate::pdms_types::{EleOperation, PdmsElement};
 use crate::RefU64;
 use bevy_ecs::system::Resource;
 use serde::{Deserialize, Serialize};
@@ -5,7 +6,6 @@ use serde_json::{json, to_string_pretty};
 use serde_with::DisplayFromStr;
 use std::fmt::format;
 use surrealdb::sql::Thing;
-use crate::pdms_types::PdmsElement;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
 pub struct SPdmsElement {
@@ -24,11 +24,13 @@ pub struct SPdmsElement {
     pub cata_hash: String,
     ///锁定模型
     pub lock: bool,
+    //todo 可以改为使用 op 来表达是否删除
     pub deleted: bool,
+    #[serde(default)]
+    pub op: EleOperation,
 }
 
 impl SPdmsElement {
-
     #[inline]
     pub fn history_id(&self) -> String {
         format!("pe:{}_{}", self.refno, self.sesno)
@@ -52,13 +54,16 @@ impl SPdmsElement {
             r#""refno": {},"#,
             self.refno.to_table_key(&self.noun)
         ));
-        json_string.push_str(&format!(r#""id": {},"#, id.unwrap_or(self.refno.to_pe_key())));
+        if let Some(id) = id {
+            json_string.push_str(&format!(r#""id": '{}',"#, id));
+        }
         json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
         json_string.push_str("}");
         json_string
     }
 
-    pub fn gen_sur_json_with_sesno(&self, sesno: i32) -> String {
+    //owner 的 sesno 也需要指定，不然不知道指向的是哪一个
+    pub fn gen_sur_json_with_sesno(&self, sesno: i32, owner_sesno: i32) -> String {
         let mut json_string = to_string_pretty(&json!({
             "name": self.name,
             "noun": self.noun,
@@ -74,12 +79,17 @@ impl SPdmsElement {
         json_string.push_str(",");
         json_string.push_str(&format!(
             r#""refno": {}_H:['{}',{}], "#,
-            &self.noun,
-            self.refno,
-            sesno
+            &self.noun, self.refno, sesno
         ));
         json_string.push_str(&format!(r#""id": ['{}',{}],"#, self.refno, sesno));
-        json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
+        if owner_sesno != 0 {
+            json_string.push_str(&format!(
+                r#""owner": pe:['{}',{}]"#,
+                self.owner, owner_sesno
+            ));
+        } else {
+            json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
+        }
         json_string.push_str("}");
         json_string
     }

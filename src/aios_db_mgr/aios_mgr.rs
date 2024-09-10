@@ -3,7 +3,10 @@ use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
-use crate::{get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB};
+use crate::{
+    get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda,
+    get_next_prev, get_pe, get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB,
+};
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
@@ -110,7 +113,7 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
-        get_named_attmap_with_uda(refno, false).await
+        get_named_attmap_with_uda(refno.into(), false).await
     }
 
     async fn get_children(&self, refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
@@ -196,9 +199,12 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_name(&self, refno: RefU64) -> anyhow::Result<String> {
-        let sql = format!("
+        let sql = format!(
+            "
         return fn::default_name({});
-        ", refno.to_pe_key());
+        ",
+            refno.to_pe_key()
+        );
         let mut response = SUL_DB.query(sql).await?;
         let o: Option<String> = response.take(0)?;
         Ok(o.unwrap_or("".to_string()))

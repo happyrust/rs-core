@@ -29,12 +29,21 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP 测试材料清单重构">
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/run.sh" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP fix room calculation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/collect.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/collect.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/fn_b_valv_supp.surql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_fmqd_valv.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_fmqd_valv.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/eq/eq_common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/eq/eq_common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -295,7 +304,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_material::test_perform_multiplication_with_none">
+  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -390,8 +399,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_uda::test_query_uda_name" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_uda::test_query_uda_name -- --exact" />
+    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_FIT -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -430,16 +439,16 @@
       <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_uda::test_query_uda_name" />
+      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
       <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
         <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
         <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_uda::test_query_uda_name" />
       </list>
     </recent_temporary>
   </component>
@@ -926,6 +935,11 @@
       <workItem from="1724917567677" duration="2744000" />
       <workItem from="1724926086454" duration="33000" />
       <workItem from="1725005605252" duration="6876000" />
+      <workItem from="1725263144859" duration="10000" />
+      <workItem from="1725272380752" duration="2586000" />
+      <workItem from="1725350122245" duration="286000" />
+      <workItem from="1725937495069" duration="624000" />
+      <workItem from="1725947153768" duration="599000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1270,7 +1284,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="383" />
+    <option name="localTasksCounter" value="385" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1309,7 +1323,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="2.1" />
+                        <option value="rs-core/外部" />
                       </list>
                     </value>
                   </entry>
@@ -1324,8 +1338,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="(1) 优化了src/types/whole_attmap.rs中refine函数的逻辑，使用临时remove_list存储待移除的键，提高了效率；&#10;(2) 在src/test/mod.rs中增加了test_parse_dir模块的调用；&#10;(3) 修正了src/data_state.rs，src/virtual_hole.rs，src/three_dimensional_review.rs，src/water_calculation.rs中多个结构体的派生属性，移除了Component属性；&#10;(4) 新增了src/test/test_parse_dir.rs测试模块；&#10;(5) 提供了新的解析坐标的方式，并添加相应测试用例；&#10;(6) 修改了all_attr_info.json中部分属性的类型定义；&#10;(7) 对src/rs_surreal/spatial.rs中的矩阵计是GENSEC的情况提供特殊处理，增加了需要bangle转换的判断等；&#10;(8) 在src/tool/mod.rs中引入了新的解析模块parse_to_dir；&#10;(9) 新增了src/tool/parse_to_dir.rs，提供了新的解析坐标的函数；&#10;(10) 在src/tool/direction_parse.rs中的parse_expr_to_dir函数中添加了新的解析方式。" />
-    <MESSAGE value="Refactored calculation of rotation angle in sweep_solid.rs and tubing.rs. Modified the round of vertices in manifold.rs. Updated testing scenarios in test_parse_dir.rs, and test_spatial.rs. Adjusted SQL query related to visible fields in inst.rs." />
     <MESSAGE value="change version to use pgno" />
     <MESSAGE value="fix matrix compute" />
     <MESSAGE value="fix" />
@@ -1349,18 +1361,9 @@
     <MESSAGE value="(1) 修改 `acceleration_tree.rs` 中字段名以增加可读性。&#10;&#10;(2) 将 `hvac_mat_id` 调用中的 `meta::id` 修改为 `record::id`，提高一致性：&#10;&#10;    * 在 `washer.surql`。&#10;    * 在 `hvac.surql` 和 `hvac_old.surql`。&#10;    * 在 `fggd_bend.surql`，`fn_get_world_pos.surql` 和其他 HVAC 相关工具。&#10;&#10;(3) 修改 `test_basic_query.rs` 中的测试数据以适应新需求。&#10;&#10;(4) 增加测试逻辑在 `test_uda.rs` 中，以验证新的 UDA 功能。&#10;&#10;(5) 更新 `uda.rs` 中增加通用方法 `get_uda_prop_as_string` 并使用此方法获取 &quot;UDNA&quot; 和 &quot;UTYP&quot; 属性。&#10;&#10;(6) 更新 `.idea/workspace.xml` 以包含最新的项目配置。" />
     <MESSAGE value="(1) 修改了&quot;ATT_UDA&quot;查询语句，增加了where条件，排除了UTYP为none的情况。" />
     <MESSAGE value="(1) 增加了测试函数 `test_query_ptset` 和相关的查询逻辑；&#10;(2) 修改了 `get_children_named_attmaps` 的 SQL 查询；&#10;(3) 修复了 `query_group_by_cata_hash` 返回结果中 map 键值类型的问题；&#10;(4) 更新了 `query_single_by_paths` 的 SQL 查询逻辑；&#10;(5) 调整了多余的注释和调试信息；&#10;(6) 修复了 `Polyline` 处理过程中节点过滤及相交校验逻辑；&#10;(7) 优化了生成 `Polyline` 的多边形布尔运算及相关异常处理；&#10;(8) 修正了 `Polyline` 相交处理中的浮点数比较逻辑。" />
-    <option name="LAST_COMMIT_MESSAGE" value="(1) 增加了测试函数 `test_query_ptset` 和相关的查询逻辑；&#10;(2) 修改了 `get_children_named_attmaps` 的 SQL 查询；&#10;(3) 修复了 `query_group_by_cata_hash` 返回结果中 map 键值类型的问题；&#10;(4) 更新了 `query_single_by_paths` 的 SQL 查询逻辑；&#10;(5) 调整了多余的注释和调试信息；&#10;(6) 修复了 `Polyline` 处理过程中节点过滤及相交校验逻辑；&#10;(7) 优化了生成 `Polyline` 的多边形布尔运算及相关异常处理；&#10;(8) 修正了 `Polyline` 相交处理中的浮点数比较逻辑。" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/expression/resolve_helper.rs</url>
-          <line>538</line>
-          <option name="timeStamp" value="45" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="fix fitt translation calculation,translation += rotation * DVec3::Z * zdist as f64;" />
+    <MESSAGE value="WIP fix room calculation" />
+    <option name="LAST_COMMIT_MESSAGE" value="WIP fix room calculation" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

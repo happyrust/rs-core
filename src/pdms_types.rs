@@ -39,6 +39,7 @@ use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::string::ToString;
 use surrealdb::sql::Thing;
+use serde_repr::{Serialize_repr, Deserialize_repr};
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -1274,22 +1275,25 @@ pub struct RoomNodes {
     pub nodes: Vec<String>,
 }
 
-#[derive(PartialEq, Debug, Default, Clone, Copy, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Default, Clone, Copy, Serialize_repr, Deserialize_repr)]
+#[repr(i32)]
 pub enum EleOperation {
     #[default]
-    None,
-    Add,
-    Modified,
-    Deleted,
+    Add = 0,
+    Modified = 1,
+    Deleted = 2,
+    Duplicate = 3,
+    None = 4,
 }
 
 impl EleOperation {
-    pub fn into_tidb_num(&self) -> u8 {
+    pub fn into_num(&self) -> i32 {
         match &self {
-            EleOperation::None => 0,
-            EleOperation::Add => 1,
-            EleOperation::Modified => 2,
-            EleOperation::Deleted => 3,
+            EleOperation::Add => 0,
+            EleOperation::Modified => 1,
+            EleOperation::Deleted => 2,
+            EleOperation::Duplicate => 3,
+            EleOperation::None => 4,
         }
     }
 }
@@ -1297,9 +1301,10 @@ impl EleOperation {
 impl From<i32> for EleOperation {
     fn from(v: i32) -> Self {
         match v {
-            1 => Self::Add,
-            2 => Self::Modified,
-            3 => Self::Deleted,
+            0 => Self::Add,
+            1 => Self::Modified,
+            2 => Self::Deleted,
+            3 => Self::Duplicate,
             _ => Self::None,
         }
     }
@@ -1308,10 +1313,11 @@ impl From<i32> for EleOperation {
 impl ToString for EleOperation {
     fn to_string(&self) -> String {
         match &self {
-            Self::None => "Unknown".to_string(),
+            Self::None => "未知".to_string(),
             EleOperation::Add => "增加".to_string(),
             EleOperation::Modified => "修改".to_string(),
             EleOperation::Deleted => "删除".to_string(),
+            EleOperation::Duplicate => "复制".to_string(),
         }
     }
 }

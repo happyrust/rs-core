@@ -1,10 +1,10 @@
+use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::*;
 use crate::SUL_DB;
 use crate::{rs_surreal, NamedAttrMap, RefU64};
 use glam::Vec3;
 use std::sync::Arc;
 use surrealdb::sql::Thing;
-use crate::parsed_data::CateAxisParam;
 
 #[tokio::test]
 async fn test_query_pe_by_refno() -> anyhow::Result<()> {
@@ -41,10 +41,15 @@ async fn test_query_ancestor_by_refno() -> anyhow::Result<()> {
 async fn test_query_index_of_parent() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
     let parent: RefU64 = "17496_273491".into();
-    let refno : RefU64 = "17496_273497".into();
-    let no_type_filter_index = rs_surreal::get_index_by_noun_in_parent(parent, refno, None).await.unwrap();
+    let refno: RefU64 = "17496_273497".into();
+    let no_type_filter_index = rs_surreal::get_index_by_noun_in_parent(parent, refno, None)
+        .await
+        .unwrap();
     dbg!(no_type_filter_index);
-    let ENDATU_filter_index = rs_surreal::get_index_by_noun_in_parent(parent, refno, Some("ENDATU")).await.unwrap();
+    let ENDATU_filter_index =
+        rs_surreal::get_index_by_noun_in_parent(parent, refno, Some("ENDATU"))
+            .await
+            .unwrap();
     dbg!(ENDATU_filter_index);
     Ok(())
 }
@@ -118,7 +123,9 @@ async fn test_query_children() {
         .unwrap();
     dbg!(nodes);
 
-    let children = rs_surreal::get_children_refnos("17496_256208".into()).await.unwrap();
+    let children = rs_surreal::get_children_refnos("17496_256208".into())
+        .await
+        .unwrap();
     dbg!(children);
 }
 
@@ -172,12 +179,15 @@ from $refnos
 async fn test_query_attmap() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
 
-    let refno = "9304/2".into();
-    let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
+    // let refno = "9304/2".into();
+    let ses_refno = RefnoSesno::new("17496_272476".into(), 885);
+    let attmap = rs_surreal::get_ui_named_attmap(("17496_272476", 885).into())
+        .await
+        .unwrap();
     dbg!(attmap);
 
-    let children = rs_surreal::get_children_named_attmaps(refno).await.unwrap();
-    dbg!(&children);
+    // let children = rs_surreal::get_children_named_attmaps(refno).await.unwrap();
+    // dbg!(&children);
 
     // let world = rs_surreal::get_world_refno("/ALL".into()).await.unwrap();
     // dbg!(world);
@@ -206,8 +216,6 @@ async fn test_query_ptset() -> anyhow::Result<()> {
 async fn test_query_cata() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
 
-
-
     let refno = "17496/171646".into();
     let cat_refno = rs_surreal::get_cat_refno(refno).await?.unwrap();
     assert_eq!(cat_refno, "13245_888353".into());
@@ -222,7 +230,6 @@ async fn test_query_cata() -> anyhow::Result<()> {
     // get_cat_attmap
     let cat_attmap = rs_surreal::get_cat_attmap(refno).await.unwrap();
     dbg!(cat_attmap);
-
 
     let refno = "17496/172806".into();
     let cat_refno = rs_surreal::get_cat_refno(refno).await.unwrap();

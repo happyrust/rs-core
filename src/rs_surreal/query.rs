@@ -34,11 +34,10 @@ struct KV<K, V> {
 #[cached(result = true)]
 pub async fn get_pe(refno: RefU64) -> anyhow::Result<Option<SPdmsElement>> {
     let sql = format!(
-        r#"select * omit id from only {} limit 1;"#, refno.to_pe_key()
+        r#"select * omit id from only {} limit 1;"#,
+        refno.to_pe_key()
     );
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let pe: Option<SPdmsElement> = response.take(0)?;
     Ok(pe)
 }
@@ -167,8 +166,8 @@ pub async fn get_index_by_noun_in_parent(
 
 ///查询的数据把 refno->name，换成名称
 #[cached(result = true)]
-pub async fn get_ui_named_attmap(refno: RefU64) -> anyhow::Result<NamedAttrMap> {
-    let mut attmap = get_named_attmap_with_uda(refno, true).await?;
+pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
+    let mut attmap = get_named_attmap_with_uda(refno_enum, true).await?;
     attmap.fill_explicit_default_values();
     let mut refno_fields = vec![];
     let mut keys = vec![];
@@ -301,25 +300,29 @@ pub async fn get_next_prev(refno: RefU64, next: bool) -> anyhow::Result<RefU64> 
 ///通过surql查询属性数据，包含UDA数据
 #[cached(result = true)]
 pub async fn get_named_attmap_with_uda(
-    refno: RefU64,
+    refno_enum: RefnoEnum,
     default_unset: bool,
 ) -> anyhow::Result<NamedAttrMap> {
-    let mut response = SUL_DB
-        .query(r#"
-            --通过传递refno，查询属性值
-    select fn::default_full_name(REFNO) as NAME, * from only (type::thing("pe", $refno)).refno fetch pe;
-    select string::concat(':', if UDNA==none || string::len(UDNA)==0 { DYUDNA } else { UDNA }) as u, DFLT as v, UTYP as t from UDA where !UHIDE and (type::thing("pe", $refno)).noun in ELEL;
-    -- uda 单独做个查询？
-    select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 { u.DYUDNA } else { u.UDNA }) as u, u.UTYP as t, v from (type::thing("ATT_UDA", $refno)).udas where u.UTYP != none;
-        "#)
-        .bind(("refno", refno.to_string()))
-        .await?;
+    let pe_key = refno_enum.to_pe_key();
+    let sql = format!(
+        r#"
+        --通过传递refno，查询属性值
+        select fn::default_full_name(REFNO) as NAME, * from only {0}.refno fetch pe;
+        select string::concat(':', if UDNA==none || string::len(UDNA)==0 {{ DYUDNA }} else {{ UDNA }}) as u, DFLT as v, UTYP as t from UDA where !UHIDE and {0}.noun in ELEL;
+        -- uda 单独做个查询？
+        select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u, u.UTYP as t, v from (ATT_UDA:{1}).udas where u.UTYP != none;
+        "#,
+        pe_key,
+        refno_enum.refno()
+    );
+    let mut response = SUL_DB.query(sql).await?;
     //获得uda的 map
     let o: surrealdb::Value = response.take(0)?;
     let mut named_attmap: NamedAttrMap = o.into_inner().into();
     let o: surrealdb::Value = response.take(1)?;
     let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
-    let uda_kvs: Vec<surrealdb::sql::Object> = array.into_iter().map(|x| x.try_into().unwrap()).collect();
+    let uda_kvs: Vec<surrealdb::sql::Object> =
+        array.into_iter().map(|x| x.try_into().unwrap()).collect();
     // dbg!(&uda_kvs);
     for map in uda_kvs {
         let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
@@ -334,7 +337,8 @@ pub async fn get_named_attmap_with_uda(
     }
     let o: surrealdb::Value = response.take(2)?;
     let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
-    let overwrite_kvs: Vec<surrealdb::sql::Object> = array.into_iter().map(|x| x.try_into().unwrap()).collect();
+    let overwrite_kvs: Vec<surrealdb::sql::Object> =
+        array.into_iter().map(|x| x.try_into().unwrap()).collect();
     // dbg!(&overwrite_kvs);
     for map in overwrite_kvs {
         let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
@@ -392,11 +396,7 @@ pub async fn get_children_named_attmaps(refno: RefU64) -> anyhow::Result<Vec<Nam
         refno.to_pe_key()
     );
     // println!("get_children_named_attmaps sql is {}", &sql);
-    let mut response = SUL_DB
-        .query(
-            sql
-        )
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let o: surrealdb::Value = response.take(0)?;
     // dbg!(&o);
     let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
@@ -418,10 +418,11 @@ pub async fn get_children_pes(refno: RefU64) -> anyhow::Result<Vec<SPdmsElement>
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
 pub async fn get_all_children_refnos(
-    refnos: impl IntoIterator<Item=&RefU64>,
+    refnos: impl IntoIterator<Item = &RefU64>,
 ) -> anyhow::Result<Vec<RefU64>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let sql = format!("array::flatten(select value in from [{pe_keys}]<-pe_owner where in.id!=none)");
+    let sql =
+        format!("array::flatten(select value in from [{pe_keys}]<-pe_owner where in.id!=none)");
     let mut response = SUL_DB.query(sql).await?;
     let refnos: Vec<RefU64> = response.take(0)?;
     Ok(refnos)
@@ -452,7 +453,10 @@ pub async fn query_filter_children(refno: RefU64, types: &[&str]) -> anyhow::Res
 }
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
-pub async fn query_filter_children_atts(refno: RefU64, types: &[&str]) -> anyhow::Result<Vec<NamedAttrMap>> {
+pub async fn query_filter_children_atts(
+    refno: RefU64,
+    types: &[&str],
+) -> anyhow::Result<Vec<NamedAttrMap>> {
     let nouns_str = types
         .iter()
         .map(|s| format!("'{s}'"))
@@ -518,16 +522,16 @@ pub async fn clear_all_caches(refno: RefU64) {
     GET_NAMED_ATTMAP_WITH_UDA
         .lock()
         .await
-        .cache_remove(&(refno, true));
+        .cache_remove(&(refno.into(), true));
     GET_NAMED_ATTMAP_WITH_UDA
         .lock()
         .await
-        .cache_remove(&(refno, false));
+        .cache_remove(&(refno.into(), false));
     GET_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_CHILDREN_NAMED_ATTMAPS.lock().await.cache_remove(&refno);
     GET_CAT_ATTMAP.lock().await.cache_remove(&refno);
     GET_CAT_REFNO.lock().await.cache_remove(&refno);
-    GET_UI_NAMED_ATTMAP.lock().await.cache_remove(&refno);
+    GET_UI_NAMED_ATTMAP.lock().await.cache_remove(&refno.into());
     GET_CHILDREN_PES.lock().await.cache_remove(&refno);
 }
 
@@ -558,7 +562,7 @@ pub async fn query_multi_children_refnos(refnos: &[RefU64]) -> anyhow::Result<Ve
 ///按cata_hash 分组获得不同的参考号类型
 // #[cached(result = true)]
 pub async fn query_group_by_cata_hash(
-    refnos: impl IntoIterator<Item=&RefU64>,
+    refnos: impl IntoIterator<Item = &RefU64>,
 ) -> anyhow::Result<DashMap<String, CataHashRefnoKV>> {
     let keys = refnos
         .into_iter()
@@ -577,9 +581,7 @@ pub async fn query_group_by_cata_hash(
             chunk.join(",")
         );
         // println!("query_group_by_cata_hash sql is {}", &sql);
-        let mut response = SUL_DB
-            .query(&sql)
-            .await?;
+        let mut response = SUL_DB.query(&sql).await?;
         // let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
         //     response.take(1).unwrap();
         //TODO surreal bug, 在 surreal 存储的 map，不知道咋变成了 string
@@ -599,7 +601,11 @@ pub async fn query_group_by_cata_hash(
                             cata_hash,
                             group_refnos,
                             exist_inst,
-                            ptset: ptset.map(|x| x.into_iter().map(|(k, v)| (k.parse().unwrap(), v)).collect()),
+                            ptset: ptset.map(|x| {
+                                x.into_iter()
+                                    .map(|(k, v)| (k.parse().unwrap(), v))
+                                    .collect()
+                            }),
                         },
                     )
                 },
@@ -607,7 +613,11 @@ pub async fn query_group_by_cata_hash(
             .collect::<DashMap<String, CataHashRefnoKV>>();
         for (k, v) in map {
             if result_map.contains_key(&k) {
-                result_map.get_mut(&k).unwrap().group_refnos.extend(v.group_refnos);
+                result_map
+                    .get_mut(&k)
+                    .unwrap()
+                    .group_refnos
+                    .extend(v.group_refnos);
             } else {
                 result_map.insert(k, v);
             }
@@ -633,12 +643,11 @@ pub async fn query_foreign_refnos(
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
-        .collect::<Vec<_>>().join(",");
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
         "select refno, refno.{} as foreign_refno,refno.{}.refno.NAME as name from [{}];",
-        &foreign_type,
-        &foreign_type,
-        refnos
+        &foreign_type, &foreign_type, refnos
     );
     let mut response = SUL_DB.query(sql).await?;
     let result: Vec<PdmsSpreName> = response.take(0)?;
