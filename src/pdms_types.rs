@@ -550,10 +550,10 @@ impl EleTreeNode {
 impl From<PdmsElement> for EleTreeNode {
     fn from(value: PdmsElement) -> Self {
         EleTreeNode {
-            refno: value.refno,
+            refno: value.refno.into(),
             noun: value.noun,
             name: value.name,
-            owner: value.owner,
+            owner: value.owner.into(),
             order: 0,
             children_count: value.children_count as _,
             deleted: false,
@@ -564,7 +564,7 @@ impl From<PdmsElement> for EleTreeNode {
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]
     fn get_refno(&self) -> RefU64 {
-        self.refno
+        self.refno.refno()
     }
 
     #[inline]
@@ -704,8 +704,8 @@ impl PdmsElement {
 impl From<EleTreeNode> for PdmsElement {
     fn from(value: EleTreeNode) -> Self {
         Self {
-            refno: value.refno,
-            owner: value.owner,
+            refno: value.refno.refno(),
+            owner: value.owner.refno(),
             name: value.name,
             noun: value.noun,
             version: 0,
