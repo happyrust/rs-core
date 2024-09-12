@@ -1,6 +1,6 @@
 use glam::Vec3;
 
-use crate::{RefU64, SUL_DB, query_neareast_along_axis};
+use crate::{query_neareast_along_axis, RefU64, RefnoEnum, SUL_DB};
 
 /// Create the relations between the valves and the floors
 pub async fn cal_valve_nearest_floor() -> anyhow::Result<()> {
@@ -15,7 +15,7 @@ pub async fn cal_valve_nearest_floor() -> anyhow::Result<()> {
             offset
         );
         let mut response = SUL_DB.query(&sql).await?;
-        let refnos: Vec<RefU64> = response.take(0).unwrap();
+        let refnos: Vec<crate::RefnoEnum> = response.take(0).unwrap();
         if refnos.is_empty() {
             break;
         }
@@ -25,7 +25,7 @@ pub async fn cal_valve_nearest_floor() -> anyhow::Result<()> {
             if let Ok(Some((nearest, dist))) = query_neareast_along_axis(refno, Vec3::NEG_Z, "FLOOR")
                 .await{
                 // dbg!((refno, nearest, dist));
-                sqls.push(format!("relate pe:{refno}->nearest_relate->FLOOR:{nearest} set dist={dist};"));
+                sqls.push(format!("relate {}->nearest_relate->FLOOR:{} set dist={dist};", refno.to_pe_key(), nearest.to_string()));
             }
         }
         //保存到 SUL_DB

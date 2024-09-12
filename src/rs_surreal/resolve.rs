@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::{collections::HashMap, str::FromStr};
 
 use crate::pdms_types::PdmsGenericType;
+use crate::RefnoEnum;
 use crate::{
     math::polish_notation::Stack, tiny_expr::expr_eval::interp, tool::float_tool::f64_round_3,
     NamedAttrMap, NamedAttrValue, RefU64,
@@ -76,7 +77,7 @@ pub const DDANGLE_STR: &'static str = "DDANGLE";
 
 ///创建desi参考号的元件库计算上下文
 pub async fn get_or_create_cata_context(
-    desi_refno: RefU64,
+    desi_refno: RefnoEnum,
     is_tubi: bool,
 ) -> anyhow::Result<CataContext> {
     let desi_att = crate::get_named_attmap(desi_refno).await?;
@@ -162,7 +163,7 @@ pub async fn get_or_create_cata_context(
         }
 
         //dtse 的信息处理
-        let dtre_refno: RefU64 = cata_attmap.get_foreign_refno("DTRE").unwrap_or_default();
+        let dtre_refno = cata_attmap.get_foreign_refno("DTRE").unwrap_or_default();
         let children = crate::get_children_named_attmaps(dtre_refno).await?;
         //如果只查部分数据，可以改一下接口
         for child in children {
@@ -255,7 +256,7 @@ pub fn eval_str_to_f64(
     dbg!(&input_expr);
     let refno = context
         .get("RS_DES_REFNO")
-        .and_then(|x| RefU64::from_str(x.as_str()).ok())
+        .and_then(|x| Some(RefnoEnum::from(x.as_str())))
         .unwrap_or_default();
     //处理引用的情况 OF 的情况, 如果需要获取 att value，还是需要用数据库去获取值
     let mut new_exp = prepare_eval_str(input_expr);
@@ -607,7 +608,7 @@ pub fn eval_str_to_f64(
 
 pub async fn resolve_expression(
     expr: &str,
-    desi_refno: RefU64,
+    desi_refno: RefnoEnum,
     is_tubi: bool,
 ) -> anyhow::Result<f64> {
     let context = get_or_create_cata_context(desi_refno, is_tubi).await?;
@@ -618,7 +619,7 @@ pub async fn resolve_expression(
 /// 如果 desi_refno 为空，代表design的数据不需要参与计算
 pub async fn resolve_expression_to_f32(
     expr: &str,
-    desi_refno: RefU64,
+    desi_refno: RefnoEnum,
     is_tubi: bool,
 ) -> anyhow::Result<f32> {
     let context = get_or_create_cata_context(desi_refno, is_tubi).await?;

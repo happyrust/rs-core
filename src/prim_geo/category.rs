@@ -25,7 +25,7 @@ pub enum ShapeErr {
 
 #[derive(Debug, Clone)]
 pub struct CateBrepShape {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub brep_shape: Box<dyn BrepShapeTrait>,
     pub transform: Transform,
     pub visible: bool,

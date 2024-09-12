@@ -98,7 +98,7 @@ pub async fn get_tx_txsb_list_material(
             };
         }
         // 过滤zone
-        let zones = get_children_pes(pe.refno).await?;
+        let zones = get_children_pes(pe.refno()).await?;
         for zone in zones {
             if !zone.name.contains("FAD") {
                 continue;

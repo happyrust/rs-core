@@ -15,7 +15,7 @@ use std::sync::Mutex;
 use glam::Vec3;
 
 //获得参考号对应的inst keys
-pub fn get_inst_relate_keys(refnos: &[RefU64]) -> String {
+pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
     if !refnos.is_empty() {
         refnos
             .iter()
@@ -46,7 +46,7 @@ pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Ve
 
 ///通过surql查询pe数据
 #[cached(result = true)]
-pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_deep_visible_inst_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let types = super::get_self_and_owner_type_name(refno).await?;
     if types[1] == "BRAN" || types[1] == "HANG" {
         return Ok(vec![refno]);
@@ -70,7 +70,7 @@ pub async fn query_deep_visible_inst_refnos(refno: RefU64) -> anyhow::Result<Vec
 }
 
 #[cached(result = true)]
-pub async fn query_deep_neg_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_deep_neg_inst_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let neg_refnos =
         super::query_filter_deep_children(refno, &TOTAL_NEG_NOUN_NAMES)
             .await?;
@@ -80,7 +80,7 @@ pub async fn query_deep_neg_inst_refnos(refno: RefU64) -> anyhow::Result<Vec<Ref
 //leave_or_arrive: true: leave, false: arrive
 #[cached(result = true)]
 pub async fn query_la_axis_attmap(
-    refno: RefU64,
+    refno: RefnoEnum,
     leave_or_arrive: bool,
 ) -> anyhow::Result<NamedAttrMap> {
     // let cata_refno = super::get_cat_refno(refno).await?.ok_or(anyhow::anyhow!("no cat_refno"))?;
@@ -99,9 +99,9 @@ pub async fn query_la_axis_attmap(
 pub struct RefnoHasNegPosInfo {
     // pub refno: RefU64,
     /// 正实体的参考号
-    pub pos: RefU64,
+    pub pos: RefnoEnum,
     /// 负实体的参考号集合
-    pub negs: Vec<RefU64>,
+    pub negs: Vec<RefnoEnum>,
 }
 
 /// 后面再创建一个 compound 的关系，负责连接这个参考号对应的 info，并标记为 compound， compound 优先
@@ -110,9 +110,9 @@ pub struct RefnoHasNegPosInfo {
 ///还要考虑下面有多个LOOP或者PLOO的情况，第二个开始都是负实体
 /// 首先查询到所有的负实体，然后找到sibling和父节点
 pub async fn query_refno_has_pos_neg_map(
-    refno: RefU64,
+    refno: RefnoEnum,
     is_cata: Option<bool>, //是否是元件库里的负实体查询
-) -> anyhow::Result<HashMap<RefU64, Vec<RefU64>>> {
+) -> anyhow::Result<HashMap<RefnoEnum, Vec<RefnoEnum>>> {
     //先查询负实体和它的neg children
     let nouns = match is_cata {
         Some(true) => CATE_NEG_NOUN_NAMES.as_slice(),
@@ -151,9 +151,9 @@ pub async fn query_refno_has_pos_neg_map(
 /// # 返回
 /// 返回一个哈希映射，其中键是参考号，值是具有正负实体映射关系的参考号信息列表
 pub async fn query_refnos_has_pos_neg_map(
-    refno: &[RefU64],
+    refno: &[RefnoEnum],
     is_cata: Option<bool>,
-) -> anyhow::Result<HashMap<RefU64, Vec<RefU64>>> {
+) -> anyhow::Result<HashMap<RefnoEnum, Vec<RefnoEnum>>> {
     let mut result = HashMap::new();
     for &refno in refno {
         let mut map = query_refno_has_pos_neg_map(refno, is_cata).await?;
@@ -163,7 +163,7 @@ pub async fn query_refnos_has_pos_neg_map(
 }
 
 /// 查询bran下所有元件的点集
-pub async fn query_bran_children_point_map(refno: RefU64) -> anyhow::Result<Vec<InstPointMap>> {
+pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<Vec<InstPointMap>> {
     let sql = format!(
         "
     select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
@@ -176,7 +176,7 @@ pub async fn query_bran_children_point_map(refno: RefU64) -> anyhow::Result<Vec<
 }
 
 /// 查询参考号对应的点集
-pub async fn query_point_map(refno: RefU64) -> anyhow::Result<Option<InstPointMap>> {
+pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPointMap>> {
     let sql = format!("
     select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num from {};", refno.to_pe_key());
     let mut response = SUL_DB.query(sql).await?;
@@ -189,8 +189,8 @@ pub async fn query_point_map(refno: RefU64) -> anyhow::Result<Option<InstPointMa
 
 /// 查询多个参考号对应的点集
 pub async fn query_refnos_point_map(
-    refnos: Vec<RefU64>,
-) -> anyhow::Result<HashMap<RefU64, InstPointMap>> {
+    refnos: Vec<RefnoEnum>,
+) -> anyhow::Result<HashMap<RefnoEnum, InstPointMap>> {
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
@@ -210,13 +210,13 @@ pub async fn query_refnos_point_map(
 }
 
 ///通过geo hash 查询参考号
-pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!(
         "array::distinct(array::flatten(select value in<-inst_relate.in from inst_geo:⟨{}⟩<-geo_relate));",
         id
     );
     let mut response = SUL_DB.query(&sql).await?;
-    let result: Vec<RefU64> = response.take(0)?;
+    let result: Vec<RefnoEnum> = response.take(0)?;
     Ok(result)
 }
 

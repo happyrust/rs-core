@@ -20,7 +20,7 @@ use bevy_render::render_asset::RenderAssetUsages;
 use std::io::Write;
 use dashmap::DashSet;
 use crate::prim_geo::basic::{BOXI_GEO_HASH, TUBI_GEO_HASH};
-use crate::{gen_bytes_hash, RefU64};
+use crate::{gen_bytes_hash, RefU64, RefnoEnum};
 use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::PdmsGenericType;
@@ -522,7 +522,7 @@ impl PlantGeoData {
 )]
 pub struct EleInstGeosData {
     pub inst_key: String,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub insts: Vec<EleInstGeo>,
 
     pub aabb: Option<Aabb>,

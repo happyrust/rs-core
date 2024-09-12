@@ -29,19 +29,43 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP fix room calculation">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP 版本管理">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/query_cata.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/query_cata.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/resolve.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/geometry/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/geometry/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/tx.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/tx.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parsed_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parsed_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_data.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_pluggin/heat_dissipation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_pluggin/heat_dissipation.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/eq/eq_common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/eq/eq_common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/category.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/category.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/profile.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/profile.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/spine.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/spine.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/tubing.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/tubing.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/room/algorithm.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/room/algorithm.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/room/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/room/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/geom.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/geom.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/spatial/pipe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/spatial/pipe.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_query_group.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
     </list>
@@ -435,12 +459,12 @@
     </configuration>
     <list>
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
       <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
-      <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
@@ -940,6 +964,8 @@
       <workItem from="1725350122245" duration="286000" />
       <workItem from="1725937495069" duration="624000" />
       <workItem from="1725947153768" duration="599000" />
+      <workItem from="1725972032932" duration="587000" />
+      <workItem from="1726114980267" duration="700000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1284,7 +1310,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="385" />
+    <option name="localTasksCounter" value="386" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1338,7 +1364,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="change version to use pgno" />
     <MESSAGE value="fix matrix compute" />
     <MESSAGE value="fix" />
     <MESSAGE value="fix opdir calculation" />
@@ -1363,7 +1388,8 @@
     <MESSAGE value="(1) 增加了测试函数 `test_query_ptset` 和相关的查询逻辑；&#10;(2) 修改了 `get_children_named_attmaps` 的 SQL 查询；&#10;(3) 修复了 `query_group_by_cata_hash` 返回结果中 map 键值类型的问题；&#10;(4) 更新了 `query_single_by_paths` 的 SQL 查询逻辑；&#10;(5) 调整了多余的注释和调试信息；&#10;(6) 修复了 `Polyline` 处理过程中节点过滤及相交校验逻辑；&#10;(7) 优化了生成 `Polyline` 的多边形布尔运算及相关异常处理；&#10;(8) 修正了 `Polyline` 相交处理中的浮点数比较逻辑。" />
     <MESSAGE value="fix fitt translation calculation,translation += rotation * DVec3::Z * zdist as f64;" />
     <MESSAGE value="WIP fix room calculation" />
-    <option name="LAST_COMMIT_MESSAGE" value="WIP fix room calculation" />
+    <MESSAGE value="WIP 版本管理" />
+    <option name="LAST_COMMIT_MESSAGE" value="WIP 版本管理" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

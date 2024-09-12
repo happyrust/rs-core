@@ -153,7 +153,7 @@ pub async fn gen_pdms_major_table() -> anyhow::Result<()> {
             if site_name.contains(&codes.site_name) {
                 // let mut zone_majors = HashMap::new();
                 result.push(PbsMajorValue {
-                    id: *site,
+                    id: site.refno(),
                     noun: "SITE".to_string(),
                     major: codes.site_code.clone(),
                 });
@@ -163,7 +163,7 @@ pub async fn gen_pdms_major_table() -> anyhow::Result<()> {
                         if zone.name.contains(major_name) {
                             // zone_majors.entry(zone.refno).or_insert(major_code.clone());
                             result.push(PbsMajorValue {
-                                id: zone.refno,
+                                id: zone.refno(),
                                 noun: zone.noun.clone(),
                                 major: major_code.clone(),
                             })
@@ -201,7 +201,7 @@ pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
         get_mdb_world_site_pes(mdb, DBType::DESI).await?;
     let mut site_name_map = HashMap::new();
     for site in sites {
-        let Ok(children) = aios_mgr.get_children(site.refno).await else {
+        let Ok(children) = aios_mgr.get_children(site.refno()).await else {
             continue;
         };
         for child in children {
@@ -209,11 +209,11 @@ pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
                 continue;
             };
             site_children_map
-                .entry(site.refno)
+                .entry(site.refno())
                 .or_insert_with(Vec::new)
                 .push(child);
         }
-        site_name_map.entry(site.refno).or_insert(site.name);
+        site_name_map.entry(site.refno()).or_insert(site.name);
     }
     // 给site和zone赋上对应的code
     let mut result = Vec::new();
@@ -234,9 +234,9 @@ pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
                 for (major_name, major_code) in &codes.zone_map {
                     for zone in site_children_map.get(&site).unwrap() {
                         if zone.name.contains(major_name) {
-                            // zone_majors.entry(zone.refno).or_insert(major_code.clone());
+                            // zone_majors.entry(zone.refno()).or_insert(major_code.clone());
                             result.push(PbsMajorValue {
-                                id: zone.refno,
+                                id: zone.refno.refno(),
                                 noun: zone.noun.clone(),
                                 major: major_code.clone(),
                             })
@@ -458,7 +458,7 @@ struct PbsRoomNodeResult {
 pub struct PbsElement {
     pub id: Thing,
     pub owner: Thing,
-    pub refno: Option<RefU64>,
+    pub refno: Option<RefnoEnum>,
     pub name: String,
     pub noun: Option<String>,
     pub children_cnt: usize,
@@ -753,15 +753,16 @@ pub async fn set_pbs_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Resu
         // 找到所有需要处理的节点
         // let nodes = query_ele_filter_deep_children(zone.id, vec!["BRAN".to_string(),
         //                                                          "EQUI".to_string(), "STRU".to_string(), "REST".to_string()]).await?;
-        let bran_refnos = query_filter_deep_children(zone.id, &["BRAN"]).await?;
+        let zone_refno: RefnoEnum = zone.id.into();
+        let bran_refnos = query_filter_deep_children(zone_refno, &["BRAN"]).await?;
         // 处理bran
         set_pbs_bran_node(&bran_refnos, &zone, &mut handles).await?;
         // 处理equi
-        let equi_refnos = query_filter_deep_children(zone.id, &["EQUI"]).await?;
+        let equi_refnos = query_filter_deep_children(zone_refno, &["EQUI"]).await?;
         set_pbs_equi_node(&equi_refnos, &zone, &mut handles).await?;
         // 处理支吊架
-        let stru_refnos = query_filter_deep_children(zone.id, &["STRU"]).await?;
-        let rest_refnos = query_filter_deep_children(zone.id, &["REST"]).await?;
+        let stru_refnos = query_filter_deep_children(zone_refno, &["STRU"]).await?;
+        let rest_refnos = query_filter_deep_children(zone_refno, &["REST"]).await?;
         // dbg!(&rest_refnos.len());
         set_pbs_supp_and_stru_node(&stru_refnos, &rest_refnos, &zone, &mut handles).await?;
     }
@@ -770,7 +771,7 @@ pub async fn set_pbs_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Resu
 
 /// 保存房间下bran相关的节点
 async fn set_pbs_bran_node(
-    refnos: &[RefU64],
+    refnos: &[RefnoEnum],
     zone: &PbsMajorValue,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
@@ -787,7 +788,7 @@ async fn set_pbs_bran_node(
         let owner = PbsElement::id(&format!("{}{}", room_code, zone.major)).to_string();
         let owner_id: Thing = ("pbs".to_string(), owner).into();
         result.push(PbsElement {
-            id: node.id.to_pbs_thing(),
+            id: node.id.refno().to_pbs_thing(),
             refno: Some(node.id.clone()),
             owner: owner_id.clone(),
             name: node.name.clone(),
@@ -796,7 +797,7 @@ async fn set_pbs_bran_node(
         });
         relate_result.push(
             PBSRelate {
-                in_id: node.id.to_pbs_thing(),
+                in_id: node.id.refno().to_pbs_thing(),
                 out_id: owner_id.clone(),
                 order_num: idx as u32,
             }
@@ -830,7 +831,7 @@ async fn set_pbs_bran_node(
 
 // /// 保存房间下equi相关的节点
 async fn set_pbs_equi_node(
-    refnos: &[RefU64],
+    refnos: &[RefnoEnum],
     zone: &PbsMajorValue,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
@@ -861,7 +862,7 @@ async fn set_pbs_equi_node(
         let room_code = node.room_code.clone().unwrap();
         let owner = PbsElement::id(&format!("{}{}", room_code, zone.major)).to_string();
         let owner_id: Thing = ("pbs".to_string(), owner).into();
-        let node_id = node.id.to_pbs_thing();
+        let node_id = node.id.refno().to_pbs_thing();
         result.push(PbsElement {
             id: node_id.clone(),
             refno: Some(node.id.clone()),
@@ -924,8 +925,8 @@ async fn set_pbs_equi_node(
 
 /// 保存房间下supp相关的节点
 async fn set_pbs_supp_and_stru_node(
-    stru_refnos: &[RefU64],
-    rest_refnos: &[RefU64],
+    stru_refnos: &[RefnoEnum],
+    rest_refnos: &[RefnoEnum],
     zone: &PbsMajorValue,
     mut handles: &mut Vec<JoinHandle<()>>,
 ) -> anyhow::Result<()> {
@@ -955,10 +956,10 @@ async fn set_pbs_supp_and_stru_node(
             let room_code = node.room_code.clone().unwrap();
             let owner = PbsElement::id(&format!("{}{}", room_code, zone.major)).to_string();
             let owner_id: Thing = ("pbs".to_string(), owner).into();
-            let node_id = node.id.to_pbs_thing();
+            let node_id = node.id.refno().to_pbs_thing();
             // 存放 STRU
             result.push(PbsElement {
-                id: node.id.to_pbs_thing(),
+                id: node.id.refno().to_pbs_thing(),
                 refno: Some(node.id.clone()),
                 owner: owner_id.clone(),
                 name: node.name.clone(),
@@ -967,7 +968,7 @@ async fn set_pbs_supp_and_stru_node(
             });
             relate_result.push(
                 PBSRelate {
-                    in_id: node.id.to_pbs_thing(),
+                    in_id: node.id.refno().to_pbs_thing(),
                     out_id: owner_id.clone(),
                     order_num: idx as u32,
                 }
@@ -1066,7 +1067,7 @@ async fn set_pbs_supp_and_stru_node(
                 supp_owner_map.insert(fixed_hash);
             }
             // 存放 STRU/REST
-            let cur_id = supp.id.to_pbs_thing();
+            let cur_id = supp.id.refno().to_pbs_thing();
             result.push(PbsElement {
                 id: cur_id.clone(),
                 owner: node_id.clone(),
@@ -1132,7 +1133,7 @@ async fn set_pbs_supp_and_stru_node(
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize)]
 struct PBSRoomNode {
-    pub id: RefU64,
+    pub id: RefnoEnum,
     pub name: String,
     pub noun: String,
     pub room_code: Option<String>,
@@ -1140,7 +1141,7 @@ struct PBSRoomNode {
 }
 
 /// 查找pbs需要的pdms的节点以及房间号
-async fn query_pbs_room_nodes(refnos: &[RefU64]) -> anyhow::Result<Vec<PBSRoomNode>> {
+async fn query_pbs_room_nodes(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<PBSRoomNode>> {
     if refnos.is_empty() {
         return Ok(vec![]);
     };
@@ -1162,8 +1163,8 @@ async fn query_pbs_room_nodes(refnos: &[RefU64]) -> anyhow::Result<Vec<PBSRoomNo
 
 /// 查询多个参考号的children
 async fn query_pbs_children_by_refnos(
-    refnos: &[RefU64],
-) -> anyhow::Result<HashMap<RefU64, Vec<PbsElement>>> {
+    refnos: &[RefnoEnum],
+) -> anyhow::Result<HashMap<RefnoEnum, Vec<PbsElement>>> {
     if refnos.is_empty() {
         return Ok(HashMap::default());
     };

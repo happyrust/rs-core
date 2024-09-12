@@ -7,7 +7,7 @@ use std::f32::consts::PI;
 
 
 use bevy_transform::prelude::*;
-use crate::RefU64;
+use crate::{RefU64, RefnoEnum};
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 
 #[derive(Component, Default, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
@@ -22,7 +22,7 @@ pub enum SpineCurveType {
 
 #[derive(Component, Debug, Default, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,)]
 pub struct Spine3D {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub pt0: Vec3,
     pub pt1: Vec3,
     pub thru_pt: Vec3,
@@ -39,7 +39,6 @@ impl Spine3D {
     //获取两端的方向，如果是直线段，就是直线的方向，如果是圆弧，就是切线的方向
     pub fn get_dir(&self, start_or_end: bool) -> Vec3 {
         match self.curve_type {
-
             SpineCurveType::LINE => {
                 if start_or_end {
                     (self.pt1 - self.pt0).normalize_or_zero()

@@ -1,6 +1,6 @@
 use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
-use crate::{get_inst_relate_keys, RefU64, SUL_DB};
+use crate::{get_inst_relate_keys, RefU64, RefnoEnum, SUL_DB};
 use bevy_transform::components::Transform;
 use glam::{DVec3, Vec3};
 use parry3d::bounding_volume::Aabb;
@@ -74,7 +74,7 @@ pub struct ModelHashInst {
 
 #[derive(Debug)]
 pub struct ModelInstData {
-    pub owner: RefU64,
+    pub owner: RefnoEnum,
     pub insts: Vec<ModelHashInst>,
     pub generic: PdmsGenericType,
     pub world_trans: Transform,
@@ -85,8 +85,8 @@ pub struct ModelInstData {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeomInstQuery {
     #[serde(alias = "id")]
-    pub refno: RefU64,
-    pub owner: RefU64,
+    pub refno: RefnoEnum,
+    pub owner: RefnoEnum,
     pub world_aabb: Aabb,
     pub world_trans: Transform,
     pub insts: Vec<ModelHashInst>,
@@ -106,7 +106,7 @@ pub struct GeomPtsQuery {
 //todo 需要按分块去加载显示
 /// 根据refnos查询当前的insts
 pub async fn query_insts(
-    refnos: impl IntoIterator<Item = &RefU64>,
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
     let inst_keys = get_inst_relate_keys(&refnos);

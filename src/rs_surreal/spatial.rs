@@ -1,6 +1,7 @@
 use crate::room::room::GLOBAL_AABB_TREE;
 use crate::tool::math_tool;
 use crate::tool::math_tool::{cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str};
+use crate::RefnoEnum;
 use crate::{
     accel_tree::acceleration_tree::QueryRay,
     consts::HAS_PLIN_TYPES,
@@ -168,16 +169,16 @@ pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat{
     DQuat::from_mat3(&DMat3::from_cols(x_axis.into(), y_axis.into(), z_axis.into()))
 }
 
-pub async fn get_spline_pts(refno: RefU64) -> anyhow::Result<Vec<DVec3>> {
+pub async fn get_spline_pts(refno: RefnoEnum) -> anyhow::Result<Vec<DVec3>> {
     let mut response = SUL_DB.query(
-        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only pe:{}", refno)).await?;
+        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key())).await?;
     let pts: Vec<DVec3> = response.take(0)?;
     Ok(pts)
 }
 
-pub async fn get_spline_line_dir(refno: RefU64) -> anyhow::Result<DVec3> {
+pub async fn get_spline_line_dir(refno: RefnoEnum) -> anyhow::Result<DVec3> {
     let mut response = SUL_DB.query(
-        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only pe:{}", refno)).await?;
+        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key())).await?;
     let pts: Vec<DVec3> = response.take(0)?;
     if pts.len() == 2 {
         return Ok((pts[1] - pts[0]).normalize());
@@ -186,7 +187,7 @@ pub async fn get_spline_line_dir(refno: RefU64) -> anyhow::Result<DVec3> {
 }
 
 #[cached(result = true)]
-pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transform>> {
+pub async fn get_world_transform(refno: RefnoEnum) -> anyhow::Result<Option<Transform>> {
     get_world_mat4(refno, false)
         .await
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
@@ -196,7 +197,7 @@ pub async fn get_world_transform(refno: RefU64) -> anyhow::Result<Option<Transfo
 ///使用cache，需要从db manager里移除出来
 ///获得世界坐标系, 需要缓存数据，如果已经存在数据了，直接获取
 #[cached(result = true)]
-pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Option<DMat4>> {
+pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
     if ancestors.len() <= 1 {
         return Ok(Some(DMat4::IDENTITY));
@@ -513,7 +514,7 @@ pub async fn get_world_mat4(refno: RefU64, is_local: bool) -> anyhow::Result<Opt
 
 ///查询形集PLIN的值，todo 需要做缓存优化
 // #[cached]
-pub async fn query_pline(refno: RefU64, jusl: String) -> anyhow::Result<Option<PlinParamData>> {
+pub async fn query_pline(refno: RefnoEnum, jusl: String) -> anyhow::Result<Option<PlinParamData>> {
     let cat_att = crate::get_cat_attmap(refno).await.unwrap_or_default();
     let psref = cat_att
         .get_foreign_refno("PSTR")
@@ -565,7 +566,7 @@ pub enum SectionEnd {
 
 /// 计算ZDIS和PKDI, refno 是有这个SPLINE属性或者SCTN这种的参考号
 pub async fn cal_zdis_pkdi_in_section_by_spine(
-    refno: RefU64,
+    refno: RefnoEnum,
     pkdi: f32,
     zdis: f32,
     section_end: Option<SectionEnd>,
@@ -668,7 +669,7 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
     Ok(Some((quat, pos)))
 }
 
-pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
+pub async fn get_spline_path(refno: RefnoEnum) -> anyhow::Result<Vec<Spine3D>> {
     let type_name = crate::get_type_name(refno).await?;
     // dbg!(&type_name);
     let mut paths = vec![];
@@ -741,10 +742,10 @@ pub async fn get_spline_path(refno: RefU64) -> anyhow::Result<Vec<Spine3D>> {
 
 ///沿着 dir 方向找到最近的目标构件
 pub async fn query_neareast_along_axis(
-    refno: RefU64,
+    refno: RefnoEnum,
     dir: Vec3,
     target_type: &str,
-) -> anyhow::Result<Option<(RefU64, f32)>> {
+) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
     let pos = get_world_transform(refno)
         .await?
         .unwrap_or_default()
@@ -766,7 +767,7 @@ pub async fn query_neareast_by_pos_dir(
     pos: Vec3,
     dir: Vec3,
     target_type: &str,
-) -> anyhow::Result<Option<(RefU64, f32)>> {
+) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
     // let pos = get_world_transform(refno).await?.unwrap_or_default().translation;
     //不用 room 的方法查询一次，直接用射线去查找
     let ray = Ray::new(pos.into(), dir.into());

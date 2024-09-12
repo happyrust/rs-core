@@ -29,7 +29,7 @@ use sea_query::{Alias, MysqlQueryBuilder};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use surrealdb::sql::Thing;
+use surrealdb::sql::{Id, Thing};
 
 ///带名称的属性map
 #[derive(
@@ -156,8 +156,12 @@ impl From<SurlValue> for NamedAttrMap {
                                 NamedAttrValue::BoolType(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::RefU64Type(_) | crate::AttrVal::ElementType(_) => {
-                                if let SurlValue::Thing(id) = v {
-                                    NamedAttrValue::RefU64Type(id.into())
+                                if let SurlValue::Thing(record) = v {
+                                    if matches!(record.id, Id::Array(_)) {
+                                        NamedAttrValue::RefnoEnumType(record.into())
+                                    } else {
+                                        NamedAttrValue::RefU64Type(record.into())
+                                    }
                                 } else {
                                     NamedAttrValue::InvalidType
                                 }
@@ -254,7 +258,7 @@ impl NamedAttrMap {
 
     pub fn pe(&self, dbnum: i32) -> SPdmsElement {
         let refno = self.get_refno_or_default();
-        let owner = self.get_refno_by_att_or_default("OWNER");
+        let owner = self.get_refno_by_att_or_default("OWNER").into();
         let noun = self.get_type();
         let name = self.get_string("NAME").unwrap_or_default();
 
@@ -349,8 +353,10 @@ impl NamedAttrMap {
     }
 
     #[inline]
-    pub fn get_foreign_refno(&self, key: &str) -> Option<RefU64> {
+    pub fn get_foreign_refno(&self, key: &str) -> Option<RefnoEnum> {
         if let NamedAttrValue::RefU64Type(d) = self.get_val(key)? {
+            return Some(RefnoEnum::Refno(*d));
+        } else if let NamedAttrValue::RefnoEnumType(d) = self.get_val(key)? {
             return Some(*d);
         }
         None
@@ -405,7 +411,7 @@ impl NamedAttrMap {
     pub fn get_refu64_vec(&self, key: &str) -> Option<Vec<RefU64>> {
         let v = self.get_val(key)?;
         match v {
-            NamedAttrValue::RefU64Array(d) => Some(d.clone()),
+            NamedAttrValue::RefU64Array(d) => Some(d.into_iter().map(|x| x.refno()).collect()),
             _ => None,
         }
     }
@@ -476,19 +482,22 @@ impl NamedAttrMap {
         format!(
             "{}:{}_{}",
             self.get_type(),
-            self.get_refno_or_default(),
+            self.get_refno_or_default().refno(),
             self.sesno()
         )
     }
 
     #[inline]
-    pub fn get_refno_or_default(&self) -> RefU64 {
+    pub fn get_refno_or_default(&self) -> RefnoEnum {
         self.get_refno().unwrap_or_default()
     }
 
+
     #[inline]
-    pub fn get_refno(&self) -> Option<RefU64> {
+    pub fn get_refno(&self) -> Option<RefnoEnum> {
         if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("REFNO") {
+            return Some(RefnoEnum::Refno(*d));
+        } else if let Some(NamedAttrValue::RefnoEnumType(d)) = self.get_val("REFNO") {
             return Some(*d);
         }
         None
@@ -545,20 +554,21 @@ impl NamedAttrMap {
     }
 
     #[inline]
-    pub fn get_owner(&self) -> RefU64 {
+    pub fn get_owner(&self) -> RefnoEnum {
         self.get_refno_by_att_or_default("OWNER")
     }
 
     #[inline]
-    pub fn get_refno_by_att_or_default(&self, att_name: &str) -> RefU64 {
+    pub fn get_refno_by_att_or_default(&self, att_name: &str) -> RefnoEnum {
         self.get_refno_by_att(att_name).unwrap_or_default()
     }
 
     #[inline]
-    pub fn get_refno_by_att(&self, att_name: &str) -> Option<RefU64> {
+    pub fn get_refno_by_att(&self, att_name: &str) -> Option<RefnoEnum> {
         let att = self.map.get(att_name)?;
         match att {
-            NamedAttrValue::RefU64Type(s) => Some(s.clone()),
+            NamedAttrValue::RefU64Type(s) => Some(RefnoEnum::Refno(*s)),
+            NamedAttrValue::RefnoEnumType(s) => Some(*s),
             _ => None,
         }
     }
@@ -602,7 +612,7 @@ impl NamedAttrMap {
         let type_name = self.get_type();
         let refno = self.get_refno_or_default();
         // map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
-        let id_str = format!("['{}',{}]", refno, sesno);
+        let id_str = format!("['{}',{}]", refno.refno(), sesno);
         map.insert("TYPE".into(), type_name.into());
 
         for (key, val) in self.map.clone().into_iter() {
@@ -614,18 +624,19 @@ impl NamedAttrMap {
                 || matches!(val, NamedAttrValue::ElementType(_))
             {
                 let refno = val.refno_value().unwrap_or_default();
-                if let Some(sesno) = sesno_map.get(&refno) {
-                    record_map.insert(key, RefnoSesno::new(refno, *sesno).into());
+                if let Some(&sesno) = sesno_map.get(&refno) && sesno != 0 {
+                    record_map.insert(key, RefnoSesno::new(refno, sesno).into());
                 } else {
                     record_map.insert(key, refno.into());
                 }
             } else if let NamedAttrValue::RefU64Array(refnos) = val {
-                for refno in refnos {
-                    if let Some(sesno) = sesno_map.get(&refno) {
+                for refno_enum in refnos {
+                    let refno = refno_enum.refno();
+                    if let Some(&sesno) = sesno_map.get(&refno) && sesno != 0 {
                         records_map
                             .entry(key.clone())
                             .or_default()
-                            .push(RefnoSesno::new(refno, *sesno).into());
+                            .push(RefnoSesno::new(refno, sesno).into());
                     } else {
                         records_map
                             .entry(key.clone())
@@ -648,7 +659,7 @@ impl NamedAttrMap {
         //后续是否需要指定 sesno，更新数据里的 引用数据
         sjson.push_str(&format!(
             r#", "REFNO": pe:['{}',{}], "id": {}, "#,
-            refno, sesno, id_str
+            refno.refno(), sesno, id_str
         ));
         for (key, val) in record_map.into_iter() {
             if val.refno().is_unset() {
@@ -696,7 +707,7 @@ impl NamedAttrMap {
             {
                 record_map.insert(key, val.refno_value().unwrap_or_default());
             } else if let NamedAttrValue::RefU64Array(refnos) = val {
-                records_map.insert(key, refnos);
+                records_map.insert(key, refnos.into_iter().map(|x| x.refno()).collect());
             } else {
                 map.insert(key, val.into());
             }
@@ -839,7 +850,7 @@ impl NamedAttrMap {
 
     pub fn get_refno_vec(&self, key: &str) -> Option<Vec<RefU64>> {
         if let NamedAttrValue::RefU64Array(d) = self.get_val(key)? {
-            return Some(d.clone());
+            return Some(d.into_iter().map(|&x| x.refno()).collect());
         }
         None
     }

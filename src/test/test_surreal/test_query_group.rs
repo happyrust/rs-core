@@ -1,4 +1,4 @@
-use crate::{RefU64, rs_surreal};
+use crate::{rs_surreal, RefU64, RefnoEnum};
 use glam::Vec3;
 use std::sync::Arc;
 
@@ -16,7 +16,7 @@ async fn test_group_cata_hash() -> anyhow::Result<()> {
         .unwrap();
 
     dbg!(&r);
-    let branch_refnos: Vec<RefU64> = r.into_iter().collect();
+    let branch_refnos: Vec<RefnoEnum> = r.into_iter().map(|x| x.into()).collect();
 
     let map =
         crate::query_group_by_cata_hash(&branch_refnos)
@@ -36,12 +36,12 @@ async fn test_group_cata_hash() -> anyhow::Result<()> {
 async fn test_query_deep_children_spre() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
     let refno: RefU64 = "16387/64917".into();
-    let should_be_none = crate::query_deep_children_refnos_filter_spre(refno, false).await.unwrap();
+    let should_be_none = crate::query_deep_children_refnos_filter_spre(refno.into(), false).await.unwrap();
     assert_eq!(should_be_none.len(), 0);
 
     // 16507/4480
     let refno: RefU64 = "16507/4480".into();
-    let result = crate::query_deep_children_refnos_filter_spre(refno, false).await.unwrap();
+    let result = crate::query_deep_children_refnos_filter_spre(refno.into(), false).await.unwrap();
     assert_eq!(result.is_empty(), false);
 
     Ok(())

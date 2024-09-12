@@ -106,7 +106,7 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_pdms_element(&self, refno: RefU64) -> anyhow::Result<Option<PdmsElement>> {
-        let Some(pe) = get_pe(refno).await? else {
+        let Some(pe) = get_pe(refno.into()).await? else {
             return Ok(None);
         };
         Ok(Some(PdmsElement::from(pe)))
@@ -117,7 +117,7 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_children(&self, refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
-        get_children_ele_nodes(refno).await
+        get_children_ele_nodes(refno.into()).await
     }
 
     async fn get_ipara_from_bran(&self, refno: RefU64) -> anyhow::Result<Vec<f32>> {
@@ -145,8 +145,8 @@ impl PdmsDataInterface for AiosDBMgr {
         };
         let pe = pe.unwrap();
         Ok(Some(PdmsElement {
-            refno: pe.refno,
-            owner: pe.owner,
+            refno: pe.refno(),
+            owner: pe.owner.refno(),
             name: pe.name,
             noun: pe.noun,
             version: 0,
@@ -223,11 +223,11 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_prev(&self, refno: RefU64) -> anyhow::Result<RefU64> {
-        get_next_prev(refno, false).await
+        get_next_prev(refno.into(), false).await.map(|x| x.into())
     }
 
     async fn get_next(&self, refno: RefU64) -> anyhow::Result<RefU64> {
-        get_next_prev(refno, true).await
+        get_next_prev(refno.into(), true).await.map(|x| x.into())
     }
 
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {

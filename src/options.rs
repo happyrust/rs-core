@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::RefU64;
+use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
@@ -97,6 +97,8 @@ pub struct DbOption {
     pub debug_print_world_transform: bool,
     #[clap(skip)]
     pub debug_root_refnos: Option<Vec<String>>,
+    #[clap(long)]
+    pub gen_history_model: Option<bool>,
     pub test_refno: Option<String>,
     pub gen_using_spref_refnos: Option<Vec<String>>,
     #[clap(skip)]
@@ -246,7 +248,12 @@ impl DbOption {
     }
 
     #[inline]
-    pub async fn get_all_debug_refnos(&self) -> Vec<RefU64> {
+    pub fn is_gen_history_model(&self) -> bool {
+        self.gen_history_model.unwrap_or(false)
+    }
+
+    #[inline]
+    pub async fn get_all_debug_refnos(&self) -> Vec<RefnoEnum> {
         let mut refnos = self.debug_root_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
@@ -269,7 +276,11 @@ impl DbOption {
         } else {
             vec![]
         };
-        refnos.extend(using_debug_spref_ele_refnos);
+        refnos.extend(using_debug_spref_ele_refnos.into_iter().map(|x| RefnoEnum::Refno(x)));
+        if self.is_gen_history_model() {
+            // let site_refnos = query_type_refnos_by_dbnum(&["SITE"], dbno.unwrap(), Some(true)).await?;
+            // refnos.extend(site_refnos.into_iter().map(|x| RefnoEnum::Refno(x)));
+        }
         refnos
     }
 

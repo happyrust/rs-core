@@ -503,10 +503,10 @@ pub trait PdmsNodeTrait: Default {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleTreeNode {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub noun: String,
     pub name: String,
-    pub owner: RefU64,
+    pub owner: RefnoEnum,
     #[serde(default)]
     pub order: u16,
     pub children_count: u16,
@@ -516,10 +516,10 @@ pub struct EleTreeNode {
 
 impl EleTreeNode {
     pub fn new(
-        refno: RefU64,
+        refno: RefnoEnum,
         noun: String,
         name: String,
-        owner: RefU64,
+        owner: RefnoEnum,
         order: u16,
         children_count: u16,
         deleted: bool,
@@ -618,7 +618,7 @@ pub struct CataHashRefnoKV {
     #[serde(default)]
     pub cata_hash: String,
     #[serde(default)]
-    pub group_refnos: Vec<RefU64>,
+    pub group_refnos: Vec<RefnoEnum>,
     pub exist_inst: bool,
     pub ptset: Option<BTreeMap<i32, CateAxisParam>>,
 }
@@ -717,8 +717,8 @@ impl From<EleTreeNode> for PdmsElement {
 impl From<SPdmsElement> for PdmsElement {
     fn from(value: SPdmsElement) -> Self {
         Self {
-            refno: value.refno,
-            owner: value.owner,
+            refno: value.refno.refno(),
+            owner: value.owner.refno(),
             name: value.name,
             noun: value.noun,
             version: 0,

@@ -1,13 +1,27 @@
+REMOVE FUNCTION fn::ancestor;
+-- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
 DEFINE FUNCTION fn::ancestor($r: record) {
     return if $r.id == none {
         return [];
     } else {
-        return array::flatten(object::values(SELECT [id] as f0, ->pe_owner->(? AS f1)->pe_owner->(? AS f2)->pe_owner->(? AS f3)->pe_owner->(? AS f4)->pe_owner->(? AS f5)->pe_owner->(? AS f6)->pe_owner->(? AS f7)->pe_owner->(? AS f8)->pe_owner->(? AS f9) from only $r));
+        let $a = SELECT value [id,
+            owner ,
+            owner.owner,
+            owner.owner.owner,
+            owner.owner.owner.owner,
+            owner.owner.owner.owner.owner ,
+            owner.owner.owner.owner.owner.owner,
+            owner.owner.owner.owner.owner.owner.owner,
+            owner.owner.owner.owner.owner.owner.owner.owner,
+            owner.owner.owner.owner.owner.owner.owner.owner.owner]
+            from only $r limit 1;
+        return array::complement($a,
+            [NONE, pe:0_0]
+        );
     };
 };
 
-
-
+REMOVE FUNCTION fn::order;
 DEFINE FUNCTION fn::order(
     $pe: record,
 ) {
@@ -32,6 +46,7 @@ DEFINE FUNCTION fn::default_names(
 };
 
 
+REMOVE FUNCTION fn::default_full_name;
 DEFINE FUNCTION fn::default_full_name($r: record) {
     return if $r.name != '' && $r.name != none {
         return $r.name;
@@ -46,7 +61,7 @@ DEFINE FUNCTION fn::default_full_name($r: record) {
     };
 };
 
-
+REMOVE FUNCTION fn::backup_atts_and_pes;
 //备份数据到版本管理table中去
 DEFINE FUNCTION fn::backup_atts_and_pes(
     $pes: array<record>,

@@ -23,16 +23,16 @@ use serde_with::{serde_as, As, FromInto};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RStarBoundingBox {
     pub aabb: Aabb,
-    #[serde(serialize_with = "RefU64::serialize_as_u64")]
-    #[serde(deserialize_with = "RefU64::deserialize_from_u64")]
-    pub refno: RefU64,
+    // #[serde(serialize_with = "RefU64::serialize_as_u64")]
+    // #[serde(deserialize_with = "RefU64::deserialize_from_u64")]
+    pub refno: RefnoEnum,
     //方便过滤
     pub noun: String,
 }
 
 impl RStarBoundingBox {
 
-    pub fn new(aabb: Aabb, refno: RefU64, noun: String) -> Self {
+    pub fn new(aabb: Aabb, refno: RefnoEnum, noun: String) -> Self {
         Self {
             aabb,
             refno,
@@ -40,7 +40,7 @@ impl RStarBoundingBox {
         }
     }
 
-    pub fn from_aabb(aabb: Aabb, refno: RefU64) -> Self {
+    pub fn from_aabb(aabb: Aabb, refno: RefnoEnum) -> Self {
         Self {
             aabb,
             refno,
@@ -48,7 +48,7 @@ impl RStarBoundingBox {
         }
     }
 
-    pub fn from_min_max(min: Vec3, max: Vec3, transform: Mat4, refno: RefU64) -> Self {
+    pub fn from_min_max(min: Vec3, max: Vec3, transform: Mat4, refno: RefnoEnum) -> Self {
         let min = transform.transform_point3(min);
         let max = transform.transform_point3(max);
 
@@ -80,10 +80,10 @@ impl rstar::PointDistance for RStarBoundingBox {
 pub struct AccelerationTree {
     pub tree: rstar::RTree<RStarBoundingBox>,
     //用来检查是否插入到了 Tree，如果遇到重复的，需要跳过
-    #[serde_as(as = "HashSet<FromInto<u64>>")]
-    ids: HashSet<RefU64>,
+    // #[serde_as(as = "HashSet<FromInto<u64>>")]
+    ids: HashSet<RefnoEnum>,
     #[serde(skip)]
-    mesh_cache: DashMap<RefU64, Vec<TriMesh>>,
+    mesh_cache: DashMap<RefnoEnum, Vec<TriMesh>>,
 }
 
 impl Deref for AccelerationTree {
@@ -107,7 +107,7 @@ pub struct QueryRay {
     pub toi: f32,
     pub solid: bool,
     pub min_dist: Cell<f32>,
-    pub min_refnos: RefCell<HashSet<RefU64>>,
+    pub min_refnos: RefCell<HashSet<RefnoEnum>>,
 }
 
 impl QueryRay {
@@ -202,7 +202,7 @@ impl AccelerationTree {
         &'a self,
         loc: Vec3,
         distance: f32,
-    ) -> impl Iterator<Item=(RefU64, Aabb)> + 'a {
+    ) -> impl Iterator<Item=(RefnoEnum, Aabb)> + 'a {
         self.tree
             .locate_within_distance([loc.x, loc.y, loc.z], distance.powi(2))
             .map(|bb| (bb.refno, bb.aabb))
@@ -252,7 +252,7 @@ impl AccelerationTree {
     }
 
     /// 获取一个refno的mesh
-    pub async fn get_tri_mesh(&self, refno: RefU64) -> Option<Ref<RefU64, Vec<TriMesh>>> {
+    pub async fn get_tri_mesh(&self, refno: RefnoEnum) -> Option<Ref<RefnoEnum, Vec<TriMesh>>> {
         if let Some(r) = self.mesh_cache.get(&refno)  {
             return Some(r);
         }
@@ -282,7 +282,7 @@ impl AccelerationTree {
 
     /// Returns the refno of the nearest object to `query_point`
     /// 也可以检查墙等等，需要判断mesh
-    pub async fn query_nearest_by_ray(&self, ray: QueryRay) -> anyhow::Result<Option<(RefU64, f32)>> {
+    pub async fn query_nearest_by_ray(&self, ray: QueryRay) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
         let _ = self
             .tree
             .locate_with_selection_function(&ray)

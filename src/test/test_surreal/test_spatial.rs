@@ -69,7 +69,7 @@ mod test_transform {
         }
     }
 
-    async fn test_ori(refno: RefU64, assert_ori: &str) {
+    async fn test_ori(refno: RefnoEnum, assert_ori: &str) {
         let transform = rs_surreal::get_world_mat4(refno, false)
             .await
             .unwrap()
@@ -238,19 +238,6 @@ mod test_transform {
             dquat_to_pdms_ori_xyz_str(&rot, true),
             "Y is Y 5.548 Z and Z is -Y 84.452 Z"
         );
-
-        // let zdir = parse_expr_to_dir("-Y 84.452 -Z").unwrap();
-        // let rot = crate::cal_ori_by_z_axis_ref_y(zdir, );
-        // dbg!(dquat_to_pdms_ori_xyz_str(&rot, true));
-        // let assert_str = "Y is Y 5.548 -Z and Z is -Y 84.452 -Z";
-        //
-        // let dir_y = parse_expr_to_dir("-X 7.2448 Y").unwrap();
-        // let dir_z = parse_expr_to_dir("Y 7.2448 X").unwrap();
-        // let dir_x = dir_y.cross(dir_z).normalize();
-        // dbg!(to_pdms_dvec_str(&dir_x, true));
-        // let mat3 = DMat3::from_quat(parse_ori_str_to_quat("Y is Y 5.548 Z and Z is -Y 84.452 Z").unwrap().as_dquat());
-        // dbg!(mat3);
-        // //Y is -Y 5.548 Z and Z is -Y 84.452 -Z
         let mat3 = DMat3::from_quat(
             parse_ori_str_to_quat("Y is X 89.969 Z and Z is -X 0.0307 Z")
                 .unwrap()

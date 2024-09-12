@@ -5,7 +5,7 @@ use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::ssc_setting::PbsElement;
 use crate::types::*;
-use crate::{rs_surreal, NamedAttrMap, RefU64, query_types};
+use crate::{query_types, rs_surreal, NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use anyhow::anyhow;
 use cached::proc_macro::cached;
@@ -15,7 +15,7 @@ use log::LevelFilter;
 use parry3d::simba::scalar::SupersetOf;
 use serde::{Deserialize, Serialize};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode, WriteLogger};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::str::FromStr;
 use surrealdb::method::Stats;
@@ -23,12 +23,12 @@ use surrealdb::sql::Thing;
 
 #[inline]
 #[cached(result = true)]
-pub async fn query_filter_all_bran_hangs(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_filter_all_bran_hangs(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     query_filter_deep_children(refno, &["BRAN", "HANG"]).await
 }
 
 #[cached(result = true)]
-pub async fn query_deep_children_refnos(refno: RefU64) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let pe_key = refno.to_pe_key();
     let sql = format!(
         r#"
@@ -39,11 +39,11 @@ pub async fn query_deep_children_refnos(refno: RefU64) -> anyhow::Result<Vec<Ref
     );
     // println!("query_deep_children_refnos sql is {}", &sql);
     return match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefU64>>(0) {
+        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
             Ok(data) => Ok(data),
             Err(e) => {
                 init_deserialize_error(
-                    "Vec<RefU64>",
+                    "Vec<RefnoEnum>",
                     &e,
                     &sql,
                     &std::panic::Location::caller().to_string(),
@@ -89,9 +89,9 @@ pub async fn query_deep_children_refnos_pbs(refno: Thing) -> anyhow::Result<Vec<
 }
 
 pub async fn query_filter_deep_children(
-    refno: RefU64,
+    refno: RefnoEnum,
     nouns: &[&str],
-) -> anyhow::Result<Vec<RefU64>> {
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let refnos = query_deep_children_refnos(refno).await?;
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
@@ -99,7 +99,7 @@ pub async fn query_filter_deep_children(
     // println!("query_filter_deep_children sql is {}", &sql);
     match SUL_DB.query(&sql).with_stats().await {
         Ok(mut response) => {
-            if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
+            if let Some((stats, Ok(result))) = response.take::<Vec<RefnoEnum>>(0) {
                 return Ok(result);
             }
         }
@@ -112,7 +112,7 @@ pub async fn query_filter_deep_children(
 }
 
 pub async fn query_filter_deep_children_atts(
-    refno: RefU64,
+    refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
     let refnos = query_deep_children_refnos(refno).await?;
@@ -166,7 +166,7 @@ pub async fn query_ele_filter_deep_children_pbs(
 
 ///深度查询
 pub async fn query_ele_filter_deep_children(
-    refno: RefU64,
+    refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<SPdmsElement>> {
     let refnos = query_deep_children_refnos(refno).await?;
@@ -186,9 +186,9 @@ pub async fn query_ele_filter_deep_children(
 /// It selects the `refno` values from a flattened array of objects,
 /// where the `noun` values match the specified list of nouns.
 pub async fn query_filter_deep_children_by_path(
-    refno: RefU64,
+    refno: RefnoEnum,
     nouns: &[&str],
-) -> anyhow::Result<Vec<RefU64>> {
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let end_noun = super::get_type_name(refno).await?;
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     if let Some(relate_sql) = gen_noun_incoming_relate_sql(&end_noun, nouns) {
@@ -198,7 +198,7 @@ pub async fn query_filter_deep_children_by_path(
         );
         // println!("sql is {}", &sql);
         let mut response = SUL_DB.query(&sql).with_stats().await?;
-        if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
+        if let Some((stats, Ok(result))) = response.take::<Vec<RefnoEnum>>(0) {
             return Ok(result);
         }
     }
@@ -207,9 +207,9 @@ pub async fn query_filter_deep_children_by_path(
 
 //过滤spre 和 catr 不能同时为空的类型,
 pub async fn query_deep_children_refnos_filter_spre(
-    refno: RefU64,
+    refno: RefnoEnum,
     filter: bool,
-) -> anyhow::Result<Vec<RefU64>> {
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let pe_key = refno.to_pe_key();
     let mut sql = format!(
         r#"
@@ -224,7 +224,43 @@ pub async fn query_deep_children_refnos_filter_spre(
         sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
     }
     let mut response = SUL_DB.query(&sql).await?;
-    let result: Vec<RefU64> = response.take(1)?;
+    let result: Vec<RefnoEnum> = response.take(1)?;
+    Ok(result)
+}
+
+async fn query_versioned_deep_children_filter_inst(
+    refno: RefnoEnum,
+    nouns: &[&str],
+    filter: bool,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+    let pe_key = refno.to_pe_key();
+    let mut sql = format!(
+        r#"
+            let $a = array::flatten( object::values( select
+                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)
+                  <-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)
+                  <-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only {pe_key} ) );
+
+            select value refno from $a"#,
+    );
+    if !nouns.is_empty() {
+        if !sql.ends_with("where") {
+            sql.push_str(" where ");
+        }
+        sql.push_str(format!(" noun in [{nouns_str}]").as_str());
+    }
+    if filter {
+        if !sql.ends_with("where") {
+            sql.push_str(" where ");
+        }
+        sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
+    }
+    // println!("query_deep_children_filter_inst sql is: {}", &sql);
+    let mut response = SUL_DB.query(&sql).await?;
+    // dbg!(&response);
+    let result: Vec<RefnoEnum> = response.take(1)?;
     Ok(result)
 }
 
@@ -239,7 +275,9 @@ async fn query_deep_children_filter_inst(
     let mut sql = format!(
         r#"
             let $a = array::flatten( object::values( select
-                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)
+                  <-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)
+                  <-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
                    from only {pe_key} ) );
 
             select value refno from $a where noun in [{nouns_str}]"#,
@@ -255,12 +293,49 @@ async fn query_deep_children_filter_inst(
 }
 
 pub async fn query_multi_filter_deep_children(
-    refnos: &[RefU64],
+    refnos: &[RefnoEnum],
     nouns: &[&str],
-) -> anyhow::Result<HashSet<RefU64>> {
+) -> anyhow::Result<HashSet<RefnoEnum>> {
     let mut result = HashSet::new();
     for &refno in refnos {
         let mut children = query_filter_deep_children(refno, nouns).await?;
+        result.extend(children.drain(..));
+    }
+    Ok(result)
+}
+
+pub async fn query_multi_deep_versioned_children_filter_inst(
+    refnos: &[RefnoEnum],
+    nouns: &[&str],
+    filter: bool,
+) -> anyhow::Result<BTreeSet<RefnoEnum>> {
+    if refnos.is_empty() {
+        return Ok(Default::default());
+    }
+    let mut result = BTreeSet::new();
+    let mut skip_set = BTreeSet::new();
+    let refno_nouns = query_types(&refnos.iter().map(|x| x.refno()).collect::<Vec<_>>()).await?;
+    for (refno, refno_noun) in refnos.iter().zip(refno_nouns) {
+        if !nouns.is_empty() {
+            if let Some(r_noun) = &refno_noun {
+                if skip_set.contains(r_noun) {
+                    continue;
+                }
+                // //检查是否有和nouns有path往来
+                let exist_path = nouns
+                    .iter()
+                    .any(|child| r_noun == child || !find_noun_path(child, r_noun).is_empty());
+                // dbg!(exist_path);
+                if !exist_path {
+                    skip_set.insert(r_noun.to_owned());
+                    continue;
+                }
+            } else {
+                continue;
+            }
+        }
+        //需要先过滤一遍，是否和nouns 的类型有path
+        let mut children = query_versioned_deep_children_filter_inst(*refno, nouns, filter).await?;
         result.extend(children.drain(..));
     }
     Ok(result)
@@ -285,8 +360,9 @@ pub async fn query_multi_deep_children_filter_inst(
                 continue;
             }
             // //检查是否有和nouns有path往来
-            let exist_path = nouns.iter().any(|child| r_noun == child ||
-                !find_noun_path(child, r_noun).is_empty());
+            let exist_path = nouns
+                .iter()
+                .any(|child| r_noun == child || !find_noun_path(child, r_noun).is_empty());
             // dbg!(exist_path);
             if !exist_path {
                 skip_set.insert(r_noun.to_owned());
@@ -296,7 +372,6 @@ pub async fn query_multi_deep_children_filter_inst(
             continue;
         }
         //需要先过滤一遍，是否和nouns 的类型有path
-        // let refno_types = query_types(&refnos).await?;
         let mut children = query_deep_children_filter_inst(*refno, nouns, filter).await?;
         result.extend(children.drain(..));
     }
@@ -304,9 +379,9 @@ pub async fn query_multi_deep_children_filter_inst(
 }
 
 pub async fn query_multi_deep_children_filter_spre(
-    refnos: Vec<RefU64>,
+    refnos: Vec<RefnoEnum>,
     filter: bool,
-) -> anyhow::Result<HashSet<RefU64>> {
+) -> anyhow::Result<HashSet<RefnoEnum>> {
     let mut result = HashSet::new();
     for refno in refnos {
         let mut children = query_deep_children_refnos_filter_spre(refno, filter).await?;
@@ -315,10 +390,7 @@ pub async fn query_multi_deep_children_filter_spre(
     Ok(result)
 }
 
-pub async fn query_filter_ancestors(
-    refno: RefU64,
-    nouns: &[&str],
-) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_filter_ancestors(refno: RefnoEnum, nouns: &[&str]) -> anyhow::Result<Vec<RefnoEnum>> {
     let start_noun = super::get_type_name(refno).await?;
     // dbg!(&start_noun);
     let nouns_str = nouns
@@ -332,39 +404,14 @@ pub async fn query_filter_ancestors(
         ancestors.iter().map(|x| x.to_pe_key()).join(","),
     );
     let mut response = SUL_DB.query(&sql).await?;
-    let reuslt: Vec<RefU64> = response.take(0)?;
+    let reuslt: Vec<RefnoEnum> = response.take(0)?;
 
     Ok(reuslt)
 }
 
-pub async fn query_filter_ancestors_old(
-    refno: RefU64,
-    nouns: &[&str],
-) -> anyhow::Result<Vec<RefU64>> {
-    let start_noun = super::get_type_name(refno).await?;
-    // dbg!(&start_noun);
-    let nouns_str = nouns
-        .iter()
-        .map(|s| format!("'{s}'"))
-        .collect::<Vec<_>>()
-        .join(",");
-    if let Some(relate_sql) = gen_noun_outcoming_relate_sql(&start_noun, nouns) {
-        let pe_key = refno.to_pe_key();
-        let sql = format!(
-            "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
-        );
-        let mut response = SUL_DB.query(&sql).with_stats().await?;
-        if let Some((stats, Ok(result))) = response.take::<Vec<RefU64>>(0) {
-            let execution_time = stats.execution_time;
-            return Ok(result);
-        }
-    }
-    Ok(vec![])
-}
-
 /// 查找选中节点以下的uda type
 pub async fn get_uda_type_refnos_from_select_refnos(
-    select_refnos: Vec<RefU64>,
+    select_refnos: Vec<RefnoEnum>,
     uda_type: &str,
     base_type: &str,
 ) -> anyhow::Result<Vec<PdmsElement>> {
@@ -375,9 +422,7 @@ pub async fn get_uda_type_refnos_from_select_refnos(
         uda_type.to_string()
     };
     for select_refno in select_refnos {
-        let Ok(refnos) =
-            query_filter_deep_children(select_refno, &[base_type]).await
-        else {
+        let Ok(refnos) = query_filter_deep_children(select_refno, &[base_type]).await else {
             continue;
         };
         let refnos_str = refnos
@@ -412,31 +457,4 @@ pub async fn get_uda_type_refnos_from_select_refnos(
     Ok(result)
 }
 
-// pub async fn query_room_name_from_supp_aql(select_refnos: Vec<RefU64>,) -> anyhow::Result<HashMap<RefU64,String>> {
-//
-// }
 
-#[tokio::test]
-async fn test_query_filter_deep_children() -> anyhow::Result<()> {
-    // 配置日志文件
-    let log_file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("error.log")?;
-    // 初始化日志系统
-    CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Error,
-            Config::default(),
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        WriteLogger::new(LevelFilter::Error, Config::default(), log_file),
-    ])
-        .unwrap();
-    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    let refno = RefU64::from_str("24383/73927").unwrap();
-    let equis = query_filter_deep_children(refno, &["EQUI"]).await?;
-    dbg!(&equis.len());
-    Ok(())
-}

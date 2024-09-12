@@ -6,12 +6,13 @@ use serde_json::{json, to_string_pretty};
 use serde_with::DisplayFromStr;
 use std::fmt::format;
 use surrealdb::sql::Thing;
+use super::RefnoEnum;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
 pub struct SPdmsElement {
     //指向具体的类型
-    pub refno: RefU64,
-    pub owner: RefU64,
+    pub refno: RefnoEnum,
+    pub owner: RefnoEnum,
     pub name: String,
     pub noun: String,
     pub dbnum: i32,
@@ -31,9 +32,15 @@ pub struct SPdmsElement {
 }
 
 impl SPdmsElement {
+
+    #[inline]
+    pub fn refno(&self) -> RefU64 {
+        self.refno.refno()
+    }
+
     #[inline]
     pub fn history_id(&self) -> String {
-        format!("pe:{}_{}", self.refno, self.sesno)
+        format!("pe:{}_{}", self.refno(), self.sesno)
     }
 
     pub fn gen_sur_json(&self, id: Option<String>) -> String {
@@ -52,7 +59,7 @@ impl SPdmsElement {
         json_string.push_str(",");
         json_string.push_str(&format!(
             r#""refno": {},"#,
-            self.refno.to_table_key(&self.noun)
+            self.refno().to_table_key(&self.noun)
         ));
         if let Some(id) = id {
             json_string.push_str(&format!(r#""id": '{}',"#, id));
@@ -79,13 +86,13 @@ impl SPdmsElement {
         json_string.push_str(",");
         json_string.push_str(&format!(
             r#""refno": {}_H:['{}',{}], "#,
-            &self.noun, self.refno, sesno
+            &self.noun, self.refno(), sesno
         ));
-        json_string.push_str(&format!(r#""id": ['{}',{}],"#, self.refno, sesno));
+        json_string.push_str(&format!(r#""id": ['{}',{}],"#, self.refno(), sesno));
         if owner_sesno != 0 {
             json_string.push_str(&format!(
                 r#""owner": pe:['{}',{}]"#,
-                self.owner, owner_sesno
+                self.owner.refno(), owner_sesno
             ));
         } else {
             json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
@@ -100,7 +107,7 @@ impl SPdmsElement {
     }
 
     #[inline]
-    pub fn get_owner(&self) -> RefU64 {
+    pub fn get_owner(&self) -> RefnoEnum {
         return self.owner;
     }
 }

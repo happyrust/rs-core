@@ -24,10 +24,8 @@ Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Se
 )]
 pub struct PdmsTubing {
     #[serde(rename = "_key")]
-    #[serde_as(as = "DisplayFromStr")]
-    pub leave_refno: RefU64,
-    #[serde_as(as = "DisplayFromStr")]
-    pub arrive_refno: RefU64,
+    pub leave_refno: RefnoEnum,
+    pub arrive_refno: RefnoEnum,
     pub start_pt: Vec3,
     pub end_pt: Vec3,
     pub desire_leave_dir: Vec3,

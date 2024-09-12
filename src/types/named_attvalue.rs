@@ -39,14 +39,17 @@ pub enum NamedAttrValue {
     ElementType(String),
     WordType(String),
     RefU64Type(RefU64),
-    RefU64Array(Vec<RefU64>),
+    RefU64Array(Vec<RefnoEnum>),
     LongType(i64),
+    RefnoEnumType(RefnoEnum),
 }
 
 use serde::de::{self, EnumAccess, MapAccess, SeqAccess, Visitor};
 use std::fmt;
 use std::vec::Vec;
 use surrealdb::sql::Thing;
+
+use super::RefnoEnum;
 
 impl<'de> Deserialize<'de> for NamedAttrValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -240,14 +243,20 @@ impl From<(&str, surrealdb::sql::Value)> for NamedAttrValue {
 
                 "REF" => NamedAttrValue::RefU64Array(
                     val.into_iter()
-                        .map(|x| RefU64::from(x.record().unwrap()))
+                        .map(|x| {
+                            RefnoEnum::from(x.record().unwrap())
+                        })
                         .collect::<Vec<_>>()
                 ),
 
                 _ => NamedAttrValue::InvalidType,
             },
             surrealdb::sql::Value::Thing(val) => {
-               NamedAttrValue::RefU64Type(RefU64::from(val))
+                if let surrealdb::sql::Id::Array(_) = &val.id{
+                    NamedAttrValue::RefnoEnumType(RefnoEnum::from(val))
+                }else{
+                    NamedAttrValue::RefU64Type(RefU64::from(val))
+                }
             },
             surrealdb::sql::Value::Object(val) => {
                 if let Some((key, v)) = val.into_iter().next(){
@@ -286,7 +295,7 @@ impl From<&AttrVal> for NamedAttrValue {
             WordType(d) => Self::StringType(d),
             RefU64Type(d) => Self::RefU64Type(d),
             StringHashType(d) => Self::IntegerType(d as i32),
-            RefU64Array(d) => Self::RefU64Array(d.0),
+            RefU64Array(d) => Self::RefU64Array(d.into_iter().map(|x| x.into()).collect()),
         }
     }
 }

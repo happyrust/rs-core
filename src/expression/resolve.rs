@@ -10,7 +10,7 @@ use crate::tool::db_tool::db1_dehash;
 use dashmap::DashMap;
 use glam::{Vec2, Vec3};
 use once_cell::sync::Lazy;
-use crate::{CataContext, DDANGLE_STR, DDHEIGHT_STR, DDRADIUS_STR, eval_str_to_f32_or_default};
+use crate::{eval_str_to_f32_or_default, CataContext, RefnoEnum, DDANGLE_STR, DDHEIGHT_STR, DDRADIUS_STR};
 use crate::expression::resolve_helper::{parse_str_axis_to_vec3, resolve_axis, resolve_to_cate_geo_params};
 
 pub static SCOM_INFO_MAP: Lazy<DashMap<RefU64, ScomInfo>> = Lazy::new(DashMap::new);
@@ -18,7 +18,7 @@ pub static SCOM_INFO_MAP: Lazy<DashMap<RefU64, ScomInfo>> = Lazy::new(DashMap::n
 
 /// 求解axis的数值
 pub fn resolve_axis_params(
-    refno: RefU64,
+    refno: RefnoEnum,
     scom: &ScomInfo,
     context: &CataContext,
 ) -> BTreeMap<i32, CateAxisParam> {
@@ -32,7 +32,7 @@ pub fn resolve_axis_params(
 
 ///求解几何体，允许出错的情况，出错的需要跳过
 pub fn resolve_gms(
-    des_refno: RefU64,
+    des_refno: RefnoEnum,
     gmse_raw_paras: &[GmParam],
     jusl_param: &Option<PlinParam>,
     na_plin_param: &Option<PlinParam>,
@@ -68,7 +68,7 @@ pub fn resolve_gms(
 
 /// 解析gmes的参数
 pub fn resolve_paragon_gm_params(
-    des_refno: RefU64,
+    des_refno: RefnoEnum,
     gm_param: &GmParam,
     jusl_param: &Option<PlinParam>,
     na_plin_param: &Option<PlinParam>,

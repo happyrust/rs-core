@@ -5,7 +5,7 @@ use parry3d::math::Isometry;
 use parry3d::query::PointQuery;
 use parry3d::shape::TriMeshFlags;
 use crate::accel_tree::acceleration_tree::RStarBoundingBox;
-use crate::{query_insts, RefU64, SUL_DB};
+use crate::{query_insts, RefU64, RefnoEnum, SUL_DB};
 use crate::room::data::RoomElement;
 use crate::room::room::{GLOBAL_AABB_TREE, GLOBAL_ROOM_AABB_TREE, load_aabb_tree, load_room_aabb_tree};
 use crate::shape::pdms_shape::PlantMesh;
@@ -26,7 +26,7 @@ pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<St
 }
 
 //传进来的是世界坐标系下的点
-pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<RefU64>> {
+pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<RefnoEnum>> {
     //通过rtree 找到所在的几个房间可能
     load_room_aabb_tree().await.unwrap();
     let pt: Point3<f32> = point.into();

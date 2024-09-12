@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use crate::pdms_types::RoomNodes;
-use crate::{RefU64, SUL_DB};
+use crate::{RefU64, RefnoEnum, SUL_DB};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ use tokio::sync::RwLock;
 #[derive(Serialize, Deserialize, Default, Clone, Hash,Eq,PartialEq)]
 pub struct RoomInfo {
     pub name: String,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 impl Ord for RoomInfo {

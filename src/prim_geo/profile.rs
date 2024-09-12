@@ -19,7 +19,7 @@ use crate::prim_geo::{CateBrepShapeMap, SweepSolid};
 
 
 
-pub async fn create_profile_geos(refno: RefU64,
+pub async fn create_profile_geos(refno: RefnoEnum,
                                  geom_info: &CateGeomsInfo,
                                  brep_shapes_map: &CateBrepShapeMap) -> anyhow::Result<bool> {
     let geos = &geom_info.geometries;
@@ -170,7 +170,7 @@ pub async fn create_profile_geos(refno: RefU64,
                         let hash = profile.get_refno().unwrap().hash_with_another_refno(spine.refno);
                         brep_shapes_map.entry(refno).or_insert(Vec::new()).push(CateBrepShape {
                             //这里需要混合在一起，可能有多个profile 和 多个 spine的点 生成的
-                            refno: RefU64(hash),
+                            refno: RefU64(hash).into(),
                             brep_shape: Box::new(loft),
                             transform,
                             visible: true,

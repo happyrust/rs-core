@@ -421,6 +421,11 @@ impl RefU64 {
     }
 
     #[inline]
+    pub fn to_array_id(&self) -> String {
+        format!("['{}']", self.to_string())
+    }
+
+    #[inline]
     pub fn hash_with_another_refno(&self, another_refno: RefU64) -> u64 {
         let mut hash = std::collections::hash_map::DefaultHasher::new();
         std::hash::Hash::hash(&self.0, &mut hash);
@@ -526,7 +531,22 @@ impl RefI32Tuple {
 }
 
 /// 参考号和 sesno 的对应关系
-#[derive(Default, Debug, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(
+    Default,
+    Debug,
+    Clone,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
+    Serialize,
+    Deserialize,
+    Ord,
+    PartialOrd,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct RefnoSesno {
     pub refno: RefU64,
     pub sesno: u32,
@@ -539,6 +559,12 @@ impl RefnoSesno {
 
     pub fn to_pe_key(&self) -> String {
         format!("pe:{}", self.to_string())
+    }
+}
+
+impl From<&str> for RefnoSesno {
+    fn from(value: &str) -> Self {
+        serde_json::from_str(value).unwrap_or_default()
     }
 }
 
@@ -567,7 +593,20 @@ impl Into<u32> for RefnoSesno {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Serialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
+    Serialize,
+    Ord,
+    PartialOrd,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub enum RefnoEnum {
     Refno(RefU64),
     SesRef(RefnoSesno),
@@ -584,6 +623,26 @@ impl ToString for RefnoEnum {
         match self {
             RefnoEnum::Refno(refno) => refno.to_string(),
             RefnoEnum::SesRef(ses_ref) => ses_ref.to_string(),
+        }
+    }
+}
+
+impl From<&str> for RefnoEnum {
+    fn from(value: &str) -> Self {
+        let value = value.trim();
+        if value.starts_with('[') {
+            RefnoEnum::SesRef(RefnoSesno::from(value))
+        } else if value.contains(",") {
+            let v: Vec<&str> = value.split(',').collect();
+            if v.len() == 2 {   
+                let refno = RefU64::from_str(v[0]).unwrap_or_default();
+                let sesno: u32 = v[1].parse().unwrap_or_default();
+                RefnoEnum::SesRef(RefnoSesno::new(refno, sesno))
+            } else {
+                RefnoEnum::default()
+            }
+        } else {
+            RefnoEnum::Refno(RefU64::from_str(value).unwrap_or_default())
         }
     }
 }
@@ -616,6 +675,7 @@ impl RefnoEnum {
         }
     }
 
+    #[inline]
     pub fn refno(&self) -> RefU64 {
         match self {
             RefnoEnum::Refno(refno) => *refno,
@@ -623,11 +683,55 @@ impl RefnoEnum {
         }
     }
 
+    #[inline]
+    pub fn is_valid(&self) -> bool {
+        self.refno().is_valid()
+    }
+
+    #[inline]
+    pub fn to_inst_relate_key(&self) -> String {
+        match self {
+            RefnoEnum::Refno(refno) => refno.to_inst_relate_key(),
+            RefnoEnum::SesRef(ses_ref) => format!("inst_relate:{}", ses_ref.to_string()),
+        }
+    }
+
+    #[inline]
+    pub fn latest(&self) -> Self {
+        self.refno().into()
+    }
+
+    #[inline]
     pub fn to_e3d_id(&self) -> String {
         match self {
             RefnoEnum::Refno(refno) => refno.to_e3d_id(),
             RefnoEnum::SesRef(ses_ref) => ses_ref.refno.to_e3d_id(),
         }
+    }
+
+    pub fn to_pdms_str(&self) -> String {
+        format!("{}/{}", self.refno().get_0(), self.refno().get_1())
+    }
+
+    #[inline]
+    pub fn hash_with_another_refno(&self, another_refno: RefnoEnum) -> u64 {
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        std::hash::Hash::hash(&self, &mut hash);
+        std::hash::Hash::hash(&another_refno, &mut hash);
+        std::hash::Hasher::finish(&hash)
+    }
+
+    #[inline]
+    pub fn to_array_id(&self) -> String {
+        match self {
+            RefnoEnum::Refno(refno) => refno.to_array_id(),
+            RefnoEnum::SesRef(ses_ref) => ses_ref.to_string(),
+        }
+    }
+
+    #[inline]
+    pub fn to_array_zero_id(&self) -> String {
+        format!("[{}, 0]", self.refno().to_string())
     }
 }
 
@@ -656,22 +760,10 @@ impl From<(String, u32)> for RefnoEnum {
     }
 }
 
-impl From<String> for RefnoEnum {
-    fn from(value: String) -> Self {
-        let refno = RefU64::from_str(&value).unwrap_or_default();
-        Self::Refno(refno)
-    }
-}
 impl From<(&str, u32)> for RefnoEnum {
     fn from(value: (&str, u32)) -> Self {
         let refno = RefU64::from_str(value.0).unwrap_or_default();
         Self::SesRef(RefnoSesno::new(refno, value.1))
-    }
-}
-impl From<&str> for RefnoEnum {
-    fn from(value: &str) -> Self {
-        let refno = RefU64::from_str(value).unwrap_or_default();
-        Self::Refno(refno)
     }
 }
 
@@ -689,6 +781,15 @@ impl From<Thing> for RefnoEnum {
             Self::SesRef(RefnoSesno::new(refno.into(), sesno))
         } else {
             Self::Refno(RefU64::from_str(&value.id.to_raw()).unwrap_or_default())
+        }
+    }
+}
+
+impl Into<RefU64> for RefnoEnum {
+    fn into(self) -> RefU64 {
+        match self {
+            RefnoEnum::Refno(refno) => refno,
+            RefnoEnum::SesRef(ses_ref) => ses_ref.refno,
         }
     }
 }
