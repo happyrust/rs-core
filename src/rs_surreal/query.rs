@@ -670,7 +670,7 @@ pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<
     let dbnums = query_mdb_db_nums(module).await?;
     let mut response = SUL_DB
         .query(format!(
-            r#"select value meta::id(id) from {} where dbnum in [{}]"#,
+            r#"select value record::id(id) from {} where dbnum in [{}]"#,
             noun.to_uppercase(),
             dbnums.iter().map(|x| x.to_string()).join(",")
         ))

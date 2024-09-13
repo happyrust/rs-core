@@ -25,19 +25,46 @@
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
     </configurations>
   </component>
+  <component name="CargoProjectFeatures">
+    <cargoProject file="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$">
+        <feature name="default" />
+      </package>
+    </cargoProject>
+  </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="fix wire">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP 添加注释">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/polyhedron.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/polyhedron.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/dq.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/dq.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/material/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/material/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/sweep_solid.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/cate.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/cate.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/bolt.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/washer.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dzcl.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dzcl.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/fn_get_world_pos.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/fn_get_world_pos.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_bend.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_bend.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_flex.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_flex.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_ofst.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_ofst.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_tape.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fggd_tape.surql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_basic_query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/bolt.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/bolt.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/washer.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/washer.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -424,13 +451,14 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Batch.cargo-clif test_query_transform" />
       <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING (2)" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" />
+      <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
@@ -1342,17 +1370,6 @@
     <MESSAGE value="fix PLDATU 方位计算" />
     <MESSAGE value="fix wire" />
     <option name="LAST_COMMIT_MESSAGE" value="fix wire" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/expression/resolve_helper.rs</url>
-          <line>538</line>
-          <option name="timeStamp" value="45" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

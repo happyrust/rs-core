@@ -8,15 +8,14 @@ use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_ori_str};
 use anyhow::anyhow;
 use approx::{abs_diff_eq, abs_diff_ne};
 use bevy_ecs::prelude::*;
-use bevy_math::prelude::*;
 use cavalier_contours::core::math::bulge_from_angle;
 use cavalier_contours::polyline::{seg_midpoint, PlineSource, PlineSourceMut, Polyline};
-use glam::*;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+use glam::*;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 #[cfg(feature = "occ")]

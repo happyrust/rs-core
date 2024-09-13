@@ -4,7 +4,7 @@ DEFINE FUNCTION fn::washer_type_CAP($pe: record) {
     return if $pf {
         return "D型";
     } else {
-        let $mat_id = meta::id(fn::hvac_mat_id($pe));
+        let $mat_id = record::id(fn::hvac_mat_id($pe));
         return if $mat_id in [1, 2, 4] {
             return "B型";
         } else {
@@ -51,7 +51,7 @@ DEFINE FUNCTION fn::washer_type_THRE($pe: record) {
     let $pf = fn::prev_stype_is_fjfd($pe);
     let $nf = fn::next_stype_is_fjfd($pe);
     let $cf = fn::c_stype_is_fjfd($pe);
-    let $mat_id = meta::id(fn::hvac_mat_id($pe));
+    let $mat_id = record::id(fn::hvac_mat_id($pe));
     let $m1 =  fn::washer_type_single($pf, $mat_id);
     let $m2 =  fn::washer_type_single($nf, $mat_id);
     let $m3 =  fn::washer_type_single($cf, $mat_id);
@@ -111,7 +111,7 @@ DEFINE FUNCTION fn::washer_len_THRE($pe: record) {
 DEFINE FUNCTION fn::washer_type_TRNS($pe: record) {
     let $pf = fn::prev_stype_is_fjfd($pe);
     let $nf = fn::next_stype_is_fjfd($pe);
-    let $mat_id = meta::id(fn::hvac_mat_id($pe));
+    let $mat_id = record::id(fn::hvac_mat_id($pe));
     let $m1 =  fn::washer_type_single($pf, $mat_id);
     let $m2 =  fn::washer_type_single($nf, $mat_id);
 

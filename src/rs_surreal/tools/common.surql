@@ -1,6 +1,6 @@
 
 DEFINE FUNCTION fn::refno($pe: record){
-    return string::replace(meta::id($pe), '_', '/');
+    return string::replace(record::id($pe), '_', '/');
 };
 
 // 将已知的desp / para 数字转为 word
