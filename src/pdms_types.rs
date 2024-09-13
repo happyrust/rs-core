@@ -329,141 +329,6 @@ where
     s.serialize_str(refno.to_string().as_str())
 }
 
-#[test]
-fn test_ele_geo_instance_serialize_deserialize() {
-    let _data = EleInstGeo {
-        geo_hash: 1,
-        refno: RefU64(56882546920359),
-        geo_param: Default::default(),
-        // aabb: Some(Aabb::new(Point3::new(1.0, 0.0, 0.0), Point3::new(2.0, 2.0, 0.0))),
-        pts: Vec::new(),
-        aabb: None,
-        transform: Transform::IDENTITY,
-        visible: false,
-        is_tubi: false,
-        geo_type: Default::default(),
-        // owner_pos_refnos: Default::default(),
-        cata_neg_refnos: vec![],
-    };
-    // let json = serde_json::to_string(&data).unwrap();
-    // dbg!(&json);
-    // let json = r#"
-    // [{"_key":"24383_72810","data":[],"visible":true,"generic_type":"STRU","aabb":{"maxs":[-9247.12890625,-1.14835810546875e+4,4653],"mins":[-9814.478515625,-1.22652236328125e+4,4553]},"world_transform":[[0.212630033493042,-0.6743800640106201,0.6743800640106201,-0.21263009309768677],[-9787.6103515625,-1.14922998046875e+4,4603],[1,1,1]],"ptset_map":{},"flow_pt_indexs":[null,null]}]
-    // "#;
-    // let data: Vec<EleGeosInfo>  = serde_json::from_str(&json).unwrap();
-    // dbg!(&data);
-
-    let _json = r#"
-    {
-  "result": [
-    {
-      "_key": "24383_72809",
-      "data": [
-        {
-          "aabb": {
-            "maxs": [
-              32.79999923706055,
-              50,
-              920.5880126953125
-            ],
-            "mins": [
-              -15.200000762939453,
-              -50,
-              0
-            ]
-          },
-          "geo_hash": "10994492164744429269",
-          "geo_param": "Unknown",
-          "is_tubi": false,
-          "pts": [],
-          "refno": "24383/72809",
-          "transform": [
-            [
-              0,
-              0,
-              0,
-              1
-            ],
-            [
-              0,
-              0,
-              0
-            ],
-            [
-              1,
-              1,
-              920.5880126953125
-            ]
-          ],
-          "visible": true
-        }
-      ],
-      "visible": true,
-      "generic_type": "STRU",
-      "aabb": {
-        "maxs": [
-          -9542.0185546875,
-          -11690.072265625,
-          4653
-        ],
-        "mins": [
-          -10109.3681640625,
-          -12471.703125,
-          4553
-        ]
-      },
-      "world_transform": [
-        [
-          0.21263228356838226,
-          -0.6743793487548828,
-          0.6743793487548828,
-          -0.21263234317302704
-        ],
-        [
-          -10082.5,
-          -11698.7900390625,
-          4603
-        ],
-        [
-          1,
-          1,
-          1
-        ]
-      ],
-      "ptset_map": {},
-      "flow_pt_indexs": [
-        null,
-        null
-      ]
-    }
-  ],
-  "hasMore": false,
-  "cached": false,
-  "extra": {
-    "warnings": [],
-    "stats": {
-      "writesExecuted": 0,
-      "writesIgnored": 0,
-      "scannedFull": 0,
-      "scannedIndex": 1,
-      "cursorsCreated": 1,
-      "cursorsRearmed": 0,
-      "cacheHits": 1,
-      "cacheMisses": 0,
-      "filtered": 0,
-      "httpRequests": 0,
-      "executionTime": 0.0026717909786384553,
-      "peakMemoryUsage": 65536
-    }
-  },
-  "error": false,
-  "code": 201
-}
-    "#;
-    // let data: Response<Cursor<EleGeosInfo>>  = serde_json::from_str(json).unwrap();
-    // dbg!(&data);
-}
-
 pub trait PdmsNodeTrait: Default {
     #[inline]
     fn get_refno(&self) -> RefU64 {
@@ -544,6 +409,16 @@ impl EleTreeNode {
             version: 0,
             children_count: self.children_count as _,
         }
+    }
+
+    #[inline]
+    pub fn latest_refno(&self) -> RefU64{
+        self.refno.refno()
+    }
+
+    #[inline]
+    pub fn latest_owner(&self) -> RefU64{
+        self.owner.refno()
     }
 }
 

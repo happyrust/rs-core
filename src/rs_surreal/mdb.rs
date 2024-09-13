@@ -1,7 +1,7 @@
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::{get_db_option, helper, types::*};
-use crate::{NamedAttrMap, RefU64};
+use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
@@ -93,9 +93,9 @@ pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> any
     Ok(true)
 }
 
-pub async fn query_type_refnos_by_dbnums(nouns: &[&str], dbnums: &[u32]) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_type_refnos_by_dbnums(nouns: &[&str], dbnums: &[u32]) -> anyhow::Result<Vec<RefnoEnum>> {
     let mut result = vec![];
-    for noun in nouns{
+    for noun in nouns {
         let sql = if dbnums.is_empty() {
             format!("select value id from {noun}")
         } else {
@@ -103,7 +103,7 @@ pub async fn query_type_refnos_by_dbnums(nouns: &[&str], dbnums: &[u32]) -> anyh
                     dbnums.into_iter().map(|x| x.to_string()).join(","))
         };
         let mut response = SUL_DB.query(&sql).await?;
-        let refnos: Vec<RefU64> = response.take(0)?;
+        let refnos: Vec<RefnoEnum> = response.take(0)?;
         result.extend(refnos);
     }
     Ok(result)
@@ -112,23 +112,28 @@ pub async fn query_type_refnos_by_dbnums(nouns: &[&str], dbnums: &[u32]) -> anyh
 ///通过dbnum过滤指定类型的参考号
 /// 通过has_children 指定是否需要有children，方便跳过一些不变要的节点
 /// todo 在属性里直接加上DBNO这个属性，而不是需要去pe里去取
-pub async fn query_type_refnos_by_dbnum(nouns: &[&str], dbnum: u32, has_children: Option<bool>) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_type_refnos_by_dbnum(nouns: &[&str], dbnum: u32, has_children: Option<bool>, only_history: bool) -> anyhow::Result<Vec<RefnoEnum>> {
     let mut result = vec![];
-    for noun in nouns{
-        let sql = match has_children{
+    for noun in nouns {
+        let table = if only_history {
+            format!("{noun}_H")
+        } else {
+            format!("{noun}")
+        };
+        let sql = match has_children {
             Some(true) => {
-                format!("select value id from {noun} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none")
+                format!("select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none")
             }
             Some(false) => {
-                format!("select value id from {noun} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none")
+                format!("select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none")
             }
             None => {
-                format!("select value id from {noun} where REFNO.dbnum={dbnum}")
+                format!("select value id from {table} where REFNO.dbnum={dbnum}")
             }
         };
         // println!("query_type_refnos_by_dbnum sql: {}", sql);
         let mut response = SUL_DB.query(&sql).await?;
-        let refnos: Vec<RefU64> = response.take(0)?;
+        let refnos: Vec<RefnoEnum> = response.take(0)?;
         result.extend(refnos);
     }
     Ok(result)
@@ -136,29 +141,34 @@ pub async fn query_type_refnos_by_dbnum(nouns: &[&str], dbnum: u32, has_children
 
 
 //额外检查SPRE  和 CATR 不能同时为空
-pub async fn query_use_cate_refnos_by_dbnum(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefU64>> {
+pub async fn query_use_cate_refnos_by_dbnum(nouns: &[&str], dbnum: u32, only_history: bool) -> anyhow::Result<Vec<RefnoEnum>> {
     let mut result = vec![];
-    for noun in nouns{
-        let sql = format!("select value id from {noun} where REFNO.dbnum={dbnum} and (SPRE != none or CATR != none)");
+    for noun in nouns {
+        let table = if only_history {
+            format!("{noun}_H")
+        } else {
+            format!("{noun}")
+        };
+        let sql =
+            format!("select value id from {table} where REFNO.dbnum={dbnum} and (SPRE != none or CATR != none)");
         let mut response = SUL_DB.query(&sql).await?;
-        let refnos: Vec<RefU64> = response.take(0)?;
+        let refnos: Vec<RefnoEnum> = response.take(0)?;
         result.extend(refnos);
     }
     Ok(result)
 }
 
 //去掉父类型是BRAN 和 HANGER的
-// pub async fn query_type_refnos_by_dbnum_exclude_bran_hang(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefU64>> {
+// pub async fn query_type_refnos_by_dbnum_exclude_bran_hang(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefnoEnum>> {
 //     let mut result = vec![];
 //     for noun in nouns {
 //         let sql = format!("select value id from {noun} where REFNO.dbnum={dbnum} and OWNER.noun not in ['BRAN', 'HANG']");
 //         let mut response = SUL_DB.query(&sql).await?;
-//         let refnos: Vec<RefU64> = response.take(0)?;
+//         let refnos: Vec<RefnoEnum> = response.take(0)?;
 //         result.extend(refnos);
 //     }
 //     Ok(result)
 // }
-
 
 
 #[cached(result = true)]
@@ -217,7 +227,7 @@ pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
 
 /// Represents the response obtained from the database query.
 #[cached(result = true)]
-pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefU64> {
+pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     let mdb_name = if mdb.starts_with('/') {
         mdb.clone()
     } else {
@@ -231,6 +241,6 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefU64> {
         )
         .bind(("mdb", mdb_name))
         .await?;
-    let id: Option<RefU64> = response.take(1)?;
+    let id: Option<RefnoEnum> = response.take(1)?;
     Ok(id.unwrap_or_default())
 }

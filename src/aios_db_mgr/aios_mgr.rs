@@ -201,7 +201,7 @@ impl PdmsDataInterface for AiosDBMgr {
     async fn get_name(&self, refno: RefU64) -> anyhow::Result<String> {
         let sql = format!(
             "
-        return fn::default_name({});
+            return fn::default_name({});
         ",
             refno.to_pe_key()
         );

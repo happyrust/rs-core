@@ -11,7 +11,7 @@ use serde_with::serde_as;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TubiInstQuery {
     #[serde(alias = "id")]
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub generic: Option<String>,
     pub world_aabb: Aabb,
     pub world_trans: Transform,
@@ -19,7 +19,7 @@ pub struct TubiInstQuery {
 }
 
 pub async fn query_tubi_insts_by_brans(
-    bran_refnos: &[RefU64],
+    bran_refnos: &[RefnoEnum],
 ) -> anyhow::Result<Vec<TubiInstQuery>> {
     let pes: String = bran_refnos
         .iter()
@@ -40,7 +40,7 @@ pub async fn query_tubi_insts_by_brans(
     Ok(r)
 }
 
-pub async fn query_tubi_insts_by_flow(refnos: &[RefU64]) -> anyhow::Result<Vec<TubiInstQuery>> {
+pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<TubiInstQuery>> {
     let pes: String = refnos
         .iter()
         .map(|x| x.to_pe_key())
@@ -80,6 +80,7 @@ pub struct ModelInstData {
     pub world_trans: Transform,
     pub world_aabb: ParryAabb,
     pub ptset: Vec<Vec3>,
+    pub is_bran_tubi: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -97,7 +98,7 @@ pub struct GeomInstQuery {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeomPtsQuery {
     #[serde(alias = "id")]
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub world_trans: Transform,
     pub world_aabb: Aabb,
     pub pts_group: Vec<(Transform, Option<Vec<DVec3>>)>,
@@ -114,6 +115,7 @@ pub async fn query_insts(
     //todo 如果是ngmr relate, 也要测试一下有没有问题
     //ngmr relate 的关系可以直接在inst boolean 做这个处理，不需要单独开方法
     //ngmr的负实体最后再执行
+    //如果有 sesno，需要按 sesno 进行过滤
     let sql = format!(
         r#"
     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
@@ -121,7 +123,7 @@ pub async fn query_insts(
             from {inst_keys} where aabb.d != none
             "#
     );
-    // println!("Query insts: {}", &sql);
+    // println!("Query insts sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
 
@@ -131,7 +133,7 @@ pub async fn query_insts(
 /// 根据(refno, sesno)查询历史的insts
 // todo 生成一个测试案例
 pub async fn query_history_insts(
-    refnos: impl IntoIterator<Item = &(RefU64, u32)>,
+    refnos: impl IntoIterator<Item = &(RefnoEnum, u32)>,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
     let history_inst_keys = refnos
         .into_iter()

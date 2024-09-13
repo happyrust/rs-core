@@ -54,7 +54,7 @@ pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>
 ///查询到祖先节点列表
 #[cached(result = true)]
 pub async fn get_ancestor(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    let sql = format!("return fn::ancestor({}).refno.*;", refno.to_pe_key());
+    let sql = format!("return fn::ancestor({}).refno;", refno.to_pe_key());
     let mut response = SUL_DB
         .query(sql)
         .await?;
@@ -171,7 +171,7 @@ pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<O
         refno_enum.to_array_zero_id(),
         refno_enum.to_array_id()
     );
-    println!("sql is {}", &sql);
+    // println!("sql is {}", &sql);
     let mut response = SUL_DB
         .query(sql)
         .await?;
@@ -201,7 +201,7 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
     for (k, v) in &mut attmap.map {
         if k == "REFNO" {
             if let NamedAttrValue::RefnoEnumType(r) = v {
-                dbg!(&r);
+                // dbg!(&r);
                 *v = NamedAttrValue::RefU64Type(r.refno().into());
             }
             continue;
@@ -462,13 +462,13 @@ pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsEleme
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
 pub async fn get_all_children_refnos(
-    refnos: impl IntoIterator<Item = &RefU64>,
-) -> anyhow::Result<Vec<RefU64>> {
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let sql =
         format!("array::flatten(select value in from [{pe_keys}]<-pe_owner where in.id!=none)");
     let mut response = SUL_DB.query(sql).await?;
-    let refnos: Vec<RefU64> = response.take(0)?;
+    let refnos: Vec<RefnoEnum> = response.take(0)?;
     Ok(refnos)
 }
 
@@ -617,7 +617,7 @@ pub async fn query_group_by_cata_hash(
     for chunk in keys.chunks(20) {
         let sql = format!(
             r#"
-            let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}]);
+            let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}])[? noun!=NONE];
             select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
                     type::thing('inst_info', cata_hash).ptset] as k,
                  array::group(id) as v
@@ -627,6 +627,7 @@ pub async fn query_group_by_cata_hash(
         );
         // println!("query_group_by_cata_hash sql is {}", &sql);
         let mut response = SUL_DB.query(&sql).await?;
+        // dbg!(&response);
         // let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
         //     response.take(1).unwrap();
         //TODO surreal bug, 在 surreal 存储的 map，不知道咋变成了 string
@@ -833,11 +834,11 @@ pub async fn query_refnos_from_names(
 
 ///查找所有同类型的参考号, 需要限制范围
 pub async fn query_same_type_refnos(
-    refno: RefU64,
+    refno: RefnoEnum,
     mdb: String,
     module: DBType,
     get_owner: bool,
-) -> anyhow::Result<Vec<RefU64>> {
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let dbnums = query_mdb_db_nums(module).await?;
     let mut sql = format!(
         r#"select value id from type::table({}.noun) where REFNO.dbnum in [{}]"#,
@@ -849,7 +850,7 @@ pub async fn query_same_type_refnos(
     }
     // println!("query_same_refnos_by_type sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
-    let refnos: Vec<RefU64> = response.take(0)?;
+    let refnos: Vec<RefnoEnum> = response.take(0)?;
     Ok(refnos)
 }
 
@@ -861,4 +862,20 @@ pub async fn query_types(refnos: &[RefU64]) -> anyhow::Result<Vec<Option<String>
     let mut response = SUL_DB.query(sql).await?;
     let type_names: Vec<Option<String>> = response.take(0)?;
     Ok(type_names)
+}
+
+
+//select value id from only pe_ses_h:['17496_171606', 0]..['17496_171606'];
+
+/// 查询历史pe
+pub async fn query_history_pes(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
+    let refno_str = refno.refno().to_string();
+    let mut response = SUL_DB.query(format!(
+        r#"
+            select value id from only pe_ses_h:['{0}', 0]..['{0}'];
+        "#,
+        refno_str,
+    )).await?;
+    let pes: Vec<RefnoEnum> = response.take(0)?;
+    Ok(pes)
 }

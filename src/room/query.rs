@@ -37,7 +37,7 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
         .collect::<Vec<_>>();
 
     // dbg!(&contains_query);
-    let refnos = contains_query.iter().map(|r| r.refno).collect::<Vec<_>>();
+    let refnos: Vec<RefnoEnum> = contains_query.iter().map(|r| r.refno.into()).collect::<Vec<_>>();
     let insts = query_insts(&refnos).await?;
     // dbg!(&insts);
     for RStarBoundingBox{
@@ -45,7 +45,7 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
         aabb,
         ..
     } in contains_query{
-        let Some(geom_inst) = insts.iter().find(|x| x.refno == *refno) else {
+        let Some(geom_inst) = insts.iter().find(|x| x.refno.refno() == *refno) else {
             continue;
         };
         for inst in &geom_inst.insts {
@@ -65,10 +65,11 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
             };
             if tri_mesh.contains_point(&Isometry::identity(), &pt){
                 // dbg!(refno);
-                return Ok(Some(*refno));
+                return Ok(Some((*refno).into()));
             }
         }
     }
 
     Ok(None)
 }
+

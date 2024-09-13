@@ -19,6 +19,8 @@ pub struct DbOption {
     #[clap(long)]
     pub sync_live: Option<bool>,
     #[clap(long)]
+    pub sync_history: Option<bool>,
+    #[clap(long)]
     pub incr_sync: bool,
     #[clap(long)]
     pub sync_only_sys: Option<bool>,
@@ -180,7 +182,7 @@ impl DbOption {
     //     self.geom_live.unwrap_or(false)
     // }
 
-    pub fn get_test_refno(&self) -> Option<RefU64>{
+    pub fn get_test_refno(&self) -> Option<RefnoEnum>{
         self.test_refno.as_ref().map(|x| x.as_str().into())
     }
 
@@ -196,6 +198,11 @@ impl DbOption {
     #[inline]
     pub fn is_gen_mesh_or_model(&self) -> bool {
         self.gen_mesh || self.gen_model
+    }
+
+    #[inline]
+    pub fn is_sync_history(&self) -> bool {
+        self.sync_history.unwrap_or(false)
     }
 
     #[inline]
@@ -258,6 +265,13 @@ impl DbOption {
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
             .unwrap_or_default();
+        if self.is_gen_history_model() {
+            let mut h_refnos = vec![];
+            for r in refnos.clone() {
+                h_refnos.extend(crate::query_history_pes(r).await.unwrap_or_default());
+            }
+            refnos.extend(h_refnos);
+        }
         //还要补充使用了gen_using_spref_refnos的模型
         let mut debug_spref_refnos = self
             .gen_using_spref_refnos
@@ -277,10 +291,7 @@ impl DbOption {
             vec![]
         };
         refnos.extend(using_debug_spref_ele_refnos.into_iter().map(|x| RefnoEnum::Refno(x)));
-        if self.is_gen_history_model() {
-            // let site_refnos = query_type_refnos_by_dbnum(&["SITE"], dbno.unwrap(), Some(true)).await?;
-            // refnos.extend(site_refnos.into_iter().map(|x| RefnoEnum::Refno(x)));
-        }
+        
         refnos
     }
 

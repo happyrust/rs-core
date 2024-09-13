@@ -197,6 +197,15 @@ async fn test_query_attmap() -> anyhow::Result<()> {
     let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
     dbg!(world_trans);
 
+
+    let refno = "17496_171640".into();
+    dbg!(&refno);
+    let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
+    dbg!(world_trans);
+
+    let history_pes = rs_surreal::query_history_pes(refno).await.unwrap();
+    dbg!(&history_pes);
+
     // let children = rs_surreal::get_children_named_attmaps(refno).await.unwrap();
     // dbg!(&children);
 

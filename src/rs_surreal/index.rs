@@ -67,3 +67,17 @@ pub async fn define_pe_index() -> anyhow::Result<()> {
         .unwrap();
     Ok(())
 }
+pub async fn define_ses_index() -> anyhow::Result<()> {
+    //针对一些特殊的表，需要先创建表，定义索引
+    SUL_DB
+        .query(
+            r#"
+        DEFINE INDEX date_index ON ses COLUMNS date;
+        DEFINE INDEX dbnum_index ON ses COLUMNS dbnum;
+        DEFINE INDEX sesno_index ON ses COLUMNS sesno;
+                "#,
+        )
+        .await
+        .unwrap();
+    Ok(())
+}

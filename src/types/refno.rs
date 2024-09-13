@@ -560,6 +560,11 @@ impl RefnoSesno {
     pub fn to_pe_key(&self) -> String {
         format!("pe:{}", self.to_string())
     }
+
+    #[inline]
+    pub fn to_table_key(&self, tbl: &str) -> String {
+        format!("{tbl}:{}", self.to_string())
+    }
 }
 
 impl From<&str> for RefnoSesno {
@@ -606,7 +611,9 @@ impl Into<u32> for RefnoSesno {
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
+    Component,
 )]
+#[serde(untagged)]
 pub enum RefnoEnum {
     Refno(RefU64),
     SesRef(RefnoSesno),
@@ -618,14 +625,14 @@ impl Default for RefnoEnum {
     }
 }
 
-impl ToString for RefnoEnum {
-    fn to_string(&self) -> String {
-        match self {
-            RefnoEnum::Refno(refno) => refno.to_string(),
-            RefnoEnum::SesRef(ses_ref) => ses_ref.to_string(),
-        }
-    }
-}
+// impl ToString for RefnoEnum {
+//     fn to_string(&self) -> String {
+//         match self {
+//             RefnoEnum::Refno(refno) => refno.to_string(),
+//             RefnoEnum::SesRef(ses_ref) => ses_ref.to_string(),
+//         }
+//     }
+// }
 
 impl From<&str> for RefnoEnum {
     fn from(value: &str) -> Self {
@@ -634,7 +641,7 @@ impl From<&str> for RefnoEnum {
             RefnoEnum::SesRef(RefnoSesno::from(value))
         } else if value.contains(",") {
             let v: Vec<&str> = value.split(',').collect();
-            if v.len() == 2 {   
+            if v.len() == 2 {
                 let refno = RefU64::from_str(v[0]).unwrap_or_default();
                 let sesno: u32 = v[1].parse().unwrap_or_default();
                 RefnoEnum::SesRef(RefnoSesno::new(refno, sesno))
@@ -670,8 +677,15 @@ impl<'de> Deserialize<'de> for RefnoEnum {
 impl RefnoEnum {
     pub fn to_pe_key(&self) -> String {
         match self {
-            RefnoEnum::Refno(refno) => format!("pe:{}", refno.to_string()),
+            RefnoEnum::Refno(refno) => refno.to_pe_key(),
             RefnoEnum::SesRef(ses_ref) => ses_ref.to_pe_key(),
+        }
+    }
+
+    pub fn sesno(&self) -> Option<u32>{
+        match self {
+            RefnoEnum::Refno(_) => None,
+            RefnoEnum::SesRef(ses_ref) => Some(ses_ref.sesno),
         }
     }
 
@@ -680,6 +694,14 @@ impl RefnoEnum {
         match self {
             RefnoEnum::Refno(refno) => *refno,
             RefnoEnum::SesRef(ses_ref) => ses_ref.refno,
+        }
+    }
+
+    #[inline]
+    pub fn to_table_key(&self, tbl: &str) -> String {
+        match self {
+            RefnoEnum::Refno(refno) => refno.to_table_key(tbl),
+            RefnoEnum::SesRef(ses_ref) => ses_ref.to_table_key(tbl),
         }
     }
 
@@ -699,6 +721,14 @@ impl RefnoEnum {
     #[inline]
     pub fn latest(&self) -> Self {
         self.refno().into()
+    }
+
+    #[inline]
+    pub fn is_latest(&self) -> bool {
+        match self {
+            RefnoEnum::Refno(_) => true,
+            RefnoEnum::SesRef(_) => false,
+        }
     }
 
     #[inline]
@@ -790,6 +820,21 @@ impl Into<RefU64> for RefnoEnum {
         match self {
             RefnoEnum::Refno(refno) => refno,
             RefnoEnum::SesRef(ses_ref) => ses_ref.refno,
+        }
+    }
+}
+
+impl Display for RefnoEnum {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RefnoEnum::Refno(refno) => write!(f, "{}_{}", refno.get_0(), refno.get_1()),
+            RefnoEnum::SesRef(ses_ref) => write!(
+                f,
+                "['{}_{}', {}]",
+                ses_ref.refno.get_0(),
+                ses_ref.refno.get_1(),
+                ses_ref.sesno
+            ),
         }
     }
 }

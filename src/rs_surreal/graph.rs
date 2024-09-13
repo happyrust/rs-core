@@ -245,17 +245,21 @@ async fn query_versioned_deep_children_filter_inst(
 
             select value refno from $a"#,
     );
+    let mut add_where = false;
     if !nouns.is_empty() {
         if !sql.ends_with("where") {
             sql.push_str(" where ");
+            add_where = true;
         }
         sql.push_str(format!(" noun in [{nouns_str}]").as_str());
     }
     if filter {
-        if !sql.ends_with("where") {
+        if add_where {
+            sql.push_str(" and ");
+        } else {
             sql.push_str(" where ");
         }
-        sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
+        sql.push_str("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
     }
     // println!("query_deep_children_filter_inst sql is: {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;

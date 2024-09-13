@@ -23,9 +23,9 @@ use serde_with::{serde_as, As, FromInto};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RStarBoundingBox {
     pub aabb: Aabb,
-    // #[serde(serialize_with = "RefU64::serialize_as_u64")]
-    // #[serde(deserialize_with = "RefU64::deserialize_from_u64")]
-    pub refno: RefnoEnum,
+    #[serde(serialize_with = "RefU64::serialize_as_u64")]
+    #[serde(deserialize_with = "RefU64::deserialize_from_u64")]
+    pub refno: RefU64,
     //方便过滤
     pub noun: String,
 }
@@ -35,15 +35,17 @@ impl RStarBoundingBox {
     pub fn new(aabb: Aabb, refno: RefnoEnum, noun: String) -> Self {
         Self {
             aabb,
-            refno,
+            refno: refno.refno(),
             noun,
         }
     }
 
+
+
     pub fn from_aabb(aabb: Aabb, refno: RefnoEnum) -> Self {
         Self {
             aabb,
-            refno,
+            refno: refno.refno(),
             noun: "UNSET".to_string(),
         }
     }
@@ -54,7 +56,7 @@ impl RStarBoundingBox {
 
         Self {
             aabb: Aabb::new(min.into(), max.into()),
-            refno,
+            refno: refno.refno(),
             noun: "UNSET".to_string(),
         }
     }
@@ -80,8 +82,8 @@ impl rstar::PointDistance for RStarBoundingBox {
 pub struct AccelerationTree {
     pub tree: rstar::RTree<RStarBoundingBox>,
     //用来检查是否插入到了 Tree，如果遇到重复的，需要跳过
-    // #[serde_as(as = "HashSet<FromInto<u64>>")]
-    ids: HashSet<RefnoEnum>,
+    #[serde_as(as = "HashSet<FromInto<u64>>")]
+    ids: HashSet<RefU64>,
     #[serde(skip)]
     mesh_cache: DashMap<RefnoEnum, Vec<TriMesh>>,
 }
@@ -154,7 +156,7 @@ impl rstar::SelectionFunction<RStarBoundingBox> for &QueryRay {
                 if abs_diff_ne!(ray_inter.time_of_impact, self.toi) {
                     self.min_refnos.borrow_mut().clear()
                 }
-                self.min_refnos.borrow_mut().insert(bbox.refno);
+                self.min_refnos.borrow_mut().insert(bbox.refno.into());
                 // println!("found: {}", bbox.refno);
                 // dbg!(ray_inter.toi);
                 return true;
@@ -205,7 +207,7 @@ impl AccelerationTree {
     ) -> impl Iterator<Item=(RefnoEnum, Aabb)> + 'a {
         self.tree
             .locate_within_distance([loc.x, loc.y, loc.z], distance.powi(2))
-            .map(|bb| (bb.refno, bb.aabb))
+            .map(|bb| (bb.refno.into(), bb.aabb))
     }
 
     pub fn locate_intersecting_bounds<'a>(

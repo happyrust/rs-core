@@ -13,7 +13,7 @@ use once_cell::sync::Lazy;
 use crate::{eval_str_to_f32_or_default, CataContext, RefnoEnum, DDANGLE_STR, DDHEIGHT_STR, DDRADIUS_STR};
 use crate::expression::resolve_helper::{parse_str_axis_to_vec3, resolve_axis, resolve_to_cate_geo_params};
 
-pub static SCOM_INFO_MAP: Lazy<DashMap<RefU64, ScomInfo>> = Lazy::new(DashMap::new);
+pub static SCOM_INFO_MAP: Lazy<DashMap<RefnoEnum, ScomInfo>> = Lazy::new(DashMap::new);
 
 
 /// 求解axis的数值

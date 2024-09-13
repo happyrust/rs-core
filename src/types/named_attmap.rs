@@ -492,6 +492,11 @@ impl NamedAttrMap {
         self.get_refno().unwrap_or_default()
     }
 
+    #[inline]
+    pub fn latest_refno(&self) -> RefU64 {
+        self.get_refno_or_default().refno()
+    }
+
 
     #[inline]
     pub fn get_refno(&self) -> Option<RefnoEnum> {
@@ -848,10 +853,10 @@ impl NamedAttrMap {
         None
     }
 
-    pub fn get_refno_vec(&self, key: &str) -> Option<Vec<RefU64>> {
+    pub fn get_refno_vec(&self, key: &str) -> Option<Vec<RefnoEnum>> {
         if let NamedAttrValue::RefU64Array(d) = self.get_val(key)? {
-            return Some(d.into_iter().map(|&x| x.refno()).collect());
-        }
+            return Some(d.clone());
+        } 
         None
     }
 

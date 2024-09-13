@@ -2,7 +2,7 @@ use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
 use crate::pdms_types::*;
 use crate::pe::SPdmsElement;
 use crate::{query_filter_deep_children, types::*};
-use crate::{NamedAttrMap, RefU64};
+use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
@@ -11,7 +11,6 @@ use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
-// use crate::test::test_surreal::init_test_surreal;
 use glam::Vec3;
 
 //获得参考号对应的inst keys
@@ -29,7 +28,7 @@ pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
 }
 
 ///获得当前参考号对应的loops （例如Panel下的loops，可能有多个）
-pub async fn fetch_loops_and_height(refno: RefU64) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)> {
+pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)> {
     let sql = format!(
         r#"
         select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
@@ -97,7 +96,7 @@ pub async fn query_la_axis_attmap(
 /// 参考号具有正负实体映射关系的信息结构体
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RefnoHasNegPosInfo {
-    // pub refno: RefU64,
+    // pub refno: RefnoEnum,
     /// 正实体的参考号
     pub pos: RefnoEnum,
     /// 负实体的参考号集合
@@ -223,7 +222,7 @@ pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>
 // #[tokio::test]
 // async fn test_query_bran_children_point_map() -> anyhow::Result<()> {
 //     init_test_surreal().await;
-//     let refno = RefU64::from_str("24383/67331").unwrap();
+//     let refno = RefnoEnum::from_str("24383/67331").unwrap();
 //     let r = query_bran_children_point_map(refno).await?;
 //     dbg!(&r);
 //     Ok(())
