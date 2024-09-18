@@ -61,9 +61,7 @@ impl SPdmsElement {
             r#""refno": {},"#,
             self.refno().to_table_key(&self.noun)
         ));
-        if let Some(id) = id {
-            json_string.push_str(&format!(r#""id": '{}',"#, id));
-        }
+        json_string.push_str(&format!(r#""id": {},"#, id.unwrap_or(self.refno.to_pe_key())));
         json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
         json_string.push_str("}");
         json_string
