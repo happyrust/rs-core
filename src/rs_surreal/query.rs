@@ -864,6 +864,13 @@ pub async fn query_types(refnos: &[RefU64]) -> anyhow::Result<Vec<Option<String>
     Ok(type_names)
 }
 
+/// 查询管件的长度
+pub async fn query_bran_fixing_length(refno:RefU64) -> anyhow::Result<f32>{
+    let sql = format!("return math::fixed(fn::bran_comp_len({})?:0.0,2)",refno.to_pe_key());
+    let mut response = SUL_DB.query(sql).await?;
+    let length: Option<f32> = response.take(0)?;
+    Ok(length.unwrap_or(0.0))
+}
 
 //select value id from only pe_ses_h:['17496_171606', 0]..['17496_171606'];
 

@@ -13,7 +13,7 @@ DEFINE FUNCTION fn::gy_part($refnos: array<record>) {
                 "COUP",
             ];
     return select 
-        fn::pe_to_refno(id) as refno, //参考号
+        fn::pe_to_refno(id) as id, //参考号
         fn::code(id) as code, // 编码
         refno.TYPE as noun // 部件
         //refno.DESP[1] as count // 数量

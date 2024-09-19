@@ -1,4 +1,5 @@
 // 垫片长度
+remove function fn::tape_gask_length;
 DEFINE FUNCTION fn::tape_gask_length($pe:record) {
     let $hvac_shape = fn::hvac_shape($pe);
     let $flan_width = $pe.refno.DESP[20];

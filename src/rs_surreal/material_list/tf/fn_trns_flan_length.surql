@@ -1,4 +1,5 @@
 // 法兰长度
+remove function fn::trns_flan_size;
 DEFINE FUNCTION fn::trns_flan_size($pe:record) {
     let $height2 = string::e3d_dehash($pe.refno.DESP[4]);
     let $width = $pe.refno.DESP[1];

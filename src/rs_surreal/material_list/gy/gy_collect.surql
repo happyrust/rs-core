@@ -11,8 +11,6 @@ define function fn::gy_bran($refnos: array<record>, $filter_noun: string) {
         return fn::gy_bend($children);
     } else if $filter_noun == 'TUBI' {
         return fn::gy_tubi($children);
-    } else if $filter_noun == 'VALVE' {
-        return fn::gy_valve($children);
     } else {
         return fn::gy_part($children);
     }

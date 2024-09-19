@@ -1,10 +1,11 @@
 // 法兰长度
+remove function fn::strt_flan_length;
 DEFINE FUNCTION fn::strt_flan_length($pe:record) {
     let $desp = $pe.refno.DESP;
     let $fl_type = if $desp[57] == 531717 { 'FJ' } else if $desp[57] == 531501 { 'FB' } else { '' };
     //return $fl_type;
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $next_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe;
+    let $pre_desp =  fn::prev_pe($pe).refno.DESP?:[0.0];
+    let $next_desp = fn::next_pe($pe).refno.DESP?:[0.0];
     return
     select if fn::hvac_shape($pe) == 'RECT' && $fl_type == 'FJ' &&  array::at(string::split(owner.name,'-'),3) != '6' {
         ((refno.DESP[1] + refno.DESP[2] + refno.DESP[20] * 2 + 3) * 4 ) / 1000
@@ -24,4 +25,4 @@ DEFINE FUNCTION fn::strt_flan_length($pe:record) {
 };
 // return fn::strt_flan_length(pe:24381_58570);
 
-array::first($pre_desp)[0] == 614823 && ((fn::b_next_type($pe,'DAMP') && array::first($next_desp)[0] == 614823) || (fn::b_next_type($pe,'DAMP')) && !$bran_b_6
+// array::first($pre_desp)[0] == 614823 && ((fn::b_next_type($pe,'DAMP') && array::first($next_desp)[0] == 614823) || (fn::b_next_type($pe,'DAMP')) && !$bran_b_6

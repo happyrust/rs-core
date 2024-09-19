@@ -1,14 +1,20 @@
 // 法兰长度
+remove function fn::tape_flan_length;
 DEFINE FUNCTION fn::tape_flan_length($pe:record) {
-    return
-    select if fn::hvac_shape($pe) == 'RECT' {
-        string::concat(string::slice(<string>(((refno.DESP[1] + refno.DESP[2] * 2 ) * 2 ) / 1000),0,string::len((<string>(((refno.DESP[1] + refno.DESP[2] * 2 ) * 2 ) / 1000)))-1)
-        , ',' ,string::slice(<string>(((refno.DESP[3] + refno.DESP[23] * 2 ) * 2 ) / 1000),0,string::len(<string>(((refno.DESP[3] + refno.DESP[23] * 2 ) * 2 ) / 1000))-1))
+    let $desp1 = $pe.refno.DESP[1];
+    let $desp2 = $pe.refno.DESP[2];
+    let $desp3 = $pe.refno.DESP[3];
+    let $desp20 = $pe.refno.DESP[20];
+    let $desp23 = $pe.refno.DESP[23];
+
+    let $length =  if fn::hvac_shape($pe) == 'RECT' {
+        string::concat(<string>math::fixed((($desp1 + $desp2 * 2 ) * 2 ) / 1000,2),',',<string>math::fixed((($desp3 + $desp23 * 2 ) * 2 ) / 1000,2))
     } else if fn::hvac_shape($pe) == 'CIRC' {
-        string::concat(string::slice((<string>((refno.DESP[1] + refno.DESP[20] * 2 ) * 3.14 ) / 1000),0,string::len(<string>((refno.DESP[1] + refno.DESP[20] * 2 ) * 3.14 ) / 1000)-1),
-        '',string::slice(<string>(((refno.DESP[3] + refno.DESP[23] * 2 ) * 3.14 ) / 1000),0,string::len(<string>((refno.DESP[3] + refno.DESP[23] * 2 ) * 3.14 ) / 1000)-1))
+        string::concat(<string>math::fixed((($desp1 + $desp20 * 2 ) * 3.14 ) / 1000,2),',',<string>math::fixed((($desp3 + $desp23 * 2 ) * 3.14 ) / 1000,2))
     } else {
         '0,0'
-    } as length from $pe
+    };
+
+    return $length;
 };
 //return fn::tape_flan_length(pe:24381_76894);

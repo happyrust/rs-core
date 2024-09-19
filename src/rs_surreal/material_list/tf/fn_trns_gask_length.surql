@@ -1,4 +1,5 @@
 // 垫片长度
+remove function fn::trns_gask_length_pre;
 DEFINE FUNCTION fn::trns_gask_length_pre($pe:record) {
     let $flan_length = array::first(fn::flex_flan_length($pe)).length;
     let $flan_width = $pe.refno.DESP[20];
@@ -29,6 +30,7 @@ DEFINE FUNCTION fn::trns_gask_length_pre($pe:record) {
     } as size from $pe
 };
 
+remove function fn::trns_gask_length_next;
 DEFINE FUNCTION fn::trns_gask_length_next($pe:record) {
     let $flan_length = array::first(fn::flex_flan_length($pe)).length;
     let $flan_width = $pe.refno.DESP[20];
@@ -61,9 +63,10 @@ DEFINE FUNCTION fn::trns_gask_length_next($pe:record) {
 
 };
 
+remove function fn::trns_gask_size;
 DEFINE FUNCTION fn::trns_gask_size($pe:record) {
     return string::concat(array::first(fn::trns_gask_size_pre($pe)).size,',',array::first(fn::trns_gask_size_next($pe)).size);
 };
 
 
-return fn::flex_gask_size(pe:24381_57347)
+// return fn::flex_gask_size(pe:24381_57347)

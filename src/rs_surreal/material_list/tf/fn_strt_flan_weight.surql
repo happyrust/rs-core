@@ -1,4 +1,5 @@
 // 法兰重量
+remove function fn::strt_flan_weight;
 DEFINE FUNCTION fn::strt_flan_weight($pe:record) {
     //let $desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
     let $desp = $pe.refno.DESP;

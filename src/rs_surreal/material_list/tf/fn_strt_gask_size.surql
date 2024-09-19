@@ -1,7 +1,8 @@
 // 垫片类型
-DEFINE FUNCTION fn::strt_gask_size($pe:record,$flan_width:float) {
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $next_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe;
+remove function fn::strt_gask_size;
+DEFINE FUNCTION fn::strt_gask_size($pe:record) {
+    let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0];
+    let $next_desp = fn::next_pe($pe).refno.DESP?:[0];
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
     let $bran_b_6 = array::at(string::split($pe.owner.name,'-'),3) == '6';
     let $hvac_shape = fn::hvac_shape($pe);

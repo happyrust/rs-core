@@ -278,7 +278,8 @@ impl AiosDBMgr {
     /// 获取项目pool
     pub async fn get_project_pool() -> anyhow::Result<Pool<MySql>> {
         let connection_str = Self::default_mysql_conn_str();
-        let url = &format!("{connection_str}/{}", self.db_option.project_name);
+        let db_option = get_db_option();
+        let url = &format!("{connection_str}/{}", db_option.project_name);
         PoolOptions::new()
             .max_connections(500)
             .acquire_timeout(Duration::from_secs(10 * 60))

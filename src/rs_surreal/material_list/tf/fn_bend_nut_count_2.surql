@@ -1,4 +1,5 @@
 // 螺母数量
+remove function fn::bend_bolt_count_2;
 DEFINE FUNCTION fn::bend_bolt_count_2($pe:record) {
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
     let $hvac_shape = fn::hvac_shape($pe);

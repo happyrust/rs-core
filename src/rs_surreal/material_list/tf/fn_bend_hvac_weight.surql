@@ -1,4 +1,5 @@
 //风管重量
+remove function fn::bend_hvac_weight;
 DEFINE FUNCTION fn::bend_hvac_weight($pe:record) {
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
     let $angle = $pe.refno.DESP[7];

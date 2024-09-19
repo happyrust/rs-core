@@ -15,7 +15,7 @@ use strum::IntoEnumIterator;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
-// pub mod dq;
+pub mod dq;
 // pub mod gps;
 // pub mod gy;
 // pub mod nt;

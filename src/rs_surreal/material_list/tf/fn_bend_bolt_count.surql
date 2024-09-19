@@ -1,17 +1,18 @@
 // 螺栓数量
+remove function fn::bend_bolt_count;
 DEFINE FUNCTION fn::bend_bolt_count($pe:record) {
     let $desp = $pe.refno.DESP;
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $next_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe;
+    let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0];
+    let $next_desp = fn::next_pe($pe).refno.DESP?:[0.0];
     let $flan_length = <float>array::first(fn::flex_flan_length($pe)).length;
     let $flan_width = $pe.refno.DESP[20];
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
     let $hvac_shape = fn::hvac_shape($pe);
 
-    let $pre_b_damp = array::first(fn::b_pre_type($pe,'DAMP'));
-    let $pre_b_mesh = array::first(fn::b_pre_type($pe,'MESH'));
-    let $next_b_damp = array::first(fn::b_next_type($pe,'DAMP'));
-    let $next_b_mesh = array::first(fn::b_next_type($pe,'MESH'));
+    let $pre_b_damp = fn::b_pre_type($pe,'DAMP');
+    let $pre_b_mesh = fn::b_pre_type($pe,'MESH');
+    let $next_b_damp = fn::b_next_type($pe,'DAMP');
+    let $next_b_mesh = fn::b_next_type($pe,'MESH');
     //return if $hvac_shape == 'RECT' && !$pre_b_damp && !$pre_b_mesh && !$next_b_damp && !$next_b_mesh && $bran_4 != '6' { 1 } else { 0 } ;
     //return [$hvac_shape == 'RECT' , !$pre_b_damp , !$pre_b_mesh , !$next_b_damp , !$next_b_mesh , $bran_4 != '6'];
     return

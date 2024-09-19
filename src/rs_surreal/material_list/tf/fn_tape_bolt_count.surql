@@ -1,4 +1,5 @@
 // 螺栓数量
+remove function fn::tape_bolt_count;
 DEFINE FUNCTION fn::tape_bolt_count($pe:record) {
     let $hvac_shape = fn::hvac_shape($pe);
     let $width = $pe.refno.DESP[1];
@@ -7,7 +8,7 @@ DEFINE FUNCTION fn::tape_bolt_count($pe:record) {
     let $height_2 = $pe.refno.DESP[4];
     let $flan_width = $pe.refno.DESP[20];
     let $flan_width_2 = $pe.refno.DESP[23];
-    let $flan_length = string::split(array::first(fn::tape_flan_length($pe)).length,',');
+    let $flan_length = <float>(string::split(fn::tape_flan_length($pe),',')[0]);
 
     let $pre_length =
     // ('[Prev_Type]' EQ 'DAMP') OR ('[Prev_Type]' EQ 'MESH')
@@ -49,7 +50,7 @@ DEFINE FUNCTION fn::tape_bolt_count($pe:record) {
         0
     };
 
-    return string::replace(string::concat(<string>$pre_length,',',<string>$next_length),'f','')
+    return string::concat(<string>math::fixed($pre_length,2),',',<string>math::fixed($next_length,2))
 };
 
 

@@ -225,4 +225,4 @@ insert into tf_strt_flan_size [
 ]
 
 
-(fn::b_pre_type($pe,'DAMP') || fn::b_pre_type($pe,'MESH')) && (fn::b_next_type($pe,'DAMP') || fn::b_next_type($pe,'MESH')) && !$bran_b_6
+// (fn::b_pre_type($pe,'DAMP') || fn::b_pre_type($pe,'MESH')) && (fn::b_next_type($pe,'DAMP') || fn::b_next_type($pe,'MESH')) && !$bran_b_6

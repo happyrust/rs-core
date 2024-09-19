@@ -1,4 +1,5 @@
 // 加强筋规格
+remove function fn::hvac_size;
 DEFINE FUNCTION fn::hvac_size($pe:record,$size:string,$pressure:string) {
     return
     select if $size =='RECT' && $pressure == 'L' && math::max([refno.DESP[1],refno.DESP[2]]) <= 800 { '-' } else if

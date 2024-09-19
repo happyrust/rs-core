@@ -1,7 +1,8 @@
 // 垫片类型
+remove function fn::trns_gask_size_pre;
 DEFINE FUNCTION fn::trns_gask_size_pre($pe:record) {
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0];
+    let $bran_4 = array::at(string::split($pe.owner.name?:'','-'),3);
     return
     select if array::first($pre_desp)[0] == 614823 {
         'D型'
@@ -15,10 +16,11 @@ DEFINE FUNCTION fn::trns_gask_size_pre($pe:record) {
     } as size from $pe
 };
 
+remove function fn::trns_gask_size_next;
 DEFINE FUNCTION fn::trns_gask_size_next($pe:record) {
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $next_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe;
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0]  ;
+    let $next_desp = fn::next_pe($pe).refno.DESP?:[0.0];
+    let $bran_4 = array::at(string::split($pe.owner.name?:'','-'),3);
     return
     select if array::first($next_desp)[0] == 614823 {
         'D型'
@@ -32,6 +34,7 @@ DEFINE FUNCTION fn::trns_gask_size_next($pe:record) {
     } as size from $pe
 };
 
+remove function fn::trns_gask_size;
 DEFINE FUNCTION fn::trns_gask_size($pe:record) {
     return string::concat(array::first(fn::trns_gask_size_pre($pe)).size,',',array::first(fn::trns_gask_size_next($pe)).size);
 };

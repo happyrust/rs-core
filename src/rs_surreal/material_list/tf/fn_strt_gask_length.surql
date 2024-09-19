@@ -1,7 +1,8 @@
 // 垫片长度
+remove function fn::strt_gask_length;
 DEFINE FUNCTION fn::strt_gask_length($pe:record,$flan_width:float) {
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $next_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe;
+    let $pre_desp =  fn::prev_pe($pe).refno.DESP?:[0.0];
+    let $next_desp = fn::next_pe($pe).refno.DESP?:[0.0];
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
     let $bran_b_6 = array::at(string::split($pe.owner.name,'-'),3) == '6';
     let $hvac_shape = fn::hvac_shape($pe);
@@ -73,9 +74,8 @@ DEFINE FUNCTION fn::strt_gask_length($pe:record,$flan_width:float) {
         ((array::first(fn::strt_flan_length($pe)).length + $flan_width * 8) / 1000) / 2
     } else if $hvac_shape == 'CIRC' && (!fn::b_pre_type($pe,'DAMP') && !fn::b_pre_type($pe,'MESH')) && (!fn::b_next_type($pe,'DAMP') && !fn::b_next_type($pe,'MESH')) && !$bran_b_6 {
         array::first(fn::strt_flan_length($pe)).length / 2
-    }
-    else {
-        ''
+    } else {
+        0.0
     } as size from $pe
 };
 
