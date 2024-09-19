@@ -2,16 +2,36 @@
 use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::save_material_value;
+#[cfg(feature = "sql")]
+use super::query::save_material_value_test;
 
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+use crate::init_test_surreal;
+use crate::SUL_DB;
 use crate::{get_pe, insert_into_table_with_chunks, query_filter_deep_children, RefU64};
 use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
+use anyhow::anyhow;
 
-pub const FIELDS: [&str; 7] = [
+lazy_static::lazy_static!{
+    static ref CHINESE_FIELDS: HashMap<&'static str, &'static str> = {
+        let mut map = HashMap::new();
+        map.insert("id", "参考号");
+        map.insert("name", "阀门位号");
+        map.insert("room_code", "所在房间号");
+        map.insert("bran_name", "阀门归属");
+        map.insert("valv_size", "阀门尺寸");
+        map.insert("material", "阀门材质");
+        map.insert("valv_use", "阀门功能");
+        map
+    };
+}
+
+const FIELDS: [&str; 7] = [
     "参考号",
     "阀门位号",
     "所在房间号",
@@ -21,17 +41,27 @@ pub const FIELDS: [&str; 7] = [
     "阀门功能",
 ];
 
-pub const TABLE: &'static str = "暖通专业_阀门清单";
+const TABLE: &'static str = "暖通专业_阀门清单";
+
+const DATA_FIELDS: [&str; 7] = [
+    "id",
+    "name",
+    "room_code",
+    "bran_name",
+    "valv_size",
+    "material",
+    "valv_use",
+];
 
 /// 暖通专业 大宗材料
 pub async fn save_nt_material_dzcl(
     refno: RefU64,
-    db: Surreal<Any>,
-    handles: &mut Vec<JoinHandle<()>>,
-) {
+) -> Vec<JoinHandle<()>> {
+    let db = SUL_DB.clone();
+    let mut handles = Vec::new();
     match get_nt_valv_list_material(db.clone(), vec![refno]).await {
         Ok(r) => {
-            if r.is_empty() { return; }
+            if r.is_empty() { return handles; }
             let r_clone = r.clone();
             let task = task::spawn(async move {
                 match insert_into_table_with_chunks(&db, "material_nt_valv", r_clone).await {
@@ -46,18 +76,14 @@ pub async fn save_nt_material_dzcl(
             {
                 let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
-                    return;
+                    return handles;
                 };
                 let task = task::spawn(async move {
 
                     match create_table_sql(&pool, &TABLE, &FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
-                                let data = r
-                                    .into_iter()
-                                    .map(|x| x.into_hashmap())
-                                    .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &TABLE, &FIELDS, data).await {
+                                match save_material_value_test(&pool, &TABLE, &DATA_FIELDS, &CHINESE_FIELDS, r).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());
@@ -77,6 +103,7 @@ pub async fn save_nt_material_dzcl(
             dbg!(e.to_string());
         }
     }
+    handles
 }
 
 /// 暖通 阀门清单
@@ -114,10 +141,10 @@ impl MaterialNtValvData {
 pub async fn get_nt_valv_list_material(
     db: Surreal<Any>,
     refnos: Vec<RefU64>,
-) -> anyhow::Result<Vec<MaterialNtValvData>> {
+) -> anyhow::Result<Vec<HashMap<String, Value>>> {
     let mut data = Vec::new();
     for refno in refnos {
-        let Some(pe) = get_pe(refno).await? else {
+        let Some(pe) = get_pe(refno.into()).await? else {
             continue;
         };
         // 如果是site，则需要过滤 site的 name
@@ -127,28 +154,35 @@ pub async fn get_nt_valv_list_material(
             };
         }
         // 查询 DAMP 的数据
-        let refnos = query_filter_deep_children(refno, &["DAMP"]).await?;
+        let refnos = query_filter_deep_children(refno.into(), &["DAMP"]).await?;
         let refnos_str =
             &refnos
                 .into_iter()
                 .map(|refno| refno.to_pe_key())
                 .collect::<Vec<String>>().join(",");
         let sql = format!(
-            r#"select
-            id,
-            fn::default_name($this.id) as name,
-            fn::room_code($this.id)[0] as room_code,
-            (->pe_owner.out->pe_owner.in.refno.NAME)[0] as bran_name,
-            [if refno.DESP[1] == NONE {{ 0 }} else {{ refno.DESP[1] }},if refno.DESP[2] == NONE {{ 0 }} else {{ refno.DESP[2] }},
-            if refno.DESP[5] == NONE {{ 0 }} else {{ refno.DESP[5] }}] as valv_size,
-            fn::get_valv_material($this.id) as material,
-            if name == NONE {{ '' }} else {{ string::slice(name,-3) }} as valv_use
-            from [{}]"#,
+            r#"return fn::nt_valv([{}])"#,
             refnos_str
         );
-        let mut response = db.query(sql).await?;
-        let mut result: Vec<MaterialNtValvData> = response.take(0)?;
-        data.append(&mut result);
+        let mut response = db.query(&sql).await?;
+        match response.take::<Vec<HashMap<String, Value>>>(0) {
+            Ok(mut result) => {
+                data.append(&mut result);
+            }
+            Err(e) => {
+                dbg!(e.to_string());
+                return Err(anyhow!(sql));
+            }
+        }
     }
     Ok(data)
+}
+
+#[tokio::test]
+async fn test_save_nt_material_dzcl() {
+    init_test_surreal().await;
+    let mut handles = Vec::new();
+    let refno = RefU64::from("24381/57021");
+    handles.append(&mut save_nt_material_dzcl(refno).await);
+    futures::future::join_all(handles).await;
 }

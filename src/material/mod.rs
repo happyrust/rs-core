@@ -16,14 +16,14 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
 pub mod dq;
-// pub mod gps;
-// pub mod gy;
-// pub mod nt;
-// pub(crate) mod query;
-// pub mod sb;
-// pub mod tf;
-// pub mod tx;
-// pub mod yk;
+pub mod gps;
+pub mod gy;
+pub mod nt;
+pub(crate) mod query;
+pub mod sb;
+pub mod tf;
+pub mod tx;
+pub mod yk;
 
 //使用enum，给每个选项一个名字
 //使用 strum_macros::EnumString，实现strum::VariantNames
