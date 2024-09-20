@@ -1,12 +1,12 @@
 // 其他材料类型
 remove function fn::bend_other_material_count_2;
 DEFINE FUNCTION fn::bend_other_material_count_2($pe:record) {
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $bran_4 = array::at(string::split($pe.owner.name,'-')?:[],3)?:'';
     let $hvac_shape = fn::hvac_shape($pe);
 
-    let $angle = $pe.refno.DESP[7];
-    let $height = $pe.refno.DESP[2];
-    let $width = $pe.refno.DESP[1];
+    let $angle = $pe.refno.DESP[7]?:0.0;
+    let $height = $pe.refno.DESP[2]?:0.0;
+    let $width = $pe.refno.DESP[1]?:0.0;
     return
     select
     // ([Angle] GT 60) AND ([Width] GE 900) AND ([Width] LT 1400) AND ([Height] GT 500) AND ([Height] LE 1000) AND (Part('[Branch]',4,'-') NE '6')

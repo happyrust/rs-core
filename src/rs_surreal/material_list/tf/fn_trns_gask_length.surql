@@ -1,14 +1,14 @@
 // 垫片长度
 remove function fn::trns_gask_length_pre;
 DEFINE FUNCTION fn::trns_gask_length_pre($pe:record) {
-    let $flan_length = array::first(fn::flex_flan_length($pe)).length;
-    let $flan_width = $pe.refno.DESP[20];
+    let $flan_length = array::first(fn::flex_flan_length($pe)).length?:0.0;
+    let $flan_width = $pe.refno.DESP[20]?:0.0;
 
     let $pre_b_damp = array::first(fn::b_pre_type($pe,'DAMP'));
     let $pre_b_mesh = array::first(fn::b_pre_type($pe,'MESH'));
 
     let $height2 = string::e3d_dehash($pe.refno.DESP[4]);
-    let $height = $pe.refno.DESP[2];
+    let $height = $pe.refno.DESP[2]?:0.0;
     let $height_str = string::e3d_dehash($height);
 
     return
@@ -32,15 +32,15 @@ DEFINE FUNCTION fn::trns_gask_length_pre($pe:record) {
 
 remove function fn::trns_gask_length_next;
 DEFINE FUNCTION fn::trns_gask_length_next($pe:record) {
-    let $flan_length = array::first(fn::flex_flan_length($pe)).length;
-    let $flan_width = $pe.refno.DESP[20];
-    let $flan_width2 = $pe.refno.DESP[23];
+    let $flan_length = array::first(fn::flex_flan_length($pe)).length?:0.0;
+    let $flan_width = $pe.refno.DESP[20]?:0.0;
+    let $flan_width2 = $pe.refno.DESP[23]?:0.0;
 
     let $next_b_damp = array::first(fn::b_next_type($pe,'DAMP'));
     let $next_b_mesh = array::first(fn::b_next_type($pe,'MESH'));
 
     let $height2 = string::e3d_dehash($pe.refno.DESP[4]);
-    let $height = $pe.refno.DESP[2];
+    let $height = $pe.refno.DESP[2]?:0.0;
     let $height_str = string::e3d_dehash($height);
 
     return

@@ -3,10 +3,9 @@ remove FUNCTION fn::strt_gask_length;
 DEFINE FUNCTION fn::strt_gask_length($pe:record,$flan_width:float) {
     let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0];
     let $next_desp =  fn::next_pe($pe).refno.DESP?:[0.0];
-    let $bran_4 = array::at(string::split($pe.owner.name?:'','-'),3);
-    let $bran_b_6 = array::at(string::split($pe.owner.name,'-'),3) == '6';
+    let $bran_4 = array::at(string::split($pe.owner.name?:'','-'),3)?:'';
+    let $bran_b_6 = (array::at(string::split($pe.owner.name?:'','-'),3)?:'') == '6';
     let $hvac_shape = fn::hvac_shape($pe);
-    //return $hvac_shape;
     return
 
     select if $hvac_shape == 'RECT' && array::first($pre_desp)[0] == 614823 && array::first($next_desp)[0] == 614823 && !$bran_b_6 {

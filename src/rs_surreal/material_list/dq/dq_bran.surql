@@ -45,7 +45,7 @@ DEFINE FUNCTION fn::dq_bran($pes: array<record>) {
 -- '碳钢Q235' as material, // 材质
 -- array::first(array::first((select value (select value v from only udas.* where u.NAME=='/BranWidth' limit 1) from type::thing("ATT_UDA", meta::id(id))))) as width, // 托盘宽度
 -- array::first(array::first((select value (select value v from only udas.* where u.NAME=='/BranHigh' limit 1) from type::thing("ATT_UDA", meta::id(id))))) as height, // 托盘高度
---         array::first(array::first((select value (select value v from only udas.* where u.NAME=='/BranWidth' limit 1) from type::thing("ATT_UDA", meta::id(id))))) * array::first(array::first((select value (select value v from only udas.* where u.NAME=='/BranHigh' limit 1) from type::thing("ATT_UDA", meta::id(id))))) as size_num, // 规格型号
+--         array::first(array::first((select value (select value v from only udas.* where u.NAME=='/BranWidth' limit 1) from type::thing("ATT_UDA", record::id(id))))) * array::first(array::first((select value (select value v from only udas.* where u.NAME=='/BranHigh' limit 1) from type::thing("ATT_UDA", record::id(id))))) as size_num, // 规格型号
 --         'Y' as b_painting, // 是否刷漆
 --         string::split(refno.NAME,'-')[1] as painting_color,
 --         (select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.DESP as b_cover, //有无盖板

@@ -1,7 +1,7 @@
 //风管面积
 remove function fn::bend_hvac_area;
 DEFINE FUNCTION fn::bend_hvac_area($pe:record) {
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $bran_4 = array::at(string::split($pe.owner.name,'-')?:[],3)?:'';
     let $angle = $pe.refno.DESP[7];
     let $height = $pe.refno.DESP[2];
     let $width = $pe.refno.DESP[1];

@@ -2,13 +2,13 @@
 remove function fn::tape_bolt_count;
 DEFINE FUNCTION fn::tape_bolt_count($pe:record) {
     let $hvac_shape = fn::hvac_shape($pe);
-    let $width = $pe.refno.DESP[1];
-    let $width_2 = $pe.refno.DESP[3];
-    let $height = $pe.refno.DESP[2];
-    let $height_2 = $pe.refno.DESP[4];
-    let $flan_width = $pe.refno.DESP[20];
-    let $flan_width_2 = $pe.refno.DESP[23];
-    let $flan_length = <float>(string::split(fn::tape_flan_length($pe),',')[0]);
+    let $width = $pe.refno.DESP[1]?:0.0;
+    let $width_2 = $pe.refno.DESP[3]?:0.0;
+    let $height = $pe.refno.DESP[2]?:0.0;
+    let $height_2 = $pe.refno.DESP[4]?:0.0;
+    let $flan_width = $pe.refno.DESP[20]?:0.0;
+    let $flan_width_2 = $pe.refno.DESP[23]?:0.0;
+    let $flan_length = <float>((string::split(fn::tape_flan_length($pe),',')[0])?:'0');
 
     let $pre_length =
     // ('[Prev_Type]' EQ 'DAMP') OR ('[Prev_Type]' EQ 'MESH')

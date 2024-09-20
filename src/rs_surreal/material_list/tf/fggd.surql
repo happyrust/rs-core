@@ -40,8 +40,8 @@ define function fn::fggd_strt($pes:array<record>) {
         math::fixed(array::first(fn::strt_bolt_count($this.id,refno.DESP[20])).count,2) as bolt_count,  // 螺栓数量
         '' as other_material_count, // 其它材料数量
         '' as screw, // 螺杆
-        math::fixed(array::first(fn::strt_bolt_count($this.id,refno.DESP[20])).count,2) as nut_count, // 螺母数量
-        math::fixed(array::first(fn::strt_bolt_count($this.id,refno.DESP[20])).count * 2,2) as nut_count_b, // 螺母数量
+        math::fixed(array::first(fn::strt_bolt_count($this.id,refno.DESP[20]?:0.0)).count,2) as nut_count, // 螺母数量
+        math::fixed(array::first(fn::strt_bolt_count($this.id,refno.DESP[20]?:0.0)).count * 2,2) as nut_count_b, // 螺母数量
         fn::room_code(id)[0]?:'' as room_num , // 房间号
         array::at(string::split(owner.name,'-'),1) as system_name, // 系统号
         array::join([array::first(fn::hvac_material($this.id)).r,fn::get_ispec_material($this.id)],';') as material // 材质

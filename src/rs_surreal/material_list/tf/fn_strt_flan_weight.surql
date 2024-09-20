@@ -4,7 +4,7 @@ DEFINE FUNCTION fn::strt_flan_weight($pe:record) {
     //let $desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
     let $desp = $pe.refno.DESP;
     let $flan_type = if array::first($desp)[57] == 531717 { 'FJ' } else if array::first($desp)[57] == 531501 { 'FB' } else { '' };
-    let $flan_length = array::first(fn::strt_flan_length($pe)).length;
+    let $flan_length = array::first(fn::strt_flan_length($pe)).length?:0.0;
     //return [$flan_type,array::first($desp)[67],$flan_length.length];
     return 
     select if ($flan_type == 'FJ' && array::first($desp)[67] == 25) {

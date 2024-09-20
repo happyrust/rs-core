@@ -1,6 +1,6 @@
 //适用于STRT
 DEFINE FUNCTION fn::hvac_bolt_qty($pe: record) {
-       let $mat_id = meta::id(fn::hvac_mat_id($pe));
+       let $mat_id = record::id(fn::hvac_mat_id($pe));
        return if $mat_id == 6 {
            return 0.0;
        } else {
@@ -43,7 +43,7 @@ DEFINE FUNCTION fn::hvac_bolt_qty($pe: record) {
 
 //适用于TAPE
 DEFINE FUNCTION fn::hvac_bolt_qtys_1($pe: record) {
-       let $mat_id = meta::id(fn::hvac_mat_id($pe));
+       let $mat_id = record::id(fn::hvac_mat_id($pe));
        return if $mat_id == 6 {
            return 0.0;
        } else {

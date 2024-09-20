@@ -56,7 +56,7 @@ DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
     RETURN (
         SELECT VALUE (
             SELECT VALUE v FROM ONLY udas.* WHERE u.NAME == $uda_name LIMIT 1
-        ) FROM type::thing("ATT_UDA", meta::id($pe.id))
+        ) FROM type::thing("ATT_UDA", record::id($pe.id))
     )[0][0];
 };
 

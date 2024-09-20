@@ -2,9 +2,9 @@
 remove function fn::tape_gask_length;
 DEFINE FUNCTION fn::tape_gask_length($pe:record) {
     let $hvac_shape = fn::hvac_shape($pe);
-    let $flan_width = $pe.refno.DESP[20];
-    let $flan_width_2 = $pe.refno.DESP[23];
-    let $flan_length = string::split(array::first(fn::tape_flan_length($pe)).length,',');
+    let $flan_width = $pe.refno.DESP[20]?:0.0;
+    let $flan_width_2 = $pe.refno.DESP[23]?:0.0;
+    let $flan_length = string::split(array::first(fn::tape_flan_length($pe)).length,',')?:'';
     //return array::first(fn::tape_flan_length($pe)).length;
     //return $flan_length;
     let $pre_length =

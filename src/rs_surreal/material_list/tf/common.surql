@@ -12,7 +12,7 @@ define function fn::code($pe: record, $opt: option<number>){
 //将pe转换为refno
 remove function fn::pe_to_refno;
 define function fn::pe_to_refno($pe:record){
-    return string::replace(meta::id($pe), '_', '/');
+    return string::replace(record::id($pe), '_', '/');
 };
 
 -- let $refno = [pe:24383_84092];
@@ -31,7 +31,7 @@ DEFINE FUNCTION fn::get_world_pos($pe:record) {
     let $noun = $pe.noun;
     return
     if $noun == 'EQUI' {
-        return select value world_trans.d.translation from type::thing('cal_equi',meta::id($pe))
+        return select value world_trans.d.translation from type::thing('cal_equi',record::id($pe))
     } else {
         return select value ->inst_relate.world_trans.d.translation from $pe
     }
@@ -39,7 +39,7 @@ DEFINE FUNCTION fn::get_world_pos($pe:record) {
 
 remove function fn::refno;
 DEFINE FUNCTION fn::refno($pe: record){
-    return string::replace(meta::id($pe), '_', '/');
+    return string::replace(record::id($pe), '_', '/');
 };
 
 remove function fn::type;
