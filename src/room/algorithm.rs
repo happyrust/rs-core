@@ -66,7 +66,7 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
 
 /// 查询多个refno所属的房间号，bran和equi也适用
 pub async fn query_room_name_from_refnos(
-    owner: Vec<RefU64>,
+    owner: Vec<RefnoEnum>,
 ) -> anyhow::Result<HashMap<RefU64, String>> {
     #[derive(Debug, Serialize, Deserialize)]
     struct RoomNameQueryRequest {
@@ -93,7 +93,7 @@ pub async fn query_room_name_from_refnos(
 
 /// 查找设备和阀门所属的楼板
 pub async fn query_equi_or_valv_belong_floors(
-    refnos: Vec<RefU64>,
+    refnos: Vec<RefnoEnum>,
 ) -> anyhow::Result<HashMap<RefU64, (String, f32)>> {
     #[serde_as]
     #[derive(Serialize, Deserialize, Debug)]
