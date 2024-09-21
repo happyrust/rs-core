@@ -558,7 +558,11 @@ impl RefnoSesno {
     }
 
     pub fn to_pe_key(&self) -> String {
-        format!("pe:{}", self.to_string())
+        if self.sesno == 0 {
+            self.refno.to_pe_key()
+        }else{
+            format!("pe:{}", self.to_string())
+        }
     }
 
     #[inline]
@@ -765,7 +769,7 @@ impl RefnoEnum {
 
     #[inline]
     pub fn to_array_zero_id(&self) -> String {
-        format!("[{}, 0]", self.refno().to_string())
+        format!("['{}', 0]", self.refno().to_string())
     }
 }
 

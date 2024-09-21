@@ -159,11 +159,10 @@ pub async fn get_index_by_noun_in_parent(
 ///获取上一个版本的参考号
 pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(
-        "select value id from only pe:{}..{} order by id desc limit 1;",
-        refno_enum.to_array_zero_id(),
-        refno_enum.to_array_id()
+        "select value id from only {}.old_pe limit 1;",
+        refno_enum.to_pe_key(),
     );
-    // println!("sql is {}", &sql);
+    println!("query_prev_version_refno sql is {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let refno: Option<RefnoEnum> = response.take(0)?;
     Ok(refno)
@@ -179,19 +178,23 @@ pub async fn get_ui_named_attmap_prev_version(
     Ok(NamedAttrMap::default())
 }
 
-pub async fn query_children_full_names_map(refno: RefnoEnum) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
+pub async fn query_children_full_names_map(
+    refno: RefnoEnum,
+) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
     let mut response = SUL_DB
         .query(format!(
             "select value [in, fn::default_full_name(in)] from {}<-pe_owner where record::exists(in)",
             refno.to_pe_key()
         ))
         .await?;
-    let map : Vec<(RefnoEnum, String)> = response.take(0)?;
+    let map: Vec<(RefnoEnum, String)> = response.take(0)?;
     let map = IndexMap::from_iter(map);
     Ok(map)
 }
 
-pub async fn query_full_names_map(refnos: &[RefnoEnum]) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
+pub async fn query_full_names_map(
+    refnos: &[RefnoEnum],
+) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
     let mut response = SUL_DB
         .query(format!(
             "select value fn::default_full_name(id) from [{}]",
@@ -900,8 +903,11 @@ pub async fn query_types(refnos: &[RefU64]) -> anyhow::Result<Vec<Option<String>
 }
 
 /// 查询管件的长度
-pub async fn query_bran_fixing_length(refno:RefU64) -> anyhow::Result<f32>{
-    let sql = format!("return math::fixed(fn::bran_comp_len({})?:0.0,2)",refno.to_pe_key());
+pub async fn query_bran_fixing_length(refno: RefU64) -> anyhow::Result<f32> {
+    let sql = format!(
+        "return math::fixed(fn::bran_comp_len({})?:0.0,2)",
+        refno.to_pe_key()
+    );
     let mut response = SUL_DB.query(sql).await?;
     let length: Option<f32> = response.take(0)?;
     Ok(length.unwrap_or(0.0))
@@ -922,4 +928,24 @@ pub async fn query_history_pes(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum
         .await?;
     let pes: Vec<RefnoEnum> = response.take(0)?;
     Ok(pes)
+}
+
+/// 通过数据库查询refno离参考 sesno 最近的 sesno 数据
+pub async fn query_refno_sesno(
+    refno: RefU64,
+    sesno: u32,
+    dbnum: i32,
+) -> anyhow::Result<(u32, bool)> {
+    let sql = format!(
+        "fn::latest_pe_sesno({}, {}, {})",
+        refno.to_pe_key(),
+        sesno,
+        dbnum
+    );
+    let mut response = SUL_DB.query(&sql).await?;
+    let r: Vec<u32> = response.take(0).unwrap();
+    if r.len() < 2 {
+        return Ok((0, false));
+    }
+    Ok((r[0], r[1] == 1))
 }

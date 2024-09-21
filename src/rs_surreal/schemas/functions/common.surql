@@ -38,6 +38,7 @@ DEFINE FUNCTION fn::default_name(
     return (select value (if name='' {string::join(" ", noun, <string> (fn::order($pe) + 1) ) } else { name } ) from $pe)[0];
 };
 
+remove function fn::default_names;
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {

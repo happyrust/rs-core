@@ -3,7 +3,7 @@ use crate::consts::{UNSET_STR, WORD_HASH};
 use crate::helper::normalize_sql_string;
 #[cfg(feature = "sea-orm")]
 use crate::orm::{BoolVec, F32Vec, I32Vec, StringVec};
-use crate::pdms_types::*;
+use crate::{pdms_types::*, query_refno_sesno};
 use crate::pe::SPdmsElement;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::*;
@@ -50,6 +50,31 @@ use surrealdb::sql::{Id, Thing};
 pub struct NamedAttrMap {
     #[serde(flatten)]
     pub map: BTreeMap<String, NamedAttrValue>,
+}
+
+impl NamedAttrMap {
+    pub async fn build_refno_sesno_map(&self, sesno: u32, dbnum: i32) -> anyhow::Result<HashMap<RefU64, u32>> {
+        let mut refno_sesno_map = HashMap::new();
+        for (_, value) in &self.map {
+            if let NamedAttrValue::RefU64Type(refno) = value {
+                if let Ok((sesno, is_latest_pe)) = query_refno_sesno(*refno, sesno, dbnum).await {
+                    if !is_latest_pe {
+                        refno_sesno_map.insert(*refno, sesno);
+                    }
+                }
+            } else if let NamedAttrValue::RefU64Array(refnos) = value {
+                for &refno_enum in refnos {
+                    let refno = refno_enum.refno();
+                    if let Ok((sesno, is_latest_pe)) = query_refno_sesno(refno, sesno, dbnum).await {
+                        if !is_latest_pe {
+                            refno_sesno_map.insert(refno, sesno);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(refno_sesno_map)
+    }
 }
 
 impl BytesTrait for NamedAttrMap {}
