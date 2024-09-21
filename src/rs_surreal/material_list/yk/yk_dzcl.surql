@@ -2,8 +2,9 @@
 #定义方法
 remove function fn::yk_dzcl;
 define function fn::yk_dzcl($refnos: array<record>) {
-    select id,
-    string::slice(refno.SPRE.name?:'', 1) as name ,
+    return select 
+    fn::pe_to_refno(id) as id,
+    string::split(string::split(refno.SPRE.name?:'/', '/')[2]?:':',':')[0] as code ,
     refno.TYPE as type // 品名
     from $refnos;
 }
@@ -14,6 +15,6 @@ define function fn::yk_dzcl($refnos: array<record>) {
 
 
 -- select id,
--- if refno.SPRE.name != NONE { string::slice(refno.SPRE.name,1) } else { ' ' } as name ,// 编码
+-- if refno.SPRE.name != NONE {{ string::split(string::split(refno.SPRE.name,'/')[2],':')[0] }} else {{ ' ' }} as code ,// 编码
 -- refno.TYPE as type // 品名
 -- from [pe:24383_67652];

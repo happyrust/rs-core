@@ -3,12 +3,12 @@
 remove function fn::gy_tubi;
 DEFINE FUNCTION fn::gy_tubi($pes: array<record>) {
     return select  
-        fn::pe_to_refno(leave) as refno,
+        fn::pe_to_refno(leave) as id,
         string::split(
-          array::at(string::split((leave.refno.HSTU ?: (leave.refno.LSTU)).name, '/'), 2) ?: '',
+          array::at(string::split((leave.refno.HSTU ?: (leave.refno.LSTU)).name?:'', '/'), 2) ?: '',
            ':'
         )[0]?:'' as code,
-        'TUBI' as type,
+        'TUBI' as noun,
         world_trans.d.scale[2] as length
     from array::flatten($pes->tubi_relate);
 };

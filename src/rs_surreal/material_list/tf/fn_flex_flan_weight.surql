@@ -1,8 +1,10 @@
 // 法兰重量
+remove function fn::flex_flan_weight;
 DEFINE FUNCTION fn::flex_flan_weight($pe:record) {
     let $desp = $pe.refno.DESP;
     let $flan_type = if array::first($desp)[57] == 531717 { 'FJ' } else if array::first($desp)[57] == 531501 { 'FB' } else { '' };
-    let $flan_length = array::first(fn::flex_flan_length($pe)).length;
+    let $flan_length = array::first(fn::flex_flan_length($pe)).length?:0.0;
+
     // return [$flan_type,array::first($desp)[67],$flan_length];
     return
     select if ($flan_type == 'FJ' && array::first($desp)[67] == 25) {

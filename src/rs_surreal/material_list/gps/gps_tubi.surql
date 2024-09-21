@@ -1,12 +1,12 @@
 // 给排水 大宗材料
 // tubi
 
-remove function fn::dzcl_tubi;
-define function fn::dzcl_tubi($refnos: array<record>){
+remove function fn::gps_tubi;
+define function fn::gps_tubi($refnos: array<record>){
     return select
       fn::pe_to_refno(leave) as id,
       string::split(
-          array::at(string::split((leave.refno.HSTU ?: (leave.refno.LSTU)).name, '/'), 2) ?: '',
+          array::at(string::split((leave.refno.HSTU ?: (leave.refno.LSTU)).name?:'', '/'), 2) ?: '',
            ':'
         )[0]?:'' as code,
         'TUBI' as type,
@@ -19,8 +19,8 @@ define function fn::dzcl_tubi($refnos: array<record>){
     from array::flatten($refnos->tubi_relate);
 };
 
-let $refno = [pe:24383_74103];
-return fn::dzcl_tubi($refno);
+-- let $refno = [pe:24383_66627];
+-- return fn::dzcl_tubi($refno);
 
 
 //   select value (select leave as id,

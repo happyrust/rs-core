@@ -1,4 +1,5 @@
 // 加强筋长度
+remove function fn::hvac_length;
 DEFINE FUNCTION fn::hvac_length($pe:record,$size:string,$pressure:string,$length:float,$width:float,$height:float) {
     return
     select value if $size =='RECT' && $pressure == 'L' && math::max([$width,$height]) <= 800 { 0 }

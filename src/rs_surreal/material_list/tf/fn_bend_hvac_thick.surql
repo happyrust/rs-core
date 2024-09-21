@@ -1,7 +1,8 @@
 //风管壁厚
+remove function fn::bend_hvac_thick;
 DEFINE FUNCTION fn::bend_hvac_thick($pe:record) {
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0];
+    let $bran_4 = array::at(string::split($pe.owner.name,'-')?:[],3)?:'';
     let $angle = $pe.refno.DESP[7];
     let $height = $pe.refno.DESP[2];
     return
@@ -13,4 +14,4 @@ DEFINE FUNCTION fn::bend_hvac_thick($pe:record) {
 };
 
 
-return fn::bend_hvac_thick(pe:24381_58571)
+// return fn::bend_hvac_thick(pe:24381_58571)
