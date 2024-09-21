@@ -42,8 +42,8 @@ remove function fn::default_names;
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
-    return (select value (if name='' {string::join(" ", noun,<string> (
-       fn::order(id) + 1) ) } else { name } ) from $pes);
+    return select value (if name='' {string::join(" ", noun,<string> (
+       fn::order(id) + 1) ) } else { name } ) from $pes;
 };
 
 
@@ -113,10 +113,7 @@ define function fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option
         return $sesno
     };
 
-    #需要知道是否是 latest，latest 都在 pe 表里存储了
-    let $l = return if $r >= $sesno { 1 } else { 0 } ;
-
-    return [$r?:0, $l];
+    return [$r?:0, $sesno];
 };
 
 remove function fn::latest_pe;

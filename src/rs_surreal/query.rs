@@ -935,7 +935,7 @@ pub async fn query_refno_sesno(
     refno: RefU64,
     sesno: u32,
     dbnum: i32,
-) -> anyhow::Result<(u32, bool)> {
+) -> anyhow::Result<(u32, u32)> {
     let sql = format!(
         "fn::latest_pe_sesno({}, {}, {})",
         refno.to_pe_key(),
@@ -944,8 +944,8 @@ pub async fn query_refno_sesno(
     );
     let mut response = SUL_DB.query(&sql).await?;
     let r: Vec<u32> = response.take(0).unwrap();
-    if r.len() < 2 {
-        return Ok((0, false));
-    }
-    Ok((r[0], r[1] == 1))
+    // if r.len() < 2 {
+    //     return Ok((0, false));
+    // }
+    Ok((r[0], r[1]))
 }

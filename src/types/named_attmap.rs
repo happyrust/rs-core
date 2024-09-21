@@ -57,16 +57,16 @@ impl NamedAttrMap {
         let mut refno_sesno_map = HashMap::new();
         for (_, value) in &self.map {
             if let NamedAttrValue::RefU64Type(refno) = value {
-                if let Ok((sesno, is_latest_pe)) = query_refno_sesno(*refno, sesno, dbnum).await {
-                    if !is_latest_pe {
+                if let Ok((sesno, latest_sesno)) = query_refno_sesno(*refno, sesno, dbnum).await {
+                    if latest_sesno != sesno {
                         refno_sesno_map.insert(*refno, sesno);
                     }
                 }
             } else if let NamedAttrValue::RefU64Array(refnos) = value {
                 for &refno_enum in refnos {
                     let refno = refno_enum.refno();
-                    if let Ok((sesno, is_latest_pe)) = query_refno_sesno(refno, sesno, dbnum).await {
-                        if !is_latest_pe {
+                    if let Ok((sesno, latest_sesno)) = query_refno_sesno(refno, sesno, dbnum).await {
+                        if latest_sesno != sesno {
                             refno_sesno_map.insert(refno, sesno);
                         }
                     }
