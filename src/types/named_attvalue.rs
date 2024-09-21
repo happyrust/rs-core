@@ -14,6 +14,8 @@ use serde_json::json;
 ///新的属性数据结构
 #[derive(
     Serialize,
+    // Eq, 
+    PartialEq,
     // Deserialize,
     Clone,
     Debug,

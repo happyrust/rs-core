@@ -44,6 +44,8 @@ use surrealdb::sql::{Id, Thing};
     Default,
     Debug,
     Component,
+    // Eq,
+    PartialEq,
 )]
 pub struct NamedAttrMap {
     #[serde(flatten)]
@@ -307,11 +309,11 @@ impl NamedAttrMap {
         }
     }
 
-    #[inline]
-    pub fn set_pgno(&mut self, v: i32) {
-        self.map
-            .insert("PGNO".into(), NamedAttrValue::IntegerType(v));
-    }
+    // #[inline]
+    // pub fn set_pgno(&mut self, v: i32) {
+    //     self.map
+    //         .insert("PGNO".into(), NamedAttrValue::IntegerType(v));
+    // }
 
     #[inline]
     pub fn set_sesno(&mut self, v: i32) {
@@ -497,7 +499,6 @@ impl NamedAttrMap {
         self.get_refno_or_default().refno()
     }
 
-
     #[inline]
     pub fn get_refno(&self) -> Option<RefnoEnum> {
         if let Some(NamedAttrValue::RefU64Type(d)) = self.get_val("REFNO") {
@@ -629,7 +630,9 @@ impl NamedAttrMap {
                 || matches!(val, NamedAttrValue::ElementType(_))
             {
                 let refno = val.refno_value().unwrap_or_default();
-                if let Some(&sesno) = sesno_map.get(&refno) && sesno != 0 {
+                if let Some(&sesno) = sesno_map.get(&refno)
+                    && sesno != 0
+                {
                     record_map.insert(key, RefnoSesno::new(refno, sesno).into());
                 } else {
                     record_map.insert(key, refno.into());
@@ -637,7 +640,9 @@ impl NamedAttrMap {
             } else if let NamedAttrValue::RefU64Array(refnos) = val {
                 for refno_enum in refnos {
                     let refno = refno_enum.refno();
-                    if let Some(&sesno) = sesno_map.get(&refno) && sesno != 0 {
+                    if let Some(&sesno) = sesno_map.get(&refno)
+                        && sesno != 0
+                    {
                         records_map
                             .entry(key.clone())
                             .or_default()
@@ -664,7 +669,9 @@ impl NamedAttrMap {
         //后续是否需要指定 sesno，更新数据里的 引用数据
         sjson.push_str(&format!(
             r#", "REFNO": pe:['{}',{}], "id": {}, "#,
-            refno.refno(), sesno, id_str
+            refno.refno(),
+            sesno,
+            id_str
         ));
         for (key, val) in record_map.into_iter() {
             if val.refno().is_unset() {
@@ -856,7 +863,7 @@ impl NamedAttrMap {
     pub fn get_refno_vec(&self, key: &str) -> Option<Vec<RefnoEnum>> {
         if let NamedAttrValue::RefU64Array(d) = self.get_val(key)? {
             return Some(d.clone());
-        } 
+        }
         None
     }
 

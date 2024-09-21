@@ -8,7 +8,7 @@ use std::fmt::format;
 use surrealdb::sql::Thing;
 use super::RefnoEnum;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default, PartialEq)]
 pub struct SPdmsElement {
     //指向具体的类型
     pub refno: RefnoEnum,

@@ -44,9 +44,7 @@ pub async fn get_pe(refno: RefnoEnum) -> anyhow::Result<Option<SPdmsElement>> {
 
 pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>> {
     let sql = format!("return fn::default_name({});", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let pe: Option<String> = response.take(0)?;
     Ok(pe)
 }
@@ -55,9 +53,7 @@ pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>
 #[cached(result = true)]
 pub async fn get_ancestor(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!("return fn::ancestor({}).refno;", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let s = response.take::<Vec<RefnoEnum>>(0);
     Ok(s?)
 }
@@ -77,9 +73,7 @@ pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> 
 #[cached(result = true)]
 pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
     let sql = format!("return fn::ancestor({}).noun;", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let s = response.take::<Vec<String>>(0);
     Ok(s?)
 }
@@ -88,9 +82,7 @@ pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>>
 #[cached(result = true)]
 pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
     let sql = format!("return fn::ancestor({}).refno.*;", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let o: surrealdb::Value = response.take(0)?;
     let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
@@ -100,9 +92,7 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
 #[cached(result = true)]
 pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
     let sql = format!("select value noun from only {} limit 1", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let type_name: Option<String> = response.take(0)?;
     Ok(type_name.unwrap_or("unset".to_owned()))
 }
@@ -119,10 +109,11 @@ pub async fn get_type_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String>>
 
 #[cached(result = true)]
 pub async fn get_owner_type_name(refno: RefU64) -> anyhow::Result<String> {
-    let sql = format!("return (select value owner.noun from only (type::thing('pe', {})));", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let sql = format!(
+        "return (select value owner.noun from only (type::thing('pe', {})));",
+        refno.to_pe_key()
+    );
+    let mut response = SUL_DB.query(sql).await?;
     // dbg!(&response);
     let type_name: Option<String> = response.take(0)?;
     Ok(type_name.unwrap_or_default())
@@ -130,10 +121,11 @@ pub async fn get_owner_type_name(refno: RefU64) -> anyhow::Result<String> {
 
 #[cached(result = true)]
 pub async fn get_self_and_owner_type_name(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
-    let sql = format!("select value [noun, owner.noun] from only {} limit 1", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let sql = format!(
+        "select value [noun, owner.noun] from only {} limit 1",
+        refno.to_pe_key()
+    );
+    let mut response = SUL_DB.query(sql).await?;
     let type_name: Vec<String> = response.take(0)?;
     Ok(type_name)
 }
@@ -172,19 +164,54 @@ pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<O
         refno_enum.to_array_id()
     );
     // println!("sql is {}", &sql);
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let refno: Option<RefnoEnum> = response.take(0)?;
     Ok(refno)
 }
 
 // //获取上一个版本的属性数据
-pub async fn get_ui_named_attmap_prev_version(refno_enum: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
+pub async fn get_ui_named_attmap_prev_version(
+    refno_enum: RefnoEnum,
+) -> anyhow::Result<NamedAttrMap> {
     if let Some(refno) = query_prev_version_refno(refno_enum).await? {
         return get_ui_named_attmap(refno).await;
     }
     Ok(NamedAttrMap::default())
+}
+
+pub async fn query_children_full_names_map(refno: RefnoEnum) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
+    let mut response = SUL_DB
+        .query(format!(
+            "select value [in, fn::default_full_name(in)] from {}<-pe_owner where record::exists(in)",
+            refno.to_pe_key()
+        ))
+        .await?;
+    let map : Vec<(RefnoEnum, String)> = response.take(0)?;
+    let map = IndexMap::from_iter(map);
+    Ok(map)
+}
+
+pub async fn query_full_names_map(refnos: &[RefnoEnum]) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
+    let mut response = SUL_DB
+        .query(format!(
+            "select value fn::default_full_name(id) from [{}]",
+            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+        ))
+        .await?;
+    let names: Vec<String> = response.take(0)?;
+    let map = IndexMap::from_iter(refnos.iter().cloned().zip(names));
+    Ok(map)
+}
+
+pub async fn query_full_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String>> {
+    let mut response = SUL_DB
+        .query(format!(
+            "select value fn::default_full_name(id) from [{}]",
+            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+        ))
+        .await?;
+    let names: Vec<String> = response.take(0)?;
+    Ok(names)
 }
 
 ///查询的数据把 refno->name，换成名称
@@ -192,7 +219,7 @@ pub async fn get_ui_named_attmap_prev_version(refno_enum: RefnoEnum) -> anyhow::
 pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let mut attmap = get_named_attmap_with_uda(refno_enum, true).await?;
     attmap.fill_explicit_default_values();
-    let mut refno_fields = vec![];
+    let mut refno_fields: Vec<RefnoEnum> = vec![];
     let mut keys = vec![];
     let mut unset_keys = vec![];
     let mut new_desp = None;
@@ -212,7 +239,7 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
         match v {
             NamedAttrValue::RefU64Type(r) => {
                 if r.is_valid() {
-                    refno_fields.push(r.to_pe_key());
+                    refno_fields.push((*r).into());
                     keys.push(k.to_owned());
                 } else {
                     unset_keys.push(k.to_owned());
@@ -220,7 +247,7 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
             }
             NamedAttrValue::RefnoEnumType(r) => {
                 if r.refno().is_valid() {
-                    refno_fields.push(r.to_pe_key());
+                    refno_fields.push(*r);
                     keys.push(k.to_owned());
                 } else {
                     unset_keys.push(k.to_owned());
@@ -276,13 +303,13 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
         attmap.insert(k, v);
     }
 
-    let mut response = SUL_DB
-        .query(format!(
-            "select value fn::default_full_name(id) from [{}]",
-            refno_fields.join(",")
-        ))
-        .await?;
-    let names: Vec<String> = response.take(0)?;
+    // let mut response = SUL_DB
+    //     .query(format!(
+    //         "select value fn::default_full_name(id) from [{}]",
+    //         refno_fields.join(",")
+    //     ))
+    //     .await?;
+    let names = query_full_names(&refno_fields).await.unwrap_or_default();
     for (k, v) in keys.into_iter().zip(names) {
         attmap.insert(
             k,
@@ -299,9 +326,7 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
 #[cached(result = true)]
 pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(r#"(select * from {}.refno)[0];"#, refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let o: surrealdb::Value = response.take(0)?;
     let named_attmap: NamedAttrMap = o.into_inner().into();
     Ok(named_attmap)
@@ -310,9 +335,7 @@ pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> 
 #[cached(result = true)]
 pub async fn get_siblings(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!("select value in from {}<-pe_owner", refno.to_pe_key());
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let refnos: Vec<RefnoEnum> = response.take(0)?;
     Ok(refnos)
 }
@@ -396,16 +419,14 @@ pub const CATR_QUERY_STR: &'static str = "refno.CATR.refno.CATR, refno.CATR.refn
 
 #[cached(result = true)]
 pub async fn get_cat_refno(refno: RefnoEnum) -> anyhow::Result<Option<RefnoEnum>> {
-    let sql = format!(  
+    let sql = format!(
         r#"
         select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]]
         from only {} limit 1;
     "#,
         refno.to_pe_key()
     );
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let r: Option<RefnoEnum> = response.take(0)?;
     Ok(r)
 }
@@ -446,19 +467,28 @@ pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<
 ///获取所有子孙的参考号
 #[cached(result = true)]
 pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsElement>> {
-    let sql = format!(  
+    let sql = format!(
         r#"
         select value in.* from {}<-pe_owner where in.id!=none
         "#,
         refno.to_pe_key()
     );
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let pes: Vec<SPdmsElement> = response.take(0)?;
     Ok(pes)
 }
 
+// pub async fn get_children_full_names(refno: RefnoEnum) -> anyhow::Result<IndexMap<RefU64, String>> {
+//     let sql = format!(
+//         r#"
+//         select value [in, fn::default_full_name(in)] from {}<-pe_owner where in.id!=none
+//         "#,
+//         refno.to_pe_key()
+//     );
+//     let mut response = SUL_DB.query(sql).await?;
+//     let pes: Vec<SPdmsElement> = response.take(0)?;
+//     Ok(pes)
+// }
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
 pub async fn get_all_children_refnos(
@@ -473,7 +503,10 @@ pub async fn get_all_children_refnos(
 }
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
-pub async fn query_filter_children(refno: RefnoEnum, types: &[&str]) -> anyhow::Result<Vec<RefnoEnum>> {
+pub async fn query_filter_children(
+    refno: RefnoEnum,
+    types: &[&str],
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let nouns_str = types
         .iter()
         .map(|s| format!("'{s}'"))
@@ -526,16 +559,15 @@ pub async fn query_filter_children_atts(
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的EleTreeNode
 #[cached(result = true)]
 pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleTreeNode>> {
-    let sql = format!(  
+    let sql = format!(
         r#"
-        select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
-                 array::len(in<-pe_owner) as children_count from {}<-pe_owner where in.id!=none
+        select  in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
+                array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
+                array::len(in<-pe_owner) as children_count from {}<-pe_owner where in.id!=none
         "#,
         refno.to_pe_key()
     );
-    let mut response = SUL_DB
-        .query(sql)
-        .await?;
+    let mut response = SUL_DB.query(sql).await?;
     let mut nodes: Vec<EleTreeNode> = response.take(0)?;
     //检查名称，如果没有给名字的，需要给上默认值, todo 后续如果是删除了又增加，名称后面的数字可能会继续增加
     let mut hashmap: HashMap<&str, i32> = HashMap::new();
@@ -586,7 +618,10 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
 #[cached(result = true)]
 pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let mut response = SUL_DB
-        .query(format!(r#"select value in from {}<-pe_owner  where in.id != NONE"#, refno.to_pe_key()))
+        .query(format!(
+            r#"select value in from {}<-pe_owner  where in.id != NONE"#,
+            refno.to_pe_key()
+        ))
         .await?;
     let refnos: Vec<RefnoEnum> = response.take(0)?;
     Ok(refnos)
@@ -864,18 +899,19 @@ pub async fn query_types(refnos: &[RefU64]) -> anyhow::Result<Vec<Option<String>
     Ok(type_names)
 }
 
-
 //select value id from only pe_ses_h:['17496_171606', 0]..['17496_171606'];
 
 /// 查询历史pe
 pub async fn query_history_pes(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let refno_str = refno.refno().to_string();
-    let mut response = SUL_DB.query(format!(
-        r#"
+    let mut response = SUL_DB
+        .query(format!(
+            r#"
             select value id from only pe_ses_h:['{0}', 0]..['{0}'];
         "#,
-        refno_str,
-    )).await?;
+            refno_str,
+        ))
+        .await?;
     let pes: Vec<RefnoEnum> = response.take(0)?;
     Ok(pes)
 }

@@ -31,6 +31,7 @@ use sea_query::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display, Pointer};
@@ -39,7 +40,6 @@ use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::string::ToString;
 use surrealdb::sql::Thing;
-use serde_repr::{Serialize_repr, Deserialize_repr};
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -53,7 +53,7 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 //"SPINE", "GENS",
 pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX", "NCYL",
-    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV", "POLYHE"
+    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV", "POLYHE",
 ];
 
 ///有loop的几何体
@@ -62,41 +62,10 @@ pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
 ];
 
 pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
-    "FIXING",
-    "GENSEC",
-    "SCREED",
-    "CMPF",
-    "GWALL",
-    "EQUI",
-    "ANCI",
-    "FITT",
-    "SJOI",
-    "SBFI",
-    "CABLE",
-    "CNODE",
-    "SCTN",
-    "SCOJ",
-    "PAVE",
-    "SUBE",
-    "SEVE",
-    "SUBJ",
-    "PLOO",
-    "RNODE",
-    "PJOI",
-    "SELJ",
-    "STWALL",
-    "WALL",
-    "PALJ",
-    "TUBI",
-    "FLOOR",
-    "CMFI",
-    "PANE",
-    "PFIT",
-    "GPART",
-    "PRTELE",
-    "NOZZ",
-    "SPCO",
-    "ELCONN",
+    "FIXING", "GENSEC", "SCREED", "CMPF", "GWALL", "EQUI", "ANCI", "FITT", "SJOI", "SBFI", "CABLE",
+    "CNODE", "SCTN", "SCOJ", "PAVE", "SUBE", "SEVE", "SUBJ", "PLOO", "RNODE", "PJOI", "SELJ",
+    "STWALL", "WALL", "PALJ", "TUBI", "FLOOR", "CMFI", "PANE", "PFIT", "GPART", "PRTELE", "NOZZ",
+    "SPCO", "ELCONN",
 ];
 
 ///负实体基本体的种类
@@ -117,9 +86,7 @@ pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 26] = [
     "NSEX", "NSRE",
 ];
 
-pub const JOINT_TYPES: [&'static str; 2] = [
-    "SJOI", "PJOI"
-];
+pub const JOINT_TYPES: [&'static str; 2] = ["SJOI", "PJOI"];
 
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
@@ -167,10 +134,10 @@ pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
 ];
 
 pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE", "EXTR", "REVO",
-    "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI",
-    "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ",
-    "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE",
+    "EXTR", "REVO", "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT",
+    "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
+    "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
 ];
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
@@ -346,6 +313,11 @@ pub trait PdmsNodeTrait: Default {
     }
 
     #[inline]
+    fn get_mod_cnt(&self) -> u32 {
+        0
+    }
+
+    #[inline]
     fn get_noun_hash(&self) -> u32 {
         0
     }
@@ -377,6 +349,8 @@ pub struct EleTreeNode {
     pub children_count: u16,
     #[serde(default)]
     pub deleted: bool,
+    //修改次数
+    pub mod_cnt: Option<u32>,
 }
 
 impl EleTreeNode {
@@ -397,6 +371,7 @@ impl EleTreeNode {
             order,
             children_count,
             deleted,
+            mod_cnt: None,
         }
     }
 
@@ -412,12 +387,12 @@ impl EleTreeNode {
     }
 
     #[inline]
-    pub fn latest_refno(&self) -> RefU64{
+    pub fn latest_refno(&self) -> RefU64 {
         self.refno.refno()
     }
 
     #[inline]
-    pub fn latest_owner(&self) -> RefU64{
+    pub fn latest_owner(&self) -> RefU64 {
         self.owner.refno()
     }
 }
@@ -432,6 +407,7 @@ impl From<PdmsElement> for EleTreeNode {
             order: 0,
             children_count: value.children_count as _,
             deleted: false,
+            mod_cnt: None,
         }
     }
 }
@@ -445,6 +421,11 @@ impl PdmsNodeTrait for EleTreeNode {
     #[inline]
     fn get_name(&self) -> &str {
         self.name.as_str()
+    }
+
+    #[inline]
+    fn get_mod_cnt(&self) -> u32 {
+        self.mod_cnt.unwrap_or_default()
     }
 
     #[inline]

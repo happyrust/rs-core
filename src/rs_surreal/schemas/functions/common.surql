@@ -48,7 +48,9 @@ DEFINE FUNCTION fn::default_names(
 
 REMOVE FUNCTION fn::default_full_name;
 DEFINE FUNCTION fn::default_full_name($r: record) {
-    return if $r.name != '' && $r.name != none {
+    return if !record::exists($r) {
+        return '';
+    }else if $r.name != '' && $r.name != none {
         return $r.name;
     } else if $r.owner.name != '' && $r.owner.name != none {
         return string::concat(fn::default_name($r), " OF ", $r.owner.noun, ' ', $r.owner.name);
@@ -131,3 +133,9 @@ define function fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 -- fn::latest_pe_sesno(pe:17496_171715, 880, 1112);
 -- fn::latest_pe_sesno(pe:17496_171715, 880);
 -- fn::latest_pe_sesno(pe:17496_171715);
+
+remove function fn::ses_data;
+define function fn::ses_data($pe: record){
+    let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
+    return select * from only $id limit 1;
+};

@@ -203,8 +203,13 @@ async fn test_query_attmap() -> anyhow::Result<()> {
     let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
     dbg!(world_trans);
 
-    let history_pes = rs_surreal::query_history_pes(refno).await.unwrap();
-    dbg!(&history_pes);
+    // let history_pes = rs_surreal::query_history_pes(refno).await.unwrap();
+    // dbg!(&history_pes);
+
+    //test query children full names
+    let refno = "17496_171606,733".into();
+    let children_names = rs_surreal::query_children_full_names_map(refno).await.unwrap();
+    dbg!(&children_names);
 
     // let children = rs_surreal::get_children_named_attmaps(refno).await.unwrap();
     // dbg!(&children);

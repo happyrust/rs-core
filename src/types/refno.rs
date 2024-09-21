@@ -675,6 +675,8 @@ impl<'de> Deserialize<'de> for RefnoEnum {
 }
 
 impl RefnoEnum {
+
+    #[inline]
     pub fn to_pe_key(&self) -> String {
         match self {
             RefnoEnum::Refno(refno) => refno.to_pe_key(),
@@ -682,6 +684,7 @@ impl RefnoEnum {
         }
     }
 
+    #[inline]
     pub fn sesno(&self) -> Option<u32>{
         match self {
             RefnoEnum::Refno(_) => None,
@@ -739,6 +742,7 @@ impl RefnoEnum {
         }
     }
 
+    #[inline]
     pub fn to_pdms_str(&self) -> String {
         format!("{}/{}", self.refno().get_0(), self.refno().get_1())
     }
