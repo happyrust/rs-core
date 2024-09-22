@@ -1,16 +1,17 @@
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
-// use crate::material::dq::save_dq_material;
-// use crate::material::gps::save_gps_material_dzcl;
-// use crate::material::gy::{save_gy_material_dzcl, save_gy_material_equi, save_gy_material_valv};
-// use crate::material::nt::save_nt_material_dzcl;
-// use crate::material::sb::save_sb_material_dzcl;
-// use crate::material::tf::save_tf_material_hvac;
-// use crate::material::tx::save_tx_material_equi;
-// use crate::material::yk::{save_yk_material_dzcl, save_yk_material_equi, save_yk_material_pipe};
+use crate::material::dq::save_dq_material;
+use crate::material::gps::save_gps_material_dzcl;
+use crate::material::gy::{save_gy_material_dzcl, save_gy_material_equi, save_gy_material_valv};
+use crate::material::nt::save_nt_material_dzcl;
+use crate::material::sb::save_sb_material_dzcl;
+use crate::material::tf::save_tf_material_hvac;
+use crate::material::tx::save_tx_material_equi;
+use crate::material::yk::{save_yk_material_dzcl, save_yk_material_equi, save_yk_material_pipe};
 use crate::pdms_user::RefnoMajor;
 use crate::ssc_setting::{gen_pdms_major_table, query_all_site_with_major, set_pdms_major_code};
-use crate::{query_filter_ancestors, RefU64, RefnoEnum, SUL_DB};
+use crate::{query_filter_ancestors, RefU64, SUL_DB};
 use std::collections::HashMap;
+use std::io::Read;
 use strum::IntoEnumIterator;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
@@ -62,7 +63,7 @@ mod tests {
                 "工艺专业-大宗材料清单".to_string(),
                 "工艺专业-设备清单".to_string(),
                 "电气专业".to_string(),
-                "仪控专业".to_string()
+                "仪控专业".to_string(),
             ]
         );
     }
@@ -91,132 +92,94 @@ mod tests {
     }
 }
 
-//保存所有的材料表单数据
-// pub async fn save_all_material_data() -> anyhow::Result<()> {
-//     // 生成专业代码
-//     // set_pdms_major_code(&aios_mgr).await?;
-//     gen_pdms_major_table().await?;
-//     // 提前跑已经创建surreal的方法
-//     if let Err(e) = define_surreal_functions(SUL_DB.clone()).await {
-//         dbg!(e.to_string());
-//         return Ok(());
-//     }
-//     let mut handles = Vec::new();
-//     // 查找所有带专业的site
-//     let sites = query_all_site_with_major().await?;
-//     // 处理所有专业表单的数据
-//     for site in sites {
-//         dbg!(&site.id);
-//         let refno = site.id;
-//         match site.major.as_str() {
-//             // 工艺
-//             "T" => {
-//                 // 大宗材料
-//                 println!("工艺布置专业-大宗材料");
-//                 // save_gy_material_dzcl(refno, SUL_DB.clone(),  &mut handles).await;
-//                 // 设备清单
-//                 println!("工艺布置专业-设备清单");
-//                 save_gy_material_equi(refno, SUL_DB.clone(), &mut handles).await;
-//                 // 阀门清单
-//                 println!("工艺布置专业-阀门清单");
-//                 save_gy_material_valv(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             // 仪控
-//             "I" => {
-//                 // 大宗材料
-//                 println!("仪控专业-大宗材料");
-//                 save_yk_material_dzcl(refno, SUL_DB.clone(), &mut handles).await;
-//                 // 仪表管道
-//                 println!("仪控专业-仪表管道");
-//                 save_yk_material_pipe(refno, SUL_DB.clone(), &mut handles).await;
-//                 // 设备清单
-//                 println!("仪控专业-设备清单");
-//                 save_yk_material_equi(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             // 通风
-//             "V" => {
-//                 // 风管管段
-//                 println!("通风专业-风管管段");
-//                 save_tf_material_hvac(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             // 电气
-//             "E" => {
-//                 // 托盘及接地
-//                 println!("电气专业-托盘及接地");
-//                 save_dq_material(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             // 通信
-//             "TX" => {
-//                 // 通信系统
-//                 println!("通信专业-通信系统");
-//                 save_tx_material_equi(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             // 给排水
-//             "W" => {
-//                 // 大宗材料
-//                 println!("给排水专业-大宗材料");
-//                 save_gps_material_dzcl(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             // 设备
-//             "EQUI" => {
-//                 // 大宗材料
-//                 println!("设备专业-大宗材料");
-//                 save_sb_material_dzcl(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             // 暖通
-//             "N" => {
-//                 // 阀门清单
-//                 println!("暖通专业-阀门清单");
-//                 save_nt_material_dzcl(refno, SUL_DB.clone(), &mut handles).await;
-//             }
-//             _ => {}
-//         }
-//     }
-//     // 等待保存线程完成
-//     println!("查询完毕，等待数据库保存完成");
-//     futures::prelude::future::join_all(handles).await;
-//     Ok(())
-// }
+/// 保存所有的材料表单数据
+pub async fn save_all_material_data() -> anyhow::Result<()> {
+    // 生成专业代码
+    // set_pdms_major_code(&aios_mgr).await?;
+    gen_pdms_major_table().await?;
+    // 提前跑已经创建surreal的方法
+    if let Err(e) = define_material_surreal_funtions(SUL_DB.clone()).await {
+        dbg!(e.to_string());
+        return Ok(());
+    }
+    let mut handles = Vec::new();
+    // 查找所有带专业的site
+    let sites = query_all_site_with_major().await?;
+    // 处理所有专业表单的数据
+    for site in sites {
+        dbg!(&site.id);
+        let refno = site.id;
+        if site.major != "V".to_string() { continue; };
+        match site.major.as_str() {
+            // 工艺
+            "T" => {
+                // 大宗材料
+                println!("工艺布置专业-大宗材料");
+                handles.append(&mut save_gy_material_dzcl(refno).await);
+                // 设备清单
+                println!("工艺布置专业-设备清单");
+                handles.append(&mut save_gy_material_equi(refno).await);
+                // 阀门清单
+                println!("工艺布置专业-阀门清单");
+                handles.append(&mut save_gy_material_valv(refno).await);
+            }
+            // 仪控
+            "I" => {
+                // 大宗材料
+                println!("仪控专业-大宗材料");
+                handles.append(&mut save_yk_material_dzcl(refno).await);
+                // 仪表管道
+                println!("仪控专业-仪表管道");
+                handles.append(&mut save_yk_material_pipe(refno).await);
+                // 设备清单
+                println!("仪控专业-设备清单");
+                handles.append(&mut save_yk_material_equi(refno).await);
+            }
+            // 通风
+            "V" => {
+                // 风管管段
+                println!("通风专业-风管管段");
+                handles.append(&mut save_tf_material_hvac(refno).await);
+            }
+            // 电气
+            "E" => {
+                // 托盘及接地
+                println!("电气专业-托盘及接地");
+                handles.append(&mut save_dq_material(refno).await);
+                // 通信
+                // 通信系统
+                println!("通信专业-通信系统");
+                handles.append(&mut save_tx_material_equi(refno).await);
+            }
+            // 给排水
+            "W" => {
+                // 大宗材料
+                println!("给排水专业-大宗材料");
+                handles.append(&mut save_gps_material_dzcl(refno).await);
+            }
+            // 设备
+            "EQUI" => {
+                // 大宗材料
+                println!("设备专业-大宗材料");
+                handles.append(&mut save_sb_material_dzcl(refno).await);
+            }
+            // 暖通
+            "N" => {
+                // 阀门清单
+                println!("暖通专业-阀门清单");
+                handles.append(&mut save_nt_material_dzcl(refno).await);
+            }
+            _ => {}
+        }
+    }
+    // 等待保存线程完成
+    println!("查询完毕，等待数据库保存完成");
+    futures::prelude::future::join_all(handles).await;
+    Ok(())
+}
 
 /// 提前运行定义好的方法
 pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
-    // // let response = db
-    // //     .query(include_str!("../rs_surreal/material_list/default_name.surql"))
-    // //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/material_list/dq/fn_dq_bran_type.surql"))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/material_list/dq/fn_vec3_distance.surql"))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/material_list/yk/fn_find_gy_bran.surql"))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/material_list/gy/fn_b_valv_supp.surql"))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!(
-    //         "../rs_surreal/material_list/dq/fn_dq_horizontal_or_vertical.surql"
-    //     ))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/material_list/fn_get_ancestor.surql"))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!(
-    //         "../rs_surreal/material_list/sb/fn_find_group_sube_children.surql"
-    //     ))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/material_list/nt/fn_get_valv_material.surql"))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/material_list/fn_get_world_pos.surql"))
-    //     .await?;
-    // let response = db
-    //     .query(include_str!("../rs_surreal/schemas/fn_query_room_code.surql"))
-    //     .await?;
     // db.query(include_str!("../rs_surreal/tools/bolt.surql")).await?;
     // db.query(include_str!("../rs_surreal/tools/common.surql")).await?;
     // db.query(include_str!("../rs_surreal/tools/fln.surql")).await?;
@@ -228,21 +191,65 @@ pub async fn define_surreal_functions(db: Surreal<Any>) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub async fn define_material_surreal_funtions(db: Surreal<Any>) -> anyhow::Result<()> {
+    db.query(read_surreal_file("rs_surreal/material_list/common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gy/gy_bend.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gy/gy_collect.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gy/gy_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gy/gy_equip.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gy/gy_part.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gy/gy_tubi.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gy/gy_valve.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("rs_surreal/material_list/dq/dq_bran.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/dq/dq_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/dq/dq_gensec.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/dq/dq_stru.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("rs_surreal/material_list/eq/eq_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/eq/eq_dz.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("rs_surreal/material_list/gps/gps_bend.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gps/gps_elbo.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gps/gps_flan.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gps/gps_redu.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gps/gps_tee.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/gps/gps_tubi.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("rs_surreal/material_list/nt/nt_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/nt/nt_valve.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("rs_surreal/material_list/tx/tx_sb.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("rs_surreal/material_list/yk/yk_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/yk/yk_dzcl.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/yk/yk_equi.surql")?.as_str()).await?;
+    db.query(read_surreal_file("rs_surreal/material_list/yk/yk_ybgd.surql")?.as_str()).await?;
+    Ok(())
+}
+
+fn read_surreal_file(file: &str) -> anyhow::Result<String> {
+    let mut file = std::fs::File::open(file)?;
+    let mut content = String::new();
+    file.read_to_string(&mut content)?;
+    Ok(content)
+}
+
 /// 查询节点属于哪个专业和专业下的具体分类
 pub async fn get_refnos_belong_major(
-    refnos: &Vec<RefnoEnum>,
-) -> anyhow::Result<HashMap<RefnoEnum, RefnoMajor>> {
+    refnos: &Vec<RefU64>,
+) -> anyhow::Result<HashMap<RefU64, RefnoMajor>> {
     let mut result = HashMap::new();
     for refno in refnos {
         // 向上找到zone
-        let zone = query_filter_ancestors(*refno, &["ZONE"]).await?;
+        let zone = query_filter_ancestors((*refno).into(), &["ZONE"]).await?;
         if zone.is_empty() {
             continue;
         };
         let zone = zone[0];
         // 找zone和site对应的专业
-        let sql = format!("select value major from type::thing('pdms_major',record::id({}));
-        select value major from type::thing('pdms_major',record::id((select value ->pe_owner.out.refno from {})[0][0]));", zone.to_pe_key(), zone.to_pe_key());
+        let sql = format!("select value major from type::thing('pdms_major',meta::id({}));
+        select value major from type::thing('pdms_major',meta::id((select value ->pe_owner.out.refno from {})[0][0]));", zone.to_pe_key(), zone.to_pe_key());
         let Ok(mut response) = SUL_DB.query(sql).await else {
             continue;
         };
