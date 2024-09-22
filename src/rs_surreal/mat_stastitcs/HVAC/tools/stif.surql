@@ -2,7 +2,7 @@
 //exp0: 0
 //exp1: ([Width] + [Height] + 83) * 2 / 1000
 //exp2: ([Width] + [Height] + 103) * int([Length] / 800 - 0.5) * 2 / 1000
-insert into stif_table  [
+insert ignore into stif_table  [
 
     //RECT/L
      {
@@ -87,7 +87,7 @@ insert into stif_table  [
     }
 ];
 
-insert into stif_wei  [
+insert ignore into stif_wei  [
      {
         "id": "0",
         "type": "STRT",

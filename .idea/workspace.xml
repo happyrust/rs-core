@@ -32,10 +32,24 @@
     <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_part.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_part.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fln.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fln.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/hvac.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/stif.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/stif.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/strt_flan_size.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/strt_flan_size.surql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/ref64vec.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/ref64vec.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/static_parameter.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/static_parameter.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tables/hvac/static_parameter.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tables/hvac/static_parameter.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/fln.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/fln.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/stif.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/stif.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_room.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_room.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -943,7 +957,8 @@
       <workItem from="1726889565056" duration="205000" />
       <workItem from="1726926956973" duration="59000" />
       <workItem from="1726931670090" duration="6000" />
-      <workItem from="1726936071398" duration="1211000" />
+      <workItem from="1726936071398" duration="2030000" />
+      <workItem from="1727005016165" duration="1302000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1288,7 +1303,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="393" />
+    <option name="localTasksCounter" value="394" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
