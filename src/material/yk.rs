@@ -473,8 +473,8 @@ pub async fn query_yk_bran_belong_gy_valv_name(
             }
             // 如果是valv，判断该valv是否属于工艺专业，如果属于则返回valv，如果不属于则返回None
             "VALV" => {
-                let major = get_refnos_belong_major(&vec![href_refno]).await?;
-                let Some(major) = major.get(&href_refno) else {
+                let major = get_refnos_belong_major(&vec![href_refno.into()]).await?;
+                let Some(major) = major.get(&href_refno.into()) else {
                     break;
                 };
                 if major.major == "T".to_string() {
@@ -516,8 +516,8 @@ pub async fn query_yk_bran_belong_gy_pipe_name(
             }
             // 如果是bran，判断该bran是否属于工艺专业，若是则返回对应的pipe，若不是，则继续向上找href
             "BRAN" => {
-                let major = get_refnos_belong_major(&vec![href_refno]).await?;
-                let Some(major) = major.get(&href_refno) else {
+                let major = get_refnos_belong_major(&vec![href_refno.into()]).await?;
+                let Some(major) = major.get(&href_refno.into()) else {
                     break;
                 };
                 if major.major == "T".to_string() {
