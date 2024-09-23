@@ -162,7 +162,7 @@ pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<O
         "select value id from only {}.old_pe limit 1;",
         refno_enum.to_pe_key(),
     );
-    println!("query_prev_version_refno sql is {}", &sql);
+    // println!("query_prev_version_refno sql is {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let refno: Option<RefnoEnum> = response.take(0)?;
     Ok(refno)
@@ -794,7 +794,7 @@ pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<
 
 /// 插入数据
 pub async fn insert_into_table(db: &Surreal<Any>, table: &str, value: &str) -> anyhow::Result<()> {
-    db.query(format!("insert into {} {}", table, value)).await?;
+    db.query(format!("insert ignore into {} {}", table, value)).await?;
     Ok(())
 }
 
@@ -805,7 +805,7 @@ pub async fn insert_pe_into_table_with_chunks(
 ) -> anyhow::Result<()> {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = r.iter().map(|x| x.gen_sur_json()).join(",");
-        let mut r = db.query(format!("insert ignore into {} [{}]", table, json))
+        db.query(format!("insert ignore into {} [{}]", table, json))
             .await?;
         let mut error = r.take_errors();
         if !error.is_empty() {
@@ -825,7 +825,7 @@ where
 {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = serde_json::to_string(r)?;
-        db.query(format!("insert into {} {}", table, json)).await?;
+        db.query(format!("insert ignore into {} {}", table, json)).await?;
     }
     Ok(())
 }

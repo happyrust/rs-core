@@ -1244,7 +1244,7 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
             SaveDatabaseChannelMsg::InsertPbsElements(table, eles) => {
                 let json = eles.iter().map(|x| x.gen_sur_json()).join(",");
                 SUL_DB
-                    .query(format!("insert into {} [{}];", table, json))
+                    .query(format!("insert ignore into {} [{}];", table, json))
                     .await
                     .unwrap();
             }

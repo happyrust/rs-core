@@ -1,4 +1,4 @@
-insert into fl_table [
+insert ignore into fl_table [
   {
     "id": 1,
     "code": "FJ25",

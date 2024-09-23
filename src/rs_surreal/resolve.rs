@@ -398,13 +398,14 @@ pub fn eval_str_to_f64(
             let is_uda = k.starts_with(":");
             if is_uda && !uda_context_added {
                 let refno_str = context.get("RS_DES_REFNO").unwrap();
-                let refno = RefU64::from_str(refno_str.as_str()).unwrap();
+                // dbg!(&refno_str);
+                let refno: RefnoEnum = refno_str.as_str().into();
                 // dbg!(&k);
                 let uda_map = NamedAttrMap::default();
                 #[cfg(not(target_arch = "wasm32"))]
                 let uda_map = tokio::task::block_in_place(|| {
                     tokio::runtime::Handle::current().block_on(async move {
-                        let d = crate::get_named_attmap_with_uda(refno.into(), false)
+                        let d = crate::get_named_attmap_with_uda(refno, false)
                             .await
                             .unwrap_or_default();
                         d

@@ -20,7 +20,7 @@ DEFINE FUNCTION fn::gy_part($refnos: array<record>) {
     from $refnos where refno.TYPE in $nouns;
 };
 -- let $data = fn::gy_part($refno);
--- insert into gy_material $data;
+-- insert ignore into gy_material $data;
 -- let $refno = [pe:24383_68329];
 -- return fn::gy_part($refno);
 

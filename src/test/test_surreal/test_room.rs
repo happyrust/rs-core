@@ -23,7 +23,7 @@ async fn test_save_room_data() -> anyhow::Result<()> {
         name: "ROOM-1".to_string(),
         ..Default::default()
     };
-    SUL_DB.query(format!("insert into room_ele {}", serde_json::to_string(&d).unwrap())).await.unwrap();
+    SUL_DB.query(format!("insert ignore into room_ele {}", serde_json::to_string(&d).unwrap())).await.unwrap();
 
     Ok(())
 }

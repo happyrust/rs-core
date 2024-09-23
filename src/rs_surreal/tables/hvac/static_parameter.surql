@@ -1,5 +1,5 @@
 
-insert into hvac_mat [{
+insert ignore into hvac_mat [{
     id: 1,
     code: 'SS',
     name: '不锈钢'
@@ -32,7 +32,7 @@ insert into hvac_mat [{
     code: 'FP',
 }]
 
-insert into hvac_pressure [{
+insert ignore into hvac_pressure [{
     id: 'B',
     code: 'BP',
     name: '低压' 
@@ -55,7 +55,7 @@ insert into hvac_pressure [{
 
 
 //shape * 8 + mat
-insert into hvac_depth [{
+insert ignore into hvac_depth [{
     id: 1,
     type: 2,
     pressure: [hvac_pressure:B, hvac_pressure:M],

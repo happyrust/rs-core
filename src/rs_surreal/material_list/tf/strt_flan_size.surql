@@ -1,4 +1,4 @@
-insert into tf_strt_flan_size [
+insert ignore into tf_strt_flan_size [
 {
     "id": 1,
     "fl_type": "FJ",
