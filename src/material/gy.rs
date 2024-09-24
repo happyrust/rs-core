@@ -13,6 +13,7 @@ use serde_json::Value;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
+use crate::material::define_material_surreal_funtions;
 #[cfg(feature = "sql")]
 use crate::material::query::save_material_value_test;
 
@@ -624,14 +625,18 @@ pub async fn get_gy_equi_list(
 async fn test_gy_bend() {
     let _ = init_test_surreal().await;
     let mut handles = vec![];
+    if let Err(e) = define_material_surreal_funtions(SUL_DB.clone()).await {
+        dbg!(e.to_string());
+        return;
+    }
     let refno = RefU64::from_str("24383/66478").unwrap();
-    // let handle = save_gy_material_dzcl(refno).await;
-    // handles.push(handle);
+    let mut handle = save_gy_material_dzcl(refno).await;
+    handles.append(&mut handle);
     let refno = RefU64::from_str("24384/24775").unwrap();
     //let mut handle = save_gy_material_equi(refno).await;
     //handles.append(&mut handle);
     let refno = RefU64::from_str("24383/66457").unwrap();
-    let mut handle = save_gy_material_valv(refno).await;
-    handles.append(&mut handle);
+    // let mut handle = save_gy_material_valv(refno).await;
+    // handles.append(&mut handle);
     futures::future::join_all(handles).await;
 }

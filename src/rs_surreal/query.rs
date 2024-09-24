@@ -805,7 +805,7 @@ pub async fn insert_pe_into_table_with_chunks(
 ) -> anyhow::Result<()> {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = r.iter().map(|x| x.gen_sur_json()).join(",");
-        db.query(format!("insert ignore into {} [{}]", table, json))
+        let mut r = db.query(format!("insert ignore into {} [{}]", table, json))
             .await?;
         let mut error = r.take_errors();
         if !error.is_empty() {
