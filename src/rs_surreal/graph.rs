@@ -32,9 +32,9 @@ pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<
     let pe_key = refno.to_pe_key();
     let sql = format!(
         r#"
-             return array::flatten( object::values( select
+             return array::flatten( object::values( (select
                   [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only {pe_key} ) );
+                   from only {pe_key} where record::exists(id))?:{{}} ) );
             "#
     );
     // println!("query_deep_children_refnos sql is {}", &sql);
@@ -394,7 +394,10 @@ pub async fn query_multi_deep_children_filter_spre(
     Ok(result)
 }
 
-pub async fn query_filter_ancestors(refno: RefnoEnum, nouns: &[&str]) -> anyhow::Result<Vec<RefnoEnum>> {
+pub async fn query_filter_ancestors(
+    refno: RefnoEnum,
+    nouns: &[&str],
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let start_noun = super::get_type_name(refno).await?;
     // dbg!(&start_noun);
     let nouns_str = nouns
@@ -460,5 +463,3 @@ pub async fn get_uda_type_refnos_from_select_refnos(
     }
     Ok(result)
 }
-
-

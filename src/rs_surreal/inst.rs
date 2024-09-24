@@ -112,20 +112,17 @@ pub async fn query_insts(
     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
     let inst_keys = get_inst_relate_keys(&refnos);
 
-    //todo 如果是ngmr relate, 也要测试一下有没有问题
-    //ngmr relate 的关系可以直接在inst boolean 做这个处理，不需要单独开方法
-    //ngmr的负实体最后再执行
-    //如果有 sesno，需要按 sesno 进行过滤
     let sql = format!(
         r#"
     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if ( (in<-neg_relate)[0] != none || (in<-ngmr_relate)[0] != none ) && $parent.booled {{ [{{ "geo_hash": record::id(in.id) }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts
+            if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts
             from {inst_keys} where aabb.d != none
             "#
     );
     // println!("Query insts sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
+    // dbg!(&geom_insts);
 
     Ok(geom_insts)
 }

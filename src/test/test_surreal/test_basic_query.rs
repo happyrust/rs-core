@@ -180,7 +180,11 @@ async fn test_query_attmap() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
 
     // let refno = "9304/2".into();
-    let refno: RefnoEnum = RefnoSesno::new("17496/171606".into(), 733).into();
+    //RefnoSesno {
+    //     refno: 17496_496583,
+    //     sesno: 961,
+    // },
+    let refno: RefnoEnum = RefnoSesno::new("17496_496583".into(), 961).into();
     let attmap = rs_surreal::get_ui_named_attmap(refno)
         .await
         .unwrap();
