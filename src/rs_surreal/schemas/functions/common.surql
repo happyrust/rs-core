@@ -1,3 +1,6 @@
+
+DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
+
 REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
 DEFINE FUNCTION fn::ancestor($r: record) {
@@ -35,7 +38,7 @@ DEFINE FUNCTION fn::order(
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
-    return (select value (if name='' {string::join(" ", noun, <string> (fn::order($pe) + 1) ) } else { name } ) from $pe)[0];
+    return (select value (if name='' {string::join(" ", noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
 };
 
 remove function fn::default_names;
@@ -43,7 +46,7 @@ DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
     return select value (if name='' {string::join(" ", noun,<string> (
-       fn::order(id) + 1) ) } else { name } ) from $pes;
+       fn::order(id)?:0 + 1) ) } else { name } ) from $pes;
 };
 
 
@@ -64,37 +67,105 @@ DEFINE FUNCTION fn::default_full_name($r: record) {
     };
 };
 
-REMOVE FUNCTION fn::backup_atts_and_pes;
-//备份数据到版本管理table中去
-DEFINE FUNCTION fn::backup_atts_and_pes(
+
+REMOVE FUNCTION fn::backup_data;
+//备份修改的数据，只针对修改的处理
+//如果是新增，应该是对pe_owner的备份
+DEFINE FUNCTION fn::backup_data(
     $pes: array<record>,
+    $is_del: bool,
+    $sesno: number,
 ) {
     for $pe in $pes {
+        //只操作最新的 refno
+        if type::is::array($pe) || !record::exists($pe) {
+            continue;  
+        };
+        if $pe.sesno > $sesno {
+            continue;
+        };
+        let $old_id = [<string> record::id($pe.id), $pe.sesno];
+        let $old_pe_id = type::thing('pe', $old_id);
+
         let $a = (select * omit id from $pe)[0];
         let $b = (select * omit id from $pe.refno)[0];
-        let $c = (select * omit id, in from $pe->inst_relate)[0];
-        if $a != none {
-            let $id = string::concat(record::id($a.refno), '_', $a.sesno);
-            let $att_id = type::thing(string::concat($a.noun, '_history'), $id);
-            let $pe_id = type::thing('pe_history', $id);
-            update $pe_id content $a;
-            update $pe_id set refno=$att_id;
-            update $att_id content $b;
+        
+        if $a != none && $b != none {
+            let $old_inst_relate_id = type::thing('inst_relate', $old_id);
+            let $old_att_id = type::thing(string::concat($a.noun, '_H'), $old_id);
+            if $is_del{
+                update $pe.id set op=2, old_pe=$old_pe_id, refno=$old_att_id, sesno=$sesno;
+            } else {
+                update $pe.id set op=1, old_pe=$old_pe_id, sesno = $sesno;
+            };
+            upsert type::thing('his_pe', record::id($pe.id)) set refnos+=$old_pe_id;
+            upsert $old_pe_id content $a.patch([{
+                                		'op': 'replace',
+                                		'path': 'refno',
+                                		'value': $old_att_id
+                                }]);
+            //属性数据需要单独的备份方法，因为有很多引用
+            upsert $old_att_id content $b.patch([{
+                                		'op': 'replace',
+                                		'path': 'REFNO',
+                                		'value': $old_pe_id
+                                }]);
 
-            //备份 inst_relate
-            if $c.out != none && ($pe_id->inst_relate_history == none || array::len($pe_id->inst_relate_history) == 0) {
-                relate $pe_id->inst_relate_history->($c.out) content $c;
-                delete type::thing('inst_relate', record::id($a.refno));
+            if $is_del{
+                delete $pe.refno;
+            };
+           
+            let $c = (select *, $old_inst_relate_id as id, $old_pe_id as in from $pe->inst_relate);
+            if !array::is_empty($c) {
+                delete select id from $pe->inst_relate;
+                insert relation into inst_relate $c;
             };
 
-            //备份 tubi_relate, 先暂时只删除，备份需要赋予版本号才行
             if $a.noun == "BRAN" || $a.noun == "HANG" {
-                //let $t = (select * omit id, in from $pe->tubi_relate)[0];
-                delete $pe->tubi_relate;
-            }
+                
+                let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id, $old_pe_id as in from $pe->tubi_relate);
+                //将 tubi relate 整体备份
+                if !array::is_empty($tubis) {
+                    //删除之前的，变成历史的
+                    delete select id from $pe->tubi_relate;
+                    insert relation into tubi_relate $tubis;
+                };
+            };
         }
     }
 };
+
+
+REMOVE FUNCTION fn::backup_owner_relate;
+//备份修改的数据，只针对修改的处理
+//如果是新增，应该是对pe_owner的备份
+DEFINE FUNCTION fn::backup_owner_relate(
+    $pes: array<record>,
+    $delete_old: bool,
+) {
+    for $pe in $pes {
+        //只操作最新的 refno
+        if type::is::array($pe) || !record::exists($pe) {
+            continue;  
+        };
+        let $old_id = [<string> record::id($pe.id), $pe.sesno];
+        let $old_pe_id = type::thing('pe', $old_id);
+        //如果子节点的sesno >= 父节点的sesno 了，则需要使用 old_pe
+        //反之则不需要动
+        let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id, 
+                    if $pe.sesno>in.sesno { in } else { in.old_pe?:in } as in, $old_pe_id as out
+                    from $pe<-pe_owner;
+        if !array::is_empty($c) {
+            if $delete_old{
+                delete select id from $pe<-pe_owner;
+            };
+            insert relation into pe_owner $c;
+        }
+    }
+};
+
+// let $pe = pe:17496_171606;
+// fn::backup_owner_relate([$pe], false);
 
 remove function fn::latest_pe_sesno;
 define function fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option<number>){

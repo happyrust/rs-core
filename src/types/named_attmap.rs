@@ -334,6 +334,7 @@ impl NamedAttrMap {
         }
     }
 
+
     // #[inline]
     // pub fn set_pgno(&mut self, v: i32) {
     //     self.map
@@ -522,6 +523,11 @@ impl NamedAttrMap {
     #[inline]
     pub fn latest_refno(&self) -> RefU64 {
         self.get_refno_or_default().refno()
+    }
+
+    #[inline]
+    pub fn ses_refno(&self) -> RefnoSesno {
+        RefnoSesno::new(self.latest_refno(), self.sesno() as _)
     }
 
     #[inline]

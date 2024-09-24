@@ -86,6 +86,14 @@ pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 26] = [
     "NSEX", "NSRE",
 ];
 
+pub const TOTAL_VERT_NOUN_NAMES: [&'static str; 2] = [
+    "VERT", "PAVE"
+];
+
+pub const TOTAL_LOOP_NOUN_NAMES: [&'static str; 2] = [
+    "LOOP", "PLOO"
+];
+
 pub const JOINT_TYPES: [&'static str; 2] = ["SJOI", "PJOI"];
 
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
@@ -348,9 +356,11 @@ pub struct EleTreeNode {
     pub order: u16,
     pub children_count: u16,
     #[serde(default)]
-    pub deleted: bool,
+    pub op: EleOperation,
     //修改次数
     pub mod_cnt: Option<u32>,
+    #[serde(default)]
+    pub children_updated: Option<bool>,
 }
 
 impl EleTreeNode {
@@ -361,7 +371,7 @@ impl EleTreeNode {
         owner: RefnoEnum,
         order: u16,
         children_count: u16,
-        deleted: bool,
+        op: EleOperation,
     ) -> Self {
         Self {
             refno,
@@ -370,8 +380,9 @@ impl EleTreeNode {
             owner,
             order,
             children_count,
-            deleted,
+            op,
             mod_cnt: None,
+            children_updated: None,
         }
     }
 
@@ -406,8 +417,9 @@ impl From<PdmsElement> for EleTreeNode {
             owner: value.owner.into(),
             order: 0,
             children_count: value.children_count as _,
-            deleted: false,
+            op: EleOperation::Modified,
             mod_cnt: None,
+            children_updated: None,
         }
     }
 }

@@ -97,9 +97,8 @@ pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
     Ok(type_name.unwrap_or("unset".to_owned()))
 }
 
-pub async fn get_type_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String>> {
-    // let pe_keys = refnos.to_table_key("pe");
-    let pe_keys = refnos.iter().map(|x| x.to_pe_key()).join(",");
+pub async fn get_type_names(refnos: impl Iterator<Item = &RefnoEnum>) -> anyhow::Result<Vec<String>> {
+    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let mut response = SUL_DB
         .query(format!(r#"select value noun from [{}]"#, pe_keys))
         .await?;
@@ -218,7 +217,7 @@ pub async fn query_full_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String
 }
 
 ///查询的数据把 refno->name，换成名称
-#[cached(result = true)]
+// #[cached(result = true)]
 pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let mut attmap = get_named_attmap_with_uda(refno_enum, true).await?;
     attmap.fill_explicit_default_values();
@@ -565,6 +564,7 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
     let sql = format!(
         r#"
         select  in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
+                in.op?:0 as op,
                 array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                 array::len(in<-pe_owner) as children_count from {}<-pe_owner where in.id!=none
         "#,
@@ -613,7 +613,7 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
     GET_CHILDREN_NAMED_ATTMAPS.lock().await.cache_remove(&refno);
     GET_CAT_ATTMAP.lock().await.cache_remove(&refno);
     GET_CAT_REFNO.lock().await.cache_remove(&refno);
-    GET_UI_NAMED_ATTMAP.lock().await.cache_remove(&refno);
+    // GET_UI_NAMED_ATTMAP.lock().await.cache_remove(&refno);
     GET_CHILDREN_PES.lock().await.cache_remove(&refno);
 }
 

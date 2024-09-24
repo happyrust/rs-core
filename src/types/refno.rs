@@ -705,6 +705,14 @@ impl RefnoEnum {
     }
 
     #[inline]
+    pub fn ref_refno(&self) -> &RefU64 {
+        match self {
+            RefnoEnum::Refno(refno) => refno,
+            RefnoEnum::SesRef(ses_ref) => &ses_ref.refno,
+        }
+    }
+
+    #[inline]
     pub fn to_table_key(&self, tbl: &str) -> String {
         match self {
             RefnoEnum::Refno(refno) => refno.to_table_key(tbl),
@@ -770,6 +778,15 @@ impl RefnoEnum {
     #[inline]
     pub fn to_array_zero_id(&self) -> String {
         format!("['{}', 0]", self.refno().to_string())
+    }
+
+    #[inline]
+    pub fn to_normal_str(&self,) -> String {
+        if self.sesno().is_some() {
+            format!("{}_{}", self.refno().to_string(), self.sesno().unwrap())
+        } else {
+            self.refno().to_string()
+        }
     }
 }
 

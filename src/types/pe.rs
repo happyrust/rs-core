@@ -43,7 +43,7 @@ impl SPdmsElement {
         format!("pe:{}_{}", self.refno(), self.sesno)
     }
 
-    pub fn gen_sur_json(&self, id: Option<String>) -> String {
+    pub fn gen_sur_json(&self, children_updated: Option<bool>, id: Option<String>) -> String {
         let mut json_string = to_string_pretty(&json!({
             "name": self.name,
             "noun": self.noun,
@@ -53,6 +53,7 @@ impl SPdmsElement {
             "cata_hash": self.cata_hash,
             "lock": self.lock,
             "deleted": self.deleted,
+            "children_updated": children_updated,
         }))
         .unwrap();
         json_string.remove(json_string.len() - 1);
@@ -61,7 +62,9 @@ impl SPdmsElement {
             r#""refno": {},"#,
             self.refno().to_table_key(&self.noun)
         ));
-        json_string.push_str(&format!(r#""id": {},"#, id.unwrap_or(self.refno.to_pe_key())));
+        if let Some(id) = id {
+            json_string.push_str(&format!(r#""id": {},"#, id));
+        }
         json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
         json_string.push_str("}");
         json_string
