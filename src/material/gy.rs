@@ -633,10 +633,10 @@ async fn test_gy_bend() {
     let mut handle = save_gy_material_dzcl(refno).await;
     handles.append(&mut handle);
     let refno = RefU64::from_str("24384/24775").unwrap();
-    //let mut handle = save_gy_material_equi(refno).await;
-    //handles.append(&mut handle);
+    let mut handle = save_gy_material_equi(refno).await;
+    handles.append(&mut handle);
     let refno = RefU64::from_str("24383/66457").unwrap();
-    // let mut handle = save_gy_material_valv(refno).await;
-    // handles.append(&mut handle);
+    let mut handle = save_gy_material_valv(refno).await;
+    handles.append(&mut handle);
     futures::future::join_all(handles).await;
 }
