@@ -49,15 +49,16 @@ arangodb_password = ""
 #tidb 配置
 ip = "127.0.0.1"
 user = "root"
-password = ""
+password = "root"
 port = "3306"
 #port = "4000"
 sql_threads_number = 50
 batch_insert_sql_cnt = 100 #mysql 批量插入的数量
 
 
+
 #版本数据库服务配置
-v_ip = "localhost"
+v_ip = "127.0.0.1"
 v_port = "1516"
 v_user = "root"
 v_password = "root"

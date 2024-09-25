@@ -546,7 +546,7 @@ pub struct DqMaterial {
 async fn test_save_dq_material() {
     init_test_surreal().await;
     let mut handles = vec![];
-    let mut handle = save_dq_material(RefU64::from("24384/25724")).await;
+    let mut handle = save_dq_material(RefU64::from("24384/25674")).await;
     handles.append(&mut handle);
     futures::future::join_all(handles).await;
 }

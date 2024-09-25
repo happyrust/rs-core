@@ -209,3 +209,17 @@ define function fn::ses_data($pe: record){
     let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
     return select * from only $id limit 1;
 };
+
+//根据类型找到父节点
+remove function fn::find_ancestor_type;
+DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
+    return (select value array::flatten([->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id
+    ]) from $pe)[0];
+};

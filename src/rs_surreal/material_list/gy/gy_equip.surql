@@ -4,7 +4,7 @@ DEFINE FUNCTION fn::gy_equip($refnos: array<record>) {
     return select
         fn::pe_to_refno(id) as id,
         string::slice(refno.NAME?:' ',1) as name, // 设备位号
-        fn::room_code($this.id)[0] as room_code,  // 房间号
+        fn::room_code($this.id)[0]?:'' as room_code,  // 房间号
         fn::default_names(array::flatten(array::union(<-pe_owner[where in.noun='NOZZ'].in,  <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in)))
             as nozz_name, // 管口号
         array::flatten(array::union(<-pe_owner[where in.noun='NOZZ'].in.refno, <-pe_owner.in<-pe_owner[where in.noun='NOZZ'].in.refno)).POS as nozz_pos, // 管口坐标

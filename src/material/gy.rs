@@ -13,7 +13,7 @@ use serde_json::Value;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
-use crate::material::define_material_surreal_funtions;
+use crate::material::{define_core_material_surreal_funtions};
 #[cfg(feature = "sql")]
 use crate::material::query::save_material_value_test;
 
@@ -625,7 +625,7 @@ pub async fn get_gy_equi_list(
 async fn test_gy_bend() {
     let _ = init_test_surreal().await;
     let mut handles = vec![];
-    if let Err(e) = define_material_surreal_funtions(SUL_DB.clone()).await {
+    if let Err(e) = define_core_material_surreal_funtions(SUL_DB.clone()).await {
         dbg!(e.to_string());
         return;
     }
