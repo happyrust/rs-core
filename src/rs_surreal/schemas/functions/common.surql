@@ -35,6 +35,7 @@ DEFINE FUNCTION fn::order(
     return array::find_index($a, $pe);
 };
 
+REMOVE FUNCTION fn::default_name;
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {

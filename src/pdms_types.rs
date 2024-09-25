@@ -346,6 +346,8 @@ pub trait PdmsNodeTrait: Default {
     }
 }
 
+pub const STATE_CODE_INIT: &'static str = "D00";
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleTreeNode {
     pub refno: RefnoEnum,
@@ -361,6 +363,7 @@ pub struct EleTreeNode {
     pub mod_cnt: Option<u32>,
     #[serde(default)]
     pub children_updated: Option<bool>,
+    pub state_code: Option<String>,
 }
 
 impl EleTreeNode {
@@ -383,6 +386,7 @@ impl EleTreeNode {
             op,
             mod_cnt: None,
             children_updated: None,
+            state_code: None,
         }
     }
 
@@ -420,6 +424,7 @@ impl From<PdmsElement> for EleTreeNode {
             op: EleOperation::Modified,
             mod_cnt: None,
             children_updated: None,
+            state_code: None,
         }
     }
 }

@@ -1,54 +1,62 @@
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::types::attmap::AttrMap;
+use glam::{DVec3, Vec3};
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 #[cfg(feature = "truck")]
 use truck_meshalgo::prelude::*;
 #[cfg(feature = "truck")]
-use truck_modeling::builder::*;
-use glam::{DVec3, Vec3};
-#[cfg(feature = "truck")]
 use truck_modeling::builder::try_attach_plane;
-use serde::{Serialize, Deserialize};
-use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::types::attmap::AttrMap;
+#[cfg(feature = "truck")]
+use truck_modeling::builder::*;
 
-use crate::NamedAttrMap;
+#[cfg(feature = "occ")]
+use crate::prim_geo::basic::OccSharedShape;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
+use crate::NamedAttrMap;
 use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
-#[cfg(feature = "occ")]
-use crate::prim_geo::basic::OccSharedShape;
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, )]
+#[derive(
+    Component,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 
 pub struct Pyramid {
     pub pbax_pt: Vec3,
-    pub pbax_dir: Vec3,   //B Axis Direction
+    pub pbax_dir: Vec3, //B Axis Direction
 
     pub pcax_pt: Vec3,
-    pub pcax_dir: Vec3,   //C Axis Direction
+    pub pcax_dir: Vec3, //C Axis Direction
 
     pub paax_pt: Vec3,
-    pub paax_dir: Vec3,   //A Axis Direction
+    pub paax_dir: Vec3, //A Axis Direction
 
     pub pbtp: f32,
     //x top
-    pub pctp: f32,  //y top
+    pub pctp: f32, //y top
 
     pub pbbt: f32,
     // x bottom
-    pub pcbt: f32,  // y bottom
+    pub pcbt: f32, // y bottom
 
     pub ptdi: f32,
     //dist to top
-    pub pbdi: f32,  //dist to bottom
+    pub pbdi: f32, //dist to bottom
 
     pub pbof: f32,
     // x offset
-    pub pcof: f32,  // y offset
+    pub pcof: f32, // y offset
 }
-
 
 impl Default for Pyramid {
     fn default() -> Self {
@@ -77,12 +85,13 @@ impl Default for Pyramid {
 impl VerifiedShape for Pyramid {
     fn check_valid(&self) -> bool {
         // dbg!(self);
-        let size_flag = self.pbtp * self.pctp >= f32::EPSILON || self.pbbt * self.pcbt >= f32::EPSILON;
+        let size_flag =
+            self.pbtp * self.pctp >= f32::EPSILON || self.pbbt * self.pcbt >= f32::EPSILON;
         if !size_flag {
             return false;
         }
-        (self.pbtp >= 0.0 && self.pctp >= 0.0 && self.pbbt >= 0.0 && self.pcbt >= 0.0) &&
-            ((self.pbtp + self.pctp) > f32::EPSILON || (self.pbbt + self.pcbt) > f32::EPSILON)
+        (self.pbtp >= 0.0 && self.pctp >= 0.0 && self.pbbt >= 0.0 && self.pcbt >= 0.0)
+            && ((self.pbtp + self.pctp) > f32::EPSILON || (self.pbbt + self.pcbt) > f32::EPSILON)
     }
 }
 
@@ -94,14 +103,13 @@ impl BrepShapeTrait for Pyramid {
     //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
     #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-
         //todo 以防止出现有单个点的情况，暂时用这个模拟
         let tx = (self.pbtp as f64 / 2.0).max(0.001);
         let ty = (self.pctp as f64 / 2.0).max(0.001);
         let bx = (self.pbbt as f64 / 2.0).max(0.001);
         let by = (self.pcbt as f64 / 2.0).max(0.001);
-        let ox =  0.5 * self.pbof as f64;
-        let oy =  0.5 * self.pcof as f64;
+        let ox = 0.5 * self.pbof as f64;
+        let oy = 0.5 * self.pcof as f64;
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
         let pts = vec![
@@ -147,12 +155,11 @@ impl BrepShapeTrait for Pyramid {
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-
         //todo 以防止出现有单个点的情况，暂时用这个模拟
-        let tx = (self.pbtp / 2.0) as f64;
-        let ty = (self.pctp / 2.0) as f64;
-        let bx = (self.pbbt / 2.0) as f64;
-        let by = (self.pcbt / 2.0) as f64;
+        let tx = (self.pbtp / 2.0).max(0.001) as f64;
+        let ty = (self.pctp / 2.0).max(0.001) as f64;
+        let bx = (self.pbbt / 2.0).max(0.001) as f64;
+        let by = (self.pcbt / 2.0).max(0.001) as f64;
         let ox = 0.5 * self.pbof as f64;
         let oy = 0.5 * self.pcof as f64;
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
@@ -160,33 +167,79 @@ impl BrepShapeTrait for Pyramid {
         let mut polys = vec![];
         let mut verts = vec![];
 
-        let pts = vec![
+        let mut pts = vec![
             DVec3::new(-tx + ox, -ty + oy, h2),
             DVec3::new(tx + ox, -ty + oy, h2),
             DVec3::new(tx + ox, ty + oy, h2),
             DVec3::new(-tx + ox, ty + oy, h2),
         ];
-        if tx * ty < f64::EPSILON {
+        // if tx * ty < f64::EPSILON {
+        //     verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
+        // } else {
+        //     polys.push(Wire::from_ordered_points(pts)?);
+        // }
+        if tx + ty < 0.001 {
             verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
-        } else {
+        } 
+        //todo use line to generate
+        // else if tx < 0.001 {
+        //     let mut pts = vec![
+        //         DVec3::new(tx + ox, -ty + oy, h2),
+        //         DVec3::new(tx + ox, ty + oy, h2),
+        //     ];
+        //     dbg!(&pts);
+        //     polys.push(Wire::from_ordered_points(pts)?);
+        // } else if ty < 0.001 {
+        //     let mut pts = vec![
+        //         DVec3::new(-tx + ox, ty + oy, h2),
+        //         DVec3::new(tx + ox, ty + oy, h2),
+        //     ];
+        //     dbg!(&pts);
+        //     polys.push(Wire::from_ordered_points(pts)?);
+        // } 
+        else {
+            let mut pts = vec![
+                DVec3::new(-tx + ox, -ty + oy, h2),
+                DVec3::new(tx + ox, -ty + oy, h2),
+                DVec3::new(tx + ox, ty + oy, h2),
+                DVec3::new(-tx + ox, ty + oy, h2),
+            ];
             polys.push(Wire::from_ordered_points(pts)?);
         }
 
-        let pts = vec![
-            DVec3::new(-bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, -by - oy, -h2),
-            DVec3::new(bx - ox, by - oy, -h2),
-            DVec3::new(-bx - ox, by - oy, -h2),
-        ];
-        if bx * by < f64::EPSILON {
+        // dbg!(bx, by);
+        if bx + by < 0.001 {
             verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
-        } else {
+        } 
+        // else if bx < 0.001 {
+        //     let mut pts = vec![
+        //         DVec3::new(bx - ox, -by - oy, -h2),
+        //         DVec3::new(bx - ox, by - oy, -h2),
+        //     ];
+        //     dbg!(&pts);
+        //     polys.push(Wire::from_ordered_points(pts)?);
+        // } else if by < 0.001 {
+        //     let mut pts = vec![
+        //         DVec3::new(-bx - ox, by - oy, -h2),
+        //         DVec3::new(bx - ox, by - oy, -h2),
+        //     ];
+        //     dbg!(&pts);
+        //     polys.push(Wire::from_ordered_points(pts)?);
+        // } 
+        else {
+            let mut pts = vec![
+                DVec3::new(-bx - ox, -by - oy, -h2),
+                DVec3::new(bx - ox, -by - oy, -h2),
+                DVec3::new(bx - ox, by - oy, -h2),
+                DVec3::new(-bx - ox, by - oy, -h2),
+            ];
             polys.push(Wire::from_ordered_points(pts)?);
         }
 
-        Ok(OccSharedShape::new(Solid::loft_with_points(polys.iter(), verts.iter())?.into_shape()))
+        Ok(OccSharedShape::new(
+            Solid::loft_with_points(polys.iter(), verts.iter())?.into_shape(),
+        ))
     }
-
 
     fn hash_unit_mesh_params(&self) -> u64 {
         let bytes = bincode::serialize(self).unwrap();
@@ -201,9 +254,7 @@ impl BrepShapeTrait for Pyramid {
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
-        Some(
-            PdmsGeoParam::PrimPyramid(self.clone())
-        )
+        Some(PdmsGeoParam::PrimPyramid(self.clone()))
     }
 }
 
@@ -219,7 +270,6 @@ impl From<&AttrMap> for Pyramid {
         let yoff = m.get_f32_or_default("YOFF");
 
         let height = m.get_f32_or_default("HEIG");
-
 
         Pyramid {
             pbax_pt: Default::default(),
@@ -246,7 +296,6 @@ impl From<AttrMap> for Pyramid {
     }
 }
 
-
 impl From<&NamedAttrMap> for Pyramid {
     fn from(m: &NamedAttrMap) -> Self {
         let xbot = m.get_f32_or_default("XBOT");
@@ -259,7 +308,6 @@ impl From<&NamedAttrMap> for Pyramid {
         let yoff = m.get_f32_or_default("YOFF");
 
         let height = m.get_f32_or_default("HEIG");
-
 
         Pyramid {
             pbax_pt: Default::default(),

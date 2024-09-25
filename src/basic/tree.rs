@@ -28,28 +28,3 @@ impl<T: PdmsNodeTrait> ElementTree<T>{
         ).flatten()?
     }
 }
-
-// #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
-// pub struct ElementTree<T: PdmsNodeTrait>(pub Tree<T>);
-//
-// impl Deref for ElementTree {
-//     type Target = Tree<PbsElement>;
-//
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
-//
-// impl DerefMut for ElementTree {
-//     fn deref_mut(&mut self) -> &mut Self::Target {
-//         &mut self.0
-//     }
-// }
-
-// impl PbsElement{
-//     //获得世界refno
-//     // #[inline]
-//     // pub fn get_world_refno(&self) -> Option<Thing> {
-//     //     self.root_node_id().map(|x| self.get(x).map(|t| t.data().id).ok()).flatten()
-//     // }
-// }

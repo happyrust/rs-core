@@ -566,7 +566,9 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
         select  in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
                 in.op?:0 as op,
                 array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
-                array::len(in<-pe_owner) as children_count from {}<-pe_owner where in.id!=none
+                array::len(in<-pe_owner) as children_count,
+                in.status_code as status_code
+        from {}<-pe_owner where in.id!=none
         "#,
         refno.to_pe_key()
     );
@@ -576,7 +578,6 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
     let mut hashmap: HashMap<&str, i32> = HashMap::new();
     for node in &mut nodes {
         if node.name.is_empty() {
-            // hashmap.entry(&node.noun).or_insert(1);
             let mut n = 1;
             if let Some(k) = hashmap.get_mut(&node.noun.as_str()) {
                 *k += 1;

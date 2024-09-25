@@ -21,7 +21,7 @@ pub struct SPdmsElement {
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status_tag: Option<String>,
+    pub status_code: Option<String>,
     pub cata_hash: String,
     ///锁定模型
     pub lock: bool,
@@ -49,7 +49,7 @@ impl SPdmsElement {
             "noun": self.noun,
             "dbnum": self.dbnum,
             "sesno": self.sesno,
-            "status_tag": self.status_tag,
+            "status_code": self.status_code,
             "cata_hash": self.cata_hash,
             "lock": self.lock,
             "deleted": self.deleted,
@@ -77,7 +77,7 @@ impl SPdmsElement {
             "noun": self.noun,
             "dbnum": self.dbnum,
             "sesno": self.sesno,
-            "status_tag": self.status_tag,
+            "status_code": self.status_code,
             "cata_hash": self.cata_hash,
             "lock": self.lock,
             "deleted": self.deleted,

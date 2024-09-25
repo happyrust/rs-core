@@ -32,6 +32,8 @@ pub struct ParseRefU64Error;
 )]
 pub struct RefU64(pub u64);
 
+// slotmap::new_key_type! { struct RefU64; }
+
 impl RefU64 {
     // 自定义序列化方法
     pub fn serialize_as_u64<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
