@@ -21,7 +21,7 @@ use serde_with::serde_as;
 use serde_with::DisplayFromStr;
 use std::collections::{BTreeMap, HashMap};
 use surrealdb::engine::any::Any;
-use surrealdb::sql::Value;
+use surrealdb::sql::{Datetime, Value};
 use surrealdb::Surreal;
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -155,15 +155,22 @@ pub async fn get_index_by_noun_in_parent(
     Ok(type_name)
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefnoDatetime {
+    pub refno: RefnoEnum,
+    pub dt: Datetime,
+}
+
 ///获取上一个版本的参考号
-pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoEnum>> {
+pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoDatetime>> {
     let sql = format!(
-        "select value id from only {}.old_pe limit 1;",
+        // "select value (id, fn::ses_date(id)) from only {}.old_pe limit 1;",
+        "select old_pe as refno, fn::ses_date(old_pe) as dt from only {} where old_pe!=none limit 1;",
         refno_enum.to_pe_key(),
     );
     // println!("query_prev_version_refno sql is {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
-    let refno: Option<RefnoEnum> = response.take(0)?;
+    let refno: Option<RefnoDatetime> = response.take(0)?;
     Ok(refno)
 }
 
@@ -171,8 +178,8 @@ pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<O
 pub async fn get_ui_named_attmap_prev_version(
     refno_enum: RefnoEnum,
 ) -> anyhow::Result<NamedAttrMap> {
-    if let Some(refno) = query_prev_version_refno(refno_enum).await? {
-        return get_ui_named_attmap(refno).await;
+    if let Some(refno_datetime) = query_prev_version_refno(refno_enum).await? {
+        return get_ui_named_attmap(refno_datetime.refno).await;
     }
     Ok(NamedAttrMap::default())
 }
@@ -559,7 +566,7 @@ pub async fn query_filter_children_atts(
 }
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的EleTreeNode
-#[cached(result = true)]
+// #[cached(result = true)]
 pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleTreeNode>> {
     let sql = format!(
         r#"

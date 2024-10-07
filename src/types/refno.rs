@@ -699,6 +699,11 @@ impl RefnoEnum {
     }
 
     #[inline]
+    pub fn is_history(&self) -> bool {
+        self.sesno().is_some()
+    }
+
+    #[inline]
     pub fn refno(&self) -> RefU64 {
         match self {
             RefnoEnum::Refno(refno) => *refno,

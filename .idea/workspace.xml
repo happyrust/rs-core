@@ -29,27 +29,16 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="wip 数据状态管理">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/index.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/index.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/fln.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/hvac_old.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs/HVAC/tools/stif.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_part.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/gy/gy_part.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fln.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/fln.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/hvac.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/stif.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/stif.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/strt_flan_size.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/tf/strt_flan_size.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/resolve.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/static_parameter.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/static_parameter.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tables/hvac/static_parameter.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tables/hvac/static_parameter.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/fln.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/fln.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/hvac.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/tools/stif.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/tools/stif.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_room.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_room.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,6 +48,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -441,12 +431,12 @@
     </configuration>
     <list>
       <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
       <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
+      <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
@@ -958,7 +948,15 @@
       <workItem from="1726926956973" duration="59000" />
       <workItem from="1726931670090" duration="6000" />
       <workItem from="1726936071398" duration="2030000" />
-      <workItem from="1727005016165" duration="1302000" />
+      <workItem from="1727005016165" duration="1367000" />
+      <workItem from="1727019704628" duration="124000" />
+      <workItem from="1727060249655" duration="1007000" />
+      <workItem from="1727104763960" duration="1043000" />
+      <workItem from="1727115583611" duration="7000" />
+      <workItem from="1727159329513" duration="161000" />
+      <workItem from="1727251697907" duration="24000" />
+      <workItem from="1727278482657" duration="54000" />
+      <workItem from="1728307279267" duration="3460000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1303,7 +1301,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="394" />
+    <option name="localTasksCounter" value="397" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1357,9 +1355,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix spine calculation" />
-    <MESSAGE value="fix delta_vec calculation" />
-    <MESSAGE value="fix pgno" />
     <MESSAGE value="fix query catr" />
     <MESSAGE value="fix backup history use pgno" />
     <MESSAGE value="fix ngmr calculation" />
@@ -1382,7 +1377,10 @@
     <MESSAGE value="WIP 数据解析保存重构" />
     <MESSAGE value="tmp" />
     <MESSAGE value="update" />
-    <option name="LAST_COMMIT_MESSAGE" value="update" />
+    <MESSAGE value="update using ignore" />
+    <MESSAGE value="wip 增量更新的版本管理" />
+    <MESSAGE value="wip 数据状态管理" />
+    <option name="LAST_COMMIT_MESSAGE" value="wip 数据状态管理" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -2,6 +2,7 @@ use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
 use crate::{get_inst_relate_keys, RefU64, RefnoEnum, SUL_DB};
 use bevy_transform::components::Transform;
+use chrono::{DateTime, Local, NaiveDateTime};
 use glam::{DVec3, Vec3};
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
@@ -16,6 +17,7 @@ pub struct TubiInstQuery {
     pub world_aabb: Aabb,
     pub world_trans: Transform,
     pub geo_hash: String,
+    pub date: surrealdb::sql::Datetime,
 }
 
 pub async fn query_tubi_insts_by_brans(
@@ -28,7 +30,9 @@ pub async fn query_tubi_insts_by_brans(
         .join(",");
     let sql = format!(
         r#"
-             select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash
+             select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                record::id(out) as geo_hash,
+                fn::ses_date(in.id) as date
                 from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
              "#,
         pes
@@ -49,7 +53,8 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
     let sql = format!(
         r#"
         array::group(array::complement(select value
-        (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash
+        (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
+            fn::ses_date(in.id) as date
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
                 from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
              "#,
@@ -81,6 +86,7 @@ pub struct ModelInstData {
     pub world_aabb: ParryAabb,
     pub ptset: Vec<Vec3>,
     pub is_bran_tubi: bool,
+    pub date: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -93,6 +99,7 @@ pub struct GeomInstQuery {
     pub insts: Vec<ModelHashInst>,
     pub generic: String,
     pub pts: Option<Vec<Vec3>>,
+    pub date: surrealdb::sql::Datetime,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -115,7 +122,8 @@ pub async fn query_insts(
     let sql = format!(
         r#"
     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts
+            if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+            fn::ses_date(in.id) as date
             from {inst_keys} where aabb.d != none
             "#
     );

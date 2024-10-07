@@ -95,7 +95,11 @@ pub async fn query_filter_deep_children(
     let refnos = query_deep_children_refnos(refno).await?;
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let sql = format!(r#"select value id from [{pe_keys}] where noun in [{nouns_str}]"#);
+    let sql = if nouns.is_empty() {
+        format!(r#"select value id from [{pe_keys}]"#)
+    } else {
+        format!(r#"select value id from [{pe_keys}] where noun in [{nouns_str}]"#)
+    };
     // println!("query_filter_deep_children sql is {}", &sql);
     match SUL_DB.query(&sql).with_stats().await {
         Ok(mut response) => {

@@ -80,7 +80,7 @@ DEFINE FUNCTION fn::backup_data(
     for $pe in $pes {
         //只操作最新的 refno
         if type::is::array($pe) || !record::exists($pe) {
-            continue;  
+            continue;
         };
         if $pe.sesno > $sesno {
             continue;
@@ -90,7 +90,7 @@ DEFINE FUNCTION fn::backup_data(
 
         let $a = (select * omit id from $pe)[0];
         let $b = (select * omit id from $pe.refno)[0];
-        
+
         if $a != none && $b != none {
             let $old_inst_relate_id = type::thing('inst_relate', $old_id);
             let $old_att_id = type::thing(string::concat($a.noun, '_H'), $old_id);
@@ -115,7 +115,7 @@ DEFINE FUNCTION fn::backup_data(
             if $is_del{
                 delete $pe.refno;
             };
-           
+
             let $c = (select *, $old_inst_relate_id as id, $old_pe_id as in from $pe->inst_relate);
             if !array::is_empty($c) {
                 delete select id from $pe->inst_relate;
@@ -123,7 +123,7 @@ DEFINE FUNCTION fn::backup_data(
             };
 
             if $a.noun == "BRAN" || $a.noun == "HANG" {
-                
+
                 let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id, $old_pe_id as in from $pe->tubi_relate);
                 //将 tubi relate 整体备份
                 if !array::is_empty($tubis) {
@@ -147,13 +147,13 @@ DEFINE FUNCTION fn::backup_owner_relate(
     for $pe in $pes {
         //只操作最新的 refno
         if type::is::array($pe) || !record::exists($pe) {
-            continue;  
+            continue;
         };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
         let $old_pe_id = type::thing('pe', $old_id);
         //如果子节点的sesno >= 父节点的sesno 了，则需要使用 old_pe
         //反之则不需要动
-        let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id, 
+        let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id,
                     if $pe.sesno>in.sesno { in } else { in.old_pe?:in } as in, $old_pe_id as out
                     from $pe<-pe_owner;
         if !array::is_empty($c) {
@@ -208,4 +208,14 @@ remove function fn::ses_data;
 define function fn::ses_data($pe: record){
     let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
     return select * from only $id limit 1;
+};
+
+remove function fn::ses_date;
+define function fn::ses_date($pe: record){
+    return if record::exists($pe) {
+        let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
+        return select value date from only $id limit 1;
+    } else {
+        return none;
+    };
 };

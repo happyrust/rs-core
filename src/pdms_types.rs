@@ -325,6 +325,11 @@ pub trait PdmsNodeTrait: Default {
         0
     }
 
+    #[inline]   
+    fn get_status(&self) -> &str {
+        ""
+    }
+
     #[inline]
     fn get_noun_hash(&self) -> u32 {
         0
@@ -363,7 +368,7 @@ pub struct EleTreeNode {
     pub mod_cnt: Option<u32>,
     #[serde(default)]
     pub children_updated: Option<bool>,
-    pub state_code: Option<String>,
+    pub status_code: Option<String>,
 }
 
 impl EleTreeNode {
@@ -386,7 +391,7 @@ impl EleTreeNode {
             op,
             mod_cnt: None,
             children_updated: None,
-            state_code: None,
+            status_code: None,
         }
     }
 
@@ -424,7 +429,7 @@ impl From<PdmsElement> for EleTreeNode {
             op: EleOperation::Modified,
             mod_cnt: None,
             children_updated: None,
-            state_code: None,
+            status_code: None,
         }
     }
 }
@@ -443,6 +448,11 @@ impl PdmsNodeTrait for EleTreeNode {
     #[inline]
     fn get_mod_cnt(&self) -> u32 {
         self.mod_cnt.unwrap_or_default()
+    }
+
+    #[inline]
+    fn get_status(&self) -> &str {
+        self.status_code.as_deref().unwrap_or_default()
     }
 
     #[inline]
