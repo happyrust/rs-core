@@ -129,45 +129,45 @@ impl<'de> Deserialize<'de> for NamedAttrValue {
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
+                where
+                    A: SeqAccess<'de>,
             {
                 let mut vec = Vec::new();
                 let mut first_elem_type = None;
                 //在这里能不能直接判断类型
-                while let Some(elem) = seq.next_element::<serde_content::Value>()? {
+                while let Some(elem) = seq.next_element::<serde_json::Value>()? {
                     if first_elem_type.is_none() {
                         first_elem_type = Some(match elem {
-                            serde_content::Value::Bool(_) => "bool",
-                            // serde_json::Value::Number(ref n) if n.is_i64() => "i64",
-                            // serde_json::Value::Number(ref n) if n.is_u64() => "u64",
+                            serde_json::Value::Bool(_) => "bool",
+                            serde_json::Value::Number(ref n) if n.is_f64() => "f64",
+                            serde_json::Value::Number(ref n) if n.is_u64() || n.is_i64() => "i32",
                             // serde_json::Value::Number(_) => "f64",
-                            // serde_json::Value::String(_) => "String",
-                            // serde_json::Value::Array(_) => "Array",
-                            // serde_json::Value::Object(_) => "Object",
-                            _ => "Object",
+                            serde_json::Value::String(_) => "String",
+                            serde_json::Value::Array(_) => "Array",
+                            serde_json::Value::Object(_) => "Object",
+                            _ => "InvalidType",
                         });
                     }
                     vec.push(elem);
                 }
 
                 match first_elem_type {
-                    // Some("f64") => Ok(NamedAttrValue::F32VecType(
-                    //     vec.into_iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect()
-                    // )),
-                    // Some("String") => Ok(NamedAttrValue::StringArrayType(
-                    //     vec.into_iter().filter_map(|v| v.as_str().map(String::from)).collect()
-                    // )),
-                    // Some("bool") => Ok(NamedAttrValue::BoolArrayType(
-                    //     vec.into_iter().filter_map(|v| v.as_bool()).collect()
-                    // )),
-                    // Some("i64") => Ok(NamedAttrValue::IntArrayType(
-                    //     vec.into_iter().filter_map(|v| v.as_i64().map(|i| i as i32)).collect()
-                    // )),
-                    // // RefU64Array 可能需要特殊处理，这里仅作为示例
-                    // Some("Object") => Ok(NamedAttrValue::RefU64Array(
-                    //     vec.into_iter().filter_map(|v| RefU64::deserialize(v).ok()).collect()
-                    // )),
+                    Some("f64") => Ok(NamedAttrValue::F32VecType(
+                        vec.into_iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect()
+                    )),
+                    Some("String") => Ok(NamedAttrValue::StringArrayType(
+                        vec.into_iter().filter_map(|v| v.as_str().map(String::from)).collect()
+                    )),
+                    Some("bool") => Ok(NamedAttrValue::BoolArrayType(
+                        vec.into_iter().filter_map(|v| v.as_bool()).collect()
+                    )),
+                    Some("i32") => Ok(NamedAttrValue::IntArrayType(
+                        vec.into_iter().filter_map(|v| v.as_i64().map(|i| i as i32)).collect()
+                    )),
+                    // RefU64Array 可能需要特殊处理，这里仅作为示例
+                    Some("Object") => Ok(NamedAttrValue::RefU64Array(
+                        vec.into_iter().filter_map(|v| RefnoEnum::deserialize(v).ok()).collect()
+                    )),
                     _ => Err(de::Error::custom("Unsupported array type")),
                 }
             }
