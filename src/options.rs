@@ -11,6 +11,8 @@ pub struct DbOption {
     #[clap(long)]
     pub total_sync: bool,
     #[clap(long)]
+    pub enable_index: Option<bool>,
+    #[clap(long)]
     pub sync_graph_db: Option<bool>,
     #[clap(long)]
     pub sync_tidb: Option<bool>,
@@ -41,6 +43,11 @@ pub struct DbOption {
     pub v_password: String,
     #[clap(long)]
     pub v_port: String,
+
+    // #[clap(long)]
+    // pub kv_ip: String,
+    // #[clap(long)]
+    // pub kv_port: String,
 
     // mqtt_host
     #[clap(long)]
@@ -310,6 +317,13 @@ impl DbOption {
         format!("ws://{ip}:{port}")
     }
 
+    // #[inline]
+    // pub fn get_kv_db_conn_str(&self) -> String {
+    //     let ip = self.kv_ip.as_str();
+    //     let port = self.kv_port.as_str();
+    //     format!("ws://{ip}:{port}")
+    // }
+
     #[inline]
     pub fn get_mysql_conn_str(&self) -> String {
         let user = self.user.as_str();
@@ -328,12 +342,12 @@ impl DbOption {
         format!("mysql://{user}:{pwd}@{ip}:{port}/{}", &self.project_name)
     }
 
-    #[inline]
-    pub fn get_mysql_db_conn_str(&self, db: &str) -> String {
-        let user = self.user.as_str();
-        let pwd = urlencoding::encode(self.password.as_str());
-        let ip = self.ip.as_str();
-        let port = self.port.as_str();
-        format!("mysql://{user}:{pwd}@{ip}:{port}/{}", db)
-    }
+    // #[inline]
+    // pub fn get_mysql_db_conn_str(&self, db: &str) -> String {
+    //     let user = self.user.as_str();
+    //     let pwd = urlencoding::encode(self.password.as_str());
+    //     let ip = self.ip.as_str();
+    //     let port = self.port.as_str();
+    //     format!("mysql://{user}:{pwd}@{ip}:{port}/{}", db)
+    // }
 }

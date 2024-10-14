@@ -7,12 +7,13 @@ use crate::ssc_setting::PbsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
-use crate::{get_db_option, DBType};
+use crate::{get_db_option, to_table_keys, DBType};
 use crate::{graph::QUERY_DEEP_CHILDREN_REFNOS, types::*};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
 use cached::Cached;
+use chrono::NaiveDateTime;
 use dashmap::DashMap;
 use indexmap::IndexMap;
 use itertools::Itertools;
@@ -97,7 +98,9 @@ pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
     Ok(type_name.unwrap_or("unset".to_owned()))
 }
 
-pub async fn get_type_names(refnos: impl Iterator<Item = &RefnoEnum>) -> anyhow::Result<Vec<String>> {
+pub async fn get_type_names(
+    refnos: impl Iterator<Item = &RefnoEnum>,
+) -> anyhow::Result<Vec<String>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let mut response = SUL_DB
         .query(format!(r#"select value noun from [{}]"#, pe_keys))
@@ -162,7 +165,9 @@ pub struct RefnoDatetime {
 }
 
 ///获取上一个版本的参考号
-pub async fn query_prev_version_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoDatetime>> {
+pub async fn query_prev_version_refno(
+    refno_enum: RefnoEnum,
+) -> anyhow::Result<Option<RefnoDatetime>> {
     let sql = format!(
         // "select value (id, fn::ses_date(id)) from only {}.old_pe limit 1;",
         "select old_pe as refno, fn::ses_date(old_pe) as dt from only {} where old_pe!=none limit 1;",
@@ -242,7 +247,7 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
             }
             continue;
         }
-        if k == "UNIPAR" {
+        if k == "UNIPAR" || k == "SESNO" {
             continue;
         }
         match v {
@@ -570,7 +575,7 @@ pub async fn query_filter_children_atts(
 pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleTreeNode>> {
     let sql = format!(
         r#"
-        select  in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, array::first(in->pe_owner.id[1]) as order,
+        select  in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, record::id(in->pe_owner.id[0])[1] as order,
                 in.op?:0 as op,
                 array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                 array::len(in<-pe_owner) as children_count,
@@ -802,7 +807,8 @@ pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<
 
 /// 插入数据
 pub async fn insert_into_table(db: &Surreal<Any>, table: &str, value: &str) -> anyhow::Result<()> {
-    db.query(format!("insert ignore into {} {}", table, value)).await?;
+    db.query(format!("insert ignore into {} {}", table, value))
+        .await?;
     Ok(())
 }
 
@@ -829,7 +835,8 @@ where
 {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = serde_json::to_string(r)?;
-        db.query(format!("insert ignore into {} {}", table, json)).await?;
+        db.query(format!("insert ignore into {} {}", table, json))
+            .await?;
     }
     Ok(())
 }
@@ -952,8 +959,80 @@ pub async fn query_refno_sesno(
     );
     let mut response = SUL_DB.query(&sql).await?;
     let r: Vec<u32> = response.take(0).unwrap();
-    // if r.len() < 2 {
-    //     return Ok((0, false));
-    // }
     Ok((r[0], r[1]))
+}
+
+///查询历史数据的日期
+pub async fn query_his_dates(
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+) -> anyhow::Result<BTreeMap<RefnoEnum, NaiveDateTime>> {
+    let refnos: Vec<_> = refnos.into_iter().collect();
+    let pes = to_table_keys!(refnos.iter(), "pe");
+    let his_refnos = to_table_keys!(refnos.iter(), "his_pe");
+    let sql = format!(
+        "select id as k, fn::ses_date(id) as v from array::flatten([{0}].refnos), [{1}];",
+        his_refnos.join(","),
+        pes.join(","),
+    );
+    println!("query_his_dates sql: {}", &sql);
+    let mut response = SUL_DB.query(&sql).await?;
+    let r: Vec<KV<RefnoEnum, surrealdb::sql::Datetime>> = response.take(0)?;
+    Ok(r.into_iter().map(|kv| (kv.k, kv.v.naive_local())).collect())
+}
+
+/// 查询最新的参考号, 需要限制日期
+pub async fn query_latest_refnos(
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    dt: NaiveDateTime,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let pes = to_table_keys!(refnos, "pe");
+    let sql = format!(
+        "select value fn::find_pe_by_datetime(id, <datetime> {}) from [{}]",
+        pes.join(","),
+        dt.and_utc().to_rfc3339(),
+    );
+    let mut response = SUL_DB.query(&sql).await?;
+    let r: Vec<RefnoEnum> = response.take(0)?;
+    Ok(r)
+}
+
+//添加query_his_dates 的 testcase
+mod test {
+    use std::str::FromStr;
+
+    use chrono::NaiveDateTime;
+
+    use crate::{init_test_surreal, pe_key, query_his_dates};
+    #[tokio::test]
+    async fn test_query_his_dates() {
+        init_test_surreal().await;
+
+        let r = query_his_dates(&[pe_key!("17496_172825")]).await.unwrap();
+        dbg!(&r);
+    }
+
+    #[tokio::test]
+    async fn test_query_latest_refnos() {
+        init_test_surreal().await;
+
+        //2025-07-03T07:18:52Z
+        let r = crate::query_latest_refnos(
+            &[pe_key!("17496_172825")],
+            NaiveDateTime::from_str("2025-07-03T07:18:52Z").unwrap(),
+        )
+        .await
+        .unwrap();
+        dbg!(&r);
+        assert_eq!(r.len(), 1);
+        assert_eq!(r[0], pe_key!("17496_172825"));
+
+        let r = crate::query_latest_refnos(
+            &[pe_key!("17496_172825")],
+            NaiveDateTime::from_str("2022-07-03T07:18:52Z").unwrap(),
+        )
+        .await
+        .unwrap();
+        dbg!(&r);
+        assert_eq!(r.len(), 0);
+    }
 }

@@ -24,6 +24,18 @@ DEFINE FUNCTION fn::ancestor($r: record) {
     };
 };
 
+REMOVE FUNCTION fn::newest_pe;
+DEFINE FUNCTION fn::newest_pe(
+    $pe: record,
+) {
+    if type::is::array($pe) {
+        return $pe;
+    };
+    let $refno = record::id($pe)[0];
+    return type::thing('pe', $refno);
+};
+
+
 REMOVE FUNCTION fn::order;
 DEFINE FUNCTION fn::order(
     $pe: record,
@@ -32,7 +44,12 @@ DEFINE FUNCTION fn::order(
         return none;
     };
     let $a = ($pe.owner<-pe_owner.in)[where noun=$pe.noun];
-    return array::find_index($a, $pe);
+    if $a == none {
+        let $b = (fn::newest_pe($pe).owner<-pe_owner.in)[where noun=$pe.noun];
+        return array::find_index($b, $pe);
+    } else {
+        return array::find_index($a, $pe);
+    };
 };
 
 REMOVE FUNCTION fn::default_name;
@@ -151,6 +168,9 @@ DEFINE FUNCTION fn::backup_owner_relate(
         };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
         let $old_pe_id = type::thing('pe', $old_id);
+        //fix 层级不连续的问题，需要更新到之前的 in->owner 关系
+        let $relate_id = select value id from $pe->pe_owner;
+        update $relate_id set in=$old_pe_id;
         //如果子节点的sesno >= 父节点的sesno 了，则需要使用 old_pe
         //反之则不需要动
         let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id,
@@ -197,6 +217,13 @@ define function fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
         let $id = record::id($pe);
     return type::thing('pe', [$id, $s[0]]);
     }
+};
+
+
+remove function fn::find_pe_by_datetime;
+define function fn::find_pe_by_datetime($pe: record, $dt: datetime){
+    let $a = select id from only array::reverse(array::flatten([$pe.refnos?:[], $pe])) where <datetime> fn::ses_date(id) <= $dt limit 1;
+    return $a;
 };
 
 

@@ -9,6 +9,7 @@ pub async fn backup_data(refnos: impl Iterator<Item = &RefU64>, is_deleted: bool
     // dbg!(&response);
     let mut erros = response.take_errors();
     if !erros.is_empty() {
+        dbg!(&sql);
         dbg!(&erros);
     }
     Ok(())

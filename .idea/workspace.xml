@@ -29,16 +29,11 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="wip 数据状态管理">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update to bevy 0.15">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/version.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/version.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -957,6 +952,10 @@
       <workItem from="1727251697907" duration="24000" />
       <workItem from="1727278482657" duration="54000" />
       <workItem from="1728307279267" duration="3460000" />
+      <workItem from="1728322187567" duration="21000" />
+      <workItem from="1728638272974" duration="1538000" />
+      <workItem from="1728654582921" duration="597000" />
+      <workItem from="1728667907287" duration="1000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1301,7 +1300,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="397" />
+    <option name="localTasksCounter" value="398" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1355,7 +1354,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix query catr" />
     <MESSAGE value="fix backup history use pgno" />
     <MESSAGE value="fix ngmr calculation" />
     <MESSAGE value="fix increment update" />
@@ -1380,7 +1378,8 @@
     <MESSAGE value="update using ignore" />
     <MESSAGE value="wip 增量更新的版本管理" />
     <MESSAGE value="wip 数据状态管理" />
-    <option name="LAST_COMMIT_MESSAGE" value="wip 数据状态管理" />
+    <MESSAGE value="update to bevy 0.15" />
+    <option name="LAST_COMMIT_MESSAGE" value="update to bevy 0.15" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

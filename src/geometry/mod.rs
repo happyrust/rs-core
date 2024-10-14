@@ -100,6 +100,8 @@ pub struct EleGeosInfo {
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
     pub has_cata_neg: bool,
     pub is_solid: bool,
+
+    // pub dt: chrono::NaiveDateTime,
 }
 
 

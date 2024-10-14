@@ -199,5 +199,23 @@ pub async fn init_test_surreal() -> DbOption {
             password: &db_option.v_password,
         }).await.unwrap();
     define_common_functions().await.unwrap();
+
+    // KV_DB
+    //     .connect(db_option.get_kv_db_conn_str())
+    //     .with_capacity(1000)
+    //     .await
+    //     .unwrap();
+    // KV_DB
+    //     .use_ns(&db_option.surreal_ns)
+    //     .use_db(&db_option.project_name)
+    //     .await
+    //     .unwrap();
+    // KV_DB
+    //     .signin(Root {
+    //         username: &db_option.v_user,
+    //         password: &db_option.v_password,
+    //     }).await.unwrap();
+
+
     db_option
 }

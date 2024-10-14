@@ -13,6 +13,7 @@ use serde_with::serde_as;
 pub struct TubiInstQuery {
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
+    pub old_refno: Option<RefnoEnum>,
     pub generic: Option<String>,
     pub world_aabb: Aabb,
     pub world_trans: Transform,
@@ -30,10 +31,13 @@ pub async fn query_tubi_insts_by_brans(
         .join(",");
     let sql = format!(
         r#"
-             select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans,
+             select
+                in.id as refno,
+                in.old_pe as old_refno,
+                (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 record::id(out) as geo_hash,
                 fn::ses_date(in.id) as date
-                from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
+             from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
              "#,
         pes
     );
@@ -80,6 +84,7 @@ pub struct ModelHashInst {
 #[derive(Debug)]
 pub struct ModelInstData {
     pub owner: RefnoEnum,
+    pub old_refno: Option<RefnoEnum>,
     pub insts: Vec<ModelHashInst>,
     pub generic: PdmsGenericType,
     pub world_trans: Transform,
@@ -93,6 +98,7 @@ pub struct ModelInstData {
 pub struct GeomInstQuery {
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
+    pub old_refno: Option<RefnoEnum>,
     pub owner: RefnoEnum,
     pub world_aabb: Aabb,
     pub world_trans: Transform,
@@ -121,11 +127,14 @@ pub async fn query_insts(
 
     let sql = format!(
         r#"
-    select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
-            fn::ses_date(in.id) as date
+            select
+                in.id as refno,
+                in.old_pe as old_refno,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
+                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                fn::ses_date(in.id) as date
             from {inst_keys} where aabb.d != none
-            "#
+        "#
     );
     // println!("Query insts sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;

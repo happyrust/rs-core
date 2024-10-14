@@ -562,7 +562,7 @@ impl RefnoSesno {
     pub fn to_pe_key(&self) -> String {
         if self.sesno == 0 {
             self.refno.to_pe_key()
-        }else{
+        } else {
             format!("pe:{}", self.to_string())
         }
     }
@@ -681,7 +681,6 @@ impl<'de> Deserialize<'de> for RefnoEnum {
 }
 
 impl RefnoEnum {
-
     #[inline]
     pub fn to_pe_key(&self) -> String {
         match self {
@@ -691,7 +690,7 @@ impl RefnoEnum {
     }
 
     #[inline]
-    pub fn sesno(&self) -> Option<u32>{
+    pub fn sesno(&self) -> Option<u32> {
         match self {
             RefnoEnum::Refno(_) => None,
             RefnoEnum::SesRef(ses_ref) => Some(ses_ref.sesno),
@@ -788,7 +787,7 @@ impl RefnoEnum {
     }
 
     #[inline]
-    pub fn to_normal_str(&self,) -> String {
+    pub fn to_normal_str(&self) -> String {
         if self.sesno().is_some() {
             format!("{}_{}", self.refno().to_string(), self.sesno().unwrap())
         } else {
@@ -869,4 +868,19 @@ impl Display for RefnoEnum {
             ),
         }
     }
+}
+
+#[macro_export]
+macro_rules! pe_key {
+    ($s:expr) => {
+        crate::RefnoEnum::from($s)
+    };
+}
+
+
+#[macro_export]
+macro_rules! to_table_keys {
+    ($refnos:expr, $table:expr) => {
+        $refnos.into_iter().map(|x| x.latest().to_table_key($table)).collect::<Vec<_>>()
+    };
 }
