@@ -165,11 +165,10 @@ pub struct RefnoDatetime {
 }
 
 ///获取上一个版本的参考号
-pub async fn query_prev_version_refno(
+pub async fn query_prev_dt_refno(
     refno_enum: RefnoEnum,
 ) -> anyhow::Result<Option<RefnoDatetime>> {
     let sql = format!(
-        // "select value (id, fn::ses_date(id)) from only {}.old_pe limit 1;",
         "select old_pe as refno, fn::ses_date(old_pe) as dt from only {} where old_pe!=none limit 1;",
         refno_enum.to_pe_key(),
     );
@@ -179,11 +178,25 @@ pub async fn query_prev_version_refno(
     Ok(refno)
 }
 
+///获取当前版本的参考号, 带日期的参考号
+pub async fn query_dt_refno(
+    refno_enum: RefnoEnum,
+) -> anyhow::Result<Option<RefnoDatetime>> {
+    let sql = format!(
+        "select id as refno, fn::ses_date(id) as dt from only {} limit 1;",
+        refno_enum.to_pe_key(),
+    );
+    // println!("query_dt_refno sql is {}", &sql);
+    let mut response = SUL_DB.query(sql).await?;
+    let refno: Option<RefnoDatetime> = response.take(0)?;
+    Ok(refno)
+}
+
 // //获取上一个版本的属性数据
 pub async fn get_ui_named_attmap_prev_version(
     refno_enum: RefnoEnum,
 ) -> anyhow::Result<NamedAttrMap> {
-    if let Some(refno_datetime) = query_prev_version_refno(refno_enum).await? {
+    if let Some(refno_datetime) = query_prev_dt_refno(refno_enum).await? {
         return get_ui_named_attmap(refno_datetime.refno).await;
     }
     Ok(NamedAttrMap::default())
@@ -974,7 +987,7 @@ pub async fn query_his_dates(
         his_refnos.join(","),
         pes.join(","),
     );
-    println!("query_his_dates sql: {}", &sql);
+    // println!("query_his_dates sql: {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     let r: Vec<KV<RefnoEnum, surrealdb::sql::Datetime>> = response.take(0)?;
     Ok(r.into_iter().map(|kv| (kv.k, kv.v.naive_local())).collect())
@@ -987,10 +1000,11 @@ pub async fn query_latest_refnos(
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     let pes = to_table_keys!(refnos, "pe");
     let sql = format!(
-        "select value fn::find_pe_by_datetime(id, <datetime> {}) from [{}]",
-        pes.join(","),
+        "select value fn::find_pe_by_datetime(id, d'{}') from [{}]",
         dt.and_utc().to_rfc3339(),
+        pes.join(","),
     );
+    // println!("query_latest_refnos sql: {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     let r: Vec<RefnoEnum> = response.take(0)?;
     Ok(r)

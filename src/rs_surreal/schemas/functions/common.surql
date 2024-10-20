@@ -28,11 +28,25 @@ REMOVE FUNCTION fn::newest_pe;
 DEFINE FUNCTION fn::newest_pe(
     $pe: record,
 ) {
-    if type::is::array($pe) {
+    if $pe == none {
+        return none;
+    };
+    let $id = record::id($pe);
+    if !type::is::array($id) {
         return $pe;
     };
-    let $refno = record::id($pe)[0];
+    let $refno = $id[0];
     return type::thing('pe', $refno);
+};
+
+REMOVE FUNCTION fn::newest_pe_id;
+DEFINE FUNCTION fn::newest_pe_id(
+    $pe: record,
+) {
+    if !type::is::array($pe) {
+        return record::id($pe);
+    };
+    return record::id($pe)[0];
 };
 
 
@@ -163,24 +177,29 @@ DEFINE FUNCTION fn::backup_owner_relate(
 ) {
     for $pe in $pes {
         //只操作最新的 refno
-        if type::is::array($pe) || !record::exists($pe) {
-            continue;
-        };
+        // if type::is::array($pe) || !record::exists($pe) {
+        //     continue;
+        // };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
         let $old_pe_id = type::thing('pe', $old_id);
         //fix 层级不连续的问题，需要更新到之前的 in->owner 关系
         let $relate_id = select value id from $pe->pe_owner;
-        update $relate_id set in=$old_pe_id;
+        -- return $relate_id;
+        //如果是旧节点，需要更新到旧的引用节点
+        if type::is::array($relate_id) {
+            update $relate_id set in=$old_pe_id;
+        };
         //如果子节点的sesno >= 父节点的sesno 了，则需要使用 old_pe
         //反之则不需要动
         let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id,
                     if $pe.sesno>in.sesno { in } else { in.old_pe?:in } as in, $old_pe_id as out
                     from $pe<-pe_owner;
+        -- return $c;
         if !array::is_empty($c) {
             if $delete_old{
                 delete select id from $pe<-pe_owner;
             };
-            insert relation into pe_owner $c;
+            return insert relation into pe_owner $c;
         }
     }
 };
@@ -222,7 +241,8 @@ define function fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 
 remove function fn::find_pe_by_datetime;
 define function fn::find_pe_by_datetime($pe: record, $dt: datetime){
-    let $a = select id from only array::reverse(array::flatten([$pe.refnos?:[], $pe])) where <datetime> fn::ses_date(id) <= $dt limit 1;
+    let $his_pe = type::thing('his_pe', fn::newest_pe_id($pe));
+    let $a = select value id from only array::reverse(array::flatten([$his_pe.refnos?:[], $pe])) where <datetime> fn::ses_date(id) <= $dt limit 1;
     return $a;
 };
 

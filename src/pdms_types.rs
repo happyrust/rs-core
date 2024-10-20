@@ -357,6 +357,7 @@ pub const STATE_CODE_INIT: &'static str = "D00";
 pub struct EleTreeNode {
     pub refno: RefnoEnum,
     pub noun: String,
+    #[serde(default)]
     pub name: String,
     pub owner: RefnoEnum,
     #[serde(default)]
