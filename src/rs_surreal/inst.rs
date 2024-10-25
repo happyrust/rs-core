@@ -34,7 +34,7 @@ pub async fn query_tubi_insts_by_brans(
              select
                 in.id as refno,
                 in.old_pe as old_refno,
-                (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 record::id(out) as geo_hash,
                 fn::ses_date(in.id) as date
              from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
@@ -57,7 +57,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
     let sql = format!(
         r#"
         array::group(array::complement(select value
-        (select in.id as refno, (in->pe_owner->pe.noun)[0] as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
+        (select in.id as refno, in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
             fn::ses_date(in.id) as date
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
                 from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
@@ -117,12 +117,15 @@ pub struct GeomPtsQuery {
     pub pts_group: Vec<(Transform, Option<Vec<DVec3>>)>,
 }
 
-//todo 需要按分块去加载显示
-/// 根据refnos查询当前的insts
+
+/// 根据最新refno查询最新insts
 pub async fn query_insts(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
+
+    //需要区分历史模型和当前最新模型
+
     let inst_keys = get_inst_relate_keys(&refnos);
 
     let sql = format!(
@@ -144,30 +147,58 @@ pub async fn query_insts(
     Ok(geom_insts)
 }
 
-/// 根据(refno, sesno)查询历史的insts
+// 根据历史refno查询历史insts
+// pub async fn query_history_insts(
+//     refnos: impl IntoIterator<Item = &RefnoEnum>,
+// ) -> anyhow::Result<Vec<GeomInstQuery>> {
+//     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
+
+//     //需要区分历史模型和当前最新模型
+
+//     let inst_keys = get_inst_relate_keys(&refnos);
+
+//     let sql = format!(
+//         r#"
+//             select
+//                 in.id as refno,
+//                 in.old_pe as old_refno,
+//                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
+//                 if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+//                 fn::ses_date(in.id) as date
+//             from {inst_keys} where aabb.d != none
+//         "#
+//     );
+//     // println!("Query insts sql: {}", &sql);
+//     let mut response = SUL_DB.query(sql).await?;
+//     let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
+//     // dbg!(&geom_insts);
+
+//     Ok(geom_insts)
+// }
+
 // todo 生成一个测试案例
-pub async fn query_history_insts(
-    refnos: impl IntoIterator<Item = &(RefnoEnum, u32)>,
-) -> anyhow::Result<Vec<GeomInstQuery>> {
-    let history_inst_keys = refnos
-        .into_iter()
-        .map(|x| format!("inst_relate:{}_{}", x.0, x.1))
-        .collect::<Vec<_>>()
-        .join(",");
+// pub async fn query_history_insts(
+//     refnos: impl IntoIterator<Item = &(RefnoEnum, u32)>,
+// ) -> anyhow::Result<Vec<GeomInstQuery>> {
+//     let history_inst_keys = refnos
+//         .into_iter()
+//         .map(|x| format!("inst_relate:{}_{}", x.0, x.1))
+//         .collect::<Vec<_>>()
+//         .join(",");
 
-    //todo 如果是ngmr relate, 也要测试一下有没有问题
-    //ngmr relate 的关系可以直接在inst boolean 做这个处理，不需要单独开方法
-    //ngmr的负实体最后再执行
-    let sql = format!(
-        r#"
-    select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-            if (in<-neg_relate)[0] != none && $parent.booled {{ [{{ "geo_hash": record::id(in.id) }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && trans.d != none && geo_type='Pos')  }} as insts
-            from {history_inst_keys} where aabb.d != none
-            "#
-    );
-    // println!("Query insts: {}", &sql);
-    let mut response = SUL_DB.query(sql).await?;
-    let mut geom_insts: Vec<GeomInstQuery> = response.take(0).unwrap();
+//     //todo 如果是ngmr relate, 也要测试一下有没有问题
+//     //ngmr relate 的关系可以直接在inst boolean 做这个处理，不需要单独开方法
+//     //ngmr的负实体最后再执行
+//     let sql = format!(
+//         r#"
+//     select in.id as refno, in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
+//             if (in<-neg_relate)[0] != none && $parent.booled {{ [{{ "geo_hash": record::id(in.id) }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && trans.d != none && geo_type='Pos')  }} as insts
+//             from {history_inst_keys} where aabb.d != none
+//             "#
+//     );
+//     // println!("Query insts: {}", &sql);
+//     let mut response = SUL_DB.query(sql).await?;
+//     let mut geom_insts: Vec<GeomInstQuery> = response.take(0).unwrap();
 
-    Ok(geom_insts)
-}
+//     Ok(geom_insts)
+// }

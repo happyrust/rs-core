@@ -165,9 +165,7 @@ pub struct RefnoDatetime {
 }
 
 ///获取上一个版本的参考号
-pub async fn query_prev_dt_refno(
-    refno_enum: RefnoEnum,
-) -> anyhow::Result<Option<RefnoDatetime>> {
+pub async fn query_prev_dt_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoDatetime>> {
     let sql = format!(
         "select old_pe as refno, fn::ses_date(old_pe) as dt from only {} where old_pe!=none limit 1;",
         refno_enum.to_pe_key(),
@@ -179,9 +177,7 @@ pub async fn query_prev_dt_refno(
 }
 
 ///获取当前版本的参考号, 带日期的参考号
-pub async fn query_dt_refno(
-    refno_enum: RefnoEnum,
-) -> anyhow::Result<Option<RefnoDatetime>> {
+pub async fn query_dt_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoDatetime>> {
     let sql = format!(
         "select id as refno, fn::ses_date(id) as dt from only {} limit 1;",
         refno_enum.to_pe_key(),
@@ -330,12 +326,6 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
         attmap.insert(k, v);
     }
 
-    // let mut response = SUL_DB
-    //     .query(format!(
-    //         "select value fn::default_full_name(id) from [{}]",
-    //         refno_fields.join(",")
-    //     ))
-    //     .await?;
     let names = query_full_names(&refno_fields).await.unwrap_or_default();
     for (k, v) in keys.into_iter().zip(names) {
         attmap.insert(
@@ -346,6 +336,8 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
     for k in unset_keys {
         attmap.insert(k, NamedAttrValue::StringType("unset".to_owned()));
     }
+
+    attmap.remove("SESNO");
     Ok(attmap)
 }
 
@@ -478,7 +470,7 @@ pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
 #[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
     let sql = format!(
-        r#"select value in.refno.* from {}<-pe_owner where in.id!=none"#,
+        r#"select value in.refno.* from {}<-pe_owner where in.id!=none and !in.deleted"#,
         refno.to_pe_key()
     );
     // println!("get_children_named_attmaps sql is {}", &sql);
@@ -496,7 +488,7 @@ pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<
 pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsElement>> {
     let sql = format!(
         r#"
-        select value in.* from {}<-pe_owner where in.id!=none
+            select value in.* from {}<-pe_owner where record::exists(in.id) and !in.deleted
         "#,
         refno.to_pe_key()
     );
@@ -505,25 +497,13 @@ pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsEleme
     Ok(pes)
 }
 
-// pub async fn get_children_full_names(refno: RefnoEnum) -> anyhow::Result<IndexMap<RefU64, String>> {
-//     let sql = format!(
-//         r#"
-//         select value [in, fn::default_full_name(in)] from {}<-pe_owner where in.id!=none
-//         "#,
-//         refno.to_pe_key()
-//     );
-//     let mut response = SUL_DB.query(sql).await?;
-//     let pes: Vec<SPdmsElement> = response.take(0)?;
-//     Ok(pes)
-// }
-
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
 pub async fn get_all_children_refnos(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let sql =
-        format!("array::flatten(select value in from [{pe_keys}]<-pe_owner where in.id!=none)");
+        format!("array::flatten(select value in from [{pe_keys}]<-pe_owner where record::exists(in.id) and !in.deleted)");
     let mut response = SUL_DB.query(sql).await?;
     let refnos: Vec<RefnoEnum> = response.take(0)?;
     Ok(refnos)
@@ -541,12 +521,12 @@ pub async fn query_filter_children(
         .join(",");
     let sql = if types.is_empty() {
         format!(
-            r#"select value in from {}<-pe_owner where in.id!=none"#,
+            r#"select value in from {}<-pe_owner where record::exists(in.id) and !in.deleted"#,
             refno.to_pe_key()
         )
     } else {
         format!(
-            r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] and in.id!=none"#,
+            r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] and record::exists(in.id) and !in.deleted"#,
             refno.to_pe_key()
         )
     };
@@ -568,12 +548,12 @@ pub async fn query_filter_children_atts(
         .join(",");
     let sql = if types.is_empty() {
         format!(
-            r#"select value in.refno.* from {}<-pe_owner where in.id!=none"#,
+            r#"select value in.refno.* from {}<-pe_owner where record::exists(in.id) and !in.deleted"#,
             refno.to_pe_key()
         )
     } else {
         format!(
-            r#"select value in.refno.* from {}<-pe_owner where in.noun in [{nouns_str}] and in.id!=none"#,
+            r#"select value in.refno.* from {}<-pe_owner where in.noun in [{nouns_str}] and record::exists(in.id) and !in.deleted"#,
             refno.to_pe_key()
         )
     };
@@ -593,7 +573,7 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
                 array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                 array::len(in<-pe_owner) as children_count,
                 in.status_code as status_code
-        from {}<-pe_owner where in.id!=none
+            from {}<-pe_owner where record::exists(in.id) and !in.deleted
         "#,
         refno.to_pe_key()
     );
@@ -646,26 +626,41 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
 ///获得children
 #[cached(result = true)]
 pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    let mut response = SUL_DB
-        .query(format!(
-            r#"select value in from {}<-pe_owner  where in.id != NONE"#,
+    let sql = if refno.is_latest() {
+        format!(
+            r#"select value in from {}<-pe_owner  where record::exists(in.id) and !in.deleted"#,
             refno.to_pe_key()
-        ))
-        .await?;
-    let refnos: Vec<RefnoEnum> = response.take(0)?;
+        )
+    } else {
+        format!(
+            r#" 
+                let $dt=<datetime>fn::ses_date({0}); 
+                select value fn::find_pe_by_datetime(in, $dt) from fn::newest_pe({0})<-pe_owner 
+                    where record::exists(in.id) and (!in.deleted or <datetime>fn::ses_date(in.id)>$dt)
+            "#,
+            refno.to_pe_key(),
+        )
+    };
+    let mut response = SUL_DB.query(sql).await?;
+    let idx = if refno.is_latest() { 0 } else { 1 };
+    let refnos: Vec<RefnoEnum> = response.take(idx)?;
     Ok(refnos)
 }
 
 pub async fn query_multi_children_refnos(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<RefnoEnum>> {
-    let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
-    let mut response = SUL_DB
-        .query(format!(
-            "select value id from array::flatten(select value <-pe_owner.in from [{}]) where id != none",
-            refno_ids.join(",")
-        ))
-        .await?;
-    let refnos: Vec<RefnoEnum> = response.take(0)?;
-    Ok(refnos)
+    // let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
+    // let mut response = SUL_DB
+    //     .query(format!(
+    //         "select value id from array::flatten(select value <-pe_owner.in from [{}]) where record::exists(id) and !deleted",
+    //         refno_ids.join(",")
+    //     ))
+    //     .await?;
+    // let refnos: Vec<RefnoEnum> = response.take(0)?;
+    let mut final_refnos = vec![];
+    for &refno in refnos {
+        final_refnos.extend(get_children_refnos(refno).await?);
+    }
+    Ok(final_refnos)
 }
 
 ///按cata_hash 分组获得不同的参考号类型
@@ -681,7 +676,7 @@ pub async fn query_group_by_cata_hash(
     for chunk in keys.chunks(20) {
         let sql = format!(
             r#"
-            let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}])[? noun!=NONE];
+            let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}])[? noun!=NONE && !deleted];
             select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
                     type::thing('inst_info', cata_hash).ptset] as k,
                  array::group(id) as v
@@ -779,11 +774,6 @@ pub async fn query_single_by_paths(
         };
         ps.push(str);
     }
-    // let select_fieds = if fields.is_empty() {
-    //     "*".to_string()
-    // } else {
-    //     fields.join(",")
-    // };
     let sql = format!(
         r#"(select value refno.* from (select value [{}] from only {}) where id != none)[0]"#,
         ps.join(","),
@@ -886,7 +876,7 @@ pub async fn query_refnos_from_names(
         .collect::<Vec<_>>();
     let names = serde_json::to_string(&names)?;
     let sql = format!(
-        "select refno,name,noun,owner,0 as children_count , 0 as version, 0 as order from pe where name in {}",
+        "select refno,name,noun,owner,0 as children_count , 0 as version, 0 as order from pe where name in {} and !deleted",
         names
     );
     let mut r = db.query(sql).await?;
@@ -907,7 +897,7 @@ pub async fn query_same_type_refnos(
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     let dbnums = query_mdb_db_nums(module).await?;
     let mut sql = format!(
-        r#"select value id from type::table({}.noun) where REFNO.dbnum in [{}]"#,
+        r#"select value id from type::table({}.noun) where REFNO.dbnum in [{}] and !deleted"#,
         refno.to_pe_key(),
         dbnums.iter().map(|x| x.to_string()).join(",")
     );
