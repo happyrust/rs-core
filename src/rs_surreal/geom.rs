@@ -1,9 +1,10 @@
 use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
-use crate::pdms_types::*;
+use crate::{pdms_types::*, to_table_key, to_table_keys};
 use crate::pe::SPdmsElement;
 use crate::{query_filter_deep_children, types::*};
 use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SurlValue, SUL_DB};
+use bevy_transform::components::Transform;
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -227,3 +228,76 @@ pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>
 //     dbg!(&r);
 //     Ok(())
 // }
+
+
+//query_ptset
+/// 查询RefnoEnum对应的点集合
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct PtsetResult {
+    pub transform: Transform,
+    pub points: Vec<Vec3>,
+}
+
+pub async fn query_ptset(refno: RefnoEnum) -> anyhow::Result<Option<PtsetResult>> {
+    let sql = format!(
+        "(select world_trans.d as transform, object::values(out.ptset?:{{}}).pt as points from {0})[0]",
+        to_table_key!(refno, "inst_relate")
+    );
+    let mut response = SUL_DB.query(&sql).await?;
+    let result: Option<PtsetResult> = response.take(0)?;
+    // dbg!(&result);
+    Ok(result)
+}
+
+
+/// 查询RefnoEnum对应的关键点集合
+pub async fn query_key_points(refno: RefnoEnum) -> anyhow::Result<Option<Vec<Vec3>>> {
+    // let sql = format!(
+    //     "select value inst_relate.pts.*.d from {}",
+    //     refno.to_pe_key()
+    // );
+    // let mut response = SUL_DB.query(&sql).await?;
+    // let result: Option<Vec<Vec3>> = response.take(0)?;
+    Ok(None)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_surreal;
+
+    #[tokio::test]
+    async fn test_query_ptset() -> anyhow::Result<()> {
+        // Initialize the test database
+        init_test_surreal().await;
+
+        // Create a test RefnoEnum
+        let refno = "17496_170587".into();
+
+        // Query the point set
+        let result = query_ptset(refno).await?;
+        assert!(result.is_some(), "Point set result should not be None");
+
+        let ptset_result = result.unwrap();
+        let transform = ptset_result.transform;
+        let points = ptset_result.points;
+
+        // Perform assertions
+        assert!(!points.is_empty(), "Point set should not be empty");
+        
+        // Check if the transform is valid
+        assert!(transform.is_finite(), "Transform should be finite");
+
+        // Check if all points are valid Vec3
+        for point in &points {
+            assert!(point.x.is_finite() && point.y.is_finite() && point.z.is_finite(), 
+                    "All components of the point should be finite");
+        }
+
+        // You might want to add more specific assertions based on expected data
+        // For example, checking for a specific number of points or specific point values
+
+        Ok(())
+    }
+}

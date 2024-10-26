@@ -877,6 +877,13 @@ macro_rules! pe_key {
     };
 }
 
+#[macro_export]
+macro_rules! to_table_key {
+    ($refno:expr, $table:expr) => {
+        $refno.to_table_key($table)
+    };
+}
+
 
 #[macro_export]
 macro_rules! to_table_keys {
