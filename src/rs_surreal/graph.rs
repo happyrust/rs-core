@@ -30,16 +30,29 @@ pub async fn query_filter_all_bran_hangs(refno: RefnoEnum) -> anyhow::Result<Vec
 #[cached(result = true)]
 pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let pe_key = refno.to_pe_key();
-    let sql = format!(
-        r#"
+    let sql = if refno.is_latest() {
+        format!(
+            r#"
              return array::flatten( object::values( (select
-                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only {pe_key} where record::exists(id))?:{{}} ) );
+                  [id] as p0, <-pe_owner[? !in.deleted]<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only {pe_key} where record::exists(id))?:{{}} ) )[? !deleted];
             "#
-    );
+        )
+    } else {
+        format!(
+            r#"
+                let $dt=<datetime>fn::ses_date({pe_key}); 
+                let $r = array::flatten( object::values( (select
+                    [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                    from only fn::newest_pe({pe_key}) where record::exists(id))?:{{}} ) )[? (!deleted or <datetime>fn::ses_date(id)>$dt)];
+                select value fn::find_pe_by_datetime($self.id, $dt) from $r;
+            "#
+        )
+    };
+    let idx = if refno.is_latest() { 0 } else { 2 };
     // println!("query_deep_children_refnos sql is {}", &sql);
     return match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
+        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(idx) {
             Ok(data) => Ok(data),
             Err(e) => {
                 init_deserialize_error(
@@ -64,8 +77,8 @@ pub async fn query_deep_children_refnos_pbs(refno: Thing) -> anyhow::Result<Vec<
     let sql = format!(
         r#"
              return array::flatten( object::values( select
-                  [id] as p0, <-pbs_owner<-(? as p1)<-pbs_owner<-(? as p2)<-pbs_owner<-(? as p3)<-pbs_owner<-(? as p4)<-pbs_owner<-(? as p5)<-pbs_owner<-(? as p6)<-pbs_owner<-(? as p7)<-pbs_owner<-(? as p8)<-pbs_owner<-(? as p9)<-pbs_owner<-(? as p10)<-pbs_owner<-(? as p11)
-                   from only {pe_key} ) );
+                  [id] as p0, <-pbs_owner[? !in.deleted]<-(? as p1)<-pbs_owner<-(? as p2)<-pbs_owner<-(? as p3)<-pbs_owner<-(? as p4)<-pbs_owner<-(? as p5)<-pbs_owner<-(? as p6)<-pbs_owner<-(? as p7)<-pbs_owner<-(? as p8)<-pbs_owner<-(? as p9)<-pbs_owner<-(? as p10)<-pbs_owner<-(? as p11)
+                   from only {pe_key} ) )[? !deleted];
             "#
     );
     return match SUL_DB.query(&sql).await {

@@ -110,7 +110,7 @@ DEFINE FUNCTION fn::backup_data(
 ) {
     for $pe in $pes {
         //只操作最新的 refno
-        if type::is::array($pe) || !record::exists($pe) {
+        if type::is::array(record::id($pe)) || !record::exists($pe) {
             continue;
         };
         if $pe.sesno > $sesno {
@@ -126,7 +126,8 @@ DEFINE FUNCTION fn::backup_data(
             let $old_inst_relate_id = type::thing('inst_relate', $old_id);
             let $old_att_id = type::thing(string::concat($a.noun, '_H'), $old_id);
             if $is_del{
-                update $pe.id set op=2, old_pe=$old_pe_id, refno=$old_att_id, sesno=$sesno;
+                //软删除
+                update $pe.id set op=2, old_pe=$old_pe_id, sesno=$sesno, deleted=true;
             } else {
                 update $pe.id set op=1, old_pe=$old_pe_id, sesno = $sesno;
             };
@@ -142,11 +143,12 @@ DEFINE FUNCTION fn::backup_data(
                                 		'path': 'REFNO',
                                 		'value': $old_pe_id
                                 }]);
-
+            //删除属性
             if $is_del{
-                delete $pe.refno;
+               delete $pe.refno;
             };
 
+            //备份关联
             let $c = (select *, $old_inst_relate_id as id, $old_pe_id as in from $pe->inst_relate);
             if !array::is_empty($c) {
                 delete select id from $pe->inst_relate;
@@ -177,18 +179,19 @@ DEFINE FUNCTION fn::backup_owner_relate(
 ) {
     for $pe in $pes {
         //只操作最新的 refno
-        // if type::is::array($pe) || !record::exists($pe) {
-        //     continue;
+        // if type::is::array(record::id($pe)) || !record::exists($pe) {
+        //      continue;
         // };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
         let $old_pe_id = type::thing('pe', $old_id);
         //fix 层级不连续的问题，需要更新到之前的 in->owner 关系
-        let $relate_id = select value id from $pe->pe_owner;
-        -- return $relate_id;
+        //let $old_owners_id = select value od from $pe->pe_owner where type::is::array(record::id(out));
+        -- return $old_owners_id;
         //如果是旧节点，需要更新到旧的引用节点
-        if type::is::array($relate_id) {
-            update $relate_id set in=$old_pe_id;
-        };
+        //for $o in $old_owners_id {
+            //需要删除了，重新创建这个单独的id
+            //update $o set in=$old_pe_id;
+        //};
         //如果子节点的sesno >= 父节点的sesno 了，则需要使用 old_pe
         //反之则不需要动
         let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id,
@@ -199,7 +202,7 @@ DEFINE FUNCTION fn::backup_owner_relate(
             if $delete_old{
                 delete select id from $pe<-pe_owner;
             };
-            return insert relation into pe_owner $c;
+            insert relation into pe_owner $c;
         }
     }
 };
@@ -242,7 +245,7 @@ define function fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 remove function fn::find_pe_by_datetime;
 define function fn::find_pe_by_datetime($pe: record, $dt: datetime){
     let $his_pe = type::thing('his_pe', fn::newest_pe_id($pe));
-    let $a = select value id from only array::reverse(array::flatten([$his_pe.refnos?:[], $pe])) where <datetime> fn::ses_date(id) <= $dt limit 1;
+    let $a = select value id from only array::reverse(array::flatten([$his_pe.refnos?:[], $pe])) where <datetime>fn::ses_date(id) <= $dt limit 1;
     return $a;
 };
 
