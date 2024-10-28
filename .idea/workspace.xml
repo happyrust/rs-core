@@ -25,15 +25,19 @@
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
     </configurations>
   </component>
+  <component name="CargoProjectFeatures">
+    <cargoProject file="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$">
+        <feature name="default" />
+      </package>
+    </cargoProject>
+  </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update to bevy 0.15">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP 版本管理的查询处理">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/version.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/version.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -235,12 +239,13 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;vc&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;2.2&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/dongpengcheng/work/new-crates/aios-core/src/rs_surreal/mat_stastitcs&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -425,6 +430,7 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Batch.cargo-clif test_query_transform" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
       <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
@@ -956,6 +962,12 @@
       <workItem from="1728638272974" duration="1538000" />
       <workItem from="1728654582921" duration="597000" />
       <workItem from="1728667907287" duration="1000" />
+      <workItem from="1729412625343" duration="5000" />
+      <workItem from="1729429519778" duration="690000" />
+      <workItem from="1729771266695" duration="4553000" />
+      <workItem from="1729780105625" duration="396000" />
+      <workItem from="1729833727362" duration="10000" />
+      <workItem from="1729836401814" duration="659000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1300,7 +1312,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="398" />
+    <option name="localTasksCounter" value="399" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1339,7 +1351,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="origin/2.1" />
+                        <option value="2.2" />
                       </list>
                     </value>
                   </entry>
@@ -1354,7 +1366,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix backup history use pgno" />
     <MESSAGE value="fix ngmr calculation" />
     <MESSAGE value="fix increment update" />
     <MESSAGE value="fix joint transform calculation" />
@@ -1379,7 +1390,8 @@
     <MESSAGE value="wip 增量更新的版本管理" />
     <MESSAGE value="wip 数据状态管理" />
     <MESSAGE value="update to bevy 0.15" />
-    <option name="LAST_COMMIT_MESSAGE" value="update to bevy 0.15" />
+    <MESSAGE value="WIP 版本管理的查询处理" />
+    <option name="LAST_COMMIT_MESSAGE" value="WIP 版本管理的查询处理" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
