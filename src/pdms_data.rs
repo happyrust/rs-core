@@ -71,7 +71,7 @@ pub struct DatasetParamStr {
 //GMSE GMSS
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct GmParam {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     /// SCYL  LSNO  SCTO  SDSH  SBOX
     pub gm_type: String,  //SCYL  LSNO  SCTO  SDSH  SBOX  SANN  SPRO
 
@@ -106,7 +106,7 @@ pub struct GmParam {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AxisParam {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub type_name: String,
     pub number: i32,
     pub x: String,
@@ -167,7 +167,7 @@ impl DataOperation {
 
 #[derive(Serialize, Deserialize)]
 pub struct IncrementData {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub attr_data_map: AttrMap,
     pub state: DataOperation,
     pub version: u32,

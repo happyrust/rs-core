@@ -2,7 +2,7 @@ use bevy_transform::components::Transform;
 use dashmap::DashMap;
 use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
-use crate::{RefU64, SUL_DB};
+use crate::{RefU64, RefnoEnum, SUL_DB};
 use serde_with::serde_as;
 use parry3d::bounding_volume::Aabb;
 use crate::basic::aabb::ParryAabb;
@@ -61,7 +61,8 @@ pub async fn query_arrive_leave_points(refnos: impl IntoIterator<Item = &RefU64>
     Ok(map)
 }
 
-pub async fn query_arrive_leave_points_by_cata_hash(refnos: impl IntoIterator<Item = &RefU64>,) -> anyhow::Result<DashMap<RefU64, [CateAxisParam; 2]>> {
+pub async fn query_arrive_leave_points_by_cata_hash(refnos: impl IntoIterator<Item = &RefnoEnum>,) 
+-> anyhow::Result<DashMap<RefnoEnum, [CateAxisParam; 2]>> {
 
     let pes: String = refnos.into_iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
     if pes.is_empty() {
@@ -80,7 +81,7 @@ pub async fn query_arrive_leave_points_by_cata_hash(refnos: impl IntoIterator<It
         .await?;
 
     // dbg!(&response);
-    let result: Vec<(RefU64, Option<CateAxisParam>, Option<CateAxisParam>)> = response.take(0)?;
+    let result: Vec<(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>)> = response.take(0)?;
     // dbg!(&r);
     let mut map = DashMap::new();
     for (refno,  a_pt, l_pt) in result {

@@ -7,7 +7,7 @@ use crate::pdms_data::{AxisParam, GmParam, ScomInfo};
 use crate::pdms_types::*;
 
 ///查询 Axis 参数
-pub async fn query_axis_params(refno: RefU64) -> anyhow::Result<BTreeMap<i32, AxisParam>> {
+pub async fn query_axis_params(refno: RefnoEnum) -> anyhow::Result<BTreeMap<i32, AxisParam>> {
     // 查找ptse
     let mut map = BTreeMap::new();
     // dbg!(refno);
@@ -25,39 +25,6 @@ pub async fn query_axis_params(refno: RefU64) -> anyhow::Result<BTreeMap<i32, Ax
         }
     }
     Ok(map)
-}
-
-///查询gmse的参数
-pub async fn query_gm_params(
-    attr_map: &AttrMap,
-) -> anyhow::Result<Vec<GmParam>> {
-    let mut gms = vec![];
-    let refno = attr_map.get_refno().unwrap_or_default();
-    let mut children = vec![];
-    for c in crate::get_children_named_attmaps(refno).await? {
-        if TOTAL_CATA_GEO_NOUN_NAMES.contains(&c.get_type_str()) {
-            children.push(c.clone());
-        } else {
-            for cc in crate::get_children_named_attmaps(c.get_refno_or_default()).await? {
-                if TOTAL_CATA_GEO_NOUN_NAMES.contains(&cc.get_type_str()) {
-                    children.push(cc.clone());
-                }
-            }
-        }
-    }
-    for geo_am in children {
-        if !geo_am.is_visible_by_level(None).unwrap_or(true) {
-            continue;
-        }
-        // dbg!(&geo_am);
-        let is_spro = geo_am.get_type_str() == "SPRO"; //todo add other types
-        gms.push(
-            query_gm_param(&geo_am, is_spro)
-                .await
-                .unwrap_or_default(),
-        );
-    }
-    Ok(gms)
 }
 
 ///对元件库的SCOM Element进行求值计算

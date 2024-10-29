@@ -10,15 +10,15 @@ use crate::tool::db_tool::db1_dehash;
 use dashmap::DashMap;
 use glam::{Vec2, Vec3};
 use once_cell::sync::Lazy;
-use crate::{CataContext, DDANGLE_STR, DDHEIGHT_STR, DDRADIUS_STR, eval_str_to_f32_or_default};
+use crate::{eval_str_to_f32_or_default, CataContext, RefnoEnum, DDANGLE_STR, DDHEIGHT_STR, DDRADIUS_STR};
 use crate::expression::resolve_helper::{parse_str_axis_to_vec3, resolve_axis, resolve_to_cate_geo_params};
 
-pub static SCOM_INFO_MAP: Lazy<DashMap<RefU64, ScomInfo>> = Lazy::new(DashMap::new);
+pub static SCOM_INFO_MAP: Lazy<DashMap<RefnoEnum, ScomInfo>> = Lazy::new(DashMap::new);
 
 
 /// 求解axis的数值
 pub fn resolve_axis_params(
-    refno: RefU64,
+    refno: RefnoEnum,
     scom: &ScomInfo,
     context: &CataContext,
 ) -> BTreeMap<i32, CateAxisParam> {
@@ -32,7 +32,7 @@ pub fn resolve_axis_params(
 
 ///求解几何体，允许出错的情况，出错的需要跳过
 pub fn resolve_gms(
-    des_refno: RefU64,
+    des_refno: RefnoEnum,
     gmse_raw_paras: &[GmParam],
     jusl_param: &Option<PlinParam>,
     na_plin_param: &Option<PlinParam>,
@@ -68,7 +68,7 @@ pub fn resolve_gms(
 
 /// 解析gmes的参数
 pub fn resolve_paragon_gm_params(
-    des_refno: RefU64,
+    des_refno: RefnoEnum,
     gm_param: &GmParam,
     jusl_param: &Option<PlinParam>,
     na_plin_param: &Option<PlinParam>,
@@ -372,14 +372,12 @@ pub fn resolve_axis_param(
     let Ok((m_dir, ref_dir, pos)) = resolve_axis(axis_param, scom, context) else {
         return Default::default();
     };
-    let dir = m_dir.is_normalized().then(|| m_dir);
+    let mut dir = m_dir.is_normalized().then(|| m_dir);
     let ref_dir = ref_dir.is_normalized().then(|| ref_dir);
     // dbg!(&axis_param);
     let result = match axis_param.type_name.as_str() {
         "PTAX" => {
             let d = eval_str_to_f32_or_default(&axis_param.distance, &context,  "DIST");
-            // let (dir, ref_dir, pos) =
-            //     resolve_axis(axis_param, scom, context).unwrap_or((Vec3::Y, Vec3::Y, Vec3::ZERO));
             CateAxisParam {
                 refno: axis_param.refno,
                 number,
@@ -397,6 +395,16 @@ pub fn resolve_axis_param(
             let x = eval_str_to_f32_or_default(&axis_param.x, &context,  "DIST");
             let y = eval_str_to_f32_or_default(&axis_param.y, &context,  "DIST");
             let z = eval_str_to_f32_or_default(&axis_param.z, &context,  "DIST");
+            if dir.is_none(){
+                // dbg!(&axis_param);
+                let dirs = axis_param.direction.split(" ").collect::<Vec<_>>();
+                if !dirs.is_empty() {
+                    dir = parse_str_axis_to_vec3(&dirs[0], &context).ok();
+                    // dbg!(dir);
+                }
+                // dbg!(dirs);
+                // dbg!(dirs);
+            }
             CateAxisParam {
                 refno: axis_param.refno,
                 number,

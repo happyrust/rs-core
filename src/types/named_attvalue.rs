@@ -7,13 +7,15 @@ use glam::{bool, f32, f64, i32, Vec3};
 use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 #[cfg(feature = "sea-orm")]
 use sea_query::Value as SeaValue;
+use serde::Deserializer;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use serde::Deserializer;
 
 ///新的属性数据结构
 #[derive(
     Serialize,
+    // Eq, 
+    PartialEq,
     // Deserialize,
     Clone,
     Debug,
@@ -39,18 +41,22 @@ pub enum NamedAttrValue {
     ElementType(String),
     WordType(String),
     RefU64Type(RefU64),
-    RefU64Array(Vec<RefU64>),
+    RefU64Array(Vec<RefnoEnum>),
     LongType(i64),
+    RefnoEnumType(RefnoEnum),
 }
 
-use serde::de::{self, Visitor, SeqAccess, MapAccess, EnumAccess};
+use serde::de::{self, EnumAccess, MapAccess, SeqAccess, Visitor};
 use std::fmt;
 use std::vec::Vec;
+use surrealdb::sql::Thing;
+
+use super::RefnoEnum;
 
 impl<'de> Deserialize<'de> for NamedAttrValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: Deserializer<'de>
+        D: Deserializer<'de>,
     {
         struct NamedAttrValueVisitor;
 
@@ -123,45 +129,45 @@ impl<'de> Deserialize<'de> for NamedAttrValue {
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
+                where
+                    A: SeqAccess<'de>,
             {
                 let mut vec = Vec::new();
                 let mut first_elem_type = None;
                 //在这里能不能直接判断类型
-                while let Some(elem) = seq.next_element::<serde_content::Value>()? {
+                while let Some(elem) = seq.next_element::<serde_json::Value>()? {
                     if first_elem_type.is_none() {
                         first_elem_type = Some(match elem {
-                            serde_content::Value::Bool(_) => "bool",
-                            // serde_json::Value::Number(ref n) if n.is_i64() => "i64",
-                            // serde_json::Value::Number(ref n) if n.is_u64() => "u64",
+                            serde_json::Value::Bool(_) => "bool",
+                            serde_json::Value::Number(ref n) if n.is_f64() => "f64",
+                            serde_json::Value::Number(ref n) if n.is_u64() || n.is_i64() => "i32",
                             // serde_json::Value::Number(_) => "f64",
-                            // serde_json::Value::String(_) => "String",
-                            // serde_json::Value::Array(_) => "Array",
-                            // serde_json::Value::Object(_) => "Object",
-                            _ => "Object",
+                            serde_json::Value::String(_) => "String",
+                            serde_json::Value::Array(_) => "Array",
+                            serde_json::Value::Object(_) => "Object",
+                            _ => "InvalidType",
                         });
                     }
                     vec.push(elem);
                 }
 
                 match first_elem_type {
-                    // Some("f64") => Ok(NamedAttrValue::F32VecType(
-                    //     vec.into_iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect()
-                    // )),
-                    // Some("String") => Ok(NamedAttrValue::StringArrayType(
-                    //     vec.into_iter().filter_map(|v| v.as_str().map(String::from)).collect()
-                    // )),
-                    // Some("bool") => Ok(NamedAttrValue::BoolArrayType(
-                    //     vec.into_iter().filter_map(|v| v.as_bool()).collect()
-                    // )),
-                    // Some("i64") => Ok(NamedAttrValue::IntArrayType(
-                    //     vec.into_iter().filter_map(|v| v.as_i64().map(|i| i as i32)).collect()
-                    // )),
-                    // // RefU64Array 可能需要特殊处理，这里仅作为示例
-                    // Some("Object") => Ok(NamedAttrValue::RefU64Array(
-                    //     vec.into_iter().filter_map(|v| RefU64::deserialize(v).ok()).collect()
-                    // )),
+                    Some("f64") => Ok(NamedAttrValue::F32VecType(
+                        vec.into_iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect()
+                    )),
+                    Some("String") => Ok(NamedAttrValue::StringArrayType(
+                        vec.into_iter().filter_map(|v| v.as_str().map(String::from)).collect()
+                    )),
+                    Some("bool") => Ok(NamedAttrValue::BoolArrayType(
+                        vec.into_iter().filter_map(|v| v.as_bool()).collect()
+                    )),
+                    Some("i32") => Ok(NamedAttrValue::IntArrayType(
+                        vec.into_iter().filter_map(|v| v.as_i64().map(|i| i as i32)).collect()
+                    )),
+                    // RefU64Array 可能需要特殊处理，这里仅作为示例
+                    Some("Object") => Ok(NamedAttrValue::RefU64Array(
+                        vec.into_iter().filter_map(|v| RefnoEnum::deserialize(v).ok()).collect()
+                    )),
                     _ => Err(de::Error::custom("Unsupported array type")),
                 }
             }
@@ -170,7 +176,6 @@ impl<'de> Deserialize<'de> for NamedAttrValue {
             where
                 M: MapAccess<'de>,
             {
-
                 let value = RefU64::deserialize(de::value::MapAccessDeserializer::new(map))?;
                 Ok(NamedAttrValue::RefU64Type(value))
             }
@@ -206,6 +211,68 @@ impl Into<Value> for NamedAttrValue {
     }
 }
 
+impl From<(&str, surrealdb::sql::Value)> for NamedAttrValue {
+    fn from(tuple: (&str, surrealdb::sql::Value)) -> Self {
+        let (tn, value) = tuple;
+        match value {
+            surrealdb::sql::Value::Number(val) => match tn {
+                "REAL" => NamedAttrValue::F32Type(val.as_float() as _),
+                _ => NamedAttrValue::IntegerType(val.as_int() as _),
+            },
+            surrealdb::sql::Value::Bool(val) => NamedAttrValue::BoolType(val),
+            surrealdb::sql::Value::Strand(val) => NamedAttrValue::StringType(val.as_string()),
+            surrealdb::sql::Value::Array(val) => match tn {
+                "REAL" | "DIR" | "POS" => NamedAttrValue::F32VecType(
+                    val.into_iter()
+                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_float() as f32)
+                        .collect(),
+                ),
+                "INT" => NamedAttrValue::IntArrayType(
+                    val.into_iter()
+                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_int() as _)
+                        .collect(),
+                ),
+                "BOOL" => NamedAttrValue::BoolArrayType(
+                    val.into_iter()
+                        .map(|x| bool::try_from(x).unwrap())
+                        .collect(),
+                ),
+                "TEXT" => NamedAttrValue::StringArrayType(
+                    val.into_iter()
+                        .map(|x| String::try_from(x).unwrap())
+                        .collect(),
+                ),
+
+                "REF" => NamedAttrValue::RefU64Array(
+                    val.into_iter()
+                        .map(|x| {
+                            RefnoEnum::from(x.record().unwrap())
+                        })
+                        .collect::<Vec<_>>()
+                ),
+
+                _ => NamedAttrValue::InvalidType,
+            },
+            surrealdb::sql::Value::Thing(val) => {
+                if let surrealdb::sql::Id::Array(_) = &val.id{
+                    NamedAttrValue::RefnoEnumType(RefnoEnum::from(val))
+                }else{
+                    NamedAttrValue::RefU64Type(RefU64::from(val))
+                }
+            },
+            surrealdb::sql::Value::Object(val) => {
+                if let Some((key, v)) = val.into_iter().next(){
+                    (tn, v).into()
+                }else{
+                    NamedAttrValue::InvalidType
+                }
+
+            }
+            _ => NamedAttrValue::InvalidType,
+        }
+    }
+}
+
 impl From<&AttrVal> for NamedAttrValue {
     fn from(v: &AttrVal) -> Self {
         use crate::attval::AttrVal::*;
@@ -230,7 +297,7 @@ impl From<&AttrVal> for NamedAttrValue {
             WordType(d) => Self::StringType(d),
             RefU64Type(d) => Self::RefU64Type(d),
             StringHashType(d) => Self::IntegerType(d as i32),
-            RefU64Array(d) => Self::RefU64Array(d.0),
+            RefU64Array(d) => Self::RefU64Array(d.into_iter().map(|x| x.into()).collect()),
         }
     }
 }
@@ -382,12 +449,10 @@ impl Into<serde_json::Value> for NamedAttrValue {
     fn into(self) -> serde_json::Value {
         match self {
             NamedAttrValue::IntegerType(d) => serde_json::Value::Number(d.into()),
-            NamedAttrValue::F32Type(d) => {
-                serde_json::Value::Number(
-                    serde_json::Number::from_f64(d as _)
-                        .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
-                )
-            }
+            NamedAttrValue::F32Type(d) => serde_json::Value::Number(
+                serde_json::Number::from_f64(d as _)
+                    .unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
+            ),
             NamedAttrValue::BoolType(b) => serde_json::Value::Bool(b),
             NamedAttrValue::StringType(s)
             | NamedAttrValue::WordType(s)
@@ -412,9 +477,7 @@ impl Into<serde_json::Value> for NamedAttrValue {
             NamedAttrValue::IntArrayType(d) => {
                 serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
             }
-            NamedAttrValue::RefU64Type(d) => {
-                d.to_string().into()
-            }
+            NamedAttrValue::RefU64Type(d) => d.to_string().into(),
             _ => serde_json::Value::Null,
         }
     }

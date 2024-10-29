@@ -10,7 +10,7 @@ use serde_with::serde_as;
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct InstPointMap {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub att_type: String,
     #[serde(default)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
@@ -19,7 +19,7 @@ pub struct InstPointMap {
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct InstPointVec {
-    pub id: RefU64,
+    pub id: RefnoEnum,
     pub att_type: String,
     #[serde(default)]
     pub ptset_map: Vec<CateAxisParam>,

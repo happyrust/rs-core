@@ -4,8 +4,8 @@ use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
 use crate::{
-    get_children_ele_nodes, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe,
-    get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB,
+    get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda,
+    get_next_prev, get_pe, get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB,
 };
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
@@ -106,18 +106,18 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_pdms_element(&self, refno: RefU64) -> anyhow::Result<Option<PdmsElement>> {
-        let Some(pe) = get_pe(refno).await? else {
+        let Some(pe) = get_pe(refno.into()).await? else {
             return Ok(None);
         };
         Ok(Some(PdmsElement::from(pe)))
     }
 
     async fn get_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
-        get_named_attmap_with_uda(refno, false).await
+        get_named_attmap_with_uda(refno.into(), false).await
     }
 
     async fn get_children(&self, refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
-        get_children_ele_nodes(refno).await
+        get_children_ele_nodes(refno.into()).await
     }
 
     async fn get_ipara_from_bran(&self, refno: RefU64) -> anyhow::Result<Vec<f32>> {
@@ -145,8 +145,8 @@ impl PdmsDataInterface for AiosDBMgr {
         };
         let pe = pe.unwrap();
         Ok(Some(PdmsElement {
-            refno: pe.refno,
-            owner: pe.owner,
+            refno: pe.refno(),
+            owner: pe.owner.refno(),
             name: pe.name,
             noun: pe.noun,
             version: 0,
@@ -199,9 +199,12 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_name(&self, refno: RefU64) -> anyhow::Result<String> {
-        let sql = format!("
-        return fn::default_name({});
-        ", refno.to_pe_key());
+        let sql = format!(
+            "
+            return fn::default_name({});
+        ",
+            refno.to_pe_key()
+        );
         let mut response = SUL_DB.query(sql).await?;
         let o: Option<String> = response.take(0)?;
         Ok(o.unwrap_or("".to_string()))
@@ -220,11 +223,11 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_prev(&self, refno: RefU64) -> anyhow::Result<RefU64> {
-        get_next_prev(refno, false).await
+        get_next_prev(refno.into(), false).await.map(|x| x.into())
     }
 
     async fn get_next(&self, refno: RefU64) -> anyhow::Result<RefU64> {
-        get_next_prev(refno, true).await
+        get_next_prev(refno.into(), true).await.map(|x| x.into())
     }
 
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {
@@ -241,8 +244,8 @@ impl PdmsDataInterface for AiosDBMgr {
 
 impl AiosDBMgr {
     ///获得默认的连接字符串
-    pub fn default_conn_str(&self) -> String {
-        let d = &self.db_option;
+    pub fn default_mysql_conn_str() -> String {
+        let d = get_db_option();
         let user = d.user.as_str();
         let pwd = urlencoding::encode(&d.password);
         let ip = d.ip.as_str();
@@ -260,8 +263,8 @@ impl AiosDBMgr {
 
     #[cfg(feature = "sql")]
     /// 获取项目配置信息pool
-    pub async fn get_global_pool(&self) -> anyhow::Result<Pool<MySql>> {
-        let connection_str = self.default_conn_str();
+    pub async fn get_global_pool() -> anyhow::Result<Pool<MySql>> {
+        let connection_str = Self::default_mysql_conn_str();
         let url = &format!("{connection_str}/{}", GLOBAL_DATABASE);
         PoolOptions::new()
             .max_connections(500)
@@ -273,9 +276,10 @@ impl AiosDBMgr {
 
     #[cfg(feature = "sql")]
     /// 获取项目pool
-    pub async fn get_project_pool(&self) -> anyhow::Result<Pool<MySql>> {
-        let connection_str = self.default_conn_str();
-        let url = &format!("{connection_str}/{}", self.db_option.project_name);
+    pub async fn get_project_pool() -> anyhow::Result<Pool<MySql>> {
+        let connection_str = Self::default_mysql_conn_str();
+        let db_option = get_db_option();
+        let url = &format!("{connection_str}/{}", db_option.project_name);
         PoolOptions::new()
             .max_connections(500)
             .acquire_timeout(Duration::from_secs(10 * 60))

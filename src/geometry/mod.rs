@@ -20,7 +20,7 @@ use bevy_render::render_asset::RenderAssetUsages;
 use std::io::Write;
 use dashmap::DashSet;
 use crate::prim_geo::basic::{BOXI_GEO_HASH, TUBI_GEO_HASH};
-use crate::{gen_bytes_hash, RefU64};
+use crate::{gen_bytes_hash, RefU64, RefnoEnum};
 use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::pdms_types::PdmsGenericType;
@@ -75,7 +75,7 @@ pub enum GeoBasicType {
 )]
 #[serde_as]
 pub struct EleGeosInfo {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub sesno: i32,
     #[serde(default)]
     pub cata_hash: Option<String>,
@@ -83,7 +83,7 @@ pub struct EleGeosInfo {
     #[serde(default)]
     #[serde(skip)]
     #[with(rkyv::with::Skip)]
-    pub cata_refno: Option<RefU64>,
+    pub cata_refno: Option<RefnoEnum>,
     //是否可见
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
@@ -139,15 +139,6 @@ impl EleGeosInfo {
         self.id_str()
     }
 
-    ///获取几何体数据的u64 key
-    #[inline]
-    pub fn get_inst_key_u64(&self) -> u64 {
-        if let Some(c) = &self.cata_hash {
-            return c.parse::<u64>().unwrap_or(*self.refno);
-        }
-        *self.refno
-    }
-
     #[inline]
     pub fn get_ele_world_transform(&self) -> Transform {
         self.world_transform
@@ -177,18 +168,18 @@ impl EleGeosInfo {
 )]
 pub struct ShapeInstancesData {
     /// 保存instance信息数据
-    pub inst_info_map: HashMap<RefU64, EleGeosInfo>,
+    pub inst_info_map: HashMap<RefnoEnum, EleGeosInfo>,
     ///保存所有用到的的tubi数据
-    pub inst_tubi_map: HashMap<RefU64, EleGeosInfo>,
+    pub inst_tubi_map: HashMap<RefnoEnum, EleGeosInfo>,
     ///保存instance几何数据
     pub inst_geos_map: HashMap<String, EleInstGeosData>,
 
     ///保存所有用到的的neg连接关系
     #[serde(skip)]
-    pub neg_relate_map: HashMap<RefU64, Vec<RefU64>>,
+    pub neg_relate_map: HashMap<RefnoEnum, Vec<RefnoEnum>>,
 
     ///并保存所有ngmr的连接关系
-    pub ngmr_neg_relate_map: HashMap<RefU64, Vec<(RefU64, RefU64)>>,
+    pub ngmr_neg_relate_map: HashMap<RefnoEnum, Vec<(RefnoEnum, RefnoEnum)>>,
 }
 
 /// shape instances 的管理方法
@@ -256,8 +247,8 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn get_show_refnos(&self) -> HashSet<RefU64> {
-        let mut ready_refnos: HashSet<RefU64> = self.inst_info_map.keys().cloned().collect();
+    pub fn get_show_refnos(&self) -> HashSet<RefnoEnum> {
+        let mut ready_refnos: HashSet<RefnoEnum> = self.inst_info_map.keys().cloned().collect();
         ready_refnos.extend(self.inst_tubi_map.keys().cloned());
         ready_refnos
     }
@@ -325,7 +316,7 @@ impl ShapeInstancesData {
     #[inline]
     pub fn get_inst_geos_data_mut_by_refno(
         &mut self,
-        refno: RefU64,
+        refno: RefnoEnum,
     ) -> Option<&mut EleInstGeosData> {
         let info = self.get_inst_info(refno)?;
         self.inst_geos_map.get_mut(&info.get_inst_key())
@@ -338,28 +329,28 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn get_inst_tubi(&self, refno: RefU64) -> Option<&EleGeosInfo> {
+    pub fn get_inst_tubi(&self, refno: RefnoEnum) -> Option<&EleGeosInfo> {
         self.inst_tubi_map.get(&refno)
     }
 
     #[inline]
-    pub fn contains(&self, refno: &RefU64) -> bool {
+    pub fn contains(&self, refno: &RefnoEnum) -> bool {
         self.inst_info_map.contains_key(refno) || self.inst_tubi_map.contains_key(refno)
     }
 
     #[inline]
-    pub fn get_inst_info(&self, refno: RefU64) -> Option<&EleGeosInfo> {
+    pub fn get_inst_info(&self, refno: RefnoEnum) -> Option<&EleGeosInfo> {
         self.inst_info_map.get(&refno)
     }
 
     #[inline]
-    pub fn insert_info(&mut self, refno: RefU64, info: EleGeosInfo) {
+    pub fn insert_info(&mut self, refno: RefnoEnum, info: EleGeosInfo) {
         self.inst_info_map.insert(refno, info);
     }
 
     ///插入 ngmr 数据
     #[inline]
-    pub fn insert_ngmr(&mut self, ele_refno: RefU64, owners: Vec<RefU64>, ngmr_geom_refno: RefU64) {
+    pub fn insert_ngmr(&mut self, ele_refno: RefnoEnum, owners: Vec<RefnoEnum>, ngmr_geom_refno: RefnoEnum) {
         for owner in owners {
             let mut d = self.ngmr_neg_relate_map.entry(owner).or_insert_with(Vec::new);
             if !d.contains(&(ele_refno, ngmr_geom_refno)) {
@@ -371,7 +362,7 @@ impl ShapeInstancesData {
 
     ///插入neg数据
     #[inline]
-    pub fn insert_negs(&mut self, refno: RefU64, negs: &[RefU64]) {
+    pub fn insert_negs(&mut self, refno: RefnoEnum, negs: &[RefnoEnum]) {
         self.neg_relate_map.entry(refno).or_insert_with(Vec::new).extend(negs);
     }
 
@@ -389,37 +380,37 @@ impl ShapeInstancesData {
     }
 
     #[inline]
-    pub fn insert_tubi(&mut self, refno: RefU64, info: EleGeosInfo) {
+    pub fn insert_tubi(&mut self, refno: RefnoEnum, info: EleGeosInfo) {
         self.inst_tubi_map.insert(refno, info);
     }
 
-    pub fn get_info(&self, refno: &RefU64) -> Option<&EleGeosInfo> {
+    pub fn get_info(&self, refno: &RefnoEnum) -> Option<&EleGeosInfo> {
         self.inst_info_map.get(refno)
     }
 
     //serialize_to_bytes
-    pub fn serialize_to_bytes(&self) -> Vec<u8> {
-        let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
-        serialized
-    }
+    // pub fn serialize_to_bytes(&self) -> Vec<u8> {
+    //     let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
+    //     serialized
+    // }
 
-    pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
-        let mut file = File::create(file_path).unwrap();
-        let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
-        file.write_all(serialized.as_slice()).unwrap();
-        true
-    }
+    // pub fn serialize_to_specify_file(&self, file_path: &str) -> bool {
+    //     let mut file = File::create(file_path).unwrap();
+    //     let serialized = rkyv::to_bytes::<_, 512>(self).unwrap().to_vec();
+    //     file.write_all(serialized.as_slice()).unwrap();
+    //     true
+    // }
 
-    pub fn deserialize_from_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
-        let mut file = File::open(file_path)?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        use rkyv::Deserialize;
-        use std::io::Read;
-        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
-        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
-        Ok(r)
-    }
+    // pub fn deserialize_from_bin_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
+    //     let mut file = File::open(file_path)?;
+    //     let mut buf: Vec<u8> = Vec::new();
+    //     file.read_to_end(&mut buf).ok();
+    //     use rkyv::Deserialize;
+    //     use std::io::Read;
+    //     let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
+    //     let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+    //     Ok(r)
+    // }
 
     ///保存compound的edge关系到arango图数据库
     pub async fn save_compound_edges_to_arango() {}
@@ -522,7 +513,7 @@ impl PlantGeoData {
 )]
 pub struct EleInstGeosData {
     pub inst_key: String,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub insts: Vec<EleInstGeo>,
 
     pub aabb: Option<Aabb>,
@@ -590,7 +581,7 @@ pub struct EleInstGeo {
     /// 几何hash参数
     pub geo_hash: u64,
     ///对应几何体参考号
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     ///几何参数数据
     #[serde(default)]
     pub geo_param: PdmsGeoParam,
@@ -606,7 +597,7 @@ pub struct EleInstGeo {
 
     //元件库里的负实体
     #[serde(default)]
-    pub cata_neg_refnos: Vec<RefU64>,
+    pub cata_neg_refnos: Vec<RefnoEnum>,
 }
 
 impl EleInstGeo {

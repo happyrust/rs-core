@@ -25,7 +25,7 @@ pub enum ShapeErr {
 
 #[derive(Debug, Clone)]
 pub struct CateBrepShape {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub brep_shape: Box<dyn BrepShapeTrait>,
     pub transform: Transform,
     pub visible: bool,
@@ -267,10 +267,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         CateGeoParam::Snout(d) | CateGeoParam::Cone(d) => {
             let pa = d.pa.as_ref()?;
             let mut x_dir = Vec3::Y;
-            let mut x_pt = Vec3::ZERO;
             let mut pts = Vec::default();
             pts.push(pa.number);
-            let mut is_cone = d.btm_diameter == 0.0;
             if let Some(pb) = d.pb.as_ref() {
                 x_dir = pb
                     .dir
@@ -344,10 +342,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .dir
                 .map(|d| d.normalize_or_zero())
                 .unwrap_or(axis.dir_flag * Vec3::Y);
-            // .is_normalized()
-            // .then(|| axis.dir)
-            // .unwrap_or(axis.dir_flag * Vec3::Y);
-
             let translation = (dir * d.dist_to_btm + axis.pt);
             let mut phei = d.height as f32;
             //如果height是负数，相当于要额外旋转一下

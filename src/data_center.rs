@@ -12,8 +12,8 @@ use crate::schema::generate_basic_versioned_schema;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProject {
-    #[serde(rename = "packageCode")]
-    pub package_code: String,
+    // #[serde(rename = "packageCode")]
+    // pub package_code: String,
     #[serde(rename = "projectCode")]
     pub project_code: String,
     pub owner: String,
@@ -28,8 +28,8 @@ impl DataCenterProject {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProjectWithRelations {
-    #[serde(rename = "packageCode")]
-    pub package_code: String,
+    // #[serde(rename = "packageCode")]
+    // pub package_code: String,
     #[serde(rename = "projectCode")]
     pub project_code: String,
     pub owner: String,
@@ -47,8 +47,8 @@ impl DataCenterProjectWithRelations {
 pub struct DataCenterInstance {
     #[serde(rename = "objectModelCode")]
     pub object_model_code: String,
-    #[serde(rename = "projectCode")]
-    pub project_code: String,
+    // #[serde(rename = "projectCode")]
+    // pub project_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
     #[serde(skip_serializing_if = "Option::is_none")]

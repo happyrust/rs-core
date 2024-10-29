@@ -1,3 +1,4 @@
+use crate::pdms_types::{EleOperation, PdmsElement};
 use crate::RefU64;
 use bevy_ecs::system::Resource;
 use serde::{Deserialize, Serialize};
@@ -5,13 +6,13 @@ use serde_json::{json, to_string_pretty};
 use serde_with::DisplayFromStr;
 use std::fmt::format;
 use surrealdb::sql::Thing;
-use crate::pdms_types::PdmsElement;
+use super::RefnoEnum;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default, PartialEq)]
 pub struct SPdmsElement {
     //指向具体的类型
-    pub refno: RefU64,
-    pub owner: RefU64,
+    pub refno: RefnoEnum,
+    pub owner: RefnoEnum,
     pub name: String,
     pub noun: String,
     pub dbnum: i32,
@@ -24,17 +25,53 @@ pub struct SPdmsElement {
     pub cata_hash: String,
     ///锁定模型
     pub lock: bool,
+    //todo 可以改为使用 op 来表达是否删除
     pub deleted: bool,
+    #[serde(default)]
+    pub op: EleOperation,
 }
 
 impl SPdmsElement {
 
     #[inline]
-    pub fn history_id(&self) -> String {
-        format!("pe:{}_{}", self.refno, self.sesno)
+    pub fn refno(&self) -> RefU64 {
+        self.refno.refno()
     }
 
-    pub fn gen_sur_json(&self, id: Option<String>) -> String {
+    #[inline]
+    pub fn history_id(&self) -> String {
+        format!("pe:{}_{}", self.refno(), self.sesno)
+    }
+
+    pub fn gen_sur_json(&self, children_updated: Option<bool>, id: Option<String>) -> String {
+        let mut json_string = to_string_pretty(&json!({
+            "name": self.name,
+            "noun": self.noun,
+            "dbnum": self.dbnum,
+            "sesno": self.sesno,
+            "status_tag": self.status_tag,
+            "cata_hash": self.cata_hash,
+            "lock": self.lock,
+            "deleted": self.deleted,
+            "children_updated": children_updated,
+        }))
+        .unwrap();
+        json_string.remove(json_string.len() - 1);
+        json_string.push_str(",");
+        json_string.push_str(&format!(
+            r#""refno": {},"#,
+            self.refno().to_table_key(&self.noun)
+        ));
+        if let Some(id) = id {
+            json_string.push_str(&format!(r#""id": {},"#, id));
+        }
+        json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
+        json_string.push_str("}");
+        json_string
+    }
+
+    //owner 的 sesno 也需要指定，不然不知道指向的是哪一个
+    pub fn gen_sur_json_with_sesno(&self, sesno: i32, owner_sesno: i32) -> String {
         let mut json_string = to_string_pretty(&json!({
             "name": self.name,
             "noun": self.noun,
@@ -49,11 +86,18 @@ impl SPdmsElement {
         json_string.remove(json_string.len() - 1);
         json_string.push_str(",");
         json_string.push_str(&format!(
-            r#""refno": {},"#,
-            self.refno.to_table_key(&self.noun)
+            r#""refno": {}_H:['{}',{}], "#,
+            &self.noun, self.refno(), sesno
         ));
-        json_string.push_str(&format!(r#""id": {},"#, id.unwrap_or(self.refno.to_pe_key())));
-        json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
+        json_string.push_str(&format!(r#""id": ['{}',{}],"#, self.refno(), sesno));
+        if owner_sesno != 0 {
+            json_string.push_str(&format!(
+                r#""owner": pe:['{}',{}]"#,
+                self.owner.refno(), owner_sesno
+            ));
+        } else {
+            json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
+        }
         json_string.push_str("}");
         json_string
     }
@@ -64,7 +108,7 @@ impl SPdmsElement {
     }
 
     #[inline]
-    pub fn get_owner(&self) -> RefU64 {
+    pub fn get_owner(&self) -> RefnoEnum {
         return self.owner;
     }
 }

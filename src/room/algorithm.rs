@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use crate::pdms_types::RoomNodes;
-use crate::{RefU64, SUL_DB};
+use crate::{RefU64, RefnoEnum, SUL_DB};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
@@ -10,10 +10,10 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::str::FromStr;
 use tokio::sync::RwLock;
 
-#[derive(Serialize, Deserialize, Default, Clone, Hash,Eq,PartialEq)]
+#[derive(Serialize, Deserialize, Default,Debug, Clone, Hash,Eq,PartialEq)]
 pub struct RoomInfo {
     pub name: String,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 impl Ord for RoomInfo {
@@ -35,10 +35,10 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
     let mut map = HashMap::new();
     let mut response = SUL_DB
         .query(r#"
-           let $f = select value (REFNO<-pe_owner.in<-pe_owner.in<-pe_owner[where in.refno.NAME != NONE && in.noun == 'FRMW'].in.refno.id )
-            from (select REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH'));
+           let $f = array::flatten(select value array::flatten(array::flatten(<-pe_owner.in<-pe_owner.in<-pe_owner[where in.noun == 'FRMW'].in.refno.id) )
+            from (select value REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH')));
 
-            return select id as refno ,NAME as name from array::flatten($f);
+            return select id as refno ,NAME as name from array::flatten($f) where NAME != NONE;
         "#)
         .await?;
     let results: Vec<RoomInfo> = response.take(1)?;
@@ -66,7 +66,7 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
 
 /// 查询多个refno所属的房间号，bran和equi也适用
 pub async fn query_room_name_from_refnos(
-    owner: Vec<RefU64>,
+    owner: Vec<RefnoEnum>,
 ) -> anyhow::Result<HashMap<RefU64, String>> {
     #[derive(Debug, Serialize, Deserialize)]
     struct RoomNameQueryRequest {
@@ -93,7 +93,7 @@ pub async fn query_room_name_from_refnos(
 
 /// 查找设备和阀门所属的楼板
 pub async fn query_equi_or_valv_belong_floors(
-    refnos: Vec<RefU64>,
+    refnos: Vec<RefnoEnum>,
 ) -> anyhow::Result<HashMap<RefU64, (String, f32)>> {
     #[serde_as]
     #[derive(Serialize, Deserialize, Debug)]

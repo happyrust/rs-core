@@ -31,6 +31,7 @@ use sea_query::*;
 #[cfg(feature = "sea-orm")]
 use sea_query::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display, Pointer};
@@ -52,7 +53,7 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
 //"SPINE", "GENS",
 pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX", "NCYL",
-    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV", "POLYHE"
+    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV", "POLYHE",
 ];
 
 ///有loop的几何体
@@ -61,41 +62,10 @@ pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
 ];
 
 pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
-    "FIXING",
-    "GENSEC",
-    "SCREED",
-    "CMPF",
-    "GWALL",
-    "EQUI",
-    "ANCI",
-    "FITT",
-    "SJOI",
-    "SBFI",
-    "CABLE",
-    "CNODE",
-    "SCTN",
-    "SCOJ",
-    "PAVE",
-    "SUBE",
-    "SEVE",
-    "SUBJ",
-    "PLOO",
-    "RNODE",
-    "PJOI",
-    "SELJ",
-    "STWALL",
-    "WALL",
-    "PALJ",
-    "TUBI",
-    "FLOOR",
-    "CMFI",
-    "PANE",
-    "PFIT",
-    "GPART",
-    "PRTELE",
-    "NOZZ",
-    "SPCO",
-    "ELCONN",
+    "FIXING", "GENSEC", "SCREED", "CMPF", "GWALL", "EQUI", "ANCI", "FITT", "SJOI", "SBFI", "CABLE",
+    "CNODE", "SCTN", "SCOJ", "PAVE", "SUBE", "SEVE", "SUBJ", "PLOO", "RNODE", "PJOI", "SELJ",
+    "STWALL", "WALL", "PALJ", "TUBI", "FLOOR", "CMFI", "PANE", "PFIT", "GPART", "PRTELE", "NOZZ",
+    "SPCO", "ELCONN",
 ];
 
 ///负实体基本体的种类
@@ -116,9 +86,15 @@ pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 26] = [
     "NSEX", "NSRE",
 ];
 
-pub const JOINT_TYPES: [&'static str; 2] = [
-    "SJOI", "PJOI"
+pub const TOTAL_VERT_NOUN_NAMES: [&'static str; 2] = [
+    "VERT", "PAVE"
 ];
+
+pub const TOTAL_LOOP_NOUN_NAMES: [&'static str; 2] = [
+    "LOOP", "PLOO"
+];
+
+pub const JOINT_TYPES: [&'static str; 2] = ["SJOI", "PJOI"];
 
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
@@ -166,10 +142,10 @@ pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
 ];
 
 pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE", "EXTR", "REVO",
-    "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI",
-    "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ",
-    "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
+    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE",
+    "EXTR", "REVO", "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT",
+    "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
+    "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
 ];
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
@@ -328,141 +304,6 @@ where
     s.serialize_str(refno.to_string().as_str())
 }
 
-#[test]
-fn test_ele_geo_instance_serialize_deserialize() {
-    let _data = EleInstGeo {
-        geo_hash: 1,
-        refno: RefU64(56882546920359),
-        geo_param: Default::default(),
-        // aabb: Some(Aabb::new(Point3::new(1.0, 0.0, 0.0), Point3::new(2.0, 2.0, 0.0))),
-        pts: Vec::new(),
-        aabb: None,
-        transform: Transform::IDENTITY,
-        visible: false,
-        is_tubi: false,
-        geo_type: Default::default(),
-        // owner_pos_refnos: Default::default(),
-        cata_neg_refnos: vec![],
-    };
-    // let json = serde_json::to_string(&data).unwrap();
-    // dbg!(&json);
-    // let json = r#"
-    // [{"_key":"24383_72810","data":[],"visible":true,"generic_type":"STRU","aabb":{"maxs":[-9247.12890625,-1.14835810546875e+4,4653],"mins":[-9814.478515625,-1.22652236328125e+4,4553]},"world_transform":[[0.212630033493042,-0.6743800640106201,0.6743800640106201,-0.21263009309768677],[-9787.6103515625,-1.14922998046875e+4,4603],[1,1,1]],"ptset_map":{},"flow_pt_indexs":[null,null]}]
-    // "#;
-    // let data: Vec<EleGeosInfo>  = serde_json::from_str(&json).unwrap();
-    // dbg!(&data);
-
-    let _json = r#"
-    {
-  "result": [
-    {
-      "_key": "24383_72809",
-      "data": [
-        {
-          "aabb": {
-            "maxs": [
-              32.79999923706055,
-              50,
-              920.5880126953125
-            ],
-            "mins": [
-              -15.200000762939453,
-              -50,
-              0
-            ]
-          },
-          "geo_hash": "10994492164744429269",
-          "geo_param": "Unknown",
-          "is_tubi": false,
-          "pts": [],
-          "refno": "24383/72809",
-          "transform": [
-            [
-              0,
-              0,
-              0,
-              1
-            ],
-            [
-              0,
-              0,
-              0
-            ],
-            [
-              1,
-              1,
-              920.5880126953125
-            ]
-          ],
-          "visible": true
-        }
-      ],
-      "visible": true,
-      "generic_type": "STRU",
-      "aabb": {
-        "maxs": [
-          -9542.0185546875,
-          -11690.072265625,
-          4653
-        ],
-        "mins": [
-          -10109.3681640625,
-          -12471.703125,
-          4553
-        ]
-      },
-      "world_transform": [
-        [
-          0.21263228356838226,
-          -0.6743793487548828,
-          0.6743793487548828,
-          -0.21263234317302704
-        ],
-        [
-          -10082.5,
-          -11698.7900390625,
-          4603
-        ],
-        [
-          1,
-          1,
-          1
-        ]
-      ],
-      "ptset_map": {},
-      "flow_pt_indexs": [
-        null,
-        null
-      ]
-    }
-  ],
-  "hasMore": false,
-  "cached": false,
-  "extra": {
-    "warnings": [],
-    "stats": {
-      "writesExecuted": 0,
-      "writesIgnored": 0,
-      "scannedFull": 0,
-      "scannedIndex": 1,
-      "cursorsCreated": 1,
-      "cursorsRearmed": 0,
-      "cacheHits": 1,
-      "cacheMisses": 0,
-      "filtered": 0,
-      "httpRequests": 0,
-      "executionTime": 0.0026717909786384553,
-      "peakMemoryUsage": 65536
-    }
-  },
-  "error": false,
-  "code": 201
-}
-    "#;
-    // let data: Response<Cursor<EleGeosInfo>>  = serde_json::from_str(json).unwrap();
-    // dbg!(&data);
-}
-
 pub trait PdmsNodeTrait: Default {
     #[inline]
     fn get_refno(&self) -> RefU64 {
@@ -477,6 +318,11 @@ pub trait PdmsNodeTrait: Default {
     #[inline]
     fn get_name(&self) -> &str {
         ""
+    }
+
+    #[inline]
+    fn get_mod_cnt(&self) -> u32 {
+        0
     }
 
     #[inline]
@@ -502,26 +348,30 @@ pub trait PdmsNodeTrait: Default {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleTreeNode {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub noun: String,
     pub name: String,
-    pub owner: RefU64,
+    pub owner: RefnoEnum,
     #[serde(default)]
     pub order: u16,
     pub children_count: u16,
     #[serde(default)]
-    pub deleted: bool,
+    pub op: EleOperation,
+    //修改次数
+    pub mod_cnt: Option<u32>,
+    #[serde(default)]
+    pub children_updated: Option<bool>,
 }
 
 impl EleTreeNode {
     pub fn new(
-        refno: RefU64,
+        refno: RefnoEnum,
         noun: String,
         name: String,
-        owner: RefU64,
+        owner: RefnoEnum,
         order: u16,
         children_count: u16,
-        deleted: bool,
+        op: EleOperation,
     ) -> Self {
         Self {
             refno,
@@ -530,7 +380,9 @@ impl EleTreeNode {
             owner,
             order,
             children_count,
-            deleted,
+            op,
+            mod_cnt: None,
+            children_updated: None,
         }
     }
 
@@ -544,18 +396,30 @@ impl EleTreeNode {
             children_count: self.children_count as _,
         }
     }
+
+    #[inline]
+    pub fn latest_refno(&self) -> RefU64 {
+        self.refno.refno()
+    }
+
+    #[inline]
+    pub fn latest_owner(&self) -> RefU64 {
+        self.owner.refno()
+    }
 }
 
 impl From<PdmsElement> for EleTreeNode {
     fn from(value: PdmsElement) -> Self {
         EleTreeNode {
-            refno: value.refno,
+            refno: value.refno.into(),
             noun: value.noun,
             name: value.name,
-            owner: value.owner,
+            owner: value.owner.into(),
             order: 0,
             children_count: value.children_count as _,
-            deleted: false,
+            op: EleOperation::Modified,
+            mod_cnt: None,
+            children_updated: None,
         }
     }
 }
@@ -563,12 +427,17 @@ impl From<PdmsElement> for EleTreeNode {
 impl PdmsNodeTrait for EleTreeNode {
     #[inline]
     fn get_refno(&self) -> RefU64 {
-        self.refno
+        self.refno.refno()
     }
 
     #[inline]
     fn get_name(&self) -> &str {
         self.name.as_str()
+    }
+
+    #[inline]
+    fn get_mod_cnt(&self) -> u32 {
+        self.mod_cnt.unwrap_or_default()
     }
 
     #[inline]
@@ -617,7 +486,7 @@ pub struct CataHashRefnoKV {
     #[serde(default)]
     pub cata_hash: String,
     #[serde(default)]
-    pub group_refnos: Vec<RefU64>,
+    pub group_refnos: Vec<RefnoEnum>,
     pub exist_inst: bool,
     pub ptset: Option<BTreeMap<i32, CateAxisParam>>,
 }
@@ -703,8 +572,8 @@ impl PdmsElement {
 impl From<EleTreeNode> for PdmsElement {
     fn from(value: EleTreeNode) -> Self {
         Self {
-            refno: value.refno,
-            owner: value.owner,
+            refno: value.refno.refno(),
+            owner: value.owner.refno(),
             name: value.name,
             noun: value.noun,
             version: 0,
@@ -716,8 +585,8 @@ impl From<EleTreeNode> for PdmsElement {
 impl From<SPdmsElement> for PdmsElement {
     fn from(value: SPdmsElement) -> Self {
         Self {
-            refno: value.refno,
-            owner: value.owner,
+            refno: value.refno.refno(),
+            owner: value.owner.refno(),
             name: value.name,
             noun: value.noun,
             version: 0,
@@ -1274,22 +1143,25 @@ pub struct RoomNodes {
     pub nodes: Vec<String>,
 }
 
-#[derive(PartialEq, Debug, Default, Clone, Copy, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Default, Clone, Copy, Serialize_repr, Deserialize_repr)]
+#[repr(i32)]
 pub enum EleOperation {
     #[default]
-    None,
-    Add,
-    Modified,
-    Deleted,
+    Add = 0,
+    Modified = 1,
+    Deleted = 2,
+    Duplicate = 3,
+    None = 4,
 }
 
 impl EleOperation {
-    pub fn into_tidb_num(&self) -> u8 {
+    pub fn into_num(&self) -> i32 {
         match &self {
-            EleOperation::None => 0,
-            EleOperation::Add => 1,
-            EleOperation::Modified => 2,
-            EleOperation::Deleted => 3,
+            EleOperation::Add => 0,
+            EleOperation::Modified => 1,
+            EleOperation::Deleted => 2,
+            EleOperation::Duplicate => 3,
+            EleOperation::None => 4,
         }
     }
 }
@@ -1297,9 +1169,10 @@ impl EleOperation {
 impl From<i32> for EleOperation {
     fn from(v: i32) -> Self {
         match v {
-            1 => Self::Add,
-            2 => Self::Modified,
-            3 => Self::Deleted,
+            0 => Self::Add,
+            1 => Self::Modified,
+            2 => Self::Deleted,
+            3 => Self::Duplicate,
             _ => Self::None,
         }
     }
@@ -1308,10 +1181,11 @@ impl From<i32> for EleOperation {
 impl ToString for EleOperation {
     fn to_string(&self) -> String {
         match &self {
-            Self::None => "Unknown".to_string(),
+            Self::None => "未知".to_string(),
             EleOperation::Add => "增加".to_string(),
             EleOperation::Modified => "修改".to_string(),
             EleOperation::Deleted => "删除".to_string(),
+            EleOperation::Duplicate => "复制".to_string(),
         }
     }
 }

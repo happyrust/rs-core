@@ -11,5 +11,8 @@ async fn test_query_uda_name() {
     let name = crate::uda::get_uda_name(hash).await.unwrap();
     dbg!(name);
 
+    let vt = crate::uda::get_uda_type(hash).await.unwrap();
+    dbg!(vt);
+
 }
 

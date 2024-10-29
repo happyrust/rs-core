@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::RefU64;
+use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +18,8 @@ pub struct DbOption {
     pub sync_versioned: Option<bool>,
     #[clap(long)]
     pub sync_live: Option<bool>,
+    #[clap(long)]
+    pub sync_history: Option<bool>,
     #[clap(long)]
     pub incr_sync: bool,
     #[clap(long)]
@@ -97,6 +99,8 @@ pub struct DbOption {
     pub debug_print_world_transform: bool,
     #[clap(skip)]
     pub debug_root_refnos: Option<Vec<String>>,
+    #[clap(long)]
+    pub gen_history_model: Option<bool>,
     pub test_refno: Option<String>,
     pub gen_using_spref_refnos: Option<Vec<String>>,
     #[clap(skip)]
@@ -178,7 +182,7 @@ impl DbOption {
     //     self.geom_live.unwrap_or(false)
     // }
 
-    pub fn get_test_refno(&self) -> Option<RefU64>{
+    pub fn get_test_refno(&self) -> Option<RefnoEnum>{
         self.test_refno.as_ref().map(|x| x.as_str().into())
     }
 
@@ -194,6 +198,20 @@ impl DbOption {
     #[inline]
     pub fn is_gen_mesh_or_model(&self) -> bool {
         self.gen_mesh || self.gen_model
+    }
+
+    #[inline]
+    pub fn is_sync_history(&self) -> bool {
+        self.sync_history.unwrap_or(false)
+    }
+
+    #[inline]
+    pub fn mdb_name(&self) -> String {
+        if self.mdb_name.starts_with("/") {
+            self.mdb_name.clone()
+        } else {
+            format!("/{}", self.mdb_name)
+        }
     }
 
     #[inline]
@@ -237,11 +255,23 @@ impl DbOption {
     }
 
     #[inline]
-    pub async fn get_all_debug_refnos(&self) -> Vec<RefU64> {
+    pub fn is_gen_history_model(&self) -> bool {
+        self.gen_history_model.unwrap_or(false)
+    }
+
+    #[inline]
+    pub async fn get_all_debug_refnos(&self) -> Vec<RefnoEnum> {
         let mut refnos = self.debug_root_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
             .unwrap_or_default();
+        if self.is_gen_history_model() {
+            let mut h_refnos = vec![];
+            for r in refnos.clone() {
+                h_refnos.extend(crate::query_history_pes(r).await.unwrap_or_default());
+            }
+            refnos.extend(h_refnos);
+        }
         //还要补充使用了gen_using_spref_refnos的模型
         let mut debug_spref_refnos = self
             .gen_using_spref_refnos
@@ -260,7 +290,8 @@ impl DbOption {
         } else {
             vec![]
         };
-        refnos.extend(using_debug_spref_ele_refnos);
+        refnos.extend(using_debug_spref_ele_refnos.into_iter().map(|x| RefnoEnum::Refno(x)));
+        
         refnos
     }
 

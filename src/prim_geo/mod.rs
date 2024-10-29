@@ -43,8 +43,8 @@ pub use sweep_solid::*;
 pub use tubing::*;
 pub use polyhedron::*;
 use crate::prim_geo::category::CateBrepShape;
-use crate::RefU64;
+use crate::{RefU64, RefnoEnum};
 
-pub type CateBrepShapeMap = DashMap<RefU64, Vec<CateBrepShape>>;
+pub type CateBrepShapeMap = DashMap<RefnoEnum, Vec<CateBrepShape>>;
 
 

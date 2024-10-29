@@ -2,31 +2,127 @@
 use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::save_material_value;
+#[cfg(feature = "sql")]
+use super::query::save_material_value_test;
 
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+use crate::{init_test_surreal, RefnoEnum};
+use crate::SUL_DB;
 use crate::{
     get_children_pes, get_pe, insert_into_table_with_chunks, query_filter_deep_children, RefU64,
 };
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xls};
 use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tokio::task::{self, JoinHandle};
 
+lazy_static::lazy_static!(
+    static ref DQ_CHINESE_FIELDS: HashMap<&'static str, &'static str> = {
+        let mut map = HashMap::new();
+        map.insert("id", "参考号");
+        map.insert("num", "机组号");
+        map.insert("project_num", "子项号");
+        map.insert("project_name", "子项名称");
+        map.insert("major", "专业");
+        map.insert("room_code", "房间号");
+        map.insert("name", "托盘段号");
+        map.insert("pos", "托盘标高");
+        map.insert("bran_type", "托盘类型");
+        map.insert("supp_name", "托盘支吊架名称");
+        map.insert("stander_num", "标准号");
+        map.insert("item_num", "物项编号");
+        map.insert("material", "材质");
+        map.insert("width", "托盘宽度mm");
+        map.insert("height", "托盘高度mm");
+        map.insert("size_num", "规格型号");
+        map.insert("b_painting", "是否刷漆");
+        map.insert("painting_color", "刷漆颜色");
+        map.insert("b_cover", "有无盖板");
+        map.insert("b_partition", "有无隔板");
+        map.insert("partition_num", "隔板编号");
+        map.insert("spre", "spre");
+        map.insert("catr", "catr");
+        map.insert("horizontal_or_vertical", "水平/竖向");
+        map.insert("unit", "单位");
+        map.insert("count", "数量");
+        // map.insert("length", "数量");
+        map
+    };
+);
+
+const FIELDS: [&'static str; 25] = [
+    "参考号",
+    "机组号",
+    "子项号",
+    "子项名称",
+    "专业",
+    "房间号",
+    "托盘段号",
+    "托盘标高",
+    "托盘类型",
+    "托盘支吊架名称",
+    "标准号",
+    "物项编号",
+    "材质",
+    "托盘宽度mm",
+    "托盘高度mm",
+    "规格型号",
+    "是否刷漆",
+    "刷漆颜色",
+    "有无盖板",
+    "有无隔板",
+    "隔板编号",
+    "共用隔板的托盘序号",
+    "水平/竖向",
+    "单位",
+    "数量",
+];
+
+const BRAN_DATA_FIELDS: [&'static str; 24] = [
+    "id",
+    "num",
+    "project_num",
+    "project_name",
+    "major",
+    "room_code",
+    "name",
+    "pos",
+    "bran_type",
+    "supp_name",
+    "stander_num",
+    "item_num",
+    "material",
+    "width",
+    "height",
+    "size_num",
+    "b_painting",
+    "painting_color",
+    "b_cover",
+    "b_partition",
+    "partition_num",
+    "horizontal_or_vertical",
+    "unit",
+    "count",
+];
+
+const DQ_TABLE_NAME: &'static str = "电气专业_托盘及接地";
+
 /// 电气专业 托盘及接地
 pub async fn save_dq_material(
     refno: RefU64,
-    db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
-    mut handles: &mut Vec<JoinHandle<()>>,
-) {
+) -> Vec<JoinHandle<()>> {
+    let db = SUL_DB.clone();
+    let mut handles = vec![];
     match get_dq_bran_list(db.clone(), vec![refno]).await {
-        Ok((mut r, mut str_r)) => {
+        Ok(mut r) => {
 
+            let mut str_r = r.clone();
             let material_data = read_dq_material_excel().unwrap_or_default();
             get_dq_value_from_material(&material_data, &mut r);
-            get_dq_value_from_material_stru(&material_data, &mut str_r);
+            get_dq_value_from_material(&material_data, &mut str_r);
 
             let r_clone = r.clone();
             let str_r_clone = str_r.clone();
@@ -56,60 +152,15 @@ pub async fn save_dq_material(
             }
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
-                    return;
+                    return handles;
                 };
                 let task = task::spawn(async move {
-                    let table_name = "电气专业_托盘及接地".to_string();
-                    let filed = vec![
-                        "参考号".to_string(),
-                        "机组号".to_string(),
-                        "元件等级名称".to_string(),
-                        "子项号".to_string(),
-                        "子项名称".to_string(),
-                        "专业".to_string(),
-                        "房间号".to_string(),
-                        "托盘段号".to_string(),
-                        "托盘标高".to_string(),
-                        "托盘类型".to_string(),
-                        "托盘支吊架名称".to_string(),
-                        "标准号".to_string(),
-                        "物项编号".to_string(),
-                        "材质".to_string(),
-                        "托盘宽度mm".to_string(),
-                        "托盘高度mm".to_string(),
-                        "规格型号".to_string(),
-                        "是否刷漆".to_string(),
-                        "刷漆颜色".to_string(),
-                        "有无盖板".to_string(),
-                        "有无隔板".to_string(),
-                        "隔板编号".to_string(),
-                        "共用隔板的托盘序号".to_string(),
-                        "水平/竖向".to_string(),
-                        "单位".to_string(),
-                        "数量".to_string(),
-                    ];
-                    match create_table_sql(&pool, &table_name, &filed).await {
+                    match create_table_sql(&pool, &DQ_TABLE_NAME, &FIELDS).await {
                         Ok(_) => {
                             if !r.is_empty() {
-                                let data = r
-                                    .into_iter()
-                                    .map(|x| x.into_hashmap())
-                                    .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &table_name, &filed, data).await {
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        dbg!(&e.to_string());
-                                    }
-                                }
-                            }
-                            if !str_r.is_empty() {
-                                let data = str_r
-                                    .into_iter()
-                                    .map(|x| x.into_hashmap())
-                                    .collect::<Vec<HashMap<String, String>>>();
-                                match save_material_value(&pool, &table_name, &filed, data).await {
+                                match save_material_value_test(&pool, &DQ_TABLE_NAME, &BRAN_DATA_FIELDS, &DQ_CHINESE_FIELDS, r).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());
@@ -129,6 +180,7 @@ pub async fn save_dq_material(
             dbg!(e.to_string());
         }
     }
+    handles
 }
 
 /// 读取电气专业材料表
@@ -153,27 +205,20 @@ fn read_dq_material_excel() -> anyhow::Result<HashMap<String, Vec<DqMaterial>>> 
 // 将材料表的 标准号 和 单位 填入其中
 fn get_dq_value_from_material(
     material_data: &HashMap<String, Vec<DqMaterial>>,
-    mut value: &mut Vec<MaterialDqMaterialList>,
+    mut value: &mut Vec<HashMap<String,Value>>,
 ) {
     for mut d in value.iter_mut() {
-        if d.spre.is_some() && material_data.contains_key(&d.spre.clone().unwrap()) {
-            let material_value = material_data.get(&d.spre.clone().unwrap()).unwrap();
-            if material_value.is_empty() {
-                continue;
-            };
-            let value = material_value[0].clone();
-            d.stander_num = value.stander_num;
-            d.unit = value.unit;
-            d.item_num = value.code;
-        } else if d.catr.is_some() && material_data.contains_key(&d.catr.clone().unwrap()) {
-            let material_value = material_data.get(&d.catr.clone().unwrap()).unwrap();
-            if material_value.is_empty() {
-                continue;
-            };
-            let value = material_value[0].clone();
-            d.stander_num = value.stander_num;
-            d.unit = value.unit;
-            d.item_num = value.code;
+        for foreign_key in ["spre","catr"] {
+            if d.contains_key(foreign_key) && material_data.contains_key(&d.get(foreign_key).unwrap().to_string().replace("\"","")) {
+                let material_value = material_data.get(&d.get(foreign_key).unwrap().to_string().replace("\"","")).unwrap();
+                if material_value.is_empty() {
+                    continue;
+                };
+                let value = material_value[0].clone();
+                d.entry("stander_num".to_string()).or_insert(Value::String(value.stander_num.unwrap_or("".to_string())));
+                d.entry("unit".to_string()).or_insert(Value::String(value.unit.unwrap_or("".to_string())));
+                d.entry("item_num".to_string()).or_insert(Value::String(value.code.unwrap_or("".to_string())));
+            }
         }
     }
 }
@@ -276,6 +321,8 @@ impl MaterialDqMaterialList {
             .or_insert(self.b_painting.unwrap_or("".to_string()));
         map.entry("刷漆颜色".to_string())
             .or_insert(self.painting_color.unwrap_or("".to_string()));
+        map.entry("有无盖板".to_string())
+            .or_insert(self.b_cover.unwrap_or("".to_string()));
         map.entry("有无隔板".to_string())
             .or_insert(self.b_partition.unwrap_or("".to_string()));
         map.entry("隔板编号".to_string())
@@ -390,11 +437,10 @@ impl MaterialDqMaterialListStru {
 pub async fn get_dq_bran_list(
     db: Surreal<Any>,
     refnos: Vec<RefU64>,
-) -> anyhow::Result<(Vec<MaterialDqMaterialList>, Vec<MaterialDqMaterialListStru>)> {
+) -> anyhow::Result<Vec<HashMap<String, Value>>> {
     let mut data = Vec::new();
-    let mut stru_data = Vec::new();
     for refno in refnos {
-        let Some(pe) = get_pe(refno).await? else {
+        let Some(pe) = get_pe(refno.into()).await? else {
             continue;
         };
         // 如果是site，则需要过滤 site的 name
@@ -404,110 +450,76 @@ pub async fn get_dq_bran_list(
             };
         }
         // 查询电气托盘的数据
-        let refnos = query_filter_deep_children(refno, &["BRAN"]).await?;
-        let refnos_str =
-            &refnos
-                .into_iter()
+        let refnos = query_filter_deep_children(refno.into(), &["BRAN"]).await?;
+        if !refnos.is_empty() {
+            let refnos_str =
+                &refnos
+                    .into_iter()
+                    .map(|refno| refno.to_pe_key())
+                    .collect::<Vec<String>>().join(",");
+            let sql = format!(
+                r#"return fn::dq_bran([{}])"#,
+                refnos_str
+            );
+            let mut response = db.query(&sql).await?;
+            match response.take::<Vec<HashMap<String,Value>>>(0) {
+                Ok(mut result) => {
+                    data.append(&mut result);
+                }
+                Err(e) => {
+                    dbg!(&sql);
+                    dbg!(&e);
+                }
+            }
+        }
+        // 查询电气支吊架的数据
+        let refnos = query_filter_deep_children(refno.into(), &["STRU"]).await?;
+        if !refnos.is_empty() {
+            let refnos_str =
+                &refnos
+                    .into_iter()
                 .map(|refno| refno.to_pe_key())
                 .collect::<Vec<String>>().join(",");
-        let sql = format!(
-            r#"select
-        id,
-        string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num, // 机组号
-        string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
-        if string::contains(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'MCT') || string::contains(fn::default_name(fn::find_ancestor_type($this.id,"ZONE")[0]),'MSUP')  {{ '主托盘' }} else {{ '次托盘' }} as major,//专业
-        fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC as project_name, //子项名称
-        fn::room_code($this.id)[0] as room_code,
-        fn::default_name($this.id) as name,// 托盘段号
-        refno.HPOS[2] as pos, // 托盘标高
-        //<-pe_owner[where in.noun!='ATTA'] order by order_num,
-
-        fn::dq_bran_type($this.id) as bran_type, // 托盘类型
-        '碳钢Q235' as material, // 材质
-        (select value (select value v from only udas.* where u.NAME =='/BranWidth' limit 1) from type::thing("ATT_UDA", record::id(id)))[0][0] as width, // 托盘宽度
-        (select value (select value v from only udas.* where u.NAME =='/BranHigh' limit 1) from type::thing("ATT_UDA", record::id(id)))[0][0] as height, // 托盘高度
-        if (select value (select value v from only udas.* where u.NAME =='/BranWidth' limit 1) from type::thing("ATT_UDA", record::id(id)))[0][0] == NONE {{ 0 }} else {{ (select value (select value v from only udas.* where u.NAME=='/BranWidth' limit 1) from type::thing("ATT_UDA", record::id(id)))[0][0] }} * if (select value (select value v from only udas.* where u.NAME=='/BranHigh' limit 1) from type::thing("ATT_UDA", record::id(id)))[0][0] == NONE {{ 0 }} else {{ (select value (select value v from only udas.* where u.NAME=='/BranHigh' limit 1) from type::thing("ATT_UDA", record::id(id)))[0][0] }} as size_num, // 规格型号
-        'Y' as b_painting, // 是否刷漆
-        string::split(fn::default_name($this.id),'-')[1] as painting_color,
-        if (select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.DESP[2] == 1 {{ '是' }} else {{ '否' }} as b_cover, //有无盖板
-        if refno.DESC == NONE {{ '无' }} else {{ '是' }} as b_partition, // 有无隔板
-        refno.DESC as partition_num, // 隔板编号
-        (select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.NAME as spre,
-        (select value in from only (select * from <-pe_owner[where in.noun != 'ATTA'] order by order_num) limit 1).refno.SPRE.refno.CATR.refno.NAME as catr,
-        fn::dq_horizontal_or_vertical($this.id) as horizontal_or_vertical
-        from [{}]"#,
-            refnos_str
-        );
-        let mut response = db.query(sql).await?;
-        let mut result: Vec<MaterialDqMaterialList> = response.take(0)?;
-        data.append(&mut result);
-        // 查询电气支吊架的数据
-        let zones = get_children_pes(pe.refno).await?;
-        for zone in zones {
-            if zone.name.contains("MTGD") {
-                continue;
-            };
-            let refnos = query_filter_deep_children(refno, &["STRU"]).await?;
-            let refnos_str =
-                &refnos
-                    .into_iter()
-                    .map(|refno| refno.to_pe_key())
-                    .collect::<Vec<String>>().join(",");
             let sql = format!(
-                r#"select id,
-        string::slice(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,1,1) as num, // 机组号
-        string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].refno.NAME,'-')[0],2) as project_num, //子项号
-        fn::find_ancestor_type($this.id,"SITE")[0].refno.DESC as project_name, //子项名称
-        '支吊架' as major,//专业
-        fn::room_code($this.id)[0] as room_code, // 房间号
-        fn::default_name($this.id) as supp_name, // 托盘支吊架名称
-        '碳钢Q355' as material,  //材质
-        if (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0] == NONE {{ '' }}
-        else {{ array::last(string::split((<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0],'-')) }} as size_num, // 规格型号
-        (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.name)[0] as spre,
-        (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun = 'GENSEC'].in.refno.SPRE.refno.CATR.refno.NAME)[0] as catr,
-        '2' as count // 数量
-        from [{}]"#,
+                r#"return fn::dq_stru([{}])"#,
                 refnos_str
             );
-            let mut response = db.query(sql).await?;
-            let mut result: Vec<MaterialDqMaterialListStru> = response.take(0)?;
-            stru_data.append(&mut result);
+            let mut response = db.query(&sql).await?;
+            match response.take::<Vec<HashMap<String,Value>>>(0) {
+                Ok(mut result) => {
+                    data.append(&mut result);
+                }
+                Err(e) => {
+                    dbg!(&sql);
+                    dbg!(&e);
+                }
+            }
         }
         // 电缆及接地
-        let zones = get_children_pes(pe.refno).await?;
-        for zone in zones {
-            if !zone.name.contains("MTGD") {
-                continue;
-            };
-            let refnos = query_filter_deep_children(refno, &["GENSEC"]).await?;
+        let refnos = query_filter_deep_children(refno.into(), &["GENSEC"]).await?;
+        if !refnos.is_empty() {
             let refnos_str =
                 &refnos
                     .into_iter()
-                    .map(|refno| refno.to_pe_key())
-                    .collect::<Vec<String>>().join(",");
+                .map(|refno| refno.to_pe_key())
+                .collect::<Vec<String>>().join(",");
             let sql = format!(
-                r#"select id,
-            string::slice(fn::find_ancestor_type($this.id,"SITE")[0].NAME,1,1) as num, // 机组号
-            string::slice(string::split(fn::find_ancestor_type($this.id,"SITE")[0].NAME,'-')[0],2) as project_num, //子项号
-            fn::find_ancestor_type($this.id,"SITE")[0].NAME.DESC as project_name, //子项名称
-            '主托盘接地' as major,//专业
-            fn::room_code($this.id)[0] as room_code, // 房间号
-            fn::default_name($this.id) as name, // 托盘段号
-            math::fixed(refno.POS[2],3) as pos,
-            '裸铜缆' as material,  //材质
-            refno.SPRE.refno.NAME as spre,
-            refno.SPRE.refno.CATR.refno.NAME as catr,
-            math::fixed(fn::vec3_distance(array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[0],array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)[1]),2) as count
-            from [{}]"#,
+                r#"return fn::dq_gensec([{}])"#,
                 refnos_str
             );
-            let mut response = db.query(sql).await?;
-            let mut result: Vec<MaterialDqMaterialList> = response.take(0)?;
-            data.append(&mut result);
+            let mut response = db.query(&sql).await?;
+            match response.take::<Vec<HashMap<String,Value>>>(0) {
+                Ok(mut result) => {
+                    data.append(&mut result);
+                }
+                Err(e) => {
+                    dbg!(&sql);
+                    dbg!(&e);
+                }
+            }
         }
     }
-    Ok((data, stru_data))
+    Ok(data)
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -528,4 +540,13 @@ pub struct DqMaterial {
     pub count: Option<String>,
     #[serde(rename = "质保等级")]
     pub level: Option<String>,
+}
+
+#[tokio::test]
+async fn test_save_dq_material() {
+    init_test_surreal().await;
+    let mut handles = vec![];
+    let mut handle = save_dq_material(RefU64::from("24384/25674")).await;
+    handles.append(&mut handle);
+    futures::future::join_all(handles).await;
 }

@@ -5,7 +5,7 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = [] #"occ", "gen_model", "sql"
+default = ["occ", "gen_model", "sql"] #"occ", "gen_model", "sql"
 occ = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 manifold = ["dep:manifold-sys"]
@@ -79,7 +79,7 @@ truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling" , optiona
 truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo", optional = true }
 truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio", optional = true }
 rkyv = { version = "0.7.42", features=["hashbrown"] }
-serde_with = "3.3.0"
+serde_with = { version = "3.9.0", features = ["macros"] }
 
 
 geo = "0.28.0"
@@ -106,6 +106,7 @@ tokio = { version = "1", features = ["rt", "sync"] }
 downcast-rs = "1.2.0"
 futures = "0.3.30"
 evalexpr = "11.3.0"
+serde_repr = "0.1.19"
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

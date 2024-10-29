@@ -72,6 +72,10 @@ impl Default for LPyramid {
 
 impl VerifiedShape for LPyramid {
     fn check_valid(&self) -> bool {
+        let size_flag = self.pbtp * self.pctp >= f32::EPSILON || self.pbbt * self.pcbt >= f32::EPSILON;
+        if !size_flag {
+            return false;
+        }
         (self.pbtp >= 0.0 && self.pctp >= 0.0 && self.pbbt >= 0.0 && self.pcbt >= 0.0) &&
             ((self.pbtp + self.pctp) > f32::EPSILON || (self.pbbt + self.pcbt) > f32::EPSILON)
     }

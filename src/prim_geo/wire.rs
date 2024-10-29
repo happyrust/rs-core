@@ -642,10 +642,11 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         if pt.z > 0.0 {
             has_frad = true;
         }
-        if i < pts.len(){
+        if i < pts.len() {
             new_pts.push(pt);
         }
     }
+    // dbg!(&new_pts);
 
     let len = new_pts.len();
     if len < 3 {
@@ -713,14 +714,11 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         println!("Polyline: {}", polyline_to_debug_json_str(&polyline));
     }
     //及一个检查是否有NAN的数据
-    for p in &polyline.vertex_data{
-
-
+    for p in &polyline.vertex_data {
         if p.bulge.is_nan() {
             return Err(anyhow!("Found NAN buldge in polyline"));
         }
     }
-
 
     //需要和初始的方向保持一致，如果是顺时针，那么要选择顺时针方向的交叉点
     let orientation = polyline.orientation();
@@ -738,13 +736,16 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         return Ok(polyline);
     } else if !has_frad {
         // dbg!(&intrs.basic_intersects);
-        let removed_idx = intrs.basic_intersects.iter().map(|x| x.start_index1)
+        let removed_idx = intrs
+            .basic_intersects
+            .iter()
+            .map(|x| x.start_index1)
             .collect::<HashSet<usize>>();
-        // for int in &intrs.basic_intersects{
-        // polyline.vertex_data.retain(|&_, index| !removed_idx.contains(&index));
-        // }
         let mut new_polyline = Polyline::new_closed();
-        new_polyline.vertex_data = polyline.vertex_data.clone().into_iter()
+        new_polyline.vertex_data = polyline
+            .vertex_data
+            .clone()
+            .into_iter()
             .enumerate()
             .filter(|(index, _)| !removed_idx.contains(index))
             .map(|(_, value)| value)
@@ -752,22 +753,18 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
 
         if let Ok(mut new_intrs) = std::panic::catch_unwind(
             (|| global_self_intersects(&new_polyline, &new_polyline.create_approx_aabb_index())),
-        )  {
+        ) {
             let basic_inter_len = new_intrs.basic_intersects.len();
             let overlap_inter_len = new_intrs.overlapping_intersects.len();
             if basic_inter_len == 0 && overlap_inter_len == 0 {
                 return Ok(new_polyline);
             } else {
-                #[cfg(feature="debug_wire")]
+                #[cfg(feature = "debug_wire")]
                 println!("有问题的wire: {}", polyline_to_debug_json_str(&polyline));
-                return Err(anyhow!(
-                    "有相交没有fillet的线段。修复失败"
-                ));
+                return Err(anyhow!("有相交没有fillet的线段。修复失败"));
             }
         };
-        return Err(anyhow!(
-                "有相交没有fillet的线段。修复失败"
-            ));
+        return Err(anyhow!("有相交没有fillet的线段。修复失败"));
     }
     #[cfg(feature = "debug_wire")]
     dbg!(&intrs);
@@ -831,7 +828,9 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
     let mut pos_poly = gen_polyline(&loops[0])?;
 
     for pts in loops.iter().skip(1) {
-        let neg = gen_polyline(pts)?;
+        let Ok(neg) = gen_polyline(pts) else {
+            continue;
+        };
         let mut r = pos_poly.boolean(&neg, BooleanOp::Not);
         if r.pos_plines.len() > 0 {
             pos_poly = r.pos_plines.remove(0).pline;
@@ -947,7 +946,8 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
             }
             let mut cur_ccw_sig = if v1.cross(v2).z > 0.0 { 1.0 } else { -1.0 };
             //如果v1 v2 方向相同，则继续沿用之前的 is_concave
-            if v1.dot(v2) > 0.99 {} else if v1.dot(v2) < -0.99 {
+            if v1.dot(v2) > 0.99 {
+            } else if v1.dot(v2) < -0.99 {
                 //如果v1 v2 方向相反，则取之前的!is_concave
                 is_concave = !is_concave;
             } else {
@@ -1133,7 +1133,7 @@ pub fn gen_occ_special_wires(pts: &Vec<Vec3>, fradius_vec: &Vec<f32>) -> anyhow:
                 if let Some(intr) = intrs.basic_intersects.pop() {
                     if polyline.vertex_data.last().unwrap().bulge_is_zero()
                         && (intr.start_index2 == polyline.vertex_data.len() - 1
-                        || intr.start_index2 == polyline.vertex_data.len() - 2)
+                            || intr.start_index2 == polyline.vertex_data.len() - 2)
                     {
                         need_remove = true;
                     }

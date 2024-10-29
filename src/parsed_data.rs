@@ -11,7 +11,7 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct CateGeomsInfo {
     //catref
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub geometries: Vec<CateGeoParam>,
     /// 和dsign发生运算的负实体数据
     pub n_geometries: Vec<CateGeoParam>,
@@ -25,7 +25,7 @@ pub struct Dataset {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct GmseParamData {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     /// SCYL  LSNO  SCTO  SDSH  SBOX
     pub type_name: String,
     pub radius: f32,
@@ -80,7 +80,7 @@ pub struct GmseParamData {
     Debug,
 )]
 pub struct CateAxisParam {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub number: i32,
     pub pt: Vec3,
     pub dir: Option<Vec3>,
@@ -458,11 +458,11 @@ pub mod geo_params_data {
     rkyv::Serialize,
 )]
 pub struct CateBoxParam {
+    pub refno: RefnoEnum,
     pub size: Vec3,
     pub offset: Vec3,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
 }
 
 #[derive(
@@ -482,7 +482,7 @@ pub struct CateConeParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 #[derive(
@@ -497,7 +497,7 @@ pub struct CateConeParam {
     rkyv::Serialize,
 )]
 pub struct CateSCylinderParam {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
     pub height: f32,
@@ -518,7 +518,7 @@ pub struct CateSCylinderParam {
     rkyv::Serialize,
 )]
 pub struct CateLCylinderParam {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub axis: Option<CateAxisParam>,
     pub dist_to_btm: f32,
     pub dist_to_top: f32,
@@ -550,7 +550,7 @@ pub struct CateExtrusionParam {
     //2D points
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 //structural annulus
@@ -566,7 +566,7 @@ pub struct CateExtrusionParam {
     rkyv::Serialize,
 )]
 pub struct SannData {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub xy: Vec2,
     pub dxy: Vec2,
     pub paxis: Option<CateAxisParam>,
@@ -596,7 +596,7 @@ pub struct SannData {
     rkyv::Serialize,
 )]
 pub struct SProfileData {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub verts: Vec<Vec2>,
     pub frads: Vec<f32>,
     pub plax: Vec3,
@@ -618,7 +618,7 @@ pub struct SProfileData {
     rkyv::Serialize,
 )]
 pub struct SRectData {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub center: Vec2,
     pub size: Vec2,
     pub dxy: Vec2,
@@ -670,7 +670,7 @@ pub enum CateProfileParam {
 }
 
 impl CateProfileParam {
-    pub fn get_refno(&self) -> Option<RefU64> {
+    pub fn get_refno(&self) -> Option<RefnoEnum> {
         match self {
             CateProfileParam::UNKOWN => None,
             CateProfileParam::SPRO(s) => Some(s.refno),
@@ -733,7 +733,7 @@ pub struct CateDishParam {
     pub radius: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 #[derive(
@@ -757,7 +757,7 @@ pub struct CateLineParam {
     pub centre_line_flag: bool,
 
     pub tube_flag: bool,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 #[derive(
@@ -772,7 +772,7 @@ pub struct CateLineParam {
     rkyv::Serialize,
 )]
 pub struct CatePyramidParam {
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
     pub pc: Option<CateAxisParam>,
@@ -801,13 +801,13 @@ pub struct CatePyramidParam {
     rkyv::Serialize,
 )]
 pub struct CateRectTorusParam {
+    pub refno: RefnoEnum,
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
     pub height: f32,
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
 }
 
 #[derive(
@@ -831,7 +831,7 @@ pub struct CateRevolutionParam {
     pub z: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 #[derive(
@@ -846,12 +846,12 @@ pub struct CateRevolutionParam {
     rkyv::Serialize,
 )]
 pub struct CateSplineParam {
+    pub refno: RefnoEnum,
     pub start_pt: Vec<f32>,
     pub end_pt: Vec<f32>,
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
 }
 
 #[derive(
@@ -876,7 +876,7 @@ pub struct CateSlopeBottomCylinderParam {
     pub alt_y_shear: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 /// 圆台 或 管嘴
@@ -892,6 +892,7 @@ pub struct CateSlopeBottomCylinderParam {
     rkyv::Serialize,
 )]
 pub struct CateSnoutParam {
+    pub refno: RefnoEnum,
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
     pub dist_to_btm: f32,
@@ -901,7 +902,6 @@ pub struct CateSnoutParam {
     pub offset: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
 }
 
 /// 球
@@ -922,7 +922,7 @@ pub struct CateSphereParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
+    pub refno: RefnoEnum,
 }
 
 ///元件库里的torus参数
@@ -938,12 +938,12 @@ pub struct CateSphereParam {
     rkyv::Serialize,
 )]
 pub struct CateTorusParam {
+    pub refno: RefnoEnum,
     pub pa: Option<CateAxisParam>,
     pub pb: Option<CateAxisParam>,
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
-    pub refno: RefU64,
 }
 
 #[derive(

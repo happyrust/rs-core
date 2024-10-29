@@ -3,6 +3,8 @@ use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::save_material_value;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+use crate::init_test_surreal;
+use crate::SUL_DB;
 use crate::{
     get_pe, insert_into_table_with_chunks, query_ele_filter_deep_children, NamedAttrValue, RefU64,
 };
@@ -17,14 +19,14 @@ use tokio::task::{self, JoinHandle};
 /// 通风专业 风管管段
 pub async fn save_tf_material_hvac(
     refno: RefU64,
-    db: Surreal<Any>,
-    aios_mgr: &AiosDBMgr,
-    mut handles: &mut Vec<JoinHandle<()>>,
-) {
+) -> Vec<JoinHandle<()>> {
+    let mut handles = Vec::new();
+    let db = SUL_DB.clone();
+    define_tf_surreal_functions(&db).await;
     match get_tf_hvac_material(&db, vec![refno]).await {
         Ok(r) => {
             if r.is_empty() {
-                return;
+                return handles;
             }
             let r_clone = r.clone();
             let task = task::spawn(async move {
@@ -38,41 +40,44 @@ pub async fn save_tf_material_hvac(
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = aios_mgr.get_project_pool().await else {
+                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
                     dbg!("无法连接到数据库");
-                    return;
+                    return handles;
                 };
                 let task = task::spawn(async move {
                     let table_name = "通风专业_风管管段清单".to_string();
                     let filed = vec![
-                        "参考号".to_string(),
-                        "描述".to_string(),
-                        "管段编号".to_string(),
-                        "子项号".to_string(),
-                        "材质".to_string(),
-                        "压力等级".to_string(),
-                        "风管长度".to_string(),
-                        "风管宽度".to_string(),
-                        "风管高度".to_string(),
-                        "风管壁厚".to_string(),
-                        "风管面积".to_string(),
-                        "风管重量".to_string(),
-                        "加强筋型材".to_string(),
-                        "加强筋长度".to_string(),
-                        "加强筋重量".to_string(),
-                        "法兰规格".to_string(),
-                        "法兰长度".to_string(),
-                        "法兰重量".to_string(),
-                        "垫圈类型".to_string(),
-                        "垫圈长度".to_string(),
-                        "螺栓数量".to_string(),
-                        "其它材料类型".to_string(),
-                        "其它材料数量".to_string(),
-                        "螺杆".to_string(),
-                        "螺母数量".to_string(),
-                        "螺母数量_2".to_string(),
-                        "所在房间号".to_string(),
-                        "系统".to_string(),
+                        "参考号",
+                        "描述",
+                        "管段编号",
+                        "子项号",
+                        "材质",
+                        "压力等级",
+                        "风管长度",
+                        "风管宽度",
+                        "风管高度",
+                        "风管壁厚",
+                        "风管面积",
+                        "风管重量",
+                        "坐标X",
+                        "坐标Y",
+                        "坐标Z",
+                        "加强筋型材",
+                        "加强筋长度",
+                        "加强筋重量",
+                        "法兰规格",
+                        "法兰长度",
+                        "法兰重量",
+                        "垫圈类型",
+                        "垫圈长度",
+                        "螺栓数量",
+                        "其它材料类型",
+                        "其它材料数量",
+                        "螺杆",
+                        "螺母数量",
+                        "螺母数量_2",
+                        "所在房间号",
+                        "系统",
                     ];
                     match create_table_sql(&pool, &table_name, &filed).await {
                         Ok(_) => {
@@ -97,6 +102,7 @@ pub async fn save_tf_material_hvac(
             dbg!(e.to_string());
         }
     }
+    handles
 }
 
 /// 通风 风管管段
@@ -459,7 +465,7 @@ pub async fn get_tf_hvac_material(
 ) -> anyhow::Result<Vec<HashMap<String, String>>> {
     let mut data = Vec::new();
     for refno in refnos {
-        let Some(pe) = get_pe(refno).await? else {
+        let Some(pe) = get_pe(refno.into()).await? else {
             continue;
         };
         // 如果是site，则需要过滤 site的 name
@@ -468,90 +474,100 @@ pub async fn get_tf_hvac_material(
                 continue;
             };
             let refnos = query_ele_filter_deep_children(
-                refno,
+                refno.into(),
                 &[
                     "BEND", "BRCO", "CAP", "FLEX", "OFST", "STIF", "STRT", "TAPE", "THRE", "TRNS",
                 ],
             )
-            .await?;
+                .await?;
             // STRT
             let strts = refnos
                 .iter()
                 .filter(|x| x.noun == "STRT".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("STRT");
             let mut result = get_tf_hvac_strt_data(db, strts).await?;
             data.append(&mut result);
             // TAPE
             let tapes = refnos
                 .iter()
                 .filter(|x| x.noun == "TAPE".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("TAPE");
             let mut result = get_tf_hvac_tape_data(db, tapes).await?;
             data.append(&mut result);
             // FLEX
             let tapes = refnos
                 .iter()
                 .filter(|x| x.noun == "FLEX".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("FLEX");
             let mut result = get_tf_hvac_flex_data(db, tapes).await?;
             data.append(&mut result);
             // BEND
             let bends = refnos
                 .iter()
                 .filter(|x| x.noun == "BEND".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("BEND");
             let mut result = get_tf_hvac_bend_data(db, bends).await?;
             data.append(&mut result);
             // OFST
             let bends = refnos
                 .iter()
                 .filter(|x| x.noun == "OFST".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("OFST");
             let mut result = get_tf_hvac_ofst_data(db, bends).await?;
             data.append(&mut result);
             // TRNS
             let trnses = refnos
                 .iter()
                 .filter(|x| x.noun == "TRNS".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("TRNS");
             let mut result = get_tf_hvac_trns_data(db, trnses).await?;
             data.append(&mut result);
             // BRCO
             let brcos = refnos
                 .iter()
                 .filter(|x| x.noun == "BRCO".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("BRCO");
             let mut result = get_tf_hvac_brco_data(db, brcos).await?;
             data.append(&mut result);
             // THRE
             let brcos = refnos
                 .iter()
                 .filter(|x| x.noun == "THRE".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("THRE");
             let mut result = get_tf_hvac_thre_data(db, brcos).await?;
             data.append(&mut result);
             // CAP
             let caps = refnos
                 .iter()
                 .filter(|x| x.noun == "CAP".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("CAP");
             let mut result = get_tf_hvac_cap_data(db, caps).await?;
             data.append(&mut result);
             // STIF
             let caps = refnos
                 .iter()
                 .filter(|x| x.noun == "STIF".to_string())
-                .map(|x| x.refno)
+                .map(|x| x.refno.into())
                 .collect::<Vec<_>>();
+            dbg!("STIF");
             let mut result = get_tf_hvac_stif_data(db, caps).await?;
             data.append(&mut result);
         }
@@ -573,46 +589,18 @@ async fn get_tf_hvac_strt_data(
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
-    let sql = format!(
-        "select
-    fn::refno(id) as id,
-    noun,
-    string::concat(fn::shape_name(id), '直管') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    fn::hvac_width_format(id) as width,
-    fn::hvac_height_format(id) as height,
-    fn::hvac_thks(id, 'DAMP') as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    fn::cal_stif_sctn_str(id) as stif_sctn,
-    fn::cal_stif_len_str(id) as stif_len,
-    fn::cal_stif_wei_str(id) as stif_wei,
-    fn::hvac_fl_name(id) as fl_type,
-    fn::hvac_fl_len(id) as fl_len,
-    fn::hvac_fl_wei(id) as fl_wei,
-
-    fn::common_washer_types(id) as washer_type,
-    fn::common_washer_len(id) as washer_len,
-    fn::hvac_bolt_qty(id) as bolt_qty,
-
-    '-' as other_qty,
-    '-' as stud,
-
-    fn::hvac_bolt_qty(id) as nut_qty,  //螺母数量
-    fn::hvac_bolt_qty(id) * 2 as washer_qty,
-
-    fn::get_room_number(id) as room_no,
-    fn::hvac_system(id) as system
-	from [{}];",
-        refnos
-    );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
+    let sql = format!("return fn::fggd_strt([{}]);", refnos);
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
     Ok(data)
 }
 
@@ -630,45 +618,18 @@ async fn get_tf_hvac_tape_data(
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
-    let sql = format!(
-        "select
-    fn::refno(id) as id,
-    noun,
-    string::concat(fn::shape_name(id), '变截面管') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    [fn::hvac_width_format(id), string::replace(<string>fn::hvac_width2(id),'f','')] as width,
-    [fn::hvac_height_format(id), string::replace(<string>fn::hvac_height2(id),'f','')] as height,
-    fn::hvac_thks(id) as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    fn::cal_stif_len_str(id) as stif_len,
-    fn::cal_stif_wei_str(id) as stif_wei,
-    fn::hvac_fl_name(id) as fl_type,
-    fn::hvac_fl_len(id) as fl_len,
-    fn::hvac_fl_wei(id) as fl_wei,
-    fn::common_washer_types(id) as washer_type,
-
-    fn::hvac_bolt_qtys_1(id) as bolt_qty,
-
-    '-' as other_type,
-    '-' as other_qty,
-    '-' as stud,
-
-    fn::hvac_bolt_qtys_1(id) as nut_qty,  //螺母数量
-    fn::hvac_washer_bolt_qtys_1(id) as washer_qty,
-
-    fn::hvac_system(id) as system,
-    fn::get_room_number(id) as room_no
-	from [{}];",
-        refnos
-    );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
+    let sql = format!("return fn::fggd_tape([{}]);", refnos);
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
     Ok(data)
 }
 
@@ -687,48 +648,19 @@ async fn get_tf_hvac_flex_data(
         .collect::<Vec<_>>()
         .join(",");
 
-    let sql = format!(
-        "select
-    fn::refno(id) as id,
-    string::concat(fn::shape_name(id), '软连接') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    fn::hvac_width_format(id) as width,
-    fn::hvac_height_format(id) as height,
-    fn::hvac_thks(id, 'DAMP') as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    fn::cal_stif_sctn_str(id) as stif_sctn,
-    fn::cal_stif_len_str(id) as stif_len,
-    fn::cal_stif_wei_str(id) as stif_wei,
-    fn::hvac_fl_name(id) as fl_type,
-    fn::hvac_fl_len(id) as fl_len,
-    fn::hvac_fl_wei(id) as fl_wei,
+    let sql = format!("return fn::fggd_flex([{}]);", refnos);
 
-     fn::common_washer_types(id) as washer_type,
-     fn::common_washer_len(id) as washer_len,
-
-     fn::hvac_bolt_qtys_THRE(id) as bolt_qty,
-    '-' as other_type,
-    '-' as other_qty,
-    '-' as stud,
-
-     fn::hvac_bolt_qtys_THRE(id) as nut_qty,  //螺母数量
-     fn::hvac_washer_bolt_qtys_THRE(id) as washer_qty,  //垫片数量
-
-
-     fn::hvac_system(id) as system,
-     fn::get_room_number(id) as room_no
-	from [{}];",
-        refnos
-    );
-
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
     Ok(data)
 }
 
@@ -746,37 +678,18 @@ async fn get_tf_hvac_bend_data(
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
-    let sql = format!("select
-    fn::refno(id) as id,
-    string::concat(fn::shape_name(id), '变截面管') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    [fn::hvac_width_format(id), string::replace(<string>fn::hvac_width2(id),'f','')] as width,
-    [fn::hvac_height_format(id), string::replace(<string>fn::hvac_height2(id),'f','')] as height,
-    fn::hvac_thks(id) as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    fn::cal_stif_len_str(id) as stif_len,
-    fn::cal_stif_wei_str(id) as stif_wei,
-    fn::hvac_fl_name(id) as fl_type,
-    fn::hvac_fl_len(id) as fl_len,
-    fn::hvac_fl_wei(id) as fl_wei,
-    fn::common_washer_types(id) as washer_type,
-    fn::washer_len_BEND(id) as washer_len,
-
-    fn::hvac_nut_qty_BEND(id) as nut_qty,  //螺母数量
-    if fn::hvac_bolt_qtys_1(id) != NONE {{
-        [fn::hvac_bolt_qtys_1(id)[0] * 2,fn::hvac_bolt_qtys_1(id)[1] * 2] }} else {{ [0] }} as washer_qty,
-
-    fn::hvac_system(id) as system,
-    fn::get_room_number(id) as room_no
-	from [{}];", refnos);
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
+    let sql = format!("return fn::fggd_bend([{}]);", refnos);
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
     Ok(data)
 }
 
@@ -804,59 +717,100 @@ fn change_hvac_result_to_map(
 /// 获取通风材料表单字段对应的中文名
 fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     let mut map = HashMap::new();
-    map.entry("id".to_string()).or_insert("参考号".to_string());
-    map.entry("description".to_string())
+    map.entry("id".to_string())
+        .or_insert("参考号".to_string());
+
+    map.entry("desc".to_string())
         .or_insert("描述".to_string());
-    map.entry("seg_code".to_string())
+
+    map.entry("bran_seg_code".to_string())
         .or_insert("管段编号".to_string());
+
     map.entry("sub_code".to_string())
         .or_insert("子项号".to_string());
+
     map.entry("material".to_string())
         .or_insert("材质".to_string());
-    map.entry("pressure".to_string())
+
+    map.entry("pressure_level".to_string())
         .or_insert("压力等级".to_string());
-    map.entry("length".to_string())
+
+    map.entry("l".to_string())
         .or_insert("风管长度".to_string());
-    map.entry("width".to_string())
+
+    map.entry("w".to_string())
         .or_insert("风管宽度".to_string());
-    map.entry("height".to_string())
+
+    map.entry("h".to_string())
         .or_insert("风管高度".to_string());
-    map.entry("wall_thk".to_string())
+
+    map.entry("x".to_string())
+        .or_insert("坐标X".to_string());
+
+    map.entry("y".to_string())
+        .or_insert("坐标Y".to_string());
+
+    map.entry("z".to_string())
+        .or_insert("坐标Z".to_string());
+
+    map.entry("thickness".to_string())
         .or_insert("风管壁厚".to_string());
-    map.entry("duct_area".to_string())
+
+    map.entry("area".to_string())
         .or_insert("风管面积".to_string());
-    map.entry("duct_weight".to_string())
-        .or_insert("法兰重量".to_string());
+
+    map.entry("weight".to_string())
+        .or_insert("风管重量".to_string());
+
     map.entry("stif_sctn".to_string())
         .or_insert("加强筋型材".to_string());
+
     map.entry("stif_len".to_string())
         .or_insert("加强筋长度".to_string());
+
     map.entry("stif_wei".to_string())
         .or_insert("加强筋重量".to_string());
-    map.entry("fl_type".to_string())
+
+    map.entry("flan_steel".to_string())
         .or_insert("法兰规格".to_string());
-    map.entry("fl_len".to_string())
+
+    map.entry("flan_length".to_string())
         .or_insert("法兰长度".to_string());
-    map.entry("fl_wei".to_string())
+
+    map.entry("flan_weight".to_string())
         .or_insert("法兰重量".to_string());
-    map.entry("washer_type".to_string())
+
+    map.entry("gask_size".to_string())
         .or_insert("垫圈类型".to_string());
-    map.entry("washer_len".to_string())
+
+    map.entry("shim_width".to_string())
         .or_insert("垫圈长度".to_string());
-    map.entry("bolt_qty".to_string())
+
+    map.entry("bolt_count".to_string())
         .or_insert("螺栓数量".to_string());
-    map.entry("other_type".to_string())
+
+    map.entry("other_material_type".to_string())
         .or_insert("其它材料类型".to_string());
-    map.entry("other_qty".to_string())
+
+    map.entry("other_material_count".to_string())
         .or_insert("其它材料数量".to_string());
-    map.entry("stud".to_string()).or_insert("螺杆".to_string());
-    map.entry("nut_qty".to_string())
+
+    map.entry("screw".to_string())
+        .or_insert("螺杆".to_string());
+
+    map.entry("nut_count".to_string())
         .or_insert("螺母数量".to_string());
-    map.entry("washer_qty".to_string())
+
+    map.entry("nut_count_b".to_string())
         .or_insert("螺母数量_2".to_string());
-    map.entry("room_no".to_string())
+
+    map.entry("gask_count".to_string())
+        .or_insert("垫片数量".to_string());
+
+    map.entry("room_num".to_string())
         .or_insert("所在房间号".to_string());
-    map.entry("system".to_string())
+
+    map.entry("system_name".to_string())
         .or_insert("系统".to_string());
 
     map
@@ -870,53 +824,25 @@ async fn get_tf_hvac_ofst_data(
     if refnos.is_empty() {
         return Ok(vec![]);
     };
+    let mut data = Vec::new();
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
-    let sql = format!(
-        "select
-    fn::refno(id) as id,
-    string::concat(fn::shape_name(id), '软连接') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    fn::hvac_width_format(id) as width,
-    fn::hvac_height_format(id) as height,
-    fn::hvac_thks(id, 'DAMP') as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    fn::cal_stif_sctn_str(id) as stif_sctn,
-    fn::cal_stif_len_str(id) as stif_len,
-    fn::cal_stif_wei_str(id) as stif_wei,
-    fn::hvac_fl_name(id) as fl_type,
-    fn::hvac_fl_len(id) as fl_len,
-    fn::hvac_fl_wei(id) as fl_wei,
-
-    fn::common_washer_types(id) as washer_type,
-    fn::common_washer_len(id) as washer_len,
-
-    fn::hvac_bolt_qtys_OFST(id) as bolt_qty,
-
-    '-' as other_type,
-    NONE as other_qty,
-    '-' as stud,
-
-    fn::hvac_bolt_qtys_OFST(id) as nut_qty,  //螺母数量
-    [fn::hvac_bolt_qtys_OFST(id)*2, fn::hvac_bolt_qtys_OFST(id)*2] as washer_qty,  //垫片数量
-
-    fn::hvac_system(id) as system,
-    fn::get_room_number(id) as room_no
-	from [{}];",
-        refnos
-    );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
-    Ok(r)
+    let sql = format!("return fn::fggd_ofst([{}]);", refnos);
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
 }
 
 /// 获取 通风 风管管段 trns 的数据
@@ -927,53 +853,28 @@ async fn get_tf_hvac_trns_data(
     if refnos.is_empty() {
         return Ok(vec![]);
     };
+    let mut data = Vec::new();
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(
-        "select
-        fn::refno(id) as id,
-        '天圆地方' as description,
-        fn::hvac_seg_code(id) as seg_code,
-        fn::hvac_sub_code(id) as sub_code,
-        fn::hvac_mats(id) as material,
-        fn::hvac_pressure(id) as pressure,
-        fn::hvac_len(id) as length,
-        fn::hvac_width_format(id) as width,
-        fn::hvac_height_format(id) as height,
-        fn::hvac_thks(id, 'DAMP') as wall_thk,
-        fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-        fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-        fn::cal_stif_sctn_str(id) as stif_sctn,
-        fn::cal_stif_len_str(id) as stif_len,
-        fn::cal_stif_wei_str(id) as stif_wei,
-        fn::hvac_fl_name(id) as fl_type,
-        fn::hvac_fl_len_TRNS(id) as fl_len,
-        fn::hvac_fl_wei(id) as fl_wei,
-
-        fn::washer_type_TRNS(id) as washer_type,
-        fn::washer_len_TRNS(id) as washer_len,
-
-        fn::hvac_bolt_qtys_TRNS(id) as bolt_qty,  //螺栓数量
-
-        '-' as other_type,
-        '-' as other_qty,
-        '-' as stud,
-
-        fn::hvac_bolt_qtys_TRNS(id) as nut_qty,  //螺母数量
-        fn::hvac_washer_bolt_qtys_TRNS(id) as washer_qty,  //垫片数量
-
-        fn::hvac_system(id) as system,
-        fn::get_room_number(id) as room_no
-	from {};",
+        "return fn::fggd_TRNS([{}]);",
         refnos
     );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
-    Ok(r)
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
 }
 
 /// 获取 通风 风管管段 brco 的数据
@@ -984,52 +885,28 @@ async fn get_tf_hvac_brco_data(
     if refnos.is_empty() {
         return Ok(vec![]);
     };
+    let mut data = Vec::new();
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(
-        "select
-      fn::refno(id) as id,
-      string::concat(fn::shape_name(id), '连接管') as description,
-      fn::hvac_seg_code(id) as seg_code,
-      fn::hvac_sub_code(id) as sub_code,
-      fn::hvac_mats(id) as material,
-      fn::hvac_pressure(id) as pressure,
-      fn::hvac_len(id) as length,
-      fn::hvac_width_format(id, 3) as width,
-      fn::hvac_height_format(id, 3) as height,
-      fn::hvac_thks(id, 'DAMP') as wall_thk,
-      fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-      fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-      fn::cal_stif_sctn_str(id) as stif_sctn,
-      fn::cal_stif_len_str(id) as stif_len,
-      fn::cal_stif_wei_str(id) as stif_wei,
-      fn::hvac_fl_name(id) as fl_type,
-      fn::hvac_fl_len(id) as fl_len,
-      fn::hvac_fl_wei(id) as fl_wei,
-
-       fn::common_washer_types(id) as washer_type,
-       fn::common_washer_len(id) as washer_len,
-
-      // fn::hvac_bolt_qtys_BRCO(id) as bolt_qty,
-      '-' as other_type,
-      '-' as other_qty,
-      '-' as stud,
-
-       // fn::hvac_bolt_qtys_BRCO(id) as nut_qty,  //螺母数量
-       fn::hvac_washer_bolt_qtys_THRE(id) as washer_qty,  //垫片数量
-
-       fn::hvac_system(id) as system,
-       fn::get_room_number(id) as room_no
-	from {};",
+        "return fn::fggd_BRCO([{}]);",
         refnos
     );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
-    Ok(r)
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
 }
 
 /// 获取 通风 风管管段 thre 的数据
@@ -1040,50 +917,28 @@ async fn get_tf_hvac_thre_data(
     if refnos.is_empty() {
         return Ok(vec![]);
     };
+    let mut data = Vec::new();
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(
-        "select
-    fn::refno(id) as id,
-    string::concat(fn::shape_name(id), '三通管') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    fn::hvac_width_three(id) as width,
-    fn::hvac_height_three(id) as height,
-    fn::hvac_thks(id) as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    '-' as stif_sctn,
-    0 as stif_len,
-    0 as stif_wei,
-    fn::hvac_fl_name_THRE(id) as fl_type,
-    fn::hvac_fl_len_THRE(id) as fl_len,
-    fn::hvac_fl_wei(id) as fl_wei,
-    fn::washer_type_THRE(id) as washer_type,
-    fn::washer_len_THRE(id) as washer_len,
-
-    '-' as other_type,
-    '-' as other_qty,
-    '-' as stud,
-
-    fn::hvac_bolt_qtys_THRE(id) as nut_qty,  //螺母数量
-    fn::hvac_washer_bolt_qtys_THRE(id) as washer_qty,  //垫片数量
-
-    fn::hvac_system(id) as system,
-    fn::get_room_number(id) as room_no
-	from [{}];",
+        "return fn::fggd_THRE([{}]);",
         refnos
     );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
-    Ok(r)
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
 }
 
 /// 获取 通风 风管管段 cap 的数据
@@ -1094,45 +949,28 @@ async fn get_tf_hvac_cap_data(
     if refnos.is_empty() {
         return Ok(vec![]);
     };
+    let mut data = Vec::new();
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(
-        "select
-    fn::refno(id) as id,
-    string::concat(fn::shape_name(id), '封头') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    fn::hvac_width_format(id) as width,
-    fn::hvac_height_format(id) as height,
-    fn::hvac_thks(id) as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    fn::cal_stif_len_str(id) as stif_len,
-    fn::cal_stif_wei_str(id) as stif_wei,
-    fn::hvac_fl_name(id) as fl_type,
-    fn::hvac_fl_len(id) as fl_len,
-    fn::hvac_fl_wei(id) as fl_wei,
-    fn::washer_type_CAP(id) as washer_type,
-    fn::washer_len_CAP(id) as washer_len,
-
-    fn::hvac_bolt_qtys_1(id) as nut_qty,  //螺母数量
-    fn::hvac_washer_bolt_qtys_1(id) as washer_qty,
-
-    fn::hvac_system(id) as system,
-    fn::get_room_number(id) as room_no
-	from [{}];",
+        "return fn::fggd_CAP([{}]);",
         refnos
     );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
-    Ok(r)
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r: Vec<HashMap<String, String>> = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
 }
 
 /// 获取 通风 风管管段 stif 的数据
@@ -1143,49 +981,50 @@ async fn get_tf_hvac_stif_data(
     if refnos.is_empty() {
         return Ok(vec![]);
     };
+    let mut data = Vec::new();
     let refnos = refnos
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(
-        "select
-    fn::refno(id) as id,
-    string::concat(fn::shape_name(id), '加强筋') as description,
-    fn::hvac_seg_code(id) as seg_code,
-    fn::hvac_sub_code(id) as sub_code,
-    fn::hvac_mats(id) as material,
-    fn::hvac_pressure(id) as pressure,
-    fn::hvac_len(id) as length,
-    fn::hvac_width_format(id) as width,
-    fn::hvac_height_format(id) as height,
-    fn::hvac_thks(id, 'DAMP') as wall_thk,
-    fn::hvac_duct_areas(id, 'DAMP') as duct_area,
-    fn::hvac_duct_weight_format(id, 'DAMP') as duct_weight,
-    fn::cal_stif_sctn_str(id) as stif_sctn,
-    fn::cal_stif_len_str(id) as stif_len,
-    fn::cal_stif_wei_str(id) as stif_wei,
-    '-' as fl_type,
-    '-' as fl_len,
-    '-' as fl_wei,
-
-    '-' as washer_type,
-    '-' as washer_len,
-    '-' as bolt_qty,
-    '-' as other_type,
-    '-' as other_qty,
-    '-' as stud,
-
-    fn::hvac_bolt_qty(id) as nut_qty,  //螺母数量
-    fn::hvac_bolt_qty(id) * 2 as washer_qty,
-
-    fn::get_room_number(id) as room_no,
-    fn::hvac_system(id) as system
-	from [{}];",
+        "return fn::fggd_STIF([{}]);",
         refnos
     );
-    let mut response = db.query(sql).await?;
-    let result: Vec<HashMap<String, NamedAttrValue>> = response.take(0).unwrap();
-    let r = change_hvac_result_to_map(result);
-    Ok(r)
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
 }
+
+
+/// 声明通风专业定义的方法
+async fn define_tf_surreal_functions(db: &Surreal<Any>) -> anyhow::Result<()> {
+    let path = "rs_surreal/material_list/tf";
+    let files = std::fs::read_dir(path)?;
+    for file in files {
+        let file = file?;
+        let path = file.path();
+        if !path.file_name().unwrap().to_str().unwrap().ends_with(".surql") {
+            continue;
+        }
+        let content = std::fs::read_to_string(path)?;
+        db.query(content).await.unwrap();
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_define_tf_surreal_functions() {
+    init_test_surreal().await;
+    define_tf_surreal_functions(&SUL_DB).await.unwrap();
+}
+

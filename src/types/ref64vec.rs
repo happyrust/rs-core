@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 use bevy_ecs::component::Component;
 use derive_more::{Deref, DerefMut};
 use crate::cache::mgr::BytesTrait;
-use crate::RefU64;
+use crate::{query_refno_sesno, RefU64};
 
 #[serde_as]
 #[derive(
@@ -21,6 +21,11 @@ use crate::RefU64;
     rkyv::Serialize,
 )]
 pub struct RefU64Vec(pub Vec<RefU64>);
+
+
+impl RefU64Vec {
+   
+}
 
 impl BytesTrait for RefU64Vec {}
 
