@@ -453,20 +453,20 @@
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING (2)" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" />
-      <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING (2)" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno" />
       </list>
     </recent_temporary>
   </component>

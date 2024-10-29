@@ -1,5 +1,5 @@
 
-insert into hvac_mat [{
+insert ignore into hvac_mat [{
     key: '1',
     code: 'SS',
     name: '不锈钢'
@@ -32,7 +32,7 @@ insert into hvac_mat [{
     code: 'FP',
 }]
 
-insert into hvac_pressure [{
+insert ignore into hvac_pressure [{
     id: 'B',
     code: 'BP',
     name: '低压' 
@@ -54,7 +54,7 @@ insert into hvac_pressure [{
 }]
 
 //shape * 8 + mat
-insert into hvac_depth [{
+insert ignore into hvac_depth [{
     // 矩形镀锌 中低压  L<= 700
     id: '1',
     mat: 1,
@@ -241,7 +241,7 @@ insert into hvac_depth [{
 ]
 
 // 法兰、加强截面积和法兰宽通过型钢规格判断
-insert into hvac_area [{
+insert ignore into hvac_area [{
     id: '1',
     size: 'L40x40x4',
     area: 3.086,
@@ -275,7 +275,7 @@ insert into hvac_area [{
 
 
 // 加强筋规格
-insert into hvac_size [{
+insert ignore into hvac_size [{
     // 矩形镀锌 中低压  L<= 700
     id: '1',
     mat: 1,
@@ -482,7 +482,7 @@ insert into hvac_size [{
 
 -- delete hvac_depth;
 
-insert into hvac_flan_size [{
+insert ignore into hvac_flan_size [{
     // 矩形镀锌 中低压  L<= 700
     id: '1',
     mat: 1,

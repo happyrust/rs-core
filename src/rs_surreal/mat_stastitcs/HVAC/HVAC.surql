@@ -1,19 +1,23 @@
 
+remove function fn::collect_hvac_SITE;
 DEFINE FUNCTION fn::collect_hvac_SITE($pe: record) {
     let $children = select value in from $pe<-pe_owner.in<-pe_owner[?in.noun='HVAC'].in<-pe_owner[?in.noun='BRAN'];
     return fn::collect_hvac_brans($children);
 };
 
+remove function fn::collect_hvac_ZONE;
 DEFINE FUNCTION fn::collect_hvac_ZONE($pe: record) {
     let $children = select value in from $pe<-pe_owner[?in.noun='HVAC'].in<-pe_owner[?in.noun='BRAN'];
     return fn::collect_hvac_brans($children);
 };
 
+remove function fn::collect_hvac;
 DEFINE FUNCTION fn::collect_hvac($pe: record) {
     let $children = fn::children($pe);
     return fn::collect_hvac_brans($children);
 };
 
+remove function fn::collect_hvac_ele;
 DEFINE FUNCTION fn::collect_hvac_ele($pe: record) {
     let $t = $pe.noun;
     return if $t =='STRT' {
@@ -39,10 +43,12 @@ DEFINE FUNCTION fn::collect_hvac_ele($pe: record) {
     };
 };
 
+remove function fn::collect_hvac_brans;
 DEFINE FUNCTION fn::collect_hvac_brans($pes: array<record>) {
     return array::flatten(select value fn::collect_hvac_bran(id) from $pes);
 };
 
+remove function fn::collect_hvac_bran;
 DEFINE FUNCTION fn::collect_hvac_bran($pe: record) {
     let $children = fn::children($pe);
     let $r = select value fn::collect_hvac_ele(id) from $children;

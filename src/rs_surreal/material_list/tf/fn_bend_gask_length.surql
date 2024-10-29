@@ -1,10 +1,11 @@
 // 垫片长度
+remove function fn::bend_gask_length_pre;
 DEFINE FUNCTION fn::bend_gask_length_pre($pe:record) {
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $next_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe;
+    let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0];
+    let $next_desp = fn::next_pe($pe).refno.DESP?:[0.0];
     let $flan_length = <float>array::first(fn::flex_flan_length($pe)).length;
-    let $flan_width = $pe.refno.DESP[20];
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $flan_width = $pe.refno.DESP[20]?:0.0;
+    let $bran_4 = array::at(string::split($pe.owner.name,'-')?:[],3)?:'';
 
     let $pre_b_damp = array::first(fn::b_pre_type($pe,'DAMP'));
     let $pre_b_mesh = array::first(fn::b_pre_type($pe,'MESH'));
@@ -78,9 +79,10 @@ DEFINE FUNCTION fn::bend_gask_length_pre($pe:record) {
     } as size from $pe
 };
 
+remove function fn::bend_gask_length_next;
 DEFINE FUNCTION fn::bend_gask_length_next($pe:record) {
-    let $pre_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) - 1 limit 1) from $pe;
-    let $next_desp = select value (select value in.refno.DESP from only ->pe_owner->pe<-pe_owner where order_num = array::first($parent->pe_owner.order_num) + 1 limit 1) from $pe;
+    let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0];
+    let $next_desp = fn::next_pe($pe).refno.DESP?:[0.0];
     let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
 
     let $pre_b_damp = fn::b_pre_type($pe,'DAMP');
@@ -120,6 +122,7 @@ DEFINE FUNCTION fn::bend_gask_length_next($pe:record) {
     } as size from $pe
 };
 
+remove function fn::bend_gask_length;
 DEFINE FUNCTION fn::bend_gask_length($pe:record) {
     return string::replace(string::concat(array::first(fn::bend_gask_length_pre($pe)).size,',',array::first(fn::bend_gask_length_next($pe)).size),'f','');
 };

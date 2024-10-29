@@ -1,6 +1,7 @@
 // 螺杆长度
+remove function fn::bend_bolt_length_2;
 DEFINE FUNCTION fn::bend_bolt_length_2($pe:record) {
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $bran_4 = array::at(string::split($pe.owner.name,'-')?:[],3)?:'';
     let $hvac_shape = fn::hvac_shape($pe);
 
     let $angle = $pe.refno.DESP[7];

@@ -1,11 +1,12 @@
 // 其他材料类型
+remove function fn::bend_other_material_type_2;
 DEFINE FUNCTION fn::bend_other_material_type_2($pe:record) {
-    let $bran_4 = array::at(string::split($pe.owner.name,'-'),3);
+    let $bran_4 = array::at(string::split($pe.owner.name,'-')?:[],3)?:'';
     let $hvac_shape = fn::hvac_shape($pe);
 
-    let $angle = $pe.refno.DESP[7];
-    let $height = $pe.refno.DESP[2];
-    let $width = $pe.refno.DESP[1];
+    let $angle = $pe.refno.DESP[7]?:0.0;
+    let $height = $pe.refno.DESP[2]?:0.0;
+    let $width = $pe.refno.DESP[1]?:0.0;
     return
     select if $hvac_shape == 'RECT' && $bran_4 != '6' {
         '套管DN15'

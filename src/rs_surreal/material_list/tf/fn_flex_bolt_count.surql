@@ -1,7 +1,10 @@
 // 螺栓数量
+remove function fn::flex_bolt_count;
 DEFINE FUNCTION fn::flex_bolt_count($pe:record,$flan_width:float) {
     let $desp = $pe.refno.DESP;
     let $hvac_shape = fn::hvac_shape($pe);
+    let $desp1 = $desp[1]?:0.0;
+    let $desp2 = $desp[2]?:0.0;
     //return [$hvac_shape];
     return
     // (('[Prev_Type]' EQ 'DAMP') OR ('[Prev_Type]' EQ 'MESH')) AND (('[Next_Type]' EQ 'DAMP') OR ('[Next_Type]' EQ 'MESH'))

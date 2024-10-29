@@ -299,7 +299,7 @@ DEFINE FUNCTION fn::hvac_shape_with_pressure($pe: record){
 
 
 
-insert into hvac_mat [
+insert ignore into hvac_mat [
     {
         "id": 1,
         "code": "GS",
