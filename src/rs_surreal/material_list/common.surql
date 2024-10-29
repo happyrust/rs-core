@@ -71,13 +71,13 @@ DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
 
 remove function fn::prev_pe;
 DEFINE FUNCTION fn::prev_pe($pe:record) {
-    let $a = ($pe->pe_owner.id[1])[0] -1;
+    let $a = (record::id($pe->pe_owner.id[0])[1]) -1;
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
 };
 
 remove function fn::next_pe;
 DEFINE FUNCTION fn::next_pe($pe:record) {
-    let $a = ($pe->pe_owner.id[1])[0] + 1;
+    let $a = (record::id($pe->pe_owner.id[0])[1]) + 1;
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
 };
 

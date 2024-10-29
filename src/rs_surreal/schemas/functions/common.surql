@@ -245,8 +245,11 @@ define function fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 remove function fn::find_pe_by_datetime;
 define function fn::find_pe_by_datetime($pe: record, $dt: datetime){
     let $his_pe = type::thing('his_pe', fn::newest_pe_id($pe));
+    if !record::exists($his_pe) {
+        return $pe;
+    };
     let $a = select value id from only array::reverse(array::flatten([$his_pe.refnos?:[], $pe])) where <datetime>fn::ses_date(id) <= $dt limit 1;
-    return $a;
+    return $a?:$pe;
 };
 
 
@@ -268,4 +271,68 @@ define function fn::ses_date($pe: record){
     } else {
         return none;
     };
+};
+
+remove function fn::next_is_type;
+DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
+    return fn::next_type($pe)==$type;
+};
+
+remove function fn::prev_pe;
+DEFINE FUNCTION fn::prev_pe($pe:record) {
+    let $a = (record::id($pe->pe_owner.id[0])[1]) - 1;
+    return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
+};
+
+remove function fn::next_pe;
+DEFINE FUNCTION fn::next_pe($pe:record) {
+    let $a = (record::id($pe->pe_owner.id[0])[1]) + 1;
+    return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
+};
+
+remove function fn::prev_type;
+DEFINE FUNCTION fn::prev_type($pe:record) {
+    return fn::prev_pe($pe).noun;
+};
+
+remove function fn::next_type;
+DEFINE FUNCTION fn::next_type($pe:record) {
+    return fn::next_pe($pe).noun;
+};
+
+
+remove function fn::children;
+DEFINE FUNCTION fn::children($pe:record) {
+    return (select value <-pe_owner.in from $pe)[0];
+};
+
+
+// 获取ipara
+remove function fn::get_ipara;
+DEFINE FUNCTION fn::get_ipara($pe:record) {
+    let $ispe = $pe.owner.refno.ISPE;
+    return if $ispe == none {
+        return [0];
+    } else {
+        return (select value (select value CATR.refno.PARA 
+                from only $ispe<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
+                and $parent.owner.refno.TEMP >=refno.ANSW 
+                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.* 
+                where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1)
+            from $pe)[0];
+    };
+};
+
+//根据类型找到父节点
+remove function fn::find_ancestor_type;
+DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
+    return (select value array::flatten([->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
+        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id
+    ]) from $pe)[0];
 };

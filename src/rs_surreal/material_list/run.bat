@@ -25,8 +25,8 @@ cd dq
 call run_dq.bat
 cd ..
 
-cd gy
-call run_gy.bat
+cd tf
+call run_tf.bat
 cd ..
 
 cd yk

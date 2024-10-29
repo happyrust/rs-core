@@ -1,4 +1,5 @@
 
+remove function fn::collect_mat_statistic;
 DEFINE FUNCTION fn::collect_mat_statistic($pe: record){
     let $type = $pe.noun;
     let $o_type = $pe.owner.noun;
