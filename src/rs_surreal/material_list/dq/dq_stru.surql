@@ -3,8 +3,8 @@ remove function fn::dq_stru;
 define function fn::dq_stru($pes:array<record>){  
     return select
         fn::pe_to_refno(id) as id, // 参考号
-        string::slice(fn::find_ancestor_type(id,'SITE')[0].name?:'',1,1) as num, // 机组号
-        string::slice((string::split(fn::find_ancestor_type(id,'SITE')[0].name?:'', '-'))[0]?:'',2) as project_num, //子项号
+        string::slice(fn::find_ancestor_type(id,'SITE').name?:'',1,1) as num, // 机组号
+        string::slice((string::split(fn::find_ancestor_type(id,'SITE').name?:'', '-'))[0]?:'',2) as project_num, //子项号
         fn::find_ancestor_type(id,'SITE')[0].refno.DESC?:'' as project_name, //子项名称
         '支吊架' as major,//专业
         fn::room_code(id)[0]?: '' as room_code, // 房间号

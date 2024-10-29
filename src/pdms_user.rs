@@ -1,14 +1,8 @@
-use serde_derive::{Deserialize, Serialize};
-use bevy_ecs::prelude::Resource;
-use crate::pdms_types::{PdmsElement};
+use crate::pdms_types::PdmsElement;
 use crate::types::*;
-use serde_with::{DisplayFromStr, serde_as};
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Role {
-    Designer,
-    Proofreader,
-}
+use bevy_ecs::prelude::Resource;
+use serde_derive::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 
 //b_designer
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Resource)]

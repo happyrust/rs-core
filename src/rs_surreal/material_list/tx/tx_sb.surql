@@ -12,7 +12,7 @@ define function fn::tx_sb($pes: array<record>) {
         fn::get_world_pos(id)[0][1]?:0.0 as y, // 坐标 y
         fn::get_world_pos(id)[0][2]?:0.0 as z, // 坐标 z
         string::slice(refno.CATR.refno.PRTREF.refno.NAME?:' ',1) as ptre_name // 设备型号
-    from $pes where !string::contains(fn::find_ancestor_type(id,'ZONE')[0].name?:'','FAD');
+    from $pes where !string::contains(fn::find_ancestor_type(id,'ZONE').name?:'','FAD');
 };
 
 -- let $pes = [pe:24384_24895];

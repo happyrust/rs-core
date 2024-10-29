@@ -5,8 +5,8 @@ remove function fn::dq_gensec;
 define function fn::dq_gensec($pes:array<record>){    
     return select 
         fn::pe_to_refno(id) as id, // 参考号
-        string::slice(fn::find_ancestor_type(id,'SITE')[0].name?:'',1,1) as num, // 机组号
-        string::slice((string::split(fn::find_ancestor_type(id,'SITE')[0].name?:'', '-'))[0]?:'',2) as project_num, //子项号
+        string::slice(fn::find_ancestor_type(id,'SITE').name?:'',1,1) as num, // 机组号
+        string::slice((string::split(fn::find_ancestor_type(id,'SITE').name?:'', '-'))[0]?:'',2) as project_num, //子项号
         fn::find_ancestor_type(id,'SITE')[0].refno.DESC?:'' as project_name, //子项名称
         '主托盘接地' as major,//专业
         fn::room_code(id)[0]?:'' as room_code, // 房间号
@@ -20,7 +20,7 @@ define function fn::dq_gensec($pes:array<record>){
         } else {
             0.0
         } as length
-    from $pes where string::contains(fn::find_ancestor_type(id,'ZONE')[0].name?:'','MTGD');
+    from $pes where string::contains(fn::find_ancestor_type(id,'ZONE').name?:'','MTGD');
 };
 
 -- let $pe = [pe:25688_76336];

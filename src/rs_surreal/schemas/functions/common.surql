@@ -326,13 +326,5 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
 //根据类型找到父节点
 remove function fn::find_ancestor_type;
 DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
-    return (select value array::flatten([->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id
-    ]) from $pe)[0];
+    (array::flatten(select value fn::ancestor(id) from $pe)[?$self.noun=$t])[0]
 };
