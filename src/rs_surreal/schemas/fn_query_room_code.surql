@@ -1,7 +1,7 @@
 REMOVE FUNCTION fn::room_code;
 DEFINE FUNCTION fn::room_code($pe:record) {
     let $noun = $pe.refno.TYPE;
-    let $uda_room = (select value v.StringType from type::thing('ATT_UDA', record::id($pe)).udas where u.NAME='/ROOM_NO');
+    let $uda_room = (select value v from type::thing('ATT_UDA', record::id($pe)).udas where u.NAME='/ROOM_NO');
     return
     // EQUI可能有两层
     if ($noun == 'EQUI'|| $noun == 'STRU' || $noun == 'REST') && array::len($uda_room) == 0 {

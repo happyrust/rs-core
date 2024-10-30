@@ -6,33 +6,10 @@ if not defined DATABASE_NAME set DATABASE_NAME=AvevaMarineSample
 REM namespace
 if not defined NAMESPACE set NAMESPACE=1516
 
-REM 定义 surql 文件数组
-set surql_files=common.surql
+REM 定义 surql 文件列表
+set surql_files=dq_common.surql dq_dz.surql dq_gensec.surql dq_stru.surql
 
 REM 遍历 surql 文件并导入
 for %%f in (%surql_files%) do (
     surreal import --conn %HTTP_ADDR% --namespace %NAMESPACE% --database %DATABASE_NAME% -u root -p root %%f
 )
-
-REM 调用子文件夹的 bat 文件
-REM 切换到子目录并运行相应的 bat 文件
-
-cd gy
-call run_gy.bat
-cd ..
-
-cd dq
-call run_dq.bat
-cd ..
-
-cd tf
-call run_tf.bat
-cd ..
-
-cd yk
-call run_yk.bat
-cd ..
-
-cd gps
-call run_gps.bat
-cd ..

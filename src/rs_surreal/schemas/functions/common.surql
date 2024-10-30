@@ -24,6 +24,32 @@ DEFINE FUNCTION fn::ancestor($r: record) {
     };
 };
 
+REMOVE FUNCTION fn::newest_pe;
+DEFINE FUNCTION fn::newest_pe(
+    $pe: record,
+) {
+    if $pe == none {
+        return none;
+    };
+    let $id = record::id($pe);
+    if !type::is::array($id) {
+        return $pe;
+    };
+    let $refno = $id[0];
+    return type::thing('pe', $refno);
+};
+
+REMOVE FUNCTION fn::newest_pe_id;
+DEFINE FUNCTION fn::newest_pe_id(
+    $pe: record,
+) {
+    if !type::is::array($pe) {
+        return record::id($pe);
+    };
+    return record::id($pe)[0];
+};
+
+
 REMOVE FUNCTION fn::order;
 DEFINE FUNCTION fn::order(
     $pe: record,
@@ -32,10 +58,15 @@ DEFINE FUNCTION fn::order(
         return none;
     };
     let $a = ($pe.owner<-pe_owner.in)[where noun=$pe.noun];
-    return array::find_index($a, $pe);
+    if $a == none {
+        let $b = (fn::newest_pe($pe).owner<-pe_owner.in)[where noun=$pe.noun];
+        return array::find_index($b, $pe);
+    } else {
+        return array::find_index($a, $pe);
+    };
 };
 
-remove function fn::default_name;
+REMOVE FUNCTION fn::default_name;
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
@@ -79,8 +110,8 @@ DEFINE FUNCTION fn::backup_data(
 ) {
     for $pe in $pes {
         //只操作最新的 refno
-        if type::is::array($pe) || !record::exists($pe) {
-            continue;  
+        if type::is::array(record::id($pe)) || !record::exists($pe) {
+            continue;
         };
         if $pe.sesno > $sesno {
             continue;
@@ -90,12 +121,13 @@ DEFINE FUNCTION fn::backup_data(
 
         let $a = (select * omit id from $pe)[0];
         let $b = (select * omit id from $pe.refno)[0];
-        
+
         if $a != none && $b != none {
             let $old_inst_relate_id = type::thing('inst_relate', $old_id);
             let $old_att_id = type::thing(string::concat($a.noun, '_H'), $old_id);
             if $is_del{
-                update $pe.id set op=2, old_pe=$old_pe_id, refno=$old_att_id, sesno=$sesno;
+                //软删除
+                update $pe.id set op=2, old_pe=$old_pe_id, sesno=$sesno, deleted=true;
             } else {
                 update $pe.id set op=1, old_pe=$old_pe_id, sesno = $sesno;
             };
@@ -111,11 +143,12 @@ DEFINE FUNCTION fn::backup_data(
                                 		'path': 'REFNO',
                                 		'value': $old_pe_id
                                 }]);
-
+            //删除属性
             if $is_del{
-                delete $pe.refno;
+               delete $pe.refno;
             };
-           
+
+            //备份关联
             let $c = (select *, $old_inst_relate_id as id, $old_pe_id as in from $pe->inst_relate);
             if !array::is_empty($c) {
                 delete select id from $pe->inst_relate;
@@ -123,7 +156,7 @@ DEFINE FUNCTION fn::backup_data(
             };
 
             if $a.noun == "BRAN" || $a.noun == "HANG" {
-                
+
                 let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id, $old_pe_id as in from $pe->tubi_relate);
                 //将 tubi relate 整体备份
                 if !array::is_empty($tubis) {
@@ -146,16 +179,25 @@ DEFINE FUNCTION fn::backup_owner_relate(
 ) {
     for $pe in $pes {
         //只操作最新的 refno
-        if type::is::array($pe) || !record::exists($pe) {
-            continue;  
-        };
+        // if type::is::array(record::id($pe)) || !record::exists($pe) {
+        //      continue;
+        // };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
         let $old_pe_id = type::thing('pe', $old_id);
+        //fix 层级不连续的问题，需要更新到之前的 in->owner 关系
+        //let $old_owners_id = select value od from $pe->pe_owner where type::is::array(record::id(out));
+        -- return $old_owners_id;
+        //如果是旧节点，需要更新到旧的引用节点
+        //for $o in $old_owners_id {
+            //需要删除了，重新创建这个单独的id
+            //update $o set in=$old_pe_id;
+        //};
         //如果子节点的sesno >= 父节点的sesno 了，则需要使用 old_pe
         //反之则不需要动
-        let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id, 
+        let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id,
                     if $pe.sesno>in.sesno { in } else { in.old_pe?:in } as in, $old_pe_id as out
                     from $pe<-pe_owner;
+        -- return $c;
         if !array::is_empty($c) {
             if $delete_old{
                 delete select id from $pe<-pe_owner;
@@ -200,6 +242,17 @@ define function fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 };
 
 
+remove function fn::find_pe_by_datetime;
+define function fn::find_pe_by_datetime($pe: record, $dt: datetime){
+    let $his_pe = type::thing('his_pe', fn::newest_pe_id($pe));
+    if !record::exists($his_pe) {
+        return $pe;
+    };
+    let $a = select value id from only array::reverse(array::flatten([$his_pe.refnos?:[], $pe])) where <datetime>fn::ses_date(id) <= $dt limit 1;
+    return $a?:$pe;
+};
+
+
 -- fn::latest_pe_sesno(pe:17496_171715, 880, 1112);
 -- fn::latest_pe_sesno(pe:17496_171715, 880);
 -- fn::latest_pe_sesno(pe:17496_171715);
@@ -210,16 +263,68 @@ define function fn::ses_data($pe: record){
     return select * from only $id limit 1;
 };
 
+remove function fn::ses_date;
+define function fn::ses_date($pe: record){
+    return if record::exists($pe) {
+        let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
+        return select value date from only $id limit 1;
+    } else {
+        return none;
+    };
+};
+
+remove function fn::next_is_type;
+DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
+    return fn::next_type($pe)==$type;
+};
+
+remove function fn::prev_pe;
+DEFINE FUNCTION fn::prev_pe($pe:record) {
+    let $a = (record::id($pe->pe_owner.id[0])[1]) - 1;
+    return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
+};
+
+remove function fn::next_pe;
+DEFINE FUNCTION fn::next_pe($pe:record) {
+    let $a = (record::id($pe->pe_owner.id[0])[1]) + 1;
+    return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
+};
+
+remove function fn::prev_type;
+DEFINE FUNCTION fn::prev_type($pe:record) {
+    return fn::prev_pe($pe).noun;
+};
+
+remove function fn::next_type;
+DEFINE FUNCTION fn::next_type($pe:record) {
+    return fn::next_pe($pe).noun;
+};
+
+
+remove function fn::children;
+DEFINE FUNCTION fn::children($pe:record) {
+    return (select value <-pe_owner.in from $pe)[0];
+};
+
+
+// 获取ipara
+remove function fn::get_ipara;
+DEFINE FUNCTION fn::get_ipara($pe:record) {
+    let $ispe = $pe.owner.refno.ISPE;
+    return if $ispe == none {
+        return [0];
+    } else {
+        return (select value (select value CATR.refno.PARA 
+                from only $ispe<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
+                and $parent.owner.refno.TEMP >=refno.ANSW 
+                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.* 
+                where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1)
+            from $pe)[0];
+    };
+};
+
 //根据类型找到父节点
 remove function fn::find_ancestor_type;
 DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
-    return (select value array::flatten([->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id,
-        ->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe->pe_owner->pe[? noun=$t].id
-    ]) from $pe)[0];
+    (array::flatten(select value fn::ancestor(id) from $pe)[?$self.noun=$t])[0]
 };
