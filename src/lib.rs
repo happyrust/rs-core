@@ -71,6 +71,7 @@ pub mod water_calculation;
 pub mod noun_graph;
 
 pub mod data_state;
+pub mod threed_review;
 
 #[cfg(not(feature = "web"))]
 pub mod test;
