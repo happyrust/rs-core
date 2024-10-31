@@ -32,7 +32,7 @@ define function fn::fggd_strt($pes:array<record>) {
         array::first(fn::hvac_size($this.id,fn::hvac_shape($this.id),array::at(string::split(owner.name,'-'),4)?:'')).size as stif_sctn, // 风管加强 型钢
         math::fixed(array::first(fn::hvac_length($this.id,fn::hvac_shape($this.id),array::at(string::split(owner.name,'-'),4)?:'',refno.DESP[5]?:0.0,refno.DESP[1]?:0.0,refno.DESP[2]?:0.0)) / 1000,2) as stif_len, // 风管加强 长度
         math::fixed(array::first(fn::hvac_weight($this.id,fn::hvac_shape($this.id),array::at(string::split(owner.name,'-'),4)?:'',refno.DESP[5]?:0.0,refno.DESP[1]?:0.0,refno.DESP[2]?:0.0)) / 1000,2) as stif_wei, //// 风管加强 重量
-        array::first(fn::strt_flan_size($this.id)).size as flan_steel, // 法兰 型钢
+        array::first(fn::strt_flan_size($this.id)).size?:'' as flan_steel, // 法兰 型钢
         math::fixed(array::first(fn::strt_flan_length($this.id)).length,2) as flan_length,//法兰 长度
         math::fixed(array::first(fn::strt_flan_weight($this.id)).weight,2) as flan_weight, //法兰 总重
         array::first(fn::strt_gask_size($this.id)).size as gask_size, //垫片类型
