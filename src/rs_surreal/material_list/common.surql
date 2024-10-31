@@ -135,5 +135,16 @@ DEFINE FUNCTION fn::array_distance($x: array<array>) {
     return vector::distance::euclidean($x[0], $x[1]);
 };
 
+remove function fn::b_pre_type;
+define function fn::b_pre_type($pe:record,$type:string) {
+    return fn::pre_is_type($pe,$type);
+};
+
+remove function fn::b_next_type;
+define function fn::b_next_type($pe:record,$type:string) {
+    return fn::next_is_type($pe,$type);
+};
+
+
 -- let $x = [[1,2,3],[4,5,6]];
 -- return fn::array_distance($x);
