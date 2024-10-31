@@ -145,6 +145,18 @@ define function fn::b_next_type($pe:record,$type:string) {
     return fn::next_is_type($pe,$type);
 };
 
+// 将已知的desp / para 数字转为 word
+DEFINE FUNCTION fn::into_str($desp: float) {
+    return if $desp == 788296 {
+        'DIAM'
+    } else if $desp == 531717 {
+        'FJ'
+    } else if $desp == 531501 {
+        'FB'
+    } else if $desp = 560742 {
+        'FEMA'
+    };
+};
 
 -- let $x = [[1,2,3],[4,5,6]];
 -- return fn::array_distance($x);

@@ -584,7 +584,7 @@ pub async fn get_gy_valv_list(
 pub async fn get_gy_equi_list(
     db: Surreal<Any>,
     refnos: Vec<RefU64>,
-) -> anyhow::Result<Vec<HashMap<String,Value>>> {
+) -> anyhow::Result<Vec<HashMap<String,serde_json::Value>>> {
     let mut data = Vec::new();
     for refno in refnos {
         let Some(pe) = get_pe(refno.into()).await? else {
