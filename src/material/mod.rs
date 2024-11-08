@@ -109,7 +109,7 @@ pub async fn save_all_material_data() -> anyhow::Result<()> {
     for site in sites {
         dbg!(&site.id);
         let refno = site.id;
-        if site.major != "T".to_string() { continue; };
+        if site.major != "V".to_string() { continue; };
         match site.major.as_str() {
             // 工艺
             "T" => {

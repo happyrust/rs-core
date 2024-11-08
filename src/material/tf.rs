@@ -48,7 +48,6 @@ pub async fn save_tf_material_hvac(
                     let table_name = "通风专业_风管管段清单".to_string();
                     let filed = vec![
                         "参考号",
-                        "描述",
                         "管段编号",
                         "子项号",
                         "材质",
@@ -59,9 +58,6 @@ pub async fn save_tf_material_hvac(
                         "风管壁厚",
                         "风管面积",
                         "风管重量",
-                        "坐标X",
-                        "坐标Y",
-                        "坐标Z",
                         "加强筋型材",
                         "加强筋长度",
                         "加强筋重量",
@@ -75,7 +71,6 @@ pub async fn save_tf_material_hvac(
                         "其它材料数量",
                         "螺杆",
                         "螺母数量",
-                        "螺母数量_2",
                         "所在房间号",
                         "系统",
                     ];
@@ -476,7 +471,7 @@ pub async fn get_tf_hvac_material(
             let refnos = query_ele_filter_deep_children(
                 refno.into(),
                 &[
-                    "BEND", "BRCO", "CAP", "FLEX", "OFST", "STIF", "STRT", "TAPE", "THRE", "TRNS",
+                    "BEND", "BRCO", "CAP", "FLEX", "OFST", "STIF", "STRT", "TAPE", "THRE", "TRNS","TEE"
                 ],
             )
                 .await?;
@@ -551,6 +546,15 @@ pub async fn get_tf_hvac_material(
                 .collect::<Vec<_>>();
             dbg!("THRE");
             let mut result = get_tf_hvac_thre_data(db, brcos).await?;
+            data.append(&mut result);
+            // TEE
+            let tees = refnos
+                .iter()
+                .filter(|x| x.noun == "TEE".to_string())
+                .map(|x| x.refno.into())
+                .collect::<Vec<_>>();
+            dbg!("TEE");
+            let mut result = get_tf_hvac_tee_data(db, tees).await?;
             data.append(&mut result);
             // CAP
             let caps = refnos
@@ -720,8 +724,8 @@ fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     map.entry("id".to_string())
         .or_insert("参考号".to_string());
 
-    map.entry("desc".to_string())
-        .or_insert("描述".to_string());
+    // map.entry("desc".to_string())
+    //     .or_insert("描述".to_string());
 
     map.entry("bran_seg_code".to_string())
         .or_insert("管段编号".to_string());
@@ -925,6 +929,38 @@ async fn get_tf_hvac_thre_data(
         .join(",");
     let sql = format!(
         "return fn::fggd_THRE([{}]);",
+        refnos
+    );
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
+}
+
+/// 获取 通风 风管管段 tee 的数据
+async fn get_tf_hvac_tee_data(
+    db: &Surreal<Any>,
+    refnos: Vec<RefU64>,
+) -> anyhow::Result<Vec<HashMap<String, String>>> {
+    if refnos.is_empty() {
+        return Ok(vec![]);
+    };
+    let mut data = Vec::new();
+    let refnos = refnos
+        .into_iter()
+        .map(|refno| refno.to_pe_key())
+        .collect::<Vec<_>>()
+        .join(",");
+    let sql = format!(
+        "return fn::fggd_tee([{}]);",
         refnos
     );
     let mut response = db.query(&sql).await?;
