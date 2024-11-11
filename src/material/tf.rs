@@ -49,7 +49,6 @@ pub async fn save_tf_material_hvac(
                     let filed = vec![
                         "参考号",
                         "管段编号",
-                        "子项号",
                         "材质",
                         "压力等级",
                         "风管宽度",
@@ -71,7 +70,6 @@ pub async fn save_tf_material_hvac(
                         "螺杆",
                         "螺母数量",
                         "所在房间号",
-                        "系统",
                     ];
                     match create_table_sql(&pool, &table_name, &filed).await {
                         Ok(_) => {
@@ -169,7 +167,7 @@ impl MaterialTfHavcList {
             .or_insert(self.id.to_pdms_str());
         map.entry("描述".to_string()).or_insert(self.description);
         map.entry("管段编号".to_string()).or_insert(self.seg_code);
-        map.entry("子项号".to_string()).or_insert(self.sub_code);
+        // map.entry("子项号".to_string()).or_insert(self.sub_code);
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
@@ -207,11 +205,9 @@ impl MaterialTfHavcList {
         map.entry("螺杆".to_string()).or_insert(self.stud);
         map.entry("螺母数量".to_string())
             .or_insert(self.nut_qty.to_string());
-        map.entry("螺母数量_2".to_string())
-            .or_insert(self.washer_qty.to_string());
         map.entry("所在房间号".to_string())
             .or_insert(self.room_no.unwrap_or("".to_string()));
-        map.entry("系统".to_string()).or_insert(self.system);
+        // map.entry("系统".to_string()).or_insert(self.system);
         map
     }
 }
@@ -284,9 +280,9 @@ impl MaterialTfHavcTapeList {
         let mut map = HashMap::new();
         map.entry("参考号".to_string())
             .or_insert(self.id.to_pdms_str());
-        map.entry("描述".to_string()).or_insert(self.description);
+        // map.entry("描述".to_string()).or_insert(self.description);
         map.entry("管段编号".to_string()).or_insert(self.seg_code);
-        map.entry("子项号".to_string()).or_insert(self.sub_code);
+        // map.entry("子项号".to_string()).or_insert(self.sub_code);
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
@@ -330,7 +326,7 @@ impl MaterialTfHavcTapeList {
             .or_insert(serde_json::to_string(&self.washer_qty).unwrap_or("[]".to_string()));
         map.entry("所在房间号".to_string())
             .or_insert(self.room_no.unwrap_or("".to_string()));
-        map.entry("系统".to_string()).or_insert(self.system);
+        // map.entry("系统".to_string()).or_insert(self.system);
         map
     }
 }
@@ -405,7 +401,7 @@ impl MaterialTfHavcFlexList {
             .or_insert(self.id.to_pdms_str());
         map.entry("描述".to_string()).or_insert(self.description);
         map.entry("管段编号".to_string()).or_insert(self.seg_code);
-        map.entry("子项号".to_string()).or_insert(self.sub_code);
+        // map.entry("子项号".to_string()).or_insert(self.sub_code);
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
@@ -443,11 +439,9 @@ impl MaterialTfHavcFlexList {
         map.entry("螺杆".to_string()).or_insert(self.stud);
         map.entry("螺母数量".to_string())
             .or_insert(serde_json::to_string(&self.nut_qty).unwrap_or("[]".to_string()));
-        map.entry("螺母数量_2".to_string())
-            .or_insert(serde_json::to_string(&self.washer_qty).unwrap_or("[]".to_string()));
         map.entry("所在房间号".to_string())
             .or_insert(self.room_no.unwrap_or("".to_string()));
-        map.entry("系统".to_string()).or_insert(self.system);
+        // map.entry("系统".to_string()).or_insert(self.system);
         map
     }
 }
@@ -729,8 +723,8 @@ fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     map.entry("bran_seg_code".to_string())
         .or_insert("管段编号".to_string());
 
-    map.entry("sub_code".to_string())
-        .or_insert("子项号".to_string());
+    // map.entry("sub_code".to_string())
+    //     .or_insert("子项号".to_string());
 
     map.entry("material".to_string())
         .or_insert("材质".to_string());
@@ -804,17 +798,14 @@ fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     map.entry("nut_count".to_string())
         .or_insert("螺母数量".to_string());
 
-    map.entry("nut_count_b".to_string())
-        .or_insert("螺母数量_2".to_string());
-
     map.entry("gask_count".to_string())
         .or_insert("垫片数量".to_string());
 
     map.entry("room_num".to_string())
         .or_insert("所在房间号".to_string());
 
-    map.entry("system_name".to_string())
-        .or_insert("系统".to_string());
+    // map.entry("system_name".to_string())
+    //     .or_insert("系统".to_string());
 
     map
 }
