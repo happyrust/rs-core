@@ -52,7 +52,6 @@ pub async fn save_tf_material_hvac(
                         "子项号",
                         "材质",
                         "压力等级",
-                        "风管长度",
                         "风管宽度",
                         "风管高度",
                         "风管壁厚",
@@ -174,8 +173,8 @@ impl MaterialTfHavcList {
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
-        map.entry("风管长度".to_string())
-            .or_insert(self.length.to_string());
+        // map.entry("风管长度".to_string())
+        //     .or_insert(self.length.to_string());
         map.entry("风管宽度".to_string()).or_insert(self.width);
         map.entry("风管高度".to_string()).or_insert(self.height);
         map.entry("风管壁厚".to_string())
@@ -291,8 +290,8 @@ impl MaterialTfHavcTapeList {
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
-        map.entry("风管长度".to_string())
-            .or_insert(self.length.to_string());
+        // map.entry("风管长度".to_string())
+        //     .or_insert(self.length.to_string());
         map.entry("风管宽度".to_string())
             .or_insert(serde_json::to_string(&self.width).unwrap_or("[]".to_string()));
         map.entry("风管高度".to_string())
@@ -410,8 +409,8 @@ impl MaterialTfHavcFlexList {
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
-        map.entry("风管长度".to_string())
-            .or_insert(self.length.to_string());
+        // map.entry("风管长度".to_string())
+        //     .or_insert(self.length.to_string());
         map.entry("风管宽度".to_string()).or_insert(self.width);
         map.entry("风管高度".to_string()).or_insert(self.height);
         map.entry("风管壁厚".to_string())
@@ -739,8 +738,8 @@ fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     map.entry("pressure_level".to_string())
         .or_insert("压力等级".to_string());
 
-    map.entry("l".to_string())
-        .or_insert("风管长度".to_string());
+    // map.entry("l".to_string())
+    //     .or_insert("风管长度".to_string());
 
     map.entry("w".to_string())
         .or_insert("风管宽度".to_string());
