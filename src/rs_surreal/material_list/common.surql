@@ -155,6 +155,8 @@ DEFINE FUNCTION fn::into_str($desp: float) {
         'FB'
     } else if $desp = 560742 {
         'FEMA'
+    } else {
+        <string>$desp
     };
 };
 
