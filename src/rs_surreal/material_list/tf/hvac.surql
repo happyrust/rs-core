@@ -79,6 +79,17 @@ DEFINE FUNCTION fn::hvac_shape($pe: record){
     };
 };
 
+remove function fn::hvac_shape_2;
+DEFINE FUNCTION fn::hvac_shape_2($pe: record){
+    return if $pe.refno.DESP[39] == 927441 {
+        return "RECT";
+    } else if $pe.refno.DESP[39] == 603858 {
+        return "CIRC";
+    } else {
+        return "unset";
+    };
+};
+
 remove function fn::shape_name;
 DEFINE FUNCTION fn::shape_name($pe: record){
     return if $pe.refno.DESP[29] == 927441 {

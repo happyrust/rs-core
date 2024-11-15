@@ -156,9 +156,10 @@ DEFINE FUNCTION fn::into_str($desp: float) {
     } else if $desp = 560742 {
         'FEMA'
     } else {
-        <string>$desp
+        <string>math::fixed($desp,2)
     };
 };
+
 
 -- let $x = [[1,2,3],[4,5,6]];
 -- return fn::array_distance($x);
