@@ -8,19 +8,19 @@ use glam::{Mat3, Quat};
 use aios_core::aios_db_mgr::aios_mgr::AiosDBMgr;
 use aios_core::room::room::load_aabb_tree;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    //创建保存元数据里的空间关系结果
-    init_test_surreal().await;
-    // load_aabb_tree().await.unwrap();
-    // create_valve_floor_relations().await.unwrap();
-    dbg!(db1_hash("FJFD"));
-    dbg!(db1_hash("DAMP"));
-    dbg!(db1_hash("MESH"));
-    dbg!(db1_dehash(642952140));
-    // get_uda_type_refnos_from_select_refnos(vec![RefU64::from_str("")])
-    Ok(())
-}
+// #[tokio::main]
+// async fn main() -> anyhow::Result<()> {
+//     //创建保存元数据里的空间关系结果
+//     init_test_surreal().await;
+//     // load_aabb_tree().await.unwrap();
+//     // create_valve_floor_relations().await.unwrap();
+//     dbg!(db1_hash("FJFD"));
+//     dbg!(db1_hash("DAMP"));
+//     dbg!(db1_hash("MESH"));
+//     dbg!(db1_dehash(642952140));
+//     // get_uda_type_refnos_from_select_refnos(vec![RefU64::from_str("")])
+//     Ok(())
+// }
 
 #[test]
 fn get_noun_hash() {
@@ -35,4 +35,4 @@ fn get_noun_hash() {
     }
 }
 
-//todo 提供一个 http 的接口返回数据吗？
+fn main() {}
