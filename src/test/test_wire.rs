@@ -1,3 +1,4 @@
+use crate::init_test_surreal;
 use crate::prim_geo::basic::OccSharedShape;
 #[cfg(feature = "occ")]
 use crate::prim_geo::wire::{gen_occ_wires, gen_polyline, polyline_to_debug_json_str};
@@ -5,11 +6,10 @@ use crate::shape::pdms_shape::PlantMesh;
 use crate::{RefU64, SUL_DB};
 use cavalier_contours::polyline::{seg_midpoint, BooleanOp, PlineSource, PlineVertex, Polyline};
 use cavalier_contours::{pline_closed, polyline};
-use geo::{ConvexHull, LineString, Polygon};
+// use geo::{ConvexHull, LineString, Polygon};
 use glam::{DVec3, Vec3};
 use opencascade::primitives::{Edge, Face, IntoShape, Wire};
 use std::fmt::format;
-use crate::init_test_surreal;
 pub async fn test_wire_from_loop(refno: RefU64) {
     let mut response = SUL_DB
         .query(format!(
@@ -349,27 +349,27 @@ fn test_occ_wire_hole() {
     shape.write_step("test_occ_wire_hole.step").unwrap();
 }
 
-#[test]
-fn test_convex_hull() {
-    //去除有问题的点，在凸包里面的点需要排除
+// #[test]
+// fn test_convex_hull() {
+//     //去除有问题的点，在凸包里面的点需要排除
 
-    let poly = Polygon::new(
-        LineString::from(vec![
-            (0.0, 0.0),
-            (5.05, -174.83),
-            (-133.47, 146.39),
-            (113.89, -100.97),
-            (-207.33, 37.55),
-            (-32.5, 32.5),
-        ]),
-        vec![],
-    );
+//     let poly = Polygon::new(
+//         LineString::from(vec![
+//             (0.0, 0.0),
+//             (5.05, -174.83),
+//             (-133.47, 146.39),
+//             (113.89, -100.97),
+//             (-207.33, 37.55),
+//             (-32.5, 32.5),
+//         ]),
+//         vec![],
+//     );
 
-    let hull = poly.convex_hull();
+//     let hull = poly.convex_hull();
 
-    dbg!(hull.interiors());
-    dbg!(hull.exterior());
-}
+//     dbg!(hull.interiors());
+//     dbg!(hull.exterior());
+// }
 
 #[test]
 fn test_occ_wire_overlap_tolerance() {

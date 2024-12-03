@@ -1,28 +1,28 @@
-use glam::{DMat4, DVec3};
-use std::fmt::Debug;
-use std::fs::File;
-use std::hash::{DefaultHasher, Hash, Hasher};
-use std::io::Write;
 use anyhow::anyhow;
-use downcast_rs::*;
 use bevy_ecs::component::Component;
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;
-use std::io::Read;
-use glam::{Mat4, Vec3, Vec4};
-use serde::{Deserialize, Serialize};
+#[cfg(feature = "render")]
+use bevy_render::render_asset::RenderAssetUsages;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
+use downcast_rs::*;
 use dyn_clone::DynClone;
+use glam::{DMat4, DVec3};
+use glam::{Mat4, Vec3, Vec4};
 use itertools::Itertools;
 use parry3d::bounding_volume::Aabb;
 use parry3d::math::{Point, Vector};
 use parry3d::shape::{TriMesh, TriMeshFlags};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
+use std::fs::File;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::BufWriter;
+use std::io::Read;
+use std::io::Write;
 use std::path::Path;
 use std::vec;
-#[cfg(feature = "render")]
-use bevy_render::render_asset::RenderAssetUsages;
 #[cfg(feature = "truck")]
 use truck_base::bounding_box::BoundingBox;
 #[cfg(feature = "truck")]
@@ -34,6 +34,7 @@ use truck_modeling::{Curve, Shell};
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
+use parry3d::bounding_volume::BoundingVolume;
 
 use crate::geometry::PlantGeoData;
 #[cfg(feature = "occ")]
@@ -74,15 +75,15 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 
 //todo 增加LOD的实现
 #[derive(
-Serialize,
-Deserialize,
-Component,
-Debug,
-Default,
-Clone,
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Component,
+    Debug,
+    Default,
+    Clone,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
 )]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
@@ -93,15 +94,45 @@ pub struct PlantMesh {
 }
 
 impl PlantMesh {
+    ///合并两个mesh
+    pub fn merge(&mut self, other: &Self) {
+        let vertex_offset = self.vertices.len() as u32;
+        self.indices
+            .extend(other.indices.iter().map(|&i| i + vertex_offset));
+        self.vertices.extend(other.vertices.iter());
+        self.normals.extend(other.normals.iter());
+        // self.wire_vertices.extend(other.wire_vertices.iter());
+
+        // Merge aabb if present
+        if let Some(other_aabb) = &other.aabb {
+            if let Some(self_aabb) = &mut self.aabb {
+                *self_aabb = self_aabb.merged(other_aabb);
+            } else {
+                self.aabb = Some(*other_aabb);
+            }
+        }
+    }
+}
+
+impl PlantMesh {
+    ///生成occ mesh
     #[cfg(feature = "occ")]
     pub fn gen_occ_mesh(shape: &Shape, tol: f64) -> anyhow::Result<Self> {
         let mut aabb = Aabb::new_invalid();
         let mesh = shape.mesh_with_tolerance(tol)?;
-        let vertices = mesh.vertices.iter().map(|&x| x.as_vec3()).collect::<Vec<_>>();
+        let vertices = mesh
+            .vertices
+            .iter()
+            .map(|&x| x.as_vec3())
+            .collect::<Vec<_>>();
         for point in vertices.iter() {
-            aabb.take_point(nalgebra::Point3::new(point.x as f32, point.y as f32, point.z as f32));
+            aabb.take_point(nalgebra::Point3::new(
+                point.x as f32,
+                point.y as f32,
+                point.z as f32,
+            ));
         }
-
+        ///生成mesh
         Ok(PlantMesh {
             indices: mesh.indices.iter().map(|&x| x as u32).collect(),
             vertices,
@@ -111,11 +142,13 @@ impl PlantMesh {
         })
     }
 
+    ///生成tri mesh
     #[inline]
     pub fn get_tri_mesh(&self, trans: Mat4) -> Option<TriMesh> {
         self.get_tri_mesh_with_flag(trans, TriMeshFlags::default())
     }
 
+    ///生成带flag的tri mesh
     #[inline]
     pub fn get_tri_mesh_with_flag(&self, trans: Mat4, flag: TriMeshFlags) -> Option<TriMesh> {
         if self.indices.len() < 3 {
@@ -148,6 +181,7 @@ impl PlantMesh {
         Some(aabb)
     }
 
+    ///计算法线
     pub fn cal_normals(&mut self) {
         for (_i, c) in self.indices.chunks(3).enumerate() {
             let a: Vec3 = self.vertices[c[0] as usize];
@@ -175,6 +209,7 @@ impl PlantMesh {
         mesh
     }
 
+    ///变换mesh
     pub fn transform_by(&self, t: &DMat4) -> Self {
         let mut vertices = Vec::with_capacity(self.vertices.len());
         let mut normals = Vec::with_capacity(self.vertices.len());
@@ -198,11 +233,20 @@ impl PlantMesh {
         }
     }
 
+    ///缩放mesh
+    pub fn scale_by(&mut self, scale: f32) {
+        self.vertices.iter_mut().for_each(|v| {
+            *v *= scale;
+        });
+    }
+
+    ///序列化
     #[inline]
     pub fn ser_to_bytes(&self) -> Vec<u8> {
         rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec()
     }
 
+    ///序列化到文件
     #[inline]
     pub fn ser_to_file(&self, file_path: &dyn AsRef<Path>) -> anyhow::Result<()> {
         let bytes = rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec();
@@ -211,6 +255,7 @@ impl PlantMesh {
         Ok(())
     }
 
+    ///从文件反序列化
     pub fn des_mesh_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
@@ -221,6 +266,7 @@ impl PlantMesh {
         Ok(r)
     }
 
+    ///从bytes反序列化
     pub fn des_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         use rkyv::Deserialize;
         let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
@@ -228,7 +274,7 @@ impl PlantMesh {
         Ok(r)
     }
 
-
+    ///压缩bytes
     #[inline]
     pub fn into_compress_bytes(&self) -> Vec<u8> {
         use flate2::write::DeflateEncoder;
@@ -238,6 +284,7 @@ impl PlantMesh {
         e.finish().unwrap_or_default()
     }
 
+    ///从压缩bytes反序列化
     #[inline]
     pub fn from_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         use flate2::write::DeflateDecoder;
@@ -247,27 +294,35 @@ impl PlantMesh {
         Ok(bincode::deserialize(&deflater.finish()?)?)
     }
 
+    ///导出obj
     pub fn export_obj(&self, reverse: bool, file_path: &str) -> std::io::Result<()> {
         let mut buffer = BufWriter::new(File::create(file_path)?);
         buffer.write_all(b"# List of geometric vertices, with (x, y, z [,w]) coordinates, w is optional and defaults to 1.0.\n")?;
-        for vd in &self.vertices {
+        for (vd, n) in self.vertices.iter().zip(self.normals.iter()) {
             buffer.write_all(
                 format!(
                     "v {:.3} {:.3} {:.3}\n",
                     vd[0] as f32, vd[1] as f32, vd[2] as f32
                 )
-                    .as_ref(),
+                .as_ref(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "vn {:.3} {:.3} {:.3}\n",
+                    n[0] as f32, n[1] as f32, n[2] as f32
+                )
+                .as_ref(),
             )?;
         }
         buffer.write_all(b"# Polygonal face element\n")?;
         for id in self.indices.chunks(3) {
             if reverse {
                 buffer.write_all(
-                    format!("f {} {} {}\n", id[2] + 1, id[1] + 1, id[0] + 1, ).as_ref(),
+                    format!("f {} {} {}\n", id[2] + 1, id[1] + 1, id[0] + 1,).as_ref(),
                 )?;
             } else {
                 buffer.write_all(
-                    format!("f {} {} {}\n", id[0] + 1, id[1] + 1, id[2] + 1, ).as_ref(),
+                    format!("f {} {} {}\n", id[0] + 1, id[1] + 1, id[2] + 1,).as_ref(),
                 )?;
             }
         }
@@ -277,26 +332,32 @@ impl PlantMesh {
     }
 }
 
-
+/// 三角形容差
 pub const TRI_TOL: f32 = 0.001;
+/// 长度容差
 pub const LEN_TOL: f32 = 0.001;
+/// 角度容差(弧度)
 pub const ANGLE_RAD_TOL: f32 = 0.001;
+/// 角度容差(弧度,f64)
 pub const ANGLE_RAD_F64_TOL: f64 = 0.001;
+/// 最小尺寸容差
 pub const MIN_SIZE_TOL: f32 = 0.01;
+/// 最大尺寸容差
 pub const MAX_SIZE_TOL: f32 = 1.0e5;
+/// 为BrepShapeTrait实现Clone特征
 dyn_clone::clone_trait_object!(BrepShapeTrait);
 
 #[derive(
-rkyv::Archive,
-rkyv::Deserialize,
-rkyv::Serialize,
-Serialize,
-Deserialize,
-Deref,
-DerefMut,
-Clone,
-Default,
-Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Serialize,
+    Deserialize,
+    Deref,
+    DerefMut,
+    Clone,
+    Default,
+    Debug,
 )]
 pub struct RsVec3(pub Vec3);
 
@@ -330,6 +391,10 @@ impl From<Vec3> for RsVec3 {
     }
 }
 
+/// 将truck库的Point3类型转换为RsVec3类型
+///
+/// 当启用truck特性时，实现从Point3到RsVec3的转换
+/// 将Point3的x,y,z坐标转换为f32类型并构造Vec3
 #[cfg(feature = "truck")]
 impl From<Point3> for RsVec3 {
     fn from(value: Point3) -> Self {
@@ -356,7 +421,8 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
     fn key_points(&self) -> Vec<RsVec3> {
         #[cfg(feature = "truck")]
         {
-            return self.gen_unit_shape()
+            return self
+                .gen_unit_shape()
                 .gen_brep_shell()
                 .map(|x| {
                     x.vertex_iter()
@@ -429,7 +495,6 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
         TRI_TOL
     }
 
-
     #[cfg(feature = "occ")]
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
         let geo_hash = self.hash_unit_mesh_params();
@@ -439,17 +504,21 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
         let mut aabb = Aabb::new_invalid();
         for edge in shape.edges() {
             for point in edge.approximation_segments() {
-                aabb.take_point(nalgebra::Point3::new(point.x as f32, point.y as f32, point.z as f32));
+                aabb.take_point(nalgebra::Point3::new(
+                    point.x as f32,
+                    point.y as f32,
+                    point.z as f32,
+                ));
             }
         }
 
-        let mesh = shape.mesh_with_tolerance(self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64)?;
+        let mesh =
+            shape.mesh_with_tolerance(self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64)?;
 
         Ok(PlantGeoData {
             geo_hash,
             aabb: Some(aabb),
         })
-
 
         // Err(anyhow!("occ shape meshed failed"))
     }
@@ -643,7 +712,6 @@ impl BevyMathTrait for Point3 {
         [self[0] as f32, self[1] as f32, self[2] as f32]
     }
 }
-
 
 #[cfg(feature = "truck")]
 #[inline]

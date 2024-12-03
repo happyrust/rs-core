@@ -53,11 +53,9 @@ DEFINE FUNCTION fn::get_tray_type($pe:record) {
 
 remove FUNCTION fn::get_uda_value;
 DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
-    RETURN (
-        SELECT VALUE (
-            SELECT VALUE v FROM ONLY udas.* WHERE u.NAME == $uda_name LIMIT 1
-        ) FROM type::thing("ATT_UDA", record::id($pe.id))
-    )[0][0];
+   RETURN SELECT VALUE (
+                SELECT VALUE object::values(v) FROM ONLY udas.* WHERE u.NAME ==  $uda_name LIMIT 1
+            )[0] FROM ONLY type::thing("ATT_UDA", record::id($pe)) limit 1
 };
 
 remove FUNCTION fn::get_cover_info;

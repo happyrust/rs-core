@@ -36,7 +36,6 @@ use serde_with::{serde_as, DisplayFromStr};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display, Pointer};
 use std::io::{Read, Write};
-use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::string::ToString;
 use surrealdb::sql::Thing;

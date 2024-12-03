@@ -36,8 +36,24 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="WIP 版本管理的查询处理">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update surql">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/achiver/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/achiver/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/facet.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/facet.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/room/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/room/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dq_common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dq_common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/run_dq.bat" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/run_dq.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_wire.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,7 +63,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -121,6 +137,7 @@
     &quot;Batch.run.executor&quot;: &quot;Run&quot;,
     &quot;Batch.run_defines (1).executor&quot;: &quot;Run&quot;,
     &quot;Batch.run_defines.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run_dq.executor&quot;: &quot;Run&quot;,
     &quot;Batch.run_tool_defines.executor&quot;: &quot;Run&quot;,
     &quot;Batch.未命名.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Run aios_core.executor&quot;: &quot;Run&quot;,
@@ -264,7 +281,7 @@
     &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
     &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;language.rust&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -300,13 +317,22 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT">
+  <component name="RunManager" selected="Batch.run_dq">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="WORKING_DIRECTORY" value="./" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SCRIPT_NAME" value="cargo-clif test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_dq" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/material_list/dq" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run_dq.bat" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
@@ -346,23 +372,6 @@
     </configuration>
     <configuration name="Test test::test_material::test_perform_multiplication_with_none" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="test --package aios_core --lib test::test_material::test_perform_multiplication_with_none -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -431,26 +440,26 @@
     </configuration>
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
+      <item itemvalue="Batch.run_dq" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
       <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
-      <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
+        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
         <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
         <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
+        <item itemvalue="Batch.run_dq" />
       </list>
     </recent_temporary>
   </component>
   <component name="RustProjectSettings">
-    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="toolchainHomeDirectory" value="D:/.cargo/bin" />
   </component>
   <component name="RustfmtProjectSettings">
     <option name="useRustfmt" value="true" />
@@ -968,6 +977,15 @@
       <workItem from="1729780105625" duration="396000" />
       <workItem from="1729833727362" duration="10000" />
       <workItem from="1729836401814" duration="659000" />
+      <workItem from="1730794752617" duration="4215000" />
+      <workItem from="1731401829908" duration="1062000" />
+      <workItem from="1731517911520" duration="21000" />
+      <workItem from="1731996832984" duration="1247000" />
+      <workItem from="1732012752368" duration="60000" />
+      <workItem from="1732074913023" duration="2894000" />
+      <workItem from="1732432149865" duration="1284000" />
+      <workItem from="1732436511318" duration="123000" />
+      <workItem from="1733036193757" duration="4115000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>

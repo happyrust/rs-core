@@ -303,7 +303,7 @@ DEFINE FUNCTION fn::next_type($pe:record) {
 
 remove function fn::children;
 DEFINE FUNCTION fn::children($pe:record) {
-    return (select value <-pe_owner.in from $pe)[0];
+    return array::distinct(select value in from $pe<-pe_owner where record::exists(in.id) and !in.deleted);
 };
 
 
@@ -328,3 +328,14 @@ remove function fn::find_ancestor_type;
 DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
     (array::flatten(select value fn::ancestor(id) from $pe)[?$self.noun=$t])[0]
 };
+
+remove function fn::get_mdb_dbnums;
+ DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
+            let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
+            return (select value dbnum from (
+                select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
+                from WORL
+                where REFNO.dbnum in $dbnos
+                order by o
+            ));
+    }

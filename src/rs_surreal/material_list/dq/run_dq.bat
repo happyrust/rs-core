@@ -1,6 +1,6 @@
 @echo off
 REM 将 http 地址取自环境变量
-if not defined HTTP_ADDR set HTTP_ADDR=http://127.0.0.1:8008
+if not defined HTTP_ADDR set HTTP_ADDR=http://127.0.0.1:8009
 REM database name
 if not defined DATABASE_NAME set DATABASE_NAME=AvevaMarineSample
 REM namespace

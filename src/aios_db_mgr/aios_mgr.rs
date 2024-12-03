@@ -52,7 +52,7 @@ impl AiosDBMgr {
         match init_surreal_with_signin(&db_option).await {
             Ok(_) => {}
             Err(e) => {
-                dbg!(&e.to_string());
+                // dbg!(&e.to_string());
             }
         }
         Ok(Self { db_option })

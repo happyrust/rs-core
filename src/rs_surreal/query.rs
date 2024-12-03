@@ -779,8 +779,8 @@ pub async fn query_single_by_paths(
         ps.join(","),
         refno.to_pe_key()
     );
-    // #[cfg(debug_assertions)]
-    // println!("query_single_by_paths Sql is {}", sql);
+    #[cfg(feature = "debug_model")]
+    println!("query_single_by_paths Sql is {}", sql);
     let mut response = SUL_DB.query(sql).await?;
     let r: surrealdb::Value = response.take(0)?;
     // dbg!(&r);

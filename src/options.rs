@@ -6,56 +6,75 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
+    /// 是否启用日志
     #[clap(long, default_value = "false")]
     pub enable_log: bool,
+    /// 是否全量同步
     #[clap(long)]
     pub total_sync: bool,
+    /// 是否启用索引
     #[clap(long)]
     pub enable_index: Option<bool>,
+    /// 是否同步图数据库
     #[clap(long)]
     pub sync_graph_db: Option<bool>,
+    /// 是否同步TiDB
     #[clap(long)]
     pub sync_tidb: Option<bool>,
+    /// 是否同步版本化数据,默认为true
     #[clap(long, default_value = "true")]
     pub sync_versioned: Option<bool>,
+    /// 是否同步实时数据
     #[clap(long)]
     pub sync_live: Option<bool>,
+    /// 是否同步历史数据
     #[clap(long)]
     pub sync_history: Option<bool>,
+    /// 是否增量同步
     #[clap(long)]
     pub incr_sync: bool,
+    /// 是否只同步系统数据
     #[clap(long)]
     pub sync_only_sys: Option<bool>,
     // #[clap(long)]
     // pub replace_insert: Option<bool>,
+    /// 同步的chunk size
     #[clap(long, default_value = "10_0000")]
     pub sync_chunk_size: Option<u32>,
 
+    /// 是否使用tidb
     #[clap(long)]
     pub use_tidb: Option<bool>,
 
-    //添加这4个变量
+    /// 版本库的ip
     #[clap(long)]
     pub v_ip: String,
+    /// 版本库的用户
     #[clap(long)]
     pub v_user: String,
+    /// 版本库的密码
     #[clap(long)]
     pub v_password: String,
+    /// 版本库的端口
     #[clap(long)]
-    pub v_port: String,
+    pub v_port: u16,
 
     // #[clap(long)]
     // pub kv_ip: String,
     // #[clap(long)]
     // pub kv_port: String,
-
-    // mqtt_host
+    /// mqtt的host
     #[clap(long)]
     pub mqtt_host: String,
+    /// mqtt的端口
     #[clap(long)]
     pub mqtt_port: u16,
+    /// 需要同步的location
     #[clap(long)]
     pub location: String,
+    /// 需要同步的location的db
+    #[clap(long)]
+    pub location_dbs: Vec<u32>,
 
     #[clap(long)]
     pub remote_file_server_hosts: Vec<String>,
@@ -85,95 +104,141 @@ pub struct DbOption {
     pub included_projects: Vec<String>,
     //覆盖project的目录名
     pub project_dirs: Option<Vec<String>>,
+    /// 包含的数据库文件列表
     #[clap(skip)]
     pub included_db_files: Option<Vec<String>>,
+    /// MDB数据库名称
     #[clap(long)]
     pub mdb_name: String,
+    /// 模块名称
     #[clap(long)]
     pub module: String,
+    /// 项目名称
     #[clap(long)]
     pub project_name: String,
+    /// 项目代码
     #[clap(long)]
     pub project_code: String,
+    /// SurrealDB命名空间
     #[clap(skip)]
     pub surreal_ns: String,
+    /// 手动指定的数据库编号列表
     #[clap(skip)]
     pub manual_db_nums: Option<Vec<u32>>,
+    /// 是否重置MDB项目
     #[clap(long)]
     pub reset_mdb_project: Option<bool>,
 
+    /// 是否打印世界坐标系变换矩阵
     #[clap(long)]
     pub debug_print_world_transform: bool,
+    /// 调试用的根节点引用号列表
     #[clap(skip)]
     pub debug_root_refnos: Option<Vec<String>>,
+    /// 是否生成历史模型
     #[clap(long)]
     pub gen_history_model: Option<bool>,
+    /// 测试用的引用号
     pub test_refno: Option<String>,
+    /// 使用特定引用号生成模型
     pub gen_using_spref_refnos: Option<Vec<String>>,
+    /// 手动同步的引用号列表
     #[clap(skip)]
     pub manual_sync_refnos: Option<Vec<String>>,
+    /// 房间根节点引用号列表
     #[clap(skip)]
     pub room_root_refnos: Option<Vec<String>>,
+    /// 调试用的引用号类型列表
     #[clap(skip)]
     pub debug_refno_types: Vec<String>,
+    /// 是否替换网格
     #[clap(long)]
     pub replace_mesh: Option<bool>,
+    /// 是否生成网格
     #[clap(long)]
     pub gen_mesh: bool,
+    /// 是否生成材质
     #[clap(skip)]
     pub gen_material: Option<bool>,
+    /// 是否保存到数据库
     #[clap(long)]
     pub save_db: Option<bool>,
+    /// 是否需要同步基础引用号
     #[clap(long)]
     pub need_sync_refno_basic: bool,
+    /// 是否仅更新数据库信息
     #[clap(long)]
     pub only_update_dbinfo: bool,
+    /// 数据库IP地址
     #[clap(long)]
     pub ip: String,
+    /// 数据库用户名
     #[clap(long)]
     pub user: String,
+    /// 数据库密码
     #[clap(long)]
     pub password: String,
+    /// 数据库端口号
     #[clap(long)]
     pub port: String,
+    /// SQL线程数量
     #[clap(short)]
     pub sql_threads_number: u32,
+    /// 是否重建SSC树
     #[clap(short)]
     pub rebuild_ssc_tree: bool,
+    /// 批量插入SQL语句的数量
     #[clap(short)]
     pub batch_insert_sql_cnt: u32,
+    /// PE块大小
     #[clap(short)]
     pub pe_chunk: u32,
+    /// 属性块大小
     #[clap(short)]
     pub att_chunk: u32,
+    /// 生成模型的批处理大小
     #[clap(short)]
     pub gen_model_batch_size: usize,
+    /// ArangoDB数据库URL地址
     #[clap(long)]
     pub arangodb_url: String,
+    /// 服务器发布IP地址
     #[clap(long)]
     pub server_release_ip: String,
+    /// ArangoDB数据库用户名
     #[clap(long)]
     pub arangodb_user: String,
+    /// ArangoDB数据库密码
     #[clap(long)]
     pub arangodb_password: String,
+    /// ArangoDB数据库名称
     #[clap(long)]
     pub arangodb_database: String,
+    /// 房间内的引用号列表
     #[clap(skip)]
     pub withing_room_refnos: Option<String>,
+    /// 建筑数据库编号列表
     #[clap(skip)]
     pub arch_db_nums: Option<Vec<i32>>,
+    /// 是否将空间树保存到数据库
     #[clap(long)]
     pub save_spatial_tree_to_db: bool,
+    /// 是否启用多线程
     #[clap(long)]
     pub multi_threads: bool,
+    /// 是否仅同步系统
     #[clap(short)]
     pub only_sync_sys: bool,
+    /// 平台URL地址
     #[clap(long)]
     pub plat_url: String,
+    /// 普华数据库IP地址
     #[clap(long)]
     pub puhua_database_ip: String,
+    /// 普华数据库用户名
     #[clap(long)]
     pub puhua_database_user: String,
+    /// 普华数据库密码
     #[clap(long)]
     pub puhua_database_password: String,
 
@@ -189,11 +254,11 @@ impl DbOption {
     //     self.geom_live.unwrap_or(false)
     // }
 
-    pub fn get_test_refno(&self) -> Option<RefnoEnum>{
+    pub fn get_test_refno(&self) -> Option<RefnoEnum> {
         self.test_refno.as_ref().map(|x| x.as_str().into())
     }
 
-    pub fn build_cate_relate(&self) -> bool{
+    pub fn build_cate_relate(&self) -> bool {
         self.build_cate_relate.unwrap_or(false)
     }
 
@@ -223,7 +288,9 @@ impl DbOption {
 
     #[inline]
     pub fn get_room_key_word(&self) -> Vec<String> {
-        self.room_key_word.clone().unwrap_or(vec!["-RM".to_string()])
+        self.room_key_word
+            .clone()
+            .unwrap_or(vec!["-RM".to_string()])
     }
 
     #[inline]
@@ -268,7 +335,8 @@ impl DbOption {
 
     #[inline]
     pub async fn get_all_debug_refnos(&self) -> Vec<RefnoEnum> {
-        let mut refnos = self.debug_root_refnos
+        let mut refnos = self
+            .debug_root_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
             .unwrap_or_default();
@@ -283,11 +351,7 @@ impl DbOption {
         let mut debug_spref_refnos = self
             .gen_using_spref_refnos
             .as_ref()
-            .map(|x| {
-                x.iter()
-                    .map(|x| x.as_str().into())
-                    .collect::<Vec<_>>()
-            })
+            .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
             .unwrap_or_default();
         let using_debug_spref_ele_refnos = if !debug_spref_refnos.is_empty() {
             let refnos = crate::query_ele_refnos_by_spres(&debug_spref_refnos)
@@ -297,8 +361,12 @@ impl DbOption {
         } else {
             vec![]
         };
-        refnos.extend(using_debug_spref_ele_refnos.into_iter().map(|x| RefnoEnum::Refno(x)));
-        
+        refnos.extend(
+            using_debug_spref_ele_refnos
+                .into_iter()
+                .map(|x| RefnoEnum::Refno(x)),
+        );
+
         refnos
     }
 
@@ -313,7 +381,7 @@ impl DbOption {
     #[inline]
     pub fn get_version_db_conn_str(&self) -> String {
         let ip = self.v_ip.as_str();
-        let port = self.v_port.as_str();
+        let port = self.v_port;
         format!("ws://{ip}:{port}")
     }
 

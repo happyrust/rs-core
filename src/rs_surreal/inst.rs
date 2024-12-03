@@ -85,6 +85,7 @@ pub struct ModelHashInst {
 pub struct ModelInstData {
     pub owner: RefnoEnum,
     pub old_refno: Option<RefnoEnum>,
+    pub has_neg: bool,
     pub insts: Vec<ModelHashInst>,
     pub generic: PdmsGenericType,
     pub world_trans: Transform,
@@ -94,33 +95,51 @@ pub struct ModelInstData {
     pub date: NaiveDateTime,
 }
 
+///
+/// 几何实例查询结构体
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeomInstQuery {
+    /// 构件编号，别名为id
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
+    /// 历史构件编号
     pub old_refno: Option<RefnoEnum>,
+    /// 所属构件编号
     pub owner: RefnoEnum,
+    /// 世界坐标系下的包围盒
     pub world_aabb: Aabb,
+    /// 世界坐标系下的变换矩阵
     pub world_trans: Transform,
+    /// 几何实例列表
     pub insts: Vec<ModelHashInst>,
+    /// 是否包含负实体
+    pub has_neg: bool,
+    /// 构件类型
     pub generic: String,
+    /// 点集数据
     pub pts: Option<Vec<Vec3>>,
+    /// 时间戳
     pub date: surrealdb::sql::Datetime,
 }
 
+/// 几何点集查询结构体
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeomPtsQuery {
+    /// 构件编号，别名为id
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
+    /// 世界坐标系下的变换矩阵
     pub world_trans: Transform,
+    /// 世界坐标系下的包围盒
     pub world_aabb: Aabb,
+    /// 点集组，每组包含一个变换矩阵和可选的点集数据
     pub pts_group: Vec<(Transform, Option<Vec<DVec3>>)>,
 }
-
 
 /// 根据最新refno查询最新insts
 pub async fn query_insts(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
+    enable_holes: bool,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
 
@@ -128,17 +147,32 @@ pub async fn query_insts(
 
     let inst_keys = get_inst_relate_keys(&refnos);
 
-    let sql = format!(
-        r#"
+    let sql = if enable_holes {
+        format!(
+            r#"
             select
                 in.id as refno,
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
                 if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                booled_id != none as has_neg,
                 fn::ses_date(in.id) as date
             from {inst_keys} where aabb.d != none
         "#
-    );
+        )
+    } else {
+        format!(
+            r#"
+            select
+                in.id as refno,
+                in.old_pe as old_refno,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
+                (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
+                booled_id != none as has_neg,
+                fn::ses_date(in.id) as date
+            from {inst_keys} where aabb.d != none "#
+        )
+    };
     // println!("Query insts sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
@@ -202,3 +236,54 @@ pub async fn query_insts(
 
 //     Ok(geom_insts)
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{init_test_surreal, RefnoEnum};
+
+    #[tokio::test]
+    async fn test_query_insts() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        // Test case 1: Query single refno
+        let refnos = vec!["17496/496442".into()];
+        let result = query_insts(&refnos, false).await?;
+        assert!(!result.is_empty(), "Should return at least one instance");
+        dbg!(&result);
+
+        // Verify returned instance has expected fields
+        let first_inst = &result[0];
+        // assert!(
+        //     first_inst.world_aabb.is_some(),
+        //     "World AABB should be present"
+        // );
+        // assert!(
+        //     first_inst.world_trans.is_some(),
+        //     "World transform should be present"
+        // );
+        // assert!(
+        //     !first_inst.insts.is_empty(),
+        //     "Should have geometry instances"
+        // );
+
+        assert!(
+            first_inst.has_neg == true,
+            "Should not have negative geometry"
+        );
+
+        // Test case 2: Query multiple refnos
+        // let refnos = vec![RefnoEnum::Pe(24383_84088), RefnoEnum::Pe(24383_84089)];
+        // let result = query_insts(&refnos).await?;
+        // assert!(result.len() >= 2, "Should return multiple instances");
+
+        // // Test case 3: Query non-existent refno
+        // let refnos = vec![RefnoEnum::Pe(0)];
+        // let result = query_insts(&refnos).await?;
+        // assert!(
+        //     result.is_empty(),
+        //     "Should return empty for non-existent refno"
+        // );
+
+        Ok(())
+    }
+}
