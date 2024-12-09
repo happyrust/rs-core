@@ -48,6 +48,7 @@ pub mod bin_data;
 pub mod create_attas_structs;
 pub mod data_center;
 pub mod datacenter_options;
+pub mod metadata;
 pub mod metadata_manager;
 pub mod negative_mesh_type;
 pub mod options;
