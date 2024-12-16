@@ -86,6 +86,7 @@ pub struct DataCenterAttr {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum AttrValue {
+    Invalid,
     AttrString(String),
     AttrFloat(f32),
     AttrInt(i32),
@@ -111,6 +112,9 @@ impl Default for AttrValue {
 impl Into<String> for AttrValue {
     fn into(self) -> String {
         match self {
+            AttrValue::Invalid => {
+                AttrValue::default().into()
+            }
             AttrString(a) => {
                 a
             }
