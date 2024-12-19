@@ -328,3 +328,14 @@ remove function fn::find_ancestor_type;
 DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
     (array::flatten(select value fn::ancestor(id) from $pe)[?$self.noun=$t])[0]
 };
+
+// 根据类型返回子节点
+remove function fn::find_deep_children_type;
+define function fn::find_deep_children_type($pe:record,$t:string) {
+    let $children = array::flatten( object::values( (select
+                      [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only $pe where record::exists(id))?:{{}} ) );
+
+    return select value id from $children where id.noun == $t
+
+};
