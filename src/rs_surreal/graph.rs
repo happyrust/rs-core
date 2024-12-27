@@ -4,6 +4,7 @@ use crate::noun_graph::*;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::ssc_setting::PbsElement;
+use crate::three_dimensional_review::ModelDataIndex;
 use crate::types::*;
 use crate::{query_types, rs_surreal, NamedAttrMap, RefU64};
 use crate::{SurlValue, SUL_DB};
@@ -462,4 +463,70 @@ pub async fn get_uda_type_refnos_from_select_refnos(
         }
     }
     Ok(result)
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct WallContainsDoor {
+    pub refno: RefU64,
+    pub wall_name: String,
+    pub fitts: Vec<WallDoorResult>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+struct WallDoorResult {
+    pub refno: RefU64,
+    pub name: String,
+    pub wall: RefU64,
+}
+
+/// 根据选择节点找到下面的wall和wall上的门
+pub async fn query_wall_doors(refno: RefU64) -> anyhow::Result<HashMap<RefU64, Vec<WallContainsDoor>>> {
+    // 找到墙
+    let mut walls_q = SUL_DB
+        .query(format!(
+            "select fn::find_deep_children_types(id,['STWALL', 'GWALL', 'WALL']) from {}",
+            refno.to_pe_key()
+        ))
+        .await?;
+    let walls: Vec<RefU64> = walls_q.take(0)?;
+    let walls_key = walls.into_iter().map(|wall| wall.to_pe_key()).join(",");
+    // 查询墙的name
+    let mut name_q = SUL_DB
+        .query(format!(
+            "select fn::default_full_name(id) as name,id from [{}]",
+            &walls_key
+        ))
+        .await?;
+    let wall_names: Vec<ModelDataIndex> = name_q.take(0)?;
+    let wall_names_map = wall_names
+        .into_iter()
+        .map(|wall| (wall.refno, wall.name))
+        .collect::<HashMap<RefU64, String>>();
+    // 找到墙下面的门洞
+    let mut fitts_q = SUL_DB
+        .query(format!("fn::find_door_from_wall([{}])", walls_key))
+        .await?;
+    let fitts: Vec<WallDoorResult> = fitts_q.take(0)?;
+    // 将数据按墙分类
+    let mut fitts_map = HashMap::new();
+    for fitt in fitts {
+        fitts_map
+            .entry(fitt.wall)
+            .or_insert_with(Vec::new)
+            .push(fitt);
+    }
+    let mut map = HashMap::new();
+    for (wall, wall_name) in wall_names_map {
+        let Some(fitts) = fitts_map.get(&wall) else {
+            continue;
+        };
+        map.entry(wall)
+            .or_insert_with(Vec::new)
+            .push(WallContainsDoor {
+                refno,
+                wall_name,
+                fitts: fitts.clone(),
+            })
+    }
+    Ok(map)
 }
