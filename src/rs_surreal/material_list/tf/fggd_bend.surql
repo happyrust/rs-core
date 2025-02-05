@@ -4,7 +4,7 @@ define function fn::fggd_bend($pes:array<record>) {
         fn::pe_to_refno(id) as id, // 参考号
         fn::fggd_bran_code(id)[0] as bran_seg_code, // 管段编号
         string::concat(string::replace(string::split(owner.name,'-')[4]?:'','L','B'),'P') as pressure_level, // 压力等级
-        if fn::hvac_shape($this.id) == 'CIRC' { string::concat('φ',<string>math::fixed(refno.DESP[1],2)) } else { <string>math::fixed(refno.DESP[1]?:0.0,2) } as w, // 宽
+        if fn::hvac_shape($this.id) == 'CIRC' { string::concat('φ',<string>math::fixed(refno.DESP[1]?:0.0,2)) } else { <string>math::fixed(refno.DESP[1]?:0.0,2) } as w, // 宽
         if fn::hvac_shape($this.id) == 'CIRC' { '' } else { <string>math::fixed(refno.DESP[2]?:0.0,2) } as h, // 高
         fn::hvac_thickness_bend(id)?:'' as thickness, // 风管壁厚
         fn::hvac_area_bend(id)?:'' as area, // 风管面积
@@ -22,7 +22,7 @@ define function fn::fggd_bend($pes:array<record>) {
         '' as screw, // 螺杆
         '' as nut_count, // 螺母数量
         fn::room_code(id)[0]?:'' as room_num , // 房间号
-        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],';') as material // 材质
+        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],',') as material // 材质
     from $pes;
 };
 

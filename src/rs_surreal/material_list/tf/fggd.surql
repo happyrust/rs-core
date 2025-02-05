@@ -3,7 +3,7 @@
 remove function fn::hvac_material;
 DEFINE FUNCTION fn::hvac_material($pe:record) {
     let $mat_code_map = ['','GS', 'CS'	,'ACS','SS','ASS','FP'];
-    return array::at($mat_code_map,<int>array::at(string::split($pe.owner.name,'-'),3))?:'';
+    return array::at($mat_code_map,fn::str_into_int(array::at(string::split($pe.owner.name,'-'),3)))?:'';
 };
 
 
@@ -31,7 +31,7 @@ define function fn::fggd_strt($pes:array<record>) {
         '' as screw, // 螺杆
         '' as nut_count, // 螺母数量
         fn::room_code(id)[0]?:'' as room_num , // 房间号
-        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],';') as material // 材质
+        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],',') as material // 材质
     from $pes;
 };
 

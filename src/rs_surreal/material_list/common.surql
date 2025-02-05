@@ -160,6 +160,11 @@ DEFINE FUNCTION fn::into_str($desp: float) {
     };
 };
 
-
--- let $x = [[1,2,3],[4,5,6]];
--- return fn::array_distance($x);
+remove function fn::str_into_int;
+define function fn::str_into_int($input:string) {
+    return if string::is::numeric($input) {
+        <int>$input
+    } else {
+        0
+    }
+};

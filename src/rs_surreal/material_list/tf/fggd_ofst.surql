@@ -22,7 +22,7 @@ define function fn::fggd_ofst($pes:array<record>) {
         '' as screw, // 螺杆
         '' as nut_count, // 螺母数量
         fn::room_code(id)[0]?:'' as room_num , // 房间号
-        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],';') as material // 材质
+        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],',') as material // 材质
     from $pes;
 };
 

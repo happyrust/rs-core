@@ -5,7 +5,7 @@ DEFINE FUNCTION fn::hvac_stype($pe: record){
 
 remove function fn::hvac_mat_number;
 DEFINE FUNCTION fn::hvac_mat_number($pe: record){
-    return <int>array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 3);
+    return fn::str_into_int(array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 3));
 };
 
 remove function fn::hvac_mat_id;

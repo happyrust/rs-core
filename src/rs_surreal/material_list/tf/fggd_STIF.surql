@@ -10,7 +10,7 @@ define function fn::fggd_STIF($pes:array<record>) {
         '' as other_material_count, // 其它材料数量
         '' as screw, // 螺杆
         '' as nut_count, // 螺母数量
-        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],';') as material // 材质
+        array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],',') as material // 材质
     from $pes;
 };
 
