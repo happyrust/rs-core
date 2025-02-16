@@ -1,5 +1,5 @@
 use bevy_ecs::event::Event;
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_with::serde_as;

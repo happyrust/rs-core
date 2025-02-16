@@ -1,6 +1,6 @@
 use bevy_math::prelude::Vec3;
 use crate::types::*;
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use serde::{Serialize,Deserialize};
 
 //贯穿件结构体

@@ -1,6 +1,6 @@
 use crate::pdms_types::{EleOperation, PdmsElement};
 use crate::RefU64;
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string_pretty};
 use serde_with::DisplayFromStr;

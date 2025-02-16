@@ -1,13 +1,13 @@
-use std::collections::{BTreeMap, HashMap};
+use crate::petgraph::{PetRefnoGraph, PetRefnoNode};
+use crate::tool::db_tool::db1_dehash;
+use crate::{AttrVal, RefU64};
 use dashmap::DashMap;
 use petgraph::prelude::*;
-use crate::petgraph::{PetRefnoGraph, PetRefnoNode};
-use crate::{AttrVal, RefU64};
-use crate::tool::db_tool::db1_dehash;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Default, Debug)]
 pub struct DbBasicData {
-    pub version: u32,
+    pub ses_pgno: u32,
     pub bytes: Vec<u8>,
     pub world_refno: RefU64,
     pub children_map: HashMap<RefU64, Vec<RefU64>>,
@@ -27,7 +27,6 @@ pub struct DbInfo {
 }
 
 impl DbBasicData {
-
     #[inline]
     pub fn get_type(&self, refno: RefU64) -> String {
         let Some(entry) = self.refno_table_map.get(&refno) else {
@@ -44,11 +43,11 @@ impl DbBasicData {
         entry.noun_hash as _
     }
 
-    pub fn gen_petgraph(&self) -> PetRefnoGraph{
+    pub fn gen_petgraph(&self) -> PetRefnoGraph {
         let mut graph = DiGraph::<PetRefnoNode, ()>::new();
         let mut node_indices = HashMap::<u64, NodeIndex>::new();
         for &refno in self.children_map.keys() {
-            let node_index = graph.add_node(PetRefnoNode{
+            let node_index = graph.add_node(PetRefnoNode {
                 id: *refno,
                 noun_hash: self.get_type_hash(refno),
             });
@@ -64,11 +63,10 @@ impl DbBasicData {
             }
         }
 
-        PetRefnoGraph{
-            version: self.version,
+        PetRefnoGraph {
+            ses_pgno: self.ses_pgno,
             graph,
             node_indices,
         }
     }
-
 }

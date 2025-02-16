@@ -70,14 +70,14 @@ REMOVE FUNCTION fn::default_name;
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
-    return (select value (if name='' {string::join(" ", noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
+    return (select value (if name='' {string::join(' ', noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
 };
 
 remove function fn::default_names;
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
-    return select value (if name='' {string::join(" ", noun,<string> (
+    return select value (if name='' {string::join(' ', noun,<string> (
        fn::order(id)?:0 + 1) ) } else { name } ) from $pes;
 };
 
@@ -330,12 +330,12 @@ DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
 };
 
 remove function fn::get_mdb_dbnums;
- DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
-            let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
-            return (select value dbnum from (
-                select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
-                from WORL
-                where REFNO.dbnum in $dbnos
-                order by o
-            ));
-    }
+DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
+        let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
+        return (select value dbnum from (
+            select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
+            from WORL
+            where REFNO.dbnum in $dbnos
+            order by o
+        ));
+}

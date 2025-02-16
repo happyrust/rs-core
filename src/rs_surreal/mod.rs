@@ -56,7 +56,11 @@ pub async fn connect_surdb(
     username: &str,
     password: &str,
 ) -> Result<(), surrealdb::Error> {
-    SUL_DB.connect(conn_str).with_capacity(1000).await?;
+    // 创建配置
+    let config = surrealdb::opt::Config::default()
+        .ast_payload()  // 启用AST格式
+        ;  // 设置容量
+    SUL_DB.connect((conn_str, config)).with_capacity(1000).await?;
     SUL_DB.use_ns(ns).use_db(db).await?;
     SUL_DB.signin(Root { username, password }).await?;
     Ok(())

@@ -36,24 +36,22 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="update surql">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="添加注释等等">
+      <change afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run_functions.bat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel_tree/acceleration_tree.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/achiver/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/achiver/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/db/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/db/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pdms_types.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdms_types.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/facet.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/facet.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prim_geo/wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/prim_geo/wire.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/room/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/room/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/inst.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/inst.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dq_common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/dq_common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/run_dq.bat" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/material_list/dq/run_dq.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/penetration.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/penetration.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/petgraph/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/petgraph/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/e3d_db.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/e3d_db.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/pdms_shape.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/pdms_shape.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/test_wire.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_wire.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/vague_search.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/vague_search.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/version_control/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/version_control/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/virtual_hole.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,7 +61,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -138,6 +136,7 @@
     &quot;Batch.run_defines (1).executor&quot;: &quot;Run&quot;,
     &quot;Batch.run_defines.executor&quot;: &quot;Run&quot;,
     &quot;Batch.run_dq.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.run_functions.executor&quot;: &quot;Run&quot;,
     &quot;Batch.run_tool_defines.executor&quot;: &quot;Run&quot;,
     &quot;Batch.未命名.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Run aios_core.executor&quot;: &quot;Run&quot;,
@@ -263,7 +262,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;2.2&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/dongpengcheng/work/new-crates/aios-core/src/rs_surreal/mat_stastitcs&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/rs_surreal/schemas/functions&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -281,17 +280,17 @@
     &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
     &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;language.rust&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;Errors&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas\functions" />
       <recent name="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs" />
       <recent name="E:\RustProject\new\new-crates\aios-core" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas" />
       <recent name="E:\RustProject\new\new-crates\aios-core\assets" />
-      <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\mat_stastitcs\HVAC" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\expression" />
@@ -317,7 +316,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Batch.run_dq">
+  <component name="RunManager" selected="Cargo.Build">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -327,17 +326,18 @@
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="run_dq" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+    <configuration name="run_functions" type="BatchConfigurationType" factoryName="Batch" temporary="true">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/material_list/dq" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/schemas/functions" />
       <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run_dq.bat" />
+      <option name="SCRIPT_NAME" value="run_functions.bat" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
-      <option name="command" value="build " />
+      <option name="buildProfileId" value="dev" />
+      <option name="command" value="build" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="false" />
@@ -440,13 +440,13 @@
     </configuration>
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
-      <item itemvalue="Batch.run_dq" />
+      <item itemvalue="Batch.run_functions" />
       <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
       <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
+      <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
@@ -454,7 +454,7 @@
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
         <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
         <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
-        <item itemvalue="Batch.run_dq" />
+        <item itemvalue="Batch.run_functions" />
       </list>
     </recent_temporary>
   </component>
@@ -985,7 +985,11 @@
       <workItem from="1732074913023" duration="2894000" />
       <workItem from="1732432149865" duration="1284000" />
       <workItem from="1732436511318" duration="123000" />
-      <workItem from="1733036193757" duration="4115000" />
+      <workItem from="1733036193757" duration="7680000" />
+      <workItem from="1734725248300" duration="719000" />
+      <workItem from="1734732431821" duration="1072000" />
+      <workItem from="1736143155810" duration="2312000" />
+      <workItem from="1738820391401" duration="2074000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1330,7 +1334,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="399" />
+    <option name="localTasksCounter" value="400" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1384,7 +1388,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix ngmr calculation" />
     <MESSAGE value="fix increment update" />
     <MESSAGE value="fix joint transform calculation" />
     <MESSAGE value="WIP fix joint transform calculation" />
@@ -1409,7 +1412,8 @@
     <MESSAGE value="wip 数据状态管理" />
     <MESSAGE value="update to bevy 0.15" />
     <MESSAGE value="WIP 版本管理的查询处理" />
-    <option name="LAST_COMMIT_MESSAGE" value="WIP 版本管理的查询处理" />
+    <MESSAGE value="添加注释等等" />
+    <option name="LAST_COMMIT_MESSAGE" value="添加注释等等" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

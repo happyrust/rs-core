@@ -74,7 +74,7 @@ pub struct DbOption {
     pub location: String,
     /// 需要同步的location的db
     #[clap(long)]
-    pub location_dbs: Vec<u32>,
+    pub location_dbs: Option<Vec<u32>>,
 
     #[clap(long)]
     pub remote_file_server_hosts: Vec<String>,

@@ -10,7 +10,7 @@ use crate::tool::hash_tool::{hash_str, hash_two_str};
 use crate::types::*;
 use crate::{get_db_option, get_mdb_world_site_pes, insert_into_table, insert_into_table_with_chunks, insert_pe_into_table_with_chunks, insert_relate_to_table, query_ele_filter_deep_children, query_filter_deep_children, rs_surreal, DBType, SUL_DB};
 use anyhow::anyhow;
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
 use dashmap::DashMap;
 use itertools::Itertools;

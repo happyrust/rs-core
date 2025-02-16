@@ -1,4 +1,4 @@
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use serde::{Deserialize, Serialize};
 
 #[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]

@@ -781,3 +781,18 @@ pub async fn query_neareast_by_pos_dir(
 
     nearest
 }
+
+
+
+/// 查询指定节点的包围盒，需要遍历子节点的所有包围盒, 如果是含有负实体的，取父节点的包围盒
+/// 负实体的邻居节点如果是正实体，可能也要考虑在内
+/// 还有种情况就是图形平台的包围盒？是需要去查询所有子节点的包围盒的
+pub async fn query_bbox(
+    refno: RefnoEnum
+) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
+
+    //获得所有子节点的包围盒？
+    //还是所有的包围盒的
+
+    Ok(None)
+}

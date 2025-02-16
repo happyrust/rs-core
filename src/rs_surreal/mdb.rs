@@ -42,15 +42,17 @@ pub async fn get_mdb_world_site_ele_nodes(
     module: DBType,
 ) -> anyhow::Result<Vec<EleTreeNode>> {
     let db_type: u8 = module.into();
-    let mut response = SUL_DB
-        .query(r#"
-            let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
-            let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o));
-            select refno, noun, name, owner, array::len(select value in from <-pe_owner) as children_count from array::flatten(select value in from $a<-pe_owner) where noun='SITE'
-        "#)
-        .bind(("mdb", mdb))
-        .bind(("db_type", db_type))
-        .await?;
+    let sql = format!(
+        r#"
+        let $dbnos = select value (select value DBNO from CURD.refno where STYP == {db_type}) from only MDB where NAME == "/ALL" limit 1;
+        let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o));
+        select refno, noun, name, owner, array::len(select value in from <-pe_owner) as children_count from array::flatten(select value in from $a<-pe_owner) where noun='SITE';
+        "#,
+        db_type = db_type,
+        // mdb = mdb
+    );
+    // println!("sql is {}", &sql);
+    let mut response = SUL_DB.query(&sql).await.unwrap();
     // dbg!(&response);
     let mut nodes: Vec<EleTreeNode> = response.take(2)?;
     for (i, node) in nodes.iter_mut().enumerate() {
@@ -59,7 +61,7 @@ pub async fn get_mdb_world_site_ele_nodes(
             node.name = format!("SITE {}", i + 1);
         }
     }
-    // dbg!(nodes.len());
+    dbg!(nodes.len());
     //检查名称，如果没有给名字的，需要给上默认值, todo 后续如果是删除了又增加，名称后面的数字可能会继续增加
     Ok(nodes)
 }
@@ -212,13 +214,14 @@ pub async fn get_mdb_world_site_pes(
 /// Represents the response obtained from the database query.
 #[cached(result = true)]
 pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
-    let mut response = SUL_DB
-        .query(
-            " \
-            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME=$mdb limit 1)[0]; \
+    let sql = format!(
+        " \
+            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
             (select value REFNO.* from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
-        )
-        .bind(("mdb", mdb))
+        mdb
+    );
+    let mut response = SUL_DB
+        .query(sql)
         .await
         .unwrap();
     let pe: Option<SPdmsElement> = response.take(1)?;
@@ -233,14 +236,16 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     } else {
         format!("/{}", mdb)
     };
+    let sql = format!(
+        " \
+            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
+            (select value REFNO from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
+        mdb_name
+    );
     let mut response = SUL_DB
-        .query(
-            " \
-            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME=$mdb limit 1)[0]; \
-            (select value REFNO from WORL where REFNO.dbnum=$f limit 1)[0]",
-        )
-        .bind(("mdb", mdb_name))
-        .await?;
+        .query(sql)
+        .await
+        .unwrap();
     let id: Option<RefnoEnum> = response.take(1)?;
     Ok(id.unwrap_or_default())
 }
