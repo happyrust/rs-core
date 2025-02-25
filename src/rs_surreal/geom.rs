@@ -1,7 +1,7 @@
-use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
+use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointMapTest, InstPointVec};
 use crate::pdms_types::*;
 use crate::pe::SPdmsElement;
-use crate::{query_filter_deep_children, types::*};
+use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
@@ -122,14 +122,14 @@ pub async fn query_refno_has_pos_neg_map(
     let refnos = query_filter_deep_children(refno, nouns)
         .await
         .unwrap();
-    if refnos.is_empty(){
+    if refnos.is_empty() {
         return Ok(HashMap::new());
     }
     //使用SUL_DB通过这些参考号反过来query查找父节点
     let sql = format!(
-         "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
-         refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
-     );
+        "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
+        refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
+    );
     // println!("query_refno_has_pos_neg_map sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     let mut result = HashMap::new();
@@ -195,17 +195,16 @@ pub async fn query_refnos_point_map(
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>();
     let sql = format!(
-        "
-    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
-    in {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+        "select id as id,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from [{}];",
+        refnos.join(",")
     );
     let mut response = SUL_DB.query(sql).await?;
-    let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
-    Ok(result
-        .into_iter()
-        .map(|r| (r.id, r.into_point_map()))
-        .collect())
+    let result: Vec<InstPointMapTest> = response.take(0).unwrap();
+    Ok(HashMap::default())
+    // Ok(result
+    //     .into_iter()
+    //     .map(|r| (r.refno, r))
+    //     .collect())
 }
 
 ///通过geo hash 查询参考号
@@ -227,3 +226,12 @@ pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>
 //     dbg!(&r);
 //     Ok(())
 // }
+
+#[tokio::test]
+async fn test_query_refnos_point_map() -> anyhow::Result<()> {
+    init_test_surreal().await;
+    let refno = RefnoEnum::from("24383/101165");
+    let r = query_refnos_point_map(vec![refno]).await?;
+    dbg!(&r);
+    Ok(())
+}

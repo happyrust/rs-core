@@ -18,6 +18,16 @@ pub struct InstPointMap {
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct InstPointMapTest {
+    pub refno: RefnoEnum,
+    pub att_type: String,
+    #[serde(default)]
+    pub ptset_map: BTreeMap<String, CateAxisParam>,
+}
+
+
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct InstPointVec {
     pub id: RefnoEnum,
     pub att_type: String,
@@ -38,3 +48,4 @@ impl InstPointVec {
         }
     }
 }
+
