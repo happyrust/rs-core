@@ -12,6 +12,7 @@ use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
+use bevy_transform::prelude::Transform;
 
 //获得参考号对应的inst keys
 pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
@@ -218,14 +219,26 @@ pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>
     Ok(result)
 }
 
-// #[tokio::test]
-// async fn test_query_bran_children_point_map() -> anyhow::Result<()> {
-//     init_test_surreal().await;
-//     let refno = RefnoEnum::from_str("24383/67331").unwrap();
-//     let r = query_bran_children_point_map(refno).await?;
-//     dbg!(&r);
-//     Ok(())
-// }
+/// 获取arrive和leave的世界坐标
+pub fn get_arrive_leave_info(refno: RefU64, point_map: &HashMap<RefU64, InstPointMap>, attr: &NamedAttrMap, transform: Transform) -> (Vec3, Vec3) {
+    let mut arrive_pos = Vec3::ZERO;
+    let mut leave_pos = Vec3::ZERO;
+    if let Some(points) = point_map.get(&refno) {
+        if let Some(NamedAttrValue::IntegerType(arrive)) = attr.get_val("ARRI") {
+            if let Some(point_info) = points.ptset_map.get(&arrive.to_string()) {
+                let arrive_point = transform.transform_point(point_info.pt);
+                arrive_pos = arrive_point;
+            }
+            if let Some(NamedAttrValue::IntegerType(leave)) = attr.get_val("LEAV") {
+                if let Some(point_info) = points.ptset_map.get(&leave.to_string()) {
+                    let leave_point = transform.transform_point(point_info.pt);
+                    leave_pos = leave_point;
+                }
+            }
+        }
+    }
+    (arrive_pos, leave_pos)
+}
 
 #[tokio::test]
 async fn test_query_refnos_point_map() -> anyhow::Result<()> {
