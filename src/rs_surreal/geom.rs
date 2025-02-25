@@ -1,17 +1,17 @@
-use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointMapTest, InstPointVec};
+use crate::pdms_pluggin::heat_dissipation::InstPointMap;
 use crate::pdms_types::*;
 use crate::pe::SPdmsElement;
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SurlValue, SUL_DB};
 use cached::proc_macro::cached;
+use glam::Vec3;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
-use glam::Vec3;
 
 //获得参考号对应的inst keys
 pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
@@ -34,7 +34,9 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec
         select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
             (select value in from {0}<-pe_owner where in.noun in ["LOOP", "PLOO"]);
         array::complement((select value refno.HEIG from [ (select value in.id from only {0}<-pe_owner where in.noun in ["LOOP", "PLOO"] limit 1), {0}]), [none])[0];
-        "#, refno.to_pe_key());
+        "#,
+        refno.to_pe_key()
+    );
     // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await.unwrap();
     let points: Vec<Vec<Vec3>> = response.take(0)?;
@@ -56,23 +58,18 @@ pub async fn query_deep_visible_inst_refnos(refno: RefnoEnum) -> anyhow::Result<
     }
     //TODO，这里可以采用ZONE作为中间层去加速这个过程
     //按照所允许的层级关系去遍历？
-    let branch_refnos =
-        super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
+    let branch_refnos = super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
 
     let mut target_refnos = super::query_multi_children_refnos(&branch_refnos).await?;
 
-    let visible_refnos =
-        super::query_filter_deep_children(refno, &VISBILE_GEO_NOUNS)
-            .await?;
+    let visible_refnos = super::query_filter_deep_children(refno, &VISBILE_GEO_NOUNS).await?;
     target_refnos.extend(visible_refnos);
     Ok(target_refnos)
 }
 
 #[cached(result = true)]
 pub async fn query_deep_neg_inst_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    let neg_refnos =
-        super::query_filter_deep_children(refno, &TOTAL_NEG_NOUN_NAMES)
-            .await?;
+    let neg_refnos = super::query_filter_deep_children(refno, &TOTAL_NEG_NOUN_NAMES).await?;
     Ok(neg_refnos)
 }
 
@@ -119,9 +116,7 @@ pub async fn query_refno_has_pos_neg_map(
         _ => &TOTAL_NEG_NOUN_NAMES.as_slice(),
     };
     //查询元件库下的负实体组合
-    let refnos = query_filter_deep_children(refno, nouns)
-        .await
-        .unwrap();
+    let refnos = query_filter_deep_children(refno, nouns).await.unwrap();
     if refnos.is_empty() {
         return Ok(HashMap::new());
     }
@@ -164,26 +159,32 @@ pub async fn query_refnos_has_pos_neg_map(
 /// 查询bran下所有元件的点集
 pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<Vec<InstPointMap>> {
     let sql = format!(
-        "
-    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
-    from pe:{}<-pe_owner order by order_num;",
+        "select in.id as refno,in.id->inst_relate.out.ptset[0] as ptset_map,in.noun as att_type from pe:{}<-pe_owner;",
         refno.to_string()
     );
-    let mut response = SUL_DB.query(sql).await?;
-    let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
-    Ok(result.into_iter().map(|r| r.into_point_map()).collect())
+    let mut response = SUL_DB.query(&sql).await?;
+    let Ok(result) = response.take(0) else {
+        dbg!(format!("sql 查询出错: {}", sql));
+        return Ok(vec![]);
+    };
+    Ok(result)
 }
 
 /// 查询参考号对应的点集
 pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPointMap>> {
-    let sql = format!("
-    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num from {};", refno.to_pe_key());
-    let mut response = SUL_DB.query(sql).await?;
-    let mut result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
+    let sql = format!(
+        "select id as refno,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from {};",
+        refno.to_pe_key()
+    );
+    let mut response = SUL_DB.query(&sql).await?;
+    let Ok(mut result) = response.take::<Vec<InstPointMap>>(0) else {
+        dbg!(format!("sql 查询出错: {}", sql));
+        return Ok(None);
+    };
     if result.is_empty() {
         return Ok(None);
     }
-    Ok(Some(result.remove(0).into_point_map()))
+    Ok(Some(result.remove(0)))
 }
 
 /// 查询多个参考号对应的点集
@@ -195,16 +196,15 @@ pub async fn query_refnos_point_map(
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>();
     let sql = format!(
-        "select id as id,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from [{}];",
+        "select id as refno,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from [{}];",
         refnos.join(",")
     );
-    let mut response = SUL_DB.query(sql).await?;
-    let result: Vec<InstPointMapTest> = response.take(0).unwrap();
-    Ok(HashMap::default())
-    // Ok(result
-    //     .into_iter()
-    //     .map(|r| (r.refno, r))
-    //     .collect())
+    let mut response = SUL_DB.query(&sql).await?;
+    let Ok(result) = response.take::<Vec<InstPointMap>>(0) else {
+        dbg!(format!("sql 查询出错: {}", sql));
+        return Ok(HashMap::default());
+    };
+    Ok(result.into_iter().map(|r| (r.refno, r)).collect())
 }
 
 ///通过geo hash 查询参考号
@@ -232,6 +232,11 @@ async fn test_query_refnos_point_map() -> anyhow::Result<()> {
     init_test_surreal().await;
     let refno = RefnoEnum::from("24383/101165");
     let r = query_refnos_point_map(vec![refno]).await?;
+    dbg!(&r);
+    let bran_refno = RefnoEnum::from("24383/101155");
+    let r = query_bran_children_point_map(bran_refno).await?;
+    dbg!(&r);
+    let r = query_point_map(refno).await?;
     dbg!(&r);
     Ok(())
 }
