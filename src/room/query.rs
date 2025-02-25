@@ -1,5 +1,6 @@
 use crate::accel_tree::acceleration_tree::RStarBoundingBox;
 use crate::room::data::RoomElement;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::room::room::{
     load_aabb_tree, load_room_aabb_tree, GLOBAL_AABB_TREE, GLOBAL_ROOM_AABB_TREE,
 };
@@ -12,6 +13,7 @@ use parry3d::math::Isometry;
 use parry3d::query::PointQuery;
 use parry3d::shape::TriMeshFlags;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<String>> {
     let Some(refno) = query_room_panel_by_point(point).await? else {
         return Ok(None);
@@ -30,6 +32,7 @@ pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<St
 }
 
 //传进来的是世界坐标系下的点
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<RefnoEnum>> {
     //通过rtree 找到所在的几个房间可能
     load_room_aabb_tree().await.unwrap();
