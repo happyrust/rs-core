@@ -20,9 +20,11 @@ define function fn::pe_to_refno($pe:record){
 // RETURN fn::normal_name("noPrefixName");  -- 返回 "noPrefixName"
 remove function fn::normal_name;
 DEFINE FUNCTION fn::normal_name($name: string) {
-    RETURN $name
-        .replace("^/", "")  -- 去掉以 '/' 开头的前缀
-        .replace("^:", ""); -- 去掉以 ':' 开头的前缀
+    return if string::starts_with($name, '/') ||  string::starts_with($name, ':') {
+        string::slice($name, 1)
+    } else {
+        $name
+    };
 };
 
 
@@ -42,6 +44,17 @@ DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
     };
 };
 
+//添加获取 panel 的长宽的方法
+remove function fn::pane_size;
+DEFINE FUNCTION fn::pane_size($pe:record) {
+    //活的下方的顶点，然后求出长宽
+    let $ps =  (select value <-pe_owner[0].in<-pe_owner.in.refno.POS from only $pe limit 1);
+    return if $ps==NONE || array::len($ps) != 4 {
+         NONE
+    } else {
+        [vector::distance::euclidean($ps[1],$ps[0]) , vector::distance::euclidean($ps[1],$ps[2])]
+    };
+};
 
 
 -- let $refno = [pe:24383_84092];
