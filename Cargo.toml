@@ -5,7 +5,7 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["occ", "gen_model", "sql"] #"occ", "gen_model", "sql"
+default = ["occ", "gen_model", "sql","hh"] #"occ", "gen_model", "sql"
 occ = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 manifold = ["dep:manifold-sys"]
@@ -15,6 +15,7 @@ debug_expr = []
 debug_wire = []
 web = ["render"]
 sql = []
+hh = []
 
 
 [dependencies]
