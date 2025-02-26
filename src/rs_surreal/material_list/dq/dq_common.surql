@@ -53,21 +53,7 @@ DEFINE FUNCTION fn::get_tray_type($pe:record) {
 
 
 
-//返回 UDA 的某个属性，这里如果在 ATT_UDA 里如果没有找到，需要去查找默认值
-remove FUNCTION fn::get_uda_value;
-DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
 
-   let $a = SELECT VALUE (
-                SELECT VALUE object::values(v) FROM ONLY udas.* WHERE u.NAME ==  $uda_name LIMIT 1
-            )[0] FROM ONLY type::thing("ATT_UDA", record::id($pe)) limit 1;
-    return if $a == NONE {
-        let $n = fn::normal_name($uda_name);
-        return select value DFLT from only UDA
-            where !UHIDE and $pe.noun in ELEL and (DYUDNA == $n || UDNA == $n) limit 1;
-    } else {
-        $a
-    };
-};
 
 remove FUNCTION fn::get_cover_info;
 DEFINE FUNCTION fn::get_cover_info($pe:record) {
