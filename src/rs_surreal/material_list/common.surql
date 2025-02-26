@@ -15,6 +15,18 @@ define function fn::pe_to_refno($pe:record){
     return string::replace(record::id($pe), '_', '/');
 };
 
+// RETURN fn::normal_name("/exampleName");  -- 返回 "exampleName"
+// RETURN fn::normal_name(":anotherName");  -- 返回 "anotherName"
+// RETURN fn::normal_name("noPrefixName");  -- 返回 "noPrefixName"
+remove function fn::normal_name;
+DEFINE FUNCTION fn::normal_name($name: string) {
+    RETURN $name
+        .replace("^/", "")  -- 去掉以 '/' 开头的前缀
+        .replace("^:", ""); -- 去掉以 ':' 开头的前缀
+};
+
+
+
 -- let $refno = [pe:24383_84092];
 -- let $code = fn::code($refno);
 -- return $code;
