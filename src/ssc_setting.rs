@@ -440,13 +440,13 @@ pub async fn set_pbs_fixed_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow
     }
     // 保存树节点
     // let task = tokio::task::spawn(async move {
-        dbg!(&eles.len());
-        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, eles).await {
-            dbg!(&e.to_string());
-        }
-        if let Err(e) = insert_relate_to_table(&SUL_DB, edge_results).await {
-            dbg!(&e.to_string());
-        }
+    dbg!(&eles.len());
+    if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, eles).await {
+        dbg!(&e.to_string());
+    }
+    if let Err(e) = insert_relate_to_table(&SUL_DB, edge_results).await {
+        dbg!(&e.to_string());
+    }
     // });
     // handles.push(task);
     Ok(())
@@ -640,12 +640,12 @@ pub async fn set_pbs_room_node(
     }
     // 保存树节点
     // let task = tokio::task::spawn(async move {
-        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
-            dbg!(&e.to_string());
-        }
-        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
-            dbg!(&e.to_string());
-        }
+    if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+        dbg!(&e.to_string());
+    }
+    if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+        dbg!(&e.to_string());
+    }
     // });
     // handles.push(task);
     Ok(rooms)
@@ -714,12 +714,12 @@ pub async fn set_pbs_room_major_node(
     }
     // 保存树节点
     // let task = tokio::task::spawn(async move {
-        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
-            dbg!(&e.to_string());
-        }
-        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
-            dbg!(&e.to_string());
-        }
+    if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+        dbg!(&e.to_string());
+    }
+    if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+        dbg!(&e.to_string());
+    }
     // });
     // handles.push(task);
     Ok(())
@@ -853,12 +853,12 @@ async fn set_pbs_bran_node(
     }
 
     // let task = tokio::task::spawn(async move {
-        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
-            dbg!(&e.to_string());
-        }
-        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
-            dbg!(&e.to_string());
-        }
+    if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+        dbg!(&e.to_string());
+    }
+    if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+        dbg!(&e.to_string());
+    }
     // });
     // handles.push(task);
     Ok(())
@@ -947,12 +947,12 @@ async fn set_pbs_equi_node(
         }
     }
     // let task = tokio::task::spawn(async move {
-        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
-            dbg!(&e.to_string());
-        }
-        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
-            dbg!(&e.to_string());
-        }
+    if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+        dbg!(&e.to_string());
+    }
+    if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+        dbg!(&e.to_string());
+    }
     // });
     // handles.push(task);
     Ok(())
@@ -1081,7 +1081,7 @@ async fn set_pbs_supp_and_stru_node(
             let Some(supp_fixed_name) = find_supp_fix_room_code(&supp.name) else {
                 continue;
             };
-            let fixed_hash = PbsElement::id(&supp_fixed_name);
+            let fixed_hash = PbsElement::id(&supp_fixed_name[0]);
             let node_id: Thing = ("pbs".to_string(), fixed_hash.to_string()).into();
             let owner = PbsElement::id(&format!("{}{}", room_code, zone.major)).to_string();
             let owner_id: Thing = ("pbs".to_string(), owner).into();
@@ -1090,7 +1090,7 @@ async fn set_pbs_supp_and_stru_node(
                 result.push(PbsElement {
                     id: node_id.clone(),
                     owner: owner_id.clone(),
-                    name: supp_fixed_name.to_string(),
+                    name: supp_fixed_name[0].to_string(),
                     ..Default::default()
                 });
                 relate_result.push(
@@ -1155,12 +1155,12 @@ async fn set_pbs_supp_and_stru_node(
         }
     }
     // let task = tokio::task::spawn(async move {
-        if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
-            dbg!(&e.to_string());
-        }
-        if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
-            dbg!(&e.to_string());
-        }
+    if let Err(e) = insert_pe_into_table_with_chunks(&SUL_DB, &PBS_TABLE, result).await {
+        dbg!(&e.to_string());
+    }
+    if let Err(e) = insert_relate_to_table(&SUL_DB, relate_result).await {
+        dbg!(&e.to_string());
+    }
     // });
     // handles.push(task);
     Ok(())
@@ -1266,10 +1266,14 @@ pub async fn execute_save_pbs(rx: mpsc::Receiver<SaveDatabaseChannelMsg>) -> any
 }
 
 /// 找到支吊架名称中的房间号 + 流水号
-pub fn find_supp_fix_room_code(name: &str) -> Option<String> {
-    let re = Regex::new(r"[A-Za-z]\d{3}\.\d{3}").unwrap();
-    match re.find(name) {
-        Some(mat) => Some(mat.as_str().to_string()),
+pub fn find_supp_fix_room_code(name: &str) -> Option<[String; 2]> {
+    let re = Regex::new(r"([A-Z]\d{3})\.(\d{3})").unwrap();
+    match re.captures(name) {
+        Some(mat) => {
+            let part1 = mat.get(1).map_or("", |m| m.as_str()).to_string();
+            let part2 = mat.get(2).map_or("", |m| m.as_str()).to_string();
+            Some([part1, part2])
+        }
         None => None,
     }
 }
@@ -1299,4 +1303,9 @@ async fn test_set_pbs_room_node() -> anyhow::Result<()> {
     AiosDBMgr::init_from_db_option().await?;
     // set_pbs_node().await?;
     Ok(())
+}
+
+#[test]
+fn test_find_supp_fix_room_code() {
+    dbg!(find_supp_fix_room_code("/R710.226"));
 }

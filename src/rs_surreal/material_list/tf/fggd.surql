@@ -6,7 +6,6 @@ DEFINE FUNCTION fn::hvac_material($pe:record) {
     return array::at($mat_code_map,fn::str_into_int(array::at(string::split($pe.owner.name,'-'),3)))?:'';
 };
 
-
 remove function fn::fggd_strt;
 define function fn::fggd_strt($pes:array<record>) {
     return select

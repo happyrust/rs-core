@@ -9,6 +9,45 @@ define function fn::code($pe: record, $opt: option<number>){
     };
 };
 
+remove function fn::normal_name;
+DEFINE FUNCTION fn::normal_name($name: string) {
+    return if string::starts_with($name, '/') ||  string::starts_with($name, ':') {
+        string::slice($name, 1)
+    } else {
+        $name
+    };
+};
+
+
+// 返回 UDA 的某个属性，这里如果在 ATT_UDA 里如果没有找到，需要去查找默认值
+remove FUNCTION fn::get_uda_value;
+DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
+
+   let $a = SELECT VALUE (
+                SELECT VALUE object::values(v) FROM ONLY udas.* WHERE u.NAME ==  $uda_name LIMIT 1
+            )[0] FROM ONLY type::thing("ATT_UDA", record::id($pe)) limit 1;
+    return if $a == NONE {
+        let $n = fn::normal_name($uda_name);
+        return select value DFLT from only UDA
+            where !UHIDE and $pe.noun in ELEL and (DYUDNA == $n || UDNA == $n) limit 1;
+    } else {
+        $a
+    };
+};
+
+//添加获取 panel 的长宽的方法
+remove function fn::pane_size;
+DEFINE FUNCTION fn::pane_size($pe:record) {
+    //活的下方的顶点，然后求出长宽
+    let $ps =  (select value <-pe_owner[0].in<-pe_owner.in.refno.POS from only $pe limit 1);
+    return if $ps==NONE || array::len($ps) != 4 {
+         NONE
+    } else {
+        [vector::distance::euclidean($ps[1],$ps[0]) , vector::distance::euclidean($ps[1],$ps[2])]
+    };
+};
+
+
 //将pe转换为refno
 remove function fn::pe_to_refno;
 define function fn::pe_to_refno($pe:record){

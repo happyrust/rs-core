@@ -51,14 +51,6 @@ DEFINE FUNCTION fn::get_tray_type($pe:record) {
         ELSE { '未知类型' };
 };
 
-remove FUNCTION fn::get_uda_value;
-DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
-
-   RETURN SELECT VALUE (
-                SELECT VALUE object::values(v) FROM ONLY udas.* WHERE u.NAME ==  $uda_name LIMIT 1
-            )[0] FROM ONLY type::thing("ATT_UDA", record::id($pe)) limit 1
-};
-
 remove FUNCTION fn::get_cover_info;
 DEFINE FUNCTION fn::get_cover_info($pe:record) {
     RETURN if (SELECT VALUE in FROM ONLY (SELECT * FROM $pe<-pe_owner[WHERE in.noun != 'ATTA'] ORDER BY order_num) LIMIT 1).refno.DESP[2] == 1 { '是' } else { '否'};
