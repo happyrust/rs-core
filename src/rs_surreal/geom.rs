@@ -1,4 +1,4 @@
-use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
+use crate::pdms_pluggin::heat_dissipation::{InstPointMap};
 use crate::{pdms_types::*, to_table_key, to_table_keys};
 use crate::pe::SPdmsElement;
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
@@ -13,7 +13,6 @@ use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
-use bevy_transform::prelude::Transform;
 
 //获得参考号对应的inst keys
 pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {

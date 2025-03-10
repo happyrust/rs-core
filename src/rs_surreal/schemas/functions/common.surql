@@ -70,14 +70,14 @@ REMOVE FUNCTION fn::default_name;
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
-    return (select value (if name='' {string::join(' ', noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
+    return (select value (if name=='' {string::join(' ', noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
 };
 
 remove function fn::default_names;
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
-    return select value (if name='' {string::join(' ', noun,<string> (
+    return select value (if name=='' {string::join(' ', noun,<string> (
        fn::order(id)?:0 + 1) ) } else { name } ) from $pes;
 };
 
