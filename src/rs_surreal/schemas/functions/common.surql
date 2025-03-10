@@ -1,5 +1,5 @@
 
-DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
+-- DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
 
 REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
