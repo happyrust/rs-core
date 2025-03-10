@@ -51,7 +51,7 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
         let Some(last) = split.last() else {
             continue;
         };
-        if !match_room_name(last) {
+        if !match_room_name_hd(last) {
             continue;
         };
         map.entry(first[1..].to_string())
@@ -129,11 +129,6 @@ pub async fn query_equi_or_valv_belong_floors(
     Ok(r)
 }
 
-/// 正则匹配是否满足房间命名规则
-pub fn match_room_name(room_name: &str) -> bool {
-    let regex = Regex::new(r"^[A-Z]\d{3}$").unwrap();
-    regex.is_match(room_name)
-}
 
 #[tokio::test]
 async fn test_query_all_room_name() {

@@ -3,11 +3,11 @@
 #![feature(result_flattening)]
 #![allow(warnings)]
 
+use config::{Config, File};
 use dashmap::DashMap;
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
 use std::io::Read;
-use config::{Config, File};
 
 pub use types::db_info::PdmsDatabaseInfo;
 
@@ -16,21 +16,21 @@ extern crate core;
 extern crate phf;
 
 pub mod accel_tree;
+pub mod aios_db_mgr;
 pub mod aql_types;
 pub mod axis_param;
-pub mod aios_db_mgr;
 
 pub mod basic;
 
 pub mod parse;
 
 pub mod bevy_types;
-pub mod error;
 pub mod cache;
 pub mod consts;
-pub mod table_const;
 pub mod csg;
+pub mod error;
 pub mod geom_types;
+pub mod table_const;
 
 pub mod geometry;
 
@@ -83,9 +83,9 @@ pub mod rs_surreal;
 pub mod schema;
 pub mod types;
 
-pub mod room;
-pub mod math;
 pub mod material;
+pub mod math;
+pub mod room;
 
 pub mod file_helper;
 
@@ -105,10 +105,10 @@ pub use rs_surreal::*;
 
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 
+use crate::function::define_common_functions;
 use crate::options::DbOption;
 use once_cell_serde::sync::OnceCell;
 use surrealdb::opt::auth::Root;
-use crate::function::define_common_functions;
 
 ///获得db option
 #[inline]
@@ -185,8 +185,10 @@ pub async fn init_test_surreal() -> DbOption {
         .build()
         .unwrap();
     let db_option: DbOption = s.try_deserialize().unwrap();
+    // 创建配置
+    let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
     SUL_DB
-        .connect(db_option.get_version_db_conn_str())
+        .connect((db_option.get_version_db_conn_str(), config))
         .with_capacity(1000)
         .await
         .unwrap();
@@ -199,25 +201,40 @@ pub async fn init_test_surreal() -> DbOption {
         .signin(Root {
             username: &db_option.v_user,
             password: &db_option.v_password,
-        }).await.unwrap();
+        })
+        .await
+        .unwrap();
     define_common_functions().await.unwrap();
-
-    // KV_DB
-    //     .connect(db_option.get_kv_db_conn_str())
-    //     .with_capacity(1000)
-    //     .await
-    //     .unwrap();
-    // KV_DB
-    //     .use_ns(&db_option.surreal_ns)
-    //     .use_db(&db_option.project_name)
-    //     .await
-    //     .unwrap();
-    // KV_DB
-    //     .signin(Root {
-    //         username: &db_option.v_user,
-    //         password: &db_option.v_password,
-    //     }).await.unwrap();
+    db_option
+}
 
 
+/// 初始化测试数据库
+pub async fn init_demo_test_surreal() -> DbOption {
+    let s = Config::builder()
+        .add_source(File::with_name("DbOption"))
+        .build()
+        .unwrap();
+    let db_option: DbOption = s.try_deserialize().unwrap();
+    // 创建配置
+    let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
+    SUL_DB
+        .connect((db_option.get_version_db_conn_str(), config))
+        .with_capacity(1000)
+        .await
+        .unwrap();
+    SUL_DB
+        .use_ns("demo")
+        .use_db("demo")
+        .await
+        .unwrap();
+    SUL_DB
+        .signin(Root {
+            username: &db_option.v_user,
+            password: &db_option.v_password,
+        })
+        .await
+        .unwrap();
+    define_common_functions().await.unwrap();
     db_option
 }
