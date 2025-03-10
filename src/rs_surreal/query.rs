@@ -382,7 +382,6 @@ pub async fn get_named_attmap_with_uda(
     refno_enum: RefnoEnum,
     default_unset: bool,
 ) -> anyhow::Result<NamedAttrMap> {
-    let pe_key = refno_enum.to_pe_key();
     let sql = format!(
         r#"
         --通过传递refno，查询属性值
@@ -391,7 +390,7 @@ pub async fn get_named_attmap_with_uda(
         -- uda 单独做个查询？
         select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u, u.UTYP as t, v from (ATT_UDA:{1}).udas where u.UTYP != none;
         "#,
-        pe_key,
+        refno_enum.to_pe_key(),
         refno_enum.refno()
     );
     let mut response = SUL_DB.query(sql).await?;
