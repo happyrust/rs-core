@@ -129,8 +129,8 @@ impl<'de> Deserialize<'de> for NamedAttrValue {
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
+                where
+                    A: SeqAccess<'de>,
             {
                 let mut vec = Vec::new();
                 let mut first_elem_type = None;

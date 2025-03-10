@@ -24,8 +24,10 @@ pub async fn load_aabb_tree() -> anyhow::Result<bool> {
     if !GLOBAL_AABB_TREE.read().await.is_empty() {
         return Ok(true);
     }
-    *GLOBAL_AABB_TREE.write().await = AccelerationTree::deserialize_from_bin_file().unwrap_or_default();
-
+    #[cfg(not(feature = "web"))]
+    {
+        *GLOBAL_AABB_TREE.write().await = AccelerationTree::deserialize_from_bin_file().unwrap_or_default();
+    }
     // {
     //     if !GLOBAL_AABB_TREE.read().await.is_empty() {
     //         return Ok(true);

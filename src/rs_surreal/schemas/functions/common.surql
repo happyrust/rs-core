@@ -314,10 +314,10 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
     return if $ispe == none {
         return [0];
     } else {
-        return (select value (select value CATR.refno.PARA 
+        return (select value (select value CATR.refno.PARA
                 from only $ispe<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
-                and $parent.owner.refno.TEMP >=refno.ANSW 
-                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.* 
+                and $parent.owner.refno.TEMP >=refno.ANSW
+                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.*
                 where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1)
             from $pe)[0];
     };

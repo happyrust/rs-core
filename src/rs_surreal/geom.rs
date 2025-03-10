@@ -1,18 +1,19 @@
 use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
 use crate::{pdms_types::*, to_table_key, to_table_keys};
 use crate::pe::SPdmsElement;
-use crate::{query_filter_deep_children, types::*};
+use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SurlValue, SUL_DB};
 use bevy_transform::components::Transform;
 use cached::proc_macro::cached;
+use glam::Vec3;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
-use glam::Vec3;
+use bevy_transform::prelude::Transform;
 
 //获得参考号对应的inst keys
 pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
@@ -165,26 +166,32 @@ pub async fn query_refnos_has_pos_neg_map(
 /// 查询bran下所有元件的点集
 pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<Vec<InstPointMap>> {
     let sql = format!(
-        "
-    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
-    from pe:{}<-pe_owner order by order_num;",
+        "select in.id as refno,in.id->inst_relate.out.ptset[0] as ptset_map,in.noun as att_type from pe:{}<-pe_owner;",
         refno.to_string()
     );
-    let mut response = SUL_DB.query(sql).await?;
-    let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
-    Ok(result.into_iter().map(|r| r.into_point_map()).collect())
+    let mut response = SUL_DB.query(&sql).await?;
+    let Ok(result) = response.take(0) else {
+        dbg!(format!("sql 查询出错: {}", sql));
+        return Ok(vec![]);
+    };
+    Ok(result)
 }
 
 /// 查询参考号对应的点集
 pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPointMap>> {
-    let sql = format!("
-    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num from {};", refno.to_pe_key());
-    let mut response = SUL_DB.query(sql).await?;
-    let mut result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
+    let sql = format!(
+        "select id as refno,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from {};",
+        refno.to_pe_key()
+    );
+    let mut response = SUL_DB.query(&sql).await?;
+    let Ok(mut result) = response.take::<Vec<InstPointMap>>(0) else {
+        dbg!(format!("sql 查询出错: {}", sql));
+        return Ok(None);
+    };
     if result.is_empty() {
         return Ok(None);
     }
-    Ok(Some(result.remove(0).into_point_map()))
+    Ok(Some(result.remove(0)))
 }
 
 /// 查询多个参考号对应的点集
@@ -196,17 +203,15 @@ pub async fn query_refnos_point_map(
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>();
     let sql = format!(
-        "
-    select in.id as id,in.id->inst_relate.pts.*.d as ptset_map,in.noun as att_type ,order_num
-    in {};",
-        serde_json::to_string(&refnos).unwrap_or("[]".to_string())
+        "select id as refno,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from [{}];",
+        refnos.join(",")
     );
-    let mut response = SUL_DB.query(sql).await?;
-    let result: Vec<InstPointVec> = response.take(0).unwrap_or(vec![]);
-    Ok(result
-        .into_iter()
-        .map(|r| (r.id, r.into_point_map()))
-        .collect())
+    let mut response = SUL_DB.query(&sql).await?;
+    let Ok(result) = response.take::<Vec<InstPointMap>>(0) else {
+        dbg!(format!("sql 查询出错: {}", sql));
+        return Ok(HashMap::default());
+    };
+    Ok(result.into_iter().map(|r| (r.refno, r)).collect())
 }
 
 ///通过geo hash 查询参考号
@@ -220,14 +225,40 @@ pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>
     Ok(result)
 }
 
-// #[tokio::test]
-// async fn test_query_bran_children_point_map() -> anyhow::Result<()> {
-//     init_test_surreal().await;
-//     let refno = RefnoEnum::from_str("24383/67331").unwrap();
-//     let r = query_bran_children_point_map(refno).await?;
-//     dbg!(&r);
-//     Ok(())
-// }
+/// 获取arrive和leave的世界坐标
+pub fn get_arrive_leave_info(refno: RefU64, point_map: &HashMap<RefU64, InstPointMap>, attr: &NamedAttrMap, transform: Transform) -> (Vec3, Vec3) {
+    let mut arrive_pos = Vec3::ZERO;
+    let mut leave_pos = Vec3::ZERO;
+    if let Some(points) = point_map.get(&refno) {
+        if let Some(NamedAttrValue::IntegerType(arrive)) = attr.get_val("ARRI") {
+            if let Some(point_info) = points.ptset_map.get(&arrive.to_string()) {
+                let arrive_point = transform.transform_point(point_info.pt);
+                arrive_pos = arrive_point;
+            }
+            if let Some(NamedAttrValue::IntegerType(leave)) = attr.get_val("LEAV") {
+                if let Some(point_info) = points.ptset_map.get(&leave.to_string()) {
+                    let leave_point = transform.transform_point(point_info.pt);
+                    leave_pos = leave_point;
+                }
+            }
+        }
+    }
+    (arrive_pos, leave_pos)
+}
+
+#[tokio::test]
+async fn test_query_refnos_point_map() -> anyhow::Result<()> {
+    init_test_surreal().await;
+    let refno = RefnoEnum::from("24383/101165");
+    let r = query_refnos_point_map(vec![refno]).await?;
+    dbg!(&r);
+    let bran_refno = RefnoEnum::from("24383/101155");
+    let r = query_bran_children_point_map(bran_refno).await?;
+    dbg!(&r);
+    let r = query_point_map(refno).await?;
+    dbg!(&r);
+    Ok(())
+}
 
 
 //query_ptset
@@ -285,13 +316,13 @@ mod tests {
 
         // Perform assertions
         assert!(!points.is_empty(), "Point set should not be empty");
-        
+
         // Check if the transform is valid
         assert!(transform.is_finite(), "Transform should be finite");
 
         // Check if all points are valid Vec3
         for point in &points {
-            assert!(point.x.is_finite() && point.y.is_finite() && point.z.is_finite(), 
+            assert!(point.x.is_finite() && point.y.is_finite() && point.z.is_finite(),
                     "All components of the point should be finite");
         }
 

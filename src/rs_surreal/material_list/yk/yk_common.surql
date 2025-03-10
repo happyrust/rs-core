@@ -16,18 +16,19 @@ DEFINE FUNCTION fn::yk_pipe_num($pe:record) {
 // 一般最后仪控的管道连接的是工艺的valv，判断最后连接的valv是否是工艺专业，若是则返回这个工艺valv所在的bran的name
 
 //todo 重构这个方法
+remove function fn::find_gy_bran;
 DEFINE FUNCTION fn::find_gy_bran($pe:record) {
-    let $first_level = $pe->pe_owner.out.refno.HREF->pe_owner.out;
-    let $second_level = $pe->pe_owner.out.refno.HREF.refno.HREF->pe_owner.out;
-    let $third_level = $pe->pe_owner.out.refno.HREF.refno.HREF.refno.HREF->pe_owner.out;
-    let $forth_level = $pe->pe_owner.out.refno.HREF.refno.HREF.refno.HREF.refno.HREF->pe_owner.out;
-    let $fivth_level = $pe->pe_owner.out.refno.HREF.refno.HREF.refno.HREF.refno.HREF.refno.HREF->pe_owner.out;
+    let $first_level = array::flatten($pe->pe_owner.out.refno.HREF->pe_owner.out);
+    let $second_level = array::flatten($pe->pe_owner.out.refno.HREF.refno.HREF->pe_owner.out);
+    let $third_level = array::flatten($pe->pe_owner.out.refno.HREF.refno.HREF.refno.HREF->pe_owner.out);
+    let $forth_level = array::flatten($pe->pe_owner.out.refno.HREF.refno.HREF.refno.HREF.refno.HREF->pe_owner.out);
+    let $fivth_level = array::flatten($pe->pe_owner.out.refno.HREF.refno.HREF.refno.HREF.refno.HREF.refno.HREF->pe_owner.out);
 
-    let $first_site = $first_level->pe_owner.out->pe_owner.out->pe_owner.out.name;
-    let $second_site = $second_level->pe_owner.out->pe_owner.out->pe_owner.out.name;
-    let $third_site = $third_level->pe_owner.out->pe_owner.out->pe_owner.out.name;
-    let $forth_site = $forth_level->pe_owner.out->pe_owner.out->pe_owner.out.name;
-    let $fivth_site = $fivth_level->pe_owner.out->pe_owner.out->pe_owner.out.name;
+    let $first_site = array::flatten($first_level->pe_owner.out->pe_owner.out->pe_owner.out.name)[0];
+    let $second_site =array::flatten($second_level->pe_owner.out->pe_owner.out->pe_owner.out.name)[0];
+    let $third_site = array::flatten($third_level->pe_owner.out->pe_owner.out->pe_owner.out.name)[0];
+    let $forth_site = array::flatten($forth_level->pe_owner.out->pe_owner.out->pe_owner.out.name)[0];
+    let $fivth_site = array::flatten($fivth_level->pe_owner.out->pe_owner.out->pe_owner.out.name)[0];
 
     return
     if $first_site[0][0] != NONE && string::contains($first_site[0][0],'PIPE') {

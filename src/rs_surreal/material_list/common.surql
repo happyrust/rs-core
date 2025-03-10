@@ -9,6 +9,45 @@ define function fn::code($pe: record, $opt: option<number>){
     };
 };
 
+remove function fn::normal_name;
+DEFINE FUNCTION fn::normal_name($name: string) {
+    return if string::starts_with($name, '/') ||  string::starts_with($name, ':') {
+        string::slice($name, 1)
+    } else {
+        $name
+    };
+};
+
+
+// 返回 UDA 的某个属性，这里如果在 ATT_UDA 里如果没有找到，需要去查找默认值
+remove FUNCTION fn::get_uda_value;
+DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
+
+   let $a = SELECT VALUE (
+                SELECT VALUE object::values(v) FROM ONLY udas.* WHERE u.NAME ==  $uda_name LIMIT 1
+            )[0] FROM ONLY type::thing("ATT_UDA", record::id($pe)) limit 1;
+    return if $a == NONE {
+        let $n = fn::normal_name($uda_name);
+        return select value DFLT from only UDA
+            where !UHIDE and $pe.noun in ELEL and (DYUDNA == $n || UDNA == $n) limit 1;
+    } else {
+        $a
+    };
+};
+
+//添加获取 panel 的长宽的方法
+remove function fn::pane_size;
+DEFINE FUNCTION fn::pane_size($pe:record) {
+    //活的下方的顶点，然后求出长宽
+    let $ps =  (select value <-pe_owner[0].in<-pe_owner.in.refno.POS from only $pe limit 1);
+    return if $ps==NONE || array::len($ps) != 4 {
+         NONE
+    } else {
+        [vector::distance::euclidean($ps[1],$ps[0]) , vector::distance::euclidean($ps[1],$ps[2])]
+    };
+};
+
+
 //将pe转换为refno
 remove function fn::pe_to_refno;
 define function fn::pe_to_refno($pe:record){
@@ -75,7 +114,7 @@ DEFINE FUNCTION fn::get_world_pos($pe:record) {
     if $noun == 'EQUI' {
         return select value world_trans.d.translation from type::thing('cal_equi',record::id($pe))
     } else {
-        return select value ->inst_relate.world_trans.d.translation from $pe
+        return select value array::flatten(->inst_relate.world_trans.d.translation) from $pe
     }
 };
 
@@ -177,5 +216,37 @@ DEFINE FUNCTION fn::array_distance($x: array<array>) {
     return vector::distance::euclidean($x[0], $x[1]);
 };
 
--- let $x = [[1,2,3],[4,5,6]];
--- return fn::array_distance($x);
+remove function fn::b_pre_type;
+define function fn::b_pre_type($pe:record,$type:string) {
+    return fn::pre_is_type($pe,$type);
+};
+
+remove function fn::b_next_type;
+define function fn::b_next_type($pe:record,$type:string) {
+    return fn::next_is_type($pe,$type);
+};
+
+// 将已知的desp / para 数字转为 word
+DEFINE FUNCTION fn::into_str($desp: float) {
+    return if $desp == 788296 {
+        'DIAM'
+    } else if $desp == 531717 {
+        'FJ'
+    } else if $desp == 531501 {
+        'FB'
+    } else if $desp = 560742 {
+        'FEMA'
+    } else {
+        <string>math::fixed($desp,2)
+    };
+};
+
+remove function fn::str_into_int;
+define function fn::str_into_int($input:string) {
+    return if string::is::numeric($input) {
+        <int>$input
+    } else {
+        0
+    }
+};
+

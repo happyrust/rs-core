@@ -1,11 +1,11 @@
-remove function fn::fggd_CAP;
-define function fn::fggd_CAP($pes:array<record>) {
+remove function fn::fggd_tee;
+define function fn::fggd_tee($pes:array<record>) {
     return select
         fn::pe_to_refno(id) as id, // 参考号
         fn::fggd_bran_code(id)[0] as bran_seg_code, // 管段编号
         string::concat(string::replace(string::split(owner.name,'-')[4]?:'','L','B'),'P') as pressure_level, // 压力等级
-        if fn::hvac_shape($this.id) == 'CIRC' { string::concat('φ',<string>math::fixed(refno.DESP[1]?:0,2)) } else { <string>math::fixed(refno.DESP[1]?:0.0,2) } as w, // 宽
-        if fn::hvac_shape($this.id) == 'CIRC' { '' } else { <string>math::fixed(refno.DESP[2]?:0.0,2) } as h, // 高
+        fn::hvac_width_thre(id) as w, // 宽
+        fn::hvac_height_thre(id) as h, // 高
         fn::hvac_thickness_tape(id)?:'' as thickness, // 风管壁厚
         fn::hvac_area_tape(id)?:'' as area, // 风管面积
         fn::hvac_weight_tape(id)?:'' as weight,  // 风管总重
@@ -25,4 +25,3 @@ define function fn::fggd_CAP($pes:array<record>) {
         array::join([fn::hvac_material($this.id),fn::get_ispec_material($this.id)],',') as material // 材质
     from $pes;
 };
-

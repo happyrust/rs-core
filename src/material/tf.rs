@@ -48,20 +48,14 @@ pub async fn save_tf_material_hvac(
                     let table_name = "通风专业_风管管段清单".to_string();
                     let filed = vec![
                         "参考号",
-                        "描述",
                         "管段编号",
-                        "子项号",
                         "材质",
                         "压力等级",
-                        "风管长度",
                         "风管宽度",
                         "风管高度",
                         "风管壁厚",
                         "风管面积",
                         "风管重量",
-                        "坐标X",
-                        "坐标Y",
-                        "坐标Z",
                         "加强筋型材",
                         "加强筋长度",
                         "加强筋重量",
@@ -75,9 +69,7 @@ pub async fn save_tf_material_hvac(
                         "其它材料数量",
                         "螺杆",
                         "螺母数量",
-                        "螺母数量_2",
                         "所在房间号",
-                        "系统",
                     ];
                     match create_table_sql(&pool, &table_name, &filed).await {
                         Ok(_) => {
@@ -175,12 +167,12 @@ impl MaterialTfHavcList {
             .or_insert(self.id.to_pdms_str());
         map.entry("描述".to_string()).or_insert(self.description);
         map.entry("管段编号".to_string()).or_insert(self.seg_code);
-        map.entry("子项号".to_string()).or_insert(self.sub_code);
+        // map.entry("子项号".to_string()).or_insert(self.sub_code);
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
-        map.entry("风管长度".to_string())
-            .or_insert(self.length.to_string());
+        // map.entry("风管长度".to_string())
+        //     .or_insert(self.length.to_string());
         map.entry("风管宽度".to_string()).or_insert(self.width);
         map.entry("风管高度".to_string()).or_insert(self.height);
         map.entry("风管壁厚".to_string())
@@ -213,11 +205,9 @@ impl MaterialTfHavcList {
         map.entry("螺杆".to_string()).or_insert(self.stud);
         map.entry("螺母数量".to_string())
             .or_insert(self.nut_qty.to_string());
-        map.entry("螺母数量_2".to_string())
-            .or_insert(self.washer_qty.to_string());
         map.entry("所在房间号".to_string())
             .or_insert(self.room_no.unwrap_or("".to_string()));
-        map.entry("系统".to_string()).or_insert(self.system);
+        // map.entry("系统".to_string()).or_insert(self.system);
         map
     }
 }
@@ -290,14 +280,14 @@ impl MaterialTfHavcTapeList {
         let mut map = HashMap::new();
         map.entry("参考号".to_string())
             .or_insert(self.id.to_pdms_str());
-        map.entry("描述".to_string()).or_insert(self.description);
+        // map.entry("描述".to_string()).or_insert(self.description);
         map.entry("管段编号".to_string()).or_insert(self.seg_code);
-        map.entry("子项号".to_string()).or_insert(self.sub_code);
+        // map.entry("子项号".to_string()).or_insert(self.sub_code);
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
-        map.entry("风管长度".to_string())
-            .or_insert(self.length.to_string());
+        // map.entry("风管长度".to_string())
+        //     .or_insert(self.length.to_string());
         map.entry("风管宽度".to_string())
             .or_insert(serde_json::to_string(&self.width).unwrap_or("[]".to_string()));
         map.entry("风管高度".to_string())
@@ -336,7 +326,7 @@ impl MaterialTfHavcTapeList {
             .or_insert(serde_json::to_string(&self.washer_qty).unwrap_or("[]".to_string()));
         map.entry("所在房间号".to_string())
             .or_insert(self.room_no.unwrap_or("".to_string()));
-        map.entry("系统".to_string()).or_insert(self.system);
+        // map.entry("系统".to_string()).or_insert(self.system);
         map
     }
 }
@@ -411,12 +401,12 @@ impl MaterialTfHavcFlexList {
             .or_insert(self.id.to_pdms_str());
         map.entry("描述".to_string()).or_insert(self.description);
         map.entry("管段编号".to_string()).or_insert(self.seg_code);
-        map.entry("子项号".to_string()).or_insert(self.sub_code);
+        // map.entry("子项号".to_string()).or_insert(self.sub_code);
         map.entry("材质".to_string())
             .or_insert(serde_json::to_string(&self.material).unwrap_or("[]".to_string()));
         map.entry("压力等级".to_string()).or_insert(self.pressure);
-        map.entry("风管长度".to_string())
-            .or_insert(self.length.to_string());
+        // map.entry("风管长度".to_string())
+        //     .or_insert(self.length.to_string());
         map.entry("风管宽度".to_string()).or_insert(self.width);
         map.entry("风管高度".to_string()).or_insert(self.height);
         map.entry("风管壁厚".to_string())
@@ -449,11 +439,9 @@ impl MaterialTfHavcFlexList {
         map.entry("螺杆".to_string()).or_insert(self.stud);
         map.entry("螺母数量".to_string())
             .or_insert(serde_json::to_string(&self.nut_qty).unwrap_or("[]".to_string()));
-        map.entry("螺母数量_2".to_string())
-            .or_insert(serde_json::to_string(&self.washer_qty).unwrap_or("[]".to_string()));
         map.entry("所在房间号".to_string())
             .or_insert(self.room_no.unwrap_or("".to_string()));
-        map.entry("系统".to_string()).or_insert(self.system);
+        // map.entry("系统".to_string()).or_insert(self.system);
         map
     }
 }
@@ -476,7 +464,7 @@ pub async fn get_tf_hvac_material(
             let refnos = query_ele_filter_deep_children(
                 refno.into(),
                 &[
-                    "BEND", "BRCO", "CAP", "FLEX", "OFST", "STIF", "STRT", "TAPE", "THRE", "TRNS",
+                    "BEND", "BRCO", "CAP", "FLEX", "OFST", "STIF", "STRT", "TAPE", "THRE", "TRNS","TEE"
                 ],
             )
                 .await?;
@@ -551,6 +539,15 @@ pub async fn get_tf_hvac_material(
                 .collect::<Vec<_>>();
             dbg!("THRE");
             let mut result = get_tf_hvac_thre_data(db, brcos).await?;
+            data.append(&mut result);
+            // TEE
+            let tees = refnos
+                .iter()
+                .filter(|x| x.noun == "TEE".to_string())
+                .map(|x| x.refno.into())
+                .collect::<Vec<_>>();
+            dbg!("TEE");
+            let mut result = get_tf_hvac_tee_data(db, tees).await?;
             data.append(&mut result);
             // CAP
             let caps = refnos
@@ -720,14 +717,14 @@ fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     map.entry("id".to_string())
         .or_insert("参考号".to_string());
 
-    map.entry("desc".to_string())
-        .or_insert("描述".to_string());
+    // map.entry("desc".to_string())
+    //     .or_insert("描述".to_string());
 
     map.entry("bran_seg_code".to_string())
         .or_insert("管段编号".to_string());
 
-    map.entry("sub_code".to_string())
-        .or_insert("子项号".to_string());
+    // map.entry("sub_code".to_string())
+    //     .or_insert("子项号".to_string());
 
     map.entry("material".to_string())
         .or_insert("材质".to_string());
@@ -735,8 +732,8 @@ fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     map.entry("pressure_level".to_string())
         .or_insert("压力等级".to_string());
 
-    map.entry("l".to_string())
-        .or_insert("风管长度".to_string());
+    // map.entry("l".to_string())
+    //     .or_insert("风管长度".to_string());
 
     map.entry("w".to_string())
         .or_insert("风管宽度".to_string());
@@ -801,17 +798,14 @@ fn get_hvac_chinese_name_map() -> HashMap<String, String> {
     map.entry("nut_count".to_string())
         .or_insert("螺母数量".to_string());
 
-    map.entry("nut_count_b".to_string())
-        .or_insert("螺母数量_2".to_string());
-
     map.entry("gask_count".to_string())
         .or_insert("垫片数量".to_string());
 
     map.entry("room_num".to_string())
         .or_insert("所在房间号".to_string());
 
-    map.entry("system_name".to_string())
-        .or_insert("系统".to_string());
+    // map.entry("system_name".to_string())
+    //     .or_insert("系统".to_string());
 
     map
 }
@@ -925,6 +919,38 @@ async fn get_tf_hvac_thre_data(
         .join(",");
     let sql = format!(
         "return fn::fggd_THRE([{}]);",
+        refnos
+    );
+    let mut response = db.query(&sql).await?;
+    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+        Ok(result) => {
+            let mut r = change_hvac_result_to_map(result);
+            data.append(&mut r);
+        }
+        Err(e) => {
+            dbg!(&sql);
+            println!("Error: {}", e);
+        }
+    }
+    Ok(data)
+}
+
+/// 获取 通风 风管管段 tee 的数据
+async fn get_tf_hvac_tee_data(
+    db: &Surreal<Any>,
+    refnos: Vec<RefU64>,
+) -> anyhow::Result<Vec<HashMap<String, String>>> {
+    if refnos.is_empty() {
+        return Ok(vec![]);
+    };
+    let mut data = Vec::new();
+    let refnos = refnos
+        .into_iter()
+        .map(|refno| refno.to_pe_key())
+        .collect::<Vec<_>>()
+        .join(",");
+    let sql = format!(
+        "return fn::fggd_tee([{}]);",
         refnos
     );
     let mut response = db.query(&sql).await?;
