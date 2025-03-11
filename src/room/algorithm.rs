@@ -51,9 +51,9 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
         let Some(last) = split.last() else {
             continue;
         };
-        if !match_room_name_hd(last) {
-            continue;
-        };
+        // if !match_room_name_hd(last) {
+        //     continue;
+        // };
         map.entry(first[1..].to_string())
             .or_insert_with(BTreeSet::new)
             .insert(RoomInfo {
