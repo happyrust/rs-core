@@ -107,7 +107,7 @@ serde_with = { version = "3.9.0", features = ["macros"] }
 
 
 # geo = "0.28.0"
-cavalier_contours = { path = "../cavalier_contours/cavalier_contours", features = [
+cavalier_contours = { git = "https://gitee.com/happydpc/cavalier_contours", features = [
     "serde",
 ] }
 indexmap = { version = "2.0.0", features = ["serde"] }
@@ -119,7 +119,7 @@ once_cell = "1.18.0"
 urlencoding = "2.1.3"
 chrono = "0.4"
 
-surrealdb = { path = "../../surrealdb/crates/sdk", default-features = false, features = [
+surrealdb = { git = "https://gitee.com/happydpc/surrealdb", default-features = false, features = [
     "protocol-ws",
 ] }
 num-traits = "0.2.17"
