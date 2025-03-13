@@ -25,33 +25,12 @@
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
     </configurations>
   </component>
-  <component name="CargoProjectFeatures">
-    <cargoProject file="$PROJECT_DIR$/Cargo.toml">
-      <package file="$PROJECT_DIR$">
-        <feature name="default" />
-      </package>
-    </cargoProject>
-  </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="添加注释等等">
-      <change afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run_functions.bat" afterDir="false" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="comment match_room_name check">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/db/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/db/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/options.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/options.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/penetration.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/penetration.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/petgraph/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/petgraph/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/e3d_db.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/e3d_db.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/spatial.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ssc_setting.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ssc_setting.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/pe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/pe.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/vague_search.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/vague_search.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/version_control/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/version_control/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/virtual_hole.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/virtual_hole.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,7 +52,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="外部使用" />
+        <entry key="$PROJECT_DIR$" value="vc" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -280,7 +259,7 @@
     &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
     &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;Errors&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -316,7 +295,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Build">
+  <component name="RunManager" selected="Cargo.Run aios_core">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -326,21 +305,29 @@
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="run_functions" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="aios-core" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/schemas/functions" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="run_functions.bat" />
-      <option name="PARAMETERS" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="Build" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="buildProfileId" value="dev" />
       <option name="command" value="build" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="false" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Run aios_core" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="run --package aios_core --bin aios_core" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
       <option name="allFeatures" value="false" />
@@ -439,27 +426,26 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Batch.cargo-clif test_query_transform" />
-      <item itemvalue="Batch.run_functions" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Run aios_core" />
       <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
       <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
-      <item itemvalue="Cargo.check" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Run aios_core" />
         <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
         <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
         <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
         <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
-        <item itemvalue="Batch.run_functions" />
       </list>
     </recent_temporary>
   </component>
   <component name="RustProjectSettings">
-    <option name="toolchainHomeDirectory" value="D:/.cargo/bin" />
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
   </component>
   <component name="RustfmtProjectSettings">
     <option name="useRustfmt" value="true" />
@@ -990,6 +976,15 @@
       <workItem from="1734732431821" duration="1072000" />
       <workItem from="1736143155810" duration="2312000" />
       <workItem from="1738820391401" duration="2074000" />
+      <workItem from="1740136597676" duration="51000" />
+      <workItem from="1740137731665" duration="1285000" />
+      <workItem from="1740450329145" duration="787000" />
+      <workItem from="1740554956823" duration="3835000" />
+      <workItem from="1741340537118" duration="224000" />
+      <workItem from="1741341217805" duration="11000" />
+      <workItem from="1741597461984" duration="4352000" />
+      <workItem from="1741682608796" duration="99000" />
+      <workItem from="1741696142320" duration="557000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1334,7 +1329,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="400" />
+    <option name="localTasksCounter" value="407" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1388,12 +1383,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix increment update" />
-    <MESSAGE value="fix joint transform calculation" />
-    <MESSAGE value="WIP fix joint transform calculation" />
-    <MESSAGE value="refactor query deep" />
-    <MESSAGE value="（1）解决自相交的问题，能够简单修复的&#10;（2）解决SJOI和PJOI的问题，SJOI会出现没有给定POSL的情况，需要靠AXIS line 和 CUTP一起去计算一个默认方位" />
-    <MESSAGE value="fix PLDATU 方位计算" />
     <MESSAGE value="fix wire" />
     <MESSAGE value="uncomment" />
     <MESSAGE value="add face filter" />
@@ -1413,7 +1402,13 @@
     <MESSAGE value="update to bevy 0.15" />
     <MESSAGE value="WIP 版本管理的查询处理" />
     <MESSAGE value="添加注释等等" />
-    <option name="LAST_COMMIT_MESSAGE" value="添加注释等等" />
+    <MESSAGE value="fix get_uda_value" />
+    <MESSAGE value="move get_uda_value to common sql" />
+    <MESSAGE value="add query pane_size" />
+    <MESSAGE value="add init_demo_test_surreal" />
+    <MESSAGE value="fix import surreal" />
+    <MESSAGE value="comment match_room_name check" />
+    <option name="LAST_COMMIT_MESSAGE" value="comment match_room_name check" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
