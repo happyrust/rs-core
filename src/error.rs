@@ -36,6 +36,10 @@ pub enum HandleError {
         sql: String,
         position: String,
     },
+    #[error("Surreal Database Error: {msg}")]
+    SurrealError {
+        msg: String,
+    },
     #[error("Invalid Error: {0} \n , at {position}")]
     InvalidErr {
         msg: String,

@@ -140,8 +140,8 @@ serde_repr = "0.1.19"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }
 redb = "1.4.0"
-manifold-sys = { path = "../manifold-sys", optional = true }
-opencascade = { path = "../opencascade-rs/crates/opencascade", optional = true }
+manifold-sys = { git = "https://gitee.com/happydpc/manifold-sys", optional = true }
+opencascade = { git = "https://gitee.com/happydpc/occt-rs", optional = true }
 sqlx = { version = "0.7.4", default-features = false, features = [
     "runtime-async-std-rustls",
     "rust_decimal",
