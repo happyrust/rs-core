@@ -20487,6 +20487,15 @@
           "StringType": ""
         },
         "att_type": "STRING"
+      },
+	  "369970574": {
+        "name": "WELDTY",
+        "hash": 369970574,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
       }
     },
     "646345": {

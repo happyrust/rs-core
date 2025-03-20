@@ -159,9 +159,9 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
         let Ok(s) = Config::builder()
             .add_source(File::with_name("DbOption"))
             .build()
-        else {
-            return (DashMap::new(), DashMap::new());
-        };
+            else {
+                return (DashMap::new(), DashMap::new());
+            };
         let db_option: DbOption = s.try_deserialize().unwrap();
         for project in db_option.included_projects {
             let path = format!("{}_uda.bin", project);
@@ -208,6 +208,30 @@ pub async fn init_test_surreal() -> DbOption {
     db_option
 }
 
+pub async fn init_surreal() -> anyhow::Result<()> {
+    let s = Config::builder()
+        .add_source(File::with_name("DbOption"))
+        .build()
+        .unwrap();
+    let db_option: DbOption = s.try_deserialize()?;
+    // 创建配置
+    let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
+    SUL_DB
+        .connect((db_option.get_version_db_conn_str(), config))
+        .with_capacity(1000)
+        .await?;
+    SUL_DB
+        .use_ns(&db_option.surreal_ns)
+        .use_db(&db_option.project_name)
+        .await?;
+    SUL_DB
+        .signin(Root {
+            username: &db_option.v_user,
+            password: &db_option.v_password,
+        })
+        .await?;
+    Ok(())
+}
 
 /// 初始化测试数据库
 pub async fn init_demo_test_surreal() -> DbOption {
@@ -224,8 +248,8 @@ pub async fn init_demo_test_surreal() -> DbOption {
         .await
         .unwrap();
     SUL_DB
-        .use_ns("demo")
-        .use_db("demo")
+        .use_ns(&db_option.surreal_ns)
+        .use_db(&db_option.project_name)
         .await
         .unwrap();
     SUL_DB

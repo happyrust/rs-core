@@ -20,6 +20,7 @@ use std::time::Duration;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
+use crate::init_surreal;
 
 pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()> {
     SUL_DB
@@ -50,10 +51,16 @@ impl AiosDBMgr {
             .build()
             .unwrap();
         let db_option: DbOption = s.try_deserialize().unwrap();
-        match init_surreal_with_signin(&db_option).await {
+        // match init_surreal_with_signin(&db_option).await {
+        //     Ok(_) => {}
+        //     Err(e) => {
+        //         // dbg!(&e.to_string());
+        //     }
+        // }
+        match init_surreal().await {
             Ok(_) => {}
             Err(e) => {
-                // dbg!(&e.to_string());
+                dbg!(&e.to_string());
             }
         }
         Ok(Self { db_option })
