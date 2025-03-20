@@ -8,6 +8,7 @@ use dashmap::DashMap;
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
 use std::io::Read;
+use crate::error::HandleError;
 
 pub use types::db_info::PdmsDatabaseInfo;
 
@@ -179,33 +180,58 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
     })
 }
 
-pub async fn init_test_surreal() -> DbOption {
+pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
     let s = Config::builder()
         .add_source(File::with_name("DbOption"))
         .build()
-        .unwrap();
-    let db_option: DbOption = s.try_deserialize().unwrap();
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to load DbOption config: {}", e)
+        })?;
+    let db_option: DbOption = s.try_deserialize()
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to deserialize DbOption: {}", e)
+        })?;
+
     // 创建配置
     let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
+
+    // Connect to database
     SUL_DB
         .connect((db_option.get_version_db_conn_str(), config))
         .with_capacity(1000)
         .await
-        .unwrap();
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to connect to database: {}", e)
+        })?;
+
+    // Set namespace and database
     SUL_DB
         .use_ns(&db_option.surreal_ns)
         .use_db(&db_option.project_name)
         .await
-        .unwrap();
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to set namespace and database: {}", e)
+        })?;
+
+    // Sign in
     SUL_DB
         .signin(Root {
             username: &db_option.v_user,
             password: &db_option.v_password,
         })
         .await
-        .unwrap();
-    define_common_functions().await.unwrap();
-    db_option
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to sign in: {}", e)
+        })?;
+
+    // Define common functions
+    define_common_functions()
+        .await
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to define common functions: {}", e)
+        })?;
+
+    Ok(db_option)
 }
 
 pub async fn init_surreal() -> anyhow::Result<()> {
@@ -234,31 +260,56 @@ pub async fn init_surreal() -> anyhow::Result<()> {
 }
 
 /// 初始化测试数据库
-pub async fn init_demo_test_surreal() -> DbOption {
+pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
     let s = Config::builder()
         .add_source(File::with_name("DbOption"))
         .build()
-        .unwrap();
-    let db_option: DbOption = s.try_deserialize().unwrap();
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to load DbOption config: {}", e)
+        })?;
+    let db_option: DbOption = s.try_deserialize()
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to deserialize DbOption: {}", e)
+        })?;
+
     // 创建配置
     let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
+
+    // Connect to database
     SUL_DB
         .connect((db_option.get_version_db_conn_str(), config))
         .with_capacity(1000)
         .await
-        .unwrap();
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to connect to database: {}", e)
+        })?;
+
+    // Set namespace and database
     SUL_DB
         .use_ns(&db_option.surreal_ns)
         .use_db(&db_option.project_name)
         .await
-        .unwrap();
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to set namespace and database: {}", e)
+        })?;
+
+    // Sign in
     SUL_DB
         .signin(Root {
             username: &db_option.v_user,
             password: &db_option.v_password,
         })
         .await
-        .unwrap();
-    define_common_functions().await.unwrap();
-    db_option
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to sign in: {}", e)
+        })?;
+
+    // Define common functions
+    define_common_functions()
+        .await
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to define common functions: {}", e)
+        })?;
+
+    Ok(db_option)
 }
