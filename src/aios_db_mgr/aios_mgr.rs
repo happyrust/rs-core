@@ -121,7 +121,7 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_attr(&self, refno: RefU64) -> anyhow::Result<NamedAttrMap> {
-        get_named_attmap_with_uda(refno.into(), false).await
+        get_named_attmap_with_uda(refno.into()).await
     }
 
     async fn get_children(&self, refno: RefU64) -> anyhow::Result<Vec<EleTreeNode>> {
