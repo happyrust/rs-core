@@ -20502,9 +20502,9 @@
         "hash": 369970574,
         "offset": 0,
         "default_val": {
-          "IntegerType": 0
+          "WordType": "unset"
         },
-        "att_type": "INTEGER"
+        "att_type": "WORD"
       }
     },
     "646345": {
