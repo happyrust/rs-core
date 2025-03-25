@@ -5,7 +5,7 @@ DEFINE FUNCTION fn::bend_bolt_count($pe:record) {
     let $pre_desp = fn::prev_pe($pe).refno.DESP?:[0.0];
     let $next_desp = fn::next_pe($pe).refno.DESP?:[0.0];
     let $flan_length = <float>array::first(fn::flex_flan_length($pe)).length;
-    let $flan_width = $pe.refno.DESP[20];
+    let $flan_width = $pe.refno.DESP[20]?:0.0;
     let $bran_4 = array::at(string::split($pe.owner.name,'-')?:[],3)?:'';
     let $hvac_shape = fn::hvac_shape($pe);
 

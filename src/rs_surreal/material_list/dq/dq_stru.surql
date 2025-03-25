@@ -14,7 +14,7 @@ define function fn::dq_stru($pes:array<record>){
         (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun ='GENSEC'].in.refno.SPRE.name)[0]?:'' as spre,
         (<-pe_owner.in<-pe_owner[where in.noun='SCTN'|| in.noun ='GENSEC'].in.refno.SPRE.refno.CATR.refno.NAME)[0]?:'' as catr,
         '2' as count // 数量
-    from $pes where !string::contains(fn::find_ancestor_type(id,'ZONE')[0].name?:'','MTGD');
+    from $pes where !string::contains(fn::find_ancestor_type(id,'ZONE').name?:'','MTGD');
 };
 
 

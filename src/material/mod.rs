@@ -228,6 +228,43 @@ pub async fn define_material_surreal_funtions(db: Surreal<Any>) -> anyhow::Resul
     Ok(())
 }
 
+pub async fn define_core_material_surreal_funtions(db: Surreal<Any>) -> anyhow::Result<()> {
+    db.query(read_surreal_file("src/rs_surreal/material_list/common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gy/gy_bend.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gy/gy_collect.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gy/gy_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gy/gy_equip.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gy/gy_part.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gy/gy_tubi.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gy/gy_valve.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("src/rs_surreal/material_list/dq/dq_bran.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/dq/dq_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/dq/dq_gensec.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/dq/dq_stru.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("src/rs_surreal/material_list/eq/eq_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/eq/eq_dz.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("src/rs_surreal/material_list/gps/gps_bend.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gps/gps_elbo.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gps/gps_flan.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gps/gps_redu.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gps/gps_tee.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/gps/gps_tubi.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("src/rs_surreal/material_list/nt/nt_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/nt/nt_valve.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("src/rs_surreal/material_list/tx/tx_sb.surql")?.as_str()).await?;
+
+    db.query(read_surreal_file("src/rs_surreal/material_list/yk/yk_common.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/yk/yk_dzcl.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/yk/yk_equi.surql")?.as_str()).await?;
+    db.query(read_surreal_file("src/rs_surreal/material_list/yk/yk_ybgd.surql")?.as_str()).await?;
+    Ok(())
+}
+
 fn read_surreal_file(file: &str) -> anyhow::Result<String> {
     let mut file = std::fs::File::open(file)?;
     let mut content = String::new();

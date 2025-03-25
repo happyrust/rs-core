@@ -1,5 +1,5 @@
 
--- DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
+DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
 
 REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
@@ -70,14 +70,14 @@ REMOVE FUNCTION fn::default_name;
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
-    return (select value (if name='' {string::join(' ', noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
+    return (select value (if name='' {string::join(" ", noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
 };
 
 remove function fn::default_names;
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
-    return select value (if name='' {string::join(' ', noun,<string> (
+    return select value (if name='' {string::join(" ", noun,<string> (
        fn::order(id)?:0 + 1) ) } else { name } ) from $pes;
 };
 
@@ -303,7 +303,7 @@ DEFINE FUNCTION fn::next_type($pe:record) {
 
 remove function fn::children;
 DEFINE FUNCTION fn::children($pe:record) {
-    return array::distinct(select value in from $pe<-pe_owner where record::exists(in.id) and !in.deleted);
+    return (select value <-pe_owner.in from $pe)[0];
 };
 
 
@@ -329,13 +329,37 @@ DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
     (array::flatten(select value fn::ancestor(id) from $pe)[?$self.noun=$t])[0]
 };
 
-remove function fn::get_mdb_dbnums;
-DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
-        let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
-        return (select value dbnum from (
-            select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
-            from WORL
-            where REFNO.dbnum in $dbnos
-            order by o
-        ));
-}
+// 根据类型返回子节点
+remove function fn::find_deep_children_type;
+define function fn::find_deep_children_type($pe:record,$t:string) {
+    let $children = array::flatten( object::values( (select
+                      [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only $pe where record::exists(id))?:{{}} ) );
+
+    return select value id from $children where id.noun == $t
+
+};
+
+// 返回类型集合的父节点
+remove function fn::find_ancestor_types;
+DEFINE FUNCTION fn::find_ancestor_types($pe: record, $t: array){
+    let $r = (array::flatten(select value fn::ancestor(id) from $pe));
+    return select value id from $r where noun in $t;
+};
+
+// 返回符合类型集合的子节点
+remove function fn::find_deep_children_types;
+define function fn::find_deep_children_types($pe:record,$t:array) {
+    let $children = array::flatten( object::values( (select
+                      [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
+                   from only $pe where record::exists(id))?:{{}} ) );
+    return select value id from $children where id.noun in $t
+
+};
+
+remove FUNCTION fn::find_door_from_wall;
+DEFINE FUNCTION fn::find_door_from_wall($pe:array) {
+    let $fitts = select value fn::find_deep_children_types(id, ["FIXING", "NBOX", "NCYL", "NXTR", "PFIT", "NPYR", "FITT", "SBFI"]) from $pe;
+    let $uda_value = select id as refno,fn::default_name(id) as name,fn::find_ancestor_types(id,["STWALL", "GWALL", "WALL"])[0] as wall from array::flatten(select value id from $fitts) where string::contains(fn::get_uda_value(id,'/JGOBJBASE')?:'','门洞');
+    return $uda_value;
+};

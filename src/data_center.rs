@@ -75,6 +75,21 @@ pub struct DataCenterRelations {
     pub attributes: Vec<u8>,
 }
 
+impl DataCenterRelations {
+    pub fn new(start_instance: &DataCenterInstance, end_instance: &DataCenterInstance) -> Self {
+        DataCenterRelations {
+            version: start_instance.version.clone(),
+            object_model_code: "RELAPCOM".to_string(),
+            instance_code: format!("RELAPCOM {}", start_instance.instance_code),
+            start_object_code: start_instance.object_model_code.clone(),
+            start_instance_code: start_instance.instance_code.clone(),
+            end_object_code: end_instance.object_model_code.clone(),
+            end_instance_code: end_instance.instance_code.clone(),
+            attributes: vec![],
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterAttr {
     #[serde(rename = "attributeModelCode")]
@@ -86,6 +101,7 @@ pub struct DataCenterAttr {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum AttrValue {
+    Invalid,
     AttrString(String),
     AttrFloat(f32),
     AttrInt(i32),
@@ -111,6 +127,9 @@ impl Default for AttrValue {
 impl Into<String> for AttrValue {
     fn into(self) -> String {
         match self {
+            AttrValue::Invalid => {
+                AttrValue::default().into()
+            }
             AttrString(a) => {
                 a
             }
@@ -218,7 +237,7 @@ pub struct SendHoleDataToArango {
 ///虚拟孔洞提资单数据
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TiziVirtualHoleData {
-    #[serde(rename = "id", alias="KeyValue")]
+    #[serde(rename = "id", alias = "KeyValue")]
     pub key_value: String,
     #[serde(rename = "formdata")]
     pub form_data: SendHoleDataFormData,
@@ -241,7 +260,6 @@ impl TiziVirtualHoleData {
         }
         Ok(serde_json::to_string(&obj)?)
     }
-
 }
 
 
@@ -257,7 +275,7 @@ impl SendHoleDataToArango {
 //提资列表
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AuditDataVec {
- pub data:Vec<SendHoleDataToArango>
+    pub data: Vec<SendHoleDataToArango>,
 }
 
 //可提资物资信息
@@ -311,7 +329,7 @@ pub struct SendHoleDataFormData {
     #[serde(rename = "files")]
     pub files: Vec<DataCenterFile>,
     #[serde(rename = "ModelData")]
-    pub model_data: Vec<Vec<(RefU64,String)>>,
+    pub model_data: Vec<Vec<(RefU64, String)>>,
     // pub model_data: HoleWallBoardVec,
 }
 
@@ -423,7 +441,7 @@ fn test_item_value() {
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
 pub struct RawHoleData {
     // node identifier
-    #[serde(rename = "id", alias="_key")]
+    #[serde(rename = "id", alias = "_key")]
     pub _key: String,
     // node link
     #[serde(rename = "RelyItem")]
@@ -543,7 +561,6 @@ pub struct RawHoleData {
 }
 
 impl RawHoleData {
-
     //todo 写一个proc macro来生成schema
     pub fn get_scheme() -> String {
         let basic_schema = generate_basic_versioned_schema::<Self>();
@@ -572,5 +589,4 @@ impl RawHoleData {
         }
         Ok(serde_json::to_string(&obj)?)
     }
-
 }

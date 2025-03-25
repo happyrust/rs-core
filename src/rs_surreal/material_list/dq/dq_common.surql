@@ -51,10 +51,6 @@ DEFINE FUNCTION fn::get_tray_type($pe:record) {
         ELSE { '未知类型' };
 };
 
-
-
-
-
 remove FUNCTION fn::get_cover_info;
 DEFINE FUNCTION fn::get_cover_info($pe:record) {
     RETURN if (SELECT VALUE in FROM ONLY (SELECT * FROM $pe<-pe_owner[WHERE in.noun != 'ATTA'] ORDER BY order_num) LIMIT 1).refno.DESP[2] == 1 { '是' } else { '否'};
