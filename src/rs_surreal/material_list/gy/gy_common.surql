@@ -16,7 +16,7 @@ define function fn::elbo_len($pe:record) {
     return if $pe.noun != 'ELBO' && $pe.noun != 'BEND' {
         return 0;
     } else {
-        return (select value (out.param.PrimCTorus.rins?:0 + 1.0)/2.0 * math::deg2rad(out.param.PrimCTorus.angle) * trans.d.scale[0]
+        return (select value (out.param.PrimCTorus.rins?:0 + 1.0)/2.0 * math::deg2rad(out.param.PrimCTorus.angle?:0) * trans.d.scale[0]
             from ($pe->inst_relate.out->geo_relate)[0])[0]?:0.0;
     }
 };
