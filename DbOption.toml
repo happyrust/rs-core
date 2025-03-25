@@ -32,7 +32,6 @@ load_spatial_tree = false
 save_spatial_tree_to_db = false
 gen_model_batch_size = 16
 
-meshes_path = "E:\\RustProject\\new\\rs-plant3-d\\assets\\meshes"
 
 #生成补充类型的graph，方便查询直接生成语句
 gen_noun_graph = false
