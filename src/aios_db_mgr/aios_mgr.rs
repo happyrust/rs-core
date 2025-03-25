@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
@@ -19,6 +20,7 @@ use std::time::Duration;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
+use crate::init_surreal;
 
 pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()> {
     SUL_DB
@@ -49,10 +51,16 @@ impl AiosDBMgr {
             .build()
             .unwrap();
         let db_option: DbOption = s.try_deserialize().unwrap();
-        match init_surreal_with_signin(&db_option).await {
+        // match init_surreal_with_signin(&db_option).await {
+        //     Ok(_) => {}
+        //     Err(e) => {
+        //         // dbg!(&e.to_string());
+        //     }
+        // }
+        match init_surreal().await {
             Ok(_) => {}
             Err(e) => {
-                // dbg!(&e.to_string());
+                dbg!(&e.to_string());
             }
         }
         Ok(Self { db_option })
@@ -286,6 +294,24 @@ impl AiosDBMgr {
             .connect(url)
             .await
             .map_err({ |x| anyhow::anyhow!(x.to_string()) })
+    }
+
+    #[cfg(feature = "sql")]
+    /// 获取include_projects不同项目对应的pool
+    pub async fn get_project_pools(&self) -> anyhow::Result<HashMap<String,Pool<MySql>>> {
+        let connection_str = Self::default_mysql_conn_str();
+        let mut map = HashMap::new();
+        for project in &self.db_option.included_projects {
+            let url = format!("{connection_str}/{}", project);
+            let pool:Pool<MySql> = PoolOptions::new()
+                .max_connections(500)
+                .acquire_timeout(Duration::from_secs(10 * 60))
+                .connect(&url)
+                .await
+                .map_err({ |x| anyhow::anyhow!(x.to_string()) })?;
+            map.entry(project.to_string()).or_insert(pool);
+        }
+        Ok(map)
     }
 
     /// 获取外部的数据库

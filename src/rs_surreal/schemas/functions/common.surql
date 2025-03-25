@@ -1,5 +1,5 @@
 
-DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
+-- DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
 
 REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
@@ -70,14 +70,14 @@ REMOVE FUNCTION fn::default_name;
 DEFINE FUNCTION fn::default_name(
     $pe: record,
 ) {
-    return (select value (if name='' {string::join(" ", noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
+    return (select value (if name=='' {string::join(' ', noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
 };
 
 remove function fn::default_names;
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
-    return select value (if name='' {string::join(" ", noun,<string> (
+    return select value (if name=='' {string::join(' ', noun,<string> (
        fn::order(id)?:0 + 1) ) } else { name } ) from $pes;
 };
 
@@ -303,7 +303,7 @@ DEFINE FUNCTION fn::next_type($pe:record) {
 
 remove function fn::children;
 DEFINE FUNCTION fn::children($pe:record) {
-    return (select value <-pe_owner.in from $pe)[0];
+    return array::distinct(select value in from $pe<-pe_owner where record::exists(in.id) and !in.deleted);
 };
 
 
@@ -314,10 +314,10 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
     return if $ispe == none {
         return [0];
     } else {
-        return (select value (select value CATR.refno.PARA 
+        return (select value (select value CATR.refno.PARA
                 from only $ispe<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
-                and $parent.owner.refno.TEMP >=refno.ANSW 
-                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.* 
+                and $parent.owner.refno.TEMP >=refno.ANSW
+                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.*
                 where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1)
             from $pe)[0];
     };
@@ -363,3 +363,14 @@ DEFINE FUNCTION fn::find_door_from_wall($pe:array) {
     let $uda_value = select id as refno,fn::default_name(id) as name,fn::find_ancestor_types(id,["STWALL", "GWALL", "WALL"])[0] as wall from array::flatten(select value id from $fitts) where string::contains(fn::get_uda_value(id,'/JGOBJBASE')?:'','门洞');
     return $uda_value;
 };
+
+remove function fn::get_mdb_dbnums;
+DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
+        let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
+        return (select value dbnum from (
+            select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
+            from WORL
+            where REFNO.dbnum in $dbnos
+            order by o
+        ));
+}

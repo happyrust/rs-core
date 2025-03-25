@@ -79,8 +79,8 @@ impl DataCenterRelations {
     pub fn new(start_instance: &DataCenterInstance, end_instance: &DataCenterInstance) -> Self {
         DataCenterRelations {
             version: start_instance.version.clone(),
-            object_model_code: "RELAPCOM".to_string(),
-            instance_code: format!("RELAPCOM {}", start_instance.instance_code),
+            object_model_code: "RELAPOPO".to_string(),
+            instance_code: format!("RELAPOPO {}", start_instance.instance_code),
             start_object_code: start_instance.object_model_code.clone(),
             start_instance_code: start_instance.instance_code.clone(),
             end_object_code: end_instance.object_model_code.clone(),
@@ -204,6 +204,7 @@ pub enum HoleType {
 pub struct ThreeDDatacenterRequest {
     pub title: String,
     pub refnos: Vec<String>,
+    pub create_rvm_relations: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

@@ -1,7 +1,5 @@
-use crate::pdms_pluggin::heat_dissipation::{InstPointMap, InstPointVec};
+use crate::pdms_pluggin::heat_dissipation::{InstPointMap};
 use crate::{pdms_types::*, to_table_key, to_table_keys};
-use crate::pdms_pluggin::heat_dissipation::InstPointMap;
-use crate::pdms_types::*;
 use crate::pe::SPdmsElement;
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{NamedAttrMap, RefnoEnum};
@@ -37,9 +35,7 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec
         select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
             (select value in from {0}<-pe_owner where in.noun in ["LOOP", "PLOO"]);
         array::complement((select value refno.HEIG from [ (select value in.id from only {0}<-pe_owner where in.noun in ["LOOP", "PLOO"] limit 1), {0}]), [none])[0];
-        "#,
-        refno.to_pe_key()
-    );
+        "#, refno.to_pe_key());
     // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await.unwrap();
     let points: Vec<Vec<Vec3>> = response.take(0)?;
@@ -61,18 +57,23 @@ pub async fn query_deep_visible_inst_refnos(refno: RefnoEnum) -> anyhow::Result<
     }
     //TODO，这里可以采用ZONE作为中间层去加速这个过程
     //按照所允许的层级关系去遍历？
-    let branch_refnos = super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
+    let branch_refnos =
+        super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
 
     let mut target_refnos = super::query_multi_children_refnos(&branch_refnos).await?;
 
-    let visible_refnos = super::query_filter_deep_children(refno, &VISBILE_GEO_NOUNS).await?;
+    let visible_refnos =
+        super::query_filter_deep_children(refno, &VISBILE_GEO_NOUNS)
+            .await?;
     target_refnos.extend(visible_refnos);
     Ok(target_refnos)
 }
 
 #[cached(result = true)]
 pub async fn query_deep_neg_inst_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    let neg_refnos = super::query_filter_deep_children(refno, &TOTAL_NEG_NOUN_NAMES).await?;
+    let neg_refnos =
+        super::query_filter_deep_children(refno, &TOTAL_NEG_NOUN_NAMES)
+            .await?;
     Ok(neg_refnos)
 }
 
@@ -119,15 +120,17 @@ pub async fn query_refno_has_pos_neg_map(
         _ => &TOTAL_NEG_NOUN_NAMES.as_slice(),
     };
     //查询元件库下的负实体组合
-    let refnos = query_filter_deep_children(refno, nouns).await.unwrap();
-    if refnos.is_empty() {
+    let refnos = query_filter_deep_children(refno, nouns)
+        .await
+        .unwrap();
+    if refnos.is_empty(){
         return Ok(HashMap::new());
     }
     //使用SUL_DB通过这些参考号反过来query查找父节点
     let sql = format!(
-        "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
-        refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
-    );
+         "select pos, array::group(id) as negs from (select $this.id as id, array::first(->pe_owner.out) as pos from [{}]) group pos",
+         refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(","),
+     );
     // println!("query_refno_has_pos_neg_map sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     let mut result = HashMap::new();

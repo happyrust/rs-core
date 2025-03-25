@@ -24,10 +24,13 @@ use aios_core::room::room::load_aabb_tree;
 
 #[test]
 fn get_noun_hash() {
-    let noun = "UDA";
+    let noun = "WELD";
     let hash = db1_hash(noun);
     dbg!(hash);
-    let hashes = [582073, 640481, 919399];
+    let noun = "WELDTY";
+    let hash = db1_hash(noun);
+    dbg!(hash);
+    let hashes = [534980, 531454, 369970574];
     for hash in hashes {
         let str = db1_dehash(hash);
         dbg!(&hash);
