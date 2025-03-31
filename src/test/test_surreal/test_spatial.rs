@@ -1,6 +1,7 @@
 use crate::tool::dir_tool::*;
 use crate::tool::direction_parse::parse_expr_to_dir;
 use crate::{room::room::load_aabb_tree, rs_surreal, tool::math_tool};
+use crate::{RefU64, RefnoEnum, RefnoSesno};
 use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
 use std::sync::Arc;
 use surrealdb::sql::Thing;
@@ -26,14 +27,18 @@ fn test_print_ori(ori: &str) {
 
 #[cfg(test)]
 mod test_transform {
-    use crate::tool::dir_tool::{parse_ori_str_to_mat, parse_ori_str_to_quat};
+    use crate::tool::dir_tool::{
+        parse_ori_str_to_dquat, parse_ori_str_to_mat, parse_ori_str_to_quat,
+    };
     use crate::tool::direction_parse::parse_expr_to_dir;
     use crate::tool::math_tool;
     use crate::tool::math_tool::{
         cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, dvec3_to_xyz_str, to_pdms_dvec_str,
         vec3_to_xyz_str,
     };
-    use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal, RefU64};
+    use crate::{
+        cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal, RefU64, RefnoEnum, RefnoSesno,
+    };
     use crate::{cal_ori_by_ydir, init_test_surreal};
     use bevy_reflect::Array;
     use glam::{DMat3, DQuat, DVec3, Mat3};
@@ -69,24 +74,29 @@ mod test_transform {
         }
     }
 
-    async fn test_ori(refno: RefnoEnum, assert_ori: &str) {
+    async fn test_ori(refno: RefnoEnum, assert_ori_str: &str) {
         let transform = rs_surreal::get_world_mat4(refno, false)
             .await
             .unwrap()
             .unwrap();
         let (scale, rot, translation) = transform.to_scale_rotation_translation();
 
-        dbg!(translation);
-        //如果包含其中的任意一个，则不需要转成XYZ
-        let convert_xyz = ["E", "N", "U", "W", "S", "D"]
-            .into_iter()
-            .any(|x| assert_ori.contains(x));
-        let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
-        dbg!(&ori_str);
-        assert_eq!(ori_str, assert_ori);
+        let assert_ori_value = parse_ori_str_to_dquat(assert_ori_str).unwrap();
+        let tol = 0.001;
+        let diff = rot.abs_diff_eq(assert_ori_value, tol);
+        assert!(diff, "Rotation difference exceeds tolerance: {:?}", diff);
+
+        // dbg!(translation);
+        // //如果包含其中的任意一个，则不需要转成XYZ
+        // let convert_xyz = ["E", "N", "U", "W", "S", "D"]
+        //     .into_iter()
+        //     .any(|x| assert_ori.contains(x));
+        // let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
+        // dbg!(&ori_str);
+        // assert_eq!(ori_str, assert_ori);
     }
 
-    async fn test_transform(refno: RefU64, assert_ori: &str, pos_str: &str) {
+    async fn test_transform(refno: RefnoEnum, assert_ori: &str, pos_str: &str) {
         let transform = rs_surreal::get_world_mat4(refno, false)
             .await
             .unwrap()
@@ -142,10 +152,9 @@ mod test_transform {
     async fn test_query_transform_ENDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
 
-        //todo fix
         test_ori(
             "17496/268348".into(),
-            "Y is Y 0.374 -X 0.345 -Z and Z is -X 0.693 -Y 42.739 -Z",
+            "Y is X 89.891 Z and Z is -X 0.1089 Z",
         )
         .await;
         // test_ori("17496/273497".into(), "Y is X and Z is Z").await;

@@ -1,6 +1,6 @@
 #同步文件配置
 total_sync = false
-incr_sync = true
+incr_sync = false
 enable_log = false
 sync_graph_db = false
 sync_versioned = false
@@ -55,10 +55,9 @@ sql_threads_number = 50
 batch_insert_sql_cnt = 100 #mysql 批量插入的数量
 
 
-
 #版本数据库服务配置
 v_ip = "127.0.0.1"
-v_port = "1516"
+v_port = "8009"
 v_user = "root"
 v_password = "root"
 pe_chunk = 500
