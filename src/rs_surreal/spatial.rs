@@ -1,6 +1,8 @@
 use crate::room::room::GLOBAL_AABB_TREE;
 use crate::tool::math_tool;
-use crate::tool::math_tool::{cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str};
+use crate::tool::math_tool::{
+    cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str,
+};
 use crate::RefnoEnum;
 use crate::{
     accel_tree::acceleration_tree::QueryRay,
@@ -32,7 +34,7 @@ use std::{collections::HashSet, f32::consts::E, time::Instant};
 pub fn cal_ori_by_z_axis_ref_x(v: DVec3) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::Y
-    }  else {
+    } else {
         DVec3::Z
     };
     let y_dir = v.cross(ref_dir).normalize();
@@ -114,7 +116,6 @@ pub fn cal_spine_ori(v: DVec3, y_ref_dir: DVec3) -> DQuat {
     rotation
 }
 
-
 pub fn cal_ori_by_z_axis_ref_y(v: DVec3) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::Y
@@ -147,13 +148,13 @@ pub fn cal_ori_by_extru_axis(v: DVec3, neg: bool) -> DQuat {
 }
 
 ///根据CUTP 和 轴方向，来计算JOINT的方位
-pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat{
+pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat {
     // let cutp = parse_expr_to_dir("Y 36.85 -X").unwrap();
     // let axis_dir = parse_expr_to_dir("Y 36.85 -X").unwrap();
     let mut y_axis = cutp.cross(axis_dir).normalize();
     let d = cutp.dot(axis_dir).abs();
     // dbg!(d);
-    if d > 0.99{
+    if d > 0.99 {
         y_axis = DVec3::Z;
     }
     let x_axis = axis_dir;
@@ -166,7 +167,11 @@ pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat{
     // // dbg!(to_pdms_dvec_str(&ref_axis, true));
     // dbg!(to_pdms_dvec_str(&y_axis, true));
     // dbg!(to_pdms_dvec_str(&x_axis, true));
-    DQuat::from_mat3(&DMat3::from_cols(x_axis.into(), y_axis.into(), z_axis.into()))
+    DQuat::from_mat3(&DMat3::from_cols(
+        x_axis.into(),
+        y_axis.into(),
+        z_axis.into(),
+    ))
 }
 
 pub async fn get_spline_pts(refno: RefnoEnum) -> anyhow::Result<Vec<DVec3>> {
@@ -294,8 +299,7 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                         }
                     }
                 }
-            }else{
-
+            } else {
             }
         }
         if att.contains_key("ZDIS") {
@@ -428,7 +432,7 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                 if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
                     plin_pos = param.pt;
                     pline_plax = param.plax;
-                    #[cfg(feature = "debug")]
+                    #[cfg(feature = "debug_spatial")]
                     {
                         dbg!(plin_owner);
                         dbg!(pos_line);
@@ -437,14 +441,19 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                 }
                 if let Ok(Some(own_param)) = query_pline(plin_owner, own_pos_line.into()).await {
                     plin_pos -= own_param.pt;
-                    #[cfg(feature = "debug")]
+                    #[cfg(feature = "debug_spatial")]
                     {
                         dbg!(own_pos_line);
                         dbg!(&own_param);
                     }
                 }
+                #[cfg(feature = "debug_spatial")]
+                {
+                    dbg!(&plin_pos);
+                }
             }
             let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
+            let plin_pos = if is_lmirror { -plin_pos } else { plin_pos };
             let mut new_quat = {
                 if cur_type == "FITT" {
                     //受到bang的影响，需要变换
@@ -469,7 +478,13 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
             }
             // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
             let offset = rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
-            // dbg!(offset);
+            #[cfg(feature = "debug_spatial")]
+            {
+                dbg!(&pos);
+                dbg!(&plin_pos);
+                dbg!(&delta_vec);
+                dbg!(offset);
+            }
             translation += offset;
             rotation = rotation * new_quat;
             // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
@@ -483,7 +498,7 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
             if apply_bang {
                 quat = quat * DQuat::from_rotation_z(bangle.to_radians());
             }
-            if has_cut_dir && !has_opdir && !has_local_ori  {
+            if has_cut_dir && !has_opdir && !has_local_ori {
                 // dbg!(cut_dir);
                 let mat3 = DMat3::from_quat(rotation);
                 // dbg!((mat3.z_axis, cut_dir));
@@ -492,8 +507,8 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
             }
             translation = translation + rotation * pos;
             if is_world_quat {
-                rotation =  quat;
-            } else{
+                rotation = quat;
+            } else {
                 rotation = rotation * quat;
             }
         }
@@ -782,15 +797,10 @@ pub async fn query_neareast_by_pos_dir(
     nearest
 }
 
-
-
 /// 查询指定节点的包围盒，需要遍历子节点的所有包围盒, 如果是含有负实体的，取父节点的包围盒
 /// 负实体的邻居节点如果是正实体，可能也要考虑在内
 /// 还有种情况就是图形平台的包围盒？是需要去查询所有子节点的包围盒的
-pub async fn query_bbox(
-    refno: RefnoEnum
-) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
-
+pub async fn query_bbox(refno: RefnoEnum) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
     //获得所有子节点的包围盒？
     //还是所有的包围盒的
 
