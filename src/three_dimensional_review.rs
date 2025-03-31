@@ -17,16 +17,30 @@ pub struct ReviewModelData {
     pub proj_code: String,
     #[serde(rename = "UserCode")]
     pub user_code: String,
+    /// 选择节点所属的site
     #[serde(rename = "SiteCode")]
     pub site_code: String,
+    /// 选择节点所属site的name
     #[serde(rename = "SiteName")]
     pub site_name: String,
+    /// 当前处理人的角色  设计人员/校审人员
     #[serde(rename = "UserRole")]
     pub user_role: String,
+    /// 选择节点的信息
     #[serde(rename = "ModelData")]
     pub model_data: ModelData,
+    /// 截图数据
     #[serde(rename = "FlowPicData")]
     pub flow_pic_data: ThreeDimensionalReviewComment,
+    /// 标题
+    #[serde(rename = "Title")]
+    pub title: String,
+    /// 创建提资单人员(设计人员)
+    #[serde(rename = "Initiator")]
+    pub initiator: String,
+    /// 是否完成编校审
+    #[serde(rename = "Finished")]
+    pub finished: bool,
 }
 
 impl ReviewModelData {
@@ -94,7 +108,9 @@ pub struct ModelDataIndex {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
 pub struct ModelData {
+    /// 选择校审内容的节点
     pub index: Vec<ModelDataIndex>,
+    /// 选择校审内容的节点往上直到site的对应的参考号, map 例子: "SITE":"9304/2","ZONE":"***",Vec顺序与上面index一致
     pub data: Vec<HashMap<String, String>>,
 }
 

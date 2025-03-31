@@ -16,6 +16,7 @@ pub static GLOBAL_ROOM_AABB_TREE: Lazy<RwLock<AccelerationTree>> =
     Lazy::new(|| RwLock::new(AccelerationTree::default()));
 
 // 不要每次都加载，需要检查缓存，如果缓存有，就不用从数据库里刷新了
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn load_aabb_tree() -> anyhow::Result<bool> {
     // 如果已生成了空间树的文件，直接读取文件中的数据即可
     //改成使用 AccelerationTree 的反序列化方法
@@ -23,8 +24,10 @@ pub async fn load_aabb_tree() -> anyhow::Result<bool> {
     if !GLOBAL_AABB_TREE.read().await.is_empty() {
         return Ok(true);
     }
-    *GLOBAL_AABB_TREE.write().await = AccelerationTree::deserialize_from_bin_file().unwrap_or_default();
-
+    #[cfg(not(feature = "web"))]
+    {
+        *GLOBAL_AABB_TREE.write().await = AccelerationTree::deserialize_from_bin_file().unwrap_or_default();
+    }
     // {
     //     if !GLOBAL_AABB_TREE.read().await.is_empty() {
     //         return Ok(true);

@@ -16,3 +16,4 @@ DEFINE FUNCTION fn::collect_mat_statistic($pe: record){
         return fn::collect_hvac_ele($pe);
     };
 }
+

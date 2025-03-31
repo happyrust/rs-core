@@ -405,10 +405,9 @@ pub fn eval_str_to_f64(
                 #[cfg(not(target_arch = "wasm32"))]
                 let uda_map = tokio::task::block_in_place(|| {
                     tokio::runtime::Handle::current().block_on(async move {
-                        let d = crate::get_named_attmap_with_uda(refno, false)
+                        crate::get_named_attmap_with_uda(refno)
                             .await
-                            .unwrap_or_default();
-                        d
+                            .unwrap_or_default()
                     })
                 });
                 for (kk, vv) in uda_map.map {

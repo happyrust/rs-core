@@ -89,6 +89,9 @@ impl From<SurlValue> for NamedAttrMap {
                 let db_info = get_default_pdms_db_info();
                 {
                     for (k, v) in o.0 {
+                        // if k.as_str() == "WELDTY" {
+                        //     dbg!(&k);
+                        // }
                         //refno的页数号也要获取出来
                         if k == "PGNO" {
                             map.insert(
@@ -111,20 +114,21 @@ impl From<SurlValue> for NamedAttrMap {
                             .named_attr_info_map
                             .get(&type_name)
                             .map(|m| m.get(&k).map(|x| x.value().clone()))
-                            .flatten()
-                        {
+                            .flatten() {
                             val.default_val
-                        }
-                        //通过 UDA 去查询这个变量的类型
-                        else {
+                        } else { //通过 UDA 去查询这个变量的类型
                             continue;
                         };
                         let named_value = match default_val {
                             crate::AttrVal::IntegerType(_) => {
                                 NamedAttrValue::IntegerType(v.try_into().unwrap_or_default())
                             }
-                            crate::AttrVal::StringType(_) | crate::AttrVal::WordType(_) => {
+                            crate::AttrVal::StringType(_) => {
                                 NamedAttrValue::StringType(v.try_into().unwrap_or_default())
+                            }
+                            crate::AttrVal::WordType(_) => {
+                                let u: u32 = v.try_into().unwrap_or_default();
+                                NamedAttrValue::WordType(db1_dehash(u))
                             }
                             crate::AttrVal::DoubleType(_) => {
                                 NamedAttrValue::F32Type(v.try_into().unwrap_or_default())

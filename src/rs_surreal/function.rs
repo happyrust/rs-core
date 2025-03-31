@@ -9,7 +9,16 @@ pub async fn define_common_functions() -> anyhow::Result<()> {
         .query(include_str!("material_list/common.surql"))
         .await?;
     SUL_DB
+        .query(include_str!("material_list/gy/gy_common.surql"))
+        .await?;
+    #[cfg(not(feature = "hh"))]
+    SUL_DB
         .query(include_str!("schemas/fn_query_room_code.surql"))
+        .await?;
+    #[cfg(feature = "hh")]
+    SUL_DB.query(include_str!("schemas/fn_query_room_code_hh.surql")).await?;
+    SUL_DB
+        .query(include_str!("schemas/get_room_nodes.surql"))
         .await?;
     SUL_DB
         .query(include_str!("schemas/status/init_status.surql"))

@@ -32,7 +32,6 @@ load_spatial_tree = false
 save_spatial_tree_to_db = false
 gen_model_batch_size = 16
 
-meshes_path = "E:\\RustProject\\new\\rs-plant3-d\\assets\\meshes"
 
 #生成补充类型的graph，方便查询直接生成语句
 gen_noun_graph = false
@@ -49,18 +48,17 @@ arangodb_password = ""
 #tidb 配置
 ip = "127.0.0.1"
 user = "root"
-password = ""
+password = "root"
 port = "3306"
 #port = "4000"
 sql_threads_number = 50
 batch_insert_sql_cnt = 100 #mysql 批量插入的数量
 
 
+
 #版本数据库服务配置
-v_ip = "localhost"
-#v_port = "8004"
-#v_port = "8003"
-v_port = "8009"
+v_ip = "127.0.0.1"
+v_port = "1516"
 v_user = "root"
 v_password = "root"
 pe_chunk = 500

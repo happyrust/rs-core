@@ -202,7 +202,7 @@ pub async fn get_mdb_world_site_pes(
         .query(r#"
             let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
             let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o));
-            array::flatten(select value in.* from $a<-pe_owner[? in.noun='SITE'])
+            array::flatten(select value in.* from $a<-pe_owner)[?noun = 'SITE']
         "#)
         .bind(("mdb", mdb))
         .bind(("db_type", db_type))

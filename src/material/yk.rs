@@ -68,7 +68,7 @@ const FIELDS: [&str; 12] = [
     "公称直径",
 ];
 
-const YK_DZCL_DATA_FIELDS: [&str;3] = [
+const YK_DZCL_DATA_FIELDS: [&str; 3] = [
     "id",
     "code",
     "type"
@@ -80,21 +80,21 @@ const PIPE_TABLE: &'static str = "仪控专业_仪表管道";
 
 const EQUI_TABLE: &'static str = "仪控专业_设备清单";
 
-const PIPE_FIELDS: [&str;4] = [
+const PIPE_FIELDS: [&str; 4] = [
     "参考号",
     "传感器标识",
     "对应根阀编号",
     "房间号"
 ];
 
-const PIPE_DATA_FIELDS: [&str;4] = [
+const PIPE_DATA_FIELDS: [&str; 4] = [
     "id",
     "name",
     "pipe_name",
     "room_code"
 ];
 
-const EQUI_FIELDS: [&str;5] = [
+const EQUI_FIELDS: [&str; 5] = [
     "参考号",
     "仪控设备位号",
     "所在房间号",
@@ -144,7 +144,7 @@ pub async fn save_yk_material_dzcl(
                                     &DZCL_TABLE,
                                     &YK_DZCL_DATA_FIELDS,
                                     &YK_DZCL_CHINESE_FIELDS,
-                                    r
+                                    r,
                                 ).await {
                                     Ok(_) => {}
                                     Err(e) => {
@@ -163,8 +163,8 @@ pub async fn save_yk_material_dzcl(
         }
         Err(e) => {
             dbg!(&e.to_string());
-            }
         }
+    }
     handles
 }
 
@@ -250,7 +250,7 @@ pub async fn save_yk_material_equi(
                         Ok(_) => {
                             if !r.is_empty() {
                                 match save_material_value_test(&pool, &EQUI_TABLE,
-                                    &EQUI_DATA_FIELDS, &YK_EQUI_CHINESE_FIELDS,r).await {
+                                                               &EQUI_DATA_FIELDS, &YK_EQUI_CHINESE_FIELDS, r).await {
                                     Ok(_) => {}
                                     Err(e) => {
                                         dbg!(&e.to_string());
@@ -277,7 +277,7 @@ pub async fn save_yk_material_equi(
 pub async fn get_yk_dzcl_list(
     db: Surreal<Any>,
     refnos: Vec<RefU64>,
-) -> anyhow::Result<Vec<HashMap<String,serde_json::Value>>> {
+) -> anyhow::Result<Vec<HashMap<String, serde_json::Value>>> {
     let mut data = Vec::new();
     for refno in refnos {
         let Some(pe) = get_pe(refno.into()).await? else {
@@ -311,7 +311,7 @@ pub async fn get_yk_dzcl_list(
             refnos_str
         );
         let mut response = db.query(sql).await?;
-        let mut result: Vec<HashMap<String,Value>> = response.take(0)?;
+        let mut result: Vec<HashMap<String, Value>> = response.take(0)?;
         data.append(&mut result);
     }
     Ok(data)
@@ -345,7 +345,7 @@ impl MaterialYkInstData {
 pub async fn get_yk_inst_pipe(
     db: Surreal<Any>,
     refnos: Vec<RefU64>,
-) -> anyhow::Result<Vec<HashMap<String,Value>>> {
+) -> anyhow::Result<Vec<HashMap<String, Value>>> {
     let mut data = Vec::new();
     for refno in refnos {
         let Some(pe) = get_pe(refno.into()).await? else {
@@ -415,7 +415,7 @@ impl MaterialYkEquiListData {
 pub async fn get_yk_equi_list_material(
     db: Surreal<Any>,
     refnos: Vec<RefU64>,
-) -> anyhow::Result<Vec<HashMap<String,Value>>> {
+) -> anyhow::Result<Vec<HashMap<String, Value>>> {
     let mut data = Vec::new();
     for refno in refnos {
         let Some(pe) = get_pe(refno.into()).await? else {
@@ -457,7 +457,7 @@ pub async fn query_yk_bran_belong_gy_valv_name(
     mut bran: RefU64,
     aios_mgr: &AiosDBMgr,
 ) -> anyhow::Result<Option<SPdmsElement>> {
-    loop {
+    for _ in 0..20 {
         // 获取href
         let Some(href) = aios_mgr.get_foreign_attr(bran, "HREF").await? else {
             break;

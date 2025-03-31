@@ -19985,6 +19985,15 @@
       }
     },
     "619079": {
+      "369970574": {
+        "name": "WELDTY",
+        "hash": 369970574,
+        "offset": 0,
+        "default_val": {
+          "WordType": "unset"
+        },
+        "att_type": "WORD"
+      },
       "774699": {
         "name": "ORIL",
         "hash": 774699,
@@ -20487,6 +20496,15 @@
           "StringType": ""
         },
         "att_type": "STRING"
+      },
+	  "369970574": {
+        "name": "WELDTY",
+        "hash": 369970574,
+        "offset": 0,
+        "default_val": {
+          "WordType": "unset"
+        },
+        "att_type": "WORD"
       }
     },
     "646345": {
@@ -93073,6 +93091,15 @@
       }
     },
     "WELD": {
+      "WELDTY": {
+        "name": "WELDTY",
+        "hash": 369970574,
+        "offset": 0,
+        "default_val": {
+          "WordType": "unset"
+        },
+        "att_type": "WORD"
+      },
       "PTNO": {
         "name": "PTNO",
         "hash": 837448,

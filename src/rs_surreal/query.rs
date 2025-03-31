@@ -240,7 +240,7 @@ pub async fn query_full_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String
 ///查询的数据把 refno->name，换成名称
 // #[cached(result = true)]
 pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
-    let mut attmap = get_named_attmap_with_uda(refno_enum, true).await?;
+    let mut attmap = get_named_attmap_with_uda(refno_enum).await?;
     attmap.fill_explicit_default_values();
     let mut refno_fields: Vec<RefnoEnum> = vec![];
     let mut keys = vec![];
@@ -378,11 +378,9 @@ pub async fn get_next_prev(refno: RefnoEnum, next: bool) -> anyhow::Result<Refno
 
 ///通过surql查询属性数据，包含UDA数据
 #[cached(result = true)]
-pub async fn get_named_attmap_with_uda(
+pub(crate) async fn get_named_attmap_with_uda(
     refno_enum: RefnoEnum,
-    default_unset: bool,
 ) -> anyhow::Result<NamedAttrMap> {
-    let pe_key = refno_enum.to_pe_key();
     let sql = format!(
         r#"
         --通过传递refno，查询属性值
@@ -391,13 +389,14 @@ pub async fn get_named_attmap_with_uda(
         -- uda 单独做个查询？
         select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u, u.UTYP as t, v from (ATT_UDA:{1}).udas where u.UTYP != none;
         "#,
-        pe_key,
+        refno_enum.to_pe_key(),
         refno_enum.refno()
     );
     let mut response = SUL_DB.query(sql).await?;
     //获得uda的 map
     let o: surrealdb::Value = response.take(0)?;
     let mut named_attmap: NamedAttrMap = o.into_inner().into();
+    // dbg!(&named_attmap);
     let o: surrealdb::Value = response.take(1)?;
     let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let uda_kvs: Vec<surrealdb::sql::Object> =
@@ -610,11 +609,7 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
     GET_NAMED_ATTMAP_WITH_UDA
         .lock()
         .await
-        .cache_remove(&(refno, true));
-    GET_NAMED_ATTMAP_WITH_UDA
-        .lock()
-        .await
-        .cache_remove(&(refno, false));
+        .cache_remove(&refno);
     GET_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_CHILDREN_NAMED_ATTMAPS.lock().await.cache_remove(&refno);
     GET_CAT_ATTMAP.lock().await.cache_remove(&refno);
@@ -822,8 +817,12 @@ pub async fn insert_pe_into_table_with_chunks(
 ) -> anyhow::Result<()> {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = r.iter().map(|x| x.gen_sur_json()).join(",");
-        db.query(format!("insert ignore into {} [{}]", table, json))
+        let mut r = db.query(format!("insert ignore into {} [{}]", table, json))
             .await?;
+        let mut error = r.take_errors();
+        if !error.is_empty() {
+            dbg!(&error);
+        }
     }
     Ok(())
 }
@@ -854,7 +853,14 @@ pub async fn insert_relate_to_table(db: &Surreal<Any>, value: Vec<String>) -> an
         sql.push_str(&format!("{} ;", v));
     }
     sql.remove(sql.len() - 1);
-    db.query(sql).await?;
+    let mut r = db.query(&sql).await?;
+    let mut error = r.take_errors();
+    // if sql.contains("pbs:24381_101383"){
+    //     dbg!(&sql);
+    // }
+    if !error.is_empty() {
+        dbg!(&error);
+    }
     Ok(())
 }
 

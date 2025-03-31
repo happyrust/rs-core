@@ -241,7 +241,7 @@ impl MaterialSbListData {
 async fn test_save_sb_material_equi() {
     init_test_surreal().await;
     let mut handles = Vec::new();
-    let refno = RefU64::from("24381/101420");
+    let refno = RefU64::from("24384/24828");
     handles.append(&mut save_sb_material_dzcl(refno).await);
     futures::future::join_all(handles).await;
 }
