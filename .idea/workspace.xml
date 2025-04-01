@@ -303,7 +303,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Build">
+  <component name="RunManager" selected="Batch.cargo-clif test_query_transform">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -348,9 +348,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="buildProfileId" value="test" />
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap -- --exact" />
+    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap_WELD" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap_WELD -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -366,8 +365,9 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap_WELD" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap_WELD -- --exact" />
+    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -434,21 +434,11 @@
     </configuration>
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
-      <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Run aios_core" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap_WELD" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
       <item itemvalue="Shell Script.run_functions.sh" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Shell Script.run_functions.sh" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap_WELD" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
-        <item itemvalue="Cargo.Run aios_core" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
       </list>
     </recent_temporary>
   </component>
@@ -1391,7 +1381,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
     <MESSAGE value="uncomment" />
     <MESSAGE value="add face filter" />
