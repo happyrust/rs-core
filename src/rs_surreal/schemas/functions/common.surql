@@ -318,6 +318,21 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
     };
 };
 
+remove function fn::prev_connect_pe_data;
+DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
+    let $p = fn::prev_connect_pe($pe);
+    return if $p != none {
+        return {
+            id: $pe,
+            prev_full_name: fn::default_full_name($p),
+            prev: $p,
+            has_tubi: fn::has_leave_tubi($p),
+        };
+    } else {
+        return none;
+    };
+};
+
 remove function fn::next_connect_pe;
 DEFINE FUNCTION fn::next_connect_pe($pe:record) {
     if $pe == none {
@@ -333,6 +348,21 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
         } else {
             return none;
         };  
+    };
+};
+
+remove function fn::next_connect_pe_data;
+DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
+    let $p = fn::next_connect_pe($pe);
+    return if $p != none {
+        return {
+            id: $pe,
+            next_full_name: fn::default_full_name($p),
+            next: $p,
+            has_tubi: fn::has_leave_tubi($p),
+        };
+    } else {
+        return none;
     };
 };
 
