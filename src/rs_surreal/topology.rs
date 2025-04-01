@@ -9,6 +9,8 @@ pub struct PipeConnection {
     pub id: RefU64,
     pub prev: Option<RefU64>,
     pub next: Option<RefU64>,
+    pub has_prev_tubi: bool,
+    pub has_next_tubi: bool,
 }
 
 /// Get the previous connected pipe element
@@ -57,11 +59,15 @@ pub async fn has_arrive_tubi(pe_id: RefU64) -> Result<bool> {
 pub async fn get_pipe_connections(pe_id: RefU64) -> Result<PipeConnection> {
     let prev = get_prev_connect_pe(pe_id).await?;
     let next = get_next_connect_pe(pe_id).await?;
+    let has_arrive = has_arrive_tubi(pe_id).await?;
+    let has_leave = has_leave_tubi(pe_id).await?;
 
     Ok(PipeConnection {
         id: pe_id,
         prev,
         next,
+        has_prev_tubi: has_arrive,
+        has_next_tubi: has_leave,
     })
 }
 
