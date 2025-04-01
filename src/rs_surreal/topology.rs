@@ -3,14 +3,22 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 
-/// Represents a connection between pipe elements
+/// Represents a previous connection of a pipe element
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct PipeConnection {
+pub struct PrevConnection {
     pub id: RefU64,
+    pub prev_full_name: String,
     pub prev: Option<RefU64>,
+    pub has_tubi: bool,
+}
+
+/// Represents a next connection of a pipe element
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct NextConnection {
+    pub id: RefU64,
+    pub next_full_name: String,
     pub next: Option<RefU64>,
-    pub has_prev_tubi: bool,
-    pub has_next_tubi: bool,
+    pub has_tubi: bool,
 }
 
 /// Get the previous connected pipe element
@@ -53,22 +61,24 @@ pub async fn has_arrive_tubi(pe_id: RefU64) -> Result<bool> {
     Ok(result.unwrap_or(false))
 }
 
-/// Get both previous and next connected pipe elements
+/// Get the previous connection of a pipe element
 ///
-/// Returns a PipeConnection struct containing the original PE and its connections
-pub async fn get_pipe_connections(pe_id: RefU64) -> Result<PipeConnection> {
-    let prev = get_prev_connect_pe(pe_id).await?;
-    let next = get_next_connect_pe(pe_id).await?;
-    let has_arrive = has_arrive_tubi(pe_id).await?;
-    let has_leave = has_leave_tubi(pe_id).await?;
+/// Wraps the Surreal function fn::prev_connect_pe_data
+pub async fn get_prev_connection(pe_id: RefU64) -> Result<PrevConnection> {
+    let sql = format!("RETURN fn::prev_connect_pe_data({})", pe_id.to_pe_key());
+    let mut result: Option<PrevConnection> = SUL_DB.query(sql).await?.take(0)?;
 
-    Ok(PipeConnection {
-        id: pe_id,
-        prev,
-        next,
-        has_prev_tubi: has_arrive,
-        has_next_tubi: has_leave,
-    })
+    Ok(result.unwrap_or(PrevConnection::default()))
+}
+
+/// Get the next connection of a pipe element
+///
+/// Wraps the Surreal function fn::next_connect_pe_data
+pub async fn get_next_connection(pe_id: RefU64) -> Result<NextConnection> {
+    let sql = format!("RETURN fn::next_connect_pe_data({})", pe_id.to_pe_key());
+    let mut result: Option<NextConnection> = SUL_DB.query(sql).await?.take(0)?;
+
+    Ok(result.unwrap_or(NextConnection::default()))
 }
 
 #[cfg(test)]
@@ -77,7 +87,7 @@ mod tests {
     use crate::{init_test_surreal, RefnoEnum};
 
     #[tokio::test]
-    async fn test_get_pipe_connections() -> Result<()> {
+    async fn test_get_connections() -> Result<()> {
         // Initialize the SurrealDB connection
         init_test_surreal().await;
 
@@ -85,15 +95,20 @@ mod tests {
         let pe_id: RefU64 = "24383_76176".into();
 
         // Get pipe connections
-        let connections = get_pipe_connections(pe_id).await?;
+        let prev_connection = get_prev_connection(pe_id).await?;
+        let next_connection = get_next_connection(pe_id).await?;
+
+        dbg!(&prev_connection);
+        dbg!(&next_connection);
 
         // Print the connections for debugging
         println!("Pipe connections for {:?}:", pe_id);
-        println!("  Previous: {:?}", connections.prev);
-        println!("  Next: {:?}", connections.next);
+        println!("  Previous: {:?}", prev_connection.prev);
+        println!("  Next: {:?}", next_connection.next);
 
-        // Assert that we got a valid connection structure
-        assert_eq!(connections.id, pe_id);
+        // Assert that we got valid connection structures
+        assert_eq!(prev_connection.id, pe_id);
+        assert_eq!(next_connection.id, pe_id);
 
         // Note: The actual prev/next values depend on your database content
         // You might want to add specific assertions for your test data
