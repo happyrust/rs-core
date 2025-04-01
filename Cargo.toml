@@ -5,7 +5,12 @@ edition = "2021"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["occ", "gen_model", "sql"] #"occ", "gen_model", "sql"
+default = [
+    "occ",
+    "gen_model",
+    "sql",
+    # "debug_spatial",
+] #"occ", "gen_model", "sql"
 occ = ["dep:opencascade"]
 render = ["dep:bevy_render"]
 manifold = ["dep:manifold-sys"]
@@ -22,6 +27,7 @@ truck = [
 gen_model = ["manifold"]
 debug_expr = []
 debug_wire = []
+debug_spatial = []
 web = ["render"]
 sql = []
 hh = []
@@ -33,7 +39,9 @@ strum_macros = "0.25"
 deku = "0.16.0"
 smol_str = { version = "0.3.2", features = ["serde"] }
 glam = { version = "0.29.0", features = ["serde", "rkyv"] }
-id_tree = { git = "https://gitee.com/happydpc/id_tree", features = ["serde_support"] }
+id_tree = { git = "https://gitee.com/happydpc/id_tree", features = [
+    "serde_support",
+] }
 dashmap = { version = "6.1.0", features = ["serde"] }
 hexasphere = "15.0.0"
 anyhow = "1.0.57"

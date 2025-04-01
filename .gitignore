@@ -16,4 +16,7 @@ Cargo.lock
 /target
 /assets
 .idea/
+/.gitee
+DbOption.toml
+.vscode
 .idea/workspace.xml

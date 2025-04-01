@@ -239,6 +239,84 @@ pub async fn query_full_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String
 
 ///查询的数据把 refno->name，换成名称
 // #[cached(result = true)]
+/// 查询数据并将 refno->name 替换为名称
+///
+/// # 参数
+///
+/// * `refno` - 需要查询的 RefnoEnum
+///
+/// # 返回值
+///
+/// 返回一个包含 RefnoEnum 和名称的 IndexMap
+///
+/// # 错误
+///
+/// 如果查询失败，将返回一个错误
+pub async fn query_data_with_refno_to_name(
+    refno: RefnoEnum,
+) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
+    let mut response = SUL_DB
+        .query(format!(
+            "select value [in, fn::default_full_name(in)] from {}<-pe_owner where record::exists(in)",
+            refno.to_pe_key()
+        ))
+        .await?;
+    let map: Vec<(RefnoEnum, String)> = response.take(0)?;
+    let map = IndexMap::from_iter(map);
+    Ok(map)
+}
+
+/// 查询多个 refno 并将其转换为名称
+///
+/// # 参数
+///
+/// * `refnos` - 需要查询的 RefnoEnum 列表
+///
+/// # 返回值
+///
+/// 返回一个包含 RefnoEnum 和名称的 IndexMap
+///
+/// # 错误
+///
+/// 如果查询失败，将返回一个错误
+pub async fn query_multiple_refnos_to_names(
+    refnos: &[RefnoEnum],
+) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
+    let mut response = SUL_DB
+        .query(format!(
+            "select value fn::default_full_name(id) from [{}]",
+            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+        ))
+        .await?;
+    let names: Vec<String> = response.take(0)?;
+    let map = IndexMap::from_iter(refnos.iter().cloned().zip(names));
+    Ok(map)
+}
+
+/// 查询多个 refno 并返回其名称列表
+///
+/// # 参数
+///
+/// * `refnos` - 需要查询的 RefnoEnum 列表
+///
+/// # 返回值
+///
+/// 返回一个包含名称的 Vec
+///
+/// # 错误
+///
+/// 如果查询失败，将返回一个错误
+pub async fn query_refnos_to_names_list(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String>> {
+    let mut response = SUL_DB
+        .query(format!(
+            "select value fn::default_full_name(id) from [{}]",
+            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+        ))
+        .await?;
+    let names: Vec<String> = response.take(0)?;
+    Ok(names)
+}
+
 pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let mut attmap = get_named_attmap_with_uda(refno_enum).await?;
     attmap.fill_explicit_default_values();
@@ -248,10 +326,10 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
     let mut new_desp = None;
     let mut tuples = vec![];
     let unip = attmap.get_i32_vec("UNIPAR").unwrap_or_default();
+    // dbg!(&attmap);
     for (k, v) in &mut attmap.map {
         if k == "REFNO" {
             if let NamedAttrValue::RefnoEnumType(r) = v {
-                // dbg!(&r);
                 *v = NamedAttrValue::RefU64Type(r.refno().into());
             }
             continue;
@@ -606,10 +684,7 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
     GET_SIBLINGS.lock().await.cache_remove(&refno);
     GET_NAMED_ATTMAP.lock().await.cache_remove(&refno);
     GET_ANCESTOR_ATTMAPS.lock().await.cache_remove(&refno);
-    GET_NAMED_ATTMAP_WITH_UDA
-        .lock()
-        .await
-        .cache_remove(&refno);
+    GET_NAMED_ATTMAP_WITH_UDA.lock().await.cache_remove(&refno);
     GET_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_CHILDREN_NAMED_ATTMAPS.lock().await.cache_remove(&refno);
     GET_CAT_ATTMAP.lock().await.cache_remove(&refno);
@@ -817,7 +892,8 @@ pub async fn insert_pe_into_table_with_chunks(
 ) -> anyhow::Result<()> {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = r.iter().map(|x| x.gen_sur_json()).join(",");
-        let mut r = db.query(format!("insert ignore into {} [{}]", table, json))
+        let mut r = db
+            .query(format!("insert ignore into {} [{}]", table, json))
             .await?;
         let mut error = r.take_errors();
         if !error.is_empty() {

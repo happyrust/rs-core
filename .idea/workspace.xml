@@ -26,11 +26,17 @@
     </configurations>
   </component>
   <component name="CargoProjects">
-    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$">
+        <enabledFeature name="default" />
+      </package>
+    </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="comment match_room_name check">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="Add WELDTY attribute to all_attr_info.json and update get_named_attmap_with_uda function calls">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test_surreal/test_spatial.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,6 +176,7 @@
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_attmap.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_attmap_WELD.executor&quot;: &quot;Debug&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor&quot;: &quot;Run&quot;,
@@ -237,6 +244,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
+    &quot;Shell Script.run_functions.sh.executor&quot;: &quot;Run&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
@@ -259,7 +267,7 @@
     &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
     &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;language.rust&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -295,7 +303,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Run aios_core">
+  <component name="RunManager" selected="Batch.cargo-clif test_query_transform">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -340,8 +348,8 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_material::test_gen_ms" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_material::test_gen_ms -- --exact" />
+    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap_WELD" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap_WELD -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -357,25 +365,9 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_material::test_perform_multiplication_with_none" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_material::test_perform_multiplication_with_none -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_ptset" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_ptset -- --exact" />
+    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -425,27 +417,33 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="run_functions.sh" type="ShConfigurationType" temporary="true">
+      <option name="SCRIPT_TEXT" value="" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run_functions.sh" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$/src/rs_surreal/schemas/functions" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="/bin/bash" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="true" />
+      <envs />
+      <method v="2" />
+    </configuration>
     <list>
-      <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Run aios_core" />
-      <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
-      <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
+      <item itemvalue="Batch.cargo-clif test_query_transform" />
+      <item itemvalue="Shell Script.run_functions.sh" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Cargo.Run aios_core" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
-        <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_ptset" />
-        <item itemvalue="Cargo.Test test::test_material::test_perform_multiplication_with_none" />
-        <item itemvalue="Cargo.Test test::test_material::test_gen_ms" />
+        <item itemvalue="Shell Script.run_functions.sh" />
       </list>
     </recent_temporary>
   </component>
   <component name="RustProjectSettings">
-    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="toolchainHomeDirectory" value="D:/.cargo/bin" />
   </component>
   <component name="RustfmtProjectSettings">
     <option name="useRustfmt" value="true" />
@@ -985,6 +983,8 @@
       <workItem from="1741597461984" duration="4352000" />
       <workItem from="1741682608796" duration="99000" />
       <workItem from="1741696142320" duration="557000" />
+      <workItem from="1742715893127" duration="3626000" />
+      <workItem from="1742798643700" duration="902000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1329,7 +1329,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="407" />
+    <option name="localTasksCounter" value="408" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1381,9 +1381,7 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="fix wire" />
     <MESSAGE value="uncomment" />
     <MESSAGE value="add face filter" />
     <MESSAGE value="(1) 修改 `acceleration_tree.rs` 中字段名以增加可读性。&#10;&#10;(2) 将 `hvac_mat_id` 调用中的 `meta::id` 修改为 `record::id`，提高一致性：&#10;&#10;    * 在 `washer.surql`。&#10;    * 在 `hvac.surql` 和 `hvac_old.surql`。&#10;    * 在 `fggd_bend.surql`，`fn_get_world_pos.surql` 和其他 HVAC 相关工具。&#10;&#10;(3) 修改 `test_basic_query.rs` 中的测试数据以适应新需求。&#10;&#10;(4) 增加测试逻辑在 `test_uda.rs` 中，以验证新的 UDA 功能。&#10;&#10;(5) 更新 `uda.rs` 中增加通用方法 `get_uda_prop_as_string` 并使用此方法获取 &quot;UDNA&quot; 和 &quot;UTYP&quot; 属性。&#10;&#10;(6) 更新 `.idea/workspace.xml` 以包含最新的项目配置。" />
@@ -1408,7 +1406,8 @@
     <MESSAGE value="add init_demo_test_surreal" />
     <MESSAGE value="fix import surreal" />
     <MESSAGE value="comment match_room_name check" />
-    <option name="LAST_COMMIT_MESSAGE" value="comment match_room_name check" />
+    <MESSAGE value="Add WELDTY attribute to all_attr_info.json and update get_named_attmap_with_uda function calls" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add WELDTY attribute to all_attr_info.json and update get_named_attmap_with_uda function calls" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

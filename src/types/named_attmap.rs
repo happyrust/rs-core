@@ -3,7 +3,6 @@ use crate::consts::{UNSET_STR, WORD_HASH};
 use crate::helper::normalize_sql_string;
 #[cfg(feature = "sea-orm")]
 use crate::orm::{BoolVec, F32Vec, I32Vec, StringVec};
-use crate::{pdms_types::*, query_refno_sesno};
 use crate::pe::SPdmsElement;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::*;
@@ -17,6 +16,7 @@ use crate::{
     cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, cal_ori_by_z_axis_ref_y,
     get_default_pdms_db_info, AttrVal, RefI32Tuple, RefU64, SurlStrand, SurlValue,
 };
+use crate::{pdms_types::*, query_refno_sesno};
 use bevy_ecs::component::Component;
 use bevy_reflect::{DynamicStruct, Reflect};
 use derive_more::{Deref, DerefMut};
@@ -53,7 +53,11 @@ pub struct NamedAttrMap {
 }
 
 impl NamedAttrMap {
-    pub async fn build_refno_sesno_map(&self, sesno: u32, dbnum: i32) -> anyhow::Result<HashMap<RefU64, u32>> {
+    pub async fn build_refno_sesno_map(
+        &self,
+        sesno: u32,
+        dbnum: i32,
+    ) -> anyhow::Result<HashMap<RefU64, u32>> {
         let mut refno_sesno_map = HashMap::new();
         for (_, value) in &self.map {
             if let NamedAttrValue::RefU64Type(refno) = value {
@@ -65,7 +69,8 @@ impl NamedAttrMap {
             } else if let NamedAttrValue::RefU64Array(refnos) = value {
                 for &refno_enum in refnos {
                     let refno = refno_enum.refno();
-                    if let Ok((sesno, latest_sesno)) = query_refno_sesno(refno, sesno, dbnum).await {
+                    if let Ok((sesno, latest_sesno)) = query_refno_sesno(refno, sesno, dbnum).await
+                    {
                         if latest_sesno != sesno {
                             refno_sesno_map.insert(refno, sesno);
                         }
@@ -114,9 +119,11 @@ impl From<SurlValue> for NamedAttrMap {
                             .named_attr_info_map
                             .get(&type_name)
                             .map(|m| m.get(&k).map(|x| x.value().clone()))
-                            .flatten() {
+                            .flatten()
+                        {
                             val.default_val
-                        } else { //通过 UDA 去查询这个变量的类型
+                        } else {
+                            //通过 UDA 去查询这个变量的类型
                             continue;
                         };
                         let named_value = match default_val {
@@ -127,8 +134,15 @@ impl From<SurlValue> for NamedAttrMap {
                                 NamedAttrValue::StringType(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::WordType(_) => {
-                                let u: u32 = v.try_into().unwrap_or_default();
-                                NamedAttrValue::WordType(db1_dehash(u))
+                                // dbg!((&k, &v));
+                                let named_value = match &v {
+                                    SurlValue::Strand(s) => NamedAttrValue::WordType(s.to_string()),
+                                    SurlValue::Number(i) => NamedAttrValue::WordType(db1_dehash(
+                                        v.try_into().unwrap_or_default()
+                                    )),
+                                    _ => NamedAttrValue::WordType("".to_string()), // Default case if type is unexpected
+                                };
+                                named_value
                             }
                             crate::AttrVal::DoubleType(_) => {
                                 NamedAttrValue::F32Type(v.try_into().unwrap_or_default())
@@ -337,7 +351,6 @@ impl NamedAttrMap {
             None
         }
     }
-
 
     // #[inline]
     // pub fn set_pgno(&mut self, v: i32) {

@@ -180,10 +180,23 @@ async fn test_query_attmap_WELD() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
 
     let refno: RefnoEnum = RefU64::from("17496_268302").into();
-    let attmap = rs_surreal::get_ui_named_attmap(refno)
-        .await
-        .unwrap();
+    let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_query_attmap_SCTN() -> anyhow::Result<()> {
+    // 初始化测试环境
+    crate::init_test_surreal().await;
+
+    // 创建 RefnoEnum 实例
+    let refno: RefnoEnum = RefnoSesno::new("17496/265703".into(), 0).into();
+    // 获取 attmap
+    let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
+    // dbg!(&attmap);
+    // 断言 JUSL 字段的值为 TOS
+    assert_eq!(attmap.get_str("JUSL"), Some("TOS"));
     Ok(())
 }
 
@@ -191,13 +204,12 @@ async fn test_query_attmap_WELD() -> anyhow::Result<()> {
 async fn test_query_attmap() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
 
-    let refno: RefnoEnum = RefnoSesno::new("17496_496583".into(), 961).into();
-    let attmap = rs_surreal::get_ui_named_attmap(refno)
-        .await
-        .unwrap();
+    let refno: RefnoEnum = RefnoSesno::new("17496_265703".into(), 961).into();
+    let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
 
-    let children = rs_surreal::query_multi_deep_versioned_children_filter_inst(&[refno], &[], false).await?;
+    let children =
+        rs_surreal::query_multi_deep_versioned_children_filter_inst(&[refno], &[], false).await?;
     dbg!(&children);
 
     let pe = rs_surreal::get_pe(refno).await.unwrap();
@@ -207,7 +219,6 @@ async fn test_query_attmap() -> anyhow::Result<()> {
     dbg!(&refno);
     let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
     dbg!(world_trans);
-
 
     let refno = "17496_171640".into();
     dbg!(&refno);
@@ -219,7 +230,9 @@ async fn test_query_attmap() -> anyhow::Result<()> {
 
     //test query children full names
     let refno = "17496_171606,733".into();
-    let children_names = rs_surreal::query_children_full_names_map(refno).await.unwrap();
+    let children_names = rs_surreal::query_children_full_names_map(refno)
+        .await
+        .unwrap();
     dbg!(&children_names);
 
     // let children = rs_surreal::get_children_named_attmaps(refno).await.unwrap();
@@ -382,7 +395,6 @@ async fn test_query_attmap() -> anyhow::Result<()> {
 //     //
 //     Ok(())
 // }
-
 
 // //test query_prev_version_refno
 // #[tokio::test]

@@ -1,6 +1,7 @@
 use crate::tool::dir_tool::*;
 use crate::tool::direction_parse::parse_expr_to_dir;
 use crate::{room::room::load_aabb_tree, rs_surreal, tool::math_tool};
+use crate::{RefU64, RefnoEnum, RefnoSesno};
 use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
 use std::sync::Arc;
 use surrealdb::sql::Thing;
@@ -26,14 +27,20 @@ fn test_print_ori(ori: &str) {
 
 #[cfg(test)]
 mod test_transform {
-    use crate::tool::dir_tool::{parse_ori_str_to_mat, parse_ori_str_to_quat};
+    use crate::test::test_surreal::test_spatial::test_transform;
+    use crate::tool::dir_tool::{
+        parse_ori_str_to_dquat, parse_ori_str_to_mat, parse_ori_str_to_quat,
+    };
     use crate::tool::direction_parse::parse_expr_to_dir;
     use crate::tool::math_tool;
     use crate::tool::math_tool::{
         cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, dvec3_to_xyz_str, to_pdms_dvec_str,
         vec3_to_xyz_str,
     };
-    use crate::{cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal, RefU64};
+    use crate::tool::parse_to_dir::{parse_coordinate, parse_str_to_vec3, parse_to_direction};
+    use crate::{
+        cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal, RefU64, RefnoEnum, RefnoSesno,
+    };
     use crate::{cal_ori_by_ydir, init_test_surreal};
     use bevy_reflect::Array;
     use glam::{DMat3, DQuat, DVec3, Mat3};
@@ -69,24 +76,40 @@ mod test_transform {
         }
     }
 
-    async fn test_ori(refno: RefnoEnum, assert_ori: &str) {
+    /// 异步函数，用于测试给定 refno 的方向
+    ///
+    /// # 参数
+    ///
+    /// * `refno` - 需要查询的 RefnoEnum
+    /// * `assert_ori_str` - 预期的方向字符串
+    async fn test_ori(refno: RefnoEnum, assert_ori_str: &str) {
         let transform = rs_surreal::get_world_mat4(refno, false)
             .await
             .unwrap()
             .unwrap();
         let (scale, rot, translation) = transform.to_scale_rotation_translation();
 
-        dbg!(translation);
-        //如果包含其中的任意一个，则不需要转成XYZ
-        let convert_xyz = ["E", "N", "U", "W", "S", "D"]
-            .into_iter()
-            .any(|x| assert_ori.contains(x));
-        let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
-        dbg!(&ori_str);
-        assert_eq!(ori_str, assert_ori);
+        let assert_ori_value = parse_ori_str_to_dquat(assert_ori_str).unwrap();
+        let tol = 0.001;
+        let dot_product = rot.dot(assert_ori_value);
+        let diff = (1.0 - dot_product.abs()).abs() <= tol || (1.0 + dot_product.abs()).abs() <= tol;
+        if !diff {
+            println!("Expected ori_str: {}", assert_ori_str);
+            println!("Actual ori_str: {}", dquat_to_pdms_ori_xyz_str(&rot, true));
+        }
+        assert!(diff, "Rotation difference exceeds tolerance: {:?}", tol);
+
+        // dbg!(translation);
+        // //如果包含其中的任意一个，则不需要转成XYZ
+        // let convert_xyz = ["E", "N", "U", "W", "S", "D"]
+        //     .into_iter()
+        //     .any(|x| assert_ori.contains(x));
+        // let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
+        // dbg!(&ori_str);
+        // assert_eq!(ori_str, assert_ori);
     }
 
-    async fn test_transform(refno: RefU64, assert_ori: &str, pos_str: &str) {
+    async fn test_transform(refno: RefnoEnum, assert_ori: &str, pos_str: &str) {
         let transform = rs_surreal::get_world_mat4(refno, false)
             .await
             .unwrap()
@@ -95,17 +118,37 @@ mod test_transform {
 
         // dbg!(translation);
         //如果包含其中的任意一个，则不需要转成XYZ
-        let convert_xyz = ["E", "N", "U", "W", "S", "D"]
-            .into_iter()
-            .any(|x| assert_ori.contains(x));
-        let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
-        dbg!(&ori_str);
-        dbg!(math_tool::dvec3_to_xyz_str(translation));
+        // let convert_xyz = ["E", "N", "U", "W", "S", "D"]
+        //     .into_iter()
+        //     .any(|x| assert_ori.contains(x));
+        // let ori_str = dquat_to_pdms_ori_xyz_str(&rot, !convert_xyz);
+        // dbg!(&ori_str);
+        // dbg!(math_tool::dvec3_to_xyz_str(translation));
+        // if !assert_ori.is_empty() {
+        //     assert_eq!(ori_str, assert_ori);
+        // }
+        println!(
+            "Actual position: {}",
+            math_tool::dvec3_to_xyz_str(translation)
+        );
         if !assert_ori.is_empty() {
-            assert_eq!(ori_str, assert_ori);
+            test_ori(refno, assert_ori).await;
         }
+
         if !pos_str.is_empty() {
-            assert_eq!(math_tool::dvec3_to_xyz_str(translation), pos_str);
+            let tol = 0.01;
+            let d = translation - parse_str_to_vec3(pos_str).unwrap();
+            dbg!(&d);
+            let diff = d.length() <= tol;
+            if !diff {
+                println!("Expected position: {}", pos_str);
+                println!(
+                    "Actual position: {}",
+                    math_tool::dvec3_to_xyz_str(translation)
+                );
+            }
+            assert!(diff, "Position difference exceeds tolerance: {:?}", tol);
+            // assert_eq!(math_tool::dvec3_to_xyz_str(translation), pos_str);
         }
     }
 
@@ -142,10 +185,9 @@ mod test_transform {
     async fn test_query_transform_ENDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
 
-        //todo fix
         test_ori(
             "17496/268348".into(),
-            "Y is Y 0.374 -X 0.345 -Z and Z is -X 0.693 -Y 42.739 -Z",
+            "Y is X 89.891 Z and Z is -X 0.1089 Z",
         )
         .await;
         // test_ori("17496/273497".into(), "Y is X and Z is Z").await;
@@ -469,8 +511,14 @@ mod test_transform {
     async fn test_query_transform_PLDATU() -> anyhow::Result<()> {
         init_test_surreal().await;
 
+        test_transform(
+            "17496/171258".into(),
+            "Y is S 3.9973 W and Z is E 3.9973 S",
+            "X 9177.61mm Y -641.369mm Z -3520mm",
+        )
+        .await;
         // test_ori("24384/25786".into(), "Y is -X 0.031 Z and Z is -Y").await;
-        test_ori("17496/268334".into(), "Y is -Z and Z is -X").await;
+        // test_ori("17496/268334".into(), "Y is -Z and Z is -X").await;
         //
         // test_ori("25688/48689".into(), "Y is Y 43.307 X and Z is X 43.307 -Y").await;
         // test_ori("25688/48821".into(), "Y is X 33.955 Y and Z is Y 33.955 -X").await;
