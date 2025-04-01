@@ -125,6 +125,7 @@ DEFINE FUNCTION fn::backup_data(
         if $a != none && $b != none {
             let $old_inst_relate_id = type::thing('inst_relate', $old_id);
             let $old_att_id = type::thing(string::concat($a.noun, '_H'), $old_id);
+            let $old_uda_att_id = type::thing('ATT_UDA_H', $old_id);
             if $is_del{
                 //软删除
                 update $pe.id set op=2, old_pe=$old_pe_id, sesno=$sesno, deleted=true;
@@ -143,6 +144,15 @@ DEFINE FUNCTION fn::backup_data(
                                 		'path': 'REFNO',
                                 		'value': $old_pe_id
                                 }]);
+            //uda 属性需要单独的备份方法，因为有很多引用
+            let $uda_data = select * from only type::thing('ATT_UDA', record::id($pe.id)) limit 1;
+            if $uda_data != none {  
+                upsert $old_uda_att_id content $uda_data.patch([{
+                                		'op': 'replace',
+                                		'path': 'refno',
+                                		'value': $old_pe_id
+                                }]);
+            };
             //删除属性
             if $is_del{
                delete $pe.refno;
@@ -157,7 +167,8 @@ DEFINE FUNCTION fn::backup_data(
 
             if $a.noun == "BRAN" || $a.noun == "HANG" {
 
-                let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id, $old_pe_id as in from $pe->tubi_relate);
+                let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id,
+                                 $old_pe_id as in from $pe->tubi_relate);
                 //将 tubi relate 整体备份
                 if !array::is_empty($tubis) {
                     //删除之前的，变成历史的
