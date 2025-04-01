@@ -278,6 +278,16 @@ DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
     return fn::next_type($pe)==$type;
 };
 
+remove function fn::first_child;
+DEFINE FUNCTION fn::first_child($pe:record) {
+    return select value (<-pe_owner[0].in) from only $pe limit 1;
+};
+
+remove function fn::last_child;
+DEFINE FUNCTION fn::last_child($pe:record) {
+    return array::last(select value (<-pe_owner.in) from only $pe limit 1);
+};
+
 remove function fn::prev_pe;
 DEFINE FUNCTION fn::prev_pe($pe:record) {
     let $a = (record::id($pe->pe_owner.id[0])[1]) - 1;
@@ -288,6 +298,52 @@ remove function fn::next_pe;
 DEFINE FUNCTION fn::next_pe($pe:record) {
     let $a = (record::id($pe->pe_owner.id[0])[1]) + 1;
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
+};
+
+remove function fn::prev_connect_pe;
+DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
+    if $pe == none {
+        return none;
+    };
+    let $p = fn::prev_pe($pe);
+    return if $p != none {
+        return $p;
+    } else {
+        let $connect_bran = $pe.owner.refno.TREF;
+        return if $connect_bran != none {
+            return fn::last_child($connect_bran);
+        } else {
+            return none;
+        };
+    };
+};
+
+remove function fn::next_connect_pe;
+DEFINE FUNCTION fn::next_connect_pe($pe:record) {
+    if $pe == none {
+        return none;
+    };
+    let $p = fn::next_pe($pe);
+    return if $p != none {
+        return $p;
+    } else {
+        let $connect_bran = $pe.owner.refno.TREF;
+        return if $connect_bran != none {
+            return fn::first_child($connect_bran);
+        } else {
+            return none;
+        };  
+    };
+};
+
+remove function fn::has_leave_tubi;
+DEFINE FUNCTION fn::has_leave_tubi($pe:record) {
+    return (select id from only $pe.owner->tubi_relate where leave=$pe limit 1) != none;
+};
+
+remove function fn::has_arrive_tubi;
+DEFINE FUNCTION fn::has_arrive_tubi($pe:record) {
+    return (select id from only $pe.owner->tubi_relate where arrive=$pe limit 1) != none;
 };
 
 remove function fn::prev_type;
