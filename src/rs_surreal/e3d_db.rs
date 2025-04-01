@@ -38,7 +38,7 @@ pub async fn query_latest_sesno(db_num: u32) -> anyhow::Result<u32> {
     let mut response = SUL_DB
         .query(format!(
             r#"
-            select sesno from only db_file_info where dbnum={db_num} limit 1;
+            select value sesno from only db_file_info where dbnum={db_num} limit 1;
             "#,
         ))
         .await?;
