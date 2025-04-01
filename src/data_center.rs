@@ -591,3 +591,19 @@ impl RawHoleData {
         Ok(serde_json::to_string(&obj)?)
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum DataCenterRecordOperate {
+    Insert,
+    Modify,
+    Delete,
+}
+
+/// 发布成功后的元数据，只存放最小交付单元
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct DataCenterRecord {
+    pub refno: RefnoEnum,
+    // 暂时存放在这里，防止后面需要单独提管件的删除操作
+    pub owner: RefnoEnum,
+    pub status: DataCenterRecordOperate,
+}
