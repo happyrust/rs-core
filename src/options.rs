@@ -125,6 +125,9 @@ pub struct DbOption {
     /// 手动指定的数据库编号列表
     #[clap(skip)]
     pub manual_db_nums: Option<Vec<u32>>,
+    /// 需要排除的数据库编号列表
+    #[clap(skip)]
+    pub exclude_db_nums: Option<Vec<u32>>,
     /// 是否重置MDB项目
     #[clap(long)]
     pub reset_mdb_project: Option<bool>,
