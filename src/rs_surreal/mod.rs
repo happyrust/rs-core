@@ -37,6 +37,7 @@ pub use query::*;
 pub use resolve::*;
 pub use spatial::*;
 pub use uda::*;
+pub use topology::*;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::any::Any;

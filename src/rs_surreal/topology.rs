@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 
 /// Represents a connection between pipe elements
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct PipeConnection {
     pub id: RefU64,
     pub prev: Option<RefU64>,
