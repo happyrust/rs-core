@@ -22,20 +22,22 @@ pub mod function;
 pub mod version;
 
 pub mod e3d_db;
+pub mod topology;
 
+pub use cate::*;
 pub use e3d_db::*;
 pub use geom::*;
 pub use graph::*;
 pub use index::*;
 pub use inst::*;
 pub use mdb::*;
+pub use pbs::*;
 pub use point::*;
 pub use query::*;
-pub use cate::*;
 pub use resolve::*;
 pub use spatial::*;
 pub use uda::*;
-pub use pbs::*;
+pub use topology::*;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::any::Any;
@@ -59,8 +61,11 @@ pub async fn connect_surdb(
     // 创建配置
     let config = surrealdb::opt::Config::default()
         .ast_payload()  // 启用AST格式
-        ;  // 设置容量
-    SUL_DB.connect((conn_str, config)).with_capacity(1000).await?;
+        ; // 设置容量
+    SUL_DB
+        .connect((conn_str, config))
+        .with_capacity(1000)
+        .await?;
     SUL_DB.use_ns(ns).use_db(db).await?;
     SUL_DB.signin(Root { username, password }).await?;
     Ok(())
