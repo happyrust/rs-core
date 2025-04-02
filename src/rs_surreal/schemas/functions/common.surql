@@ -320,7 +320,7 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
     return if $p != none {
         return $p;
     } else {
-        let $connect_bran = $pe.owner.refno.TREF;
+        let $connect_bran = $pe.owner.refno.HREF;
         return if $connect_bran != none {
             return fn::last_child($connect_bran);
         } else {
