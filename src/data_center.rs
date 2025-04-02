@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use bevy_ecs::prelude::Resource;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
@@ -603,7 +603,19 @@ pub enum DataCenterRecordOperate {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct DataCenterRecord {
     pub refno: RefnoEnum,
-    // 暂时存放在这里，防止后面需要单独提管件的删除操作
+    // 删除节点所属的zone，不然删除后找不到相关的节点
     pub owner: RefnoEnum,
     pub status: DataCenterRecordOperate,
+}
+
+impl DataCenterRecord {
+    pub fn get_insert_sql(refnos:HashSet<RefU64>) -> String {
+        let data = refnos.into_iter().map(|refno| DataCenterRecord {
+            refno: refno.into(),
+            owner: Default::default(),
+            status: DataCenterRecordOperate::Insert,
+        }).collect::<Vec<_>>();
+        let Ok(json) = serde_json::to_string(&data) else { return "".to_string() };
+        format!("insert ignore into {} {}","datacenter_handle",json)
+    }
 }
