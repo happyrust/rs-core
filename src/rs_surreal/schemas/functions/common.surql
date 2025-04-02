@@ -352,9 +352,9 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
         };
         //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
         let $tubi_spref = return if $tubi_refno == $pe.owner {
-            $pe.owner.refno.HSTU
+            $pe.owner.refno.HSTU.name
         } else {
-            $tubi_refno.LSTU
+            $tubi_refno.refno.LSTU.name
         };
         return {
             id: $pe,
@@ -370,7 +370,7 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
                 prev_full_name: fn::default_full_name($pe.owner),
                 prev: $pe.owner,
                 tubi_refno: $pe.owner,
-                tubi_spref: $pe.owner.refno.HSTU
+                tubi_spref: $pe.owner.refno.HSTU.name
             };
         } else {
             none
@@ -412,9 +412,9 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
         };
         //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
         let $tubi_spref = return if $tubi_refno == $pe.owner.refno.TREF {
-            $pe.owner.refno.TREF.refno.HSTU
+            $pe.owner.refno.TREF.refno.HSTU.name
         } else {
-            $tubi_refno.LSTU
+            $tubi_refno.refno.LSTU.name
         };
         return {
             id: $pe,
@@ -430,7 +430,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
                 next_full_name: fn::default_full_name($pe),
                 next: $pe,
                 tubi_refno: $pe,
-                tubi_spref: $pe.LSTU
+                tubi_spref: $pe.refno.LSTU.name           
             };
         } else {
             none

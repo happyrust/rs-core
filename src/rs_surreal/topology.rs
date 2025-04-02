@@ -10,6 +10,7 @@ pub struct PrevConnection {
     pub prev_full_name: String,
     pub prev: Option<RefU64>,
     pub tubi_refno: Option<RefU64>,
+    pub tubi_spref: Option<String>,
 }
 
 /// Represents a next connection of a pipe element
@@ -19,6 +20,7 @@ pub struct NextConnection {
     pub next_full_name: String,
     pub next: Option<RefU64>,
     pub tubi_refno: Option<RefU64>,
+    pub tubi_spref: Option<String>,
 }
 
 /// Get the previous connected pipe element
