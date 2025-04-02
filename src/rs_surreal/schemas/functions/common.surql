@@ -350,11 +350,18 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
         } else {
             none
         };
+        //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
+        let $tubi_spref = return if $tubi_refno == $pe.owner {
+            $pe.owner.refno.HSTU
+        } else {
+            $tubi_refno.LSTU
+        };
         return {
             id: $pe,
             prev_full_name: fn::default_full_name($p),
             prev: $p,
             tubi_refno: $tubi_refno,
+            tubi_spref: $tubi_spref
         };
     } else {
         return if fn::has_arrive_tubi($pe) {
@@ -363,6 +370,7 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
                 prev_full_name: fn::default_full_name($pe.owner),
                 prev: $pe.owner,
                 tubi_refno: $pe.owner,
+                tubi_spref: $pe.owner.refno.HSTU
             };
         } else {
             none
@@ -396,17 +404,24 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
         //不是branch下的最后一个节点
         let $tubi_refno = return if fn::has_leave_tubi($pe) {
             $pe
-        } else if fn::has_leave_tubi($pe.owner.REFNO.TREF) {
+        } else if fn::has_leave_tubi($pe.owner.refno.TREF) {
             //是branch的最后一个节点，需要判断关联的branch有tubi
-            $pe.owner.REFNO.TREF
+            $pe.owner.refno.TREF
         } else {
             none
+        };
+        //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
+        let $tubi_spref = return if $tubi_refno == $pe.owner.refno.TREF {
+            $pe.owner.refno.TREF.refno.HSTU
+        } else {
+            $tubi_refno.LSTU
         };
         return {
             id: $pe,
             next_full_name: fn::default_full_name($p),
             next: $p,
             tubi_refno: $tubi_refno,
+            tubi_spref: $tubi_spref
         };
     } else {
         return if fn::has_leave_tubi($pe) {
@@ -415,6 +430,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
                 next_full_name: fn::default_full_name($pe),
                 next: $pe,
                 tubi_refno: $pe,
+                tubi_spref: $pe.LSTU
             };
         } else {
             none
