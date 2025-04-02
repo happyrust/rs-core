@@ -33,10 +33,8 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 增加了对 ATT_UDA 类型属性的备份逻辑，单独处理其相关引用数据的更新和存储。  &#10;(2) 修改了 tubi_relate 查询的格式，优化代码可读性。">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run.bat" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run_functions.bat" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/run_functions.bat" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -435,11 +433,11 @@
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Run aios_core" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap_WELD" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
-      <item itemvalue="Cargo.check" />
       <item itemvalue="Shell Script.run_functions.sh" />
     </list>
     <recent_temporary>
@@ -995,6 +993,8 @@
       <workItem from="1743501831027" duration="95000" />
       <workItem from="1743504283762" duration="68000" />
       <workItem from="1743507645353" duration="2000" />
+      <workItem from="1743519563397" duration="104000" />
+      <workItem from="1743520185891" duration="783000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1339,7 +1339,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="415" />
+    <option name="localTasksCounter" value="416" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1393,7 +1393,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="update" />
     <MESSAGE value="update using ignore" />
     <MESSAGE value="wip 增量更新的版本管理" />
     <MESSAGE value="wip 数据状态管理" />
@@ -1418,7 +1417,8 @@
     <MESSAGE value="(1) 重命名结构体 `PipeConnection` 为 `PrevConnection` 并新增 `NextConnection` 结构体。  &#10;(2) 为 `PrevConnection` 和 `NextConnection` 添加字段 `prev_full_name` 和 `next_full_name`，合并并简化 `has_tubi` 字段。  &#10;(3) 新增获取连接的方法 `get_prev_connection` 和 `get_next_connection`，替换原 `get_pipe_connections` 方法。  &#10;(4) 修改测试函数为 `test_get_connections`，分别测试前后连接逻辑并更新断言和调试输出。" />
     <MESSAGE value="(1) 添加了函数 `fn::prev_connect_pe_data` 用于处理前向连接数据，包括返回完整名称及 `has_tubi` 信息。  &#10;(2) 添加了函数 `fn::next_connect_pe_data` 用于处理后向连接数据，同样返回完整名称及 `has_tubi` 信息。" />
     <MESSAGE value="(1) 增加了对 ATT_UDA 类型属性的备份逻辑，单独处理其相关引用数据的更新和存储。  &#10;(2) 修改了 tubi_relate 查询的格式，优化代码可读性。" />
-    <option name="LAST_COMMIT_MESSAGE" value="(1) 增加了对 ATT_UDA 类型属性的备份逻辑，单独处理其相关引用数据的更新和存储。  &#10;(2) 修改了 tubi_relate 查询的格式，优化代码可读性。" />
+    <MESSAGE value="(1) 修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。" />
+    <option name="LAST_COMMIT_MESSAGE" value="(1) 修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。" />
     <option name="NON_MODAL_COMMIT_POSTPONE_SLOW_CHECKS" value="false" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
