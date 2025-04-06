@@ -9,7 +9,8 @@ pub struct PrevConnection {
     pub id: RefU64,
     pub prev_full_name: String,
     pub prev: Option<RefU64>,
-    pub has_tubi: bool,
+    pub tubi_refno: Option<RefU64>,
+    pub tubi_spref: Option<String>,
 }
 
 /// Represents a next connection of a pipe element
@@ -18,7 +19,8 @@ pub struct NextConnection {
     pub id: RefU64,
     pub next_full_name: String,
     pub next: Option<RefU64>,
-    pub has_tubi: bool,
+    pub tubi_refno: Option<RefU64>,
+    pub tubi_spref: Option<String>,
 }
 
 /// Get the previous connected pipe element
@@ -92,7 +94,7 @@ mod tests {
         init_test_surreal().await;
 
         // Use a specific refno for testing
-        let pe_id: RefU64 = "24383_76176".into();
+        let pe_id: RefU64 = "24383_76192".into();
 
         // Get pipe connections
         let prev_connection = get_prev_connection(pe_id).await?;
