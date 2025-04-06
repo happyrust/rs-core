@@ -47,14 +47,26 @@ impl DataCenterProjectWithRelations {
 pub struct DataCenterInstance {
     #[serde(rename = "objectModelCode")]
     pub object_model_code: String,
-    // #[serde(rename = "projectCode")]
-    // pub project_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "serialize_option_string_with_default")]
     pub operate: Option<String>,
     pub version: String,
     pub attributes: Vec<DataCenterAttr>,
+}
+
+fn serialize_option_string_with_default<S>(
+    value: &Option<String>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+{
+    match value {
+        Some(v) => serializer.serialize_str(v),
+        None => serializer.serialize_str("draft"), // default value
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
