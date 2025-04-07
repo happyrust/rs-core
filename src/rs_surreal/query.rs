@@ -59,6 +59,19 @@ pub async fn get_ancestor(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     Ok(s?)
 }
 
+///查询指定类型的第一个祖先节点
+#[cached(result = true)]
+pub async fn query_ancestor_of_type(refno: RefnoEnum, ancestor_type: String) -> anyhow::Result<Option<RefnoEnum>> {
+    let sql = format!(
+        "return fn::find_ancestor_type({}, '{}');",
+        refno.to_pe_key(),
+        ancestor_type
+    );
+    let mut response = SUL_DB.query(sql).await?;
+    let ancestor: Option<RefnoEnum> = response.take(0)?;
+    Ok(ancestor)
+}
+
 // #[cached(result = true)]
 pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(

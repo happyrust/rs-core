@@ -404,3 +404,20 @@ async fn test_query_attmap() -> anyhow::Result<()> {
 //     dbg!(refno);
 //     Ok(())
 // }
+
+#[tokio::test]
+async fn test_query_ancestor_of_type() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    
+    let refno = RefnoEnum::from("pe:24383_73928");
+    
+    let site_ancestor = rs_surreal::query_ancestor_of_type(refno, "SITE".to_string()).await?;
+    assert!(site_ancestor.is_some());
+    let site_ancestor = site_ancestor.unwrap();
+    assert_eq!(site_ancestor.to_string(), "24383_73927");
+    
+    let non_existent = rs_surreal::query_ancestor_of_type(refno, "NONEXISTENT".to_string()).await?;
+    assert!(non_existent.is_none());
+    
+    Ok(())
+}
