@@ -26,16 +26,10 @@
     </configurations>
   </component>
   <component name="CargoProjects">
-    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
-      <package file="$PROJECT_DIR$">
-        <enabledFeature name="default" />
-      </package>
-    </cargoProject>
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 在`options.rs`中新增了`exclude_db_nums`字段，用于指定需要排除的数据库编号列表。&#10;(2) 在`query.rs`中新增了`get_default_full_name`函数，用于获取管道元素的默认全名。&#10;(3) 新增了`topology.rs`文件，包含多个与管道连接相关的结构体和异步函数。&#10;(4) 在`e3d_db.rs`中修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。&#10;(5) 在`schemas/functions/common.surql`中更新了多个SurrealDB函数，包括`prev_connect_pe`、`next(6) 在`material_list/common.surql`中移除了部分重复的SurrealDB函数定义。&#10;(7) 在`wire.rs`中增加了对`pos_poly`顶点数量的检查，并删除了生成特殊线段的旧代码。" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -995,6 +989,7 @@
       <workItem from="1743519563397" duration="104000" />
       <workItem from="1743520185891" duration="783000" />
       <workItem from="1743568215832" duration="1183000" />
+      <workItem from="1744016572520" duration="75000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1339,11 +1334,14 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="416" />
+    <option name="localTasksCounter" value="417" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.configurationType" implementationName="BatchConfigurationType" />
   </component>
   <component name="Vcs.Log.History.Properties">
     <option name="COLUMN_ID_ORDER">
@@ -1393,7 +1391,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="update using ignore" />
     <MESSAGE value="wip 增量更新的版本管理" />
     <MESSAGE value="wip 数据状态管理" />
     <MESSAGE value="update to bevy 0.15" />
@@ -1418,7 +1415,8 @@
     <MESSAGE value="(1) 添加了函数 `fn::prev_connect_pe_data` 用于处理前向连接数据，包括返回完整名称及 `has_tubi` 信息。  &#10;(2) 添加了函数 `fn::next_connect_pe_data` 用于处理后向连接数据，同样返回完整名称及 `has_tubi` 信息。" />
     <MESSAGE value="(1) 增加了对 ATT_UDA 类型属性的备份逻辑，单独处理其相关引用数据的更新和存储。  &#10;(2) 修改了 tubi_relate 查询的格式，优化代码可读性。" />
     <MESSAGE value="(1) 修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。" />
-    <option name="LAST_COMMIT_MESSAGE" value="(1) 修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。" />
+    <MESSAGE value="(1) 在`options.rs`中新增了`exclude_db_nums`字段，用于指定需要排除的数据库编号列表。&#10;(2) 在`query.rs`中新增了`get_default_full_name`函数，用于获取管道元素的默认全名。&#10;(3) 新增了`topology.rs`文件，包含多个与管道连接相关的结构体和异步函数。&#10;(4) 在`e3d_db.rs`中修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。&#10;(5) 在`schemas/functions/common.surql`中更新了多个SurrealDB函数，包括`prev_connect_pe`、`next" />
+    <option name="LAST_COMMIT_MESSAGE" value="(1) 在`options.rs`中新增了`exclude_db_nums`字段，用于指定需要排除的数据库编号列表。&#10;(2) 在`query.rs`中新增了`get_default_full_name`函数，用于获取管道元素的默认全名。&#10;(3) 新增了`topology.rs`文件，包含多个与管道连接相关的结构体和异步函数。&#10;(4) 在`e3d_db.rs`中修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。&#10;(5) 在`schemas/functions/common.surql`中更新了多个SurrealDB函数，包括`prev_connect_pe`、`next" />
     <option name="NON_MODAL_COMMIT_POSTPONE_SLOW_CHECKS" value="false" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
