@@ -3,12 +3,12 @@
 #![feature(result_flattening)]
 #![allow(warnings)]
 
+use crate::error::HandleError;
 use config::{Config, File};
 use dashmap::DashMap;
 #[allow(unused_mut)]
 use std::collections::BTreeMap;
 use std::io::Read;
-use crate::error::HandleError;
 
 pub use types::db_info::PdmsDatabaseInfo;
 
@@ -160,9 +160,9 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
         let Ok(s) = Config::builder()
             .add_source(File::with_name("DbOption"))
             .build()
-            else {
-                return (DashMap::new(), DashMap::new());
-            };
+        else {
+            return (DashMap::new(), DashMap::new());
+        };
         let db_option: DbOption = s.try_deserialize().unwrap();
         for project in db_option.included_projects {
             let path = format!("{}_uda.bin", project);
@@ -185,12 +185,11 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         .add_source(File::with_name("DbOption"))
         .build()
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to load DbOption config: {}", e)
+            msg: format!("Failed to load DbOption config: {}", e),
         })?;
-    let db_option: DbOption = s.try_deserialize()
-        .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to deserialize DbOption: {}", e)
-        })?;
+    let db_option: DbOption = s.try_deserialize().map_err(|e| HandleError::SurrealError {
+        msg: format!("Failed to deserialize DbOption: {}", e),
+    })?;
 
     // 创建配置
     let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
@@ -201,7 +200,7 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         .with_capacity(1000)
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to connect to database: {}", e)
+            msg: format!("Failed to connect to database: {}", e),
         })?;
 
     // Set namespace and database
@@ -210,7 +209,7 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         .use_db(&db_option.project_name)
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to set namespace and database: {}", e)
+            msg: format!("Failed to set namespace and database: {}", e),
         })?;
 
     // Sign in
@@ -221,14 +220,14 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         })
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to sign in: {}", e)
+            msg: format!("Failed to sign in: {}", e),
         })?;
 
     // Define common functions
     define_common_functions()
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to define common functions: {}", e)
+            msg: format!("Failed to define common functions: {}", e),
         })?;
 
     Ok(db_option)
@@ -256,6 +255,12 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             password: &db_option.v_password,
         })
         .await?;
+    // Define common functions
+    define_common_functions()
+        .await
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to define common functions: {}", e),
+        })?;
     Ok(())
 }
 
@@ -265,12 +270,11 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
         .add_source(File::with_name("DbOption"))
         .build()
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to load DbOption config: {}", e)
+            msg: format!("Failed to load DbOption config: {}", e),
         })?;
-    let db_option: DbOption = s.try_deserialize()
-        .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to deserialize DbOption: {}", e)
-        })?;
+    let db_option: DbOption = s.try_deserialize().map_err(|e| HandleError::SurrealError {
+        msg: format!("Failed to deserialize DbOption: {}", e),
+    })?;
 
     // 创建配置
     let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
@@ -281,7 +285,7 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
         .with_capacity(1000)
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to connect to database: {}", e)
+            msg: format!("Failed to connect to database: {}", e),
         })?;
 
     // Set namespace and database
@@ -290,7 +294,7 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
         .use_db(&db_option.project_name)
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to set namespace and database: {}", e)
+            msg: format!("Failed to set namespace and database: {}", e),
         })?;
 
     // Sign in
@@ -301,14 +305,14 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
         })
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to sign in: {}", e)
+            msg: format!("Failed to sign in: {}", e),
         })?;
 
     // Define common functions
     define_common_functions()
         .await
         .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to define common functions: {}", e)
+            msg: format!("Failed to define common functions: {}", e),
         })?;
 
     Ok(db_option)

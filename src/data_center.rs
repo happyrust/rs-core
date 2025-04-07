@@ -1,14 +1,14 @@
-use std::collections::HashMap;
 use bevy_ecs::prelude::Resource;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
-use uuid::Uuid;
 use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 use crate::metadata_manager::FileBytes;
+use crate::schema::generate_basic_versioned_schema;
 use crate::types::*;
 use bevy_ecs::prelude::Component;
-use crate::schema::generate_basic_versioned_schema;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProject {
@@ -47,14 +47,26 @@ impl DataCenterProjectWithRelations {
 pub struct DataCenterInstance {
     #[serde(rename = "objectModelCode")]
     pub object_model_code: String,
-    // #[serde(rename = "projectCode")]
-    // pub project_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "serialize_option_string_with_default")]
     pub operate: Option<String>,
     pub version: String,
     pub attributes: Vec<DataCenterAttr>,
+}
+
+fn serialize_option_string_with_default<S>(
+    value: &Option<String>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+{
+    match value {
+        Some(v) => serializer.serialize_str(v),
+        None => serializer.serialize_str("draft"), // default value
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -127,51 +139,31 @@ impl Default for AttrValue {
 impl Into<String> for AttrValue {
     fn into(self) -> String {
         match self {
-            AttrValue::Invalid => {
-                AttrValue::default().into()
-            }
-            AttrString(a) => {
-                a
-            }
-            AttrFloat(a) => {
-                a.to_string()
-            }
-            AttrValue::AttrInt(a) => {
-                a.to_string()
-            }
+            AttrValue::Invalid => AttrValue::default().into(),
+            AttrString(a) => a,
+            AttrFloat(a) => a.to_string(),
+            AttrValue::AttrInt(a) => a.to_string(),
             AttrValue::AttrBool(a) => {
-                if a { "Y".to_string() } else { "N".to_string() }
+                if a {
+                    "Y".to_string()
+                } else {
+                    "N".to_string()
+                }
             }
-            AttrStrArray(a) => {
-                serde_json::to_string(&a).unwrap_or("[]".to_string())
-            }
-            AttrValue::AttrIntArray(a) => {
-                serde_json::to_string(&a).unwrap_or("[]".to_string())
-            }
-            AttrValue::AttrFloatArray(a) => {
-                serde_json::to_string(&a).unwrap_or("[]".to_string())
-            }
-            AttrValue::AttrVec3(a) => {
-                serde_json::to_string(&a).unwrap_or("[]".to_string())
-            }
-            AttrValue::AttrVec3Array(a) => {
-                serde_json::to_string(&a).unwrap_or("[]".to_string())
-            }
-            AttrValue::AttrMap(a) => {
-                serde_json::to_string(&a).unwrap_or("{}".to_string())
-            }
+            AttrStrArray(a) => serde_json::to_string(&a).unwrap_or("[]".to_string()),
+            AttrValue::AttrIntArray(a) => serde_json::to_string(&a).unwrap_or("[]".to_string()),
+            AttrValue::AttrFloatArray(a) => serde_json::to_string(&a).unwrap_or("[]".to_string()),
+            AttrValue::AttrVec3(a) => serde_json::to_string(&a).unwrap_or("[]".to_string()),
+            AttrValue::AttrVec3Array(a) => serde_json::to_string(&a).unwrap_or("[]".to_string()),
+            AttrValue::AttrMap(a) => serde_json::to_string(&a).unwrap_or("{}".to_string()),
             AttrValue::AttrVecVecStringMap(a) => {
                 serde_json::to_string(&a).unwrap_or("{}".to_string())
             }
-            AttrValue::AttrMapFloat(a) => {
-                serde_json::to_string(&a).unwrap_or("{}".to_string())
-            }
+            AttrValue::AttrMapFloat(a) => serde_json::to_string(&a).unwrap_or("{}".to_string()),
             AttrValue::AttrMapFloatArray(a) => {
                 serde_json::to_string(&a).unwrap_or("{}".to_string())
             }
-            AttrValue::AttrItemArray(a) => {
-                serde_json::to_string(&a).unwrap_or("[]".to_string())
-            }
+            AttrValue::AttrItemArray(a) => serde_json::to_string(&a).unwrap_or("[]".to_string()),
         }
     }
 }
@@ -263,7 +255,6 @@ impl TiziVirtualHoleData {
     }
 }
 
-
 impl SendHoleDataToArango {
     pub fn to_ui_struct(self) -> TiziVirtualHoleData {
         TiziVirtualHoleData {
@@ -340,7 +331,6 @@ pub struct HoleWallBoardVec {
     pub data: Vec<(RefU64, String)>,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HoleDataModelBody {
     pub code: String,
@@ -403,7 +393,6 @@ pub struct CableWeight {
     /// 电缆线重
     pub cable_weight: String,
 }
-
 
 //接收创建虚拟孔洞流程的结构体
 #[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
@@ -565,12 +554,15 @@ impl RawHoleData {
     //todo 写一个proc macro来生成schema
     pub fn get_scheme() -> String {
         let basic_schema = generate_basic_versioned_schema::<Self>();
-        format!(r#"{{
+        format!(
+            r#"{{
         "@type" : "Class",
         "@id"   : "VirtualHole",
         "@key"  : {{ "@type": "Lexical", "@fields": ["_key"] }},
         {}
-        }}"#, basic_schema)
+        }}"#,
+            basic_schema
+        )
     }
 
     pub fn gen_versioned_data_json(&self) -> anyhow::Result<String> {
@@ -589,5 +581,44 @@ impl RawHoleData {
             m.insert("_key".into(), value);
         }
         Ok(serde_json::to_string(&obj)?)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum DataCenterRecordOperate {
+    Insert,
+    Modify,
+    Delete,
+}
+
+/// 发布成功后的元数据，只存放最小交付单元
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct DataCenterRecord {
+    pub refno: RefnoEnum,
+    // 删除节点所属的zone，不然删除后找不到相关的节点
+    pub owner: RefnoEnum,
+    pub status: DataCenterRecordOperate,
+}
+
+impl DataCenterRecord {
+    pub fn get_insert_sql(refnos: HashSet<RefU64>) -> String {
+        if refnos.is_empty() { return "".to_string(); };
+        let data = refnos
+            .into_iter()
+            .map(|refno| DataCenterRecord {
+                refno: refno.into(),
+                owner: Default::default(),
+                status: DataCenterRecordOperate::Insert,
+            })
+            .collect::<Vec<_>>();
+        let sql = data
+            .into_iter()
+            .map(|d| format!("({},{},'{:?}')", d.refno.to_table_key("datacenter_handle"), d.owner.to_pe_key(), d.status))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            "insert ignore into {} (id,owner,status) values {}",
+            "datacenter_handle", sql
+        )
     }
 }

@@ -125,6 +125,7 @@ DEFINE FUNCTION fn::backup_data(
         if $a != none && $b != none {
             let $old_inst_relate_id = type::thing('inst_relate', $old_id);
             let $old_att_id = type::thing(string::concat($a.noun, '_H'), $old_id);
+            let $old_uda_att_id = type::thing('ATT_UDA_H', $old_id);
             if $is_del{
                 //软删除
                 update $pe.id set op=2, old_pe=$old_pe_id, sesno=$sesno, deleted=true;
@@ -143,6 +144,15 @@ DEFINE FUNCTION fn::backup_data(
                                 		'path': 'REFNO',
                                 		'value': $old_pe_id
                                 }]);
+            //uda 属性需要单独的备份方法，因为有很多引用
+            let $uda_data = select * from only type::thing('ATT_UDA', record::id($pe.id)) limit 1;
+            if $uda_data != none {  
+                upsert $old_uda_att_id content $uda_data.patch([{
+                                		'op': 'replace',
+                                		'path': 'refno',
+                                		'value': $old_pe_id
+                                }]);
+            };
             //删除属性
             if $is_del{
                delete $pe.refno;
@@ -157,7 +167,8 @@ DEFINE FUNCTION fn::backup_data(
 
             if $a.noun == "BRAN" || $a.noun == "HANG" {
 
-                let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id, $old_pe_id as in from $pe->tubi_relate);
+                let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id,
+                                 $old_pe_id as in from $pe->tubi_relate);
                 //将 tubi relate 整体备份
                 if !array::is_empty($tubis) {
                     //删除之前的，变成历史的
@@ -278,16 +289,163 @@ DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
     return fn::next_type($pe)==$type;
 };
 
+remove function fn::first_child;
+DEFINE FUNCTION fn::first_child($pe:record) {
+    return select value (<-pe_owner[0].in) from only $pe limit 1;
+};
+
+remove function fn::last_child;
+DEFINE FUNCTION fn::last_child($pe:record) {
+    return array::last((select value (<-pe_owner.in) from only $pe limit 1)?:[]);
+};
+
 remove function fn::prev_pe;
 DEFINE FUNCTION fn::prev_pe($pe:record) {
+    if $pe == none || !record::exists($pe) {
+        return none;
+    };
     let $a = (record::id($pe->pe_owner.id[0])[1]) - 1;
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
 };
 
 remove function fn::next_pe;
 DEFINE FUNCTION fn::next_pe($pe:record) {
+    if $pe == none || !record::exists($pe) {
+        return none;
+    };
     let $a = (record::id($pe->pe_owner.id[0])[1]) + 1;
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
+};
+
+remove function fn::prev_connect_pe;
+DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
+    if $pe == none {
+        return none;
+    };
+    let $p = fn::prev_pe($pe);
+    return $p;
+    return if $p != none {
+        return $p;
+    } else {
+        let $connect_bran = $pe.owner.refno.HREF;
+        return if $connect_bran != none {
+            return fn::last_child($connect_bran);
+        } else {
+            return none;
+        };
+    };
+};
+
+remove function fn::prev_connect_pe_data;
+DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
+    let $p = fn::prev_connect_pe($pe);
+    // let $q = fn::prev_pe($pe);
+    return if $p != none {
+        //不是branch下的第一个节点
+        let $tubi_refno = return if fn::has_arrive_tubi($pe) {
+            $pe.owner
+        } else if fn::has_leave_tubi($p) {
+            //是branch的最后一个节点，需要判断关联的branch有tubi
+            $p
+        } else {
+            none
+        };
+        //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
+        let $tubi_spref = return if $tubi_refno == $pe.owner {
+            $pe.owner.refno.HSTU.name
+        } else {
+            $tubi_refno.refno.LSTU.name
+        };
+        return {
+            id: $pe,
+            prev_full_name: fn::default_full_name($p),
+            prev: $p,
+            tubi_refno: $tubi_refno,
+            tubi_spref: $tubi_spref
+        };
+    } else {
+        return if fn::has_arrive_tubi($pe) {
+            return {
+                id: $pe,
+                prev_full_name: fn::default_full_name($pe.owner),
+                prev: $pe.owner,
+                tubi_refno: $pe.owner,
+                tubi_spref: $pe.owner.refno.HSTU.name
+            };
+        } else {
+            none
+        };
+    };
+};
+
+remove function fn::next_connect_pe;
+DEFINE FUNCTION fn::next_connect_pe($pe:record) {
+    if $pe == none {
+        return none;
+    };
+    let $p = fn::next_pe($pe);
+    return if $p != none {
+        return $p;
+    } else {
+        let $connect_bran = $pe.owner.refno.TREF;
+        return if $connect_bran != none {
+            return fn::first_child($connect_bran);
+        } else {
+            return none;
+        };  
+    };
+};
+
+remove function fn::next_connect_pe_data;
+DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
+    let $p = fn::next_connect_pe($pe);
+    // let $q = fn::next_pe($pe);
+    return if $p != none {
+        //不是branch下的最后一个节点
+        let $tubi_refno = return if fn::has_leave_tubi($pe) {
+            $pe
+        } else if fn::has_leave_tubi($pe.owner.refno.TREF) {
+            //是branch的最后一个节点，需要判断关联的branch有tubi
+            $pe.owner.refno.TREF
+        } else {
+            none
+        };
+        //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
+        let $tubi_spref = return if $tubi_refno == $pe.owner.refno.TREF {
+            $pe.owner.refno.TREF.refno.HSTU.name
+        } else {
+            $tubi_refno.refno.LSTU.name
+        };
+        return {
+            id: $pe,
+            next_full_name: fn::default_full_name($p),
+            next: $p,
+            tubi_refno: $tubi_refno,
+            tubi_spref: $tubi_spref
+        };
+    } else {
+        return if fn::has_leave_tubi($pe) {
+            return {
+                id: $pe,
+                next_full_name: fn::default_full_name($pe),
+                next: $pe,
+                tubi_refno: $pe,
+                tubi_spref: $pe.refno.LSTU.name           
+            };
+        } else {
+            none
+        };
+    };
+};
+
+remove function fn::has_leave_tubi;
+DEFINE FUNCTION fn::has_leave_tubi($pe:record) {
+    return (select id from only $pe.owner->tubi_relate where leave=$pe limit 1) != none;
+};
+
+remove function fn::has_arrive_tubi;
+DEFINE FUNCTION fn::has_arrive_tubi($pe:record) {
+    return (select id from only $pe.owner->tubi_relate where arrive=$pe limit 1) != none;
 };
 
 remove function fn::prev_type;

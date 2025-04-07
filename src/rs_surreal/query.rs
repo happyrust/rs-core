@@ -466,6 +466,17 @@ pub async fn get_next_prev(refno: RefnoEnum, next: bool) -> anyhow::Result<Refno
         Ok(siblings.get(pos - 1).cloned().unwrap_or_default())
     }
 }
+/// Get the default full name for a pipe element
+///
+/// Wraps the Surreal function fn::default_full_name
+#[cached(result = true)]
+pub async fn get_default_full_name(refno: RefnoEnum) -> anyhow::Result<String> {
+    let sql = format!("RETURN fn::default_full_name({})", refno.to_pe_key());
+    let mut response = SUL_DB.query(sql).await?;
+    let result: Option<String> = response.take(0)?;
+
+    Ok(result.unwrap_or_default())
+}
 
 ///通过surql查询属性数据，包含UDA数据
 #[cached(result = true)]
