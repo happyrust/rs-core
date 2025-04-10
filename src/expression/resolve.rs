@@ -275,7 +275,7 @@ pub fn resolve_gmse_params(
                 } else {
                     paxises.push(None);
                     // dbg!(&gm);
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "debug")]
                     println!("Axis: '{axis_str}' index not exist");
                 }
             }
