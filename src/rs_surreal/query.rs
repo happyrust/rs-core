@@ -99,7 +99,7 @@ pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
 }
 
 pub async fn get_type_names(
-    refnos: impl Iterator<Item = &RefnoEnum>,
+    refnos: impl Iterator<Item=&RefnoEnum>,
 ) -> anyhow::Result<Vec<String>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let mut response = SUL_DB
@@ -453,6 +453,7 @@ pub async fn get_next_prev(refno: RefnoEnum, next: bool) -> anyhow::Result<Refno
         Ok(siblings.get(pos - 1).cloned().unwrap_or_default())
     }
 }
+
 /// Get the default full name for a pipe element
 ///
 /// Wraps the Surreal function fn::default_full_name
@@ -587,7 +588,7 @@ pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsEleme
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
 pub async fn get_all_children_refnos(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    refnos: impl IntoIterator<Item=&RefnoEnum>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let sql =
@@ -747,7 +748,7 @@ pub async fn query_multi_children_refnos(refnos: &[RefnoEnum]) -> anyhow::Result
 ///按cata_hash 分组获得不同的参考号类型
 // #[cached(result = true)]
 pub async fn query_group_by_cata_hash(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    refnos: impl IntoIterator<Item=&RefnoEnum>,
 ) -> anyhow::Result<DashMap<String, CataHashRefnoKV>> {
     let keys = refnos
         .into_iter()
@@ -919,8 +920,8 @@ pub async fn insert_into_table_with_chunks<T>(
     table: &str,
     value: Vec<T>,
 ) -> anyhow::Result<()>
-where
-    T: Sized + Serialize,
+    where
+        T: Sized + Serialize,
 {
     for r in value.chunks(MAX_INSERT_LENGTH) {
         let json = serde_json::to_string(r)?;
@@ -1060,7 +1061,7 @@ pub async fn query_refno_sesno(
 
 ///查询历史数据的日期
 pub async fn query_his_dates(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    refnos: impl IntoIterator<Item=&RefnoEnum>,
 ) -> anyhow::Result<BTreeMap<RefnoEnum, NaiveDateTime>> {
     let refnos: Vec<_> = refnos.into_iter().collect();
     let pes = to_table_keys!(refnos.iter(), "pe");
@@ -1078,7 +1079,7 @@ pub async fn query_his_dates(
 
 /// 查询最新的参考号, 需要限制日期
 pub async fn query_latest_refnos(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    refnos: impl IntoIterator<Item=&RefnoEnum>,
     dt: NaiveDateTime,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     let pes = to_table_keys!(refnos, "pe");
@@ -1093,6 +1094,22 @@ pub async fn query_latest_refnos(
     Ok(r)
 }
 
+/// 获取参考号对应uda的数据
+pub async fn get_uda_value(refno: RefU64, uda: &str) -> anyhow::Result<Option<String>> {
+    let uda = uda.replace(":", "/");
+    let sql = format!(
+        "select value fn::get_uda_value(id,'{}') from {}",
+        uda,
+        refno.to_pe_key()
+    );
+    let mut resp = SUL_DB.query(&sql).await?;
+    let r = resp.take::<Vec<Option<String>>>(0)?;
+    if r.is_empty() {
+        return Ok(None);
+    }
+    Ok(r[0].clone())
+}
+
 //添加query_his_dates 的 testcase
 mod test {
     use std::str::FromStr;
@@ -1100,6 +1117,7 @@ mod test {
     use chrono::NaiveDateTime;
 
     use crate::{init_test_surreal, pe_key, query_his_dates};
+
     #[tokio::test]
     async fn test_query_his_dates() {
         init_test_surreal().await;
@@ -1117,8 +1135,8 @@ mod test {
             &[pe_key!("17496_172825")],
             NaiveDateTime::from_str("2025-07-03T07:18:52Z").unwrap(),
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
         dbg!(&r);
         assert_eq!(r.len(), 1);
         assert_eq!(r[0], pe_key!("17496_172825"));
@@ -1127,8 +1145,8 @@ mod test {
             &[pe_key!("17496_172825")],
             NaiveDateTime::from_str("2022-07-03T07:18:52Z").unwrap(),
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
         dbg!(&r);
         assert_eq!(r.len(), 0);
     }
