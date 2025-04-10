@@ -12,7 +12,7 @@ DEFINE FUNCTION fn::room_code($pe:record) {
         ])))
     } else if  $noun == 'BRAN' && $uda_room == [NONE] {
         return array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id), [none])
-    } else if $noun == 'SUPPO' {
+    } else if $noun == 'SUPPO' || $noun == 'ZONE' {
         return array::distinct(
             (array::flatten( array::complement((select value (<-room_relate.room_num)[0] from array::flatten($pe<-pe_owner.in<-pe_owner.in<-pe_owner.in.id)),[NONE])
         )))
