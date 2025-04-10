@@ -473,6 +473,23 @@ pub fn resolve_overlap_intersection(
     Ok((new_polyline, true))
 }
 
+/// 处理基本相交情况
+/// 
+/// 该函数用于处理多段线(polyline)的基本相交情况。基本相交是指两个线段相交于一个点。
+///
+/// # 参数
+/// * `polyline` - 输入的多段线
+/// * `intersect` - 相交信息,包含相交点和相交线段的索引
+/// * `ori` - 多段线的方向
+///
+/// # 返回值
+/// * `Result<Polyline>` - 处理后的新多段线
+/// 
+/// # 处理逻辑
+/// 1. 根据相交点将相交的线段分割成两部分
+/// 2. 根据线段类型(直线或圆弧)采用不同的处理策略
+/// 3. 保持多段线的方向一致性
+/// 4. 移除重复的点
 pub fn resolve_basic_intersection(
     polyline: &Polyline,
     intersect: &PlineBasicIntersect<f64>,
@@ -481,28 +498,31 @@ pub fn resolve_basic_intersection(
     let mut new_polyline = polyline.clone();
     let verts_len = polyline.vertex_data.len();
     
-    // Check if polyline has enough vertices
+    // 检查多段线是否有足够的顶点
     if verts_len < 3 {
         return Err(anyhow!("Polyline has too few vertices."));
     }
     
-    //优先处理和直线的相交情况
+    // 获取相交线段的起始索引
     let si_0 = intersect.start_index1;
     let mut next_si_0 = (si_0 + 1) % verts_len;
     let mut si_1 = intersect.start_index2;
     let next_si_1 = (si_1 + 1) % verts_len;
     
-    // Validate indices
+    // 验证索引的有效性
     if si_0 >= verts_len || si_1 >= verts_len || next_si_0 >= verts_len || next_si_1 >= verts_len {
         return Err(anyhow!("Invalid intersection indices for polyline."));
     }
     
     let point = intersect.point;
 
+    // 处理两条直线相交的情况
     if polyline[si_0].bulge == 0.0 && polyline[si_1].bulge == 0.0 {
         new_polyline[si_1] = PlineVertex::new(point.x, point.y, 0.0);
-    } else if polyline[si_0].bulge == 0.0 && polyline[si_1].bulge != 0.0 {
-        //如果点和端点重合，直接砍掉
+    } 
+    // 处理直线和圆弧相交的情况(第一条是直线,第二条是圆弧)
+    else if polyline[si_0].bulge == 0.0 && polyline[si_1].bulge != 0.0 {
+        // 如果点和端点重合，直接砍掉
         let mut tmp_polyline = Polyline::new_closed();
         tmp_polyline.add(polyline[si_0].x, polyline[si_0].y, 0.0);
         tmp_polyline.add(point.x, point.y, 0.0);
@@ -514,8 +534,8 @@ pub fn resolve_basic_intersection(
         let r = seg_split(polyline[si_1], polyline[next_si_1], point, 0.01);
         #[cfg(feature = "debug_wire")]
         dbg!(&r);
+        // 如果分割点和端点重合
         if r.split_vertex.bulge == 0.0 {
-            //直接就和端点重合了
             if si_0 == 0 {
                 next_si_0 = verts_len;
             }
@@ -524,14 +544,15 @@ pub fn resolve_basic_intersection(
                 "first arc, second line, same end point, remove between {} .. {}",
                 next_si_1, next_si_0
             );
+            // 确保范围有效：next_si_1 <= next_si_0
             if next_si_0 < next_si_1 {
-                return Err(anyhow!("Repair intersection wire failed."));
+                return Err(anyhow!("Invalid drain range: next_si_0({}) < next_si_1({})", next_si_0, next_si_1));
             }
-            // Safe drain with bounds checking
+            // 安全地移除范围内的顶点
             if next_si_1 < new_polyline.vertex_data.len() && next_si_0 <= new_polyline.vertex_data.len() {
                 new_polyline.vertex_data.drain(next_si_1..next_si_0);
             } else {
-                return Err(anyhow!("Invalid drain range for polyline."));
+                return Err(anyhow!("Invalid drain range for polyline: next_si_1={}, next_si_0={}, len={}", next_si_1, next_si_0, new_polyline.vertex_data.len()));
             }
         } else if use_start {
             new_polyline[si_1] = r.updated_start;
@@ -542,7 +563,7 @@ pub fn resolve_basic_intersection(
                 si_1, si_0
             );
         } else {
-            // Check if indices are valid
+            // 检查索引的有效性
             if next_si_0 >= new_polyline.vertex_data.len() || si_1 >= new_polyline.vertex_data.len() {
                 return Err(anyhow!("Invalid vertex indices for polyline."));
             }
@@ -554,17 +575,20 @@ pub fn resolve_basic_intersection(
                 "first arc, second line , use split remove between {} .. {}",
                 next_si_0, si_1
             );
+            // 确保范围有效：next_si_0 <= si_1
             if si_1 < next_si_0 {
-                return Err(anyhow!("Repair intersection wire failed."));
+                return Err(anyhow!("Invalid drain range: si_1({}) < next_si_0({})", si_1, next_si_0));
             }
-            // Safe drain with bounds checking
+            // 安全地移除范围内的顶点
             if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
                 new_polyline.vertex_data.drain(next_si_0..si_1);
             } else {
-                return Err(anyhow!("Invalid drain range for polyline."));
+                return Err(anyhow!("Invalid drain range for polyline: next_si_0={}, si_1={}, len={}", next_si_0, si_1, new_polyline.vertex_data.len()));
             }
         }
-    } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge == 0.0 {
+    } 
+    // 处理圆弧和直线相交的情况(第一条是圆弧,第二条是直线)
+    else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge == 0.0 {
         let mut tmp_polyline = Polyline::new_closed();
         tmp_polyline.add(polyline[si_0].x, polyline[si_0].y, 0.0);
         tmp_polyline.add(point.x, point.y, 0.0);
@@ -576,18 +600,22 @@ pub fn resolve_basic_intersection(
         let mut r = seg_split(polyline[si_0], polyline[next_si_0], point, 0.01);
         #[cfg(feature = "debug_wire")]
         dbg!(&r);
-        //直接就和端点重合了
+        // 如果分割点和端点重合
         if r.split_vertex.bulge == 0.0 {
             #[cfg(feature = "debug_wire")]
             println!(
                 "first arc, second line, same end point, remove between {} .. {}",
                 next_si_0, si_1
             );
-            // Safe drain with bounds checking
+            // 确保范围有效：next_si_0 <= si_1
+            if si_1 < next_si_0 {
+                return Err(anyhow!("Invalid drain range: si_1({}) < next_si_0({})", si_1, next_si_0));
+            }
+            // 安全地移除范围内的顶点
             if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
                 new_polyline.vertex_data.drain(next_si_0..si_1);
             } else {
-                return Err(anyhow!("Invalid drain range for polyline."));
+                return Err(anyhow!("Invalid drain range for polyline: next_si_0={}, si_1={}, len={}", next_si_0, si_1, new_polyline.vertex_data.len()));
             }
         } else {
             if use_start {
@@ -598,14 +626,18 @@ pub fn resolve_basic_intersection(
                     "first arc, second line , use start remove between {} .. {}",
                     next_si_0, si_1
                 );
-                // Safe drain with bounds checking
+                // 确保范围有效：next_si_0 <= si_1
+                if si_1 < next_si_0 {
+                    return Err(anyhow!("Invalid drain range: si_1({}) < next_si_0({})", si_1, next_si_0));
+                }
+                // 安全地移除范围内的顶点
                 if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
                     new_polyline.vertex_data.drain(next_si_0..si_1);
                 } else {
-                    return Err(anyhow!("Invalid drain range for polyline."));
+                    return Err(anyhow!("Invalid drain range for polyline: next_si_0={}, si_1={}, len={}", next_si_0, si_1, new_polyline.vertex_data.len()));
                 }
             } else {
-                // Check if indices are valid
+                // 检查索引的有效性
                 if si_0 >= new_polyline.vertex_data.len() || next_si_1 >= new_polyline.vertex_data.len() {
                     return Err(anyhow!("Invalid vertex indices for polyline."));
                 }
@@ -619,8 +651,10 @@ pub fn resolve_basic_intersection(
                 );
             }
         }
-    } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge != 0.0 {
-        // Verify that we can safely calculate (si_0 + 1) % verts_len
+    } 
+    // 处理两条圆弧相交的情况
+    else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge != 0.0 {
+        // 验证索引的有效性
         if si_0 >= verts_len || (si_0 + 1) >= verts_len {
             return Err(anyhow!("Invalid index for polyline."));
         }
@@ -631,15 +665,15 @@ pub fn resolve_basic_intersection(
             point,
             0.01,
         );
-        //更新开头的点
+        // 更新第一条圆弧的起点
         new_polyline[si_0] = sr.updated_start;
         
-        // Verify that we can safely calculate (si_1 + 1) % verts_len
+        // 验证索引的有效性
         if si_1 >= verts_len || (si_1 + 1) >= verts_len {
             return Err(anyhow!("Invalid index for polyline."));
         }
         
-        //更新下一个起点
+        // 更新第二条圆弧的起点
         let er = seg_split(
             polyline[si_1],
             polyline[(si_1 + 1) % verts_len],
@@ -651,15 +685,20 @@ pub fn resolve_basic_intersection(
         if si_1 >= next_si_0 {
             #[cfg(feature = "debug_wire")]
             println!("both arc, remove between {} .. {}", next_si_0, si_1);
-            // Safe drain with bounds checking
+            // 确保范围有效：next_si_0 <= si_1
+            if si_1 < next_si_0 {
+                return Err(anyhow!("Invalid drain range: si_1({}) < next_si_0({})", si_1, next_si_0));
+            }
+            // 安全地移除范围内的顶点
             if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
                 new_polyline.vertex_data.drain(next_si_0..si_1);
             } else {
-                return Err(anyhow!("Invalid drain range for polyline."));
+                return Err(anyhow!("Invalid drain range for polyline: next_si_0={}, si_1={}, len={}", next_si_0, si_1, new_polyline.vertex_data.len()));
             }
         }
     }
 
+    // 移除重复的点
     if let Some(r) = new_polyline.remove_repeat_pos(0.01) {
         new_polyline = r;
     }
