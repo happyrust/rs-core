@@ -503,7 +503,7 @@ pub(crate) async fn get_named_attmap_with_uda(
     let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let uda_kvs: Vec<surrealdb::sql::Object> =
         array.into_iter().map(|x| x.try_into().unwrap()).collect();
-    // dbg!(&uda_kvs);
+    dbg!(&uda_kvs);
     for map in uda_kvs {
         let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
         let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
@@ -519,7 +519,7 @@ pub(crate) async fn get_named_attmap_with_uda(
     let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let overwrite_kvs: Vec<surrealdb::sql::Object> =
         array.into_iter().map(|x| x.try_into().unwrap()).collect();
-    // dbg!(&overwrite_kvs);
+    dbg!(&overwrite_kvs);
     for map in overwrite_kvs {
         let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
         let utype: String = map.get("t").unwrap().clone().try_into().unwrap();

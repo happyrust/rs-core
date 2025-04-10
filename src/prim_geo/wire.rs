@@ -480,11 +480,23 @@ pub fn resolve_basic_intersection(
 ) -> anyhow::Result<Polyline> {
     let mut new_polyline = polyline.clone();
     let verts_len = polyline.vertex_data.len();
+    
+    // Check if polyline has enough vertices
+    if verts_len < 3 {
+        return Err(anyhow!("Polyline has too few vertices."));
+    }
+    
     //优先处理和直线的相交情况
     let si_0 = intersect.start_index1;
     let mut next_si_0 = (si_0 + 1) % verts_len;
     let mut si_1 = intersect.start_index2;
     let next_si_1 = (si_1 + 1) % verts_len;
+    
+    // Validate indices
+    if si_0 >= verts_len || si_1 >= verts_len || next_si_0 >= verts_len || next_si_1 >= verts_len {
+        return Err(anyhow!("Invalid intersection indices for polyline."));
+    }
+    
     let point = intersect.point;
 
     if polyline[si_0].bulge == 0.0 && polyline[si_1].bulge == 0.0 {
@@ -515,7 +527,12 @@ pub fn resolve_basic_intersection(
             if next_si_0 < next_si_1 {
                 return Err(anyhow!("Repair intersection wire failed."));
             }
-            new_polyline.vertex_data.drain(next_si_1..next_si_0);
+            // Safe drain with bounds checking
+            if next_si_1 < new_polyline.vertex_data.len() && next_si_0 <= new_polyline.vertex_data.len() {
+                new_polyline.vertex_data.drain(next_si_1..next_si_0);
+            } else {
+                return Err(anyhow!("Invalid drain range for polyline."));
+            }
         } else if use_start {
             new_polyline[si_1] = r.updated_start;
             new_polyline[si_0] = r.split_vertex;
@@ -525,6 +542,11 @@ pub fn resolve_basic_intersection(
                 si_1, si_0
             );
         } else {
+            // Check if indices are valid
+            if next_si_0 >= new_polyline.vertex_data.len() || si_1 >= new_polyline.vertex_data.len() {
+                return Err(anyhow!("Invalid vertex indices for polyline."));
+            }
+            
             new_polyline[next_si_0] = r.split_vertex;
             new_polyline[si_1] = r.split_vertex;
             #[cfg(feature = "debug_wire")]
@@ -535,7 +557,12 @@ pub fn resolve_basic_intersection(
             if si_1 < next_si_0 {
                 return Err(anyhow!("Repair intersection wire failed."));
             }
-            new_polyline.vertex_data.drain(next_si_0..si_1);
+            // Safe drain with bounds checking
+            if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
+                new_polyline.vertex_data.drain(next_si_0..si_1);
+            } else {
+                return Err(anyhow!("Invalid drain range for polyline."));
+            }
         }
     } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge == 0.0 {
         let mut tmp_polyline = Polyline::new_closed();
@@ -556,7 +583,12 @@ pub fn resolve_basic_intersection(
                 "first arc, second line, same end point, remove between {} .. {}",
                 next_si_0, si_1
             );
-            new_polyline.vertex_data.drain(next_si_0..si_1);
+            // Safe drain with bounds checking
+            if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
+                new_polyline.vertex_data.drain(next_si_0..si_1);
+            } else {
+                return Err(anyhow!("Invalid drain range for polyline."));
+            }
         } else {
             if use_start {
                 new_polyline[si_0] = r.updated_start;
@@ -566,8 +598,18 @@ pub fn resolve_basic_intersection(
                     "first arc, second line , use start remove between {} .. {}",
                     next_si_0, si_1
                 );
-                new_polyline.vertex_data.drain(next_si_0..si_1);
+                // Safe drain with bounds checking
+                if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
+                    new_polyline.vertex_data.drain(next_si_0..si_1);
+                } else {
+                    return Err(anyhow!("Invalid drain range for polyline."));
+                }
             } else {
+                // Check if indices are valid
+                if si_0 >= new_polyline.vertex_data.len() || next_si_1 >= new_polyline.vertex_data.len() {
+                    return Err(anyhow!("Invalid vertex indices for polyline."));
+                }
+                
                 new_polyline[si_0] = r.split_vertex;
                 new_polyline[next_si_1] = r.split_vertex;
                 #[cfg(feature = "debug_wire")]
@@ -578,6 +620,11 @@ pub fn resolve_basic_intersection(
             }
         }
     } else if polyline[si_0].bulge != 0.0 && polyline[si_1].bulge != 0.0 {
+        // Verify that we can safely calculate (si_0 + 1) % verts_len
+        if si_0 >= verts_len || (si_0 + 1) >= verts_len {
+            return Err(anyhow!("Invalid index for polyline."));
+        }
+        
         let sr = seg_split(
             polyline[si_0],
             polyline[(si_0 + 1) % verts_len],
@@ -586,6 +633,12 @@ pub fn resolve_basic_intersection(
         );
         //更新开头的点
         new_polyline[si_0] = sr.updated_start;
+        
+        // Verify that we can safely calculate (si_1 + 1) % verts_len
+        if si_1 >= verts_len || (si_1 + 1) >= verts_len {
+            return Err(anyhow!("Invalid index for polyline."));
+        }
+        
         //更新下一个起点
         let er = seg_split(
             polyline[si_1],
@@ -598,7 +651,12 @@ pub fn resolve_basic_intersection(
         if si_1 >= next_si_0 {
             #[cfg(feature = "debug_wire")]
             println!("both arc, remove between {} .. {}", next_si_0, si_1);
-            new_polyline.vertex_data.drain(next_si_0..si_1);
+            // Safe drain with bounds checking
+            if next_si_0 < new_polyline.vertex_data.len() && si_1 <= new_polyline.vertex_data.len() {
+                new_polyline.vertex_data.drain(next_si_0..si_1);
+            } else {
+                return Err(anyhow!("Invalid drain range for polyline."));
+            }
         }
     }
 

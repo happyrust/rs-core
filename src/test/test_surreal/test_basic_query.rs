@@ -421,3 +421,37 @@ async fn test_query_ancestor_of_type() -> anyhow::Result<()> {
     
     Ok(())
 }
+
+#[tokio::test]
+async fn test_get_named_attmap_with_uda() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    use crate::NamedAttrValue;
+    let refno = RefnoEnum::from("pe:24383_66563");
+    let attmap = rs_surreal::get_named_attmap_with_uda(refno).await?;
+    dbg!(&attmap);
+    
+    // Basic attributes should exist
+    assert!(attmap.contains_key("NAME"));
+    assert!(attmap.contains_key("REFNO"));
+    
+    // Check UDA values
+    // Get both default UDAs and overwritten UDAs
+    let uda_keys: Vec<_> = attmap.map.keys()
+        .filter(|k| k.starts_with(":"))
+        .collect();
+    assert!(!uda_keys.is_empty(), "Should contain UDA attributes");
+
+    // Verify UDA values are properly typed
+    // for key in uda_keys {
+    //     let value = attmap.map.get(key).unwrap();
+    //     match value {
+    //         NamedAttrValue::StringType(_) |
+    //         NamedAttrValue::IntegerType(_) |
+    //         // NamedAttrValue::FloatType(_) |
+    //         // NamedAttrValue::BooleanType(_) => {},
+    //         _ => panic!("Unexpected UDA value type for key {}", key)
+    //     }
+    // }
+
+    Ok(())
+}
