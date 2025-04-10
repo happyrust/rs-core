@@ -290,15 +290,17 @@ pub async fn get_refnos_belong_major(
         let Ok(mut response) = SUL_DB.query(sql).await else {
             continue;
         };
-        let zone_major: Vec<String> = response.take(0)?;
-        let site_major: Vec<String> = response.take(1)?;
-        if zone_major.is_empty() || site_major.is_empty() {
+        let zone_major: Vec<Option<String>> = response.take(0)?;
+        let site_major: Vec<Option<String>> = response.take(1)?;
+        if zone_major.is_empty() || site_major.is_empty() || zone_major[0].is_none() || site_major[0].is_none() {
             continue;
         };
+        let site_major = site_major[0].clone().unwrap();
+        let zone_major = zone_major[0].clone().unwrap();
         result.entry(*refno).or_insert(RefnoMajor {
             refno: refno.to_pdms_str(),
-            major: site_major[0].clone(),
-            major_classify: zone_major[0].clone(),
+            major: site_major,
+            major_classify: zone_major,
         });
     }
     Ok(result)
