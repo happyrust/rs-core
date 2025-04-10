@@ -59,6 +59,19 @@ pub async fn get_ancestor(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     Ok(s?)
 }
 
+///查询指定类型的第一个祖先节点
+#[cached(result = true)]
+pub async fn query_ancestor_of_type(refno: RefnoEnum, ancestor_type: String) -> anyhow::Result<Option<RefnoEnum>> {
+    let sql = format!(
+        "return fn::find_ancestor_type({}, '{}');",
+        refno.to_pe_key(),
+        ancestor_type
+    );
+    let mut response = SUL_DB.query(sql).await?;
+    let ancestor: Option<RefnoEnum> = response.take(0)?;
+    Ok(ancestor)
+}
+
 // #[cached(result = true)]
 pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(
@@ -491,7 +504,7 @@ pub(crate) async fn get_named_attmap_with_uda(
     let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let uda_kvs: Vec<surrealdb::sql::Object> =
         array.into_iter().map(|x| x.try_into().unwrap()).collect();
-    // dbg!(&uda_kvs);
+    dbg!(&uda_kvs);
     for map in uda_kvs {
         let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
         let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
@@ -507,7 +520,7 @@ pub(crate) async fn get_named_attmap_with_uda(
     let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let overwrite_kvs: Vec<surrealdb::sql::Object> =
         array.into_iter().map(|x| x.try_into().unwrap()).collect();
-    // dbg!(&overwrite_kvs);
+    dbg!(&overwrite_kvs);
     for map in overwrite_kvs {
         let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
         let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
