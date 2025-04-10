@@ -457,7 +457,7 @@ pub async fn query_yk_bran_belong_gy_valv_name(
     mut bran: RefU64,
     aios_mgr: &AiosDBMgr,
 ) -> anyhow::Result<Option<SPdmsElement>> {
-    for _ in 0..20 {
+    for _ in 0..5 {
         // 获取href
         let Some(href) = aios_mgr.get_foreign_attr(bran, "HREF").await? else {
             break;

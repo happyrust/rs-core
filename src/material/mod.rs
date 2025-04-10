@@ -285,8 +285,8 @@ pub async fn get_refnos_belong_major(
         };
         let zone = zone[0];
         // 找zone和site对应的专业
-        let sql = format!("select value major from type::thing('pdms_major',meta::id({}));
-        select value major from type::thing('pdms_major',meta::id((select value ->pe_owner.out.refno from {})[0][0]));", zone.to_pe_key(), zone.to_pe_key());
+        let sql = format!("select value fn::get_uda_value('/CNPEdivco',id) from {};
+        select value fn::get_uda_value('/CNPEspco',owner) from {};", zone.to_pe_key(), zone.to_pe_key());
         let Ok(mut response) = SUL_DB.query(sql).await else {
             continue;
         };
