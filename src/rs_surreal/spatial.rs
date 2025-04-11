@@ -203,15 +203,21 @@ pub async fn get_world_transform(refno: RefnoEnum) -> anyhow::Result<Option<Tran
 ///获得世界坐标系, 需要缓存数据，如果已经存在数据了，直接获取
 #[cached(result = true)]
 pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
-    let start = std::time::Instant::now();
+    #[cfg(feature = "profile")]
+    let start_ancestors = std::time::Instant::now();
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
-    let elapsed = start.elapsed();
-    println!("get_ancestor_attmaps took {:?}", elapsed);
+    #[cfg(feature = "profile")]
+    let elapsed_ancestors = start_ancestors.elapsed();
+    #[cfg(feature = "profile")]
+    println!("get_ancestor_attmaps took {:?}", elapsed_ancestors);
 
-    let start = std::time::Instant::now();
+    #[cfg(feature = "profile")]
+    let start_refnos = std::time::Instant::now();
     let ancestor_refnos = crate::query_ancestor_refnos(refno).await?;
-    let elapsed = start.elapsed();
-    println!("query_ancestor_refnos took {:?}", elapsed);
+    #[cfg(feature = "profile")]
+    let elapsed_refnos = start_refnos.elapsed();
+    #[cfg(feature = "profile")]
+    println!("query_ancestor_refnos took {:?}", elapsed_refnos);
     if ancestor_refnos.len() <= 1 {
         return Ok(Some(DMat4::IDENTITY));
     }
