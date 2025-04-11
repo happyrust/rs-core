@@ -51,15 +51,35 @@ pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>
 }
 
 ///查询到祖先节点列表
+/// 获取指定refno的所有祖先节点
+/// 
+/// # 参数
+/// * `refno` - 要查询的refno
+/// 
+/// # 返回值
+/// * `Vec<RefnoEnum>` - 祖先节点的refno列表
+/// 
+/// # 错误
+/// * 如果查询失败会返回错误
 #[cached(result = true)]
-pub async fn get_ancestor(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
+pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!("return fn::ancestor({}).refno;", refno.to_pe_key());
     let mut response = SUL_DB.query(sql).await?;
     let s = response.take::<Vec<RefnoEnum>>(0);
     Ok(s?)
 }
 
-///查询指定类型的第一个祖先节点
+/// 查询指定类型的第一个祖先节点
+/// 
+/// # 参数
+/// * `refno` - 要查询的refno
+/// * `ancestor_type` - 要查询的祖先节点类型
+/// 
+/// # 返回值
+/// * `Option<RefnoEnum>` - 如果找到则返回对应的祖先节点refno,否则返回None
+/// 
+/// # 错误
+/// * 如果查询失败会返回错误
 #[cached(result = true)]
 pub async fn query_ancestor_of_type(refno: RefnoEnum, ancestor_type: String) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(
@@ -73,6 +93,16 @@ pub async fn query_ancestor_of_type(refno: RefnoEnum, ancestor_type: String) -> 
 }
 
 // #[cached(result = true)]
+/// 通过名称查询refno
+/// 
+/// # 参数
+/// * `name` - 要查询的名称
+/// 
+/// # 返回值
+/// * `Option<RefnoEnum>` - 如果找到则返回对应的refno,否则返回None
+/// 
+/// # 错误
+/// * 如果查询失败会返回错误
 pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(
         r#"select value id from only pe where name="/{}" limit 1;"#,
@@ -84,6 +114,16 @@ pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> 
     Ok(s?)
 }
 
+/// 获取指定refno的所有祖先节点的类型名称
+/// 
+/// # 参数
+/// * `refno` - 要查询的refno
+/// 
+/// # 返回值
+/// * `Vec<String>` - 祖先节点的类型名称列表
+/// 
+/// # 错误
+/// * 如果查询失败会返回错误
 #[cached(result = true)]
 pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
     let sql = format!("return fn::ancestor({}).noun;", refno.to_pe_key());
@@ -93,7 +133,16 @@ pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>>
 }
 
 ///查询到祖先节点属性数据
-#[cached(result = true)]
+/// 查询指定refno的所有祖先节点的属性数据
+///
+/// # 参数
+/// * `refno` - 要查询的refno
+///
+/// # 返回值
+/// * `Vec<NamedAttrMap>` - 祖先节点的属性数据列表,包含每个节点的名称和属性映射
+///
+/// # 错误
+/// * 如果查询失败会返回错误
 pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
     let sql = format!("return fn::ancestor({}).refno.*;", refno.to_pe_key());
     let mut response = SUL_DB.query(sql).await?;
@@ -103,6 +152,13 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
     Ok(named_attmaps)
 }
 
+/// 获取指定refno的类型名称
+/// 
+/// # 参数
+/// * `refno` - 要查询的refno
+/// 
+/// # 返回值
+/// * `String` - 类型名称，如果未找到则返回"unset"
 #[cached(result = true)]
 pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
     let sql = format!("select value noun from only {} limit 1", refno.to_pe_key());
@@ -111,6 +167,13 @@ pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
     Ok(type_name.unwrap_or("unset".to_owned()))
 }
 
+/// 批量获取多个refno的类型名称
+/// 
+/// # 参数
+/// * `refnos` - refno迭代器
+/// 
+/// # 返回值
+/// * `Vec<String>` - 类型名称列表
 pub async fn get_type_names(
     refnos: impl Iterator<Item=&RefnoEnum>,
 ) -> anyhow::Result<Vec<String>> {
@@ -702,13 +765,13 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
     // crate::GET_WORLD_TRANSFORM.lock().await.cache_remove(&refno);
     crate::GET_WORLD_TRANSFORM.lock().await.cache_clear();
     crate::GET_WORLD_MAT4.lock().await.cache_clear();
-    GET_ANCESTOR.lock().await.cache_remove(&refno);
+    QUERY_ANCESTOR_REFNOS.lock().await.cache_remove(&refno);
     QUERY_DEEP_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_PE.lock().await.cache_remove(&refno);
     GET_TYPE_NAME.lock().await.cache_remove(&refno);
     GET_SIBLINGS.lock().await.cache_remove(&refno);
     GET_NAMED_ATTMAP.lock().await.cache_remove(&refno);
-    GET_ANCESTOR_ATTMAPS.lock().await.cache_remove(&refno);
+    // GET_ANCESTOR_ATTMAPS.lock().await.cache_remove(&refno);
     GET_NAMED_ATTMAP_WITH_UDA.lock().await.cache_remove(&refno);
     GET_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_CHILDREN_NAMED_ATTMAPS.lock().await.cache_remove(&refno);
