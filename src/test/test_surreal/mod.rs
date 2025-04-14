@@ -20,7 +20,7 @@ pub mod test_spatial;
 
 // pub mod test_room;
 
-// pub mod test_geom;
+pub mod test_geom;
 
 // pub mod test_uda;
 

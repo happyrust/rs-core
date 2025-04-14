@@ -166,7 +166,7 @@ pub async fn query_insts(
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
                 if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
                 booled_id != none as has_neg,
-                fn::ses_date(in.id) as date
+                dt as date
             from {inst_keys} where aabb.d != none
         "#
         )
@@ -179,11 +179,11 @@ pub async fn query_insts(
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
                 (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
                 booled_id != none as has_neg,
-                fn::ses_date(in.id) as date
+                dt as date
             from {inst_keys} where aabb.d != none "#
         )
     };
-    // println!("Query insts sql: {}", &sql);
+    println!("Query insts sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
     let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
     // dbg!(&geom_insts);
