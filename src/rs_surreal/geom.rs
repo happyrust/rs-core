@@ -185,7 +185,7 @@ async fn test_query_bran_children_point_map() {
 /// 查询参考号对应的点集
 pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPointMap>> {
     let sql = format!(
-        "select id as refno,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from {};",
+        "select id as refno,id->inst_relate.out.ptset[0]?:{{}} as ptset_map,noun as att_type from {};",
         refno.to_pe_key()
     );
     let mut response = SUL_DB.query(&sql).await?;
@@ -208,7 +208,7 @@ pub async fn query_refnos_point_map(
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>();
     let sql = format!(
-        "select id as refno,id->inst_relate.out.ptset[0] as ptset_map,noun as att_type from [{}];",
+        "select id as refno,id->inst_relate.out.ptset[0]?:{{}} as ptset_map,noun as att_type from [{}];",
         refnos.join(",")
     );
     let mut response = SUL_DB.query(&sql).await?;
