@@ -285,20 +285,22 @@ pub async fn get_refnos_belong_major(
         };
         let zone = zone[0];
         // 找zone和site对应的专业
-        let sql = format!("select value major from type::thing('pdms_major',meta::id({}));
-        select value major from type::thing('pdms_major',meta::id((select value ->pe_owner.out.refno from {})[0][0]));", zone.to_pe_key(), zone.to_pe_key());
+        let sql = format!("select value fn::get_uda_value(id,'/CNPEdivco') from {};
+        select value fn::get_uda_value(owner,'/CNPEspco') from {};", zone.to_pe_key(), zone.to_pe_key());
         let Ok(mut response) = SUL_DB.query(sql).await else {
             continue;
         };
-        let zone_major: Vec<String> = response.take(0)?;
-        let site_major: Vec<String> = response.take(1)?;
-        if zone_major.is_empty() || site_major.is_empty() {
+        let zone_major: Vec<Option<String>> = response.take(0)?;
+        let site_major: Vec<Option<String>> = response.take(1)?;
+        if zone_major.is_empty() || site_major.is_empty() || zone_major[0].is_none() || site_major[0].is_none() {
             continue;
         };
+        let site_major = site_major[0].clone().unwrap();
+        let zone_major = zone_major[0].clone().unwrap();
         result.entry(*refno).or_insert(RefnoMajor {
             refno: refno.to_pdms_str(),
-            major: site_major[0].clone(),
-            major_classify: zone_major[0].clone(),
+            major: site_major,
+            major_classify: zone_major,
         });
     }
     Ok(result)

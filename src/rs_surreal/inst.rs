@@ -137,6 +137,16 @@ pub struct GeomPtsQuery {
 }
 
 /// 根据最新refno查询最新insts
+/// 根据构件编号查询几何实例信息
+///
+/// # 参数
+///
+/// * `refnos` - 构件编号迭代器
+/// * `enable_holes` - 是否启用孔洞查询
+///
+/// # 返回值
+///
+/// 返回几何实例查询结果的向量
 pub async fn query_insts(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
     enable_holes: bool,
@@ -156,7 +166,7 @@ pub async fn query_insts(
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
                 if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
                 booled_id != none as has_neg,
-                fn::ses_date(in.id) as date
+                dt as date
             from {inst_keys} where aabb.d != none
         "#
         )
@@ -169,7 +179,7 @@ pub async fn query_insts(
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
                 (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
                 booled_id != none as has_neg,
-                fn::ses_date(in.id) as date
+                dt as date
             from {inst_keys} where aabb.d != none "#
         )
     };
@@ -237,6 +247,64 @@ pub async fn query_insts(
 //     Ok(geom_insts)
 // }
 
+/// 根据区域编号查询几何实例信息
+///
+/// # 参数
+///
+/// * `refnos` - 区域编号迭代器
+/// * `enable_holes` - 是否启用孔洞查询
+///
+/// # 返回值
+///
+/// 返回几何实例查询结果的向量
+pub async fn query_insts_by_zone(
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    enable_holes: bool,
+) -> anyhow::Result<Vec<GeomInstQuery>> {
+    let zone_refnos = refnos
+        .into_iter()
+        .map(|x| format!("ZONE:{}", x))
+        .collect::<Vec<_>>()
+        .join(",");
+
+    let sql = if enable_holes {
+        format!(
+            r#"
+            select
+                in.id as refno,
+                in.old_pe as old_refno,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
+                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                booled_id != none as has_neg,
+                fn::ses_date(in.id) as date
+            from inst_relate where zone_refno in [{}] and aabb.d != none
+            "#,
+            zone_refnos
+        )
+    } else {
+        format!(
+            r#"
+            select
+                in.id as refno,
+                in.old_pe as old_refno,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
+                (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
+                booled_id != none as has_neg,
+                fn::ses_date(in.id) as date
+            from inst_relate where zone_refno in [{}] and aabb.d != none
+            "#,
+            zone_refnos
+        )
+    };
+
+    println!("Query insts by zone sql: {}", &sql);
+
+    let mut response = SUL_DB.query(sql).await?;
+    let geom_insts: Vec<GeomInstQuery> = response.take(0)?;
+
+    Ok(geom_insts)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -283,6 +351,26 @@ mod tests {
         //     result.is_empty(),
         //     "Should return empty for non-existent refno"
         // );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_insts_by_zone() -> anyhow::Result<()> {
+        init_test_surreal().await;
+        
+        // Test case: Query instances by zone
+        let zone_refnos = vec!["24383_66457".into()];
+        let result = query_insts_by_zone(&zone_refnos, false).await?;
+        
+        // Verify the results
+        assert!(!result.is_empty(), "Should return instances for the zone");
+        
+        // Check the first instance has all required fields
+        if let Some(first_inst) = result.first() {
+            assert!(first_inst.refno.to_string().len() > 0, "Should have valid refno");
+            assert!(first_inst.insts.len() > 0, "Should have geometry instances");
+        }
 
         Ok(())
     }

@@ -203,8 +203,22 @@ pub async fn get_world_transform(refno: RefnoEnum) -> anyhow::Result<Option<Tran
 ///获得世界坐标系, 需要缓存数据，如果已经存在数据了，直接获取
 #[cached(result = true)]
 pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
+    #[cfg(feature = "profile")]
+    let start_ancestors = std::time::Instant::now();
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
-    if ancestors.len() <= 1 {
+    #[cfg(feature = "profile")]
+    let elapsed_ancestors = start_ancestors.elapsed();
+    #[cfg(feature = "profile")]
+    println!("get_ancestor_attmaps took {:?}", elapsed_ancestors);
+
+    #[cfg(feature = "profile")]
+    let start_refnos = std::time::Instant::now();
+    let ancestor_refnos = crate::query_ancestor_refnos(refno).await?;
+    #[cfg(feature = "profile")]
+    let elapsed_refnos = start_refnos.elapsed();
+    #[cfg(feature = "profile")]
+    println!("query_ancestor_refnos took {:?}", elapsed_refnos);
+    if ancestor_refnos.len() <= 1 {
         return Ok(Some(DMat4::IDENTITY));
     }
     ancestors.reverse();
@@ -221,7 +235,7 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
         let cur_type = att.get_type_str();
         // dbg!(cur_type);
         let owner_type = o_att.get_type_str();
-        owner = o_att.get_refno_or_default();
+        owner = att.get_owner();
         prev_mat4 = mat4;
 
         let mut pos = att.get_position().unwrap_or_default().as_dvec3();
@@ -439,7 +453,7 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                         dbg!(&param);
                     }
                 }
-                if let Ok(Some(own_param)) = query_pline(plin_owner, own_pos_line.into()).await {
+                if let Ok(Some(own_param)) = crate::query_pline(plin_owner, own_pos_line.into()).await {
                     plin_pos -= own_param.pt;
                     #[cfg(feature = "debug_spatial")]
                     {
@@ -529,6 +543,16 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
 
 ///查询形集PLIN的值，todo 需要做缓存优化
 // #[cached]
+/// 根据参考号和JUSL值查询形集PLIN的参数数据
+/// 
+/// # Arguments
+/// * `refno` - 参考号
+/// * `jusl` - JUSL值
+/// 
+/// # Returns
+/// * `Ok(Some(PlinParamData))` - 查询成功返回PLIN参数数据
+/// * `Ok(None)` - 未找到匹配的PLIN数据
+/// * `Err` - 查询过程中发生错误
 pub async fn query_pline(refno: RefnoEnum, jusl: String) -> anyhow::Result<Option<PlinParamData>> {
     let cat_att = crate::get_cat_attmap(refno).await.unwrap_or_default();
     let psref = cat_att

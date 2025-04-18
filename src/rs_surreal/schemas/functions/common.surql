@@ -327,8 +327,10 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.HREF;
-        return if $connect_bran != none {
+        return if $connect_bran != none && $connect_bran.noun == "BRAN" {
             return fn::last_child($connect_bran);
+        } else if $connect_bran != none {
+            return $connect_bran;
         } else {
             return none;
         };
@@ -379,8 +381,10 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.TREF;
-        return if $connect_bran != none {
+        return if $connect_bran != none && $connect_bran.noun == "BRAN" {
             return fn::first_child($connect_bran);
+        } else if $connect_bran != none {
+            return $connect_bran;
         } else {
             return none;
         };  

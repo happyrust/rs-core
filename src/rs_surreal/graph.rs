@@ -21,6 +21,7 @@ use std::fs::{File, OpenOptions};
 use std::str::FromStr;
 use surrealdb::method::Stats;
 use surrealdb::sql::Thing;
+use crate::query_ancestor_refnos;
 
 #[inline]
 #[cached(result = true)]
@@ -412,6 +413,17 @@ pub async fn query_multi_deep_children_filter_spre(
     Ok(result)
 }
 
+/// 查询指定refno的祖先节点中符合指定类型的节点
+/// 
+/// # 参数
+/// * `refno` - 要查询的refno
+/// * `nouns` - 要过滤的祖先节点类型列表
+/// 
+/// # 返回值
+/// * `Vec<RefnoEnum>` - 符合指定类型的祖先节点refno列表
+/// 
+/// # 错误
+/// * 如果查询失败会返回错误
 pub async fn query_filter_ancestors(
     refno: RefnoEnum,
     nouns: &[&str],
@@ -423,7 +435,7 @@ pub async fn query_filter_ancestors(
         .map(|s| format!("'{s}'"))
         .collect::<Vec<_>>()
         .join(",");
-    let ancestors = super::get_ancestor(refno).await?;
+    let ancestors = query_ancestor_refnos(refno).await?;
     let sql = format!(
         "select value refno from [{}] where refno.TYPE in [{nouns_str}] or refno.TYPEX in [{nouns_str}]",
         ancestors.iter().map(|x| x.to_pe_key()).join(","),

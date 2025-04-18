@@ -24,6 +24,8 @@ pub mod version;
 pub mod e3d_db;
 pub mod topology;
 
+pub mod operation;
+
 pub use cate::*;
 pub use e3d_db::*;
 pub use geom::*;

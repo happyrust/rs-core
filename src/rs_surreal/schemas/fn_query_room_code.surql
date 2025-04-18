@@ -1,22 +1,22 @@
 REMOVE FUNCTION fn::room_code;
 DEFINE FUNCTION fn::room_code($pe:record) {
     let $noun = $pe.refno.TYPE;
-    let $uda_room = (select value v from type::thing('ATT_UDA', record::id($pe)).udas where u.NAME='/ROOM_NO');
+    let $uda_room = [fn::get_uda_value($pe,'/ROOM_NO')];
     return
     // EQUI可能有两层
-    if ($noun == 'EQUI'|| $noun == 'STRU' || $noun == 'REST') && array::len($uda_room) == 0 {
+    if ($noun == 'EQUI'|| $noun == 'STRU' || $noun == 'REST') && $uda_room == [NONE] {
         return array::distinct(
             (array::flatten([
         array::complement((select value (<-room_relate.room_num)[0] from array::flatten($pe<-pe_owner.in.id)),[NONE]),
         array::complement((select value (<-room_relate.room_num)[0] from array::flatten($pe<-pe_owner.in<-pe_owner.in.id)),[NONE])
         ])))
-    } else if  $noun == 'BRAN' && array::len($uda_room) == 0 {
+    } else if  $noun == 'BRAN' && $uda_room == [NONE] {
         return array::complement((select value (<-room_relate.room_num)[0] from $pe<-pe_owner.in.id), [none])
-    } else if $noun == 'SUPPO' {
+    } else if $noun == 'SUPPO' || $noun == 'ZONE' {
         return array::distinct(
             (array::flatten( array::complement((select value (<-room_relate.room_num)[0] from array::flatten($pe<-pe_owner.in<-pe_owner.in<-pe_owner.in.id)),[NONE])
         )))
-    } else if array::len($uda_room) == 0 {
+    } else if $uda_room == [NONE] {
         return select value (<-room_relate.room_num)[0] from $pe
     } else {
         return $uda_room

@@ -14,7 +14,7 @@ use serde_json::json;
 ///新的属性数据结构
 #[derive(
     Serialize,
-    // Eq, 
+    // Eq,
     PartialEq,
     // Deserialize,
     Clone,
@@ -48,8 +48,9 @@ pub enum NamedAttrValue {
 
 use serde::de::{self, EnumAccess, MapAccess, SeqAccess, Visitor};
 use std::fmt;
+use std::str::FromStr;
 use std::vec::Vec;
-use surrealdb::sql::Thing;
+use surrealdb::sql::{Array, Thing};
 
 use super::RefnoEnum;
 
@@ -129,8 +130,8 @@ impl<'de> Deserialize<'de> for NamedAttrValue {
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-                where
-                    A: SeqAccess<'de>,
+            where
+                A: SeqAccess<'de>,
             {
                 let mut vec = Vec::new();
                 let mut first_elem_type = None;
@@ -153,20 +154,28 @@ impl<'de> Deserialize<'de> for NamedAttrValue {
 
                 match first_elem_type {
                     Some("f64") => Ok(NamedAttrValue::F32VecType(
-                        vec.into_iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect()
+                        vec.into_iter()
+                            .filter_map(|v| v.as_f64().map(|f| f as f32))
+                            .collect(),
                     )),
                     Some("String") => Ok(NamedAttrValue::StringArrayType(
-                        vec.into_iter().filter_map(|v| v.as_str().map(String::from)).collect()
+                        vec.into_iter()
+                            .filter_map(|v| v.as_str().map(String::from))
+                            .collect(),
                     )),
                     Some("bool") => Ok(NamedAttrValue::BoolArrayType(
-                        vec.into_iter().filter_map(|v| v.as_bool()).collect()
+                        vec.into_iter().filter_map(|v| v.as_bool()).collect(),
                     )),
                     Some("i32") => Ok(NamedAttrValue::IntArrayType(
-                        vec.into_iter().filter_map(|v| v.as_i64().map(|i| i as i32)).collect()
+                        vec.into_iter()
+                            .filter_map(|v| v.as_i64().map(|i| i as i32))
+                            .collect(),
                     )),
                     // RefU64Array 可能需要特殊处理，这里仅作为示例
                     Some("Object") => Ok(NamedAttrValue::RefU64Array(
-                        vec.into_iter().filter_map(|v| RefnoEnum::deserialize(v).ok()).collect()
+                        vec.into_iter()
+                            .filter_map(|v| RefnoEnum::deserialize(v).ok())
+                            .collect(),
                     )),
                     _ => Err(de::Error::custom("Unsupported array type")),
                 }
@@ -245,31 +254,47 @@ impl From<(&str, surrealdb::sql::Value)> for NamedAttrValue {
 
                 "REF" => NamedAttrValue::RefU64Array(
                     val.into_iter()
-                        .map(|x| {
-                            RefnoEnum::from(x.record().unwrap())
-                        })
-                        .collect::<Vec<_>>()
+                        .map(|x| RefnoEnum::from(x.to_string().as_str()))
+                        .collect::<Vec<_>>(),
                 ),
 
                 _ => NamedAttrValue::InvalidType,
             },
             surrealdb::sql::Value::Thing(val) => {
-                if let surrealdb::sql::Id::Array(_) = &val.id{
+                if let surrealdb::sql::Id::Array(_) = &val.id {
                     NamedAttrValue::RefnoEnumType(RefnoEnum::from(val))
-                }else{
+                } else {
                     NamedAttrValue::RefU64Type(RefU64::from(val))
                 }
-            },
+            }
             surrealdb::sql::Value::Object(val) => {
-                if let Some((key, v)) = val.into_iter().next(){
+                if let Some((key, v)) = val.into_iter().next() {
                     (tn, v).into()
-                }else{
+                } else {
                     NamedAttrValue::InvalidType
                 }
-
             }
             _ => NamedAttrValue::InvalidType,
         }
+    }
+}
+
+#[test]
+fn test_from_surreal() {
+    let sql = vec!["17463_6376".to_string(),"17463_6379".to_string()];
+    let value = surrealdb::sql::Value::Array(Array::from(sql));
+    if let surrealdb::sql::Value::Array(value) = value {
+        let r = value.into_iter()
+            .map(|x| match x.clone().record() {
+                None => {
+                    RefnoEnum::from(x.to_string().as_str())
+                }
+                Some(id) => {
+                    RefnoEnum::from(id)
+                }
+            } )
+            .collect::<Vec<_>>();
+        dbg!(&r);
     }
 }
 

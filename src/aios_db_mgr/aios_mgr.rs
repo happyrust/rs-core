@@ -240,15 +240,14 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {
         let sql = format!(
-            "
-        return fn::room_code({})[0];
-        ",
+            "return fn::room_code({})[0];",
             refno.to_pe_key()
         );
         let mut response = SUL_DB.query(sql).await?;
         Ok(response.take(0)?)
     }
 }
+
 
 impl AiosDBMgr {
     ///获得默认的连接字符串

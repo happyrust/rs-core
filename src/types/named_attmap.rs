@@ -955,6 +955,10 @@ impl NamedAttrMap {
         self.get_f32(key).unwrap_or_default()
     }
 
+    /// 获取位置信息
+    /// 
+    /// # 返回值
+    /// * `Option<Vec3>` - 如果存在POS属性，返回对应的Vec3位置向量；如果不存在POS但存在POSS，则返回POSS位置向量；否则返回None
     #[inline]
     pub fn get_position(&self) -> Option<Vec3> {
         if let Some(pos) = self.get_f32_vec("POS") {

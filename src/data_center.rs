@@ -47,14 +47,26 @@ impl DataCenterProjectWithRelations {
 pub struct DataCenterInstance {
     #[serde(rename = "objectModelCode")]
     pub object_model_code: String,
-    // #[serde(rename = "projectCode")]
-    // pub project_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "serialize_option_string_with_default")]
     pub operate: Option<String>,
     pub version: String,
     pub attributes: Vec<DataCenterAttr>,
+}
+
+fn serialize_option_string_with_default<S>(
+    value: &Option<String>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+{
+    match value {
+        Some(v) => serializer.serialize_str(v),
+        None => serializer.serialize_str("draft"), // default value
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -64,6 +76,8 @@ pub struct DataCenterRelations {
     pub object_model_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
+    #[serde(serialize_with = "serialize_option_string_with_default")]
+    pub operate: Option<String>,
     #[serde(rename = "startObjectCode")]
     pub start_object_code: String,
     #[serde(rename = "startInstanceCode")]
@@ -81,6 +95,7 @@ impl DataCenterRelations {
             version: start_instance.version.clone(),
             object_model_code: "RELAPOPO".to_string(),
             instance_code: format!("RELAPOPO {}", start_instance.instance_code),
+            operate: None,
             start_object_code: start_instance.object_model_code.clone(),
             start_instance_code: start_instance.instance_code.clone(),
             end_object_code: end_instance.object_model_code.clone(),
@@ -609,4 +624,18 @@ impl DataCenterRecord {
             "datacenter_handle", sql
         )
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct DataCenterPlatResponse {
+    #[serde(rename = "Success")]
+    pub success: bool,
+    #[serde(rename = "Result")]
+    pub result: String,
+    #[serde(rename = "KeyValue")]
+    pub key_value: String,
+    #[serde(rename = "LoginUrl")]
+    pub login_url: String,
+    #[serde(rename = "StatusCode")]
+    pub status_code: u32,
 }

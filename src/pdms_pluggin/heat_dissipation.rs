@@ -16,6 +16,17 @@ pub struct InstPointMap {
     pub ptset_map: BTreeMap<String, CateAxisParam>,
 }
 
+
+#[test]
+fn test_de_ser() {
+    let input = r#"{
+    "att_type":"WELD",
+    "ptset_map": None,
+    "refno":"pe:17414_27235"
+}"#;
+    let r = serde_json::from_str::<InstPointMap>(input).unwrap();
+    dbg!(&r);
+}
 // #[serde_as]
 // #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 // pub struct InstPointVec {

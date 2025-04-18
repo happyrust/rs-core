@@ -19,15 +19,16 @@ async fn test_query_inst_refnos() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_instance() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
+    use crate::RefnoEnum;
 
-    let refno: RefU64 = "16389_8737".into();
+    // let refno: RefU64 = "16389_8737".into();
     // let insts = rs_surreal::query_history_insts(&[(refno, )])).await.unwrap();
     // dbg!(insts);
 
-    // let refno: RefU64 = "16389_8737".into();
-    // let insts = rs_surreal::query_insts(&[refno])
-    //     .await
-    //     .unwrap();
+    let refno: RefnoEnum = "17496_497034".into();
+    let insts = rs_surreal::query_insts(&[refno], true)
+        .await
+        .unwrap();
     // dbg!(insts);
     Ok(())
 }
