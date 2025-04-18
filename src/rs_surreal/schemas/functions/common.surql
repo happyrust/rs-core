@@ -384,7 +384,7 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
        none
     };
     let $tubi_name = return if $tubi_refno == none {
-                ''
+        none
     } else { string::concat('ileave tube of ',  fn::default_full_name($tubi_refno)) };
     return if $p != none {   //如果存在上一个节点
         //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
@@ -462,7 +462,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
        none
     };
     let $tubi_name = return if $tubi_refno == none {
-       ''
+       none
    } else { string::concat('ileave tube of ',  fn::default_full_name($pe)) };
     return if $p != none {
         let $tubi_spref = return if $tubi_refno == none {

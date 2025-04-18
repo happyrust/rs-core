@@ -9,6 +9,7 @@ pub struct PrevConnection {
     pub id: RefU64,
     pub prev_full_name: String,
     pub prev: Option<RefU64>,
+    pub tubi_name: Option<String>,
     pub tubi_refno: Option<RefU64>,
     pub tubi_spref: Option<String>,
 }
@@ -19,6 +20,7 @@ pub struct NextConnection {
     pub id: RefU64,
     pub next_full_name: String,
     pub next: Option<RefU64>,
+    pub tubi_name: Option<String>,
     pub tubi_refno: Option<RefU64>,
     pub tubi_spref: Option<String>,
 }
