@@ -323,7 +323,6 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
         return none;
     };
     let $p = fn::prev_pe($pe);
-    return $p;
     return if $p != none {
         return $p;
     } else {
@@ -339,17 +338,9 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
 remove function fn::prev_connect_pe_data;
 DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     let $p = fn::prev_connect_pe($pe);
-    // let $q = fn::prev_pe($pe);
-    return if $p != none {
-        //不是branch下的第一个节点
-        let $tubi_refno = return if fn::has_arrive_tubi($pe) {
-            $pe.owner
-        } else if fn::has_leave_tubi($p) {
-            //是branch的最后一个节点，需要判断关联的branch有tubi
-            $p
-        } else {
-            none
-        };
+    //如果有到达这个元件的直段，则返回这个直段的leave
+    let $tubi_refno = fn::query_tubi_from($pe);
+    return if $p != none {   //如果存在上一个节点
         //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
         let $tubi_spref = return if $tubi_refno == $pe.owner {
             $pe.owner.refno.HSTU.name
@@ -363,8 +354,8 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
             tubi_refno: $tubi_refno,
             tubi_spref: $tubi_spref
         };
-    } else {
-        return if fn::has_arrive_tubi($pe) {
+    } else {  //如果不存在上一个节点
+        return if $tubi_refno != none {
             return {
                 id: $pe,
                 prev_full_name: fn::default_full_name($pe.owner),
@@ -399,17 +390,8 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
 remove function fn::next_connect_pe_data;
 DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     let $p = fn::next_connect_pe($pe);
-    // let $q = fn::next_pe($pe);
+    let $tubi_refno = fn::query_tubi_to($pe);
     return if $p != none {
-        //不是branch下的最后一个节点
-        let $tubi_refno = return if fn::has_leave_tubi($pe) {
-            $pe
-        } else if fn::has_leave_tubi($pe.owner.refno.TREF) {
-            //是branch的最后一个节点，需要判断关联的branch有tubi
-            $pe.owner.refno.TREF
-        } else {
-            none
-        };
         //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
         let $tubi_spref = return if $tubi_refno == $pe.owner.refno.TREF {
             $pe.owner.refno.TREF.refno.HSTU.name
@@ -424,7 +406,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
             tubi_spref: $tubi_spref
         };
     } else {
-        return if fn::has_leave_tubi($pe) {
+        return if $tubi_refno != none {
             return {
                 id: $pe,
                 next_full_name: fn::default_full_name($pe),
@@ -438,14 +420,14 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     };
 };
 
-remove function fn::has_leave_tubi;
-DEFINE FUNCTION fn::has_leave_tubi($pe:record) {
-    return (select id from only $pe.owner->tubi_relate where leave=$pe limit 1) != none;
+remove function fn::query_tubi_to;
+DEFINE FUNCTION fn::query_tubi_to($pe:record) {
+    return select arrive from only $pe.owner->tubi_relate where leave=$pe limit 1;
 };
 
-remove function fn::has_arrive_tubi;
-DEFINE FUNCTION fn::has_arrive_tubi($pe:record) {
-    return (select id from only $pe.owner->tubi_relate where arrive=$pe limit 1) != none;
+remove function fn::query_tubi_from;
+DEFINE FUNCTION fn::query_tubi_from($pe:record) {
+    return select leave from only $pe.owner->tubi_relate where arrive=$pe limit 1;
 };
 
 remove function fn::prev_type;
