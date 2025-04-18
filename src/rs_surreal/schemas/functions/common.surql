@@ -328,8 +328,10 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.HREF;
-        return if $connect_bran != none {
+        return if $connect_bran != none && $connect_bran.noun == "BRAN" {
             return fn::last_child($connect_bran);
+        } else if $connect_bran != none {
+            return $connect_bran;
         } else {
             return none;
         };
@@ -339,7 +341,6 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
 remove function fn::prev_connect_pe_data;
 DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     let $p = fn::prev_connect_pe($pe);
-    // let $q = fn::prev_pe($pe);
     return if $p != none {
         //不是branch下的第一个节点
         let $tubi_refno = return if fn::has_arrive_tubi($pe) {
@@ -388,8 +389,10 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.TREF;
-        return if $connect_bran != none {
+        return if $connect_bran != none && $connect_bran.noun == "BRAN" {
             return fn::first_child($connect_bran);
+        } else if $connect_bran != none {
+            return $connect_bran;
         } else {
             return none;
         };  
