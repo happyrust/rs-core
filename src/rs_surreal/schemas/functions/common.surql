@@ -323,7 +323,6 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
         return none;
     };
     let $p = fn::prev_pe($pe);
-    return $p;
     return if $p != none {
         return $p;
     } else {
