@@ -4379,9 +4379,9 @@
         "hash": 662987,
         "offset": 0,
         "default_val": {
-          "ElementType": ""
+          "RefU64Array": []
         },
-        "att_type": "ELEMENT"
+        "att_type": "RefU64Vec"
       }
     },
     "929272": {
@@ -100372,9 +100372,9 @@
         "hash": 662987,
         "offset": 0,
         "default_val": {
-          "ElementType": ""
+          "RefU64Array": []
         },
-        "att_type": "ELEMENT"
+        "att_type": "RefU64Vec"
       },
       "CCORRE": {
         "name": "CCORRE",
