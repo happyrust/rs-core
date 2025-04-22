@@ -612,9 +612,9 @@ define function fn::get_flan_bolt_list($pe:record) {
     if $spcos == NONE { return NONE; };
     let $filter_spcos = select value id from $spcos where string::contains(name,$blot_size);
     if array::len($filter_spcos) == 0 { return NONE; };
-    let $mat = select value id.refno.DETR.refno.RTEX from $filter_spcos;
+    let $mat = select name , id.refno.DETR.refno.RTEX as rtext from $filter_spcos;
     return {
-        'bltf':$bltf,
+        'bltf':$bltf[0],
         'mat':$mat
     }
 };
