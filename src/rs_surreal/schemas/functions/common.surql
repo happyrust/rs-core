@@ -597,4 +597,24 @@ DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
             where REFNO.dbnum in $dbnos
             order by o
         ));
-}
+};
+
+remove function fn::get_flan_bolt_list;
+define function fn::get_flan_bolt_list($pe:record) {
+    if $pe.refno.SPRE == NONE { return NONE; };
+    let $bltf = select value refno.SPRE.refno.CATR.refno.BLRF[0].name from $pe;
+    if $bltf == NONE { return NONE; };
+    let $bltf_split = array::last(string::split($bltf[0],'-')?:[]);
+    let $blot_size = string::concat($bltf_split,'W')?:'';
+    let $ancestor = fn::find_ancestor_type($pe.refno.SPRE?:pe:0_0,'SPEC').refno.BSPE;
+    if $ancestor == NONE { return NONE; };
+    let $spcos = fn::find_deep_children_type($ancestor,'SPCO');
+    if $spcos == NONE { return NONE; };
+    let $filter_spcos = select value id from $spcos where string::contains(name,$blot_size);
+    if array::len($filter_spcos) == 0 { return NONE; };
+    let $mat = select name , id.refno.DETR.refno.RTEX as rtext from $filter_spcos;
+    return {
+        'bltf':$bltf[0],
+        'mat':$mat
+    }
+};
