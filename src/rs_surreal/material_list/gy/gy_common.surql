@@ -41,24 +41,20 @@ define function fn::bran_len($pe:record) {
 //计算管道元件的长度
 remove function fn::bran_comp_len;
 define function fn::bran_comp_len($pe:record) {
-    return if $pe.owner.noun != 'BRAN' {
-        return 0.0;
-    } else {
-        return if $pe.noun == 'ELBO' || $pe.noun == 'BEND' {
-            return fn::elbo_len($pe);
-        } else if $pe.noun == 'TEE' {
-            return fn::tee_len($pe);
-        } else {
-            let $ptset = ($pe->inst_relate.out.ptset)[0];
-            let $l = <string> $pe.refno.LEAV;
-            let $a = <string> $pe.refno.ARRI;
-            let $start_pt = $ptset[$l].pt;
-            let $end_pt = $ptset[$a].pt;
-            return if $start_pt == none || $end_pt == none {
-                0.0;
-            } else {
-                vector::distance::euclidean($start_pt, $end_pt);
-            }
-        };
-    }
+   return if $pe.noun == 'ELBO' || $pe.noun == 'BEND' {
+       return fn::elbo_len($pe);
+   } else if $pe.noun == 'TEE' {
+       return fn::tee_len($pe);
+   } else {
+       let $ptset = ($pe->inst_relate.out.ptset)[0];
+       let $l = <string> $pe.refno.LEAV;
+       let $a = <string> $pe.refno.ARRI;
+       let $start_pt = $ptset[$l].pt;
+       let $end_pt = $ptset[$a].pt;
+       return if $start_pt == none || $end_pt == none {
+           0.0;
+       } else {
+           vector::distance::euclidean($start_pt, $end_pt);
+       }
+   };
 };
