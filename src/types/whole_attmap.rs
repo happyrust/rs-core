@@ -7,10 +7,33 @@ use dashmap::DashMap;
 use glam::i32;
 use serde_derive::{Deserialize, Serialize};
 
+
+/// 显式属性的结构体
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExplicitAttr {
+    /// 属性名称
+    pub name: String,
+    /// 属性值
+    pub value: NamedAttrValue,
+    /// 是否为UDA属性
+    pub is_uda: bool,
+    /// 哈希值
+    pub hash_val: i32,
+}
+
+/// 完整的属性映射结构体
+/// 
+/// 包含两个主要字段:
+/// - `attmap`: 常规的命名属性映射
+/// - `explicit_attmap`: 显式的命名属性映射
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct WholeAttMap {
+    /// 常规的命名属性映射
     pub attmap: NamedAttrMap,
+    /// 显式的命名属性映射
     pub explicit_attmap: NamedAttrMap,
+    /// 显式的UDA属性映射
+    pub uda_atts: Vec<ExplicitAttr>,
 }
 
 impl WholeAttMap {
@@ -21,6 +44,14 @@ impl WholeAttMap {
 
     pub fn att_map_mut(&mut self) -> &mut NamedAttrMap{
         &mut self.attmap
+    }
+
+    pub fn explicit_attmap(&self) -> &NamedAttrMap{
+        &self.explicit_attmap
+    }
+
+    pub fn uda_atts(&self) -> &Vec<ExplicitAttr>{
+        &self.uda_atts
     }
 
     pub fn refine(mut self, info_map: &DashMap<String, AttrInfo>) -> Self {

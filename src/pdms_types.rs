@@ -1164,9 +1164,10 @@ pub enum EleOperation {
     #[default]
     Add = 0,
     Modified = 1,
-    Deleted = 2,
-    Duplicate = 3,
-    None = 4,
+    GeometryModified = 2,
+    Deleted = 3,
+    Duplicate = 4,
+    None = 5,
 }
 
 impl EleOperation {
@@ -1174,9 +1175,10 @@ impl EleOperation {
         match &self {
             EleOperation::Add => 0,
             EleOperation::Modified => 1,
-            EleOperation::Deleted => 2,
-            EleOperation::Duplicate => 3,
-            EleOperation::None => 4,
+            EleOperation::GeometryModified => 2,
+            EleOperation::Deleted => 3,
+            EleOperation::Duplicate => 4,
+            EleOperation::None => 5,
         }
     }
 }
@@ -1198,7 +1200,7 @@ impl ToString for EleOperation {
         match &self {
             Self::None => "未知".to_string(),
             EleOperation::Add => "增加".to_string(),
-            EleOperation::Modified => "修改".to_string(),
+            EleOperation::Modified | EleOperation::GeometryModified => "修改".to_string(),
             EleOperation::Deleted => "删除".to_string(),
             EleOperation::Duplicate => "复制".to_string(),
         }
