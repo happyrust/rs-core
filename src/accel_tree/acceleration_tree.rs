@@ -106,7 +106,7 @@ pub struct QueryRay {
     pub toi: f32,
     pub solid: bool,
     pub min_dist: Cell<f32>,
-    pub min_refnos: RefCell<HashSet<RefnoEnum>>,
+    pub min_refnos: HashSet<RefnoEnum>,
 }
 
 impl QueryRay {
@@ -117,7 +117,7 @@ impl QueryRay {
             toi: 10_0000.0,
             // found: Cell::new(false),
             min_dist: Cell::new(f32::MAX),
-            min_refnos: RefCell::new(HashSet::default()),
+            min_refnos: HashSet::default(),
             solid,
         }
     }
@@ -153,10 +153,10 @@ impl rstar::SelectionFunction<RStarBoundingBox> for &QueryRay {
                 self.min_dist.set(ray_inter.time_of_impact);
 
                 //找到更近的，清空之前的
-                if abs_diff_ne!(ray_inter.time_of_impact, self.toi) {
-                    self.min_refnos.borrow_mut().clear()
-                }
-                self.min_refnos.borrow_mut().insert(bbox.refno.into());
+                // if abs_diff_ne!(ray_inter.time_of_impact, self.toi) {
+                //     self.min_refnos.borrow_mut().clear()
+                // }
+                // self.min_refnos.borrow_mut().insert(bbox.refno.into());
                 // println!("found: {}", bbox.refno);
                 // dbg!(ray_inter.toi);
                 return true;
@@ -298,7 +298,7 @@ impl AccelerationTree {
             .tree
             .locate_with_selection_function(&ray)
             .collect::<Vec<_>>();
-        let refnos = ray.min_refnos.borrow();
+        let refnos = &ray.min_refnos;
         if refnos.is_empty() {
             return Ok(None);
         }
