@@ -48,6 +48,11 @@ pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
     "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA",
 ];
 
+///基本体几何体相关的属性
+pub const PRIMITIVE_GEO_ATTR_NAMES: [&'static str; 8] = [
+    "XLEN", "YLEN", "ZLEN", "XRAD", "YRAD", "ZRAD", "XANG", "YANG",
+];
+
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
 pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
@@ -65,6 +70,46 @@ pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
     "CNODE", "SCTN", "SCOJ", "PAVE", "SUBE", "SEVE", "SUBJ", "PLOO", "RNODE", "PJOI", "SELJ",
     "STWALL", "WALL", "PALJ", "TUBI", "FLOOR", "CMFI", "PANE", "PFIT", "GPART", "PRTELE", "NOZZ",
     "SPCO", "ELCONN",
+];
+
+///使用元件库的几何体相关的属性, todo 继续完善
+pub const CATA_GEO_ATTR_NAMES: [&'static str; 4] = [
+    "SPRE", "CATR", "ZDIS", "DESP"
+];
+
+///方位的相关属性, todo 继续完善
+pub const TRANSFORM_ATTR_NAMES: [&'static str; 4] = [
+    "POS", "ORI", "POSS", "POSE"
+];
+
+///管道的类型
+pub const PIPING_NOUN_NAMES: [&'static str; 26] = [
+    "WELD",
+    "ELBO",
+    "VALV", 
+    "FLAN",
+    "GASK",
+    "ATTA",
+    "OLET",
+    "FBLI",
+    "REDU",
+    "TEE",
+    "BEND",
+    "INST",
+    "TRNS",
+    "DAMP",
+    "STRT",
+    "TAPE",
+    "THRE",
+    "UNIO",
+    "BRCO",
+    "OFST",
+    "CAP",
+    "PCOM",
+    "FTUB",
+    "STIF",
+    "SILE",
+    "COUP"
 ];
 
 ///负实体基本体的种类
@@ -146,6 +191,7 @@ pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
     "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
     "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
 ];
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub enum SjusType {

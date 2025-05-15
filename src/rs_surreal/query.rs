@@ -147,7 +147,7 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
     let sql = format!("return fn::ancestor({}).refno.*;", refno.to_pe_key());
     let mut response = SUL_DB.query(sql).await?;
     let o: surrealdb::Value = response.take(0)?;
-    let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
+    let os = o.into_inner().into_array().unwrap();
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
     Ok(named_attmaps)
 }
@@ -564,12 +564,12 @@ pub(crate) async fn get_named_attmap_with_uda(
     let mut named_attmap: NamedAttrMap = o.into_inner().into();
     // dbg!(&named_attmap);
     let o: surrealdb::Value = response.take(1)?;
-    let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
+    let array = o.into_inner().into_array().unwrap();
     let uda_kvs: Vec<surrealdb::sql::Object> =
-        array.into_iter().map(|x| x.try_into().unwrap()).collect();
+        array.into_iter().map(|x| x.into_object().unwrap()).collect();
     for map in uda_kvs {
-        let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
-        let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
+        let uname: String = map.get("u").unwrap().clone().as_string();
+        let utype: String = map.get("t").unwrap().clone().as_string();
         if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }
@@ -579,12 +579,12 @@ pub(crate) async fn get_named_attmap_with_uda(
         named_attmap.insert(uname, att_value);
     }
     let o: surrealdb::Value = response.take(2)?;
-    let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
+    let array = o.into_inner().into_array().unwrap();
     let overwrite_kvs: Vec<surrealdb::sql::Object> =
-        array.into_iter().map(|x| x.try_into().unwrap()).collect();
+        array.into_iter().map(|x| x.into_object().unwrap()).collect();
     for map in overwrite_kvs {
-        let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
-        let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
+        let uname: String = map.get("u").unwrap().clone().as_string();
+        let utype: String = map.get("t").unwrap().clone().as_string();
         if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }
@@ -640,7 +640,7 @@ pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<
     let mut response = SUL_DB.query(sql).await?;
     let o: surrealdb::Value = response.take(0)?;
     // dbg!(&o);
-    let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
+    let os = o.into_inner().into_array().unwrap();
     // dbg!(&os);
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
     Ok(named_attmaps)
@@ -722,7 +722,7 @@ pub async fn query_filter_children_atts(
     };
     let mut response = SUL_DB.query(sql).await?;
     let value: surrealdb::Value = response.take(0)?;
-    let atts: Vec<surrealdb::sql::Value> = value.into_inner().try_into().unwrap();
+    let atts = value.into_inner().into_array().unwrap();
     Ok(atts.into_iter().map(|x| x.into()).collect())
 }
 

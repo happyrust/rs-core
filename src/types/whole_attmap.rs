@@ -50,8 +50,16 @@ impl WholeAttMap {
         &self.explicit_attmap
     }
 
+    pub fn explicit_attmap_mut(&mut self) -> &mut NamedAttrMap{
+        &mut self.explicit_attmap
+    }
+
     pub fn uda_atts(&self) -> &Vec<ExplicitAttr>{
         &self.uda_atts
+    }
+
+    pub fn uda_atts_mut(&mut self) -> &mut Vec<ExplicitAttr>{
+        &mut self.uda_atts
     }
 
     pub fn refine(mut self, info_map: &DashMap<String, AttrInfo>) -> Self {

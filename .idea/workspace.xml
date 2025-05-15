@@ -26,10 +26,16 @@
     </configurations>
   </component>
   <component name="CargoProjects">
-    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$">
+        <enabledFeature name="default" />
+      </package>
+    </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 在`options.rs`中新增了`exclude_db_nums`字段，用于指定需要排除的数据库编号列表。&#10;(2) 在`query.rs`中新增了`get_default_full_name`函数，用于获取管道元素的默认全名。&#10;(3) 新增了`topology.rs`文件，包含多个与管道连接相关的结构体和异步函数。&#10;(4) 在`e3d_db.rs`中修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。&#10;(5) 在`schemas/functions/common.surql`中更新了多个SurrealDB函数，包括`prev_connect_pe`、`next(6) 在`material_list/common.surql`中移除了部分重复的SurrealDB函数定义。&#10;(7) 在`wire.rs`中增加了对`pos_poly`顶点数量的检查，并删除了生成特殊线段的旧代码。" />
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 新增了显式属性结构体 `ExplicitAttr`，包含名称、值、UDA标志和哈希值字段。  &#10;(2) 在 `WholeAttMap` 中新增了 `uda_atts` 字段，用于存储显式UDA属性映射。  &#10;(3) 为 `WholeAttMap` 增加了 `explicit_attmap` 和 `uda_atts` 的 getter 方法。  &#10;(4) 修改了 `">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -38,7 +44,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -146,6 +152,7 @@
     &quot;Cargo.Test prim_geo::wire::test_gen_occ_reverse_circle.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test prim_geo::wire::test_occ_wire_hole.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test rs_surreal::spatial::test_cal_ydir_ori.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test rs_surreal::topology::tests::test_get_connections.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test ssc_setting::test_set_pbs_fixed_node.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_expression::test_parse_axis_expression.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test test::test_expression::test_parse_complex_expression.executor&quot;: &quot;Run&quot;,
@@ -295,13 +302,22 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Build">
+  <component name="RunManager" selected="Cargo.Test rs_surreal::topology::tests::test_get_connections">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="WORKING_DIRECTORY" value="./" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SCRIPT_NAME" value="cargo-clif test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_functions" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/schemas/functions" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run_functions.bat" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
@@ -323,8 +339,9 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Run aios_core" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="run --package aios_core --bin aios_core" />
+    <configuration name="Test rs_surreal::topology::tests::test_get_connections" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --package aios_core --lib rs_surreal::topology::tests::test_get_connections -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -343,23 +360,6 @@
     <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="buildProfileId" value="test" />
       <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap_WELD" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap_WELD -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -425,22 +425,25 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Batch.cargo-clif test_query_transform" />
+      <item itemvalue="Batch.run_functions" />
       <item itemvalue="Cargo.Build" />
-      <item itemvalue="Cargo.check" />
-      <item itemvalue="Cargo.Run aios_core" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap_WELD" />
+      <item itemvalue="Cargo.Test rs_surreal::topology::tests::test_get_connections" />
       <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
       <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
+      <item itemvalue="Cargo.check" />
       <item itemvalue="Shell Script.run_functions.sh" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test rs_surreal::topology::tests::test_get_connections" />
+        <item itemvalue="Batch.run_functions" />
         <item itemvalue="Shell Script.run_functions.sh" />
       </list>
     </recent_temporary>
   </component>
   <component name="RustProjectSettings">
-    <option name="toolchainHomeDirectory" value="$PROJECT_DIR$/../../../.cargo/bin" />
+    <option name="toolchainHomeDirectory" value="D:/.cargo/bin" />
   </component>
   <component name="RustfmtProjectSettings">
     <option name="useRustfmt" value="true" />
@@ -990,6 +993,14 @@
       <workItem from="1743520185891" duration="783000" />
       <workItem from="1743568215832" duration="1183000" />
       <workItem from="1744016572520" duration="75000" />
+      <workItem from="1745107824160" duration="49000" />
+      <workItem from="1745480481594" duration="603000" />
+      <workItem from="1745483781758" duration="633000" />
+      <workItem from="1745535956228" duration="2702000" />
+      <workItem from="1745572538468" duration="384000" />
+      <workItem from="1745572939519" duration="1206000" />
+      <workItem from="1745585960054" duration="6000" />
+      <workItem from="1745601717607" duration="135000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1334,7 +1345,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="417" />
+    <option name="localTasksCounter" value="422" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1391,13 +1402,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="wip 增量更新的版本管理" />
-    <MESSAGE value="wip 数据状态管理" />
-    <MESSAGE value="update to bevy 0.15" />
-    <MESSAGE value="WIP 版本管理的查询处理" />
-    <MESSAGE value="添加注释等等" />
-    <MESSAGE value="fix get_uda_value" />
-    <MESSAGE value="move get_uda_value to common sql" />
     <MESSAGE value="add query pane_size" />
     <MESSAGE value="add init_demo_test_surreal" />
     <MESSAGE value="fix import surreal" />
@@ -1416,7 +1420,14 @@
     <MESSAGE value="(1) 增加了对 ATT_UDA 类型属性的备份逻辑，单独处理其相关引用数据的更新和存储。  &#10;(2) 修改了 tubi_relate 查询的格式，优化代码可读性。" />
     <MESSAGE value="(1) 修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。" />
     <MESSAGE value="(1) 在`options.rs`中新增了`exclude_db_nums`字段，用于指定需要排除的数据库编号列表。&#10;(2) 在`query.rs`中新增了`get_default_full_name`函数，用于获取管道元素的默认全名。&#10;(3) 新增了`topology.rs`文件，包含多个与管道连接相关的结构体和异步函数。&#10;(4) 在`e3d_db.rs`中修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。&#10;(5) 在`schemas/functions/common.surql`中更新了多个SurrealDB函数，包括`prev_connect_pe`、`next" />
-    <option name="LAST_COMMIT_MESSAGE" value="(1) 在`options.rs`中新增了`exclude_db_nums`字段，用于指定需要排除的数据库编号列表。&#10;(2) 在`query.rs`中新增了`get_default_full_name`函数，用于获取管道元素的默认全名。&#10;(3) 新增了`topology.rs`文件，包含多个与管道连接相关的结构体和异步函数。&#10;(4) 在`e3d_db.rs`中修改了SQL查询语句，新增`value`关键字以正确提取`sesno`字段的值。&#10;(5) 在`schemas/functions/common.surql`中更新了多个SurrealDB函数，包括`prev_connect_pe`、`next" />
+    <MESSAGE value="(1) 修改了`fn::prev_connect_pe_data`和`fn::next_connect_pe_data`函数，简化了逻辑并移除了不必要的代码。&#10;(2) 增加了`fn::query_tubi_to`和`fn::query_tubi_from`函数，替换了原有的`fn::has_leave_tubi`和`fn::has_arrive_tubi`函数。" />
+    <MESSAGE value="(1) 添加了`fn::first_child_exclude_type`、`fn::last_child_exclude_type`、`fn::prev_pe_exclude_type`和`fn::next_pe_exclude_type`函数，以排除特定类型的子节点。&#10;(2) 更新了`fn::prev_connect_pe`和`fn::next_connect_pe`函数，使用新的排除类型函数。&#10;(3) 在`fn::prev_connect_pe_data`和`fn::next_connect_pe_data" />
+    <MESSAGE value="(1) 添加了`fn::first_child_exclude_type`、`fn::last_child_exclude_type`、`fn::prev_pe_exclude_type`和`fn::next_pe_exclude_type`函数，以排除特定类型的子节点。&#10;(2) 更新了`fn::prev_connect_pe`和`fn::next_connect_pe`函数，使用新的排除类型函数。&#10;(3) 在`fn::prev_connect_pe_data`和`fn::next_connect_pe_datafn::query_bran_first_tubi`函数，用于查询分支的第一个直段。" />
+    <MESSAGE value="(1) 在`topology.rs`中为两个结构体增加了`pub tubi_name: Option&lt;String&gt;`字段。&#10;(2) 在`common.surql`中修改了`tubi_name`的赋值逻辑，将" />
+    <MESSAGE value="fix run in async context" />
+    <MESSAGE value="(1) 删除了`mod.rs`文件中的多余空行，优化代码结构。  &#10;(2) 新增了`test_different_dbs`模块，用于测试不同数据库的支持。  &#10;(3) 升级了`dashmap`依赖版本至`7.0.0-rc2`，并保留`serde`特性。  &#10;(4) 增加了对`duckdb`库的依赖，版本为`1.2.2`。" />
+    <MESSAGE value="(1) 新增了显式属性结构体 `ExplicitAttr`，包含名称、值、UDA标志和哈希值字段。  &#10;(2) 在 `WholeAttMap` 中新增了 `uda_atts` 字段，用于存储显式UDA属性映射。  &#10;(3) 为 `WholeAttMap` 增加了 `explicit_attmap` 和 `uda_atts` 的 getter 方法。  &#10;(4) 修改了 `" />
+    <option name="LAST_COMMIT_MESSAGE" value="(1) 新增了显式属性结构体 `ExplicitAttr`，包含名称、值、UDA标志和哈希值字段。  &#10;(2) 在 `WholeAttMap` 中新增了 `uda_atts` 字段，用于存储显式UDA属性映射。  &#10;(3) 为 `WholeAttMap` 增加了 `explicit_attmap` 和 `uda_atts` 的 getter 方法。  &#10;(4) 修改了 `" />
     <option name="NON_MODAL_COMMIT_POSTPONE_SLOW_CHECKS" value="false" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
