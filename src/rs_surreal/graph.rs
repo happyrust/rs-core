@@ -146,8 +146,7 @@ pub async fn query_filter_deep_children_atts(
         match SUL_DB.query(&sql).with_stats().await {
             Ok(mut response) => {
                 if let Some((stats, Ok(value))) = response.take::<surrealdb::Value>(0) {
-                    // let result: Vec<surrealdb::sql::Value> = value.into_inner().into_array();
-                    let result = value.into_inner().into_array().unwrap();
+                    let result: Vec<surrealdb::sql::Value> = value.into_inner().try_into().unwrap();
                     // dbg!(result.len());
                     atts.extend(result.into_iter().map(|x| x.into()));
                 }

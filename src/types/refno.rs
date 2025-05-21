@@ -837,8 +837,8 @@ impl From<Thing> for RefnoEnum {
                 .get(1)
                 .cloned()
                 .unwrap_or_default()
-                .into_int()
-                .unwrap_or_default() as _;
+                .try_into()
+                .unwrap_or_default();
             Self::SesRef(RefnoSesno::new(refno.into(), sesno))
         } else {
             Self::Refno(RefU64::from_str(&value.id.to_raw()).unwrap_or_default())
