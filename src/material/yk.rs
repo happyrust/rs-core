@@ -13,7 +13,7 @@ use crate::pe::SPdmsElement;
 use crate::SUL_DB;
 use crate::{
     get_pe, insert_into_table_with_chunks, query_filter_ancestors, query_filter_deep_children,
-    RefU64,
+    RefU64,RefnoEnum
 };
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -452,39 +452,63 @@ pub async fn get_yk_equi_list_material(
     Ok(data)
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+struct BelongGyValvResponse {
+    pub id: RefnoEnum,
+    pub noun: String,
+    pub name: String,
+    pub site:bool,
+    pub valv:Vec<String>,
+}
+
 /// 查找仪控管段所属工艺管道的根阀
 pub async fn query_yk_bran_belong_gy_valv_name(
     mut bran: RefU64,
     aios_mgr: &AiosDBMgr,
-) -> anyhow::Result<Option<SPdmsElement>> {
+) -> anyhow::Result<Option<(String,String)>> {
     for _ in 0..5 {
-        // 获取href
-        let Some(href) = aios_mgr.get_foreign_attr(bran, "HREF").await? else {
-            break;
-        };
-        let Some(href_refno) = href.get_refno() else {
-            break;
-        };
-        // 判断 href 是 bran还是 valv
-        match href.get_type_str() {
-            // 如果是bran就继续想上找href
+        let mut sql = format!("select id,noun ,name?:'' as name, string::contains(fn::find_ancestor_type(id,'SITE').name?:'','PIPE') as site,
+                    <-pe_owner.in.filter(|$x| $x.noun == 'VALV').name as valv from {}.refno.HREF", bran.to_pe_key());
+        let mut resp = SUL_DB.query(&sql).await?;
+        let r = resp.take::<Vec<BelongGyValvResponse>>(0)?;
+        // 没有填href，返回的就是空
+        if r.is_empty() { return Ok(None); };
+        let r = r[0].clone();
+        // 判断 href 是 bran还是 tee等管件
+        match r.noun.as_str() {
+            // 如果是bran,判断是否属于工艺专业，若属于，看该bran下是否有valv,有则返回valv的name
             "BRAN" => {
-                bran = href_refno.refno();
-            }
-            // 如果是valv，判断该valv是否属于工艺专业，如果属于则返回valv，如果不属于则返回None
-            "VALV" => {
-                let major = get_refnos_belong_major(&vec![href_refno.into()]).await?;
-                let Some(major) = major.get(&href_refno.into()) else {
-                    break;
-                };
-                if major.major == "T".to_string() {
-                    return get_pe(href_refno).await;
+                if r.site {
+                    if !r.valv.is_empty() {
+                        return Ok(Some((r.noun.clone(),r.valv[0].clone())));
+                    } else {
+                        // 如果是工艺管道，则返回PIPE的nmae，赋值到 仪表管编号
+                        let owner_name = aios_mgr.get_name(r.id.refno()).await?;
+                        return Ok(Some(("PIPE".to_string(),owner_name)));
+                    }
                 } else {
-                    return Ok(None);
+                    // 不是工艺专业，则继续找href
+                    bran = r.id.refno();
                 }
             }
-            &_ => {
-                break;
+            "NOZZ" => {
+                if r.site {
+                    // 如果是NOZZ，则返回EQUI的nmae，赋值到 仪表管编号
+                    let owner_name = aios_mgr.get_name(r.id.refno()).await?;
+                    return Ok(Some(("EQUI".to_string(),owner_name)));
+                } else {
+                    // 不是工艺专业，则继续找href
+                    bran = r.id.refno();
+                }
+            }
+            // 如果是tee等管件，判断是否是工艺专业，如果是则返回None
+            _ => {
+                if r.site {
+                    return Ok(None);
+                } else {
+                    // 不是工艺专业，则继续找href
+                    bran = r.id.refno();
+                }
             }
         }
     }
