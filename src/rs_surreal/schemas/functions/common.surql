@@ -360,11 +360,9 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.HREF;
-        return if $connect_bran != none && $connect_bran.noun == "BRAN" {
-            return fn::last_child($connect_bran);
-        } else if $connect_bran != none {
-            return $connect_bran;
-        } else {
+        return if $connect_bran != none {
+            return fn::last_child($connect_bran)?:$connect_bran;
+        }  else {
             return none;
         };
     };
@@ -395,17 +393,6 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
         } else {
             $tubi_refno.refno.LSTU.name
         };
-         return if $tubi_refno != none {
-                    $tubi_refno.refno.LSTU.name
-                } else if fn::query_tubi_to($pe.owner.refno.TREF) != none {
-                    // 返回是否有bran开启的直段
-                    $pe.owner.refno.TREF
-                } else {
-                    none
-                };
-        let $tubi_name = return if $tubi_refno == none {
-                    ''
-                 } else { string::concat('ileave tube of ',  fn::default_full_name($tubi_refno)) };
         return {
             id: $pe,
             prev_full_name: fn::default_full_name($p),
@@ -440,10 +427,8 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.TREF;
-        return if $connect_bran != none && $connect_bran.noun == "BRAN" {
-            return fn::first_child($connect_bran);
-        } else if $connect_bran != none {
-            return $connect_bran;
+        return if $connect_bran != none {
+            return fn::first_child($connect_bran)?:$connect_bran;
         } else {
             return none;
         };  
