@@ -1,27 +1,20 @@
+use std::io::Read;
+use std::path::PathBuf;
 use crate::{NamedAttrMap, RefU64, SurlValue, SUL_DB};
 use cached::proc_macro::cached;
 
 pub async fn define_common_functions() -> anyhow::Result<()> {
-    SUL_DB
-        .query(include_str!("schemas/functions/common.surql"))
-        .await?;
-    SUL_DB
-        .query(include_str!("material_list/common.surql"))
-        .await?;
-    SUL_DB
-        .query(include_str!("material_list/gy/gy_common.surql"))
-        .await?;
-    #[cfg(not(feature = "hh"))]
-    SUL_DB
-        .query(include_str!("schemas/fn_query_room_code.surql"))
-        .await?;
-    #[cfg(feature = "hh")]
-    SUL_DB.query(include_str!("schemas/fn_query_room_code_hh.surql")).await?;
-    SUL_DB
-        .query(include_str!("schemas/get_room_nodes.surql"))
-        .await?;
-    SUL_DB
-        .query(include_str!("schemas/status/init_status.surql"))
-        .await?;
+    let target_dir = std::fs::read_dir("resource/surreal")?.into_iter()
+        .map(|entry| {
+            let entry = entry.unwrap();
+            entry.path()
+        }).collect::<Vec<PathBuf>>();
+    for file in target_dir {
+        println!("载入surreal {}",file.file_name().unwrap().to_str().unwrap().to_string());
+        let mut file = std::fs::File::open(file)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+        SUL_DB.query(content).await?;
+    }
     Ok(())
 }
