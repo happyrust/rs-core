@@ -16,6 +16,9 @@ pub async fn get_spre_material_code(refno: RefU64, foreign_name: &str, aios_mgr:
 ///
 /// 例如 "/VMB1/CPP00102:P,50" -> "CPP00102"
 pub fn split_spre_material_code(spre_name: &str) -> Option<String> {
+    if spre_name.contains(" OF ") {
+        return None;
+    }
     let spre_name_split = spre_name.split("/").collect::<Vec<_>>();
     if spre_name_split.len() < 3 {
         return None;

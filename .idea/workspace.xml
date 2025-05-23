@@ -33,15 +33,14 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 修改了calamine依赖来源，改为从官方GitHub仓库获取。  &#10;(2) 删除了calamine的版本号限制配置。  &#10;(3) 移除了针对calamine依赖的注释代码。">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 移除了calamine依赖中指定的branch参数，默认使用主分支。">
+      <change afterPath="$PROJECT_DIR$/src/types/refno_backup.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/graph.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/graph.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/functions/common.surql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attmap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attmap.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/named_attvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/named_attvalue.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/refno.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/refno.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/aios_db_mgr/aios_mgr.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/datacenter_query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/datacenter_query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/function.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/function.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code.surql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code_hh.surql" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/schemas/fn_query_room_code_hh.surql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,7 +50,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -132,6 +131,7 @@
     "Cargo.Run aios_core.executor": "Run",
     "Cargo.Test expression::parse_axis::test_parse_1.executor": "Run",
     "Cargo.Test expression::parse_axis::test_parse_dir_expr_max.executor": "Run",
+    "Cargo.Test get_noun_hash.executor": "Run",
     "Cargo.Test noun_graph::tests::test_is_owner.executor": "Run",
     "Cargo.Test orm::BOX::test_reflect.executor": "Run",
     "Cargo.Test orm::diff_data::test_query_diff.executor": "Run",
@@ -255,7 +255,7 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "test-2.1",
-    "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core/src/rs_surreal/schemas/functions",
+    "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core/src/types",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -279,11 +279,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\types" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas\functions" />
       <recent name="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs" />
       <recent name="E:\RustProject\new\new-crates\aios-core" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas" />
-      <recent name="E:\RustProject\new\new-crates\aios-core\assets" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\expression" />
@@ -309,7 +309,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Batch.run">
+  <component name="RunManager" selected="Cargo.Test get_noun_hash">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -322,7 +322,7 @@
     <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas\functions" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/schemas/functions" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SCRIPT_NAME" value="run.bat" />
       <option name="PARAMETERS" value="" />
@@ -355,9 +355,9 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test rs_surreal::topology::tests::test_get_connections" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="buildProfileId" value="dev" />
-      <option name="command" value="test --package aios_core --lib rs_surreal::topology::tests::test_get_connections -- --exact" />
+    <configuration name="Test get_noun_hash" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --package aios_core --bin aios_core get_noun_hash -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -373,8 +373,9 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_FIT -- --exact" />
+    <configuration name="Test rs_surreal::topology::tests::test_get_connections" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="dev" />
+      <option name="command" value="test --package aios_core --lib rs_surreal::topology::tests::test_get_connections -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -428,12 +429,13 @@
       <item itemvalue="Batch.run_functions" />
       <item itemvalue="Cargo.Build" />
       <item itemvalue="Cargo.check" />
+      <item itemvalue="Cargo.Test get_noun_hash" />
       <item itemvalue="Cargo.Test rs_surreal::topology::tests::test_get_connections" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
       <item itemvalue="Shell Script.run_functions.sh" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test get_noun_hash" />
         <item itemvalue="Batch.run" />
         <item itemvalue="Cargo.Test rs_surreal::topology::tests::test_get_connections" />
         <item itemvalue="Batch.run_functions" />
@@ -1007,6 +1009,14 @@
       <workItem from="1747666561420" duration="554000" />
       <workItem from="1747795105363" duration="733000" />
       <workItem from="1747813859313" duration="1714000" />
+      <workItem from="1747827045353" duration="90000" />
+      <workItem from="1747827179999" duration="836000" />
+      <workItem from="1747828204868" duration="592000" />
+      <workItem from="1747831541362" duration="774000" />
+      <workItem from="1747832355749" duration="4164000" />
+      <workItem from="1747904236331" duration="579000" />
+      <workItem from="1747917296773" duration="1428000" />
+      <workItem from="1747930276613" duration="2247000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>

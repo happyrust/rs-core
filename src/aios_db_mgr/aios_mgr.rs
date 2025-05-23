@@ -246,6 +246,7 @@ impl PdmsDataInterface for AiosDBMgr {
         let mut response = SUL_DB.query(sql).await?;
         Ok(response.take(0)?)
     }
+
 }
 
 
