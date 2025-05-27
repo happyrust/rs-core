@@ -4,10 +4,7 @@ use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
-use crate::{
-    get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda,
-    get_next_prev, get_pe, get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB,
-};
+use crate::{get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB, get_world_transform};
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
@@ -219,15 +216,16 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_world_transform(&self, refno: RefU64) -> anyhow::Result<Option<Transform>> {
-        let sql = format!(
-            "
-        (select (->inst_relate.world_trans.d)[0] as length from {})[0].length;
-        ",
-            refno.to_pe_key()
-        );
-        let mut response = SUL_DB.query(sql).await?;
-        let transform: Option<Transform> = response.take(0)?;
-        Ok(transform)
+        // let sql = format!(
+        //     "
+        // (select (->inst_relate.world_trans.d)[0] as length from {})[0].length;
+        // ",
+        //     refno.to_pe_key()
+        // );
+        // let mut response = SUL_DB.query(sql).await?;
+        // let transform: Option<Transform> = response.take(0)?;
+        get_world_transform(refno.into()).await
+        // Ok(transform)
     }
 
     async fn get_prev(&self, refno: RefU64) -> anyhow::Result<RefU64> {
@@ -297,12 +295,12 @@ impl AiosDBMgr {
 
     #[cfg(feature = "sql")]
     /// 获取include_projects不同项目对应的pool
-    pub async fn get_project_pools(&self) -> anyhow::Result<HashMap<String,Pool<MySql>>> {
+    pub async fn get_project_pools(&self) -> anyhow::Result<HashMap<String, Pool<MySql>>> {
         let connection_str = Self::default_mysql_conn_str();
         let mut map = HashMap::new();
         for project in &self.db_option.included_projects {
             let url = format!("{connection_str}/{}", project);
-            let pool:Pool<MySql> = PoolOptions::new()
+            let pool: Pool<MySql> = PoolOptions::new()
                 .max_connections(500)
                 .acquire_timeout(Duration::from_secs(10 * 60))
                 .connect(&url)
