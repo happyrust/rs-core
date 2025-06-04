@@ -241,11 +241,25 @@ impl PdmsDataInterface for AiosDBMgr {
             "return fn::room_code({})[0];",
             refno.to_pe_key()
         );
-        let mut response = SUL_DB.query(sql).await?;
-        Ok(response.take(0)?)
+        prev_connect_pe_data        let mut response = SUL_DB.query(&sql).await?;
+        let r: Option<String> = response.take(0)?;
+        match r {
+            Some(room_code) => {
+                if room_code.is_empty() {
+                    dbg!("未查找到对应房间号");
+                    dbg!(&sql);
+                } else {
+                    return Ok(Some(room_code));
+                }
+            }
+            None => {
+                dbg!("未查找到对应房间号");
+                dbg!(&sql);
+            }
+        }
+        Ok(None)
     }
 }
-
 
 impl AiosDBMgr {
     ///获得默认的连接字符串
