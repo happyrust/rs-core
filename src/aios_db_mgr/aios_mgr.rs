@@ -241,7 +241,7 @@ impl PdmsDataInterface for AiosDBMgr {
             "return fn::room_code({})[0];",
             refno.to_pe_key()
         );
-        prev_connect_pe_data        let mut response = SUL_DB.query(&sql).await?;
+        let mut response = SUL_DB.query(&sql).await?;
         let r: Option<String> = response.take(0)?;
         match r {
             Some(room_code) => {
