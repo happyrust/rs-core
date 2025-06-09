@@ -1,3 +1,13 @@
+//! 查询模块 - 提供数据库查询功能
+//!
+//! 这个模块包含了所有与 SurrealDB 数据库交互的查询函数。
+//! 主要功能包括：
+//! - 基础元素查询
+//! - 层次结构查询
+//! - 属性数据查询
+//! - 历史数据查询
+//! - 批量操作
+
 use super::query_mdb_db_nums;
 use crate::consts::MAX_INSERT_LENGTH;
 use crate::parsed_data::CateAxisParam;
@@ -731,12 +741,12 @@ pub async fn query_filter_children_atts(
 pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleTreeNode>> {
     let sql = format!(
         r#"
-        select  in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, record::id(in->pe_owner.id[0])[1] as order,
+        select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, record::id(in->pe_owner.id[0])[1] as order,
                 in.op?:0 as op,
                 array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                 array::len(in<-pe_owner) as children_count,
                 in.status_code as status_code
-            from {}<-pe_owner where record::exists(in.id) and !in.deleted
+            from {}<-pe_owner where in.id!=none and record::exists(in.id) and !in.deleted
         "#,
         refno.to_pe_key()
     );
