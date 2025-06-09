@@ -6,10 +6,10 @@ pub mod mdb;
 pub mod query;
 
 // 新的重构模块
-pub mod query_builder;
-pub mod error_handler;
-pub mod cache_manager;
-pub mod queries;
+// pub mod query_builder;
+// pub mod error_handler;
+// pub mod cache_manager;
+// pub mod queries;
 
 pub mod cate;
 pub mod resolve;

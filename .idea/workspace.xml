@@ -33,11 +33,10 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 移除了calamine依赖中指定的branch参数，默认使用主分支。">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 新增 `src/types/refno_backup.rs` 文件，包含 `RefU64`、`RefI32Tuple`、`RefnoSesno` 和 `RefnoEnum` 等多个结构体及其相关实现。  &#10;(2) 提供多种序列化与反序列化方法，包括对 `serde` 和 `sea-orm` 的支持。  &#10;(3) 实现了扩展功能，如参考号格式转换、URL 生成、哈希操作等实用函数。  &#10;(4) 增强了跨类型间的互相转换支持，包括从字符串、结构体等转换为 `RefU64` 或其他枚举类型。">
+      <change afterPath="$PROJECT_DIR$/pe_elements.duckdb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/consts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/consts.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,7 +46,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -112,168 +111,168 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Batch.cargo-clif test_query_transform.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run (1).executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run_defines (1).executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run_defines.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run_dq.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run_functions.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.run_tool_defines.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.未命名.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run aios_core.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test expression::parse_axis::test_parse_1.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test expression::parse_axis::test_parse_dir_expr_max.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test get_noun_hash.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test noun_graph::tests::test_is_owner.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::BOX::test_reflect.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::diff_data::test_query_diff.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::pdms_element::test_ele_reflect.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::sql::test_do_op_reflect_sql.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test orm::test_do_op_reflect.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test petgraph::test_serde.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_check_wire.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_check_wire_17496_254047.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_check_wire_25688_45261.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_check_wire_25688_72092.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_complex_1.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_complex_2.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_complex_circe.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_complex_half_circle.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_complex_half_circle_1.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_convex_hull.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_circle.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_circle_part.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_cire.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_concave.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_concave_big.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_cut_circle_big_corner_2.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_gen_occ_reverse_circle.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test prim_geo::wire::test_occ_wire_hole.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test rs_surreal::spatial::test_cal_ydir_ori.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test rs_surreal::topology::tests::test_get_connections.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test ssc_setting::test_set_pbs_fixed_node.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_expression::test_parse_axis_expression.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_expression::test_parse_complex_expression.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_expression::test_parse_expression.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_material::test_gen_ms.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_material::test_perform_multiplication_with_none.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_parse_dir::test_1.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_parse_dir::test_parse_dir.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_parse_dir::test_parse_to_dir.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_refno::test_des_refno.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_rotation::test_rotation_complex.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_schema::test_gen_att_schema.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_schema::test_gen_schema_from_json.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_shape::test_gen_wire_1.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_shape::test_gen_wire_2.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_spatial_calculation::test_query_point_room.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_sql::test_table::test_create_table.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_build_spre_relates.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_attmap.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_attmap_WELD.executor&quot;: &quot;Debug&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_index_of_parent.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_basic_query::test_query_ptset.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_geom::test_query_inst_refnos.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_geom::test_query_instance.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_graph::test_petgraph_search.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_mdb::test_get_world_sites.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_query_fuzzy::test_query_deep_children.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_query_fuzzy::test_query_same_refnos.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_query_group::test_query_deep_children_spre.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_room::test_save_room_data.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::get_cal_ori.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori_by_line_axis.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_CMFI.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_ENDATU.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING (1).executor&quot;: &quot;Debug&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING (2).executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PJOI.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PNODE.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SBFI.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SCOJ.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SCTN.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SNODE.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_STWALL.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_TMPL.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_surreal::test_uda::test_query_uda_name.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_sync2::test_gen_att_type_structs.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_sync2::test_parse.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_1.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_24381_154722.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_34950.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45293.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45314.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45331.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_45339.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_gen_wire_25688_71674.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_occ_wire_overlap_tolerance.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_wire_17496_171545.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test test::test_wire::test_wire_17496_269393.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test tool::math_tool::test_cal_end_points.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test tool::math_tool::test_convert_to_dir_string.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.check.executor&quot;: &quot;Run&quot;,
-    &quot;Project.color&quot;: &quot;011c4a&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;Shell Script.run_functions.sh.executor&quot;: &quot;Run&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;62f4359e&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/types&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/room/query.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/rs_surreal/cate.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/rs_surreal/pbs.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
-    &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
-    &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
-    &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Batch.cargo-clif test_query_transform.executor": "Run",
+    "Batch.run (1).executor": "Run",
+    "Batch.run.executor": "Run",
+    "Batch.run_defines (1).executor": "Run",
+    "Batch.run_defines.executor": "Run",
+    "Batch.run_dq.executor": "Run",
+    "Batch.run_functions.executor": "Run",
+    "Batch.run_tool_defines.executor": "Run",
+    "Batch.未命名.executor": "Run",
+    "Cargo.Run aios_core.executor": "Run",
+    "Cargo.Test expression::parse_axis::test_parse_1.executor": "Run",
+    "Cargo.Test expression::parse_axis::test_parse_dir_expr_max.executor": "Run",
+    "Cargo.Test get_noun_hash.executor": "Run",
+    "Cargo.Test noun_graph::tests::test_is_owner.executor": "Run",
+    "Cargo.Test orm::BOX::test_reflect.executor": "Run",
+    "Cargo.Test orm::diff_data::test_query_diff.executor": "Run",
+    "Cargo.Test orm::pdms_element::test_ele_reflect.executor": "Run",
+    "Cargo.Test orm::sql::test_do_op_reflect_sql.executor": "Run",
+    "Cargo.Test orm::test_do_op_reflect.executor": "Run",
+    "Cargo.Test petgraph::test_serde.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_check_wire.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_check_wire_17496_254047.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_check_wire_25688_45261.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_check_wire_25688_72092.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_1.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_2.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_circe.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_half_circle.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_complex_half_circle_1.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_convex_hull.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_circle.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_circle.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_circle_part.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_cire.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_concave.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_concave_big.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_cut_circle_big_corner_2.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_gen_occ_reverse_circle.executor": "Run",
+    "Cargo.Test prim_geo::wire::test_occ_wire_hole.executor": "Run",
+    "Cargo.Test rs_surreal::spatial::test_cal_ydir_ori.executor": "Run",
+    "Cargo.Test rs_surreal::topology::tests::test_get_connections.executor": "Run",
+    "Cargo.Test ssc_setting::test_set_pbs_fixed_node.executor": "Run",
+    "Cargo.Test test::test_expression::test_parse_axis_expression.executor": "Run",
+    "Cargo.Test test::test_expression::test_parse_complex_expression.executor": "Run",
+    "Cargo.Test test::test_expression::test_parse_expression.executor": "Run",
+    "Cargo.Test test::test_material::test_gen_ms.executor": "Run",
+    "Cargo.Test test::test_material::test_perform_multiplication_with_none.executor": "Run",
+    "Cargo.Test test::test_parse_dir::test_1.executor": "Run",
+    "Cargo.Test test::test_parse_dir::test_parse_dir.executor": "Run",
+    "Cargo.Test test::test_parse_dir::test_parse_to_dir.executor": "Run",
+    "Cargo.Test test::test_refno::test_des_refno.executor": "Run",
+    "Cargo.Test test::test_rotation::test_rotation_complex.executor": "Run",
+    "Cargo.Test test::test_schema::test_gen_att_schema.executor": "Run",
+    "Cargo.Test test::test_schema::test_gen_schema_from_json.executor": "Run",
+    "Cargo.Test test::test_shape::test_gen_wire_1.executor": "Run",
+    "Cargo.Test test::test_shape::test_gen_wire_2.executor": "Run",
+    "Cargo.Test test::test_spatial_calculation::test_query_point_room.executor": "Run",
+    "Cargo.Test test::test_sql::test_insert::test_gen_insert_sql.executor": "Run",
+    "Cargo.Test test::test_sql::test_table::test_create_table.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_build_spre_relates.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_ancestor_by_refno.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_att_by_refno.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_attmap.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_attmap_WELD.executor": "Debug",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_cata.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_children_att.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_custom_bend.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_index_of_parent.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_pe_by_refno.executor": "Run",
+    "Cargo.Test test::test_surreal::test_basic_query::test_query_ptset.executor": "Run",
+    "Cargo.Test test::test_surreal::test_geom::test_query_inst_refnos.executor": "Run",
+    "Cargo.Test test::test_surreal::test_geom::test_query_instance.executor": "Run",
+    "Cargo.Test test::test_surreal::test_geom::test_query_la_points.executor": "Run",
+    "Cargo.Test test::test_surreal::test_graph::test_petgraph_search.executor": "Run",
+    "Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_inst.executor": "Run",
+    "Cargo.Test test::test_surreal::test_graph::test_query_refnos_without_insted.executor": "Run",
+    "Cargo.Test test::test_surreal::test_mdb::test_get_world.executor": "Run",
+    "Cargo.Test test::test_surreal::test_mdb::test_get_world_sites.executor": "Run",
+    "Cargo.Test test::test_surreal::test_pbs::test_query_pbs_children.executor": "Run",
+    "Cargo.Test test::test_surreal::test_query_fuzzy::test_query_deep_children.executor": "Run",
+    "Cargo.Test test::test_surreal::test_query_fuzzy::test_query_same_refnos.executor": "Run",
+    "Cargo.Test test::test_surreal::test_query_group::test_group_cata_hash.executor": "Run",
+    "Cargo.Test test::test_surreal::test_query_group::test_query_deep_children_spre.executor": "Run",
+    "Cargo.Test test::test_surreal::test_room::test_save_room_data.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_query_fixing.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_query_transform.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::get_cal_ori.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_cal_ori_by_line_axis.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_CMFI.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_ENDATU.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING (1).executor": "Debug",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING (2).executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIXING.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_GENSEC.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_JLDATU.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PJOI.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PLDATU.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_PNODE.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SBFI.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SCOJ.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SCTN.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SJOI.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_SNODE.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_STWALL.executor": "Run",
+    "Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_TMPL.executor": "Run",
+    "Cargo.Test test::test_surreal::test_uda::test_query_uda_name.executor": "Run",
+    "Cargo.Test test::test_sync2::test_gen_att_type_structs.executor": "Run",
+    "Cargo.Test test::test_sync2::test_parse.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_1.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_24381_154722.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_25688_34950.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_25688_45293.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_25688_45314.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_25688_45331.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_25688_45339.executor": "Run",
+    "Cargo.Test test::test_wire::test_gen_wire_25688_71674.executor": "Run",
+    "Cargo.Test test::test_wire::test_occ_wire_overlap_tolerance.executor": "Run",
+    "Cargo.Test test::test_wire::test_wire_17496_171545.executor": "Run",
+    "Cargo.Test test::test_wire::test_wire_17496_269393.executor": "Run",
+    "Cargo.Test tool::math_tool::test_cal_end_points.executor": "Run",
+    "Cargo.Test tool::math_tool::test_convert_to_dir_string.executor": "Run",
+    "Cargo.check.executor": "Run",
+    "Project.color": "011c4a",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "Shell Script.run_functions.sh.executor": "Run",
+    "WebServerToolWindowFactoryState": "false",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "2.3",
+    "last_opened_file_path": "E:/RustProject/new/new-crates/aios-core/src/types",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.disableDetachedFileInspection/Users/dongpengcheng/rust-projects/new/aios_core/src/accel_tree/acceleration_2d_tree.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/room/query.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/rs_surreal/cate.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/RustProject/new/new-crates/aios-core/src/rs_surreal/pbs.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/BOX.rs": "true",
+    "org.rust.disableDetachedFileInspectionE:/work/new-crates/aios-core/src/orm/box.rs": "true",
+    "org.rust.first.attach.projects": "true",
+    "org.rust.first.attach.projects.stats": "true",
+    "org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs": "true",
+    "org.rust.hideToolchainNotifications": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\types" />
@@ -306,7 +305,7 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Test get_noun_hash">
+  <component name="RunManager" selected="Cargo.Build">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -353,7 +352,7 @@
       </method>
     </configuration>
     <configuration name="Test get_noun_hash" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="buildProfileId" value="test" />
+      <option name="buildProfileId" value="dev" />
       <option name="command" value="test --package aios_core --bin aios_core get_noun_hash -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
@@ -425,9 +424,9 @@
       <item itemvalue="Batch.run" />
       <item itemvalue="Batch.run_functions" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.check" />
       <item itemvalue="Cargo.Test get_noun_hash" />
       <item itemvalue="Cargo.Test rs_surreal::topology::tests::test_get_connections" />
-      <item itemvalue="Cargo.check" />
       <item itemvalue="Shell Script.run_functions.sh" />
     </list>
     <recent_temporary>
@@ -1368,7 +1367,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="425" />
+    <option name="localTasksCounter" value="426" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1425,10 +1424,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="comment match_room_name check" />
-    <MESSAGE value="Add WELDTY attribute to all_attr_info.json and update get_named_attmap_with_uda function calls" />
-    <MESSAGE value="请提供具体的代码差异（diff）内容，我会根据改动内容生成相应的简洁提交信息。" />
-    <MESSAGE value="(1) 新增模块 `topology`，定义了 `PipeConnection` 结构体及多个与管道连接相关的异步函数，例如 `get_prev_connect_pe` 和 `get_next_connect_pe` 等；  &#10;(2) 增加了针对 `get_pipe_connections` 函数的单元测试，验证管道连接逻辑的正确性；  &#10;(3) 修改了 `mod.rs` 文件，新增对 `topology` 和 `pbs` 模块的引用；  &#10;(4) 优化了 `SUL_DB` 数据库连接调用链的格式和可读性；  &#10;(5) 在 `common.surql` 文件中重构函数，新增并定义了多个管道连接的 SurrealQL 函数，如 `fn::prev_connect_pe` 和 `fn::next_connect_pe`，同时移除了旧版的相关函数；  &#10;(6) 新增函数 `fn::has_leave_tubi` 和 `fn::has_arrive_tubi`，用于检查管道元素是否存在进出连接；  &#10;(7) 定义了 `fn::first_child` 和 `fn::last_child`" />
     <MESSAGE value="(1) 新增模块 `topology`，定义了 `PipeConnection` 结构体及多个与管道连接相关的异步函数，例如 `get_prev_connect_pe` 和 `get_next_connect_pe` 等；  &#10;(2) 增加了针对 `get_pipe_connections` 函数的单元测试，验证管道连接逻辑的正确性；  &#10;(3) 修改了 `mod.rs` 文件，新增对 `topology` 和 `pbs` 模块的引用；  &#10;(4) 优化了 `SUL_DB` 数据库连接调用链的格式和可读性；  &#10;(5) 在 `common.surql` 文件中重构函数，新增并定义了多个管道连接的 SurrealQL 函数，如 `fn::prev_connect_pe` 和 `fn::next_connect_pe`，同时移除了旧版的相关函数；  &#10;(6) 新增函数 `fn::has_leave_tubi` 和 `fn::has_arrive_tubi`，用于检查管道元素是否存在进出连接；  &#10;(7) 定义了 `fn::first_child` 和 `fn::last_child` 函数，用于获取连接的第一个和最后一个子元素。  " />
     <MESSAGE value="(1) 新增 `topology` 模块，定义管道连接结构体并实现连接相关功能函数，包括获取前后连接元素及检查管道端点状态等。  &#10;(2) 优化 SurrealDB 连接方式代码，提升可读性与整洁性。  &#10;(3) 在 `common.surql` 中重构与连接和管道端相关的 SurrealDB 函数，新增或移除多个函数以支持新功能逻辑。  &#10;(4) 添加 `topology` 模块的单元测试，验证管道连接功能的正确性。  " />
     <MESSAGE value="(1) 增加了 `topology` 模块，包含用于管道元素连接关系的相关方法和结构体 `PipeConnection`。  &#10;(2) 调整了 `mod.rs` 文件的模块导入顺序，并引入了 `topology`。  &#10;(3) 优化了 `connect` 方法链式调用的代码格式，提升可读性。  &#10;(4) 移除了 SurrealDB 中的旧函数 `fn::first_child` 等，并重新定义了功能更完善的新版本函数，例如 `fn::prev_connect_pe` 和 `fn::next_connect_pe`。  &#10;(5) 增加了针对 `get_pipe_connections` 的测试代码，确保新功能的正确性。" />
@@ -1450,7 +1445,11 @@
     <MESSAGE value="(1) 替换了多处 `try_into` 方法为更简洁的 `into_*` 方法，优化数据转换逻辑。&#10;(2) 为 `WholeAttMap` 增加了显式属性映射的可变访问方法。&#10;(3) 新增多个常量以支持几何体、管道及方位相关属性定义。&#10;(4) 修改了 `NamedAttrValue` 的部分匹配逻辑，移除了多余代码并提高可读性。&#10;(5) 在 `Cargo.toml` 引入了 SurrealDB SDK 的本地路径依赖。&#10;(6) 更新了项目配置文件以支持新的测试用例。" />
     <MESSAGE value="(1) 升级了 `glam` 依赖版本从 0.29.0 到 0.29.3。  &#10;(2) 更新了 `calamine` 依赖，将其从 Gitee 仓库版本切换为 0.27.0 的发布版。" />
     <MESSAGE value="(1) 修改了calamine依赖来源，改为从官方GitHub仓库获取。  &#10;(2) 删除了calamine的版本号限制配置。  &#10;(3) 移除了针对calamine依赖的注释代码。" />
-    <option name="LAST_COMMIT_MESSAGE" value="(1) 修改了calamine依赖来源，改为从官方GitHub仓库获取。  &#10;(2) 删除了calamine的版本号限制配置。  &#10;(3) 移除了针对calamine依赖的注释代码。" />
+    <MESSAGE value="Merge commit '2dbd48d' into 2.3&#10;&#10;# Conflicts:&#10;#&#9;src/rs_surreal/query.rs&#10;#&#9;src/rs_surreal/schemas/fn_query_room_code.surql&#10;#&#9;src/rs_surreal/schemas/functions/common.surql&#10;" />
+    <MESSAGE value="(1) 新增 `refno_backup.rs` 文件，定义了多个关于 `RefU64` 和参考号的结构体和方法。  &#10;(2) 实现了 `RefU64` 的序列化和反序列化，包括自定义逻辑。  &#10;(3) 增加了 `RefnoVariant` 和 `RefnoEnum` 枚举类型，支持不同格式的参考号。  &#10;(4) 补充了多个由 `RefU64` 到其他类型的转换方法，以及参考号的格式化输出方法。  &#10;(5) 实现了 `RefnoSesno` 结构，扩展了参考号的表示形式。" />
+    <MESSAGE value="(1) 新增了 `RefU64` 等类型及其相关实现，包括序列化、反序列化、自定义格式转换等功能。  &#10;(2) 增加了 `RefI32Tuple` 和 `RefnoSesno` 类型，并实现了其辅助方法。  &#10;(3) 提供了 `RefnoEnum` 枚举及其操作接口，用于处理多种参考号类型。  &#10;(4) 对 sea-orm 特性进行适配支持，扩展数据库操作接口。  " />
+    <MESSAGE value="(1) 新增 `src/types/refno_backup.rs` 文件，包含 `RefU64`、`RefI32Tuple`、`RefnoSesno` 和 `RefnoEnum` 等多个结构体及其相关实现。  &#10;(2) 提供多种序列化与反序列化方法，包括对 `serde` 和 `sea-orm` 的支持。  &#10;(3) 实现了扩展功能，如参考号格式转换、URL 生成、哈希操作等实用函数。  &#10;(4) 增强了跨类型间的互相转换支持，包括从字符串、结构体等转换为 `RefU64` 或其他枚举类型。" />
+    <option name="LAST_COMMIT_MESSAGE" value="(1) 新增 `src/types/refno_backup.rs` 文件，包含 `RefU64`、`RefI32Tuple`、`RefnoSesno` 和 `RefnoEnum` 等多个结构体及其相关实现。  &#10;(2) 提供多种序列化与反序列化方法，包括对 `serde` 和 `sea-orm` 的支持。  &#10;(3) 实现了扩展功能，如参考号格式转换、URL 生成、哈希操作等实用函数。  &#10;(4) 增强了跨类型间的互相转换支持，包括从字符串、结构体等转换为 `RefU64` 或其他枚举类型。" />
     <option name="NON_MODAL_COMMIT_POSTPONE_SLOW_CHECKS" value="false" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
