@@ -101,13 +101,13 @@ impl From<SurlValue> for NamedAttrMap {
                         if k == "PGNO" {
                             map.insert(
                                 k.clone(),
-                                NamedAttrValue::IntegerType(v.into_int().unwrap_or_default() as _),
+                                NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()),
                             );
                             continue;
                         } else if k == "SESNO" {
                             map.insert(
                                 k.clone(),
-                                NamedAttrValue::IntegerType(v.into_int().unwrap_or_default() as _),
+                                NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()),
                             );
                             continue;
                         }
@@ -128,38 +128,40 @@ impl From<SurlValue> for NamedAttrMap {
                         };
                         let named_value = match default_val {
                             crate::AttrVal::IntegerType(_) => {
-                                NamedAttrValue::IntegerType(v.into_int().unwrap_or_default() as _)
+                                NamedAttrValue::IntegerType(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::StringType(_) => {
-                                NamedAttrValue::StringType(v.as_string())
+                                NamedAttrValue::StringType(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::WordType(_) => {
                                 // dbg!((&k, &v));
                                 let named_value = match &v {
                                     SurlValue::Strand(s) => NamedAttrValue::WordType(s.to_string()),
                                     SurlValue::Number(i) => NamedAttrValue::WordType(db1_dehash(
-                                        v.into_int().unwrap_or_default() as _,
+                                        v.try_into().unwrap_or_default()
                                     )),
                                     _ => NamedAttrValue::WordType("".to_string()), // Default case if type is unexpected
                                 };
                                 named_value
                             }
                             crate::AttrVal::DoubleType(_) => {
-                                NamedAttrValue::F32Type(v.into_float().unwrap_or_default() as _)
+                                NamedAttrValue::F32Type(v.try_into().unwrap_or_default())
                             }
                             crate::AttrVal::DoubleArrayType(_) => {
-                                let v = v.into_array().unwrap();
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
                                 NamedAttrValue::F32VecType(
                                     v.into_iter()
-                                        .map(|x| x.into_float().unwrap_or_default() as _)
+                                        .map(|x| f32::try_from(x).unwrap_or_default())
                                         .collect(),
                                 )
                             }
                             crate::AttrVal::Vec3Type(_) => {
-                                let v = v.into_array().unwrap();
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
                                 let p = v
                                     .into_iter()
-                                    .map(|x| x.into_float().unwrap_or_default() as _)
+                                    .map(|x| f32::try_from(x).unwrap_or_default())
                                     .collect::<Vec<_>>();
                                 if p.len() < 3 {
                                     //如果不够3个，就补0，错误处理？
@@ -169,28 +171,35 @@ impl From<SurlValue> for NamedAttrMap {
                                 }
                             }
                             crate::AttrVal::StringArrayType(_) => {
-                                let v = v.into_array().unwrap();
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
                                 NamedAttrValue::StringArrayType(
                                     v.into_iter()
-                                        .map(|x| x.as_string())
+                                        .map(|x| String::try_from(x).unwrap_or_default())
                                         .collect(),
                                 )
                             }
                             crate::AttrVal::BoolArrayType(_) => {
-                                let v = v.into_array().unwrap();
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
                                 NamedAttrValue::BoolArrayType(
-                                    v.into_iter().map(|x| x.is_true()).collect(),
-                                )
-                            }
-                            crate::AttrVal::IntArrayType(_) => {
-                                let v = v.into_array().unwrap();
-                                NamedAttrValue::IntArrayType(
                                     v.into_iter()
-                                        .map(|x| x.into_int().unwrap_or_default() as _)
+                                        .map(|x| bool::try_from(x).unwrap_or_default())
                                         .collect(),
                                 )
                             }
-                            crate::AttrVal::BoolType(_) => NamedAttrValue::BoolType(v.is_true()),
+                            crate::AttrVal::IntArrayType(_) => {
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
+                                NamedAttrValue::IntArrayType(
+                                    v.into_iter()
+                                        .map(|x| i32::try_from(x).unwrap_or_default())
+                                        .collect(),
+                                )
+                            }
+                            crate::AttrVal::BoolType(_) => {
+                                NamedAttrValue::BoolType(v.try_into().unwrap_or_default())
+                            }
                             crate::AttrVal::RefU64Type(_) | crate::AttrVal::ElementType(_) => {
                                 if let SurlValue::Thing(record) = v {
                                     if matches!(record.id, Id::Array(_)) {
@@ -203,7 +212,8 @@ impl From<SurlValue> for NamedAttrMap {
                                 }
                             }
                             crate::AttrVal::RefU64Array(_) => {
-                                let v = v.into_array().unwrap();
+                                let v: Vec<surrealdb::sql::Value> =
+                                    v.try_into().unwrap_or_default();
                                 NamedAttrValue::RefU64Array(
                                     v.into_iter()
                                         .map(|x| {
@@ -645,6 +655,14 @@ impl NamedAttrMap {
         self.gen_sur_json_exclude(&[], Some(id))
     }
 
+    /// 根据会话号生成sur json字符串
+    /// 
+    /// # 参数
+    /// * `sesno` - 会话号
+    /// * `sesno_map` - RefU64到会话号的映射表
+    /// 
+    /// # 返回值
+    /// * `Option<String>` - 生成的sur json字符串,如果生成失败则返回None
     pub fn gen_sur_json_with_sesno(
         &self,
         sesno: i32,
@@ -738,6 +756,14 @@ impl NamedAttrMap {
         Some(normalize_sql_string(&sjson))
     }
 
+    /// 生成排除指定字段的JSON字符串
+    /// 
+    /// # 参数
+    /// * `excludes` - 需要排除的字段名数组
+    /// * `id` - 可选的ID字符串,如果不提供则使用refno作为ID
+    /// 
+    /// # 返回值
+    /// * `Option<String>` - 成功则返回JSON字符串,失败返回None
     pub fn gen_sur_json_exclude(&self, excludes: &[&str], id: Option<String>) -> Option<String> {
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         let mut record_map: IndexMap<String, RefU64> = IndexMap::new();

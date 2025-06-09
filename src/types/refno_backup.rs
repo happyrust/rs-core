@@ -172,6 +172,18 @@ impl<'de> Deserialize<'de> for RefU64 {
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // 处理数组格式 [a,b]
+        if s.starts_with('[') && s.ends_with(']') {
+            let content = &s[1..s.len()-1];
+            let nums: Vec<&str> = content.split(',').collect();
+            if nums.len() == 2 {
+                if let (Ok(a), Ok(b)) = (nums[0].trim().parse::<u32>(), nums[1].trim().parse::<u32>()) {
+                    return Ok(Self::from_two_nums(a, b));
+                }
+            }
+        }
+        
+        // 原有的解析逻辑
         let ts = s.split(['=', ':']).skip(1).next().unwrap_or(s);
         let nums = ts
             .split(['_', '/'])
@@ -307,19 +319,10 @@ impl Into<Vec<u8>> for RefU64 {
     }
 }
 
-// impl BytesTrait for RefU64 {
-//     fn to_bytes(&self) -> anyhow::Result<Vec<u8>> {
-//         Ok(self.0.to_be_bytes().to_vec().into())
-//     }
-//
-//     fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-//         Ok(Self(u64::from_be_bytes(bytes[..8].try_into()?)))
-//     }
-// }
-
 impl Display for RefU64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}_{}", self.get_0(), self.get_1())
+        // write!(f, "{}_{}", self.get_0(), self.get_1())
+        write!(f, "{}", self.to_key())
     }
 }
 
@@ -345,17 +348,22 @@ impl RefU64 {
 
     #[inline]
     pub fn to_pe_thing(&self) -> Thing {
-        ("pe".to_string(), self.to_string()).into()
+        ("pe".to_string(), self.to_key()).into()
+    }
+
+    #[inline]
+    pub fn to_key(&self) -> String {
+        format!("[{},{}]", self.get_0(), self.get_1())
     }
 
     #[inline]
     pub fn to_pe_versioned_key(&self, version: i32) -> String {
-        format!("pe_v:{}_{}", &self.to_string(), version)
+        format!("pe_v:[{},{}]", self.get_0(), self.get_1())
     }
 
     #[inline]
     pub fn to_pbs_key(&self) -> String {
-        format!("pbs:{}", &self.0.to_string())
+        format!("pbs:[{},{}]", self.get_0(), self.get_1())
     }
 
     #[inline]
@@ -374,17 +382,17 @@ impl RefU64 {
 
     #[inline]
     pub fn to_inst_relate_history_key(&self, version: i32) -> String {
-        format!("inst_relate:{}_{}", &self.to_string(), version)
+        format!("inst_relate:[{},{}]", self.get_0(), self.get_1())
     }
 
     #[inline]
     pub fn to_table_key(&self, tbl: &str) -> String {
-        format!("{tbl}:{}", &self.to_string())
+        format!("{tbl}:[{},{}]", self.get_0(), self.get_1())
     }
 
     #[inline]
     pub fn to_table_history_key(&self, tbl: &str, version: i32) -> String {
-        format!("{tbl}_v:{}_{}", &self.to_string(), version)
+        format!("{tbl}_v:[{},{}, {}]", self.get_0(), self.get_1(), version)
     }
 
     #[inline]

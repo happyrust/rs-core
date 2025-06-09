@@ -233,22 +233,22 @@ impl From<(&str, surrealdb::sql::Value)> for NamedAttrValue {
             surrealdb::sql::Value::Array(val) => match tn {
                 "REAL" | "DIR" | "POS" => NamedAttrValue::F32VecType(
                     val.into_iter()
-                        .map(|x| x.into_float().unwrap_or_default() as _)
+                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_float() as f32)
                         .collect(),
                 ),
                 "INT" => NamedAttrValue::IntArrayType(
                     val.into_iter()
-                        .map(|x| x.into_float().unwrap_or_default() as _)
+                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_int() as _)
                         .collect(),
                 ),
                 "BOOL" => NamedAttrValue::BoolArrayType(
                     val.into_iter()
-                        .map(|x| x.is_true())
+                        .map(|x| bool::try_from(x).unwrap())
                         .collect(),
                 ),
                 "TEXT" => NamedAttrValue::StringArrayType(
                     val.into_iter()
-                        .map(|x| x.as_string())
+                        .map(|x| String::try_from(x).unwrap())
                         .collect(),
                 ),
 
@@ -287,8 +287,12 @@ fn test_from_surreal() {
         let r = value
             .into_iter()
             .map(|x| match x.clone().record() {
-                None => RefnoEnum::from(x.to_string().as_str()),
-                Some(id) => RefnoEnum::from(id),
+                None => {
+                    RefnoEnum::from(x.to_string().as_str())
+                }
+                Some(id) => {
+                    RefnoEnum::from(id)
+                }
             })
             .collect::<Vec<_>>();
         dbg!(&r);
@@ -486,7 +490,6 @@ impl Into<serde_json::Value> for NamedAttrValue {
                 if s.contains('\0') || s.contains("u0000") {
                     return serde_json::Value::String("".into());
                 }
-                // serde_json::Value::String(s)
                 serde_json::Value::String(format!("pe:{}", s))
             }
             NamedAttrValue::RefU64Type(d) => {
@@ -507,7 +510,6 @@ impl Into<serde_json::Value> for NamedAttrValue {
             NamedAttrValue::IntArrayType(d) => {
                 serde_json::Value::Array(d.into_iter().map(|x| x.into()).collect())
             }
-            // NamedAttrValue::RefU64Type(d) => d.to_string().into(),
             _ => serde_json::Value::Null,
         }
     }

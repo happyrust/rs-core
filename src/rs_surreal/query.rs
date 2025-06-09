@@ -1,3 +1,13 @@
+//! 查询模块 - 提供数据库查询功能
+//!
+//! 这个模块包含了所有与 SurrealDB 数据库交互的查询函数。
+//! 主要功能包括：
+//! - 基础元素查询
+//! - 层次结构查询
+//! - 属性数据查询
+//! - 历史数据查询
+//! - 批量操作
+
 use super::query_mdb_db_nums;
 use crate::consts::MAX_INSERT_LENGTH;
 use crate::parsed_data::CateAxisParam;
@@ -147,7 +157,7 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
     let sql = format!("return fn::ancestor({}).refno.*;", refno.to_pe_key());
     let mut response = SUL_DB.query(sql).await?;
     let o: surrealdb::Value = response.take(0)?;
-    let os = o.into_inner().into_array().unwrap();
+    let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
     Ok(named_attmaps)
 }
@@ -564,12 +574,12 @@ pub(crate) async fn get_named_attmap_with_uda(
     let mut named_attmap: NamedAttrMap = o.into_inner().into();
     // dbg!(&named_attmap);
     let o: surrealdb::Value = response.take(1)?;
-    let array = o.into_inner().into_array().unwrap();
+    let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let uda_kvs: Vec<surrealdb::sql::Object> =
-        array.into_iter().map(|x| x.into_object().unwrap()).collect();
+        array.into_iter().map(|x| x.try_into().unwrap()).collect();
     for map in uda_kvs {
-        let uname: String = map.get("u").unwrap().clone().as_string();
-        let utype: String = map.get("t").unwrap().clone().as_string();
+        let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
+        let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
         if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }
@@ -579,12 +589,12 @@ pub(crate) async fn get_named_attmap_with_uda(
         named_attmap.insert(uname, att_value);
     }
     let o: surrealdb::Value = response.take(2)?;
-    let array = o.into_inner().into_array().unwrap();
+    let array: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     let overwrite_kvs: Vec<surrealdb::sql::Object> =
-        array.into_iter().map(|x| x.into_object().unwrap()).collect();
+        array.into_iter().map(|x| x.try_into().unwrap()).collect();
     for map in overwrite_kvs {
-        let uname: String = map.get("u").unwrap().clone().as_string();
-        let utype: String = map.get("t").unwrap().clone().as_string();
+        let uname: String = map.get("u").unwrap().clone().try_into().unwrap();
+        let utype: String = map.get("t").unwrap().clone().try_into().unwrap();
         if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }
@@ -640,7 +650,7 @@ pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<
     let mut response = SUL_DB.query(sql).await?;
     let o: surrealdb::Value = response.take(0)?;
     // dbg!(&o);
-    let os = o.into_inner().into_array().unwrap();
+    let os: Vec<SurlValue> = o.into_inner().try_into().unwrap();
     // dbg!(&os);
     let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
     Ok(named_attmaps)
@@ -722,7 +732,7 @@ pub async fn query_filter_children_atts(
     };
     let mut response = SUL_DB.query(sql).await?;
     let value: surrealdb::Value = response.take(0)?;
-    let atts = value.into_inner().into_array().unwrap();
+    let atts: Vec<surrealdb::sql::Value> = value.into_inner().try_into().unwrap();
     Ok(atts.into_iter().map(|x| x.into()).collect())
 }
 
@@ -731,12 +741,12 @@ pub async fn query_filter_children_atts(
 pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleTreeNode>> {
     let sql = format!(
         r#"
-        select  in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, record::id(in->pe_owner.id[0])[1] as order,
+        select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, record::id(in->pe_owner.id[0])[1] as order,
                 in.op?:0 as op,
                 array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                 array::len(in<-pe_owner) as children_count,
                 in.status_code as status_code
-            from {}<-pe_owner where in.id!= none && record::exists(in.id) and !in.deleted
+            from {}<-pe_owner where in.id!=none and record::exists(in.id) and !in.deleted
         "#,
         refno.to_pe_key()
     );
@@ -784,7 +794,7 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
 pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = if refno.is_latest() {
         format!(
-            r#"select value in from {}<-pe_owner  where record::exists(in.id) and !in.deleted"#,
+            r#"select value in from {}<-pe_owner  where in.id!=none and record::exists(in.id) and !in.deleted"#,
             refno.to_pe_key()
         )
     } else {
@@ -792,7 +802,7 @@ pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEn
             r#" 
                 let $dt=<datetime>fn::ses_date({0}); 
                 select value fn::find_pe_by_datetime(in, $dt) from fn::newest_pe({0})<-pe_owner 
-                    where in.id != none and record::exists(in.id) and (!in.deleted or <datetime>fn::ses_date(in.id)>$dt)
+                    where in.id!=none and record::exists(in.id) and (!in.deleted or <datetime>fn::ses_date(in.id)>$dt)
             "#,
             refno.to_pe_key(),
         )
@@ -814,7 +824,17 @@ pub async fn query_multi_children_refnos(refnos: &[RefnoEnum]) -> anyhow::Result
     // let refnos: Vec<RefnoEnum> = response.take(0)?;
     let mut final_refnos = vec![];
     for &refno in refnos {
-        final_refnos.extend(get_children_refnos(refno).await?);
+            match get_children_refnos(refno).await {
+                Ok(children) => {
+                    final_refnos.extend(children);
+                },
+                Err(e) => {
+                    eprintln!("获取子参考号时出错: refno={:?}, 错误: {:?}", refno, e);
+                    // 这里可以选择继续循环或返回错误
+                    return Err(e);  // 如果要中断并返回错误
+                    // 或者跳过此错误项，继续处理下一个
+                }
+            };
     }
     Ok(final_refnos)
 }

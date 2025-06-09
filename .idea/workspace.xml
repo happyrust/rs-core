@@ -33,8 +33,11 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 新增了显式属性结构体 `ExplicitAttr`，包含名称、值、UDA标志和哈希值字段。  &#10;(2) 在 `WholeAttMap` 中新增了 `uda_atts` 字段，用于存储显式UDA属性映射。  &#10;(3) 为 `WholeAttMap` 增加了 `explicit_attmap` 和 `uda_atts` 的 getter 方法。  &#10;(4) 修改了 `">
+    <list default="true" id="25309c7c-31f0-4022-bb27-1c7e6a80e5b9" name="变更" comment="(1) 移除了calamine依赖中指定的branch参数，默认使用主分支。">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/consts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/consts.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/mdb.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs_surreal/query.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs_surreal/query.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +59,7 @@
     <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="vc" />
+        <entry key="$PROJECT_DIR$" value="test-2.1" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -125,6 +128,7 @@
     &quot;Cargo.Run aios_core.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test expression::parse_axis::test_parse_1.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test expression::parse_axis::test_parse_dir_expr_max.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test get_noun_hash.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test noun_graph::tests::test_is_owner.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::BOX::test_reflect.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Test orm::diff_data::test_query_diff.executor&quot;: &quot;Run&quot;,
@@ -247,8 +251,8 @@
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;2.2&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/rs_surreal/schemas/functions&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;62f4359e&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/RustProject/new/new-crates/aios-core/src/types&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -266,17 +270,17 @@
     &quot;org.rust.first.attach.projects.stats&quot;: &quot;true&quot;,
     &quot;org.rust.hideNoCargoProjectNotificationsE:/rsplant/crates/bevy/crates/bevy_ecs/src/event.rs&quot;: &quot;true&quot;,
     &quot;org.rust.hideToolchainNotifications&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;language.rust&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\RustProject\new\new-crates\aios-core\src\types" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas\functions" />
       <recent name="$PROJECT_DIR$/src/rs_surreal/mat_stastitcs" />
       <recent name="E:\RustProject\new\new-crates\aios-core" />
       <recent name="E:\RustProject\new\new-crates\aios-core\src\rs_surreal\schemas" />
-      <recent name="E:\RustProject\new\new-crates\aios-core\assets" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\RustProject\new\new-crates\aios-core\src\expression" />
@@ -302,13 +306,22 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager" selected="Cargo.Test rs_surreal::topology::tests::test_get_connections">
+  <component name="RunManager" selected="Cargo.Test get_noun_hash">
     <configuration name="cargo-clif test_query_transform" type="BatchConfigurationType" factoryName="Batch">
       <module name="aios-core" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="WORKING_DIRECTORY" value="./" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SCRIPT_NAME" value="cargo-clif test --package aios_core --lib test::test_surreal::test_spatial::test_query_transform -- --exact" />
+      <option name="PARAMETERS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="aios-core" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./src/rs_surreal/schemas/functions" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="run.bat" />
       <option name="PARAMETERS" value="" />
       <method v="2" />
     </configuration>
@@ -339,44 +352,27 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test get_noun_hash" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --package aios_core --bin aios_core get_noun_hash -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Test rs_surreal::topology::tests::test_get_connections" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="buildProfileId" value="test" />
+      <option name="buildProfileId" value="dev" />
       <option name="command" value="test --package aios_core --lib rs_surreal::topology::tests::test_get_connections -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_basic_query::test_query_attmap" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="buildProfileId" value="test" />
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_basic_query::test_query_attmap -- --exact" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="test --package aios_core --lib test::test_surreal::test_spatial::test_transform::test_query_transform_FIT -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -426,16 +422,18 @@
     </configuration>
     <list>
       <item itemvalue="Batch.cargo-clif test_query_transform" />
+      <item itemvalue="Batch.run" />
       <item itemvalue="Batch.run_functions" />
       <item itemvalue="Cargo.Build" />
+      <item itemvalue="Cargo.Test get_noun_hash" />
       <item itemvalue="Cargo.Test rs_surreal::topology::tests::test_get_connections" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_basic_query::test_query_attmap" />
-      <item itemvalue="Cargo.Test test::test_surreal::test_spatial::test_transform::test_query_transform_FIT" />
       <item itemvalue="Cargo.check" />
       <item itemvalue="Shell Script.run_functions.sh" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test get_noun_hash" />
+        <item itemvalue="Batch.run" />
         <item itemvalue="Cargo.Test rs_surreal::topology::tests::test_get_connections" />
         <item itemvalue="Batch.run_functions" />
         <item itemvalue="Shell Script.run_functions.sh" />
@@ -1001,6 +999,31 @@
       <workItem from="1745572939519" duration="1206000" />
       <workItem from="1745585960054" duration="6000" />
       <workItem from="1745601717607" duration="135000" />
+      <workItem from="1747291182375" duration="58000" />
+      <workItem from="1747294809881" duration="43000" />
+      <workItem from="1747294970751" duration="103000" />
+      <workItem from="1747306099789" duration="2781000" />
+      <workItem from="1747666561420" duration="554000" />
+      <workItem from="1747795105363" duration="733000" />
+      <workItem from="1747813859313" duration="1714000" />
+      <workItem from="1747827045353" duration="90000" />
+      <workItem from="1747827179999" duration="836000" />
+      <workItem from="1747828204868" duration="592000" />
+      <workItem from="1747831541362" duration="774000" />
+      <workItem from="1747832355749" duration="4164000" />
+      <workItem from="1747904236331" duration="579000" />
+      <workItem from="1747917296773" duration="1428000" />
+      <workItem from="1747930276613" duration="2247000" />
+      <workItem from="1747999962899" duration="1262000" />
+      <workItem from="1748226001638" duration="572000" />
+      <workItem from="1748250623439" duration="2951000" />
+      <workItem from="1748276576913" duration="2661000" />
+      <workItem from="1748327212756" duration="43000" />
+      <workItem from="1748329479906" duration="1771000" />
+      <workItem from="1748402570141" duration="249000" />
+      <workItem from="1748589609775" duration="3000" />
+      <workItem from="1749257320152" duration="632000" />
+      <workItem from="1749317018464" duration="349000" />
     </task>
     <task id="LOCAL-00155" summary="update">
       <created>1667131046027</created>
@@ -1345,7 +1368,7 @@
       <option name="project" value="LOCAL" />
       <updated>1686848923737</updated>
     </task>
-    <option name="localTasksCounter" value="422" />
+    <option name="localTasksCounter" value="425" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -1387,7 +1410,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="2.2" />
+                        <option value="origin/test-2.1" />
                       </list>
                     </value>
                   </entry>
@@ -1402,9 +1425,6 @@
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_NEW_TODO" value="false" />
-    <MESSAGE value="add query pane_size" />
-    <MESSAGE value="add init_demo_test_surreal" />
-    <MESSAGE value="fix import surreal" />
     <MESSAGE value="comment match_room_name check" />
     <MESSAGE value="Add WELDTY attribute to all_attr_info.json and update get_named_attmap_with_uda function calls" />
     <MESSAGE value="请提供具体的代码差异（diff）内容，我会根据改动内容生成相应的简洁提交信息。" />
@@ -1427,7 +1447,10 @@
     <MESSAGE value="fix run in async context" />
     <MESSAGE value="(1) 删除了`mod.rs`文件中的多余空行，优化代码结构。  &#10;(2) 新增了`test_different_dbs`模块，用于测试不同数据库的支持。  &#10;(3) 升级了`dashmap`依赖版本至`7.0.0-rc2`，并保留`serde`特性。  &#10;(4) 增加了对`duckdb`库的依赖，版本为`1.2.2`。" />
     <MESSAGE value="(1) 新增了显式属性结构体 `ExplicitAttr`，包含名称、值、UDA标志和哈希值字段。  &#10;(2) 在 `WholeAttMap` 中新增了 `uda_atts` 字段，用于存储显式UDA属性映射。  &#10;(3) 为 `WholeAttMap` 增加了 `explicit_attmap` 和 `uda_atts` 的 getter 方法。  &#10;(4) 修改了 `" />
-    <option name="LAST_COMMIT_MESSAGE" value="(1) 新增了显式属性结构体 `ExplicitAttr`，包含名称、值、UDA标志和哈希值字段。  &#10;(2) 在 `WholeAttMap` 中新增了 `uda_atts` 字段，用于存储显式UDA属性映射。  &#10;(3) 为 `WholeAttMap` 增加了 `explicit_attmap` 和 `uda_atts` 的 getter 方法。  &#10;(4) 修改了 `" />
+    <MESSAGE value="(1) 替换了多处 `try_into` 方法为更简洁的 `into_*` 方法，优化数据转换逻辑。&#10;(2) 为 `WholeAttMap` 增加了显式属性映射的可变访问方法。&#10;(3) 新增多个常量以支持几何体、管道及方位相关属性定义。&#10;(4) 修改了 `NamedAttrValue` 的部分匹配逻辑，移除了多余代码并提高可读性。&#10;(5) 在 `Cargo.toml` 引入了 SurrealDB SDK 的本地路径依赖。&#10;(6) 更新了项目配置文件以支持新的测试用例。" />
+    <MESSAGE value="(1) 升级了 `glam` 依赖版本从 0.29.0 到 0.29.3。  &#10;(2) 更新了 `calamine` 依赖，将其从 Gitee 仓库版本切换为 0.27.0 的发布版。" />
+    <MESSAGE value="(1) 修改了calamine依赖来源，改为从官方GitHub仓库获取。  &#10;(2) 删除了calamine的版本号限制配置。  &#10;(3) 移除了针对calamine依赖的注释代码。" />
+    <option name="LAST_COMMIT_MESSAGE" value="(1) 修改了calamine依赖来源，改为从官方GitHub仓库获取。  &#10;(2) 删除了calamine的版本号限制配置。  &#10;(3) 移除了针对calamine依赖的注释代码。" />
     <option name="NON_MODAL_COMMIT_POSTPONE_SLOW_CHECKS" value="false" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
