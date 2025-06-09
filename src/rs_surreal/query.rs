@@ -736,7 +736,7 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
                 array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                 array::len(in<-pe_owner) as children_count,
                 in.status_code as status_code
-            from {}<-pe_owner where record::exists(in.id) and !in.deleted
+            from {}<-pe_owner where in.id!= none && record::exists(in.id) and !in.deleted
         "#,
         refno.to_pe_key()
     );
@@ -792,7 +792,7 @@ pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEn
             r#" 
                 let $dt=<datetime>fn::ses_date({0}); 
                 select value fn::find_pe_by_datetime(in, $dt) from fn::newest_pe({0})<-pe_owner 
-                    where record::exists(in.id) and (!in.deleted or <datetime>fn::ses_date(in.id)>$dt)
+                    where in.id != none and record::exists(in.id) and (!in.deleted or <datetime>fn::ses_date(in.id)>$dt)
             "#,
             refno.to_pe_key(),
         )

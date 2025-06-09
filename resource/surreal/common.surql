@@ -323,8 +323,8 @@ DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
     if $pe == none || !record::exists($pe) {
             return none;
     };
-    let $a = (record::id($pe->pe_owner.id[0])[1]) - 1;
-    return select value in from only ($pe->pe_owner->pe<-pe_owner)[..$a] where in.noun != $exclude_type  limit 1;
+    let $a = (record::id($pe->pe_owner.id[0])[1]);
+    return (select value in from ($pe->pe_owner->pe<-pe_owner)[..$a] where in.noun != $exclude_type).last();
 };
 
 remove function fn::last_child_exclude_type;
@@ -372,7 +372,7 @@ remove function fn::prev_connect_pe_data;
 DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     let $p = fn::prev_connect_pe($pe);
     //如果有到达这个元件的直段，则返回这个直段的leave
-    let $tmp_tubi_refno = fn::query_tubi_from($pe);
+    let $tmp_tubi_refno = fn::query_tubi_from($pe).leave;
     let $tubi_refno = if $tmp_tubi_refno != none {
         $tmp_tubi_refno
     } else if fn::query_tubi_to($pe.owner) != none {   //判断bran的最尾部是不是TUBI
