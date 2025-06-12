@@ -20,6 +20,16 @@ pub struct DataCenterProject {
     pub instances: Vec<DataCenterInstance>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct DataCenterProjectHH {
+    // #[serde(rename = "packageCode")]
+    // pub package_code: String,
+    #[serde(rename = "projectCode")]
+    pub project_code: String,
+    pub owner: String,
+    pub instances: Vec<DataCenterInstanceHH>,
+}
+
 impl DataCenterProject {
     pub fn convert_package_code() -> String {
         Uuid::new_v4().to_string()
@@ -44,13 +54,51 @@ impl DataCenterProjectWithRelations {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct DataCenterProjectWithRelationsHH {
+    // #[serde(rename = "packageCode")]
+    // pub package_code: String,
+    #[serde(rename = "projectCode")]
+    pub project_code: String,
+    pub owner: String,
+    pub instances: Vec<DataCenterInstanceHH>,
+    pub relations: Vec<DataCenterRelations>,
+}
+
+// #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+// pub struct DataCenterInstance {
+//     #[serde(rename = "objectModelCode")]
+//     pub object_model_code: String,
+//     #[serde(rename = "instanceCode")]
+//     pub instance_code: String,
+//     #[serde(serialize_with = "serialize_option_string_with_default")]
+//     pub operate: Option<String>,
+//     pub version: String,
+//     pub attributes: Vec<DataCenterAttr>,
+// }
+
+// #[cfg(not(feature = "hd"))]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterInstance {
     #[serde(rename = "objectModelCode")]
     pub object_model_code: String,
     #[serde(rename = "instanceCode")]
     pub instance_code: String,
-    // #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(serialize_with = "serialize_option_string_with_default")]
+    pub operate: Option<String>,
+    // #[cfg(not(feature = "hd"))]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // pub operate: Option<String>,
+    pub version: String,
+    pub attributes: Vec<DataCenterAttr>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct DataCenterInstanceHH {
+    #[serde(rename = "objectModelCode")]
+    pub object_model_code: String,
+    #[serde(rename = "instanceCode")]
+    pub instance_code: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub operate: Option<String>,
     pub version: String,
     pub attributes: Vec<DataCenterAttr>,
