@@ -18,7 +18,7 @@ pub struct TubiInstQuery {
     pub world_aabb: Aabb,
     pub world_trans: Transform,
     pub geo_hash: String,
-    pub date: surrealdb::sql::Datetime,
+    pub date: Option<surrealdb::sql::Datetime>,
 }
 
 pub async fn query_tubi_insts_by_brans(
@@ -43,6 +43,7 @@ pub async fn query_tubi_insts_by_brans(
     );
     // println!("Query tubi insts: {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
+    // dbg!(&response);
 
     let r = response.take::<Vec<TubiInstQuery>>(0)?;
     Ok(r)
@@ -60,7 +61,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
         (select in.id as refno, in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
             fn::ses_date(in.id) as date
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
-                from [{}] where owner.noun in ['BRAN', 'HANG'], [none]))
+                from [{}] where in.id != none and  owner.noun in ['BRAN', 'HANG'], [none]))
              "#,
         pes
     );
@@ -119,7 +120,7 @@ pub struct GeomInstQuery {
     /// 点集数据
     pub pts: Option<Vec<Vec3>>,
     /// 时间戳
-    pub date: surrealdb::sql::Datetime,
+    pub date: Option<surrealdb::sql::Datetime>,
 }
 
 /// 几何点集查询结构体
