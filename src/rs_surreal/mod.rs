@@ -56,6 +56,7 @@ use surrealdb::Surreal;
 pub type SurlValue = surrealdb::sql::Value;
 pub type SurlStrand = surrealdb::sql::Strand;
 pub static SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
+pub static SECOND_SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
 ///连接surreal

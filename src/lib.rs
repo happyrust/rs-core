@@ -109,7 +109,7 @@ pub use rs_surreal::*;
 pub type BHashMap<K, V> = BTreeMap<K, V>;
 
 use crate::function::define_common_functions;
-use crate::options::DbOption;
+use crate::options::{DbOption, SecondUnitDbOption};
 use once_cell_serde::sync::OnceCell;
 use surrealdb::opt::auth::Root;
 
@@ -263,6 +263,31 @@ pub async fn init_surreal() -> anyhow::Result<()> {
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
         })?;
+    Ok(())
+}
+
+/// 连接二号机组
+pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
+    let s = Config::builder()
+        .add_source(File::with_name("SecondUnitDbOption"))
+        .build()
+        .unwrap();
+    let db_option: SecondUnitDbOption = s.try_deserialize()?;
+    let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
+    SECOND_SUL_DB
+        .connect((db_option.get_version_db_conn_str(), config))
+        .with_capacity(1000)
+        .await?;
+    SECOND_SUL_DB
+        .use_ns(&db_option.surreal_ns)
+        .use_db(&db_option.project_name)
+        .await?;
+    SECOND_SUL_DB
+        .signin(Root {
+            username: &db_option.v_user,
+            password: &db_option.v_password,
+        })
+        .await?;
     Ok(())
 }
 

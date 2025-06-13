@@ -58,7 +58,6 @@ pub struct DbOption {
     /// 版本库的端口
     #[clap(long)]
     pub v_port: u16,
-
     // #[clap(long)]
     // pub kv_ip: String,
     // #[clap(long)]
@@ -421,4 +420,38 @@ impl DbOption {
     //     let port = self.port.as_str();
     //     format!("mysql://{user}:{pwd}@{ip}:{port}/{}", db)
     // }
+}
+
+#[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
+pub struct SecondUnitDbOption {
+    // 项目名称
+    #[clap(long)]
+    pub project_name: String,
+    /// 项目代码
+    #[clap(long)]
+    pub project_code: String,
+    /// SurrealDB命名空间
+    #[clap(skip)]
+    pub surreal_ns: String,
+    /// 二号机组的ip
+    #[clap(long)]
+    pub v_ip: String,
+    /// 二号机组的用户
+    #[clap(long)]
+    pub v_user: String,
+    /// 二号机组的密码
+    #[clap(long)]
+    pub v_password: String,
+    /// 二号机组的端口
+    #[clap(long)]
+    pub v_port: u16,
+}
+
+impl SecondUnitDbOption {
+    #[inline]
+    pub fn get_version_db_conn_str(&self) -> String {
+        let ip = self.v_ip.as_str();
+        let port = self.v_port;
+        format!("ws://{ip}:{port}")
+    }
 }
