@@ -60,7 +60,9 @@ impl AiosDBMgr {
         }
         // 连接二号机组
         match init_second_unit_surreal().await {
-            Ok(_) => {}
+            Ok(_) => {
+                println!("连接到副机组");
+            }
             Err(e) => {
                 println!("无法连接到副机组");
                 dbg!(&e.to_string());

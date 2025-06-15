@@ -291,6 +291,22 @@ pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// 判断是否连接到二号机组
+pub async fn b_connected_second_unit() -> anyhow::Result<()> {
+    let s = Config::builder()
+        .add_source(File::with_name("SecondUnitDbOption"))
+        .build()
+        .unwrap();
+    let db_option: SecondUnitDbOption = s.try_deserialize()?;
+    SECOND_SUL_DB
+        .signin(Root {
+            username: &db_option.v_user,
+            password: &db_option.v_password,
+        })
+        .await?;
+    Ok(())
+}
+
 /// 初始化测试数据库
 pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
     let s = Config::builder()
