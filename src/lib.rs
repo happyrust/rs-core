@@ -270,8 +270,7 @@ pub async fn init_surreal() -> anyhow::Result<()> {
 pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
     let s = Config::builder()
         .add_source(File::with_name("SecondUnitDbOption"))
-        .build()
-        .unwrap();
+        .build()?;
     let db_option: SecondUnitDbOption = s.try_deserialize()?;
     let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
     SECOND_SUL_DB
@@ -295,8 +294,7 @@ pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
 pub async fn b_connected_second_unit() -> anyhow::Result<()> {
     let s = Config::builder()
         .add_source(File::with_name("SecondUnitDbOption"))
-        .build()
-        .unwrap();
+        .build()?;
     let db_option: SecondUnitDbOption = s.try_deserialize()?;
     SECOND_SUL_DB
         .signin(Root {

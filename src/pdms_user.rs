@@ -8,6 +8,7 @@ use serde_with::{serde_as, DisplayFromStr};
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Resource)]
 pub struct PdmsUser {
     pub user_name: String,
+    pub chinese_name: String,
     pub user_major: String,
     pub b_designer: bool,
 }
