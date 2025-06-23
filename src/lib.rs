@@ -75,7 +75,7 @@ pub mod noun_graph;
 pub mod data_state;
 pub mod threed_review;
 
-// pub mod transform;
+pub mod transform;
 
 #[cfg(not(feature = "web"))]
 pub mod test;

@@ -18,7 +18,11 @@ use anyhow::anyhow;
 use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
 use glam::{DMat3, DMat4, DQuat, DVec3};
-use crate::rs_surreal::spatial::{get_spline_pts, query_pline, SectionEnd, cal_zdis_pkdi_in_section_by_spine};
+use crate::rs_surreal::spatial::{
+    get_spline_pts, query_pline, SectionEnd, cal_zdis_pkdi_in_section_by_spine,
+    cal_spine_ori_by_z_axis_ref_x, cal_ori_by_z_axis_ref_y, cal_ori_by_opdir,
+    cal_ori_by_z_axis_ref_x, cal_ori_by_ydir, cal_cutp_ori
+};
 
 /// Calculate the local transform for an entity relative to its parent
 /// 
@@ -107,9 +111,11 @@ pub async fn get_local_mat4(refno: RefnoEnum, parent_refno: RefnoEnum) -> anyhow
                 let jlin_pos = param.pt;
                 let jlin_plax = param.plax;
                 
-                let c_t = get_local_transform(c_ref, parent_refno)
-                    .await?
-                    .unwrap_or_default();
+                // Get the world transform for c_ref and parent_refno to calculate local transform
+                let c_world = crate::rs_surreal::get_world_mat4(c_ref, false).await?.unwrap_or(DMat4::IDENTITY);
+                let parent_world = crate::rs_surreal::get_world_mat4(parent_refno, false).await?.unwrap_or(DMat4::IDENTITY);
+                let c_local_mat = parent_world.inverse() * c_world;
+                let c_t = Transform::from_matrix(c_local_mat.as_mat4());
                 
                 let jlin_offset = c_t.rotation.as_dquat() * jlin_pos;
                 let c_axis = c_t.rotation.as_dquat() * DVec3::Z;
