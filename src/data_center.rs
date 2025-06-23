@@ -218,6 +218,12 @@ impl Into<String> for AttrValue {
     }
 }
 
+impl AttrValue {
+    pub fn to_string(self) -> String {
+        self.into()
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum ItemValue {
