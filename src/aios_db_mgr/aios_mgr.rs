@@ -1,10 +1,14 @@
-use std::collections::HashMap;
 use crate::aios_db_mgr::PdmsDataInterface;
+use crate::init_surreal;
 use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
-use crate::{get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world, AttrMap, NamedAttrMap, RefU64, SurlValue, SUL_DB, get_world_transform};
+use crate::{
+    get_children_ele_nodes, get_db_option, get_named_attmap, get_named_attmap_with_uda,
+    get_next_prev, get_pe, get_world, get_world_transform, init_second_unit_surreal, AttrMap,
+    NamedAttrMap, RefU64, SurlValue, SUL_DB,
+};
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
 use config::{Config, File};
@@ -12,12 +16,12 @@ use config::{Config, File};
 use sqlx::pool::PoolOptions;
 #[cfg(feature = "sql")]
 use sqlx::{MySql, Pool};
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::Duration;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
-use crate::init_surreal;
 
 pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()> {
     SUL_DB
@@ -48,15 +52,19 @@ impl AiosDBMgr {
             .build()
             .unwrap();
         let db_option: DbOption = s.try_deserialize().unwrap();
-        // match init_surreal_with_signin(&db_option).await {
-        //     Ok(_) => {}
-        //     Err(e) => {
-        //         // dbg!(&e.to_string());
-        //     }
-        // }
         match init_surreal().await {
             Ok(_) => {}
             Err(e) => {
+                dbg!(&e.to_string());
+            }
+        }
+        // 连接二号机组
+        match init_second_unit_surreal().await {
+            Ok(_) => {
+                println!("连接到副机组");
+            }
+            Err(e) => {
+                println!("无法连接到副机组");
                 dbg!(&e.to_string());
             }
         }
@@ -237,10 +245,7 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {
-        let sql = format!(
-            "return fn::room_code({})[0];",
-            refno.to_pe_key()
-        );
+        let sql = format!("return fn::room_code({})[0];", refno.to_pe_key());
         let mut response = SUL_DB.query(&sql).await?;
         let r: Option<String> = response.take(0)?;
         match r {
@@ -259,7 +264,6 @@ impl PdmsDataInterface for AiosDBMgr {
         }
         Ok(None)
     }
-
 }
 
 impl AiosDBMgr {

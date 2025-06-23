@@ -38,8 +38,6 @@ impl DataCenterProject {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DataCenterProjectWithRelations {
-    // #[serde(rename = "packageCode")]
-    // pub package_code: String,
     #[serde(rename = "projectCode")]
     pub project_code: String,
     pub owner: String,
@@ -103,6 +101,7 @@ pub struct DataCenterInstanceHH {
     pub version: String,
     pub attributes: Vec<DataCenterAttr>,
 }
+
 
 fn serialize_option_string_with_default<S>(
     value: &Option<String>,
@@ -642,35 +641,38 @@ pub enum DataCenterRecordOperate {
     Delete,
 }
 
+pub const DATACENTER_VERSION: &'static str = "datacenter_version";
+
 /// 发布成功后的元数据，只存放最小交付单元
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct DataCenterRecord {
     pub refno: RefnoEnum,
+    pub instance_code: String,
     // 删除节点所属的zone，不然删除后找不到相关的节点
-    pub owner: RefnoEnum,
+    pub belong_zone: RefnoEnum,
     pub status: DataCenterRecordOperate,
+    pub version: String,
 }
 
 impl DataCenterRecord {
-    pub fn get_insert_sql(refnos: HashSet<RefU64>) -> String {
+    pub fn get_insert_sql(refnos: HashMap<RefnoEnum, String>) -> String {
         if refnos.is_empty() { return "".to_string(); };
         let data = refnos
             .into_iter()
-            .map(|refno| DataCenterRecord {
+            .map(|(refno, instance_code)| DataCenterRecord {
                 refno: refno.into(),
-                owner: Default::default(),
+                instance_code: instance_code,
                 status: DataCenterRecordOperate::Insert,
+                belong_zone: Default::default(),
+                version: "".to_string(),
             })
-            .collect::<Vec<_>>();
-        let sql = data
+            .collect::<Vec<DataCenterRecord>>();
+        data
             .into_iter()
-            .map(|d| format!("({},{},'{:?}')", d.refno.to_table_key("datacenter_handle"), d.owner.to_pe_key(), d.status))
+            .map(|d| format!("upsert {} set instance_code = '{}' , status = '{:?}'",
+                             d.refno.to_table_key(DATACENTER_VERSION), d.instance_code, d.status))
             .collect::<Vec<_>>()
-            .join(",");
-        format!(
-            "insert ignore into {} (id,owner,status) values {}",
-            "datacenter_handle", sql
-        )
+            .join(";")
     }
 }
 
