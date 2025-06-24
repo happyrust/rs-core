@@ -323,8 +323,8 @@ DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
     if $pe == none || !record::exists($pe) {
             return none;
     };
-    let $a = (record::id($pe->pe_owner.id[0])[1]) - 1;
-    return select value in from only ($pe->pe_owner->pe<-pe_owner)[..$a] where in.noun != $exclude_type  limit 1;
+    let $a = (record::id($pe->pe_owner.id[0])[1]);
+    return (select value in from ($pe->pe_owner->pe<-pe_owner)[..$a] where in.noun != $exclude_type).last();
 };
 
 remove function fn::last_child_exclude_type;
@@ -361,7 +361,7 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
     } else {
         let $connect_bran = $pe.owner.refno.HREF;
         return if $connect_bran != none {
-            return fn::last_child($connect_bran)?:$connect_bran;
+            return fn::last_child_exclude_type($connect_bran,'ATTA')?:$connect_bran;
         } else {
             return none;
         };
@@ -372,12 +372,12 @@ remove function fn::prev_connect_pe_data;
 DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     let $p = fn::prev_connect_pe($pe);
     //如果有到达这个元件的直段，则返回这个直段的leave
-    let $tmp_tubi_refno = fn::query_tubi_from($pe);
+    let $tmp_tubi_refno = fn::query_tubi_from($pe).leave;
     let $tubi_refno = if $tmp_tubi_refno != none {
         $tmp_tubi_refno
-    } else if fn::query_tubi_to($pe.owner) != none {   //判断bran的最尾部是不是TUBI
+    } else if fn::first_child($pe.owner) == $pe && $pe.owner.refno.HREF.noun == 'BRAN' && fn::query_tubi_to($pe.owner) != none {
         // 返回是否有bran开启的直段
-        fn::query_tubi_to($pe.owner)
+        fn::query_tubi_to($pe.owner).arrive
     } else {
        none
     };
@@ -428,10 +428,10 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
     } else {
         let $connect_bran = $pe.owner.refno.TREF;
         return if $connect_bran != none {
-            return fn::first_child($connect_bran)?:$connect_bran;
+            return fn::first_child_exclude_type($connect_bran,'ATTA')?:$connect_bran;
         } else {
             return none;
-        };  
+        };
     };
 };
 
@@ -440,7 +440,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     let $p = fn::next_connect_pe($pe);
     let $tubi_refno = if fn::query_tubi_to($pe) != none {
         $pe
-    } else if fn::query_tubi_to($pe.owner.refno.TREF) != none {
+    } else if fn::last_child($pe.owner) == $pe && $pe.owner.refno.TREF.noun == 'BRAN' && fn::query_tubi_to($pe.owner.refno.TREF) != none {
         // 返回是否有bran开启的直段
       $pe.owner.refno.TREF
     } else {
@@ -448,7 +448,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     };
     let $tubi_name = return if $tubi_refno == none {
        none
-   } else { string::concat('ileave tube of ',  fn::default_full_name($pe)) };
+   } else { string::concat('ileave tube of ',  fn::default_full_name($tubi_refno)) };
     return if $p != none {
         let $tubi_spref = return if $tubi_refno == none {
             none
@@ -473,7 +473,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
                 next: $pe,
                 tubi_refno: tubi_refno,
                 tubi_name: $tubi_name,
-                tubi_spref: $pe.refno.LSTU.name           
+                tubi_spref: $pe.refno.LSTU.name
             };
         } else {
             none
@@ -483,12 +483,20 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
 
 remove function fn::query_tubi_to;
 DEFINE FUNCTION fn::query_tubi_to($pe:record) {
-    return select arrive from only $pe.owner->tubi_relate where leave=$pe limit 1;
+    if $pe.noun == 'BRAN' {
+       return select arrive from only $pe->tubi_relate where leave=$pe limit 1;
+    } else {
+        return select arrive from only $pe.owner->tubi_relate where leave=$pe limit 1;
+    }
 };
 
 remove function fn::query_tubi_from;
 DEFINE FUNCTION fn::query_tubi_from($pe:record) {
-    return select leave from only $pe.owner->tubi_relate where arrive=$pe limit 1;
+    if $pe.noun == 'BRAN' {
+        return select leave from only $pe->tubi_relate where arrive=$pe limit 1;
+    } else {
+        return select leave from only $pe.owner->tubi_relate where arrive=$pe limit 1;
+    }
 };
 
 remove function fn::query_bran_first_tubi;
