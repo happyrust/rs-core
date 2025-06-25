@@ -295,18 +295,13 @@ DEFINE FUNCTION fn::first_child($pe:record) {
 };
 
 remove function fn::first_child_exclude_type;
-DEFINE FUNCTION fn::first_child_exclude_type($pe:record, $exclude_type: string) {
-    return select value in from only $pe<-pe_owner where in.noun != $exclude_type limit 1;
+DEFINE FUNCTION fn::first_child_exclude_type($pe:record, $exclude_types: array) {
+    return select value in from only $pe<-pe_owner where !$exclude_types.any(in.noun) limit 1;
 };
 
 remove function fn::last_child;
 DEFINE FUNCTION fn::last_child($pe:record) {
     return array::last((select value (<-pe_owner.in) from only $pe limit 1)?:[]);
-};
-
-remove function fn::last_child_exclude_type;
-DEFINE FUNCTION fn::last_child_exclude_type($pe:record, $exclude_type: string) {
-    return (select * from only $pe<-pe_owner where in.noun != $exclude_type order by id desc limit 1).in;
 };
 
 remove function fn::prev_pe;
@@ -319,17 +314,17 @@ DEFINE FUNCTION fn::prev_pe($pe:record) {
 };
 
 remove function fn::prev_pe_exclude_type;
-DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
+DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_types: array) {
     if $pe == none || !record::exists($pe) {
             return none;
     };
     let $a = (record::id($pe->pe_owner.id[0])[1]);
-    return (select value in from ($pe->pe_owner->pe<-pe_owner)[..$a] where in.noun != $exclude_type).last();
+    return (select value in from ($pe->pe_owner->pe<-pe_owner)[..$a] where !$exclude_types.any(in.noun)).last();
 };
 
 remove function fn::last_child_exclude_type;
-DEFINE FUNCTION fn::last_child_exclude_type($pe:record, $exclude_type: string) {
-    return (select * from only $pe<-pe_owner where in.noun != $exclude_type order by id desc limit 1).in;
+DEFINE FUNCTION fn::last_child_exclude_type($pe:record, $exclude_types: array) {
+    return (select * from only $pe<-pe_owner where !$exclude_types.any(in.noun) order by id desc limit 1).in;
 };
 
 remove function fn::next_pe;
@@ -342,12 +337,12 @@ DEFINE FUNCTION fn::next_pe($pe:record) {
 };
 
 remove function fn::next_pe_exclude_type;
-DEFINE FUNCTION fn::next_pe_exclude_type($pe:record, $exclude_type: string) {
+DEFINE FUNCTION fn::next_pe_exclude_type($pe:record, $exclude_types: array) {
     if $pe == none || !record::exists($pe) {
             return none;
         };
     let $a = (record::id($pe->pe_owner.id[0])[1]) + 1;
-    return select value in from only ($pe->pe_owner->pe<-pe_owner)[$a..] where in.noun != $exclude_type  limit 1;
+    return select value in from only ($pe->pe_owner->pe<-pe_owner)[$a..] where !$exclude_types.any(in.noun)  limit 1;
 };
 
 remove function fn::prev_connect_pe;
@@ -355,13 +350,13 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
     if $pe == none {
         return none;
     };
-    let $p = fn::prev_pe_exclude_type($pe, 'ATTA');
+    let $p = fn::prev_pe_exclude_type($pe, ['ATTA','GASK']);
     return if $p != none {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.HREF;
         return if $connect_bran != none {
-            return fn::last_child_exclude_type($connect_bran,'ATTA')?:$connect_bran;
+            return fn::last_child_exclude_type($connect_bran,['ATTA','GASK'])?:$connect_bran;
         } else {
             return none;
         };
@@ -371,19 +366,27 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
 remove function fn::prev_connect_pe_data;
 DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     let $p = fn::prev_connect_pe($pe);
+    // 判断上一个跨bran连接的是否有tubi
+    let $p_tubi = fn::query_tubi_to($p).arrive;
     //如果有到达这个元件的直段，则返回这个直段的leave
     let $tmp_tubi_refno = fn::query_tubi_from($pe).leave;
+    let $b_href_bran = $pe.owner.refno.HREF.noun == 'BRAN';
     let $tubi_refno = if $tmp_tubi_refno != none {
         $tmp_tubi_refno
-    } else if fn::first_child($pe.owner) == $pe && $pe.owner.refno.HREF.noun == 'BRAN' && fn::query_tubi_to($pe.owner) != none {
-        // 返回是否有bran开启的直段
+    } else if fn::first_child($pe.owner) == $pe && $b_href_bran && fn::query_tubi_to($pe.owner) != none {
+        // 判断在bran第一节点时有没有tubi
         fn::query_tubi_to($pe.owner).arrive
+    } else if $p_tubi != none && $b_href_bran {
+        // 判断跨bran的上一个元件，该元件下面有没有tubi  并排除HREF连接的是TEE等管件的情况
+        $p
     } else {
        none
     };
     let $tubi_name = return if $tubi_refno == none {
         none
-    } else { string::concat('ileave tube of ',  fn::default_full_name($tubi_refno)) };
+    } else {
+        string::concat('ileave tube of ',  fn::default_full_name($tubi_refno))
+    };
     return if $p != none {   //如果存在上一个节点
         //如果tubi_refno是branch的最后一个节点，则需要判断关联的branch有tubi
         let $tubi_spref = return if $tubi_refno == none {
@@ -422,13 +425,13 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
     if $pe == none {
         return none;
     };
-    let $p = fn::next_pe_exclude_type($pe, 'ATTA');
+    let $p = fn::next_pe_exclude_type($pe, ['ATTA','GASK']);
     return if $p != none {
         return $p;
     } else {
         let $connect_bran = $pe.owner.refno.TREF;
         return if $connect_bran != none {
-            return fn::first_child_exclude_type($connect_bran,'ATTA')?:$connect_bran;
+            return fn::first_child_exclude_type($connect_bran,['ATTA','GASK'])?:$connect_bran;
         } else {
             return none;
         };
@@ -438,13 +441,17 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
 remove function fn::next_connect_pe_data;
 DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     let $p = fn::next_connect_pe($pe);
+    let $p_tubi = fn::query_tubi_from($p).leave;
+    let $b_tref_bran = $pe.owner.refno.TREF.noun == 'BRAN';
     let $tubi_refno = if fn::query_tubi_to($pe) != none {
         $pe
-    } else if fn::last_child($pe.owner) == $pe && $pe.owner.refno.TREF.noun == 'BRAN' && fn::query_tubi_to($pe.owner.refno.TREF) != none {
+    } else if fn::last_child($pe.owner) == $pe && $b_tref_bran && fn::query_tubi_to($pe.owner.refno.TREF) != none {
         // 返回是否有bran开启的直段
       $pe.owner.refno.TREF
+    } else if $p_tubi!= NONE && $b_tref_bran {
+       $p
     } else {
-       none
+        NONE
     };
     let $tubi_name = return if $tubi_refno == none {
        none
