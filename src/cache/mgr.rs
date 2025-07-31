@@ -12,14 +12,14 @@ use dashmap::mapref::one::Ref;
 use parry3d::bounding_volume::Aabb;
 
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
 use redb::{
     Database, ReadableTable, TableDefinition,
 };
 
 
 pub const CACHE_SLED_NAME: &'static str = "cache.rdb";
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
 const TABLE: TableDefinition<u64, &[u8]> = TableDefinition::new("my_data");
 
 
@@ -53,6 +53,7 @@ impl BytesTrait for Aabb{
 #[derive(Clone, Debug)]
 pub struct CacheMgr<T: BytesTrait + Clone + Serialize + DeserializeOwned> {
     name: String,
+    #[cfg(feature = "redb")]
     db: Option<Arc<Database>>,
     map: DashMap<RefU64, T>,
     use_redb: bool,
@@ -72,6 +73,7 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
     pub fn new(name: &str, save_to_redb: bool) -> Self {
         Self {
             name: name.to_string(),
+            #[cfg(feature = "redb")]
             db: if save_to_redb {
                 unsafe { Database::create(name).map(|x| Arc::new(x)).ok() }
             } else {
@@ -120,9 +122,9 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
 
     #[inline]
     pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
         {
-            if self.use_redb && !self.map.contains_key(k) && self.db.is_some() {
+            if self.use_redb && !self.map.contains_key(k) {
                 if let Some(db) = &self.db {
                     let read_txn = db.begin_read().ok()?;
                     let table = read_txn.open_table(TABLE).ok()?;
@@ -140,7 +142,7 @@ impl<T: BytesTrait + Clone + Serialize + DeserializeOwned> CacheMgr<T> {
     pub fn insert(&self, k: RefU64, value: &T) -> anyhow::Result<()> {
         self.map.insert(k, value.clone());
         if self.use_redb {
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
             {
                 if let Some(db) = &self.db {
                     let write_txn = db.begin_write()?;
@@ -185,41 +187,12 @@ impl<T: Clone + Serialize + DeserializeOwned> CacheMgr<T>
 
     #[inline]
     pub fn get(&self, k: &RefU64) -> Option<Ref<RefU64, T>> {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            if self.use_redb && !self.map.contains_key(k) && self.db.is_some() {
-                // if let Ok(Some(bytes)) = self.db.as_ref().unwrap().get(k.into()) {
-                //     self.map.insert((*k).into(), bytes.into());
-                // }
-                if let Some(db) = &self.db {
-                    let read_txn = db.begin_read().ok()?;
-                    let table = read_txn.open_table(TABLE).ok()?;
-                    if let Ok(Some(bytes)) = table.get(&**k) {
-                        self.map.insert((*k).into(), T::from_bytes(bytes));
-                    }
-                }
-            }
-        }
         self.map.get(k)
     }
 
     #[inline]
     pub fn insert(&self, k: RefU64, value: &T) -> anyhow::Result<()> {
         self.map.insert(k, value.clone());
-        if self.use_redb {
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                if let Some(db) = &self.db {
-                    let write_txn = db.begin_write()?;
-                    {
-                        //todo use on file
-                        let mut table = write_txn.open_table(TABLE)?;
-                        table.insert(&*k, &value.to_bytes())?;
-                    }
-                    write_txn.commit()?;
-                }
-            }
-        }
         Ok(())
     }
 

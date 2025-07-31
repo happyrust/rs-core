@@ -618,3 +618,16 @@ define function fn::get_flan_bolt_list($pe:record) {
         'mat':$mat
     }
 };
+
+remove function fn::query_ptset;
+define function fn::query_ptset($refno: string) {
+    let $table_name = string::concat($refno, '_inst_relate');
+    let $sql = string::concat(
+        '(SELECT world_trans.d AS transform, object::values(out.ptset?:{}).pt AS points FROM ',
+        $table_name,
+        ')[0]'
+    );
+    
+    let $result = SELECT VALUE $sql FROM ONLY [];
+    return $result[0];
+};

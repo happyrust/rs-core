@@ -278,27 +278,36 @@ pub struct PtsetResult {
     pub points: Vec<Vec3>,
 }
 
+/// 查询参考号对应的点集合
+/// 
+/// # 参数
+/// * `refno` - 需要查询的参考号
+/// 
+/// # 返回值
+/// * `Ok(Some(PtsetResult))` - 查询成功且找到点集
+/// * `Ok(None)` - 查询成功但未找到点集
+/// * `Err` - 查询过程中发生错误
+/// 
+/// # 实现说明
+/// 1. 通过SQL查询inst_relate表中的数据
+/// 2. 获取世界坐标变换矩阵(world_trans.d)和点集(ptset)
+/// 3. 将结果解析为PtsetResult结构体
 pub async fn query_ptset(refno: RefnoEnum) -> anyhow::Result<Option<PtsetResult>> {
+    // 构建SQL查询语句:
+    // - world_trans.d 获取世界坐标变换矩阵
+    // - object::values(out.ptset?:{}).pt 获取点集,如果ptset为空则返回空对象
     let sql = format!(
         "(select world_trans.d as transform, object::values(out.ptset?:{{}}).pt as points from {0})[0]",
         to_table_key!(refno, "inst_relate")
     );
+    // 执行查询
     let mut response = SUL_DB.query(&sql).await?;
+    // 解析查询结果为PtsetResult类型
     let result: Option<PtsetResult> = response.take(0)?;
     // dbg!(&result);
     Ok(result)
 }
 
-/// 查询RefnoEnum对应的关键点集合
-pub async fn query_key_points(refno: RefnoEnum) -> anyhow::Result<Option<Vec<Vec3>>> {
-    // let sql = format!(
-    //     "select value inst_relate.pts.*.d from {}",
-    //     refno.to_pe_key()
-    // );
-    // let mut response = SUL_DB.query(&sql).await?;
-    // let result: Option<Vec<Vec3>> = response.take(0)?;
-    Ok(None)
-}
 
 #[cfg(test)]
 mod tests {

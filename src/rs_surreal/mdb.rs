@@ -1,3 +1,4 @@
+// 导入所需的依赖
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::{get_db_option, helper, types::*};
@@ -12,30 +13,32 @@ use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
 
+/// 数据库类型枚举
+/// 用于区分不同类型的数据库模块
 #[derive(IntoPrimitive, TryFromPrimitive, Clone, Copy, Hash, Eq, PartialEq, Debug)]
 #[repr(u8)]
 pub enum DBType {
-    DESI = 1,
-    CATA = 2,
-    PROP = 3,
-    ISOD = 4,
-    PADD = 5,
-    DICT = 6,
-    ENGI = 7,
-    SCHE = 14,
-    UNSET,
+    DESI = 1,  // 设计数据库
+    CATA = 2,  // 目录数据库
+    PROP = 3,  // 属性数据库
+    ISOD = 4,  // ISO图数据库
+    PADD = 5,  // 管道数据库
+    DICT = 6,  // 字典数据库
+    ENGI = 7,  // 工程数据库
+    SCHE = 14, // 图纸数据库
+    UNSET,     // 未设置类型
 }
 
-/// Executes a query on the SUL_DB database to retrieve information from MDB and DB tables.
+/// 从数据库中获取MDB和DB表的信息
 ///
-/// # Arguments
+/// # 参数说明
 ///
-/// * `mdb` - The name of the MDB to query.
-/// * `db_type` - The type of DB to filter by.
+/// * `mdb` - 要查询的MDB名称
+/// * `db_type` - 数据库类型过滤条件
 ///
-/// # Returns
+/// # 返回值
 ///
-/// The response containing the refno, noun, name, owner, and children_count fields from the query.
+/// 返回包含refno、noun、name、owner和children_count字段的查询结果
 #[cached(result = true)]
 pub async fn get_mdb_world_site_ele_nodes(
     mdb: String,
@@ -51,10 +54,11 @@ pub async fn get_mdb_world_site_ele_nodes(
         db_type = db_type,
         mdb = mdb
     );
-    // println!("sql is {}", &sql);
+    // 执行查询
     let mut response = SUL_DB.query(&sql).await.unwrap();
-    // dbg!(&response);
+    // 获取结果
     let mut nodes: Vec<EleTreeNode> = response.take(2)?;
+    // 处理节点顺序和名称
     for (i, node) in nodes.iter_mut().enumerate() {
         node.order = i as _;
         if node.name.is_empty() {
@@ -65,6 +69,14 @@ pub async fn get_mdb_world_site_ele_nodes(
     Ok(nodes)
 }
 
+/// 创建MDB世界站点PE表
+/// 
+/// # 参数
+/// * `mdb` - MDB名称
+/// * `module` - 数据库类型
+/// 
+/// # 返回值
+/// * `bool` - 创建是否成功
 pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> anyhow::Result<bool> {
     let db_type: u8 = module.into();
     let mut response = SUL_DB
@@ -94,6 +106,14 @@ pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> any
     Ok(true)
 }
 
+/// 通过数据库编号列表查询指定类型的参考号
+/// 
+/// # 参数
+/// * `nouns` - 要查询的类型名称列表
+/// * `dbnums` - 数据库编号列表
+/// 
+/// # 返回值
+/// * `Vec<RefnoEnum>` - 参考号列表
 pub async fn query_type_refnos_by_dbnums(
     nouns: &[&str],
     dbnums: &[u32],
@@ -150,7 +170,13 @@ pub async fn query_type_refnos_by_dbnum(
     Ok(result)
 }
 
-//额外检查SPRE  和 CATR 不能同时为空
+/// 查询使用类别参考号
+/// 额外检查SPRE和CATR不能同时为空
+/// 
+/// # 参数
+/// * `nouns` - 要查询的类型名称列表
+/// * `dbnum` - 数据库编号
+/// * `only_history` - 是否只查询历史记录
 pub async fn query_use_cate_refnos_by_dbnum(
     nouns: &[&str],
     dbnum: u32,
@@ -172,7 +198,7 @@ pub async fn query_use_cate_refnos_by_dbnum(
     Ok(result)
 }
 
-//去掉父类型是BRAN 和 HANGER的
+/// 去掉父类型是BRAN和HANGER的记录
 // pub async fn query_type_refnos_by_dbnum_exclude_bran_hang(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefnoEnum>> {
 //     let mut result = vec![];
 //     for noun in nouns {
@@ -184,6 +210,13 @@ pub async fn query_use_cate_refnos_by_dbnum(
 //     Ok(result)
 // }
 
+/// 查询MDB数据库编号
+/// 
+/// # 参数
+/// * `module` - 数据库类型
+/// 
+/// # 返回值
+/// * `Vec<u32>` - 数据库编号列表
 #[cached(result = true)]
 pub async fn query_mdb_db_nums(module: DBType) -> anyhow::Result<Vec<u32>> {
     let db_type: u8 = module.into();
@@ -203,7 +236,14 @@ pub async fn query_mdb_db_nums(module: DBType) -> anyhow::Result<Vec<u32>> {
     Ok(pe)
 }
 
-///查询mdb的world下的所有pe
+/// 查询MDB的world下的所有PE
+/// 
+/// # 参数
+/// * `mdb` - MDB名称
+/// * `module` - 数据库类型
+/// 
+/// # 返回值
+/// * `Vec<SPdmsElement>` - PE元素列表
 #[cached(result = true)]
 pub async fn get_mdb_world_site_pes(
     mdb: String,
@@ -223,7 +263,13 @@ pub async fn get_mdb_world_site_pes(
     Ok(pe)
 }
 
-/// Represents the response obtained from the database query.
+/// 获取世界节点
+/// 
+/// # 参数
+/// * `mdb` - MDB名称
+/// 
+/// # 返回值
+/// * `Option<SPdmsElement>` - 世界节点元素
 #[cached(result = true)]
 pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
     let sql = format!(
@@ -237,21 +283,39 @@ pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
     Ok(pe)
 }
 
-/// Represents the response obtained from the database query.
+/// 获取世界参考号
+/// 
+/// # 参数
+/// * `mdb` - MDB数据库名称
+/// 
+/// # 返回值
+/// * `RefnoEnum` - 世界节点的参考号
+/// 
+/// # 说明
+/// * 使用缓存优化查询性能
+/// * 从WORL表中查询指定MDB下的世界节点参考号
+/// * 如果未找到则返回默认值
 #[cached(result = true)]
 pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
+    // 标准化MDB名称,确保以'/'开头
     let mdb_name = if mdb.starts_with('/') {
         mdb.clone()
     } else {
         format!("/{}", mdb)
     };
+    
+    // 构建SQL查询
+    // 1. 首先获取MDB对应的DBNO(数据库编号)
+    // 2. 然后查询该DBNO下类型为WORL的参考号
     let sql = format!(
         " \
             let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
             (select value REFNO from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         mdb_name
     );
-    let mut response = SUL_DB.query(sql).await.unwrap();
+    
+    // 执行查询并获取结果
+    let mut response = SUL_DB.query(sql).await?;
     let id: Option<RefnoEnum> = response.take(1)?;
     Ok(id.unwrap_or_default())
 }
