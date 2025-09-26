@@ -28,3 +28,12 @@ pub mod test_different_dbs;
 // pub mod test_transform;
 
 // pub mod test_material;
+
+// #[cfg(not(target_arch = "wasm32"))]
+// pub mod test_gensec_spine;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod test_svg_standalone;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod test_arc_demo;

@@ -2,8 +2,8 @@
 // gensec
 
 remove function fn::dq_gensec;
-define function fn::dq_gensec($pes:array<record>){    
-    return select 
+define function fn::dq_gensec($pes:array<record>){
+    return select
         fn::pe_to_refno(id) as id, // 参考号
         string::slice(fn::find_ancestor_type(id,'SITE').name?:'',1,1) as num, // 机组号
         string::slice((string::split(fn::find_ancestor_type(id,'SITE').name?:'', '-'))[0]?:'',2) as project_num, //子项号
@@ -13,13 +13,10 @@ define function fn::dq_gensec($pes:array<record>){
         string::slice(refno.NAME?:'',1) as name, // 托盘段号
         math::fixed(refno.POS[2]?:0,3) as pos,
         '裸铜缆' as material,  //材质
-        refno.SPRE.refno.NAME?:'' as spre,  
+        refno.SPRE.refno.NAME?:'' as spre,
         refno.SPRE.refno.CATR.refno.NAME?:'' as catr,
-        if array::len(array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)) == 2 {
-            math::fixed(fn::array_distance(array::clump(<-pe_owner.in<-pe_owner[where in.noun='POINSP'].in.refno.POS,3)), 3)
-        } else {
-            0.0
-        } as length
+        // 使用新的SPINE长度计算函数
+        fn::get_gensec_spine_length(id) as length
     from $pes where string::contains(fn::find_ancestor_type(id,'ZONE').name?:'','MTGD');
 };
 
