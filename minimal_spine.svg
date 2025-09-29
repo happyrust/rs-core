@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+<defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+</defs>
+<style>
+    .point-poinsp { fill: #2196F3; stroke: #1976D2; stroke-width: 2; }
+    .point-curve { fill: #FF9800; stroke: #F57F17; stroke-width: 2; }
+    .path-line { stroke: #4CAF50; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+    .path-arc { stroke: #E91E63; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+    .label { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+    .coord-label { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+    .grid { stroke: #eee; stroke-width: 1; }
+    .axis { stroke: #ccc; stroke-width: 2; }
+</style>
+<line x1="50" y1="50" x2="50" y2="550" class="grid" />
+<line x1="225" y1="50" x2="225" y2="550" class="grid" />
+<line x1="400" y1="50" x2="400" y2="550" class="grid" />
+<line x1="575" y1="50" x2="575" y2="550" class="grid" />
+<line x1="750" y1="50" x2="750" y2="550" class="grid" />
+<line x1="50" y1="475" x2="750" y2="475" class="grid" />
+<line x1="50" y1="300" x2="750" y2="300" class="grid" />
+<line x1="50" y1="125" x2="750" y2="125" class="grid" />
+<line x1="50.0" y1="475.0" x2="400.0" y2="475.0" class="path-line" />
+<path d="M 400.0 475.0 Q 662.5 387.5 750.0 125.0" class="path-arc" />
+<circle cx="50.0" cy="475.0" r="6" class="point-poinsp" />
+<circle cx="400.0" cy="475.0" r="6" class="point-poinsp" />
+<circle cx="575.0" cy="300.0" r="6" class="point-curve" />
+<circle cx="750.0" cy="125.0" r="6" class="point-poinsp" />
+</svg>

@@ -29,3 +29,4 @@ pub use ref64vec::*;
 pub use refno::*;
 pub use whole_attmap::*;
 pub use hash::*;
+pub use pe::*;

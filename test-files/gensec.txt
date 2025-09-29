@@ -1,0 +1,64 @@
+﻿$S-  -- Synonym translation OFF
+-- ----------------------------------------------------------------
+-- Data Listing    Date : 24 Sep 2025 16:21
+
+ONERROR GOLABEL /ERROR3
+
+INPUT BEGIN
+NEW GENSEC
+BUIL false
+SHOP false
+GRADE 0
+FIRE 0
+SPRE SPCOMPONENT /GROUND/TUBE/SEG00016
+MEML NA
+POS E 0mm N 0mm U 15.75mm
+
+NEW SPINE
+YDIR S
+
+NEW POINSP
+POS E 12635mm S 25862mm D 1950mm
+
+END
+NEW POINSP
+POS E 12785mm S 25862mm D 1950mm
+
+END
+NEW CURVE
+POS E 12884mm S 25903.01mm D 1950mm
+RADI 140mm
+CURTYP THRU
+
+END
+NEW POINSP
+POS E 12925mm S 26002mm D 1950mm
+
+END
+NEW POINSP
+POS E 12925mm S 26152mm D 1950mm
+
+END
+NEW POINSP
+POS E 12925mm S 29152mm D 1950mm
+
+END
+NEW POINSP
+POS E 12925mm S 30652mm D 1950mm
+
+END
+END
+END
+INPUT END  GENSEC 1 of FRMWORK 1 of STRUCTURE /M-BL-1NH-2020B-JD
+INPUT FINISH
+-- Switch synonyms back on if an error occurs.
+LABEL /ERROR3
+handle ANY
+$S+
+RETURN ERROR
+endhandle
+
+-- End Data Listing    Date : 24 Sep 2025 16:21
+$S+  -- Synonym translation ON
+-- ----------------------------------------------------------------
+

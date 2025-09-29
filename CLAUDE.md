@@ -1,4 +1,6 @@
 # CLAUDE.md
+ 没有我的命令，不要随意创建测试文件，你要先出方案，然后让我确认之后才能修改和创建文件。
+我是 plan 模式的情况在，不要开启代码编辑，我只是让你先出方案设计，只有我确定了方案之后，你才能修改。
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 

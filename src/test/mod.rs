@@ -21,6 +21,13 @@ pub mod test_parse_dir;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_surreal;
 
+#[cfg(feature = "kuzu")]
+pub mod test_kuzu;
+
+pub mod test_sync;
+
+// pub mod test_db_adapter;
+
 pub mod test_expression;
 
 pub mod test_different_dbs;
@@ -37,3 +44,6 @@ pub mod test_svg_standalone;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_arc_demo;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod test_clean_svg;

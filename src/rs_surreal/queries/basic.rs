@@ -271,6 +271,79 @@ impl BasicQueryService {
             }
         }
     }
+
+    /// 通过数据库编号获取对应的 WORLD 参考号
+    ///
+    /// # 参数
+    /// * `dbnum` - 数据库编号
+    ///
+    /// # 返回值
+    /// * `Result<Option<RefnoEnum>>` - 如果找到则返回 WORLD 的参考号，否则返回 None
+    ///
+    /// # 错误
+    /// * 如果数据库查询失败会返回错误
+    ///
+    /// # 示例
+    /// ```rust
+    /// use crate::rs_surreal::queries::basic::BasicQueryService;
+    ///
+    /// let world_refno = BasicQueryService::get_world_by_dbnum(1112).await?;
+    /// ```
+    pub async fn get_world_by_dbnum(dbnum: u32) -> Result<Option<RefnoEnum>> {
+        let start_time = Instant::now();
+        let query = FunctionQueryBuilder::get_world(dbnum);
+        let sql = query.build().to_string();
+
+        match query.fetch_one::<RefnoEnum>().await {
+            Ok(world_refno) => {
+                let execution_time = start_time.elapsed().as_millis() as u64;
+                QueryErrorHandler::log_query_execution(&sql, execution_time);
+                Ok(world_refno)
+            }
+            Err(error) => {
+                let query_error = QueryErrorHandler::handle_execution_error(&sql, error);
+                Err(query_error.into())
+            }
+        }
+    }
+
+    /// 查询指定 WORLD 下的所有 SITE 节点
+    ///
+    /// # 参数
+    /// * `world_refno` - WORLD 节点的参考号
+    ///
+    /// # 返回值
+    /// * `Result<Vec<RefnoEnum>>` - SITE 节点的参考号列表
+    ///
+    /// # 错误
+    /// * 如果数据库查询失败会返回错误
+    ///
+    /// # 示例
+    /// ```rust
+    /// use crate::rs_surreal::queries::basic::BasicQueryService;
+    /// use crate::types::RefnoEnum;
+    ///
+    /// let world_refno = RefnoEnum::from("123_456");
+    /// let sites = BasicQueryService::query_sites_of_world(world_refno).await?;
+    /// ```
+    pub async fn query_sites_of_world(world_refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
+        let start_time = Instant::now();
+        let query = FunctionQueryBuilder::query_sites_of_db(world_refno);
+        let sql = query.build().to_string();
+
+        match query.fetch_all::<RefnoEnum>().await {
+            Ok(sites) => {
+                let execution_time = start_time.elapsed().as_millis() as u64;
+                QueryErrorHandler::log_query_execution(&sql, execution_time);
+                QueryErrorHandler::log_query_results(&sql, sites.len());
+                Ok(sites)
+            }
+            Err(error) => {
+                let query_error = QueryErrorHandler::handle_execution_error(&sql, error);
+                Err(query_error.into())
+            }
+        }
+    }
 }
 
 /// 缓存版本的基础查询函数（保持向后兼容）
@@ -303,6 +376,26 @@ pub async fn get_default_full_name(refno: RefnoEnum) -> anyhow::Result<String> {
     BasicQueryService::get_default_full_name(refno).await
 }
 
+/// 通过数据库编号获取对应的 WORLD 参考号（向后兼容函数）
+pub async fn get_world_by_dbnum(dbnum: u32) -> anyhow::Result<Option<RefnoEnum>> {
+    BasicQueryService::get_world_by_dbnum(dbnum).await
+}
+
+/// 查询指定 WORLD 下的所有 SITE 节点（向后兼容函数）
+pub async fn query_sites_of_world(world_refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
+    BasicQueryService::query_sites_of_world(world_refno).await
+}
+
+/// 通过数据库编号直接获取所有 SITE 节点（向后兼容函数）
+pub async fn get_sites_of_dbnum(dbnum: u32) -> anyhow::Result<Vec<RefnoEnum>> {
+    BasicQueryService::get_sites_of_dbnum(dbnum).await
+}
+
+/// 通过数据库编号直接获取所有 SITE 节点（向后兼容函数）
+pub async fn get_sites_of_dbnum(dbnum: u32) -> anyhow::Result<Vec<RefnoEnum>> {
+    BasicQueryService::get_sites_of_dbnum(dbnum).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -315,6 +408,35 @@ mod tests {
         
         // 测试类型名称查询的错误处理
         match BasicQueryService::get_type_name(refno).await {
+            Ok(_) => {
+                // 查询成功
+            }
+            Err(_) => {
+                // 预期的错误，因为没有实际的数据库连接
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_world_and_site_queries() {
+        // 测试新添加的 WORLD 和 SITE 查询方法
+        // 注意：这些测试需要实际的数据库连接和数据
+
+        let dbnum = 1112u32;
+        let world_refno = RefnoEnum::from("123_456");
+
+        // 测试通过数据库编号获取 WORLD 的错误处理
+        match BasicQueryService::get_world_by_dbnum(dbnum).await {
+            Ok(_) => {
+                // 查询成功
+            }
+            Err(_) => {
+                // 预期的错误，因为没有实际的数据库连接
+            }
+        }
+
+        // 测试查询 WORLD 下的 SITE 节点的错误处理
+        match BasicQueryService::query_sites_of_world(world_refno).await {
             Ok(_) => {
                 // 查询成功
             }

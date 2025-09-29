@@ -65,7 +65,7 @@ impl PdmsNodeTrait for MetadataManagerTreeNode {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MetadataManagerTableDataExcelIndex {
     pub code: Option<usize>,
-    pub data_type: Option<usize>,
+    pub noun: Option<usize>,
     pub data_constraint: Option<usize>,
     pub b_multi: Option<usize>,
     pub english_name: Option<usize>,
@@ -84,7 +84,7 @@ pub struct MetadataManagerTableDataExcelIndex {
 pub struct MetadataManagerTableData {
     pub id: u64,
     pub code: String,
-    pub data_type: String,
+    pub noun: String,
     pub data_constraint: String,
     pub b_multi: bool,
     pub english_name: String,
@@ -111,7 +111,7 @@ pub struct ShowMetadataManagerTableData {
     pub id: u64,
     pub old_code: String,
     pub new_code: String,
-    pub data_type: String,
+    pub noun: String,
     pub data_constraint: String,
     pub b_multi: String,
     pub english_name: String,
@@ -139,7 +139,7 @@ impl ShowMetadataManagerTableData {
         data.english_define = table_data.english_define;
         data.chinese_define = table_data.chinese_define;
         data.b_multi = if table_data.b_multi { "Y".to_string() } else { "N".to_string() };
-        data.data_type = table_data.data_type;
+        data.noun = table_data.noun;
         data.data_constraint = table_data.data_constraint;
         data.unit = table_data.unit;
         data.desc = table_data.desc;

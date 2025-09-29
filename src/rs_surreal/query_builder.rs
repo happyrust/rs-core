@@ -225,6 +225,30 @@ impl FunctionQueryBuilder {
             refno.to_pe_key()
         ))
     }
+
+    /// 构建通过数据库编号获取 WORLD 的查询
+    pub fn get_world(dbnum: u32) -> QueryBuilder {
+        QueryBuilder::from_sql(format!(
+            "RETURN fn::get_world({})",
+            dbnum
+        ))
+    }
+
+    /// 构建查询 WORLD 下所有 SITE 节点的查询
+    pub fn query_sites_of_db(world_refno: RefnoEnum) -> QueryBuilder {
+        QueryBuilder::from_sql(format!(
+            "RETURN fn::query_sites_of_db({})",
+            world_refno.to_pe_key()
+        ))
+    }
+
+    /// 构建通过数据库编号直接获取所有 SITE 节点的查询
+    pub fn get_sites_of_dbnum(dbnum: u32) -> QueryBuilder {
+        QueryBuilder::from_sql(format!(
+            "RETURN fn::get_sites_of_dbnum({})",
+            dbnum
+        ))
+    }
 }
 
 #[cfg(test)]

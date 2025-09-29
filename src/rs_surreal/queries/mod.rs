@@ -7,22 +7,25 @@
 //! - `attributes`: 属性查询功能
 //! - `batch`: 批量查询功能
 //! - `history`: 历史数据查询功能
+//! - `timeline`: 时间线查询功能
 
 pub mod basic;
 pub mod hierarchy;
 pub mod attributes;
 pub mod batch;
+pub mod timeline;
 
 // 重新导出主要的查询服务
 pub use basic::BasicQueryService;
 pub use hierarchy::HierarchyQueryService;
 pub use attributes::AttributeQueryService;
 pub use batch::BatchQueryService;
+pub use timeline::TimelineQueryService;
 
 // 重新导出向后兼容的函数
 pub use basic::{
-    get_pe, get_type_name, get_default_name, get_refno_by_name, 
-    get_type_names, get_default_full_name
+    get_pe, get_type_name, get_default_name, get_refno_by_name,
+    get_type_names, get_default_full_name, get_world_by_dbnum, query_sites_of_world
 };
 
 pub use hierarchy::{
@@ -41,6 +44,12 @@ pub use batch::{
     query_data_with_refno_to_name, query_multiple_refnos_to_names,
     query_refnos_to_names_list, get_all_children_refnos, query_types,
     query_filter_children, query_filter_children_atts
+};
+
+pub use timeline::{
+    query_ses_time_range, query_ses_time_range_by_dbnum,
+    query_ses_records_at_time, query_ses_changes_in_range,
+    get_ses_record, get_latest_ses_records, SesRecord
 };
 
 /// 查询模块的统一接口
@@ -65,6 +74,11 @@ impl QueryService {
     /// 批量查询服务
     pub fn batch() -> &'static BatchQueryService {
         &BatchQueryService
+    }
+
+    /// 时间线查询服务
+    pub fn timeline() -> &'static TimelineQueryService {
+        &TimelineQueryService
     }
 }
 

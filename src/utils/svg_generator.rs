@@ -9,6 +9,9 @@ pub struct SpineSvgGenerator {
     margin: f32,
     scale: f32,
     points: Vec<(String, Vec3, Option<f32>)>, // (type, position, radius)
+    show_labels: bool,     // 是否显示长度标签
+    show_coordinates: bool, // 是否显示坐标
+    show_legend: bool,     // 是否显示图例
 }
 
 impl SpineSvgGenerator {
@@ -19,7 +22,17 @@ impl SpineSvgGenerator {
             margin: 50.0,
             scale: 1.0,
             points: Vec::new(),
+            show_labels: true,
+            show_coordinates: true,
+            show_legend: true,
         }
+    }
+
+    /// 设置是否显示标签和图例
+    pub fn set_display_options(&mut self, show_labels: bool, show_coordinates: bool, show_legend: bool) {
+        self.show_labels = show_labels;
+        self.show_coordinates = show_coordinates;
+        self.show_legend = show_legend;
     }
 
     /// 添加路径点
@@ -191,14 +204,16 @@ impl SpineSvgGenerator {
                     x1, y1, x2, y2
                 ));
 
-                // 添加长度标签
-                let length = current.1.distance(next.1);
-                let mid_x = (x1 + x2) / 2.0;
-                let mid_y = (y1 + y2) / 2.0;
-                paths.push_str(&format!(
-                    "<text x=\"{:.1}\" y=\"{:.1}\" class=\"label\" text-anchor=\"middle\">{:.1}mm</text>\n",
-                    mid_x, mid_y - 5.0, length
-                ));
+                // 添加长度标签（可选）
+                if self.show_labels {
+                    let length = current.1.distance(next.1);
+                    let mid_x = (x1 + x2) / 2.0;
+                    let mid_y = (y1 + y2) / 2.0;
+                    paths.push_str(&format!(
+                        "<text x=\"{:.1}\" y=\"{:.1}\" class=\"label\" text-anchor=\"middle\">{:.1}mm</text>\n",
+                        mid_x, mid_y - 5.0, length
+                    ));
+                }
 
                 i += 1;
             }
@@ -229,17 +244,19 @@ impl SpineSvgGenerator {
                         ));
                     }
 
-                    // 添加弧线信息
-                    if let Some(radius) = next.2 {
-                        let chord_length = current.1.distance(after_curve.1);
-                        let angle = 2.0 * (chord_length / (2.0 * radius)).asin();
-                        let arc_length = radius * angle;
+                    // 添加弧线信息（可选）
+                    if self.show_labels {
+                        if let Some(radius) = next.2 {
+                            let chord_length = current.1.distance(after_curve.1);
+                            let angle = 2.0 * (chord_length / (2.0 * radius)).asin();
+                            let arc_length = radius * angle;
 
-                        paths.push_str(&format!(
-                            "<text x=\"{:.1}\" y=\"{:.1}\" class=\"label\" text-anchor=\"middle\">Arc: {:.1}mm</text>\n<text x=\"{:.1}\" y=\"{:.1}\" class=\"coord-label\" text-anchor=\"middle\">R={:.1}</text>\n",
-                            x2, y2 - 15.0, arc_length,
-                            x2, y2 + 10.0, radius
-                        ));
+                            paths.push_str(&format!(
+                                "<text x=\"{:.1}\" y=\"{:.1}\" class=\"label\" text-anchor=\"middle\">Arc: {:.1}mm</text>\n<text x=\"{:.1}\" y=\"{:.1}\" class=\"coord-label\" text-anchor=\"middle\">R={:.1}</text>\n",
+                                x2, y2 - 15.0, arc_length,
+                                x2, y2 + 10.0, radius
+                            ));
+                        }
                     }
 
                     i += 2;
@@ -273,17 +290,21 @@ impl SpineSvgGenerator {
                 x, y, class
             ));
 
-            // 添加点标签
-            points.push_str(&format!(
-                "<text x=\"{:.1}\" y=\"{:.1}\" class=\"label\" text-anchor=\"middle\">{}</text>\n",
-                x, y - 12.0, i
-            ));
+            // 添加点标签（可选）
+            if self.show_labels {
+                points.push_str(&format!(
+                    "<text x=\"{:.1}\" y=\"{:.1}\" class=\"label\" text-anchor=\"middle\">{}</text>\n",
+                    x, y - 12.0, i
+                ));
+            }
 
-            // 添加坐标
-            points.push_str(&format!(
-                "<text x=\"{:.1}\" y=\"{:.1}\" class=\"coord-label\" text-anchor=\"middle\">({:.0},{:.0})</text>\n",
-                x, y + 20.0, pos.x, pos.y
-            ));
+            // 添加坐标（可选）
+            if self.show_coordinates {
+                points.push_str(&format!(
+                    "<text x=\"{:.1}\" y=\"{:.1}\" class=\"coord-label\" text-anchor=\"middle\">({:.0},{:.0})</text>\n",
+                    x, y + 20.0, pos.x, pos.y
+                ));
+            }
         }
 
         points
@@ -292,6 +313,10 @@ impl SpineSvgGenerator {
     /// 生成信息面板
     fn generate_info(&self) -> String {
         let mut info = String::new();
+
+        if !self.show_legend {
+            return info;
+        }
 
         // 计算总长度
         let total_length = self.calculate_total_length();
@@ -304,9 +329,9 @@ impl SpineSvgGenerator {
             self.points.iter().filter(|(t, _, _)| t == "CURVE").count()
         ));
 
-        // 图例
+        // 图例（只显示点类型，不显示路径类型文字）
         info.push_str(
-            "<circle cx=\"230\" cy=\"30\" r=\"6\" class=\"point-poinsp\" />\n<text x=\"245\" y=\"35\" class=\"coord-label\">POINSP</text>\n<circle cx=\"230\" cy=\"50\" r=\"6\" class=\"point-curve\" />\n<text x=\"245\" y=\"55\" class=\"coord-label\">CURVE</text>\n<line x1=\"230\" y1=\"70\" x2=\"260\" y2=\"70\" class=\"path-line\" />\n<text x=\"270\" y=\"75\" class=\"coord-label\">直线</text>\n<path d=\"M 230 90 Q 245 85 260 90\" class=\"path-arc\" />\n<text x=\"270\" y=\"95\" class=\"coord-label\">弧线</text>\n"
+            "<circle cx=\"230\" cy=\"30\" r=\"6\" class=\"point-poinsp\" />\n<text x=\"245\" y=\"35\" class=\"coord-label\">POINSP</text>\n<circle cx=\"230\" cy=\"50\" r=\"6\" class=\"point-curve\" />\n<text x=\"245\" y=\"55\" class=\"coord-label\">CURVE</text>\n<line x1=\"230\" y1=\"70\" x2=\"260\" y2=\"70\" class=\"path-line\" />\n<path d=\"M 230 90 Q 245 85 260 90\" class=\"path-arc\" />\n"
         );
 
         info

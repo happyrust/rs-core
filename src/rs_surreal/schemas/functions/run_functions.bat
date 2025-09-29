@@ -7,7 +7,7 @@ REM namespace
 if not defined NAMESPACE set NAMESPACE=1516
 
 REM 定义 surql 文件列表
-set surql_files=common.surql
+set surql_files=common.surql db.surql
 
 REM 遍历 surql 文件并导入
 for %%f in (%surql_files%) do (

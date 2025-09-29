@@ -1,3 +1,4 @@
+pub mod adapter;
 pub mod datacenter_query;
 pub mod geom;
 pub mod graph;
@@ -20,6 +21,7 @@ pub mod uda;
 pub mod pbs;
 
 pub mod inst;
+pub mod inst_structs;
 
 pub mod point;
 
@@ -38,6 +40,7 @@ pub use geom::*;
 pub use graph::*;
 pub use index::*;
 pub use inst::*;
+pub use inst_structs::*;
 pub use mdb::*;
 pub use pbs::*;
 pub use point::*;
@@ -46,6 +49,8 @@ pub use resolve::*;
 pub use spatial::*;
 pub use uda::*;
 pub use topology::*;
+
+pub use adapter::create_surreal_adapter;
 
 use once_cell::sync::Lazy;
 use surrealdb::engine::any::Any;

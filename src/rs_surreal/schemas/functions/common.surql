@@ -627,7 +627,8 @@ define function fn::query_ptset($refno: string) {
         $table_name,
         ')[0]'
     );
-    
+
     let $result = SELECT VALUE $sql FROM ONLY [];
     return $result[0];
 };
+

@@ -6,7 +6,7 @@
 : "${NAMESPACE:=1516}"
 
 # Define surql files to process
-surql_files="common.surql"
+surql_files="common.surql db.surql query_ptset.surql"
 
 # Process each surql file
 for file in $surql_files; do
