@@ -24,12 +24,30 @@ async fn test_simple_svg_generation() {
 
     // 验证SVG内容
     let svg_content = svg_generator.generate_svg();
-    assert!(svg_content.contains("<svg"), "SVG should contain opening tag");
-    assert!(svg_content.contains("</svg>"), "SVG should contain closing tag");
-    assert!(svg_content.contains("path-line"), "SVG should contain line paths");
-    assert!(svg_content.contains("path-arc"), "SVG should contain arc paths");
-    assert!(svg_content.contains("point-poinsp"), "SVG should contain POINSP points");
-    assert!(svg_content.contains("point-curve"), "SVG should contain CURVE points");
+    assert!(
+        svg_content.contains("<svg"),
+        "SVG should contain opening tag"
+    );
+    assert!(
+        svg_content.contains("</svg>"),
+        "SVG should contain closing tag"
+    );
+    assert!(
+        svg_content.contains("path-line"),
+        "SVG should contain line paths"
+    );
+    assert!(
+        svg_content.contains("path-arc"),
+        "SVG should contain arc paths"
+    );
+    assert!(
+        svg_content.contains("point-poinsp"),
+        "SVG should contain POINSP points"
+    );
+    assert!(
+        svg_content.contains("point-curve"),
+        "SVG should contain CURVE points"
+    );
 
     println!("✅ SVG content validation passed");
 }
@@ -43,7 +61,7 @@ async fn test_gensec_data_svg_generation() {
     let points = vec![
         ("POINSP", Vec3::new(12635.0, -25862.0, 1950.0)),
         ("POINSP", Vec3::new(12785.0, -25862.0, 1950.0)),
-        ("CURVE",  Vec3::new(12884.0, -25903.01, 1950.0)), // 半径140mm
+        ("CURVE", Vec3::new(12884.0, -25903.01, 1950.0)), // 半径140mm
         ("POINSP", Vec3::new(12925.0, -26002.0, 1950.0)),
         ("POINSP", Vec3::new(12925.0, -26152.0, 1950.0)),
         ("POINSP", Vec3::new(12925.0, -29152.0, 1950.0)),
@@ -68,8 +86,10 @@ async fn test_gensec_data_svg_generation() {
     let radius = 140.0;
     let angle = 2.0 * (chord / (2.0 * radius)).asin();
     let arc_length = radius * angle;
-    println!("  Segment 1-2-3 (arc): chord={:.3}, radius={:.3}, arc_length={:.3} mm",
-             chord, radius, arc_length);
+    println!(
+        "  Segment 1-2-3 (arc): chord={:.3}, radius={:.3}, arc_length={:.3} mm",
+        chord, radius, arc_length
+    );
 
     // 段3: POINSP[3] -> POINSP[4] (直线)
     let seg3_length = points[3].1.distance(points[4].1);
@@ -91,8 +111,14 @@ async fn test_gensec_data_svg_generation() {
     println!("\nTotal expected length: {:.3} mm", total_expected);
 
     // 验证总长度在合理范围内（考虑弧线计算的误差）
-    assert!(total_expected > 4800.0, "Total length should be greater than 4800mm");
-    assert!(total_expected < 5100.0, "Total length should be less than 5100mm");
+    assert!(
+        total_expected > 4800.0,
+        "Total length should be greater than 4800mm"
+    );
+    assert!(
+        total_expected < 5100.0,
+        "Total length should be less than 5100mm"
+    );
 
     // 生成SVG可视化
     println!("\nGenerating SVG for gensec.txt data...");
@@ -161,7 +187,7 @@ fn generate_gensec_svg(points: &Vec<(&str, Vec3)>, total_length: f32) {
             println!("✅ SVG visualization saved to: {}", svg_filename);
             println!("   Open this file in a web browser to view the SPINE path");
             println!("   Total calculated length: {:.3} mm", total_length);
-        },
+        }
         Err(e) => println!("❌ Failed to save SVG: {}", e),
     }
 }

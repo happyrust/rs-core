@@ -3,11 +3,13 @@
 //! 提供高级图遍历功能
 
 #[cfg(feature = "kuzu")]
-use crate::types::*;
+use super::pe_query::node_refno;
 #[cfg(feature = "kuzu")]
 use crate::rs_kuzu::create_kuzu_connection;
 #[cfg(feature = "kuzu")]
-use anyhow::Result;
+use crate::types::*;
+#[cfg(feature = "kuzu")]
+use anyhow::{Context, Result, anyhow};
 
 #[cfg(feature = "kuzu")]
 /// 最短路径查询
@@ -26,16 +28,29 @@ pub async fn shortest_path_kuzu(from: RefnoEnum, to: RefnoEnum) -> Result<Vec<Re
     let mut result = conn.query(&query)?;
 
     if let Some(record) = result.next() {
-        if let Some(value) = record.get(0) {
-            // 解析路径节点
-            if let kuzu::Value::List(_, nodes) = value {
+        let value = record
+            .get(0)
+            .with_context(|| "最短路径查询结果缺少路径列".to_string())?;
+
+        match value {
+            kuzu::Value::List(_, nodes) => {
                 let mut path = Vec::new();
-                for node in nodes {
-                    // 提取节点的 refno 属性
-                    // TODO: 需要根据实际的 Value 结构解析
-                    log::debug!("路径节点: {:?}", node);
+                for node_value in nodes {
+                    match node_value {
+                        kuzu::Value::Node(node) => {
+                            let refno = node_refno(node)?;
+                            path.push(refno);
+                        }
+                        other => {
+                            log::warn!("最短路径结果包含非节点值: {:?}", other);
+                        }
+                    }
                 }
+
                 return Ok(path);
+            }
+            other => {
+                return Err(anyhow!("最短路径查询返回的列类型不是节点列表: {:?}", other));
             }
         }
     }
@@ -68,8 +83,12 @@ pub async fn query_subtree_kuzu(root: RefnoEnum, max_depth: Option<u32>) -> Resu
         }
     }
 
-    log::debug!("子树查询: 根节点 {}, 深度 {}, 找到 {} 个节点",
-        root.refno().0, depth, subtree.len());
+    log::debug!(
+        "子树查询: 根节点 {}, 深度 {}, 找到 {} 个节点",
+        root.refno().0,
+        depth,
+        subtree.len()
+    );
 
     Ok(subtree)
 }
@@ -97,8 +116,11 @@ pub async fn find_connected_component_kuzu(refno: RefnoEnum) -> Result<Vec<Refno
         }
     }
 
-    log::debug!("连通分量: 节点 {} 连通到 {} 个节点",
-        refno.refno().0, component.len());
+    log::debug!(
+        "连通分量: 节点 {} 连通到 {} 个节点",
+        refno.refno().0,
+        component.len()
+    );
 
     Ok(component)
 }

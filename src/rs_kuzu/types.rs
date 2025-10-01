@@ -5,9 +5,9 @@
 #[cfg(feature = "kuzu")]
 use crate::types::*;
 #[cfg(feature = "kuzu")]
-use kuzu::{Value as KuzuValue, LogicalType};
-#[cfg(feature = "kuzu")]
 use anyhow::Result;
+#[cfg(feature = "kuzu")]
+use kuzu::{LogicalType, Value as KuzuValue};
 
 #[cfg(feature = "kuzu")]
 /// 将 NamedAttrValue 转换为 Kuzu Value
@@ -28,22 +28,15 @@ pub fn named_attr_to_kuzu_value(attr: &NamedAttrValue) -> Result<KuzuValue> {
             // 数组转换为 JSON 字符串
             Ok(KuzuValue::String(serde_json::to_string(arr)?))
         }
-        NamedAttrValue::F32VecType(arr) => {
-            Ok(KuzuValue::String(serde_json::to_string(arr)?))
-        }
-        NamedAttrValue::StringArrayType(arr) => {
-            Ok(KuzuValue::String(serde_json::to_string(arr)?))
-        }
+        NamedAttrValue::F32VecType(arr) => Ok(KuzuValue::String(serde_json::to_string(arr)?)),
+        NamedAttrValue::StringArrayType(arr) => Ok(KuzuValue::String(serde_json::to_string(arr)?)),
         _ => Err(anyhow::anyhow!("不支持的属性类型转换")),
     }
 }
 
 #[cfg(feature = "kuzu")]
 /// 将 Kuzu Value 转换为 NamedAttrValue
-pub fn kuzu_value_to_named_attr(
-    value: &KuzuValue,
-    attr_type: &str,
-) -> Result<NamedAttrValue> {
+pub fn kuzu_value_to_named_attr(value: &KuzuValue, attr_type: &str) -> Result<NamedAttrValue> {
     match attr_type.to_uppercase().as_str() {
         "INT" | "INTEGER" | "I32" => {
             if let KuzuValue::Int64(i) = value {

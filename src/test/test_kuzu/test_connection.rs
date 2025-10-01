@@ -40,7 +40,9 @@ async fn test_kuzu_connection() {
     fs::create_dir_all("./test_data").unwrap();
 
     // 初始化
-    init_kuzu(test_db_path, SystemConfig::default()).await.unwrap();
+    init_kuzu(test_db_path, SystemConfig::default())
+        .await
+        .unwrap();
 
     // 获取连接
     let conn_result = get_kuzu_connection();

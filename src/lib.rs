@@ -80,12 +80,12 @@ pub mod transform;
 #[cfg(not(feature = "web"))]
 pub mod test;
 
+pub mod db_adapter;
 #[cfg(feature = "sea-orm")]
 pub mod orm;
-pub mod rs_surreal;
 #[cfg(feature = "kuzu")]
 pub mod rs_kuzu;
-pub mod db_adapter;
+pub mod rs_surreal;
 pub mod schema;
 pub mod sync;
 pub mod types;

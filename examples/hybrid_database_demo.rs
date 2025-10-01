@@ -48,11 +48,7 @@ async fn main() -> anyhow::Result<()> {
         cache_ttl_secs: 300,
     };
 
-    let manager = HybridDatabaseManager::new(
-        surreal_adapter,
-        kuzu_adapter.clone(),
-        config.clone(),
-    );
+    let manager = HybridDatabaseManager::new(surreal_adapter, kuzu_adapter.clone(), config.clone());
 
     println!("   ✅ 混合管理器: {}", manager.name());
     println!("   模式: {:?}", config.mode);
@@ -89,9 +85,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn demonstrate_routing(
-    manager: &HybridDatabaseManager,
-) -> anyhow::Result<()> {
+async fn demonstrate_routing(manager: &HybridDatabaseManager) -> anyhow::Result<()> {
     println!("   查询路由决策：");
 
     // 创建不同的查询上下文
@@ -112,16 +106,16 @@ async fn demonstrate_routing(
     Ok(())
 }
 
-fn demonstrate_modes(
-    primary_name: &str,
-    secondary_name: Option<&str>,
-) {
+fn demonstrate_modes(primary_name: &str, secondary_name: Option<&str>) {
     println!("\n   可用的混合模式：");
     println!("   1. SurrealPrimary - {} 为主", primary_name);
     if let Some(name) = secondary_name {
         println!("   2. KuzuPrimary - {} 为主", name);
         println!("   3. DualSurrealPreferred - 双写，优先 {}", primary_name);
         println!("   4. DualKuzuPreferred - 双写，优先 {} (推荐)", name);
-        println!("   5. WriteToSurrealReadFromKuzu - 写 {}，读 {}", primary_name, name);
+        println!(
+            "   5. WriteToSurrealReadFromKuzu - 写 {}，读 {}",
+            primary_name, name
+        );
     }
 }

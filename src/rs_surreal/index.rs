@@ -1,4 +1,4 @@
-use crate::{options::DbOption, SUL_DB};
+use crate::{SUL_DB, options::DbOption};
 
 ///创建几何相关索引索引
 pub async fn create_geom_index() -> anyhow::Result<()> {

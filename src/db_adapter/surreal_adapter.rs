@@ -124,11 +124,7 @@ impl DatabaseAdapter for SurrealAdapter {
         rs_surreal::query::get_named_attmap_with_uda(refno).await
     }
 
-    async fn save_attmap(
-        &self,
-        refno: RefnoEnum,
-        _attmap: &NamedAttrMap,
-    ) -> anyhow::Result<()> {
+    async fn save_attmap(&self, refno: RefnoEnum, _attmap: &NamedAttrMap) -> anyhow::Result<()> {
         // TODO: 实现属性保存逻辑
         log::debug!("SurrealAdapter: 保存属性 {:?}", refno);
         Ok(())
@@ -159,11 +155,7 @@ impl DatabaseAdapter for SurrealAdapter {
         _ctx: Option<QueryContext>,
     ) -> anyhow::Result<Vec<RefnoEnum>> {
         // TODO: 实现相关元素查询
-        log::debug!(
-            "SurrealAdapter: 查询相关元素 {:?} -[{}]->",
-            refno,
-            rel_type
-        );
+        log::debug!("SurrealAdapter: 查询相关元素 {:?} -[{}]->", refno, rel_type);
         Ok(vec![])
     }
 

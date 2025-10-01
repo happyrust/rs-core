@@ -335,7 +335,6 @@ pub struct DbOption {
 
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
-
     /// Kuzu 数据库配置
     #[clap(skip)]
     pub kuzu: Option<KuzuConfig>,

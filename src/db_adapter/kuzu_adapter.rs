@@ -109,11 +109,7 @@ impl DatabaseAdapter for KuzuAdapter {
         rs_kuzu::queries::get_named_attmap_kuzu(refno).await
     }
 
-    async fn save_attmap(
-        &self,
-        refno: RefnoEnum,
-        attmap: &NamedAttrMap,
-    ) -> anyhow::Result<()> {
+    async fn save_attmap(&self, refno: RefnoEnum, attmap: &NamedAttrMap) -> anyhow::Result<()> {
         rs_kuzu::operations::save_attmap_kuzu(refno, attmap).await
     }
 
@@ -186,11 +182,7 @@ impl DatabaseAdapter for KuzuAdapter {
         // MATCH (root:PE)-[:OWNS*1..max_depth]->(descendant:PE)
         // WHERE root.refno = $refno
         // RETURN DISTINCT descendant.refno
-        log::debug!(
-            "KuzuAdapter: 查询子树 {:?} 深度: {}",
-            refno,
-            max_depth
-        );
+        log::debug!("KuzuAdapter: 查询子树 {:?} 深度: {}", refno, max_depth);
 
         // 临时实现：使用递归
         let mut result = vec![refno];

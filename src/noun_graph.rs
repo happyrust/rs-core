@@ -3,6 +3,7 @@ use itertools::Itertools;
 use once_cell::sync::Lazy;
 use petgraph::graph::DiGraph;
 use petgraph::graph::NodeIndex;
+use std::collections::hash_map::RandomState;
 use std::fs::File;
 use std::io::Read;
 
@@ -28,13 +29,11 @@ pub fn is_owner_type(child_noun: &str, own_noun: &str) -> bool {
     else {
         return false;
     };
-    let mut paths = petgraph::algo::all_simple_paths::<Vec<NodeIndex<u32>>, &DiGraph<u32, u32>>(
-        &NOUN_GRAPH,
-        child_node,
-        own_node,
-        0,
-        None,
-    );
+    let mut paths = petgraph::algo::all_simple_paths::<
+        Vec<NodeIndex<u32>>,
+        &DiGraph<u32, u32>,
+        RandomState,
+    >(&*NOUN_GRAPH, child_node, own_node, 0, None);
     while let Some(path) = paths.next() {
         if path.len() == 2 {
             return true;
@@ -59,13 +58,11 @@ pub fn find_noun_path(start_noun: &str, end_noun: &str) -> Vec<Vec<String>> {
     else {
         return vec![];
     };
-    let mut paths = petgraph::algo::all_simple_paths::<Vec<NodeIndex<u32>>, &DiGraph<u32, u32>>(
-        &NOUN_GRAPH,
-        start_node,
-        end_node,
-        0,
-        None,
-    );
+    let mut paths = petgraph::algo::all_simple_paths::<
+        Vec<NodeIndex<u32>>,
+        &DiGraph<u32, u32>,
+        RandomState,
+    >(&*NOUN_GRAPH, start_node, end_node, 0, None);
     let mut result = Vec::new();
     while let Some(path) = paths.next() {
         let mut path_str = Vec::new();

@@ -29,7 +29,7 @@ impl Default for KuzuConnectionConfig {
         Self {
             database_path: "./data/kuzu_db".to_string(),
             buffer_pool_size: Some(4 * 1024 * 1024 * 1024), // 4GB
-            max_num_threads: Some(4),  // 默认 4 线程
+            max_num_threads: Some(4),                       // 默认 4 线程
             enable_compression: true,
             read_only: false,
         }
@@ -88,10 +88,7 @@ impl KuzuConnectionConfig {
         let path = Path::new(&self.database_path);
         if let Some(parent) = path.parent() {
             if !parent.exists() {
-                return Err(anyhow::anyhow!(
-                    "数据库目录不存在: {}",
-                    parent.display()
-                ));
+                return Err(anyhow::anyhow!("数据库目录不存在: {}", parent.display()));
             }
         }
 

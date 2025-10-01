@@ -18,7 +18,9 @@ async fn test_schema_initialization() {
     fs::create_dir_all("./test_data").unwrap();
 
     // 初始化数据库
-    init_kuzu(test_db_path, SystemConfig::default()).await.unwrap();
+    init_kuzu(test_db_path, SystemConfig::default())
+        .await
+        .unwrap();
 
     // 初始化图模式
     let result = init_kuzu_schema().await;
@@ -38,7 +40,9 @@ async fn test_schema_check() {
     fs::create_dir_all("./test_data").unwrap();
 
     // 初始化数据库
-    init_kuzu(test_db_path, SystemConfig::default()).await.unwrap();
+    init_kuzu(test_db_path, SystemConfig::default())
+        .await
+        .unwrap();
 
     // 检查模式（应该未初始化）
     let is_init = is_schema_initialized().await.unwrap_or(false);
@@ -65,12 +69,18 @@ async fn test_schema_stats() {
     fs::create_dir_all("./test_data").unwrap();
 
     // 初始化数据库和模式
-    init_kuzu(test_db_path, SystemConfig::default()).await.unwrap();
+    init_kuzu(test_db_path, SystemConfig::default())
+        .await
+        .unwrap();
     init_kuzu_schema().await.unwrap();
 
     // 查询统计
     let stats_result = SchemaStats::query().await;
-    assert!(stats_result.is_ok(), "统计查询失败: {:?}", stats_result.err());
+    assert!(
+        stats_result.is_ok(),
+        "统计查询失败: {:?}",
+        stats_result.err()
+    );
 
     let stats = stats_result.unwrap();
     println!("✓ 模式统计查询成功");
@@ -94,7 +104,9 @@ async fn test_drop_all_tables() {
     let _ = fs::remove_dir_all(test_db_path);
     fs::create_dir_all("./test_data").unwrap();
 
-    init_kuzu(test_db_path, SystemConfig::default()).await.unwrap();
+    init_kuzu(test_db_path, SystemConfig::default())
+        .await
+        .unwrap();
     init_kuzu_schema().await.unwrap();
 
     // 删除所有表

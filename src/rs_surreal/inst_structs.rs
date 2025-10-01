@@ -1,15 +1,15 @@
 //! inst_relate 和 inst_geo 结构体定义
-//! 
+//!
 //! 这个模块包含了 SurrealDB 中 inst_relate、inst_geo 和 geo_relate 表的结构体定义
 //! 以及相应的 to_surql 方法用于生成 SurrealDB 插入语句
 
+use crate::RefnoEnum;
 use bevy_transform::components::Transform;
+use chrono::NaiveDateTime;
+use glam::Vec3;
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
-use chrono::NaiveDateTime;
-use glam::Vec3;
-use crate::RefnoEnum;
 
 /// inst_relate 表结构体
 /// 表示实例关系，连接PE元素和几何实例
@@ -189,35 +189,44 @@ impl InstRelate {
     /// 参考现有的 gen_sur_json 模式
     pub fn to_surql(&self) -> String {
         let aabb_str = match &self.aabb {
-            Some(aabb) => format!("{{ d: {} }}", serde_json::to_string(&aabb.d).unwrap_or_default()),
+            Some(aabb) => format!(
+                "{{ d: {} }}",
+                serde_json::to_string(&aabb.d).unwrap_or_default()
+            ),
             None => "NONE".to_string(),
         };
-        
+
         let world_trans_str = match &self.world_trans {
-            Some(trans) => format!("{{ d: {} }}", serde_json::to_string(&trans.d).unwrap_or_default()),
+            Some(trans) => format!(
+                "{{ d: {} }}",
+                serde_json::to_string(&trans.d).unwrap_or_default()
+            ),
             None => "NONE".to_string(),
         };
-        
+
         let ptset_str = match &self.ptset {
-            Some(ptset) => format!("{{ d: {} }}", serde_json::to_string(&ptset.d).unwrap_or_default()),
+            Some(ptset) => format!(
+                "{{ d: {} }}",
+                serde_json::to_string(&ptset.d).unwrap_or_default()
+            ),
             None => "NONE".to_string(),
         };
-        
+
         let booled_id_str = match &self.booled_id {
             Some(id) => format!("'{}'", id),
             None => "NONE".to_string(),
         };
-        
+
         let dt_str = match &self.dt {
             Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
             None => "time::now()".to_string(),
         };
-        
+
         let zone_refno_str = match &self.zone_refno {
             Some(refno) => format!("'{}'", refno),
             None => "NONE".to_string(),
         };
-        
+
         let old_pe_str = match &self.old_pe {
             Some(refno) => format!("'{}'", refno),
             None => "NONE".to_string(),
@@ -317,7 +326,10 @@ impl InstGeo {
     /// 生成 SurrealDB 插入语句
     pub fn to_surql(&self) -> String {
         let trans_str = match &self.trans {
-            Some(trans) => format!("{{ d: {} }}", serde_json::to_string(&trans.d).unwrap_or_default()),
+            Some(trans) => format!(
+                "{{ d: {} }}",
+                serde_json::to_string(&trans.d).unwrap_or_default()
+            ),
             None => "NONE".to_string(),
         };
 
@@ -407,7 +419,10 @@ impl GeoRelate {
     /// 生成 SurrealDB 插入语句
     pub fn to_surql(&self) -> String {
         let trans_str = match &self.trans {
-            Some(trans) => format!("{{ d: {} }}", serde_json::to_string(&trans.d).unwrap_or_default()),
+            Some(trans) => format!(
+                "{{ d: {} }}",
+                serde_json::to_string(&trans.d).unwrap_or_default()
+            ),
             None => "NONE".to_string(),
         };
 
@@ -459,10 +474,10 @@ impl GeoRelate {
 mod tests {
     use super::*;
     use bevy_transform::components::Transform;
-    use parry3d::bounding_volume::Aabb;
-    use glam::{Vec3, Quat};
-    use serde_json::json;
     use chrono::Utc;
+    use glam::{Quat, Vec3};
+    use parry3d::bounding_volume::Aabb;
+    use serde_json::json;
 
     #[test]
     fn test_inst_relate_creation() {
@@ -494,7 +509,8 @@ mod tests {
             "geo_instance_1".to_string(),
             RefnoEnum::from("67890"),
             "PIPE".to_string(),
-        ).with_aabb(aabb);
+        )
+        .with_aabb(aabb);
 
         assert!(inst_relate.aabb.is_some());
     }
@@ -568,13 +584,7 @@ mod tests {
             "height": 2.0
         });
 
-        let inst_geo = InstGeo::new(
-            "geo_123".to_string(),
-            param,
-            true,
-            true,
-            "Pos".to_string(),
-        );
+        let inst_geo = InstGeo::new("geo_123".to_string(), param, true, true, "Pos".to_string());
 
         let sql = inst_geo.to_surql();
         assert!(sql.contains("CREATE inst_geo:geo_123"));

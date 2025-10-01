@@ -144,11 +144,7 @@ pub trait DatabaseAdapter: Send + Sync + Debug {
     }
 
     /// 保存属性
-    async fn save_attmap(
-        &self,
-        refno: RefnoEnum,
-        attmap: &NamedAttrMap,
-    ) -> anyhow::Result<()>;
+    async fn save_attmap(&self, refno: RefnoEnum, attmap: &NamedAttrMap) -> anyhow::Result<()>;
 
     // ==================== 关系操作 ====================
 

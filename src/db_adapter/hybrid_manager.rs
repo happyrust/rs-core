@@ -26,10 +26,7 @@ impl std::fmt::Debug for HybridDatabaseManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("HybridDatabaseManager")
             .field("primary", &self.primary.name())
-            .field(
-                "secondary",
-                &self.secondary.as_ref().map(|s| s.name()),
-            )
+            .field("secondary", &self.secondary.as_ref().map(|s| s.name()))
             .field("mode", &self.config.mode)
             .finish()
     }
@@ -71,9 +68,7 @@ impl HybridDatabaseManager {
             HybridMode::SurrealPrimary => {
                 self.execute_with_fallback(primary_fn, secondary_fn).await
             }
-            HybridMode::KuzuPrimary => {
-                self.execute_with_fallback(secondary_fn, primary_fn).await
-            }
+            HybridMode::KuzuPrimary => self.execute_with_fallback(secondary_fn, primary_fn).await,
             HybridMode::DualSurrealPreferred => {
                 if prefer_graph {
                     // 图查询优先次要数据库（Kuzu）
@@ -98,11 +93,7 @@ impl HybridDatabaseManager {
     }
 
     /// 执行查询并在失败时回退
-    async fn execute_with_fallback<T, F1, F2>(
-        &self,
-        primary: F1,
-        fallback: F2,
-    ) -> anyhow::Result<T>
+    async fn execute_with_fallback<T, F1, F2>(&self, primary: F1, fallback: F2) -> anyhow::Result<T>
     where
         F1: std::future::Future<Output = anyhow::Result<T>>,
         F2: std::future::Future<Output = anyhow::Result<T>>,
@@ -133,11 +124,7 @@ impl HybridDatabaseManager {
     }
 
     /// 双写：同时写入两个数据库
-    async fn dual_write<F1, F2>(
-        &self,
-        primary_write: F1,
-        secondary_write: F2,
-    ) -> anyhow::Result<()>
+    async fn dual_write<F1, F2>(&self, primary_write: F1, secondary_write: F2) -> anyhow::Result<()>
     where
         F1: std::future::Future<Output = anyhow::Result<()>>,
         F2: std::future::Future<Output = anyhow::Result<()>>,
@@ -233,7 +220,10 @@ impl DatabaseAdapter for HybridDatabaseManager {
         refno: RefnoEnum,
         ctx: Option<QueryContext>,
     ) -> anyhow::Result<Option<SPdmsElement>> {
-        let prefer_graph = ctx.as_ref().map(|c| c.requires_graph_traversal).unwrap_or(false);
+        let prefer_graph = ctx
+            .as_ref()
+            .map(|c| c.requires_graph_traversal)
+            .unwrap_or(false);
 
         if let Some(secondary) = &self.secondary {
             self.route_query(
@@ -285,11 +275,8 @@ impl DatabaseAdapter for HybridDatabaseManager {
 
     async fn save_pe(&self, pe: &SPdmsElement) -> anyhow::Result<()> {
         if let Some(secondary) = &self.secondary {
-            self.execute_write(
-                self.primary.save_pe(pe),
-                secondary.save_pe(pe),
-            )
-            .await
+            self.execute_write(self.primary.save_pe(pe), secondary.save_pe(pe))
+                .await
         } else {
             self.primary.save_pe(pe).await
         }
@@ -297,11 +284,8 @@ impl DatabaseAdapter for HybridDatabaseManager {
 
     async fn delete_pe(&self, refno: RefnoEnum) -> anyhow::Result<()> {
         if let Some(secondary) = &self.secondary {
-            self.execute_write(
-                self.primary.delete_pe(refno),
-                secondary.delete_pe(refno),
-            )
-            .await
+            self.execute_write(self.primary.delete_pe(refno), secondary.delete_pe(refno))
+                .await
         } else {
             self.primary.delete_pe(refno).await
         }
@@ -326,11 +310,7 @@ impl DatabaseAdapter for HybridDatabaseManager {
         }
     }
 
-    async fn save_attmap(
-        &self,
-        refno: RefnoEnum,
-        attmap: &NamedAttrMap,
-    ) -> anyhow::Result<()> {
+    async fn save_attmap(&self, refno: RefnoEnum, attmap: &NamedAttrMap) -> anyhow::Result<()> {
         if let Some(secondary) = &self.secondary {
             self.execute_write(
                 self.primary.save_attmap(refno, attmap),

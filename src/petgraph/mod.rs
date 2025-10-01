@@ -1,9 +1,9 @@
+use crate::RefU64;
 use crate::noun_graph::NOUN_GRAPH;
 use crate::tool::db_tool::db1_dehash;
-use crate::RefU64;
 use petgraph::prelude::*;
 use serde_derive::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque, hash_map::RandomState};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PetRefnoNode {
@@ -53,7 +53,7 @@ impl PetRefnoGraph {
     pub fn find_path(&self, start: RefU64, end: RefU64) -> Option<Vec<&PetRefnoNode>> {
         let start_node = self.node_indices.get(&start)?;
         let end_node = self.node_indices.get(&end)?;
-        let mut paths = petgraph::algo::all_simple_paths::<Vec<_>, &DiGraph<_, _>>(
+        let mut paths = petgraph::algo::all_simple_paths::<Vec<_>, &DiGraph<_, _>, RandomState>(
             &self.graph,
             *start_node,
             *end_node,

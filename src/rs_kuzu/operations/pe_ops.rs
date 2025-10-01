@@ -3,9 +3,9 @@
 //! 提供 PE 节点的写入和更新操作
 
 #[cfg(feature = "kuzu")]
-use crate::types::*;
-#[cfg(feature = "kuzu")]
 use crate::rs_kuzu::create_kuzu_connection;
+#[cfg(feature = "kuzu")]
+use crate::types::*;
 #[cfg(feature = "kuzu")]
 use anyhow::Result;
 

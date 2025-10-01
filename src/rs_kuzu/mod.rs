@@ -3,42 +3,41 @@
 //! 提供 Kuzu 嵌入式图数据库的集成支持，用于高效的图遍历和关系查询。
 
 #[cfg(feature = "kuzu")]
+pub mod adapter;
+#[cfg(feature = "kuzu")]
 pub mod connection;
+#[cfg(feature = "kuzu")]
+pub mod operations;
+#[cfg(feature = "kuzu")]
+pub mod queries;
 #[cfg(feature = "kuzu")]
 pub mod schema;
 #[cfg(feature = "kuzu")]
 pub mod types;
-#[cfg(feature = "kuzu")]
-pub mod queries;
-#[cfg(feature = "kuzu")]
-pub mod operations;
-#[cfg(feature = "kuzu")]
-pub mod adapter;
 
+#[cfg(feature = "kuzu")]
+pub use adapter::create_kuzu_adapter;
 #[cfg(feature = "kuzu")]
 pub use connection::*;
 #[cfg(feature = "kuzu")]
 pub use schema::*;
 #[cfg(feature = "kuzu")]
 pub use types::*;
-#[cfg(feature = "kuzu")]
-pub use adapter::create_kuzu_adapter;
 
 #[cfg(feature = "kuzu")]
-use kuzu::{Database, Connection, SystemConfig};
+use kuzu::{Connection, Database, SystemConfig};
 #[cfg(feature = "kuzu")]
 use once_cell::sync::Lazy;
 #[cfg(feature = "kuzu")]
 use parking_lot::RwLock;
 #[cfg(feature = "kuzu")]
-use std::sync::Arc;
-#[cfg(feature = "kuzu")]
 use std::cell::RefCell;
+#[cfg(feature = "kuzu")]
+use std::sync::Arc;
 
 #[cfg(feature = "kuzu")]
 /// 全局 Kuzu 数据库实例
-pub static KUZU_DB: Lazy<Arc<RwLock<Option<Database>>>> =
-    Lazy::new(|| Arc::new(RwLock::new(None)));
+pub static KUZU_DB: Lazy<Arc<RwLock<Option<Database>>>> = Lazy::new(|| Arc::new(RwLock::new(None)));
 
 #[cfg(feature = "kuzu")]
 /// 初始化 Kuzu 数据库
@@ -90,9 +89,8 @@ impl std::ops::Deref for KuzuConnectionGuard {
 pub fn create_kuzu_connection() -> anyhow::Result<KuzuConnectionGuard> {
     // SAFETY: 我们将 guard 的生命周期转换为 'static
     // 这是安全的，因为 KUZU_DB 是全局静态变量
-    let guard: parking_lot::RwLockReadGuard<'static, Option<Database>> = unsafe {
-        std::mem::transmute(KUZU_DB.read())
-    };
+    let guard: parking_lot::RwLockReadGuard<'static, Option<Database>> =
+        unsafe { std::mem::transmute(KUZU_DB.read()) };
 
     let db = guard
         .as_ref()
@@ -100,9 +98,7 @@ pub fn create_kuzu_connection() -> anyhow::Result<KuzuConnectionGuard> {
 
     // SAFETY: 数据库引用的生命周期被扩展为 'static
     // 这是安全的，因为我们持有 guard，确保数据库不会被释放
-    let db_static: &'static Database = unsafe {
-        &*(db as *const Database)
-    };
+    let db_static: &'static Database = unsafe { &*(db as *const Database) };
 
     let conn = Connection::new(db_static)?;
 

@@ -212,7 +212,8 @@ impl SchemaStats {
 
         if let Some(record) = result.next() {
             // Kuzu 使用索引号获取值
-            let value = record.get(0)
+            let value = record
+                .get(0)
                 .ok_or_else(|| anyhow::anyhow!("无法获取count值"))?;
 
             // 尝试从 Value 中提取 i64
@@ -233,7 +234,8 @@ impl SchemaStats {
 
         if let Some(record) = result.next() {
             // Kuzu 使用索引号获取值
-            let value = record.get(0)
+            let value = record
+                .get(0)
                 .ok_or_else(|| anyhow::anyhow!("无法获取count值"))?;
 
             // 尝试从 Value 中提取 i64

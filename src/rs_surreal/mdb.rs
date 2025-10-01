@@ -1,9 +1,9 @@
 // 导入所需的依赖
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
-use crate::{get_db_option, helper, types::*};
 use crate::{NamedAttrMap, RefnoEnum};
-use crate::{SurlValue, SUL_DB};
+use crate::{SUL_DB, SurlValue};
+use crate::{get_db_option, helper, types::*};
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use itertools::Itertools;
@@ -70,11 +70,11 @@ pub async fn get_mdb_world_site_ele_nodes(
 }
 
 /// 创建MDB世界站点PE表
-/// 
+///
 /// # 参数
 /// * `mdb` - MDB名称
 /// * `module` - 数据库类型
-/// 
+///
 /// # 返回值
 /// * `bool` - 创建是否成功
 pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> anyhow::Result<bool> {
@@ -107,11 +107,11 @@ pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> any
 }
 
 /// 通过数据库编号列表查询指定类型的参考号
-/// 
+///
 /// # 参数
 /// * `nouns` - 要查询的类型名称列表
 /// * `dbnums` - 数据库编号列表
-/// 
+///
 /// # 返回值
 /// * `Vec<RefnoEnum>` - 参考号列表
 pub async fn query_type_refnos_by_dbnums(
@@ -153,10 +153,14 @@ pub async fn query_type_refnos_by_dbnum(
         };
         let sql = match has_children {
             Some(true) => {
-                format!("select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none")
+                format!(
+                    "select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none"
+                )
             }
             Some(false) => {
-                format!("select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none")
+                format!(
+                    "select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none"
+                )
             }
             None => {
                 format!("select value id from {table} where REFNO.dbnum={dbnum}")
@@ -172,7 +176,7 @@ pub async fn query_type_refnos_by_dbnum(
 
 /// 查询使用类别参考号
 /// 额外检查SPRE和CATR不能同时为空
-/// 
+///
 /// # 参数
 /// * `nouns` - 要查询的类型名称列表
 /// * `dbnum` - 数据库编号
@@ -189,8 +193,9 @@ pub async fn query_use_cate_refnos_by_dbnum(
         } else {
             format!("{noun}")
         };
-        let sql =
-            format!("select value id from {table} where REFNO.dbnum={dbnum} and (SPRE != none or CATR != none)");
+        let sql = format!(
+            "select value id from {table} where REFNO.dbnum={dbnum} and (SPRE != none or CATR != none)"
+        );
         let mut response = SUL_DB.query(&sql).await?;
         let refnos: Vec<RefnoEnum> = response.take(0)?;
         result.extend(refnos);
@@ -211,10 +216,10 @@ pub async fn query_use_cate_refnos_by_dbnum(
 // }
 
 /// 查询MDB数据库编号
-/// 
+///
 /// # 参数
 /// * `module` - 数据库类型
-/// 
+///
 /// # 返回值
 /// * `Vec<u32>` - 数据库编号列表
 #[cached(result = true)]
@@ -237,11 +242,11 @@ pub async fn query_mdb_db_nums(module: DBType) -> anyhow::Result<Vec<u32>> {
 }
 
 /// 查询MDB的world下的所有PE
-/// 
+///
 /// # 参数
 /// * `mdb` - MDB名称
 /// * `module` - 数据库类型
-/// 
+///
 /// # 返回值
 /// * `Vec<SPdmsElement>` - PE元素列表
 #[cached(result = true)]
@@ -264,10 +269,10 @@ pub async fn get_mdb_world_site_pes(
 }
 
 /// 获取世界节点
-/// 
+///
 /// # 参数
 /// * `mdb` - MDB名称
-/// 
+///
 /// # 返回值
 /// * `Option<SPdmsElement>` - 世界节点元素
 #[cached(result = true)]
@@ -284,13 +289,13 @@ pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
 }
 
 /// 获取世界参考号
-/// 
+///
 /// # 参数
 /// * `mdb` - MDB数据库名称
-/// 
+///
 /// # 返回值
 /// * `RefnoEnum` - 世界节点的参考号
-/// 
+///
 /// # 说明
 /// * 使用缓存优化查询性能
 /// * 从WORL表中查询指定MDB下的世界节点参考号
@@ -303,7 +308,7 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     } else {
         format!("/{}", mdb)
     };
-    
+
     // 构建SQL查询
     // 1. 首先获取MDB对应的DBNO(数据库编号)
     // 2. 然后查询该DBNO下类型为WORL的参考号
@@ -313,7 +318,7 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
             (select value REFNO from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         mdb_name
     );
-    
+
     // 执行查询并获取结果
     let mut response = SUL_DB.query(sql).await?;
     let id: Option<RefnoEnum> = response.take(1)?;

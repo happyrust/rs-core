@@ -166,7 +166,8 @@ impl SyncFilter {
     /// 检查类型是否符合过滤条件
     pub fn matches_type(&self, element_type: &str) -> bool {
         // 如果有排除列表，检查是否在其中
-        if !self.exclude_types.is_empty() && self.exclude_types.contains(&element_type.to_string()) {
+        if !self.exclude_types.is_empty() && self.exclude_types.contains(&element_type.to_string())
+        {
             return false;
         }
 
@@ -181,7 +182,9 @@ impl SyncFilter {
     /// 检查属性是否符合过滤条件
     pub fn matches_attribute(&self, attr_name: &str) -> bool {
         // 如果有排除列表，检查是否在其中
-        if !self.exclude_attributes.is_empty() && self.exclude_attributes.contains(&attr_name.to_string()) {
+        if !self.exclude_attributes.is_empty()
+            && self.exclude_attributes.contains(&attr_name.to_string())
+        {
             return false;
         }
 

@@ -2,7 +2,10 @@
 //!
 //! 协调和管理数据同步过程
 
-use super::{SyncDirection, SyncFilter, SyncMode, SyncStatistics, SyncStrategy, SyncTask, SyncTaskStatus, SyncTaskType};
+use super::{
+    SyncDirection, SyncFilter, SyncMode, SyncStatistics, SyncStrategy, SyncTask, SyncTaskStatus,
+    SyncTaskType,
+};
 use crate::db_adapter::{DatabaseAdapter, QueryContext};
 use crate::types::*;
 use anyhow::Result;
@@ -185,7 +188,9 @@ impl SyncManager {
 
         // 保存到目标数据库
         if !filtered_attmap.is_empty() {
-            self.target_adapter.save_attmap(refno, &filtered_attmap).await?;
+            self.target_adapter
+                .save_attmap(refno, &filtered_attmap)
+                .await?;
         }
 
         Ok(())
@@ -196,9 +201,14 @@ impl SyncManager {
         let ctx = QueryContext::default();
 
         // 同步子元素关系
-        let children = self.source_adapter.query_children(refno, Some(ctx.clone())).await?;
+        let children = self
+            .source_adapter
+            .query_children(refno, Some(ctx.clone()))
+            .await?;
         for child in children {
-            self.target_adapter.create_relation(refno, child, "OWNS").await?;
+            self.target_adapter
+                .create_relation(refno, child, "OWNS")
+                .await?;
         }
 
         // TODO: 同步其他类型的关系（REFERS_TO, USES_CATA等）
@@ -242,9 +252,7 @@ impl SyncManager {
 
         // 实际应该基于变更时间戳过滤
         // 这里作为示例只返回前100个
-        let changed_pes = all_pes.into_iter()
-            .take(100)
-            .collect();
+        let changed_pes = all_pes.into_iter().take(100).collect();
 
         Ok(changed_pes)
     }
@@ -257,7 +265,10 @@ impl SyncManager {
         // TODO: 使用 query_all_pes 方法（当实现后）
         // 暂时使用查询根节点和遍历的方式获取所有 PE
         let root_pe = RefnoEnum::from(RefU64(1)); // 假设从根节点开始
-        let all_pes = self.source_adapter.query_subtree(root_pe, 999, Some(ctx)).await
+        let all_pes = self
+            .source_adapter
+            .query_subtree(root_pe, 999, Some(ctx))
+            .await
             .unwrap_or_else(|_| vec![]);
 
         // 应用过滤器
@@ -362,8 +373,12 @@ impl SyncManagerBuilder {
 
     /// 构建同步管理器
     pub fn build(self) -> Result<SyncManager> {
-        let source = self.source.ok_or_else(|| anyhow::anyhow!("源数据库未设置"))?;
-        let target = self.target.ok_or_else(|| anyhow::anyhow!("目标数据库未设置"))?;
+        let source = self
+            .source
+            .ok_or_else(|| anyhow::anyhow!("源数据库未设置"))?;
+        let target = self
+            .target
+            .ok_or_else(|| anyhow::anyhow!("目标数据库未设置"))?;
 
         Ok(SyncManager::new(source, target, self.strategy, self.filter))
     }

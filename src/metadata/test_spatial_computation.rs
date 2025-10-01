@@ -1,5 +1,5 @@
 use crate::metadata::spatial_computation::*;
-use crate::{init_test_surreal, RefU64, RefnoEnum};
+use crate::{RefU64, RefnoEnum, init_test_surreal};
 use std::str::FromStr;
 
 #[tokio::test]
@@ -42,5 +42,5 @@ async fn test_get_panel_size() {
     init_test_surreal().await;
     let refno = RefU64::from_str("25688/47610").unwrap();
     let size = get_panel_size(refno.into()).await.unwrap();
-    assert_eq!(size, [600.0,600.0]);
+    assert_eq!(size, [600.0, 600.0]);
 }

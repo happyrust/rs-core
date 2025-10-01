@@ -9,9 +9,9 @@ pub struct SpineSvgGenerator {
     margin: f32,
     scale: f32,
     points: Vec<(String, Vec3, Option<f32>)>, // (type, position, radius)
-    show_labels: bool,     // 是否显示长度标签
-    show_coordinates: bool, // 是否显示坐标
-    show_legend: bool,     // 是否显示图例
+    show_labels: bool,                        // 是否显示长度标签
+    show_coordinates: bool,                   // 是否显示坐标
+    show_legend: bool,                        // 是否显示图例
 }
 
 impl SpineSvgGenerator {
@@ -29,7 +29,12 @@ impl SpineSvgGenerator {
     }
 
     /// 设置是否显示标签和图例
-    pub fn set_display_options(&mut self, show_labels: bool, show_coordinates: bool, show_legend: bool) {
+    pub fn set_display_options(
+        &mut self,
+        show_labels: bool,
+        show_coordinates: bool,
+        show_legend: bool,
+    ) {
         self.show_labels = show_labels;
         self.show_coordinates = show_coordinates;
         self.show_legend = show_legend;
@@ -72,8 +77,16 @@ impl SpineSvgGenerator {
         let canvas_width = self.width - 2.0 * self.margin;
         let canvas_height = self.height - 2.0 * self.margin;
 
-        let scale_x = if data_width > 0.0 { canvas_width / data_width } else { 1.0 };
-        let scale_y = if data_height > 0.0 { canvas_height / data_height } else { 1.0 };
+        let scale_x = if data_width > 0.0 {
+            canvas_width / data_width
+        } else {
+            1.0
+        };
+        let scale_y = if data_height > 0.0 {
+            canvas_height / data_height
+        } else {
+            1.0
+        };
         let scale = scale_x.min(scale_y);
 
         // 计算偏移量，使图形居中
@@ -141,7 +154,10 @@ impl SpineSvgGenerator {
             let (svg_x, _) = self.world_to_svg(Vec3::new(x, 0.0, 0.0), scale, offset);
             grid.push_str(&format!(
                 "<line x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\" class=\"grid\" />\n",
-                svg_x, self.margin, svg_x, self.height - self.margin
+                svg_x,
+                self.margin,
+                svg_x,
+                self.height - self.margin
             ));
             x += grid_step;
         }
@@ -152,7 +168,10 @@ impl SpineSvgGenerator {
             let (_, svg_y) = self.world_to_svg(Vec3::new(0.0, y, 0.0), scale, offset);
             grid.push_str(&format!(
                 "<line x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\" class=\"grid\" />\n",
-                self.margin, svg_y, self.width - self.margin, svg_y
+                self.margin,
+                svg_y,
+                self.width - self.margin,
+                svg_y
             ));
             y += grid_step;
         }
@@ -228,9 +247,8 @@ impl SpineSvgGenerator {
                     // 绘制弧线 - 计算正确的弧形控制点
                     if let Some(radius) = next.2 {
                         // 计算弧线的正确控制点
-                        let (control_x, control_y) = calculate_arc_control_point(
-                            (x1, y1), (x3, y3), radius, scale
-                        );
+                        let (control_x, control_y) =
+                            calculate_arc_control_point((x1, y1), (x3, y3), radius, scale);
 
                         paths.push_str(&format!(
                             "<path d=\"M {:.1} {:.1} Q {:.1} {:.1} {:.1} {:.1}\" class=\"path-arc\" />\n",
@@ -367,7 +385,8 @@ impl SpineSvgGenerator {
                             total_length += arc_length;
                         } else {
                             // 使用直线近似
-                            total_length += current.1.distance(next.1) + next.1.distance(after_curve.1);
+                            total_length +=
+                                current.1.distance(next.1) + next.1.distance(after_curve.1);
                         }
                     } else {
                         total_length += current.1.distance(next.1) + next.1.distance(after_curve.1);
@@ -441,8 +460,10 @@ fn calculate_arc_control_point(
         let perp_y = chord_dir_x;
 
         // 控制点位于弦中点的垂直方向
-        (mid_x + perp_x * perpendicular_distance,
-         mid_y + perp_y * perpendicular_distance)
+        (
+            mid_x + perp_x * perpendicular_distance,
+            mid_y + perp_y * perpendicular_distance,
+        )
     } else {
         // 正常情况：计算真正的弧形
         let sagitta = svg_radius - (svg_radius.powi(2) - chord_half.powi(2)).sqrt();
@@ -456,8 +477,10 @@ fn calculate_arc_control_point(
         let perp_y = chord_dir_x;
 
         // 控制点位于弦中点加上矢高距离
-        (mid_x + perp_x * sagitta * 1.5, // 乘以1.5让弧线更明显
-         mid_y + perp_y * sagitta * 1.5)
+        (
+            mid_x + perp_x * sagitta * 1.5, // 乘以1.5让弧线更明显
+            mid_y + perp_y * sagitta * 1.5,
+        )
     }
 }
 

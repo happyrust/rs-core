@@ -3,9 +3,9 @@
 //! 提供元素间关系的图查询功能
 
 #[cfg(feature = "kuzu")]
-use crate::types::*;
-#[cfg(feature = "kuzu")]
 use crate::rs_kuzu::create_kuzu_connection;
+#[cfg(feature = "kuzu")]
+use crate::types::*;
 #[cfg(feature = "kuzu")]
 use anyhow::Result;
 

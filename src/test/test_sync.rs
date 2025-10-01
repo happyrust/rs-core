@@ -96,9 +96,9 @@ mod tests {
     /// 测试同步管理器构建器
     #[tokio::test]
     async fn test_sync_manager_builder() -> Result<()> {
-        use crate::rs_surreal::create_surreal_adapter;
         #[cfg(feature = "kuzu")]
         use crate::rs_kuzu::create_kuzu_adapter;
+        use crate::rs_surreal::create_surreal_adapter;
 
         // 创建源和目标适配器
         let source = Arc::new(create_surreal_adapter()?);
@@ -164,8 +164,7 @@ mod tests {
         ];
 
         for resolution in strategies {
-            let strategy = SyncStrategy::default()
-                .with_conflict_resolution(resolution);
+            let strategy = SyncStrategy::default().with_conflict_resolution(resolution);
             assert_eq!(strategy.conflict_resolution, resolution);
         }
     }
@@ -180,8 +179,7 @@ mod tests {
         ];
 
         for direction in directions {
-            let strategy = SyncStrategy::default()
-                .with_direction(direction);
+            let strategy = SyncStrategy::default().with_direction(direction);
             assert_eq!(strategy.direction, direction);
         }
     }
