@@ -14,6 +14,10 @@ pub mod queries;
 pub mod schema;
 #[cfg(feature = "kuzu")]
 pub mod types;
+#[cfg(feature = "kuzu")]
+pub mod specs;
+#[cfg(feature = "kuzu")]
+pub mod json_schema;
 
 #[cfg(feature = "kuzu")]
 pub use adapter::create_kuzu_adapter;
@@ -23,6 +27,8 @@ pub use connection::*;
 pub use schema::*;
 #[cfg(feature = "kuzu")]
 pub use types::*;
+#[cfg(feature = "kuzu")]
+pub use specs::*;
 
 #[cfg(feature = "kuzu")]
 use kuzu::{Connection, Database, SystemConfig};
@@ -106,6 +112,11 @@ pub fn create_kuzu_connection() -> anyhow::Result<KuzuConnectionGuard> {
         _guard: guard,
         conn,
     })
+}
+
+#[cfg(feature = "kuzu")]
+pub fn get_kuzu_connection() -> anyhow::Result<KuzuConnectionGuard> {
+    create_kuzu_connection()
 }
 
 #[cfg(feature = "kuzu")]

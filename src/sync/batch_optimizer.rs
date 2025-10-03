@@ -3,7 +3,9 @@
 //! 提供高效的批量数据操作优化
 
 use crate::db_adapter::{DatabaseAdapter, QueryContext};
-use crate::types::*;
+use crate::types::{
+    EdgeRecord, EdgeType, NamedAttrMap, PeRecord, RefnoEnum, SPdmsElement, TypedAttrRecord,
+};
 use anyhow::Result;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -47,12 +49,18 @@ impl Default for BatchConfig {
 /// 操作缓冲区
 #[derive(Debug, Default)]
 struct OperationBuffer {
-    /// PE写入缓冲
+    /// Surreal 原有 PE 写入缓冲
     pe_writes: Vec<SPdmsElement>,
-    /// 属性写入缓冲
+    /// Surreal 原有属性写入缓冲
     attr_writes: HashMap<RefnoEnum, NamedAttrMap>,
-    /// 关系写入缓冲
+    /// Surreal 原有关系写入缓冲
     relation_writes: Vec<(RefnoEnum, RefnoEnum, String)>,
+    /// Kuzu: PE 结构化写入缓冲
+    pe_records: Vec<PeRecord>,
+    /// Kuzu: 强类型属性写入缓冲
+    typed_attr_writes: HashMap<RefnoEnum, TypedAttrRecord>,
+    /// Kuzu: 外部引用/关系写入缓冲
+    edge_writes: Vec<EdgeRecord>,
 }
 
 impl BatchOptimizer {
@@ -73,6 +81,49 @@ impl BatchOptimizer {
         if buffer.pe_writes.len() >= self.config.pe_batch_size {
             drop(buffer);
             self.flush_pe_buffer().await?;
+        }
+
+        Ok(())
+    }
+
+    /// 添加结构化 PE 记录到缓冲区
+    pub async fn buffer_pe_record(&self, record: PeRecord) -> Result<()> {
+        let mut buffer = self.buffer.write().await;
+        buffer.pe_records.push(record);
+
+        if buffer.pe_records.len() >= self.config.pe_batch_size {
+            drop(buffer);
+            self.flush_pe_record_buffer().await?;
+        }
+
+        Ok(())
+    }
+
+    /// 添加强类型属性记录
+    pub async fn buffer_typed_attributes(
+        &self,
+        record: TypedAttrRecord,
+    ) -> Result<()> {
+        let mut buffer = self.buffer.write().await;
+        let refno = record.refno;
+        buffer.typed_attr_writes.insert(refno, record);
+
+        if buffer.typed_attr_writes.len() >= self.config.attr_batch_size {
+            drop(buffer);
+            self.flush_typed_attr_buffer().await?;
+        }
+
+        Ok(())
+    }
+
+    /// 添加 Kuzu 关系记录
+    pub async fn buffer_edge(&self, edge: EdgeRecord) -> Result<()> {
+        let mut buffer = self.buffer.write().await;
+        buffer.edge_writes.push(edge);
+
+        if buffer.edge_writes.len() >= self.config.relation_batch_size {
+            drop(buffer);
+            self.flush_edge_buffer().await?;
         }
 
         Ok(())
@@ -143,6 +194,63 @@ impl BatchOptimizer {
         Ok(())
     }
 
+    /// 刷新结构化 PE 缓冲区
+    async fn flush_pe_record_buffer(&self) -> Result<()> {
+        let mut buffer = self.buffer.write().await;
+        if buffer.pe_records.is_empty() {
+            return Ok(());
+        }
+
+        let records = std::mem::take(&mut buffer.pe_records);
+        drop(buffer);
+
+        log::debug!("批量写入 {} 个 PE 结构化记录", records.len());
+
+        Ok(())
+    }
+
+    /// 刷新强类型属性缓冲区
+    async fn flush_typed_attr_buffer(&self) -> Result<()> {
+        let mut buffer = self.buffer.write().await;
+        if buffer.typed_attr_writes.is_empty() {
+            return Ok(());
+        }
+
+        let attrs: Vec<TypedAttrRecord> = buffer
+            .typed_attr_writes
+            .drain()
+            .map(|(_, record)| record)
+            .collect();
+        drop(buffer);
+
+        log::debug!("批量写入 {} 个强类型属性集", attrs.len());
+
+        Ok(())
+    }
+
+    /// 刷新 Kuzu 关系缓冲区
+    async fn flush_edge_buffer(&self) -> Result<()> {
+        let mut buffer = self.buffer.write().await;
+        if buffer.edge_writes.is_empty() {
+            return Ok(());
+        }
+
+        let edges = std::mem::take(&mut buffer.edge_writes);
+        drop(buffer);
+
+        let rel_attr = edges
+            .iter()
+            .filter(|edge| matches!(edge.edge_type, EdgeType::RelAttr))
+            .count();
+        log::debug!(
+            "批量写入 {} 条 Kuzu 关系（REL_ATTR {} 条）",
+            edges.len(),
+            rel_attr
+        );
+
+        Ok(())
+    }
+
     /// 刷新关系缓冲区
     async fn flush_relation_buffer(&self) -> Result<()> {
         let mut buffer = self.buffer.write().await;
@@ -164,6 +272,9 @@ impl BatchOptimizer {
         self.flush_pe_buffer().await?;
         self.flush_attr_buffer().await?;
         self.flush_relation_buffer().await?;
+        self.flush_pe_record_buffer().await?;
+        self.flush_typed_attr_buffer().await?;
+        self.flush_edge_buffer().await?;
         Ok(())
     }
 
@@ -174,6 +285,9 @@ impl BatchOptimizer {
             pe_count: buffer.pe_writes.len(),
             attr_count: buffer.attr_writes.len(),
             relation_count: buffer.relation_writes.len(),
+            pe_record_count: buffer.pe_records.len(),
+            typed_attr_count: buffer.typed_attr_writes.len(),
+            edge_count: buffer.edge_writes.len(),
         }
     }
 }
@@ -184,12 +298,20 @@ pub struct BufferStatus {
     pub pe_count: usize,
     pub attr_count: usize,
     pub relation_count: usize,
+    pub pe_record_count: usize,
+    pub typed_attr_count: usize,
+    pub edge_count: usize,
 }
 
 impl BufferStatus {
     /// 获取总缓冲项数
     pub fn total_count(&self) -> usize {
-        self.pe_count + self.attr_count + self.relation_count
+        self.pe_count
+            + self.attr_count
+            + self.relation_count
+            + self.pe_record_count
+            + self.typed_attr_count
+            + self.edge_count
     }
 }
 
@@ -382,6 +504,7 @@ impl BatchTransaction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::RefU64;
 
     #[tokio::test]
     async fn test_batch_optimizer() {

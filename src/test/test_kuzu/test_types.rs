@@ -114,23 +114,23 @@ fn test_vec3_round_trip() {
 #[test]
 #[cfg(feature = "kuzu")]
 fn test_array_conversion() {
-    // 测试 I32Array
-    let attr = NamedAttrValue::I32Array(vec![1, 2, 3, 4, 5]);
+    // 测试 IntArrayType
+    let attr = NamedAttrValue::IntArrayType(vec![1, 2, 3, 4, 5]);
     let kuzu_val = named_attr_to_kuzu_value(&attr);
     assert!(kuzu_val.is_ok());
-    println!("✓ I32Array 转换成功");
+    println!("✓ IntArrayType 转换成功");
 
-    // 测试 F32Array
-    let attr = NamedAttrValue::F32Array(vec![1.1, 2.2, 3.3]);
+    // 测试 F32VecType
+    let attr = NamedAttrValue::F32VecType(vec![1.1, 2.2, 3.3]);
     let kuzu_val = named_attr_to_kuzu_value(&attr);
     assert!(kuzu_val.is_ok());
-    println!("✓ F32Array 转换成功");
+    println!("✓ F32VecType 转换成功");
 
-    // 测试 StringArray
-    let attr = NamedAttrValue::StringArray(vec!["a".to_string(), "b".to_string()]);
+    // 测试 StringArrayType
+    let attr = NamedAttrValue::StringArrayType(vec!["a".to_string(), "b".to_string()]);
     let kuzu_val = named_attr_to_kuzu_value(&attr);
     assert!(kuzu_val.is_ok());
-    println!("✓ StringArray 转换成功");
+    println!("✓ StringArrayType 转换成功");
 }
 
 #[test]

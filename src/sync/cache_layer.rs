@@ -374,6 +374,7 @@ impl CacheManagerStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{RefU64, SPdmsElement};
 
     #[tokio::test]
     async fn test_cache_layer() {
@@ -406,7 +407,7 @@ mod tests {
         let cache = PECache::new(100);
 
         let refno = RefnoEnum::from(RefU64(123));
-        let pe = PElement::default();
+        let pe = SPdmsElement::default();
 
         cache.put(refno, pe.clone()).await;
         let cached = cache.get(refno).await;
