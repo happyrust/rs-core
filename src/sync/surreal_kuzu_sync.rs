@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::rs_kuzu::json_schema::{load_attr_info_json, pdms_type_to_kuzu};
 use crate::rs_kuzu::{create_kuzu_connection, init_kuzu_schema};
-use crate::rs_surreal::{SUL_DB, get_pe_by_refno, query_pe_list};
+use crate::rs_surreal::SUL_DB;
 use crate::types::{NamedAttrMap, RefnoEnum, RefU64, AttrVal};
 use crate::pdms_types::AttrInfo;
 
@@ -60,14 +60,14 @@ pub struct SyncStats {
 }
 
 /// SurrealDB 到 Kuzu 的数据同步器
-pub struct SurrealKuzuSync {
+pub struct SurrealKuzuSync<'a> {
     config: SyncConfig,
-    kuzu_conn: Connection,
+    kuzu_conn: Connection<'a>,
     attr_info: HashMap<String, HashMap<String, AttrInfo>>,
     stats: SyncStats,
 }
 
-impl SurrealKuzuSync {
+impl<'a> SurrealKuzuSync<'a> {
     /// 创建新的同步器实例
     pub async fn new(config: SyncConfig) -> Result<Self> {
         // 确保 Kuzu 已初始化
