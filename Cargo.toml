@@ -91,13 +91,13 @@ lru = "0.12"
 num_cpus = "1.16"
 
 
-bevy_transform = { git = "https://gitee.com/happydpc/bevy", package = "bevy_transform", features = [
+bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", features = [
     "serialize",
 ] }
-bevy_math = { git = "https://gitee.com/happydpc/bevy", package = "bevy_math" }
-bevy_ecs = { git = "https://gitee.com/happydpc/bevy", package = "bevy_ecs" }
-bevy_reflect = { git = "https://gitee.com/happydpc/bevy", package = "bevy_reflect" }
-bevy_render = { git = "https://gitee.com/happydpc/bevy", package = "bevy_render", optional = true }
+bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math" }
+bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs" }
+bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect" }
+bevy_render = { git = "https://github.com/happyrust/bevy", package = "bevy_render", optional = true }
 
 base64 = "0.22.0"
 serde = { version = "1.0.133", features = ["derive"] }
