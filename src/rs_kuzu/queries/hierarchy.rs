@@ -2,7 +2,11 @@
 //!
 //! 提供层级遍历相关的查询功能，包括祖先查询、子节点查询、深层递归查询等。
 
-use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError, query_builder::HierarchyQueryBuilder};
+use crate::rs_kuzu::{
+    create_kuzu_connection,
+    error::KuzuQueryError,
+    query_builder::HierarchyQueryBuilder,
+};
 use crate::types::{RefnoEnum, RefU64};
 use anyhow::Result;
 use kuzu::Value;

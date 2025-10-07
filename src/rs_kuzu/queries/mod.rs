@@ -20,6 +20,8 @@ pub mod type_filter;
 pub mod batch;
 #[cfg(feature = "kuzu")]
 pub mod multi_filter;
+#[cfg(feature = "kuzu")]
+pub mod advanced_hierarchy;
 
 #[cfg(feature = "kuzu")]
 pub use attr_query::*;
@@ -39,3 +41,5 @@ pub use type_filter::*;
 pub use batch::*;
 #[cfg(feature = "kuzu")]
 pub use multi_filter::*;
+#[cfg(feature = "kuzu")]
+pub use advanced_hierarchy::*;

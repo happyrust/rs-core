@@ -1,0 +1,2 @@
+CALL table_info('Attr_ELBO') RETURN property_id, name, type ORDER BY property_id;
+:quit

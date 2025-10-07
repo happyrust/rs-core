@@ -1,0 +1,21 @@
+noun: PLATFORM
+table: Attr_PLATFORM
+fields:
+  - name: status_code
+    type: String
+    nullable: true
+  - name: geom_refno
+    type: Refno
+    edge: TO_GEOM
+  - name: matl
+    type: String
+    nullable: true
+  - name: weight
+    type: Double
+    nullable: true
+  - name: owner_refno
+    type: Refno
+    cache: true
+  - name: install_date
+    type: String
+    nullable: true

@@ -1,0 +1,35 @@
+// 1. 查看所有表
+CALL show_tables() RETURN *;
+
+// 2. 直接查询 ELBO 表（验证表是否存在）
+MATCH (n:Attr_ELBO) RETURN COUNT(*) AS count;
+
+// 3. 查看 ELBO 表的示例数据
+MATCH (n:Attr_ELBO) RETURN n LIMIT 5;
+
+// 4. 查看 ELBO 表的特定字段
+MATCH (n:Attr_ELBO) RETURN n.refno, n.NAME, n.TYPE LIMIT 10;
+
+// 5. 插入测试数据到 ELBO 表
+CREATE (e:Attr_ELBO {refno: 12345, NAME: 'ELBO-001', TYPE: 'STANDARD', ANGL: 90.0});
+
+// 6. 查询刚插入的数据
+MATCH (n:Attr_ELBO) WHERE n.refno = 12345 RETURN n;
+
+// 7. 查看 PE 主表
+MATCH (p:PE) RETURN COUNT(*) AS pe_count;
+
+// 8. 创建 PE 与 Attr_ELBO 的关联
+CREATE (p:PE {refno: 12345, name: 'ELBO-001', noun: 'ELBO'});
+MATCH (p:PE), (e:Attr_ELBO) WHERE p.refno = 12345 AND e.refno = 12345 CREATE (p)-[:TO_ELBO]->(e);
+
+// 9. 查询关联关系
+MATCH (p:PE)-[:TO_ELBO]->(e:Attr_ELBO) RETURN p.name, e.NAME, e.TYPE;
+
+// 10. 使用过滤条件查询表信息（正确语法）
+WITH show_tables() AS tables
+UNWIND tables AS t
+WHERE t.name CONTAINS 'ELBO'
+RETURN t;
+
+:quit

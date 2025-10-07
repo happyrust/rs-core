@@ -1,0 +1,27 @@
+noun: ELBO
+table: Attr_ELBO
+fields:
+  - name: status_code
+    type: String
+    nullable: true
+  - name: lock
+    type: Bool
+    nullable: true
+  - name: spre_refno
+    type: Refno
+    edge: TO_SPRE
+  - name: ptre_refno
+    type: Refno
+    edge: TO_PTRE
+  - name: cata_hash
+    type: String
+    edge: TO_CATA
+  - name: leve
+    type: List<Int32>
+    cache: true
+  - name: bore
+    type: Double
+    nullable: true
+  - name: spec
+    type: String
+    nullable: true
