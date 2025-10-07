@@ -79,7 +79,7 @@ impl SCTorus {
                 translation,
                 ..Default::default()
             };
-            if mat.is_nan() {
+            if mat.translation.is_nan() || mat.rotation.is_nan() || mat.scale.is_nan() {
                 return None;
             }
             return Some((ctorus, mat));

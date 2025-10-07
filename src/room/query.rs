@@ -37,7 +37,9 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
     //通过rtree 找到所在的几个房间可能
     load_room_aabb_tree().await.unwrap();
     let pt: Point3<f32> = point.into();
-    let point_aabb = Aabb::new(pt, pt);
+    // 转换为 parry 使用的 nalgebra Point3
+    let parry_pt = parry3d::math::Point::new(pt.x, pt.y, pt.z);
+    let point_aabb = Aabb::new(parry_pt, parry_pt);
     let read = GLOBAL_ROOM_AABB_TREE.read().await;
     let mut contains_query = read
         .locate_intersecting_bounds(&point_aabb)
@@ -64,12 +66,12 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
                 continue;
             };
             let Some(mut tri_mesh) = mesh.get_tri_mesh_with_flag(
-                (geom_inst.world_trans * inst.transform).compute_matrix(),
+                (geom_inst.world_trans * inst.transform).to_matrix(),
                 TriMeshFlags::ORIENTED,
             ) else {
                 continue;
             };
-            if tri_mesh.contains_point(&Isometry::identity(), &pt) {
+            if tri_mesh.contains_point(&Isometry::identity(), &parry_pt) {
                 // dbg!(refno);
                 return Ok(Some((*refno).into()));
             }

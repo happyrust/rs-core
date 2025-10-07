@@ -792,7 +792,9 @@ pub async fn query_neareast_along_axis(
         .unwrap_or_default()
         .translation;
     //不用 room 的方法查询一次，直接用射线去查找
-    let ray = Ray::new(pos.into(), dir.into());
+    let parry_pos = parry3d::math::Point::new(pos.x, pos.y, pos.z);
+    let parry_dir = parry3d::math::Vector::new(dir.x, dir.y, dir.z);
+    let ray = Ray::new(parry_pos, parry_dir);
     // dbg!(&ray);
     let rtree = GLOBAL_AABB_TREE.read().await;
     let mut filter = HashSet::new();
@@ -811,7 +813,9 @@ pub async fn query_neareast_by_pos_dir(
 ) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
     // let pos = get_world_transform(refno).await?.unwrap_or_default().translation;
     //不用 room 的方法查询一次，直接用射线去查找
-    let ray = Ray::new(pos.into(), dir.into());
+    let parry_pos = parry3d::math::Point::new(pos.x, pos.y, pos.z);
+    let parry_dir = parry3d::math::Vector::new(dir.x, dir.y, dir.z);
+    let ray = Ray::new(parry_pos, parry_dir);
     // dbg!(&ray);
     let rtree = GLOBAL_AABB_TREE.read().await;
     let mut filter = HashSet::new();

@@ -193,10 +193,17 @@ pub fn generate_all_table_sqls() -> Result<Vec<String>> {
             noun STRING,
             dbnum INT32,
             sesno INT32,
+            cata_hash STRING,
             deleted BOOLEAN DEFAULT false,
-            lock BOOLEAN DEFAULT false
+            lock BOOLEAN DEFAULT false,
+            typex INT32
         )".to_string()
     );
+
+    // 1.1 创建 PE 表索引
+    sqls.push("CREATE INDEX IF NOT EXISTS idx_pe_typex ON PE(typex)".to_string());
+    sqls.push("CREATE INDEX IF NOT EXISTS idx_pe_noun ON PE(noun)".to_string());
+    sqls.push("CREATE INDEX IF NOT EXISTS idx_pe_cata_hash ON PE(cata_hash)".to_string());
 
     // 2. 为每个 noun 创建属性表和关系
     for (noun, attrs) in &attr_info.named_attr_info_map {

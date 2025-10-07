@@ -96,14 +96,13 @@ impl CateAxisParam {
     pub fn transformed(&self, trans: &Transform) -> Self {
         let mut axis = self.clone();
         axis.pt = trans.transform_point(axis.pt);
-        axis.dir = axis.dir.map(|d| trans.transform_vec3(d));
+        axis.dir = axis.dir.map(|d| trans.rotation * d);
         axis
     }
 
     pub fn transform(&mut self, trans: &Transform) {
         self.pt = trans.transform_point(self.pt);
-        // self.dir = trans.transform_vec3(self.dir);
-        self.dir = self.dir.map(|d| trans.transform_vec3(d));
+        self.dir = self.dir.map(|d| trans.rotation * d);
     }
 }
 
@@ -703,7 +702,7 @@ impl CateProfileParam {
                     .iter()
                     .map(|x| nalgebra::Point2::from(*x))
                     .collect::<Vec<_>>();
-                Some(Aabb::from_points(&pts))
+                Some(Aabb::from_points(pts.iter().copied()))
             }
             CateProfileParam::SREC(s) => Some(Aabb::new(
                 nalgebra::Point2::from(s.center + s.dxy - s.size / 2.0),

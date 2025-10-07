@@ -26,9 +26,6 @@ use std::fmt::Debug;
 
 ///PDMS的属性数据Map
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
     Serialize,
     Deserialize,
     Deref,
@@ -100,7 +97,7 @@ impl AttrMap {
 
     #[inline]
     pub fn into_rkyv_bytes(&self) -> Vec<u8> {
-        rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec()
+        bincode::serialize(self).unwrap()
     }
 
     #[inline]
@@ -115,9 +112,7 @@ impl AttrMap {
 
     #[inline]
     pub fn from_rkyv_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use rkyv::Deserialize;
-        let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
-        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        let r: Self = bincode::deserialize(bytes)?;
         Ok(r)
     }
 

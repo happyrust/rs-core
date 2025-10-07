@@ -31,18 +31,22 @@ pub async fn save_model_to_kuzu(
 ) -> Result<()> {
     let conn = create_kuzu_connection()?;
 
+    // 提取 TYPEX 值
+    let mut pe_with_typex = pe.clone();
+    pe_with_typex.extract_typex(attmap);
+
     // 开启事务
     conn.query("BEGIN TRANSACTION")?;
 
     let result = async {
-        // 1. 保存 PE 节点
-        pe_ops::save_pe_node(pe).await?;
+        // 1. 保存 PE 节点（包含 typex）
+        pe_ops::save_pe_node(&pe_with_typex).await?;
 
         // 2. 保存属性节点
-        attr_ops::save_attr_node(pe, attmap).await?;
+        attr_ops::save_attr_node(&pe_with_typex, attmap).await?;
 
         // 3. 创建关系
-        relation_ops::create_all_relations(pe, attmap).await?;
+        relation_ops::create_all_relations(&pe_with_typex, attmap).await?;
 
         Ok::<(), anyhow::Error>(())
     }.await;
@@ -50,12 +54,13 @@ pub async fn save_model_to_kuzu(
     match result {
         Ok(_) => {
             conn.query("COMMIT")?;
-            log::info!("成功保存模型: {} ({}) refno={}", pe.name, pe.noun, pe.refno.refno());
+            log::info!("成功保存模型: {} ({}) refno={} typex={:?}",
+                      pe_with_typex.name, pe_with_typex.noun, pe_with_typex.refno.refno(), pe_with_typex.typex);
             Ok(())
         }
         Err(e) => {
             conn.query("ROLLBACK")?;
-            log::error!("保存模型失败 {}: {}", pe.refno.refno(), e);
+            log::error!("保存模型失败 {}: {}", pe_with_typex.refno.refno(), e);
             Err(e)
         }
     }
@@ -71,15 +76,25 @@ pub async fn save_models_batch(
     conn.query("BEGIN TRANSACTION")?;
 
     let result = async {
-        // 批量保存 PE 节点
-        let pes: Vec<_> = models.iter().map(|(pe, _)| pe.clone()).collect();
-        pe_ops::save_pe_batch(&pes).await?;
+        // 提取所有 PE 的 TYPEX 并保存
+        let mut pes_with_typex: Vec<SPdmsElement> = models.iter().map(|(pe, attmap)| {
+            let mut pe_clone = pe.clone();
+            pe_clone.extract_typex(attmap);
+            pe_clone
+        }).collect();
 
-        // 批量保存属性节点
-        attr_ops::save_attr_batch(&models).await?;
+        pe_ops::save_pe_batch(&pes_with_typex).await?;
+
+        // 批量保存属性节点（使用带 typex 的 PE）
+        let models_with_typex: Vec<_> = pes_with_typex.iter()
+            .zip(models.iter())
+            .map(|(pe, (_, attmap))| (pe.clone(), attmap.clone()))
+            .collect();
+
+        attr_ops::save_attr_batch(&models_with_typex).await?;
 
         // 批量创建关系
-        relation_ops::create_relations_batch(&models).await?;
+        relation_ops::create_relations_batch(&models_with_typex).await?;
 
         Ok::<(), anyhow::Error>(())
     }.await;
@@ -107,7 +122,8 @@ pub async fn save_attmaps_to_kuzu(
     let models: Vec<(SPdmsElement, NamedAttrMap)> = attmaps
         .into_iter()
         .map(|attmap| {
-            let pe = attmap.pe(dbnum);
+            let mut pe = attmap.pe(dbnum);
+            // TYPEX 会在 save_models_batch 中提取
             (pe, attmap)
         })
         .collect();

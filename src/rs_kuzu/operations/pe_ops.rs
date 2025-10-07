@@ -27,20 +27,25 @@ pub async fn save_pe_node(pe: &SPdmsElement) -> Result<()> {
             noun: '{}',
             dbnum: {},
             sesno: {},
+            cata_hash: '{}',
             deleted: {},
-            lock: {}
+            lock: {},
+            typex: {}
         }})",
         pe.refno.refno().0,
         escape_string(&pe.name),
-        pe.noun,
+        escape_string(&pe.noun),
         pe.dbnum,
         pe.sesno,
+        escape_string(&pe.cata_hash),
         pe.deleted,
-        pe.lock
+        pe.lock,
+        pe.typex.unwrap_or(0)
     );
 
     conn.query(&query)?;
-    log::debug!("保存 PE 节点: {} ({}) refno={}", pe.name, pe.noun, pe.refno.refno());
+    log::debug!("保存 PE 节点: {} ({}) refno={} typex={:?}",
+                pe.name, pe.noun, pe.refno.refno(), pe.typex);
 
     Ok(())
 }
@@ -61,16 +66,20 @@ pub async fn save_pe_batch(pes: &[SPdmsElement]) -> Result<()> {
                     noun: '{}',
                     dbnum: {},
                     sesno: {},
+                    cata_hash: '{}',
                     deleted: {},
-                    lock: {}
+                    lock: {},
+                    typex: {}
                 }})",
                 pe.refno.refno().0,
                 escape_string(&pe.name),
-                pe.noun,
+                escape_string(&pe.noun),
                 pe.dbnum,
                 pe.sesno,
+                escape_string(&pe.cata_hash),
                 pe.deleted,
-                pe.lock
+                pe.lock,
+                pe.typex.unwrap_or(0)
             );
 
             conn.query(&query)?;

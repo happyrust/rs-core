@@ -161,7 +161,7 @@ impl BrepShapeTrait for Extrusion {
             .flatten()
             .map(|x| nalgebra::Point2::from(nalgebra::Vector2::from(x.truncate())))
             .collect::<Vec<_>>();
-        let profile_aabb = Aabb::from_points(&pts);
+        let profile_aabb = Aabb::from_points(pts.iter().copied());
         0.001 * profile_aabb.bounding_sphere().radius.max(1.0)
     }
 

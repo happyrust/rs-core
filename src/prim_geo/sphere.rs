@@ -112,13 +112,12 @@ impl BrepShapeTrait for Sphere {
 
         let points = raw_points
             .iter()
-            .map(|&p| Vec3::from(p * self.radius))
+            .map(|&p| Vec3::from((p * self.radius).to_array()))
             .collect::<Vec<Vec3>>();
 
         let normals = raw_points
             .iter()
-            .copied()
-            .map(Into::into)
+            .map(|&p| Vec3::from(p.to_array()))
             .collect::<Vec<Vec3>>();
 
         let mut indices = Vec::with_capacity(generated.indices_per_main_triangle() * 20);

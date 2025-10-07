@@ -1,6 +1,9 @@
 use super::RefnoEnum;
 use crate::RefU64;
 use crate::pdms_types::{EleOperation, PdmsElement};
+use crate::types::named_attmap::NamedAttrMap;
+use crate::types::named_attvalue::NamedAttrValue;
+use crate::tool::db_tool::db1_hash;
 use bevy_ecs::resource::Resource;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string_pretty};
@@ -29,6 +32,11 @@ pub struct SPdmsElement {
     pub deleted: bool,
     #[serde(default)]
     pub op: EleOperation,
+
+    /// TYPEX 扩展类型ID - 从 ATT_UDTYPE 或 ATT_TYPEX 属性中提取
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub typex: Option<i32>,
 }
 
 impl SPdmsElement {
@@ -111,5 +119,30 @@ impl SPdmsElement {
     #[inline]
     pub fn get_owner(&self) -> RefnoEnum {
         return self.owner;
+    }
+
+    /// 从 NamedAttrMap 中提取 TYPEX 值
+    /// 优先级: UDTYPE > TYPEX > None
+    pub fn extract_typex(&mut self, attmap: &NamedAttrMap) {
+        // 1. 优先从 UDTYPE 属性获取
+        if let Some(NamedAttrValue::IntegerType(type_id)) = attmap.map.get("UDTYPE") {
+            self.typex = Some(*type_id);
+            return;
+        }
+
+        // 2. 从 TYPEX 属性获取
+        if let Some(NamedAttrValue::IntegerType(type_id)) = attmap.map.get("TYPEX") {
+            self.typex = Some(*type_id);
+            return;
+        }
+
+        // 3. 如果都没有，保持为 None
+        self.typex = None;
+    }
+
+    /// 获取 noun 的 hash 值
+    #[inline]
+    pub fn get_noun_hash(&self) -> u32 {
+        db1_hash(&self.noun.to_uppercase())
     }
 }

@@ -1,9 +1,11 @@
 use anyhow::anyhow;
 use bevy_ecs::component::Component;
 #[cfg(feature = "render")]
-use bevy_render::prelude::*;
+use bevy_mesh::{Mesh, Indices};
 #[cfg(feature = "render")]
-use bevy_render::render_asset::RenderAssetUsages;
+use bevy_render::render_resource::PrimitiveTopology;
+#[cfg(feature = "render")]
+use bevy_asset::RenderAssetUsages;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
 use downcast_rs::*;
@@ -81,15 +83,14 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
     Debug,
     Default,
     Clone,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
 )]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<Vec3>,
     pub normals: Vec<Vec3>,
+    #[serde(skip)]
     pub wire_vertices: Vec<Vec<Vec3>>,
+    #[serde(skip)]
     pub aabb: Option<Aabb>,
 }
 
@@ -165,7 +166,7 @@ impl PlantMesh {
         self.indices.chunks(3).for_each(|i| {
             indices.push([i[0] as u32, i[1] as u32, i[2] as u32]);
         });
-        let mut tri_mesh = TriMesh::with_flags(points, indices, flag);
+        let tri_mesh = TriMesh::with_flags(points, indices, flag).ok()?;
         Some(tri_mesh)
     }
 
@@ -198,10 +199,7 @@ impl PlantMesh {
     ///todo 后面需要把uv使用上
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh(&self) -> Mesh {
-        use bevy_render::mesh::Indices;
-        use bevy_render::render_resource::PrimitiveTopology::TriangleList;
-
-        let mut mesh = Mesh::new(TriangleList, RenderAssetUsages::default());
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
         // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
@@ -243,13 +241,13 @@ impl PlantMesh {
     ///序列化
     #[inline]
     pub fn ser_to_bytes(&self) -> Vec<u8> {
-        rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec()
+        bincode::serialize(self).unwrap()
     }
 
     ///序列化到文件
     #[inline]
     pub fn ser_to_file(&self, file_path: &dyn AsRef<Path>) -> anyhow::Result<()> {
-        let bytes = rkyv::to_bytes::<_, 1024>(self).unwrap().to_vec();
+        let bytes = bincode::serialize(self)?;
         let mut file = File::create(file_path).unwrap();
         file.write_all(&bytes)?;
         Ok(())
@@ -260,17 +258,13 @@ impl PlantMesh {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        use rkyv::Deserialize;
-        let archived = unsafe { rkyv::archived_root::<Self>(buf.as_slice()) };
-        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        let r: Self = bincode::deserialize(&buf)?;
         Ok(r)
     }
 
     ///从bytes反序列化
     pub fn des_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use rkyv::Deserialize;
-        let archived = unsafe { rkyv::archived_root::<Self>(bytes) };
-        let r: Self = archived.deserialize(&mut rkyv::Infallible)?;
+        let r: Self = bincode::deserialize(bytes)?;
         Ok(r)
     }
 
