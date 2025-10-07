@@ -18,6 +18,12 @@ pub mod types;
 pub mod specs;
 #[cfg(feature = "kuzu")]
 pub mod json_schema;
+#[cfg(feature = "kuzu")]
+pub mod error;
+#[cfg(feature = "kuzu")]
+pub mod query_builder;
+#[cfg(feature = "kuzu")]
+pub mod query_router;
 
 #[cfg(feature = "kuzu")]
 pub use adapter::create_kuzu_adapter;

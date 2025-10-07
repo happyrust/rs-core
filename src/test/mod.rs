@@ -24,6 +24,9 @@ pub mod test_surreal;
 #[cfg(feature = "kuzu")]
 pub mod test_kuzu;
 
+#[cfg(feature = "kuzu")]
+pub mod test_kuzu_queries;
+
 pub mod test_sync;
 
 // pub mod test_db_adapter;
