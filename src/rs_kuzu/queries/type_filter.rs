@@ -27,11 +27,11 @@ use kuzu::Value;
 /// ```
 pub async fn kuzu_query_type_refnos_by_dbnum(
     nouns: &[&str],
-    dbnum: u32,
+    dbnum: i32,
     has_children: Option<bool>,
 ) -> Result<Vec<RefnoEnum>> {
     let query = TypeFilterQueryBuilder::new()
-        .dbnum(dbnum)
+        .dbnum(dbnum as u32)
         .nouns(nouns)
         .with_children(has_children)
         .build();
@@ -69,10 +69,11 @@ pub async fn kuzu_query_type_refnos_by_dbnum(
 /// * `Result<Vec<RefnoEnum>>` - 匹配的refno列表
 pub async fn kuzu_query_type_refnos_by_dbnums(
     nouns: &[&str],
-    dbnums: &[u32],
+    dbnums: &[i32],
 ) -> Result<Vec<RefnoEnum>> {
+    let dbnums_u32: Vec<u32> = dbnums.iter().map(|&d| d as u32).collect();
     let query = TypeFilterQueryBuilder::new()
-        .dbnums(dbnums)
+        .dbnums(&dbnums_u32)
         .nouns(nouns)
         .build();
 
@@ -106,9 +107,9 @@ pub async fn kuzu_query_type_refnos_by_dbnums(
 ///
 /// # 返回
 /// * `Result<Option<RefnoEnum>>` - WORLD 节点的 refno（如果存在）
-pub async fn kuzu_get_world_by_dbnum(dbnum: u32) -> Result<Option<RefnoEnum>> {
+pub async fn kuzu_get_world_by_dbnum(dbnum: i32) -> Result<Option<RefnoEnum>> {
     let query = TypeFilterQueryBuilder::new()
-        .dbnum(dbnum)
+        .dbnum(dbnum as u32)
         .nouns(&["WORLD"])
         .limit(1)
         .build();
@@ -140,7 +141,7 @@ pub async fn kuzu_get_world_by_dbnum(dbnum: u32) -> Result<Option<RefnoEnum>> {
 ///
 /// # 返回
 /// * `Result<Vec<RefnoEnum>>` - SITE 节点的 refno 列表
-pub async fn kuzu_get_sites_of_dbnum(dbnum: u32) -> Result<Vec<RefnoEnum>> {
+pub async fn kuzu_get_sites_of_dbnum(dbnum: i32) -> Result<Vec<RefnoEnum>> {
     kuzu_query_type_refnos_by_dbnum(&["SITE"], dbnum, None).await
 }
 
@@ -156,11 +157,48 @@ pub async fn kuzu_get_sites_of_dbnum(dbnum: u32) -> Result<Vec<RefnoEnum>> {
 /// 注意：这个方法需要额外的类别信息，当前简化实现
 pub async fn kuzu_query_use_cate_refnos_by_dbnum(
     nouns: &[&str],
-    dbnum: u32,
+    dbnum: i32,
 ) -> Result<Vec<RefnoEnum>> {
     // TODO: 实现类别过滤逻辑
     // 当前版本与 query_type_refnos_by_dbnum 相同
     kuzu_query_type_refnos_by_dbnum(nouns, dbnum, None).await
+}
+
+/// 统计指定类型在数据库中的数量
+///
+/// # 参数
+/// * `noun` - noun 类型
+/// * `dbnum` - 数据库编号
+///
+/// # 返回
+/// * `Result<usize>` - 匹配元素的数量
+pub async fn kuzu_count_by_type(noun: &str, dbnum: i32) -> Result<usize> {
+    let dbnum = dbnum as u32;
+    let query = format!(
+        "MATCH (pe:PE {{noun: '{}', dbnum: {}}})
+         RETURN COUNT(*) AS count",
+        noun, dbnum
+    );
+
+    log::debug!("Kuzu count query: {}", query);
+
+    let conn = create_kuzu_connection()
+        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+
+    let mut result = conn.query(&query)
+        .map_err(|e| KuzuQueryError::QueryExecutionError {
+            query: query.clone(),
+            error: e.to_string(),
+        })?;
+
+    if let Some(row) = result.next() {
+        if let Some(Value::Int64(count)) = row.get(0) {
+            log::debug!("Count for noun={} dbnum={}: {}", noun, dbnum, count);
+            return Ok(*count as usize);
+        }
+    }
+
+    Ok(0)
 }
 
 #[cfg(test)]

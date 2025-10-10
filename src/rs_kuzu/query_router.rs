@@ -253,7 +253,7 @@ impl QueryRouter {
                 surreal_mdb::query_type_refnos_by_dbnum(nouns, dbnum, has_children, false).await
             }
             QueryEngine::Kuzu => {
-                kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum, has_children).await
+                kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum as i32, has_children).await
             }
             QueryEngine::Auto => {
                 self.auto_query_type_refnos_by_dbnum(nouns, dbnum, has_children).await
@@ -268,7 +268,7 @@ impl QueryRouter {
         dbnum: u32,
         has_children: Option<bool>,
     ) -> Result<Vec<RefnoEnum>> {
-        match kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum, has_children).await {
+        match kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum as i32, has_children).await {
             Ok(result) => {
                 log::debug!("✓ Kuzu query succeeded for query_type_refnos_by_dbnum");
                 Ok(result)
@@ -296,7 +296,7 @@ impl QueryRouter {
                     .map(|v| v.into_iter().next())
             }
             QueryEngine::Kuzu => {
-                kuzu_type_filter::kuzu_get_world_by_dbnum(dbnum).await
+                kuzu_type_filter::kuzu_get_world_by_dbnum(dbnum as i32).await
             }
             QueryEngine::Auto => {
                 self.auto_get_world_by_dbnum(dbnum).await
@@ -306,7 +306,7 @@ impl QueryRouter {
 
     /// Auto 模式: 获取 WORLD 节点
     async fn auto_get_world_by_dbnum(&self, dbnum: u32) -> Result<Option<RefnoEnum>> {
-        match kuzu_type_filter::kuzu_get_world_by_dbnum(dbnum).await {
+        match kuzu_type_filter::kuzu_get_world_by_dbnum(dbnum as i32).await {
             Ok(result) => {
                 log::debug!("✓ Kuzu query succeeded for get_world_by_dbnum");
                 Ok(result)

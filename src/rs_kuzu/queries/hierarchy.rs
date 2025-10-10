@@ -286,6 +286,168 @@ pub async fn kuzu_query_filter_children(
     Ok(refnos)
 }
 
+/// 查询深层子孙节点（指定深度限制）
+///
+/// # 参数
+/// * `refno` - 父节点的refno
+/// * `max_depth` - 最大递归深度
+///
+/// # 返回
+/// * `Result<Vec<RefnoEnum>>` - 所有子孙的refno列表
+///
+/// # 示例
+/// ```no_run
+/// # use aios_core::rs_kuzu::queries::hierarchy::kuzu_query_deep_children_refnos_with_depth;
+/// # use aios_core::types::*;
+/// # tokio_test::block_on(async {
+/// let refno = RefnoEnum::from(RefU64(123));
+/// let children = kuzu_query_deep_children_refnos_with_depth(refno, 5).await.unwrap();
+/// println!("找到 {} 个子孙节点（深度≤5）", children.len());
+/// # });
+/// ```
+pub async fn kuzu_query_deep_children_refnos_with_depth(
+    refno: RefnoEnum,
+    max_depth: usize,
+) -> Result<Vec<RefnoEnum>> {
+    let query = HierarchyQueryBuilder::children(refno)
+        .depth(1, Some(max_depth))
+        .build();
+
+    log::debug!("Kuzu query (depth={}): {}", max_depth, query);
+
+    let conn = create_kuzu_connection()
+        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+
+    let mut result = conn.query(&query)
+        .map_err(|e| KuzuQueryError::QueryExecutionError {
+            query: query.clone(),
+            error: e.to_string(),
+        })?;
+
+    let mut refnos = Vec::new();
+
+    while let Some(row) = result.next() {
+        if let Some(Value::Int64(refno_val)) = row.get(0) {
+            refnos.push(RefnoEnum::from(RefU64(*refno_val as u64)));
+        }
+    }
+
+    log::debug!("Found {} deep children (depth≤{}) for refno {:?}", refnos.len(), max_depth, refno);
+    Ok(refnos)
+}
+
+/// 按类型过滤深层子孙（指定深度限制）
+///
+/// # 参数
+/// * `refno` - 父节点的refno
+/// * `nouns` - 要过滤的noun类型列表
+/// * `max_depth` - 最大递归深度
+///
+/// # 返回
+/// * `Result<Vec<RefnoEnum>>` - 匹配的子孙refno列表
+///
+/// # 示例
+/// ```no_run
+/// # use aios_core::rs_kuzu::queries::hierarchy::kuzu_query_filter_deep_children_with_depth;
+/// # use aios_core::types::*;
+/// # tokio_test::block_on(async {
+/// let refno = RefnoEnum::from(RefU64(123));
+/// let equips = kuzu_query_filter_deep_children_with_depth(
+///     refno,
+///     &["EQUI", "PIPE"],
+///     10
+/// ).await.unwrap();
+/// println!("找到 {} 个设备（深度≤10）", equips.len());
+/// # });
+/// ```
+pub async fn kuzu_query_filter_deep_children_with_depth(
+    refno: RefnoEnum,
+    nouns: &[&str],
+    max_depth: usize,
+) -> Result<Vec<RefnoEnum>> {
+    let query = HierarchyQueryBuilder::children(refno)
+        .depth(1, Some(max_depth))
+        .filter_nouns(nouns)
+        .build();
+
+    log::debug!("Kuzu query (depth={}, nouns={:?}): {}", max_depth, nouns, query);
+
+    let conn = create_kuzu_connection()
+        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+
+    let mut result = conn.query(&query)
+        .map_err(|e| KuzuQueryError::QueryExecutionError {
+            query: query.clone(),
+            error: e.to_string(),
+        })?;
+
+    let mut refnos = Vec::new();
+
+    while let Some(row) = result.next() {
+        if let Some(Value::Int64(refno_val)) = row.get(0) {
+            refnos.push(RefnoEnum::from(RefU64(*refno_val as u64)));
+        }
+    }
+
+    log::debug!("Found {} filtered deep children (depth≤{}) for refno {:?}", refnos.len(), max_depth, refno);
+    Ok(refnos)
+}
+
+/// 获取节点在层级树中的深度
+///
+/// # 参数
+/// * `refno` - 要查询的节点refno
+///
+/// # 返回
+/// * `Result<usize>` - 节点深度（根节点深度为0）
+///
+/// # 示例
+/// ```no_run
+/// # use aios_core::rs_kuzu::queries::hierarchy::kuzu_get_node_depth;
+/// # use aios_core::types::*;
+/// # tokio_test::block_on(async {
+/// let refno = RefnoEnum::from(RefU64(123));
+/// let depth = kuzu_get_node_depth(refno).await.unwrap();
+/// println!("节点深度: {}", depth);
+/// # });
+/// ```
+pub async fn kuzu_get_node_depth(refno: RefnoEnum) -> Result<usize> {
+    // 查询从根节点到当前节点的路径长度
+    let refno_val = refno.refno().0;
+
+    let query = format!(
+        "MATCH path = (root:PE_Node)-[:PARENT_OF*]->(node:PE_Node {{refno: {}}}) \
+         WHERE NOT EXISTS {{ MATCH (parent)-[:PARENT_OF]->(root) }} \
+         RETURN length(path) AS depth \
+         ORDER BY depth DESC \
+         LIMIT 1",
+        refno_val
+    );
+
+    log::debug!("Kuzu depth query: {}", query);
+
+    let conn = create_kuzu_connection()
+        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+
+    let mut result = conn.query(&query)
+        .map_err(|e| KuzuQueryError::QueryExecutionError {
+            query: query.clone(),
+            error: e.to_string(),
+        })?;
+
+    if let Some(row) = result.next() {
+        if let Some(Value::Int64(depth_val)) = row.get(0) {
+            let depth = *depth_val as usize;
+            log::debug!("Node {:?} has depth {}", refno, depth);
+            return Ok(depth);
+        }
+    }
+
+    // 如果没有找到路径，说明是根节点
+    log::debug!("Node {:?} is a root node (depth=0)", refno);
+    Ok(0)
+}
+
 /// 按类型过滤祖先节点
 ///
 /// # 参数

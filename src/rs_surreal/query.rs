@@ -677,13 +677,37 @@ pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsEleme
 pub async fn get_all_children_refnos(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let sql = format!(
-        "array::flatten(select value in from [{pe_keys}]<-pe_owner where record::exists(in.id) and !in.deleted)"
-    );
-    let mut response = SUL_DB.query(sql).await?;
-    let refnos: Vec<RefnoEnum> = response.take(0)?;
-    Ok(refnos)
+    let refnos_vec: Vec<_> = refnos.into_iter().collect();
+
+    if refnos_vec.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // 对于单个元素使用简单查询
+    if refnos_vec.len() == 1 {
+        let sql = format!(
+            "select value in from {}<-pe_owner where record::exists(in.id) and !in.deleted",
+            refnos_vec[0].to_pe_key()
+        );
+        let mut response = SUL_DB.query(sql).await?;
+        let refnos: Vec<RefnoEnum> = response.take(0)?;
+        return Ok(refnos);
+    }
+
+    // 对于多个元素，逐个查询并合并结果
+    // 这样避免了 array::flatten 的解析问题
+    let mut all_children = Vec::new();
+    for refno in refnos_vec {
+        let sql = format!(
+            "select value in from {}<-pe_owner where record::exists(in.id) and !in.deleted",
+            refno.to_pe_key()
+        );
+        let mut response = SUL_DB.query(sql).await?;
+        let children: Vec<RefnoEnum> = response.take(0)?;
+        all_children.extend(children);
+    }
+
+    Ok(all_children)
 }
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号

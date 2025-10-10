@@ -124,3 +124,20 @@ pub async fn find_connected_component_kuzu(refno: RefnoEnum) -> Result<Vec<Refno
 
     Ok(component)
 }
+
+// ============================================================================
+// QueryProvider 兼容包装函数
+// ============================================================================
+
+#[cfg(feature = "kuzu")]
+/// 最短路径查询 (QueryProvider 兼容函数)
+pub async fn kuzu_find_shortest_path(from: RefnoEnum, to: RefnoEnum) -> Result<Vec<RefnoEnum>> {
+    shortest_path_kuzu(from, to).await
+}
+
+#[cfg(feature = "kuzu")]
+/// 检查两个节点是否可达 (QueryProvider 兼容函数)
+pub async fn kuzu_is_reachable(from: RefnoEnum, to: RefnoEnum) -> Result<bool> {
+    let path = shortest_path_kuzu(from, to).await?;
+    Ok(!path.is_empty())
+}

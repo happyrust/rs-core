@@ -168,44 +168,80 @@ impl BatchQueryService {
     }
 
     /// 批量获取所有子元素的 refno
-    /// 
+    ///
     /// # 参数
     /// * `refnos` - 父元素的参考号列表
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<RefnoEnum>>` - 所有子元素的 refno 列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn get_all_children_refnos(
         refnos: impl IntoIterator<Item = &RefnoEnum>,
     ) -> Result<Vec<RefnoEnum>> {
-        let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-        
-        if pe_keys.is_empty() {
+        let refnos_vec: Vec<_> = refnos.into_iter().collect();
+
+        if refnos_vec.is_empty() {
             return Ok(Vec::new());
         }
 
         let start_time = Instant::now();
-        let sql = format!(
-            "array::flatten(SELECT value in FROM [{}]<-pe_owner WHERE record::exists(in.id) AND !in.deleted)",
-            pe_keys
-        );
-        
-        let query = QueryBuilder::from_sql(&sql);
 
-        match query.fetch_all::<RefnoEnum>().await {
-            Ok(refnos) => {
-                let execution_time = start_time.elapsed().as_millis() as u64;
-                QueryErrorHandler::log_query_execution(&sql, execution_time);
-                QueryErrorHandler::log_query_results(&sql, refnos.len());
-                Ok(refnos)
-            }
-            Err(error) => {
-                let query_error = QueryErrorHandler::handle_execution_error(&sql, error);
-                Err(query_error.into())
+        // 对于单个元素使用简单查询
+        if refnos_vec.len() == 1 {
+            let sql = format!(
+                "SELECT value in FROM {}<-pe_owner WHERE record::exists(in.id) AND !in.deleted",
+                refnos_vec[0].to_pe_key()
+            );
+            let query = QueryBuilder::from_sql(&sql);
+
+            return match query.fetch_all::<RefnoEnum>().await {
+                Ok(refnos) => {
+                    let execution_time = start_time.elapsed().as_millis() as u64;
+                    QueryErrorHandler::log_query_execution(&sql, execution_time);
+                    QueryErrorHandler::log_query_results(&sql, refnos.len());
+                    Ok(refnos)
+                }
+                Err(error) => {
+                    let query_error = QueryErrorHandler::handle_execution_error(&sql, error);
+                    Err(query_error.into())
+                }
+            };
+        }
+
+        // 对于多个元素，逐个查询并合并结果
+        // 这样避免了 array::flatten 的解析问题
+        let mut all_children = Vec::new();
+        for refno in &refnos_vec {
+            let sql = format!(
+                "SELECT value in FROM {}<-pe_owner WHERE record::exists(in.id) AND !in.deleted",
+                refno.to_pe_key()
+            );
+            let query = QueryBuilder::from_sql(&sql);
+
+            match query.fetch_all::<RefnoEnum>().await {
+                Ok(children) => {
+                    all_children.extend(children);
+                }
+                Err(error) => {
+                    // 记录单个查询失败但继续处理其他
+                    log::warn!("批量查询子节点失败 {}: {}", refno.to_pe_key(), error);
+                }
             }
         }
+
+        let execution_time = start_time.elapsed().as_millis() as u64;
+        QueryErrorHandler::log_query_execution(
+            &format!("get_all_children_refnos({} items)", refnos_vec.len()),
+            execution_time
+        );
+        QueryErrorHandler::log_query_results(
+            &format!("get_all_children_refnos({} items)", refnos_vec.len()),
+            all_children.len()
+        );
+
+        Ok(all_children)
     }
 
     /// 批量查询类型

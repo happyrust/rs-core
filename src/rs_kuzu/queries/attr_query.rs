@@ -119,3 +119,37 @@ pub async fn get_batch_attmaps_kuzu(
 
     Ok(result)
 }
+
+// ============================================================================
+// QueryProvider 兼容包装函数
+// ============================================================================
+
+#[cfg(feature = "kuzu")]
+/// 查询单个元素属性 (QueryProvider 兼容函数)
+pub async fn kuzu_get_named_attmap(refno: RefnoEnum) -> Result<Option<NamedAttrMap>> {
+    match get_named_attmap_kuzu(refno).await {
+        Ok(attmap) => Ok(Some(attmap)),
+        Err(e) => {
+            log::warn!("查询属性失败: {}", e);
+            Ok(None)
+        }
+    }
+}
+
+#[cfg(feature = "kuzu")]
+/// 批量查询属性 (QueryProvider 兼容函数)
+pub async fn kuzu_get_attmaps_batch(refnos: &[RefnoEnum]) -> Result<Vec<NamedAttrMap>> {
+    let results = get_batch_attmaps_kuzu(refnos).await?;
+
+    // 转换为按顺序的 Vec<NamedAttrMap>，保持输入顺序
+    let mut attmaps = Vec::new();
+    for refno in refnos {
+        if let Some((_, attmap)) = results.iter().find(|(r, _)| r == refno) {
+            attmaps.push(attmap.clone());
+        } else {
+            attmaps.push(NamedAttrMap::default());
+        }
+    }
+
+    Ok(attmaps)
+}

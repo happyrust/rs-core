@@ -3,7 +3,7 @@
 //! 提供批量查询功能，包括批量获取子节点、全名查询等
 
 use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError};
-use crate::types::{RefnoEnum, RefU64};
+use crate::types::{RefnoEnum, RefU64, SPdmsElement};
 use anyhow::Result;
 use indexmap::IndexMap;
 use itertools::Itertools;
@@ -139,16 +139,16 @@ pub async fn kuzu_query_full_names(refnos: &[RefnoEnum]) -> Result<Vec<String>> 
 /// * `refnos` - refno列表
 ///
 /// # 返回
-/// * `Result<IndexMap<RefnoEnum, String>>` - refno到全名的映射
-pub async fn kuzu_query_full_names_map(refnos: &[RefnoEnum]) -> Result<IndexMap<RefnoEnum, String>> {
+/// * `Result<Vec<(RefnoEnum, String)>>` - refno到全名的元组列表
+pub async fn kuzu_query_full_names_map(refnos: &[RefnoEnum]) -> Result<Vec<(RefnoEnum, String)>> {
     let full_names = kuzu_query_full_names(refnos).await?;
 
-    let map: IndexMap<RefnoEnum, String> = refnos.iter()
+    let result: Vec<(RefnoEnum, String)> = refnos.iter()
         .zip(full_names.iter())
         .map(|(refno, name)| (*refno, name.clone()))
         .collect();
 
-    Ok(map)
+    Ok(result)
 }
 
 /// 查询子节点的全名映射
@@ -157,10 +157,10 @@ pub async fn kuzu_query_full_names_map(refnos: &[RefnoEnum]) -> Result<IndexMap<
 /// * `refno` - 父节点refno
 ///
 /// # 返回
-/// * `Result<IndexMap<RefnoEnum, String>>` - 子节点refno到全名的映射
+/// * `Result<Vec<(RefnoEnum, String)>>` - 子节点refno到全名的元组列表
 pub async fn kuzu_query_children_full_names_map(
     refno: RefnoEnum,
-) -> Result<IndexMap<RefnoEnum, String>> {
+) -> Result<Vec<(RefnoEnum, String)>> {
     use crate::rs_kuzu::queries::hierarchy::kuzu_get_children_refnos;
 
     // 先获取所有子节点
@@ -168,6 +168,18 @@ pub async fn kuzu_query_children_full_names_map(
 
     // 再查询他们的全名
     kuzu_query_full_names_map(&children).await
+}
+
+/// 批量查询 PE 元素
+///
+/// # 参数
+/// * `refnos` - refno列表
+///
+/// # 返回
+/// * `Result<Vec<SPdmsElement>>` - PE 元素列表（保持顺序，跳过不存在的）
+pub async fn kuzu_get_pes_batch(refnos: &[RefnoEnum]) -> Result<Vec<SPdmsElement>> {
+    use crate::rs_kuzu::queries::pe_query;
+    pe_query::kuzu_get_pes_batch(refnos).await
 }
 
 #[cfg(test)]

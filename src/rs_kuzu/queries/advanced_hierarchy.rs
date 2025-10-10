@@ -3,7 +3,7 @@
 //! 提供返回完整对象（PE、NamedAttrMap等）的高级查询功能
 
 use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError};
-use crate::types::{RefnoEnum, RefU64, NamedAttrMap};
+use crate::types::{RefnoEnum, RefU64, NamedAttrMap, NamedAttrValue};
 use crate::pe::SPdmsElement;
 use anyhow::Result;
 use kuzu::Value;
@@ -63,6 +63,10 @@ pub async fn kuzu_get_children_pes(refno: RefnoEnum) -> Result<Vec<SPdmsElement>
                 deleted: *deleted,
                 lock: *lock,
                 owner: RefnoEnum::default(), // 需要单独查询
+                status_code: None,
+                cata_hash: String::new(),
+                op: crate::pdms_types::EleOperation::None,
+                typex: None,
             };
             pes.push(pe);
         }
@@ -119,11 +123,11 @@ pub async fn kuzu_get_children_named_attmaps(refno: RefnoEnum) -> Result<Vec<Nam
             let mut attmap = NamedAttrMap::default();
 
             // 设置基础PE属性
-            attmap.insert_i32(":REFNO", *refno_val as i32);
-            attmap.insert_string(":NAME", name.clone());
-            attmap.insert_string(":NOUN", noun.clone());
-            attmap.insert_i32(":DBNUM", *dbnum as i32);
-            attmap.insert_i32(":SESNO", *sesno as i32);
+            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
+            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
+            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
+            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
+            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
 
             attmaps.push(attmap);
         }
@@ -177,11 +181,11 @@ pub async fn kuzu_get_ancestor_attmaps(refno: RefnoEnum) -> Result<Vec<NamedAttr
         ) {
             let mut attmap = NamedAttrMap::default();
 
-            attmap.insert_i32(":REFNO", *refno_val as i32);
-            attmap.insert_string(":NAME", name.clone());
-            attmap.insert_string(":NOUN", noun.clone());
-            attmap.insert_i32(":DBNUM", *dbnum as i32);
-            attmap.insert_i32(":SESNO", *sesno as i32);
+            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
+            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
+            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
+            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
+            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
 
             attmaps.push(attmap);
         }
@@ -247,11 +251,11 @@ pub async fn kuzu_query_filter_children_atts(
         ) {
             let mut attmap = NamedAttrMap::default();
 
-            attmap.insert_i32(":REFNO", *refno_val as i32);
-            attmap.insert_string(":NAME", name.clone());
-            attmap.insert_string(":NOUN", noun.clone());
-            attmap.insert_i32(":DBNUM", *dbnum as i32);
-            attmap.insert_i32(":SESNO", *sesno as i32);
+            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
+            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
+            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
+            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
+            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
 
             attmaps.push(attmap);
         }
@@ -317,11 +321,11 @@ pub async fn kuzu_query_filter_deep_children_atts(
         ) {
             let mut attmap = NamedAttrMap::default();
 
-            attmap.insert_i32(":REFNO", *refno_val as i32);
-            attmap.insert_string(":NAME", name.clone());
-            attmap.insert_string(":NOUN", noun.clone());
-            attmap.insert_i32(":DBNUM", *dbnum as i32);
-            attmap.insert_i32(":SESNO", *sesno as i32);
+            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
+            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
+            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
+            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
+            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
 
             attmaps.push(attmap);
         }

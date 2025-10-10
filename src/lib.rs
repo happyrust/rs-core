@@ -89,6 +89,7 @@ pub mod rs_surreal;
 pub mod schema;
 pub mod sync;
 pub mod types;
+pub mod query_provider;
 
 pub mod material;
 pub mod math;

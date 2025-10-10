@@ -13,12 +13,14 @@ use kuzu::Value;
 /// # 参数
 /// * `refnos` - 父节点refno列表
 /// * `nouns` - 要过滤的noun类型列表
+/// * `max_depth` - 最大递归深度（默认 12）
 ///
 /// # 返回
 /// * `Result<Vec<RefnoEnum>>` - 匹配的子孙refno列表
 pub async fn kuzu_query_multi_filter_deep_children(
     refnos: &[RefnoEnum],
     nouns: &[&str],
+    max_depth: usize,
 ) -> Result<Vec<RefnoEnum>> {
     if refnos.is_empty() {
         return Ok(Vec::new());
@@ -34,11 +36,11 @@ pub async fn kuzu_query_multi_filter_deep_children(
     };
 
     let query = format!(
-        "MATCH (parent:PE)-[:OWNS*1..12]->(descendant:PE)
+        "MATCH (parent:PE)-[:OWNS*1..{}]->(descendant:PE)
          WHERE parent.refno IN [{}]{}
                AND descendant.deleted = false
          RETURN DISTINCT descendant.refno",
-        refno_list, noun_filter
+        max_depth, refno_list, noun_filter
     );
 
     log::debug!("Kuzu query: {}", query);
@@ -188,7 +190,7 @@ pub async fn kuzu_query_multi_deep_children_filter_inst(
 ) -> Result<Vec<RefnoEnum>> {
     if include_spre {
         // 包含 SPRE，直接使用标准的多条件过滤
-        kuzu_query_multi_filter_deep_children(refnos, nouns).await
+        kuzu_query_multi_filter_deep_children(refnos, nouns, 12).await
     } else {
         // 不包含 SPRE，使用 SPRE 过滤
         kuzu_query_multi_deep_children_filter_spre(refnos, nouns, None).await

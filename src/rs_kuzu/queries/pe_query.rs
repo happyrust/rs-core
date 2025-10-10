@@ -244,3 +244,38 @@ fn value_as_refno(value: &Value, field: &str) -> Result<RefnoEnum> {
 
     Ok(RefnoEnum::from(RefU64(raw)))
 }
+
+// ============================================================================
+// QueryProvider 兼容包装函数
+// ============================================================================
+
+#[cfg(feature = "kuzu")]
+/// 查询单个 PE (QueryProvider 兼容函数)
+pub async fn kuzu_get_pe(refno: RefnoEnum) -> Result<Option<SPdmsElement>> {
+    get_pe_from_kuzu(refno).await
+}
+
+#[cfg(feature = "kuzu")]
+/// 查询子元素的完整 PE (QueryProvider 兼容函数)
+pub async fn kuzu_get_children_pes(refno: RefnoEnum) -> Result<Vec<SPdmsElement>> {
+    use crate::rs_kuzu::queries::advanced_hierarchy;
+    advanced_hierarchy::kuzu_get_children_pes(refno).await
+}
+
+#[cfg(feature = "kuzu")]
+/// 批量查询 PE (QueryProvider 兼容函数)
+pub async fn kuzu_get_pes_batch(refnos: &[RefnoEnum]) -> Result<Vec<SPdmsElement>> {
+    if refnos.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut pes = Vec::new();
+    for refno in refnos {
+        if let Some(pe) = get_pe_from_kuzu(*refno).await? {
+            pes.push(pe);
+        }
+    }
+
+    log::debug!("批量查询 PE: 请求 {} 个，返回 {} 个", refnos.len(), pes.len());
+    Ok(pes)
+}

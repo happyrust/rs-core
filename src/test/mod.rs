@@ -29,6 +29,8 @@ pub mod test_kuzu_queries;
 
 pub mod test_sync;
 
+pub mod test_query_provider;
+
 // pub mod test_db_adapter;
 
 pub mod test_expression;
