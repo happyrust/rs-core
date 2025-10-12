@@ -67,11 +67,40 @@ pub async fn save_model_to_kuzu(
 }
 
 #[cfg(feature = "kuzu")]
+/// 保存完整模型到 Kuzu (无事务版本 - 用于避免事务冲突)
+pub async fn save_model_to_kuzu_no_transaction(
+    pe: &SPdmsElement,
+    attmap: &NamedAttrMap
+) -> Result<()> {
+    // 提取 TYPEX 值
+    let mut pe_with_typex = pe.clone();
+    pe_with_typex.extract_typex(attmap);
+
+    // 直接保存，不使用事务
+    // 1. 保存 PE 节点（包含 typex）
+    pe_ops::save_pe_node(&pe_with_typex).await?;
+
+    // 2. 保存属性节点
+    attr_ops::save_attr_node(&pe_with_typex, attmap).await?;
+
+    // 3. 创建关系
+    relation_ops::create_all_relations(&pe_with_typex, attmap).await?;
+
+    log::debug!("成功保存模型 (无事务): {} ({}) refno={} typex={:?}",
+              pe_with_typex.name, pe_with_typex.noun, pe_with_typex.refno.refno(), pe_with_typex.typex);
+
+    Ok(())
+}
+
+#[cfg(feature = "kuzu")]
 /// 批量保存模型
 pub async fn save_models_batch(
     models: Vec<(SPdmsElement, NamedAttrMap)>
 ) -> Result<()> {
     let conn = create_kuzu_connection()?;
+
+    // 先尝试清理任何可能存在的事务
+    let _ = conn.query("ROLLBACK");
 
     conn.query("BEGIN TRANSACTION")?;
 

@@ -20,19 +20,36 @@ fn escape_string(s: &str) -> String {
 pub async fn save_pe_node(pe: &SPdmsElement) -> Result<()> {
     let conn = create_kuzu_connection()?;
 
+    // 使用 MERGE 避免重复键错误
     let query = format!(
-        "CREATE (p:PE {{
-            refno: {},
-            name: '{}',
-            noun: '{}',
-            dbnum: {},
-            sesno: {},
-            cata_hash: '{}',
-            deleted: {},
-            lock: {},
-            typex: {}
-        }})",
+        "MERGE (p:PE {{refno: {}}})
+         ON MATCH SET
+            p.name = '{}',
+            p.noun = '{}',
+            p.dbnum = {},
+            p.sesno = {},
+            p.cata_hash = '{}',
+            p.deleted = {},
+            p.lock = {},
+            p.typex = {}
+         ON CREATE SET
+            p.name = '{}',
+            p.noun = '{}',
+            p.dbnum = {},
+            p.sesno = {},
+            p.cata_hash = '{}',
+            p.deleted = {},
+            p.lock = {},
+            p.typex = {}",
         pe.refno.refno().0,
+        escape_string(&pe.name),
+        escape_string(&pe.noun),
+        pe.dbnum,
+        pe.sesno,
+        escape_string(&pe.cata_hash),
+        pe.deleted,
+        pe.lock,
+        pe.typex.unwrap_or(0),
         escape_string(&pe.name),
         escape_string(&pe.noun),
         pe.dbnum,
@@ -59,19 +76,36 @@ pub async fn save_pe_batch(pes: &[SPdmsElement]) -> Result<()> {
 
     let result = (|| {
         for pe in pes {
+            // 使用 MERGE 避免重复键错误
             let query = format!(
-                "CREATE (p:PE {{
-                    refno: {},
-                    name: '{}',
-                    noun: '{}',
-                    dbnum: {},
-                    sesno: {},
-                    cata_hash: '{}',
-                    deleted: {},
-                    lock: {},
-                    typex: {}
-                }})",
+                "MERGE (p:PE {{refno: {}}})
+                 ON MATCH SET
+                    p.name = '{}',
+                    p.noun = '{}',
+                    p.dbnum = {},
+                    p.sesno = {},
+                    p.cata_hash = '{}',
+                    p.deleted = {},
+                    p.lock = {},
+                    p.typex = {}
+                 ON CREATE SET
+                    p.name = '{}',
+                    p.noun = '{}',
+                    p.dbnum = {},
+                    p.sesno = {},
+                    p.cata_hash = '{}',
+                    p.deleted = {},
+                    p.lock = {},
+                    p.typex = {}",
                 pe.refno.refno().0,
+                escape_string(&pe.name),
+                escape_string(&pe.noun),
+                pe.dbnum,
+                pe.sesno,
+                escape_string(&pe.cata_hash),
+                pe.deleted,
+                pe.lock,
+                pe.typex.unwrap_or(0),
                 escape_string(&pe.name),
                 escape_string(&pe.noun),
                 pe.dbnum,

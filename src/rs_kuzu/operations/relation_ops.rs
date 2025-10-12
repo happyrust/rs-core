@@ -16,9 +16,10 @@ pub async fn create_pe_to_attr_relation(pe: &SPdmsElement) -> Result<()> {
     let refno = pe.refno.refno().0;
     let noun = &pe.noun.to_uppercase();
 
+    // 使用 MERGE 避免重复边
     let query = format!(
         "MATCH (p:PE {{refno: {}}}), (a:Attr_{} {{refno: {}}})
-         CREATE (p)-[:TO_{}]->(a)",
+         MERGE (p)-[:TO_{}]->(a)",
         refno, noun, refno, noun
     );
 
@@ -39,9 +40,10 @@ pub async fn create_owns_relation(pe: &SPdmsElement) -> Result<()> {
     let refno = pe.refno.refno().0;
     let owner_refno = pe.owner.refno().0;
 
+    // 使用 MERGE 避免重复边
     let query = format!(
         "MATCH (p1:PE {{refno: {}}}), (p2:PE {{refno: {}}})
-         CREATE (p2)-[:OWNS]->(p1)",
+         MERGE (p2)-[:OWNS]->(p1)",
         refno, owner_refno
     );
 
@@ -71,9 +73,10 @@ pub async fn create_attr_reference_relations(
                 let edge_name = format!("{}_{}", noun, attr_name.to_uppercase());
                 let target = target_refno.0;
 
+                // 使用 MERGE 避免重复边
                 let query = format!(
                     "MATCH (a:Attr_{} {{refno: {}}}), (p:PE {{refno: {}}})
-                     CREATE (a)-[:{}]->(p)",
+                     MERGE (a)-[:{}]->(p)",
                     noun, refno, target, edge_name
                 );
 
@@ -94,9 +97,10 @@ pub async fn create_attr_reference_relations(
                 let edge_name = format!("{}_{}", noun, attr_name.to_uppercase());
                 let target = target_refno.refno().0;
 
+                // 使用 MERGE 避免重复边
                 let query = format!(
                     "MATCH (a:Attr_{} {{refno: {}}}), (p:PE {{refno: {}}})
-                     CREATE (a)-[:{}]->(p)",
+                     MERGE (a)-[:{}]->(p)",
                     noun, refno, target, edge_name
                 );
 

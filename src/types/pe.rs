@@ -68,9 +68,9 @@ impl SPdmsElement {
             r#""refno": {},"#,
             self.refno().to_table_key(&self.noun)
         ));
-        if let Some(id) = id {
-            json_string.push_str(&format!(r#""id": {},"#, id));
-        }
+        // 使用提供的 id，或默认使用 noun:refno 格式 (Thing 类型)
+        let id_value = id.unwrap_or_else(|| self.refno().to_table_key(&self.noun));
+        json_string.push_str(&format!(r#""id": {},"#, id_value));
         json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));
         json_string.push_str("}");
         json_string

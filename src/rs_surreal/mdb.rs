@@ -151,25 +151,51 @@ pub async fn query_type_refnos_by_dbnum(
         } else {
             format!("{noun}")
         };
+        // 优先使用 id 字段（对于大部分表，id 就是 refno）
+        // 但对于某些表(如 SITE, ZONE), id 不是有效 refno，会 fallback 到从 REFNO 计算
         let sql = match has_children {
             Some(true) => {
                 format!(
-                    "select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none"
+                    "select id, REFNO from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none"
                 )
             }
             Some(false) => {
                 format!(
-                    "select value id from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none"
+                    "select id, REFNO from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none"
                 )
             }
             None => {
-                format!("select value id from {table} where REFNO.dbnum={dbnum}")
+                format!("select id, REFNO from {table} where REFNO.dbnum={dbnum}")
             }
         };
         // println!("query_type_refnos_by_dbnum sql: {}", sql);
         let mut response = SUL_DB.query(&sql).await?;
-        let refnos: Vec<RefnoEnum> = response.take(0)?;
-        result.extend(refnos);
+
+        // 使用 serde_json::Value 以兼容不同类型的 REFNO 字段
+        let records: Vec<serde_json::Value> = response.take(0)?;
+
+        use crate::types::RefU64;
+        for record in records {
+            // 先尝试从 id 解析
+            if let Some(id_val) = record.get("id") {
+                // 尝试将 id 解析为 Thing
+                if let Ok(thing) = serde_json::from_value::<surrealdb::sql::Thing>(id_val.clone()) {
+                    if let Ok(refno) = RefnoEnum::try_from(thing) {
+                        result.push(refno);
+                        continue;
+                    }
+                }
+            }
+
+            // id 解析失败，尝试从 REFNO 对象计算
+            if let Some(refno_val) = record.get("REFNO") {
+                if let Some(refno_obj) = refno_val.as_object() {
+                    let dbnum = refno_obj.get("dbnum").and_then(|v| v.as_u64()).unwrap_or(0);
+                    let nume = refno_obj.get("nume").and_then(|v| v.as_u64()).unwrap_or(0);
+                    result.push(RefnoEnum::from(RefU64::from(dbnum * 1000000 + nume)));
+                }
+            }
+        }
     }
     Ok(result)
 }

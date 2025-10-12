@@ -86,7 +86,8 @@ pub async fn save_attr_node(pe: &SPdmsElement, attmap: &NamedAttrMap) -> Result<
     let table_name = format!("Attr_{}", noun.to_uppercase());
 
     // 构建属性字段
-    let mut fields = vec![format!("refno: {}", pe.refno.refno().0)];
+    let mut fields = vec![];
+    let refno = pe.refno.refno().0;
 
     for (attr_name, attr_value) in &attmap.map {
         // 跳过特殊字段
@@ -103,14 +104,18 @@ pub async fn save_attr_node(pe: &SPdmsElement, attmap: &NamedAttrMap) -> Result<
         }
     }
 
+    // 使用 MERGE 避免重复键错误
+    // Kuzu 的 MERGE 需要在匹配条件中包含所有要设置的属性
+    fields.insert(0, format!("refno: {}", refno));
+
     let query = format!(
-        "CREATE (a:{} {{ {} }})",
+        "MERGE (a:{} {{ {} }})",
         table_name,
         fields.join(", ")
     );
 
     conn.query(&query)?;
-    log::debug!("保存属性节点: {} refno={}", table_name, pe.refno.refno());
+    log::debug!("保存属性节点: {} refno={}", table_name, refno);
 
     Ok(())
 }
@@ -128,8 +133,9 @@ pub async fn save_attr_batch(
         for (pe, attmap) in models {
             let noun = &pe.noun;
             let table_name = format!("Attr_{}", noun.to_uppercase());
+            let refno = pe.refno.refno().0;
 
-            let mut fields = vec![format!("refno: {}", pe.refno.refno().0)];
+            let mut fields = vec![];
 
             for (attr_name, attr_value) in &attmap.map {
                 if attr_name == "REFNO"
@@ -145,8 +151,12 @@ pub async fn save_attr_batch(
                 }
             }
 
+            // 使用 MERGE 避免重复键错误
+            // Kuzu 的 MERGE 需要在匹配条件中包含所有要设置的属性
+            fields.insert(0, format!("refno: {}", refno));
+
             let query = format!(
-                "CREATE (a:{} {{ {} }})",
+                "MERGE (a:{} {{ {} }})",
                 table_name,
                 fields.join(", ")
             );

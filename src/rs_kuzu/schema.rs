@@ -66,6 +66,10 @@ pub async fn init_kuzu_schema() -> Result<()> {
         success_count
     );
 
+    // 确保没有遗留的事务 - 尝试回滚任何可能存在的事务
+    // 如果没有活跃事务，这个操作会失败但不影响功能
+    let _ = conn.query("ROLLBACK");
+
     Ok(())
 }
 
