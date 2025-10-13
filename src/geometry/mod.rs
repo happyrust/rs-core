@@ -8,13 +8,13 @@ use crate::prim_geo::{SBox, SCylinder};
 use crate::shape::pdms_shape::{PlantMesh, RsVec3};
 use crate::tool::hash_tool::hash_two_str;
 use crate::{RefU64, RefnoEnum, gen_bytes_hash};
-use bevy_ecs::prelude::Resource;
 #[cfg(feature = "render")]
-use bevy_render::render_resource::PrimitiveTopology;
+use bevy_asset::RenderAssetUsages;
+use bevy_ecs::prelude::Resource;
 #[cfg(feature = "render")]
 use bevy_mesh::{Indices, Mesh};
 #[cfg(feature = "render")]
-use bevy_asset::RenderAssetUsages;
+use bevy_render::render_resource::PrimitiveTopology;
 use bevy_transform::components::Transform;
 use dashmap::DashSet;
 use glam::{Vec3, bool, i32, u64};
@@ -61,14 +61,7 @@ pub enum GeoBasicType {
 }
 
 /// 存储一个Element 包含的所有几何信息
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    Default,
-    Resource,
-)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, Resource)]
 #[serde_as]
 pub struct EleGeosInfo {
     pub refno: RefnoEnum,
@@ -463,8 +456,10 @@ impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
-        let mut mesh =
-            Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::RENDER_WORLD);
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::RENDER_WORLD,
+        );
         let d = PlantMesh::default();
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, d.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, d.normals.clone());

@@ -2,15 +2,15 @@
 //!
 //! 提供统一的查询接口，支持在 SurrealDB、Kuzu 和自动选择模式之间切换
 
+use crate::rs_kuzu::queries::{hierarchy as kuzu_hierarchy, type_filter as kuzu_type_filter};
 use crate::rs_surreal;
 use crate::rs_surreal::graph as surreal_graph;
 use crate::rs_surreal::mdb as surreal_mdb;
-use crate::rs_kuzu::queries::{hierarchy as kuzu_hierarchy, type_filter as kuzu_type_filter};
 use crate::types::RefnoEnum;
 use anyhow::Result;
-use std::sync::Arc;
-use parking_lot::RwLock;
 use once_cell::sync::Lazy;
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 /// 查询引擎选择策略
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -92,15 +92,9 @@ impl QueryRouter {
     /// * `Result<Vec<RefnoEnum>>` - 子节点列表
     pub async fn get_children_refnos(&self, refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
         match self.strategy {
-            QueryEngine::SurrealDB => {
-                rs_surreal::get_children_refnos(refno).await
-            }
-            QueryEngine::Kuzu => {
-                kuzu_hierarchy::kuzu_get_children_refnos(refno).await
-            }
-            QueryEngine::Auto => {
-                self.auto_get_children_refnos(refno).await
-            }
+            QueryEngine::SurrealDB => rs_surreal::get_children_refnos(refno).await,
+            QueryEngine::Kuzu => kuzu_hierarchy::kuzu_get_children_refnos(refno).await,
+            QueryEngine::Auto => self.auto_get_children_refnos(refno).await,
         }
     }
 
@@ -128,15 +122,9 @@ impl QueryRouter {
     /// * `Result<Vec<RefnoEnum>>` - 祖先列表
     pub async fn query_ancestor_refnos(&self, refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
         match self.strategy {
-            QueryEngine::SurrealDB => {
-                crate::query_ancestor_refnos(refno).await
-            }
-            QueryEngine::Kuzu => {
-                kuzu_hierarchy::kuzu_query_ancestor_refnos(refno).await
-            }
-            QueryEngine::Auto => {
-                self.auto_query_ancestor_refnos(refno).await
-            }
+            QueryEngine::SurrealDB => crate::query_ancestor_refnos(refno).await,
+            QueryEngine::Kuzu => kuzu_hierarchy::kuzu_query_ancestor_refnos(refno).await,
+            QueryEngine::Auto => self.auto_query_ancestor_refnos(refno).await,
         }
     }
 
@@ -163,15 +151,9 @@ impl QueryRouter {
     /// * `Result<Vec<RefnoEnum>>` - 所有子孙列表
     pub async fn query_deep_children_refnos(&self, refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
         match self.strategy {
-            QueryEngine::SurrealDB => {
-                surreal_graph::query_deep_children_refnos(refno).await
-            }
-            QueryEngine::Kuzu => {
-                kuzu_hierarchy::kuzu_query_deep_children_refnos(refno).await
-            }
-            QueryEngine::Auto => {
-                self.auto_query_deep_children_refnos(refno).await
-            }
+            QueryEngine::SurrealDB => surreal_graph::query_deep_children_refnos(refno).await,
+            QueryEngine::Kuzu => kuzu_hierarchy::kuzu_query_deep_children_refnos(refno).await,
+            QueryEngine::Auto => self.auto_query_deep_children_refnos(refno).await,
         }
     }
 
@@ -203,15 +185,11 @@ impl QueryRouter {
         nouns: &[&str],
     ) -> Result<Vec<RefnoEnum>> {
         match self.strategy {
-            QueryEngine::SurrealDB => {
-                surreal_graph::query_filter_deep_children(refno, nouns).await
-            }
+            QueryEngine::SurrealDB => surreal_graph::query_filter_deep_children(refno, nouns).await,
             QueryEngine::Kuzu => {
                 kuzu_hierarchy::kuzu_query_filter_deep_children(refno, nouns).await
             }
-            QueryEngine::Auto => {
-                self.auto_query_filter_deep_children(refno, nouns).await
-            }
+            QueryEngine::Auto => self.auto_query_filter_deep_children(refno, nouns).await,
         }
     }
 
@@ -253,10 +231,12 @@ impl QueryRouter {
                 surreal_mdb::query_type_refnos_by_dbnum(nouns, dbnum, has_children, false).await
             }
             QueryEngine::Kuzu => {
-                kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum as i32, has_children).await
+                kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum as i32, has_children)
+                    .await
             }
             QueryEngine::Auto => {
-                self.auto_query_type_refnos_by_dbnum(nouns, dbnum, has_children).await
+                self.auto_query_type_refnos_by_dbnum(nouns, dbnum, has_children)
+                    .await
             }
         }
     }
@@ -268,7 +248,9 @@ impl QueryRouter {
         dbnum: u32,
         has_children: Option<bool>,
     ) -> Result<Vec<RefnoEnum>> {
-        match kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum as i32, has_children).await {
+        match kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum as i32, has_children)
+            .await
+        {
             Ok(result) => {
                 log::debug!("✓ Kuzu query succeeded for query_type_refnos_by_dbnum");
                 Ok(result)
@@ -295,12 +277,8 @@ impl QueryRouter {
                     .await
                     .map(|v| v.into_iter().next())
             }
-            QueryEngine::Kuzu => {
-                kuzu_type_filter::kuzu_get_world_by_dbnum(dbnum as i32).await
-            }
-            QueryEngine::Auto => {
-                self.auto_get_world_by_dbnum(dbnum).await
-            }
+            QueryEngine::Kuzu => kuzu_type_filter::kuzu_get_world_by_dbnum(dbnum as i32).await,
+            QueryEngine::Auto => self.auto_get_world_by_dbnum(dbnum).await,
         }
     }
 
@@ -334,12 +312,16 @@ pub async fn routed_get_children_refnos(refno: RefnoEnum) -> Result<Vec<RefnoEnu
 
 /// 便捷函数: 使用全局配置的路由器查询祖先
 pub async fn routed_query_ancestor_refnos(refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
-    QueryRouter::from_global().query_ancestor_refnos(refno).await
+    QueryRouter::from_global()
+        .query_ancestor_refnos(refno)
+        .await
 }
 
 /// 便捷函数: 使用全局配置的路由器查询深层子孙
 pub async fn routed_query_deep_children_refnos(refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
-    QueryRouter::from_global().query_deep_children_refnos(refno).await
+    QueryRouter::from_global()
+        .query_deep_children_refnos(refno)
+        .await
 }
 
 /// 便捷函数: 使用全局配置的路由器按类型过滤
@@ -348,7 +330,9 @@ pub async fn routed_query_type_refnos_by_dbnum(
     dbnum: u32,
     has_children: Option<bool>,
 ) -> Result<Vec<RefnoEnum>> {
-    QueryRouter::from_global().query_type_refnos_by_dbnum(nouns, dbnum, has_children).await
+    QueryRouter::from_global()
+        .query_type_refnos_by_dbnum(nouns, dbnum, has_children)
+        .await
 }
 
 #[cfg(test)]
@@ -358,7 +342,10 @@ mod tests {
 
     #[test]
     fn test_query_engine_from_str() {
-        assert_eq!(QueryEngine::from_str("surrealdb").unwrap(), QueryEngine::SurrealDB);
+        assert_eq!(
+            QueryEngine::from_str("surrealdb").unwrap(),
+            QueryEngine::SurrealDB
+        );
         assert_eq!(QueryEngine::from_str("kuzu").unwrap(), QueryEngine::Kuzu);
         assert_eq!(QueryEngine::from_str("auto").unwrap(), QueryEngine::Auto);
         assert!(QueryEngine::from_str("invalid").is_err());

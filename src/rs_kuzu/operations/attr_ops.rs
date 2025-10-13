@@ -44,12 +44,22 @@ fn format_attr_field(name: &str, value: &NamedAttrValue) -> Result<Option<String
         F32VecType(vec) => {
             let vals: Vec<String> = vec
                 .iter()
-                .map(|v| if v.is_finite() { v.to_string() } else { "0.0".to_string() })
+                .map(|v| {
+                    if v.is_finite() {
+                        v.to_string()
+                    } else {
+                        "0.0".to_string()
+                    }
+                })
                 .collect();
             format!("{}: [{}]", name.to_uppercase(), vals.join(", "))
         }
         IntArrayType(vec) => {
-            let vals = vec.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", ");
+            let vals = vec
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
             format!("{}: [{}]", name.to_uppercase(), vals)
         }
         StringArrayType(vec) => {
@@ -60,7 +70,11 @@ fn format_attr_field(name: &str, value: &NamedAttrValue) -> Result<Option<String
             format!("{}: [{}]", name.to_uppercase(), vals.join(", "))
         }
         BoolArrayType(vec) => {
-            let vals = vec.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", ");
+            let vals = vec
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
             format!("{}: [{}]", name.to_uppercase(), vals)
         }
         RefU64Type(_) | RefnoEnumType(_) => {
@@ -108,11 +122,7 @@ pub async fn save_attr_node(pe: &SPdmsElement, attmap: &NamedAttrMap) -> Result<
     // Kuzu 的 MERGE 需要在匹配条件中包含所有要设置的属性
     fields.insert(0, format!("refno: {}", refno));
 
-    let query = format!(
-        "MERGE (a:{} {{ {} }})",
-        table_name,
-        fields.join(", ")
-    );
+    let query = format!("MERGE (a:{} {{ {} }})", table_name, fields.join(", "));
 
     conn.query(&query)?;
     log::debug!("保存属性节点: {} refno={}", table_name, refno);
@@ -122,9 +132,7 @@ pub async fn save_attr_node(pe: &SPdmsElement, attmap: &NamedAttrMap) -> Result<
 
 #[cfg(feature = "kuzu")]
 /// 批量保存属性节点
-pub async fn save_attr_batch(
-    models: &[(SPdmsElement, NamedAttrMap)]
-) -> Result<()> {
+pub async fn save_attr_batch(models: &[(SPdmsElement, NamedAttrMap)]) -> Result<()> {
     let conn = create_kuzu_connection()?;
 
     conn.query("BEGIN TRANSACTION")?;
@@ -155,11 +163,7 @@ pub async fn save_attr_batch(
             // Kuzu 的 MERGE 需要在匹配条件中包含所有要设置的属性
             fields.insert(0, format!("refno: {}", refno));
 
-            let query = format!(
-                "MERGE (a:{} {{ {} }})",
-                table_name,
-                fields.join(", ")
-            );
+            let query = format!("MERGE (a:{} {{ {} }})", table_name, fields.join(", "));
 
             conn.query(&query)?;
         }

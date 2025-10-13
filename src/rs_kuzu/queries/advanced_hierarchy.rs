@@ -2,9 +2,9 @@
 //!
 //! 提供返回完整对象（PE、NamedAttrMap等）的高级查询功能
 
-use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError};
-use crate::types::{RefnoEnum, RefU64, NamedAttrMap, NamedAttrValue};
 use crate::pe::SPdmsElement;
+use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError};
+use crate::types::{NamedAttrMap, NamedAttrValue, RefU64, RefnoEnum};
 use anyhow::Result;
 use kuzu::Value;
 
@@ -25,10 +25,11 @@ pub async fn kuzu_get_children_pes(refno: RefnoEnum) -> Result<Vec<SPdmsElement>
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -95,10 +96,11 @@ pub async fn kuzu_get_children_named_attmaps(refno: RefnoEnum) -> Result<Vec<Nam
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -113,27 +115,41 @@ pub async fn kuzu_get_children_named_attmaps(refno: RefnoEnum) -> Result<Vec<Nam
             Some(Value::String(noun)),
             Some(Value::Int64(dbnum)),
             Some(Value::Int64(sesno)),
-        ) = (
-            row.get(0),
-            row.get(1),
-            row.get(2),
-            row.get(3),
-            row.get(4),
-        ) {
+        ) = (row.get(0), row.get(1), row.get(2), row.get(3), row.get(4))
+        {
             let mut attmap = NamedAttrMap::default();
 
             // 设置基础PE属性
-            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
-            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
-            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
-            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
-            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
+            attmap.map.insert(
+                ":REFNO".to_string(),
+                NamedAttrValue::IntegerType(*refno_val as i32),
+            );
+            attmap.map.insert(
+                ":NAME".to_string(),
+                NamedAttrValue::StringType(name.clone()),
+            );
+            attmap.map.insert(
+                ":NOUN".to_string(),
+                NamedAttrValue::StringType(noun.clone()),
+            );
+            attmap.map.insert(
+                ":DBNUM".to_string(),
+                NamedAttrValue::IntegerType(*dbnum as i32),
+            );
+            attmap.map.insert(
+                ":SESNO".to_string(),
+                NamedAttrValue::IntegerType(*sesno as i32),
+            );
 
             attmaps.push(attmap);
         }
     }
 
-    log::debug!("Found {} children attmaps for refno {:?}", attmaps.len(), refno);
+    log::debug!(
+        "Found {} children attmaps for refno {:?}",
+        attmaps.len(),
+        refno
+    );
     Ok(attmaps)
 }
 
@@ -154,10 +170,11 @@ pub async fn kuzu_get_ancestor_attmaps(refno: RefnoEnum) -> Result<Vec<NamedAttr
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -172,26 +189,40 @@ pub async fn kuzu_get_ancestor_attmaps(refno: RefnoEnum) -> Result<Vec<NamedAttr
             Some(Value::String(noun)),
             Some(Value::Int64(dbnum)),
             Some(Value::Int64(sesno)),
-        ) = (
-            row.get(0),
-            row.get(1),
-            row.get(2),
-            row.get(3),
-            row.get(4),
-        ) {
+        ) = (row.get(0), row.get(1), row.get(2), row.get(3), row.get(4))
+        {
             let mut attmap = NamedAttrMap::default();
 
-            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
-            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
-            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
-            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
-            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
+            attmap.map.insert(
+                ":REFNO".to_string(),
+                NamedAttrValue::IntegerType(*refno_val as i32),
+            );
+            attmap.map.insert(
+                ":NAME".to_string(),
+                NamedAttrValue::StringType(name.clone()),
+            );
+            attmap.map.insert(
+                ":NOUN".to_string(),
+                NamedAttrValue::StringType(noun.clone()),
+            );
+            attmap.map.insert(
+                ":DBNUM".to_string(),
+                NamedAttrValue::IntegerType(*dbnum as i32),
+            );
+            attmap.map.insert(
+                ":SESNO".to_string(),
+                NamedAttrValue::IntegerType(*sesno as i32),
+            );
 
             attmaps.push(attmap);
         }
     }
 
-    log::debug!("Found {} ancestor attmaps for refno {:?}", attmaps.len(), refno);
+    log::debug!(
+        "Found {} ancestor attmaps for refno {:?}",
+        attmaps.len(),
+        refno
+    );
     Ok(attmaps)
 }
 
@@ -210,7 +241,11 @@ pub async fn kuzu_query_filter_children_atts(
     let noun_filter = if types.is_empty() {
         String::new()
     } else {
-        let nouns = types.iter().map(|n| format!("'{}'", n)).collect::<Vec<_>>().join(", ");
+        let nouns = types
+            .iter()
+            .map(|n| format!("'{}'", n))
+            .collect::<Vec<_>>()
+            .join(", ");
         format!("AND child.noun IN [{}]", nouns)
     };
 
@@ -224,10 +259,11 @@ pub async fn kuzu_query_filter_children_atts(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -242,26 +278,40 @@ pub async fn kuzu_query_filter_children_atts(
             Some(Value::String(noun)),
             Some(Value::Int64(dbnum)),
             Some(Value::Int64(sesno)),
-        ) = (
-            row.get(0),
-            row.get(1),
-            row.get(2),
-            row.get(3),
-            row.get(4),
-        ) {
+        ) = (row.get(0), row.get(1), row.get(2), row.get(3), row.get(4))
+        {
             let mut attmap = NamedAttrMap::default();
 
-            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
-            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
-            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
-            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
-            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
+            attmap.map.insert(
+                ":REFNO".to_string(),
+                NamedAttrValue::IntegerType(*refno_val as i32),
+            );
+            attmap.map.insert(
+                ":NAME".to_string(),
+                NamedAttrValue::StringType(name.clone()),
+            );
+            attmap.map.insert(
+                ":NOUN".to_string(),
+                NamedAttrValue::StringType(noun.clone()),
+            );
+            attmap.map.insert(
+                ":DBNUM".to_string(),
+                NamedAttrValue::IntegerType(*dbnum as i32),
+            );
+            attmap.map.insert(
+                ":SESNO".to_string(),
+                NamedAttrValue::IntegerType(*sesno as i32),
+            );
 
             attmaps.push(attmap);
         }
     }
 
-    log::debug!("Found {} filtered children attmaps for refno {:?}", attmaps.len(), refno);
+    log::debug!(
+        "Found {} filtered children attmaps for refno {:?}",
+        attmaps.len(),
+        refno
+    );
     Ok(attmaps)
 }
 
@@ -280,7 +330,11 @@ pub async fn kuzu_query_filter_deep_children_atts(
     let noun_filter = if nouns.is_empty() {
         String::new()
     } else {
-        let nouns_str = nouns.iter().map(|n| format!("'{}'", n)).collect::<Vec<_>>().join(", ");
+        let nouns_str = nouns
+            .iter()
+            .map(|n| format!("'{}'", n))
+            .collect::<Vec<_>>()
+            .join(", ");
         format!("AND descendant.noun IN [{}]", nouns_str)
     };
 
@@ -294,10 +348,11 @@ pub async fn kuzu_query_filter_deep_children_atts(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -312,26 +367,40 @@ pub async fn kuzu_query_filter_deep_children_atts(
             Some(Value::String(noun)),
             Some(Value::Int64(dbnum)),
             Some(Value::Int64(sesno)),
-        ) = (
-            row.get(0),
-            row.get(1),
-            row.get(2),
-            row.get(3),
-            row.get(4),
-        ) {
+        ) = (row.get(0), row.get(1), row.get(2), row.get(3), row.get(4))
+        {
             let mut attmap = NamedAttrMap::default();
 
-            attmap.map.insert(":REFNO".to_string(), NamedAttrValue::IntegerType(*refno_val as i32));
-            attmap.map.insert(":NAME".to_string(), NamedAttrValue::StringType(name.clone()));
-            attmap.map.insert(":NOUN".to_string(), NamedAttrValue::StringType(noun.clone()));
-            attmap.map.insert(":DBNUM".to_string(), NamedAttrValue::IntegerType(*dbnum as i32));
-            attmap.map.insert(":SESNO".to_string(), NamedAttrValue::IntegerType(*sesno as i32));
+            attmap.map.insert(
+                ":REFNO".to_string(),
+                NamedAttrValue::IntegerType(*refno_val as i32),
+            );
+            attmap.map.insert(
+                ":NAME".to_string(),
+                NamedAttrValue::StringType(name.clone()),
+            );
+            attmap.map.insert(
+                ":NOUN".to_string(),
+                NamedAttrValue::StringType(noun.clone()),
+            );
+            attmap.map.insert(
+                ":DBNUM".to_string(),
+                NamedAttrValue::IntegerType(*dbnum as i32),
+            );
+            attmap.map.insert(
+                ":SESNO".to_string(),
+                NamedAttrValue::IntegerType(*sesno as i32),
+            );
 
             attmaps.push(attmap);
         }
     }
 
-    log::debug!("Found {} filtered deep children attmaps for refno {:?}", attmaps.len(), refno);
+    log::debug!(
+        "Found {} filtered deep children attmaps for refno {:?}",
+        attmaps.len(),
+        refno
+    );
     Ok(attmaps)
 }
 

@@ -83,13 +83,13 @@ pub mod test;
 pub mod db_adapter;
 #[cfg(feature = "sea-orm")]
 pub mod orm;
+pub mod query_provider;
 #[cfg(feature = "kuzu")]
 pub mod rs_kuzu;
 pub mod rs_surreal;
 pub mod schema;
 pub mod sync;
 pub mod types;
-pub mod query_provider;
 
 pub mod material;
 pub mod math;

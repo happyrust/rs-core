@@ -2,7 +2,7 @@
 //!
 //! 直接读取 JSON 文件并生成强类型的 Kuzu 表结构
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -28,11 +28,11 @@ pub fn load_attr_info_json() -> Result<AllAttrInfo> {
         return Err(anyhow!("all_attr_info.json 文件不存在: {:?}", json_path));
     }
 
-    let content = fs::read_to_string(&json_path)
-        .with_context(|| format!("读取文件失败: {:?}", json_path))?;
+    let content =
+        fs::read_to_string(&json_path).with_context(|| format!("读取文件失败: {:?}", json_path))?;
 
-    let attr_info: AllAttrInfo = serde_json::from_str(&content)
-        .with_context(|| "解析 JSON 失败")?;
+    let attr_info: AllAttrInfo =
+        serde_json::from_str(&content).with_context(|| "解析 JSON 失败")?;
 
     Ok(attr_info)
 }
@@ -65,7 +65,8 @@ pub fn pdms_type_to_kuzu(attr_type: &DbAttributeType, default_val: &AttrVal) -> 
                 _ => "STRING", // 默认为字符串
             }
         }
-    }.to_string()
+    }
+    .to_string()
 }
 
 /// 生成单个 noun 的建表 SQL
@@ -102,8 +103,7 @@ pub fn generate_noun_table_sql(noun: &str, attrs: &HashMap<String, AttrInfo>) ->
 
     Ok(format!(
         "CREATE NODE TABLE IF NOT EXISTS {}(\n{}\n        )",
-        table_name,
-        columns_str
+        table_name, columns_str
     ))
 }
 
@@ -197,7 +197,8 @@ pub fn generate_all_table_sqls() -> Result<Vec<String>> {
             deleted BOOLEAN DEFAULT false,
             lock BOOLEAN DEFAULT false,
             typex INT32
-        )".to_string()
+        )"
+        .to_string(),
     );
 
     // 1.1 创建 PE 表索引
@@ -225,7 +226,8 @@ pub fn generate_all_table_sqls() -> Result<Vec<String>> {
         "CREATE REL TABLE IF NOT EXISTS OWNS(
             FROM PE TO PE,
             MANY_ONE
-        )".to_string()
+        )"
+        .to_string(),
     );
 
     Ok(sqls)
@@ -258,9 +260,21 @@ mod tests {
 
     #[test]
     fn test_type_mapping() {
-        assert_eq!(pdms_type_to_kuzu(&DbAttributeType::INTEGER, &AttrVal::IntegerType(0)), "INT32");
-        assert_eq!(pdms_type_to_kuzu(&DbAttributeType::DOUBLE, &AttrVal::DoubleType(0.0)), "DOUBLE");
-        assert_eq!(pdms_type_to_kuzu(&DbAttributeType::STRING, &AttrVal::StringType("".into())), "STRING");
-        assert_eq!(pdms_type_to_kuzu(&DbAttributeType::ELEMENT, &AttrVal::RefU64Type(0.into())), "INT64");
+        assert_eq!(
+            pdms_type_to_kuzu(&DbAttributeType::INTEGER, &AttrVal::IntegerType(0)),
+            "INT32"
+        );
+        assert_eq!(
+            pdms_type_to_kuzu(&DbAttributeType::DOUBLE, &AttrVal::DoubleType(0.0)),
+            "DOUBLE"
+        );
+        assert_eq!(
+            pdms_type_to_kuzu(&DbAttributeType::STRING, &AttrVal::StringType("".into())),
+            "STRING"
+        );
+        assert_eq!(
+            pdms_type_to_kuzu(&DbAttributeType::ELEMENT, &AttrVal::RefU64Type(0.into())),
+            "INT64"
+        );
     }
 }

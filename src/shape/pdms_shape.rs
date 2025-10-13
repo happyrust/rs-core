@@ -1,11 +1,11 @@
 use anyhow::anyhow;
-use bevy_ecs::component::Component;
-#[cfg(feature = "render")]
-use bevy_mesh::{Mesh, Indices};
-#[cfg(feature = "render")]
-use bevy_render::render_resource::PrimitiveTopology;
 #[cfg(feature = "render")]
 use bevy_asset::RenderAssetUsages;
+use bevy_ecs::component::Component;
+#[cfg(feature = "render")]
+use bevy_mesh::{Indices, Mesh};
+#[cfg(feature = "render")]
+use bevy_render::render_resource::PrimitiveTopology;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
 use downcast_rs::*;
@@ -76,14 +76,7 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 }
 
 //todo 增加LOD的实现
-#[derive(
-    Serialize,
-    Deserialize,
-    Component,
-    Debug,
-    Default,
-    Clone,
-)]
+#[derive(Serialize, Deserialize, Component, Debug, Default, Clone)]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<Vec3>,
@@ -199,7 +192,10 @@ impl PlantMesh {
     ///todo 后面需要把uv使用上
     #[cfg(feature = "render")]
     pub fn gen_bevy_mesh(&self) -> Mesh {
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
         // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);

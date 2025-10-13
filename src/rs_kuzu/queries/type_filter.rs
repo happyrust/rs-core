@@ -2,8 +2,10 @@
 //!
 //! 提供基于 dbnum 和 noun 的类型过滤查询功能
 
-use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError, query_builder::TypeFilterQueryBuilder};
-use crate::types::{RefnoEnum, RefU64};
+use crate::rs_kuzu::{
+    create_kuzu_connection, error::KuzuQueryError, query_builder::TypeFilterQueryBuilder,
+};
+use crate::types::{RefU64, RefnoEnum};
 use anyhow::Result;
 use kuzu::Value;
 
@@ -38,10 +40,11 @@ pub async fn kuzu_query_type_refnos_by_dbnum(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -55,7 +58,12 @@ pub async fn kuzu_query_type_refnos_by_dbnum(
         }
     }
 
-    log::debug!("Found {} elements for dbnum={} nouns={:?}", refnos.len(), dbnum, nouns);
+    log::debug!(
+        "Found {} elements for dbnum={} nouns={:?}",
+        refnos.len(),
+        dbnum,
+        nouns
+    );
     Ok(refnos)
 }
 
@@ -79,10 +87,11 @@ pub async fn kuzu_query_type_refnos_by_dbnums(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -96,7 +105,12 @@ pub async fn kuzu_query_type_refnos_by_dbnums(
         }
     }
 
-    log::debug!("Found {} elements for dbnums={:?} nouns={:?}", refnos.len(), dbnums, nouns);
+    log::debug!(
+        "Found {} elements for dbnums={:?} nouns={:?}",
+        refnos.len(),
+        dbnums,
+        nouns
+    );
     Ok(refnos)
 }
 
@@ -116,10 +130,11 @@ pub async fn kuzu_get_world_by_dbnum(dbnum: i32) -> Result<Option<RefnoEnum>> {
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -182,10 +197,11 @@ pub async fn kuzu_count_by_type(noun: &str, dbnum: i32) -> Result<usize> {
 
     log::debug!("Kuzu count query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),

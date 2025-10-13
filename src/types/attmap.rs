@@ -25,15 +25,7 @@ use std::fmt;
 use std::fmt::Debug;
 
 ///PDMS的属性数据Map
-#[derive(
-    Serialize,
-    Deserialize,
-    Deref,
-    DerefMut,
-    Clone,
-    Default,
-    Component,
-)]
+#[derive(Serialize, Deserialize, Deref, DerefMut, Clone, Default, Component)]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
 }

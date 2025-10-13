@@ -3,11 +3,9 @@
 //! 提供层级遍历相关的查询功能，包括祖先查询、子节点查询、深层递归查询等。
 
 use crate::rs_kuzu::{
-    create_kuzu_connection,
-    error::KuzuQueryError,
-    query_builder::HierarchyQueryBuilder,
+    create_kuzu_connection, error::KuzuQueryError, query_builder::HierarchyQueryBuilder,
 };
-use crate::types::{RefnoEnum, RefU64};
+use crate::types::{RefU64, RefnoEnum};
 use anyhow::Result;
 use kuzu::Value;
 
@@ -36,10 +34,11 @@ pub async fn kuzu_get_children_refnos(refno: RefnoEnum) -> Result<Vec<RefnoEnum>
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -71,10 +70,11 @@ pub async fn kuzu_query_ancestor_refnos(refno: RefnoEnum) -> Result<Vec<RefnoEnu
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -111,10 +111,11 @@ pub async fn kuzu_query_ancestor_of_type(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -144,10 +145,11 @@ pub async fn kuzu_get_ancestor_types(refno: RefnoEnum) -> Result<Vec<String>> {
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -181,10 +183,11 @@ pub async fn kuzu_query_deep_children_refnos(refno: RefnoEnum) -> Result<Vec<Ref
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -221,10 +224,11 @@ pub async fn kuzu_query_filter_deep_children(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -238,7 +242,11 @@ pub async fn kuzu_query_filter_deep_children(
         }
     }
 
-    log::debug!("Found {} filtered deep children for refno {:?}", refnos.len(), refno);
+    log::debug!(
+        "Found {} filtered deep children for refno {:?}",
+        refnos.len(),
+        refno
+    );
     Ok(refnos)
 }
 
@@ -254,8 +262,7 @@ pub async fn kuzu_query_filter_children(
     refno: RefnoEnum,
     types: &[&str],
 ) -> Result<Vec<RefnoEnum>> {
-    let builder = HierarchyQueryBuilder::children(refno)
-        .single_depth(1);
+    let builder = HierarchyQueryBuilder::children(refno).single_depth(1);
 
     let query = if types.is_empty() {
         builder.build()
@@ -265,10 +272,11 @@ pub async fn kuzu_query_filter_children(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -282,7 +290,11 @@ pub async fn kuzu_query_filter_children(
         }
     }
 
-    log::debug!("Found {} filtered children for refno {:?}", refnos.len(), refno);
+    log::debug!(
+        "Found {} filtered children for refno {:?}",
+        refnos.len(),
+        refno
+    );
     Ok(refnos)
 }
 
@@ -315,10 +327,11 @@ pub async fn kuzu_query_deep_children_refnos_with_depth(
 
     log::debug!("Kuzu query (depth={}): {}", max_depth, query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -332,7 +345,12 @@ pub async fn kuzu_query_deep_children_refnos_with_depth(
         }
     }
 
-    log::debug!("Found {} deep children (depth≤{}) for refno {:?}", refnos.len(), max_depth, refno);
+    log::debug!(
+        "Found {} deep children (depth≤{}) for refno {:?}",
+        refnos.len(),
+        max_depth,
+        refno
+    );
     Ok(refnos)
 }
 
@@ -370,12 +388,18 @@ pub async fn kuzu_query_filter_deep_children_with_depth(
         .filter_nouns(nouns)
         .build();
 
-    log::debug!("Kuzu query (depth={}, nouns={:?}): {}", max_depth, nouns, query);
+    log::debug!(
+        "Kuzu query (depth={}, nouns={:?}): {}",
+        max_depth,
+        nouns,
+        query
+    );
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -389,7 +413,12 @@ pub async fn kuzu_query_filter_deep_children_with_depth(
         }
     }
 
-    log::debug!("Found {} filtered deep children (depth≤{}) for refno {:?}", refnos.len(), max_depth, refno);
+    log::debug!(
+        "Found {} filtered deep children (depth≤{}) for refno {:?}",
+        refnos.len(),
+        max_depth,
+        refno
+    );
     Ok(refnos)
 }
 
@@ -426,10 +455,11 @@ pub async fn kuzu_get_node_depth(refno: RefnoEnum) -> Result<usize> {
 
     log::debug!("Kuzu depth query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -467,10 +497,11 @@ pub async fn kuzu_query_filter_ancestors(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -484,7 +515,11 @@ pub async fn kuzu_query_filter_ancestors(
         }
     }
 
-    log::debug!("Found {} filtered ancestors for refno {:?}", refnos.len(), refno);
+    log::debug!(
+        "Found {} filtered ancestors for refno {:?}",
+        refnos.len(),
+        refno
+    );
     Ok(refnos)
 }
 

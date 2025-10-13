@@ -52,9 +52,8 @@ async fn main() -> Result<()> {
 
     // 3. 创建同步服务
     info!("步骤 3: 创建同步服务");
-    let sync_service = PeSyncService::new(1000) // 批处理大小为 1000
-        .with_dbnum_filter(1112); // 只同步 dbnum=1112 的数据
-    info!("✓ 同步服务已创建 (批处理大小: 1000, 过滤 dbnum: 1112)");
+    let mut sync_service = PeSyncService::new();
+    info!("✓ 同步服务已创建");
 
     // 4. 初始化 Kuzu 数据库
     #[cfg(feature = "kuzu")]
@@ -74,7 +73,7 @@ async fn main() -> Result<()> {
     info!("步骤 5: 开始数据同步");
     info!("  正在从 SurrealDB 同步 dbnum=1112 的数据到 Kuzu...");
 
-    let sync_stats = sync_service.sync_all().await?;
+    let sync_stats = sync_service.sync_all_sites(Some(1112), None, None).await?;
 
     info!("✓ 数据同步完成！");
     info!("  - PE 节点数量: {}", sync_stats.pe_count);

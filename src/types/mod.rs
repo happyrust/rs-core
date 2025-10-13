@@ -12,8 +12,8 @@ pub mod hash;
 pub mod pe;
 pub mod rs_transform;
 
-pub mod table;
 pub mod sync_records;
+pub mod table;
 
 use glam::u32;
 pub use refno::*;
@@ -30,5 +30,5 @@ pub use pe::*;
 pub use query_sql::*;
 pub use ref64vec::*;
 pub use refno::*;
-pub use whole_attmap::*;
 pub use sync_records::*;
+pub use whole_attmap::*;

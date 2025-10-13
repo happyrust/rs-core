@@ -4,8 +4,8 @@
 #[cfg(all(feature = "kuzu", feature = "surreal"))]
 mod tests {
     use crate::parsed_data::db_reader::PdmsDbReader;
-    use crate::rs_kuzu::*;
     use crate::rs_kuzu::operations::*;
+    use crate::rs_kuzu::*;
     use crate::rs_surreal::*;
     use crate::types::*;
     use kuzu::SystemConfig;
@@ -58,7 +58,12 @@ mod tests {
         println!("✅ 成功解析 {} 个元素", attmaps.len());
 
         for (idx, attmap) in attmaps.iter().take(3).enumerate() {
-            println!("  {}. {} ({})", idx + 1, attmap.get_name_or_default(), attmap.get_type());
+            println!(
+                "  {}. {} ({})",
+                idx + 1,
+                attmap.get_name_or_default(),
+                attmap.get_type()
+            );
         }
     }
 
@@ -169,8 +174,10 @@ mod tests {
 
             let speed = size as f64 / duration.as_secs_f64();
 
-            println!("  批量保存 {} 个元素: {:?} ({:.0} 个/秒)",
-                size, duration, speed);
+            println!(
+                "  批量保存 {} 个元素: {:?} ({:.0} 个/秒)",
+                size, duration, speed
+            );
         }
 
         println!("✅ 性能测试完成");
@@ -210,7 +217,10 @@ mod tests {
         for attmap in &attmaps {
             let noun = attmap.get_type();
             if target_nouns.contains(&noun.as_str()) {
-                found_nouns.entry(noun).or_insert(Vec::new()).push(attmap.clone());
+                found_nouns
+                    .entry(noun)
+                    .or_insert(Vec::new())
+                    .push(attmap.clone());
             }
         }
 

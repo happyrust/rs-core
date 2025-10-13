@@ -276,6 +276,10 @@ pub async fn kuzu_get_pes_batch(refnos: &[RefnoEnum]) -> Result<Vec<SPdmsElement
         }
     }
 
-    log::debug!("批量查询 PE: 请求 {} 个，返回 {} 个", refnos.len(), pes.len());
+    log::debug!(
+        "批量查询 PE: 请求 {} 个，返回 {} 个",
+        refnos.len(),
+        pes.len()
+    );
     Ok(pes)
 }

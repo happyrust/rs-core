@@ -12,10 +12,7 @@ pub enum KuzuQueryError {
     ConnectionError(String),
 
     /// 查询执行错误
-    QueryExecutionError {
-        query: String,
-        error: String,
-    },
+    QueryExecutionError { query: String, error: String },
 
     /// 结果解析错误
     ResultParseError {
@@ -24,10 +21,7 @@ pub enum KuzuQueryError {
     },
 
     /// 参数错误
-    InvalidParameter {
-        param: String,
-        reason: String,
-    },
+    InvalidParameter { param: String, reason: String },
 
     /// 其他错误
     Other(String),
@@ -45,8 +39,15 @@ impl fmt::Display for KuzuQueryError {
             Self::QueryExecutionError { query, error } => {
                 write!(f, "Kuzu 查询执行失败\n查询: {}\n错误: {}", query, error)
             }
-            Self::ResultParseError { expected_type, error } => {
-                write!(f, "Kuzu 结果解析失败\n期望类型: {}\n错误: {}", expected_type, error)
+            Self::ResultParseError {
+                expected_type,
+                error,
+            } => {
+                write!(
+                    f,
+                    "Kuzu 结果解析失败\n期望类型: {}\n错误: {}",
+                    expected_type, error
+                )
             }
             Self::InvalidParameter { param, reason } => {
                 write!(f, "参数错误 '{}': {}", param, reason)

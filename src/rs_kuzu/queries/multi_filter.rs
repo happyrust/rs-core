@@ -3,7 +3,7 @@
 //! 提供复杂的多条件组合查询功能
 
 use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError};
-use crate::types::{RefnoEnum, RefU64};
+use crate::types::{RefU64, RefnoEnum};
 use anyhow::Result;
 use itertools::Itertools;
 use kuzu::Value;
@@ -45,10 +45,11 @@ pub async fn kuzu_query_multi_filter_deep_children(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -62,7 +63,11 @@ pub async fn kuzu_query_multi_filter_deep_children(
         }
     }
 
-    log::debug!("Found {} descendants for {} parents with noun filter", descendants.len(), refnos.len());
+    log::debug!(
+        "Found {} descendants for {} parents with noun filter",
+        descendants.len(),
+        refnos.len()
+    );
     Ok(descendants)
 }
 
@@ -93,10 +98,11 @@ pub async fn kuzu_query_deep_children_filter_spre(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -110,7 +116,11 @@ pub async fn kuzu_query_deep_children_filter_spre(
         }
     }
 
-    log::debug!("Found {} non-SPRE descendants for refno {:?}", descendants.len(), refno);
+    log::debug!(
+        "Found {} non-SPRE descendants for refno {:?}",
+        descendants.len(),
+        refno
+    );
     Ok(descendants)
 }
 
@@ -153,10 +163,11 @@ pub async fn kuzu_query_multi_deep_children_filter_spre(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -170,7 +181,11 @@ pub async fn kuzu_query_multi_deep_children_filter_spre(
         }
     }
 
-    log::debug!("Found {} non-SPRE descendants for {} parents", descendants.len(), refnos.len());
+    log::debug!(
+        "Found {} non-SPRE descendants for {} parents",
+        descendants.len(),
+        refnos.len()
+    );
     Ok(descendants)
 }
 
@@ -222,10 +237,11 @@ pub async fn kuzu_query_filter_deep_children_by_path(
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -239,8 +255,12 @@ pub async fn kuzu_query_filter_deep_children_by_path(
         }
     }
 
-    log::debug!("Found {} descendants with path prefix '{}' for refno {:?}",
-        descendants.len(), path_prefix, refno);
+    log::debug!(
+        "Found {} descendants with path prefix '{}' for refno {:?}",
+        descendants.len(),
+        path_prefix,
+        refno
+    );
     Ok(descendants)
 }
 
@@ -252,10 +272,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要数据库环境
     async fn test_query_multi_filter_deep_children() {
-        let refnos = vec![
-            RefnoEnum::from(RefU64(123)),
-            RefnoEnum::from(RefU64(456)),
-        ];
+        let refnos = vec![RefnoEnum::from(RefU64(123)), RefnoEnum::from(RefU64(456))];
         let result = kuzu_query_multi_filter_deep_children(&refnos, &["PIPE", "EQUI"]).await;
         assert!(result.is_ok());
     }

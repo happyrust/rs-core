@@ -2,8 +2,8 @@
 
 use super::error::{QueryError, QueryResult};
 use super::traits::*;
-use crate::types::{SPdmsElement as PE, NamedAttrMap as NamedAttMap};
 use crate::RefnoEnum;
+use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use async_trait::async_trait;
 use log::{debug, warn};
 
@@ -30,9 +30,7 @@ impl KuzuQueryProvider {
     /// 创建新的 Kuzu 查询提供者（无 kuzu feature 时的占位实现）
     #[cfg(not(feature = "kuzu"))]
     pub fn new() -> QueryResult<Self> {
-        Err(QueryError::Other(
-            "Kuzu feature is not enabled".into(),
-        ))
+        Err(QueryError::Other("Kuzu feature is not enabled".into()))
     }
 
     /// 使用自定义名称创建查询提供者
@@ -45,9 +43,7 @@ impl KuzuQueryProvider {
         #[cfg(not(feature = "kuzu"))]
         {
             let _ = name;
-            Err(QueryError::Other(
-                "Kuzu feature is not enabled".into(),
-            ))
+            Err(QueryError::Other("Kuzu feature is not enabled".into()))
         }
     }
 }
@@ -97,7 +93,10 @@ impl HierarchyQuery for KuzuQueryProvider {
         refno: RefnoEnum,
         max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] get_descendants: {:?}, depth: {:?}", self.name, refno, max_depth);
+        debug!(
+            "[{}] get_descendants: {:?}, depth: {:?}",
+            self.name, refno, max_depth
+        );
 
         #[cfg(feature = "kuzu")]
         {
@@ -136,7 +135,10 @@ impl HierarchyQuery for KuzuQueryProvider {
         refno: RefnoEnum,
         nouns: &[&str],
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] get_ancestors_of_type: {:?}, nouns: {:?}", self.name, refno, nouns);
+        debug!(
+            "[{}] get_ancestors_of_type: {:?}, nouns: {:?}",
+            self.name, refno, nouns
+        );
 
         #[cfg(feature = "kuzu")]
         {
@@ -158,15 +160,19 @@ impl HierarchyQuery for KuzuQueryProvider {
         nouns: &[&str],
         max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] get_descendants_filtered: {:?}, nouns: {:?}, depth: {:?}",
-            self.name, refno, nouns, max_depth);
+        debug!(
+            "[{}] get_descendants_filtered: {:?}, nouns: {:?}, depth: {:?}",
+            self.name, refno, nouns, max_depth
+        );
 
         #[cfg(feature = "kuzu")]
         {
             let depth = max_depth.unwrap_or(12);
-            rs_kuzu::queries::hierarchy::kuzu_query_filter_deep_children_with_depth(refno, nouns, depth)
-                .await
-                .map_err(|e| QueryError::ExecutionError(e.to_string()))
+            rs_kuzu::queries::hierarchy::kuzu_query_filter_deep_children_with_depth(
+                refno, nouns, depth,
+            )
+            .await
+            .map_err(|e| QueryError::ExecutionError(e.to_string()))
         }
 
         #[cfg(not(feature = "kuzu"))]
@@ -206,14 +212,20 @@ impl TypeQuery for KuzuQueryProvider {
         dbnum: i32,
         has_children: Option<bool>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] query_by_type: nouns={:?}, dbnum={}, has_children={:?}",
-            self.name, nouns, dbnum, has_children);
+        debug!(
+            "[{}] query_by_type: nouns={:?}, dbnum={}, has_children={:?}",
+            self.name, nouns, dbnum, has_children
+        );
 
         #[cfg(feature = "kuzu")]
         {
-            rs_kuzu::queries::type_filter::kuzu_query_type_refnos_by_dbnum(nouns, dbnum, has_children)
-                .await
-                .map_err(|e| QueryError::ExecutionError(e.to_string()))
+            rs_kuzu::queries::type_filter::kuzu_query_type_refnos_by_dbnum(
+                nouns,
+                dbnum,
+                has_children,
+            )
+            .await
+            .map_err(|e| QueryError::ExecutionError(e.to_string()))
         }
 
         #[cfg(not(feature = "kuzu"))]
@@ -228,8 +240,10 @@ impl TypeQuery for KuzuQueryProvider {
         nouns: &[&str],
         dbnums: &[i32],
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] query_by_type_multi_db: nouns={:?}, dbnums={:?}",
-            self.name, nouns, dbnums);
+        debug!(
+            "[{}] query_by_type_multi_db: nouns={:?}, dbnums={:?}",
+            self.name, nouns, dbnums
+        );
 
         #[cfg(feature = "kuzu")]
         {
@@ -280,7 +294,10 @@ impl TypeQuery for KuzuQueryProvider {
     }
 
     async fn count_by_type(&self, noun: &str, dbnum: i32) -> QueryResult<usize> {
-        debug!("[{}] count_by_type: noun={}, dbnum={}", self.name, noun, dbnum);
+        debug!(
+            "[{}] count_by_type: noun={}, dbnum={}",
+            self.name, noun, dbnum
+        );
 
         #[cfg(feature = "kuzu")]
         {
@@ -341,7 +358,11 @@ impl BatchQuery for KuzuQueryProvider {
         &self,
         refnos: &[RefnoEnum],
     ) -> QueryResult<Vec<(RefnoEnum, String)>> {
-        debug!("[{}] get_full_names_batch: {} items", self.name, refnos.len());
+        debug!(
+            "[{}] get_full_names_batch: {} items",
+            self.name,
+            refnos.len()
+        );
 
         #[cfg(feature = "kuzu")]
         {
@@ -370,15 +391,22 @@ impl GraphQuery for KuzuQueryProvider {
         nouns: &[&str],
         max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] query_multi_descendants: {} refnos, {:?} nouns, depth: {:?}",
-            self.name, refnos.len(), nouns, max_depth);
+        debug!(
+            "[{}] query_multi_descendants: {} refnos, {:?} nouns, depth: {:?}",
+            self.name,
+            refnos.len(),
+            nouns,
+            max_depth
+        );
 
         #[cfg(feature = "kuzu")]
         {
             let depth = max_depth.unwrap_or(12);
-            rs_kuzu::queries::multi_filter::kuzu_query_multi_filter_deep_children(refnos, nouns, depth)
-                .await
-                .map_err(|e| QueryError::ExecutionError(e.to_string()))
+            rs_kuzu::queries::multi_filter::kuzu_query_multi_filter_deep_children(
+                refnos, nouns, depth,
+            )
+            .await
+            .map_err(|e| QueryError::ExecutionError(e.to_string()))
         }
 
         #[cfg(not(feature = "kuzu"))]

@@ -33,6 +33,7 @@ debug_spatial = []
 web = ["render"]
 sql = ["dep:sqlx"]
 kuzu = ["dep:kuzu"]
+mem-kv-save = []  # 额外保存PE数据到内存KV数据库
 hh = []
 
 

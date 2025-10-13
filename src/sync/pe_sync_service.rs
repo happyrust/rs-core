@@ -1,344 +1,364 @@
-//! PE 数据同步服务
+//! PE 数据同步服务 - 基于层级树的递归同步
 //!
 //! 负责从 SurrealDB 同步 PE 和 pe_owner 数据到 Kuzu
+//! 支持指定任意 refno 节点,递归同步其所有子树
 
-use crate::rs_surreal::query::*;
-use crate::rs_surreal::{SUL_DB, query_type_refnos_by_dbnum};
+use crate::rs_surreal::{get_mdb_world_site_pes, get_site_pes_by_dbnum, DBType, SUL_DB};
 use crate::types::*;
-use crate::{RefU64, RefnoEnum};
-use anyhow::Result;
-use log::{debug, info, warn};
-use std::collections::HashMap;
+use anyhow::{Context, Result};
+use log::{debug, error, info, warn};
 
 #[cfg(feature = "kuzu")]
 use crate::rs_kuzu::{create_kuzu_connection, init_kuzu, init_kuzu_schema};
 #[cfg(feature = "kuzu")]
-use kuzu::{SystemConfig, Value};
+use kuzu::SystemConfig;
 
 /// PE 同步服务
 pub struct PeSyncService {
-    /// 批处理大小
-    batch_size: usize,
-    /// 是否只同步指定的 dbnum
-    filter_dbnum: Option<i32>,
+    /// 失败记录追踪
+    failed_nodes: Vec<FailedRecord>,
+    failed_relations: Vec<FailedRecord>,
+}
+
+/// 失败记录
+#[derive(Debug, Clone)]
+pub struct FailedRecord {
+    pub refno: u64,
+    pub parent_refno: Option<u64>,
+    pub error: String,
 }
 
 impl PeSyncService {
     /// 创建新的同步服务实例
-    pub fn new(batch_size: usize) -> Self {
+    pub fn new() -> Self {
         Self {
-            batch_size,
-            filter_dbnum: None,
+            failed_nodes: Vec::new(),
+            failed_relations: Vec::new(),
         }
-    }
-
-    /// 设置只同步指定的 dbnum
-    pub fn with_dbnum_filter(mut self, dbnum: i32) -> Self {
-        self.filter_dbnum = Some(dbnum);
-        self
     }
 
     /// 初始化 Kuzu 数据库
     #[cfg(feature = "kuzu")]
     pub async fn init_kuzu_database(&self, db_path: &str) -> Result<()> {
         info!("初始化 Kuzu 数据库: {}", db_path);
-
-        // 初始化数据库
         init_kuzu(db_path, SystemConfig::default()).await?;
-
-        // 初始化模式
         init_kuzu_schema().await?;
-
         info!("Kuzu 数据库初始化完成");
         Ok(())
     }
 
-    /// 执行完整同步
-    pub async fn sync_all(&self) -> Result<SyncStats> {
-        info!("开始 PE 数据全量同步");
+
+    /// 🎯 核心方法: 同步指定 dbnum 的所有 SITE 及其子树
+    ///
+    /// ## 功能概述
+    /// - 根据传入的 `dbnum` 或 `mdb_name` 解析需要同步的根 SITE 列表。
+    /// - 逐个调用 [`Self::sync_by_refno`] 执行广度优先同步，累积同步统计。
+    /// - 汇总耗时与同步结果，并统一输出失败节点与关系的日志。
+    ///
+    /// ## 行为细节
+    /// 1. 当提供 `dbnum` 时，限定同步单一数据库下的 SITE。
+    /// 2. 当 `dbnum` 为 `None` 时，必须传入 `mdb_name` 与可选模块 `module`，以获取全库 SITE。
+    /// 3. 对每个 SITE 调用 [`Self::sync_by_refno`]，并叠加节点/关系计数与耗时。
+    /// 4. 最终打印统计信息并调用 [`Self::report_failures`] 报告同步异常。
+    ///
+    /// # 参数
+    /// - `dbnum`: 数据库编号，如果为 None 则查询所有 SITE
+    /// - `mdb_name`: MDB 名称(当 dbnum 为 None 时必须提供)
+    /// - `module`: 数据库模块类型(默认 DESI)
+    #[cfg(feature = "kuzu")]
+    pub async fn sync_all_sites(
+        &mut self,
+        dbnum: Option<i32>,
+        mdb_name: Option<String>,
+        module: Option<DBType>,
+    ) -> Result<SyncStats> {
+        let start_time = std::time::Instant::now();
+
+        // 1. 获取所有 SITE 根节点集合
+        let sites = if let Some(dbnum) = dbnum {
+            // 按 dbnum 查询 SITE
+            info!("开始同步 dbnum {} 的所有 SITE", dbnum);
+            self.fetch_sites_by_dbnum(dbnum).await?
+        } else {
+            // 通过 MDB 查询所有 SITE
+            let mdb = mdb_name.ok_or_else(|| {
+                anyhow::anyhow!("当 dbnum 为 None 时，必须提供 mdb_name 参数")
+            })?;
+            let db_module = module.unwrap_or(DBType::DESI);
+            info!("开始同步 MDB '{}' 的所有 SITE", mdb);
+            self.fetch_sites_by_mdb(&mdb, db_module).await?
+        };
+
+        info!("找到 {} 个 SITE 节点", sites.len());
+
+        // 2. 逐个 SITE 执行同步并累计统计信息
+        let mut total_stats = SyncStats::default();
+        for (idx, site_refno) in sites.iter().enumerate() {
+            info!(
+                "同步 SITE [{}/{}]: refno={}",
+                idx + 1,
+                sites.len(),
+                site_refno
+            );
+
+            let stats = self.sync_by_refno(*site_refno).await?;
+            total_stats.pe_count += stats.pe_count;
+            total_stats.owner_count += stats.owner_count;
+        }
+
+        total_stats.duration = start_time.elapsed();
+        info!("所有 SITE 同步完成: {:?}", total_stats);
+
+        // 3. 输出在整个同步过程中记录的失败节点与关系
+        self.report_failures();
+
+        Ok(total_stats)
+    }
+
+    /// 🎯 核心通用方法: 同步指定 refno 及其所有子节点(批量操作)
+    ///
+    /// ## 功能概述
+    /// 这是最通用的同步方法，可以同步任意节点（SITE、ZONE、EQUI 等）及其整个子树。
+    ///
+    /// ## 工作流程（批量优化版 - 使用 SurrealDB 层级查询）
+    /// 1. **阶段一：批量查询** - 使用 SurrealDB 的层级查询一次性获取整个子树
+    /// 2. **阶段二：批量插入节点** - 将所有节点批量插入到 Kuzu 数据库
+    /// 3. **阶段三：批量创建关系** - 根据每个节点的 owner 字段批量创建父子关系
+    ///
+    /// ## 性能优化
+    /// - **消除逐层遍历**：使用 SurrealDB 图查询语法一次性获取整个子树
+    /// - **批量操作**：先插入所有节点，再创建所有关系，减少数据库往返
+    /// - **省略 pe_owner 表查询**：直接使用 PE 节点的 owner 字段创建关系
+    ///
+    /// # 参数
+    /// - `root_refno`: 任意节点的 refno，可以是 SITE、ZONE、EQUI 等任何类型
+    ///
+    /// # 返回
+    /// - 同步统计信息，包括节点数、关系数、耗时
+    #[cfg(feature = "kuzu")]
+    pub async fn sync_by_refno(&mut self, root_refno: RefU64) -> Result<SyncStats> {
+        info!("开始批量同步节点树: root_refno={}", root_refno);
         let start_time = std::time::Instant::now();
 
         let mut stats = SyncStats::default();
 
-        // 1. 同步 PE 节点
-        stats.pe_count = self.sync_pe_nodes().await?;
+        // 🎯 阶段一：使用 SurrealDB 层级查询一次性获取整个子树
+        info!("阶段 1/3: 查询所有子节点...");
+        let all_nodes = self.fetch_subtree(root_refno).await?;
+        info!("找到 {} 个节点（包含根节点）", all_nodes.len());
 
-        // 2. 同步 pe_owner 关系
-        stats.owner_count = self.sync_owner_relations().await?;
+        // 🎯 阶段二：批量插入所有节点到 Kuzu
+        info!("阶段 2/3: 批量插入节点到 Kuzu...");
+        for (idx, pe) in all_nodes.iter().enumerate() {
+            if let Err(e) = self.insert_pe_node(pe).await {
+                error!("插入节点 {} 失败: {}", pe.refno(), e);
+                self.failed_nodes.push(FailedRecord {
+                    refno: pe.refno().0,
+                    parent_refno: None,
+                    error: e.to_string(),
+                });
+            } else {
+                stats.pe_count += 1;
+                if (idx + 1) % 100 == 0 {
+                    debug!("已插入 {}/{} 个节点", idx + 1, all_nodes.len());
+                }
+            }
+        }
+        info!("节点插入完成: {}/{} 成功", stats.pe_count, all_nodes.len());
+
+        // 🎯 阶段三：批量创建关系（基于每个节点的 owner 字段）
+        info!("阶段 3/3: 批量创建 OWNS 关系...");
+        for pe in &all_nodes {
+            let owner_refno = pe.owner.refno().0; // 获取 owner 的 u64 值
+            // 如果有父节点且父节点不为 0（根节点的 owner 通常为 0）
+            if owner_refno > 0 {
+                if let Err(e) = self
+                    .create_owner_relation(owner_refno, pe.refno().0)
+                    .await
+                {
+                    error!(
+                        "创建关系 {} -> {} 失败: {}",
+                        owner_refno,
+                        pe.refno(),
+                        e
+                    );
+                    self.failed_relations.push(FailedRecord {
+                        refno: pe.refno().0,
+                        parent_refno: Some(owner_refno),
+                        error: e.to_string(),
+                    });
+                } else {
+                    stats.owner_count += 1;
+                }
+            }
+        }
+        info!("关系创建完成: {} 条", stats.owner_count);
 
         stats.duration = start_time.elapsed();
-
-        info!("同步完成: {:?}", stats);
+        info!("节点树同步完成: {:?}", stats);
         Ok(stats)
     }
 
-    /// 同步 PE 节点数据
-    #[cfg(feature = "kuzu")]
-    async fn sync_pe_nodes(&self) -> Result<usize> {
-        info!("开始同步 PE 节点");
-
-        // 查询所有 PE 数据
-        let pes = if let Some(dbnum) = self.filter_dbnum {
-            self.query_pe_by_dbnum(dbnum).await?
-        } else {
-            self.query_all_pe().await?
-        };
-
-        info!("查询到 {} 个 PE 节点", pes.len());
-
-        // 批量插入到 Kuzu
-        let mut total_inserted = 0;
-        for chunk in pes.chunks(self.batch_size) {
-            let inserted = self.insert_pe_batch(chunk).await?;
-            total_inserted += inserted;
-            debug!("已插入 {} / {} PE 节点", total_inserted, pes.len());
-        }
-
-        Ok(total_inserted)
+    /// 通过 MDB 获取所有 SITE 节点
+    async fn fetch_sites_by_mdb(&self, mdb: &str, module: DBType) -> Result<Vec<RefU64>> {
+        let sites = get_mdb_world_site_pes(mdb.to_string(), module).await?;
+        Ok(sites.into_iter().map(|s| s.refno()).collect())
     }
 
-    /// 同步 pe_owner 关系
-    #[cfg(feature = "kuzu")]
-    async fn sync_owner_relations(&self) -> Result<usize> {
-        info!("开始同步 pe_owner 关系");
-
-        // 查询所有 owner 关系
-        let relations = if let Some(dbnum) = self.filter_dbnum {
-            self.query_owner_relations_by_dbnum(dbnum).await?
-        } else {
-            self.query_all_owner_relations().await?
-        };
-
-        info!("查询到 {} 个 owner 关系", relations.len());
-
-        // 批量创建关系
-        let mut total_created = 0;
-        for chunk in relations.chunks(self.batch_size) {
-            let created = self.create_owner_relations_batch(chunk).await?;
-            total_created += created;
-            debug!("已创建 {} / {} owner 关系", total_created, relations.len());
-        }
-
-        Ok(total_created)
+    /// 从 SurrealDB 获取指定 dbnum 的所有 SITE 节点
+    ///
+    /// 使用 `get_site_pes_by_dbnum` 通过 WORL -> pe_owner 关系查询 SITE
+    /// 这种方式与 `get_mdb_world_site_pes` 保持一致的查询逻辑
+    async fn fetch_sites_by_dbnum(&self, dbnum: i32) -> Result<Vec<RefU64>> {
+        let sites = get_site_pes_by_dbnum(dbnum as u32).await?;
+        Ok(sites.into_iter().map(|s| s.refno()).collect())
     }
 
-    /// 从 SurrealDB 查询所有 PE
-    async fn query_all_pe(&self) -> Result<Vec<SPdmsElement>> {
-        // 使用更保守的查询方式 - 查询所有常见类型
-        let nouns = vec![
-            "PIPE", "BRAN", "EQUI", "STRU", "FITT", "VALV", "FLAN", "INST", "TUBI", "ATTA", "PLOO",
-            "LOOP", "SITE", "ZONE",
-        ];
-        let mut all_pes = Vec::new();
+    /// 🎯 使用 SurrealDB 层级查询获取整个子树（包含根节点）
+    ///
+    /// ## 工作原理
+    /// 使用 SurrealDB 的图遍历语法 `<-pe_owner` 递归查询所有子孙节点
+    /// pe_owner 关系方向: child -[pe_owner]-> parent
+    /// 所以从 parent <-pe_owner 可以获取所有子节点
+    ///
+    /// ## 查询逻辑
+    /// 1. 先获取根节点本身
+    /// 2. 使用 pe:{root}<-pe_owner 递归获取所有后代节点
+    /// 3. 过滤掉已删除的节点（deleted = false）
+    ///
+    /// # 返回
+    /// 包含根节点和所有子孙节点的列表
+    async fn fetch_subtree(&self, root_refno: RefU64) -> Result<Vec<SPdmsElement>> {
+        let mut all_nodes = Vec::new();
 
-        for noun in nouns {
-            // 查询所有 dbnum
-            for dbnum in [1112, 7999, 7997, 8000] {
-                if let Ok(refnos) = query_type_refnos_by_dbnum(&[noun], dbnum, None, false).await {
-                    for refno in refnos {
-                        if let Ok(Some(pe)) = get_pe(refno).await {
-                            if !pe.deleted {
-                                all_pes.push(pe);
-                            }
-                        }
-                    }
-                }
-            }
+        // 1. 查询根节点（使用 record ID 格式）
+        let root_sql = format!(
+            "SELECT * FROM pe:{} WHERE deleted = false LIMIT 1",
+            root_refno
+        );
+        let mut result = SUL_DB.query(root_sql).await?;
+        let root_nodes: Vec<SPdmsElement> = result.take(0)?;
+
+        if root_nodes.is_empty() {
+            warn!("根节点 {} 不存在或已删除", root_refno);
+            return Ok(all_nodes);
         }
 
-        Ok(all_pes)
-    }
+        all_nodes.extend(root_nodes);
 
-    /// 按 dbnum 查询 PE
-    async fn query_pe_by_dbnum(&self, dbnum: i32) -> Result<Vec<SPdmsElement>> {
-        // 先获取指定 dbnum 的 refnos
-        // 使用现有的查询函数，查询所有类型
-        let nouns = vec![
-            "PIPE", "BRAN", "EQUI", "STRU", "FITT", "VALV", "FLAN", "INST", "TUBI", "ATTA", "PLOO",
-            "LOOP",
-        ];
-        let mut all_refnos = Vec::new();
-        for noun in nouns {
-            if let Ok(refnos) = query_type_refnos_by_dbnum(&[noun], dbnum as u32, None, false).await
-            {
-                all_refnos.extend(refnos);
-            }
-        }
-        let refnos = all_refnos;
-
-        let mut pes = Vec::new();
-        for refno in refnos {
-            if let Ok(Some(pe)) = get_pe(refno).await {
-                if !pe.deleted && pe.dbnum == dbnum {
-                    pes.push(pe);
-                }
-            }
-        }
-
-        Ok(pes)
-    }
-
-    /// 查询所有 owner 关系
-    async fn query_all_owner_relations(&self) -> Result<Vec<OwnerRelation>> {
-        // 获取所有 PE 并从中提取 owner 关系
-        let nouns = vec![
-            "PIPE", "BRAN", "EQUI", "STRU", "FITT", "VALV", "FLAN", "INST", "TUBI", "ATTA", "PLOO",
-            "LOOP",
-        ];
-        let mut relations = Vec::new();
-
-        for noun in nouns {
-            for dbnum in [1112, 7999, 7997, 8000] {
-                if let Ok(refnos) = query_type_refnos_by_dbnum(&[noun], dbnum, None, false).await {
-                    for child_refno in refnos {
-                        if let Ok(Some(pe)) = get_pe(child_refno).await {
-                            if !pe.deleted && pe.owner.refno().0 != 0 {
-                                relations.push(OwnerRelation {
-                                    child_refno: child_refno.refno().0,
-                                    parent_refno: pe.owner.refno().0,
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(relations)
-    }
-
-    /// 按 dbnum 查询 owner 关系
-    async fn query_owner_relations_by_dbnum(&self, dbnum: i32) -> Result<Vec<OwnerRelation>> {
-        // 获取指定 dbnum 的 PE 并从中提取 owner 关系
-        let nouns = vec![
-            "PIPE", "BRAN", "EQUI", "STRU", "FITT", "VALV", "FLAN", "INST", "TUBI", "ATTA", "PLOO",
-            "LOOP",
-        ];
-        let mut all_refnos = Vec::new();
-        for noun in nouns {
-            if let Ok(refnos) = query_type_refnos_by_dbnum(&[noun], dbnum as u32, None, false).await
-            {
-                all_refnos.extend(refnos);
-            }
-        }
-        let refnos = all_refnos;
-
-        let mut relations = Vec::new();
-        for child_refno in refnos {
-            if let Ok(Some(pe)) = get_pe(child_refno).await {
-                if !pe.deleted && pe.owner.refno().0 != 0 {
-                    relations.push(OwnerRelation {
-                        child_refno: child_refno.refno().0,
-                        parent_refno: pe.owner.refno().0,
-                    });
-                }
-            }
-        }
-
-        Ok(relations)
-    }
-
-    /// 批量插入 PE 到 Kuzu
-    #[cfg(feature = "kuzu")]
-    async fn insert_pe_batch(&self, pes: &[SPdmsElement]) -> Result<usize> {
-        let conn = create_kuzu_connection()?;
-
-        // 准备批量插入语句
-        let mut values = Vec::new();
-        for pe in pes {
-            values.push(format!(
-                "({}, '{}', '{}', {}, {}, '{}', {}, {}, {})",
-                pe.refno().0,
-                pe.name.replace("'", "''"),
-                pe.noun.replace("'", "''"),
-                pe.dbnum,
-                pe.sesno,
-                pe.cata_hash.replace("'", "''"),
-                pe.deleted,
-                pe.status_code
-                    .as_ref()
-                    .map_or("NULL".to_string(), |s| format!(
-                        "'{}'",
-                        s.replace("'", "''")
-                    )),
-                pe.lock
-            ));
-        }
-
-        if values.is_empty() {
-            return Ok(0);
-        }
-
-        // 执行批量插入
-        let sql = format!(
-            "CREATE (p:PE {{refno: $1, name: $2, noun: $3, dbnum: $4, sesno: $5, cata_hash: $6, deleted: $7, status_code: $8, lock: $9}})",
+        // 2. 查询所有子孙节点（使用层级遍历）
+        let descendants_sql = format!(
+            r#"
+            SELECT VALUE in
+            FROM pe:{}<-pe_owner
+            WHERE in.deleted = false
+            "#,
+            root_refno
         );
 
-        // 使用 MERGE 避免重复
-        let mut count = 0;
-        for pe in pes {
-            let merge_sql = format!(
-                r#"
-                MERGE (p:PE {{refno: {}}})
-                SET p.name = '{}',
-                    p.noun = '{}',
-                    p.dbnum = {},
-                    p.sesno = {},
-                    p.cata_hash = '{}',
-                    p.deleted = {},
-                    p.status_code = {},
-                    p.lock = {}
-                "#,
-                pe.refno().0,
-                pe.name.replace("'", "''"),
-                pe.noun.replace("'", "''"),
-                pe.dbnum,
-                pe.sesno,
-                pe.cata_hash.replace("'", "''"),
-                pe.deleted,
-                pe.status_code
-                    .as_ref()
-                    .map_or("NULL".to_string(), |s| format!(
-                        "'{}'",
-                        s.replace("'", "''")
-                    )),
-                pe.lock
-            );
+        let mut result = SUL_DB.query(descendants_sql).await?;
+        let descendants: Vec<SPdmsElement> = result.take(0)?;
+        all_nodes.extend(descendants);
 
-            match conn.query(&merge_sql) {
-                Ok(_) => count += 1,
-                Err(e) => warn!("插入 PE {} 失败: {}", pe.refno().0, e),
-            }
-        }
-
-        Ok(count)
+        Ok(all_nodes)
     }
 
-    /// 批量创建 owner 关系
+    /// 根据 refno 获取 PE 数据
+    async fn fetch_pe_by_refno(&self, refno: RefU64) -> Result<Option<SPdmsElement>> {
+        let sql = format!(
+            "SELECT * FROM pe WHERE refno = {} AND deleted = false LIMIT 1",
+            refno
+        );
+
+        let mut result = SUL_DB.query(sql).await?;
+        let pes: Vec<SPdmsElement> = result.take(0)?;
+        Ok(pes.into_iter().next())
+    }
+
+    /// 插入单个 PE 节点到 Kuzu
     #[cfg(feature = "kuzu")]
-    async fn create_owner_relations_batch(&self, relations: &[OwnerRelation]) -> Result<usize> {
+    async fn insert_pe_node(&mut self, pe: &SPdmsElement) -> Result<()> {
         let conn = create_kuzu_connection()?;
 
-        let mut count = 0;
-        for rel in relations {
-            let sql = format!(
-                r#"
-                MATCH (parent:PE {{refno: {}}}), (child:PE {{refno: {}}})
-                MERGE (parent)-[:OWNS]->(child)
-                "#,
-                rel.parent_refno, rel.child_refno
-            );
+        let name = pe.name.replace("'", "''");
+        let noun = pe.noun.replace("'", "''");
+        let cata_hash = pe.cata_hash.replace("'", "''");
 
-            match conn.query(&sql) {
-                Ok(_) => count += 1,
-                Err(e) => warn!(
-                    "创建关系 {} -> {} 失败: {}",
-                    rel.parent_refno, rel.child_refno, e
-                ),
+        let create_sql = format!(
+            r#"CREATE (p:PE {{refno: {}, name: '{}', noun: '{}', dbnum: {}, sesno: {}, cata_hash: '{}', deleted: {}, lock: {}}})"#,
+            pe.refno().0,
+            name,
+            noun,
+            pe.dbnum,
+            pe.sesno,
+            cata_hash,
+            pe.deleted,
+            pe.lock
+        );
+
+        conn.query(&create_sql)
+            .context(format!("插入 PE 节点 {} 失败", pe.refno()))?;
+
+        Ok(())
+    }
+
+    /// 创建单条 owner 关系
+    #[cfg(feature = "kuzu")]
+    async fn create_owner_relation(&mut self, parent_refno: u64, child_refno: u64) -> Result<()> {
+        let conn = create_kuzu_connection()?;
+
+        let sql = format!(
+            r#"MATCH (parent:PE {{refno: {}}}), (child:PE {{refno: {}}}) CREATE (parent)-[:OWNS]->(child)"#,
+            parent_refno, child_refno
+        );
+
+        conn.query(&sql).context(format!(
+            "创建关系 {} -> {} 失败",
+            parent_refno, child_refno
+        ))?;
+
+        Ok(())
+    }
+
+    /// 报告失败记录
+    fn report_failures(&self) {
+        if !self.failed_nodes.is_empty() {
+            warn!("⚠️  {} 个节点同步失败:", self.failed_nodes.len());
+            for (idx, fail) in self.failed_nodes.iter().take(10).enumerate() {
+                warn!("  [{}] refno={}: {}", idx + 1, fail.refno, fail.error);
+            }
+            if self.failed_nodes.len() > 10 {
+                warn!("  ... 还有 {} 个失败记录", self.failed_nodes.len() - 10);
             }
         }
 
-        Ok(count)
+        if !self.failed_relations.is_empty() {
+            warn!("⚠️  {} 条关系同步失败:", self.failed_relations.len());
+            for (idx, fail) in self.failed_relations.iter().take(10).enumerate() {
+                warn!(
+                    "  [{}] {} -> {}: {}",
+                    idx + 1,
+                    fail.parent_refno.unwrap_or(0),
+                    fail.refno,
+                    fail.error
+                );
+            }
+            if self.failed_relations.len() > 10 {
+                warn!(
+                    "  ... 还有 {} 个失败记录",
+                    self.failed_relations.len() - 10
+                );
+            }
+        }
+    }
+
+    /// 获取失败记录用于重试
+    pub fn get_failed_nodes(&self) -> &[FailedRecord] {
+        &self.failed_nodes
+    }
+
+    pub fn get_failed_relations(&self) -> &[FailedRecord] {
+        &self.failed_relations
     }
 
     /// 验证同步结果
@@ -489,13 +509,6 @@ impl PeSyncService {
     }
 }
 
-/// Owner 关系结构
-#[derive(Debug, Clone, serde::Deserialize)]
-struct OwnerRelation {
-    child_refno: u64,
-    parent_refno: u64,
-}
-
 /// 同步统计
 #[derive(Debug, Default)]
 pub struct SyncStats {
@@ -528,11 +541,16 @@ pub struct VerificationResult {
 
 #[cfg(not(feature = "kuzu"))]
 impl PeSyncService {
-    async fn sync_pe_nodes(&self) -> Result<usize> {
+    pub async fn sync_all_sites(
+        &mut self,
+        _dbnum: Option<i32>,
+        _mdb_name: Option<String>,
+        _module: Option<DBType>,
+    ) -> Result<SyncStats> {
         anyhow::bail!("Kuzu feature not enabled")
     }
 
-    async fn sync_owner_relations(&self) -> Result<usize> {
+    pub async fn sync_by_refno(&mut self, _root_refno: RefU64) -> Result<SyncStats> {
         anyhow::bail!("Kuzu feature not enabled")
     }
 

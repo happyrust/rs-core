@@ -3,8 +3,8 @@
 #[cfg(test)]
 #[cfg(feature = "kuzu")]
 mod tests {
-    use crate::rs_kuzu::*;
     use crate::rs_kuzu::operations::*;
+    use crate::rs_kuzu::*;
     use crate::types::*;
     use glam::Vec3;
 
@@ -42,22 +42,40 @@ mod tests {
     fn create_test_attmap(noun: &str, refno: u64) -> NamedAttrMap {
         let mut attmap = NamedAttrMap::default();
 
-        attmap.insert("TYPE".to_string(), NamedAttrValue::StringType(noun.to_string()));
-        attmap.insert("REFNO".to_string(), NamedAttrValue::RefU64Type(RefU64(refno)));
-        attmap.insert("NAME".to_string(), NamedAttrValue::StringType(format!("TEST-{}-{}", noun, refno)));
+        attmap.insert(
+            "TYPE".to_string(),
+            NamedAttrValue::StringType(noun.to_string()),
+        );
+        attmap.insert(
+            "REFNO".to_string(),
+            NamedAttrValue::RefU64Type(RefU64(refno)),
+        );
+        attmap.insert(
+            "NAME".to_string(),
+            NamedAttrValue::StringType(format!("TEST-{}-{}", noun, refno)),
+        );
 
         match noun {
             "ELBO" => {
                 attmap.insert("BORE".to_string(), NamedAttrValue::F32Type(100.0));
                 attmap.insert("ANGLE".to_string(), NamedAttrValue::F32Type(90.0));
                 attmap.insert("RADIUS".to_string(), NamedAttrValue::F32Type(150.0));
-                attmap.insert("POS".to_string(), NamedAttrValue::Vec3Type(Vec3::new(1000.0, 2000.0, 3000.0)));
+                attmap.insert(
+                    "POS".to_string(),
+                    NamedAttrValue::Vec3Type(Vec3::new(1000.0, 2000.0, 3000.0)),
+                );
             }
             "PIPE" => {
                 attmap.insert("BORE".to_string(), NamedAttrValue::F32Type(50.0));
                 attmap.insert("LENGTH".to_string(), NamedAttrValue::F32Type(5000.0));
-                attmap.insert("POSS".to_string(), NamedAttrValue::Vec3Type(Vec3::new(0.0, 0.0, 0.0)));
-                attmap.insert("POSE".to_string(), NamedAttrValue::Vec3Type(Vec3::new(5000.0, 0.0, 0.0)));
+                attmap.insert(
+                    "POSS".to_string(),
+                    NamedAttrValue::Vec3Type(Vec3::new(0.0, 0.0, 0.0)),
+                );
+                attmap.insert(
+                    "POSE".to_string(),
+                    NamedAttrValue::Vec3Type(Vec3::new(5000.0, 0.0, 0.0)),
+                );
             }
             _ => {}
         }
@@ -168,7 +186,10 @@ mod tests {
         save_model_to_kuzu(&ref_pe, &ref_attmap).await.unwrap();
 
         // 主 PE 添加引用
-        main_attmap.insert("PREF".to_string(), NamedAttrValue::RefU64Type(RefU64(30001)));
+        main_attmap.insert(
+            "PREF".to_string(),
+            NamedAttrValue::RefU64Type(RefU64(30001)),
+        );
 
         // 保存主 PE
         let result = save_model_to_kuzu(&main_pe, &main_attmap).await;
@@ -190,7 +211,11 @@ mod tests {
         }
 
         let result = save_attmaps_to_kuzu(attmaps, 1).await;
-        assert!(result.is_ok(), "保存 NamedAttrMap 列表失败: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "保存 NamedAttrMap 列表失败: {:?}",
+            result.err()
+        );
 
         println!("✅ 成功从 NamedAttrMap 列表保存 5 个模型");
     }

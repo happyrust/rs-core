@@ -25,10 +25,7 @@ use anyhow::Result;
 
 #[cfg(feature = "kuzu")]
 /// 保存完整模型到 Kuzu (PE + 属性 + 关系)
-pub async fn save_model_to_kuzu(
-    pe: &SPdmsElement,
-    attmap: &NamedAttrMap
-) -> Result<()> {
+pub async fn save_model_to_kuzu(pe: &SPdmsElement, attmap: &NamedAttrMap) -> Result<()> {
     let conn = create_kuzu_connection()?;
 
     // 提取 TYPEX 值
@@ -49,13 +46,19 @@ pub async fn save_model_to_kuzu(
         relation_ops::create_all_relations(&pe_with_typex, attmap).await?;
 
         Ok::<(), anyhow::Error>(())
-    }.await;
+    }
+    .await;
 
     match result {
         Ok(_) => {
             conn.query("COMMIT")?;
-            log::info!("成功保存模型: {} ({}) refno={} typex={:?}",
-                      pe_with_typex.name, pe_with_typex.noun, pe_with_typex.refno.refno(), pe_with_typex.typex);
+            log::info!(
+                "成功保存模型: {} ({}) refno={} typex={:?}",
+                pe_with_typex.name,
+                pe_with_typex.noun,
+                pe_with_typex.refno.refno(),
+                pe_with_typex.typex
+            );
             Ok(())
         }
         Err(e) => {
@@ -70,7 +73,7 @@ pub async fn save_model_to_kuzu(
 /// 保存完整模型到 Kuzu (无事务版本 - 用于避免事务冲突)
 pub async fn save_model_to_kuzu_no_transaction(
     pe: &SPdmsElement,
-    attmap: &NamedAttrMap
+    attmap: &NamedAttrMap,
 ) -> Result<()> {
     // 提取 TYPEX 值
     let mut pe_with_typex = pe.clone();
@@ -86,17 +89,20 @@ pub async fn save_model_to_kuzu_no_transaction(
     // 3. 创建关系
     relation_ops::create_all_relations(&pe_with_typex, attmap).await?;
 
-    log::debug!("成功保存模型 (无事务): {} ({}) refno={} typex={:?}",
-              pe_with_typex.name, pe_with_typex.noun, pe_with_typex.refno.refno(), pe_with_typex.typex);
+    log::debug!(
+        "成功保存模型 (无事务): {} ({}) refno={} typex={:?}",
+        pe_with_typex.name,
+        pe_with_typex.noun,
+        pe_with_typex.refno.refno(),
+        pe_with_typex.typex
+    );
 
     Ok(())
 }
 
 #[cfg(feature = "kuzu")]
 /// 批量保存模型
-pub async fn save_models_batch(
-    models: Vec<(SPdmsElement, NamedAttrMap)>
-) -> Result<()> {
+pub async fn save_models_batch(models: Vec<(SPdmsElement, NamedAttrMap)>) -> Result<()> {
     let conn = create_kuzu_connection()?;
 
     // 先尝试清理任何可能存在的事务
@@ -106,16 +112,20 @@ pub async fn save_models_batch(
 
     let result = async {
         // 提取所有 PE 的 TYPEX 并保存
-        let mut pes_with_typex: Vec<SPdmsElement> = models.iter().map(|(pe, attmap)| {
-            let mut pe_clone = pe.clone();
-            pe_clone.extract_typex(attmap);
-            pe_clone
-        }).collect();
+        let mut pes_with_typex: Vec<SPdmsElement> = models
+            .iter()
+            .map(|(pe, attmap)| {
+                let mut pe_clone = pe.clone();
+                pe_clone.extract_typex(attmap);
+                pe_clone
+            })
+            .collect();
 
         pe_ops::save_pe_batch(&pes_with_typex).await?;
 
         // 批量保存属性节点（使用带 typex 的 PE）
-        let models_with_typex: Vec<_> = pes_with_typex.iter()
+        let models_with_typex: Vec<_> = pes_with_typex
+            .iter()
             .zip(models.iter())
             .map(|(pe, (_, attmap))| (pe.clone(), attmap.clone()))
             .collect();
@@ -126,7 +136,8 @@ pub async fn save_models_batch(
         relation_ops::create_relations_batch(&models_with_typex).await?;
 
         Ok::<(), anyhow::Error>(())
-    }.await;
+    }
+    .await;
 
     match result {
         Ok(_) => {
@@ -144,10 +155,7 @@ pub async fn save_models_batch(
 
 #[cfg(feature = "kuzu")]
 /// 保存模型列表 (从 NamedAttrMap 列表)
-pub async fn save_attmaps_to_kuzu(
-    attmaps: Vec<NamedAttrMap>,
-    dbnum: i32
-) -> Result<()> {
+pub async fn save_attmaps_to_kuzu(attmaps: Vec<NamedAttrMap>, dbnum: i32) -> Result<()> {
     let models: Vec<(SPdmsElement, NamedAttrMap)> = attmaps
         .into_iter()
         .map(|attmap| {
@@ -159,3 +167,7 @@ pub async fn save_attmaps_to_kuzu(
 
     save_models_batch(models).await
 }
+
+// 导出 PE + Owner 模式函数
+#[cfg(feature = "kuzu")]
+pub use pe_ops::{save_pe_nodes_batch, save_pe_owns_batch, save_pe_owns_from_map};

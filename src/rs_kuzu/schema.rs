@@ -23,8 +23,7 @@ pub async fn init_kuzu_schema() -> Result<()> {
     let conn = create_kuzu_connection()?;
 
     // 生成所有表的 SQL 语句
-    let sqls = generate_all_table_sqls()
-        .context("生成表 SQL 失败")?;
+    let sqls = generate_all_table_sqls().context("生成表 SQL 失败")?;
 
     log::info!("准备创建 {} 个表", sqls.len());
 
@@ -161,7 +160,10 @@ pub async fn validate_schema() -> Result<()> {
 #[cfg(feature = "kuzu")]
 fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
     // 尝试查询表，如果表不存在会报错
-    match conn.query(&format!("MATCH (n:{}) RETURN COUNT(*) LIMIT 1;", table_name)) {
+    match conn.query(&format!(
+        "MATCH (n:{}) RETURN COUNT(*) LIMIT 1;",
+        table_name
+    )) {
         Ok(_) => Ok(true),
         Err(e) => {
             if e.to_string().contains("does not exist") {

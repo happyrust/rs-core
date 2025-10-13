@@ -64,6 +64,10 @@ pub static SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 pub static SECOND_SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
+/// 内存KV数据库全局连接（用于PE数据额外备份）
+#[cfg(feature = "mem-kv-save")]
+pub static SUL_MEM_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
+
 ///连接surreal
 pub async fn connect_surdb(
     conn_str: &str,
@@ -95,6 +99,78 @@ pub async fn connect_kvdb(
     SUL_DB.connect(conn_str).with_capacity(1000).await?;
     SUL_DB.use_ns(ns).use_db(db).await?;
     SUL_DB.signin(Root { username, password }).await?;
+    Ok(())
+}
+
+/// 初始化内存KV数据库连接
+///
+/// 连接到配置的内存KV数据库实例，用于PE数据的额外备份。
+///
+/// # 配置
+///
+/// 需要在 DbOption.toml 中配置：
+/// ```toml
+/// mem_kv_ip = "localhost"
+/// mem_kv_port = "8011"
+/// mem_kv_user = "root"
+/// mem_kv_password = "root"
+/// ```
+///
+/// # 错误处理
+///
+/// 如果连接失败，返回错误。调用者可以决定是否继续运行应用。
+///
+/// # 示例
+///
+/// ```rust,no_run
+/// use aios_core::init_mem_db;
+///
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
+///     match init_mem_db().await {
+///         Ok(_) => println!("备份数据库连接成功"),
+///         Err(e) => eprintln!("备份数据库连接失败: {}", e),
+///     }
+///     Ok(())
+/// }
+/// ```
+#[cfg(feature = "mem-kv-save")]
+pub async fn init_mem_db() -> anyhow::Result<()> {
+    use crate::get_db_option;
+
+    let db_option = get_db_option();
+
+    // 构建连接字符串
+    let address = format!("{}:{}", db_option.mem_kv_ip, db_option.mem_kv_port);
+    let conn_str = format!("ws://{}", address);
+
+    println!("正在连接到内存KV数据库: {}", conn_str);
+
+    // 创建配置
+    let config = surrealdb::opt::Config::default()
+        .ast_payload();  // 启用AST格式
+
+    // 连接到数据库
+    SUL_MEM_DB
+        .connect((&conn_str, config))
+        .with_capacity(1000)
+        .await?;
+
+    // 使用命名空间和数据库
+    SUL_MEM_DB
+        .use_ns(&db_option.project_code)
+        .use_db(&db_option.project_name)
+        .await?;
+
+    // 认证
+    SUL_MEM_DB.signin(Root {
+        username: &db_option.mem_kv_user,
+        password: &db_option.mem_kv_password,
+    }).await?;
+
+    println!("✅ 内存KV数据库连接成功: {} -> NS: {}, DB: {}",
+        conn_str, db_option.project_code, db_option.project_name);
+
     Ok(())
 }
 

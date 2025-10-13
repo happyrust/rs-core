@@ -3,7 +3,7 @@
 //! 提供批量查询功能，包括批量获取子节点、全名查询等
 
 use crate::rs_kuzu::{create_kuzu_connection, error::KuzuQueryError};
-use crate::types::{RefnoEnum, RefU64, SPdmsElement};
+use crate::types::{RefU64, RefnoEnum, SPdmsElement};
 use anyhow::Result;
 use indexmap::IndexMap;
 use itertools::Itertools;
@@ -32,10 +32,11 @@ pub async fn kuzu_get_all_children_refnos(refnos: &[RefnoEnum]) -> Result<Vec<Re
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -49,7 +50,11 @@ pub async fn kuzu_get_all_children_refnos(refnos: &[RefnoEnum]) -> Result<Vec<Re
         }
     }
 
-    log::debug!("Found {} children for {} parents", children.len(), refnos.len());
+    log::debug!(
+        "Found {} children for {} parents",
+        children.len(),
+        refnos.len()
+    );
     Ok(children)
 }
 
@@ -83,10 +88,11 @@ pub async fn kuzu_query_full_names(refnos: &[RefnoEnum]) -> Result<Vec<String>> 
 
     log::debug!("Kuzu query: {}", query);
 
-    let conn = create_kuzu_connection()
-        .map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
+    let conn =
+        create_kuzu_connection().map_err(|e| KuzuQueryError::ConnectionError(e.to_string()))?;
 
-    let mut result = conn.query(&query)
+    let mut result = conn
+        .query(&query)
         .map_err(|e| KuzuQueryError::QueryExecutionError {
             query: query.clone(),
             error: e.to_string(),
@@ -95,14 +101,17 @@ pub async fn kuzu_query_full_names(refnos: &[RefnoEnum]) -> Result<Vec<String>> 
     let mut full_names_map: IndexMap<i64, String> = IndexMap::new();
 
     while let Some(row) = result.next() {
-        if let (Some(Value::Int64(refno_val)), Some(Value::List(_, names_list))) = (row.get(0), row.get(1)) {
+        if let (Some(Value::Int64(refno_val)), Some(Value::List(_, names_list))) =
+            (row.get(0), row.get(1))
+        {
             // 只取最长路径（第一个结果，因为已经按 depth DESC 排序）
             if full_names_map.contains_key(refno_val) {
                 continue;
             }
 
             // 拼接 name
-            let names: Vec<String> = names_list.iter()
+            let names: Vec<String> = names_list
+                .iter()
                 .filter_map(|v| {
                     if let Value::String(s) = v {
                         Some(s.clone())
@@ -122,14 +131,19 @@ pub async fn kuzu_query_full_names(refnos: &[RefnoEnum]) -> Result<Vec<String>> 
     }
 
     // 按原始 refnos 顺序返回结果
-    let full_names: Vec<String> = refnos.iter()
+    let full_names: Vec<String> = refnos
+        .iter()
         .filter_map(|r| {
             let refno_i64 = r.refno().0 as i64;
             full_names_map.get(&refno_i64).cloned()
         })
         .collect();
 
-    log::debug!("Generated {} full names for {} refnos", full_names.len(), refnos.len());
+    log::debug!(
+        "Generated {} full names for {} refnos",
+        full_names.len(),
+        refnos.len()
+    );
     Ok(full_names)
 }
 
@@ -143,7 +157,8 @@ pub async fn kuzu_query_full_names(refnos: &[RefnoEnum]) -> Result<Vec<String>> 
 pub async fn kuzu_query_full_names_map(refnos: &[RefnoEnum]) -> Result<Vec<(RefnoEnum, String)>> {
     let full_names = kuzu_query_full_names(refnos).await?;
 
-    let result: Vec<(RefnoEnum, String)> = refnos.iter()
+    let result: Vec<(RefnoEnum, String)> = refnos
+        .iter()
         .zip(full_names.iter())
         .map(|(refno, name)| (*refno, name.clone()))
         .collect();
@@ -190,10 +205,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要数据库环境
     async fn test_get_all_children_refnos() {
-        let refnos = vec![
-            RefnoEnum::from(RefU64(123)),
-            RefnoEnum::from(RefU64(456)),
-        ];
+        let refnos = vec![RefnoEnum::from(RefU64(123)), RefnoEnum::from(RefU64(456))];
         let result = kuzu_get_all_children_refnos(&refnos).await;
         assert!(result.is_ok());
     }
@@ -201,9 +213,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_query_full_names() {
-        let refnos = vec![
-            RefnoEnum::from(RefU64(123)),
-        ];
+        let refnos = vec![RefnoEnum::from(RefU64(123))];
         let result = kuzu_query_full_names(&refnos).await;
         assert!(result.is_ok());
     }

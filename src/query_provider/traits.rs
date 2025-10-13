@@ -1,8 +1,8 @@
 //! 统一查询接口 Trait 定义
 
-use crate::types::{SPdmsElement as PE, NamedAttrMap as NamedAttMap};
-use crate::RefnoEnum;
 use super::error::QueryResult;
+use crate::RefnoEnum;
+use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use async_trait::async_trait;
 
 /// 层级查询接口
@@ -243,7 +243,9 @@ pub trait GraphQuery: Send + Sync {
 ///
 /// 组合了所有查询接口，提供完整的查询能力
 #[async_trait]
-pub trait QueryProvider: HierarchyQuery + TypeQuery + BatchQuery + GraphQuery + Send + Sync {
+pub trait QueryProvider:
+    HierarchyQuery + TypeQuery + BatchQuery + GraphQuery + Send + Sync
+{
     /// 获取单个 PE 信息
     ///
     /// # 参数

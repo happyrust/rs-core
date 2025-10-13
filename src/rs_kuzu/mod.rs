@@ -7,23 +7,23 @@ pub mod adapter;
 #[cfg(feature = "kuzu")]
 pub mod connection;
 #[cfg(feature = "kuzu")]
+pub mod error;
+#[cfg(feature = "kuzu")]
+pub mod json_schema;
+#[cfg(feature = "kuzu")]
 pub mod operations;
 #[cfg(feature = "kuzu")]
 pub mod queries;
 #[cfg(feature = "kuzu")]
-pub mod schema;
-#[cfg(feature = "kuzu")]
-pub mod types;
-#[cfg(feature = "kuzu")]
-pub mod specs;
-#[cfg(feature = "kuzu")]
-pub mod json_schema;
-#[cfg(feature = "kuzu")]
-pub mod error;
-#[cfg(feature = "kuzu")]
 pub mod query_builder;
 #[cfg(feature = "kuzu")]
 pub mod query_router;
+#[cfg(feature = "kuzu")]
+pub mod schema;
+#[cfg(feature = "kuzu")]
+pub mod specs;
+#[cfg(feature = "kuzu")]
+pub mod types;
 
 #[cfg(feature = "kuzu")]
 pub use adapter::create_kuzu_adapter;
@@ -32,9 +32,9 @@ pub use connection::*;
 #[cfg(feature = "kuzu")]
 pub use schema::*;
 #[cfg(feature = "kuzu")]
-pub use types::*;
-#[cfg(feature = "kuzu")]
 pub use specs::*;
+#[cfg(feature = "kuzu")]
+pub use types::*;
 
 #[cfg(feature = "kuzu")]
 use kuzu::{Connection, Database, SystemConfig};

@@ -5,13 +5,13 @@
 #[cfg(all(test, feature = "kuzu"))]
 mod kuzu_query_tests {
     use crate::init_surreal;
+    use crate::rs_kuzu::queries::hierarchy as kuzu_hierarchy;
+    use crate::rs_kuzu::queries::type_filter as kuzu_type_filter;
+    use crate::rs_kuzu::query_router::{QueryEngine, QueryRouter};
+    use crate::rs_kuzu::*;
     use crate::rs_surreal;
     use crate::rs_surreal::graph as surreal_graph;
     use crate::rs_surreal::mdb as surreal_mdb;
-    use crate::rs_kuzu::*;
-    use crate::rs_kuzu::queries::hierarchy as kuzu_hierarchy;
-    use crate::rs_kuzu::queries::type_filter as kuzu_type_filter;
-    use crate::rs_kuzu::query_router::{QueryRouter, QueryEngine};
     use crate::types::*;
     use kuzu::SystemConfig;
     use std::collections::HashSet;
@@ -35,7 +35,8 @@ mod kuzu_query_tests {
     /// 获取测试用的 refno
     async fn get_test_refnos() -> anyhow::Result<Vec<RefnoEnum>> {
         // 查询一些有子节点的元素用于测试
-        let refnos = surreal_mdb::query_type_refnos_by_dbnum(&["ZONE"], 1112, Some(true), false).await?;
+        let refnos =
+            surreal_mdb::query_type_refnos_by_dbnum(&["ZONE"], 1112, Some(true), false).await?;
         Ok(refnos.into_iter().take(5).collect())
     }
 
@@ -50,22 +51,35 @@ mod kuzu_query_tests {
             let surreal_result = rs_surreal::get_children_refnos(refno).await.unwrap();
 
             // Kuzu 查询
-            let kuzu_result = kuzu_hierarchy::kuzu_get_children_refnos(refno).await.unwrap();
+            let kuzu_result = kuzu_hierarchy::kuzu_get_children_refnos(refno)
+                .await
+                .unwrap();
 
             // 转换为 HashSet 进行比较（忽略顺序）
             let surreal_set: HashSet<_> = surreal_result.iter().collect();
             let kuzu_set: HashSet<_> = kuzu_result.iter().collect();
 
-            println!("refno {:?}: SurrealDB={}, Kuzu={}",
-                refno, surreal_result.len(), kuzu_result.len());
+            println!(
+                "refno {:?}: SurrealDB={}, Kuzu={}",
+                refno,
+                surreal_result.len(),
+                kuzu_result.len()
+            );
 
             // 验证数量一致
-            assert_eq!(surreal_set.len(), kuzu_set.len(),
-                "子节点数量不一致 for refno {:?}", refno);
+            assert_eq!(
+                surreal_set.len(),
+                kuzu_set.len(),
+                "子节点数量不一致 for refno {:?}",
+                refno
+            );
 
             // 验证内容一致
-            assert_eq!(surreal_set, kuzu_set,
-                "子节点内容不一致 for refno {:?}", refno);
+            assert_eq!(
+                surreal_set, kuzu_set,
+                "子节点内容不一致 for refno {:?}",
+                refno
+            );
         }
     }
 
@@ -77,19 +91,31 @@ mod kuzu_query_tests {
 
         for refno in test_refnos.into_iter().take(2) {
             // SurrealDB 查询
-            let surreal_result = surreal_graph::query_deep_children_refnos(refno).await.unwrap();
+            let surreal_result = surreal_graph::query_deep_children_refnos(refno)
+                .await
+                .unwrap();
 
             // Kuzu 查询
-            let kuzu_result = kuzu_hierarchy::kuzu_query_deep_children_refnos(refno).await.unwrap();
+            let kuzu_result = kuzu_hierarchy::kuzu_query_deep_children_refnos(refno)
+                .await
+                .unwrap();
 
             let surreal_set: HashSet<_> = surreal_result.iter().collect();
             let kuzu_set: HashSet<_> = kuzu_result.iter().collect();
 
-            println!("refno {:?}: SurrealDB={}, Kuzu={}",
-                refno, surreal_result.len(), kuzu_result.len());
+            println!(
+                "refno {:?}: SurrealDB={}, Kuzu={}",
+                refno,
+                surreal_result.len(),
+                kuzu_result.len()
+            );
 
-            assert_eq!(surreal_set.len(), kuzu_set.len(),
-                "深层子节点数量不一致 for refno {:?}", refno);
+            assert_eq!(
+                surreal_set.len(),
+                kuzu_set.len(),
+                "深层子节点数量不一致 for refno {:?}",
+                refno
+            );
         }
     }
 
@@ -108,23 +134,33 @@ mod kuzu_query_tests {
             let nouns_ref: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
 
             // SurrealDB 查询
-            let surreal_result = surreal_mdb::query_type_refnos_by_dbnum(
-                &nouns_ref, dbnum, None, false
-            ).await.unwrap();
+            let surreal_result =
+                surreal_mdb::query_type_refnos_by_dbnum(&nouns_ref, dbnum, None, false)
+                    .await
+                    .unwrap();
 
             // Kuzu 查询
-            let kuzu_result = kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(
-                &nouns_ref, dbnum, None
-            ).await.unwrap();
+            let kuzu_result =
+                kuzu_type_filter::kuzu_query_type_refnos_by_dbnum(&nouns_ref, dbnum, None)
+                    .await
+                    .unwrap();
 
             let surreal_set: HashSet<_> = surreal_result.iter().collect();
             let kuzu_set: HashSet<_> = kuzu_result.iter().collect();
 
-            println!("nouns {:?}: SurrealDB={}, Kuzu={}",
-                nouns, surreal_result.len(), kuzu_result.len());
+            println!(
+                "nouns {:?}: SurrealDB={}, Kuzu={}",
+                nouns,
+                surreal_result.len(),
+                kuzu_result.len()
+            );
 
-            assert_eq!(surreal_set.len(), kuzu_set.len(),
-                "类型过滤结果数量不一致 for nouns {:?}", nouns);
+            assert_eq!(
+                surreal_set.len(),
+                kuzu_set.len(),
+                "类型过滤结果数量不一致 for nouns {:?}",
+                nouns
+            );
         }
     }
 
@@ -184,19 +220,32 @@ mod kuzu_query_tests {
 
         for refno in test_refnos.into_iter().take(2) {
             // SurrealDB 查询
-            let surreal_result = surreal_graph::query_filter_deep_children(refno, &filter_nouns).await.unwrap();
+            let surreal_result = surreal_graph::query_filter_deep_children(refno, &filter_nouns)
+                .await
+                .unwrap();
 
             // Kuzu 查询
-            let kuzu_result = kuzu_hierarchy::kuzu_query_filter_deep_children(refno, &filter_nouns).await.unwrap();
+            let kuzu_result = kuzu_hierarchy::kuzu_query_filter_deep_children(refno, &filter_nouns)
+                .await
+                .unwrap();
 
             let surreal_set: HashSet<_> = surreal_result.iter().collect();
             let kuzu_set: HashSet<_> = kuzu_result.iter().collect();
 
-            println!("refno {:?} with filter {:?}: SurrealDB={}, Kuzu={}",
-                refno, filter_nouns, surreal_result.len(), kuzu_result.len());
+            println!(
+                "refno {:?} with filter {:?}: SurrealDB={}, Kuzu={}",
+                refno,
+                filter_nouns,
+                surreal_result.len(),
+                kuzu_result.len()
+            );
 
-            assert_eq!(surreal_set.len(), kuzu_set.len(),
-                "过滤深层子节点数量不一致 for refno {:?}", refno);
+            assert_eq!(
+                surreal_set.len(),
+                kuzu_set.len(),
+                "过滤深层子节点数量不一致 for refno {:?}",
+                refno
+            );
         }
     }
 
@@ -207,30 +256,41 @@ mod kuzu_query_tests {
 
         // 查询一些深层节点来测试祖先查询
         let deep_refnos = surreal_mdb::query_type_refnos_by_dbnum(&["PIPE"], 1112, None, false)
-            .await.unwrap();
+            .await
+            .unwrap();
 
         for refno in deep_refnos.into_iter().take(5) {
             // SurrealDB 查询
             let surreal_result = crate::query_ancestor_refnos(refno).await.unwrap();
 
             // Kuzu 查询
-            let kuzu_result = kuzu_hierarchy::kuzu_query_ancestor_refnos(refno).await.unwrap();
+            let kuzu_result = kuzu_hierarchy::kuzu_query_ancestor_refnos(refno)
+                .await
+                .unwrap();
 
             let surreal_set: HashSet<_> = surreal_result.iter().collect();
             let kuzu_set: HashSet<_> = kuzu_result.iter().collect();
 
-            println!("refno {:?}: SurrealDB ancestors={}, Kuzu ancestors={}",
-                refno, surreal_result.len(), kuzu_result.len());
+            println!(
+                "refno {:?}: SurrealDB ancestors={}, Kuzu ancestors={}",
+                refno,
+                surreal_result.len(),
+                kuzu_result.len()
+            );
 
             // 祖先数量应该一致
-            assert_eq!(surreal_set.len(), kuzu_set.len(),
-                "祖先数量不一致 for refno {:?}", refno);
+            assert_eq!(
+                surreal_set.len(),
+                kuzu_set.len(),
+                "祖先数量不一致 for refno {:?}",
+                refno
+            );
         }
     }
 
     #[test]
     fn test_query_engine_config() {
-        use crate::rs_kuzu::query_router::{set_query_engine, get_query_engine};
+        use crate::rs_kuzu::query_router::{get_query_engine, set_query_engine};
 
         // 测试设置和获取全局配置
         set_query_engine(QueryEngine::Kuzu);

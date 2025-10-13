@@ -100,10 +100,7 @@ impl BatchOptimizer {
     }
 
     /// 添加强类型属性记录
-    pub async fn buffer_typed_attributes(
-        &self,
-        record: TypedAttrRecord,
-    ) -> Result<()> {
+    pub async fn buffer_typed_attributes(&self, record: TypedAttrRecord) -> Result<()> {
         let mut buffer = self.buffer.write().await;
         let refno = record.refno;
         buffer.typed_attr_writes.insert(refno, record);

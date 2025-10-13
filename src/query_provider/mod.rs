@@ -26,20 +26,14 @@
 //! }
 //! ```
 
-pub mod traits;
-pub mod surreal_provider;
+pub mod error;
 pub mod kuzu_provider;
 pub mod router;
-pub mod error;
+pub mod surreal_provider;
+pub mod traits;
 
-pub use traits::{
-    QueryProvider,
-    HierarchyQuery,
-    TypeQuery,
-    BatchQuery,
-    GraphQuery,
-};
-pub use surreal_provider::SurrealQueryProvider;
-pub use kuzu_provider::KuzuQueryProvider;
-pub use router::{QueryRouter, QueryEngine, QueryStrategy};
 pub use error::{QueryError, QueryResult};
+pub use kuzu_provider::KuzuQueryProvider;
+pub use router::{QueryEngine, QueryRouter, QueryStrategy};
+pub use surreal_provider::SurrealQueryProvider;
+pub use traits::{BatchQuery, GraphQuery, HierarchyQuery, QueryProvider, TypeQuery};

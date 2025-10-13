@@ -2,9 +2,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::query_provider::*;
-    use crate::init_surreal;
     use crate::RefnoEnum;
+    use crate::init_surreal;
+    use crate::query_provider::*;
 
     /// 测试 SurrealDB 查询提供者
     #[tokio::test]
@@ -15,10 +15,7 @@ mod tests {
         let provider = SurrealQueryProvider::new().unwrap();
 
         // 测试查询类型
-        let pipes = provider
-            .query_by_type(&["PIPE"], 1112, None)
-            .await
-            .unwrap();
+        let pipes = provider.query_by_type(&["PIPE"], 1112, None).await.unwrap();
 
         println!("找到 {} 个 PIPE 元素", pipes.len());
         assert!(!pipes.is_empty());
@@ -86,10 +83,7 @@ mod tests {
             println!("[Router-Auto] 第一个 ZONE 有 {} 个子节点", children.len());
 
             // 测试深层查询
-            let descendants = router
-                .get_descendants(first_zone, Some(3))
-                .await
-                .unwrap();
+            let descendants = router.get_descendants(first_zone, Some(3)).await.unwrap();
             println!("[Router-Auto] 深度3的子孙节点: {} 个", descendants.len());
         }
     }
@@ -113,7 +107,10 @@ mod tests {
 
         assert!(result.is_ok(), "回退机制应该确保查询成功");
         let pipes = result.unwrap();
-        println!("[Router-Fallback] 找到 {} 个 PIPE（可能使用了回退）", pipes.len());
+        println!(
+            "[Router-Fallback] 找到 {} 个 PIPE（可能使用了回退）",
+            pipes.len()
+        );
     }
 
     /// 测试不同提供者的结果一致性

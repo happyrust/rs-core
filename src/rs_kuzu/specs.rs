@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use serde::Deserialize;
@@ -84,10 +84,8 @@ pub fn load_attr_table_specs() -> Result<Vec<AttrTableSpec>> {
     }
 
     let mut specs = Vec::new();
-    for entry in fs::read_dir(&base_dir).with_context(|| format!(
-        "读取目录 {:?} 失败",
-        base_dir
-    ))? {
+    for entry in fs::read_dir(&base_dir).with_context(|| format!("读取目录 {:?} 失败", base_dir))?
+    {
         let entry = entry?;
         let path = entry.path();
         if path.extension().and_then(|ext| ext.to_str()) != Some("yaml") {
@@ -102,10 +100,9 @@ pub fn load_attr_table_specs() -> Result<Vec<AttrTableSpec>> {
 }
 
 fn load_spec_from_path(path: &Path) -> Result<AttrTableSpec> {
-    let content = fs::read_to_string(path)
-        .with_context(|| format!("读取文件 {:?} 失败", path))?;
-    let mut spec: AttrTableSpec = serde_yaml::from_str(&content)
-        .with_context(|| format!("解析 YAML {:?} 失败", path))?;
+    let content = fs::read_to_string(path).with_context(|| format!("读取文件 {:?} 失败", path))?;
+    let mut spec: AttrTableSpec =
+        serde_yaml::from_str(&content).with_context(|| format!("解析 YAML {:?} 失败", path))?;
     if spec.table.is_empty() {
         spec.table = format!("Attr_{}", spec.noun.to_uppercase());
     }
@@ -343,7 +340,10 @@ mod tests {
             .expect("projection should produce typed record");
 
         assert_eq!(projection.typed_record.noun.to_uppercase(), "ELBO");
-        assert_eq!(projection.typed_record.fields.get("STATUS_CODE"), Some(&Value::String("OK".into())));
+        assert_eq!(
+            projection.typed_record.fields.get("STATUS_CODE"),
+            Some(&Value::String("OK".into()))
+        );
         assert_eq!(projection.edges.len(), 2); // REL_ATTR + TO_SPRE
     }
 }

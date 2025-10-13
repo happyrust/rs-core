@@ -2,9 +2,9 @@
 
 use super::error::{QueryError, QueryResult};
 use super::traits::*;
-use crate::rs_surreal;
-use crate::types::{SPdmsElement as PE, NamedAttrMap as NamedAttMap};
 use crate::RefnoEnum;
+use crate::rs_surreal;
+use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use async_trait::async_trait;
 use log::{debug, warn};
 
@@ -61,7 +61,10 @@ impl HierarchyQuery for SurrealQueryProvider {
         refno: RefnoEnum,
         max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] get_descendants: {:?}, depth: {:?}", self.name, refno, max_depth);
+        debug!(
+            "[{}] get_descendants: {:?}, depth: {:?}",
+            self.name, refno, max_depth
+        );
 
         // SurrealDB 的深层查询默认是 12 层
         if let Some(depth) = max_depth {
@@ -87,7 +90,10 @@ impl HierarchyQuery for SurrealQueryProvider {
         refno: RefnoEnum,
         nouns: &[&str],
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] get_ancestors_of_type: {:?}, nouns: {:?}", self.name, refno, nouns);
+        debug!(
+            "[{}] get_ancestors_of_type: {:?}, nouns: {:?}",
+            self.name, refno, nouns
+        );
         rs_surreal::graph::query_filter_ancestors(refno, nouns)
             .await
             .map_err(|e| QueryError::ExecutionError(e.to_string()))
@@ -99,8 +105,10 @@ impl HierarchyQuery for SurrealQueryProvider {
         nouns: &[&str],
         max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] get_descendants_filtered: {:?}, nouns: {:?}, depth: {:?}",
-            self.name, refno, nouns, max_depth);
+        debug!(
+            "[{}] get_descendants_filtered: {:?}, nouns: {:?}, depth: {:?}",
+            self.name, refno, nouns, max_depth
+        );
 
         if max_depth.is_some() && max_depth.unwrap() > 12 {
             warn!("SurrealDB 最大支持 12 层递归");
@@ -131,8 +139,10 @@ impl TypeQuery for SurrealQueryProvider {
         dbnum: i32,
         has_children: Option<bool>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] query_by_type: nouns={:?}, dbnum={}, has_children={:?}",
-            self.name, nouns, dbnum, has_children);
+        debug!(
+            "[{}] query_by_type: nouns={:?}, dbnum={}, has_children={:?}",
+            self.name, nouns, dbnum, has_children
+        );
 
         rs_surreal::mdb::query_type_refnos_by_dbnum(nouns, dbnum as u32, has_children, false)
             .await
@@ -144,8 +154,10 @@ impl TypeQuery for SurrealQueryProvider {
         nouns: &[&str],
         dbnums: &[i32],
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] query_by_type_multi_db: nouns={:?}, dbnums={:?}",
-            self.name, nouns, dbnums);
+        debug!(
+            "[{}] query_by_type_multi_db: nouns={:?}, dbnums={:?}",
+            self.name, nouns, dbnums
+        );
 
         // 转换 i32 到 u32
         let dbnums_u32: Vec<u32> = dbnums.iter().map(|&d| d as u32).collect();
@@ -168,7 +180,10 @@ impl TypeQuery for SurrealQueryProvider {
     }
 
     async fn count_by_type(&self, noun: &str, dbnum: i32) -> QueryResult<usize> {
-        debug!("[{}] count_by_type: noun={}, dbnum={}", self.name, noun, dbnum);
+        debug!(
+            "[{}] count_by_type: noun={}, dbnum={}",
+            self.name, noun, dbnum
+        );
 
         // 通过查询所有元素并统计数量
         let refnos = self.query_by_type(&[noun], dbnum, None).await?;
@@ -212,7 +227,11 @@ impl BatchQuery for SurrealQueryProvider {
         &self,
         refnos: &[RefnoEnum],
     ) -> QueryResult<Vec<(RefnoEnum, String)>> {
-        debug!("[{}] get_full_names_batch: {} items", self.name, refnos.len());
+        debug!(
+            "[{}] get_full_names_batch: {} items",
+            self.name,
+            refnos.len()
+        );
 
         rs_surreal::query_full_names_map(refnos)
             .await
@@ -233,8 +252,13 @@ impl GraphQuery for SurrealQueryProvider {
         nouns: &[&str],
         max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] query_multi_descendants: {} refnos, {:?} nouns, depth: {:?}",
-            self.name, refnos.len(), nouns, max_depth);
+        debug!(
+            "[{}] query_multi_descendants: {} refnos, {:?} nouns, depth: {:?}",
+            self.name,
+            refnos.len(),
+            nouns,
+            max_depth
+        );
 
         if max_depth.is_some() && max_depth.unwrap() > 12 {
             warn!("SurrealDB 最大支持 12 层递归");

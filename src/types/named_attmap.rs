@@ -612,6 +612,19 @@ impl NamedAttrMap {
         self.get_refno_by_att_or_default("OWNER")
     }
 
+    /// 获取 owner 的 RefU64（便捷方法）
+    ///
+    /// 用于 Kuzu PE + Owner 模式，直接返回 owner 的 RefU64
+    #[inline]
+    pub fn get_owner_refno(&self) -> Option<RefU64> {
+        let owner = self.get_owner();
+        if owner.refno().is_unset() {
+            None
+        } else {
+            Some(owner.refno())
+        }
+    }
+
     #[inline]
     pub fn get_refno_by_att_or_default(&self, att_name: &str) -> RefnoEnum {
         self.get_refno_by_att(att_name).unwrap_or_default()

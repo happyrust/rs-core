@@ -2,11 +2,10 @@
 
 #[cfg(feature = "kuzu")]
 mod tests {
-    use aios_core::rs_kuzu::json_schema::{
-        generate_all_table_sqls, generate_noun_table_sql, load_attr_info_json,
-        pdms_type_to_kuzu,
-    };
     use aios_core::pdms_types::DbAttributeType;
+    use aios_core::rs_kuzu::json_schema::{
+        generate_all_table_sqls, generate_noun_table_sql, load_attr_info_json, pdms_type_to_kuzu,
+    };
     use aios_core::types::AttrVal;
 
     #[test]
@@ -18,8 +17,7 @@ mod tests {
 
         // 测试为 ELBO 生成表
         if let Some(elbo_attrs) = attr_info.named_attr_info_map.get("ELBO") {
-            let sql = generate_noun_table_sql("ELBO", elbo_attrs)
-                .expect("应该能生成 ELBO 表 SQL");
+            let sql = generate_noun_table_sql("ELBO", elbo_attrs).expect("应该能生成 ELBO 表 SQL");
 
             println!("\n生成的 ELBO 表 SQL:");
             println!("{}", sql);
@@ -33,8 +31,7 @@ mod tests {
 
         // 测试为 PIPE 生成表
         if let Some(pipe_attrs) = attr_info.named_attr_info_map.get("PIPE") {
-            let sql = generate_noun_table_sql("PIPE", pipe_attrs)
-                .expect("应该能生成 PIPE 表 SQL");
+            let sql = generate_noun_table_sql("PIPE", pipe_attrs).expect("应该能生成 PIPE 表 SQL");
 
             println!("\n生成的 PIPE 表 SQL:");
             println!("{}", sql);
@@ -50,11 +47,15 @@ mod tests {
         println!("\n总共生成 {} 条 SQL 语句", sqls.len());
 
         // 检查是否包含 PE 主表
-        let has_pe = sqls.iter().any(|sql| sql.contains("CREATE NODE TABLE IF NOT EXISTS PE"));
+        let has_pe = sqls
+            .iter()
+            .any(|sql| sql.contains("CREATE NODE TABLE IF NOT EXISTS PE"));
         assert!(has_pe, "应该包含 PE 主表");
 
         // 检查是否包含 OWNS 关系表
-        let has_owns = sqls.iter().any(|sql| sql.contains("CREATE REL TABLE IF NOT EXISTS OWNS"));
+        let has_owns = sqls
+            .iter()
+            .any(|sql| sql.contains("CREATE REL TABLE IF NOT EXISTS OWNS"));
         assert!(has_owns, "应该包含 OWNS 关系表");
 
         // 检查是否包含属性表
@@ -100,7 +101,10 @@ mod tests {
 
         // 测试数组类型
         assert_eq!(
-            pdms_type_to_kuzu(&DbAttributeType::ORIENTATION, &AttrVal::Vec3Type([0.0, 0.0, 0.0])),
+            pdms_type_to_kuzu(
+                &DbAttributeType::ORIENTATION,
+                &AttrVal::Vec3Type([0.0, 0.0, 0.0])
+            ),
             "LIST<DOUBLE>"
         );
 

@@ -338,6 +338,26 @@ pub struct DbOption {
     /// Kuzu 数据库配置
     #[clap(skip)]
     pub kuzu: Option<KuzuConfig>,
+
+    /// 内存KV数据库IP地址（用于PE数据额外备份）
+    #[clap(long)]
+    #[serde(default = "default_mem_kv_ip")]
+    pub mem_kv_ip: String,
+
+    /// 内存KV数据库端口
+    #[clap(long)]
+    #[serde(default = "default_mem_kv_port")]
+    pub mem_kv_port: String,
+
+    /// 内存KV数据库用户名
+    #[clap(long)]
+    #[serde(default = "default_mem_kv_user")]
+    pub mem_kv_user: String,
+
+    /// 内存KV数据库密码
+    #[clap(long)]
+    #[serde(default = "default_mem_kv_password")]
+    pub mem_kv_password: String,
 }
 
 impl DbOption {
@@ -544,4 +564,24 @@ impl SecondUnitDbOption {
         let port = self.v_port;
         format!("ws://{ip}:{port}")
     }
+}
+
+// ============================================================================
+// 内存KV数据库配置默认值函数
+// ============================================================================
+
+fn default_mem_kv_ip() -> String {
+    "localhost".to_string()
+}
+
+fn default_mem_kv_port() -> String {
+    "8011".to_string()
+}
+
+fn default_mem_kv_user() -> String {
+    "root".to_string()
+}
+
+fn default_mem_kv_password() -> String {
+    "root".to_string()
 }

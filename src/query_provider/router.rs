@@ -5,8 +5,8 @@
 use super::error::{QueryError, QueryResult};
 use super::traits::*;
 use super::{KuzuQueryProvider, SurrealQueryProvider};
-use crate::types::{SPdmsElement as PE, NamedAttrMap as NamedAttMap};
 use crate::RefnoEnum;
+use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use async_trait::async_trait;
 use log::{debug, info, warn};
 use std::sync::{Arc, RwLock};
@@ -187,7 +187,11 @@ impl QueryRouter {
     /// 执行查询（带回退机制）
     async fn execute_with_fallback<F, T>(&self, query_name: &str, f: F) -> QueryResult<T>
     where
-        F: Fn(Arc<dyn QueryProvider>) -> std::pin::Pin<Box<dyn std::future::Future<Output = QueryResult<T>> + Send>> + Send,
+        F: Fn(
+                Arc<dyn QueryProvider>,
+            )
+                -> std::pin::Pin<Box<dyn std::future::Future<Output = QueryResult<T>> + Send>>
+            + Send,
         T: Send,
     {
         let strategy = self.get_strategy();
@@ -202,8 +206,12 @@ impl QueryRouter {
         if strategy.enable_performance_log {
             let elapsed = start_time.elapsed();
             if elapsed.as_millis() > 100 {
-                info!("[{}] {} 查询耗时: {:?}",
-                    provider.provider_name(), query_name, elapsed);
+                info!(
+                    "[{}] {} 查询耗时: {:?}",
+                    provider.provider_name(),
+                    query_name,
+                    elapsed
+                );
             }
         }
 
@@ -211,7 +219,12 @@ impl QueryRouter {
         match result {
             Ok(value) => Ok(value),
             Err(e) => {
-                warn!("[{}] {} 查询失败: {}", provider.provider_name(), query_name, e);
+                warn!(
+                    "[{}] {} 查询失败: {}",
+                    provider.provider_name(),
+                    query_name,
+                    e
+                );
 
                 // 如果启用了回退且当前不是 SurrealDB，则回退
                 if strategy.enable_fallback && engine != QueryEngine::SurrealDB {
@@ -234,19 +247,17 @@ impl QueryRouter {
 impl HierarchyQuery for QueryRouter {
     async fn get_children(&self, refno: RefnoEnum) -> QueryResult<Vec<RefnoEnum>> {
         self.execute_with_fallback("get_children", |provider| {
-            Box::pin(async move {
-                provider.get_children(refno).await
-            })
-        }).await
+            Box::pin(async move { provider.get_children(refno).await })
+        })
+        .await
     }
 
     async fn get_children_batch(&self, refnos: &[RefnoEnum]) -> QueryResult<Vec<RefnoEnum>> {
         self.execute_with_fallback("get_children_batch", |provider| {
             let refnos = refnos.to_vec();
-            Box::pin(async move {
-                provider.get_children_batch(&refnos).await
-            })
-        }).await
+            Box::pin(async move { provider.get_children_batch(&refnos).await })
+        })
+        .await
     }
 
     async fn get_descendants(
@@ -255,18 +266,16 @@ impl HierarchyQuery for QueryRouter {
         max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
         self.execute_with_fallback("get_descendants", |provider| {
-            Box::pin(async move {
-                provider.get_descendants(refno, max_depth).await
-            })
-        }).await
+            Box::pin(async move { provider.get_descendants(refno, max_depth).await })
+        })
+        .await
     }
 
     async fn get_ancestors(&self, refno: RefnoEnum) -> QueryResult<Vec<RefnoEnum>> {
         self.execute_with_fallback("get_ancestors", |provider| {
-            Box::pin(async move {
-                provider.get_ancestors(refno).await
-            })
-        }).await
+            Box::pin(async move { provider.get_ancestors(refno).await })
+        })
+        .await
     }
 
     async fn get_ancestors_of_type(
@@ -280,7 +289,8 @@ impl HierarchyQuery for QueryRouter {
                 let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
                 provider.get_ancestors_of_type(refno, &noun_refs).await
             })
-        }).await
+        })
+        .await
     }
 
     async fn get_descendants_filtered(
@@ -293,17 +303,19 @@ impl HierarchyQuery for QueryRouter {
             let nouns: Vec<String> = nouns.iter().map(|s| s.to_string()).collect();
             Box::pin(async move {
                 let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
-                provider.get_descendants_filtered(refno, &noun_refs, max_depth).await
+                provider
+                    .get_descendants_filtered(refno, &noun_refs, max_depth)
+                    .await
             })
-        }).await
+        })
+        .await
     }
 
     async fn get_children_pes(&self, refno: RefnoEnum) -> QueryResult<Vec<PE>> {
         self.execute_with_fallback("get_children_pes", |provider| {
-            Box::pin(async move {
-                provider.get_children_pes(refno).await
-            })
-        }).await
+            Box::pin(async move { provider.get_children_pes(refno).await })
+        })
+        .await
     }
 }
 
@@ -323,9 +335,12 @@ impl TypeQuery for QueryRouter {
             let nouns: Vec<String> = nouns.iter().map(|s| s.to_string()).collect();
             Box::pin(async move {
                 let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
-                provider.query_by_type(&noun_refs, dbnum, has_children).await
+                provider
+                    .query_by_type(&noun_refs, dbnum, has_children)
+                    .await
             })
-        }).await
+        })
+        .await
     }
 
     async fn query_by_type_multi_db(
@@ -340,32 +355,30 @@ impl TypeQuery for QueryRouter {
                 let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
                 provider.query_by_type_multi_db(&noun_refs, &dbnums).await
             })
-        }).await
+        })
+        .await
     }
 
     async fn get_world(&self, dbnum: i32) -> QueryResult<Option<RefnoEnum>> {
         self.execute_with_fallback("get_world", |provider| {
-            Box::pin(async move {
-                provider.get_world(dbnum).await
-            })
-        }).await
+            Box::pin(async move { provider.get_world(dbnum).await })
+        })
+        .await
     }
 
     async fn get_sites(&self, dbnum: i32) -> QueryResult<Vec<RefnoEnum>> {
         self.execute_with_fallback("get_sites", |provider| {
-            Box::pin(async move {
-                provider.get_sites(dbnum).await
-            })
-        }).await
+            Box::pin(async move { provider.get_sites(dbnum).await })
+        })
+        .await
     }
 
     async fn count_by_type(&self, noun: &str, dbnum: i32) -> QueryResult<usize> {
         self.execute_with_fallback("count_by_type", |provider| {
             let noun = noun.to_string();
-            Box::pin(async move {
-                provider.count_by_type(&noun, dbnum).await
-            })
-        }).await
+            Box::pin(async move { provider.count_by_type(&noun, dbnum).await })
+        })
+        .await
     }
 }
 
@@ -378,19 +391,17 @@ impl BatchQuery for QueryRouter {
     async fn get_pes_batch(&self, refnos: &[RefnoEnum]) -> QueryResult<Vec<PE>> {
         self.execute_with_fallback("get_pes_batch", |provider| {
             let refnos = refnos.to_vec();
-            Box::pin(async move {
-                provider.get_pes_batch(&refnos).await
-            })
-        }).await
+            Box::pin(async move { provider.get_pes_batch(&refnos).await })
+        })
+        .await
     }
 
     async fn get_attmaps_batch(&self, refnos: &[RefnoEnum]) -> QueryResult<Vec<NamedAttMap>> {
         self.execute_with_fallback("get_attmaps_batch", |provider| {
             let refnos = refnos.to_vec();
-            Box::pin(async move {
-                provider.get_attmaps_batch(&refnos).await
-            })
-        }).await
+            Box::pin(async move { provider.get_attmaps_batch(&refnos).await })
+        })
+        .await
     }
 
     async fn get_full_names_batch(
@@ -399,10 +410,9 @@ impl BatchQuery for QueryRouter {
     ) -> QueryResult<Vec<(RefnoEnum, String)>> {
         self.execute_with_fallback("get_full_names_batch", |provider| {
             let refnos = refnos.to_vec();
-            Box::pin(async move {
-                provider.get_full_names_batch(&refnos).await
-            })
-        }).await
+            Box::pin(async move { provider.get_full_names_batch(&refnos).await })
+        })
+        .await
     }
 }
 
@@ -423,9 +433,12 @@ impl GraphQuery for QueryRouter {
             let nouns: Vec<String> = nouns.iter().map(|s| s.to_string()).collect();
             Box::pin(async move {
                 let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
-                provider.query_multi_descendants(&refnos, &noun_refs, max_depth).await
+                provider
+                    .query_multi_descendants(&refnos, &noun_refs, max_depth)
+                    .await
             })
-        }).await
+        })
+        .await
     }
 
     async fn find_shortest_path(
@@ -434,18 +447,16 @@ impl GraphQuery for QueryRouter {
         to: RefnoEnum,
     ) -> QueryResult<Vec<RefnoEnum>> {
         self.execute_with_fallback("find_shortest_path", |provider| {
-            Box::pin(async move {
-                provider.find_shortest_path(from, to).await
-            })
-        }).await
+            Box::pin(async move { provider.find_shortest_path(from, to).await })
+        })
+        .await
     }
 
     async fn get_node_depth(&self, refno: RefnoEnum) -> QueryResult<usize> {
         self.execute_with_fallback("get_node_depth", |provider| {
-            Box::pin(async move {
-                provider.get_node_depth(refno).await
-            })
-        }).await
+            Box::pin(async move { provider.get_node_depth(refno).await })
+        })
+        .await
     }
 }
 
@@ -457,26 +468,23 @@ impl GraphQuery for QueryRouter {
 impl QueryProvider for QueryRouter {
     async fn get_pe(&self, refno: RefnoEnum) -> QueryResult<Option<PE>> {
         self.execute_with_fallback("get_pe", |provider| {
-            Box::pin(async move {
-                provider.get_pe(refno).await
-            })
-        }).await
+            Box::pin(async move { provider.get_pe(refno).await })
+        })
+        .await
     }
 
     async fn get_attmap(&self, refno: RefnoEnum) -> QueryResult<Option<NamedAttMap>> {
         self.execute_with_fallback("get_attmap", |provider| {
-            Box::pin(async move {
-                provider.get_attmap(refno).await
-            })
-        }).await
+            Box::pin(async move { provider.get_attmap(refno).await })
+        })
+        .await
     }
 
     async fn exists(&self, refno: RefnoEnum) -> QueryResult<bool> {
         self.execute_with_fallback("exists", |provider| {
-            Box::pin(async move {
-                provider.exists(refno).await
-            })
-        }).await
+            Box::pin(async move { provider.exists(refno).await })
+        })
+        .await
     }
 
     fn provider_name(&self) -> &str {

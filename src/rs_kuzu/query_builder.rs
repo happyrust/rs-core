@@ -123,14 +123,8 @@ impl HierarchyQueryBuilder {
         };
 
         let (arrow, node_var) = match self.direction {
-            TraversalDirection::Children => (
-                format!("-[:OWNS{}]->", depth_spec),
-                "descendant"
-            ),
-            TraversalDirection::Ancestors => (
-                format!("<-[:OWNS{}]-", depth_spec),
-                "ancestor"
-            ),
+            TraversalDirection::Children => (format!("-[:OWNS{}]->", depth_spec), "descendant"),
+            TraversalDirection::Ancestors => (format!("<-[:OWNS{}]-", depth_spec), "ancestor"),
         };
 
         let mut conditions = Vec::new();
@@ -142,7 +136,9 @@ impl HierarchyQueryBuilder {
 
         // noun 类型过滤
         if !self.noun_filter.is_empty() {
-            let nouns = self.noun_filter.iter()
+            let nouns = self
+                .noun_filter
+                .iter()
                 .map(|n| format!("'{}'", n))
                 .join(", ");
             conditions.push(format!("{}.noun IN [{}]", node_var, nouns));
@@ -157,7 +153,9 @@ impl HierarchyQueryBuilder {
             format!("\n WHERE {}", conditions.join("\n   AND "))
         };
 
-        let return_fields = self.return_fields.iter()
+        let return_fields = self
+            .return_fields
+            .iter()
             .map(|f| format!("{}.{}", node_var, f))
             .join(", ");
 
@@ -269,9 +267,7 @@ impl TypeFilterQueryBuilder {
 
         // noun 类型过滤
         if !self.nouns.is_empty() {
-            let nouns = self.nouns.iter()
-                .map(|n| format!("'{}'", n))
-                .join(", ");
+            let nouns = self.nouns.iter().map(|n| format!("'{}'", n)).join(", ");
             conditions.push(format!("p.noun IN [{}]", nouns));
         }
 
@@ -298,11 +294,14 @@ impl TypeFilterQueryBuilder {
             format!("\n WHERE {}", conditions.join("\n   AND "))
         };
 
-        let return_fields = self.return_fields.iter()
+        let return_fields = self
+            .return_fields
+            .iter()
             .map(|f| format!("p.{}", f))
             .join(", ");
 
-        let limit_clause = self.limit
+        let limit_clause = self
+            .limit
             .map(|l| format!("\n LIMIT {}", l))
             .unwrap_or_default();
 
@@ -329,8 +328,7 @@ mod tests {
     #[test]
     fn test_children_query_builder() {
         let refno = RefnoEnum::from(RefU64(123));
-        let query = HierarchyQueryBuilder::children(refno)
-            .build();
+        let query = HierarchyQueryBuilder::children(refno).build();
 
         assert!(query.contains("MATCH (start:PE {refno: 123})"));
         assert!(query.contains("-[:OWNS]->"));
