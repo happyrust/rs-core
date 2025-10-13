@@ -17,8 +17,8 @@ fn test_dehash_uda() {
 #[test]
 fn test_gen_hash() {
     let aabb = Aabb::new([-1.0, -1.0, -1.0].into(), [1.0, 1.0, 1.0].into());
-    let hash1 = gen_bytes_hash::<_, 512>(&aabb);
+    let hash1 = gen_bytes_hash(&aabb);
     let aabb = Aabb::new([1.0, -1.0, -1.0].into(), [1.0, 1.0, 1.0].into());
-    let hash2 = gen_bytes_hash::<_, 512>(&aabb);
+    let hash2 = gen_bytes_hash(&aabb);
     assert_ne!(hash1, hash2);
 }

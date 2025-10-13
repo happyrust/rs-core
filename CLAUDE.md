@@ -55,6 +55,65 @@ cargo test --features sql
 - Query building, spatial operations, and data versioning
 - Material list management with domain-specific modules (dq, gps, gy, nt, tf, tx, yk)
 
+**Database Schema Architecture**
+- **PE 表 (Plant Element Table)**: 统一存储所有类型的植物工程元素
+  - 所有元素（SITE、ZONE、EQUI、PIPE 等）都存储在同一个 `pe` 表中
+  - 通过 `noun` 字段区分元素类型（如 'SITE', 'ZONE', 'EQUI', 'PIPE'）
+  - 每个元素通过 `refno` (RefU64) 唯一标识
+  - 包含 `dbnum` (数据库编号)、`sesno` (会话编号)、`deleted` (删除标记) 等字段
+
+- **类型表（WORL、SITE、ZONE、EQUI 等）与 PE 表的关系**:
+  - **重要架构**: 存在 WORL、SITE、ZONE、EQUI、PIPE 等类型表
+  - 这些类型表中的 **REFNO 字段指向 pe 表中的记录**
+  - 类型表存储特定类型的属性和元数据
+  - **pe 表是核心存储**，类型表通过 REFNO 引用 pe 表
+  - **查询示例**: `SELECT value REFNO from WORL WHERE REFNO.dbnum = 1112` 返回的是 pe 表中的 id
+  - **关键**: 当需要在 pe_owner 关系中使用时，必须通过 REFNO 获取 pe 表的引用
+
+- **pe_owner 关系表**: 表示 PE 元素之间的父子层级关系
+  - **关系方向**: `child (in) -[pe_owner]-> parent (out)`
+  - `in` 字段指向子节点 (child PE element in pe table)
+  - `out` 字段指向父节点 (parent PE element in pe table)
+  - 这是一个通用的关系表，适用于所有类型的 PE 元素
+  - **重要**: `pe_owner` 针对的是 `pe` 表之间的连接关系，不是针对具体类型表（如 WORL、SITE、ZONE 表）
+  - **查询子节点**: 必须使用 pe 表的 id，例如：
+    ```sql
+    let $world_pe_id = (SELECT value REFNO from WORL WHERE ...)[0];
+    SELECT value in FROM $world_pe_id<-pe_owner WHERE in.noun = 'SITE';
+    ```
+
+- **层级结构示例**:
+  ```
+  MDB (多数据库)
+    └─ WORL (世界节点, dbnum 标识)
+        └─ SITE (站点)
+            └─ ZONE (区域)
+                └─ EQUI (设备)
+                    └─ PIPE (管道)
+  ```
+
+- **查询模式**:
+  - 查询子节点: `SELECT VALUE in FROM pe_owner WHERE out = <parent_id> AND in.deleted = false`
+  - 查询父节点: `SELECT VALUE out FROM pe_owner WHERE in = <child_id>`
+  - 反向遍历: `<node_id><-pe_owner` (查找所有指向该节点的关系)
+  - 图查询语法: `node->edge_table->target` 或 `node<-edge_table<-source`
+
+- **RELATE 语句 - 创建图关系**:
+  - 基本语法: `RELATE from_record->table->to_record`
+  - 示例: `RELATE person:aristotle->wrote->article:on_sleep`
+  - 结果会自动生成包含 `in`, `out`, `id` 三个字段的关系记录
+  - `in` 字段存储关系的源节点（from_record）
+  - `out` 字段存储关系的目标节点（to_record）
+  - 可以在关系上添加额外数据: `RELATE a->r->b SET field = value` 或 `CONTENT {...}`
+
+- **图遍历查询**:
+  - 正向遍历: `SELECT ->wrote->article FROM person` (查询 person 写的 article)
+  - 反向遍历: `SELECT <-wrote<-person FROM article` (查询写了 article 的 person)
+  - 双向遍历: `SELECT <->sister_of<->city FROM city` (适用于对称关系)
+  - 直接返回: `RETURN person:tobie->purchased->product` (直接获取结果)
+  - 条件过滤: `->edge[WHERE condition]->target` (在遍历时过滤)
+  - 递归查询: `@.{n}->edge->target` (递归 n 层) 或 `@.{1..20}` (范围递归)
+
 **Data Types (`types/`)**
 - Core data structures: `RefNo`, `AttMap`, `AttVal`, `NamedAttMap`
 - Database info structures and query SQL builders
@@ -139,3 +198,4 @@ When making changes:
 3. Geometric operations require understanding of the coordinate systems used
 4. Material calculations follow domain-specific business rules
 5. Always test with various `DbOption.toml` configurations
+- add to memory

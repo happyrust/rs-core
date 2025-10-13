@@ -294,6 +294,45 @@ pub async fn get_mdb_world_site_pes(
     Ok(pe)
 }
 
+/// 通过 dbnum 查询该数据库下的所有 SITE 节点
+///
+/// ## 功能说明
+/// 查询指定 dbnum 下所有 WORL 节点的直接子节点中类型为 SITE 的节点
+///
+/// ## 查询逻辑
+/// 1. 从 WORL 表查找 dbnum 对应的世界节点
+/// 2. 通过 pe_owner 关系反向查找 WORL 的子节点
+/// 3. 筛选出 noun = 'SITE' 的节点
+///
+/// ## 与 get_mdb_world_site_pes 的区别
+/// - `get_mdb_world_site_pes`: 通过 MDB 名称查询，支持多个 dbnum，保持原有顺序
+/// - `get_site_pes_by_dbnum`: 直接通过单个 dbnum 查询，更快速直接
+///
+/// # 参数
+/// * `dbnum` - 数据库编号
+///
+/// # 返回值
+/// * `Vec<SPdmsElement>` - SITE 元素列表
+///
+/// # 示例
+/// ```rust
+/// let sites = get_site_pes_by_dbnum(3001).await?;
+/// for site in sites {
+///     println!("SITE: {}, refno: {}", site.name, site.refno());
+/// }
+/// ```
+pub async fn get_site_pes_by_dbnum(dbnum: u32) -> anyhow::Result<Vec<SPdmsElement>> {
+    let mut response = SUL_DB
+        .query(r#"
+            let $world = (select value REFNO from WORL where REFNO.dbnum = $dbnum and REFNO.noun = 'WORL' limit 1)[0];
+            select value in.* from $world<-pe_owner where in.noun = 'SITE' and in.deleted = false
+        "#)
+        .bind(("dbnum", dbnum))
+        .await?;
+    let sites: Vec<SPdmsElement> = response.take(1)?;
+    Ok(sites)
+}
+
 /// 获取世界节点
 ///
 /// # 参数
