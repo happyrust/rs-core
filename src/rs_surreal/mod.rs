@@ -101,76 +101,72 @@ pub async fn connect_kvdb(
     Ok(())
 }
 
-/// 初始化内存KV数据库连接
-///
-/// 连接到配置的内存KV数据库实例，用于PE数据的额外备份。
-///
-/// # 配置
-///
-/// 需要在 DbOption.toml 中配置：
-/// ```toml
-/// mem_kv_ip = "localhost"
-/// mem_kv_port = "8011"
-/// mem_kv_user = "root"
-/// mem_kv_password = "root"
-/// ```
-///
-/// # 错误处理
-///
-/// 如果连接失败，返回错误。调用者可以决定是否继续运行应用。
-///
-/// # 示例
-///
-/// ```rust,no_run
-/// use aios_core::init_mem_db;
-///
-/// #[tokio::main]
-/// async fn main() -> anyhow::Result<()> {
-///     match init_mem_db().await {
-///         Ok(_) => println!("备份数据库连接成功"),
-///         Err(e) => eprintln!("备份数据库连接失败: {}", e),
-///     }
-///     Ok(())
-/// }
-/// ```
+/// 带重试的内存KV数据库初始化（与 init_surreal_with_retry 风格一致）
 #[cfg(feature = "mem-kv-save")]
-pub async fn init_mem_db() -> anyhow::Result<()> {
-    use crate::get_db_option;
+pub async fn init_mem_db_with_retry(db_option: &crate::options::DbOption) -> anyhow::Result<()> {
+    use std::time::Duration;
 
-    let db_option = get_db_option();
+    let normalized_ip = if db_option.mem_kv_ip == "localhost" {
+        "127.0.0.1".to_string()
+    } else {
+        db_option.mem_kv_ip.clone()
+    };
 
-    // 构建连接字符串
-    let address = format!("{}:{}", db_option.mem_kv_ip, db_option.mem_kv_port);
-    let conn_str = format!("ws://{}", address);
+    let addr = format!("{}:{}", normalized_ip, db_option.mem_kv_port);
+    let conn_str = format!("ws://{}", addr);
 
-    println!("正在连接到内存KV数据库: {}", conn_str);
+    let max_retries: usize = 10;
+    let mut attempt: usize = 0;
+    loop {
+        println!(
+            "尝试连接内存KV: {} (NS={}, DB={})，第{}次",
+            conn_str, db_option.project_code, db_option.project_name, attempt + 1
+        );
 
-    // 创建配置
-    let config = surrealdb::opt::Config::default()
-        .ast_payload();  // 启用AST格式
+        // 创建配置
+        let config = surrealdb::opt::Config::default().ast_payload();
 
-    // 连接到数据库
-    SUL_MEM_DB
-        .connect((&conn_str, config))
-        .with_capacity(1000)
-        .await?;
+        let connect_result = async {
+            SUL_MEM_DB
+                .connect((&conn_str, config))
+                .with_capacity(1000)
+                .await?;
+            SUL_MEM_DB
+                .use_ns(&db_option.project_code)
+                .use_db(&db_option.project_name)
+                .await?;
+            SUL_MEM_DB
+                .signin(Root {
+                    username: db_option.mem_kv_user.clone(),
+                    password: db_option.mem_kv_password.clone(),
+                })
+                .await?;
+            Ok::<(), surrealdb::Error>(())
+        }
+        .await;
 
-    // 使用命名空间和数据库
-    SUL_MEM_DB
-        .use_ns(&db_option.project_code)
-        .use_db(&db_option.project_name)
-        .await?;
-
-    // 认证
-    SUL_MEM_DB.signin(Root {
-        username: db_option.mem_kv_user.clone(),
-        password: db_option.mem_kv_password.clone(),
-    }).await?;
-
-    println!("✅ 内存KV数据库连接成功: {} -> NS: {}, DB: {}",
-        conn_str, db_option.project_code, db_option.project_name);
-
-    Ok(())
+        match connect_result {
+            Ok(_) => {
+                println!(
+                    "✅ 内存KV数据库连接成功: {} -> NS: {}, DB: {}",
+                    conn_str, db_option.project_code, db_option.project_name
+                );
+                return Ok(());
+            }
+            Err(e) => {
+                attempt += 1;
+                if attempt >= max_retries {
+                    return Err(anyhow::anyhow!(e));
+                }
+                let backoff_ms = 200u64.saturating_mul(attempt as u64);
+                eprintln!(
+                    "⚠️ 内存KV连接失败(第{}次): {}，{}ms后重试...",
+                    attempt, e, backoff_ms
+                );
+                tokio::time::sleep(Duration::from_millis(backoff_ms)).await;
+            }
+        }
+    }
 }
 
 pub fn convert_to_sql_str_array(nouns: &[&str]) -> String {
