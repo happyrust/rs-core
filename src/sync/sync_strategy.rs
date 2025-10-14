@@ -8,10 +8,10 @@ use std::time::Duration;
 /// 同步方向
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SyncDirection {
-    /// 从 SurrealDB 同步到 Kuzu
-    SurrealToKuzu,
-    /// 从 Kuzu 同步到 SurrealDB
-    KuzuToSurreal,
+    /// 从源数据库同步到目标数据库
+    SourceToTarget,
+    /// 从目标数据库同步回源数据库
+    TargetToSource,
     /// 双向同步
     Bidirectional,
 }
@@ -68,7 +68,7 @@ pub struct SyncStrategy {
 impl Default for SyncStrategy {
     fn default() -> Self {
         Self {
-            direction: SyncDirection::SurrealToKuzu,
+            direction: SyncDirection::SourceToTarget,
             mode: SyncMode::Incremental,
             conflict_resolution: ConflictResolution::SourceWins,
             batch_size: 1000,

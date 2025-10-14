@@ -4,7 +4,7 @@ use crate::{RefU64, RefnoEnum, RefnoSesno};
 use crate::{room::room::load_aabb_tree, rs_surreal, tool::math_tool};
 use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
 use std::sync::Arc;
-use surrealdb::sql::Thing;
+use surrealdb::types::RecordId;
 
 fn test_print_ori(ori: &str) {
     let rotation = parse_ori_str_to_quat(ori).unwrap_or(glam::Quat::IDENTITY);

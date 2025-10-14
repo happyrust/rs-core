@@ -7,11 +7,12 @@ use crate::types::named_attvalue::NamedAttrValue;
 use bevy_ecs::resource::Resource;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string_pretty};
+use surrealdb::types::SurrealValue;
+use surrealdb::types as surrealdb_types;
 use serde_with::DisplayFromStr;
 use std::fmt::format;
-use surrealdb::sql::Thing;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default, PartialEq, SurrealValue)]
 pub struct SPdmsElement {
     //指向具体的类型
     pub refno: RefnoEnum,
@@ -68,7 +69,7 @@ impl SPdmsElement {
             r#""refno": {},"#,
             self.refno().to_table_key(&self.noun)
         ));
-        // 使用提供的 id，或默认使用 noun:refno 格式 (Thing 类型)
+        // 使用提供的 id，或默认使用 noun:refno 格式 (RecordId 类型)
         let id_value = id.unwrap_or_else(|| self.refno().to_table_key(&self.noun));
         json_string.push_str(&format!(r#""id": {},"#, id_value));
         json_string.push_str(&format!(r#""owner": {}"#, self.owner.to_pe_key()));

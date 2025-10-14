@@ -17,6 +17,7 @@ use crate::{
         math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str},
     },
 };
+use crate::utils::take_vec;
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
@@ -177,14 +178,32 @@ pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat {
 pub async fn get_spline_pts(refno: RefnoEnum) -> anyhow::Result<Vec<DVec3>> {
     let mut response = SUL_DB.query(
         format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key())).await?;
-    let pts: Vec<DVec3> = response.take(0)?;
+    let raw_pts: Vec<Vec<f64>> = take_vec(&mut response, 0)?;
+    let pts: Vec<DVec3> = raw_pts
+        .into_iter()
+        .map(|coords| {
+            let x = coords.get(0).copied().unwrap_or_default();
+            let y = coords.get(1).copied().unwrap_or_default();
+            let z = coords.get(2).copied().unwrap_or_default();
+            DVec3::new(x, y, z)
+        })
+        .collect();
     Ok(pts)
 }
 
 pub async fn get_spline_line_dir(refno: RefnoEnum) -> anyhow::Result<DVec3> {
     let mut response = SUL_DB.query(
         format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key())).await?;
-    let pts: Vec<DVec3> = response.take(0)?;
+    let raw_pts: Vec<Vec<f64>> = take_vec(&mut response, 0)?;
+    let pts: Vec<DVec3> = raw_pts
+        .into_iter()
+        .map(|coords| {
+            let x = coords.get(0).copied().unwrap_or_default();
+            let y = coords.get(1).copied().unwrap_or_default();
+            let z = coords.get(2).copied().unwrap_or_default();
+            DVec3::new(x, y, z)
+        })
+        .collect();
     if pts.len() == 2 {
         return Ok((pts[1] - pts[0]).normalize());
     }

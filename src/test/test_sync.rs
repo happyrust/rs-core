@@ -1,8 +1,7 @@
 //! 同步机制测试
 //!
-//! 测试 SurrealDB 和 Kuzu 之间的数据同步
+//! 覆盖同步策略、过滤和管理器的基础行为
 
-use crate::db_adapter::{DatabaseAdapter, QueryContext};
 use crate::sync::*;
 use crate::types::*;
 use anyhow::Result;
@@ -96,16 +95,10 @@ mod tests {
     /// 测试同步管理器构建器
     #[tokio::test]
     async fn test_sync_manager_builder() -> Result<()> {
-        #[cfg(feature = "kuzu")]
-        use crate::rs_kuzu::create_kuzu_adapter;
         use crate::rs_surreal::create_surreal_adapter;
 
         // 创建源和目标适配器
         let source = Arc::new(create_surreal_adapter()?);
-
-        #[cfg(feature = "kuzu")]
-        let target = Arc::new(create_kuzu_adapter()?);
-        #[cfg(not(feature = "kuzu"))]
         let target = Arc::new(create_surreal_adapter()?);
 
         // 使用构建器创建同步管理器
@@ -173,8 +166,8 @@ mod tests {
     #[test]
     fn test_sync_direction() {
         let directions = vec![
-            SyncDirection::SurrealToKuzu,
-            SyncDirection::KuzuToSurreal,
+            SyncDirection::SourceToTarget,
+            SyncDirection::TargetToSource,
             SyncDirection::Bidirectional,
         ];
 

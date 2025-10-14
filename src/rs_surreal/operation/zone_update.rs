@@ -1,4 +1,5 @@
 use crate::{RefnoEnum, SUL_DB};
+use crate::utils::take_vec;
 use anyhow::Result;
 use serde::Deserialize;
 
@@ -18,7 +19,7 @@ pub async fn update_missing_zone_refno() -> Result<usize> {
     "#;
 
     let mut count_response = SUL_DB.query(count_sql).await?;
-    let count_result: Vec<CountResult> = count_response.take(0)?;
+    let count_result: Vec<CountResult> = take_vec(&mut count_response, 0)?;
     let record_count = count_result.first().map(|r| r.count).unwrap_or(0);
 
     if record_count == 0 {

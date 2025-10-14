@@ -4,92 +4,6 @@ use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
-/// Kuzu 数据库配置
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KuzuConfig {
-    /// 是否启用 Kuzu
-    pub enable: bool,
-    /// 数据库文件路径
-    pub database_path: String,
-    /// 缓冲池大小（字节）
-    pub buffer_pool_size: Option<u64>,
-    /// 最大线程数
-    pub max_num_threads: Option<u64>,
-    /// 混合模式配置
-    pub hybrid: Option<KuzuHybridConfig>,
-    /// 同步配置
-    pub sync: Option<KuzuSyncConfig>,
-}
-
-impl Default for KuzuConfig {
-    fn default() -> Self {
-        Self {
-            enable: false,
-            database_path: "./data/kuzu_db".to_string(),
-            buffer_pool_size: Some(4 * 1024 * 1024 * 1024), // 4GB
-            max_num_threads: None,
-            hybrid: Some(KuzuHybridConfig::default()),
-            sync: Some(KuzuSyncConfig::default()),
-        }
-    }
-}
-
-/// Kuzu 混合模式配置
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KuzuHybridConfig {
-    /// 混合模式
-    pub mode: String,
-    /// 查询超时（毫秒）
-    pub query_timeout_ms: u64,
-    /// 是否在主数据库失败时回退到备用数据库
-    pub fallback_on_error: bool,
-}
-
-impl Default for KuzuHybridConfig {
-    fn default() -> Self {
-        Self {
-            mode: "dual_kuzu_preferred".to_string(),
-            query_timeout_ms: 5000,
-            fallback_on_error: true,
-        }
-    }
-}
-
-/// Kuzu 数据同步配置
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KuzuSyncConfig {
-    /// 是否启用自动同步
-    pub enabled: bool,
-    /// 同步方向
-    pub direction: String,
-    /// 同步间隔（秒）
-    pub interval_secs: u64,
-    /// 批量同步大小
-    pub batch_size: usize,
-    /// 是否同步 PE
-    pub sync_pe: bool,
-    /// 是否同步属性
-    pub sync_attributes: bool,
-    /// 是否同步关系
-    pub sync_relations: bool,
-    /// 冲突解决策略
-    pub conflict_resolution: String,
-}
-
-impl Default for KuzuSyncConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            direction: "surreal_to_kuzu".to_string(),
-            interval_secs: 300,
-            batch_size: 1000,
-            sync_pe: true,
-            sync_attributes: true,
-            sync_relations: true,
-            conflict_resolution: "surreal_wins".to_string(),
-        }
-    }
-}
 
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
@@ -335,9 +249,6 @@ pub struct DbOption {
 
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
-    /// Kuzu 数据库配置
-    #[clap(skip)]
-    pub kuzu: Option<KuzuConfig>,
 
     /// 内存KV数据库IP地址（用于PE数据额外备份）
     #[clap(long)]

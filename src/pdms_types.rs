@@ -38,7 +38,9 @@ use std::fmt::{Debug, Display, Pointer};
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
-use surrealdb::sql::Thing;
+use surrealdb::types::SurrealValue;
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::RecordId;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -324,7 +326,7 @@ pub trait PdmsNodeTrait: Default {
     }
 
     #[inline]
-    fn get_id(&self) -> Option<&Thing> {
+    fn get_id(&self) -> Option<&RecordId> {
         None
     }
 
@@ -366,7 +368,7 @@ pub trait PdmsNodeTrait: Default {
 
 pub const STATE_CODE_INIT: &'static str = "D00";
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, SurrealValue)]
 pub struct EleTreeNode {
     pub refno: RefnoEnum,
     pub noun: String,
@@ -1172,7 +1174,7 @@ pub struct RoomNodes {
     pub nodes: Vec<String>,
 }
 
-#[derive(PartialEq, Debug, Default, Clone, Copy, Serialize_repr, Deserialize_repr)]
+#[derive(PartialEq, Debug, Default, Clone, Copy, Serialize_repr, Deserialize_repr, SurrealValue)]
 #[repr(i32)]
 pub enum EleOperation {
     #[default]

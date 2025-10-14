@@ -1,12 +1,15 @@
 use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
-use crate::{RefU64, RefnoEnum, SUL_DB, get_inst_relate_keys};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurlValue, get_inst_relate_keys};
 use bevy_transform::components::Transform;
 use chrono::{DateTime, Local, NaiveDateTime};
 use glam::{DVec3, Vec3};
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
+use serde::de::DeserializeOwned;
+use serde_json;
+use anyhow::Context;
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,8 +21,20 @@ pub struct TubiInstQuery {
     pub world_aabb: Aabb,
     pub world_trans: Transform,
     pub geo_hash: String,
-    pub date: Option<surrealdb::sql::Datetime>,
+    pub date: Option<surrealdb::types::Datetime>,
 }
+
+
+fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<Vec<T>> {
+    values
+        .into_iter()
+        .map(|value| {
+            let json = value.into_json_value();
+            serde_json::from_value(json).context("failed to deserialize Surreal value")
+        })
+        .collect()
+}
+
 
 pub async fn query_tubi_insts_by_brans(
     bran_refnos: &[RefnoEnum],
@@ -45,7 +60,8 @@ pub async fn query_tubi_insts_by_brans(
     let mut response = SUL_DB.query(&sql).await?;
     // dbg!(&response);
 
-    let r = response.take::<Vec<TubiInstQuery>>(0)?;
+    let values: Vec<SurlValue> = response.take(0)?;
+    let r = decode_values(values)?;
     Ok(r)
 }
 
@@ -68,7 +84,8 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
     // println!("Sql query_tubi_insts_by_flow: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
 
-    let r = response.take::<Vec<TubiInstQuery>>(0)?;
+    let values: Vec<SurlValue> = response.take(0)?;
+    let r = decode_values(values)?;
     Ok(r)
 }
 
@@ -120,7 +137,7 @@ pub struct GeomInstQuery {
     /// 点集数据
     pub pts: Option<Vec<Vec3>>,
     /// 时间戳
-    pub date: Option<surrealdb::sql::Datetime>,
+    pub date: Option<surrealdb::types::Datetime>,
 }
 
 /// 几何点集查询结构体
@@ -186,40 +203,15 @@ pub async fn query_insts(
     };
     // println!("Query insts sql: {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
-    let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
+    let values: Vec<SurlValue> = response.take(0)?;
+    let mut geom_insts: Vec<GeomInstQuery> = decode_values(values)?;
     // dbg!(&geom_insts);
 
     Ok(geom_insts)
 }
 
 // 根据历史refno查询历史insts
-// pub async fn query_history_insts(
-//     refnos: impl IntoIterator<Item = &RefnoEnum>,
-// ) -> anyhow::Result<Vec<GeomInstQuery>> {
-//     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
-
-//     //需要区分历史模型和当前最新模型
-
-//     let inst_keys = get_inst_relate_keys(&refnos);
-
-//     let sql = format!(
-//         r#"
-//             select
-//                 in.id as refno,
-//                 in.old_pe as old_refno,
-//                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-//                 if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
-//                 fn::ses_date(in.id) as date
-//             from {inst_keys} where aabb.d != none
-//         "#
-//     );
-//     // println!("Query insts sql: {}", &sql);
-//     let mut response = SUL_DB.query(sql).await?;
-//     let mut geom_insts: Vec<GeomInstQuery> = response.take(0)?;
-//     // dbg!(&geom_insts);
-
-//     Ok(geom_insts)
-// }
+// (legacy implementation removed during SurrealDB v3 migration)
 
 // todo 生成一个测试案例
 // pub async fn query_history_insts(
@@ -301,7 +293,8 @@ pub async fn query_insts_by_zone(
     println!("Query insts by zone sql: {}", &sql);
 
     let mut response = SUL_DB.query(sql).await?;
-    let geom_insts: Vec<GeomInstQuery> = response.take(0)?;
+    let values: Vec<SurlValue> = response.take(0)?;
+    let geom_insts: Vec<GeomInstQuery> = decode_values(values)?;
 
     Ok(geom_insts)
 }

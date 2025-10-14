@@ -6,6 +6,7 @@ use crate::pe::SPdmsElement;
 use crate::query_ancestor_refnos;
 use crate::ssc_setting::PbsElement;
 use crate::three_dimensional_review::ModelDataIndex;
+use crate::utils::RecordIdExt;
 use crate::types::*;
 use crate::{NamedAttrMap, RefU64, query_types, rs_surreal};
 use crate::{SUL_DB, SurlValue};
@@ -20,8 +21,8 @@ use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode, W
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::str::FromStr;
-use surrealdb::method::Stats;
-use surrealdb::sql::Thing;
+use surrealdb::types::{RecordId, SurrealValue};
+use surrealdb::types as surrealdb_types;
 
 #[inline]
 #[cached(result = true)]
@@ -43,7 +44,7 @@ pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<
     } else {
         format!(
             r#"
-                let $dt=<datetime>fn::ses_date({pe_key}); 
+                let $dt=<datetime>fn::ses_date({pe_key});
                 let $r = array::flatten( object::values( (select
                     [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
                     from only fn::newest_pe({pe_key}) where record::exists(id))?:{{}} ) )[? (!deleted or <datetime>fn::ses_date(id)>$dt)];
@@ -74,8 +75,8 @@ pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<
 }
 
 #[cached(result = true)]
-pub async fn query_deep_children_refnos_pbs(refno: Thing) -> anyhow::Result<Vec<Thing>> {
-    let pe_key = refno.to_string();
+pub async fn query_deep_children_refnos_pbs(refno: RecordId) -> anyhow::Result<Vec<RecordId>> {
+    let pe_key = refno.to_raw();
     let sql = format!(
         r#"
              return array::flatten( object::values( select
@@ -84,7 +85,7 @@ pub async fn query_deep_children_refnos_pbs(refno: Thing) -> anyhow::Result<Vec<
             "#
     );
     return match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<Thing>>(0) {
+        Ok(mut response) => match response.take::<Vec<RecordId>>(0) {
             Ok(data) => Ok(data),
             Err(e) => {
                 init_deserialize_error(
@@ -116,9 +117,9 @@ pub async fn query_filter_deep_children(
         format!(r#"select value id from [{pe_keys}] where noun in [{nouns_str}]"#)
     };
     // println!("query_filter_deep_children sql is {}", &sql);
-    match SUL_DB.query(&sql).with_stats().await {
+    match SUL_DB.query(&sql).await {
         Ok(mut response) => {
-            if let Some((stats, Ok(result))) = response.take::<Vec<RefnoEnum>>(0) {
+            if let Ok(result) = response.take::<Vec<RefnoEnum>>(0) {
                 return Ok(result);
             }
         }
@@ -143,10 +144,11 @@ pub async fn query_filter_deep_children_atts(
         let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
         let sql = format!(r#"select value refno.* from [{pe_keys}] where noun in [{nouns_str}]"#);
         // println!("query_filter_deep_children_atts sql is {}", &sql);
-        match SUL_DB.query(&sql).with_stats().await {
+        match SUL_DB.query(&sql).await {
             Ok(mut response) => {
-                if let Some((stats, Ok(value))) = response.take::<surrealdb::Value>(0) {
-                    let result: Vec<surrealdb::sql::Value> = value.into_inner().try_into().unwrap();
+                if let Ok(value) = response.take::<SurlValue>(0) {
+                    let result: Vec<surrealdb::types::Value> =
+                        value.into_inner().try_into().unwrap();
                     // dbg!(result.len());
                     atts.extend(result.into_iter().map(|x| x.into()));
                 }
@@ -161,7 +163,7 @@ pub async fn query_filter_deep_children_atts(
 }
 
 pub async fn query_ele_filter_deep_children_pbs(
-    refno: Thing,
+    refno: RecordId,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<PbsElement>> {
     let refnos = query_deep_children_refnos_pbs(refno).await?;
@@ -169,9 +171,9 @@ pub async fn query_ele_filter_deep_children_pbs(
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
     // println!("sql is {}", &sql);
-    match SUL_DB.query(&sql).with_stats().await {
+    match SUL_DB.query(&sql).await {
         Ok(mut response) => {
-            if let Some((stats, Ok(result))) = response.take::<Vec<PbsElement>>(0) {
+            if let Ok(result) = response.take::<Vec<PbsElement>>(0) {
                 return Ok(result);
             }
         }
@@ -193,8 +195,8 @@ pub async fn query_ele_filter_deep_children(
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
     // println!("sql is {}", &sql);
-    let mut response = SUL_DB.query(&sql).with_stats().await.unwrap();
-    if let Some((stats, Ok(result))) = response.take::<Vec<SPdmsElement>>(0) {
+    let mut response = SUL_DB.query(&sql).await.unwrap();
+    if let Ok(result) = response.take::<Vec<SPdmsElement>>(0) {
         return Ok(result);
     }
     Ok(vec![])
@@ -216,8 +218,8 @@ pub async fn query_filter_deep_children_by_path(
             "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
         );
         // println!("sql is {}", &sql);
-        let mut response = SUL_DB.query(&sql).with_stats().await?;
-        if let Some((stats, Ok(result))) = response.take::<Vec<RefnoEnum>>(0) {
+        let mut response = SUL_DB.query(&sql).await?;
+        if let Ok(result) = response.take::<Vec<RefnoEnum>>(0) {
             return Ok(result);
         }
     }
@@ -501,7 +503,7 @@ pub struct WallContainsDoor {
     pub fitts: Vec<WallDoorResult>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, SurrealValue)]
 struct WallDoorResult {
     pub refno: RefU64,
     pub name: String,

@@ -4,6 +4,7 @@ use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SUL_DB, SurlValue};
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{pdms_types::*, to_table_key, to_table_keys};
+use crate::utils::{take_option, take_vec};
 use bevy_transform::components::Transform;
 use cached::proc_macro::cached;
 use glam::Vec3;
@@ -40,7 +41,21 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec
     );
     // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await.unwrap();
-    let points: Vec<Vec<Vec3>> = response.take(0)?;
+    let raw_points: Vec<Vec<Vec<f64>>> = response.take(0)?;
+    let points: Vec<Vec<Vec3>> = raw_points
+        .into_iter()
+        .map(|outer| {
+            outer
+                .into_iter()
+                .map(|inner| {
+                    let x = inner.get(0).copied().unwrap_or_default() as f32;
+                    let y = inner.get(1).copied().unwrap_or_default() as f32;
+                    let z = inner.get(2).copied().unwrap_or_default() as f32;
+                    Vec3::new(x, y, z)
+                })
+                .collect()
+        })
+        .collect();
     let height: Option<f32> = response.take(1)?;
 
     Ok((points, height.unwrap_or_default()))
@@ -133,8 +148,8 @@ pub async fn query_refno_has_pos_neg_map(
     // println!("query_refno_has_pos_neg_map sql is {}", &sql);
     let mut response = SUL_DB.query(&sql).await?;
     let mut result = HashMap::new();
-    if let Ok(r) = response.take::<Vec<RefnoHasNegPosInfo>>(0) {
-        for info in r {
+    if let Ok(infos) = take_vec::<RefnoHasNegPosInfo>(&mut response, 0) {
+        for info in infos {
             result.insert(info.pos, info.negs);
         }
     }
@@ -168,7 +183,7 @@ pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<V
         refno.to_string()
     );
     let mut response = SUL_DB.query(&sql).await?;
-    match response.take(0) {
+    match take_vec::<InstPointMap>(&mut response, 0) {
         Ok(r) => Ok(r),
         Err(e) => {
             dbg!(format!("sql 查询出错: {}", sql));
@@ -193,7 +208,7 @@ pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPoin
         refno.to_pe_key()
     );
     let mut response = SUL_DB.query(&sql).await?;
-    let Ok(mut result) = response.take::<Vec<InstPointMap>>(0) else {
+    let Ok(mut result) = take_vec::<InstPointMap>(&mut response, 0) else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(None);
     };
@@ -216,7 +231,7 @@ pub async fn query_refnos_point_map(
         refnos.join(",")
     );
     let mut response = SUL_DB.query(&sql).await?;
-    let Ok(result) = response.take::<Vec<InstPointMap>>(0) else {
+    let Ok(result) = take_vec::<InstPointMap>(&mut response, 0) else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(HashMap::default());
     };
@@ -230,7 +245,7 @@ pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>
         id
     );
     let mut response = SUL_DB.query(&sql).await?;
-    let result: Vec<RefnoEnum> = response.take(0)?;
+    let result = take_vec::<RefnoEnum>(&mut response, 0)?;
     Ok(result)
 }
 
@@ -307,7 +322,7 @@ pub async fn query_ptset(refno: RefnoEnum) -> anyhow::Result<Option<PtsetResult>
     // 执行查询
     let mut response = SUL_DB.query(&sql).await?;
     // 解析查询结果为PtsetResult类型
-    let result: Option<PtsetResult> = response.take(0)?;
+    let result = take_option::<PtsetResult>(&mut response, 0)?;
     // dbg!(&result);
     Ok(result)
 }

@@ -1,4 +1,5 @@
 use crate::attval::AttrVal;
+use crate::utils::{value_to_bool, value_to_f32, value_to_i32, value_to_string};
 use crate::tool::float_tool::f32_round_3;
 use crate::{RefU64, RefU64Vec, SurlValue};
 use bevy_ecs::component::Component;
@@ -14,9 +15,8 @@ use serde_json::json;
 ///新的属性数据结构
 #[derive(
     Serialize,
-    // Eq,
+    Deserialize,
     PartialEq,
-    // Deserialize,
     Clone,
     Debug,
     Component,
@@ -50,224 +50,57 @@ use serde::de::{self, EnumAccess, MapAccess, SeqAccess, Visitor};
 use std::fmt;
 use std::str::FromStr;
 use std::vec::Vec;
-use surrealdb::sql::{Array, Thing};
+use surrealdb::types::{Array, RecordId, RecordIdKey, ToSql, Value};
 
 use super::RefnoEnum;
 
-impl<'de> Deserialize<'de> for NamedAttrValue {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct NamedAttrValueVisitor;
-
-        impl<'de> Visitor<'de> for NamedAttrValueVisitor {
-            type Value = NamedAttrValue;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a valid NamedAttrValue")
-            }
-
-            fn visit_i32<E>(self, value: i32) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(NamedAttrValue::IntegerType(value))
-            }
-
-            fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                if value >= i32::MIN as i64 && value <= i32::MAX as i64 {
-                    Ok(NamedAttrValue::IntegerType(value as i32))
-                } else {
-                    Ok(NamedAttrValue::LongType(value))
-                }
-            }
-
-            fn visit_f32<E>(self, value: f32) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(NamedAttrValue::F32Type(value))
-            }
-
-            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(NamedAttrValue::F32Type(value as f32))
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(NamedAttrValue::StringType(value.to_owned()))
-            }
-
-            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(NamedAttrValue::StringType(value))
-            }
-
-            fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(NamedAttrValue::BoolType(value))
-            }
-
-            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
-            where
-                A: EnumAccess<'de>,
-            {
-                let _ = data;
-                Ok(NamedAttrValue::InvalidType)
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
-            {
-                let mut vec = Vec::new();
-                let mut first_elem_type = None;
-                //在这里能不能直接判断类型
-                while let Some(elem) = seq.next_element::<serde_json::Value>()? {
-                    if first_elem_type.is_none() {
-                        first_elem_type = Some(match elem {
-                            serde_json::Value::Bool(_) => "bool",
-                            serde_json::Value::Number(ref n) if n.is_f64() => "f64",
-                            serde_json::Value::Number(ref n) if n.is_u64() || n.is_i64() => "i32",
-                            // serde_json::Value::Number(_) => "f64",
-                            serde_json::Value::String(_) => "String",
-                            serde_json::Value::Array(_) => "Array",
-                            serde_json::Value::Object(_) => "Object",
-                            _ => "InvalidType",
-                        });
-                    }
-                    vec.push(elem);
-                }
-
-                match first_elem_type {
-                    Some("f64") => Ok(NamedAttrValue::F32VecType(
-                        vec.into_iter()
-                            .filter_map(|v| v.as_f64().map(|f| f as f32))
-                            .collect(),
-                    )),
-                    Some("String") => Ok(NamedAttrValue::StringArrayType(
-                        vec.into_iter()
-                            .filter_map(|v| v.as_str().map(String::from))
-                            .collect(),
-                    )),
-                    Some("bool") => Ok(NamedAttrValue::BoolArrayType(
-                        vec.into_iter().filter_map(|v| v.as_bool()).collect(),
-                    )),
-                    Some("i32") => Ok(NamedAttrValue::IntArrayType(
-                        vec.into_iter()
-                            .filter_map(|v| v.as_i64().map(|i| i as i32))
-                            .collect(),
-                    )),
-                    // RefU64Array 可能需要特殊处理，这里仅作为示例
-                    Some("Object") => Ok(NamedAttrValue::RefU64Array(
-                        vec.into_iter()
-                            .filter_map(|v| RefnoEnum::deserialize(v).ok())
-                            .collect(),
-                    )),
-                    _ => Err(de::Error::custom("Unsupported array type")),
-                }
-            }
-
-            fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
-            where
-                M: MapAccess<'de>,
-            {
-                let value = RefU64::deserialize(de::value::MapAccessDeserializer::new(map))?;
-                Ok(NamedAttrValue::RefU64Type(value))
-            }
-        }
-
-        deserializer.deserialize_any(NamedAttrValueVisitor)
-    }
-}
-
-#[cfg(feature = "sea-orm")]
-impl Into<Value> for NamedAttrValue {
-    fn into(self) -> Value {
-        match self {
-            NamedAttrValue::IntegerType(val) => Value::Int(val.into()),
-            NamedAttrValue::StringType(val)
-            | NamedAttrValue::WordType(val)
-            | NamedAttrValue::ElementType(val) => Value::String(Some(val.into())),
-            NamedAttrValue::F32Type(val) => Value::Float(val.into()),
-            NamedAttrValue::BoolType(val) => Value::Bool(val.into()),
-            NamedAttrValue::RefU64Type(val) => Value::String(Some(val.to_string().into())),
-            NamedAttrValue::F32VecType(val) => {
-                let new_val = val.into_iter().map(|x| f32_round_3(x)).collect::<Vec<_>>();
-                Value::Json(Some(json!(new_val).into()))
-            }
-            NamedAttrValue::Vec3Type(val) => Value::Json(Some(json!(val).into())),
-            NamedAttrValue::StringArrayType(val) => Value::Json(Some(json!(val).into())),
-            NamedAttrValue::BoolArrayType(val) => Value::Json(Some(json!(val).into())),
-            NamedAttrValue::IntArrayType(val) => Value::Json(Some(json!(val).into())),
-
-            _ => Value::String(None),
-            // NamedAttrValue::InvalidType => {}
-        }
-    }
-}
-
-impl From<(&str, surrealdb::sql::Value)> for NamedAttrValue {
-    fn from(tuple: (&str, surrealdb::sql::Value)) -> Self {
+impl From<(&str, Value)> for NamedAttrValue {
+    fn from(tuple: (&str, Value)) -> Self {
         let (tn, value) = tuple;
         match value {
-            surrealdb::sql::Value::Number(val) => match tn {
-                "REAL" => NamedAttrValue::F32Type(val.as_float() as _),
-                _ => NamedAttrValue::IntegerType(val.as_int() as _),
+            Value::Number(val) => match tn {
+                "REAL" => NamedAttrValue::F32Type(val.to_f64().unwrap_or_default() as f32),
+                _ => NamedAttrValue::IntegerType(val.to_int().unwrap_or_default() as i32),
             },
-            surrealdb::sql::Value::Bool(val) => NamedAttrValue::BoolType(val),
-            surrealdb::sql::Value::Strand(val) => NamedAttrValue::StringType(val.as_string()),
-            surrealdb::sql::Value::Array(val) => match tn {
-                "REAL" | "DIR" | "POS" => NamedAttrValue::F32VecType(
-                    val.into_iter()
-                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_float() as f32)
-                        .collect(),
-                ),
-                "INT" => NamedAttrValue::IntArrayType(
-                    val.into_iter()
-                        .map(|x| surrealdb::sql::Number::try_from(x).unwrap().as_int() as _)
-                        .collect(),
-                ),
-                "BOOL" => NamedAttrValue::BoolArrayType(
-                    val.into_iter()
-                        .map(|x| bool::try_from(x).unwrap())
-                        .collect(),
-                ),
-                "TEXT" => NamedAttrValue::StringArrayType(
-                    val.into_iter()
-                        .map(|x| String::try_from(x).unwrap())
-                        .collect(),
-                ),
-
-                "REF" => NamedAttrValue::RefU64Array(
-                    val.into_iter()
-                        .map(|x| RefnoEnum::from(x.to_string().as_str()))
-                        .collect::<Vec<_>>(),
-                ),
-
+            Value::Bool(val) => NamedAttrValue::BoolType(val),
+            Value::String(val) => NamedAttrValue::StringType(val),
+            Value::Array(val) => match tn {
+                "REAL" | "DIR" | "POS" => {
+                    let values = val.iter().map(value_to_f32).collect::<Vec<_>>();
+                    NamedAttrValue::F32VecType(values)
+                }
+                "INT" => {
+                    let values = val.iter().map(value_to_i32).collect::<Vec<_>>();
+                    NamedAttrValue::IntArrayType(values)
+                }
+                "BOOL" => {
+                    let values = val.iter().map(value_to_bool).collect::<Vec<_>>();
+                    NamedAttrValue::BoolArrayType(values)
+                }
+                "TEXT" => {
+                    let values = val.iter().map(value_to_string).collect::<Vec<_>>();
+                    NamedAttrValue::StringArrayType(values)
+                }
+                "REF" => {
+                    let values = val
+                        .iter()
+                        .map(|x| match x {
+                            Value::RecordId(rid) => RefnoEnum::from(rid.clone()),
+                            _ => {
+                                let s = value_to_string(x);
+                                RefnoEnum::from(s.as_str())
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    NamedAttrValue::RefU64Array(values)
+                }
                 _ => NamedAttrValue::InvalidType,
             },
-            surrealdb::sql::Value::Thing(val) => {
-                if let surrealdb::sql::Id::Array(_) = &val.id {
-                    NamedAttrValue::RefnoEnumType(RefnoEnum::from(val))
-                } else {
-                    NamedAttrValue::RefU64Type(RefU64::from(val))
-                }
-            }
-            surrealdb::sql::Value::Object(val) => {
+            Value::RecordId(val) => match &val.key {
+                RecordIdKey::Array(_) => NamedAttrValue::RefnoEnumType(RefnoEnum::from(val)),
+                _ => NamedAttrValue::RefU64Type(RefU64::from(val)),
+            },
+            Value::Object(val) => {
                 if let Some((key, v)) = val.into_iter().next() {
                     (tn, v).into()
                 } else {
@@ -282,8 +115,8 @@ impl From<(&str, surrealdb::sql::Value)> for NamedAttrValue {
 #[test]
 fn test_from_surreal() {
     let sql = vec!["17463_6376".to_string(), "17463_6379".to_string()];
-    let value = surrealdb::sql::Value::Array(Array::from(sql));
-    if let surrealdb::sql::Value::Array(value) = value {
+    let value = surrealdb::types::Value::Array(Array::from(sql));
+    if let surrealdb::types::Value::Array(value) = value {
         let r = value
             .into_iter()
             .map(|x| match x.clone().record() {

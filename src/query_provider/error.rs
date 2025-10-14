@@ -49,12 +49,5 @@ impl From<anyhow::Error> for QueryError {
     }
 }
 
-#[cfg(feature = "kuzu")]
-impl From<kuzu::Error> for QueryError {
-    fn from(err: kuzu::Error) -> Self {
-        QueryError::ExecutionError(err.to_string())
-    }
-}
-
 /// 查询结果类型别名
 pub type QueryResult<T> = Result<T, QueryError>;

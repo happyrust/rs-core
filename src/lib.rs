@@ -36,6 +36,8 @@ pub mod table_const;
 pub mod geometry;
 
 pub mod helper;
+#[cfg(feature = "live")]
+pub mod live;
 pub mod parsed_data;
 pub mod pdms_data;
 pub mod pdms_types;
@@ -84,8 +86,6 @@ pub mod db_adapter;
 #[cfg(feature = "sea-orm")]
 pub mod orm;
 pub mod query_provider;
-#[cfg(feature = "kuzu")]
-pub mod rs_kuzu;
 pub mod rs_surreal;
 pub mod schema;
 pub mod sync;
@@ -224,8 +224,8 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
     // Sign in
     SUL_DB
         .signin(Root {
-            username: &db_option.v_user,
-            password: &db_option.v_password,
+            username: db_option.v_user.clone(),
+            password: db_option.v_password.clone(),
         })
         .await
         .map_err(|e| HandleError::SurrealError {
@@ -260,8 +260,8 @@ pub async fn init_surreal() -> anyhow::Result<()> {
         .await?;
     SUL_DB
         .signin(Root {
-            username: &db_option.v_user,
-            password: &db_option.v_password,
+            username: db_option.v_user.clone(),
+            password: db_option.v_password.clone(),
         })
         .await?;
     // Define common functions
@@ -290,8 +290,8 @@ pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
         .await?;
     SECOND_SUL_DB
         .signin(Root {
-            username: &db_option.v_user,
-            password: &db_option.v_password,
+            username: db_option.v_user.clone(),
+            password: db_option.v_password.clone(),
         })
         .await?;
     Ok(())
@@ -305,8 +305,8 @@ pub async fn b_connected_second_unit() -> anyhow::Result<()> {
     let db_option: SecondUnitDbOption = s.try_deserialize()?;
     SECOND_SUL_DB
         .signin(Root {
-            username: &db_option.v_user,
-            password: &db_option.v_password,
+            username: db_option.v_user.clone(),
+            password: db_option.v_password.clone(),
         })
         .await?;
     Ok(())
@@ -348,8 +348,8 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
     // Sign in
     SUL_DB
         .signin(Root {
-            username: &db_option.v_user,
-            password: &db_option.v_password,
+            username: db_option.v_user.clone(),
+            password: db_option.v_password.clone(),
         })
         .await
         .map_err(|e| HandleError::SurrealError {

@@ -9,6 +9,7 @@ use crate::SUL_DB;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::init_test_surreal;
 use crate::{RefU64, get_pe, insert_into_table_with_chunks, query_filter_deep_children};
+use crate::utils::take_vec;
 use anyhow::anyhow;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
@@ -169,7 +170,7 @@ pub async fn get_nt_valv_list_material(
             .join(",");
         let sql = format!(r#"return fn::nt_valv([{}])"#, refnos_str);
         let mut response = db.query(&sql).await?;
-        match response.take::<Vec<HashMap<String, Value>>>(0) {
+        match take_vec::<HashMap<String, Value>>(&mut response, 0) {
             Ok(mut result) => {
                 data.append(&mut result);
             }

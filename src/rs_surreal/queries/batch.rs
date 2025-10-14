@@ -374,7 +374,7 @@ impl BatchQueryService {
                 let execution_time = start_time.elapsed().as_millis() as u64;
                 QueryErrorHandler::log_query_execution(&sql, execution_time);
 
-                let atts: Vec<surrealdb::sql::Value> = value.into_inner().try_into().unwrap();
+                let atts: Vec<surrealdb::types::Value> = value.into_inner().try_into().unwrap();
                 let result: Vec<NamedAttrMap> = atts.into_iter().map(|x| x.into()).collect();
                 
                 QueryErrorHandler::log_query_results(&sql, result.len());

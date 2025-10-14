@@ -6,6 +6,8 @@ use bevy_transform::prelude::Transform;
 use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::SurrealValue;
 use std::collections::HashMap;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
@@ -98,6 +100,7 @@ pub struct ThreeDimensionalReviewData {
 }
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(SurrealValue)]
 pub struct ModelDataIndex {
     pub refno: RefU64,
     pub name: String,

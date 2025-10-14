@@ -144,6 +144,8 @@ pub mod geo_params_data {
     #[cfg(feature = "occ")]
     use opencascade::primitives::*;
     use serde_derive::{Deserialize, Serialize};
+use surrealdb::types::SurrealValue;
+use surrealdb::types as surrealdb_types;
 
     #[derive(Clone, Serialize, Deserialize, Debug, Default)]
     pub enum CateGeoParam {

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
-use surrealdb::sql::Thing;
+use surrealdb::types::RecordId;
 
 #[cached]
 pub async fn get_uda_refno(hash: i32) -> Option<RefU64> {

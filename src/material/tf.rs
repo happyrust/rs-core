@@ -4,6 +4,7 @@ use super::query::create_table_sql;
 use super::query::save_material_value;
 use crate::SUL_DB;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+use crate::utils::take_vec;
 use crate::init_test_surreal;
 use crate::{
     NamedAttrValue, RefU64, get_pe, insert_into_table_with_chunks, query_ele_filter_deep_children,
@@ -587,7 +588,7 @@ async fn get_tf_hvac_strt_data(
         .join(",");
     let sql = format!("return fn::fggd_strt([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -616,7 +617,7 @@ async fn get_tf_hvac_tape_data(
         .join(",");
     let sql = format!("return fn::fggd_tape([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -647,7 +648,7 @@ async fn get_tf_hvac_flex_data(
     let sql = format!("return fn::fggd_flex([{}]);", refnos);
 
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -676,7 +677,7 @@ async fn get_tf_hvac_bend_data(
         .join(",");
     let sql = format!("return fn::fggd_bend([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -819,7 +820,7 @@ async fn get_tf_hvac_ofst_data(
         .join(",");
     let sql = format!("return fn::fggd_ofst([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -848,7 +849,7 @@ async fn get_tf_hvac_trns_data(
         .join(",");
     let sql = format!("return fn::fggd_TRNS([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -877,7 +878,7 @@ async fn get_tf_hvac_brco_data(
         .join(",");
     let sql = format!("return fn::fggd_BRCO([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -906,7 +907,7 @@ async fn get_tf_hvac_thre_data(
         .join(",");
     let sql = format!("return fn::fggd_THRE([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -935,7 +936,7 @@ async fn get_tf_hvac_tee_data(
         .join(",");
     let sql = format!("return fn::fggd_tee([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -964,7 +965,7 @@ async fn get_tf_hvac_cap_data(
         .join(",");
     let sql = format!("return fn::fggd_CAP([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r: Vec<HashMap<String, String>> = change_hvac_result_to_map(result);
             data.append(&mut r);
@@ -993,7 +994,7 @@ async fn get_tf_hvac_stif_data(
         .join(",");
     let sql = format!("return fn::fggd_STIF([{}]);", refnos);
     let mut response = db.query(&sql).await?;
-    match response.take::<Vec<HashMap<String, NamedAttrValue>>>(0) {
+    match take_vec::<HashMap<String, NamedAttrValue>>(&mut response, 0) {
         Ok(result) => {
             let mut r = change_hvac_result_to_map(result);
             data.append(&mut r);

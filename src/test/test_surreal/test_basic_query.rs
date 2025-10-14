@@ -4,7 +4,7 @@ use crate::pdms_types::*;
 use crate::{NamedAttrMap, RefU64, rs_surreal};
 use glam::Vec3;
 use std::sync::Arc;
-use surrealdb::sql::Thing;
+use surrealdb::types::RecordId;
 
 // #[tokio::test]
 // async fn test_query_pe_by_refno() -> anyhow::Result<()> {
@@ -164,7 +164,7 @@ use surrealdb::sql::Thing;
 // math::fixed((refno.ANGL / 360) * 2 *3.1415 * refno.SPRE.refno.CATR.refno.PARA[1],2) as count // 长度
 // from $refnos
 //         "#)
-//         .bind(("refnos", [Thing::from(("pe", "24383_84092"))] ) )
+//         .bind(("refnos", [RecordId::from(("pe", "24383_84092"))] ) )
 //         .await
 //         .unwrap();
 //     dbg!(response);

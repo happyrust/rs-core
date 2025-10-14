@@ -4,7 +4,7 @@
 
 use super::error::{QueryError, QueryResult};
 use super::traits::*;
-use super::{KuzuQueryProvider, SurrealQueryProvider};
+use super::SurrealQueryProvider;
 use crate::RefnoEnum;
 use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use async_trait::async_trait;
@@ -16,9 +16,7 @@ use std::sync::{Arc, RwLock};
 pub enum QueryEngine {
     /// 使用 SurrealDB
     SurrealDB,
-    /// 使用 Kuzu
-    Kuzu,
-    /// 自动选择（优先 Kuzu，失败时回退到 SurrealDB）
+    /// 自动选择（当前仅有 SurrealDB，实现等同于 SurrealDB）
     Auto,
 }
 
@@ -62,15 +60,6 @@ impl QueryStrategy {
         }
     }
 
-    /// 创建只使用 Kuzu 的策略
-    pub fn kuzu_only() -> Self {
-        Self {
-            engine: QueryEngine::Kuzu,
-            enable_fallback: false,
-            ..Default::default()
-        }
-    }
-
     /// 创建自动选择策略（默认）
     pub fn auto() -> Self {
         Self::default()
@@ -101,9 +90,6 @@ impl QueryStrategy {
 pub struct QueryRouter {
     /// SurrealDB 查询提供者
     surreal_provider: Arc<SurrealQueryProvider>,
-    /// Kuzu 查询提供者
-    #[cfg(feature = "kuzu")]
-    kuzu_provider: Arc<KuzuQueryProvider>,
     /// 查询策略
     strategy: Arc<RwLock<QueryStrategy>>,
 }
@@ -113,13 +99,8 @@ impl QueryRouter {
     pub fn new(strategy: QueryStrategy) -> QueryResult<Self> {
         let surreal_provider = Arc::new(SurrealQueryProvider::new()?);
 
-        #[cfg(feature = "kuzu")]
-        let kuzu_provider = Arc::new(KuzuQueryProvider::new()?);
-
         Ok(Self {
             surreal_provider,
-            #[cfg(feature = "kuzu")]
-            kuzu_provider,
             strategy: Arc::new(RwLock::new(strategy)),
         })
     }
@@ -132,11 +113,6 @@ impl QueryRouter {
     /// 创建只使用 SurrealDB 的路由器
     pub fn surreal_only() -> QueryResult<Self> {
         Self::new(QueryStrategy::surreal_only())
-    }
-
-    /// 创建只使用 Kuzu 的路由器
-    pub fn kuzu_only() -> QueryResult<Self> {
-        Self::new(QueryStrategy::kuzu_only())
     }
 
     /// 更新策略
@@ -160,25 +136,8 @@ impl QueryRouter {
                 debug!("选择 SurrealDB 查询提供者");
                 (QueryEngine::SurrealDB, self.surreal_provider.clone())
             }
-            #[cfg(feature = "kuzu")]
-            QueryEngine::Kuzu => {
-                debug!("选择 Kuzu 查询提供者");
-                (QueryEngine::Kuzu, self.kuzu_provider.clone())
-            }
-            #[cfg(not(feature = "kuzu"))]
-            QueryEngine::Kuzu => {
-                warn!("Kuzu feature 未启用，回退到 SurrealDB");
-                (QueryEngine::SurrealDB, self.surreal_provider.clone())
-            }
-            #[cfg(feature = "kuzu")]
             QueryEngine::Auto => {
-                // 默认优先使用 Kuzu
-                debug!("自动选择模式，优先使用 Kuzu");
-                (QueryEngine::Kuzu, self.kuzu_provider.clone())
-            }
-            #[cfg(not(feature = "kuzu"))]
-            QueryEngine::Auto => {
-                debug!("自动选择模式，Kuzu 未启用，使用 SurrealDB");
+                debug!("自动选择模式，使用 SurrealDB 查询提供者");
                 (QueryEngine::SurrealDB, self.surreal_provider.clone())
             }
         }
@@ -492,16 +451,8 @@ impl QueryProvider for QueryRouter {
     }
 
     async fn health_check(&self) -> QueryResult<bool> {
-        // 检查所有提供者的健康状态
+        // 检查 SurrealDB 提供者的健康状态
         let surreal_health = self.surreal_provider.health_check().await.unwrap_or(false);
-
-        #[cfg(feature = "kuzu")]
-        let kuzu_health = self.kuzu_provider.health_check().await.unwrap_or(false);
-
-        #[cfg(not(feature = "kuzu"))]
-        let kuzu_health = false;
-
-        // 至少有一个健康即可
-        Ok(surreal_health || kuzu_health)
+        Ok(surreal_health)
     }
 }

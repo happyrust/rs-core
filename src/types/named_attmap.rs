@@ -12,8 +12,9 @@ use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
 use crate::types::attmap::AttrMap;
 use crate::types::named_attvalue::NamedAttrValue;
+use crate::utils::{value_to_bool, value_to_f32, value_to_i32, value_to_string};
 use crate::{
-    AttrVal, RefI32Tuple, RefU64, SurlStrand, SurlValue, cal_ori_by_extru_axis,
+    AttrVal, RefI32Tuple, RefU64, RefnoEnum, SurlValue, cal_ori_by_extru_axis,
     cal_ori_by_z_axis_ref_x, cal_ori_by_z_axis_ref_y, get_default_pdms_db_info,
 };
 use crate::{pdms_types::*, query_refno_sesno};
@@ -29,7 +30,7 @@ use sea_query::{Alias, MysqlQueryBuilder};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use surrealdb::sql::{Id, Thing};
+use surrealdb::types::{RecordId, RecordIdKey, Value};
 
 ///带名称的属性map
 #[derive(
@@ -88,148 +89,132 @@ impl From<SurlValue> for NamedAttrMap {
     fn from(s: SurlValue) -> Self {
         let mut map = BTreeMap::default();
         //需要根据类型来判断转换成相应的类型
-        if let surrealdb::sql::Value::Object(o) = s {
-            if let Some(SurlValue::Strand(name)) = o.get("TYPE") {
-                let type_name = name.to_string().clone();
+        if let surrealdb::types::Value::Object(mut o) = s {
+            let type_name = o
+                .get("TYPE")
+                .and_then(|value| match value {
+                    SurlValue::String(name) => Some(name.clone()),
+                    _ => None,
+                })
+                .unwrap_or_default();
+
+            if !type_name.is_empty() {
                 let db_info = get_default_pdms_db_info();
-                {
-                    for (k, v) in o.0 {
-                        // if k.as_str() == "WELDTY" {
-                        //     dbg!(&k);
-                        // }
-                        //refno的页数号也要获取出来
-                        if k == "PGNO" {
-                            map.insert(
-                                k.clone(),
-                                NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()),
-                            );
-                            continue;
-                        } else if k == "SESNO" {
-                            map.insert(
-                                k.clone(),
-                                NamedAttrValue::IntegerType(v.try_into().unwrap_or_default()),
-                            );
-                            continue;
+
+                for (k, v) in o.into_iter() {
+                    if k == "PGNO" {
+                        map.insert(k.clone(), NamedAttrValue::IntegerType(value_to_i32(&v)));
+                        continue;
+                    } else if k == "SESNO" {
+                        map.insert(k.clone(), NamedAttrValue::IntegerType(value_to_i32(&v)));
+                        continue;
+                    }
+
+                    let default_val = if k == "REFNO" || k == "OWNER" {
+                        AttrVal::RefU64Type(Default::default())
+                    } else if k == "TYPE" {
+                        AttrVal::StringType(Default::default())
+                    } else if let Some(val) = db_info
+                        .named_attr_info_map
+                        .get(&type_name)
+                        .and_then(|m| m.get(&k).map(|x| x.value().clone()))
+                    {
+                        val.default_val
+                    } else {
+                        continue;
+                    };
+
+                    let named_value = match default_val {
+                        AttrVal::IntegerType(_) => {
+                            NamedAttrValue::IntegerType(value_to_i32(&v))
                         }
-                        let default_val = if k == "REFNO" || k == "OWNER" {
-                            AttrVal::RefU64Type(Default::default())
-                        } else if k == "TYPE" {
-                            AttrVal::StringType(Default::default())
-                        } else if let Some(val) = db_info
-                            .named_attr_info_map
-                            .get(&type_name)
-                            .map(|m| m.get(&k).map(|x| x.value().clone()))
-                            .flatten()
-                        {
-                            val.default_val
-                        } else {
-                            //通过 UDA 去查询这个变量的类型
-                            continue;
-                        };
-                        let named_value = match default_val {
-                            crate::AttrVal::IntegerType(_) => {
-                                NamedAttrValue::IntegerType(v.try_into().unwrap_or_default())
+                        AttrVal::StringType(_) => {
+                            NamedAttrValue::StringType(value_to_string(&v))
+                        }
+                        AttrVal::WordType(_) => match &v {
+                            SurlValue::String(s) => NamedAttrValue::WordType(s.clone()),
+                            SurlValue::Number(_) => {
+                                NamedAttrValue::WordType(db1_dehash(value_to_i32(&v).max(0) as u32))
                             }
-                            crate::AttrVal::StringType(_) => {
-                                NamedAttrValue::StringType(v.try_into().unwrap_or_default())
+                            _ => NamedAttrValue::WordType(String::new()),
+                        },
+                        AttrVal::DoubleType(_) => NamedAttrValue::F32Type(value_to_f32(&v)),
+                        AttrVal::DoubleArrayType(_) => {
+                            if let SurlValue::Array(arr) = &v {
+                                let values = arr.iter().map(value_to_f32).collect::<Vec<_>>();
+                                NamedAttrValue::F32VecType(values)
+                            } else {
+                                NamedAttrValue::F32VecType(Vec::new())
                             }
-                            crate::AttrVal::WordType(_) => {
-                                // dbg!((&k, &v));
-                                let named_value = match &v {
-                                    SurlValue::Strand(s) => NamedAttrValue::WordType(s.to_string()),
-                                    SurlValue::Number(i) => NamedAttrValue::WordType(db1_dehash(
-                                        v.try_into().unwrap_or_default(),
-                                    )),
-                                    _ => NamedAttrValue::WordType("".to_string()), // Default case if type is unexpected
-                                };
-                                named_value
-                            }
-                            crate::AttrVal::DoubleType(_) => {
-                                NamedAttrValue::F32Type(v.try_into().unwrap_or_default())
-                            }
-                            crate::AttrVal::DoubleArrayType(_) => {
-                                let v: Vec<surrealdb::sql::Value> =
-                                    v.try_into().unwrap_or_default();
-                                NamedAttrValue::F32VecType(
-                                    v.into_iter()
-                                        .map(|x| f32::try_from(x).unwrap_or_default())
-                                        .collect(),
-                                )
-                            }
-                            crate::AttrVal::Vec3Type(_) => {
-                                let v: Vec<surrealdb::sql::Value> =
-                                    v.try_into().unwrap_or_default();
-                                let p = v
-                                    .into_iter()
-                                    .map(|x| f32::try_from(x).unwrap_or_default())
-                                    .collect::<Vec<_>>();
-                                if p.len() < 3 {
-                                    //如果不够3个，就补0，错误处理？
+                        }
+                        AttrVal::Vec3Type(_) => {
+                            if let SurlValue::Array(arr) = &v {
+                                let values = arr.iter().map(value_to_f32).collect::<Vec<_>>();
+                                if values.len() >= 3 {
+                                    NamedAttrValue::Vec3Type(Vec3::new(values[0], values[1], values[2]))
+                                } else {
                                     NamedAttrValue::Vec3Type(Vec3::ZERO)
-                                } else {
-                                    NamedAttrValue::Vec3Type(Vec3::new(p[0], p[1], p[2]))
                                 }
+                            } else {
+                                NamedAttrValue::Vec3Type(Vec3::ZERO)
                             }
-                            crate::AttrVal::StringArrayType(_) => {
-                                let v: Vec<surrealdb::sql::Value> =
-                                    v.try_into().unwrap_or_default();
-                                NamedAttrValue::StringArrayType(
-                                    v.into_iter()
-                                        .map(|x| String::try_from(x).unwrap_or_default())
-                                        .collect(),
-                                )
+                        }
+                        AttrVal::StringArrayType(_) => {
+                            if let SurlValue::Array(arr) = &v {
+                                let values = arr.iter().map(value_to_string).collect::<Vec<_>>();
+                                NamedAttrValue::StringArrayType(values)
+                            } else {
+                                NamedAttrValue::StringArrayType(Vec::new())
                             }
-                            crate::AttrVal::BoolArrayType(_) => {
-                                let v: Vec<surrealdb::sql::Value> =
-                                    v.try_into().unwrap_or_default();
-                                NamedAttrValue::BoolArrayType(
-                                    v.into_iter()
-                                        .map(|x| bool::try_from(x).unwrap_or_default())
-                                        .collect(),
-                                )
+                        }
+                        AttrVal::BoolArrayType(_) => {
+                            if let SurlValue::Array(arr) = &v {
+                                let values = arr.iter().map(value_to_bool).collect::<Vec<_>>();
+                                NamedAttrValue::BoolArrayType(values)
+                            } else {
+                                NamedAttrValue::BoolArrayType(Vec::new())
                             }
-                            crate::AttrVal::IntArrayType(_) => {
-                                let v: Vec<surrealdb::sql::Value> =
-                                    v.try_into().unwrap_or_default();
-                                NamedAttrValue::IntArrayType(
-                                    v.into_iter()
-                                        .map(|x| i32::try_from(x).unwrap_or_default())
-                                        .collect(),
-                                )
+                        }
+                        AttrVal::IntArrayType(_) => {
+                            if let SurlValue::Array(arr) = &v {
+                                let values = arr.iter().map(value_to_i32).collect::<Vec<_>>();
+                                NamedAttrValue::IntArrayType(values)
+                            } else {
+                                NamedAttrValue::IntArrayType(Vec::new())
                             }
-                            crate::AttrVal::BoolType(_) => {
-                                NamedAttrValue::BoolType(v.try_into().unwrap_or_default())
-                            }
-                            crate::AttrVal::RefU64Type(_) | crate::AttrVal::ElementType(_) => {
-                                if let SurlValue::Thing(record) = v {
-                                    if matches!(record.id, Id::Array(_)) {
-                                        NamedAttrValue::RefnoEnumType(record.into())
-                                    } else {
-                                        NamedAttrValue::RefU64Type(record.into())
-                                    }
+                        }
+                        AttrVal::BoolType(_) => NamedAttrValue::BoolType(value_to_bool(&v)),
+                        AttrVal::RefU64Type(_) | AttrVal::ElementType(_) => match &v {
+                            SurlValue::RecordId(record) => {
+                                if matches!(record.key, RecordIdKey::Array(_)) {
+                                    NamedAttrValue::RefnoEnumType(RefnoEnum::from(record.clone()))
                                 } else {
-                                    NamedAttrValue::InvalidType
+                                    NamedAttrValue::RefU64Type(RefU64::from(record.clone()))
                                 }
-                            }
-                            crate::AttrVal::RefU64Array(_) => {
-                                let v: Vec<surrealdb::sql::Value> =
-                                    v.try_into().unwrap_or_default();
-                                NamedAttrValue::RefU64Array(
-                                    v.into_iter()
-                                        .map(|x| {
-                                            if let SurlValue::Thing(id) = x {
-                                                id.into()
-                                            } else {
-                                                Default::default()
-                                            }
-                                        })
-                                        .collect(),
-                                )
                             }
                             _ => NamedAttrValue::InvalidType,
-                        };
-                        map.insert(k.clone(), named_value);
-                    }
+                        },
+                        AttrVal::RefU64Array(_) => {
+                            if let SurlValue::Array(arr) = &v {
+                                let values = arr
+                                    .iter()
+                                    .map(|x| match x {
+                                        Value::RecordId(id) => RefnoEnum::from(id.clone()),
+                                        _ => {
+                                            let s = value_to_string(x);
+                                            RefnoEnum::from(s.as_str())
+                                        }
+                                    })
+                                    .collect::<Vec<_>>();
+                                NamedAttrValue::RefU64Array(values)
+                            } else {
+                                NamedAttrValue::RefU64Array(Vec::new())
+                            }
+                        }
+                        _ => NamedAttrValue::InvalidType,
+                    };
+
+                    map.insert(k.clone(), named_value);
                 }
             }
         }

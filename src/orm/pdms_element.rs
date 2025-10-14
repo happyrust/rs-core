@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
 use std::any::TypeId;
-use surrealdb::sql::Thing;
+use surrealdb::types::RecordId;
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, DeriveEntityModel)]

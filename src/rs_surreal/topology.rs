@@ -1,7 +1,8 @@
 use crate::{RefU64, rs_surreal::SUL_DB};
+use crate::utils::{take_option, take_single};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Thing;
+use surrealdb::types::RecordId;
 
 /// Represents a previous connection of a pipe element
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -30,7 +31,8 @@ pub struct NextConnection {
 /// Wraps the Surreal function fn::prev_connect_pe
 pub async fn get_prev_connect_pe(pe_id: RefU64) -> Result<Option<RefU64>> {
     let sql = format!("RETURN fn::prev_connect_pe({})", pe_id.to_pe_key());
-    let result: Option<RefU64> = SUL_DB.query(sql).await?.take(0)?;
+    let mut response = SUL_DB.query(sql).await?;
+    let result = take_option::<RefU64>(&mut response, 0)?;
 
     Ok(result)
 }
@@ -40,7 +42,8 @@ pub async fn get_prev_connect_pe(pe_id: RefU64) -> Result<Option<RefU64>> {
 /// Wraps the Surreal function fn::next_connect_pe
 pub async fn get_next_connect_pe(pe_id: RefU64) -> Result<Option<RefU64>> {
     let sql = format!("RETURN fn::next_connect_pe({})", pe_id.to_pe_key());
-    let result: Option<RefU64> = SUL_DB.query(sql).await?.take(0)?;
+    let mut response = SUL_DB.query(sql).await?;
+    let result = take_option::<RefU64>(&mut response, 0)?;
 
     Ok(result)
 }
@@ -50,7 +53,8 @@ pub async fn get_next_connect_pe(pe_id: RefU64) -> Result<Option<RefU64>> {
 /// Wraps the Surreal function fn::has_leave_tubi
 pub async fn has_leave_tubi(pe_id: RefU64) -> Result<bool> {
     let sql = format!("RETURN fn::has_leave_tubi({})", pe_id.to_pe_key());
-    let result: Option<bool> = SUL_DB.query(sql).await?.take(0)?;
+    let mut response = SUL_DB.query(sql).await?;
+    let result = take_option::<bool>(&mut response, 0)?;
 
     Ok(result.unwrap_or(false))
 }
@@ -60,7 +64,8 @@ pub async fn has_leave_tubi(pe_id: RefU64) -> Result<bool> {
 /// Wraps the Surreal function fn::has_arrive_tubi
 pub async fn has_arrive_tubi(pe_id: RefU64) -> Result<bool> {
     let sql = format!("RETURN fn::has_arrive_tubi({})", pe_id.to_pe_key());
-    let result: Option<bool> = SUL_DB.query(sql).await?.take(0)?;
+    let mut response = SUL_DB.query(sql).await?;
+    let result = take_option::<bool>(&mut response, 0)?;
 
     Ok(result.unwrap_or(false))
 }
@@ -70,7 +75,8 @@ pub async fn has_arrive_tubi(pe_id: RefU64) -> Result<bool> {
 /// Wraps the Surreal function fn::prev_connect_pe_data
 pub async fn get_prev_connection(pe_id: RefU64) -> Result<PrevConnection> {
     let sql = format!("RETURN fn::prev_connect_pe_data({})", pe_id.to_pe_key());
-    let mut result: Option<PrevConnection> = SUL_DB.query(sql).await?.take(0)?;
+    let mut response = SUL_DB.query(sql).await?;
+    let result = take_option::<PrevConnection>(&mut response, 0)?;
 
     Ok(result.unwrap_or(PrevConnection::default()))
 }
@@ -80,7 +86,8 @@ pub async fn get_prev_connection(pe_id: RefU64) -> Result<PrevConnection> {
 /// Wraps the Surreal function fn::next_connect_pe_data
 pub async fn get_next_connection(pe_id: RefU64) -> Result<NextConnection> {
     let sql = format!("RETURN fn::next_connect_pe_data({})", pe_id.to_pe_key());
-    let mut result: Option<NextConnection> = SUL_DB.query(sql).await?.take(0)?;
+    let mut response = SUL_DB.query(sql).await?;
+    let result = take_option::<NextConnection>(&mut response, 0)?;
 
     Ok(result.unwrap_or(NextConnection::default()))
 }

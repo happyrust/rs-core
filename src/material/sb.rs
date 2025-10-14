@@ -14,7 +14,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
-use surrealdb::sql::Thing;
+use surrealdb::types::RecordId;
+use crate::utils::RecordIdExt;
 use tokio::task::{self, JoinHandle};
 
 lazy_static::lazy_static! {
@@ -171,19 +172,19 @@ pub async fn get_sb_dzcl_list_material(
     Ok(data)
 }
 
-fn filter_equi_children(datas: Vec<Vec<Vec<Thing>>>) -> Vec<Vec<String>> {
+fn filter_equi_children(datas: Vec<Vec<Vec<RecordId>>>) -> Vec<Vec<String>> {
     let mut result = Vec::new();
     for data in datas {
         let filtered_data: Vec<Vec<String>> = data
             .into_iter()
-            .filter(|inner_vec| inner_vec.iter().all(|s| s.tb == "BOX"))
+            .filter(|inner_vec| inner_vec.iter().all(|s| s.table == "BOX"))
             .filter(|inner_vec| {
                 let count = inner_vec.iter().count();
                 count == 3 || count == 4
             })
             .map(|vec| {
                 vec.iter()
-                    .map(|thing| format!("BOX:{}", thing.id.to_string()))
+                    .map(|thing| thing.to_raw())
                     .collect::<Vec<String>>()
             })
             .collect();
@@ -202,7 +203,7 @@ pub struct MaterialSbListData {
     pub pos: Option<f32>,
     pub length: Option<f32>,
     pub room_code: Option<String>,
-    pub boxs: Vec<Vec<Thing>>,
+    pub boxs: Vec<Vec<RecordId>>,
     #[serde(default)]
     pub version_tag: String,
 }

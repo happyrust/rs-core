@@ -7,7 +7,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Value;
+use surrealdb::types::Value;
 
 use crate::{
     rs_surreal::get_conn,

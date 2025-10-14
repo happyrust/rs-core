@@ -2,6 +2,7 @@ use crate::basic::aabb::ParryAabb;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::PdmsGenericType;
 use crate::{RefU64, RefnoEnum, SUL_DB};
+use crate::utils::take_vec;
 use bevy_transform::components::Transform;
 use dashmap::DashMap;
 use glam::Vec3;
@@ -46,19 +47,19 @@ pub async fn query_arrive_leave_points(
              "#,
         pes
     );
-    // dbg!(&sql);
     let mut response = SUL_DB.query(&sql).await.unwrap();
 
-    // dbg!(&response);
-    let result: Vec<(
+    #[derive(Deserialize)]
+    struct PointRow(
         RefU64,
         Transform,
         Option<CateAxisParam>,
         Option<CateAxisParam>,
-    )> = response.take(0).unwrap();
-    // dbg!(&r);
+    );
+
+    let rows: Vec<PointRow> = take_vec(&mut response, 0)?;
     let mut map = DashMap::new();
-    for (refno, trans, a_pt, l_pt) in result {
+    for PointRow(refno, trans, a_pt, l_pt) in rows {
         if a_pt.is_none() || l_pt.is_none() {
             continue;
         }
@@ -96,12 +97,12 @@ pub async fn query_arrive_leave_points_by_cata_hash(
     // dbg!(&sql);
     let mut response = SUL_DB.query(&sql).await?;
 
-    // dbg!(&response);
-    let result: Vec<(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>)> =
-        response.take(0)?;
-    // dbg!(&r);
+    #[derive(Deserialize)]
+    struct CataRow(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>);
+
+    let rows: Vec<CataRow> = take_vec(&mut response, 0)?;
     let mut map = DashMap::new();
-    for (refno, a_pt, l_pt) in result {
+    for CataRow(refno, a_pt, l_pt) in rows {
         if a_pt.is_none() || l_pt.is_none() {
             continue;
         }

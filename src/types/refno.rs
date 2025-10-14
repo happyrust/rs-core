@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
+use surrealdb::types as surrealdb_types;
+use crate::utils::{IntoRecordId, RecordIdExt};
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::hash::Hash;
 use std::ops::Deref;
@@ -29,6 +31,7 @@ pub struct ParseRefU64Error;
     PartialOrd,
     Ord,
     Reflect,
+    SurrealValue,
 )]
 pub struct RefU64(pub u64);
 
@@ -71,7 +74,7 @@ impl Serialize for RefU64 {
 #[derive(Debug, Serialize)]
 // #[serde(untagged)]
 enum RefnoVariant {
-    RefThing(Thing),
+    RefThing(RecordId),
     Str(String),
     Num(u64),
 }
@@ -89,7 +92,7 @@ impl<'de> Deserialize<'de> for RefnoVariant {
             type Value = RefnoVariant;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a Thing, a string, or an unsigned integer")
+                formatter.write_str("a RecordId, a string, or an unsigned integer")
             }
 
             fn visit_str<E>(self, value: &str) -> Result<RefnoVariant, E>
@@ -118,7 +121,7 @@ impl<'de> Deserialize<'de> for RefnoVariant {
                 A: de::MapAccess<'de>,
             {
                 // 尝试将map反序列化为Thing
-                let thing = Thing::deserialize(de::value::MapAccessDeserializer::new(map))?;
+                let thing = RecordId::deserialize(de::value::MapAccessDeserializer::new(map))?;
                 Ok(RefnoVariant::RefThing(thing))
             }
         }
@@ -158,7 +161,7 @@ impl<'de> Deserialize<'de> for RefU64 {
 //         Ok(Default::default())
 //         // // if let Ok(s) = RefnoVariant::deserialize(deserializer) {
 //         //     match s {
-//         //         RefnoVariant::Thing(s) => Ok(s.into()),
+//         //         RefnoVariant::RecordId(s) => Ok(s.into()),
 //         //         RefnoVariant::Str(s) => Self::from_str(s.as_str())
 //         //             .map_err(|_| serde::de::Error::custom("refno parse string error")),
 //         //         RefnoVariant::Num(d) => Ok(Self(d)),
@@ -187,9 +190,10 @@ impl FromStr for RefU64 {
     }
 }
 
-impl From<Thing> for RefU64 {
-    fn from(thing: Thing) -> Self {
-        thing.id.to_raw().as_str().into()
+impl From<RecordId> for RefU64 {
+    fn from(record: RecordId) -> Self {
+        let raw = record.to_raw();
+        raw.as_str().into()
     }
 }
 
@@ -344,8 +348,8 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn to_pe_thing(&self) -> Thing {
-        ("pe".to_string(), self.to_string()).into()
+    pub fn to_pe_thing(&self) -> RecordId {
+        ("pe".to_string(), self.to_string()).into_record_id()
     }
 
     #[inline]
@@ -359,8 +363,8 @@ impl RefU64 {
     }
 
     #[inline]
-    pub fn to_pbs_thing(&self) -> Thing {
-        ("pbs".to_string(), self.to_string()).into()
+    pub fn to_pbs_thing(&self) -> RecordId {
+        ("pbs".to_string(), self.to_string()).into_record_id()
     }
 
     pub fn to_type_key(&self, noun: &str) -> String {
@@ -478,7 +482,7 @@ use anyhow::anyhow;
 #[cfg(feature = "sea-orm")]
 use sea_orm::sea_query::ValueType;
 use std::string::String;
-use surrealdb::sql::Thing;
+use surrealdb::types::{RecordId, RecordIdKey, SurrealValue, ToSql, Value};
 
 impl Into<String> for RefI32Tuple {
     fn into(self) -> String {
@@ -548,6 +552,7 @@ impl RefI32Tuple {
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
+    SurrealValue,
 )]
 pub struct RefnoSesno {
     pub refno: RefU64,
@@ -618,8 +623,10 @@ impl Into<u32> for RefnoSesno {
     rkyv::Deserialize,
     rkyv::Serialize,
     Component,
+    SurrealValue,
 )]
 #[serde(untagged)]
+#[surreal(untagged)]
 pub enum RefnoEnum {
     Refno(RefU64),
     SesRef(RefnoSesno),
@@ -828,20 +835,35 @@ impl From<(&str, u32)> for RefnoEnum {
     }
 }
 
-impl From<Thing> for RefnoEnum {
-    fn from(value: Thing) -> Self {
-        //检查是否是 array
-        if let surrealdb::sql::Id::Array(array) = &value.id {
-            let refno = array.get(0).cloned().unwrap_or_default().to_string();
-            let sesno: u32 = array
-                .get(1)
-                .cloned()
-                .unwrap_or_default()
-                .try_into()
+impl From<RecordId> for RefnoEnum {
+    fn from(value: RecordId) -> Self {
+        if let RecordIdKey::Array(array) = &value.key {
+            let refno_raw = array
+                .get(0)
+                .map(|v| match v {
+                    Value::String(s) => s.clone(),
+                    Value::Number(n) => n.to_string(),
+                    Value::RecordId(r) => r.to_raw(),
+                    other => {
+                        let mut raw = String::new();
+                        other.fmt_sql(&mut raw);
+                        raw
+                    }
+                })
                 .unwrap_or_default();
-            Self::SesRef(RefnoSesno::new(refno.into(), sesno))
+            let sesno = array
+                .get(1)
+                .and_then(|v| match v {
+                    Value::Number(n) => n.to_int().map(|n| n as u32),
+                    Value::String(s) => s.parse().ok(),
+                    _ => None,
+                })
+                .unwrap_or_default();
+            Self::SesRef(RefnoSesno::new(refno_raw.as_str().into(), sesno))
         } else {
-            Self::Refno(RefU64::from_str(&value.id.to_raw()).unwrap_or_default())
+            Self::Refno(
+                RefU64::from_str(&value.to_raw()).unwrap_or_default(),
+            )
         }
     }
 }

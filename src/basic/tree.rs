@@ -7,7 +7,7 @@ use id_tree::Tree;
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
-use surrealdb::sql::Thing;
+use surrealdb::types::RecordId;
 
 pub type E3dTree = ElementTree<EleTreeNode>;
 
@@ -24,7 +24,7 @@ impl<T: PdmsNodeTrait> ElementTree<T> {
     }
 
     #[inline]
-    pub fn get_root_id(&self) -> Option<Thing> {
+pub fn get_root_id(&self) -> Option<RecordId> {
         self.root_node_id()
             .map(|x| self.get(x).map(|t| t.data().get_id().cloned()).ok())
             .flatten()?

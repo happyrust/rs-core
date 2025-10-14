@@ -53,13 +53,12 @@ pub use uda::*;
 pub use adapter::create_surreal_adapter;
 
 use once_cell::sync::Lazy;
-use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
+use surrealdb::Surreal;
 
 // pub type SurlValue = surrealdb::Value;
-pub type SurlValue = surrealdb::sql::Value;
-pub type SurlStrand = surrealdb::sql::Strand;
+pub type SurlValue = surrealdb::types::Value;
 pub static SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 pub static SECOND_SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
@@ -85,7 +84,7 @@ pub async fn connect_surdb(
         .with_capacity(1000)
         .await?;
     SUL_DB.use_ns(ns).use_db(db).await?;
-    SUL_DB.signin(Root { username, password }).await?;
+    SUL_DB.signin(Root { username: username.to_owned(), password: password.to_owned() }).await?;
     Ok(())
 }
 
@@ -98,7 +97,7 @@ pub async fn connect_kvdb(
 ) -> Result<(), surrealdb::Error> {
     SUL_DB.connect(conn_str).with_capacity(1000).await?;
     SUL_DB.use_ns(ns).use_db(db).await?;
-    SUL_DB.signin(Root { username, password }).await?;
+    SUL_DB.signin(Root { username: username.to_owned(), password: password.to_owned() }).await?;
     Ok(())
 }
 
@@ -164,8 +163,8 @@ pub async fn init_mem_db() -> anyhow::Result<()> {
 
     // 认证
     SUL_MEM_DB.signin(Root {
-        username: &db_option.mem_kv_user,
-        password: &db_option.mem_kv_password,
+        username: db_option.mem_kv_user.clone(),
+        password: db_option.mem_kv_password.clone(),
     }).await?;
 
     println!("✅ 内存KV数据库连接成功: {} -> NS: {}, DB: {}",

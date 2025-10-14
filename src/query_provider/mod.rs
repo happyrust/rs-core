@@ -1,6 +1,6 @@
 //! 统一查询接口架构
 //!
-//! 提供跨数据库的统一查询接口，支持 SurrealDB、Kuzu 等多种数据库实现
+//! 提供跨数据库的统一查询接口
 //!
 //! # 设计理念
 //!
@@ -27,13 +27,11 @@
 //! ```
 
 pub mod error;
-pub mod kuzu_provider;
 pub mod router;
 pub mod surreal_provider;
 pub mod traits;
 
 pub use error::{QueryError, QueryResult};
-pub use kuzu_provider::KuzuQueryProvider;
 pub use router::{QueryEngine, QueryRouter, QueryStrategy};
 pub use surreal_provider::SurrealQueryProvider;
 pub use traits::{BatchQuery, GraphQuery, HierarchyQuery, QueryProvider, TypeQuery};

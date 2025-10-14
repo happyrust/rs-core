@@ -21,12 +21,6 @@ pub mod test_parse_dir;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_surreal;
 
-#[cfg(feature = "kuzu")]
-pub mod test_kuzu;
-
-#[cfg(feature = "kuzu")]
-pub mod test_kuzu_queries;
-
 pub mod test_sync;
 
 pub mod test_query_provider;

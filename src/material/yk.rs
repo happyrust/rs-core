@@ -8,6 +8,7 @@ use crate::SUL_DB;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::aios_db_mgr::aios_mgr::{self, AiosDBMgr};
 use crate::init_test_surreal;
+use crate::utils::take_vec;
 use crate::material::get_refnos_belong_major;
 use crate::material::gy::MaterialGyData;
 use crate::pe::SPdmsElement;
@@ -355,7 +356,7 @@ pub async fn get_yk_inst_pipe(
             .join(",");
         let sql = format!(r#"return fn::yk_ybgd([{}])"#, refnos_str);
         let mut response = db.query(&sql).await?;
-        match response.take(0) {
+        match take_vec::<HashMap<String, Value>>(&mut response, 0) {
             Ok(mut result) => {
                 data.append(&mut result);
             }
@@ -421,7 +422,7 @@ pub async fn get_yk_equi_list_material(
             .join(",");
         let sql = format!(r#"return fn::yk_equi([{}])"#, refnos_str);
         let mut response = db.query(&sql).await?;
-        match response.take(0) {
+        match take_vec::<HashMap<String, Value>>(&mut response, 0) {
             Ok(mut result) => {
                 data.append(&mut result);
             }
@@ -452,7 +453,7 @@ pub async fn query_yk_bran_belong_gy_valv_name(
         let mut sql = format!("select id,noun ,name?:'' as name, string::contains(fn::find_ancestor_type(id,'SITE').name?:'','PIPE') as site,
                     <-pe_owner.in.filter(|$x| $x.noun == 'VALV').name as valv from {}.refno.HREF", bran.to_pe_key());
         let mut resp = SUL_DB.query(&sql).await?;
-        let r = resp.take::<Vec<BelongGyValvResponse>>(0)?;
+        let r: Vec<BelongGyValvResponse> = take_vec(&mut resp, 0)?;
         // 没有填href，返回的就是空
         if r.is_empty() {
             return Ok(None);
