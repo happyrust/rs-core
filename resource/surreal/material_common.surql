@@ -227,7 +227,7 @@ DEFINE FUNCTION fn::into_str($desp: float) {
 
 remove function fn::str_into_int;
 define function fn::str_into_int($input:string) {
-    return if string::is::numeric($input) {
+    return if string::is_numeric($input) {
         <int>$input
     } else {
         0

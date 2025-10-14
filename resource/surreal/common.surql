@@ -4,23 +4,11 @@
 REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
 DEFINE FUNCTION fn::ancestor($r: record) {
-    return if $r.id == none {
+    return if !record::exists($r) {
         return [];
     } else {
-        let $a = SELECT value [id,
-            owner ,
-            owner.owner,
-            owner.owner.owner,
-            owner.owner.owner.owner,
-            owner.owner.owner.owner.owner ,
-            owner.owner.owner.owner.owner.owner,
-            owner.owner.owner.owner.owner.owner.owner,
-            owner.owner.owner.owner.owner.owner.owner.owner,
-            owner.owner.owner.owner.owner.owner.owner.owner.owner]
-            from only $r limit 1;
-        return array::complement($a,
-            [NONE, pe:0_0]
-        );
+        let $nodes = (SELECT VALUE @.{..+collect}(owner) FROM ONLY $r LIMIT 1) ?: [];
+        return array::filter($nodes, |$v| $v != NONE && $v != pe:0_0);
     };
 };
 
@@ -32,7 +20,7 @@ DEFINE FUNCTION fn::newest_pe(
         return none;
     };
     let $id = record::id($pe);
-    if !type::is::array($id) {
+    if !type::is_array($id) {
         return $pe;
     };
     let $refno = $id[0];
@@ -43,7 +31,7 @@ REMOVE FUNCTION fn::newest_pe_id;
 DEFINE FUNCTION fn::newest_pe_id(
     $pe: record,
 ) {
-    if !type::is::array($pe) {
+    if !type::is_array($pe) {
         return record::id($pe);
     };
     return record::id($pe)[0];
@@ -110,7 +98,7 @@ DEFINE FUNCTION fn::backup_data(
 ) {
     for $pe in $pes {
         //只操作最新的 refno
-        if type::is::array(record::id($pe)) || !record::exists($pe) {
+        if type::is_array(record::id($pe)) || !record::exists($pe) {
             continue;
         };
         if $pe.sesno > $sesno {
@@ -190,13 +178,13 @@ DEFINE FUNCTION fn::backup_owner_relate(
 ) {
     for $pe in $pes {
         //只操作最新的 refno
-        // if type::is::array(record::id($pe)) || !record::exists($pe) {
+        // if type::is_array(record::id($pe)) || !record::exists($pe) {
         //      continue;
         // };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
         let $old_pe_id = type::thing('pe', $old_id);
         //fix 层级不连续的问题，需要更新到之前的 in->owner 关系
-        //let $old_owners_id = select value od from $pe->pe_owner where type::is::array(record::id(out));
+        //let $old_owners_id = select value od from $pe->pe_owner where type::is_array(record::id(out));
         -- return $old_owners_id;
         //如果是旧节点，需要更新到旧的引用节点
         //for $o in $old_owners_id {
@@ -244,7 +232,7 @@ define function fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option
 remove function fn::latest_pe;
 define function fn::latest_pe($pe: record, $s: option<number>, $db: option<number>){
     let $s = fn::latest_pe_sesno($pe, $s, $db);
-    return if $s[1]  {
+    return if $s[1] == $s[0]  {
         return $pe;
     } else{
         let $id = record::id($pe);
@@ -327,10 +315,6 @@ DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
     return (select value in from ($pe->pe_owner->pe<-pe_owner)[..$a] where in.noun != $exclude_type).last();
 };
 
-remove function fn::last_child_exclude_type;
-DEFINE FUNCTION fn::last_child_exclude_type($pe:record, $exclude_type: string) {
-    return (select * from only $pe<-pe_owner where in.noun != $exclude_type order by id desc limit 1).in;
-};
 
 remove function fn::next_pe;
 DEFINE FUNCTION fn::next_pe($pe:record) {
@@ -467,11 +451,11 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
         };
     } else {
         return if $tubi_refno != none {
-            return {
+        return {
                 id: $pe,
                 next_full_name: fn::default_full_name($pe),
                 next: $pe,
-                tubi_refno: tubi_refno,
+                tubi_refno: $tubi_refno,
                 tubi_name: $tubi_name,
                 tubi_spref: $pe.refno.LSTU.name           
             };

@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string_pretty};
 use surrealdb::types::SurrealValue;
 use surrealdb::types as surrealdb_types;
+use surrealdb::types::RecordId;
 use serde_with::DisplayFromStr;
 use std::fmt::format;
 
@@ -22,6 +23,11 @@ pub struct SPdmsElement {
     pub dbnum: i32,
     ///小版本号
     pub sesno: i32,
+
+    /// 直接内联保存的 children 记录链接数组（可为空）
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<RecordId>>,
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -67,7 +67,6 @@ pub mod version_control;
 pub mod virtual_hole;
 
 pub mod achiver;
-pub mod enso_types;
 pub mod plugging_material;
 pub mod room_setting;
 pub mod water_calculation;

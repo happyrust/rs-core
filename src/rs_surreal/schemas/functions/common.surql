@@ -4,23 +4,11 @@
 REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
 DEFINE FUNCTION fn::ancestor($r: record) {
-    return if $r.id == none {
+    return if !record::exists($r) {
         return [];
     } else {
-        let $a = SELECT value [id,
-            owner ,
-            owner.owner,
-            owner.owner.owner,
-            owner.owner.owner.owner,
-            owner.owner.owner.owner.owner ,
-            owner.owner.owner.owner.owner.owner,
-            owner.owner.owner.owner.owner.owner.owner,
-            owner.owner.owner.owner.owner.owner.owner.owner,
-            owner.owner.owner.owner.owner.owner.owner.owner.owner]
-            from only $r limit 1;
-        return array::complement($a,
-            [NONE, pe:0_0]
-        );
+        let $nodes = (SELECT VALUE @.{..+collect}(owner) FROM ONLY $r LIMIT 1) ?: [];
+        return array::filter($nodes, |$v| $v != NONE && $v != pe:0_0);
     };
 };
 
