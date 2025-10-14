@@ -137,7 +137,7 @@ pub async fn query_filter_deep_children_atts(
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
     let refnos = query_deep_children_refnos(refno).await?;
     // dbg!(refnos.len());
-    let mut atts = vec![];
+    let mut atts: Vec<NamedAttrMap> = Vec::new();
     //需要使用chunk
     for chunk in refnos.chunks(200) {
         let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
@@ -147,10 +147,9 @@ pub async fn query_filter_deep_children_atts(
         match SUL_DB.query(&sql).await {
             Ok(mut response) => {
                 if let Ok(value) = response.take::<SurlValue>(0) {
-                    let result: Vec<surrealdb::types::Value> =
-                        value.into_inner().try_into().unwrap();
-                    // dbg!(result.len());
-                    atts.extend(result.into_iter().map(|x| x.into()));
+                    if let Ok(result) = value.into_vec::<SurlValue>() {
+                        atts.extend(result.into_iter().map(|x| x.into()));
+                    }
                 }
             }
             Err(e) => {
@@ -167,7 +166,7 @@ pub async fn query_ele_filter_deep_children_pbs(
     nouns: &[&str],
 ) -> anyhow::Result<Vec<PbsElement>> {
     let refnos = query_deep_children_refnos_pbs(refno).await?;
-    let pe_keys = refnos.into_iter().join(",");
+    let pe_keys = refnos.into_iter().map(|rid| rid.to_raw()).join(",");
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
     // println!("sql is {}", &sql);

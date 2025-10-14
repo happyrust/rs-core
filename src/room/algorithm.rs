@@ -3,14 +3,16 @@ use crate::{RefU64, RefnoEnum, SUL_DB};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
-use serde_with::DisplayFromStr;
 use serde_with::serde_as;
+use serde_with::DisplayFromStr;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::str::FromStr;
 use tokio::sync::RwLock;
+use surrealdb::types::SurrealValue;
+use surrealdb::types as surrealdb_types;
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, Eq, PartialEq, SurrealValue)]
 pub struct RoomInfo {
     pub name: String,
     pub refno: RefnoEnum,
@@ -68,7 +70,7 @@ pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<Ro
 pub async fn query_room_name_from_refnos(
     owner: Vec<RefnoEnum>,
 ) -> anyhow::Result<HashMap<RefU64, String>> {
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize, SurrealValue)]
     struct RoomNameQueryRequest {
         pub id: RefU64,
         pub room: Option<String>,
@@ -94,7 +96,7 @@ pub async fn query_equi_or_valv_belong_floors(
     refnos: Vec<RefnoEnum>,
 ) -> anyhow::Result<HashMap<RefU64, (String, f32)>> {
     #[serde_as]
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, SurrealValue)]
     struct BelongFloorResponse {
         #[serde_as(as = "DisplayFromStr")]
         pub id: RefU64,

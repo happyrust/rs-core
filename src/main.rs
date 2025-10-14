@@ -1,16 +1,3 @@
-use aios_core::aios_db_mgr::aios_mgr::AiosDBMgr;
-use aios_core::room::room::load_aabb_tree;
-use aios_core::tool::math_tool::*;
-use aios_core::{
-    RefU64, get_uda_type_refnos_from_select_refnos, init_test_surreal,
-    tool::{
-        db_tool::{db1_dehash, db1_hash},
-        dir_tool::parse_ori_str_to_quat,
-    },
-};
-use anyhow::Ok;
-use glam::{Mat3, Quat};
-
 // #[tokio::main]
 // async fn main() -> anyhow::Result<()> {
 //     //创建保存元数据里的空间关系结果
@@ -27,6 +14,8 @@ use glam::{Mat3, Quat};
 
 #[test]
 fn get_noun_hash() {
+    use aios_core::tool::db_tool::{db1_dehash, db1_hash};
+
     let noun = "SCOM";
     let hash = db1_hash(noun);
     dbg!(hash);

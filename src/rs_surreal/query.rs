@@ -37,8 +37,8 @@ use surrealdb::engine::any::Any;
 use surrealdb::types::{Datetime, SurrealValue, Value};
 use surrealdb::types as surrealdb_types;
 
-#[derive(Clone, Debug, Default, Deserialize)]
-struct KV<K, V> {
+#[derive(Clone, Debug, Default, Serialize, Deserialize, SurrealValue)]
+struct KV<K: SurrealValue, V: SurrealValue> {
     k: K,
     v: V,
 }

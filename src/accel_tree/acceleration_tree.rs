@@ -19,6 +19,7 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
+use surrealdb::types::{Kind, SurrealValue, Value};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RStarBoundingBox {
@@ -71,6 +72,23 @@ impl rstar::PointDistance for RStarBoundingBox {
     fn distance_2(&self, point: &[f32; 3]) -> f32 {
         let aabb = rstar::AABB::from_corners(self.aabb.mins.into(), self.aabb.maxs.into());
         aabb.distance_2(point)
+    }
+}
+
+impl SurrealValue for RStarBoundingBox {
+    fn kind_of() -> Kind {
+        Kind::Object
+    }
+
+    fn into_value(self) -> Value {
+        let json =
+            serde_json::to_value(&self).expect("序列化 RStarBoundingBox 失败");
+        json.into_value()
+    }
+
+    fn from_value(value: Value) -> anyhow::Result<Self> {
+        let json = serde_json::Value::from_value(value)?;
+        Ok(serde_json::from_value(json)?)
     }
 }
 

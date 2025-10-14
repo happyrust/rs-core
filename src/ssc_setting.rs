@@ -1170,7 +1170,7 @@ async fn set_pbs_supp_and_stru_node(
 
 /// pbs下重新划分的pdms树节点，bran equi等
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, SurrealValue)]
 struct PBSRoomNode {
     pub id: RefnoEnum,
     pub name: String,

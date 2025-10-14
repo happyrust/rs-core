@@ -6,6 +6,8 @@ use crate::types::*;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
+use surrealdb::types::{Kind, SurrealValue, Value};
+use surrealdb::types as surrealdb_types;
 
 ///元件库的集合信息
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -120,6 +122,22 @@ impl Default for CateAxisParam {
             pheight: 0.0,
             pconnect: "".to_string(),
         }
+    }
+}
+
+impl SurrealValue for CateAxisParam {
+    fn kind_of() -> Kind {
+        Kind::Object
+    }
+
+    fn into_value(self) -> Value {
+        let json = serde_json::to_value(&self).expect("序列化 CateAxisParam 失败");
+        json.into_value()
+    }
+
+    fn from_value(value: Value) -> anyhow::Result<Self> {
+        let json = serde_json::Value::from_value(value)?;
+        Ok(serde_json::from_value(json)?)
     }
 }
 
