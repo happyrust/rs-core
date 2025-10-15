@@ -204,7 +204,6 @@ pub trait GraphQuery: Send + Sync {
     /// # 参数
     /// - `refnos`: 起点节点列表
     /// - `nouns`: 要过滤的类型列表
-    /// - `max_depth`: 最大递归深度
     ///
     /// # 返回
     /// 匹配条件的 refno 列表
@@ -212,7 +211,6 @@ pub trait GraphQuery: Send + Sync {
         &self,
         refnos: &[RefnoEnum],
         nouns: &[&str],
-        max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>>;
 
     /// 查询两个节点之间的最短路径

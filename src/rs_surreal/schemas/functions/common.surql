@@ -559,16 +559,6 @@ DEFINE FUNCTION fn::find_ancestor_types($pe: record, $t: array){
     return select value id from $r where noun in $t;
 };
 
-// 返回符合类型集合的子节点
-remove function fn::find_deep_children_types;
-define function fn::find_deep_children_types($pe:record,$t:array) {
-    let $children = array::flatten( object::values( (select
-                      [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only $pe where record::exists(id))?:{{}} ) );
-    return select value id from $children where id.noun in $t
-
-};
-
 remove FUNCTION fn::find_door_from_wall;
 DEFINE FUNCTION fn::find_door_from_wall($pe:array) {
     let $fitts = select value fn::find_deep_children_types(id, ["FIXING", "NBOX", "NCYL", "NXTR", "PFIT", "NPYR", "FITT", "SBFI"]) from $pe;

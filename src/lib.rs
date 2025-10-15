@@ -26,7 +26,7 @@ pub mod basic;
 pub mod parse;
 
 pub mod bevy_types;
-pub mod cache;
+// pub mod cache; // 模块已删除
 pub mod consts;
 pub mod csg;
 pub mod error;

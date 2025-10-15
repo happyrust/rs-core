@@ -558,37 +558,14 @@ DEFINE FUNCTION fn::collect_descendant_infos(
         return [];
     };
     -- 使用 +inclusive 修饰符来控制是否包含根节点本身
-    let $raw_descendants = if $include_self {
-        (SELECT VALUE @.{..+collect+inclusive}.children FROM ONLY $root LIMIT 1) ?: []
-    } else {
-        (SELECT VALUE @.{..+collect}.children FROM ONLY $root LIMIT 1) ?: []
-    };
+    let $raw_descendants = (SELECT VALUE @.{..+collect+inclusive}.children.{id, noun} FROM ONLY $root LIMIT 1) ?: [];
     let $descendants = array::flatten(array::flatten($raw_descendants));
     let $filtered = array::filter($descendants, |$node|
-        record::exists($node) &&
+        ($include_self || record::id($node.id) != record::id($root)) &&
         (!$skip_deleted || !($node.deleted?:false)) &&
         (array::len($types) == 0 || $node.noun IN $types)
     );
-    return array::distinct(array::map(
-        $filtered,
-        |$node| {{
-            node: $node,
-            id: record::id($node),
-            noun: $node.noun,
-            deleted: $node.deleted?:false
-        }}
-    ));
-};
-
-REMOVE FUNCTION fn::collect_descendants_by_children;
-DEFINE FUNCTION fn::collect_descendants_by_children(
-    $root: record,
-    $types: array<string>,
-    $include_self: bool,
-    $skip_deleted: bool
-) {
-    let $infos = fn::collect_descendant_infos($root, $types, $include_self, $skip_deleted);
-    return array::distinct(array::map($infos, |$info| $info.id));
+    return $filtered;
 };
 
 REMOVE FUNCTION fn::visible_geo_descendants;
@@ -599,7 +576,8 @@ DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool) 
         "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
         "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ"
     ];
-    return fn::collect_descendants_by_children($root, $visible_types, $include_self, true);
+    let $infos = fn::collect_descendant_infos($root, $visible_types, $include_self, true);
+    return array::distinct(array::map($infos, |$info| $info.id));
 };
 
 remove FUNCTION fn::find_door_from_wall;
@@ -707,7 +685,7 @@ DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
 -- REMOVE FUNCTION test::exercise_visible_descendants;
 -- DEFINE FUNCTION test::exercise_visible_descendants($cleanup: bool) {
 --     let $root = test::create_mock_children_tree();
---     let $collect_all = fn::collect_descendants_by_children(type::thing('pe', $root), [], true);
+--     let $collect_all = fn::collect_descendant_infos(type::thing('pe', $root), [], true, true);
 --     let $visible = fn::visible_geo_descendants(type::thing('pe', $root), true);
 --     if $cleanup {
 --         test::cleanup_mock_children_tree();

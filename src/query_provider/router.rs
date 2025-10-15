@@ -385,7 +385,6 @@ impl GraphQuery for QueryRouter {
         &self,
         refnos: &[RefnoEnum],
         nouns: &[&str],
-        max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
         self.execute_with_fallback("query_multi_descendants", |provider| {
             let refnos = refnos.to_vec();
@@ -393,7 +392,7 @@ impl GraphQuery for QueryRouter {
             Box::pin(async move {
                 let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
                 provider
-                    .query_multi_descendants(&refnos, &noun_refs, max_depth)
+                    .query_multi_descendants(&refnos, &noun_refs)
                     .await
             })
         })

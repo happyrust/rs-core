@@ -25,17 +25,17 @@ pub async fn cal_valve_nearest_floor() -> anyhow::Result<()> {
             if let Ok(Some((nearest, dist))) =
                 query_neareast_along_axis(refno, Vec3::NEG_Z, "FLOOR").await
             {
-                // dbg!((refno, nearest, dist));
+                // 使用 pe 表的主键，避免生成无效的 RecordId
                 sqls.push(format!(
-                    "relate {}->nearest_relate->FLOOR:{} set dist={dist};",
+                    "relate {}->nearest_relate->{} set dist={dist};",
                     refno.to_pe_key(),
-                    nearest.to_string()
+                    nearest.to_pe_key()
                 ));
             }
         }
         //保存到 SUL_DB
         if !sqls.is_empty() {
-            SUL_DB.query(sqls.join(";")).await?;
+            SUL_DB.query(sqls.join("")).await?;
         }
         offset += page_count;
     }

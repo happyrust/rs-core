@@ -328,12 +328,88 @@ pub async fn query_multi_filter_deep_children(
     refnos: &[RefnoEnum],
     nouns: &[&str],
 ) -> anyhow::Result<HashSet<RefnoEnum>> {
-    let mut result = HashSet::new();
-    for &refno in refnos {
-        let mut children = query_filter_deep_children(refno, nouns).await?;
-        result.extend(children.drain(..));
+    if refnos.is_empty() {
+        return Ok(HashSet::new());
     }
-    Ok(result)
+
+    // 优化：使用 SurQL 批量查询，避免串行循环
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+    let types_expr = if nouns.is_empty() {
+        "[]".to_string()
+    } else {
+        format!("[{}]", nouns_str)
+    };
+
+    // 构建 refno 列表
+    let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
+    let refno_list = refno_keys.join(", ");
+
+    // 使用 SurQL 批量查询所有起点的子孙节点
+    // 优化：使用 fn::find_deep_children_types 进行批量处理
+    let sql = format!(
+        r#"
+        LET $refnos = [{}];
+        LET $types = {};
+        
+        -- 批量查询所有起点的子孙节点，使用 fn::find_deep_children_types
+        LET $all_descendants = array::flatten(array::map($refnos, |$refno| 
+            fn::find_deep_children_types($refno, $types)
+        ));
+        
+        -- 去重并返回结果
+        RETURN array::distinct($all_descendants)
+        "#,
+        refno_list,
+        types_expr
+    );
+
+        match SUL_DB.query(&sql).await {
+            Ok(mut response) => {
+                // fn::find_deep_children_types 返回字符串 ID 数组，需要先解析为字符串
+                match response.take::<Vec<String>>(0) {
+                    Ok(string_data) => {
+                        // 将字符串 ID 转换为 RefnoEnum
+                        let mut refnos = Vec::new();
+                        for id_str in string_data {
+                            let refno = RefnoEnum::from(id_str.as_str());
+                            refnos.push(refno);
+                        }
+                        Ok(refnos.into_iter().collect())
+                    }
+                    Err(e) => {
+                        // 如果解析为字符串数组失败，可能是返回了 none 或其他类型
+                        // 尝试解析为 Vec<serde_json::Value> 来检查实际返回的内容
+                        match response.take::<Vec<serde_json::Value>>(0) {
+                            Ok(json_data) => {
+                                // 检查是否返回了 null 或空数组
+                                if json_data.is_empty() || (json_data.len() == 1 && json_data[0].is_null()) {
+                                    // 返回空结果
+                                    Ok(HashSet::new())
+                                } else {
+                                    // 尝试从 JSON 数据中提取字符串
+                                    let mut refnos = Vec::new();
+                                    for value in json_data {
+                                        if let Some(id_str) = value.as_str() {
+                                            let refno = RefnoEnum::from(id_str);
+                                            refnos.push(refno);
+                                        }
+                                    }
+                                    Ok(refnos.into_iter().collect())
+                                }
+                            }
+                            Err(_) => {
+                                // 如果都失败了，返回空结果
+                                Ok(HashSet::new())
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+                Err(anyhow!(e.to_string()))
+            }
+        }
 }
 
 pub async fn query_multi_deep_versioned_children_filter_inst(

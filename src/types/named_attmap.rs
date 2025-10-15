@@ -1,4 +1,4 @@
-use crate::cache::mgr::BytesTrait;
+
 use crate::consts::{UNSET_STR, WORD_HASH};
 use crate::helper::normalize_sql_string;
 #[cfg(feature = "sea-orm")]
@@ -83,7 +83,7 @@ impl NamedAttrMap {
     }
 }
 
-impl BytesTrait for NamedAttrMap {}
+
 
 impl From<SurlValue> for NamedAttrMap {
     fn from(s: SurlValue) -> Self {

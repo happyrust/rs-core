@@ -34,6 +34,9 @@ pub mod topology;
 
 pub mod operation;
 
+// XKT 生成相关查询
+pub mod xkt_query;
+
 pub use cate::*;
 pub use e3d_db::*;
 pub use geom::*;
@@ -49,6 +52,7 @@ pub use resolve::*;
 pub use spatial::*;
 pub use topology::*;
 pub use uda::*;
+pub use xkt_query::*;
 
 pub use adapter::create_surreal_adapter;
 

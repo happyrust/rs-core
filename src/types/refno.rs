@@ -1,3 +1,4 @@
+use crate::utils::{IntoRecordId, RecordIdExt};
 use bevy_ecs::component::Component;
 use bevy_reflect::Reflect;
 #[cfg(feature = "sea-orm")]
@@ -6,13 +7,12 @@ use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
-use surrealdb::types as surrealdb_types;
-use crate::utils::{IntoRecordId, RecordIdExt};
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::hash::Hash;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::{default, fmt, hash};
+use surrealdb::types as surrealdb_types;
 
 #[derive(Debug, PartialEq, Eq, derive_more::Display)]
 pub struct ParseRefU64Error;
@@ -34,8 +34,6 @@ pub struct ParseRefU64Error;
     SurrealValue,
 )]
 pub struct RefU64(pub u64);
-
-// slotmap::new_key_type! { struct RefU64; }
 
 impl RefU64 {
     // 自定义序列化方法
@@ -147,30 +145,6 @@ impl<'de> Deserialize<'de> for RefU64 {
         }
     }
 }
-
-// impl<'de> Deserialize<'de> for RefU64 {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         let string = RefnoVariant::deserialize(deserializer)?;
-//         // println!("RefU64: {}", &string);
-//         // let value = RefnoVariant::deserialize(deserializer).unwrap();
-//         // let thing = RefnoVariant::deserialize(deserializer).unwrap();
-//         // dbg!(&thing);
-//         Ok(Default::default())
-//         // // if let Ok(s) = RefnoVariant::deserialize(deserializer) {
-//         //     match s {
-//         //         RefnoVariant::RecordId(s) => Ok(s.into()),
-//         //         RefnoVariant::Str(s) => Self::from_str(s.as_str())
-//         //             .map_err(|_| serde::de::Error::custom("refno parse string error")),
-//         //         RefnoVariant::Num(d) => Ok(Self(d)),
-//         //     }
-//         // } else {
-//         //     return Err(serde::de::Error::custom("refno parse error"));
-//         // }
-//     }
-// }
 
 impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
@@ -477,7 +451,6 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct RefI32Tuple(pub (i32, i32));
 
-use crate::cache::mgr::BytesTrait;
 use anyhow::anyhow;
 #[cfg(feature = "sea-orm")]
 use sea_orm::sea_query::ValueType;
@@ -638,15 +611,6 @@ impl Default for RefnoEnum {
     }
 }
 
-// impl ToString for RefnoEnum {
-//     fn to_string(&self) -> String {
-//         match self {
-//             RefnoEnum::Refno(refno) => refno.to_string(),
-//             RefnoEnum::SesRef(ses_ref) => ses_ref.to_string(),
-//         }
-//     }
-// }
-
 impl From<&str> for RefnoEnum {
     fn from(value: &str) -> Self {
         let value = value.trim();
@@ -667,6 +631,14 @@ impl From<&str> for RefnoEnum {
     }
 }
 
+impl FromStr for RefnoEnum {
+    type Err = ParseRefU64Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(RefnoEnum::from(s))
+    }
+}
+
 //实现 deserialize
 impl<'de> Deserialize<'de> for RefnoEnum {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -676,14 +648,16 @@ impl<'de> Deserialize<'de> for RefnoEnum {
         use serde::de;
         use serde::de::Visitor;
         use serde_json::Value;
-        
+
         struct RefnoEnumVisitor;
 
         impl<'de> Visitor<'de> for RefnoEnumVisitor {
             type Value = RefnoEnum;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a RefnoEnum (number, string, RecordId, or {refno: number, sesno: number})")
+                formatter.write_str(
+                    "a RefnoEnum (number, string, RecordId, or {refno: number, sesno: number})",
+                )
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<RefnoEnum, E>
@@ -700,7 +674,9 @@ impl<'de> Deserialize<'de> for RefnoEnum {
                 if value >= 0 {
                     Ok(RefnoEnum::Refno(RefU64(value as u64)))
                 } else {
-                    Err(de::Error::custom("negative numbers are not valid for RefnoEnum"))
+                    Err(de::Error::custom(
+                        "negative numbers are not valid for RefnoEnum",
+                    ))
                 }
             }
 
@@ -708,9 +684,9 @@ impl<'de> Deserialize<'de> for RefnoEnum {
             where
                 E: de::Error,
             {
-                RefU64::from_str(value)
-                    .map(|x| x.into())
-                    .map_err(|_| de::Error::custom(format!("RefnoEnum parse string error: {}", value)))
+                RefU64::from_str(value).map(|x| x.into()).map_err(|_| {
+                    de::Error::custom(format!("RefnoEnum parse string error: {}", value))
+                })
             }
 
             fn visit_string<E>(self, value: String) -> Result<RefnoEnum, E>
@@ -728,7 +704,7 @@ impl<'de> Deserialize<'de> for RefnoEnum {
                 let mut refno: Option<u64> = None;
                 let mut sesno: Option<u32> = None;
                 let mut is_record_id = false;
-                
+
                 while let Some(key) = map.next_key::<String>()? {
                     match key.as_str() {
                         "refno" => {
@@ -753,16 +729,21 @@ impl<'de> Deserialize<'de> for RefnoEnum {
                         }
                     }
                 }
-                
+
                 // 如果是RecordId格式，尝试重新解析
                 if is_record_id {
                     // 重新创建map来解析RecordId
-                    return Err(de::Error::custom("RecordId format not supported in this context"));
+                    return Err(de::Error::custom(
+                        "RecordId format not supported in this context",
+                    ));
                 }
-                
+
                 // 如果是{refno, sesno}格式
                 if let (Some(refno_val), Some(sesno_val)) = (refno, sesno) {
-                    Ok(RefnoEnum::SesRef(RefnoSesno::new(RefU64(refno_val), sesno_val)))
+                    Ok(RefnoEnum::SesRef(RefnoSesno::new(
+                        RefU64(refno_val),
+                        sesno_val,
+                    )))
                 } else if let Some(refno_val) = refno {
                     // 只有refno，没有sesno
                     Ok(RefnoEnum::Refno(RefU64(refno_val)))
@@ -777,80 +758,124 @@ impl<'de> Deserialize<'de> for RefnoEnum {
             {
                 let mut seq = seq;
                 let mut values = Vec::new();
-                
+
                 while let Some(value) = seq.next_element::<Value>()? {
                     values.push(value);
                 }
-                
+
                 if values.len() == 2 {
                     // 尝试解析为 [refno, sesno] 格式
                     let refno_val = match &values[0] {
-                        Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("refno must be a positive number"))?,
-                        Value::String(s) => RefU64::from_str(s).map_err(|_| de::Error::custom("invalid refno string"))?.0,
+                        Value::Number(n) => n
+                            .as_u64()
+                            .ok_or_else(|| de::Error::custom("refno must be a positive number"))?,
+                        Value::String(s) => {
+                            RefU64::from_str(s)
+                                .map_err(|_| de::Error::custom("invalid refno string"))?
+                                .0
+                        }
                         Value::Object(obj) => {
                             // 处理 {refno: number, sesno: number} 格式
                             if let Some(refno_field) = obj.get("refno") {
                                 match refno_field {
-                                    Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("refno must be a positive number"))?,
-                                    Value::String(s) => RefU64::from_str(s).map_err(|_| de::Error::custom("invalid refno string"))?.0,
-                                    _ => return Err(de::Error::custom("refno must be a number or string")),
+                                    Value::Number(n) => n.as_u64().ok_or_else(|| {
+                                        de::Error::custom("refno must be a positive number")
+                                    })?,
+                                    Value::String(s) => {
+                                        RefU64::from_str(s)
+                                            .map_err(|_| de::Error::custom("invalid refno string"))?
+                                            .0
+                                    }
+                                    _ => {
+                                        return Err(de::Error::custom(
+                                            "refno must be a number or string",
+                                        ));
+                                    }
                                 }
                             } else {
                                 return Err(de::Error::custom("missing refno field"));
                             }
                         }
-                        _ => return Err(de::Error::custom("refno must be a number, string, or object")),
+                        _ => {
+                            return Err(de::Error::custom(
+                                "refno must be a number, string, or object",
+                            ));
+                        }
                     };
-                    
+
                     let sesno_val = match &values[1] {
-                        Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("sesno must be a positive number"))? as u32,
+                        Value::Number(n) => n
+                            .as_u64()
+                            .ok_or_else(|| de::Error::custom("sesno must be a positive number"))?
+                            as u32,
                         _ => return Err(de::Error::custom("sesno must be a number")),
                     };
-                    
-                    Ok(RefnoEnum::SesRef(RefnoSesno::new(RefU64(refno_val), sesno_val)))
+
+                    Ok(RefnoEnum::SesRef(RefnoSesno::new(
+                        RefU64(refno_val),
+                        sesno_val,
+                    )))
                 } else if values.len() == 1 {
                     // 尝试解析为单个值
                     match &values[0] {
                         Value::Number(n) => {
-                            let val = n.as_u64().ok_or_else(|| de::Error::custom("number must be positive"))?;
+                            let val = n
+                                .as_u64()
+                                .ok_or_else(|| de::Error::custom("number must be positive"))?;
                             Ok(RefnoEnum::Refno(RefU64(val)))
                         }
-                        Value::String(s) => {
-                            RefU64::from_str(s)
-                                .map(|x| x.into())
-                                .map_err(|_| de::Error::custom("invalid refno string"))
-                        }
+                        Value::String(s) => RefU64::from_str(s)
+                            .map(|x| x.into())
+                            .map_err(|_| de::Error::custom("invalid refno string")),
                         Value::Object(obj) => {
                             // 处理 {refno: number, sesno: number} 格式
                             let refno_val = if let Some(refno_field) = obj.get("refno") {
                                 match refno_field {
-                                    Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("refno must be a positive number"))?,
-                                    Value::String(s) => RefU64::from_str(s).map_err(|_| de::Error::custom("invalid refno string"))?.0,
-                                    _ => return Err(de::Error::custom("refno must be a number or string")),
+                                    Value::Number(n) => n.as_u64().ok_or_else(|| {
+                                        de::Error::custom("refno must be a positive number")
+                                    })?,
+                                    Value::String(s) => {
+                                        RefU64::from_str(s)
+                                            .map_err(|_| de::Error::custom("invalid refno string"))?
+                                            .0
+                                    }
+                                    _ => {
+                                        return Err(de::Error::custom(
+                                            "refno must be a number or string",
+                                        ));
+                                    }
                                 }
                             } else {
                                 return Err(de::Error::custom("missing refno field"));
                             };
-                            
+
                             let sesno_val = if let Some(sesno_field) = obj.get("sesno") {
                                 match sesno_field {
-                                    Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("sesno must be a positive number"))? as u32,
+                                    Value::Number(n) => n.as_u64().ok_or_else(|| {
+                                        de::Error::custom("sesno must be a positive number")
+                                    })?
+                                        as u32,
                                     _ => return Err(de::Error::custom("sesno must be a number")),
                                 }
                             } else {
                                 0 // 默认sesno为0
                             };
-                            
+
                             if sesno_val == 0 {
                                 Ok(RefnoEnum::Refno(RefU64(refno_val)))
                             } else {
-                                Ok(RefnoEnum::SesRef(RefnoSesno::new(RefU64(refno_val), sesno_val)))
+                                Ok(RefnoEnum::SesRef(RefnoSesno::new(
+                                    RefU64(refno_val),
+                                    sesno_val,
+                                )))
                             }
                         }
                         _ => Err(de::Error::custom("unsupported value type in array")),
                     }
                 } else {
-                    Err(de::Error::custom("RefnoEnum array must have 1 or 2 elements"))
+                    Err(de::Error::custom(
+                        "RefnoEnum array must have 1 or 2 elements",
+                    ))
                 }
             }
         }
@@ -1033,9 +1058,7 @@ impl From<RecordId> for RefnoEnum {
                 .unwrap_or_default();
             Self::SesRef(RefnoSesno::new(refno_raw.as_str().into(), sesno))
         } else {
-            Self::Refno(
-                RefU64::from_str(&value.to_raw()).unwrap_or_default(),
-            )
+            Self::Refno(RefU64::from_str(&value.to_raw()).unwrap_or_default())
         }
     }
 }
@@ -1061,6 +1084,37 @@ impl Display for RefnoEnum {
                 ses_ref.sesno
             ),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::convert::TryFrom;
+    use surrealdb::types::RecordId;
+
+    #[test]
+    fn refno_enum_from_surreal_record_id() {
+        // 模拟 `return pe:1_2` 的 SurrealDB 返回值
+        let record_id = RecordId::parse_simple("pe:1_2").expect("record id parse failed");
+        let refno = RefnoEnum::try_from(record_id).expect("RefnoEnum conversion failed");
+
+        assert_eq!(refno, RefnoEnum::Refno(RefU64::from_two_nums(1, 2)));
+    }
+
+    #[test]
+    fn refno_enum_from_surreal_json_payload() {
+        let payload = serde_json::json!({ "tb": "pe", "id": "1_2" });
+        let record_id: RecordId =
+            serde_json::from_value(payload).expect("record id deserialize failed");
+        let refno = RefnoEnum::try_from(record_id).expect("RefnoEnum conversion failed");
+
+        assert_eq!(refno, RefnoEnum::Refno(RefU64::from_two_nums(1, 2)));
+
+        // 额外验证直接从字符串反序列化同样可行
+        let refno_from_str: RefnoEnum =
+            serde_json::from_str("\"pe:1_2\"").expect("string deserialize failed");
+        assert_eq!(refno_from_str, refno);
     }
 }
 

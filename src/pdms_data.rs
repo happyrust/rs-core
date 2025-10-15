@@ -1,5 +1,5 @@
 use crate::PdmsDatabaseInfo;
-use crate::cache::mgr::BytesTrait;
+
 use crate::pdms_types::*;
 use crate::tool::db_tool::db1_dehash;
 use crate::types::attmap::AttrMap;
@@ -30,7 +30,7 @@ pub struct ScomInfo {
     pub plin_map: HashMap<String, PlinParam>,
 }
 
-impl BytesTrait for ScomInfo {}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PlinParam {

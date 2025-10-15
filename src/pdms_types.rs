@@ -1,4 +1,4 @@
-use crate::cache::mgr::BytesTrait;
+
 use crate::consts::*;
 use crate::geometry::{EleInstGeo, EleInstGeosData};
 #[cfg(feature = "sea-orm")]
@@ -629,7 +629,7 @@ impl From<SPdmsElement> for PdmsElement {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
 
-impl BytesTrait for PdmsElementVec {}
+
 
 impl EleNode {
     pub fn set_default_name(name_hash: AiosStrHash) -> EleNode {

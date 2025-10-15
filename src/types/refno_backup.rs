@@ -485,7 +485,7 @@ impl RefU64 {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub struct RefI32Tuple(pub (i32, i32));
 
-use crate::cache::mgr::BytesTrait;
+
 use anyhow::anyhow;
 #[cfg(feature = "sea-orm")]
 use sea_orm::sea_query::ValueType;

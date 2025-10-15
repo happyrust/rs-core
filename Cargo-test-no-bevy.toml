@@ -1,0 +1,122 @@
+# 测试专用配置文件 - 排除 Bevy 依赖
+# 使用方法: cargo test --manifest-path Cargo-test-no-bevy.toml
+
+[package]
+name = "aios_core"
+version = "0.2.0"
+edition = "2024"
+resolver = "2"
+
+# 测试时只包含必要的 features，排除 Bevy
+[features]
+default = []
+# 明确排除 render feature
+redb = ["dep:redb"]
+occ = ["dep:opencascade"]
+# render = ["dep:bevy_render", "dep:bevy_mesh", "dep:bevy_asset"]  # 排除
+manifold = ["dep:manifold-sys"]
+truck = []
+gen_model = ["manifold"]
+debug_expr = []
+debug_wire = []
+debug_spatial = []
+# web = ["render"]  # 排除
+sql = ["dep:sqlx"]
+mem-kv-save = []
+
+# 测试相关的 features
+test-no-bevy = []
+
+# 开发依赖（排除 Bevy 相关的测试工具）
+[dev-dependencies]
+strum = { version = "0.27.2", features = ["derive"] }
+strum_macros = "0.27.2"
+anyhow = "1.0.57"
+serde_json = { version = "1.0" }
+tokio = { version = "1.47.1", features = ["full"] }
+rstest = { version = "0.25.0" }
+
+# 主要依赖（排除 Bevy）
+[dependencies]
+strum = { version = "0.27.2", features = ["derive"] }
+strum_macros = "0.27.2"
+deku = "0.16.0"
+smol_str = { version = "0.3.2", features = ["serde"] }
+glam = { version = "0.30.8", features = ["serde", "rkyv"] }
+id_tree = { git = "https://gitee.com/happydpc/id_tree", features = [
+    "serde_support",
+] }
+dashmap = { version = "=7.0.0-rc2", features = ["serde"] }
+hexasphere = "15.0.0"
+anyhow = "1.0.57"
+# lyon = "1.0.0"
+nalgebra = { version = "0.34.1", features = [
+    "serde",
+    "convert-glam030",
+] }
+parry3d = { version = "0.25.0", features = [
+    "serde-serialize",
+] }
+parry2d = { version = "0.25.0", features = [
+    "serde-serialize",
+] ]
+approx = "1.5.1"
+memchr = "2.5.0"
+nom = "7.1.1"
+itertools = "0.14.0"
+flate2 = "1.1.1"
+lazy_static = "1.4.0"
+smallvec = "1.8.0"
+derive_more = { version = "1.0.0", features = ["deref", "deref_mut", "display"] }
+bitflags = "2.4.0"
+ordered-float = "5.1.0"
+phf = { version = "0.11.2", features = ["macros"] }
+derivative = "2.2.0"
+dyn-clone = "1.0.9"
+rstar = { git = "https://gitee.com/happyrust/rstar", features = ["serde"] }
+uuid = "1.3.0"
+config = "0.14.1"
+calamine = { git = "https://gitee.com/happydpc/calamine" }
+
+thiserror = "1.0.60"
+log = "0.4.21"
+simplelog = "0.12.2"
+lru = "0.12"
+num_cpus = "1.16"
+
+base64 = "0.22.0"
+serde = { version = "1.0.133", features = ["derive"] }
+serde_derive = "1.0.133"
+serde_json = { version = "1.0" }
+serde_yaml = "0.9"
+hash32 = "1.0.0"
+bincode = "1.3.3"
+clap = { version = "^4.0", features = ["derive"] }
+
+rkyv = { version = "0.8.12" }
+serde_with = { version = "3.9.0", features = ["macros"] }
+
+# 保留必要的依赖
+indexmap = { version = "2.0.0", features = ["serde"] }
+pretty-hex = "0.4.0"
+once_cell_serde = "1.17.1"
+jsonxf = "1.1.1"
+once_cell = "1.18.0"
+urlencoding = "2.1.3"
+chrono = "0.4"
+
+surrealdb = { git = "https://gitee.com/happyrust/surrealdb", branch = "3.0", default-features = false, features = [
+    "protocol-ws",
+    "kv-memory",  # 使用内存存储，避免外部依赖
+] }
+num-traits = "0.2.17"
+regex = "1.11.3"
+petgraph = { version = "0.8.2", features = ["serde-1"] }
+cached = { version = "0.56.0", features = ["wasm", "async", "proc_macro"] }
+async-recursion = "1.0.5"
+async-trait = "0.1.78"
+
+# 测试依赖
+dev-dependencies]
+# 测试工具
+tokio-test = "0.4"

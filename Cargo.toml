@@ -6,7 +6,11 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = [
-    "render",
+    "bevy_transform",
+    "bevy_math",
+    "bevy_ecs",
+    "bevy_reflect",
+    # "render",
     # "occ",
     # "gen_model",
     # "sql",
@@ -34,6 +38,10 @@ web = ["render"]
 sql = ["dep:sqlx"]
 mem-kv-save = []  # 额外保存PE数据到内存KV数据库
 hh = []
+bevy_transform = ["dep:bevy_transform"]
+bevy_math = ["dep:bevy_math"]
+bevy_ecs = ["dep:bevy_ecs"]
+bevy_reflect = ["dep:bevy_reflect"]
 
 
 [dependencies]
@@ -85,12 +93,12 @@ lru = "0.12"
 num_cpus = "1.16"
 
 
-bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", features = [
+bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", optional = true, features = [
     "serialize",
 ] }
-bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math" }
-bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs" }
-bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect" }
+bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math", optional = true }
+bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs", optional = true }
+bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect", optional = true }
 bevy_render = { git = "https://github.com/happyrust/bevy", package = "bevy_render", optional = true }
 bevy_mesh = { git = "https://github.com/happyrust/bevy", package = "bevy_mesh", optional = true }
 bevy_asset = { git = "https://github.com/happyrust/bevy", package = "bevy_asset", optional = true }
@@ -131,6 +139,7 @@ chrono = "0.4"
 
 surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "3.0", default-features = false, features = [
     "protocol-ws",
+    "kv-mem"
 ] }
 num-traits = "0.2.17"
 regex = "1.11.3"
@@ -169,5 +178,8 @@ tempfile = "3"
 name = "sync_benchmark"
 harness = false
 
-#[patch."https://gitee.com/happydpc/surrealdb.git"]
-#surrealdb = { path = "../../surrealdb/crates/sdk" }
+[patch.crates-io]
+surrealdb = { path= "/Volumes/DPC/work/database/surrealdb/crates/sdk", default-features = false, features = [
+    "protocol-ws",
+    "kv-mem"
+]}

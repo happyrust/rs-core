@@ -159,7 +159,7 @@ pub trait BatchQuery {
 ```rust
 pub trait GraphQuery {
     // 多起点深层子孙查询
-    async fn query_multi_descendants(&self, refnos: &[RefnoEnum], nouns: &[&str], max_depth: Option<usize>)
+    async fn query_multi_descendants(&self, refnos: &[RefnoEnum], nouns: &[&str])
         -> QueryResult<Vec<RefnoEnum>>;
 
     // 查找最短路径
@@ -418,7 +418,7 @@ async fn example_graph_algorithms() -> QueryResult<()> {
     // 2. 多起点查询
     let start_points = &zones[..3.min(zones.len())];
     let descendants = router
-        .query_multi_descendants(start_points, &["PIPE", "EQUI"], Some(5))
+        .query_multi_descendants(start_points, &["PIPE", "EQUI"])
         .await?;
     println!("从 {} 个起点查询到 {} 个子孙", start_points.len(), descendants.len());
 

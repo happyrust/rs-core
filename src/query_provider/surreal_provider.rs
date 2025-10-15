@@ -250,19 +250,13 @@ impl GraphQuery for SurrealQueryProvider {
         &self,
         refnos: &[RefnoEnum],
         nouns: &[&str],
-        max_depth: Option<usize>,
     ) -> QueryResult<Vec<RefnoEnum>> {
         debug!(
-            "[{}] query_multi_descendants: {} refnos, {:?} nouns, depth: {:?}",
+            "[{}] query_multi_descendants: {} refnos, {:?} nouns",
             self.name,
             refnos.len(),
-            nouns,
-            max_depth
+            nouns
         );
-
-        if max_depth.is_some() && max_depth.unwrap() > 12 {
-            warn!("SurrealDB 最大支持 12 层递归");
-        }
 
         rs_surreal::graph::query_multi_filter_deep_children(refnos, nouns)
             .await
