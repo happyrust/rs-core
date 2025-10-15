@@ -1,9 +1,11 @@
 use crate::graph::*;
+use crate::init_test_surreal;
 use crate::noun_graph::gen_noun_incoming_relate_sql;
 use crate::noun_graph::gen_noun_outcoming_relate_sql;
 use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
 use crate::petgraph::PetRefnoGraph;
 use crate::tool::db_tool::db1_hash;
+use crate::{RefnoEnum, SUL_DB};
 use petgraph::algo::all_simple_paths;
 use petgraph::graph::Graph;
 use petgraph::graph::NodeIndex;
@@ -100,5 +102,61 @@ async fn test_query_ancestor_filter() -> anyhow::Result<()> {
             .await
             .unwrap();
     dbg!(target);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_collect_descendants_with_mock_tree() -> anyhow::Result<()> {
+    init_test_surreal().await;
+
+    let _ = SUL_DB
+        .query("RETURN test::cleanup_mock_children_tree();")
+        .await;
+
+    let mut create_resp = SUL_DB
+        .query("RETURN test::create_mock_children_tree();")
+        .await?;
+    let root_str: String = create_resp.take(0)?;
+    let root_refno = RefnoEnum::from(root_str.as_str());
+
+    let mut all_refnos = query_deep_children_refnos(root_refno).await?;
+    let mut all_str: Vec<String> = all_refnos
+        .into_iter()
+        .map(|r| r.to_normal_str())
+        .collect();
+    all_str.sort();
+    assert_eq!(
+        all_str,
+        vec![
+            "99999/1000".to_string(),
+            "99999/1001".to_string(),
+            "99999/1002".to_string(),
+            "99999/1003".to_string()
+        ]
+    );
+
+    let mut bran_refnos = query_filter_deep_children(root_refno, &["BRAN"]).await?;
+    let mut bran_str: Vec<String> = bran_refnos
+        .into_iter()
+        .map(|r| r.to_normal_str())
+        .collect();
+    bran_str.sort();
+    assert_eq!(bran_str, vec!["99999/1002".to_string()]);
+
+    let mut cable_refnos = query_filter_deep_children(root_refno, &["CABLE"]).await?;
+    let mut cable_str: Vec<String> = cable_refnos
+        .into_iter()
+        .map(|r| r.to_normal_str())
+        .collect();
+    cable_str.sort();
+    assert_eq!(cable_str, vec!["99999/1003".to_string()]);
+
+    let panel_refnos = query_filter_deep_children(root_refno, &["PANEL"]).await?;
+    assert!(panel_refnos.is_empty(), "deleted PANEL node should be filtered out");
+
+    SUL_DB
+        .query("RETURN test::cleanup_mock_children_tree();")
+        .await?;
+
     Ok(())
 }

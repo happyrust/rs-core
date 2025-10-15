@@ -19,6 +19,8 @@ use glam::u32;
 pub use refno::*;
 
 pub type NounHash = u32;
+pub type Datetime = surrealdb::types::Datetime;
+pub type Thing = surrealdb::types::RecordId;
 
 pub use attmap::*;
 pub use attval::*;

@@ -13,6 +13,7 @@ use indexmap::IndexMap;
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::time::Instant;
+use crate::types::Thing;
 
 /// 层次结构查询服务
 pub struct HierarchyQueryService;
@@ -41,8 +42,13 @@ impl HierarchyQueryService {
         let sql = query.build().to_string();
 
         // 执行查询
-        match query.fetch_all::<RefnoEnum>().await {
-            Ok(ancestors) => {
+        match query.fetch_all::<Thing>().await {
+            Ok(records) => {
+                let ancestors: Vec<RefnoEnum> = records
+                    .into_iter()
+                    .map(RefnoEnum::from)
+                    .filter(|r| r.is_valid())
+                    .collect();
                 let execution_time = start_time.elapsed().as_millis() as u64;
                 QueryErrorHandler::log_query_execution(&sql, execution_time);
                 QueryErrorHandler::log_query_results(&sql, ancestors.len());

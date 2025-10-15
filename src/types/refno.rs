@@ -673,17 +673,189 @@ impl<'de> Deserialize<'de> for RefnoEnum {
     where
         D: Deserializer<'de>,
     {
-        if let Ok(s) = RefnoVariant::deserialize(deserializer) {
-            match s {
-                RefnoVariant::RefThing(s) => Ok(s.into()),
-                RefnoVariant::Str(s) => RefU64::from_str(s.as_str())
-                    .map(|x| x.into())
-                    .map_err(|_| serde::de::Error::custom("RefnoEnum parse string error")),
-                RefnoVariant::Num(d) => Ok(RefnoEnum::Refno(RefU64(d))),
+        use serde::de;
+        use serde::de::Visitor;
+        use serde_json::Value;
+        
+        struct RefnoEnumVisitor;
+
+        impl<'de> Visitor<'de> for RefnoEnumVisitor {
+            type Value = RefnoEnum;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a RefnoEnum (number, string, RecordId, or {refno: number, sesno: number})")
             }
-        } else {
-            return Err(serde::de::Error::custom("RefnoEnum parse error"));
+
+            fn visit_u64<E>(self, value: u64) -> Result<RefnoEnum, E>
+            where
+                E: de::Error,
+            {
+                Ok(RefnoEnum::Refno(RefU64(value)))
+            }
+
+            fn visit_i64<E>(self, value: i64) -> Result<RefnoEnum, E>
+            where
+                E: de::Error,
+            {
+                if value >= 0 {
+                    Ok(RefnoEnum::Refno(RefU64(value as u64)))
+                } else {
+                    Err(de::Error::custom("negative numbers are not valid for RefnoEnum"))
+                }
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<RefnoEnum, E>
+            where
+                E: de::Error,
+            {
+                RefU64::from_str(value)
+                    .map(|x| x.into())
+                    .map_err(|_| de::Error::custom(format!("RefnoEnum parse string error: {}", value)))
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<RefnoEnum, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<RefnoEnum, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                // 首先尝试将map反序列化为{refno: number, sesno: number}格式
+                let mut refno: Option<u64> = None;
+                let mut sesno: Option<u32> = None;
+                let mut is_record_id = false;
+                
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "refno" => {
+                            if refno.is_some() {
+                                return Err(de::Error::duplicate_field("refno"));
+                            }
+                            refno = Some(map.next_value()?);
+                        }
+                        "sesno" => {
+                            if sesno.is_some() {
+                                return Err(de::Error::duplicate_field("sesno"));
+                            }
+                            sesno = Some(map.next_value()?);
+                        }
+                        "tb" | "id" => {
+                            // 这些是RecordId的字段，标记为RecordId格式
+                            is_record_id = true;
+                            let _ = map.next_value::<de::IgnoredAny>()?;
+                        }
+                        _ => {
+                            let _ = map.next_value::<de::IgnoredAny>()?;
+                        }
+                    }
+                }
+                
+                // 如果是RecordId格式，尝试重新解析
+                if is_record_id {
+                    // 重新创建map来解析RecordId
+                    return Err(de::Error::custom("RecordId format not supported in this context"));
+                }
+                
+                // 如果是{refno, sesno}格式
+                if let (Some(refno_val), Some(sesno_val)) = (refno, sesno) {
+                    Ok(RefnoEnum::SesRef(RefnoSesno::new(RefU64(refno_val), sesno_val)))
+                } else if let Some(refno_val) = refno {
+                    // 只有refno，没有sesno
+                    Ok(RefnoEnum::Refno(RefU64(refno_val)))
+                } else {
+                    Err(de::Error::missing_field("refno"))
+                }
+            }
+
+            fn visit_seq<A>(self, seq: A) -> Result<RefnoEnum, A::Error>
+            where
+                A: de::SeqAccess<'de>,
+            {
+                let mut seq = seq;
+                let mut values = Vec::new();
+                
+                while let Some(value) = seq.next_element::<Value>()? {
+                    values.push(value);
+                }
+                
+                if values.len() == 2 {
+                    // 尝试解析为 [refno, sesno] 格式
+                    let refno_val = match &values[0] {
+                        Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("refno must be a positive number"))?,
+                        Value::String(s) => RefU64::from_str(s).map_err(|_| de::Error::custom("invalid refno string"))?.0,
+                        Value::Object(obj) => {
+                            // 处理 {refno: number, sesno: number} 格式
+                            if let Some(refno_field) = obj.get("refno") {
+                                match refno_field {
+                                    Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("refno must be a positive number"))?,
+                                    Value::String(s) => RefU64::from_str(s).map_err(|_| de::Error::custom("invalid refno string"))?.0,
+                                    _ => return Err(de::Error::custom("refno must be a number or string")),
+                                }
+                            } else {
+                                return Err(de::Error::custom("missing refno field"));
+                            }
+                        }
+                        _ => return Err(de::Error::custom("refno must be a number, string, or object")),
+                    };
+                    
+                    let sesno_val = match &values[1] {
+                        Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("sesno must be a positive number"))? as u32,
+                        _ => return Err(de::Error::custom("sesno must be a number")),
+                    };
+                    
+                    Ok(RefnoEnum::SesRef(RefnoSesno::new(RefU64(refno_val), sesno_val)))
+                } else if values.len() == 1 {
+                    // 尝试解析为单个值
+                    match &values[0] {
+                        Value::Number(n) => {
+                            let val = n.as_u64().ok_or_else(|| de::Error::custom("number must be positive"))?;
+                            Ok(RefnoEnum::Refno(RefU64(val)))
+                        }
+                        Value::String(s) => {
+                            RefU64::from_str(s)
+                                .map(|x| x.into())
+                                .map_err(|_| de::Error::custom("invalid refno string"))
+                        }
+                        Value::Object(obj) => {
+                            // 处理 {refno: number, sesno: number} 格式
+                            let refno_val = if let Some(refno_field) = obj.get("refno") {
+                                match refno_field {
+                                    Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("refno must be a positive number"))?,
+                                    Value::String(s) => RefU64::from_str(s).map_err(|_| de::Error::custom("invalid refno string"))?.0,
+                                    _ => return Err(de::Error::custom("refno must be a number or string")),
+                                }
+                            } else {
+                                return Err(de::Error::custom("missing refno field"));
+                            };
+                            
+                            let sesno_val = if let Some(sesno_field) = obj.get("sesno") {
+                                match sesno_field {
+                                    Value::Number(n) => n.as_u64().ok_or_else(|| de::Error::custom("sesno must be a positive number"))? as u32,
+                                    _ => return Err(de::Error::custom("sesno must be a number")),
+                                }
+                            } else {
+                                0 // 默认sesno为0
+                            };
+                            
+                            if sesno_val == 0 {
+                                Ok(RefnoEnum::Refno(RefU64(refno_val)))
+                            } else {
+                                Ok(RefnoEnum::SesRef(RefnoSesno::new(RefU64(refno_val), sesno_val)))
+                            }
+                        }
+                        _ => Err(de::Error::custom("unsupported value type in array")),
+                    }
+                } else {
+                    Err(de::Error::custom("RefnoEnum array must have 1 or 2 elements"))
+                }
+            }
         }
+
+        deserializer.deserialize_any(RefnoEnumVisitor)
     }
 }
 

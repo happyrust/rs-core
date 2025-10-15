@@ -30,48 +30,86 @@ pub async fn query_filter_all_bran_hangs(refno: RefnoEnum) -> anyhow::Result<Vec
     query_filter_deep_children(refno, &["BRAN", "HANG"]).await
 }
 
-#[cached(result = true)]
-pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
+async fn collect_descendant_refnos(
+    refno: RefnoEnum,
+    nouns: &[&str],
+    include_self: bool,
+    skip_deleted: bool,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+    let types_expr = if nouns.is_empty() {
+        "[]".to_string()
+    } else {
+        format!("[{}]", nouns_str)
+    };
+    let include_self_str = if include_self { "true" } else { "false" };
+    let skip_deleted_str = if skip_deleted { "true" } else { "false" };
     let pe_key = refno.to_pe_key();
+
     let sql = if refno.is_latest() {
         format!(
-            r#"
-             return array::flatten( object::values( (select
-                  [id] as p0, <-pe_owner[? !in.deleted]<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only {pe_key} where record::exists(id))?:{{}} ) )[? !deleted];
-            "#
+            "SELECT VALUE fn::collect_descendants_by_children({root}, {types}, {include_self}, {skip_deleted});",
+            root = pe_key,
+            types = types_expr,
+            include_self = include_self_str,
+            skip_deleted = skip_deleted_str,
         )
     } else {
+        let info_skip = if skip_deleted { "true" } else { "false" };
+        let skip_condition = if skip_deleted {
+            "!$info.deleted".to_string()
+        } else {
+            "true".to_string()
+        };
         format!(
             r#"
-                let $dt=<datetime>fn::ses_date({pe_key});
-                let $r = array::flatten( object::values( (select
-                    [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                    from only fn::newest_pe({pe_key}) where record::exists(id))?:{{}} ) )[? (!deleted or <datetime>fn::ses_date(id)>$dt)];
-                select value fn::find_pe_by_datetime($self.id, $dt) from $r;
-            "#
+            LET $pe = {root};
+            LET $dt = <datetime>fn::ses_date($pe);
+            LET $infos = fn::collect_descendant_infos(fn::newest_pe($pe), {types}, {include_self}, {info_skip});
+            LET $filtered = array::filter(
+                $infos,
+                |$info| ({skip_condition}) && (!$info.deleted || <datetime>fn::ses_date($info.node) > $dt)
+            );
+            LET $matched = array::map($filtered, |$info| fn::find_pe_by_datetime($info.node, $dt));
+            SELECT VALUE array::distinct(array::map(
+                array::filter($matched, |$node| $node != NONE),
+                |$node| record::id($node)
+            ));
+            "#,
+            root = pe_key,
+            types = types_expr,
+            include_self = include_self_str,
+            info_skip = info_skip,
+            skip_condition = skip_condition,
         )
     };
-    let idx = if refno.is_latest() { 0 } else { 2 };
-    // println!("query_deep_children_refnos sql is {}", &sql);
-    return match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(idx) {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                init_deserialize_error(
-                    "Vec<RefnoEnum>",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
+
+    match SUL_DB.query(&sql).await {
+        Ok(mut response) => {
+            let idx = if refno.is_latest() { 0 } else { 5 };
+            match response.take::<Vec<RefnoEnum>>(idx) {
+                Ok(data) => Ok(data),
+                Err(e) => {
+                    init_deserialize_error(
+                        "Vec<RefnoEnum>",
+                        &e,
+                        &sql,
+                        &std::panic::Location::caller().to_string(),
+                    );
+                    Err(anyhow!(e.to_string()))
+                }
             }
-        },
+        }
         Err(e) => {
             init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
             Err(anyhow!(e.to_string()))
         }
-    };
+    }
+}
+
+#[cached(result = true)]
+pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
+    collect_descendant_refnos(refno, &[], true, true).await
 }
 
 #[cached(result = true)]
@@ -108,42 +146,18 @@ pub async fn query_filter_deep_children(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let refnos = query_deep_children_refnos(refno).await?;
-    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let sql = if nouns.is_empty() {
-        format!(r#"select value id from [{pe_keys}]"#)
-    } else {
-        format!(r#"select value id from [{pe_keys}] where noun in [{nouns_str}]"#)
-    };
-    // println!("query_filter_deep_children sql is {}", &sql);
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => {
-            if let Ok(result) = response.take::<Vec<RefnoEnum>>(0) {
-                return Ok(result);
-            }
-        }
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            return Err(anyhow!(e.to_string()));
-        }
-    }
-    Ok(vec![])
+    collect_descendant_refnos(refno, nouns, true, true).await
 }
 
 pub async fn query_filter_deep_children_atts(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
-    let refnos = query_deep_children_refnos(refno).await?;
-    // dbg!(refnos.len());
+    let refnos = collect_descendant_refnos(refno, nouns, true, true).await?;
     let mut atts: Vec<NamedAttrMap> = Vec::new();
-    //需要使用chunk
     for chunk in refnos.chunks(200) {
         let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
-        let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-        let sql = format!(r#"select value refno.* from [{pe_keys}] where noun in [{nouns_str}]"#);
-        // println!("query_filter_deep_children_atts sql is {}", &sql);
+        let sql = format!(r#"select value refno.* from [{pe_keys}]"#);
         match SUL_DB.query(&sql).await {
             Ok(mut response) => {
                 if let Ok(value) = response.take::<SurlValue>(0) {
@@ -189,11 +203,12 @@ pub async fn query_ele_filter_deep_children(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<SPdmsElement>> {
-    let refnos = query_deep_children_refnos(refno).await?;
+    let refnos = collect_descendant_refnos(refno, nouns, true, true).await?;
+    if refnos.is_empty() {
+        return Ok(vec![]);
+    }
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
-    // println!("sql is {}", &sql);
+    let sql = format!(r#"select * from [{pe_keys}]"#);
     let mut response = SUL_DB.query(&sql).await.unwrap();
     if let Ok(result) = response.take::<Vec<SPdmsElement>>(0) {
         return Ok(result);
@@ -230,21 +245,23 @@ pub async fn query_deep_children_refnos_filter_spre(
     refno: RefnoEnum,
     filter: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let pe_key = refno.to_pe_key();
-    let mut sql = format!(
-        r#"
-            let $a = array::flatten( object::values( select
-                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only {pe_key} ) );
-
-            select value id from $a.refno where SPRE.id !=none || CATR.id != none
-        "#,
-    );
-    if filter {
-        sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
+    let descendants = collect_descendant_refnos(refno, &[], true, false).await?;
+    if descendants.is_empty() {
+        return Ok(vec![]);
     }
-    let mut response = SUL_DB.query(&sql).await?;
-    let result: Vec<RefnoEnum> = response.take(1)?;
+    let mut result = Vec::new();
+    for chunk in descendants.chunks(200) {
+        let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
+        let mut conditions = vec!["(refno.SPRE.id != none OR refno.CATR.id != none)".to_string()];
+        if filter {
+            conditions.push("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string());
+        }
+        let where_clause = format!(" where {}", conditions.join(" and "));
+        let sql = format!("select value id from [{pe_keys}]{where_clause};");
+        let mut response = SUL_DB.query(&sql).await?;
+        let mut chunk_refnos: Vec<RefnoEnum> = response.take(0)?;
+        result.append(&mut chunk_refnos);
+    }
     Ok(result)
 }
 
@@ -253,38 +270,27 @@ async fn query_versioned_deep_children_filter_inst(
     nouns: &[&str],
     filter: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let pe_key = refno.to_pe_key();
-    let mut sql = format!(
-        r#"
-            let $a = array::flatten( object::values( select
-                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)
-                  <-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)
-                  <-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only {pe_key} ) );
-
-            select value refno from $a"#,
-    );
-    let mut add_where = false;
-    if !nouns.is_empty() {
-        if !sql.ends_with("where") {
-            sql.push_str(" where ");
-            add_where = true;
-        }
-        sql.push_str(format!(" noun in [{nouns_str}]").as_str());
+    let candidates = collect_descendant_refnos(refno, nouns, true, false).await?;
+    if candidates.is_empty() {
+        return Ok(vec![]);
     }
-    if filter {
-        if add_where {
-            sql.push_str(" and ");
+    let mut result = Vec::new();
+    for chunk in candidates.chunks(200) {
+        let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
+        let mut clauses = Vec::new();
+        if filter {
+            clauses.push("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string());
+        }
+        let where_clause = if clauses.is_empty() {
+            "".to_string()
         } else {
-            sql.push_str(" where ");
-        }
-        sql.push_str("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
+            format!(" where {}", clauses.join(" and "))
+        };
+        let sql = format!("select value id from [{pe_keys}]{where_clause};");
+        let mut response = SUL_DB.query(&sql).await?;
+        let mut chunk_refnos: Vec<RefnoEnum> = response.take(0)?;
+        result.append(&mut chunk_refnos);
     }
-    // println!("query_deep_children_filter_inst sql is: {}", &sql);
-    let mut response = SUL_DB.query(&sql).await?;
-    // dbg!(&response);
-    let result: Vec<RefnoEnum> = response.take(1)?;
     Ok(result)
 }
 
@@ -294,25 +300,27 @@ async fn query_deep_children_filter_inst(
     nouns: &[&str],
     filter: bool,
 ) -> anyhow::Result<Vec<RefU64>> {
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let pe_key = refno.to_pe_key();
-    let mut sql = format!(
-        r#"
-            let $a = array::flatten( object::values( select
-                  [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)
-                  <-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)
-                  <-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only {pe_key} ) );
-
-            select value refno from $a where noun in [{nouns_str}]"#,
-    );
-    if filter {
-        sql.push_str(" and array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0");
+    let candidates = collect_descendant_refnos(refno.into(), nouns, true, false).await?;
+    if candidates.is_empty() {
+        return Ok(vec![]);
     }
-    // println!("query_deep_children_filter_inst sql is: {}", &sql);
-    let mut response = SUL_DB.query(&sql).await?;
-    // dbg!(&response);
-    let result: Vec<RefU64> = response.take(1)?;
+    let mut result = Vec::new();
+    for chunk in candidates.chunks(200) {
+        let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
+        let mut clauses = Vec::new();
+        if filter {
+            clauses.push("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string());
+        }
+        let where_clause = if clauses.is_empty() {
+            "".to_string()
+        } else {
+            format!(" where {}", clauses.join(" and "))
+        };
+        let sql = format!("select value id from [{pe_keys}]{where_clause};");
+        let mut response = SUL_DB.query(&sql).await?;
+        let mut chunk_refnos: Vec<RefnoEnum> = response.take(0)?;
+        result.extend(chunk_refnos.into_iter().map(|r| r.refno()));
+    }
     Ok(result)
 }
 

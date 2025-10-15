@@ -112,22 +112,6 @@ impl From<(&str, Value)> for NamedAttrValue {
     }
 }
 
-#[test]
-fn test_from_surreal() {
-    let sql = vec!["17463_6376".to_string(), "17463_6379".to_string()];
-    let value = surrealdb::types::Value::Array(Array::from(sql));
-    if let surrealdb::types::Value::Array(value) = value {
-        let r = value
-            .into_iter()
-            .map(|x| match x.clone().record() {
-                None => RefnoEnum::from(x.to_string().as_str()),
-                Some(id) => RefnoEnum::from(id),
-            })
-            .collect::<Vec<_>>();
-        dbg!(&r);
-    }
-}
-
 impl From<&AttrVal> for NamedAttrValue {
     fn from(v: &AttrVal) -> Self {
         use crate::attval::AttrVal::*;

@@ -833,14 +833,6 @@ pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEn
 }
 
 pub async fn query_multi_children_refnos(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<RefnoEnum>> {
-    // let mut refno_ids = refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>();
-    // let mut response = SUL_DB
-    //     .query(format!(
-    //         "select value id from array::flatten(select value <-pe_owner.in from [{}]) where record::exists(id) and !deleted",
-    //         refno_ids.join(",")
-    //     ))
-    //     .await?;
-    // let refnos: Vec<RefnoEnum> = response.take(0)?;
     let mut final_refnos = vec![];
     for &refno in refnos {
         match get_children_refnos(refno).await {

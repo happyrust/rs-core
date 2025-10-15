@@ -9,6 +9,7 @@ use cavalier_contours::{pline_closed, polyline};
 // use geo::{ConvexHull, LineString, Polygon};
 use glam::{DVec3, Vec3};
 use opencascade::primitives::{Edge, Face, IntoShape, Wire};
+use serde_json::Value as JsonValue;
 use std::fmt::format;
 pub async fn test_wire_from_loop(refno: RefU64) {
     let mut response = SUL_DB
@@ -20,7 +21,24 @@ pub async fn test_wire_from_loop(refno: RefU64) {
         ))
         .await
         .unwrap();
-    let points: Vec<Vec3> = response.take(0).unwrap();
+    let raw_points: Vec<JsonValue> = response.take(0).unwrap();
+    
+    let points: Vec<Vec3> = raw_points
+        .into_iter()
+        .filter_map(|v| {
+            if let JsonValue::Array(arr) = v {
+                if arr.len() >= 3 {
+                    if let (Some(JsonValue::Number(x)), Some(JsonValue::Number(y)), Some(JsonValue::Number(z))) = 
+                        (arr.get(0), arr.get(1), arr.get(2)) {
+                        if let (Some(x), Some(y), Some(z)) = (x.as_f64(), y.as_f64(), z.as_f64()) {
+                            return Some(Vec3::new(x as f32, y as f32, z as f32));
+                        }
+                    }
+                }
+            }
+            None
+        })
+        .collect();
 
     let pline = gen_polyline(&points).unwrap();
     println!("{}", polyline_to_debug_json_str(&pline));
@@ -31,7 +49,39 @@ pub async fn test_wire_from_floor_panel(refno: RefU64) {
         select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
             (select value in from {}<-pe_owner)
     "#, refno.to_pe_key())).await.unwrap();
-    let points: Vec<Vec<Vec3>> = response.take(0).unwrap();
+    let raw_points: Vec<JsonValue> = response.take(0).unwrap();
+    
+    let points: Vec<Vec<Vec3>> = raw_points
+        .into_iter()
+        .filter_map(|v| {
+            if let JsonValue::Array(arr) = v {
+                let vec3_points: Vec<Vec3> = arr
+                    .into_iter()
+                    .filter_map(|item| {
+                        if let JsonValue::Array(point_arr) = item {
+                            if point_arr.len() >= 3 {
+                                if let (Some(JsonValue::Number(x)), Some(JsonValue::Number(y)), Some(JsonValue::Number(z))) = 
+                                    (point_arr.get(0), point_arr.get(1), point_arr.get(2)) {
+                                    if let (Some(x), Some(y), Some(z)) = (x.as_f64(), y.as_f64(), z.as_f64()) {
+                                        return Some(Vec3::new(x as f32, y as f32, z as f32));
+                                    }
+                                }
+                            }
+                        }
+                        None
+                    })
+                    .collect();
+                if !vec3_points.is_empty() {
+                    Some(vec3_points)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .collect();
+    
     dbg!(&points);
 
     gen_occ_wires(&points).unwrap();

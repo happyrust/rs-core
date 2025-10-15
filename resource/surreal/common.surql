@@ -7,7 +7,7 @@ DEFINE FUNCTION fn::ancestor($r: record) {
     return if !record::exists($r) {
         return [];
     } else {
-        let $nodes = (SELECT VALUE @.{..+collect}(owner) FROM ONLY $r LIMIT 1) ?: [];
+        let $nodes = (SELECT VALUE @.{..+collect+inclusive}(.owner) FROM ONLY $r LIMIT 1) ?: [];
         return array::filter($nodes, |$v| $v != NONE && $v != pe:0_0);
     };
 };
@@ -61,7 +61,7 @@ DEFINE FUNCTION fn::default_name(
     return (select value (if name=='' {string::join(' ', noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
 };
 
-remove function fn::default_names;
+REMOVE FUNCTION fn::default_names;
 DEFINE FUNCTION fn::default_names(
     $pes: array<record>,
 ) {
@@ -209,8 +209,8 @@ DEFINE FUNCTION fn::backup_owner_relate(
 // let $pe = pe:17496_171606;
 // fn::backup_owner_relate([$pe], false);
 
-remove function fn::latest_pe_sesno;
-define function fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option<number>){
+REMOVE FUNCTION fn::latest_pe_sesno;
+DEFINE FUNCTION fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option<number>){
     let $sesno = $pe.sesno?:0;
     let $r = return if $s != none and $db != none {
         #找到对应的时间
@@ -229,8 +229,8 @@ define function fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option
     return [$r?:0, $sesno];
 };
 
-remove function fn::latest_pe;
-define function fn::latest_pe($pe: record, $s: option<number>, $db: option<number>){
+REMOVE FUNCTION fn::latest_pe;
+DEFINE FUNCTION fn::latest_pe($pe: record, $s: option<number>, $db: option<number>){
     let $s = fn::latest_pe_sesno($pe, $s, $db);
     return if $s[1] == $s[0]  {
         return $pe;
@@ -241,8 +241,8 @@ define function fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 };
 
 
-remove function fn::find_pe_by_datetime;
-define function fn::find_pe_by_datetime($pe: record, $dt: datetime){
+REMOVE FUNCTION fn::find_pe_by_datetime;
+DEFINE FUNCTION fn::find_pe_by_datetime($pe: record, $dt: datetime){
     let $his_pe = type::thing('his_pe', fn::newest_pe_id($pe));
     if !record::exists($his_pe) {
         return $pe;
@@ -256,14 +256,14 @@ define function fn::find_pe_by_datetime($pe: record, $dt: datetime){
 -- fn::latest_pe_sesno(pe:17496_171715, 880);
 -- fn::latest_pe_sesno(pe:17496_171715);
 
-remove function fn::ses_data;
-define function fn::ses_data($pe: record){
+REMOVE FUNCTION fn::ses_data;
+DEFINE FUNCTION fn::ses_data($pe: record){
     let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
     return select * from only $id limit 1;
 };
 
-remove function fn::ses_date;
-define function fn::ses_date($pe: record){
+REMOVE FUNCTION fn::ses_date;
+DEFINE FUNCTION fn::ses_date($pe: record){
     return if record::exists($pe) {
         let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
         return select value date from only $id limit 1;
@@ -272,32 +272,32 @@ define function fn::ses_date($pe: record){
     };
 };
 
-remove function fn::next_is_type;
+REMOVE FUNCTION fn::next_is_type;
 DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
     return fn::next_type($pe)==$type;
 };
 
-remove function fn::first_child;
+REMOVE FUNCTION fn::first_child;
 DEFINE FUNCTION fn::first_child($pe:record) {
     return select value (<-pe_owner[0].in) from only $pe limit 1;
 };
 
-remove function fn::first_child_exclude_type;
+REMOVE FUNCTION fn::first_child_exclude_type;
 DEFINE FUNCTION fn::first_child_exclude_type($pe:record, $exclude_type: string) {
     return select value in from only $pe<-pe_owner where in.noun != $exclude_type limit 1;
 };
 
-remove function fn::last_child;
+REMOVE FUNCTION fn::last_child;
 DEFINE FUNCTION fn::last_child($pe:record) {
     return array::last((select value (<-pe_owner.in) from only $pe limit 1)?:[]);
 };
 
-remove function fn::last_child_exclude_type;
+REMOVE FUNCTION fn::last_child_exclude_type;
 DEFINE FUNCTION fn::last_child_exclude_type($pe:record, $exclude_type: string) {
     return (select * from only $pe<-pe_owner where in.noun != $exclude_type order by id desc limit 1).in;
 };
 
-remove function fn::prev_pe;
+REMOVE FUNCTION fn::prev_pe;
 DEFINE FUNCTION fn::prev_pe($pe:record) {
     if $pe == none || !record::exists($pe) {
         return none;
@@ -306,7 +306,7 @@ DEFINE FUNCTION fn::prev_pe($pe:record) {
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
 };
 
-remove function fn::prev_pe_exclude_type;
+REMOVE FUNCTION fn::prev_pe_exclude_type;
 DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
     if $pe == none || !record::exists($pe) {
             return none;
@@ -316,7 +316,7 @@ DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
 };
 
 
-remove function fn::next_pe;
+REMOVE FUNCTION fn::next_pe;
 DEFINE FUNCTION fn::next_pe($pe:record) {
     if $pe == none || !record::exists($pe) {
         return none;
@@ -325,7 +325,7 @@ DEFINE FUNCTION fn::next_pe($pe:record) {
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
 };
 
-remove function fn::next_pe_exclude_type;
+REMOVE FUNCTION fn::next_pe_exclude_type;
 DEFINE FUNCTION fn::next_pe_exclude_type($pe:record, $exclude_type: string) {
     if $pe == none || !record::exists($pe) {
             return none;
@@ -334,7 +334,7 @@ DEFINE FUNCTION fn::next_pe_exclude_type($pe:record, $exclude_type: string) {
     return select value in from only ($pe->pe_owner->pe<-pe_owner)[$a..] where in.noun != $exclude_type  limit 1;
 };
 
-remove function fn::prev_connect_pe;
+REMOVE FUNCTION fn::prev_connect_pe;
 DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
     if $pe == none {
         return none;
@@ -352,7 +352,7 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
     };
 };
 
-remove function fn::prev_connect_pe_data;
+REMOVE FUNCTION fn::prev_connect_pe_data;
 DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     let $p = fn::prev_connect_pe($pe);
     //如果有到达这个元件的直段，则返回这个直段的leave
@@ -401,7 +401,7 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     };
 };
 
-remove function fn::next_connect_pe;
+REMOVE FUNCTION fn::next_connect_pe;
 DEFINE FUNCTION fn::next_connect_pe($pe:record) {
     if $pe == none {
         return none;
@@ -419,7 +419,7 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
     };
 };
 
-remove function fn::next_connect_pe_data;
+REMOVE FUNCTION fn::next_connect_pe_data;
 DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     let $p = fn::next_connect_pe($pe);
     let $tubi_refno = if fn::query_tubi_to($pe) != none {
@@ -465,17 +465,17 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     };
 };
 
-remove function fn::query_tubi_to;
+REMOVE FUNCTION fn::query_tubi_to;
 DEFINE FUNCTION fn::query_tubi_to($pe:record) {
     return select arrive from only $pe.owner->tubi_relate where leave=$pe limit 1;
 };
 
-remove function fn::query_tubi_from;
+REMOVE FUNCTION fn::query_tubi_from;
 DEFINE FUNCTION fn::query_tubi_from($pe:record) {
     return select leave from only $pe.owner->tubi_relate where arrive=$pe limit 1;
 };
 
-remove function fn::query_bran_first_tubi;
+REMOVE FUNCTION fn::query_bran_first_tubi;
 DEFINE FUNCTION fn::query_bran_first_tubi($pe:record) {
     if $pe.noun != 'BRAN' {
         return none;
@@ -483,25 +483,25 @@ DEFINE FUNCTION fn::query_bran_first_tubi($pe:record) {
     return tubi_relate:[$pe, 0].id;
 };
 
-remove function fn::prev_type;
+REMOVE FUNCTION fn::prev_type;
 DEFINE FUNCTION fn::prev_type($pe:record) {
     return fn::prev_pe($pe).noun;
 };
 
-remove function fn::next_type;
+REMOVE FUNCTION fn::next_type;
 DEFINE FUNCTION fn::next_type($pe:record) {
     return fn::next_pe($pe).noun;
 };
 
 
-remove function fn::children;
+REMOVE FUNCTION fn::children;
 DEFINE FUNCTION fn::children($pe:record) {
     return array::distinct(select value in from $pe<-pe_owner where record::exists(in.id) and !in.deleted);
 };
 
 
 // 获取ipara
-remove function fn::get_ipara;
+REMOVE FUNCTION fn::get_ipara;
 DEFINE FUNCTION fn::get_ipara($pe:record) {
     let $ispe = $pe.owner.refno.ISPE;
     return if $ispe == none {
@@ -517,14 +517,14 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
 };
 
 //根据类型找到父节点
-remove function fn::find_ancestor_type;
+REMOVE FUNCTION fn::find_ancestor_type;
 DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
     (array::flatten(select value fn::ancestor(id) from $pe)[?$self.noun=$t])[0]
 };
 
 // 根据类型返回子节点
-remove function fn::find_deep_children_type;
-define function fn::find_deep_children_type($pe:record,$t:string) {
+REMOVE FUNCTION fn::find_deep_children_type;
+DEFINE FUNCTION fn::find_deep_children_type($pe:record,$t:string) {
     let $children = array::flatten( object::values( (select
                       [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
                    from only $pe where record::exists(id))?:{{}} ) );
@@ -534,20 +534,72 @@ define function fn::find_deep_children_type($pe:record,$t:string) {
 };
 
 // 返回类型集合的父节点
-remove function fn::find_ancestor_types;
+REMOVE FUNCTION fn::find_ancestor_types;
 DEFINE FUNCTION fn::find_ancestor_types($pe: record, $t: array){
     let $r = (array::flatten(select value fn::ancestor(id) from $pe));
     return select value id from $r where noun in $t;
 };
 
 // 返回符合类型集合的子节点
-remove function fn::find_deep_children_types;
-define function fn::find_deep_children_types($pe:record,$t:array) {
-    let $children = array::flatten( object::values( (select
-                      [id] as p0, <-pe_owner<-(? as p1)<-pe_owner<-(? as p2)<-pe_owner<-(? as p3)<-pe_owner<-(? as p4)<-pe_owner<-(? as p5)<-pe_owner<-(? as p6)<-pe_owner<-(? as p7)<-pe_owner<-(? as p8)<-pe_owner<-(? as p9)<-pe_owner<-(? as p10)<-pe_owner<-(? as p11)
-                   from only $pe where record::exists(id))?:{{}} ) );
-    return select value id from $children where id.noun in $t
+REMOVE FUNCTION fn::find_deep_children_types;
+DEFINE FUNCTION fn::find_deep_children_types($pe:record,$t:array) {
+    let $infos = fn::collect_descendant_infos($pe, $t, true, true);
+    return array::map($infos, |$info| $info.id);
+};
 
+REMOVE FUNCTION fn::collect_descendant_infos;
+DEFINE FUNCTION fn::collect_descendant_infos(
+    $root: record,
+    $types: array<string>,
+    $include_self: bool,
+    $skip_deleted: bool
+) {
+    if !record::exists($root) {
+        return [];
+    };
+    -- 使用 +inclusive 修饰符来控制是否包含根节点本身
+    let $raw_descendants = if $include_self {
+        (SELECT VALUE @.{..+collect+inclusive}.children FROM ONLY $root LIMIT 1) ?: []
+    } else {
+        (SELECT VALUE @.{..+collect}.children FROM ONLY $root LIMIT 1) ?: []
+    };
+    let $descendants = array::flatten(array::flatten($raw_descendants));
+    let $filtered = array::filter($descendants, |$node|
+        record::exists($node) &&
+        (!$skip_deleted || !($node.deleted?:false)) &&
+        (array::len($types) == 0 || $node.noun IN $types)
+    );
+    return array::distinct(array::map(
+        $filtered,
+        |$node| {{
+            node: $node,
+            id: record::id($node),
+            noun: $node.noun,
+            deleted: $node.deleted?:false
+        }}
+    ));
+};
+
+REMOVE FUNCTION fn::collect_descendants_by_children;
+DEFINE FUNCTION fn::collect_descendants_by_children(
+    $root: record,
+    $types: array<string>,
+    $include_self: bool,
+    $skip_deleted: bool
+) {
+    let $infos = fn::collect_descendant_infos($root, $types, $include_self, $skip_deleted);
+    return array::distinct(array::map($infos, |$info| $info.id));
+};
+
+REMOVE FUNCTION fn::visible_geo_descendants;
+DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool) {
+    let $visible_types = [
+        "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE",
+        "EXTR", "REVO", "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT",
+        "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
+        "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ"
+    ];
+    return fn::collect_descendants_by_children($root, $visible_types, $include_self, true);
 };
 
 remove FUNCTION fn::find_door_from_wall;
@@ -557,7 +609,7 @@ DEFINE FUNCTION fn::find_door_from_wall($pe:array) {
     return $uda_value;
 };
 
-remove function fn::get_mdb_dbnums;
+REMOVE FUNCTION fn::get_mdb_dbnums;
 DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
         let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
         return (select value dbnum from (
@@ -568,8 +620,8 @@ DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
         ));
 };
 
-remove function fn::get_flan_bolt_list;
-define function fn::get_flan_bolt_list($pe:record) {
+REMOVE FUNCTION fn::get_flan_bolt_list;
+DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
     if $pe.refno.SPRE == NONE { return NONE; };
     let $bltf = select value refno.SPRE.refno.CATR.refno.BLRF[0].name from $pe;
     if $bltf == NONE { return NONE; };
@@ -587,3 +639,82 @@ define function fn::get_flan_bolt_list($pe:record) {
         'mat':$mat
     }
 };
+
+-- 注释掉测试函数，因为 SurrealDB 3.0 不支持 test:: 命名空间
+-- REMOVE FUNCTION test::create_mock_children_tree;
+-- DEFINE FUNCTION test::create_mock_children_tree() {
+--     let $root = type::thing('pe', '99999/1000');
+--     let $box = type::thing('pe', '99999/1001');
+--     let $bran = type::thing('pe', '99999/1002');
+--     let $cable = type::thing('pe', '99999/1003');
+--     let $panel = type::thing('pe', '99999/1004');
+--
+--     UPSERT $root CONTENT {
+--         noun: "ROOT",
+--         name: "Mock Root",
+--         deleted: false,
+--         children: []
+--     };
+--     UPSERT $box CONTENT {
+--         noun: "BOX",
+--         name: "Mock Box",
+--         deleted: false,
+--         children: []
+--     };
+--     UPSERT $bran CONTENT {
+--         noun: "BRAN",
+--         name: "Mock Bran",
+--         deleted: false,
+--         children: []
+--     };
+--     UPSERT $cable CONTENT {
+--         noun: "CABLE",
+--         name: "Mock Cable",
+--         deleted: false,
+--         children: []
+--     };
+--     UPSERT $panel CONTENT {
+--         noun: "PANEL",
+--         name: "Mock Panel",
+--         deleted: true,
+--         children: []
+--     };
+--
+--     UPDATE $root SET children = [$box, $bran];
+--     UPDATE $bran SET children = [$cable, $panel];
+--
+--     return '99999/1000';
+-- };
+--
+-- REMOVE FUNCTION test::cleanup_mock_children_tree;
+-- DEFINE FUNCTION test::cleanup_mock_children_tree() {
+--     let $ids = [
+--         type::thing('pe', '99999/1000'),
+--         type::thing('pe', '99999/1001'),
+--         type::thing('pe', '99999/1002'),
+--         type::thing('pe', '99999/1003'),
+--         type::thing('pe', '99999/1004')
+--     ];
+--     for $id in $ids {
+--         if record::exists($id) {
+--             UPDATE $id SET children = [];
+--         };
+--     };
+--     delete $ids;
+--     return true;
+-- };
+--
+-- REMOVE FUNCTION test::exercise_visible_descendants;
+-- DEFINE FUNCTION test::exercise_visible_descendants($cleanup: bool) {
+--     let $root = test::create_mock_children_tree();
+--     let $collect_all = fn::collect_descendants_by_children(type::thing('pe', $root), [], true);
+--     let $visible = fn::visible_geo_descendants(type::thing('pe', $root), true);
+--     if $cleanup {
+--         test::cleanup_mock_children_tree();
+--     };
+--     return {
+--         root: $root,
+--         all_descendants: $collect_all,
+--         visible_descendants: $visible
+--     };
+-- };
