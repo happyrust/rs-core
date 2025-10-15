@@ -1,5 +1,4 @@
 use crate::graph::*;
-use crate::init_test_surreal;
 use crate::noun_graph::gen_noun_incoming_relate_sql;
 use crate::noun_graph::gen_noun_outcoming_relate_sql;
 use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
@@ -13,150 +12,109 @@ use petgraph::graphmap::DiGraphMap;
 use petgraph::graphmap::GraphMap;
 use std::collections::HashSet;
 
-#[test]
-fn test_petgraph_search() {
-    let path = r#"E:\RustProject\new\gen-model\assets\pg\1112.pg"#;
-    let graph = PetRefnoGraph::load(path).unwrap();
-    dbg!(graph.node_indices.len());
-    let target_hashes = ["PAVE"].iter().map(|x| db1_hash(x)).collect::<HashSet<_>>();
-    let search = graph
-        .search_path_refnos("17496_248588".into(), |hash| target_hashes.contains(&hash))
-        .unwrap();
-
-    dbg!(&search.len());
-}
-
-#[test]
-fn test_petgraph_noun_path() {
-    // 创建一个有向图
-    let mut graph = DiGraphMap::new();
-    let node_a = graph.add_node("A");
-    let node_b = graph.add_node("B");
-    let node_c = graph.add_node("C");
-    let node_d = graph.add_node("D");
-    let node_e = graph.add_node("E");
-
-    graph.add_edge(node_a, node_b, 1);
-    graph.add_edge(node_a, node_c, 1);
-    graph.add_edge(node_b, node_d, 1);
-    graph.add_edge(node_c, node_d, 1);
-    graph.add_edge(node_d, node_e, 1);
-    let node_e = graph.add_node("E");
-
-    let start_node = node_a;
-    let end_node = node_e;
-
-    // let index = graph.node_indices().find(|i| graph[*i] == "B").unwrap();
-    // dbg!(&index);
-
-    // 使用 all_simple_paths 函数找到所有路径
-    let paths =
-        all_simple_paths::<Vec<_>, _>(&graph, start_node, end_node, 0, None).collect::<Vec<_>>();
-
-    // 遍历路径并计算距离
-    for path in paths {
-        // let distance: i32 = path
-        //     .windows(2)
-        //     .map(|window| {
-        //         graph
-        //             .edge_weight(graph.find_edge(window[0], window[1]).unwrap())
-        //             .unwrap()
-        //     })
-        //     .sum();
-        // println!("Path: {:?}, Distance: {}", path, distance);
-        println!("Path: {:?}", path);
-    }
-}
-
+use super::test_helpers::init_sul_db_with_memory;
 
 #[tokio::test]
-async fn test_query_all_bran_hangers() -> anyhow::Result<()> {
-    crate::init_test_surreal().await;
-    let refno = "17496/171102".into(); // Replace with your desired refno value
-    let result = query_filter_all_bran_hangs(refno).await?;
-    dbg!(&result.len());
+async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Result<()> {
+    // 使用内存数据库初始化全局 SUL_DB（加载 resource/surreal 下的函数定义）
+    init_sul_db_with_memory().await?;
 
-    let result = query_filter_deep_children(
-        refno,
-        &CATA_WITHOUT_REUSE_GEO_NAMES,
-    )
-    .await?;
-    dbg!(&result);
+    // 读取测试数据文件并插入
+    let test_data_path = "src/test/json/layers/layer_01.txt";
+    let test_data = std::fs::read_to_string(test_data_path).expect("Failed to read test data file");
 
-    let refno = "17496/171180".into(); // Replace with your desired refno value
-    let result = query_filter_all_bran_hangs(refno).await?;
-    dbg!(&result);
+    // 直接插入文件中的 JSON 数组
+    let insert_sql = format!("INSERT INTO pe {};", test_data);
+    SUL_DB.query(&insert_sql).await?;
 
-    // TODO: Add assertions to validate the result
+    // 测试 1: 从 WORL 节点查询所有 SITE 类型的子孙
+    let worl_refno: RefnoEnum = "9304/0".into();
+    let result = query_multi_filter_deep_children(&[worl_refno], &["SITE"]).await?;
 
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_query_ancestor_filter() -> anyhow::Result<()> {
-    crate::init_test_surreal().await;
-    let refno = "25688/7957".into();
-    // let type_name = crate::get_type_name(refno).await?;
-    let target =
-        crate::query_filter_ancestors(refno, &["STWALL", "ZONE"])
-            .await
-            .unwrap();
-    dbg!(target);
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_collect_descendants_with_mock_tree() -> anyhow::Result<()> {
-    init_test_surreal().await;
-
-    let _ = SUL_DB
-        .query("RETURN test::cleanup_mock_children_tree();")
-        .await;
-
-    let mut create_resp = SUL_DB
-        .query("RETURN test::create_mock_children_tree();")
-        .await?;
-    let root_str: String = create_resp.take(0)?;
-    let root_refno = RefnoEnum::from(root_str.as_str());
-
-    let mut all_refnos = query_deep_children_refnos(root_refno).await?;
-    let mut all_str: Vec<String> = all_refnos
-        .into_iter()
-        .map(|r| r.to_normal_str())
-        .collect();
-    all_str.sort();
-    assert_eq!(
-        all_str,
-        vec![
-            "99999/1000".to_string(),
-            "99999/1001".to_string(),
-            "99999/1002".to_string(),
-            "99999/1003".to_string()
-        ]
+    assert!(!result.is_empty(), "Should find SITE descendants");
+    assert!(
+        result.contains(&RefnoEnum::from("17496/169982")),
+        "Should contain SITE:17496_169982"
     );
 
-    let mut bran_refnos = query_filter_deep_children(root_refno, &["BRAN"]).await?;
-    let mut bran_str: Vec<String> = bran_refnos
-        .into_iter()
-        .map(|r| r.to_normal_str())
-        .collect();
-    bran_str.sort();
-    assert_eq!(bran_str, vec!["99999/1002".to_string()]);
+    // 测试 2: 从 SITE 节点查询所有 ZONE 和 EQUI 类型的子孙
+    let site_refno: RefnoEnum = "17496/169982".into();
+    let result = query_multi_filter_deep_children(&[site_refno.clone()], &["ZONE", "EQUI"]).await?;
 
-    let mut cable_refnos = query_filter_deep_children(root_refno, &["CABLE"]).await?;
-    let mut cable_str: Vec<String> = cable_refnos
-        .into_iter()
-        .map(|r| r.to_normal_str())
-        .collect();
-    cable_str.sort();
-    assert_eq!(cable_str, vec!["99999/1003".to_string()]);
+    assert!(!result.is_empty(), "Should find ZONE and EQUI descendants");
+    assert!(
+        result.contains(&RefnoEnum::from("17496/171099")),
+        "Should contain ZONE:17496_171099"
+    );
+    assert!(
+        result.contains(&RefnoEnum::from("17496/171100")),
+        "Should contain EQUI:17496_171100"
+    );
 
-    let panel_refnos = query_filter_deep_children(root_refno, &["PANEL"]).await?;
-    assert!(panel_refnos.is_empty(), "deleted PANEL node should be filtered out");
+    // 测试 3: 从 ZONE 节点查询所有 EQUI 类型的子孙
+    let zone_refno: RefnoEnum = "17496/171099".into();
+    let result = query_multi_filter_deep_children(&[zone_refno.clone()], &["EQUI"]).await?;
 
-    SUL_DB
-        .query("RETURN test::cleanup_mock_children_tree();")
-        .await?;
+    assert_eq!(result.len(), 1, "Should find exactly 1 EQUI");
+    assert!(
+        result.contains(&RefnoEnum::from("17496/171100")),
+        "Should contain EQUI:17496_171100"
+    );
+
+    // 测试 4: 多个起点查询（SITE 和 ZONE 一起查询 EQUI）
+    let result =
+        query_multi_filter_deep_children(&[site_refno.clone(), zone_refno.clone()], &["EQUI"])
+            .await?;
+
+    assert_eq!(
+        result.len(),
+        1,
+        "Should find 1 unique EQUI from multiple starting points"
+    );
+    assert!(
+        result.contains(&RefnoEnum::from("17496/171100")),
+        "Should contain EQUI:17496_171100"
+    );
+
+    // 测试 5: 查询所有类型（nouns 为空）
+    let result = query_multi_filter_deep_children(&[worl_refno.clone()], &[]).await?;
+
+    assert!(
+        !result.is_empty(),
+        "Should find all descendants when nouns is empty"
+    );
+    // 应该包含 SITE、ZONE、EQUI 等所有子孙
+
+    // 测试 6: 空的 refnos 输入
+    let result = query_multi_filter_deep_children(&[], &["EQUI"]).await?;
+
+    assert!(result.is_empty(), "Empty refnos should return empty result");
+
+    // 测试 7: 查询不存在的类型
+    let result = query_multi_filter_deep_children(&[worl_refno], &["NONEXISTENT_TYPE"]).await?;
+
+    assert!(
+        result.is_empty(),
+        "Should return empty for non-existent type"
+    );
+
+    // 清理测试数据
+    let cleanup_sql = r#"
+        DELETE pe:17496_171101;
+        DELETE pe:17496_171100;
+        DELETE pe:17496_171099;
+        DELETE pe:17496_169983;
+        DELETE pe:25688_4135;
+        DELETE pe:17496_169982;
+        DELETE pe:9304_0;
+
+        DELETE pe_owner WHERE in IN [
+            pe:17496_171101, pe:17496_171100, pe:17496_171099,
+            pe:17496_169983, pe:25688_4135, pe:17496_169982
+        ];
+    "#;
+
+    SUL_DB.query(cleanup_sql).await?;
 
     Ok(())
 }

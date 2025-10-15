@@ -6,8 +6,8 @@ use crate::pe::SPdmsElement;
 use crate::query_ancestor_refnos;
 use crate::ssc_setting::PbsElement;
 use crate::three_dimensional_review::ModelDataIndex;
-use crate::utils::RecordIdExt;
 use crate::types::*;
+use crate::utils::RecordIdExt;
 use crate::{NamedAttrMap, RefU64, query_types, rs_surreal};
 use crate::{SUL_DB, SurlValue};
 use anyhow::anyhow;
@@ -21,8 +21,8 @@ use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode, W
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::str::FromStr;
-use surrealdb::types::{RecordId, SurrealValue};
 use surrealdb::types as surrealdb_types;
+use surrealdb::types::{RecordId, SurrealValue};
 
 #[inline]
 #[cached(result = true)]
@@ -254,7 +254,9 @@ pub async fn query_deep_children_refnos_filter_spre(
         let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
         let mut conditions = vec!["(refno.SPRE.id != none OR refno.CATR.id != none)".to_string()];
         if filter {
-            conditions.push("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string());
+            conditions.push(
+                "array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string(),
+            );
         }
         let where_clause = format!(" where {}", conditions.join(" and "));
         let sql = format!("select value id from [{pe_keys}]{where_clause};");
@@ -279,7 +281,9 @@ async fn query_versioned_deep_children_filter_inst(
         let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
         let mut clauses = Vec::new();
         if filter {
-            clauses.push("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string());
+            clauses.push(
+                "array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string(),
+            );
         }
         let where_clause = if clauses.is_empty() {
             "".to_string()
@@ -309,7 +313,9 @@ async fn query_deep_children_filter_inst(
         let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
         let mut clauses = Vec::new();
         if filter {
-            clauses.push("array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string());
+            clauses.push(
+                "array::len(->inst_relate) = 0 and array::len(->tubi_relate) = 0".to_string(),
+            );
         }
         let where_clause = if clauses.is_empty() {
             "".to_string()
@@ -327,9 +333,9 @@ async fn query_deep_children_filter_inst(
 pub async fn query_multi_filter_deep_children(
     refnos: &[RefnoEnum],
     nouns: &[&str],
-) -> anyhow::Result<HashSet<RefnoEnum>> {
+) -> anyhow::Result<Vec<RefnoEnum>> {
     if refnos.is_empty() {
-        return Ok(HashSet::new());
+        return Ok(Vec::new());
     }
 
     // 优化：使用 SurQL 批量查询，避免串行循环
@@ -345,71 +351,25 @@ pub async fn query_multi_filter_deep_children(
     let refno_list = refno_keys.join(", ");
 
     // 使用 SurQL 批量查询所有起点的子孙节点
-    // 优化：使用 fn::find_deep_children_types 进行批量处理
     let sql = format!(
         r#"
-        LET $refnos = [{}];
-        LET $types = {};
-        
         -- 批量查询所有起点的子孙节点，使用 fn::find_deep_children_types
-        LET $all_descendants = array::flatten(array::map($refnos, |$refno| 
-            fn::find_deep_children_types($refno, $types)
-        ));
-        
-        -- 去重并返回结果
-        RETURN array::distinct($all_descendants)
+        array::flatten(array::map([{}], |$refno|
+            fn::find_deep_children_types($refno, {})
+        ))
         "#,
-        refno_list,
-        types_expr
+        refno_list, types_expr
     );
 
-        match SUL_DB.query(&sql).await {
-            Ok(mut response) => {
-                // fn::find_deep_children_types 返回字符串 ID 数组，需要先解析为字符串
-                match response.take::<Vec<String>>(0) {
-                    Ok(string_data) => {
-                        // 将字符串 ID 转换为 RefnoEnum
-                        let mut refnos = Vec::new();
-                        for id_str in string_data {
-                            let refno = RefnoEnum::from(id_str.as_str());
-                            refnos.push(refno);
-                        }
-                        Ok(refnos.into_iter().collect())
-                    }
-                    Err(e) => {
-                        // 如果解析为字符串数组失败，可能是返回了 none 或其他类型
-                        // 尝试解析为 Vec<serde_json::Value> 来检查实际返回的内容
-                        match response.take::<Vec<serde_json::Value>>(0) {
-                            Ok(json_data) => {
-                                // 检查是否返回了 null 或空数组
-                                if json_data.is_empty() || (json_data.len() == 1 && json_data[0].is_null()) {
-                                    // 返回空结果
-                                    Ok(HashSet::new())
-                                } else {
-                                    // 尝试从 JSON 数据中提取字符串
-                                    let mut refnos = Vec::new();
-                                    for value in json_data {
-                                        if let Some(id_str) = value.as_str() {
-                                            let refno = RefnoEnum::from(id_str);
-                                            refnos.push(refno);
-                                        }
-                                    }
-                                    Ok(refnos.into_iter().collect())
-                                }
-                            }
-                            Err(_) => {
-                                // 如果都失败了，返回空结果
-                                Ok(HashSet::new())
-                            }
-                        }
-                    }
-                }
-            }
-            Err(e) => {
-                init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-                Err(anyhow!(e.to_string()))
-            }
-        }
+    // println!("Sql: {}", sql);
+
+    let mut response = SUL_DB.query(&sql).await?;
+    dbg!(&response);
+
+    // record::id 返回字符串数组（如 "17496_171100"）
+    let result: Vec<RefU64> = response.take(0)?;
+
+    Ok(result.into_iter().map(|x| x.into()).collect())
 }
 
 pub async fn query_multi_deep_versioned_children_filter_inst(

@@ -178,8 +178,8 @@ tempfile = "3"
 name = "sync_benchmark"
 harness = false
 
-[patch.crates-io]
-surrealdb = { path= "/Volumes/DPC/work/database/surrealdb/crates/sdk", default-features = false, features = [
+[patch."https://gitee.com/happydpc/surrealdb"]
+surrealdb = { path = "/Volumes/DPC/work/database/surrealdb/crates/sdk", default-features = false, features = [
     "protocol-ws",
     "kv-mem"
-]}
+] }

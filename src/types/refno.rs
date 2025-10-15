@@ -14,6 +14,27 @@ use std::str::FromStr;
 use std::{default, fmt, hash};
 use surrealdb::types as surrealdb_types;
 
+//todo change to this struct
+#[derive(
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    Hash,
+    Clone,
+    Default,
+    Component,
+    Eq,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    Reflect,
+    SurrealValue,
+)]
+pub struct RefNo {
+    id: String,
+    sesno: Option<u16>,
+}
+
 #[derive(Debug, PartialEq, Eq, derive_more::Display)]
 pub struct ParseRefU64Error;
 
@@ -31,9 +52,30 @@ pub struct ParseRefU64Error;
     PartialOrd,
     Ord,
     Reflect,
-    SurrealValue,
+    // SurrealValue,
 )]
 pub struct RefU64(pub u64);
+
+impl SurrealValue for RefU64 {
+    fn kind_of() -> surrealdb_types::Kind {
+        surrealdb_types::Kind::Record(vec!["pe".to_string()])
+    }
+
+    fn into_value(self) -> surrealdb_types::Value {
+        surrealdb_types::Value::RecordId(self.to_pe_thing())
+    }
+
+    fn from_value(value: surrealdb_types::Value) -> anyhow::Result<Self> {
+        match value {
+            surrealdb_types::Value::RecordId(rid) => Ok(Self::from(rid)),
+            surrealdb_types::Value::String(s) => {
+                Self::from_str(&s).map_err(|_| anyhow::anyhow!("无法解析字符串为 RefU64"))
+            }
+            surrealdb_types::Value::Number(n) => Ok(Self(n.to_int().unwrap_or(0) as u64)),
+            _ => Err(anyhow::anyhow!("不支持的值类型转换为 RefU64")),
+        }
+    }
+}
 
 impl RefU64 {
     // 自定义序列化方法
@@ -70,7 +112,7 @@ impl Serialize for RefU64 {
 }
 
 #[derive(Debug, Serialize)]
-// #[serde(untagged)]
+#[serde(untagged)]
 enum RefnoVariant {
     RefThing(RecordId),
     Str(String),
@@ -120,6 +162,7 @@ impl<'de> Deserialize<'de> for RefnoVariant {
             {
                 // 尝试将map反序列化为Thing
                 let thing = RecordId::deserialize(de::value::MapAccessDeserializer::new(map))?;
+                dbg!(&thing);
                 Ok(RefnoVariant::RefThing(thing))
             }
         }
@@ -134,6 +177,7 @@ impl<'de> Deserialize<'de> for RefU64 {
         D: Deserializer<'de>,
     {
         if let Ok(s) = RefnoVariant::deserialize(deserializer) {
+            dbg!(&s);
             match s {
                 RefnoVariant::RefThing(s) => Ok(s.into()),
                 RefnoVariant::Str(s) => Self::from_str(s.as_str())
@@ -167,7 +211,11 @@ impl FromStr for RefU64 {
 impl From<RecordId> for RefU64 {
     fn from(record: RecordId) -> Self {
         let raw = record.to_raw();
-        raw.as_str().into()
+        match record.key {
+            RecordIdKey::String(key) => RefU64::from(key),
+            RecordIdKey::Number(num) => RefU64(num as u64),
+            _ => raw.as_str().into(),
+        }
     }
 }
 
@@ -1093,6 +1141,54 @@ mod tests {
     use std::convert::TryFrom;
     use surrealdb::types::RecordId;
 
+    fn sample_ref() -> RefU64 {
+        RefU64::from_two_nums(17_496, 266_203)
+    }
+
+    #[test]
+    fn refno_enum_deserialize_from_string() {
+        let parsed: RefnoEnum =
+            serde_json::from_str("\"17496/266203\"").expect("string deserialization failed");
+        assert_eq!(parsed, RefnoEnum::Refno(sample_ref()));
+    }
+
+    #[test]
+    fn refno_enum_deserialize_from_single_element_array() {
+        let parsed: RefnoEnum =
+            serde_json::from_str("[\"17496/266203\"]").expect("array deserialization failed");
+        assert_eq!(parsed, RefnoEnum::Refno(sample_ref()));
+    }
+
+    #[test]
+    fn refno_enum_deserialize_from_number_pair_array() {
+        let parsed: RefnoEnum =
+            serde_json::from_str("[123456, 3]").expect("array number deserialization failed");
+        assert_eq!(
+            parsed,
+            RefnoEnum::SesRef(RefnoSesno::new(RefU64(123_456), 3))
+        );
+    }
+
+    #[test]
+    fn refno_enum_deserialize_from_object_with_sesno() {
+        let parsed: RefnoEnum = serde_json::from_str("{\"refno\": \"17496/266203\", \"sesno\": 4}")
+            .expect("object deserialization failed");
+        assert_eq!(parsed, RefnoEnum::SesRef(RefnoSesno::new(sample_ref(), 4)));
+    }
+
+    #[test]
+    fn refno_enum_deserialize_from_object_without_sesno() {
+        let parsed: RefnoEnum = serde_json::from_str("{\"refno\": \"17496/266203\"}")
+            .expect("object deserialization failed");
+        assert_eq!(parsed, RefnoEnum::Refno(sample_ref()));
+    }
+
+    #[test]
+    fn refno_enum_deserialize_negative_number_fails() {
+        let result = serde_json::from_str::<RefnoEnum>("-1");
+        assert!(result.is_err());
+    }
+
     #[test]
     fn refno_enum_from_surreal_record_id() {
         // 模拟 `return pe:1_2` 的 SurrealDB 返回值
@@ -1115,6 +1211,196 @@ mod tests {
         let refno_from_str: RefnoEnum =
             serde_json::from_str("\"pe:1_2\"").expect("string deserialize failed");
         assert_eq!(refno_from_str, refno);
+    }
+
+    #[test]
+    fn refu64_from_surrealdb_record_id_value() {
+        use surrealdb::types::{RecordId, RecordIdKey, Strand, SurrealValue, Value};
+
+        // 创建 RecordId: pe:17496_169982
+        let record_id = RecordId {
+            table: "pe".to_string(),
+            key: RecordIdKey::String("17496_169982".to_string()),
+        };
+
+        // 包装成 SurrealDB Value (不需要 Box)
+        let surreal_value = Value::RecordId(record_id);
+
+        // 使用 SurrealValue trait 的 from_value 方法转换为 RefU64
+        let refu64 =
+            RefU64::from_value(surreal_value).expect("Failed to convert RecordId Value to RefU64");
+
+        // 验证结果
+        let expected = RefU64::from_two_nums(17496, 169982);
+        assert_eq!(
+            refu64, expected,
+            "RefU64 conversion from RecordId Value failed"
+        );
+
+        // 验证转换后的字符串表示
+        assert_eq!(refu64.to_string(), "17496/169982");
+    }
+
+    #[test]
+    fn refu64_from_surrealdb_string_value() {
+        use surrealdb::types::{Strand, SurrealValue, Value};
+
+        // 测试从字符串 Value 转换
+        let string_value = Value::String(Strand::from("17496/169982"));
+        let refu64 =
+            RefU64::from_value(string_value).expect("Failed to convert String Value to RefU64");
+
+        assert_eq!(refu64, RefU64::from_two_nums(17496, 169982));
+    }
+
+    #[test]
+    fn refu64_from_surrealdb_number_value() {
+        use surrealdb::types::{Number, SurrealValue, Value};
+
+        // 测试从数字 Value 转换
+        let number_value = Value::Number(Number::from(123456789i64));
+        let refu64 =
+            RefU64::from_value(number_value).expect("Failed to convert Number Value to RefU64");
+
+        assert_eq!(refu64, RefU64(123456789));
+    }
+
+    /// 测试 RefU64 序列化为 Value::RecordId
+    #[test]
+    fn test_refu64_into_value_as_record_id() {
+        use surrealdb::types::{RecordIdKey, SurrealValue, Value};
+
+        let refu64 = RefU64::from_two_nums(17496, 169982);
+
+        // 序列化为 Value
+        let value = refu64.into_value();
+
+        // 验证是 RecordId 类型
+        match &value {
+            Value::RecordId(rid) => {
+                assert_eq!(rid.table, "pe");
+                match &rid.key {
+                    RecordIdKey::String(s) => {
+                        assert_eq!(s, "17496_169982");
+                    }
+                    _ => panic!("Expected String key"),
+                }
+            }
+            _ => panic!("Expected RecordId value, got {:?}", value),
+        }
+    }
+
+    /// 测试从不同表名的 RecordId 转换
+    #[test]
+    fn test_refu64_from_different_table_record_id() {
+        use surrealdb::types::{RecordId, RecordIdKey, SurrealValue, Value};
+
+        // 测试从 pbs 表的 RecordId 转换
+        let record_id = RecordId {
+            table: "pbs".to_string(),
+            key: RecordIdKey::String("100_200".to_string()),
+        };
+        let value = Value::RecordId(record_id);
+        let refu64 = RefU64::from_value(value).expect("Failed to convert");
+
+        assert_eq!(refu64, RefU64::from_two_nums(100, 200));
+    }
+
+    /// 测试从数字类型的 RecordId key 转换
+    #[test]
+    fn test_refu64_from_number_key_record_id() {
+        use surrealdb::types::{RecordId, RecordIdKey, SurrealValue, Value};
+
+        let record_id = RecordId {
+            table: "pe".to_string(),
+            key: RecordIdKey::Number(123456789),
+        };
+        let value = Value::RecordId(record_id);
+        let refu64 = RefU64::from_value(value).expect("Failed to convert");
+
+        assert_eq!(refu64, RefU64(123456789));
+    }
+
+    /// 测试 RefU64 的往返转换（序列化 -> 反序列化）
+    #[test]
+    fn test_refu64_roundtrip_conversion() {
+        use surrealdb::types::SurrealValue;
+
+        let original = RefU64::from_two_nums(17496, 169982);
+
+        // 序列化
+        let value = original.into_value();
+
+        // 反序列化
+        let restored = RefU64::from_value(value).expect("Failed to restore");
+
+        assert_eq!(original, restored);
+        assert_eq!(original.to_string(), restored.to_string());
+    }
+
+    /// 测试 kind_of 方法返回正确的类型信息
+    #[test]
+    fn test_refu64_kind_of() {
+        use surrealdb::types::{Kind, SurrealValue};
+
+        let kind = RefU64::kind_of();
+
+        // 验证返回的是 Record 类型
+        match kind {
+            Kind::Record(tables) => {
+                assert_eq!(tables.len(), 1);
+                assert_eq!(tables[0], "pe");
+            }
+            _ => panic!("Expected Kind::Record, got {:?}", kind),
+        }
+    }
+
+    /// 测试从无效的 Value 类型转换应该失败
+    #[test]
+    fn test_refu64_from_invalid_value_types() {
+        use surrealdb::types::{SurrealValue, Value};
+
+        // 测试从 Bool 转换应该失败
+        let bool_value = Value::Bool(true);
+        assert!(RefU64::from_value(bool_value).is_err());
+
+        // 测试从 None 转换应该失败
+        let none_value = Value::None;
+        assert!(RefU64::from_value(none_value).is_err());
+
+        // 测试从 Array 转换应该失败
+        let array_value = Value::Array(vec![].into());
+        assert!(RefU64::from_value(array_value).is_err());
+    }
+
+    /// 测试从格式错误的字符串转换
+    #[test]
+    fn test_refu64_from_invalid_string_value() {
+        use surrealdb::types::{Strand, SurrealValue, Value};
+
+        // 无效格式的字符串
+        let invalid_string = Value::String(Strand::from("invalid_format"));
+        let result = RefU64::from_value(invalid_string);
+
+        // 应该返回错误或默认值（取决于实现）
+        assert!(result.is_err() || result.unwrap() == RefU64::default());
+    }
+
+    /// 测试实际查询场景：模拟 SurrealDB 返回 RecordId
+    #[test]
+    fn test_refu64_query_result_scenario() {
+        use surrealdb::types::{RecordId, SurrealValue, Value};
+
+        // 模拟 SurrealDB 查询返回: SELECT value REFNO from WORL WHERE ...
+        let query_result =
+            RecordId::parse_simple("pe:17496_169982").expect("Failed to parse RecordId");
+
+        let value = Value::RecordId(query_result);
+        let refu64 = RefU64::from_value(value).expect("Failed to convert query result");
+
+        assert_eq!(refu64.get_0(), 17496);
+        assert_eq!(refu64.get_1(), 169982);
+        assert_eq!(refu64.to_string(), "17496_169982");
     }
 }
 

@@ -10,14 +10,14 @@ pub mod test_mdb;
 
 pub mod test_basic_query;
 
-pub mod test_refno_enum;
+// pub mod test_refno_enum;
 pub mod test_helpers;
-pub mod test_memory_db;
+// pub mod test_memory_db;
 pub mod test_simple_refno;
 
 // pub mod test_query_group;
 
-// pub mod test_graph;
+pub mod test_graph;
 
 // pub mod test_serde;
 

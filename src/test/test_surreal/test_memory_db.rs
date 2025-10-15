@@ -2,7 +2,7 @@
 //! 
 //! 测试内存数据库的初始化和基本功能
 
-use crate::test::test_surreal::test_helpers::*;
+// use crate::test::test_surreal::test_helpers::*;
 
 #[tokio::test]
 async fn test_memory_database_init() -> anyhow::Result<()> {

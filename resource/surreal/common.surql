@@ -7,7 +7,7 @@ DEFINE FUNCTION fn::ancestor($r: record) {
     return if !record::exists($r) {
         return [];
     } else {
-        let $nodes = (SELECT VALUE @.{..+collect+inclusive}(.owner) FROM ONLY $r LIMIT 1) ?: [];
+        let $nodes = (SELECT VALUE @.{..+collect+inclusive}.owner FROM ONLY $r LIMIT 1) ?: [];
         return array::filter($nodes, |$v| $v != NONE && $v != pe:0_0);
     };
 };
@@ -134,7 +134,7 @@ DEFINE FUNCTION fn::backup_data(
                                 }]);
             //uda 属性需要单独的备份方法，因为有很多引用
             let $uda_data = select * from only type::thing('ATT_UDA', record::id($pe.id)) limit 1;
-            if $uda_data != none {  
+            if $uda_data != none {
                 upsert $old_uda_att_id content $uda_data.patch([{
                                 		'op': 'replace',
                                 		'path': 'refno',
@@ -415,7 +415,7 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
             return fn::first_child($connect_bran)?:$connect_bran;
         } else {
             return none;
-        };  
+        };
     };
 };
 
@@ -457,7 +457,7 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
                 next: $pe,
                 tubi_refno: $tubi_refno,
                 tubi_name: $tubi_name,
-                tubi_spref: $pe.refno.LSTU.name           
+                tubi_spref: $pe.refno.LSTU.name
             };
         } else {
             none
@@ -545,6 +545,16 @@ REMOVE FUNCTION fn::find_deep_children_types;
 DEFINE FUNCTION fn::find_deep_children_types($pe:record,$t:array) {
     let $infos = fn::collect_descendant_infos($pe, $t, true, true);
     return array::map($infos, |$info| $info.id);
+};
+
+REMOVE FUNCTION fn::collect_children;
+DEFINE FUNCTION fn::collect_children($root: record) {
+    if !record::exists($root) {
+        return [];
+    };
+    let $raw_children = (SELECT VALUE children FROM ONLY $root LIMIT 1) ?: [];
+    let $children = array::flatten([$raw_children]);
+    return array::filter($children, |$child| $child != none);
 };
 
 REMOVE FUNCTION fn::collect_descendant_infos;

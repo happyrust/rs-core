@@ -5,7 +5,7 @@
 use crate::types::*;
 use crate::{SurlValue, SUL_DB};
 use anyhow::Result;
-use surrealdb::Response;
+use surrealdb::IndexedResults;
 use std::fmt::Display;
 
 /// 查询构建器 - 用于构建和执行 SurrealDB 查询
@@ -65,7 +65,7 @@ impl QueryBuilder {
     }
 
     /// 执行查询并返回响应
-    pub async fn execute(&self) -> Result<Response> {
+    pub async fn execute(&self) -> Result<IndexedResults> {
         let response = SUL_DB.query(&self.sql).await?;
         Ok(response)
     }
