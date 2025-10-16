@@ -29,7 +29,7 @@ use sea_query::{Alias, MysqlQueryBuilder};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use surrealdb::types::{RecordId, RecordIdKey, Value};
+use surrealdb::types::{RecordId, RecordIdKey, Value, SurrealValue};
 
 ///带名称的属性map
 #[derive(
@@ -225,6 +225,20 @@ impl From<NamedAttrMap> for SurlValue {
             obj.insert(k, value);
         }
         SurlValue::Object(obj)
+    }
+}
+
+impl SurrealValue for NamedAttrMap {
+    fn kind_of() -> surrealdb::types::Kind {
+        surrealdb::types::Kind::Object
+    }
+
+    fn into_value(self) -> SurlValue {
+        self.into()
+    }
+
+    fn from_value(value: SurlValue) -> anyhow::Result<Self> {
+        Ok(value.into())
     }
 }
 

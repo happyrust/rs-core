@@ -583,14 +583,22 @@ DEFINE FUNCTION fn::collect_descendant_ids_by_types($pe:record,$t:array,$inclusi
 };
 
 REMOVE FUNCTION fn::collect_children;
--- 收集所有子节点
-DEFINE FUNCTION fn::collect_children($root: record) {
+-- 收集子节点，支持按类型过滤
+-- $types: 要过滤的类型数组，空数组表示不过滤
+DEFINE FUNCTION fn::collect_children($root: record, $types: option<array<string>>) {
     if !record::exists($root) {
         return [];
     };
     let $raw_children = (SELECT VALUE children FROM ONLY $root LIMIT 1) ?: [];
     let $children = array::flatten([$raw_children]);
-    return array::filter($children, |$child| $child != none);
+    let $filtered = array::filter($children, |$child| $child != none);
+
+    let $type_filter = $types ?: [];
+    if array::len($type_filter) == 0 {
+        return $filtered;
+    } else {
+        return array::filter($filtered, |$child| $child.noun IN $type_filter);
+    };
 };
 
 REMOVE FUNCTION fn::collect_descendant_infos;
@@ -606,7 +614,7 @@ DEFINE FUNCTION fn::collect_descendant_infos(
         return [];
     };
     -- 使用 $inclusive 参数来控制是否包含根节点本身，默认为 false
-    let $use_inclusive = $inclusive ?: false;
+    let $use_inclusive = $inclusive ?:true;
     -- 注：$range_str 作为函数签名的一部分用于 Rust 代码生成 SQL
     -- Rust 代码会在调用时进行字符串拼接，生成类似以下的 SQL：
     -- (SELECT VALUE array::flatten(@.{1..5+collect}.children).{ id, noun } FROM ONLY $root LIMIT 1)
@@ -616,7 +624,7 @@ DEFINE FUNCTION fn::collect_descendant_infos(
         (SELECT VALUE array::flatten(@.{..+collect}.children).{ id, noun } FROM ONLY $root LIMIT 1) ?: []
     };
     let $filtered = array::filter($raw_descendants, |$node|
-        (array::len($types) == 0 || $node.noun IN $types)
+        $node != NONE && $node.id != NONE && (array::len($types) == 0 || $node.noun IN $types)
     );
     return $filtered;
 };

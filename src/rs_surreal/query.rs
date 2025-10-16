@@ -521,8 +521,8 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
 pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(r#"(select * from {}.refno)[0];"#, refno.to_pe_key());
     let mut response = SUL_DB.query(sql).await?;
-    let named_attmap: NamedAttrMap = take_single(&mut response, 0)?;
-    Ok(named_attmap)
+    let named_attmap: Option<NamedAttrMap> = response.take(0)?;
+    Ok(named_attmap.unwrap_or_default())
 }
 
 #[cached(result = true)]
@@ -720,54 +720,55 @@ pub async fn get_all_children_refnos(
     Ok(all_children)
 }
 
-///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
+///查询直接子节点，支持按类型过滤
 pub async fn query_filter_children(
     refno: RefnoEnum,
     types: &[&str],
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let nouns_str = types
-        .iter()
-        .map(|s| format!("'{s}'"))
-        .collect::<Vec<_>>()
-        .join(",");
-    let sql = if types.is_empty() {
-        format!(
-            r#"select value in from {}<-pe_owner where record::exists(in.id) and !in.deleted"#,
-            refno.to_pe_key()
-        )
+    let types_array = if types.is_empty() {
+        "none".to_string()
     } else {
-        format!(
-            r#"select value in from {}<-pe_owner where in.noun in [{nouns_str}] and record::exists(in.id) and !in.deleted"#,
-            refno.to_pe_key()
-        )
+        let types_str = types
+            .iter()
+            .map(|s| format!("'{s}'"))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("[{}]", types_str)
     };
-    // println!("query_filter_children: {}", &sql);
+
+    let sql = format!(
+        "return select value id from fn::collect_children({}, {})",
+        refno.to_pe_key(),
+        types_array
+    );
+
     let mut response = SUL_DB.query(sql).await?;
     let pes: Vec<RefnoEnum> = response.take(0)?;
     Ok(pes)
 }
 
-///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
+///查询直接子节点属性，支持按类型过滤
 pub async fn query_filter_children_atts(
     refno: RefnoEnum,
     types: &[&str],
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
-    let nouns_str = types
-        .iter()
-        .map(|s| format!("'{s}'"))
-        .collect::<Vec<_>>()
-        .join(",");
-    let sql = if types.is_empty() {
-        format!(
-            r#"select value in.refno.* from {}<-pe_owner where record::exists(in.id) and !in.deleted"#,
-            refno.to_pe_key()
-        )
+    let types_array = if types.is_empty() {
+        "none".to_string()
     } else {
-        format!(
-            r#"select value in.refno.* from {}<-pe_owner where in.noun in [{nouns_str}] and record::exists(in.id) and !in.deleted"#,
-            refno.to_pe_key()
-        )
+        let types_str = types
+            .iter()
+            .map(|s| format!("'{s}'"))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("[{}]", types_str)
     };
+
+    let sql = format!(
+        "return select value id.refno.* from fn::collect_children({}, {})",
+        refno.to_pe_key(),
+        types_array
+    );
+
     let mut response = SUL_DB.query(sql).await?;
     let atts: Vec<NamedAttrMap> = take_vec(&mut response, 0)?;
     Ok(atts)

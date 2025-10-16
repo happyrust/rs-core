@@ -19,7 +19,7 @@ pub mod test_simple_refno;
 
 pub mod test_graph;
 
-// pub mod test_serde;
+pub mod test_serde;
 
 pub mod test_spatial;
 
@@ -32,3 +32,4 @@ pub mod test_geom;
 // pub mod test_pbs;
 
 // pub mod test_scom_query;
+pub mod test_type_hierarchy;
