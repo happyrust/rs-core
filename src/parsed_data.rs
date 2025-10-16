@@ -6,8 +6,8 @@ use crate::types::*;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
-use surrealdb::types::{Kind, SurrealValue, Value};
 use surrealdb::types as surrealdb_types;
+use surrealdb::types::{Kind, SurrealValue, Value};
 
 ///元件库的集合信息
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -162,8 +162,8 @@ pub mod geo_params_data {
     #[cfg(feature = "occ")]
     use opencascade::primitives::*;
     use serde_derive::{Deserialize, Serialize};
-use surrealdb::types::SurrealValue;
-use surrealdb::types as surrealdb_types;
+    use surrealdb::types as surrealdb_types;
+    use surrealdb::types::SurrealValue;
 
     #[derive(Clone, Serialize, Deserialize, Debug, Default)]
     pub enum CateGeoParam {

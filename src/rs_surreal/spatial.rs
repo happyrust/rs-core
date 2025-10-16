@@ -4,6 +4,7 @@ use crate::tool::math_tool;
 use crate::tool::math_tool::{
     cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str,
 };
+use crate::utils::take_vec;
 use crate::{
     NamedAttrMap, RefU64, SUL_DB,
     accel_tree::acceleration_tree::QueryRay,
@@ -17,7 +18,6 @@ use crate::{
         math_tool::{quat_to_pdms_ori_str, quat_to_pdms_ori_xyz_str},
     },
 };
-use crate::utils::take_vec;
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;

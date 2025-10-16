@@ -24,7 +24,7 @@ impl<T: PdmsNodeTrait> ElementTree<T> {
     }
 
     #[inline]
-pub fn get_root_id(&self) -> Option<RecordId> {
+    pub fn get_root_id(&self) -> Option<RecordId> {
         self.root_node_id()
             .map(|x| self.get(x).map(|t| t.data().get_id().cloned()).ok())
             .flatten()?

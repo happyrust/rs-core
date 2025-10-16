@@ -7,11 +7,11 @@ use crate::types::named_attvalue::NamedAttrValue;
 use bevy_ecs::resource::Resource;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string_pretty};
-use surrealdb::types::SurrealValue;
-use surrealdb::types as surrealdb_types;
-use surrealdb::types::RecordId;
 use serde_with::DisplayFromStr;
 use std::fmt::format;
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::RecordId;
+use surrealdb::types::SurrealValue;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Resource, Default, PartialEq, SurrealValue)]
 pub struct SPdmsElement {

@@ -76,8 +76,8 @@ pub mod noun_graph;
 pub mod data_state;
 pub mod threed_review;
 
-pub mod transform;
 pub mod runtime;
+pub mod transform;
 
 #[cfg(not(feature = "web"))]
 pub mod test;
@@ -112,17 +112,15 @@ pub mod utils;
 
 pub use crate::types::*;
 pub use rs_surreal::*;
-pub use runtime::{connect_local_rocksdb, init_surreal_with_retry, try_connect_database, DbOptionSurrealExt};
+pub use runtime::{
+    DbOptionSurrealExt, connect_local_rocksdb, init_surreal_with_retry, initialize_databases,
+    try_connect_database,
+};
 
 #[cfg(feature = "web_ui")]
 pub use web_ui::{
-    connect_with_config,
-    create_required_tables,
-    test_database_connection,
-    verify_connection,
-    ConnectionConfig,
-    ConnectionHandle,
-    DeploymentConnectionPool,
+    ConnectionConfig, ConnectionHandle, DeploymentConnectionPool, connect_with_config,
+    create_required_tables, test_database_connection, verify_connection,
 };
 
 pub type BHashMap<K, V> = BTreeMap<K, V>;

@@ -540,10 +540,10 @@ DEFINE FUNCTION fn::find_ancestor_types($pe: record, $t: array){
     return select value id from $r where noun in $t;
 };
 
-// 返回符合类型集合的子节点
-REMOVE FUNCTION fn::find_deep_children_types;
-DEFINE FUNCTION fn::find_deep_children_types($pe:record,$t:array) {
-    let $infos = fn::collect_descendant_infos($pe, $t, true, true);
+// 返回符合类型集合的子节点ID
+REMOVE FUNCTION fn::collect_descendant_ids_by_types;
+DEFINE FUNCTION fn::collect_descendant_ids_by_types($pe:record,$t:array,$inclusive:option<bool>) {
+    let $infos = fn::collect_descendant_infos($pe, $t, $inclusive);
     return array::map($infos, |$info| $info.id);
 };
 
@@ -561,18 +561,19 @@ REMOVE FUNCTION fn::collect_descendant_infos;
 DEFINE FUNCTION fn::collect_descendant_infos(
     $root: record,
     $types: array<string>,
-    $include_self: bool,
-    $skip_deleted: bool
+    $inclusive: option<bool>,
 ) {
     if !record::exists($root) {
         return [];
     };
-    -- 使用 +inclusive 修饰符来控制是否包含根节点本身
-    let $raw_descendants = (SELECT VALUE @.{..+collect+inclusive}.children.{id, noun} FROM ONLY $root LIMIT 1) ?: [];
-    let $descendants = array::flatten(array::flatten($raw_descendants));
-    let $filtered = array::filter($descendants, |$node|
-        ($include_self || record::id($node.id) != record::id($root)) &&
-        (!$skip_deleted || !($node.deleted?:false)) &&
+    -- 使用 $inclusive 参数来控制是否包含根节点本身，默认为 false
+    let $use_inclusive = $inclusive ?: false;
+    let $raw_descendants = if $use_inclusive {
+        (SELECT VALUE array::flatten(@.{..+collect+inclusive}.children).{ id, noun } FROM ONLY $root LIMIT 1) ?: []
+    } else {
+        (SELECT VALUE array::flatten(@.{..+collect}.children).{ id, noun } FROM ONLY $root LIMIT 1) ?: []
+    };
+    let $filtered = array::filter($raw_descendants, |$node|
         (array::len($types) == 0 || $node.noun IN $types)
     );
     return $filtered;
@@ -586,13 +587,13 @@ DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool) 
         "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
         "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ"
     ];
-    let $infos = fn::collect_descendant_infos($root, $visible_types, $include_self, true);
-    return array::distinct(array::map($infos, |$info| $info.id));
+    let $infos = fn::collect_descendant_infos($root, $visible_types, none);
+    return array::map($infos, |$info| $info.id);
 };
 
 remove FUNCTION fn::find_door_from_wall;
 DEFINE FUNCTION fn::find_door_from_wall($pe:array) {
-    let $fitts = select value fn::find_deep_children_types(id, ["FIXING", "NBOX", "NCYL", "NXTR", "PFIT", "NPYR", "FITT", "SBFI"]) from $pe;
+    let $fitts = select value fn::collect_descendant_ids_by_types(id, ["FIXING", "NBOX", "NCYL", "NXTR", "PFIT", "NPYR", "FITT", "SBFI"], none) from $pe;
     let $uda_value = select id as refno,fn::default_name(id) as name,fn::find_ancestor_types(id,["STWALL", "GWALL", "WALL"])[0] as wall from array::flatten(select value id from $fitts) where string::contains(fn::get_uda_value(id,'/JGOBJBASE')?:'','门洞');
     return $uda_value;
 };
@@ -695,7 +696,7 @@ DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
 -- REMOVE FUNCTION test::exercise_visible_descendants;
 -- DEFINE FUNCTION test::exercise_visible_descendants($cleanup: bool) {
 --     let $root = test::create_mock_children_tree();
---     let $collect_all = fn::collect_descendant_infos(type::thing('pe', $root), [], true, true);
+--     let $collect_all = fn::collect_descendant_infos(type::thing('pe', $root), [], true);
 --     let $visible = fn::visible_geo_descendants(type::thing('pe', $root), true);
 --     if $cleanup {
 --         test::cleanup_mock_children_tree();

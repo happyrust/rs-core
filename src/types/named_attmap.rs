@@ -1,4 +1,3 @@
-
 use crate::consts::{UNSET_STR, WORD_HASH};
 use crate::helper::normalize_sql_string;
 #[cfg(feature = "sea-orm")]
@@ -83,8 +82,6 @@ impl NamedAttrMap {
     }
 }
 
-
-
 impl From<SurlValue> for NamedAttrMap {
     fn from(s: SurlValue) -> Self {
         let mut map = BTreeMap::default();
@@ -125,12 +122,8 @@ impl From<SurlValue> for NamedAttrMap {
                     };
 
                     let named_value = match default_val {
-                        AttrVal::IntegerType(_) => {
-                            NamedAttrValue::IntegerType(value_to_i32(&v))
-                        }
-                        AttrVal::StringType(_) => {
-                            NamedAttrValue::StringType(value_to_string(&v))
-                        }
+                        AttrVal::IntegerType(_) => NamedAttrValue::IntegerType(value_to_i32(&v)),
+                        AttrVal::StringType(_) => NamedAttrValue::StringType(value_to_string(&v)),
                         AttrVal::WordType(_) => match &v {
                             SurlValue::String(s) => NamedAttrValue::WordType(s.clone()),
                             SurlValue::Number(_) => {
@@ -151,7 +144,9 @@ impl From<SurlValue> for NamedAttrMap {
                             if let SurlValue::Array(arr) = &v {
                                 let values = arr.iter().map(value_to_f32).collect::<Vec<_>>();
                                 if values.len() >= 3 {
-                                    NamedAttrValue::Vec3Type(Vec3::new(values[0], values[1], values[2]))
+                                    NamedAttrValue::Vec3Type(Vec3::new(
+                                        values[0], values[1], values[2],
+                                    ))
                                 } else {
                                     NamedAttrValue::Vec3Type(Vec3::ZERO)
                                 }

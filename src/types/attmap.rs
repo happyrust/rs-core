@@ -1,4 +1,3 @@
-
 use crate::consts::{ATT_CURD, ATT_STYP, UNSET_STR};
 use crate::pdms_types::*;
 use crate::prim_geo::ctorus::CTorus;
@@ -49,7 +48,6 @@ impl Debug for AttrMap {
 // }
 
 #[cfg(not(target_arch = "wasm32"))]
-
 
 impl AttrMap {
     ///是否为负实体

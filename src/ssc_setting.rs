@@ -32,8 +32,8 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
-use surrealdb::types::{RecordId, SurrealValue};
 use surrealdb::types as surrealdb_types;
+use surrealdb::types::{RecordId, SurrealValue};
 use tokio::task;
 use tokio::task::JoinHandle;
 
@@ -538,7 +538,8 @@ pub async fn set_pbs_room_node(
     let rooms = query_all_room_name().await?;
     let mut name_set = HashSet::new();
     name_set.insert("一号机组".to_string());
-    let first_jizhu: RecordId = ("pbs".to_string(), PbsElement::id("一号机组").to_string()).into_record_id();
+    let first_jizhu: RecordId =
+        ("pbs".to_string(), PbsElement::id("一号机组").to_string()).into_record_id();
     // 将项目中所有的房间，通过厂房 、 层位 、 房间号进行排列和存储
     for (factory_idx, (factory, room)) in rooms.clone().into_iter().enumerate() {
         let factory_hash = PbsElement::id(&factory).to_string();

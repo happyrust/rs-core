@@ -1,5 +1,5 @@
-use crate::{RefU64, rs_surreal::SUL_DB};
 use crate::utils::{take_option, take_single};
+use crate::{RefU64, rs_surreal::SUL_DB};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use surrealdb::types::RecordId;

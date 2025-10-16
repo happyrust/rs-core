@@ -4,7 +4,6 @@ use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
     /// 是否启用日志
@@ -252,7 +251,6 @@ pub struct DbOption {
 
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
-
     /// 内存KV数据库IP地址（用于PE数据额外备份）
     #[clap(long)]
     #[serde(default = "default_mem_kv_ip")]
@@ -283,7 +281,9 @@ impl DbOption {
     /// 获取 SurrealDB 脚本目录路径，如果未配置则返回默认值 "resource/surreal"
     #[inline]
     pub fn get_surreal_script_dir(&self) -> &str {
-        self.surreal_script_dir.as_deref().unwrap_or("resource/surreal")
+        self.surreal_script_dir
+            .as_deref()
+            .unwrap_or("resource/surreal")
     }
 
     pub fn get_test_refno(&self) -> Option<RefnoEnum> {
@@ -484,7 +484,9 @@ impl SecondUnitDbOption {
     /// 获取 SurrealDB 脚本目录路径，如果未配置则返回默认值 "resource/surreal"
     #[inline]
     pub fn get_surreal_script_dir(&self) -> &str {
-        self.surreal_script_dir.as_deref().unwrap_or("resource/surreal")
+        self.surreal_script_dir
+            .as_deref()
+            .unwrap_or("resource/surreal")
     }
 
     #[inline]

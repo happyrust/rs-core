@@ -703,7 +703,7 @@ impl SurrealValue for RefnoEnum {
                         if arr.is_empty() {
                             return Err(anyhow::anyhow!("RecordId Array key 为空"));
                         }
-                        
+
                         // Convert array elements to strings and join with comma
                         let parts: Vec<String> = arr
                             .iter()
@@ -717,7 +717,7 @@ impl SurrealValue for RefnoEnum {
                                 }
                             })
                             .collect();
-                        
+
                         let joined = parts.join(",");
                         RefnoEnum::from_str(&joined)
                             .map_err(|_| anyhow::anyhow!("无法解析 RecordId Array key: {}", joined))
@@ -1588,10 +1588,13 @@ mod tests {
         fn test_refno_enum_from_record_id_with_array_key() {
             let record_id = RecordId {
                 table: "pe".to_string(),
-                key: RecordIdKey::Array(vec![
-                    Value::String("100_200".to_string()),
-                    Value::Number(Number::Int(5)),
-                ].into()),
+                key: RecordIdKey::Array(
+                    vec![
+                        Value::String("100_200".to_string()),
+                        Value::Number(Number::Int(5)),
+                    ]
+                    .into(),
+                ),
             };
             let value = Value::RecordId(record_id);
 
@@ -1615,10 +1618,13 @@ mod tests {
             };
             let value = Value::RecordId(record_id);
 
-            let refno_enum = RefnoEnum::from_value(value)
-                .expect("Failed to convert RecordId with String key");
+            let refno_enum =
+                RefnoEnum::from_value(value).expect("Failed to convert RecordId with String key");
 
-            assert_eq!(refno_enum, RefnoEnum::Refno(RefU64::from_two_nums(100, 200)));
+            assert_eq!(
+                refno_enum,
+                RefnoEnum::Refno(RefU64::from_two_nums(100, 200))
+            );
         }
 
         /// 测试从 RecordId 的 Number key 转换为 RefnoEnum
@@ -1630,8 +1636,8 @@ mod tests {
             };
             let value = Value::RecordId(record_id);
 
-            let refno_enum = RefnoEnum::from_value(value)
-                .expect("Failed to convert RecordId with Number key");
+            let refno_enum =
+                RefnoEnum::from_value(value).expect("Failed to convert RecordId with Number key");
 
             assert_eq!(refno_enum, RefnoEnum::Refno(RefU64(123456789)));
         }

@@ -4,8 +4,8 @@ use super::query::create_table_sql;
 use super::query::save_material_value;
 use crate::SUL_DB;
 use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
-use crate::utils::take_vec;
 use crate::init_test_surreal;
+use crate::utils::take_vec;
 use crate::{
     NamedAttrValue, RefU64, get_pe, insert_into_table_with_chunks, query_ele_filter_deep_children,
 };

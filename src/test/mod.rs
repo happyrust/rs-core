@@ -21,8 +21,6 @@ pub mod test_parse_dir;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_surreal;
 
-pub mod test_sync;
-
 pub mod test_query_provider;
 
 // pub mod test_db_adapter;

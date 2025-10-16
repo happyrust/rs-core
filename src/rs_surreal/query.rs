@@ -17,10 +17,10 @@ use crate::ssc_setting::PbsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
+use crate::utils::{take_option, take_single, take_vec};
 use crate::{DBType, get_db_option, to_table_keys};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SUL_DB, SurlValue};
-use crate::utils::{take_option, take_single, take_vec};
 use crate::{graph::QUERY_DEEP_CHILDREN_REFNOS, types::*};
 use cached::Cached;
 use cached::proc_macro::cached;
@@ -34,8 +34,8 @@ use serde_with::serde_as;
 use std::collections::{BTreeMap, HashMap};
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
-use surrealdb::types::{Datetime, SurrealValue, Value};
 use surrealdb::types as surrealdb_types;
+use surrealdb::types::{Datetime, SurrealValue, Value};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, SurrealValue)]
 struct KV<K: SurrealValue, V: SurrealValue> {
@@ -582,7 +582,12 @@ pub(crate) async fn get_named_attmap_with_uda(
     let mut named_attmap: NamedAttrMap = take_single(&mut response, 0)?;
     // dbg!(&named_attmap);
     let uda_kvs: Vec<AttrKV> = take_vec(&mut response, 1)?;
-    for AttrKV { u: uname, t: utype, v } in uda_kvs {
+    for AttrKV {
+        u: uname,
+        t: utype,
+        v,
+    } in uda_kvs
+    {
         if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }
@@ -590,7 +595,12 @@ pub(crate) async fn get_named_attmap_with_uda(
         named_attmap.insert(uname, att_value);
     }
     let overwrite_kvs: Vec<AttrKV> = take_vec(&mut response, 2)?;
-    for AttrKV { u: uname, t: utype, v } in overwrite_kvs {
+    for AttrKV {
+        u: uname,
+        t: utype,
+        v,
+    } in overwrite_kvs
+    {
         if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
             continue;
         }

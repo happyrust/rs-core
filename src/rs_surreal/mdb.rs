@@ -179,7 +179,9 @@ pub async fn query_type_refnos_by_dbnum(
             // 先尝试从 id 解析
             if let Some(id_val) = record.get("id") {
                 // 尝试将 id 解析为 RecordId
-                if let Ok(thing) = serde_json::from_value::<surrealdb::types::RecordId>(id_val.clone()) {
+                if let Ok(thing) =
+                    serde_json::from_value::<surrealdb::types::RecordId>(id_val.clone())
+                {
                     if let Ok(refno) = RefnoEnum::try_from(thing) {
                         result.push(refno);
                         continue;

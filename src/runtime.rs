@@ -1,6 +1,6 @@
+use crate::init_surreal;
 use crate::options::DbOption;
 use crate::rs_surreal::SUL_DB;
-use crate::init_surreal;
 use anyhow::Result;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -111,12 +111,12 @@ pub async fn try_connect_database() -> Result<()> {
 }
 
 /// 统一的数据库初始化入口，包含所有数据库连接和函数定义
-/// 
+///
 /// 根据编译特性自动选择合适的初始化方式：
 /// - `local` 特性: 使用 RocksDB 后端
 /// - `ws` 特性: 使用 WebSocket 连接远程 SurrealDB
 /// - `mem-kv-save` 特性: 额外初始化内存 KV 数据库
-/// 
+///
 /// 此函数还会初始化 SurrealDB 通用函数定义
 pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
     // 1. 初始化本地 RocksDB（如果启用 local 特性）
@@ -158,7 +158,9 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
     }
 
     // 4. 初始化 SurrealDB 通用函数定义
-    if let Err(e) = crate::function::define_common_functions(db_option.get_surreal_script_dir()).await {
+    if let Err(e) =
+        crate::function::define_common_functions(db_option.get_surreal_script_dir()).await
+    {
         eprintln!("初始化通用函数失败: {} (忽略并继续)", e);
     }
 

@@ -149,15 +149,15 @@ pub async fn query_filter_deep_children(
 }
 
 /// 查询子孙节点的属性
-/// 
+///
 /// # 性能优化
 /// - 使用数据库端函数 `fn::collect_descendants_with_attrs` 一次性完成所有操作
 /// - 相比旧实现，减少 90%+ 的网络往返时间
-/// 
+///
 /// # 参数
 /// - `refno`: 起始节点
 /// - `nouns`: 要筛选的节点类型（空数组表示不过滤类型）
-/// 
+///
 /// # 返回
 /// 所有符合条件的子孙节点的 refno.* 属性
 pub async fn query_filter_deep_children_atts(
@@ -171,45 +171,41 @@ pub async fn query_filter_deep_children_atts(
         format!("[{}]", nouns_str)
     };
     let pe_key = refno.to_pe_key();
-    
+
     // 使用优化的数据库端函数一次性完成所有操作
     // exclude_self 使用 none 表示包含自身
     let sql = format!(
         "SELECT VALUE fn::collect_descendants_with_attrs({}, {}, none);",
         pe_key, types_expr
     );
-    
+
     match SUL_DB.query(&sql).await {
-        Ok(mut response) => {
-            match response.take::<SurlValue>(0) {
-                Ok(value) => {
-                    match value.into_vec::<SurlValue>() {
-                        Ok(result) => {
-                            let atts: Vec<NamedAttrMap> = result.into_iter().map(|x| x.into()).collect();
-                            Ok(atts)
-                        }
-                        Err(e) => {
-                            init_deserialize_error(
-                                "Vec<SurlValue>",
-                                &e,
-                                &sql,
-                                &std::panic::Location::caller().to_string(),
-                            );
-                            Err(anyhow!(e.to_string()))
-                        }
-                    }
+        Ok(mut response) => match response.take::<SurlValue>(0) {
+            Ok(value) => match value.into_vec::<SurlValue>() {
+                Ok(result) => {
+                    let atts: Vec<NamedAttrMap> = result.into_iter().map(|x| x.into()).collect();
+                    Ok(atts)
                 }
                 Err(e) => {
                     init_deserialize_error(
-                        "SurlValue",
+                        "Vec<SurlValue>",
                         &e,
                         &sql,
                         &std::panic::Location::caller().to_string(),
                     );
                     Err(anyhow!(e.to_string()))
                 }
+            },
+            Err(e) => {
+                init_deserialize_error(
+                    "SurlValue",
+                    &e,
+                    &sql,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
             }
-        }
+        },
         Err(e) => {
             init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
             Err(anyhow!(e.to_string()))
@@ -283,15 +279,15 @@ pub async fn query_filter_deep_children_by_path(
 }
 
 /// 过滤 SPRE 和 CATR 不能同时为空的类型
-/// 
+///
 /// # 性能优化
 /// - 使用数据库端函数 `fn::collect_descendants_filter_spre` 一次性完成所有操作
 /// - 相比旧实现，减少 90%+ 的网络往返时间
-/// 
+///
 /// # 参数
 /// - `refno`: 起始节点
 /// - `filter`: 是否同时过滤掉有 inst_relate 或 tubi_relate 的节点
-/// 
+///
 /// # 返回
 /// 符合 SPRE/CATR 条件的子孙节点列表
 pub async fn query_deep_children_refnos_filter_spre(
@@ -300,29 +296,27 @@ pub async fn query_deep_children_refnos_filter_spre(
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     let pe_key = refno.to_pe_key();
     let filter_str = if filter { "true" } else { "false" };
-    
+
     // 使用优化的数据库端函数一次性完成所有操作
     // exclude_self 使用 none 表示包含自身
     let sql = format!(
         "SELECT VALUE fn::collect_descendants_filter_spre({}, [], {}, none);",
         pe_key, filter_str
     );
-    
+
     match SUL_DB.query(&sql).await {
-        Ok(mut response) => {
-            match response.take::<Vec<RefnoEnum>>(0) {
-                Ok(result) => Ok(result),
-                Err(e) => {
-                    init_deserialize_error(
-                        "Vec<RefnoEnum>",
-                        &e,
-                        &sql,
-                        &std::panic::Location::caller().to_string(),
-                    );
-                    Err(anyhow!(e.to_string()))
-                }
+        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
+            Ok(result) => Ok(result),
+            Err(e) => {
+                init_deserialize_error(
+                    "Vec<RefnoEnum>",
+                    &e,
+                    &sql,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
             }
-        }
+        },
         Err(e) => {
             init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
             Err(anyhow!(e.to_string()))
@@ -331,16 +325,16 @@ pub async fn query_deep_children_refnos_filter_spre(
 }
 
 /// 查询深层子孙节点并过滤（支持版本化查询）
-/// 
+///
 /// # 性能优化
 /// - 使用数据库端函数 `fn::collect_descendants_filter_inst` 一次性完成所有操作
 /// - 对于版本化查询，仍需分步处理以确保历史数据准确性
-/// 
+///
 /// # 参数
 /// - `refno`: 起始节点（可能包含版本信息）
 /// - `nouns`: 要筛选的节点类型
 /// - `filter`: 是否过滤掉有 inst_relate 或 tubi_relate 的节点
-/// 
+///
 /// # 注意
 /// - 如果是最新版本（refno.is_latest()），使用优化路径
 /// - 如果是历史版本，需要特殊处理时间点查询
@@ -359,27 +353,25 @@ async fn query_versioned_deep_children_filter_inst(
         };
         let filter_str = if filter { "true" } else { "false" };
         let pe_key = refno.to_pe_key();
-        
+
         let sql = format!(
             "SELECT VALUE fn::collect_descendants_filter_inst({}, {}, {}, true, false);",
             pe_key, types_expr, filter_str
         );
-        
+
         match SUL_DB.query(&sql).await {
-            Ok(mut response) => {
-                match response.take::<Vec<RefnoEnum>>(0) {
-                    Ok(refnos) => Ok(refnos),
-                    Err(e) => {
-                        init_deserialize_error(
-                            "Vec<RefnoEnum>",
-                            &e,
-                            &sql,
-                            &std::panic::Location::caller().to_string(),
-                        );
-                        Err(anyhow!(e.to_string()))
-                    }
+            Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
+                Ok(refnos) => Ok(refnos),
+                Err(e) => {
+                    init_deserialize_error(
+                        "Vec<RefnoEnum>",
+                        &e,
+                        &sql,
+                        &std::panic::Location::caller().to_string(),
+                    );
+                    Err(anyhow!(e.to_string()))
                 }
-            }
+            },
             Err(e) => {
                 init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
                 Err(anyhow!(e.to_string()))
@@ -391,10 +383,11 @@ async fn query_versioned_deep_children_filter_inst(
         if candidates.is_empty() {
             return Ok(vec![]);
         }
-        
+
         // 对于历史版本，保持分块处理以控制内存使用
         let mut result = Vec::new();
-        for chunk in candidates.chunks(500) {  // 增加分块大小到 500
+        for chunk in candidates.chunks(500) {
+            // 增加分块大小到 500
             let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
             let filter_clause = if filter {
                 // 使用优化的关系检查
@@ -403,7 +396,7 @@ async fn query_versioned_deep_children_filter_inst(
                 ""
             };
             let sql = format!("select value id from [{}]{};", pe_keys, filter_clause);
-            
+
             match SUL_DB.query(&sql).await {
                 Ok(mut response) => {
                     if let Ok(mut chunk_refnos) = response.take::<Vec<RefnoEnum>>(0) {
@@ -421,17 +414,17 @@ async fn query_versioned_deep_children_filter_inst(
 }
 
 /// 查询深层子孙节点并过滤掉有 inst_relate 或 tubi_relate 关系的节点
-/// 
+///
 /// # 性能优化
 /// - 使用数据库端函数 `fn::collect_descendants_filter_inst` 一次性完成所有操作
 /// - 相比旧实现，减少 90%+ 的网络往返时间
 /// - 使用 `count(...LIMIT 1)` 优化关系检查，避免遍历所有关系
-/// 
+///
 /// # 参数
 /// - `refno`: 起始节点
 /// - `nouns`: 要筛选的节点类型（空数组表示不过滤类型）
 /// - `filter`: 是否过滤掉有 inst_relate 或 tubi_relate 的节点
-/// 
+///
 /// # 性能对比
 /// - 旧实现（2000节点）: ~55ms (1次收集 + 10次分块过滤)
 /// - 新实现（2000节点）: ~5ms (1次数据库端处理)
@@ -449,28 +442,26 @@ async fn query_deep_children_filter_inst(
     };
     let filter_str = if filter { "true" } else { "false" };
     let pe_key = refno.to_pe_key();
-    
+
     // 使用优化的数据库端函数一次性完成所有操作
     let sql = format!(
         "SELECT VALUE fn::collect_descendants_filter_inst({}, {}, {}, true, false);",
         pe_key, types_expr, filter_str
     );
-    
+
     match SUL_DB.query(&sql).await {
-        Ok(mut response) => {
-            match response.take::<Vec<RefnoEnum>>(0) {
-                Ok(refnos) => Ok(refnos.into_iter().map(|r| r.refno()).collect()),
-                Err(e) => {
-                    init_deserialize_error(
-                        "Vec<RefnoEnum>",
-                        &e,
-                        &sql,
-                        &std::panic::Location::caller().to_string(),
-                    );
-                    Err(anyhow!(e.to_string()))
-                }
+        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
+            Ok(refnos) => Ok(refnos.into_iter().map(|r| r.refno()).collect()),
+            Err(e) => {
+                init_deserialize_error(
+                    "Vec<RefnoEnum>",
+                    &e,
+                    &sql,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
             }
-        }
+        },
         Err(e) => {
             init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
             Err(anyhow!(e.to_string()))

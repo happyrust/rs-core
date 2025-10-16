@@ -56,15 +56,29 @@ async fn test_get_site_pes_by_dbnum() {
     println!("\nTesting dbnum: {}", test_dbnum);
 
     let result = rs_surreal::get_site_pes_by_dbnum(test_dbnum).await;
-    assert!(result.is_ok(), "Failed to query sites by dbnum: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to query sites by dbnum: {:?}",
+        result.err()
+    );
 
     let sites = result.unwrap();
-    println!("Found {} SITE elements for dbnum {}", sites.len(), test_dbnum);
+    println!(
+        "Found {} SITE elements for dbnum {}",
+        sites.len(),
+        test_dbnum
+    );
 
     // 如果找到 SITE，验证它们的属性
     for (i, site) in sites.iter().enumerate() {
-        println!("  SITE {}: name='{}', noun='{}', dbnum={}, refno={}",
-            i + 1, site.name, site.noun, site.dbnum, site.refno());
+        println!(
+            "  SITE {}: name='{}', noun='{}', dbnum={}, refno={}",
+            i + 1,
+            site.name,
+            site.noun,
+            site.dbnum,
+            site.refno()
+        );
         assert_eq!(site.noun, "SITE", "Expected noun to be 'SITE'");
         assert_eq!(site.dbnum, test_dbnum as i32, "Expected dbnum to match");
         assert!(!site.deleted, "Expected deleted to be false");

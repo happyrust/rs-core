@@ -3,9 +3,9 @@
 //! 该模块提供了从 SurrealDB 查询几何体数据用于 XKT 文件生成的功能
 
 use crate::{RefnoEnum, SUL_DB, SurlValue, get_inst_relate_keys};
+use anyhow::{Context, Result};
 use bevy_transform::components::Transform;
 use serde::{Deserialize, Serialize};
-use anyhow::{Result, Context};
 use std::collections::HashMap;
 
 /// XKT 几何体查询结果
@@ -54,15 +54,13 @@ pub struct XktGeometryData {
 ///     Ok(())
 /// }
 /// ```
-pub async fn query_xkt_geometries(
-    refnos: &[RefnoEnum],
-) -> Result<Vec<XktGeometryData>> {
+pub async fn query_xkt_geometries(refnos: &[RefnoEnum]) -> Result<Vec<XktGeometryData>> {
     if refnos.is_empty() {
         return Ok(Vec::new());
     }
 
     let inst_keys = get_inst_relate_keys(refnos);
-    
+
     // 查询 SQL:
     // 1. 从 inst_relate 获取世界变换
     // 2. 通过 geo_relate 获取几何体信息
@@ -84,20 +82,16 @@ pub async fn query_xkt_geometries(
             AND out.id != none
         "#
     );
-    
-    let mut response = SUL_DB.query(sql).await
-        .context("查询 XKT 几何体数据失败")?;
-    
-    let values: Vec<SurlValue> = response.take(0)
-        .context("解析查询结果失败")?;
-    
+
+    let mut response = SUL_DB.query(sql).await.context("查询 XKT 几何体数据失败")?;
+
+    let values: Vec<SurlValue> = response.take(0).context("解析查询结果失败")?;
+
     let geometries: Vec<XktGeometryData> = values
         .into_iter()
-        .filter_map(|v| {
-            serde_json::from_value(v.into_json_value()).ok()
-        })
+        .filter_map(|v| serde_json::from_value(v.into_json_value()).ok())
         .collect();
-    
+
     Ok(geometries)
 }
 
@@ -123,9 +117,7 @@ pub async fn query_xkt_geometries(
 ///     Ok(())
 /// }
 /// ```
-pub async fn check_mesh_status(
-    geo_hashes: &[String],
-) -> Result<(Vec<String>, Vec<String>)> {
+pub async fn check_mesh_status(geo_hashes: &[String]) -> Result<(Vec<String>, Vec<String>)> {
     if geo_hashes.is_empty() {
         return Ok((Vec::new(), Vec::new()));
     }
@@ -135,7 +127,7 @@ pub async fn check_mesh_status(
         .map(|h| format!("inst_geo:⟨{}⟩", h))
         .collect::<Vec<_>>()
         .join(",");
-    
+
     let sql = format!(
         r#"
         SELECT 
@@ -146,13 +138,11 @@ pub async fn check_mesh_status(
         "#,
         hashes_str
     );
-    
-    let mut response = SUL_DB.query(sql).await
-        .context("查询 mesh 状态失败")?;
-    
-    let values: Vec<SurlValue> = response.take(0)
-        .context("解析 mesh 状态失败")?;
-    
+
+    let mut response = SUL_DB.query(sql).await.context("查询 mesh 状态失败")?;
+
+    let values: Vec<SurlValue> = response.take(0).context("解析 mesh 状态失败")?;
+
     let found: Vec<String> = values
         .into_iter()
         .filter_map(|v| {
@@ -162,13 +152,13 @@ pub async fn check_mesh_status(
                 .map(|s| s.to_string())
         })
         .collect();
-    
+
     let missing: Vec<String> = geo_hashes
         .iter()
         .filter(|h| !found.contains(h))
         .cloned()
         .collect();
-    
+
     Ok((found, missing))
 }
 
@@ -202,14 +192,14 @@ pub fn group_geometries_by_refno(
     geometries: Vec<XktGeometryData>,
 ) -> HashMap<RefnoEnum, Vec<XktGeometryData>> {
     let mut groups = HashMap::new();
-    
+
     for geo in geometries {
         groups
             .entry(geo.refno.clone())
             .or_insert_with(Vec::new)
             .push(geo);
     }
-    
+
     groups
 }
 
@@ -224,20 +214,18 @@ pub fn get_geometry_statistics(
     geometries: &[XktGeometryData],
 ) -> (usize, usize, HashMap<String, usize>) {
     let total = geometries.len();
-    
+
     // 统计唯一几何体
-    let unique_hashes: std::collections::HashSet<_> = geometries
-        .iter()
-        .map(|g| &g.geo_hash)
-        .collect();
+    let unique_hashes: std::collections::HashSet<_> =
+        geometries.iter().map(|g| &g.geo_hash).collect();
     let unique_count = unique_hashes.len();
-    
+
     // 按类型统计
     let mut by_type: HashMap<String, usize> = HashMap::new();
     for geo in geometries {
         *by_type.entry(geo.noun.clone()).or_insert(0) += 1;
     }
-    
+
     (total, unique_count, by_type)
 }
 
@@ -276,8 +264,14 @@ mod tests {
 
         let groups = group_geometries_by_refno(geometries);
         assert_eq!(groups.len(), 2);
-        assert_eq!(groups.get(&"17496/266203".parse().unwrap()).unwrap().len(), 2);
-        assert_eq!(groups.get(&"24383/86525".parse().unwrap()).unwrap().len(), 1);
+        assert_eq!(
+            groups.get(&"17496/266203".parse().unwrap()).unwrap().len(),
+            2
+        );
+        assert_eq!(
+            groups.get(&"24383/86525".parse().unwrap()).unwrap().len(),
+            1
+        );
     }
 
     #[test]
@@ -316,4 +310,3 @@ mod tests {
         assert_eq!(*by_type.get("PIPE").unwrap(), 1);
     }
 }
-

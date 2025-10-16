@@ -1,4 +1,3 @@
-
 use crate::consts::*;
 use crate::geometry::{EleInstGeo, EleInstGeosData};
 #[cfg(feature = "sea-orm")]
@@ -38,9 +37,9 @@ use std::fmt::{Debug, Display, Pointer};
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
-use surrealdb::types::SurrealValue;
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::RecordId;
+use surrealdb::types::SurrealValue;
 
 ///控制pdms显示的深度层级
 pub const LEVEL_VISBLE: u32 = 6;
@@ -629,8 +628,6 @@ impl From<SPdmsElement> for PdmsElement {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
 
-
-
 impl EleNode {
     pub fn set_default_name(name_hash: AiosStrHash) -> EleNode {
         EleNode {
@@ -1174,7 +1171,9 @@ pub struct RoomNodes {
     pub nodes: Vec<String>,
 }
 
-#[derive(PartialEq, Debug, Default, Clone, Copy, Serialize_repr, Deserialize_repr, SurrealValue)]
+#[derive(
+    PartialEq, Debug, Default, Clone, Copy, Serialize_repr, Deserialize_repr, SurrealValue,
+)]
 #[repr(i32)]
 pub enum EleOperation {
     #[default]

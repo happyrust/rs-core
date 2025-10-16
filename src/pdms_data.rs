@@ -30,8 +30,6 @@ pub struct ScomInfo {
     pub plin_map: HashMap<String, PlinParam>,
 }
 
-
-
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PlinParam {
     pub vxy: [String; 2],

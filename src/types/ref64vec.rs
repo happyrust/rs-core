@@ -1,4 +1,3 @@
-
 use crate::{RefU64, query_refno_sesno};
 use bevy_ecs::component::Component;
 use derive_more::{Deref, DerefMut};
@@ -23,8 +22,6 @@ use std::vec::IntoIter;
 pub struct RefU64Vec(pub Vec<RefU64>);
 
 impl RefU64Vec {}
-
-
 
 impl From<Vec<RefU64>> for RefU64Vec {
     fn from(d: Vec<RefU64>) -> Self {

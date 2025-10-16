@@ -57,9 +57,9 @@ pub use xkt_query::*;
 pub use adapter::create_surreal_adapter;
 
 use once_cell::sync::Lazy;
+use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
-use surrealdb::Surreal;
 
 // pub type SurlValue = surrealdb::Value;
 pub type SurlValue = surrealdb::types::Value;
@@ -88,7 +88,12 @@ pub async fn connect_surdb(
         .with_capacity(1000)
         .await?;
     SUL_DB.use_ns(ns).use_db(db).await?;
-    SUL_DB.signin(Root { username: username.to_owned(), password: password.to_owned() }).await?;
+    SUL_DB
+        .signin(Root {
+            username: username.to_owned(),
+            password: password.to_owned(),
+        })
+        .await?;
     Ok(())
 }
 
@@ -101,7 +106,12 @@ pub async fn connect_kvdb(
 ) -> Result<(), surrealdb::Error> {
     SUL_DB.connect(conn_str).with_capacity(1000).await?;
     SUL_DB.use_ns(ns).use_db(db).await?;
-    SUL_DB.signin(Root { username: username.to_owned(), password: password.to_owned() }).await?;
+    SUL_DB
+        .signin(Root {
+            username: username.to_owned(),
+            password: password.to_owned(),
+        })
+        .await?;
     Ok(())
 }
 
@@ -124,7 +134,10 @@ pub async fn init_mem_db_with_retry(db_option: &crate::options::DbOption) -> any
     loop {
         println!(
             "尝试连接内存KV: {} (NS={}, DB={})，第{}次",
-            conn_str, db_option.project_code, db_option.project_name, attempt + 1
+            conn_str,
+            db_option.project_code,
+            db_option.project_name,
+            attempt + 1
         );
 
         // 创建配置

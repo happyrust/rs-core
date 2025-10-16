@@ -2,9 +2,9 @@
 //!
 //! 提供智能的查询路由和自动选择功能
 
+use super::SurrealQueryProvider;
 use super::error::{QueryError, QueryResult};
 use super::traits::*;
-use super::SurrealQueryProvider;
 use crate::RefnoEnum;
 use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use async_trait::async_trait;
@@ -391,9 +391,7 @@ impl GraphQuery for QueryRouter {
             let nouns: Vec<String> = nouns.iter().map(|s| s.to_string()).collect();
             Box::pin(async move {
                 let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
-                provider
-                    .query_multi_descendants(&refnos, &noun_refs)
-                    .await
+                provider.query_multi_descendants(&refnos, &noun_refs).await
             })
         })
         .await

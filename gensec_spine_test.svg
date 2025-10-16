@@ -111,7 +111,5 @@
 <circle cx="230" cy="50" r="6" class="point-curve" />
 <text x="245" y="55" class="coord-label">CURVE</text>
 <line x1="230" y1="70" x2="260" y2="70" class="path-line" />
-<text x="270" y="75" class="coord-label">直线</text>
 <path d="M 230 90 Q 245 85 260 90" class="path-arc" />
-<text x="270" y="95" class="coord-label">弧线</text>
 </svg>

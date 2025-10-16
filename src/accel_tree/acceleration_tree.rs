@@ -81,8 +81,7 @@ impl SurrealValue for RStarBoundingBox {
     }
 
     fn into_value(self) -> Value {
-        let json =
-            serde_json::to_value(&self).expect("序列化 RStarBoundingBox 失败");
+        let json = serde_json::to_value(&self).expect("序列化 RStarBoundingBox 失败");
         json.into_value()
     }
 

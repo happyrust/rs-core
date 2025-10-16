@@ -1,5 +1,5 @@
-use crate::{RefnoEnum, SUL_DB};
 use crate::utils::take_vec;
+use crate::{RefnoEnum, SUL_DB};
 use anyhow::Result;
 use serde::Deserialize;
 

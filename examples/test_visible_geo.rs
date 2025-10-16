@@ -1,4 +1,4 @@
-use aios_core::{init_surreal, SUL_DB, SurlValue};
+use aios_core::{SUL_DB, SurlValue, init_surreal};
 use anyhow::Result;
 
 #[tokio::main]
@@ -43,7 +43,9 @@ async fn main() -> Result<()> {
     }
 
     // 4b. 使用 +inclusive 包含根节点本身
-    println!("\n4b. 使用 @.{{..+collect+inclusive}}(.children) 递归收集所有后代节点（包含自身）...");
+    println!(
+        "\n4b. 使用 @.{{..+collect+inclusive}}(.children) 递归收集所有后代节点（包含自身）..."
+    );
     let query_inclusive = r#"
         (SELECT VALUE @.{..+collect+inclusive}(.children).{id, noun} FROM ONLY pe:17496_171099 LIMIT 1) ?: []
     "#;
@@ -63,17 +65,20 @@ async fn main() -> Result<()> {
         "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE",
         "EXTR", "REVO", "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT",
         "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
-        "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ"
+        "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
     ];
 
-    let visible_nodes: Vec<_> = all_descendants.iter().filter(|node| {
-        if let SurlValue::Object(obj) = node {
-            if let Some(SurlValue::String(noun)) = obj.get("noun") {
-                return visible_types.contains(&noun.as_str());
+    let visible_nodes: Vec<_> = all_descendants
+        .iter()
+        .filter(|node| {
+            if let SurlValue::Object(obj) = node {
+                if let Some(SurlValue::String(noun)) = obj.get("noun") {
+                    return visible_types.contains(&noun.as_str());
+                }
             }
-        }
-        false
-    }).collect();
+            false
+        })
+        .collect();
 
     println!("   找到 {} 个可见几何节点", visible_nodes.len());
 
@@ -81,9 +86,16 @@ async fn main() -> Result<()> {
     for (i, node) in visible_nodes.iter().enumerate() {
         if let SurlValue::Object(obj) = node {
             let id = obj.get("id");
-            let noun = obj.get("noun").and_then(|v| {
-                if let SurlValue::String(s) = v { Some(s.as_str()) } else { None }
-            }).unwrap_or("Unknown");
+            let noun = obj
+                .get("noun")
+                .and_then(|v| {
+                    if let SurlValue::String(s) = v {
+                        Some(s.as_str())
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or("Unknown");
             println!("   [{}] ID: {:?}, 类型: {}", i + 1, id, noun);
         }
     }
@@ -118,7 +130,10 @@ async fn main() -> Result<()> {
     let query = "SELECT * FROM fn::visible_geo_descendants(pe:17496_171099, false);";
     let mut response = SUL_DB.query(query).await?;
     let result_without_self: Vec<SurlValue> = response.take(0)?;
-    println!("   找到 {} 个可见几何节点（不包含根节点）", result_without_self.len());
+    println!(
+        "   找到 {} 个可见几何节点（不包含根节点）",
+        result_without_self.len()
+    );
     for (i, node) in result_without_self.iter().enumerate() {
         println!("   [{}] {:?}", i + 1, node);
     }
@@ -128,7 +143,10 @@ async fn main() -> Result<()> {
     let query = "SELECT * FROM fn::visible_geo_descendants(pe:17496_171099, true);";
     let mut response = SUL_DB.query(query).await?;
     let result_with_self: Vec<SurlValue> = response.take(0)?;
-    println!("   找到 {} 个可见几何节点（包含根节点）", result_with_self.len());
+    println!(
+        "   找到 {} 个可见几何节点（包含根节点）",
+        result_with_self.len()
+    );
     for (i, node) in result_with_self.iter().enumerate() {
         println!("   [{}] {:?}", i + 1, node);
     }
@@ -136,4 +154,3 @@ async fn main() -> Result<()> {
     println!("\n=== 测试完成 ===");
     Ok(())
 }
-
