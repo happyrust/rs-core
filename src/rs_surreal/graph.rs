@@ -209,7 +209,7 @@ pub async fn query_filter_deep_children_atts_with_range(
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let pe_key = refno.to_pe_key();
     let range_str = range.unwrap_or("..");
-    
+
     // 构建类型过滤条件
     let type_filter = if nouns.is_empty() {
         String::new()
@@ -235,12 +235,22 @@ pub async fn query_filter_deep_children_atts_with_range(
     })?;
 
     let value = response.take::<SurlValue>(0).map_err(|e| {
-        init_deserialize_error("SurlValue", &e, &sql, &std::panic::Location::caller().to_string());
+        init_deserialize_error(
+            "SurlValue",
+            &e,
+            &sql,
+            &std::panic::Location::caller().to_string(),
+        );
         anyhow!(e.to_string())
     })?;
 
     let result = value.into_vec::<SurlValue>().map_err(|e| {
-        init_deserialize_error("Vec<SurlValue>", &e, &sql, &std::panic::Location::caller().to_string());
+        init_deserialize_error(
+            "Vec<SurlValue>",
+            &e,
+            &sql,
+            &std::panic::Location::caller().to_string(),
+        );
         anyhow!(e.to_string())
     })?;
 
@@ -740,5 +750,3 @@ pub async fn get_uda_type_refnos_from_select_refnos(
     }
     Ok(result)
 }
-
-

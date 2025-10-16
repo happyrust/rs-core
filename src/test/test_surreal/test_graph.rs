@@ -39,7 +39,8 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
 
     // 测试 2: 从 SITE 节点查询所有 ZONE 和 EQUI 类型的子孙
     let site_refno: RefnoEnum = "17496/169982".into();
-    let result = query_multi_filter_deep_children(&[site_refno.clone()], &["ZONE", "EQUI"], None).await?;
+    let result =
+        query_multi_filter_deep_children(&[site_refno.clone()], &["ZONE", "EQUI"], None).await?;
 
     assert!(!result.is_empty(), "Should find ZONE and EQUI descendants");
     assert!(
@@ -62,9 +63,12 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
     );
 
     // 测试 4: 多个起点查询（SITE 和 ZONE 一起查询 EQUI）
-    let result =
-        query_multi_filter_deep_children(&[site_refno.clone(), zone_refno.clone()], &["EQUI"], None)
-            .await?;
+    let result = query_multi_filter_deep_children(
+        &[site_refno.clone(), zone_refno.clone()],
+        &["EQUI"],
+        None,
+    )
+    .await?;
 
     assert_eq!(
         result.len(),
@@ -91,7 +95,8 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
     assert!(result.is_empty(), "Empty refnos should return empty result");
 
     // 测试 7: 查询不存在的类型
-    let result = query_multi_filter_deep_children(&[worl_refno], &["NONEXISTENT_TYPE"], None).await?;
+    let result =
+        query_multi_filter_deep_children(&[worl_refno], &["NONEXISTENT_TYPE"], None).await?;
 
     assert!(
         result.is_empty(),
@@ -141,8 +146,12 @@ async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Resul
 
     // 测试 1: 默认范围 ".." - 应该获取所有后代
     println!("\n=== 测试 1: 默认范围 '..' 获取所有后代 ===");
-    let result_unlimited = query_multi_filter_deep_children(&[worl_refno.clone()], &[], None).await?;
-    println!("从 WORL 查询所有后代（无限深度）: {} 个节点", result_unlimited.len());
+    let result_unlimited =
+        query_multi_filter_deep_children(&[worl_refno.clone()], &[], None).await?;
+    println!(
+        "从 WORL 查询所有后代（无限深度）: {} 个节点",
+        result_unlimited.len()
+    );
     for refno in &result_unlimited {
         println!("  - {}", refno);
     }
@@ -178,7 +187,10 @@ async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Resul
     println!("\n=== 测试 5: 从 SITE 查询不同范围的后代 ===");
     let result_site_unlimited =
         query_multi_filter_deep_children(&[site_refno.clone()], &[], None).await?;
-    println!("从 SITE 查询所有后代（无限深度）: {} 个节点", result_site_unlimited.len());
+    println!(
+        "从 SITE 查询所有后代（无限深度）: {} 个节点",
+        result_site_unlimited.len()
+    );
 
     let result_site_layer1 =
         query_multi_filter_deep_children(&[site_refno.clone()], &[], Some("1")).await?;

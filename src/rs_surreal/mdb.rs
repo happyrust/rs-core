@@ -136,25 +136,25 @@ pub async fn query_type_refnos_by_dbnums(
 }
 
 /// 通过dbnum过滤指定类型的参考号
-/// 
+///
 /// # 参数
 /// * `nouns` - 要查询的类型名称列表
 /// * `dbnum` - 数据库编号
 /// * `has_children` - 是否需要有children，方便跳过一些不必要的节点
 /// * `only_history` - 是否只查询历史记录（暂未实现）
-/// 
+///
 /// # 实现说明
 /// 直接查询 pe 表，使用 `noun IN [...]` 条件一次性获取所有类型的数据，
 /// 比循环查询多个类型表更高效。
-/// 
+///
 /// # 示例
 /// ```ignore
 /// // 查询所有 ZONE 节点
 /// let zones = query_type_refnos_by_dbnum(&["ZONE"], 1112, None, false).await?;
-/// 
+///
 /// // 查询多个类型
 /// let elements = query_type_refnos_by_dbnum(&["SITE", "ZONE", "EQUI"], 1112, None, false).await?;
-/// 
+///
 /// // 只查询有子节点的 ZONE
 /// let parent_zones = query_type_refnos_by_dbnum(&["ZONE"], 1112, Some(true), false).await?;
 /// ```
@@ -165,27 +165,27 @@ pub async fn query_type_refnos_by_dbnum(
     only_history: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     // 将 nouns 转换为 SQL 数组格式 ['SITE', 'ZONE', ...]
-    let nouns_array = nouns.iter()
+    let nouns_array = nouns
+        .iter()
         .map(|n| format!("'{}'", n))
         .collect::<Vec<_>>()
         .join(", ");
-    
+
     // 构建 SQL 查询，直接查询 pe 表，使用 noun IN 条件
     // 根据 has_children 参数动态拼接子节点过滤条件
-    let mut sql = format!(
-        "SELECT value id FROM pe WHERE dbnum = {dbnum} AND noun IN [{nouns_array}]"
-    );
-    
+    let mut sql =
+        format!("SELECT value id FROM pe WHERE dbnum = {dbnum} AND noun IN [{nouns_array}]");
+
     // 根据 has_children 参数添加额外的过滤条件
     match has_children {
         Some(true) => sql.push_str(" AND array::len(children) > 0"),
         Some(false) => sql.push_str(" AND (children == none OR array::len(children) = 0)"),
         None => {} // 不添加任何子节点过滤条件
     }
-    
+
     let mut response = SUL_DB.query(&sql).await?;
     let refnos: Vec<RefnoEnum> = response.take(0)?;
-    
+
     Ok(refnos)
 }
 

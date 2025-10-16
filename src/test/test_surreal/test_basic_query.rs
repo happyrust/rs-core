@@ -423,6 +423,19 @@ async fn test_query_ancestor_of_type() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+async fn test_get_named_attmap() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+    use crate::NamedAttrValue;
+    let refno = RefnoEnum::from("pe:17496_201377");
+    let type_name = crate::get_type_name(refno).await?;
+    dbg!(&type_name);
+    assert_eq!(type_name.as_str(), "BOX");
+    let attmap = rs_surreal::get_named_attmap(refno).await?;
+    dbg!(&attmap);
+    Ok(())
+}
+
+#[tokio::test]
 async fn test_get_named_attmap_with_uda() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
     use crate::NamedAttrValue;

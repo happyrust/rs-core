@@ -297,23 +297,23 @@ impl BatchQueryService {
         types: &[&str],
     ) -> Result<Vec<RefnoEnum>> {
         let start_time = Instant::now();
-        let sql = if types.is_empty() {
-            format!(
-                r#"SELECT value in FROM {}<-pe_owner WHERE record::exists(in.id) AND !in.deleted"#,
-                refno.to_pe_key()
-            )
+        
+        let types_array = if types.is_empty() {
+            "none".to_string()
         } else {
-            let nouns_str = types
+            let types_str = types
                 .iter()
                 .map(|s| format!("'{s}'"))
                 .collect::<Vec<_>>()
                 .join(",");
-            format!(
-                r#"SELECT value in FROM {}<-pe_owner WHERE in.noun IN [{}] AND record::exists(in.id) AND !in.deleted"#,
-                refno.to_pe_key(),
-                nouns_str
-            )
+            format!("[{}]", types_str)
         };
+        
+        let sql = format!(
+            r#"SELECT value id FROM fn::collect_children({}, {})"#,
+            refno.to_pe_key(),
+            types_array
+        );
 
         let query = QueryBuilder::from_sql(&sql);
 
@@ -349,23 +349,23 @@ impl BatchQueryService {
         use crate::{NamedAttrMap, SurlValue};
         
         let start_time = Instant::now();
-        let sql = if types.is_empty() {
-            format!(
-                r#"SELECT value in.refno.* FROM {}<-pe_owner WHERE record::exists(in.id) AND !in.deleted"#,
-                refno.to_pe_key()
-            )
+        
+        let types_array = if types.is_empty() {
+            "none".to_string()
         } else {
-            let nouns_str = types
+            let types_str = types
                 .iter()
                 .map(|s| format!("'{s}'"))
                 .collect::<Vec<_>>()
                 .join(",");
-            format!(
-                r#"SELECT value in.refno.* FROM {}<-pe_owner WHERE in.noun IN [{}] AND record::exists(in.id) AND !in.deleted"#,
-                refno.to_pe_key(),
-                nouns_str
-            )
+            format!("[{}]", types_str)
         };
+        
+        let sql = format!(
+            r#"SELECT value id.refno.* FROM fn::collect_children({}, {})"#,
+            refno.to_pe_key(),
+            types_array
+        );
 
         let query = QueryBuilder::from_sql(&sql);
 

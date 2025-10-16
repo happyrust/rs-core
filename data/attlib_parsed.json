@@ -1,0 +1,1824 @@
+{
+  "source_file": "data/attlib-2.10.dat",
+  "attribute_count": 7900,
+  "attributes": {
+    "attr_00000693": {
+      "hash": 1683,
+      "hash_hex": "0x00000693",
+      "type": "UNKNOWN_1704",
+      "type_code": 1704,
+      "offset": 1742,
+      "flags": 1741,
+      "flags_hex": "0x6cd"
+    },
+    "attr_000008bc": {
+      "hash": 2236,
+      "hash_hex": "0x000008bc",
+      "type": "UNKNOWN_2242",
+      "type_code": 2242,
+      "offset": 0,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_00000002": {
+      "hash": 2,
+      "hash_hex": "0x00000002",
+      "type": "BOOL",
+      "type_code": 6,
+      "offset": 88,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_00000001": {
+      "hash": 1,
+      "hash_hex": "0x00000001",
+      "type": "UNKNOWN_11",
+      "type_code": 11,
+      "offset": 88,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_0009c18e": {
+      "hash": 639374,
+      "hash_hex": "0x0009c18e",
+      "type": "STRING",
+      "type_code": 4,
+      "offset": 1018863,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_00000004": {
+      "hash": 4,
+      "hash_hex": "0x00000004",
+      "type": "INTEGER",
+      "type_code": 2,
+      "offset": 2,
+      "flags": 939199,
+      "flags_hex": "0xe54bf"
+    },
+    "attr_112ef91a": {
+      "hash": 288291098,
+      "hash_hex": "0x112ef91a",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 2,
+      "flags": 2,
+      "flags_hex": "0x2"
+    },
+    "attr_000e6432": {
+      "hash": 943154,
+      "hash_hex": "0x000e6432",
+      "type": "STRING",
+      "type_code": 4,
+      "offset": 713101,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_00000003": {
+      "hash": 3,
+      "hash_hex": "0x00000003",
+      "type": "BOOL",
+      "type_code": 6,
+      "offset": 87,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_000d3377": {
+      "hash": 865143,
+      "hash_hex": "0x000d3377",
+      "type": "REAL",
+      "type_code": 3,
+      "offset": 932061,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_00000008": {
+      "hash": 8,
+      "hash_hex": "0x00000008",
+      "type": "REAL",
+      "type_code": 3,
+      "offset": 2,
+      "flags": 939199,
+      "flags_hex": "0xe54bf"
+    },
+    "attr_00ac02de": {
+      "hash": 11272926,
+      "hash_hex": "0x00ac02de",
+      "type": "UNKNOWN_10200307",
+      "type_code": 10200307,
+      "offset": 2,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_014962bc": {
+      "hash": 21586620,
+      "hash_hex": "0x014962bc",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 2,
+      "flags": 2,
+      "flags_hex": "0x2"
+    },
+    "attr_14bbbf8e": {
+      "hash": 347848590,
+      "hash_hex": "0x14bbbf8e",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 2,
+      "flags": 2,
+      "flags_hex": "0x2"
+    },
+    "attr_00429909": {
+      "hash": 4364553,
+      "hash_hex": "0x00429909",
+      "type": "STRING",
+      "type_code": 4,
+      "offset": 173673355,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_ffffffff": {
+      "hash": 4294967295,
+      "hash_hex": "0xffffffff",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 0,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_134f041f": {
+      "hash": 323945503,
+      "hash_hex": "0x134f041f",
+      "type": "STRING",
+      "type_code": 4,
+      "offset": 4294967295,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_0000006f": {
+      "hash": 111,
+      "hash_hex": "0x0000006f",
+      "type": "UNKNOWN_32",
+      "type_code": 32,
+      "offset": 101,
+      "flags": 114,
+      "flags_hex": "0x72"
+    },
+    "attr_00000082": {
+      "hash": 130,
+      "hash_hex": "0x00000082",
+      "type": "UNKNOWN_145",
+      "type_code": 145,
+      "offset": 4294967295,
+      "flags": 144,
+      "flags_hex": "0x90"
+    },
+    "attr_0000006d": {
+      "hash": 109,
+      "hash_hex": "0x0000006d",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 108,
+      "flags": 128,
+      "flags_hex": "0x80"
+    },
+    "attr_00000083": {
+      "hash": 131,
+      "hash_hex": "0x00000083",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000041": {
+      "hash": 65,
+      "hash_hex": "0x00000041",
+      "type": "UNKNOWN_120",
+      "type_code": 120,
+      "offset": 115,
+      "flags": 105,
+      "flags_hex": "0x69"
+    },
+    "attr_0000004e": {
+      "hash": 78,
+      "hash_hex": "0x0000004e",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 31,
+      "flags": 722578,
+      "flags_hex": "0xb0692"
+    },
+    "attr_00000072": {
+      "hash": 114,
+      "hash_hex": "0x00000072",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000065": {
+      "hash": 101,
+      "hash_hex": "0x00000065",
+      "type": "UNKNOWN_112",
+      "type_code": 112,
+      "offset": 97,
+      "flags": 101,
+      "flags_hex": "0x65"
+    },
+    "attr_00000020": {
+      "hash": 32,
+      "hash_hex": "0x00000020",
+      "type": "UNKNOWN_112",
+      "type_code": 112,
+      "offset": 115,
+      "flags": 111,
+      "flags_hex": "0x6f"
+    },
+    "attr_0000006c": {
+      "hash": 108,
+      "hash_hex": "0x0000006c",
+      "type": "UNKNOWN_101",
+      "type_code": 101,
+      "offset": 101,
+      "flags": 109,
+      "flags_hex": "0x6d"
+    },
+    "attr_000bcbff": {
+      "hash": 773119,
+      "hash_hex": "0x000bcbff",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 10000,
+      "flags": 2,
+      "flags_hex": "0x2"
+    },
+    "attr_00000006": {
+      "hash": 6,
+      "hash_hex": "0x00000006",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 73,
+      "flags": 88,
+      "flags_hex": "0x58"
+    },
+    "attr_0000004c": {
+      "hash": 76,
+      "hash_hex": "0x0000004c",
+      "type": "UNKNOWN_68",
+      "type_code": 68,
+      "offset": 6,
+      "flags": 83,
+      "flags_hex": "0x53"
+    },
+    "attr_00000061": {
+      "hash": 97,
+      "hash_hex": "0x00000061",
+      "type": "UNKNOWN_116",
+      "type_code": 116,
+      "offset": 97,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_0000001e": {
+      "hash": 30,
+      "hash_hex": "0x0000001e",
+      "type": "UNKNOWN_67",
+      "type_code": 67,
+      "offset": 116,
+      "flags": 97,
+      "flags_hex": "0x61"
+    },
+    "attr_00000075": {
+      "hash": 117,
+      "hash_hex": "0x00000075",
+      "type": "UNKNOWN_114",
+      "type_code": 114,
+      "offset": 32,
+      "flags": 110,
+      "flags_hex": "0x6e"
+    },
+    "attr_00000066": {
+      "hash": 102,
+      "hash_hex": "0x00000066",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 8,
+      "flags": 6,
+      "flags_hex": "0x6"
+    },
+    "attr_00000050": {
+      "hash": 80,
+      "hash_hex": "0x00000050",
+      "type": "UNKNOWN_79",
+      "type_code": 79,
+      "offset": 13,
+      "flags": 83,
+      "flags_hex": "0x53"
+    },
+    "attr_0000006e": {
+      "hash": 110,
+      "hash_hex": "0x0000006e",
+      "type": "UNKNOWN_13",
+      "type_code": 13,
+      "offset": 82,
+      "flags": 7,
+      "flags_hex": "0x7"
+    },
+    "attr_00000074": {
+      "hash": 116,
+      "hash_hex": "0x00000074",
+      "type": "UNKNOWN_115",
+      "type_code": 115,
+      "offset": 0,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_00000078": {
+      "hash": 120,
+      "hash_hex": "0x00000078",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000048": {
+      "hash": 72,
+      "hash_hex": "0x00000048",
+      "type": "UNKNOWN_114",
+      "type_code": 114,
+      "offset": 74,
+      "flags": 121,
+      "flags_hex": "0x79"
+    },
+    "attr_00000077": {
+      "hash": 119,
+      "hash_hex": "0x00000077",
+      "type": "UNKNOWN_101",
+      "type_code": 101,
+      "offset": 100,
+      "flags": 108,
+      "flags_hex": "0x6c"
+    },
+    "attr_00000058": {
+      "hash": 88,
+      "hash_hex": "0x00000058",
+      "type": "UNKNOWN_93",
+      "type_code": 93,
+      "offset": 85,
+      "flags": 73,
+      "flags_hex": "0x49"
+    },
+    "attr_0000002b": {
+      "hash": 43,
+      "hash_hex": "0x0000002b",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 103,
+      "flags": 110,
+      "flags_hex": "0x6e"
+    },
+    "attr_00000043": {
+      "hash": 67,
+      "hash_hex": "0x00000043",
+      "type": "UNKNOWN_84",
+      "type_code": 84,
+      "offset": 79,
+      "flags": 73,
+      "flags_hex": "0x49"
+    },
+    "attr_00000069": {
+      "hash": 105,
+      "hash_hex": "0x00000069",
+      "type": "UNKNOWN_116",
+      "type_code": 116,
+      "offset": 111,
+      "flags": 105,
+      "flags_hex": "0x69"
+    },
+    "attr_0000005a": {
+      "hash": 90,
+      "hash_hex": "0x0000005a",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000047": {
+      "hash": 71,
+      "hash_hex": "0x00000047",
+      "type": "UNKNOWN_90",
+      "type_code": 90,
+      "offset": 73,
+      "flags": 101,
+      "flags_hex": "0x65"
+    },
+    "attr_00000063": {
+      "hash": 99,
+      "hash_hex": "0x00000063",
+      "type": "UNKNOWN_104",
+      "type_code": 104,
+      "offset": 100,
+      "flags": 101,
+      "flags_hex": "0x65"
+    },
+    "attr_0000004a": {
+      "hash": 74,
+      "hash_hex": "0x0000004a",
+      "type": "UNKNOWN_114",
+      "type_code": 114,
+      "offset": 76,
+      "flags": 120,
+      "flags_hex": "0x78"
+    },
+    "attr_00000076": {
+      "hash": 118,
+      "hash_hex": "0x00000076",
+      "type": "UNKNOWN_101",
+      "type_code": 101,
+      "offset": 119,
+      "flags": 32,
+      "flags_hex": "0x20"
+    },
+    "attr_000b0692": {
+      "hash": 722578,
+      "hash_hex": "0x000b0692",
+      "type": "UNKNOWN_36",
+      "type_code": 36,
+      "offset": 114,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_00000067": {
+      "hash": 103,
+      "hash_hex": "0x00000067",
+      "type": "UNKNOWN_32",
+      "type_code": 32,
+      "offset": 87,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_00000068": {
+      "hash": 104,
+      "hash_hex": "0x00000068",
+      "type": "UNKNOWN_111",
+      "type_code": 111,
+      "offset": 1,
+      "flags": 114,
+      "flags_hex": "0x72"
+    },
+    "attr_00000053": {
+      "hash": 83,
+      "hash_hex": "0x00000053",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 30,
+      "flags": 722578,
+      "flags_hex": "0xb0692"
+    },
+    "attr_00000059": {
+      "hash": 89,
+      "hash_hex": "0x00000059",
+      "type": "STRING",
+      "type_code": 4,
+      "offset": 121,
+      "flags": 84,
+      "flags_hex": "0x54"
+    },
+    "attr_0000006a": {
+      "hash": 106,
+      "hash_hex": "0x0000006a",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 105,
+      "flags": 123,
+      "flags_hex": "0x7b"
+    },
+    "attr_00000011": {
+      "hash": 17,
+      "hash_hex": "0x00000011",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_00000064": {
+      "hash": 100,
+      "hash_hex": "0x00000064",
+      "type": "UNKNOWN_32",
+      "type_code": 32,
+      "offset": 111,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_0000007a": {
+      "hash": 122,
+      "hash_hex": "0x0000007a",
+      "type": "UNKNOWN_129",
+      "type_code": 129,
+      "offset": 118,
+      "flags": 74,
+      "flags_hex": "0x4a"
+    },
+    "attr_0000008c": {
+      "hash": 140,
+      "hash_hex": "0x0000008c",
+      "type": "UNKNOWN_125",
+      "type_code": 125,
+      "offset": 0,
+      "flags": 108,
+      "flags_hex": "0x6c"
+    },
+    "attr_000000ae": {
+      "hash": 174,
+      "hash_hex": "0x000000ae",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000042": {
+      "hash": 66,
+      "hash_hex": "0x00000042",
+      "type": "UNKNOWN_101",
+      "type_code": 101,
+      "offset": 100,
+      "flags": 110,
+      "flags_hex": "0x6e"
+    },
+    "attr_000e272f": {
+      "hash": 927535,
+      "hash_hex": "0x000e272f",
+      "type": "UNKNOWN_45",
+      "type_code": 45,
+      "offset": 101,
+      "flags": 83,
+      "flags_hex": "0x53"
+    },
+    "attr_00000062": {
+      "hash": 98,
+      "hash_hex": "0x00000062",
+      "type": "UNKNOWN_101",
+      "type_code": 101,
+      "offset": 115,
+      "flags": 114,
+      "flags_hex": "0x72"
+    },
+    "attr_00000055": {
+      "hash": 85,
+      "hash_hex": "0x00000055",
+      "type": "UNKNOWN_88",
+      "type_code": 88,
+      "offset": 79,
+      "flags": 76,
+      "flags_hex": "0x4c"
+    },
+    "attr_00000010": {
+      "hash": 16,
+      "hash_hex": "0x00000010",
+      "type": "UNKNOWN_66",
+      "type_code": 66,
+      "offset": 115,
+      "flags": 97,
+      "flags_hex": "0x61"
+    },
+    "attr_0000004f": {
+      "hash": 79,
+      "hash_hex": "0x0000004f",
+      "type": "UNKNOWN_87",
+      "type_code": 87,
+      "offset": 7,
+      "flags": 78,
+      "flags_hex": "0x4e"
+    },
+    "attr_00000015": {
+      "hash": 21,
+      "hash_hex": "0x00000015",
+      "type": "UNKNOWN_66",
+      "type_code": 66,
+      "offset": 115,
+      "flags": 117,
+      "flags_hex": "0x75"
+    },
+    "attr_00000070": {
+      "hash": 112,
+      "hash_hex": "0x00000070",
+      "type": "UNKNOWN_108",
+      "type_code": 108,
+      "offset": 101,
+      "flags": 105,
+      "flags_hex": "0x69"
+    },
+    "attr_000853b1": {
+      "hash": 545713,
+      "hash_hex": "0x000853b1",
+      "type": "UNKNOWN_538503",
+      "type_code": 538503,
+      "offset": 1,
+      "flags": 13,
+      "flags_hex": "0xd"
+    },
+    "attr_00000057": {
+      "hash": 87,
+      "hash_hex": "0x00000057",
+      "type": "UNKNOWN_101",
+      "type_code": 101,
+      "offset": 100,
+      "flags": 108,
+      "flags_hex": "0x6c"
+    },
+    "attr_00000073": {
+      "hash": 115,
+      "hash_hex": "0x00000073",
+      "type": "UNKNOWN_113",
+      "type_code": 113,
+      "offset": 4294967295,
+      "flags": 115,
+      "flags_hex": "0x73"
+    },
+    "attr_00000045": {
+      "hash": 69,
+      "hash_hex": "0x00000045",
+      "type": "UNKNOWN_70",
+      "type_code": 70,
+      "offset": 722578,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_0000000b": {
+      "hash": 11,
+      "hash_hex": "0x0000000b",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_00000049": {
+      "hash": 73,
+      "hash_hex": "0x00000049",
+      "type": "UNKNOWN_84",
+      "type_code": 84,
+      "offset": 79,
+      "flags": 73,
+      "flags_hex": "0x49"
+    },
+    "attr_00000056": {
+      "hash": 86,
+      "hash_hex": "0x00000056",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 22,
+      "flags": 722578,
+      "flags_hex": "0xb0692"
+    },
+    "attr_0008a1e6": {
+      "hash": 565734,
+      "hash_hex": "0x0008a1e6",
+      "type": "UNKNOWN_25",
+      "type_code": 25,
+      "offset": 101,
+      "flags": 83,
+      "flags_hex": "0x53"
+    },
+    "attr_0000000c": {
+      "hash": 12,
+      "hash_hex": "0x0000000c",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 73,
+      "flags": 88,
+      "flags_hex": "0x58"
+    },
+    "attr_0000005c": {
+      "hash": 92,
+      "hash_hex": "0x0000005c",
+      "type": "UNKNOWN_97",
+      "type_code": 97,
+      "offset": 90,
+      "flags": 74,
+      "flags_hex": "0x4a"
+    },
+    "attr_00000093": {
+      "hash": 147,
+      "hash_hex": "0x00000093",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 144,
+      "flags": 75,
+      "flags_hex": "0x4b"
+    },
+    "attr_00000017": {
+      "hash": 23,
+      "hash_hex": "0x00000017",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 117,
+      "flags_hex": "0x75"
+    },
+    "attr_00000054": {
+      "hash": 84,
+      "hash_hex": "0x00000054",
+      "type": "UNKNOWN_97",
+      "type_code": 97,
+      "offset": 108,
+      "flags": 98,
+      "flags_hex": "0x62"
+    },
+    "attr_00000007": {
+      "hash": 7,
+      "hash_hex": "0x00000007",
+      "type": "UNKNOWN_83",
+      "type_code": 83,
+      "offset": 111,
+      "flags": 112,
+      "flags_hex": "0x70"
+    },
+    "attr_0000000f": {
+      "hash": 15,
+      "hash_hex": "0x0000000f",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 103,
+      "flags": 110,
+      "flags_hex": "0x6e"
+    },
+    "attr_0000007f": {
+      "hash": 127,
+      "hash_hex": "0x0000007f",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000044": {
+      "hash": 68,
+      "hash_hex": "0x00000044",
+      "type": "UNKNOWN_73",
+      "type_code": 73,
+      "offset": 69,
+      "flags": 82,
+      "flags_hex": "0x52"
+    },
+    "attr_0000000d": {
+      "hash": 13,
+      "hash_hex": "0x0000000d",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 67,
+      "flags": 30,
+      "flags_hex": "0x1e"
+    },
+    "attr_000e567e": {
+      "hash": 939646,
+      "hash_hex": "0x000e567e",
+      "type": "UNKNOWN_31",
+      "type_code": 31,
+      "offset": 117,
+      "flags": 67,
+      "flags_hex": "0x43"
+    },
+    "attr_0000000a": {
+      "hash": 10,
+      "hash_hex": "0x0000000a",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_00000092": {
+      "hash": 146,
+      "hash_hex": "0x00000092",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000091": {
+      "hash": 145,
+      "hash_hex": "0x00000091",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000001f4": {
+      "hash": 500,
+      "hash_hex": "0x000001f4",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 14,
+      "flags": 1,
+      "flags_hex": "0x1"
+    },
+    "attr_00000081": {
+      "hash": 129,
+      "hash_hex": "0x00000081",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000004d": {
+      "hash": 77,
+      "hash_hex": "0x0000004d",
+      "type": "UNKNOWN_14",
+      "type_code": 14,
+      "offset": 116,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_00000009": {
+      "hash": 9,
+      "hash_hex": "0x00000009",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 115,
+      "flags": 115,
+      "flags_hex": "0x73"
+    },
+    "attr_0000001c": {
+      "hash": 28,
+      "hash_hex": "0x0000001c",
+      "type": "UNKNOWN_80",
+      "type_code": 80,
+      "offset": 101,
+      "flags": 114,
+      "flags_hex": "0x72"
+    },
+    "attr_000e54bf": {
+      "hash": 939199,
+      "hash_hex": "0x000e54bf",
+      "type": "INTEGER",
+      "type_code": 2,
+      "offset": 65,
+      "flags": 6,
+      "flags_hex": "0x6"
+    },
+    "attr_00000094": {
+      "hash": 148,
+      "hash_hex": "0x00000094",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000095": {
+      "hash": 149,
+      "hash_hex": "0x00000095",
+      "type": "UNKNOWN_130",
+      "type_code": 130,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000046": {
+      "hash": 70,
+      "hash_hex": "0x00000046",
+      "type": "UNKNOWN_69",
+      "type_code": 69,
+      "offset": 69,
+      "flags": 82,
+      "flags_hex": "0x52"
+    },
+    "attr_00000052": {
+      "hash": 82,
+      "hash_hex": "0x00000052",
+      "type": "UNKNOWN_69",
+      "type_code": 69,
+      "offset": 6,
+      "flags": 70,
+      "flags_hex": "0x46"
+    },
+    "attr_00000005": {
+      "hash": 5,
+      "hash_hex": "0x00000005",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 82,
+      "flags": 86,
+      "flags_hex": "0x56"
+    },
+    "attr_0000004b": {
+      "hash": 75,
+      "hash_hex": "0x0000004b",
+      "type": "UNKNOWN_146",
+      "type_code": 146,
+      "offset": 77,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_0000008b": {
+      "hash": 139,
+      "hash_hex": "0x0000008b",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000016": {
+      "hash": 22,
+      "hash_hex": "0x00000016",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 117,
+      "flags_hex": "0x75"
+    },
+    "attr_00000079": {
+      "hash": 121,
+      "hash_hex": "0x00000079",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000006b": {
+      "hash": 107,
+      "hash_hex": "0x0000006b",
+      "type": "UNKNOWN_110",
+      "type_code": 110,
+      "offset": 115,
+      "flags": 101,
+      "flags_hex": "0x65"
+    },
+    "attr_0000007e": {
+      "hash": 126,
+      "hash_hex": "0x0000007e",
+      "type": "UNKNOWN_108",
+      "type_code": 108,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000012": {
+      "hash": 18,
+      "hash_hex": "0x00000012",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_00000021": {
+      "hash": 33,
+      "hash_hex": "0x00000021",
+      "type": "UNKNOWN_82",
+      "type_code": 82,
+      "offset": 116,
+      "flags": 101,
+      "flags_hex": "0x65"
+    },
+    "attr_00000071": {
+      "hash": 113,
+      "hash_hex": "0x00000071",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000005b": {
+      "hash": 91,
+      "hash_hex": "0x0000005b",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 90,
+      "flags": 100,
+      "flags_hex": "0x64"
+    },
+    "attr_0000008d": {
+      "hash": 141,
+      "hash_hex": "0x0000008d",
+      "type": "UNKNOWN_118",
+      "type_code": 118,
+      "offset": 4294967295,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_00000033": {
+      "hash": 51,
+      "hash_hex": "0x00000033",
+      "type": "UNKNOWN_120",
+      "type_code": 120,
+      "offset": 4294967295,
+      "flags": 121,
+      "flags_hex": "0x79"
+    },
+    "attr_00000098": {
+      "hash": 152,
+      "hash_hex": "0x00000098",
+      "type": "UNKNOWN_77",
+      "type_code": 77,
+      "offset": 4294967295,
+      "flags": 142,
+      "flags_hex": "0x8e"
+    },
+    "attr_00000088": {
+      "hash": 136,
+      "hash_hex": "0x00000088",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000087": {
+      "hash": 135,
+      "hash_hex": "0x00000087",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000060": {
+      "hash": 96,
+      "hash_hex": "0x00000060",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 92,
+      "flags": 72,
+      "flags_hex": "0x48"
+    },
+    "attr_00000086": {
+      "hash": 134,
+      "hash_hex": "0x00000086",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000099": {
+      "hash": 153,
+      "hash_hex": "0x00000099",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000089": {
+      "hash": 137,
+      "hash_hex": "0x00000089",
+      "type": "UNKNOWN_111",
+      "type_code": 111,
+      "offset": 4294967295,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_0000007b": {
+      "hash": 123,
+      "hash_hex": "0x0000007b",
+      "type": "UNKNOWN_79",
+      "type_code": 79,
+      "offset": 4294967295,
+      "flags": 112,
+      "flags_hex": "0x70"
+    },
+    "attr_0000007c": {
+      "hash": 124,
+      "hash_hex": "0x0000007c",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000097": {
+      "hash": 151,
+      "hash_hex": "0x00000097",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_000000a8": {
+      "hash": 168,
+      "hash_hex": "0x000000a8",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000005f": {
+      "hash": 95,
+      "hash_hex": "0x0000005f",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000005e": {
+      "hash": 94,
+      "hash_hex": "0x0000005e",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000008a": {
+      "hash": 138,
+      "hash_hex": "0x0000008a",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000a6": {
+      "hash": 166,
+      "hash_hex": "0x000000a6",
+      "type": "UNKNOWN_130",
+      "type_code": 130,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000003a": {
+      "hash": 58,
+      "hash_hex": "0x0000003a",
+      "type": "UNKNOWN_84",
+      "type_code": 84,
+      "offset": 112,
+      "flags": 121,
+      "flags_hex": "0x79"
+    },
+    "attr_0000002c": {
+      "hash": 44,
+      "hash_hex": "0x0000002c",
+      "type": "UNKNOWN_32",
+      "type_code": 32,
+      "offset": 65,
+      "flags": 78,
+      "flags_hex": "0x4e"
+    },
+    "attr_0000000e": {
+      "hash": 14,
+      "hash_hex": "0x0000000e",
+      "type": "INTVEC",
+      "type_code": 7,
+      "offset": 101,
+      "flags": 82,
+      "flags_hex": "0x52"
+    },
+    "attr_00000090": {
+      "hash": 144,
+      "hash_hex": "0x00000090",
+      "type": "UNKNOWN_146",
+      "type_code": 146,
+      "offset": 4294967295,
+      "flags": 128,
+      "flags_hex": "0x80"
+    },
+    "attr_0000002d": {
+      "hash": 45,
+      "hash_hex": "0x0000002d",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_00000028": {
+      "hash": 40,
+      "hash_hex": "0x00000028",
+      "type": "UNKNOWN_76",
+      "type_code": 76,
+      "offset": 115,
+      "flags": 105,
+      "flags_hex": "0x69"
+    },
+    "attr_0000008f": {
+      "hash": 143,
+      "hash_hex": "0x0000008f",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000096": {
+      "hash": 150,
+      "hash_hex": "0x00000096",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00095b0c": {
+      "hash": 613132,
+      "hash_hex": "0x00095b0c",
+      "type": "BOOL",
+      "type_code": 6,
+      "offset": 117,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_0e88027d": {
+      "hash": 243794557,
+      "hash_hex": "0x0e88027d",
+      "type": "UNKNOWN_12",
+      "type_code": 12,
+      "offset": 114,
+      "flags": 68,
+      "flags_hex": "0x44"
+    },
+    "attr_0000022a": {
+      "hash": 554,
+      "hash_hex": "0x0000022a",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 1,
+      "flags": 308,
+      "flags_hex": "0x134"
+    },
+    "attr_00000229": {
+      "hash": 553,
+      "hash_hex": "0x00000229",
+      "type": "UNKNOWN_134",
+      "type_code": 134,
+      "offset": 4294967295,
+      "flags": 135,
+      "flags_hex": "0x87"
+    },
+    "attr_0000009e": {
+      "hash": 158,
+      "hash_hex": "0x0000009e",
+      "type": "UNKNOWN_138",
+      "type_code": 138,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000026": {
+      "hash": 38,
+      "hash_hex": "0x00000026",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 117,
+      "flags_hex": "0x75"
+    },
+    "attr_0000020f": {
+      "hash": 527,
+      "hash_hex": "0x0000020f",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 1,
+      "flags": 224,
+      "flags_hex": "0xe0"
+    },
+    "attr_000000df": {
+      "hash": 223,
+      "hash_hex": "0x000000df",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 0,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_0000009b": {
+      "hash": 155,
+      "hash_hex": "0x0000009b",
+      "type": "UNKNOWN_120",
+      "type_code": 120,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000080": {
+      "hash": 128,
+      "hash_hex": "0x00000080",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 127,
+      "flags": 132,
+      "flags_hex": "0x84"
+    },
+    "attr_0000007d": {
+      "hash": 125,
+      "hash_hex": "0x0000007d",
+      "type": "UNKNOWN_132",
+      "type_code": 132,
+      "offset": 122,
+      "flags": 75,
+      "flags_hex": "0x4b"
+    },
+    "attr_00000084": {
+      "hash": 132,
+      "hash_hex": "0x00000084",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000a5": {
+      "hash": 165,
+      "hash_hex": "0x000000a5",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 0,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000a0": {
+      "hash": 160,
+      "hash_hex": "0x000000a0",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 0,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000002f": {
+      "hash": 47,
+      "hash_hex": "0x0000002f",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 117,
+      "flags_hex": "0x75"
+    },
+    "attr_00000034": {
+      "hash": 52,
+      "hash_hex": "0x00000034",
+      "type": "UNKNOWN_82",
+      "type_code": 82,
+      "offset": 102,
+      "flags": 101,
+      "flags_hex": "0x65"
+    },
+    "attr_00000085": {
+      "hash": 133,
+      "hash_hex": "0x00000085",
+      "type": "UNKNOWN_110",
+      "type_code": 110,
+      "offset": 4294967295,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_000000a1": {
+      "hash": 161,
+      "hash_hex": "0x000000a1",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000008e": {
+      "hash": 142,
+      "hash_hex": "0x0000008e",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0473eedc": {
+      "hash": 74706652,
+      "hash_hex": "0x0473eedc",
+      "type": "UNKNOWN_12",
+      "type_code": 12,
+      "offset": 114,
+      "flags": 68,
+      "flags_hex": "0x44"
+    },
+    "attr_000000e0": {
+      "hash": 224,
+      "hash_hex": "0x000000e0",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 1,
+      "flags": 275,
+      "flags_hex": "0x113"
+    },
+    "attr_00000227": {
+      "hash": 551,
+      "hash_hex": "0x00000227",
+      "type": "INTEGER",
+      "type_code": 2,
+      "offset": 3,
+      "flags": 552,
+      "flags_hex": "0x228"
+    },
+    "attr_0000021d": {
+      "hash": 541,
+      "hash_hex": "0x0000021d",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_0000001a": {
+      "hash": 26,
+      "hash_hex": "0x0000001a",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 109,
+      "flags": 100,
+      "flags_hex": "0x64"
+    },
+    "attr_00000113": {
+      "hash": 275,
+      "hash_hex": "0x00000113",
+      "type": "UNKNOWN_109",
+      "type_code": 109,
+      "offset": 0,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_00000018": {
+      "hash": 24,
+      "hash_hex": "0x00000018",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 116,
+      "flags": 116,
+      "flags_hex": "0x74"
+    },
+    "attr_00000029": {
+      "hash": 41,
+      "hash_hex": "0x00000029",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 773119,
+      "flags": 2,
+      "flags_hex": "0x2"
+    },
+    "attr_00000014": {
+      "hash": 20,
+      "hash_hex": "0x00000014",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 2,
+      "flags": 2,
+      "flags_hex": "0x2"
+    },
+    "attr_0009c5e1": {
+      "hash": 640481,
+      "hash_hex": "0x0009c5e1",
+      "type": "REAL",
+      "type_code": 3,
+      "offset": 6,
+      "flags": 2,
+      "flags_hex": "0x2"
+    },
+    "attr_00000036": {
+      "hash": 54,
+      "hash_hex": "0x00000036",
+      "type": "UNKNOWN_67",
+      "type_code": 67,
+      "offset": 109,
+      "flags": 111,
+      "flags_hex": "0x6f"
+    },
+    "attr_0000005d": {
+      "hash": 93,
+      "hash_hex": "0x0000005d",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 0,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000a7": {
+      "hash": 167,
+      "hash_hex": "0x000000a7",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000003b": {
+      "hash": 59,
+      "hash_hex": "0x0000003b",
+      "type": "UNKNOWN_84",
+      "type_code": 84,
+      "offset": 32,
+      "flags": 111,
+      "flags_hex": "0x6f"
+    },
+    "attr_00000032": {
+      "hash": 50,
+      "hash_hex": "0x00000032",
+      "type": "ELEMENT",
+      "type_code": 1,
+      "offset": 17,
+      "flags": 2000,
+      "flags_hex": "0x7d0"
+    },
+    "attr_00000031": {
+      "hash": 49,
+      "hash_hex": "0x00000031",
+      "type": "UNKNOWN_50",
+      "type_code": 50,
+      "offset": 32,
+      "flags": 48,
+      "flags_hex": "0x30"
+    },
+    "attr_000d337e": {
+      "hash": 865150,
+      "hash_hex": "0x000d337e",
+      "type": "UNKNOWN_90",
+      "type_code": 90,
+      "offset": 4294967295,
+      "flags": 91,
+      "flags_hex": "0x5b"
+    },
+    "attr_0000009f": {
+      "hash": 159,
+      "hash_hex": "0x0000009f",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000009a": {
+      "hash": 154,
+      "hash_hex": "0x0000009a",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0f7a2cc8": {
+      "hash": 259665096,
+      "hash_hex": "0x0f7a2cc8",
+      "type": "INTEGER",
+      "type_code": 2,
+      "offset": 65,
+      "flags": 4,
+      "flags_hex": "0x4"
+    },
+    "attr_0009ab88": {
+      "hash": 633736,
+      "hash_hex": "0x0009ab88",
+      "type": "INTVEC",
+      "type_code": 7,
+      "offset": 114,
+      "flags": 68,
+      "flags_hex": "0x44"
+    },
+    "attr_00083787": {
+      "hash": 538503,
+      "hash_hex": "0x00083787",
+      "type": "UNKNOWN_13",
+      "type_code": 13,
+      "offset": 80,
+      "flags": 10,
+      "flags_hex": "0xa"
+    },
+    "attr_02a68651": {
+      "hash": 44467793,
+      "hash_hex": "0x02a68651",
+      "type": "UNKNOWN_916786",
+      "type_code": 916786,
+      "offset": 3,
+      "flags": 531894,
+      "flags_hex": "0x81db6"
+    },
+    "attr_000003e8": {
+      "hash": 1000,
+      "hash_hex": "0x000003e8",
+      "type": "STRING",
+      "type_code": 4,
+      "offset": 65,
+      "flags": 6,
+      "flags_hex": "0x6"
+    },
+    "attr_00000051": {
+      "hash": 81,
+      "hash_hex": "0x00000051",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000001d": {
+      "hash": 29,
+      "hash_hex": "0x0000001d",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 115,
+      "flags": 115,
+      "flags_hex": "0x73"
+    },
+    "attr_00000013": {
+      "hash": 19,
+      "hash_hex": "0x00000013",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 110,
+      "flags": 110,
+      "flags_hex": "0x6e"
+    },
+    "attr_000e9296": {
+      "hash": 955030,
+      "hash_hex": "0x000e9296",
+      "type": "UNKNOWN_30",
+      "type_code": 30,
+      "offset": 117,
+      "flags": 78,
+      "flags_hex": "0x4e"
+    },
+    "attr_000000a3": {
+      "hash": 163,
+      "hash_hex": "0x000000a3",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000022": {
+      "hash": 34,
+      "hash_hex": "0x00000022",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 115,
+      "flags": 115,
+      "flags_hex": "0x73"
+    },
+    "attr_00000019": {
+      "hash": 25,
+      "hash_hex": "0x00000019",
+      "type": "UNKNOWN_65",
+      "type_code": 65,
+      "offset": 115,
+      "flags": 115,
+      "flags_hex": "0x73"
+    },
+    "attr_000000b1": {
+      "hash": 177,
+      "hash_hex": "0x000000b1",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 132,
+      "flags_hex": "0x84"
+    },
+    "attr_000000b2": {
+      "hash": 178,
+      "hash_hex": "0x000000b2",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000a2": {
+      "hash": 162,
+      "hash_hex": "0x000000a2",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000a4": {
+      "hash": 164,
+      "hash_hex": "0x000000a4",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 0,
+      "flags_hex": "0x0"
+    },
+    "attr_0000009d": {
+      "hash": 157,
+      "hash_hex": "0x0000009d",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 75,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00000023": {
+      "hash": 35,
+      "hash_hex": "0x00000023",
+      "type": "UNKNOWN_76",
+      "type_code": 76,
+      "offset": 115,
+      "flags": 105,
+      "flags_hex": "0x69"
+    },
+    "attr_000007d0": {
+      "hash": 2000,
+      "hash_hex": "0x000007d0",
+      "type": "UNKNOWN_17",
+      "type_code": 17,
+      "offset": 116,
+      "flags": 65,
+      "flags_hex": "0x41"
+    },
+    "attr_000000b5": {
+      "hash": 181,
+      "hash_hex": "0x000000b5",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000b7": {
+      "hash": 183,
+      "hash_hex": "0x000000b7",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000b3": {
+      "hash": 179,
+      "hash_hex": "0x000000b3",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000aa": {
+      "hash": 170,
+      "hash_hex": "0x000000aa",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_0000009c": {
+      "hash": 156,
+      "hash_hex": "0x0000009c",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000b0": {
+      "hash": 176,
+      "hash_hex": "0x000000b0",
+      "type": "UNKNOWN_0",
+      "type_code": 0,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_000000af": {
+      "hash": 175,
+      "hash_hex": "0x000000af",
+      "type": "UNKNOWN_4294967295",
+      "type_code": 4294967295,
+      "offset": 4294967295,
+      "flags": 4294967295,
+      "flags_hex": "0xffffffff"
+    },
+    "attr_00083f62": {
+      "hash": 540514,
+      "hash_hex": "0x00083f62",
+      "type": "UNKNOWN_70",
+      "type_code": 70,
+      "offset": 105,
+      "flags": 76,
+      "flags_hex": "0x4c"
+    },
+    "attr_000d10be": {
+      "hash": 856254,
+      "hash_hex": "0x000d10be",
+      "type": "UNKNOWN_33",
+      "type_code": 33,
+      "offset": 111,
+      "flags": 67,
+      "flags_hex": "0x43"
+    }
+  }
+}

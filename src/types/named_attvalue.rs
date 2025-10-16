@@ -331,21 +331,28 @@ impl Into<serde_json::Value> for NamedAttrValue {
 impl From<NamedAttrValue> for SurlValue {
     fn from(value: NamedAttrValue) -> Self {
         use surrealdb::types::Number;
-        
+
         match value {
             NamedAttrValue::IntegerType(v) => SurlValue::Number(Number::Int(v as i64)),
             NamedAttrValue::LongType(v) => SurlValue::Number(Number::Int(v)),
-            NamedAttrValue::StringType(v) | NamedAttrValue::WordType(v) | NamedAttrValue::ElementType(v) => {
-                SurlValue::String(v)
-            }
+            NamedAttrValue::StringType(v)
+            | NamedAttrValue::WordType(v)
+            | NamedAttrValue::ElementType(v) => SurlValue::String(v),
             NamedAttrValue::F32Type(v) => SurlValue::Number(Number::Float(v as f64)),
             NamedAttrValue::BoolType(v) => SurlValue::Bool(v),
             NamedAttrValue::F32VecType(v) => {
-                let arr: Vec<SurlValue> = v.into_iter().map(|x| SurlValue::Number(Number::Float(x as f64))).collect();
+                let arr: Vec<SurlValue> = v
+                    .into_iter()
+                    .map(|x| SurlValue::Number(Number::Float(x as f64)))
+                    .collect();
                 SurlValue::Array(arr.into())
             }
             NamedAttrValue::Vec3Type(v) => {
-                let arr: Vec<SurlValue> = v.to_array().into_iter().map(|x| SurlValue::Number(Number::Float(x as f64))).collect();
+                let arr: Vec<SurlValue> = v
+                    .to_array()
+                    .into_iter()
+                    .map(|x| SurlValue::Number(Number::Float(x as f64)))
+                    .collect();
                 SurlValue::Array(arr.into())
             }
             NamedAttrValue::StringArrayType(v) => {
@@ -357,13 +364,19 @@ impl From<NamedAttrValue> for SurlValue {
                 SurlValue::Array(arr.into())
             }
             NamedAttrValue::IntArrayType(v) => {
-                let arr: Vec<SurlValue> = v.into_iter().map(|x| SurlValue::Number(Number::Int(x as i64))).collect();
+                let arr: Vec<SurlValue> = v
+                    .into_iter()
+                    .map(|x| SurlValue::Number(Number::Int(x as i64)))
+                    .collect();
                 SurlValue::Array(arr.into())
             }
             NamedAttrValue::RefU64Type(v) => SurlValue::RecordId(v.to_pe_thing()),
             NamedAttrValue::RefnoEnumType(v) => SurlValue::RecordId(v.to_pe_thing()),
             NamedAttrValue::RefU64Array(v) => {
-                let arr: Vec<SurlValue> = v.into_iter().map(|x| SurlValue::RecordId(x.to_pe_thing())).collect();
+                let arr: Vec<SurlValue> = v
+                    .into_iter()
+                    .map(|x| SurlValue::RecordId(x.to_pe_thing()))
+                    .collect();
                 SurlValue::Array(arr.into())
             }
             NamedAttrValue::InvalidType => SurlValue::None,

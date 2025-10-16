@@ -496,11 +496,7 @@ pub struct TubiRelate {
 
 impl TubiRelate {
     /// 创建新的 TubiRelate 实例
-    pub fn new(
-        id: String,
-        leave: RefnoEnum,
-        arrive: RefnoEnum,
-    ) -> Self {
+    pub fn new(id: String, leave: RefnoEnum, arrive: RefnoEnum) -> Self {
         Self {
             id,
             leave,
@@ -534,18 +530,12 @@ impl TubiRelate {
     /// 生成 SurrealDB 插入语句并同步更新关联的PE
     pub fn to_surql(&self) -> String {
         let start_pt_str = match &self.start_pt {
-            Some(pt) => format!(
-                "{{ x: {}, y: {}, z: {} }}",
-                pt.x, pt.y, pt.z
-            ),
+            Some(pt) => format!("{{ x: {}, y: {}, z: {} }}", pt.x, pt.y, pt.z),
             None => "NONE".to_string(),
         };
 
         let end_pt_str = match &self.end_pt {
-            Some(pt) => format!(
-                "{{ x: {}, y: {}, z: {} }}",
-                pt.x, pt.y, pt.z
-            ),
+            Some(pt) => format!("{{ x: {}, y: {}, z: {} }}", pt.x, pt.y, pt.z),
             None => "NONE".to_string(),
         };
 
