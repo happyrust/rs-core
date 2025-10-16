@@ -52,18 +52,35 @@ async fn collect_descendant_refnos_with_range(
     } else {
         format!("[{}]", nouns_str)
     };
-    let include_self_str = if include_self { "true" } else { "false" };
-    let skip_deleted_str = if skip_deleted { "true" } else { "false" };
     let pe_key = refno.to_pe_key();
     let range = range_str.unwrap_or("..");
 
     let sql = if refno.is_latest() {
+        let collect_modifier = if include_self { "+inclusive" } else { "" };
+        let types_filter = if nouns.is_empty() {
+            "true".to_string()
+        } else {
+            format!("$info.noun IN {}", types_expr)
+        };
+        let skip_condition = if skip_deleted {
+            "!$info.deleted".to_string()
+        } else {
+            "true".to_string()
+        };
         format!(
-            "SELECT VALUE fn::collect_descendants_by_children({root}, {types}, {include_self}, {skip_deleted});",
+            r#"
+            LET $raw_infos = (SELECT VALUE array::flatten(@.{{{range}{collect_modifier}+collect}}.children).{{ id, noun }} FROM ONLY {root} LIMIT 1) ?: [];
+            LET $infos = array::filter($raw_infos, |$info| {types_filter});
+            SELECT VALUE array::map(
+                array::filter($infos, |$info| {skip_condition}),
+                |$info| record::id($info.id)
+            );
+            "#,
             root = pe_key,
-            types = types_expr,
-            include_self = include_self_str,
-            skip_deleted = skip_deleted_str,
+            range = range,
+            collect_modifier = collect_modifier,
+            types_filter = types_filter,
+            skip_condition = skip_condition,
         )
     } else {
         let skip_condition = if skip_deleted {
@@ -104,7 +121,7 @@ async fn collect_descendant_refnos_with_range(
 
     match SUL_DB.query(&sql).await {
         Ok(mut response) => {
-            let idx = if refno.is_latest() { 0 } else { 5 };
+            let idx = if refno.is_latest() { 2 } else { 5 };
             match response.take::<Vec<RefnoEnum>>(idx) {
                 Ok(data) => Ok(data),
                 Err(e) => {
