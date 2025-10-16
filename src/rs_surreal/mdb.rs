@@ -135,71 +135,58 @@ pub async fn query_type_refnos_by_dbnums(
     Ok(result)
 }
 
-///通过dbnum过滤指定类型的参考号
-/// 通过has_children 指定是否需要有children，方便跳过一些不变要的节点
-/// todo 在属性里直接加上DBNO这个属性，而不是需要去pe里去取
+/// 通过dbnum过滤指定类型的参考号
+/// 
+/// # 参数
+/// * `nouns` - 要查询的类型名称列表
+/// * `dbnum` - 数据库编号
+/// * `has_children` - 是否需要有children，方便跳过一些不必要的节点
+/// * `only_history` - 是否只查询历史记录（暂未实现）
+/// 
+/// # 实现说明
+/// 直接查询 pe 表，使用 `noun IN [...]` 条件一次性获取所有类型的数据，
+/// 比循环查询多个类型表更高效。
+/// 
+/// # 示例
+/// ```ignore
+/// // 查询所有 ZONE 节点
+/// let zones = query_type_refnos_by_dbnum(&["ZONE"], 1112, None, false).await?;
+/// 
+/// // 查询多个类型
+/// let elements = query_type_refnos_by_dbnum(&["SITE", "ZONE", "EQUI"], 1112, None, false).await?;
+/// 
+/// // 只查询有子节点的 ZONE
+/// let parent_zones = query_type_refnos_by_dbnum(&["ZONE"], 1112, Some(true), false).await?;
+/// ```
 pub async fn query_type_refnos_by_dbnum(
     nouns: &[&str],
     dbnum: u32,
     has_children: Option<bool>,
     only_history: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let mut result = vec![];
-    for noun in nouns {
-        let table = if only_history {
-            format!("{noun}_H")
-        } else {
-            format!("{noun}")
-        };
-        // 优先使用 id 字段（对于大部分表，id 就是 refno）
-        // 但对于某些表(如 SITE, ZONE), id 不是有效 refno，会 fallback 到从 REFNO 计算
-        let sql = match has_children {
-            Some(true) => {
-                format!(
-                    "select id, REFNO from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] != none"
-                )
-            }
-            Some(false) => {
-                format!(
-                    "select id, REFNO from {table} where REFNO.dbnum={dbnum} and (REFNO<-pe_owner.in)[0] == none"
-                )
-            }
-            None => {
-                format!("select id, REFNO from {table} where REFNO.dbnum={dbnum}")
-            }
-        };
-        // println!("query_type_refnos_by_dbnum sql: {}", sql);
-        let mut response = SUL_DB.query(&sql).await?;
-
-        // 使用 serde_json::Value 以兼容不同类型的 REFNO 字段
-        let records: Vec<serde_json::Value> = response.take(0)?;
-
-        use crate::types::RefU64;
-        for record in records {
-            // 先尝试从 id 解析
-            if let Some(id_val) = record.get("id") {
-                // 尝试将 id 解析为 RecordId
-                if let Ok(thing) =
-                    serde_json::from_value::<surrealdb::types::RecordId>(id_val.clone())
-                {
-                    if let Ok(refno) = RefnoEnum::try_from(thing) {
-                        result.push(refno);
-                        continue;
-                    }
-                }
-            }
-
-            // id 解析失败，尝试从 REFNO 对象计算
-            if let Some(refno_val) = record.get("REFNO") {
-                if let Some(refno_obj) = refno_val.as_object() {
-                    let dbnum = refno_obj.get("dbnum").and_then(|v| v.as_u64()).unwrap_or(0);
-                    let nume = refno_obj.get("nume").and_then(|v| v.as_u64()).unwrap_or(0);
-                    result.push(RefnoEnum::from(RefU64::from(dbnum * 1000000 + nume)));
-                }
-            }
-        }
+    // 将 nouns 转换为 SQL 数组格式 ['SITE', 'ZONE', ...]
+    let nouns_array = nouns.iter()
+        .map(|n| format!("'{}'", n))
+        .collect::<Vec<_>>()
+        .join(", ");
+    
+    // 构建 SQL 查询，直接查询 pe 表，使用 noun IN 条件
+    // 根据 has_children 参数动态拼接子节点过滤条件
+    let mut sql = format!(
+        "SELECT value id FROM pe WHERE dbnum = {dbnum} AND noun IN [{nouns_array}]"
+    );
+    
+    // 根据 has_children 参数添加额外的过滤条件
+    match has_children {
+        Some(true) => sql.push_str(" AND array::len(children) > 0"),
+        Some(false) => sql.push_str(" AND (children == none OR array::len(children) = 0)"),
+        None => {} // 不添加任何子节点过滤条件
     }
-    Ok(result)
+    
+    let mut response = SUL_DB.query(&sql).await?;
+    let refnos: Vec<RefnoEnum> = response.take(0)?;
+    
+    Ok(refnos)
 }
 
 /// 查询使用类别参考号
@@ -390,4 +377,213 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     let mut response = SUL_DB.query(sql).await?;
     let id: Option<RefnoEnum> = response.take(1)?;
     Ok(id.unwrap_or_default())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_surreal;
+
+    #[tokio::test]
+    async fn test_get_world_refno() {
+        init_test_surreal().await;
+
+        let mdb = get_db_option().mdb_name.clone();
+        println!("🧪 测试 get_world_refno, MDB: {}", mdb);
+
+        let result = get_world_refno(mdb.clone()).await;
+        assert!(result.is_ok(), "查询世界参考号应该成功");
+
+        let refno = result.unwrap();
+        println!("   ✅ 世界参考号: {:?}", refno);
+        assert_ne!(refno, RefnoEnum::default(), "参考号不应为默认值");
+    }
+
+    #[tokio::test]
+    async fn test_query_mdb_db_nums() {
+        init_test_surreal().await;
+
+        println!("🧪 测试 query_mdb_db_nums");
+
+        let result = query_mdb_db_nums(DBType::DESI).await;
+        assert!(result.is_ok(), "查询数据库编号应该成功");
+
+        let db_nums = result.unwrap();
+        println!("   ✅ 查询到 {} 个数据库编号", db_nums.len());
+        if !db_nums.is_empty() {
+            println!("   数据库编号列表: {:?}", db_nums);
+            assert!(db_nums.iter().all(|&n| n > 0), "所有数据库编号应大于0");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_site_pes_by_dbnum() {
+        init_test_surreal().await;
+
+        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        if db_nums.is_empty() {
+            println!("⚠️  没有可用的数据库编号，跳过测试");
+            return;
+        }
+
+        let dbnum = db_nums[0];
+        println!("🧪 测试 get_site_pes_by_dbnum, dbnum: {}", dbnum);
+
+        let result = get_site_pes_by_dbnum(dbnum).await;
+        assert!(result.is_ok(), "查询SITE节点应该成功");
+
+        let sites = result.unwrap();
+        println!("   ✅ 查询到 {} 个SITE节点", sites.len());
+
+        for (i, site) in sites.iter().take(3).enumerate() {
+            println!(
+                "   SITE[{}]: noun={}, name={:?}, refno={:?}",
+                i, site.noun, site.name, site.refno
+            );
+            assert_eq!(site.noun, "SITE", "节点类型应为SITE");
+            assert!(!site.deleted, "SITE节点不应被删除");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_query_type_refnos_by_dbnum() {
+        init_test_surreal().await;
+
+        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        if db_nums.is_empty() {
+            println!("⚠️  没有可用的数据库编号，跳过测试");
+            return;
+        }
+
+        let dbnum = db_nums[0];
+        let nouns = &["SITE", "ZONE"];
+        println!(
+            "🧪 测试 query_type_refnos_by_dbnum, dbnum: {}, nouns: {:?}",
+            dbnum, nouns
+        );
+
+        let result = query_type_refnos_by_dbnum(nouns, dbnum, None, false).await;
+        assert!(result.is_ok(), "查询参考号应该成功");
+
+        let refnos = result.unwrap();
+        println!("   ✅ 查询到 {} 个参考号", refnos.len());
+
+        if !refnos.is_empty() {
+            println!("   前3个参考号: {:?}", &refnos[..refnos.len().min(3)]);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_query_type_refnos_by_dbnum_with_children() {
+        init_test_surreal().await;
+
+        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        if db_nums.is_empty() {
+            println!("⚠️  没有可用的数据库编号，跳过测试");
+            return;
+        }
+
+        let dbnum = db_nums[0];
+        let nouns = &["ZONE"];
+        println!(
+            "🧪 测试 query_type_refnos_by_dbnum (has_children=true), dbnum: {}",
+            dbnum
+        );
+
+        let result = query_type_refnos_by_dbnum(nouns, dbnum, Some(true), false).await;
+        assert!(result.is_ok(), "查询有子节点的参考号应该成功");
+
+        let refnos = result.unwrap();
+        println!("   ✅ 查询到 {} 个有子节点的ZONE", refnos.len());
+    }
+
+    #[tokio::test]
+    async fn test_get_mdb_world_site_pes() {
+        init_test_surreal().await;
+
+        let mdb = get_db_option().mdb_name.clone();
+        println!("🧪 测试 get_mdb_world_site_pes, MDB: {}", mdb);
+
+        let result = get_mdb_world_site_pes(mdb.clone(), DBType::DESI).await;
+        assert!(result.is_ok(), "查询SITE元素应该成功");
+
+        let sites = result.unwrap();
+        println!("   ✅ 查询到 {} 个SITE元素", sites.len());
+
+        for (i, site) in sites.iter().take(3).enumerate() {
+            println!("   SITE[{}]: noun={}, name={:?}", i, site.noun, site.name);
+            assert_eq!(site.noun, "SITE");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_mdb_world_site_ele_nodes() {
+        init_test_surreal().await;
+
+        let mdb = get_db_option().mdb_name.clone();
+        println!("🧪 测试 get_mdb_world_site_ele_nodes, MDB: {}", mdb);
+
+        let result = get_mdb_world_site_ele_nodes(mdb.clone(), DBType::DESI).await;
+        assert!(result.is_ok(), "查询树形节点应该成功");
+
+        let nodes = result.unwrap();
+        println!("   ✅ 查询到 {} 个节点", nodes.len());
+
+        for (i, node) in nodes.iter().take(3).enumerate() {
+            println!(
+                "   节点[{}]: order={}, name={}, noun={}, children_count={}",
+                i, node.order, node.name, node.noun, node.children_count
+            );
+            assert_eq!(node.noun, "SITE");
+            assert!(!node.name.is_empty(), "节点名称不应为空");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_query_type_refnos_by_dbnums() {
+        init_test_surreal().await;
+
+        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        if db_nums.is_empty() {
+            println!("⚠️  没有可用的数据库编号，跳过测试");
+            return;
+        }
+
+        let nouns = &["WORL"];
+        println!(
+            "🧪 测试 query_type_refnos_by_dbnums, dbnums: {:?}, nouns: {:?}",
+            db_nums, nouns
+        );
+
+        let result = query_type_refnos_by_dbnums(nouns, &db_nums).await;
+        assert!(result.is_ok(), "查询参考号列表应该成功");
+
+        let refnos = result.unwrap();
+        println!("   ✅ 查询到 {} 个WORL参考号", refnos.len());
+        assert_eq!(refnos.len(), db_nums.len(), "WORL数量应等于数据库数量");
+    }
+
+    #[tokio::test]
+    async fn test_query_use_cate_refnos_by_dbnum() {
+        init_test_surreal().await;
+
+        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        if db_nums.is_empty() {
+            println!("⚠️  没有可用的数据库编号，跳过测试");
+            return;
+        }
+
+        let dbnum = db_nums[0];
+        let nouns = &["EQUI", "PIPE"];
+        println!(
+            "🧪 测试 query_use_cate_refnos_by_dbnum, dbnum: {}, nouns: {:?}",
+            dbnum, nouns
+        );
+
+        let result = query_use_cate_refnos_by_dbnum(nouns, dbnum, false).await;
+        assert!(result.is_ok(), "查询类别参考号应该成功");
+
+        let refnos = result.unwrap();
+        println!("   ✅ 查询到 {} 个有类别信息的参考号", refnos.len());
+    }
 }
