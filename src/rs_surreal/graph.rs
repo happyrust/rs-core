@@ -36,6 +36,16 @@ async fn collect_descendant_refnos(
     include_self: bool,
     skip_deleted: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
+    collect_descendant_refnos_with_range(refno, nouns, include_self, skip_deleted, None).await
+}
+
+async fn collect_descendant_refnos_with_range(
+    refno: RefnoEnum,
+    nouns: &[&str],
+    include_self: bool,
+    skip_deleted: bool,
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let types_expr = if nouns.is_empty() {
         "[]".to_string()
@@ -45,6 +55,7 @@ async fn collect_descendant_refnos(
     let include_self_str = if include_self { "true" } else { "false" };
     let skip_deleted_str = if skip_deleted { "true" } else { "false" };
     let pe_key = refno.to_pe_key();
+    let range = range_str.unwrap_or("..");
 
     let sql = if refno.is_latest() {
         format!(
@@ -60,25 +71,33 @@ async fn collect_descendant_refnos(
         } else {
             "true".to_string()
         };
-        let inclusive_param = if include_self { "true" } else { "none" };
+        let collect_modifier = if include_self { "+inclusive" } else { "" };
+        let types_filter = if nouns.is_empty() {
+            "true".to_string()
+        } else {
+            format!("$info.noun IN {}", types_expr)
+        };
         format!(
             r#"
             LET $pe = {root};
             LET $dt = <datetime>fn::ses_date($pe);
-            LET $infos = fn::collect_descendant_infos(fn::newest_pe($pe), {types}, {inclusive});
+            LET $root_pe = fn::newest_pe($pe);
+            LET $raw_infos = (SELECT VALUE array::flatten(@.{{{range}{collect_modifier}+collect}}.children).{{ id, noun }} FROM ONLY $root_pe LIMIT 1) ?: [];
+            LET $infos = array::filter($raw_infos, |$info| {types_filter});
             LET $filtered = array::filter(
                 $infos,
-                |$info| ({skip_condition}) && (!$info.deleted || <datetime>fn::ses_date($info.node) > $dt)
+                |$info| ({skip_condition}) && (!$info.deleted || <datetime>fn::ses_date($info.id) > $dt)
             );
-            LET $matched = array::map($filtered, |$info| fn::find_pe_by_datetime($info.node, $dt));
+            LET $matched = array::map($filtered, |$info| fn::find_pe_by_datetime($info.id, $dt));
             SELECT VALUE array::distinct(array::map(
                 array::filter($matched, |$node| $node != NONE),
                 |$node| record::id($node)
             ));
             "#,
             root = pe_key,
-            types = types_expr,
-            inclusive = inclusive_param,
+            range = range,
+            collect_modifier = collect_modifier,
+            types_filter = types_filter,
             skip_condition = skip_condition,
         )
     };

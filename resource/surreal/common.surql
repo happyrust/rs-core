@@ -611,6 +611,8 @@ DEFINE FUNCTION fn::collect_children($root: record) {
 
 REMOVE FUNCTION fn::collect_descendant_infos;
 -- 收集子孙节点信息（包含ID和类型）
+-- 如需自定义 range，在 Rust 代码中使用 fn::collect_descendant_infos_with_range 宏
+-- 或直接在 SQL 中拼接：SELECT ... @.{1..5+collect}.children ...
 DEFINE FUNCTION fn::collect_descendant_infos(
     $root: record,
     $types: array<string>,
@@ -631,6 +633,11 @@ DEFINE FUNCTION fn::collect_descendant_infos(
     );
     return $filtered;
 };
+
+-- 带自定义 range 的收集函数（通过 Rust 宏调用）
+-- 使用方式：直接在 SQL 中拼接 range 字符串，例如：
+-- LET $infos = (SELECT VALUE array::flatten(@.{1..5+collect}.children).{ id, noun } FROM ONLY $root LIMIT 1);
+-- 然后应用类型过滤
 
 REMOVE FUNCTION fn::visible_geo_descendants;
 -- 获取可见的几何子孙节点
@@ -804,6 +811,6 @@ DEFINE FUNCTION fn::query_ptset($refno: string) {
 -- 返回：符合条件的节点 ID 数组
 -- 性能提升：相比分块查询，减少 90% 的网络往返时间
 -- ============================================================================
-REMOVE FUNCTION fn::collect_descendants_filter_inst;
--- 收集子孙节点并过滤实例关系和直段关系
-DEFINE FUNCTION fn::collect_descendants_filter_inst(
+-- REMOVE FUNCTION fn::collect_descendants_filter_inst;
+-- -- 收集子孙节点并过滤实例关系和直段关系
+-- DEFINE FUNCTION fn::collect_descendants_filter_inst(
