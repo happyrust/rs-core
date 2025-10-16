@@ -44,6 +44,16 @@ pub struct SPdmsElement {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub typex: Option<i32>,
+
+    /// inst_relate 记录链接 - 用于快速定位几何实例关系
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inst_relate_id: Option<RecordId>,
+
+    /// tubi_relate 记录链接数组 - 用于快速定位管道关系（可能有多个）
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tubi_id: Option<Vec<RecordId>>,
 }
 
 impl SPdmsElement {

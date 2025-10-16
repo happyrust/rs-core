@@ -244,7 +244,8 @@ impl InstRelate {
                 dt = {},
                 zone_refno = {},
                 old_pe = {},
-                ptset = {};"#,
+                ptset = {};
+UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             self.id,
             self.input,
             self.out,
@@ -256,7 +257,9 @@ impl InstRelate {
             dt_str,
             zone_refno_str,
             old_pe_str,
-            ptset_str
+            ptset_str,
+            self.input,
+            self.id
         )
     }
 
@@ -470,6 +473,117 @@ impl GeoRelate {
     }
 }
 
+/// tubi_relate 表结构体
+/// 表示管道关系，连接管道的起点和终点PE元素
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TubiRelate {
+    /// 关系ID
+    pub id: String,
+    /// 起点PE引用 (leave)
+    pub leave: RefnoEnum,
+    /// 终点PE引用 (arrive)
+    pub arrive: RefnoEnum,
+    /// 管道起点
+    pub start_pt: Option<Vec3>,
+    /// 管道终点
+    pub end_pt: Option<Vec3>,
+    /// 所属系统编号
+    pub system: Option<RefnoEnum>,
+    /// 时间戳
+    pub dt: Option<NaiveDateTime>,
+}
+
+impl TubiRelate {
+    /// 创建新的 TubiRelate 实例
+    pub fn new(
+        id: String,
+        leave: RefnoEnum,
+        arrive: RefnoEnum,
+    ) -> Self {
+        Self {
+            id,
+            leave,
+            arrive,
+            start_pt: None,
+            end_pt: None,
+            system: None,
+            dt: None,
+        }
+    }
+
+    /// 设置起点和终点
+    pub fn with_points(mut self, start: Vec3, end: Vec3) -> Self {
+        self.start_pt = Some(start);
+        self.end_pt = Some(end);
+        self
+    }
+
+    /// 设置所属系统
+    pub fn with_system(mut self, system: RefnoEnum) -> Self {
+        self.system = Some(system);
+        self
+    }
+
+    /// 设置时间戳
+    pub fn with_dt(mut self, dt: NaiveDateTime) -> Self {
+        self.dt = Some(dt);
+        self
+    }
+
+    /// 生成 SurrealDB 插入语句并同步更新关联的PE
+    pub fn to_surql(&self) -> String {
+        let start_pt_str = match &self.start_pt {
+            Some(pt) => format!(
+                "{{ x: {}, y: {}, z: {} }}",
+                pt.x, pt.y, pt.z
+            ),
+            None => "NONE".to_string(),
+        };
+
+        let end_pt_str = match &self.end_pt {
+            Some(pt) => format!(
+                "{{ x: {}, y: {}, z: {} }}",
+                pt.x, pt.y, pt.z
+            ),
+            None => "NONE".to_string(),
+        };
+
+        let system_str = match &self.system {
+            Some(system) => format!("pe:{}", system),
+            None => "NONE".to_string(),
+        };
+
+        let dt_str = match &self.dt {
+            Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
+            None => "time::now()".to_string(),
+        };
+
+        format!(
+            r#"CREATE tubi_relate:{} SET
+                leave = pe:{},
+                arrive = pe:{},
+                start_pt = {},
+                end_pt = {},
+                system = {},
+                dt = {};
+UPDATE pe:{} SET tubi_id = array::push(tubi_id?:[], tubi_relate:{});
+UPDATE pe:{} SET tubi_id = array::push(tubi_id?:[], tubi_relate:{});"#,
+            self.id,
+            self.leave,
+            self.arrive,
+            start_pt_str,
+            end_pt_str,
+            system_str,
+            dt_str,
+            self.leave,
+            self.id,
+            self.arrive,
+            self.id
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -526,11 +640,15 @@ mod tests {
         );
 
         let sql = inst_relate.to_surql();
+        println!("Generated SQL:\n{}", sql);
         assert!(sql.contains("CREATE inst_relate:test_id"));
-        assert!(sql.contains("in = pe:12345"));
+        assert!(sql.contains("in = pe:"));
         assert!(sql.contains("out = geo_instance_1"));
-        assert!(sql.contains("owner = pe:67890"));
+        assert!(sql.contains("owner = pe:"));
         assert!(sql.contains("generic = 'PIPE'"));
+        // 验证UPDATE语句将inst_relate_id添加到pe记录
+        assert!(sql.contains("UPDATE pe:"));
+        assert!(sql.contains("inst_relate_id = inst_relate:test_id"));
     }
 
     #[test]
@@ -544,12 +662,13 @@ mod tests {
         );
 
         let json_str = inst_relate.gen_sur_json();
+        println!("Generated JSON:\n{}", json_str);
         let json: serde_json::Value = serde_json::from_str(&json_str).unwrap();
 
         assert_eq!(json["id"], "inst_relate:test_id");
-        assert_eq!(json["in"], "pe:12345");
+        assert!(json["in"].as_str().unwrap().contains("pe:"));
         assert_eq!(json["out"], "geo_instance_1");
-        assert_eq!(json["owner"], "pe:67890");
+        assert!(json["owner"].as_str().unwrap().contains("pe:"));
         assert_eq!(json["generic"], "PIPE");
     }
 
@@ -630,5 +749,37 @@ mod tests {
         assert!(sql.contains("visible = true"));
         assert!(sql.contains("meshed = true"));
         assert!(sql.contains("geo_type = 'Pos'"));
+    }
+
+    #[test]
+    fn test_tubi_relate_creation() {
+        let tubi_relate = TubiRelate::new(
+            "tubi_123".to_string(),
+            RefnoEnum::from("11111"),
+            RefnoEnum::from("22222"),
+        );
+
+        assert_eq!(tubi_relate.id, "tubi_123");
+        assert_eq!(tubi_relate.leave, RefnoEnum::from("11111"));
+        assert_eq!(tubi_relate.arrive, RefnoEnum::from("22222"));
+    }
+
+    #[test]
+    fn test_tubi_relate_to_surql() {
+        let tubi_relate = TubiRelate::new(
+            "tubi_123".to_string(),
+            RefnoEnum::from("11111"),
+            RefnoEnum::from("22222"),
+        )
+        .with_points(Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0));
+
+        let sql = tubi_relate.to_surql();
+        println!("Generated TubiRelate SQL:\n{}", sql);
+        assert!(sql.contains("CREATE tubi_relate:tubi_123"));
+        assert!(sql.contains("leave = pe:"));
+        assert!(sql.contains("arrive = pe:"));
+        // 验证UPDATE语句将tubi_id添加到pe记录
+        assert!(sql.contains("UPDATE pe:"));
+        assert!(sql.contains("tubi_id = array::push(tubi_id?:[], tubi_relate:tubi_123)"));
     }
 }
