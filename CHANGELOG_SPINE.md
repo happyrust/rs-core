@@ -1,5 +1,149 @@
 # SPINE路径处理和可视化更新日志
 
+## [2025-01-16] - RefnoEnum SurrealValue 实现增强
+
+### ✨ 新增功能
+
+#### RefnoEnum SurrealValue 手动实现
+- **手动实现 SurrealValue trait**: 替代 derive macro，提供更精确的类型转换控制
+  - `kind_of()`: 返回 `Kind::Record(["pe"])` 表示主要存储为 pe 表记录
+  - `into_value()`: 支持两种序列化形式
+    - `RefnoEnum::Refno` → `Value::RecordId` (如 `pe:123_456`)
+    - `RefnoEnum::SesRef` → `Value::Array([RecordId, sesno])` (如 `[pe:123_456, 5]`)
+  - `from_value()`: 支持多种 SurrealDB 值类型的反序列化
+
+#### RecordId Array Key 支持
+- **新增 RecordId Array key 处理**: 支持 `pe:["123_456", 12]` 格式
+  - `RecordIdKey::String`: 直接字符串解析 (如 `pe:"100_200"`)
+  - `RecordIdKey::Number`: 直接数字转换 (如 `pe:123456789`)
+  - `RecordIdKey::Array`: 数组元素用逗号拼接后解析 (如 `pe:["100_200", 5]` → `"100_200,5"`)
+  - Fallback: 使用 `to_raw()` 处理其他情况
+
+#### Deserialize 实现优化
+- **改进 Deserialize trait 实现**: 更健壮的反序列化逻辑
+  - 使用 `serde_json::Value` 作为中间格式，提高兼容性
+  - 统一的 `parse_refno_value` 和 `parse_sesno_value` 辅助函数
+  - 支持嵌套对象和多层结构解析
+  - 处理 `{refno, sesno}`, `{tb, id}`, `{id}` 等多种格式
+
+### 🧪 测试覆盖
+
+#### 新增 14 个测试用例
+- **RefnoEnum SurrealValue 测试**:
+  - `test_refno_enum_refno_into_value`: 测试 Refno 变体序列化为 RecordId
+  - `test_refno_enum_sesref_into_value`: 测试 SesRef 变体序列化为 Array
+  - `test_refno_enum_from_record_id_value`: 测试从 RecordId 反序列化
+  - `test_refno_enum_from_array_value`: 测试从 Array 反序列化为 SesRef
+  - `test_refno_enum_from_string_value`: 测试从 String 反序列化
+  - `test_refno_enum_from_number_value`: 测试从 Number 反序列化
+  - `test_refno_enum_roundtrip_refno`: 测试 Refno 往返转换
+  - `test_refno_enum_roundtrip_sesref`: 测试 SesRef 往返转换
+  - `test_refno_enum_from_single_element_array_value`: 测试单元素数组
+  - `test_refno_enum_from_array_with_zero_sesno`: 测试 sesno=0 的数组
+  - `test_refno_enum_kind_of`: 测试 kind_of 方法
+
+- **RecordId Array Key 测试**:
+  - `test_refno_enum_from_record_id_with_array_key`: 测试 Array key (如 `["100_200", 5]`)
+  - `test_refno_enum_from_record_id_with_string_key`: 测试 String key
+  - `test_refno_enum_from_record_id_with_number_key`: 测试 Number key
+
+#### 测试统计
+- **总计**: 33 个测试用例 (22 个 RefnoEnum + 11 个 RefU64)
+- **状态**: ✅ 全部通过
+
+### 🔧 修复和改进
+
+#### 代码质量提升
+- 移除 `#[surreal(untagged)]` 属性，使用手动实现
+- 添加必要的 import: `serde::de`, `MapAccessDeserializer`, `JsonValue`
+- 统一错误处理，使用 `anyhow::Result` 和清晰的错误消息
+- 改进代码注释，说明各种转换场景
+
+#### 测试修复
+- 修复 `refu64_from_surrealdb_record_id_value` 测试中的断言 (使用 `_` 而非 `/`)
+- 更新 `test_refno_enum_kind_of` 测试以匹配实际实现
+
+### 📊 技术细节
+
+#### RecordId Array Key 处理逻辑
+```rust
+// 输入: pe:["100_200", 5]
+// 步骤:
+1. 提取 Array 中的元素
+2. 将每个元素转为字符串 (String → clone, Number → to_string)
+3. 使用逗号拼接: "100_200,5"
+4. 调用 RefnoEnum::from_str 解析
+// 输出: RefnoEnum::SesRef(RefnoSesno { refno: 100_200, sesno: 5 })
+```
+
+#### 支持的 SurrealDB 值格式
+- **RecordId**: `pe:123_456`, `pe:["123_456", 12]`, `pe:789`
+- **String**: `"123_456"`, `"100_200,5"`
+- **Number**: `123456789`
+- **Array**: `[pe:123_456, 5]`, `["123_456"]`
+
+### 🔄 修改文件
+
+```
+src/types/refno.rs                          # RefnoEnum 主要实现
+  - 添加 SurrealValue 手动实现 (115 行)
+  - 增强 RecordId 处理逻辑
+  - 改进 Deserialize 实现
+  - 新增 14 个测试用例
+```
+
+### 💡 使用示例
+
+#### 从 SurrealDB 查询结果反序列化
+```rust
+// 查询: SELECT value REFNO from WORL WHERE ...
+// 返回: pe:["123_456", 12]
+
+let value = surrealdb_types::Value::RecordId(record_id);
+let refno_enum = RefnoEnum::from_value(value)?;
+
+match refno_enum {
+    RefnoEnum::Refno(refno) => println!("简单引用: {}", refno),
+    RefnoEnum::SesRef(ses_ref) => {
+        println!("历史版本引用: {}, sesno: {}", 
+                 ses_ref.refno, ses_ref.sesno);
+    }
+}
+```
+
+#### 序列化到 SurrealDB
+```rust
+// Refno 变体 → RecordId
+let refno = RefnoEnum::Refno(RefU64::from_two_nums(100, 200));
+let value = refno.into_value(); // Value::RecordId(pe:100_200)
+
+// SesRef 变体 → Array
+let ses_ref = RefnoEnum::SesRef(RefnoSesno::new(
+    RefU64::from_two_nums(100, 200), 5
+));
+let value = ses_ref.into_value(); // Value::Array([pe:100_200, 5])
+```
+
+### 🎯 解决的问题
+
+1. **RecordId Array key 不支持** - 现在可以正确处理 `pe:["123_456", 12]` 格式
+2. **类型转换不够灵活** - 手动实现提供了更精细的控制
+3. **错误信息不清晰** - 改进了错误消息，便于调试
+4. **测试覆盖不足** - 新增 14 个测试用例，覆盖各种边界情况
+5. **Deserialize 实现脆弱** - 使用 JsonValue 中间格式，提高健壮性
+
+### 🚀 后续优化方向
+
+- [ ] 性能优化: 减少字符串分配和克隆
+- [ ] 支持更多 RecordId key 类型 (如 Object, Geometry)
+- [ ] 添加自定义序列化配置选项
+- [ ] 实现 `TryFrom<RecordId>` trait
+- [ ] 支持批量转换优化
+
+---
+
+这次更新显著提升了 RefnoEnum 与 SurrealDB 的互操作性，特别是对复杂 RecordId 格式的支持，为版本化数据查询提供了更强大的基础。
+
 ## [2024-09-26] - SPINE路径可视化功能
 
 ### ✨ 新增功能
