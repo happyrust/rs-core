@@ -1,3 +1,0 @@
-CALL current_setting('schema') RETURN *;
-CALL show_tables() RETURN *;
-:quit

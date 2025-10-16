@@ -1116,6 +1116,14 @@ impl RefnoEnum {
     }
 
     #[inline]
+    pub fn to_pe_thing(&self) -> RecordId {
+        match self {
+            RefnoEnum::Refno(refno) => refno.to_pe_thing(),
+            RefnoEnum::SesRef(ses_ref) => ses_ref.refno.to_pe_thing(),
+        }
+    }
+
+    #[inline]
     pub fn sesno(&self) -> Option<u32> {
         match self {
             RefnoEnum::Refno(_) => None,

@@ -217,6 +217,17 @@ impl From<SurlValue> for NamedAttrMap {
     }
 }
 
+impl From<NamedAttrMap> for SurlValue {
+    fn from(map: NamedAttrMap) -> Self {
+        let mut obj = surrealdb::types::Object::default();
+        for (k, v) in map.map {
+            let value: SurlValue = v.into();
+            obj.insert(k, value);
+        }
+        SurlValue::Object(obj)
+    }
+}
+
 impl From<AttrMap> for NamedAttrMap {
     fn from(v: AttrMap) -> Self {
         (&v).into()

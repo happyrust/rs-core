@@ -1,4 +1,4 @@
-use surrealdb::types::{RecordId, RecordIdKey, ToSql};
+use surrealdb::types::{RecordId, RecordIdKey, Table, ToSql};
 
 /// 将表名与主键元组便捷地转换为 `RecordId`
 pub trait IntoRecordId {
@@ -7,7 +7,7 @@ pub trait IntoRecordId {
 
 impl<T, U> IntoRecordId for (T, U)
 where
-    T: Into<String>,
+    T: Into<Table>,
     U: Into<RecordIdKey>,
 {
     fn into_record_id(self) -> RecordId {
