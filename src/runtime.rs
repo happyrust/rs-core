@@ -109,3 +109,58 @@ pub async fn try_connect_database() -> Result<()> {
     println!("✓ 功能测试通过");
     Ok(())
 }
+
+/// 统一的数据库初始化入口，包含所有数据库连接和函数定义
+/// 
+/// 根据编译特性自动选择合适的初始化方式：
+/// - `local` 特性: 使用 RocksDB 后端
+/// - `ws` 特性: 使用 WebSocket 连接远程 SurrealDB
+/// - `mem-kv-save` 特性: 额外初始化内存 KV 数据库
+/// 
+/// 此函数还会初始化 SurrealDB 通用函数定义
+pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
+    // 1. 初始化本地 RocksDB（如果启用 local 特性）
+    #[cfg(feature = "local")]
+    {
+        println!("初始化本地 RocksDB...");
+        connect_local_rocksdb(&db_option.project_name).await?;
+    }
+
+    // 2. 初始化远程 SurrealDB（如果启用 ws 特性）
+    #[cfg(feature = "ws")]
+    {
+        println!("数据库连接中...");
+        match init_surreal_with_retry(db_option).await {
+            Ok(_) => {
+                println!(
+                    "✅ 数据库连接成功: {} -> {}",
+                    db_option.get_version_db_conn_str(),
+                    db_option.project_name
+                );
+            }
+            Err(e) => {
+                eprintln!("❌ 数据库连接失败: {}", e);
+                eprintln!("   配置信息: {}", db_option.connection_summary());
+                eprintln!("   请检查 SurrealDB 服务是否运行，配置是否正确");
+                // 不直接返回错误，让应用继续运行但标记数据库不可用
+            }
+        }
+
+        // 3. 初始化内存 KV 数据库（如果启用 mem-kv-save 特性）
+        #[cfg(feature = "mem-kv-save")]
+        {
+            use crate::init_mem_db_with_retry;
+            if let Err(e) = init_mem_db_with_retry(db_option).await {
+                eprintln!("❌ 内存KV数据库连接失败: {}", e);
+                eprintln!("   请检查内存KV数据库服务是否运行");
+            }
+        }
+    }
+
+    // 4. 初始化 SurrealDB 通用函数定义
+    if let Err(e) = crate::function::define_common_functions(db_option.get_surreal_script_dir()).await {
+        eprintln!("初始化通用函数失败: {} (忽略并继续)", e);
+    }
+
+    Ok(())
+}
