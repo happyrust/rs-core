@@ -282,7 +282,13 @@ impl AttributeQueryService {
                 QueryErrorHandler::log_query_execution(&sql, execution_time);
 
                 let os: Vec<SurlValue> = value.into_inner().try_into().unwrap();
-                let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
+                // 过滤掉 NONE 值
+                let named_attmaps: Vec<NamedAttrMap> = os.into_iter()
+                    .filter_map(|x| {
+                        let val: Result<NamedAttrMap, _> = x.try_into();
+                        val.ok() // 将 Err 转换为 None，从而过滤掉无法转换的值
+                    })
+                    .collect();
                 
                 QueryErrorHandler::log_query_results(&sql, named_attmaps.len());
                 Ok(named_attmaps)

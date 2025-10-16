@@ -161,7 +161,14 @@ pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>>
 pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
     let sql = format!("return fn::ancestor({}).refno.*;", refno.to_pe_key());
     let mut response = SUL_DB.query(sql).await?;
-    let named_attmaps: Vec<NamedAttrMap> = take_vec(&mut response, 0)?;
+    let raw_values: Vec<SurlValue> = response.take(0)?;
+    // 过滤掉 NONE 值
+    let named_attmaps: Vec<NamedAttrMap> = raw_values.into_iter()
+        .filter_map(|x| {
+            let val: Result<NamedAttrMap, _> = x.try_into();
+            val.ok() // 将 Err 转换为 None，从而过滤掉无法转换的值
+        })
+        .collect();
     Ok(named_attmaps)
 }
 
