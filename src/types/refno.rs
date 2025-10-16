@@ -1137,6 +1137,14 @@ impl RefnoEnum {
     }
 
     #[inline]
+    pub fn is_none(&self) -> bool {
+        match self {
+            RefnoEnum::Refno(refno) => refno.0 == 0,
+            RefnoEnum::SesRef(ses_ref) => ses_ref.refno.0 == 0,
+        }
+    }
+
+    #[inline]
     pub fn refno(&self) -> RefU64 {
         match self {
             RefnoEnum::Refno(refno) => *refno,

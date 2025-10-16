@@ -1188,8 +1188,8 @@ async fn query_pbs_room_nodes(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<PBSRoo
     let refnos = refnos.into_iter().map(|refno| refno.to_pe_key()).join(",");
     let sql = format!(
         r#"
-        select type::thing('pbs',record::id(id)) as id,name,noun,fn::room_code(id)[0] as room_code,
-            (select fn::default_name(id) as name, noun, refno, type::thing('pbs',record::id(id)) as id, type::thing('pbs',record::id(owner)) as owner,
+        select type::record('pbs',record::id(id)) as id,name,noun,fn::room_code(id)[0] as room_code,
+            (select fn::default_name(id) as name, noun, refno, type::record('pbs',record::id(id)) as id, type::record('pbs',record::id(owner)) as owner,
             array::len(<-pe_owner) as children_cnt from (select value in from <-pe_owner)
             ) as children
             from [{}]
@@ -1219,7 +1219,7 @@ async fn query_pbs_children_by_refnos(
     let mut map = HashMap::new();
     let pes = refnos.into_iter().map(|refno| refno.to_pe_key()).join(",");
     let sql = format!(
-        r#"select fn::default_name(id) as name, noun, refno, type::thing('pbs',record::id(id)) as id, type::thing('pbs',record::id(owner)) as owner, array::len(<-pe_owner) as children_cnt  from array::flatten(select value in from [{}]<-pe_owner)"#,
+        r#"select fn::default_name(id) as name, noun, refno, type::record('pbs',record::id(id)) as id, type::record('pbs',record::id(owner)) as owner, array::len(<-pe_owner) as children_cnt  from array::flatten(select value in from [{}]<-pe_owner)"#,
         pes
     );
     let mut response = SUL_DB.query(sql).await?;

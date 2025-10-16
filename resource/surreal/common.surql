@@ -43,7 +43,7 @@ DEFINE FUNCTION fn::newest_pe(
         return $pe;
     };
     let $refno = $id[0];
-    return type::thing('pe', $refno);
+    return type::record('pe', $refno);
 };
 
 REMOVE FUNCTION fn::newest_pe_id;
@@ -130,22 +130,22 @@ DEFINE FUNCTION fn::backup_data(
             continue;
         };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
-        let $old_pe_id = type::thing('pe', $old_id);
+        let $old_pe_id = type::record('pe', $old_id);
 
         let $a = (select * omit id from $pe)[0];
         let $b = (select * omit id from $pe.refno)[0];
 
         if $a != none && $b != none {
-            let $old_inst_relate_id = type::thing('inst_relate', $old_id);
-            let $old_att_id = type::thing(string::concat($a.noun, '_H'), $old_id);
-            let $old_uda_att_id = type::thing('ATT_UDA_H', $old_id);
+            let $old_inst_relate_id = type::record('inst_relate', $old_id);
+            let $old_att_id = type::record(string::concat($a.noun, '_H'), $old_id);
+            let $old_uda_att_id = type::record('ATT_UDA_H', $old_id);
             if $is_del{
                 //软删除
                 update $pe.id set op=2, old_pe=$old_pe_id, sesno=$sesno, deleted=true;
             } else {
                 update $pe.id set op=1, old_pe=$old_pe_id, sesno = $sesno;
             };
-            upsert type::thing('his_pe', record::id($pe.id)) set refnos+=$old_pe_id;
+            upsert type::record('his_pe', record::id($pe.id)) set refnos+=$old_pe_id;
             upsert $old_pe_id content $a.patch([{
                                   'op': 'replace',
                                   'path': 'refno',
@@ -158,7 +158,7 @@ DEFINE FUNCTION fn::backup_data(
                                   'value': $old_pe_id
                                 }]);
             //uda 属性需要单独的备份方法，因为有很多引用
-            let $uda_data = select * from only type::thing('ATT_UDA', record::id($pe.id)) limit 1;
+            let $uda_data = select * from only type::record('ATT_UDA', record::id($pe.id)) limit 1;
             if $uda_data != none {
                 upsert $old_uda_att_id content $uda_data.patch([{
                                   'op': 'replace',
@@ -180,7 +180,7 @@ DEFINE FUNCTION fn::backup_data(
 
             if $a.noun == "BRAN" || $a.noun == "HANG" {
 
-                let $tubis = (select *, type::thing('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id,
+                let $tubis = (select *, type::record('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id,
                                  $old_pe_id as in from $pe->tubi_relate);
                 //将 tubi relate 整体备份
                 if !array::is_empty($tubis) {
@@ -208,7 +208,7 @@ DEFINE FUNCTION fn::backup_owner_relate(
         //      continue;
         // };
         let $old_id = [<string> record::id($pe.id), $pe.sesno];
-        let $old_pe_id = type::thing('pe', $old_id);
+        let $old_pe_id = type::record('pe', $old_id);
         //fix 层级不连续的问题，需要更新到之前的 in->owner 关系
         //let $old_owners_id = select value od from $pe->pe_owner where type::is_array(record::id(out));
         -- return $old_owners_id;
@@ -219,7 +219,7 @@ DEFINE FUNCTION fn::backup_owner_relate(
         //};
         //如果子节点的sesno >= 父节点的sesno 了，则需要使用 old_pe
         //反之则不需要动
-        let $c = select *, type::thing('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id,
+        let $c = select *, type::record('pe_owner', [ $old_pe_id, record::id(id)[1] ]) as id,
                     if $pe.sesno>in.sesno { in } else { in.old_pe?:in } as in, $old_pe_id as out
                     from $pe<-pe_owner;
         -- return $c;
@@ -264,7 +264,7 @@ DEFINE FUNCTION fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
         return $pe;
     } else{
         let $id = record::id($pe);
-    return type::thing('pe', [$id, $s[0]]);
+    return type::record('pe', [$id, $s[0]]);
     }
 };
 
@@ -272,7 +272,7 @@ DEFINE FUNCTION fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 REMOVE FUNCTION fn::find_pe_by_datetime;
 -- 根据日期时间查找节点
 DEFINE FUNCTION fn::find_pe_by_datetime($pe: record, $dt: datetime){
-    let $his_pe = type::thing('his_pe', fn::newest_pe_id($pe));
+    let $his_pe = type::record('his_pe', fn::newest_pe_id($pe));
     if !record::exists($his_pe) {
         return $pe;
     };
@@ -288,7 +288,7 @@ DEFINE FUNCTION fn::find_pe_by_datetime($pe: record, $dt: datetime){
 REMOVE FUNCTION fn::ses_data;
 -- 获取节点的会话数据
 DEFINE FUNCTION fn::ses_data($pe: record){
-    let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
+    let $id = type::record('ses', [$pe.dbnum, $pe.sesno]);
     return select * from only $id limit 1;
 };
 
@@ -296,7 +296,7 @@ REMOVE FUNCTION fn::ses_date;
 -- 获取节点的会话日期
 DEFINE FUNCTION fn::ses_date($pe: record){
     return if record::exists($pe) {
-        let $id = type::thing('ses', [$pe.dbnum, $pe.sesno]);
+        let $id = type::record('ses', [$pe.dbnum, $pe.sesno]);
         return select value date from only $id limit 1;
     } else {
         return none;
@@ -696,11 +696,11 @@ DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
 -- 注释掉测试函数，因为 SurrealDB 3.0 不支持 test:: 命名空间
 -- REMOVE FUNCTION test::create_mock_children_tree;
 -- DEFINE FUNCTION test::create_mock_children_tree() {
---     let $root = type::thing('pe', '99999/1000');
---     let $box = type::thing('pe', '99999/1001');
---     let $bran = type::thing('pe', '99999/1002');
---     let $cable = type::thing('pe', '99999/1003');
---     let $panel = type::thing('pe', '99999/1004');
+--     let $root = type::record('pe', '99999/1000');
+--     let $box = type::record('pe', '99999/1001');
+--     let $bran = type::record('pe', '99999/1002');
+--     let $cable = type::record('pe', '99999/1003');
+--     let $panel = type::record('pe', '99999/1004');
 --
 --     UPSERT $root CONTENT {
 --         noun: "ROOT",
@@ -742,11 +742,11 @@ DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
 -- REMOVE FUNCTION test::cleanup_mock_children_tree;
 -- DEFINE FUNCTION test::cleanup_mock_children_tree() {
 --     let $ids = [
---         type::thing('pe', '99999/1000'),
---         type::thing('pe', '99999/1001'),
---         type::thing('pe', '99999/1002'),
---         type::thing('pe', '99999/1003'),
---         type::thing('pe', '99999/1004')
+--         type::record('pe', '99999/1000'),
+--         type::record('pe', '99999/1001'),
+--         type::record('pe', '99999/1002'),
+--         type::record('pe', '99999/1003'),
+--         type::record('pe', '99999/1004')
 --     ];
 --     for $id in $ids {
 --         if record::exists($id) {
@@ -760,8 +760,8 @@ DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
 -- REMOVE FUNCTION test::exercise_visible_descendants;
 -- DEFINE FUNCTION test::exercise_visible_descendants($cleanup: bool) {
 --     let $root = test::create_mock_children_tree();
---     let $collect_all = fn::collect_descendant_infos(type::thing('pe', $root), [], true);
---     let $visible = fn::visible_geo_descendants(type::thing('pe', $root), true);
+--     let $collect_all = fn::collect_descendant_infos(type::record('pe', $root), [], true);
+--     let $visible = fn::visible_geo_descendants(type::record('pe', $root), true);
 --     if $cleanup {
 --         test::cleanup_mock_children_tree();
 --     };

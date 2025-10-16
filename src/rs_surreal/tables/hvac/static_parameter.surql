@@ -35,22 +35,22 @@ insert ignore into hvac_mat [{
 insert ignore into hvac_pressure [{
     id: 'B',
     code: 'BP',
-    name: '低压' 
+    name: '低压'
 },
 {
     id: 'M',
     code: 'MP',
-    name: '中压' 
+    name: '中压'
 },
 {
     id: 'H',
     code: 'HP',
-    name: '高压' 
+    name: '高压'
 },
 {
     id: 'T',
     code: 'TP',
-    name: '超高压' 
+    name: '超高压'
 }]
 
 
@@ -109,9 +109,7 @@ let $type = 1;
 let $max_len = 800;
 let $pressure = 'B';
 
-select * from only hvac_depth where type=$type and type::thing("hvac_pressure", $pressure) in pressure and $max_len > max_length[0] and $max_len <= max_length[1] limit 1
+select * from only hvac_depth where type=$type and type::record("hvac_pressure", $pressure) in pressure and $max_len > max_length[0] and $max_len <= max_length[1] limit 1
 
 
 -- select * from hvac_mat
-
-

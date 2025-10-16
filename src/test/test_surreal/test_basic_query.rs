@@ -141,7 +141,7 @@ use surrealdb::types::RecordId;
 // async fn test_query_custom() -> anyhow::Result<()> {
 //     crate::init_test_surreal().await;
 //     let mut response = SUL_DB
-//         .query(r#"(select owner, owner.noun as o_noun from type::thing("pe", $refno) )[0]"#)
+//         .query(r#"(select owner, owner.noun as o_noun from type::record("pe", $refno) )[0]"#)
 //         .bind(("refno", "17496_171555"))
 //         .await
 //         .unwrap();

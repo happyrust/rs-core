@@ -376,8 +376,8 @@ mod tests {
 //=============================================================================
 
 use crate::geometry::ShapeInstancesData;
-use futures::stream::FuturesUnordered;
 use futures::StreamExt;
+use futures::stream::FuturesUnordered;
 use std::collections::HashMap;
 
 /// 初始化数据库的 inst_relate 表的索引
@@ -391,7 +391,7 @@ pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
 }
 
 /// 定义 dbnum_info_table 的更新事件
-/// 
+///
 /// 当 pe 表有 CREATE/UPDATE/DELETE 事件时，自动更新 dbnum_info_table 的统计信息
 #[cfg(feature = "surreal-save")]
 pub async fn define_dbnum_event() -> anyhow::Result<()> {
@@ -405,9 +405,9 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
             let $ref_1 = <int>array::at($id_parts, 1);
             let $is_delete = $value.deleted and $event = "UPDATE";
             let $max_sesno = if $after.sesno > $before.sesno?:0 { $after.sesno } else { $before.sesno };
-            -- 根据事件类型处理  type::thing("dbnum_info_table", $ref_0)
+            -- 根据事件类型处理  type::record("dbnum_info_table", $ref_0)
             IF $event = "CREATE"   {
-                UPSERT type::thing('dbnum_info_table', $ref_0) MERGE {
+                UPSERT type::record('dbnum_info_table', $ref_0) MERGE {
                     dbnum: $dbnum,
                     count: count?:0 + 1,
                     sesno: $max_sesno,
@@ -415,7 +415,7 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
                     updated_at: time::now()
                 };
             } ELSE IF $event = "DELETE" OR $is_delete  {
-                UPSERT type::thing('dbnum_info_table', $ref_0) MERGE {
+                UPSERT type::record('dbnum_info_table', $ref_0) MERGE {
                     count: count - 1,
                     sesno: $max_sesno,
                     max_ref1: $ref_1,
@@ -423,7 +423,7 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
                 }
                 WHERE count > 0;
             }  ELSE IF $event = "UPDATE" {
-                UPSERT type::thing('dbnum_info_table', $ref_0) MERGE {
+                UPSERT type::record('dbnum_info_table', $ref_0) MERGE {
                     sesno: $max_sesno,
                     updated_at: time::now()
                 };
@@ -792,7 +792,10 @@ pub async fn save_instance_data_single(
             let mut sql_string = "".to_string();
             for &&k in chunk {
                 let v = param_map.get(&k).unwrap();
-                let json = format!("INSERT IGNORE INTO param {{'id':param:⟨{}⟩, 'd':{}}};", k, v);
+                let json = format!(
+                    "INSERT IGNORE INTO param {{'id':param:⟨{}⟩, 'd':{}}};",
+                    k, v
+                );
                 sql_string.push_str(&json);
             }
             SUL_DB.query(sql_string).await.unwrap();
@@ -816,7 +819,10 @@ pub async fn save_instance_data(
     println!("inst_geos_map.len() = {}", inst_mgr.inst_geos_map.len());
     println!("inst_tubi_map.len() = {}", inst_mgr.inst_tubi_map.len());
     println!("neg_relate_map.len() = {}", inst_mgr.neg_relate_map.len());
-    println!("ngmr_neg_relate_map.len() = {}", inst_mgr.ngmr_neg_relate_map.len());
+    println!(
+        "ngmr_neg_relate_map.len() = {}",
+        inst_mgr.ngmr_neg_relate_map.len()
+    );
     println!("replace_exist = {}", replace_exist);
     // ========== 调试信息结束 ==========
 

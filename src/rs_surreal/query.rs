@@ -163,7 +163,8 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
     let mut response = SUL_DB.query(sql).await?;
     let raw_values: Vec<SurlValue> = response.take(0)?;
     // 过滤掉 NONE 值
-    let named_attmaps: Vec<NamedAttrMap> = raw_values.into_iter()
+    let named_attmaps: Vec<NamedAttrMap> = raw_values
+        .into_iter()
         .filter_map(|x| {
             let val: Result<NamedAttrMap, _> = x.try_into();
             val.ok() // 将 Err 转换为 None，从而过滤掉无法转换的值
@@ -208,7 +209,7 @@ pub async fn get_type_names(
 #[cached(result = true)]
 pub async fn get_owner_type_name(refno: RefU64) -> anyhow::Result<String> {
     let sql = format!(
-        "return (select value owner.noun from only (type::thing('pe', {})));",
+        "return (select value owner.noun from only (type::record('pe', {})));",
         refno.to_pe_key()
     );
     let mut response = SUL_DB.query(sql).await?;
@@ -779,7 +780,7 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
         r#"
         select in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, record::id(in->pe_owner.id[0])[1] as order,
                 in.op?:0 as op,
-                array::len((select value refnos from only type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
+                array::len((select value refnos from only type::record("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                 array::len(in<-pe_owner) as children_count,
                 in.status_code as status_code
             from {}<-pe_owner where in.id!=none and record::exists(in.id) and !in.deleted
@@ -881,8 +882,8 @@ pub async fn query_group_by_cata_hash(
         let sql = format!(
             r#"
             let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}])[? noun!=NONE && !deleted];
-            select [cata_hash, type::thing('inst_info', cata_hash).id!=none,
-                    type::thing('inst_info', cata_hash).ptset] as k,
+            select [cata_hash, type::record('inst_info', cata_hash).id!=none,
+                    type::record('inst_info', cata_hash).ptset] as k,
                  array::group(id) as v
             from $a where noun not in ["BRAN", "HANG"]  group by k;
         "#,

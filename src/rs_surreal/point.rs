@@ -88,8 +88,8 @@ pub async fn query_arrive_leave_points_by_cata_hash(
     let sql = format!(
         r#"
              select value [id,
-                (select * from object::values(type::thing("inst_info", cata_hash).ptset) where number=$parent.refno.ARRI)[0],
-                (select * from object::values(type::thing("inst_info", cata_hash).ptset) where number=$parent.refno.LEAV)[0]
+                (select * from object::values(type::record("inst_info", cata_hash).ptset) where number=$parent.refno.ARRI)[0],
+                (select * from object::values(type::record("inst_info", cata_hash).ptset) where number=$parent.refno.LEAV)[0]
             ] from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']])
              "#,
         pes

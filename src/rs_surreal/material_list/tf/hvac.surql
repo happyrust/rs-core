@@ -10,7 +10,7 @@ DEFINE FUNCTION fn::hvac_mat_number($pe: record){
 
 remove function fn::hvac_mat_id;
 DEFINE FUNCTION fn::hvac_mat_id($pe: record){
-    return type::thing('hvac_mat', <int>array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 3));
+    return type::record('hvac_mat', <int>array::at(string::split(($pe->pe_owner->pe.name)[0], '-'), 3));
 };
 
 //获得风管系统
@@ -38,7 +38,7 @@ DEFINE FUNCTION fn::hvac_mats($pe: record){
 
 remove function fn::hvac_number;
 DEFINE FUNCTION fn::hvac_number($pe: record){
-    let $v = (select value <int>v from type::thing('ATT_UDA', record::id($pe)).udas where u.NAME='/H-SECTCODE')[0];
+    let $v = (select value <int>v from type::record('ATT_UDA', record::id($pe)).udas where u.NAME='/H-SECTCODE')[0];
     return if $v == none {
         return "unset";
     } else {

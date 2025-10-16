@@ -1,11 +1,14 @@
 //! 层次结构查询模块
-//! 
+//!
 //! 提供元素层次结构相关的查询功能，包括祖先查询、子元素查询、兄弟元素查询等。
 
 use crate::pdms_types::EleTreeNode;
 use crate::rs_surreal::cache_manager::QUERY_CACHE;
 use crate::rs_surreal::error_handler::{QueryError, QueryErrorHandler};
-use crate::rs_surreal::query_builder::{BatchQueryBuilder, FunctionQueryBuilder, PeQueryBuilder, QueryBuilder};
+use crate::rs_surreal::query_builder::{
+    BatchQueryBuilder, FunctionQueryBuilder, PeQueryBuilder, QueryBuilder,
+};
+use crate::types::Thing;
 use crate::types::*;
 use anyhow::Result;
 use cached::proc_macro::cached;
@@ -13,25 +16,24 @@ use indexmap::IndexMap;
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::time::Instant;
-use crate::types::Thing;
 
 /// 层次结构查询服务
 pub struct HierarchyQueryService;
 
 impl HierarchyQueryService {
     /// 查询祖先节点列表
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 要查询的参考号
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<RefnoEnum>>` - 祖先节点的 refno 列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn query_ancestor_refnos(refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
         let start_time = Instant::now();
-        
+
         // 先检查缓存
         if let Some(cached_ancestors) = QUERY_CACHE.get_ancestors(&refno).await {
             return Ok(cached_ancestors);
@@ -66,14 +68,14 @@ impl HierarchyQueryService {
     }
 
     /// 查询指定类型的第一个祖先节点
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 要查询的参考号
     /// * `ancestor_type` - 要查询的祖先节点类型
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Option<RefnoEnum>>` - 如果找到则返回对应的祖先节点 refno，否则返回 None
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn query_ancestor_of_type(
@@ -98,13 +100,13 @@ impl HierarchyQueryService {
     }
 
     /// 获取指定 refno 的所有祖先节点的类型名称
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 要查询的参考号
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<String>>` - 祖先节点的类型名称列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn get_ancestor_types(refno: RefnoEnum) -> Result<Vec<String>> {
@@ -127,18 +129,18 @@ impl HierarchyQueryService {
     }
 
     /// 获取子元素的 refno 列表
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 父元素的参考号
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<RefnoEnum>>` - 子元素的 refno 列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn get_children_refnos(refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
         let start_time = Instant::now();
-        
+
         // 先检查缓存
         if let Some(cached_children) = QUERY_CACHE.get_children(&refno).await {
             return Ok(cached_children);
@@ -150,9 +152,9 @@ impl HierarchyQueryService {
         } else {
             // 历史版本查询
             let sql = format!(
-                r#" 
-                LET $dt=<datetime>fn::ses_date({0}); 
-                SELECT value fn::find_pe_by_datetime(in, $dt) FROM fn::newest_pe({0})<-pe_owner 
+                r#"
+                LET $dt=<datetime>fn::ses_date({0});
+                SELECT value fn::find_pe_by_datetime(in, $dt) FROM fn::newest_pe({0})<-pe_owner
                     WHERE in.id!=none AND record::exists(in.id) AND (!in.deleted OR <datetime>fn::ses_date(in.id)>$dt)
                 "#,
                 refno.to_pe_key(),
@@ -182,13 +184,13 @@ impl HierarchyQueryService {
     }
 
     /// 获取兄弟元素列表
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 要查询的参考号
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<RefnoEnum>>` - 兄弟元素的 refno 列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn get_siblings(refno: RefnoEnum) -> Result<Vec<RefnoEnum>> {
@@ -211,14 +213,14 @@ impl HierarchyQueryService {
     }
 
     /// 获取下一个或上一个兄弟元素
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 当前元素的参考号
     /// * `next` - true 获取下一个，false 获取上一个
-    /// 
+    ///
     /// # 返回值
     /// * `Result<RefnoEnum>` - 兄弟元素的 refno，如果不存在则返回默认值
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn get_next_prev(refno: RefnoEnum, next: bool) -> Result<RefnoEnum> {
@@ -239,18 +241,18 @@ impl HierarchyQueryService {
     }
 
     /// 批量获取多个 refno 的所有子元素
-    /// 
+    ///
     /// # 参数
     /// * `refnos` - 父元素的参考号列表
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<RefnoEnum>>` - 所有子元素的 refno 列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn query_multi_children_refnos(refnos: &[RefnoEnum]) -> Result<Vec<RefnoEnum>> {
         let mut final_refnos = Vec::new();
-        
+
         for &refno in refnos {
             match Self::get_children_refnos(refno).await {
                 Ok(children) => {
@@ -262,35 +264,35 @@ impl HierarchyQueryService {
                 }
             }
         }
-        
+
         Ok(final_refnos)
     }
 
     /// 获取子元素的树节点信息
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 父元素的参考号
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<EleTreeNode>>` - 子元素的树节点信息列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn get_children_ele_nodes(refno: RefnoEnum) -> Result<Vec<EleTreeNode>> {
         let start_time = Instant::now();
         let sql = format!(
             r#"
-            SELECT in.refno as refno, in.noun as noun, in.name as name, in.owner as owner, 
+            SELECT in.refno as refno, in.noun as noun, in.name as name, in.owner as owner,
                    record::id(in->pe_owner.id[0])[1] as order,
                    in.op?:0 as op,
-                   array::len((SELECT value refnos FROM ONLY type::thing("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
+                   array::len((SELECT value refnos FROM ONLY type::record("his_pe", record::id(in.refno)))?:[]) as mod_cnt,
                    array::len(in<-pe_owner) as children_count,
                    in.status_code as status_code
             FROM {}<-pe_owner WHERE in.id!=none AND record::exists(in.id) AND !in.deleted
             "#,
             refno.to_pe_key()
         );
-        
+
         let query = QueryBuilder::from_sql(&sql);
 
         match query.fetch_all::<EleTreeNode>().await {
@@ -324,15 +326,15 @@ impl HierarchyQueryService {
     }
 
     /// 在父节点下的索引，noun 有值时按照 noun 过滤
-    /// 
+    ///
     /// # 参数
     /// * `parent` - 父节点的参考号
     /// * `refno` - 子节点的参考号
     /// * `noun` - 可选的类型过滤条件
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Option<u32>>` - 在父节点下的索引位置
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
     pub async fn get_index_by_noun_in_parent(
@@ -427,7 +429,7 @@ mod tests {
     #[tokio::test]
     async fn test_hierarchy_query_service() {
         let refno = RefnoEnum::from("12345_67890");
-        
+
         // 测试祖先查询的错误处理
         match HierarchyQueryService::query_ancestor_refnos(refno).await {
             Ok(_) => {

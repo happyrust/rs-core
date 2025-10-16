@@ -42,15 +42,15 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
             let $ref_1 = array::at($id, 1);
             let $is_delete = $value.deleted and $event = "UPDATE";
             let $max_sesno = if $after.sesno > $before.sesno?:0 { $after.sesno } else { $before.sesno };
-            -- 根据事件类型处理  type::thing("dbnum_info_table", $ref_0)
+            -- 根据事件类型处理  type::record("dbnum_info_table", $ref_0)
             IF $event = "CREATE"   {
-                UPSERT type::thing('dbnum_info_table', $ref_0) SET
+                UPSERT type::record('dbnum_info_table', $ref_0) SET
                     dbnum = $dbnum,
                     count = count?:0 + 1,
                     sesno = $max_sesno,
                     max_ref1 = $ref_1;
             } ELSE IF $event = "DELETE" OR $is_delete  {
-                UPSERT type::thing('dbnum_info_table', $ref_0) SET
+                UPSERT type::record('dbnum_info_table', $ref_0) SET
                     count = count - 1,
                     sesno = $max_sesno,
                     max_ref1 = $ref_1

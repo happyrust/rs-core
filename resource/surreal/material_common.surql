@@ -1,4 +1,4 @@
-//string::split(string::split(refno.SPRE.name?:'//:', '/')[2],':')[0]?:'' as code, 
+//string::split(string::split(refno.SPRE.name?:'//:', '/')[2],':')[0]?:'' as code,
 // 编码
 remove function fn::code;
 define function fn::code($pe: record, $opt: option<number>){
@@ -25,7 +25,7 @@ DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
 
    let $a = SELECT VALUE (
                 SELECT VALUE object::values(v) FROM ONLY udas.* WHERE u.NAME ==  $uda_name LIMIT 1
-            )[0] FROM ONLY type::thing("ATT_UDA", record::id($pe)) limit 1;
+            )[0] FROM ONLY type::record("ATT_UDA", record::id($pe)) limit 1;
     return if $a == NONE {
         let $n = fn::normal_name($uda_name);
         return select value DFLT from only UDA
@@ -73,7 +73,7 @@ DEFINE FUNCTION fn::get_uda_value($pe:record, $uda_name:string) {
 
    let $a = SELECT VALUE (
                 SELECT VALUE object::values(v) FROM ONLY udas.* WHERE u.NAME ==  $uda_name LIMIT 1
-            )[0] FROM ONLY type::thing("ATT_UDA", record::id($pe)) limit 1;
+            )[0] FROM ONLY type::record("ATT_UDA", record::id($pe)) limit 1;
     return if $a == NONE {
         let $n = fn::normal_name($uda_name);
         return select value DFLT from only UDA
@@ -112,7 +112,7 @@ DEFINE FUNCTION fn::get_world_pos($pe:record) {
     let $noun = $pe.noun;
     return
     if $noun == 'EQUI' {
-        return select value world_trans.d.translation from type::thing('cal_equi',record::id($pe))
+        return select value world_trans.d.translation from type::record('cal_equi',record::id($pe))
     } else {
         return select value array::flatten(->inst_relate.world_trans.d.translation) from $pe
     }
@@ -169,10 +169,10 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
     return if $ispe == none {
         return [0];
     } else {
-        return (select value (select value CATR.refno.PARA 
+        return (select value (select value CATR.refno.PARA
                 from only $ispe<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
-                and $parent.owner.refno.TEMP >=refno.ANSW 
-                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.* 
+                and $parent.owner.refno.TEMP >=refno.ANSW
+                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.*
                 where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1)
             from $pe)[0];
     };
@@ -233,4 +233,3 @@ define function fn::str_into_int($input:string) {
         0
     }
 };
-

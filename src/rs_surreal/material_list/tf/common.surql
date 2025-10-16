@@ -1,4 +1,4 @@
-//string::split(string::split(refno.SPRE.name?:'//:', '/')[2],':')[0]?:'' as code, 
+//string::split(string::split(refno.SPRE.name?:'//:', '/')[2],':')[0]?:'' as code,
 // 编码
 remove function fn::code;
 define function fn::code($pe: record, $opt: option<number>){
@@ -31,7 +31,7 @@ DEFINE FUNCTION fn::get_world_pos($pe:record) {
     let $noun = $pe.noun;
     return
     if $noun == 'EQUI' {
-        return select value world_trans.d.translation from type::thing('cal_equi',record::id($pe))
+        return select value world_trans.d.translation from type::record('cal_equi',record::id($pe))
     } else {
         return select value ->inst_relate.world_trans.d.translation from $pe
     }
