@@ -177,7 +177,7 @@ fn filter_equi_children(datas: Vec<Vec<Vec<RecordId>>>) -> Vec<Vec<String>> {
     for data in datas {
         let filtered_data: Vec<Vec<String>> = data
             .into_iter()
-            .filter(|inner_vec| inner_vec.iter().all(|s| s.table == "BOX".into()))
+            .filter(|inner_vec| inner_vec.iter().all(|s| s.table.as_str() == "BOX"))
             .filter(|inner_vec| {
                 let count = inner_vec.iter().count();
                 count == 3 || count == 4

@@ -127,7 +127,7 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
     }
 
     // 2. 初始化远程 SurrealDB（如果启用 ws 特性）
-    #[cfg(feature = "ws")]
+    #[cfg(not(feature = "local"))]
     {
         println!("数据库连接中...");
         match init_surreal_with_retry(db_option).await {

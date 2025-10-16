@@ -164,53 +164,59 @@ pub async fn query_filter_deep_children_atts(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let types_expr = if nouns.is_empty() {
-        "[]".to_string()
-    } else {
-        format!("[{}]", nouns_str)
-    };
-    let pe_key = refno.to_pe_key();
+    query_filter_deep_children_atts_with_range(refno, nouns, None).await
+}
 
-    // 使用优化的数据库端函数一次性完成所有操作
-    // exclude_self 使用 none 表示包含自身
+/// 查询子孙节点的属性（带层级范围控制）
+///
+/// # 参数
+/// - `refno`: 根节点引用
+/// - `nouns`: 要筛选的类型数组
+/// - `range`: 层级范围字符串，如 Some("..")（无限）, Some("1..5")（1到5层）, Some("3")（固定3层）, None（默认".."）
+pub async fn query_filter_deep_children_atts_with_range(
+    refno: RefnoEnum,
+    nouns: &[&str],
+    range: Option<&str>,
+) -> anyhow::Result<Vec<NamedAttrMap>> {
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+    let pe_key = refno.to_pe_key();
+    let range_str = range.unwrap_or("..");
+    
+    // 构建类型过滤条件
+    let type_filter = if nouns.is_empty() {
+        String::new()
+    } else {
+        format!(" && noun IN [{}]", nouns_str)
+    };
+
+    // 直接在 SQL 中拼接 range，生成内联查询
     let sql = format!(
-        "SELECT VALUE fn::collect_descendants_with_attrs({}, {}, none);",
-        pe_key, types_expr
+        r#"
+        LET $root = {};
+        LET $descendants = (SELECT VALUE array::flatten(@.{{{}+collect+inclusive}}.children).{{ id, noun }} FROM ONLY $root LIMIT 1) ?: [];
+        LET $filtered = array::filter($descendants, |$node| true{});
+        LET $pes = array::filter($filtered, |$info| $info.id != NONE && record::exists($info.id));
+        SELECT VALUE $pes.id.refno.* FROM $pes;
+        "#,
+        pe_key, range_str, type_filter
     );
 
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<SurlValue>(0) {
-            Ok(value) => match value.into_vec::<SurlValue>() {
-                Ok(result) => {
-                    let atts: Vec<NamedAttrMap> = result.into_iter().map(|x| x.into()).collect();
-                    Ok(atts)
-                }
-                Err(e) => {
-                    init_deserialize_error(
-                        "Vec<SurlValue>",
-                        &e,
-                        &sql,
-                        &std::panic::Location::caller().to_string(),
-                    );
-                    Err(anyhow!(e.to_string()))
-                }
-            },
-            Err(e) => {
-                init_deserialize_error(
-                    "SurlValue",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
-            }
-        },
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
-    }
+    let mut response = SUL_DB.query(&sql).await.map_err(|e| {
+        init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+        anyhow!(e.to_string())
+    })?;
+
+    let value = response.take::<SurlValue>(0).map_err(|e| {
+        init_deserialize_error("SurlValue", &e, &sql, &std::panic::Location::caller().to_string());
+        anyhow!(e.to_string())
+    })?;
+
+    let result = value.into_vec::<SurlValue>().map_err(|e| {
+        init_deserialize_error("Vec<SurlValue>", &e, &sql, &std::panic::Location::caller().to_string());
+        anyhow!(e.to_string())
+    })?;
+
+    Ok(result.into_iter().map(|x| x.into()).collect())
 }
 
 pub async fn query_ele_filter_deep_children_pbs(
