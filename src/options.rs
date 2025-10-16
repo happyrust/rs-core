@@ -122,9 +122,9 @@ pub struct DbOption {
     /// SurrealDB命名空间
     #[clap(skip)]
     pub surreal_ns: String,
-    /// SurrealDB 脚本目录路径
-    #[clap(long, default_value = "resource/surreal")]
-    pub surreal_script_dir: String,
+    /// SurrealDB 脚本目录路径，默认为 resource/surreal
+    #[clap(long)]
+    pub surreal_script_dir: Option<String>,
     /// 手动指定的数据库编号列表
     #[clap(skip)]
     pub manual_db_nums: Option<Vec<u32>>,
@@ -279,6 +279,12 @@ impl DbOption {
     // pub fn is_geom_live(&self) -> bool {
     //     self.geom_live.unwrap_or(false)
     // }
+
+    /// 获取 SurrealDB 脚本目录路径，如果未配置则返回默认值 "resource/surreal"
+    #[inline]
+    pub fn get_surreal_script_dir(&self) -> &str {
+        self.surreal_script_dir.as_deref().unwrap_or("resource/surreal")
+    }
 
     pub fn get_test_refno(&self) -> Option<RefnoEnum> {
         self.test_refno.as_ref().map(|x| x.as_str().into())
@@ -457,9 +463,9 @@ pub struct SecondUnitDbOption {
     /// SurrealDB命名空间
     #[clap(skip)]
     pub surreal_ns: String,
-    /// SurrealDB 脚本目录路径
-    #[clap(long, default_value = "resource/surreal")]
-    pub surreal_script_dir: String,
+    /// SurrealDB 脚本目录路径，默认为 resource/surreal
+    #[clap(long)]
+    pub surreal_script_dir: Option<String>,
     /// 二号机组的ip
     #[clap(long)]
     pub v_ip: String,
@@ -475,6 +481,12 @@ pub struct SecondUnitDbOption {
 }
 
 impl SecondUnitDbOption {
+    /// 获取 SurrealDB 脚本目录路径，如果未配置则返回默认值 "resource/surreal"
+    #[inline]
+    pub fn get_surreal_script_dir(&self) -> &str {
+        self.surreal_script_dir.as_deref().unwrap_or("resource/surreal")
+    }
+
     #[inline]
     pub fn get_version_db_conn_str(&self) -> String {
         let ip = self.v_ip.as_str();
