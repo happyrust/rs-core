@@ -258,7 +258,7 @@ impl GraphQuery for SurrealQueryProvider {
             nouns
         );
 
-        rs_surreal::graph::query_multi_filter_deep_children(refnos, nouns)
+        rs_surreal::graph::query_multi_filter_deep_children(refnos, nouns, None)
             .await
             .map(|set| set.into_iter().collect())
             .map_err(|e| QueryError::ExecutionError(e.to_string()))

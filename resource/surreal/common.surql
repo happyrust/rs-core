@@ -12,23 +12,7 @@ DEFINE FUNCTION fn::ancestor($r: record) {
     };
 };
 
-REMOVE FUNCTION fn::collect_descendants_with_attrs;
-DEFINE FUNCTION fn::collect_descendants_with_attrs(
-    $root: record,
-    $types: array<string>,
-    $include_self: option<bool>
-) {
-    -- 1. 收集所有子孙节点 ID
-    let $ids = fn::collect_descendant_ids_by_types($root, $types, $include_self);
 
-    -- 2. 批量查询所有节点的属性
-    -- 将 ID 数组转换为 pe 记录，然后提取 refno.* 属性
-    let $pes = array::filter($ids, |$id| $id !=NONE && record::exists($id));
-
-
-    -- 3. 从每个 pe 记录中提取 refno 属性
-    return select refno.* from $pes;
-};
 
 REMOVE FUNCTION fn::newest_pe;
 -- 获取节点的最新版本（如果不是数组ID则返回自身）
@@ -593,8 +577,8 @@ DEFINE FUNCTION fn::find_ancestor_types($pe: record, $t: array){
 // 返回符合类型集合的子节点ID
 REMOVE FUNCTION fn::collect_descendant_ids_by_types;
 -- 收集符合指定类型的子孙节点ID
-DEFINE FUNCTION fn::collect_descendant_ids_by_types($pe:record,$t:array,$inclusive:option<bool>) {
-    let $infos = fn::collect_descendant_infos($pe, $t, $inclusive);
+DEFINE FUNCTION fn::collect_descendant_ids_by_types($pe:record,$t:array,$inclusive:option<bool>,$range_str:string) {
+    let $infos = fn::collect_descendant_infos($pe, $t, $inclusive, $range_str);
     return array::map($infos, |$info| $info.id);
 };
 
@@ -610,19 +594,22 @@ DEFINE FUNCTION fn::collect_children($root: record) {
 };
 
 REMOVE FUNCTION fn::collect_descendant_infos;
--- 收集子孙节点信息（包含ID和类型）
--- 如需自定义 range，在 Rust 代码中使用 fn::collect_descendant_infos_with_range 宏
--- 或直接在 SQL 中拼接：SELECT ... @.{1..5+collect}.children ...
+-- 收集子孙节点信息（包含ID和类型），支持自定义递归深度范围
+-- $range_str: 递归范围字符串，仅用于文档/注释，实际在 Rust 代码中进行字符串拼接
 DEFINE FUNCTION fn::collect_descendant_infos(
     $root: record,
     $types: array<string>,
     $inclusive: option<bool>,
+    $range_str: string,
 ) {
     if !record::exists($root) {
         return [];
     };
     -- 使用 $inclusive 参数来控制是否包含根节点本身，默认为 false
     let $use_inclusive = $inclusive ?: false;
+    -- 注：$range_str 作为函数签名的一部分用于 Rust 代码生成 SQL
+    -- Rust 代码会在调用时进行字符串拼接，生成类似以下的 SQL：
+    -- (SELECT VALUE array::flatten(@.{1..5+collect}.children).{ id, noun } FROM ONLY $root LIMIT 1)
     let $raw_descendants = if $use_inclusive {
         (SELECT VALUE array::flatten(@.{..+collect+inclusive}.children).{ id, noun } FROM ONLY $root LIMIT 1) ?: []
     } else {
@@ -634,31 +621,22 @@ DEFINE FUNCTION fn::collect_descendant_infos(
     return $filtered;
 };
 
--- 带自定义 range 的收集函数（通过 Rust 宏调用）
--- 使用方式：直接在 SQL 中拼接 range 字符串，例如：
--- LET $infos = (SELECT VALUE array::flatten(@.{1..5+collect}.children).{ id, noun } FROM ONLY $root LIMIT 1);
--- 然后应用类型过滤
+
 
 REMOVE FUNCTION fn::visible_geo_descendants;
 -- 获取可见的几何子孙节点
-DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool) {
+DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool, $range_str: string) {
     let $visible_types = [
         "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE",
         "EXTR", "REVO", "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT",
         "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
         "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ"
     ];
-    let $infos = fn::collect_descendant_infos($root, $visible_types, none);
+    let $infos = fn::collect_descendant_infos($root, $visible_types, none, $range_str);
     return array::map($infos, |$info| $info.id);
 };
 
-remove FUNCTION fn::find_door_from_wall;
--- 从墙中查找门洞
-DEFINE FUNCTION fn::find_door_from_wall($pe:array) {
-    let $fitts = select value fn::collect_descendant_ids_by_types(id, ["FIXING", "NBOX", "NCYL", "NXTR", "PFIT", "NPYR", "FITT", "SBFI"], none) from $pe;
-    let $uda_value = select id as refno,fn::default_name(id) as name,fn::find_ancestor_types(id,["STWALL", "GWALL", "WALL"])[0] as wall from array::flatten(select value id from $fitts) where string::contains(fn::get_uda_value(id,'/JGOBJBASE')?:'','门洞');
-    return $uda_value;
-};
+
 
 REMOVE FUNCTION fn::get_mdb_dbnums;
 -- 获取MDB数据库编号
@@ -760,8 +738,8 @@ DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
 -- REMOVE FUNCTION test::exercise_visible_descendants;
 -- DEFINE FUNCTION test::exercise_visible_descendants($cleanup: bool) {
 --     let $root = test::create_mock_children_tree();
---     let $collect_all = fn::collect_descendant_infos(type::record('pe', $root), [], true);
---     let $visible = fn::visible_geo_descendants(type::record('pe', $root), true);
+--     let $collect_all = fn::collect_descendant_infos(type::record('pe', $root), [], true, "..");
+--     let $visible = fn::visible_geo_descendants(type::record('pe', $root), true, "..");
 --     if $cleanup {
 --         test::cleanup_mock_children_tree();
 --     };

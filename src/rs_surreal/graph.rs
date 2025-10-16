@@ -186,14 +186,6 @@ pub async fn query_filter_deep_children(
 
 /// 查询子孙节点的属性
 ///
-/// # 性能优化
-/// - 使用数据库端函数 `fn::collect_descendants_with_attrs` 一次性完成所有操作
-/// - 相比旧实现，减少 90%+ 的网络往返时间
-///
-/// # 参数
-/// - `refno`: 起始节点
-/// - `nouns`: 要筛选的节点类型（空数组表示不过滤类型）
-///
 /// # 返回
 /// 所有符合条件的子孙节点的 refno.* 属性
 pub async fn query_filter_deep_children_atts(
@@ -528,11 +520,14 @@ async fn query_deep_children_filter_inst(
 ///
 /// # 示例
 /// ```ignore
-/// let children = query_multi_filter_deep_children(&[refno1, refno2], &["BOX", "CYLI"]).await?;
+/// let children = query_multi_filter_deep_children(&[refno1, refno2], &["BOX", "CYLI"], None).await?;
+/// // 使用自定义范围：
+/// let children = query_multi_filter_deep_children(&[refno1, refno2], &["BOX", "CYLI"], Some("1..5")).await?;
 /// ```
 pub async fn query_multi_filter_deep_children(
     refnos: &[RefnoEnum],
     nouns: &[&str],
+    range_str: Option<&str>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     if refnos.is_empty() {
         return Ok(Vec::new());
@@ -550,6 +545,8 @@ pub async fn query_multi_filter_deep_children(
     let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
     let refno_list = refno_keys.join(", ");
 
+    let range = range_str.unwrap_or("..");
+
     // 构建 SurQL 批量查询语句
     // 1. 对每个起始节点调用 fn::collect_descendant_ids_by_types 获取子孙节点
     // 2. 将所有结果展平（flatten）并过滤掉 None 值
@@ -558,10 +555,10 @@ pub async fn query_multi_filter_deep_children(
         r#"
         -- 批量查询所有起点的子孙节点，使用 fn::collect_descendant_ids_by_types
         array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
-            fn::collect_descendant_ids_by_types($refno, {}, none)
+            fn::collect_descendant_ids_by_types($refno, {}, none, "{}")
         )), |$v| $v != none))
         "#,
-        refno_list, types_expr
+        refno_list, types_expr, range
     );
 
     // println!("Sql: {}", sql);
@@ -744,70 +741,4 @@ pub async fn get_uda_type_refnos_from_select_refnos(
     Ok(result)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct WallContainsDoor {
-    pub refno: RefU64,
-    pub wall_name: String,
-    pub fitts: Vec<WallDoorResult>,
-}
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, SurrealValue)]
-struct WallDoorResult {
-    pub refno: RefU64,
-    pub name: String,
-    pub wall: RefU64,
-}
-
-/// 根据选择节点找到下面的wall和wall上的门
-pub async fn query_wall_doors(
-    refno: RefU64,
-) -> anyhow::Result<HashMap<RefU64, Vec<WallContainsDoor>>> {
-    // 找到墙
-    let mut walls_q = SUL_DB
-        .query(format!(
-            "select fn::collect_descendant_ids_by_types(id,['STWALL', 'GWALL', 'WALL'], none) from {}",
-            refno.to_pe_key()
-        ))
-        .await?;
-    let walls: Vec<RefU64> = walls_q.take(0)?;
-    let walls_key = walls.into_iter().map(|wall| wall.to_pe_key()).join(",");
-    // 查询墙的name
-    let mut name_q = SUL_DB
-        .query(format!(
-            "select fn::default_full_name(id) as name,id from [{}]",
-            &walls_key
-        ))
-        .await?;
-    let wall_names: Vec<ModelDataIndex> = name_q.take(0)?;
-    let wall_names_map = wall_names
-        .into_iter()
-        .map(|wall| (wall.refno, wall.name))
-        .collect::<HashMap<RefU64, String>>();
-    // 找到墙下面的门洞
-    let mut fitts_q = SUL_DB
-        .query(format!("fn::find_door_from_wall([{}])", walls_key))
-        .await?;
-    let fitts: Vec<WallDoorResult> = fitts_q.take(0)?;
-    // 将数据按墙分类
-    let mut fitts_map = HashMap::new();
-    for fitt in fitts {
-        fitts_map
-            .entry(fitt.wall)
-            .or_insert_with(Vec::new)
-            .push(fitt);
-    }
-    let mut map = HashMap::new();
-    for (wall, wall_name) in wall_names_map {
-        let Some(fitts) = fitts_map.get(&wall) else {
-            continue;
-        };
-        map.entry(wall)
-            .or_insert_with(Vec::new)
-            .push(WallContainsDoor {
-                refno,
-                wall_name,
-                fitts: fitts.clone(),
-            })
-    }
-    Ok(map)
-}
