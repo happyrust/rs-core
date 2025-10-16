@@ -1414,7 +1414,7 @@ mod tests {
 
             match &value {
                 Value::RecordId(rid) => {
-                    assert_eq!(rid.table, "pe");
+                    assert_eq!(rid.table, "pe".into());
                     match &rid.key {
                         RecordIdKey::String(s) => {
                             assert_eq!(s, "17496_169982");
@@ -1439,7 +1439,7 @@ mod tests {
                     // First element should be RecordId
                     match &arr[0] {
                         Value::RecordId(rid) => {
-                            assert_eq!(rid.table, "pe");
+                            assert_eq!(rid.table, "pe".into());
                             match &rid.key {
                                 RecordIdKey::String(s) => assert_eq!(s, "100_200"),
                                 _ => panic!("Expected String key in array"),
@@ -1464,7 +1464,7 @@ mod tests {
         #[test]
         fn test_refno_enum_from_record_id_value() {
             let record_id = RecordId {
-                table: "pe".to_string(),
+                table: "pe".to_string().into(),
                 key: RecordIdKey::String("17496_169982".to_string()),
             };
             let value = Value::RecordId(record_id);
@@ -1482,7 +1482,7 @@ mod tests {
         #[test]
         fn test_refno_enum_from_array_value() {
             let refno_value = Value::RecordId(RecordId {
-                table: "pe".to_string(),
+                table: "pe".to_string().into(),
                 key: RecordIdKey::String("100_200".to_string()),
             });
             let sesno_value = Value::Number(Number::Int(5));
@@ -1544,7 +1544,7 @@ mod tests {
         #[test]
         fn test_refno_enum_from_single_element_array_value() {
             let refno_value = Value::RecordId(RecordId {
-                table: "pe".to_string(),
+                table: "pe".to_string().into(),
                 key: RecordIdKey::String("100_200".to_string()),
             });
             let array_value = Value::Array(vec![refno_value].into());
@@ -1562,7 +1562,7 @@ mod tests {
         #[test]
         fn test_refno_enum_from_array_with_zero_sesno() {
             let refno_value = Value::RecordId(RecordId {
-                table: "pe".to_string(),
+                table: "pe".to_string().into(),
                 key: RecordIdKey::String("100_200".to_string()),
             });
             let sesno_value = Value::Number(Number::Int(0));
@@ -1595,7 +1595,7 @@ mod tests {
         #[test]
         fn test_refno_enum_from_record_id_with_array_key() {
             let record_id = RecordId {
-                table: "pe".to_string(),
+                table: "pe".to_string().into(),
                 key: RecordIdKey::Array(
                     vec![
                         Value::String("100_200".to_string()),
@@ -1621,7 +1621,7 @@ mod tests {
         #[test]
         fn test_refno_enum_from_record_id_with_string_key() {
             let record_id = RecordId {
-                table: "pe".to_string(),
+                table: "pe".into(),
                 key: RecordIdKey::String("100_200".to_string()),
             };
             let value = Value::RecordId(record_id);
@@ -1639,7 +1639,7 @@ mod tests {
         #[test]
         fn test_refno_enum_from_record_id_with_number_key() {
             let record_id = RecordId {
-                table: "pe".to_string(),
+                table: "pe".to_string().into(),
                 key: RecordIdKey::Number(123456789),
             };
             let value = Value::RecordId(record_id);
@@ -1658,7 +1658,7 @@ mod tests {
         #[test]
         fn refu64_from_surrealdb_record_id_value() {
             let record_id = RecordId {
-                table: "pe".to_string(),
+                table: "pe".to_string().into(),
                 key: RecordIdKey::String("17496_169982".to_string()),
             };
 
@@ -1703,7 +1703,7 @@ mod tests {
 
             match &value {
                 Value::RecordId(rid) => {
-                    assert_eq!(rid.table, "pe");
+                    assert_eq!(rid.table, "pe".into());
                     match &rid.key {
                         RecordIdKey::String(s) => {
                             assert_eq!(s, "17496_169982");
@@ -1719,7 +1719,7 @@ mod tests {
         #[test]
         fn test_refu64_from_different_table_record_id() {
             let record_id = RecordId {
-                table: "pbs".to_string(),
+                table: "pbs".into(),
                 key: RecordIdKey::String("100_200".to_string()),
             };
             let value = Value::RecordId(record_id);
@@ -1732,7 +1732,7 @@ mod tests {
         #[test]
         fn test_refu64_from_number_key_record_id() {
             let record_id = RecordId {
-                table: "pe".to_string(),
+                table: "pe".into(),
                 key: RecordIdKey::Number(123456789),
             };
             let value = Value::RecordId(record_id);
