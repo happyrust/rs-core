@@ -10,9 +10,9 @@ use std::io::Read;
 
 /// 为指定的数据库实例加载 SurrealDB 函数定义
 /// 
-/// 从 resource/surreal 目录加载所有 .surql 文件并在数据库中执行
-async fn load_surreal_functions(db: &Surreal<Db>) -> Result<()> {
-    let target_dir = std::fs::read_dir("resource/surreal")?
+/// 从指定目录加载所有 .surql 文件并在数据库中执行
+async fn load_surreal_functions(db: &Surreal<Db>, script_dir: &str) -> Result<()> {
+    let target_dir = std::fs::read_dir(script_dir)?
         .into_iter()
         .map(|entry| {
             let entry = entry.unwrap();
@@ -61,7 +61,7 @@ pub async fn create_memory_db() -> Result<Surreal<Db>> {
         .map_err(|e| anyhow::anyhow!("Failed to set namespace/database: {}", e))?;
     
     // 加载 SurrealDB 函数定义
-    load_surreal_functions(&db)
+    load_surreal_functions(&db, "resource/surreal")
         .await
         .map_err(|e| anyhow::anyhow!("Failed to load SurrealDB functions: {}", e))?;
     
@@ -103,7 +103,7 @@ pub async fn init_sul_db_with_memory() -> Result<()> {
         .map_err(|e| anyhow::anyhow!("Failed to set namespace/database: {}", e))?;
     
     // 加载 SurrealDB 函数定义（从 resource/surreal/*.surql 文件）
-    crate::function::define_common_functions()
+    crate::function::define_common_functions("resource/surreal")
         .await
         .map_err(|e| anyhow::anyhow!("Failed to define common functions: {}", e))?;
     

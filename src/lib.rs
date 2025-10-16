@@ -245,7 +245,7 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         })?;
 
     // Define common functions
-    define_common_functions()
+    define_common_functions(&db_option.surreal_script_dir)
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
@@ -277,7 +277,7 @@ pub async fn init_surreal() -> anyhow::Result<()> {
         })
         .await?;
     // Define common functions
-    define_common_functions()
+    define_common_functions(&db_option.surreal_script_dir)
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
@@ -369,7 +369,7 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
         })?;
 
     // Define common functions
-    define_common_functions()
+    define_common_functions(&db_option.surreal_script_dir)
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),

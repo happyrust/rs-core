@@ -3,8 +3,8 @@ use cached::proc_macro::cached;
 use std::io::Read;
 use std::path::PathBuf;
 
-pub async fn define_common_functions() -> anyhow::Result<()> {
-    let target_dir = std::fs::read_dir("resource/surreal")?
+pub async fn define_common_functions(script_dir: &str) -> anyhow::Result<()> {
+    let target_dir = std::fs::read_dir(script_dir)?
         .into_iter()
         .map(|entry| {
             let entry = entry.unwrap();

@@ -122,6 +122,9 @@ pub struct DbOption {
     /// SurrealDB命名空间
     #[clap(skip)]
     pub surreal_ns: String,
+    /// SurrealDB 脚本目录路径
+    #[clap(long, default_value = "resource/surreal")]
+    pub surreal_script_dir: String,
     /// 手动指定的数据库编号列表
     #[clap(skip)]
     pub manual_db_nums: Option<Vec<u32>>,
@@ -454,6 +457,9 @@ pub struct SecondUnitDbOption {
     /// SurrealDB命名空间
     #[clap(skip)]
     pub surreal_ns: String,
+    /// SurrealDB 脚本目录路径
+    #[clap(long, default_value = "resource/surreal")]
+    pub surreal_script_dir: String,
     /// 二号机组的ip
     #[clap(long)]
     pub v_ip: String,
