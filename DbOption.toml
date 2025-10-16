@@ -101,8 +101,8 @@ puhua_database_password = ""
 
 room_keyword = "-RM" # 2016  K-R-K100   (-R-)
 
-debug_root_refnos = []
-#debug_root_refnos = ["=24381/35855", "=24383/71551", "=24381/95690"]
-#debug_root_refnos = ["24381/36155", "24383/67004"]
-# debug_root_refnos = ["24383/66457", "24381/34110"]
-#debug_root_refnos = ["17496/172806"]
+debug_model_refnos = []
+#debug_model_refnos = ["=24381/35855", "=24383/71551", "=24381/95690"]
+#debug_model_refnos = ["24381/36155", "24383/67004"]
+# debug_model_refnos = ["24383/66457", "24381/34110"]
+#debug_model_refnos = ["17496/172806"]

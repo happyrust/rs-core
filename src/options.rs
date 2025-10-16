@@ -137,9 +137,9 @@ pub struct DbOption {
     /// 是否打印世界坐标系变换矩阵
     #[clap(long)]
     pub debug_print_world_transform: bool,
-    /// 调试用的根节点引用号列表
+    /// 调试用的模型生成参考号列表（仅在生成模型时有效）
     #[clap(skip)]
-    pub debug_root_refnos: Option<Vec<String>>,
+    pub debug_model_refnos: Option<Vec<String>>,
     /// 是否生成历史模型
     #[clap(long)]
     pub gen_history_model: Option<bool>,
@@ -368,7 +368,7 @@ impl DbOption {
     #[inline]
     pub async fn get_all_debug_refnos(&self) -> Vec<RefnoEnum> {
         let mut refnos = self
-            .debug_root_refnos
+            .debug_model_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
             .unwrap_or_default();
