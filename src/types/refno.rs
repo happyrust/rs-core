@@ -62,6 +62,7 @@ pub struct RefU64(pub u64);
 impl SurrealValue for RefU64 {
     fn kind_of() -> surrealdb_types::Kind {
         surrealdb_types::Kind::Record(vec!["pe".to_string()])
+        // surrealdb_types::Kind::Any
     }
 
     fn into_value(self) -> surrealdb_types::Value {
@@ -665,6 +666,7 @@ impl SurrealValue for RefnoEnum {
         // RefnoEnum can be either a RecordId or an Array [RecordId, sesno]
         // Using Kind::Record to indicate it's primarily stored as pe table records
         surrealdb_types::Kind::Record(vec!["pe".to_string()])
+        // surrealdb_types::Kind::Any
     }
 
     fn into_value(self) -> surrealdb_types::Value {

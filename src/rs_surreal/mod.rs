@@ -1,6 +1,7 @@
 pub mod adapter;
 pub mod datacenter_query;
 pub mod geom;
+pub mod geometry_query;
 pub mod graph;
 pub mod index;
 pub mod mdb;
@@ -40,6 +41,7 @@ pub mod type_hierarchy;
 pub use cate::*;
 pub use e3d_db::*;
 pub use geom::*;
+pub use geometry_query::*;
 pub use graph::*;
 pub use index::*;
 pub use inst::*;
