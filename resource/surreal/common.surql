@@ -630,6 +630,37 @@ DEFINE FUNCTION fn::collect_descendant_infos(
 };
 
 
+REMOVE FUNCTION fn::collect_descendant_ids_has_inst;
+-- 收集子孙节点的 ID 和 has_inst 状态
+-- 返回 { id, has_inst } 结构数组，可以通过 [? has_inst] 过滤出有 inst_relate 的节点
+-- $range_str: 递归范围字符串，仅用于文档/注释，实际在 Rust 代码中进行字符串拼接
+DEFINE FUNCTION fn::collect_descendant_ids_has_inst(
+    $root: record,
+    $types: array<string>,
+    $inclusive: option<bool>,
+    $range_str: string,
+) {
+    if !record::exists($root) {
+        return [];
+    };
+    -- 使用 $inclusive 参数来控制是否包含根节点本身，默认为 false
+    let $use_inclusive = $inclusive ?:true;
+    -- 注：$range_str 作为函数签名的一部分用于 Rust 代码生成 SQL
+    let $raw_descendants = if $use_inclusive {
+        (SELECT VALUE array::flatten(@.{..+collect+inclusive}.children).{ id, has_inst } FROM ONLY $root LIMIT 1) ?: []
+    } else {
+        (SELECT VALUE array::flatten(@.{..+collect}.children).{ id, has_inst } FROM ONLY $root LIMIT 1) ?: []
+    };
+
+    -- 先按类型过滤
+    let $type_filtered = array::filter($raw_descendants, |$node|
+        $node.has_inst && $node.id != NONE && (array::len($types) == 0 || $node.noun IN $types)
+    );
+
+    return array::map($type_filtered, |$x| $x.id);
+};
+
+
 
 REMOVE FUNCTION fn::visible_geo_descendants;
 -- 获取可见的几何子孙节点
@@ -644,6 +675,17 @@ DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool, 
     return array::map($infos, |$info| $info.id);
 };
 
+REMOVE FUNCTION fn::negative_geo_descendants;
+-- 获取负实体几何子孙节点（对应 TOTAL_NEG_NOUN_NAMES）
+DEFINE FUNCTION fn::negative_geo_descendants($root: record, $include_self: bool, $range_str: string) {
+    let $negative_types = [
+        "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
+        "NSCY", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY",
+        "NSEX", "NSRE"
+    ];
+    let $infos = fn::collect_descendant_infos($root, $negative_types, none, $range_str);
+    return array::map($infos, |$info| $info.id);
+};
 
 
 REMOVE FUNCTION fn::get_mdb_dbnums;

@@ -30,121 +30,9 @@ pub async fn query_filter_all_bran_hangs(refno: RefnoEnum) -> anyhow::Result<Vec
     query_filter_deep_children(refno, &["BRAN", "HANG"]).await
 }
 
-async fn collect_descendant_refnos(
-    refno: RefnoEnum,
-    nouns: &[&str],
-    include_self: bool,
-    skip_deleted: bool,
-) -> anyhow::Result<Vec<RefnoEnum>> {
-    collect_descendant_refnos_with_range(refno, nouns, include_self, skip_deleted, None).await
-}
-
-async fn collect_descendant_refnos_with_range(
-    refno: RefnoEnum,
-    nouns: &[&str],
-    include_self: bool,
-    skip_deleted: bool,
-    range_str: Option<&str>,
-) -> anyhow::Result<Vec<RefnoEnum>> {
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let types_expr = if nouns.is_empty() {
-        "[]".to_string()
-    } else {
-        format!("[{}]", nouns_str)
-    };
-    let pe_key = refno.to_pe_key();
-    let range = range_str.unwrap_or("..");
-
-    let sql = if refno.is_latest() {
-        let collect_modifier = if include_self { "+inclusive" } else { "" };
-        let types_filter = if nouns.is_empty() {
-            "true".to_string()
-        } else {
-            format!("$info.noun IN {}", types_expr)
-        };
-        let skip_condition = if skip_deleted {
-            "!$info.deleted".to_string()
-        } else {
-            "true".to_string()
-        };
-        format!(
-            r#"
-            LET $raw_infos = (SELECT VALUE array::flatten(@.{{{range}{collect_modifier}+collect}}.children).{{ id, noun }} FROM ONLY {root} LIMIT 1) ?: [];
-            LET $infos = array::filter($raw_infos, |$info| {types_filter});
-            SELECT VALUE array::map(
-                array::filter($infos, |$info| {skip_condition}),
-                |$info| record::id($info.id)
-            );
-            "#,
-            root = pe_key,
-            range = range,
-            collect_modifier = collect_modifier,
-            types_filter = types_filter,
-            skip_condition = skip_condition,
-        )
-    } else {
-        let skip_condition = if skip_deleted {
-            "!$info.deleted".to_string()
-        } else {
-            "true".to_string()
-        };
-        let collect_modifier = if include_self { "+inclusive" } else { "" };
-        let types_filter = if nouns.is_empty() {
-            "true".to_string()
-        } else {
-            format!("$info.noun IN {}", types_expr)
-        };
-        format!(
-            r#"
-            LET $pe = {root};
-            LET $dt = <datetime>fn::ses_date($pe);
-            LET $root_pe = fn::newest_pe($pe);
-            LET $raw_infos = (SELECT VALUE array::flatten(@.{{{range}{collect_modifier}+collect}}.children).{{ id, noun }} FROM ONLY $root_pe LIMIT 1) ?: [];
-            LET $infos = array::filter($raw_infos, |$info| {types_filter});
-            LET $filtered = array::filter(
-                $infos,
-                |$info| ({skip_condition}) && (!$info.deleted || <datetime>fn::ses_date($info.id) > $dt)
-            );
-            LET $matched = array::map($filtered, |$info| fn::find_pe_by_datetime($info.id, $dt));
-            SELECT VALUE array::distinct(array::map(
-                array::filter($matched, |$node| $node != NONE),
-                |$node| record::id($node)
-            ));
-            "#,
-            root = pe_key,
-            range = range,
-            collect_modifier = collect_modifier,
-            types_filter = types_filter,
-            skip_condition = skip_condition,
-        )
-    };
-
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => {
-            let idx = if refno.is_latest() { 2 } else { 5 };
-            match response.take::<Vec<RefnoEnum>>(idx) {
-                Ok(data) => Ok(data),
-                Err(e) => {
-                    init_deserialize_error(
-                        "Vec<RefnoEnum>",
-                        &e,
-                        &sql,
-                        &std::panic::Location::caller().to_string(),
-                    );
-                    Err(anyhow!(e.to_string()))
-                }
-            }
-        }
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
-    }
-}
-
 #[cached(result = true)]
 pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    collect_descendant_refnos(refno, &[], true, true).await
+    query_multi_filter_deep_children(&[refno], &[], None).await
 }
 
 #[cached(result = true)]
@@ -181,7 +69,7 @@ pub async fn query_filter_deep_children(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    collect_descendant_refnos(refno, nouns, true, true).await
+    query_multi_filter_deep_children(&[refno], nouns, None).await
 }
 
 /// 查询子孙节点的属性
@@ -285,7 +173,7 @@ pub async fn query_ele_filter_deep_children(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<SPdmsElement>> {
-    let refnos = collect_descendant_refnos(refno, nouns, true, true).await?;
+    let refnos = query_multi_filter_deep_children(&[refno], nouns, None).await?;
     if refnos.is_empty() {
         return Ok(vec![]);
     }
@@ -423,7 +311,7 @@ async fn query_versioned_deep_children_filter_inst(
         }
     } else {
         // 历史版本查询：仍使用原有逻辑确保准确性
-        let candidates = collect_descendant_refnos(refno, nouns, true, false).await?;
+        let candidates = query_multi_filter_deep_children(&[refno], nouns, None).await?;
         if candidates.is_empty() {
             return Ok(vec![]);
         }
@@ -749,4 +637,208 @@ pub async fn get_uda_type_refnos_from_select_refnos(
         }
     }
     Ok(result)
+}
+
+/// 查询可见的几何子孙节点
+///
+/// 该函数调用 SurrealDB 的 `fn::visible_geo_descendants` 函数，用于获取所有可见的几何元素。
+/// 可见几何类型包括：BOX, CYLI, SLCY, CONE, DISH, CTOR, RTOR, PYRA, SNOU, POHE, POLYHE,
+/// EXTR, REVO, FLOOR, PANE, ELCONN, CMPF, WALL, GWALL, SJOI, FITT, PFIT, FIXING, PJOI,
+/// GENSEC, RNODE, PRTELE, GPART, SCREED, PALJ, CABLE, BATT, CMFI, SCOJ, SEVE, SBFI,
+/// STWALL, SCTN, NOZZ
+///
+/// # 参数
+/// - `refno`: 起始节点的引用编号
+/// - `include_self`: 是否包含起始节点自身
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
+///
+/// # 返回值
+/// - `Ok(Vec<RefnoEnum>)`: 所有符合条件的可见几何节点的引用编号列表
+/// - `Err(anyhow::Error)`: 查询失败时返回错误
+///
+/// # 示例
+/// ```ignore
+/// // 查询所有子孙节点中的可见几何元素（不包含自身）
+/// let visible_nodes = query_visible_geo_descendants(refno, false, None).await?;
+///
+/// // 包含自身
+/// let visible_with_self = query_visible_geo_descendants(refno, true, None).await?;
+///
+/// // 限制查询深度为 1-5 层
+/// let visible_range = query_visible_geo_descendants(refno, false, Some("1..5")).await?;
+/// ```
+pub async fn query_visible_geo_descendants(
+    refno: RefnoEnum,
+    include_self: bool,
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let pe_key = refno.to_pe_key();
+    let range = range_str.unwrap_or("..");
+    let include_self_str = if include_self { "true" } else { "false" };
+
+    // 调用 SurrealDB 函数 fn::visible_geo_descendants
+    let sql = format!(
+        r#"SELECT VALUE fn::visible_geo_descendants({}, {}, "{}");"#,
+        pe_key, include_self_str, range
+    );
+
+    match SUL_DB.query(&sql).await {
+        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
+            Ok(result) => Ok(result),
+            Err(e) => {
+                init_deserialize_error(
+                    "Vec<RefnoEnum>",
+                    &e,
+                    &sql,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
+            }
+        },
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            Err(anyhow!(e.to_string()))
+        }
+    }
+}
+
+/// 查询负实体几何子孙节点
+///
+/// 该函数调用 SurrealDB 的 `fn::negative_geo_descendants` 函数，用于获取所有负实体几何元素。
+/// 负实体类型包括：NBOX, NCYL, NLCY, NSBO, NCON, NSNO, NPYR, NDIS, NXTR, NCTO, NRTO, NREV,
+/// NSCY, NSCO, NLSN, NSSP, NSCT, NSRT, NSDS, NSSL, NLPY, NSEX, NSRE
+///
+/// 负实体通常用于表示布尔减运算中的减去部分，例如孔洞、槽等。
+///
+/// # 参数
+/// - `refno`: 起始节点的引用编号
+/// - `include_self`: 是否包含起始节点自身
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
+///
+/// # 返回值
+/// - `Ok(Vec<RefnoEnum>)`: 所有符合条件的负实体几何节点的引用编号列表
+/// - `Err(anyhow::Error)`: 查询失败时返回错误
+///
+/// # 示例
+/// ```ignore
+/// // 查询所有子孙节点中的负实体元素（不包含自身）
+/// let negative_nodes = query_negative_geo_descendants(refno, false, None).await?;
+///
+/// // 包含自身
+/// let negative_with_self = query_negative_geo_descendants(refno, true, None).await?;
+///
+/// // 限制查询深度为 1-3 层
+/// let negative_range = query_negative_geo_descendants(refno, false, Some("1..3")).await?;
+/// ```
+pub async fn query_negative_geo_descendants(
+    refno: RefnoEnum,
+    include_self: bool,
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let pe_key = refno.to_pe_key();
+    let range = range_str.unwrap_or("..");
+    let include_self_str = if include_self { "true" } else { "false" };
+
+    // 调用 SurrealDB 函数 fn::negative_geo_descendants
+    let sql = format!(
+        r#"SELECT VALUE fn::negative_geo_descendants({}, {}, "{}");"#,
+        pe_key, include_self_str, range
+    );
+
+    match SUL_DB.query(&sql).await {
+        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
+            Ok(result) => Ok(result),
+            Err(e) => {
+                init_deserialize_error(
+                    "Vec<RefnoEnum>",
+                    &e,
+                    &sql,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
+            }
+        },
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            Err(anyhow!(e.to_string()))
+        }
+    }
+}
+
+/// 查询有 inst_relate 关系的子孙节点
+///
+/// 该函数调用 SurrealDB 的 `fn::collect_descendant_ids_has_inst` 函数，
+/// 并过滤出有 inst_relate 关系的节点 ID。
+///
+/// # 参数
+/// - `refno`: 起始节点的引用编号
+/// - `types`: 要筛选的节点类型列表（空切片表示不过滤类型）
+/// - `include_self`: 是否包含起始节点自身
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
+///
+/// # 返回值
+/// - `Ok(Vec<RefnoEnum>)`: 所有有 inst_relate 关系的节点 ID 列表
+/// - `Err(anyhow::Error)`: 查询失败时返回错误
+///
+/// # 示例
+/// ```ignore
+/// // 查询所有有 inst_relate 的子孙节点（不包含自身，不限类型）
+/// let nodes = query_collect_descendant_ids_has_inst(refno, &[], false, None).await?;
+///
+/// // 查询特定类型中有 inst_relate 的节点（包含自身）
+/// let typed_nodes = query_collect_descendant_ids_has_inst(
+///     refno, &["BOX", "CYLI", "EQUI"], true, None
+/// ).await?;
+///
+/// // 限制查询深度为 1-5 层
+/// let ranged_nodes = query_collect_descendant_ids_has_inst(
+///     refno, &[], false, Some("1..5")
+/// ).await?;
+/// ```
+pub async fn query_collect_descendant_ids_has_inst(
+    refno: RefnoEnum,
+    types: &[&str],
+    include_self: bool,
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let pe_key = refno.to_pe_key();
+    let range = range_str.unwrap_or("..");
+    let include_self_option = if include_self { "true" } else { "none" };
+
+    // 构建类型数组字符串
+    let types_str = if types.is_empty() {
+        "[]".to_string()
+    } else {
+        let types_list = types
+            .iter()
+            .map(|t| format!("\"{}\"", t))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("[{}]", types_list)
+    };
+
+    // 调用 SurrealDB 函数并过滤出有 inst_relate 的节点
+    let sql = format!(
+        r#"RETURN fn::collect_descendant_ids_has_inst({}, {}, {}, "{}")[? has_inst].id;"#,
+        pe_key, types_str, include_self_option, range
+    );
+
+    match SUL_DB.query(&sql).await {
+        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
+            Ok(result) => Ok(result),
+            Err(e) => {
+                init_deserialize_error(
+                    "Vec<RefnoEnum>",
+                    &e,
+                    &sql,
+                    &std::panic::Location::caller().to_string(),
+                );
+                Err(anyhow!(e.to_string()))
+            }
+        },
+        Err(e) => {
+            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
+            Err(anyhow!(e.to_string()))
+        }
+    }
 }
