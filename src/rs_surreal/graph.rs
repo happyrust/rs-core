@@ -771,7 +771,7 @@ pub async fn query_negative_geo_descendants(
 /// 并过滤出有 inst_relate 关系的节点 ID。
 ///
 /// # 参数
-/// - `refno`: 起始节点的引用编号
+/// - `refnos`: 起始节点的引用编号列表（支持多个节点）
 /// - `types`: 要筛选的节点类型列表（空切片表示不过滤类型）
 /// - `include_self`: 是否包含起始节点自身
 /// - `range_str`: 递归范围字符串，可选参数，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
@@ -782,30 +782,33 @@ pub async fn query_negative_geo_descendants(
 ///
 /// # 示例
 /// ```ignore
-/// // 查询所有有 inst_relate 的子孙节点（不包含自身，不限类型）
-/// let nodes = collect_descendant_ids_has_inst(refno, &[], false, None).await?;
+/// // 查询单个节点的所有子孙节点（不包含自身，不限类型）
+/// let nodes = collect_descendant_ids_has_inst(&[refno], &[], false, None).await?;
+///
+/// // 查询多个节点的子孙节点
+/// let nodes = collect_descendant_ids_has_inst(&[refno1, refno2], &[], false, None).await?;
 ///
 /// // 查询特定类型中有 inst_relate 的节点（包含自身）
 /// let typed_nodes = collect_descendant_ids_has_inst(
-///     refno, &["BOX", "CYLI", "EQUI"], true, None
+///     &[refno], &["BOX", "CYLI", "EQUI"], true, None
 /// ).await?;
 ///
 /// // 限制查询深度为 1-5 层
 /// let ranged_nodes = collect_descendant_ids_has_inst(
-///     refno, &[], false, Some("1..5")
+///     &[refno], &[], false, Some("1..5")
 /// ).await?;
 /// ```
 pub async fn collect_descendant_ids_has_inst(
-    refno: RefnoEnum,
+    refnos: &[RefnoEnum],
     types: &[&str],
     include_self: bool,
     range_str: Option<&str>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let pe_key = refno.to_pe_key();
-    let range = range_str.unwrap_or("..");
-    let include_self_option = if include_self { "true" } else { "none" };
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
 
-    // 构建类型数组字符串
+    // 将类型列表转换为 SQL 字符串数组格式
     let types_str = if types.is_empty() {
         "[]".to_string()
     } else {
@@ -817,11 +820,22 @@ pub async fn collect_descendant_ids_has_inst(
         format!("[{}]", types_list)
     };
 
-    // 调用 SurrealDB 函数并过滤出有 inst_relate 的节点
-    // 注意：当前固定使用 ".." 范围，range_str 参数为未来扩展保留
+    let range = range_str.unwrap_or("..");
+    let include_self_option = if include_self { "true" } else { "none" };
+
+    // 将所有 refno 转换为 PE key 格式并拼接
+    let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
+    let refno_list = refno_keys.join(", ");
+
+    // 构建批量查询语句
     let sql = format!(
-        r#"RETURN fn::collect_descendant_ids_has_inst({}, {}, {})[? has_inst].id;"#,
-        pe_key, types_str, include_self_option
+        r#"
+        -- 批量查询所有起点的子孙节点，使用 fn::collect_descendant_ids_has_inst
+        array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
+            fn::collect_descendant_ids_has_inst($refno, {}, {})[? has_inst]
+        )), |$v| $v != none))
+        "#,
+        refno_list, types_str, include_self_option
     );
 
     match SUL_DB.query(&sql).await {

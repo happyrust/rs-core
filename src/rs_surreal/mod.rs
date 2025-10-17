@@ -36,7 +36,6 @@ pub mod operation;
 
 // XKT 生成相关查询
 pub mod type_hierarchy;
-pub mod xkt_query;
 
 pub use cate::*;
 pub use e3d_db::*;
@@ -54,7 +53,6 @@ pub use spatial::*;
 pub use topology::*;
 pub use type_hierarchy::*;
 pub use uda::*;
-pub use xkt_query::*;
 
 pub use adapter::create_surreal_adapter;
 

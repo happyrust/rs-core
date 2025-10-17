@@ -19,7 +19,7 @@ async fn test_collect_descendant_ids_has_inst() -> anyhow::Result<()> {
     // 测试 1: 查询所有有 inst_relate 的子孙节点（不限类型）
     // ========================================================================
     println!("=== 测试 1: 查询所有有 inst_relate 的子孙节点（不限类型，不包含自身） ===\n");
-    let nodes_with_inst = collect_descendant_ids_has_inst(test_refno, &[], false, None).await?;
+    let nodes_with_inst = collect_descendant_ids_has_inst(&[test_refno], &[], false, None).await?;
 
     println!(
         "找到 {} 个有 inst_relate 的子孙节点\n",
