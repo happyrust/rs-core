@@ -633,7 +633,7 @@ DEFINE FUNCTION fn::collect_descendant_infos(
 REMOVE FUNCTION fn::collect_descendant_ids_has_inst;
 -- 收集子孙节点的 ID 和 has_inst 状态
 -- 返回 { id, has_inst } 结构数组，可以通过 [? has_inst] 过滤出有 inst_relate 的节点
--- 使用固定的递归范围 ".."（无限递归）
+-- $range_str: 递归范围字符串，可选参数，默认为 ".."
 DEFINE FUNCTION fn::collect_descendant_ids_has_inst(
     $root: record,
     $types: array<string>,
@@ -644,7 +644,7 @@ DEFINE FUNCTION fn::collect_descendant_ids_has_inst(
     };
     -- 使用 $inclusive 参数来控制是否包含根节点本身，默认为 false
     let $use_inclusive = $inclusive ?:true;
-    -- 使用固定的递归范围 ".."（无限递归）
+    -- 注：当前固定使用 ".." 范围，未来版本支持动态范围时再使用 $range_str 参数
     let $raw_descendants = if $use_inclusive {
         (SELECT VALUE array::flatten(@.{..+collect+inclusive}.children).{ id, has_inst } FROM ONLY $root LIMIT 1) ?: []
     } else {

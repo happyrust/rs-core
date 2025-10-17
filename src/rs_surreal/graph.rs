@@ -774,7 +774,7 @@ pub async fn query_negative_geo_descendants(
 /// - `refno`: 起始节点的引用编号
 /// - `types`: 要筛选的节点类型列表（空切片表示不过滤类型）
 /// - `include_self`: 是否包含起始节点自身
-/// - `range_str`: 递归范围字符串（当前固定为".."无限递归，为未来扩展保留）
+/// - `range_str`: 递归范围字符串，可选参数，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
 ///
 /// # 返回值
 /// - `Ok(Vec<RefnoEnum>)`: 所有有 inst_relate 关系的节点 ID 列表
@@ -818,7 +818,7 @@ pub async fn collect_descendant_ids_has_inst(
     };
 
     // 调用 SurrealDB 函数并过滤出有 inst_relate 的节点
-    // 注意：当前 SurrealDB 函数固定使用 ".." 范围，range_str 参数为未来扩展保留
+    // 注意：当前固定使用 ".." 范围，range_str 参数为未来扩展保留
     let sql = format!(
         r#"RETURN fn::collect_descendant_ids_has_inst({}, {}, {})[? has_inst].id;"#,
         pe_key, types_str, include_self_option
