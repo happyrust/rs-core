@@ -783,19 +783,19 @@ pub async fn query_negative_geo_descendants(
 /// # 示例
 /// ```ignore
 /// // 查询所有有 inst_relate 的子孙节点（不包含自身，不限类型）
-/// let nodes = query_collect_descendant_ids_has_inst(refno, &[], false, None).await?;
+/// let nodes = collect_descendant_ids_has_inst(refno, &[], false, None).await?;
 ///
 /// // 查询特定类型中有 inst_relate 的节点（包含自身）
-/// let typed_nodes = query_collect_descendant_ids_has_inst(
+/// let typed_nodes = collect_descendant_ids_has_inst(
 ///     refno, &["BOX", "CYLI", "EQUI"], true, None
 /// ).await?;
 ///
 /// // 限制查询深度为 1-5 层
-/// let ranged_nodes = query_collect_descendant_ids_has_inst(
+/// let ranged_nodes = collect_descendant_ids_has_inst(
 ///     refno, &[], false, Some("1..5")
 /// ).await?;
 /// ```
-pub async fn query_collect_descendant_ids_has_inst(
+pub async fn collect_descendant_ids_has_inst(
     refno: RefnoEnum,
     types: &[&str],
     include_self: bool,

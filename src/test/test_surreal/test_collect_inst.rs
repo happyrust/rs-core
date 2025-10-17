@@ -1,10 +1,10 @@
-use crate::rs_surreal::graph::query_collect_descendant_ids_has_inst;
+use crate::rs_surreal::graph::collect_descendant_ids_has_inst;
 use crate::{RefnoEnum, init_surreal};
 
 #[tokio::test]
 #[ignore] // 需要真实数据库连接，使用 cargo test test_collect_descendant_ids_has_inst --lib -- --ignored --test-threads=1 --nocapture 运行
 async fn test_collect_descendant_ids_has_inst() -> anyhow::Result<()> {
-    println!("\n=== 测试 query_collect_descendant_ids_has_inst 函数 ===\n");
+    println!("\n=== 测试 collect_descendant_ids_has_inst 函数 ===\n");
 
     // 初始化数据库连接（会自动加载 common.surql）
     println!("初始化数据库连接...");
@@ -19,8 +19,7 @@ async fn test_collect_descendant_ids_has_inst() -> anyhow::Result<()> {
     // 测试 1: 查询所有有 inst_relate 的子孙节点（不限类型）
     // ========================================================================
     println!("=== 测试 1: 查询所有有 inst_relate 的子孙节点（不限类型，不包含自身） ===\n");
-    let nodes_with_inst =
-        query_collect_descendant_ids_has_inst(test_refno, &[], false, None).await?;
+    let nodes_with_inst = collect_descendant_ids_has_inst(test_refno, &[], false, None).await?;
 
     println!(
         "找到 {} 个有 inst_relate 的子孙节点\n",
