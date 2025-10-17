@@ -456,6 +456,12 @@ pub async fn save_pts_to_surreal(vec3_map: &DashMap<u64, String>) {
 /// 2. 计算每个实例的全局 AABB（通过变换合并所有几何 AABB）
 /// 3. 批量更新到 SurrealDB
 /// 4. 保存 AABB 数据到 aabb 表中去重存储
+///
+/// # SQL 说明
+///
+/// - world_trans.d != none：仅处理拥有世界变换的实例
+/// - 子查询 out->geo_relate 仅保留 out.aabb.d != none 且 trans.d != none 的几何（有局部AABB且有变换）
+/// - 若 !replace_exist 则追加条件 and aabb=none，避免覆盖已存在的实例 AABB（增量回填）
 pub async fn update_inst_relate_aabbs_by_refnos(
     refnos: &[RefnoEnum],
     replace_exist: bool,
