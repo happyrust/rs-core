@@ -29,9 +29,7 @@ pub struct SPdmsElement {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub children: Option<Vec<RecordId>>,
 
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status_code: Option<String>,
+    pub status_code: String,
     pub cata_hash: String,
     ///锁定模型
     pub lock: bool,
