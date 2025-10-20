@@ -1,0 +1,20 @@
+{
+  "ELBO": {
+    "NAME": {
+      "data_type": "TEXT",
+      "data_type_code": 4,
+      "default_flag": 1,
+      "default_value": null,
+      "hash": 639374,
+      "name": "NAME"
+    },
+    "TYPE": {
+      "data_type": "INT",
+      "data_type_code": 3,
+      "default_flag": 1,
+      "default_value": null,
+      "hash": 642215,
+      "name": "TYPE"
+    }
+  }
+}

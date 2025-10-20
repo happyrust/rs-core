@@ -1338,15 +1338,15 @@ impl NamedAttrMap {
             }
 
             //如果是土建模型 "DRNS", "DRNE"
-            if let Some(drns) = self.get_as_string("DRNS")
-                && let Some(drne) = self.get_as_string("DRNE")
-            {
-                std::hash::Hash::hash(&drns, &mut hasher);
-                std::hash::Hash::hash(&drne, &mut hasher);
-                let poss = self.get_vec3("POSS").unwrap_or_default();
-                let pose = self.get_vec3("POSE").unwrap_or_default();
-                let v = (pose - poss).length();
-                hash_f32(v, &mut hasher);
+            if let Some(drns) = self.get_as_string("DRNS") {
+                if let Some(drne) = self.get_as_string("DRNE") {
+                    std::hash::Hash::hash(&drns, &mut hasher);
+                    std::hash::Hash::hash(&drne, &mut hasher);
+                    let poss = self.get_vec3("POSS").unwrap_or_default();
+                    let pose = self.get_vec3("POSE").unwrap_or_default();
+                    let v = (pose - poss).length();
+                    hash_f32(v, &mut hasher);
+                }
             }
             //JUSL is adjus in wire calculation, so here we should make hash unique by jusl
             let jusl = self.get_str_or_default("JUSL");

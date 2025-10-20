@@ -19,6 +19,7 @@ extern crate phf;
 pub mod accel_tree;
 pub mod aios_db_mgr;
 pub mod aql_types;
+pub mod attlib_parser;
 pub mod axis_param;
 
 pub mod basic;
@@ -240,7 +241,8 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to sign in: {}", e),
-        })?;
+        })
+        .unwrap();
 
     // Define common functions
     define_common_functions(db_option.get_surreal_script_dir())

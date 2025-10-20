@@ -1,211 +1,295 @@
 #!/usr/bin/env python3
 """
-AVEVA E3D attlib.dat 文件解析器
-基于 core.dll 逆向工程分析结果编写
-
-文件格式：
-- 偏移 0x000: 文件头（字符串标识）
-- 偏移 0x800: 8个数据段指针
-- 偏移 0x1000+: 实际数据区
+attlib.dat 解析器 - Python 版本
+用于快速测试和调试属性库文件格式
 """
 
 import struct
 import json
-import sys
-from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, asdict
 
+# 常量定义
+PAGE_SIZE = 2048
+WORDS_PER_PAGE = 512
+MIN_HASH = 531442
+MAX_HASH = 387951929
+PAGE_SWITCH_MARK = 0x00000000
+SEGMENT_END_MARK = 0xFFFFFFFF
+DATA_REGION_START = 0x1000
+SEGMENT_POINTERS_OFFSET = 0x0800
 
 @dataclass
-class AttributeInfo:
-    """属性信息"""
-    hash: int           # 属性哈希ID
-    type_code: int      # 类型代码
-    flags: int          # 标志位
-    offset: int         # 在Noun实例中的偏移
-    name: str = ""      # 属性名称
-    att_type: str = ""  # 属性类型字符串
-
+class AttlibAttrIndex:
+    attr_hash: int
+    combined: int
+    
+    def record_num(self) -> int:
+        return self.combined // 512
+    
+    def slot_offset(self) -> int:
+        return self.combined % 512
 
 @dataclass
-class NounInfo:
-    """Noun信息"""
-    hash: int           # Noun哈希ID
-    name: str           # Noun名称
-    attributes: List[AttributeInfo]  # 属性列表
-
+class AttlibAttrDefinition:
+    attr_hash: int
+    data_type: int
+    default_flag: int
+    default_value: any
 
 class AttlibParser:
-    """attlib.dat 解析器"""
-
-    # 属性类型映射（基于 E3D 定义）
-    ATT_TYPE_MAP = {
-        1: "ELEMENT",    # 元素引用
-        2: "INTEGER",    # 整数
-        3: "REAL",       # 实数/浮点
-        4: "STRING",     # 字符串
-        5: "WORD",       # 单词
-        6: "BOOL",       # 布尔
-        7: "INTVEC",     # 整数数组
-        8: "REALVEC",    # 实数数组
-    }
-
-    def __init__(self, filename: str):
-        self.filename = filename
-        self.data = None
-        self.nouns: Dict[str, NounInfo] = {}
-
-    def load_file(self):
-        """加载文件到内存"""
-        with open(self.filename, 'rb') as f:
-            self.data = f.read()
-        print(f"✓ 加载文件: {self.filename} ({len(self.data)} 字节)")
-
-    def read_int32(self, offset: int, big_endian: bool = True) -> int:
-        """读取32位整数"""
-        if offset + 4 > len(self.data):
-            return 0
-        fmt = '>I' if big_endian else '<I'
-        return struct.unpack(fmt, self.data[offset:offset+4])[0]
-
-    def read_string(self, offset: int, max_len: int = 256) -> str:
-        """读取以NULL结尾的字符串"""
-        if offset >= len(self.data):
-            return ""
-        end = offset
-        while end < len(self.data) and end < offset + max_len and self.data[end] != 0:
-            end += 1
-        try:
-            return self.data[offset:end].decode('ascii', errors='ignore')
-        except:
-            return ""
-
-    def parse_header(self) -> Tuple[List[int], str]:
-        """解析文件头"""
-        # 读取偏移 0x800 的8个数据段指针
-        segment_offsets = []
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.file = open(file_path, 'rb')
+        self.attr_index: Dict[int, AttlibAttrIndex] = {}
+        self.attr_definitions: Dict[int, AttlibAttrDefinition] = {}
+        self.segment_pointers = self._read_segment_pointers()
+        self.page_cache: Dict[int, List[int]] = {}
+    
+    def _read_segment_pointers(self) -> List[int]:
+        """读取段指针表"""
+        self.file.seek(SEGMENT_POINTERS_OFFSET)
+        pointers = []
         for i in range(8):
-            offset = 0x800 + i * 4
-            segment_offsets.append(self.read_int32(offset))
+            data = self.file.read(4)
+            ptr = struct.unpack('>I', data)[0]  # 大端序
+            pointers.append(ptr)
+        
+        print("段指针表:")
+        for i, ptr in enumerate(pointers):
+            print(f"  段 {i}: 0x{ptr:08X} (页号: {ptr})")
+        
+        return pointers
+    
+    def read_page(self, page_num: int) -> List[int]:
+        """读取指定页号的页面"""
+        if page_num in self.page_cache:
+            return self.page_cache[page_num]
+        
+        file_offset = DATA_REGION_START + page_num * PAGE_SIZE
+        self.file.seek(file_offset)
+        page_data = self.file.read(PAGE_SIZE)
+        
+        words = []
+        for i in range(WORDS_PER_PAGE):
+            word_bytes = page_data[i*4:(i+1)*4]
+            word = struct.unpack('>I', word_bytes)[0]  # 大端序
+            words.append(word)
+        
+        self.page_cache[page_num] = words
+        return words
+    
+    def load_atgtdf(self):
+        """加载 ATGTDF 段（属性定义表）"""
+        print("\n加载 ATGTDF 段（属性定义）")
+        # 根据 IDA Pro 分析，段指针 [0] 应该指向 ATGTDF
+        start_page = self.segment_pointers[0]
+        print(f"  使用段指针 [0] = {start_page} 作为起点")
 
-        # 读取版本信息（从文件头）
-        version = ""
-        # 前面的数据是编码的字符串 "Attribute Data File"
+        page_num = start_page
+        word_idx = 0
+        record_count = 0
 
-        print(f"✓ 数据段指针: {[hex(x) for x in segment_offsets]}")
-        return segment_offsets, version
+        while True:
+            words = self.read_page(page_num)
 
-    def parse_attribute_data(self, start_offset: int, count: int) -> List[AttributeInfo]:
-        """
-        解析属性数据段
-        每个属性记录格式 (16字节):
-          +0: hash (4字节)
-          +4: type_code (4字节)
-          +8: flags (4字节)
-          +12: offset (4字节)
-        """
-        attributes = []
-        offset = start_offset
+            while word_idx < WORDS_PER_PAGE:
+                word = words[word_idx]
+                word_idx += 1
 
-        for i in range(count):
-            if offset + 16 > len(self.data):
-                break
+                if word == PAGE_SWITCH_MARK:
+                    page_num += 1
+                    word_idx = 0
+                    break
 
-            hash_val = self.read_int32(offset)
-            type_code = self.read_int32(offset + 4)
-            flags = self.read_int32(offset + 8)
-            attr_offset = self.read_int32(offset + 12)
+                if word == SEGMENT_END_MARK:
+                    print(f"  ATGTDF 加载完成，共 {record_count} 条记录")
+                    return
+                
+                # 检查是否为有效哈希值
+                if word < MIN_HASH or word > MAX_HASH:
+                    continue
+                
+                attr_hash = word
+                
+                # 读取 data_type
+                if word_idx >= WORDS_PER_PAGE:
+                    page_num += 1
+                    word_idx = 0
+                    words = self.read_page(page_num)
+                
+                data_type = words[word_idx]
+                word_idx += 1
+                
+                # 读取 default_flag
+                if word_idx >= WORDS_PER_PAGE:
+                    page_num += 1
+                    word_idx = 0
+                    words = self.read_page(page_num)
+                
+                default_flag = words[word_idx]
+                word_idx += 1
+                
+                # 读取默认值
+                default_value = self._read_default_value(words, word_idx, page_num, data_type, default_flag)
+                
+                self.attr_definitions[attr_hash] = AttlibAttrDefinition(
+                    attr_hash=attr_hash,
+                    data_type=data_type,
+                    default_flag=default_flag,
+                    default_value=default_value
+                )
+                
+                if record_count < 5:
+                    print(f"    [{record_count}] hash=0x{attr_hash:08X}, type={data_type}, flag={default_flag}")
+                
+                record_count += 1
+    
+    def _read_default_value(self, words, word_idx, page_num, data_type, default_flag):
+        """读取默认值"""
+        if default_flag == 1:
+            return None
+        
+        if default_flag != 2:
+            return None
+        
+        if data_type == 4:  # TEXT
+            if word_idx >= WORDS_PER_PAGE:
+                page_num += 1
+                word_idx = 0
+                words = self.read_page(page_num)
+            
+            length = words[word_idx]
+            text_data = []
+            word_idx += 1
+            
+            for _ in range(length):
+                if word_idx >= WORDS_PER_PAGE:
+                    page_num += 1
+                    word_idx = 0
+                    words = self.read_page(page_num)
+                
+                text_data.append(words[word_idx])
+                word_idx += 1
+            
+            return {"type": "TEXT", "data": text_data}
+        else:
+            # 标量类型
+            if word_idx >= WORDS_PER_PAGE:
+                page_num += 1
+                word_idx = 0
+                words = self.read_page(page_num)
+            
+            scalar = words[word_idx]
+            return {"type": "SCALAR", "data": scalar}
+    
+    def load_atgtix(self):
+        """加载 ATGTIX 段（属性索引表）"""
+        print("\n加载 ATGTIX 段（属性索引）")
+        print("  从页 0 开始扫描")
+        
+        page_num = 0
+        word_idx = 0
+        record_count = 0
+        
+        while True:
+            words = self.read_page(page_num)
+            
+            while word_idx < WORDS_PER_PAGE:
+                word = words[word_idx]
+                word_idx += 1
+                
+                if word == PAGE_SWITCH_MARK:
+                    page_num += 1
+                    word_idx = 0
+                    break
+                
+                if word == SEGMENT_END_MARK:
+                    print(f"  ATGTIX 加载完成，共 {record_count} 条记录")
+                    return
+                
+                if word < MIN_HASH or word > MAX_HASH:
+                    continue
+                
+                attr_hash = word
+                
+                if word_idx >= WORDS_PER_PAGE:
+                    page_num += 1
+                    word_idx = 0
+                    words = self.read_page(page_num)
+                
+                combined = words[word_idx]
+                word_idx += 1
+                
+                self.attr_index[attr_hash] = AttlibAttrIndex(
+                    attr_hash=attr_hash,
+                    combined=combined
+                )
+                
+                if record_count < 5:
+                    print(f"    [{record_count}] hash=0x{attr_hash:08X}, combined=0x{combined:08X}")
+                
+                record_count += 1
+    
+    def load_all(self):
+        """加载所有段"""
+        self.load_atgtdf()
+        self.load_atgtix()
+    
+    def get_attribute(self, hash_val: int) -> Optional[AttlibAttrDefinition]:
+        """获取属性定义"""
+        return self.attr_definitions.get(hash_val)
+    
+    def close(self):
+        """关闭文件"""
+        self.file.close()
 
-            # 跳过无效记录
-            if hash_val == 0:
-                offset += 16
-                continue
-
-            att_type = self.ATT_TYPE_MAP.get(type_code, f"UNKNOWN_{type_code}")
-
-            attr = AttributeInfo(
-                hash=hash_val,
-                type_code=type_code,
-                flags=flags,
-                offset=attr_offset,
-                att_type=att_type
-            )
-            attributes.append(attr)
-            offset += 16
-
-        return attributes
-
-    def parse(self):
-        """解析整个文件"""
-        print("\n开始解析 attlib.dat...")
-
-        # 1. 解析文件头
-        segment_offsets, version = self.parse_header()
-
-        # 2. 尝试解析属性数据
-        # 基于逆向工程，数据段3通常存储Attribute定义
-        attr_segment = segment_offsets[3] if len(segment_offsets) > 3 else 0x1000
-
-        print(f"\n尝试从偏移 0x{attr_segment:x} 解析属性数据...")
-
-        # 预估属性数量（根据文件大小）
-        estimated_count = min(10000, (len(self.data) - attr_segment) // 16)
-        attributes = self.parse_attribute_data(attr_segment, estimated_count)
-
-        print(f"✓ 解析出 {len(attributes)} 个属性定义")
-
-        # 3. 显示前20个属性样本
-        print("\n属性样本（前20个）:")
-        for i, attr in enumerate(attributes[:20]):
-            print(f"  {i+1:3d}. Hash=0x{attr.hash:08x}, Type={attr.att_type:10s}, Offset={attr.offset:3d}, Flags=0x{attr.flags:x}")
-
-        return attributes
-
-    def export_json(self, attributes: List[AttributeInfo], output_file: str):
-        """导出为JSON格式"""
-        # 按哈希值分组
-        attr_dict = {}
-        for attr in attributes:
-            key = f"attr_{attr.hash:08x}"
-            attr_dict[key] = {
-                "hash": attr.hash,
-                "hash_hex": f"0x{attr.hash:08x}",
-                "type": attr.att_type,
-                "type_code": attr.type_code,
-                "offset": attr.offset,
-                "flags": attr.flags,
-                "flags_hex": f"0x{attr.flags:x}"
-            }
-
-        output_data = {
-            "source_file": self.filename,
-            "attribute_count": len(attributes),
-            "attributes": attr_dict
-        }
-
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(output_data, f, indent=2, ensure_ascii=False)
-
-        print(f"\n✓ 已导出到: {output_file}")
-
-
-def main():
-    input_file = "data/attlib-2.10.dat"
-    output_file = "data/attlib_parsed.json"
-
-    if len(sys.argv) > 1:
-        input_file = sys.argv[1]
-    if len(sys.argv) > 2:
-        output_file = sys.argv[2]
-
-    parser = AttlibParser(input_file)
-    parser.load_file()
-    attributes = parser.parse()
-    parser.export_json(attributes, output_file)
-
-    print("\n✅ 解析完成！")
-
+def data_type_to_string(data_type: int) -> str:
+    """将数据类型代码转换为字符串"""
+    types = {
+        1: "LOG",
+        2: "REAL",
+        3: "INT",
+        4: "TEXT"
+    }
+    return types.get(data_type, f"UNKNOWN({data_type})")
 
 if __name__ == "__main__":
-    main()
+    parser = AttlibParser("data/attlib.dat")
+    parser.load_all()
+
+    print("\n=== 所有找到的属性 ===")
+    print(f"ATGTIX 索引: {len(parser.attr_index)} 条")
+    print(f"ATGTDF 定义: {len(parser.attr_definitions)} 条")
+
+    if parser.attr_definitions:
+        print("\nATGTDF 中的属性:")
+        for i, (hash_val, attr) in enumerate(list(parser.attr_definitions.items())[:10]):
+            print(f"  [{i}] hash=0x{hash_val:08X}, type={data_type_to_string(attr.data_type)}, flag={attr.default_flag}")
+
+    if parser.attr_index:
+        print("\nATGTIX 中的所有属性:")
+        for i, (hash_val, idx) in enumerate(parser.attr_index.items()):
+            print(f"  [{i}] hash=0x{hash_val:08X} ({hash_val}), combined=0x{idx.combined:08X}")
+
+    # 测试 ELBO 属性
+    elbo_attrs = {
+        "POS": 545713,
+        "ORI": 538503,
+        "NAME": 639374,
+        "TYPE": 642215,
+    }
+
+    print("\n=== ELBO 属性查询 ===")
+    for name, hash_val in elbo_attrs.items():
+        attr = parser.get_attribute(hash_val)
+        if attr:
+            print(f"✓ {name} (hash: {hash_val})")
+            print(f"  data_type: {data_type_to_string(attr.data_type)}")
+            print(f"  default_flag: {attr.default_flag}")
+            print(f"  default_value: {attr.default_value}")
+        else:
+            print(f"✗ {name} (hash: {hash_val}) - NOT FOUND")
+
+    parser.close()
+

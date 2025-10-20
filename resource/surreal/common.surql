@@ -687,9 +687,11 @@ DEFINE FUNCTION fn::negative_geo_descendants($root: record, $include_self: bool,
 };
 
 
-REMOVE FUNCTION fn::get_mdb_dbnums;
--- 获取MDB数据库编号
-DEFINE FUNCTION fn::get_mdb_dbnums($mdb: string, $db_type: int) {
+REMOVE FUNCTION fn::query_mdb_db_nums;
+-- 查询MDB数据库编号
+-- 参数：$mdb - MDB名称, $db_type - 数据库类型
+-- 返回：数据库编号数组
+DEFINE FUNCTION fn::query_mdb_db_nums($mdb: string, $db_type: int) {
         let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
         return (select value dbnum from (
             select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o

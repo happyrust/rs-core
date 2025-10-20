@@ -120,7 +120,7 @@ clap = { version = "^4.0", features = ["derive"] }
 # truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling", optional = true }
 # truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo", optional = true }
 # truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio", optional = true }
-rkyv = { version = "0.8.12" }
+rkyv = { version = "0.8.12", features = ["alloc"] }
 serde_with = { version = "3.9.0", features = ["macros"] }
 
 

@@ -1000,7 +1000,8 @@ pub async fn query_single_by_paths(
 
 ///通过类型过滤所有的参考号
 pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<Vec<RefU64>> {
-    let dbnums = query_mdb_db_nums(module).await?;
+    let mdb = crate::get_db_option().mdb_name.clone();
+    let dbnums = query_mdb_db_nums(Some(mdb), module).await?;
     let mut response = SUL_DB
         .query(format!(
             r#"select value record::id(id) from {} where dbnum in [{}]"#,
@@ -1111,7 +1112,7 @@ pub async fn query_same_type_refnos(
     module: DBType,
     get_owner: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let dbnums = query_mdb_db_nums(module).await?;
+    let dbnums = query_mdb_db_nums(Some(mdb.clone()), module).await?;
     let mut sql = format!(
         r#"select value id from type::table({}.noun) where REFNO.dbnum in [{}] and !deleted"#,
         refno.to_pe_key(),

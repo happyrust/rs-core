@@ -1,3 +1,4 @@
+use crate::helper::to_e3d_name;
 // 导入所需的依赖
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
@@ -55,7 +56,7 @@ pub async fn get_mdb_world_site_ele_nodes(
         mdb = mdb
     );
     // 执行查询
-    let mut response = SUL_DB.query(&sql).await.unwrap();
+    let mut response = SUL_DB.query(&sql).await?;
     // 获取结果
     let mut nodes: Vec<EleTreeNode> = response.take(2)?;
     // 处理节点顺序和名称
@@ -233,26 +234,20 @@ pub async fn query_use_cate_refnos_by_dbnum(
 /// 查询MDB数据库编号
 ///
 /// # 参数
+/// * `mdb` - MDB名称
 /// * `module` - 数据库类型
 ///
 /// # 返回值
 /// * `Vec<u32>` - 数据库编号列表
 #[cached(result = true)]
-pub async fn query_mdb_db_nums(module: DBType) -> anyhow::Result<Vec<u32>> {
+pub async fn query_mdb_db_nums(mdb: Option<String>, module: DBType) -> anyhow::Result<Vec<u32>> {
     let db_type: u8 = module.into();
-    let mdb = &get_db_option().mdb_name;
-    let mdb = crate::helper::to_e3d_name(mdb);
-    let mut response = SUL_DB
-        .query(r#"
-            let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
-            select value dbnum from (select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
-                from WORL where REFNO.dbnum in $dbnos order by o);
-        "#)
-        .bind(("mdb", mdb))
-        .bind(("db_type", db_type))
-        .await?;
-    dbg!(&response);
-    let pe: Vec<u32> = response.take(1)?;
+    let mdb = mdb.unwrap_or_else(|| crate::get_db_option().mdb_name.clone());
+    let processed_mdb = crate::helper::to_e3d_name(&mdb).into_owned();
+    let sql = format!("select value dbnum from CURD.refno where STYP={db_type} and NAME=$mdb");
+    println!("Executing SQL: {}", sql);
+    let mut response = SUL_DB.query(&sql).bind(("mdb", processed_mdb)).await?;
+    let pe: Vec<u32> = response.take(0)?;
     Ok(pe)
 }
 
@@ -314,7 +309,7 @@ pub async fn get_site_pes_by_dbnum(dbnum: u32) -> anyhow::Result<Vec<SPdmsElemen
     let mut response = SUL_DB
         .query(r#"
             let $world = (select value REFNO from WORL where REFNO.dbnum = $dbnum and REFNO.noun = 'WORL' limit 1)[0];
-            select value in.* from $world<-pe_owner where in.noun = 'SITE' and in.deleted = false
+            select status_code ?? NONE as status_code,  * from $world.children where noun = 'SITE' and deleted = false;
         "#)
         .bind(("dbnum", dbnum))
         .await?;
@@ -331,13 +326,15 @@ pub async fn get_site_pes_by_dbnum(dbnum: u32) -> anyhow::Result<Vec<SPdmsElemen
 /// * `Option<SPdmsElement>` - 世界节点元素
 #[cached(result = true)]
 pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
+    let mdb_name = to_e3d_name(&mdb);
     let sql = format!(
         " \
             let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
-            (select value REFNO.* from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
-        mdb
+            (select * from WORL.REFNO where dbnum=$f and noun='WORL' limit 1)[0]",
+        mdb_name
     );
-    let mut response = SUL_DB.query(sql).await.unwrap();
+    let mut response = SUL_DB.query(sql).await?;
+    dbg!(&response);
     let pe: Option<SPdmsElement> = response.take(1)?;
     Ok(pe)
 }
@@ -405,7 +402,8 @@ mod tests {
 
         println!("🧪 测试 query_mdb_db_nums");
 
-        let result = query_mdb_db_nums(DBType::DESI).await;
+        let mdb = get_db_option().mdb_name.clone();
+        let result = query_mdb_db_nums(Some(mdb), DBType::DESI).await;
         assert!(result.is_ok(), "查询数据库编号应该成功");
 
         let db_nums = result.unwrap();
@@ -420,7 +418,9 @@ mod tests {
     async fn test_get_site_pes_by_dbnum() {
         init_test_surreal().await;
 
-        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        let db_nums = query_mdb_db_nums(Some(get_db_option().mdb_name.clone()), DBType::DESI)
+            .await
+            .unwrap();
         if db_nums.is_empty() {
             println!("⚠️  没有可用的数据库编号，跳过测试");
             return;
@@ -449,7 +449,9 @@ mod tests {
     async fn test_query_type_refnos_by_dbnum() {
         init_test_surreal().await;
 
-        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        let db_nums = query_mdb_db_nums(Some(get_db_option().mdb_name.clone()), DBType::DESI)
+            .await
+            .unwrap();
         if db_nums.is_empty() {
             println!("⚠️  没有可用的数据库编号，跳过测试");
             return;
@@ -477,7 +479,9 @@ mod tests {
     async fn test_query_type_refnos_by_dbnum_with_children() {
         init_test_surreal().await;
 
-        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        let db_nums = query_mdb_db_nums(Some(get_db_option().mdb_name.clone()), DBType::DESI)
+            .await
+            .unwrap();
         if db_nums.is_empty() {
             println!("⚠️  没有可用的数据库编号，跳过测试");
             return;
@@ -543,7 +547,9 @@ mod tests {
     async fn test_query_type_refnos_by_dbnums() {
         init_test_surreal().await;
 
-        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        let db_nums = query_mdb_db_nums(Some(get_db_option().mdb_name.clone()), DBType::DESI)
+            .await
+            .unwrap();
         if db_nums.is_empty() {
             println!("⚠️  没有可用的数据库编号，跳过测试");
             return;
@@ -567,7 +573,9 @@ mod tests {
     async fn test_query_use_cate_refnos_by_dbnum() {
         init_test_surreal().await;
 
-        let db_nums = query_mdb_db_nums(DBType::DESI).await.unwrap();
+        let db_nums = query_mdb_db_nums(Some(get_db_option().mdb_name.clone()), DBType::DESI)
+            .await
+            .unwrap();
         if db_nums.is_empty() {
             println!("⚠️  没有可用的数据库编号，跳过测试");
             return;
@@ -586,4 +594,12 @@ mod tests {
         let refnos = result.unwrap();
         println!("   ✅ 查询到 {} 个有类别信息的参考号", refnos.len());
     }
+}
+
+/// 测试简单的数据库连接
+pub async fn test_simple_query() -> anyhow::Result<()> {
+    let mut response = SUL_DB.query("RETURN 1").await?;
+    let result: Vec<i32> = response.take(0)?;
+    println!("Simple query result: {:?}", result);
+    Ok(())
 }

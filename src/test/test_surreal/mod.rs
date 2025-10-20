@@ -19,6 +19,8 @@ pub mod test_simple_refno;
 
 pub mod test_graph;
 
+pub mod test_query_insts;
+
 pub mod test_serde;
 
 pub mod test_spatial;

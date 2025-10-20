@@ -1,0 +1,490 @@
+{
+  "PIPE": {
+    "BORE": {
+      "name": "BORE",
+      "hash": 643385,
+      "offset": 0,
+      "default_val": {
+        "DoubleType": 0.0
+      },
+      "att_type": "DOUBLE"
+    },
+    "BUIL": {
+      "name": "BUIL",
+      "hash": 774767,
+      "offset": 0,
+      "default_val": {
+        "BoolType": false
+      },
+      "att_type": "BOOL"
+    },
+    "CARE": {
+      "name": "CARE",
+      "hash": 643008,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "CASR": {
+      "name": "CASR",
+      "hash": 899616,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "CCEN": {
+      "name": "CCEN",
+      "hash": 810732,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "CCLA": {
+      "name": "CCLA",
+      "hash": 559956,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "CDRG": {
+      "name": "CDRG",
+      "hash": 682455,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "CNUM": {
+      "name": "CNUM",
+      "hash": 803010,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "DELDSG": {
+      "name": "DELDSG",
+      "hash": 111158788,
+      "offset": 0,
+      "default_val": {
+        "WordType": "unset"
+      },
+      "att_type": "WORD"
+    },
+    "DESC": {
+      "name": "DESC",
+      "hash": 604480,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "DRRF": {
+      "name": "DRRF",
+      "hash": 663151,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "DSCO": {
+      "name": "DSCO",
+      "hash": 829390,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "DUTY": {
+      "name": "DUTY",
+      "hash": 1038667,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "EREC": {
+      "name": "EREC",
+      "hash": 594626,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "FAREA": {
+      "name": "FAREA",
+      "hash": 1174452,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "FDRA": {
+      "name": "FDRA",
+      "hash": 564360,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "FLUR": {
+      "name": "FLUR",
+      "hash": 901374,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "FPLINE": {
+      "name": "FPLINE",
+      "hash": 79902483,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "FRDR": {
+      "name": "FRDR",
+      "hash": 889143,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "FREV": {
+      "name": "FREV",
+      "hash": 968604,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "FSTAT": {
+      "name": "FSTAT",
+      "hash": 11195043,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "FUNC": {
+      "name": "FUNC",
+      "hash": 601269,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "INPRTR": {
+      "name": "INPRTR",
+      "hash": 269806932,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "INSC": {
+      "name": "INSC",
+      "hash": 604728,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "ISOH": {
+      "name": "ISOH",
+      "hash": 700362,
+      "offset": 0,
+      "default_val": {
+        "BoolType": false
+      },
+      "att_type": "BOOL"
+    },
+    "ISPE": {
+      "name": "ISPE",
+      "hash": 642042,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "JMAX": {
+      "name": "JMAX",
+      "hash": 1004923,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "LISS": {
+      "name": "LISS",
+      "hash": 919524,
+      "offset": 0,
+      "default_val": {
+        "BoolType": false
+      },
+      "att_type": "BOOL"
+    },
+    "LNTP": {
+      "name": "LNTP",
+      "hash": 861339,
+      "offset": 0,
+      "default_val": {
+        "WordType": "unset"
+      },
+      "att_type": "WORD"
+    },
+    "LOCK": {
+      "name": "LOCK",
+      "hash": 750558,
+      "offset": 0,
+      "default_val": {
+        "BoolType": false
+      },
+      "att_type": "BOOL"
+    },
+    "LOOS": {
+      "name": "LOOS",
+      "hash": 916770,
+      "offset": 0,
+      "default_val": {
+        "BoolType": false
+      },
+      "att_type": "BOOL"
+    },
+    "MATR": {
+      "name": "MATR",
+      "hash": 900355,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "MDSYSF": {
+      "name": "MDSYSF",
+      "hash": 97228309,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "NAME": {
+      "name": "NAME",
+      "hash": 639374,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "ORRF": {
+      "name": "ORRF",
+      "hash": 663162,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "OUPRTR": {
+      "name": "OUPRTR",
+      "hash": 269807127,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "OWNER": {
+      "name": "OWNER",
+      "hash": 10206636,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "PMAX": {
+      "name": "PMAX",
+      "hash": 1004929,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "PRES": {
+      "name": "PRES",
+      "hash": 909565,
+      "offset": 0,
+      "default_val": {
+        "DoubleType": 0.0
+      },
+      "att_type": "DOUBLE"
+    },
+    "PSPE": {
+      "name": "PSPE",
+      "hash": 642049,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "PTSP": {
+      "name": "PTSP",
+      "hash": 860776,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "PURP": {
+      "name": "PURP",
+      "hash": 860074,
+      "offset": 0,
+      "default_val": {
+        "WordType": "unset"
+      },
+      "att_type": "WORD"
+    },
+    "REV": {
+      "name": "REV",
+      "hash": 547632,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "RLST": {
+      "name": "RLST",
+      "hash": 939294,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "SAFC": {
+      "name": "SAFC",
+      "hash": 594910,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "SHOP": {
+      "name": "SHOP",
+      "hash": 857539,
+      "offset": 0,
+      "default_val": {
+        "BoolType": false
+      },
+      "att_type": "BOOL"
+    },
+    "SKEY": {
+      "name": "SKEY",
+      "hash": 1027477,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "SLOREF": {
+      "name": "SLOREF",
+      "hash": 89647660,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "SMAX": {
+      "name": "SMAX",
+      "hash": 1004932,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    },
+    "SPLP": {
+      "name": "SPLP",
+      "hash": 855568,
+      "offset": 0,
+      "default_val": {
+        "StringType": ""
+      },
+      "att_type": "STRING"
+    },
+    "TEMP": {
+      "name": "TEMP",
+      "hash": 856001,
+      "offset": 0,
+      "default_val": {
+        "DoubleType": 0.0
+      },
+      "att_type": "DOUBLE"
+    },
+    "TSPE": {
+      "name": "TSPE",
+      "hash": 642053,
+      "offset": 0,
+      "default_val": {
+        "ElementType": ""
+      },
+      "att_type": "ELEMENT"
+    },
+    "TYPE": {
+      "name": "TYPE",
+      "hash": 642215,
+      "offset": 0,
+      "default_val": {
+        "WordType": "unset"
+      },
+      "att_type": "WORD"
+    },
+    "WMAX": {
+      "name": "WMAX",
+      "hash": 1004936,
+      "offset": 0,
+      "default_val": {
+        "IntegerType": 0
+      },
+      "att_type": "INTEGER"
+    }
+  }
+}
