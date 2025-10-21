@@ -2,6 +2,13 @@ use bevy_ecs::resource::Resource;
 use serde::Deserialize;
 use serde::Serialize;
 
+pub mod version_info;
+
+pub use version_info::{
+    query_pe_history_data, ChangeCount, ChangeDetail, ChangeType, PEHistoryData, VersionInfo,
+    VersionItem,
+};
+
 /// 电气平台传入得信息，需要知道该name得设备 在传入得version到最新得版本是否发生变化
 #[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
 pub struct VersionControlDataCenterRequest {

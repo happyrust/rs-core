@@ -14,8 +14,8 @@ git-fetch-with-cli = true
 # [profile.dev.package."*"]
 # codegen-backend = "cranelift"
 
-[build]
-rustflags = ["-Z", "threads=8"]
+# [build]
+# rustflags = ["-Z", "threads=8"]
 
 # WASM 目标特定配置
 [target.wasm32-unknown-unknown]

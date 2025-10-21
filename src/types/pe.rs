@@ -35,9 +35,8 @@ pub struct SPdmsElement {
     pub lock: bool,
     //todo 可以改为使用 op 来表达是否删除
     pub deleted: bool,
-    #[serde(default)]
-    pub op: EleOperation,
-
+    // #[serde(default)]
+    // pub op: EleOperation,
     /// TYPEX 扩展类型ID - 从 ATT_UDTYPE 或 ATT_TYPEX 属性中提取
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]

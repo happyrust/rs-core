@@ -307,7 +307,7 @@ pub async fn query_aabb_params(
         sql.push_str(" and aabb=none");
     }
 
-    println!("Executing SQL: {}", sql);
+    // println!("Executing SQL: {}", sql);
     let mut response = SUL_DB.query(sql).await?;
     let result: Vec<QueryAabbParam> = response.take(0)?;
 

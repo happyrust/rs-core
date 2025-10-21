@@ -1,0 +1,91 @@
+---
+import type { CollectionKey } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import SidebarItem, {
+    type SidebarItem as TSidebarItem,
+} from './SidebarItem.astro';
+import { metadata } from './metadata';
+
+import Search from '../Search.astro';
+
+type Props = {
+    items: TSidebarItem[];
+    collection: Exclude<CollectionKey, 'labs-items'>;
+};
+
+const { items, collection } = Astro.props;
+const doc = metadata[collection];
+---
+
+<div class="flex flex-col h-full">
+    {doc && (
+        <div class="flex flex-col p-6 gap-4 border-b border-border md:hidden">
+			<Search isMobile={true} />
+        </div>
+    )}
+    <div
+		id="sidebar-container"
+		class="overflow-y-auto flex-grow pb-8 lg:pt-4"
+		data-collection={collection}
+	>
+        <div class="px-4 lg:px-6 py-6">
+            {items.map((item) => (
+                <SidebarItem {...item} />
+            ))}
+        </div>
+        {doc?.repo && (
+            <div class="mx-6 lg:mx-8 px-2 py-3 border-t border-border">
+                <a href={doc.repo.href} class="text-sm flex items-center gap-1.5 text-opacity-50">
+                    {doc.repo.title}
+                    <Icon name="fa6-solid:arrow-up-right-from-square" class="w-2.5" />
+                </a>
+            </div>
+        )}
+    </div>
+</div>
+
+<script>
+
+	// Stores the scroll position in session storage when a sidebar link is clicked.
+	// This is needed to restore the scroll position when the user navigates to a page.
+	// We can't use hash-based scrolling because the sidebar is a separate component,
+	// And if we do implement the content is scrolled down.
+
+	const container = document.querySelector<HTMLDivElement>("#sidebar-container");
+
+	if (!container) {
+		throw new Error("Sidebar container not found");
+	}
+
+	const storedOffset = sessionStorage.getItem('surrealdb:sidebar-offset');
+	const previousDoc = sessionStorage.getItem('surrealdb:previous-doc');
+	const currentDoc = container.dataset.collection ?? "";
+
+	if (storedOffset && previousDoc === currentDoc) {
+		container.scrollTop = parseInt(storedOffset, 10);
+	} else {
+		sessionStorage.removeItem('surrealdb:sidebar-offset');
+		sessionStorage.removeItem('surrealdb:previous-doc');
+		container.scrollTop = 0;
+	}
+
+	const active = container.querySelector<HTMLDivElement>('.text-surreal-pink');
+
+	if(active) {
+		const offsetTop = active.offsetTop - (container.clientHeight / 2) + (active.clientHeight / 2);
+
+		container.scrollTo({ 
+			top: offsetTop,
+			behavior: 'smooth',
+		});
+	}
+
+	container.addEventListener('click', (e) => {
+		const target = e.target as HTMLElement;
+
+		if(target.matches('.sidebar-link')) {
+			sessionStorage.setItem('surrealdb:sidebar-offset', container.scrollTop.toString());
+			sessionStorage.setItem('surrealdb:previous-doc', currentDoc);
+		}
+	});
+</script>

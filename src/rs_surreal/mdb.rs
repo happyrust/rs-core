@@ -46,19 +46,21 @@ pub async fn get_mdb_world_site_ele_nodes(
     module: DBType,
 ) -> anyhow::Result<Vec<EleTreeNode>> {
     let db_type: u8 = module.into();
+    let mdb_name = to_e3d_name(&mdb);
     let sql = format!(
         r#"
         let $dbnos = select value (select value DBNO from CURD.refno where STYP == {db_type}) from only MDB where NAME == "{mdb}" limit 1;
         let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o));
-        select refno, noun, name, owner, array::len(select value in from <-pe_owner) as children_count from array::flatten(select value in from $a<-pe_owner) where noun='SITE';
+        select refno, noun, name, owner, array::len(children) as children_count, 0 as order from array::flatten($a.children) where noun='SITE';
         "#,
         db_type = db_type,
-        mdb = mdb
+        mdb = mdb_name
     );
+    // println!("SQL: {}", sql);
     // 执行查询
     let mut response = SUL_DB.query(&sql).await?;
     // 获取结果
-    let mut nodes: Vec<EleTreeNode> = response.take(2)?;
+    let mut nodes: Vec<EleTreeNode> = response.take(2).unwrap();
     // 处理节点顺序和名称
     for (i, node) in nodes.iter_mut().enumerate() {
         node.order = i as _;
@@ -244,9 +246,11 @@ pub async fn query_mdb_db_nums(mdb: Option<String>, module: DBType) -> anyhow::R
     let db_type: u8 = module.into();
     let mdb = mdb.unwrap_or_else(|| crate::get_db_option().mdb_name.clone());
     let processed_mdb = crate::helper::to_e3d_name(&mdb).into_owned();
-    let sql = format!("select value dbnum from CURD.refno where STYP={db_type} and NAME=$mdb");
+    let sql = format!(
+        " select value (select value DBNO from CURD.refno where STYP={db_type}) from only MDB where NAME='{processed_mdb}' limit 1"
+    );
     println!("Executing SQL: {}", sql);
-    let mut response = SUL_DB.query(&sql).bind(("mdb", processed_mdb)).await?;
+    let mut response = SUL_DB.query(&sql).await.unwrap();
     let pe: Vec<u32> = response.take(0)?;
     Ok(pe)
 }
@@ -265,15 +269,18 @@ pub async fn get_mdb_world_site_pes(
     module: DBType,
 ) -> anyhow::Result<Vec<SPdmsElement>> {
     let db_type: u8 = module.into();
-    let mut response = SUL_DB
-        .query(r#"
-            let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
-            let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o));
-            array::flatten(select value in.* from $a<-pe_owner)[?noun = 'SITE']
-        "#)
-        .bind(("mdb", mdb))
-        .bind(("db_type", db_type))
-        .await?;
+    let mdb_name = to_e3d_name(&mdb);
+    let sql = format!(
+        r#"
+        let $dbnos = select value (select value DBNO from CURD.refno where STYP={db_type}) from only MDB where NAME='{mdb}' limit 1;
+        let $a = (select value id from (select REFNO.id as id, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos order by o));
+        array::flatten(select value in.* from $a<-pe_owner)[?noun = 'SITE']
+        "#,
+        db_type = db_type,
+        mdb = mdb_name
+    );
+    // println!("SQL: {}", sql);
+    let mut response = SUL_DB.query(&sql).await?;
     let pe: Vec<SPdmsElement> = response.take(2)?;
     Ok(pe)
 }
@@ -330,11 +337,12 @@ pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
     let sql = format!(
         " \
             let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
-            (select * from WORL.REFNO where dbnum=$f and noun='WORL' limit 1)[0]",
+            (select value REFNO.* from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         mdb_name
     );
+    // println!("Executing SQL: {}", sql);
     let mut response = SUL_DB.query(sql).await?;
-    dbg!(&response);
+    // dbg!(&response);
     let pe: Option<SPdmsElement> = response.take(1)?;
     Ok(pe)
 }

@@ -9,6 +9,8 @@
 ## Coding Style & Naming Conventions
 核心库启用了 `#![feature(let_chains, trivial_bounds, result_flattening)]`，提交前须确保新增代码在这些 feature 下可编译；执行 `cargo fmt --all` 保持官方 `rustfmt` 风格并遵循 4 空格缩进；模块与文件命名使用 `snake_case`（例如 `data_center.rs`），类型使用 `CamelCase`（如 `PdmsDatabaseInfo`），常量以 `SCREAMING_SNAKE_CASE` 命名；特性相关逻辑需通过 `#[cfg(feature = "live")]` 等条件编译明确包裹。
 
+**外部系统命名约定**：AVEVA PDMS/E3D 系统的内部缩写和数据结构命名请参考 `docs/attlib_naming_conventions.md`。
+
 ## Testing Guidelines
 测试框架依赖 Cargo 内建机制，建议在本地同时执行 `cargo test` 与 `cargo test --lib` 对比输出；针对数据库差异，可运行 `cargo run --example test_unified_query` 并比对 `surreal_perf.log`；独立模块可使用 `cargo test test_memory_database_init`、`cargo test test_gensec_spine -- --nocapture` 等现有命令作为模板；新增集成夹具放入 `test-files/`，输出日志放入 `test_output/`，文件命名遵循 `test_模块_场景.log` 以便归档。
 

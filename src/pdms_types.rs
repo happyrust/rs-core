@@ -10,9 +10,9 @@ use crate::types::attmap::AttrMap;
 use crate::types::attval::{AttrVal, AttrValAql};
 use crate::types::named_attvalue::NamedAttrValue;
 pub use crate::types::*;
-use bevy_ecs::prelude::*;
 #[cfg(feature = "bevy_component")]
 use bevy_ecs::component::Component;
+use bevy_ecs::prelude::*;
 use bevy_math::*;
 use bevy_reflect::Reflect;
 #[cfg(feature = "render")]
@@ -377,10 +377,11 @@ pub struct EleTreeNode {
     pub name: String,
     pub owner: RefnoEnum,
     #[serde(default)]
+    #[surreal(value = 0)]
     pub order: u16,
     pub children_count: u16,
-    #[serde(default)]
-    pub op: EleOperation,
+    // #[serde(default)]
+    // pub op: EleOperation,
     //修改次数
     pub mod_cnt: Option<u32>,
     #[serde(default)]
@@ -405,7 +406,7 @@ impl EleTreeNode {
             owner,
             order,
             children_count,
-            op,
+            // op,
             mod_cnt: None,
             children_updated: None,
             status_code: None,
@@ -443,7 +444,7 @@ impl From<PdmsElement> for EleTreeNode {
             owner: value.owner.into(),
             order: 0,
             children_count: value.children_count as _,
-            op: EleOperation::Modified,
+            // op: EleOperation::Modified,
             mod_cnt: None,
             children_updated: None,
             status_code: None,
@@ -709,8 +710,7 @@ pub struct AttrInfo {
     pub att_type: DbAttributeType,
 }
 
-impl AttrInfo {
-}
+impl AttrInfo {}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PDMSDBInfo {
