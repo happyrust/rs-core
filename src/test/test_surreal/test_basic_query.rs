@@ -113,21 +113,21 @@ use surrealdb::types::RecordId;
 //     dbg!((next, prev));
 // }
 
-// #[tokio::test]
-// async fn test_query_children() {
-//     crate::init_test_surreal().await;
-//     // let refnos = rs_surreal::get_children_refnos("9304_0".into()).await;
-//     // dbg!(refnos);
-//     let nodes = rs_surreal::get_children_ele_nodes("17496_256208".into())
-//         .await
-//         .unwrap();
-//     dbg!(nodes);
+#[tokio::test]
+async fn test_query_children() {
+    crate::init_test_surreal().await;
+    // let refnos = rs_surreal::get_children_refnos("9304_0".into()).await;
+    // dbg!(refnos);
+    let nodes = rs_surreal::get_children_ele_nodes("21491_10801".into())
+        .await
+        .unwrap();
+    dbg!(nodes);
 
-//     let children = rs_surreal::get_children_refnos("17496_256208".into())
-//         .await
-//         .unwrap();
-//     dbg!(children);
-// }
+    // let children = rs_surreal::get_children_refnos("17496_256208".into())
+    //     .await
+    //     .unwrap();
+    // dbg!(children);
+}
 
 // #[tokio::test]
 // async fn test_query_children_att() {
