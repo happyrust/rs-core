@@ -60,18 +60,20 @@ async fn query_insts_returns_single_instance_from_mem_db() -> anyhow::Result<()>
 
     assert_eq!(inst.refno, refno);
     assert_eq!(inst.generic, "PIPE");
-    assert!(inst
-        .world_aabb
-        .mins
-        .coords
-        .iter()
-        .all(|v| (*v - 0.0).abs() < f32::EPSILON));
-    assert!(inst
-        .world_aabb
-        .maxs
-        .coords
-        .iter()
-        .all(|v| (*v - 1.0).abs() < f32::EPSILON));
+    assert!(
+        inst.world_aabb
+            .mins
+            .coords
+            .iter()
+            .all(|v| (*v - 0.0).abs() < f32::EPSILON)
+    );
+    assert!(
+        inst.world_aabb
+            .maxs
+            .coords
+            .iter()
+            .all(|v| (*v - 1.0).abs() < f32::EPSILON)
+    );
     assert_eq!(inst.insts.len(), 1, "应该生成一条几何实体引用");
     assert_eq!(inst.insts[0].geo_hash, "inst_geo:demo_hash");
     assert!(inst.has_neg, "存在 booled_id 时应标记为含有布尔实体");

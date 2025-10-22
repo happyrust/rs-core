@@ -5,8 +5,8 @@ use serde::Serialize;
 pub mod version_info;
 
 pub use version_info::{
-    query_pe_history_data, ChangeCount, ChangeDetail, ChangeType, PEHistoryData, VersionInfo,
-    VersionItem,
+    ChangeCount, ChangeDetail, ChangeType, PEHistoryData, VersionInfo, VersionItem,
+    query_pe_history_data,
 };
 
 /// 电气平台传入得信息，需要知道该name得设备 在传入得version到最新得版本是否发生变化

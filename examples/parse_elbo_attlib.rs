@@ -1,5 +1,5 @@
 use aios_core::attlib_parser::AttlibParser;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 
 // ELBO 属性的哈希值映射（从 data/ELBO.json 中提取）
@@ -106,7 +106,12 @@ fn main() -> std::io::Result<()> {
                     "default_value": default_val,
                 });
 
-                println!("✓ {} (hash: {}, type: {})", name, hash, data_type_to_string(attr_def.data_type));
+                println!(
+                    "✓ {} (hash: {}, type: {})",
+                    name,
+                    hash,
+                    data_type_to_string(attr_def.data_type)
+                );
             }
             None => {
                 missing_count += 1;
@@ -132,4 +137,3 @@ fn main() -> std::io::Result<()> {
 
     Ok(())
 }
-

@@ -285,8 +285,6 @@ impl PdmsDatabaseInfo {
         None
     }
 
-
-
     pub fn fill_default_values(&self, att_map: &mut AttrMap) {
         let noun_hash = att_map.get_noun();
         if let Some(m) = self.noun_attr_info_map.get(&noun_hash) {

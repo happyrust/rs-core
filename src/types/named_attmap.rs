@@ -29,7 +29,7 @@ use sea_query::{Alias, MysqlQueryBuilder};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use surrealdb::types::{RecordId, RecordIdKey, Value, SurrealValue};
+use surrealdb::types::{RecordId, RecordIdKey, SurrealValue, Value};
 
 ///带名称的属性map
 #[derive(

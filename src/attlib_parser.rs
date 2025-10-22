@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use serde::{Deserialize, Serialize};
 
 const PAGE_SIZE: usize = 2048;
 const WORDS_PER_PAGE: usize = 512;
@@ -181,8 +181,13 @@ impl AttlibParser {
             let attr_hash = word;
             let combined = cursor.next_word(self)?;
 
-            self.attr_index
-                .insert(attr_hash, AttlibAttrIndex { attr_hash, combined });
+            self.attr_index.insert(
+                attr_hash,
+                AttlibAttrIndex {
+                    attr_hash,
+                    combined,
+                },
+            );
 
             if record_count < 5 {
                 eprintln!("    [{}] hash=0x{:08X}", record_count, attr_hash);
@@ -272,8 +277,6 @@ impl AttlibParser {
             Ok(AttlibDefaultValue::Scalar(scalar))
         }
     }
-
-
 
     pub fn get_attribute(&self, hash: u32) -> Option<&AttlibAttrDefinition> {
         self.attr_definitions.get(&hash)

@@ -189,9 +189,7 @@ pub struct BufferStatus {
 impl BufferStatus {
     /// 获取总缓冲项数
     pub fn total_count(&self) -> usize {
-        self.pe_count
-            + self.attr_count
-            + self.relation_count
+        self.pe_count + self.attr_count + self.relation_count
     }
 }
 
