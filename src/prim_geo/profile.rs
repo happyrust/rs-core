@@ -49,7 +49,7 @@ pub async fn create_profile_geos(
     // dbg!((refno, drns, drne));
     let parent_refno = att.get_owner();
     let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" {
-        let children_refnos = crate::query_filter_children(refno, &["SPINE"])
+        let children_refnos = crate::collect_descendant_filter_ids(&[refno], &["SPINE"], None)
             .await
             .unwrap_or_default();
         let mut paths = vec![];

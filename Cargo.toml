@@ -174,8 +174,8 @@ criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }
 async-trait = "0.1"
 tempfile = "3"
 
-# [patch."https://gitee.com/happydpc/surrealdb"]
-# surrealdb = { path = "/Volumes/DPC/work/database/surrealdb/crates/sdk", default-features = false, features = [
-#     "protocol-ws",
-#     "kv-mem"
-# ] }
+[patch."https://gitee.com/happydpc/surrealdb"]
+surrealdb = { path = "/Volumes/DPC/work/database/surrealdb/crates/sdk", default-features = false, features = [
+    "protocol-ws",
+    "kv-mem"
+] }

@@ -53,11 +53,11 @@ async fn test_query_same_refnos() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_deep_children() -> anyhow::Result<()> {
     use crate::pdms_types::GNERAL_LOOP_OWNER_NOUN_NAMES;
-    use crate::query_multi_deep_children_filter_inst;
+    use crate::query_deep_children_filter_inst;
     crate::init_test_surreal().await;
     let refno: RefU64 = "17496/274056".into();
     let deep =
-        query_multi_deep_children_filter_inst(&[refno], &GNERAL_LOOP_OWNER_NOUN_NAMES, false)
+        query_deep_children_filter_inst(&[refno], &GNERAL_LOOP_OWNER_NOUN_NAMES, false)
             .await?;
 
     dbg!(deep);

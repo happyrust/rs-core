@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use super::test_helpers::init_sul_db_with_memory;
 
 #[tokio::test]
-async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Result<()> {
+async fn test_collect_descendant_filter_ids_with_layer_data() -> anyhow::Result<()> {
     // 使用内存数据库初始化全局 SUL_DB（加载 resource/surreal 下的函数定义）
     init_sul_db_with_memory().await?;
 
@@ -29,7 +29,7 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
 
     // 测试 1: 从 WORL 节点查询所有 SITE 类型的子孙
     let worl_refno: RefnoEnum = "9304/0".into();
-    let result = query_multi_filter_deep_children(&[worl_refno], &["SITE"], None).await?;
+    let result = collect_descendant_filter_ids(&[worl_refno], &["SITE"], None).await?;
 
     assert!(!result.is_empty(), "Should find SITE descendants");
     assert!(
@@ -40,7 +40,7 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
     // 测试 2: 从 SITE 节点查询所有 ZONE 和 EQUI 类型的子孙
     let site_refno: RefnoEnum = "17496/169982".into();
     let result =
-        query_multi_filter_deep_children(&[site_refno.clone()], &["ZONE", "EQUI"], None).await?;
+        collect_descendant_filter_ids(&[site_refno.clone()], &["ZONE", "EQUI"], None).await?;
 
     assert!(!result.is_empty(), "Should find ZONE and EQUI descendants");
     assert!(
@@ -54,7 +54,7 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
 
     // 测试 3: 从 ZONE 节点查询所有 EQUI 类型的子孙
     let zone_refno: RefnoEnum = "17496/171099".into();
-    let result = query_multi_filter_deep_children(&[zone_refno.clone()], &["EQUI"], None).await?;
+    let result = collect_descendant_filter_ids(&[zone_refno.clone()], &["EQUI"], None).await?;
 
     assert_eq!(result.len(), 1, "Should find exactly 1 EQUI");
     assert!(
@@ -63,12 +63,9 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
     );
 
     // 测试 4: 多个起点查询（SITE 和 ZONE 一起查询 EQUI）
-    let result = query_multi_filter_deep_children(
-        &[site_refno.clone(), zone_refno.clone()],
-        &["EQUI"],
-        None,
-    )
-    .await?;
+    let result =
+        collect_descendant_filter_ids(&[site_refno.clone(), zone_refno.clone()], &["EQUI"], None)
+            .await?;
 
     assert_eq!(
         result.len(),
@@ -81,7 +78,7 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
     );
 
     // 测试 5: 查询所有类型（nouns 为空）
-    let result = query_multi_filter_deep_children(&[worl_refno.clone()], &[], None).await?;
+    let result = collect_descendant_filter_ids(&[worl_refno.clone()], &[], None).await?;
 
     assert!(
         !result.is_empty(),
@@ -90,13 +87,12 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
     // 应该包含 SITE、ZONE、EQUI 等所有子孙
 
     // 测试 6: 空的 refnos 输入
-    let result = query_multi_filter_deep_children(&[], &["EQUI"], None).await?;
+    let result = collect_descendant_filter_ids(&[], &["EQUI"], None).await?;
 
     assert!(result.is_empty(), "Empty refnos should return empty result");
 
     // 测试 7: 查询不存在的类型
-    let result =
-        query_multi_filter_deep_children(&[worl_refno], &["NONEXISTENT_TYPE"], None).await?;
+    let result = collect_descendant_filter_ids(&[worl_refno], &["NONEXISTENT_TYPE"], None).await?;
 
     assert!(
         result.is_empty(),
@@ -124,11 +120,92 @@ async fn test_query_multi_filter_deep_children_with_layer_data() -> anyhow::Resu
     Ok(())
 }
 
+#[tokio::test]
+async fn test_collect_descendant_with_expr_generic() -> anyhow::Result<()> {
+    use crate::pe::SPdmsElement;
+    use crate::NamedAttrMap;
+
+    // 使用内存数据库初始化全局 SUL_DB
+    init_sul_db_with_memory().await?;
+
+    // 读取测试数据文件并插入
+    let test_data_path = "src/test/json/layers/layer_01.txt";
+    let test_data = std::fs::read_to_string(test_data_path).expect("Failed to read test data file");
+
+    // 直接插入文件中的 JSON 数组
+    let insert_sql = format!("INSERT INTO pe {};", test_data);
+    SUL_DB.query(&insert_sql).await?;
+
+    let worl_refno: RefnoEnum = "9304/0".into();
+    let site_refno: RefnoEnum = "17496/169982".into();
+
+    // 测试 1: 使用泛型函数查询 RefnoEnum（与 collect_descendant_filter_ids 等价）
+    println!("\n=== 测试 1: 泛型函数查询 RefnoEnum ===");
+    let ids: Vec<RefnoEnum> =
+        collect_descendant_with_expr(&[worl_refno.clone()], &["SITE"], None, "VALUE id").await?;
+    assert!(!ids.is_empty(), "Should find SITE descendants");
+    assert!(
+        ids.contains(&site_refno),
+        "Should contain SITE:17496_169982"
+    );
+    println!("找到 {} 个 SITE 节点", ids.len());
+
+    // 测试 2: 使用泛型函数查询 NamedAttrMap（完整元素）
+    println!("\n=== 测试 2: 泛型函数查询 NamedAttrMap ===");
+    let elements: Vec<NamedAttrMap> =
+        collect_descendant_with_expr(&[site_refno.clone()], &["EQUI"], None, "*").await?;
+    assert!(!elements.is_empty(), "Should find EQUI elements");
+    for elem in &elements {
+        if let Some(name) = elem.get_string("name") {
+            if let Some(noun) = elem.get_string("noun") {
+                println!("Element: name={}, noun={}", name, noun);
+                assert_eq!(noun, "EQUI", "All elements should be EQUI type");
+            }
+        }
+    }
+
+    // 测试 3: 使用泛型函数查询 NamedAttrMap（完整属性）
+    println!("\n=== 测试 3: 泛型函数查询 NamedAttrMap ===");
+    let attrs: Vec<NamedAttrMap> =
+        collect_descendant_with_expr(&[site_refno.clone()], &["ZONE"], None, "*").await?;
+    assert!(!attrs.is_empty(), "Should find ZONE attributes");
+    for attr in &attrs {
+        if let Some(name) = attr.get_string("name") {
+            println!("Zone name: {}", name);
+        }
+        if let Some(noun) = attr.get_string("noun") {
+            assert_eq!(noun, "ZONE", "All attributes should be ZONE type");
+        }
+    }
+
+    // 测试 4: 使用便利函数 collect_descendant_full_attrs（与测试2等价）
+    println!("\n=== 测试 4: 便利函数 collect_descendant_full_attrs ===");
+    let elements2 = collect_descendant_full_attrs(&[site_refno.clone()], &["EQUI"], None).await?;
+    assert_eq!(
+        elements.len(),
+        elements2.len(),
+        "便利函数应该返回相同数量的元素"
+    );
+
+    // 测试 5: 使用便利函数 collect_descendant_full_attrs
+    println!("\n=== 测试 5: 便利函数 collect_descendant_full_attrs ===");
+    let attrs2 = collect_descendant_full_attrs(&[site_refno.clone()], &["ZONE"], None).await?;
+    assert_eq!(
+        attrs.len(),
+        attrs2.len(),
+        "便利函数应该返回相同数量的属性"
+    );
+
+    println!("\n=== 所有测试通过 ===");
+
+    Ok(())
+}
+
 // 注意：这个测试应该单独运行以避免数据库连接冲突
-// 运行命令: cargo test test_query_multi_filter_deep_children_with_range_str --lib -- --test-threads=1
+// 运行命令: cargo test test_collect_descendant_filter_ids_with_range_str --lib -- --test-threads=1
 #[tokio::test]
 #[ignore]
-async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Result<()> {
+async fn test_collect_descendant_filter_ids_with_range_str() -> anyhow::Result<()> {
     // 使用内存数据库初始化全局 SUL_DB（加载 resource/surreal 下的函数定义）
     init_sul_db_with_memory().await?;
 
@@ -146,8 +223,7 @@ async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Resul
 
     // 测试 1: 默认范围 ".." - 应该获取所有后代
     println!("\n=== 测试 1: 默认范围 '..' 获取所有后代 ===");
-    let result_unlimited =
-        query_multi_filter_deep_children(&[worl_refno.clone()], &[], None).await?;
+    let result_unlimited = collect_descendant_filter_ids(&[worl_refno.clone()], &[], None).await?;
     println!(
         "从 WORL 查询所有后代（无限深度）: {} 个节点",
         result_unlimited.len()
@@ -159,7 +235,7 @@ async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Resul
     // 测试 2: 范围 "1" - 只查询第 1 层（直接子节点）
     println!("\n=== 测试 2: 范围 '1' 只查询第 1 层 ===");
     let result_layer1 =
-        query_multi_filter_deep_children(&[worl_refno.clone()], &[], Some("1")).await?;
+        collect_descendant_filter_ids(&[worl_refno.clone()], &[], Some("1")).await?;
     println!("从 WORL 查询第 1 层: {} 个节点", result_layer1.len());
     for refno in &result_layer1 {
         println!("  - {}", refno);
@@ -168,7 +244,7 @@ async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Resul
     // 测试 3: 范围 "1..2" - 查询 1 到 2 层
     println!("\n=== 测试 3: 范围 '1..2' 查询 1 到 2 层 ===");
     let result_layer1_2 =
-        query_multi_filter_deep_children(&[worl_refno.clone()], &[], Some("1..2")).await?;
+        collect_descendant_filter_ids(&[worl_refno.clone()], &[], Some("1..2")).await?;
     println!("从 WORL 查询 1 到 2 层: {} 个节点", result_layer1_2.len());
     for refno in &result_layer1_2 {
         println!("  - {}", refno);
@@ -177,7 +253,7 @@ async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Resul
     // 测试 4: 范围 "2" - 只查询第 2 层
     println!("\n=== 测试 4: 范围 '2' 只查询第 2 层 ===");
     let result_layer2 =
-        query_multi_filter_deep_children(&[worl_refno.clone()], &[], Some("2")).await?;
+        collect_descendant_filter_ids(&[worl_refno.clone()], &[], Some("2")).await?;
     println!("从 WORL 查询第 2 层: {} 个节点", result_layer2.len());
     for refno in &result_layer2 {
         println!("  - {}", refno);
@@ -186,14 +262,14 @@ async fn test_query_multi_filter_deep_children_with_range_str() -> anyhow::Resul
     // 测试 5: 从 SITE 查询不同范围的后代
     println!("\n=== 测试 5: 从 SITE 查询不同范围的后代 ===");
     let result_site_unlimited =
-        query_multi_filter_deep_children(&[site_refno.clone()], &[], None).await?;
+        collect_descendant_filter_ids(&[site_refno.clone()], &[], None).await?;
     println!(
         "从 SITE 查询所有后代（无限深度）: {} 个节点",
         result_site_unlimited.len()
     );
 
     let result_site_layer1 =
-        query_multi_filter_deep_children(&[site_refno.clone()], &[], Some("1")).await?;
+        collect_descendant_filter_ids(&[site_refno.clone()], &[], Some("1")).await?;
     println!("从 SITE 查询第 1 层: {} 个节点", result_site_layer1.len());
 
     // 测试 6: 验证层级关系 - 层级结构应该是递进的

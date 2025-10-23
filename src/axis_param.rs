@@ -1,4 +1,5 @@
 use crate::parsed_data::CateAxisParam;
+use crate::shape::pdms_shape::RsVec3;
 use glam::Vec3;
 use std::ops::Neg;
 
@@ -6,19 +7,17 @@ impl Neg for CateAxisParam {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Self {
-            // dir: Vec3::new(-self.dir[0].clone(), -self.dir[1].clone(), -self.dir[2].clone()),
-            dir: self.dir.map(|x| -x),
-            dir_flag: -1.0,
-            ..self.clone()
-        }
+        let mut result = self.clone();
+        result.dir = result.dir.map(|x| -x);
+        result.dir_flag = -1.0;
+        result
     }
 }
 
 impl CateAxisParam {
     pub fn zero() -> Self {
         Self {
-            pt: Vec3::ZERO,
+            pt: RsVec3(Vec3::ZERO),
             dir: None,
             pconnect: "".to_string(),
             ..Default::default()
@@ -27,8 +26,8 @@ impl CateAxisParam {
 
     pub fn x() -> Self {
         Self {
-            pt: Vec3::ZERO,
-            dir: Some(Vec3::X),
+            pt: RsVec3(Vec3::ZERO),
+            dir: Some(RsVec3(Vec3::X)),
             pconnect: "".to_string(),
             ..Default::default()
         }
@@ -36,8 +35,8 @@ impl CateAxisParam {
 
     pub fn y() -> Self {
         Self {
-            pt: Vec3::ZERO,
-            dir: Some(Vec3::Y),
+            pt: RsVec3(Vec3::ZERO),
+            dir: Some(RsVec3(Vec3::Y)),
             pconnect: "".to_string(),
             ..Default::default()
         }
@@ -45,8 +44,8 @@ impl CateAxisParam {
 
     pub fn z() -> Self {
         Self {
-            pt: Vec3::ZERO,
-            dir: Some(Vec3::Z),
+            pt: RsVec3(Vec3::ZERO),
+            dir: Some(RsVec3(Vec3::Z)),
             pconnect: "".to_string(),
             ..Default::default()
         }

@@ -52,16 +52,19 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
 
             let paax_dir = pa
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pa.dir_flag * Vec3::Z);
             let pbax_dir = pb
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pb.dir_flag * Vec3::Y);
 
             let pcax_dir = pc
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pc.dir_flag * Vec3::X);
             let z_axis = paax_dir;
             let mut x_axis = pbax_dir;
@@ -90,11 +93,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             // dbg!((x_axis, y_axis, z_axis));
             //需要转换成CTorus
             let pyramid = LPyramid {
-                pbax_pt: pb.pt,
+                pbax_pt: pb.pt.0,
                 pbax_dir,
-                pcax_pt: pc.pt,
+                pcax_pt: pc.pt.0,
                 pcax_dir,
-                paax_pt: pa.pt,
+                paax_pt: pa.pt.0,
                 paax_dir,
 
                 pbtp: d.x_top,
@@ -108,7 +111,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             };
             // dbg!(&pyramid);
             //需要偏移到 btm
-            let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt;
+            let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt.0;
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateBrepShape {
                 refno: d.refno,
@@ -133,16 +136,18 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             let paax_dir = pa
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pa.dir_flag * Vec3::X);
             let pbax_dir = pb
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pb.dir_flag * Vec3::Y);
             let sc_torus = SCTorus {
-                paax_pt: pa.pt,
+                paax_pt: pa.pt.0,
                 paax_dir,
-                pbax_pt: pb.pt,
+                pbax_pt: pb.pt.0,
                 pbax_dir,
                 pdia: d.diameter as f32,
             };
@@ -169,18 +174,20 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             let paax_dir = pa
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pa.dir_flag * Vec3::X);
             let pbax_dir = pb
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pb.dir_flag * Vec3::Y);
             let sr_torus = SRTorus {
                 paax_expr: "PAAX".to_string(),
-                paax_pt: pa.pt,
+                paax_pt: pa.pt.0,
                 paax_dir,
                 pbax_expr: "PBAX".to_string(),
-                pbax_pt: pb.pt,
+                pbax_pt: pb.pt.0,
                 pbax_dir,
                 pheig: d.height as f32,
                 pdia: d.diameter as f32,
@@ -223,7 +230,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = axis.dir.map(|d| d.normalize_or_zero()).unwrap_or(Vec3::X);
+            let mut dir = axis.dir.as_ref().map(|d| d.0.normalize_or_zero()).unwrap_or(Vec3::X);
             if dir.length() == 0.0 {
                 return None;
             }
@@ -231,7 +238,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .is_normalized()
                 .then(|| dir)
                 .unwrap_or(axis.dir_flag * Vec3::X);
-            let translation = dir * (d.dist_to_btm as f32) + axis.pt;
+            let translation = dir * (d.dist_to_btm as f32) + axis.pt.0;
             let mut height = d.height;
             if d.height < 0.0 {
                 height = -d.height;
@@ -272,7 +279,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if let Some(pb) = d.pb.as_ref() {
                 x_dir = pb
                     .dir
-                    .map(|d| d.normalize_or_zero())
+                    .as_ref()
+                    .map(|d| d.0.normalize_or_zero())
                     .unwrap_or(pb.dir_flag * Vec3::Y);
                 pts.push(pb.number);
             }
@@ -280,10 +288,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut btm_on_top = false;
             let z_dir = pa
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pa.dir_flag * Vec3::X);
 
-            let origin = pa.pt;
+            let origin = pa.pt.0;
             let x_axis = x_dir;
             let translation = origin + z_dir * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
             let mut height = (d.dist_to_top - d.dist_to_btm) as f32;
@@ -340,9 +349,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(axis.number);
             let mut dir = axis
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(axis.dir_flag * Vec3::Y);
-            let translation = (dir * d.dist_to_btm + axis.pt);
+            let translation = (dir * d.dist_to_btm + axis.pt.0);
             let mut phei = d.height as f32;
             //如果height是负数，相当于要额外旋转一下
             if phei < 0.0 {
@@ -379,9 +389,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(axis.number);
             let mut dir = axis
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(axis.dir_flag * Vec3::Y);
-            let translation = (dir * d.dist_to_btm + axis.pt);
+            let translation = (dir * d.dist_to_btm + axis.pt.0);
             let phei = d.dist_to_top - d.dist_to_btm;
             if phei < 0.0 {
                 dir = -dir;
@@ -419,7 +430,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(axis.number);
             let z_axis = axis
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(axis.dir_flag * Vec3::Y);
             // dbg!(d.refno);
             if z_axis.length() == 0.0 {
@@ -428,7 +440,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             // dbg!(z_axis);
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
-            let ref_axis = axis.ref_dir.unwrap_or_default();
+            let ref_axis = axis.ref_dir.as_ref().map(|r| r.0).unwrap_or_default();
             //检查有没有参考轴，没有的话使用底部的， 不能使用这个from_rotation_arc
             let rotation = if ref_axis.length() == 0.0 {
                 //ref_axis初始轴为X轴，先绕着y轴旋转x_shear, 再绕着x轴旋转 y_shear
@@ -455,7 +467,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 }
                 Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
             };
-            let translation = z_axis * (d.dist_to_btm as f32) + axis.pt;
+            let translation = z_axis * (d.dist_to_btm as f32) + axis.pt.0;
             let transform = Transform {
                 rotation,
                 translation,
@@ -492,7 +504,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let mut pts = Vec::default();
             pts.push(axis.number);
             let transform = Transform {
-                translation: axis.pt,
+                translation: axis.pt.0,
                 ..Default::default()
             };
             return Some(CateBrepShape {
@@ -515,11 +527,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             pts.push(pb.number);
             let paax_dir = pa
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pa.dir_flag * Vec3::X);
             let pbax_dir = pb
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pb.dir_flag * Vec3::Y);
             let z_dir = paax_dir
                 .normalize_or_zero()
@@ -542,10 +556,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             });
 
-            let translation = pa.pt + xyz_pt;
+            let translation = pa.pt.0 + xyz_pt;
             let transform = Transform {
                 rotation,
-                translation,
+                translation: translation.into(),
                 ..Default::default()
             };
             return Some(CateBrepShape {
@@ -569,11 +583,13 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             //如果有一个轴为0
             let paax_dir = pa
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pa.dir_flag * Vec3::X);
             let pbax_dir = pb
                 .dir
-                .map(|d| d.normalize_or_zero())
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(pb.dir_flag * Vec3::Y);
             let mut z_dir = paax_dir.cross(pbax_dir).normalize_or_zero();
             if !z_dir.is_normalized() {
@@ -586,7 +602,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             });
             let rotation = Quat::from_mat3(&Mat3::from_cols(paax_dir, pbax_dir, z_dir));
-            let translation = rotation * Vec3::new(d.x, d.y, d.z) + pa.pt;
+            let translation = rotation * Vec3::new(d.x, d.y, d.z) + pa.pt.0;
             let transform = Transform {
                 rotation,
                 translation,

@@ -25,6 +25,7 @@ use std::io::Read;
 use std::io::Write;
 use std::path::Path;
 use std::vec;
+use surrealdb::types::SurrealValue;
 #[cfg(feature = "truck")]
 use truck_base::bounding_box::BoundingBox;
 #[cfg(feature = "truck")]
@@ -378,6 +379,272 @@ impl Eq for RsVec3 {}
 impl From<Vec3> for RsVec3 {
     fn from(value: Vec3) -> Self {
         Self(value)
+    }
+}
+
+impl From<RsVec3> for Vec3 {
+    fn from(value: RsVec3) -> Self {
+        value.0
+    }
+}
+
+impl AsRef<Vec3> for RsVec3 {
+    fn as_ref(&self) -> &Vec3 {
+        &self.0
+    }
+}
+
+impl AsMut<Vec3> for RsVec3 {
+    fn as_mut(&mut self) -> &mut Vec3 {
+        &mut self.0
+    }
+}
+
+// 运算符重载: RsVec3 * f32
+impl std::ops::Mul<f32> for RsVec3 {
+    type Output = RsVec3;
+    fn mul(self, rhs: f32) -> Self::Output {
+        RsVec3(self.0 * rhs)
+    }
+}
+
+// 运算符重载: &RsVec3 * f32
+impl std::ops::Mul<f32> for &RsVec3 {
+    type Output = RsVec3;
+    fn mul(self, rhs: f32) -> Self::Output {
+        RsVec3(self.0 * rhs)
+    }
+}
+
+// 运算符重载: f32 * RsVec3
+impl std::ops::Mul<RsVec3> for f32 {
+    type Output = RsVec3;
+    fn mul(self, rhs: RsVec3) -> Self::Output {
+        RsVec3(self * rhs.0)
+    }
+}
+
+// 运算符重载: f32 * &RsVec3
+impl std::ops::Mul<&RsVec3> for f32 {
+    type Output = RsVec3;
+    fn mul(self, rhs: &RsVec3) -> Self::Output {
+        RsVec3(self * rhs.0)
+    }
+}
+
+// 运算符重载: RsVec3 + RsVec3
+impl std::ops::Add for RsVec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: Self) -> Self::Output {
+        RsVec3(self.0 + rhs.0)
+    }
+}
+
+// 运算符重载: &RsVec3 + &RsVec3
+impl std::ops::Add for &RsVec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: Self) -> Self::Output {
+        RsVec3(self.0 + rhs.0)
+    }
+}
+
+// 运算符重载: RsVec3 - RsVec3
+impl std::ops::Sub for RsVec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: Self) -> Self::Output {
+        RsVec3(self.0 - rhs.0)
+    }
+}
+
+// 运算符重载: &RsVec3 - &RsVec3
+impl std::ops::Sub for &RsVec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: Self) -> Self::Output {
+        RsVec3(self.0 - rhs.0)
+    }
+}
+
+// 运算符重载: -RsVec3 (取负)
+impl std::ops::Neg for RsVec3 {
+    type Output = RsVec3;
+    fn neg(self) -> Self::Output {
+        RsVec3(-self.0)
+    }
+}
+
+// 运算符重载: -&RsVec3
+impl std::ops::Neg for &RsVec3 {
+    type Output = RsVec3;
+    fn neg(self) -> Self::Output {
+        RsVec3(-self.0)
+    }
+}
+
+// ============ RsVec3 与 Vec3 混合运算 ============
+
+// RsVec3 + Vec3
+impl std::ops::Add<Vec3> for RsVec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: Vec3) -> Self::Output {
+        RsVec3(self.0 + rhs)
+    }
+}
+
+// &RsVec3 + Vec3
+impl std::ops::Add<Vec3> for &RsVec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: Vec3) -> Self::Output {
+        RsVec3(self.0 + rhs)
+    }
+}
+
+// RsVec3 + &Vec3
+impl std::ops::Add<&Vec3> for RsVec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: &Vec3) -> Self::Output {
+        RsVec3(self.0 + *rhs)
+    }
+}
+
+// &RsVec3 + &Vec3
+impl std::ops::Add<&Vec3> for &RsVec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: &Vec3) -> Self::Output {
+        RsVec3(self.0 + *rhs)
+    }
+}
+
+// Vec3 + RsVec3
+impl std::ops::Add<RsVec3> for Vec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: RsVec3) -> Self::Output {
+        RsVec3(self + rhs.0)
+    }
+}
+
+// &Vec3 + RsVec3
+impl std::ops::Add<RsVec3> for &Vec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: RsVec3) -> Self::Output {
+        RsVec3(*self + rhs.0)
+    }
+}
+
+// Vec3 + &RsVec3
+impl std::ops::Add<&RsVec3> for Vec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: &RsVec3) -> Self::Output {
+        RsVec3(self + rhs.0)
+    }
+}
+
+// &Vec3 + &RsVec3
+impl std::ops::Add<&RsVec3> for &Vec3 {
+    type Output = RsVec3;
+    fn add(self, rhs: &RsVec3) -> Self::Output {
+        RsVec3(*self + rhs.0)
+    }
+}
+
+// RsVec3 - Vec3
+impl std::ops::Sub<Vec3> for RsVec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: Vec3) -> Self::Output {
+        RsVec3(self.0 - rhs)
+    }
+}
+
+// &RsVec3 - Vec3
+impl std::ops::Sub<Vec3> for &RsVec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: Vec3) -> Self::Output {
+        RsVec3(self.0 - rhs)
+    }
+}
+
+// RsVec3 - &Vec3
+impl std::ops::Sub<&Vec3> for RsVec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: &Vec3) -> Self::Output {
+        RsVec3(self.0 - *rhs)
+    }
+}
+
+// &RsVec3 - &Vec3
+impl std::ops::Sub<&Vec3> for &RsVec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: &Vec3) -> Self::Output {
+        RsVec3(self.0 - *rhs)
+    }
+}
+
+// Vec3 - RsVec3
+impl std::ops::Sub<RsVec3> for Vec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: RsVec3) -> Self::Output {
+        RsVec3(self - rhs.0)
+    }
+}
+
+// &Vec3 - RsVec3
+impl std::ops::Sub<RsVec3> for &Vec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: RsVec3) -> Self::Output {
+        RsVec3(*self - rhs.0)
+    }
+}
+
+// Vec3 - &RsVec3
+impl std::ops::Sub<&RsVec3> for Vec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: &RsVec3) -> Self::Output {
+        RsVec3(self - rhs.0)
+    }
+}
+
+// &Vec3 - &RsVec3
+impl std::ops::Sub<&RsVec3> for &Vec3 {
+    type Output = RsVec3;
+    fn sub(self, rhs: &RsVec3) -> Self::Output {
+        RsVec3(*self - rhs.0)
+    }
+}
+
+impl SurrealValue for RsVec3 {
+    fn kind_of() -> surrealdb::types::Kind {
+        surrealdb::types::Kind::Array(Box::new(surrealdb::types::Kind::Number), None)
+    }
+
+    fn into_value(self) -> surrealdb::types::Value {
+        surrealdb::types::Value::Array(surrealdb::types::Array::from(vec![
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.x as f64)),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.y as f64)),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.z as f64)),
+        ]))
+    }
+
+    fn from_value(value: surrealdb::types::Value) -> anyhow::Result<Self> {
+        match value {
+            surrealdb::types::Value::Array(arr) => {
+                if arr.len() != 3 {
+                    return Err(anyhow::anyhow!("数组长度必须为 3 才能转换为 RsVec3"));
+                }
+                let x = match &arr[0] {
+                    surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
+                    _ => return Err(anyhow::anyhow!("数组第一个元素必须是数字")),
+                };
+                let y = match &arr[1] {
+                    surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
+                    _ => return Err(anyhow::anyhow!("数组第二个元素必须是数字")),
+                };
+                let z = match &arr[2] {
+                    surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
+                    _ => return Err(anyhow::anyhow!("数组第三个元素必须是数字")),
+                };
+                Ok(RsVec3(Vec3::new(x, y, z)))
+            }
+            _ => Err(anyhow::anyhow!("值必须是数组类型才能转换为 RsVec3")),
+        }
     }
 }
 

@@ -211,14 +211,6 @@ impl HierarchyQuery for QueryRouter {
         .await
     }
 
-    async fn get_children_batch(&self, refnos: &[RefnoEnum]) -> QueryResult<Vec<RefnoEnum>> {
-        self.execute_with_fallback("get_children_batch", |provider| {
-            let refnos = refnos.to_vec();
-            Box::pin(async move { provider.get_children_batch(&refnos).await })
-        })
-        .await
-    }
-
     async fn get_descendants(
         &self,
         refno: RefnoEnum,

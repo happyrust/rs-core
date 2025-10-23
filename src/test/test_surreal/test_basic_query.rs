@@ -204,36 +204,36 @@ async fn test_query_attmap_SCTN() -> anyhow::Result<()> {
 async fn test_query_attmap() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
 
-    let refno: RefnoEnum = RefnoSesno::new("17496_265703".into(), 961).into();
+    let refno: RefnoEnum = "21491_18938".into();
     let attmap = rs_surreal::get_ui_named_attmap(refno).await.unwrap();
     dbg!(attmap);
 
-    let children =
-        rs_surreal::query_multi_deep_versioned_children_filter_inst(&[refno], &[], false).await?;
-    dbg!(&children);
+    // let children =
+    //     rs_surreal::query_multi_deep_versioned_children_filter_inst(&[refno], &[], false).await?;
+    // dbg!(&children);
 
-    let pe = rs_surreal::get_pe(refno).await.unwrap();
-    dbg!(pe);
+    // let pe = rs_surreal::get_pe(refno).await.unwrap();
+    // dbg!(pe);
 
-    let refno = "17496_171640,733".into();
-    dbg!(&refno);
-    let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
-    dbg!(world_trans);
+    // let refno = "17496_171640,733".into();
+    // dbg!(&refno);
+    // let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
+    // dbg!(world_trans);
 
-    let refno = "17496_171640".into();
-    dbg!(&refno);
-    let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
-    dbg!(world_trans);
+    // let refno = "17496_171640".into();
+    // dbg!(&refno);
+    // let world_trans = rs_surreal::get_world_transform(refno).await.unwrap();
+    // dbg!(world_trans);
 
     // let history_pes = rs_surreal::query_history_pes(refno).await.unwrap();
     // dbg!(&history_pes);
 
     //test query children full names
-    let refno = "17496_171606,733".into();
-    let children_names = rs_surreal::query_children_full_names_map(refno)
-        .await
-        .unwrap();
-    dbg!(&children_names);
+    // let refno = "17496_171606,733".into();
+    // let children_names = rs_surreal::query_children_full_names_map(refno)
+    //     .await
+    //     .unwrap();
+    // dbg!(&children_names);
 
     // let children = rs_surreal::get_children_named_attmaps(refno).await.unwrap();
     // dbg!(&children);

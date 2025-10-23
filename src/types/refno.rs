@@ -198,6 +198,8 @@ impl FromStr for RefU64 {
     type Err = ParseRefU64Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let ts = s.split(['=', ':']).skip(1).next().unwrap_or(s);
+        // 移除 SurrealDB RecordId 格式中的 ⟨ 和 ⟩ 字符
+        let ts = ts.trim_start_matches('⟨').trim_end_matches('⟩');
         let nums = ts
             .split(['_', '/'])
             .filter_map(|x| x.parse::<u32>().ok())

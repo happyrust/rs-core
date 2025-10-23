@@ -49,12 +49,12 @@ impl HierarchyQuery for SurrealQueryProvider {
             .map_err(|e| QueryError::ExecutionError(e.to_string()))
     }
 
-    async fn get_children_batch(&self, refnos: &[RefnoEnum]) -> QueryResult<Vec<RefnoEnum>> {
-        debug!("[{}] get_children_batch: {} items", self.name, refnos.len());
-        rs_surreal::query::get_all_children_refnos(refnos)
-            .await
-            .map_err(|e| QueryError::ExecutionError(e.to_string()))
-    }
+    // async fn get_children_batch(&self, refnos: &[RefnoEnum]) -> QueryResult<Vec<RefnoEnum>> {
+    //     debug!("[{}] get_children_batch: {} items", self.name, refnos.len());
+    //     rs_surreal::query::collect_children_refnos(refnos)
+    //         .await
+    //         .map_err(|e| QueryError::ExecutionError(e.to_string()))
+    // }
 
     async fn get_descendants(
         &self,
@@ -258,7 +258,7 @@ impl GraphQuery for SurrealQueryProvider {
             nouns
         );
 
-        rs_surreal::graph::query_multi_filter_deep_children(refnos, nouns, None)
+        rs_surreal::graph::collect_descendant_filter_ids(refnos, nouns, None)
             .await
             .map(|set| set.into_iter().collect())
             .map_err(|e| QueryError::ExecutionError(e.to_string()))

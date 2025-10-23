@@ -2,6 +2,7 @@ use bevy_transform::prelude::Transform;
 use std::collections::BTreeMap;
 
 use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::shape::pdms_shape::RsVec3;
 use crate::types::*;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
@@ -80,14 +81,15 @@ pub struct GmseParamData {
     Serialize,
     Deserialize,
     Debug,
+    SurrealValue,
 )]
 pub struct CateAxisParam {
     pub refno: RefnoEnum,
     pub number: i32,
-    pub pt: Vec3,
-    pub dir: Option<Vec3>,
+    pub pt: RsVec3,
+    pub dir: Option<RsVec3>,
     pub dir_flag: f32,
-    pub ref_dir: Option<Vec3>,
+    pub ref_dir: Option<RsVec3>,
     pub pbore: f32,
     pub pwidth: f32,
     pub pheight: f32,
@@ -97,14 +99,14 @@ pub struct CateAxisParam {
 impl CateAxisParam {
     pub fn transformed(&self, trans: &Transform) -> Self {
         let mut axis = self.clone();
-        axis.pt = trans.transform_point(axis.pt);
-        axis.dir = axis.dir.map(|d| trans.rotation * d);
+        axis.pt = RsVec3(trans.transform_point(axis.pt.0));
+        axis.dir = axis.dir.map(|d| RsVec3(trans.rotation * d.0));
         axis
     }
 
     pub fn transform(&mut self, trans: &Transform) {
-        self.pt = trans.transform_point(self.pt);
-        self.dir = self.dir.map(|d| trans.rotation * d);
+        self.pt = RsVec3(trans.transform_point(self.pt.0));
+        self.dir = self.dir.as_ref().map(|d| RsVec3(trans.rotation * d.0));
     }
 }
 
@@ -114,7 +116,7 @@ impl Default for CateAxisParam {
             refno: Default::default(),
             number: 0,
             pt: Default::default(),
-            dir: Some(Vec3::Y),
+            dir: Some(RsVec3(Vec3::Y)),
             dir_flag: 1.0,
             ref_dir: Default::default(),
             pbore: 0.0,
@@ -122,22 +124,6 @@ impl Default for CateAxisParam {
             pheight: 0.0,
             pconnect: "".to_string(),
         }
-    }
-}
-
-impl SurrealValue for CateAxisParam {
-    fn kind_of() -> Kind {
-        Kind::Object
-    }
-
-    fn into_value(self) -> Value {
-        let json = serde_json::to_value(&self).expect("序列化 CateAxisParam 失败");
-        json.into_value()
-    }
-
-    fn from_value(value: Value) -> anyhow::Result<Self> {
-        let json = serde_json::Value::from_value(value)?;
-        Ok(serde_json::from_value(json)?)
     }
 }
 

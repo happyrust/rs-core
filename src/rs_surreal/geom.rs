@@ -261,12 +261,12 @@ pub fn get_arrive_leave_info(
     if let Some(points) = point_map.get(&refno) {
         if let Some(NamedAttrValue::IntegerType(arrive)) = attr.get_val("ARRI") {
             if let Some(point_info) = points.ptset_map.get(&arrive.to_string()) {
-                let arrive_point = transform.transform_point(point_info.pt);
+                let arrive_point = transform.transform_point(point_info.pt.0);
                 arrive_pos = arrive_point;
             }
             if let Some(NamedAttrValue::IntegerType(leave)) = attr.get_val("LEAV") {
                 if let Some(point_info) = points.ptset_map.get(&leave.to_string()) {
-                    let leave_point = transform.transform_point(point_info.pt);
+                    let leave_point = transform.transform_point(point_info.pt.0);
                     leave_pos = leave_point;
                 }
             }

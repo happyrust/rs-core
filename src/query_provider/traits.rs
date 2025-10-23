@@ -19,15 +19,6 @@ pub trait HierarchyQuery: Send + Sync {
     /// 子节点的 refno 列表
     async fn get_children(&self, refno: RefnoEnum) -> QueryResult<Vec<RefnoEnum>>;
 
-    /// 批量获取子节点
-    ///
-    /// # 参数
-    /// - `refnos`: 父节点的 refno 列表
-    ///
-    /// # 返回
-    /// 所有父节点的子节点 refno 列表（去重）
-    async fn get_children_batch(&self, refnos: &[RefnoEnum]) -> QueryResult<Vec<RefnoEnum>>;
-
     /// 查询深层子孙节点（递归）
     ///
     /// # 参数

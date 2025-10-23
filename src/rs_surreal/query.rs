@@ -32,6 +32,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
 use std::collections::{BTreeMap, HashMap};
+use std::str::FromStr;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use surrealdb::types as surrealdb_types;
@@ -41,6 +42,15 @@ use surrealdb::types::{Datetime, SurrealValue, Value};
 struct KV<K: SurrealValue, V: SurrealValue> {
     k: K,
     v: V,
+}
+
+/// CataHash 分组查询结果
+/// k 是一个元组：(cata_hash, exist_inst, ptset)
+/// v 是分组的 refnos
+#[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
+pub struct CataHashGroupQueryResult {
+    pub k: (String, bool, Option<BTreeMap<String, CateAxisParam>>),
+    pub v: Vec<RefnoEnum>,
 }
 
 ///通过surql查询pe数据
@@ -578,18 +588,22 @@ pub(crate) async fn get_named_attmap_with_uda(
         refno_enum.to_pe_key(),
         refno_enum.refno()
     );
+    println!("SQL: {}", sql);
     let mut response = SUL_DB.query(sql).await?;
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, SurrealValue)]
     struct AttrKV {
         u: String,
         t: String,
         v: SurlValue,
     }
     //获得uda的 map
-    let mut named_attmap: NamedAttrMap = take_single(&mut response, 0)?;
+    // dbg!(&response);
+    let mut named_attmap = response
+        .take::<Option<NamedAttrMap>>(0)?
+        .unwrap_or_default();
     // dbg!(&named_attmap);
-    let uda_kvs: Vec<AttrKV> = take_vec(&mut response, 1)?;
+    let uda_kvs: Vec<AttrKV> = response.take(1)?;
     for AttrKV {
         u: uname,
         t: utype,
@@ -602,7 +616,7 @@ pub(crate) async fn get_named_attmap_with_uda(
         let att_value = NamedAttrValue::from((utype.as_str(), v));
         named_attmap.insert(uname, att_value);
     }
-    let overwrite_kvs: Vec<AttrKV> = take_vec(&mut response, 2)?;
+    let overwrite_kvs: Vec<AttrKV> = response.take(2)?;
     for AttrKV {
         u: uname,
         t: utype,
@@ -660,12 +674,11 @@ pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
 #[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
     let sql = format!(
-        r#"select value in.refno.* from {}<-pe_owner where in.id!=none and !in.deleted"#,
+        r#"select value refno.* from {}.children where id!=none and !deleted"#,
         refno.to_pe_key()
     );
-    // println!("get_children_named_attmaps sql is {}", &sql);
     let mut response = SUL_DB.query(sql).await?;
-    let named_attmaps: Vec<NamedAttrMap> = take_vec(&mut response, 0)?;
+    let named_attmaps: Vec<NamedAttrMap> = response.take(0)?;
     Ok(named_attmaps)
 }
 
@@ -674,76 +687,12 @@ pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<
 pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsElement>> {
     let sql = format!(
         r#"
-            select value in.* from {}<-pe_owner where record::exists(in.id) and !in.deleted
+            select * from {}.children where record::exists(id) and !deleted
         "#,
         refno.to_pe_key()
     );
     let mut response = SUL_DB.query(sql).await?;
     let pes: Vec<SPdmsElement> = response.take(0)?;
-    Ok(pes)
-}
-
-///传入一个负数的参考号数组，返回一个数组，包含所有子孙的参考号
-pub async fn get_all_children_refnos(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
-) -> anyhow::Result<Vec<RefnoEnum>> {
-    let refnos_vec: Vec<_> = refnos.into_iter().collect();
-
-    if refnos_vec.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    // 对于单个元素使用简单查询
-    if refnos_vec.len() == 1 {
-        let sql = format!(
-            "select value in from {}<-pe_owner where record::exists(in.id) and !in.deleted",
-            refnos_vec[0].to_pe_key()
-        );
-        let mut response = SUL_DB.query(sql).await?;
-        let refnos: Vec<RefnoEnum> = response.take(0)?;
-        return Ok(refnos);
-    }
-
-    // 对于多个元素，逐个查询并合并结果
-    // 这样避免了 array::flatten 的解析问题
-    let mut all_children = Vec::new();
-    for refno in refnos_vec {
-        let sql = format!(
-            "select value in from {}<-pe_owner where record::exists(in.id) and !in.deleted",
-            refno.to_pe_key()
-        );
-        let mut response = SUL_DB.query(sql).await?;
-        let children: Vec<RefnoEnum> = response.take(0)?;
-        all_children.extend(children);
-    }
-
-    Ok(all_children)
-}
-
-///查询直接子节点，支持按类型过滤
-pub async fn query_filter_children(
-    refno: RefnoEnum,
-    types: &[&str],
-) -> anyhow::Result<Vec<RefnoEnum>> {
-    let types_array = if types.is_empty() {
-        "none".to_string()
-    } else {
-        let types_str = types
-            .iter()
-            .map(|s| format!("'{s}'"))
-            .collect::<Vec<_>>()
-            .join(",");
-        format!("[{}]", types_str)
-    };
-
-    let sql = format!(
-        "return select value id from fn::collect_children({}, {})",
-        refno.to_pe_key(),
-        types_array
-    );
-
-    let mut response = SUL_DB.query(sql).await?;
-    let pes: Vec<RefnoEnum> = response.take(0)?;
     Ok(pes)
 }
 
@@ -894,16 +843,12 @@ pub async fn query_group_by_cata_hash(
         // println!("query_group_by_cata_hash sql is {}", &sql);
         let mut response = SUL_DB.query(&sql).await?;
         // dbg!(&response);
-        // let d: Vec<KV<(String, bool, Option<BTreeMap<i32, CateAxisParam>>), Vec<RefU64>>> =
-        //     response.take(1).unwrap();
-        //TODO surreal bug, 在 surreal 存储的 map，不知道咋变成了 string
-        let d: Vec<KV<(String, bool, Option<BTreeMap<String, CateAxisParam>>), Vec<RefnoEnum>>> =
-            take_vec(&mut response, 1)?;
-        // dbg!(&d);
+        // 使用专门的结构体接收查询结果
+        let d: Vec<CataHashGroupQueryResult> = take_vec(&mut response, 1).unwrap();
         let map = d
             .into_iter()
             .map(
-                |KV {
+                |CataHashGroupQueryResult {
                      k: (cata_hash, exist_inst, ptset),
                      v: group_refnos,
                  }| {
@@ -915,7 +860,18 @@ pub async fn query_group_by_cata_hash(
                             exist_inst,
                             ptset: ptset.map(|x| {
                                 x.into_iter()
-                                    .map(|(k, v)| (k.parse().unwrap(), v))
+                                    .filter_map(|(k, v)| {
+                                        // 尝试直接解析为 i32
+                                        if let Ok(key) = k.parse::<i32>() {
+                                            Some((key, v))
+                                        } else if let Ok(refno) = RefU64::from_str(&k) {
+                                            // 如果是 RefU64 格式（如 pe:⟨21895_68780⟩），转换为 i32
+                                            Some((refno.0 as i32, v))
+                                        } else {
+                                            eprintln!("Warning: Failed to parse ptset key: {}", k);
+                                            None
+                                        }
+                                    })
                                     .collect()
                             }),
                         },
@@ -989,7 +945,9 @@ pub async fn query_single_by_paths(
     #[cfg(feature = "debug_model")]
     println!("query_single_by_paths Sql is {}", sql);
     let mut response = SUL_DB.query(sql).await?;
-    let mut map: NamedAttrMap = take_single(&mut response, 0)?;
+    let mut map = response
+        .take::<Option<NamedAttrMap>>(0)?
+        .unwrap_or_default();
     // dbg!(&map);
     //只保留 fileds 里的数据
     if !fields.is_empty() {

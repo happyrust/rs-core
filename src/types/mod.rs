@@ -18,6 +18,7 @@ pub use refno::*;
 
 pub type NounHash = u32;
 pub type Datetime = surrealdb::types::Datetime;
+pub type RecordId = surrealdb::types::RecordId;
 pub type Thing = surrealdb::types::RecordId;
 
 pub use attmap::*;

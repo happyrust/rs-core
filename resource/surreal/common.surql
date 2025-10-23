@@ -582,6 +582,75 @@ DEFINE FUNCTION fn::collect_descendant_ids_by_types($pe:record,$t:array,$inclusi
     return array::map($infos, |$info| $info.id);
 };
 
+// 返回符合类型集合且具有 CATR 或 SPRE 属性的子节点ID
+REMOVE FUNCTION fn::collect_descendants_filter_spre;
+-- 收集符合指定类型的子孙节点ID，并过滤出具有 CATR 或 SPRE 属性的节点
+-- 参数：
+--   $root: 起始节点
+--   $types: 要过滤的类型数组，空数组表示不过滤
+--   $filter_inst: 是否过滤掉有 inst_relate 或 tubi_relate 的节点
+--   $inclusive: 是否包含根节点本身
+--   $range_str: 递归范围字符串，仅用于文档/注释
+-- 返回：符合条件且 refno.CATR 或 refno.SPRE 不为空且 record exist 的节点ID数组
+DEFINE FUNCTION fn::collect_descendants_filter_spre(
+    $root: record,
+    $types: array<string>,
+    $filter_inst: option<bool>,
+    $inclusive: option<bool>,
+    $range_str: string,
+) {
+    if !record::exists($root) {
+        return [];
+    };
+    -- 使用 $inclusive 参数来控制是否包含根节点本身，默认为 true
+    let $use_inclusive = $inclusive ?:true;
+    let $need_filter = $filter_inst ?: false;
+    
+    -- 收集子孙节点时同时获取 id, noun, refno.CATR, refno.SPRE, inst_relate_id, tubi_id 信息
+    let $raw_descendants = if $use_inclusive {
+        (SELECT VALUE array::flatten(@.{..+collect+inclusive}.children).{ 
+            id, 
+            noun, 
+            catr: refno.CATR, 
+            spre: refno.SPRE,
+            inst_relate_id,
+            tubi_id
+        } FROM ONLY $root LIMIT 1) ?: []
+    } else {
+        (SELECT VALUE array::flatten(@.{..+collect}.children).{ 
+            id, 
+            noun, 
+            catr: refno.CATR, 
+            spre: refno.SPRE,
+            inst_relate_id,
+            tubi_id
+        } FROM ONLY $root LIMIT 1) ?: []
+    };
+    
+    -- 第一步：过滤类型和 CATR/SPRE 条件
+    let $type_filtered = array::filter($raw_descendants, |$node|
+        $node != NONE
+        && $node.id != NONE
+        && (array::len($types) == 0 || $node.noun IN $types)
+        && (
+            ($node.catr != NONE && record::exists($node.catr))
+            || ($node.spre != NONE && record::exists($node.spre))
+        )
+    );
+    
+    -- 第二步：如果需要，过滤掉有 inst_relate 或 tubi_relate 的节点
+    let $filtered = if $need_filter {
+        array::filter($type_filtered, |$node|
+            !type::is_record($node.inst_relate_id)
+            && array::len(if type::is_array($node.tubi_id) { $node.tubi_id } else { [] }) == 0
+        )
+    } else {
+        $type_filtered
+    };
+    
+    return array::map($filtered, |$node| $node.id);
+};
+
 REMOVE FUNCTION fn::collect_children;
 -- 收集子节点，支持按类型过滤
 -- $types: 要过滤的类型数组，空数组表示不过滤
@@ -840,6 +909,56 @@ DEFINE FUNCTION fn::query_ptset($refno: string) {
 -- 返回：符合条件的节点 ID 数组
 -- 性能提升：相比分块查询，减少 90% 的网络往返时间
 -- ============================================================================
--- REMOVE FUNCTION fn::collect_descendants_filter_inst;
--- -- 收集子孙节点并过滤实例关系和直段关系
--- DEFINE FUNCTION fn::collect_descendants_filter_inst(
+REMOVE FUNCTION fn::collect_descendants_filter_inst;
+-- 收集子孙节点并过滤实例关系和直段关系
+DEFINE FUNCTION fn::collect_descendants_filter_inst(
+    $root: record,
+    $types: array<string>,
+    $filter_inst: option<bool>,
+    $include_self: option<bool>,
+    $skip_deleted: option<bool>,
+) {
+    if !record::exists($root) {
+        return [];
+    };
+
+    let $need_filter = $filter_inst ?: false;
+    let $with_self = $include_self ?: true;
+    let $skip_deleted_nodes = $skip_deleted ?: false;
+
+    let $raw_descendants = if $with_self {
+        (SELECT VALUE array::flatten(@.{..+collect+inclusive}.children).{
+            id,
+            noun,
+            deleted,
+            inst_relate_id,
+            tubi_id
+        } FROM ONLY $root LIMIT 1) ?: []
+    } else {
+        (SELECT VALUE array::flatten(@.{..+collect}.children).{
+            id,
+            noun,
+            deleted,
+            inst_relate_id,
+            tubi_id
+        } FROM ONLY $root LIMIT 1) ?: []
+    };
+
+    let $type_filtered = array::filter($raw_descendants, |$node|
+        $node != NONE
+        && $node.id != NONE
+        && (array::len($types) == 0 || $node.noun IN $types)
+        && (!$skip_deleted_nodes || $node.deleted != true)
+    );
+
+    let $filtered = if $need_filter {
+        array::filter($type_filtered, |$node|
+            !type::is_record($node.inst_relate_id)
+            && array::len(if type::is_array($node.tubi_id) { $node.tubi_id } else { [] }) == 0
+        )
+    } else {
+        $type_filtered
+    };
+
+    return array::map($filtered, |$node| $node.id);
+};

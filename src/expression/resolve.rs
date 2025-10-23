@@ -9,6 +9,7 @@ use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::parsed_data::{CateAxisParam, GmseParamData};
 use crate::pdms_data::{AxisParam, GmParam, PlinParam, ScomInfo};
 use crate::pdms_types::RefU64;
+use crate::shape::pdms_shape::RsVec3;
 use crate::tool::db_tool::db1_dehash;
 use crate::{
     CataContext, DDANGLE_STR, DDHEIGHT_STR, DDRADIUS_STR, RefnoEnum, eval_str_to_f32_or_default,
@@ -304,7 +305,7 @@ pub fn resolve_gmse_params(
                 }
             }
         } else {
-            let dir = parse_str_axis_to_vec3(axis, context).ok();
+            let dir = parse_str_axis_to_vec3(axis, context).ok().map(RsVec3);
             let axis = CateAxisParam {
                 refno: Default::default(),
                 number: 0,
@@ -403,8 +404,8 @@ pub fn resolve_axis_param(
     let Ok((m_dir, ref_dir, pos)) = resolve_axis(axis_param, scom, context) else {
         return Default::default();
     };
-    let mut dir = m_dir.is_normalized().then(|| m_dir);
-    let ref_dir = ref_dir.is_normalized().then(|| ref_dir);
+    let mut dir = m_dir.is_normalized().then(|| RsVec3(m_dir));
+    let ref_dir = ref_dir.is_normalized().then(|| RsVec3(ref_dir));
     // dbg!(&axis_param);
     let result = match axis_param.type_name.as_str() {
         "PTAX" => {
@@ -412,7 +413,7 @@ pub fn resolve_axis_param(
             CateAxisParam {
                 refno: axis_param.refno,
                 number,
-                pt: d * m_dir + pos,
+                pt: RsVec3(d * m_dir + pos),
                 dir,
                 ref_dir,
                 pconnect,
@@ -430,7 +431,7 @@ pub fn resolve_axis_param(
                 // dbg!(&axis_param);
                 let dirs = axis_param.direction.split(" ").collect::<Vec<_>>();
                 if !dirs.is_empty() {
-                    dir = parse_str_axis_to_vec3(&dirs[0], &context).ok();
+                    dir = parse_str_axis_to_vec3(&dirs[0], &context).ok().map(RsVec3);
                     // dbg!(dir);
                 }
                 // dbg!(dirs);
@@ -439,7 +440,7 @@ pub fn resolve_axis_param(
             CateAxisParam {
                 refno: axis_param.refno,
                 number,
-                pt: pos + Vec3::new(x, y, z),
+                pt: RsVec3(pos + Vec3::new(x, y, z)),
                 dir,
                 ref_dir,
                 pconnect,

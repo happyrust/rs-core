@@ -386,9 +386,9 @@ pub fn resolve_axis(
             if let Some(indx) = scom.axis_param_numbers.iter().position(|&x| x == pnt_index) {
                 let axis = resolve_axis_param(&scom.axis_params[indx], scom, context);
                 let flag = if is_neg { -1.0 } else { 1.0 };
-                dir = flag * axis.dir.unwrap_or_default();
+                dir = *axis.dir.unwrap_or_default() * flag;
                 if !is_pp {
-                    pos = axis.pt;
+                    pos = axis.pt.0;
                 }
             } else {
                 return Err(anyhow::anyhow!("未找到点索引: {}", pnt_index));
@@ -412,7 +412,7 @@ pub fn resolve_axis(
                 //     return Err(anyhow::anyhow!("方向为空"));
                 // }
                 let flag = if is_neg { -1.0 } else { 1.0 };
-                ref_dir = flag * axis.dir.unwrap_or_default();
+                ref_dir = *axis.dir.unwrap_or_default() * flag;
             } else {
                 return Err(anyhow::anyhow!("未找到点索引: {}", pnt_indx));
             }

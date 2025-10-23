@@ -32,7 +32,7 @@ pub async fn query_filter_all_bran_hangs(refno: RefnoEnum) -> anyhow::Result<Vec
 
 #[cached(result = true)]
 pub async fn query_deep_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    query_multi_filter_deep_children(&[refno], &[], None).await
+    collect_descendant_filter_ids(&[refno], &[], None).await
 }
 
 #[cached(result = true)]
@@ -69,7 +69,7 @@ pub async fn query_filter_deep_children(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    query_multi_filter_deep_children(&[refno], nouns, None).await
+    collect_descendant_filter_ids(&[refno], nouns, None).await
 }
 
 /// 查询子孙节点的属性
@@ -173,7 +173,7 @@ pub async fn query_ele_filter_deep_children(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<SPdmsElement>> {
-    let refnos = query_multi_filter_deep_children(&[refno], nouns, None).await?;
+    let refnos = collect_descendant_filter_ids(&[refno], nouns, None).await?;
     if refnos.is_empty() {
         return Ok(vec![]);
     }
@@ -210,30 +210,53 @@ pub async fn query_filter_deep_children_by_path(
     Ok(vec![])
 }
 
-/// 过滤 SPRE 和 CATR 不能同时为空的类型
+/// 查询子孙节点，过滤具有 SPRE/CATR 属性的节点（支持单个或多个起点）
 ///
 /// # 性能优化
 /// - 使用数据库端函数 `fn::collect_descendants_filter_spre` 一次性完成所有操作
+/// - 使用 array::map + array::flatten + array::distinct 模式减少网络往返
 /// - 相比旧实现，减少 90%+ 的网络往返时间
 ///
 /// # 参数
-/// - `refno`: 起始节点
+/// - `refnos`: 起始节点数组（可以传入单个或多个节点）
 /// - `filter`: 是否同时过滤掉有 inst_relate 或 tubi_relate 的节点
 ///
 /// # 返回
-/// 符合 SPRE/CATR 条件的子孙节点列表
+/// 符合 SPRE/CATR 条件的去重后的子孙节点列表
+///
+/// # 示例
+/// ```ignore
+/// // 单个节点
+/// let children = query_deep_children_refnos_filter_spre(&[refno], false).await?;
+/// // 多个节点
+/// let children = query_deep_children_refnos_filter_spre(&[refno1, refno2], false).await?;
+/// ```
 pub async fn query_deep_children_refnos_filter_spre(
-    refno: RefnoEnum,
+    refnos: &[RefnoEnum],
     filter: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    let pe_key = refno.to_pe_key();
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
+
     let filter_str = if filter { "true" } else { "false" };
 
-    // 使用优化的数据库端函数一次性完成所有操作
-    // exclude_self 使用 none 表示包含自身
+    // 将所有 refno 转换为 PE key 格式并拼接
+    let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
+    let refno_list = refno_keys.join(", ");
+
+    // 构建 SurQL 批量查询语句
+    // 1. 对每个起始节点调用 fn::collect_descendants_filter_spre 获取符合条件的子孙节点
+    // 2. 将所有结果展平（flatten）并过滤掉 None 值
+    // 3. 最后去重（distinct）
     let sql = format!(
-        "SELECT VALUE fn::collect_descendants_filter_spre({}, [], {}, none);",
-        pe_key, filter_str
+        r#"
+        -- 批量查询所有起点的子孙节点，使用 fn::collect_descendants_filter_spre
+        array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
+            fn::collect_descendants_filter_spre($refno, [], {}, none, "..")
+        )), |$v| $v != none));
+        "#,
+        refno_list, filter_str
     );
 
     match SUL_DB.query(&sql).await {
@@ -287,7 +310,7 @@ async fn query_versioned_deep_children_filter_inst(
         let pe_key = refno.to_pe_key();
 
         let sql = format!(
-            "SELECT VALUE fn::collect_descendants_filter_inst({}, {}, {}, true, false);",
+            "fn::collect_descendants_filter_inst({}, {}, {}, true, false);",
             pe_key, types_expr, filter_str
         );
 
@@ -311,7 +334,7 @@ async fn query_versioned_deep_children_filter_inst(
         }
     } else {
         // 历史版本查询：仍使用原有逻辑确保准确性
-        let candidates = query_multi_filter_deep_children(&[refno], nouns, None).await?;
+        let candidates = collect_descendant_filter_ids(&[refno], nouns, None).await?;
         if candidates.is_empty() {
             return Ok(vec![]);
         }
@@ -345,27 +368,43 @@ async fn query_versioned_deep_children_filter_inst(
     }
 }
 
-/// 查询深层子孙节点并过滤掉有 inst_relate 或 tubi_relate 关系的节点
+/// 查询深层子孙节点并过滤掉有 inst_relate 或 tubi_relate 关系的节点（支持单个或多个起点）
 ///
 /// # 性能优化
 /// - 使用数据库端函数 `fn::collect_descendants_filter_inst` 一次性完成所有操作
+/// - 使用 array::map + array::flatten + array::distinct 模式减少网络往返
 /// - 相比旧实现，减少 90%+ 的网络往返时间
 /// - 使用 `count(...LIMIT 1)` 优化关系检查，避免遍历所有关系
 ///
 /// # 参数
-/// - `refno`: 起始节点
+/// - `refnos`: 起始节点数组（可以传入单个或多个节点）
 /// - `nouns`: 要筛选的节点类型（空数组表示不过滤类型）
 /// - `filter`: 是否过滤掉有 inst_relate 或 tubi_relate 的节点
+///
+/// # 返回
+/// 符合条件的去重后的子孙节点列表
 ///
 /// # 性能对比
 /// - 旧实现（2000节点）: ~55ms (1次收集 + 10次分块过滤)
 /// - 新实现（2000节点）: ~5ms (1次数据库端处理)
 /// - 提升: 91%
-async fn query_deep_children_filter_inst(
-    refno: RefU64,
+///
+/// # 示例
+/// ```ignore
+/// // 单个节点
+/// let children = query_deep_children_filter_inst(&[refno], &["BRAN", "HANG"], true).await?;
+/// // 多个节点
+/// let children = query_deep_children_filter_inst(&[refno1, refno2], &["BRAN"], false).await?;
+/// ```
+pub async fn query_deep_children_filter_inst(
+    refnos: &[RefU64],
     nouns: &[&str],
     filter: bool,
 ) -> anyhow::Result<Vec<RefU64>> {
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
+
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let types_expr = if nouns.is_empty() {
         "[]".to_string()
@@ -373,12 +412,26 @@ async fn query_deep_children_filter_inst(
         format!("[{}]", nouns_str)
     };
     let filter_str = if filter { "true" } else { "false" };
-    let pe_key = refno.to_pe_key();
 
-    // 使用优化的数据库端函数一次性完成所有操作
+    // 将所有 refno 转换为 PE key 格式并拼接
+    let refno_keys: Vec<String> = refnos
+        .iter()
+        .map(|r| RefnoEnum::from(*r).to_pe_key())
+        .collect();
+    let refno_list = refno_keys.join(", ");
+
+    // 构建 SurQL 批量查询语句
+    // 1. 对每个起始节点调用 fn::collect_descendants_filter_inst 获取符合条件的子孙节点
+    // 2. 将所有结果展平（flatten）并过滤掉 None 值
+    // 3. 最后去重（distinct）
     let sql = format!(
-        "SELECT VALUE fn::collect_descendants_filter_inst({}, {}, {}, true, false);",
-        pe_key, types_expr, filter_str
+        r#"
+        -- 批量查询所有起点的子孙节点，使用 fn::collect_descendants_filter_inst
+        array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
+            fn::collect_descendants_filter_inst($refno, {}, {}, true, false)
+        )), |$v| $v != none));
+        "#,
+        refno_list, types_expr, filter_str
     );
 
     match SUL_DB.query(&sql).await {
@@ -401,32 +454,41 @@ async fn query_deep_children_filter_inst(
     }
 }
 
-/// 批量查询多个节点的深层子孙节点（按类型过滤）
+/// 批量查询多个节点的深层子孙节点（泛型版本，支持自定义 SELECT 表达式）
 ///
 /// # 功能说明
 /// - 从多个起始节点出发，批量查询其所有子孙节点
 /// - 可按指定类型（nouns）过滤结果，如果 nouns 为空则返回所有类型
+/// - 支持自定义 SELECT 表达式，可返回任意实现了 `SurrealValue` 的类型
 /// - 使用 SurQL 批量查询优化性能，避免串行循环
 /// - 自动去重并过滤掉无效的 None 值
 ///
 /// # 参数
 /// - `refnos`: 起始节点的 RefnoEnum 列表
 /// - `nouns`: 要筛选的节点类型列表（如 ["BOX", "CYLI"]），为空则不过滤
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
+/// - `select_expr`: SELECT 表达式，如 "VALUE id"（返回 ID）、"*"（返回完整记录）、"{ id, noun, name }"（返回部分字段）
 ///
 /// # 返回
-/// - 返回所有符合条件的子孙节点 RefnoEnum 列表（已去重）
+/// - 返回所有符合条件的子孙节点，类型为 `Vec<T>`，其中 `T` 必须实现 `SurrealValue` trait
 ///
 /// # 示例
 /// ```ignore
-/// let children = query_multi_filter_deep_children(&[refno1, refno2], &["BOX", "CYLI"], None).await?;
-/// // 使用自定义范围：
-/// let children = query_multi_filter_deep_children(&[refno1, refno2], &["BOX", "CYLI"], Some("1..5")).await?;
+/// // 查询 ID 列表
+/// let ids: Vec<RefnoEnum> = collect_descendant_with_expr(&[refno], &["SITE"], None, "VALUE id").await?;
+///
+/// // 查询完整元素
+/// let elements: Vec<SPdmsElement> = collect_descendant_with_expr(&[refno], &["EQUI"], None, "*").await?;
+///
+/// // 查询部分字段为 NamedAttrMap
+/// let attrs: Vec<NamedAttrMap> = collect_descendant_with_expr(&[refno], &[], Some("1..3"), "*").await?;
 /// ```
-pub async fn query_multi_filter_deep_children(
+pub async fn collect_descendant_with_expr<T: SurrealValue>(
     refnos: &[RefnoEnum],
     nouns: &[&str],
     range_str: Option<&str>,
-) -> anyhow::Result<Vec<RefnoEnum>> {
+    select_expr: &str,
+) -> anyhow::Result<Vec<T>> {
     if refnos.is_empty() {
         return Ok(Vec::new());
     }
@@ -446,17 +508,19 @@ pub async fn query_multi_filter_deep_children(
     let range = range_str.unwrap_or("..");
 
     // 构建 SurQL 批量查询语句
-    // 1. 对每个起始节点调用 fn::collect_descendant_ids_by_types 获取子孙节点
+    // 1. 对每个起始节点调用 fn::collect_descendant_ids_by_types 获取子孙节点 ID
     // 2. 将所有结果展平（flatten）并过滤掉 None 值
-    // 3. 最后去重（distinct）
+    // 3. 去重（distinct）得到 $ids
+    // 4. 使用自定义的 select_expr 从 $ids 中查询数据
     let sql = format!(
         r#"
         -- 批量查询所有起点的子孙节点，使用 fn::collect_descendant_ids_by_types
-        array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
+        let $ids = array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
             fn::collect_descendant_ids_by_types($refno, {}, none, "{}")
-        )), |$v| $v != none))
+        )), |$v| $v != none));
+        SELECT {} FROM $ids;
         "#,
-        refno_list, types_expr, range
+        refno_list, types_expr, range, select_expr
     );
 
     // println!("Sql: {}", sql);
@@ -464,98 +528,105 @@ pub async fn query_multi_filter_deep_children(
     let mut response = SUL_DB.query(&sql).await?;
     // dbg!(&response);
 
-    // 从响应中提取结果（record::id 返回字符串数组，如 "17496_171100"）
-    let result: Vec<RefnoEnum> = response.take(0)?;
+    // 跳过第一个结果（let $ids 的赋值），取第二个结果（SELECT 的结果）
+    let result: Vec<T> = response.take(1)?;
 
-    // 将 RefU64 转换为 RefnoEnum 并返回
     Ok(result)
-    // Ok(result.into_iter().map(|x| x.into()).collect())
 }
 
-pub async fn query_multi_deep_versioned_children_filter_inst(
+/// 批量查询多个节点的深层子孙节点（按类型过滤）
+///
+/// # 功能说明
+/// - 从多个起始节点出发，批量查询其所有子孙节点的 ID
+/// - 可按指定类型（nouns）过滤结果，如果 nouns 为空则返回所有类型
+/// - 使用 SurQL 批量查询优化性能，避免串行循环
+/// - 自动去重并过滤掉无效的 None 值
+///
+/// # 参数
+/// - `refnos`: 起始节点的 RefnoEnum 列表
+/// - `nouns`: 要筛选的节点类型列表（如 ["BOX", "CYLI"]），为空则不过滤
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
+///
+/// # 返回
+/// - 返回所有符合条件的子孙节点 RefnoEnum 列表（已去重）
+///
+/// # 示例
+/// ```ignore
+/// let children = collect_descendant_filter_ids(&[refno1, refno2], &["BOX", "CYLI"], None).await?;
+/// // 使用自定义范围：
+/// let children = collect_descendant_filter_ids(&[refno1, refno2], &["BOX", "CYLI"], Some("1..5")).await?;
+/// ```
+pub async fn collect_descendant_filter_ids(
     refnos: &[RefnoEnum],
     nouns: &[&str],
-    filter: bool,
-) -> anyhow::Result<BTreeSet<RefnoEnum>> {
-    if refnos.is_empty() {
-        return Ok(Default::default());
-    }
-    let mut result = BTreeSet::new();
-    let mut skip_set = BTreeSet::new();
-    let refno_nouns = query_types(&refnos.iter().map(|x| x.refno()).collect::<Vec<_>>()).await?;
-    for (refno, refno_noun) in refnos.iter().zip(refno_nouns) {
-        if !nouns.is_empty() {
-            if let Some(r_noun) = &refno_noun {
-                if skip_set.contains(r_noun) {
-                    continue;
-                }
-                // //检查是否有和nouns有path往来
-                let exist_path = nouns
-                    .iter()
-                    .any(|child| r_noun == child || !find_noun_path(child, r_noun).is_empty());
-                // dbg!(exist_path);
-                if !exist_path {
-                    skip_set.insert(r_noun.to_owned());
-                    continue;
-                }
-            } else {
-                continue;
-            }
-        }
-        //需要先过滤一遍，是否和nouns 的类型有path
-        let mut children = query_versioned_deep_children_filter_inst(*refno, nouns, filter).await?;
-        result.extend(children.drain(..));
-    }
-    Ok(result)
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    // 使用泛型函数，传入 "VALUE id" 表达式来获取 ID 列表
+    collect_descendant_with_expr(refnos, nouns, range_str, "VALUE id").await
 }
 
-// #[cached(result = true)]
-pub async fn query_multi_deep_children_filter_inst(
-    refnos: &[RefU64],
+/// 批量查询多个节点的深层子孙节点（返回完整的 SPdmsElement）
+///
+/// # 功能说明
+/// - 从多个起始节点出发，批量查询其所有子孙节点的完整元素信息
+/// - 可按指定类型（nouns）过滤结果，如果 nouns 为空则返回所有类型
+/// - 返回 `SPdmsElement` 结构体，包含 refno, owner, name, noun 等字段
+///
+/// # 参数
+/// - `refnos`: 起始节点的 RefnoEnum 列表
+/// - `nouns`: 要筛选的节点类型列表（如 ["EQUI", "PIPE"]），为空则不过滤
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）
+///
+/// # 返回
+/// - 返回所有符合条件的子孙节点 SPdmsElement 列表（已去重）
+///
+/// # 示例
+/// ```ignore
+/// let elements = collect_descendant_elements(&[refno], &["EQUI"], None).await?;
+/// for elem in elements {
+///     println!("Element: {} ({})", elem.name, elem.noun);
+/// }
+/// ```
+pub async fn collect_descendant_elements(
+    refnos: &[RefnoEnum],
     nouns: &[&str],
-    filter: bool,
-) -> anyhow::Result<HashSet<RefU64>> {
-    if refnos.is_empty() {
-        return Ok(Default::default());
-    }
-    let mut result = HashSet::new();
-    let mut skip_set = HashSet::new();
-    let refno_nouns = query_types(refnos).await?;
-    for (refno, refno_noun) in refnos.iter().zip(refno_nouns) {
-        // for refno in refnos {
-        if let Some(r_noun) = &refno_noun {
-            if skip_set.contains(r_noun) {
-                continue;
-            }
-            // //检查是否有和nouns有path往来
-            let exist_path = nouns
-                .iter()
-                .any(|child| r_noun == child || !find_noun_path(child, r_noun).is_empty());
-            // dbg!(exist_path);
-            if !exist_path {
-                skip_set.insert(r_noun.to_owned());
-                continue;
-            }
-        } else {
-            continue;
-        }
-        //需要先过滤一遍，是否和nouns 的类型有path
-        let mut children = query_deep_children_filter_inst(*refno, nouns, filter).await?;
-        result.extend(children.drain(..));
-    }
-    Ok(result)
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<SPdmsElement>> {
+    // 使用泛型函数，传入 "*" 表达式来获取完整记录
+    collect_descendant_with_expr(refnos, nouns, range_str, "*").await
 }
 
-pub async fn query_multi_deep_children_filter_spre(
-    refnos: Vec<RefnoEnum>,
-    filter: bool,
-) -> anyhow::Result<HashSet<RefnoEnum>> {
-    let mut result = HashSet::new();
-    for refno in refnos {
-        let mut children = query_deep_children_refnos_filter_spre(refno, filter).await?;
-        result.extend(children.drain(..));
-    }
-    Ok(result)
+/// 批量查询多个节点的深层子孙节点（返回 NamedAttrMap）
+///
+/// # 功能说明
+/// - 从多个起始节点出发，批量查询其所有子孙节点的完整属性
+/// - 可按指定类型（nouns）过滤结果，如果 nouns 为空则返回所有类型
+/// - 返回 `NamedAttrMap` 结构体，包含所有属性的键值对
+///
+/// # 参数
+/// - `refnos`: 起始节点的 RefnoEnum 列表
+/// - `nouns`: 要筛选的节点类型列表（如 ["ZONE", "EQUI"]），为空则不过滤
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）
+///
+/// # 返回
+/// - 返回所有符合条件的子孙节点 NamedAttrMap 列表（已去重）
+///
+/// # 示例
+/// ```ignore
+/// let attrs = collect_descendant_full_attrs(&[refno], &["ZONE"], Some("1..3")).await?;
+/// for attr in attrs {
+///     if let Some(name) = attr.get_string("NAME") {
+///         println!("Name: {}", name);
+///     }
+/// }
+/// ```
+pub async fn collect_descendant_full_attrs(
+    refnos: &[RefnoEnum],
+    nouns: &[&str],
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<NamedAttrMap>> {
+    // 使用泛型函数，传入 "*" 表达式来获取完整属性
+    collect_descendant_with_expr(refnos, nouns, range_str, "*").await
 }
 
 /// 查询指定refno的祖先节点中符合指定类型的节点
