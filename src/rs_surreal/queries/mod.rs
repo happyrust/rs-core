@@ -43,7 +43,7 @@ pub use batch::{
     query_full_names, query_full_names_map, query_children_full_names_map,
     query_data_with_refno_to_name, query_multiple_refnos_to_names,
     query_refnos_to_names_list, get_all_children_refnos, query_types,
-    query_filter_children, query_filter_children_atts
+    query_filter_children
 };
 
 pub use timeline::{

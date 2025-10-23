@@ -282,109 +282,28 @@ impl BatchQueryService {
     }
 
     /// 按类型过滤子元素
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 父元素的参考号
     /// * `types` - 要过滤的类型列表
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<RefnoEnum>>` - 过滤后的子元素 refno 列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
+    ///
+    /// # 注意
+    /// **已重构**: 现在使用 `collect_children_filter_ids` 实现
     pub async fn query_filter_children(
         refno: RefnoEnum,
         types: &[&str],
     ) -> Result<Vec<RefnoEnum>> {
-        let start_time = Instant::now();
-        
-        let types_array = if types.is_empty() {
-            "none".to_string()
-        } else {
-            let types_str = types
-                .iter()
-                .map(|s| format!("'{s}'"))
-                .collect::<Vec<_>>()
-                .join(",");
-            format!("[{}]", types_str)
-        };
-        
-        let sql = format!(
-            r#"SELECT value id FROM fn::collect_children({}, {})"#,
-            refno.to_pe_key(),
-            types_array
-        );
+        use crate::graph::collect_children_filter_ids;
 
-        let query = QueryBuilder::from_sql(&sql);
-
-        match query.fetch_all::<RefnoEnum>().await {
-            Ok(children) => {
-                let execution_time = start_time.elapsed().as_millis() as u64;
-                QueryErrorHandler::log_query_execution(&sql, execution_time);
-                QueryErrorHandler::log_query_results(&sql, children.len());
-                Ok(children)
-            }
-            Err(error) => {
-                let query_error = QueryErrorHandler::handle_execution_error(&sql, error);
-                Err(query_error.into())
-            }
-        }
-    }
-
-    /// 按类型过滤子元素属性
-    /// 
-    /// # 参数
-    /// * `refno` - 父元素的参考号
-    /// * `types` - 要过滤的类型列表
-    /// 
-    /// # 返回值
-    /// * `Result<Vec<NamedAttrMap>>` - 过滤后的子元素属性列表
-    /// 
-    /// # 错误
-    /// * 如果查询失败会返回错误
-    pub async fn query_filter_children_atts(
-        refno: RefnoEnum,
-        types: &[&str],
-    ) -> Result<Vec<NamedAttrMap>> {
-        use crate::{NamedAttrMap, SurlValue};
-        
-        let start_time = Instant::now();
-        
-        let types_array = if types.is_empty() {
-            "none".to_string()
-        } else {
-            let types_str = types
-                .iter()
-                .map(|s| format!("'{s}'"))
-                .collect::<Vec<_>>()
-                .join(",");
-            format!("[{}]", types_str)
-        };
-        
-        let sql = format!(
-            r#"SELECT value id.refno.* FROM fn::collect_children({}, {})"#,
-            refno.to_pe_key(),
-            types_array
-        );
-
-        let query = QueryBuilder::from_sql(&sql);
-
-        match query.fetch_value().await {
-            Ok(value) => {
-                let execution_time = start_time.elapsed().as_millis() as u64;
-                QueryErrorHandler::log_query_execution(&sql, execution_time);
-
-                let atts: Vec<surrealdb::types::Value> = value.into_inner().try_into().unwrap();
-                let result: Vec<NamedAttrMap> = atts.into_iter().map(|x| x.into()).collect();
-                
-                QueryErrorHandler::log_query_results(&sql, result.len());
-                Ok(result)
-            }
-            Err(error) => {
-                let query_error = QueryErrorHandler::handle_execution_error(&sql, error);
-                Err(query_error.into())
-            }
-        }
+        collect_children_filter_ids(refno, types)
+            .await
+            .map_err(|e| e.into())
     }
 }
 
@@ -436,13 +355,6 @@ pub async fn query_filter_children(
     types: &[&str],
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     BatchQueryService::query_filter_children(refno, types).await
-}
-
-pub async fn query_filter_children_atts(
-    refno: RefnoEnum,
-    types: &[&str],
-) -> anyhow::Result<Vec<NamedAttrMap>> {
-    BatchQueryService::query_filter_children_atts(refno, types).await
 }
 
 #[cfg(test)]

@@ -671,56 +671,24 @@ pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     Ok(named_attmap)
 }
 
+/// 获取直接子节点的属性映射
+///
+/// # 注意
+/// **已重构**: 现在使用 `collect_children_filter_attrs` 实现
 #[cached(result = true)]
 pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
-    let sql = format!(
-        r#"select value refno.* from {}.children where id!=none and !deleted"#,
-        refno.to_pe_key()
-    );
-    let mut response = SUL_DB.query(sql).await?;
-    let named_attmaps: Vec<NamedAttrMap> = response.take(0)?;
-    Ok(named_attmaps)
+    use crate::graph::collect_children_filter_attrs;
+    collect_children_filter_attrs(refno, &[]).await
 }
 
-///获取所有子孙的参考号
+///获取所有直接子节点的完整元素
+///
+/// # 注意
+/// **已重构**: 现在使用 `collect_children_elements` 实现
 #[cached(result = true)]
 pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsElement>> {
-    let sql = format!(
-        r#"
-            select * from {}.children where record::exists(id) and !deleted
-        "#,
-        refno.to_pe_key()
-    );
-    let mut response = SUL_DB.query(sql).await?;
-    let pes: Vec<SPdmsElement> = response.take(0)?;
-    Ok(pes)
-}
-
-///查询直接子节点属性，支持按类型过滤
-pub async fn query_filter_children_atts(
-    refno: RefnoEnum,
-    types: &[&str],
-) -> anyhow::Result<Vec<NamedAttrMap>> {
-    let types_array = if types.is_empty() {
-        "none".to_string()
-    } else {
-        let types_str = types
-            .iter()
-            .map(|s| format!("'{s}'"))
-            .collect::<Vec<_>>()
-            .join(",");
-        format!("[{}]", types_str)
-    };
-
-    let sql = format!(
-        "return select value id.refno.* from fn::collect_children({}, {})",
-        refno.to_pe_key(),
-        types_array
-    );
-
-    let mut response = SUL_DB.query(sql).await?;
-    let atts: Vec<NamedAttrMap> = take_vec(&mut response, 0)?;
-    Ok(atts)
+    use crate::graph::collect_children_elements;
+    collect_children_elements(refno, &[]).await
 }
 
 ///传入一个负数的参考号数组，返回一个数组，包含所有子孙的EleTreeNode

@@ -19,6 +19,8 @@ pub mod test_query_group;
 
 pub mod test_graph;
 
+pub mod test_collect_children;
+
 pub mod test_query_insts;
 
 pub mod test_serde;

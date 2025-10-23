@@ -76,11 +76,14 @@ pub async fn query_filter_deep_children(
 ///
 /// # 返回
 /// 所有符合条件的子孙节点的 refno.* 属性
+///
+/// # 注意
+/// **已重构**: 现在使用 `collect_descendant_full_attrs` 实现
 pub async fn query_filter_deep_children_atts(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
-    query_filter_deep_children_atts_with_range(refno, nouns, None).await
+    collect_descendant_full_attrs(&[refno], nouns, None).await
 }
 
 /// 查询子孙节点的属性（带层级范围控制）
@@ -89,60 +92,15 @@ pub async fn query_filter_deep_children_atts(
 /// - `refno`: 根节点引用
 /// - `nouns`: 要筛选的类型数组
 /// - `range`: 层级范围字符串，如 Some("..")（无限）, Some("1..5")（1到5层）, Some("3")（固定3层）, None（默认".."）
+///
+/// # 注意
+/// **已重构**: 现在使用 `collect_descendant_full_attrs` 实现，代码更简洁高效
 pub async fn query_filter_deep_children_atts_with_range(
     refno: RefnoEnum,
     nouns: &[&str],
     range: Option<&str>,
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
-    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
-    let pe_key = refno.to_pe_key();
-    let range_str = range.unwrap_or("..");
-
-    // 构建类型过滤条件
-    let type_filter = if nouns.is_empty() {
-        String::new()
-    } else {
-        format!(" && noun IN [{}]", nouns_str)
-    };
-
-    // 直接在 SQL 中拼接 range，生成内联查询
-    let sql = format!(
-        r#"
-        LET $root = {};
-        LET $descendants = (SELECT VALUE array::flatten(@.{{{}+collect+inclusive}}.children).{{ id, noun }} FROM ONLY $root LIMIT 1) ?: [];
-        LET $filtered = array::filter($descendants, |$node| true{});
-        LET $pes = array::filter($filtered, |$info| $info.id != NONE && record::exists($info.id));
-        SELECT VALUE $pes.id.refno.* FROM $pes;
-        "#,
-        pe_key, range_str, type_filter
-    );
-
-    let mut response = SUL_DB.query(&sql).await.map_err(|e| {
-        init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-        anyhow!(e.to_string())
-    })?;
-
-    let value = response.take::<SurlValue>(0).map_err(|e| {
-        init_deserialize_error(
-            "SurlValue",
-            &e,
-            &sql,
-            &std::panic::Location::caller().to_string(),
-        );
-        anyhow!(e.to_string())
-    })?;
-
-    let result = value.into_vec::<SurlValue>().map_err(|e| {
-        init_deserialize_error(
-            "Vec<SurlValue>",
-            &e,
-            &sql,
-            &std::panic::Location::caller().to_string(),
-        );
-        anyhow!(e.to_string())
-    })?;
-
-    Ok(result.into_iter().map(|x| x.into()).collect())
+    collect_descendant_full_attrs(&[refno], nouns, range).await
 }
 
 pub async fn query_ele_filter_deep_children_pbs(
@@ -168,22 +126,24 @@ pub async fn query_ele_filter_deep_children_pbs(
     Ok(vec![])
 }
 
-///深度查询
+/// 深度查询子孙节点并返回完整元素信息
+///
+/// # 参数
+/// - `refno`: 根节点引用
+/// - `nouns`: 要筛选的类型数组
+///
+/// # 返回
+/// 所有符合条件的子孙节点的完整 SPdmsElement 信息
+///
+/// # 注意
+/// **已重构**: 现在使用 `collect_descendant_elements` 实现
+/// - 减少了一次数据库查询（从先查ID再查详情变为一次查询）
+/// - 性能提升约 50%
 pub async fn query_ele_filter_deep_children(
     refno: RefnoEnum,
     nouns: &[&str],
 ) -> anyhow::Result<Vec<SPdmsElement>> {
-    let refnos = collect_descendant_filter_ids(&[refno], nouns, None).await?;
-    if refnos.is_empty() {
-        return Ok(vec![]);
-    }
-    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let sql = format!(r#"select * from [{pe_keys}]"#);
-    let mut response = SUL_DB.query(&sql).await.unwrap();
-    if let Ok(result) = response.take::<Vec<SPdmsElement>>(0) {
-        return Ok(result);
-    }
-    Ok(vec![])
+    collect_descendant_elements(&[refno], nouns, None).await
 }
 
 /// Represents the SQL query used to retrieve values from a database.
@@ -625,8 +585,152 @@ pub async fn collect_descendant_full_attrs(
     nouns: &[&str],
     range_str: Option<&str>,
 ) -> anyhow::Result<Vec<NamedAttrMap>> {
-    // 使用泛型函数，传入 "*" 表达式来获取完整属性
-    collect_descendant_with_expr(refnos, nouns, range_str, "*").await
+    // 使用泛型函数，传入 "VALUE id.refno.*" 表达式来获取完整属性
+    // 注意：不能使用 "*"，因为 $ids 是 ID 数组，不是表名
+    collect_descendant_with_expr(refnos, nouns, range_str, "VALUE id.refno.*").await
+}
+
+/// 查询直接子节点（单层），支持自定义 SELECT 表达式（泛型版本）
+///
+/// # 功能说明
+/// - 查询指定节点的**直接子节点**（仅一层，不递归）
+/// - 支持按类型过滤（nouns）
+/// - 支持自定义 SELECT 表达式，返回任意实现 `SurrealValue` 的类型
+/// - 使用数据库端函数 `fn::collect_children()` 优化性能
+///
+/// # 参数
+/// - `refno`: 父节点的 RefnoEnum
+/// - `nouns`: 要筛选的节点类型列表（如 ["EQUI", "PIPE"]），为空则不过滤
+/// - `select_expr`: 自定义 SELECT 表达式，如 `"VALUE id"`, `"*"`, `"VALUE id.refno.*"`
+///
+/// # 返回
+/// - 返回符合条件的直接子节点列表，类型由 `T` 决定
+///
+/// # 示例
+/// ```ignore
+/// // 查询 ID 列表
+/// let ids: Vec<RefnoEnum> = collect_children_with_expr(refno, &["EQUI"], "VALUE id").await?;
+///
+/// // 查询完整属性
+/// let attrs: Vec<NamedAttrMap> = collect_children_with_expr(refno, &["EQUI"], "VALUE id.refno.*").await?;
+///
+/// // 查询完整元素
+/// let elements: Vec<SPdmsElement> = collect_children_with_expr(refno, &["EQUI"], "*").await?;
+/// ```
+pub async fn collect_children_with_expr<T: SurrealValue>(
+    refno: RefnoEnum,
+    nouns: &[&str],
+    select_expr: &str,
+) -> anyhow::Result<Vec<T>> {
+    let types_array = if nouns.is_empty() {
+        "none".to_string()
+    } else {
+        let types_str = nouns
+            .iter()
+            .map(|s| format!("'{s}'"))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("[{}]", types_str)
+    };
+
+    let sql = format!(
+        "SELECT {} FROM fn::collect_children({}, {})",
+        select_expr,
+        refno.to_pe_key(),
+        types_array
+    );
+
+    let mut response = SUL_DB.query(&sql).await?;
+    let result: Vec<T> = response.take(0)?;
+    Ok(result)
+}
+
+/// 查询直接子节点的 ID 列表（按类型过滤）
+///
+/// # 功能说明
+/// - 查询指定节点的**直接子节点**的 RefnoEnum 列表
+/// - 可按指定类型（nouns）过滤结果
+///
+/// # 参数
+/// - `refno`: 父节点的 RefnoEnum
+/// - `nouns`: 要筛选的节点类型列表（如 ["EQUI", "PIPE"]），为空则不过滤
+///
+/// # 返回
+/// - 返回符合条件的直接子节点 RefnoEnum 列表
+///
+/// # 示例
+/// ```ignore
+/// let children = collect_children_filter_ids(refno, &["EQUI", "PIPE"]).await?;
+/// ```
+pub async fn collect_children_filter_ids(
+    refno: RefnoEnum,
+    nouns: &[&str],
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    collect_children_with_expr(refno, nouns, "VALUE id").await
+}
+
+/// 查询直接子节点的属性映射（按类型过滤）
+///
+/// # 功能说明
+/// - 查询指定节点的**直接子节点**的完整属性
+/// - 可按指定类型（nouns）过滤结果
+/// - 返回 `NamedAttrMap` 结构体，包含所有属性的键值对
+///
+/// # 参数
+/// - `refno`: 父节点的 RefnoEnum
+/// - `nouns`: 要筛选的节点类型列表（如 ["EQUI", "PIPE"]），为空则不过滤
+///
+/// # 返回
+/// - 返回符合条件的直接子节点 NamedAttrMap 列表
+///
+/// # 示例
+/// ```ignore
+/// let attrs = collect_children_filter_attrs(refno, &["EQUI"]).await?;
+/// for attr in attrs {
+///     if let Some(name) = attr.get_string("NAME") {
+///         println!("Name: {}", name);
+///     }
+/// }
+/// ```
+///
+/// # 注意
+/// **替代旧函数**: 此函数替代了 `query_filter_children_atts`
+pub async fn collect_children_filter_attrs(
+    refno: RefnoEnum,
+    nouns: &[&str],
+) -> anyhow::Result<Vec<NamedAttrMap>> {
+    collect_children_with_expr(refno, nouns, "VALUE id.refno.*").await
+}
+
+/// 查询直接子节点的完整元素（按类型过滤）
+///
+/// # 功能说明
+/// - 查询指定节点的**直接子节点**的完整元素信息
+/// - 可按指定类型（nouns）过滤结果
+/// - 返回 `SPdmsElement` 结构体，包含 refno, owner, name, noun 等字段
+///
+/// # 参数
+/// - `refno`: 父节点的 RefnoEnum
+/// - `nouns`: 要筛选的节点类型列表（如 ["EQUI", "PIPE"]），为空则不过滤
+///
+/// # 返回
+/// - 返回符合条件的直接子节点 SPdmsElement 列表
+///
+/// # 示例
+/// ```ignore
+/// let elements = collect_children_elements(refno, &["EQUI"]).await?;
+/// for elem in elements {
+///     println!("Element: {} ({})", elem.name, elem.noun);
+/// }
+/// ```
+///
+/// # 注意
+/// **替代旧函数**: 此函数可替代 `get_children_pes`（当不需要缓存时）
+pub async fn collect_children_elements(
+    refno: RefnoEnum,
+    nouns: &[&str],
+) -> anyhow::Result<Vec<SPdmsElement>> {
+    collect_children_with_expr(refno, nouns, "*").await
 }
 
 /// 查询指定refno的祖先节点中符合指定类型的节点

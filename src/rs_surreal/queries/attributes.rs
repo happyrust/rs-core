@@ -301,40 +301,24 @@ impl AttributeQueryService {
     }
 
     /// 获取子元素的属性映射列表
-    /// 
+    ///
     /// # 参数
     /// * `refno` - 父元素的参考号
-    /// 
+    ///
     /// # 返回值
     /// * `Result<Vec<NamedAttrMap>>` - 子元素的属性映射列表
-    /// 
+    ///
     /// # 错误
     /// * 如果查询失败会返回错误
+    ///
+    /// # 注意
+    /// **已重构**: 现在使用 `collect_children_filter_attrs` 实现
     pub async fn get_children_named_attmaps(refno: RefnoEnum) -> Result<Vec<NamedAttrMap>> {
-        let start_time = Instant::now();
-        let sql = format!(
-            r#"SELECT value in.refno.* FROM {}<-pe_owner WHERE in.id!=none AND !in.deleted"#,
-            refno.to_pe_key()
-        );
-        
-        let query = QueryBuilder::from_sql(&sql);
+        use crate::graph::collect_children_filter_attrs;
 
-        match query.fetch_value().await {
-            Ok(value) => {
-                let execution_time = start_time.elapsed().as_millis() as u64;
-                QueryErrorHandler::log_query_execution(&sql, execution_time);
-
-                let os: Vec<SurlValue> = value.into_inner().try_into().unwrap();
-                let named_attmaps: Vec<NamedAttrMap> = os.into_iter().map(|x| x.into()).collect();
-                
-                QueryErrorHandler::log_query_results(&sql, named_attmaps.len());
-                Ok(named_attmaps)
-            }
-            Err(error) => {
-                let query_error = QueryErrorHandler::handle_execution_error(&sql, error);
-                Err(query_error.into())
-            }
-        }
+        collect_children_filter_attrs(refno, &[])
+            .await
+            .map_err(|e| e.into())
     }
 
     /// 通过路径查询单个属性
