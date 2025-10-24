@@ -253,7 +253,19 @@ pub fn eval_str_to_f64(
         return Ok(0.0);
     }
     #[cfg(feature = "debug_expr")]
-    dbg!(&input_expr);
+    {
+        dbg!(&input_expr);
+        // 如果表达式包含 PARAM，打印 context 中的所有 PARAM 键
+        if input_expr.contains("PARAM") {
+            println!("Context PARAM keys:");
+            for entry in context.context.iter() {
+                let key = entry.key();
+                if key.contains("PARAM") {
+                    println!("  {} = {}", key, entry.value());
+                }
+            }
+        }
+    }
     let refno = context
         .get("RS_DES_REFNO")
         .and_then(|x| Some(RefnoEnum::from(x.as_str())))
@@ -441,6 +453,12 @@ pub fn eval_str_to_f64(
                     }
                 }
                 uda_context_added = true;
+            }
+
+            #[cfg(feature = "debug_expr")]
+            if input_expr.contains("PARAM") {
+                println!("Checking key: k='{}', s='{}', is_some_param={}, contains_key={}",
+                    &k, s, is_some_param, context.contains_key(&k));
             }
 
             if context.contains_key(&k) {
