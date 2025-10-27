@@ -96,6 +96,51 @@ impl BrepShapeTrait for Sphere {
         Some(PdmsGeoParam::PrimSphere(self.clone()))
     }
 
+    /// 为球体生成增强的关键点
+    ///
+    /// 包括：
+    /// - 1个中心点（优先级100）
+    /// - 6个主轴端点（优先级90）
+    /// - 8个赤道圆周点（优先级70）
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+
+        // 中心点（优先级最高：100）
+        let world_center = transform.transform_point(self.center);
+        points.push((world_center, "Center".to_string(), 100));
+
+        // 6个主轴端点（优先级：90）
+        let axis_points = [
+            Vec3::new(self.radius, 0.0, 0.0),   // +X
+            Vec3::new(-self.radius, 0.0, 0.0),  // -X
+            Vec3::new(0.0, self.radius, 0.0),   // +Y
+            Vec3::new(0.0, -self.radius, 0.0),  // -Y
+            Vec3::new(0.0, 0.0, self.radius),   // +Z
+            Vec3::new(0.0, 0.0, -self.radius),  // -Z
+        ];
+
+        for axis_point in axis_points {
+            let local_pos = self.center + axis_point;
+            let world_pos = transform.transform_point(local_pos);
+            points.push((world_pos, "Endpoint".to_string(), 90));
+        }
+
+        // 赤道圆周8个点（优先级：70）
+        for i in 0..8 {
+            let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+            let x = self.radius * angle.cos();
+            let y = self.radius * angle.sin();
+            let local_pos = self.center + Vec3::new(x, y, 0.0);
+            let world_pos = transform.transform_point(local_pos);
+            points.push((world_pos, "SurfacePoint".to_string(), 70));
+        }
+
+        points
+    }
+
     ///直接通过基本体的参数，生成模型
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         let generated = IcoSphere::new(32, |point| {

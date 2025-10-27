@@ -11,6 +11,16 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json;
 use serde_with::serde_as;
 
+/// 初始化数据库的 inst_relate 表的索引
+pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
+    // 创建 zone_refno 字段的索引
+    let create_index_sql = "
+        DEFINE INDEX idx_inst_relate_zone_refno ON TABLE inst_relate COLUMNS zone_refno TYPE BTREE;
+    ";
+    let _ = SUL_DB.query(create_index_sql).await;
+    Ok(())
+}
+
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TubiInstQuery {
@@ -380,16 +390,6 @@ use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 use std::collections::HashMap;
 
-/// 初始化数据库的 inst_relate 表的索引
-pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
-    // 创建 zone_refno 字段的索引
-    let create_index_sql = "
-        DEFINE INDEX idx_inst_relate_zone_refno ON TABLE inst_relate COLUMNS zone_refno TYPE BTREE;
-    ";
-    let _ = SUL_DB.query(create_index_sql).await;
-    Ok(())
-}
-
 /// 定义 dbnum_info_table 的更新事件
 ///
 /// 当 pe 表有 CREATE/UPDATE/DELETE 事件时，自动更新 dbnum_info_table 的统计信息
@@ -441,753 +441,110 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
     Ok(())
 }
 
-///保存instance 数据到数据库（单线程版本）
-pub async fn save_instance_data_single(
-    inst_mgr: &ShapeInstancesData,
-    replace_exist: bool,
+/// 删除指定 refnos 对应的 instance 数据
+///
+/// 会依次删除以下数据：
+/// 1. inst_geo 表数据 (通过 geo_relate 关系)
+/// 2. geo_relate 关系表
+/// 3. inst_info 表数据
+/// 4. inst_relate 关系表
+///
+/// # 参数
+///
+/// * `refnos` - 需要删除的构件编号迭代器
+///
+/// # 返回值
+///
+/// 返回删除操作的结果
+pub async fn delete_instance_data(
+    refnos: impl IntoIterator<Item = RefnoEnum>,
 ) -> anyhow::Result<()> {
-    use crate::gen_bytes_hash;
-    use itertools::Itertools;
+    let refnos: Vec<RefnoEnum> = refnos.into_iter().collect();
 
-    let mut aabb_map: HashMap<u64, String> = HashMap::new();
-    let mut transform_map: HashMap<u64, String> = HashMap::new();
-    //标识单位矩阵
-    transform_map.insert(0, serde_json::to_string(&Transform::IDENTITY).unwrap());
-    let mut param_map = HashMap::new();
-    let mut vec3_map: HashMap<u64, String> = HashMap::new();
-    let test_refno = crate::get_db_option().get_test_refno();
+    if refnos.is_empty() {
+        return Ok(());
+    }
 
     let chunk_size = 300;
-    //把delete 提前，因为后面的插入都是异步的执行
-    if replace_exist {
-        let keys = inst_mgr.inst_info_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut delete_sql_vec = vec![];
 
-            for &k in chunk {
-                let v = inst_mgr.inst_info_map.get(k).unwrap();
-                let delete_old_sql = format!(
-                    r#"
-                delete array::flatten(select value out->geo_relate.out from {0});
-                delete array::flatten(select value out->geo_relate from {0});
-                delete array::flatten(select value out from {0});
-                delete {0};"#,
-                    v.refno.to_inst_relate_key()
-                );
-                delete_sql_vec.push(delete_old_sql);
-            }
-            //如果需要删除之前的，先执行
-            if !delete_sql_vec.is_empty() {
-                let sql = delete_sql_vec.join("");
-                // dbg!(&sql);
-                SUL_DB.query(sql).await.unwrap();
-            }
-        }
-        // return Ok(());
-    }
+    // 分批删除，避免单次 SQL 过大
+    for chunk in refnos.chunks(chunk_size) {
+        let mut delete_sql_vec = vec![];
 
-    let keys = inst_mgr.inst_geos_map.keys().collect::<Vec<_>>();
-    // let mut insert_handles = FuturesUnordered::new();
-    let mut inst_geo_vec = vec![];
-    let mut geo_relate_vec = vec![];
-
-    // dbg!(&keys);
-    for k in keys {
-        let v = inst_mgr.inst_geos_map.get(k).unwrap();
-        for inst in &v.insts {
-            if inst.transform.translation.is_nan()
-                || inst.transform.rotation.is_nan()
-                || inst.transform.scale.is_nan()
-            {
-                dbg!(&inst);
-                continue;
-            }
-            let transform_hash = crate::gen_bytes_hash(&inst.transform);
-            if !transform_map.contains_key(&transform_hash) {
-                transform_map.insert(
-                    transform_hash,
-                    serde_json::to_string(&inst.transform).unwrap(),
-                );
-            }
-            let param_hash = crate::gen_bytes_hash(&inst.geo_param);
-            if !param_map.contains_key(&param_hash) {
-                param_map.insert(param_hash, serde_json::to_string(&inst.geo_param).unwrap());
-            }
-            let key_pts = inst.geo_param.key_points();
-            let mut pt_hashes = vec![];
-            for k in key_pts {
-                let pts_hash = k.gen_hash();
-                pt_hashes.push(format!("vec3:⟨{}⟩", pts_hash));
-                if !vec3_map.contains_key(&pts_hash) {
-                    vec3_map.insert(pts_hash, serde_json::to_string(&k).unwrap());
-                }
-            }
-            //还需要加入geo_param的指向，param 是否填原始参数？ param=param:{}
-            //使用cata_key -> inst_geos
-            let cat_negs_str = if !inst.cata_neg_refnos.is_empty() {
-                format!(
-                    ", cata_neg: [{}]",
-                    inst.cata_neg_refnos.iter().map(|x| x.to_pe_key()).join(",")
-                )
-            } else {
-                "".to_string()
-            };
-            //如果是replace, 直接这里需要先删除之前的sql语句
-            let mut relate_json = format!(
-                r#"in: inst_info:⟨{0}⟩, out: inst_geo:⟨{1}⟩, trans: trans:⟨{2}⟩, geom_refno: pe:{3}, pts: [{4}], geo_type: '{5}', visible: {6} {7}"#,
-                v.id(),
-                inst.geo_hash,
-                transform_hash,
-                inst.refno,
-                pt_hashes.join(","),
-                inst.geo_type.to_string(),
-                inst.visible,
-                cat_negs_str
+        for refno in chunk {
+            let inst_relate_key = refno.to_inst_relate_key();
+            let delete_sql = format!(
+                r#"
+                BEGIN TRANSACTION;
+                    delete array::flatten(select value out->geo_relate.out from {0});
+                    delete array::flatten(select value out->geo_relate from {0});
+                    delete array::flatten(select value out from {0});
+                    delete {0};
+                COMMIT TRANSACTION;
+                "#,
+                inst_relate_key
             );
-            //将 string 转成一个 hash id
-            let id = crate::gen_bytes_hash(&relate_json);
-            let final_json = format!("{{ {relate_json}, id: '{id}' }}");
-            // dbg!(&relate_sql);
-            // println!("geo relate json: {}", &final_json);
-            geo_relate_vec.push(final_json);
-            //保存 unit shape 的几何参数
-            inst_geo_vec.push(inst.gen_unit_geo_sur_json());
-            // EXIST_MESH_GEOS.insert(inst.geo_hash);
-        }
-    }
-
-    if !inst_geo_vec.is_empty() {
-        for chunk in inst_geo_vec.chunks(chunk_size) {
-            let sql_string = format!(
-                "insert ignore into {} [{}];",
-                stringify!(inst_geo),
-                chunk.join(",")
-            );
-            // dbg!(&sql_string);
-            // let handle = tokio::spawn(async move {
-            SUL_DB.query(sql_string).await.unwrap();
-            // });
-            // insert_handles.push(handle);
-        }
-    }
-    if !geo_relate_vec.is_empty() {
-        // let handle = tokio::spawn(async move {
-        for chunk in geo_relate_vec.chunks(chunk_size) {
-            let sql = format!("INSERT RELATION INTO geo_relate [{}];", chunk.join(","));
-            //
-            // println!("geo relate sql: {}", &sql);
-            let mut response = SUL_DB.query(sql).await.unwrap();
-            // let mut error = response.take_errors();
-            // if !error.is_empty() {
-            //     dbg!(&error);
-            // }
-        }
-        // });
-        // insert_handles.push(handle);
-    }
-
-    //保存tubi的数据
-    let keys = inst_mgr.inst_tubi_map.keys().collect::<Vec<_>>();
-    for chunk in keys.chunks(chunk_size) {
-        for &k in chunk {
-            let v = inst_mgr.inst_tubi_map.get(k).unwrap();
-            //更新aabb 和 transform，保存relate已经在别的地方加了，这里后面需要重构
-            let aabb = v.aabb.unwrap();
-            let aabb_hash = crate::gen_bytes_hash(&aabb);
-            let transform_hash = crate::gen_bytes_hash(&v.world_transform);
-            if !aabb_map.contains_key(&aabb_hash) {
-                aabb_map.insert(aabb_hash, serde_json::to_string(&aabb).unwrap());
-            }
-            if !transform_map.contains_key(&transform_hash) {
-                transform_map.insert(
-                    transform_hash,
-                    serde_json::to_string(&v.world_transform).unwrap(),
-                );
-            }
-        }
-    }
-
-    let keys = inst_mgr.inst_info_map.keys().collect::<Vec<_>>();
-    if !inst_mgr.neg_relate_map.is_empty() {
-        let mut neg_relate_vec = vec![];
-        // dbg!(&inst_mgr.neg_relate_map);
-        for (k, refnos) in &inst_mgr.neg_relate_map {
-            //这里需要order
-            for (indx, r) in refnos.into_iter().enumerate() {
-                neg_relate_vec.push(format!(
-                    "{{ in: {}, id: [{}, {indx}], out: {} }}",
-                    r.to_pe_key(),
-                    r.to_string(),
-                    k.to_pe_key(),
-                ));
-            }
-        }
-        if !neg_relate_vec.is_empty() {
-            for chunk in neg_relate_vec.chunks(chunk_size) {
-                let neg_relate_sql =
-                    format!("INSERT RELATION INTO neg_relate [{}];", chunk.join(","));
-                SUL_DB.query(neg_relate_sql).await.unwrap();
-            }
-        }
-    }
-
-    // dbg!(&inst_mgr.ngmr_neg_relate_map);
-    if !inst_mgr.ngmr_neg_relate_map.is_empty() {
-        let mut ngmr_relate_vec = vec![];
-        for (k, refnos) in &inst_mgr.ngmr_neg_relate_map {
-            let kpe = k.to_pe_key();
-            for (ele_refno, ngmr_geom_refno) in refnos {
-                let ele_pe = ele_refno.to_pe_key();
-                let ngmr_pe = ngmr_geom_refno.to_pe_key();
-                ngmr_relate_vec.push(format!(
-                    "{{ in: {0}, id: [{0}, {1}, {2}], out: {1}, ngmr: {2}}}",
-                    ele_pe, kpe, ngmr_pe
-                ));
-            }
-        }
-        if !ngmr_relate_vec.is_empty() {
-            for chunk in ngmr_relate_vec.chunks(chunk_size) {
-                let ngmr_relate_sql =
-                    format!("INSERT RELATION INTO ngmr_relate [{}];", chunk.join(","));
-                SUL_DB.query(ngmr_relate_sql).await.unwrap();
-            }
-        }
-    }
-
-    // dbg!(&inst_mgr.ngmr_relate_map);
-    // for chunk in keys.chunks(chunk_size)
-    {
-        let mut inst_info_vec = vec![];
-        let mut inst_relate_vec = vec![];
-        for k in keys.clone() {
-            let v = inst_mgr.inst_info_map.get(k).unwrap();
-            if v.world_transform.translation.is_nan()
-                || v.world_transform.rotation.is_nan()
-                || v.world_transform.scale.is_nan()
-            {
-                continue;
-            }
-            inst_info_vec.push(v.gen_sur_json(&mut vec3_map));
-
-            let transform_hash = crate::gen_bytes_hash(&v.world_transform);
-            if !transform_map.contains_key(&transform_hash) {
-                transform_map.insert(
-                    transform_hash,
-                    serde_json::to_string(&v.world_transform).unwrap(),
-                );
-            }
-
-            let relate_sql = format!(
-                "{{id: {},  in: {}, out: inst_info:⟨{}⟩, world_trans: trans:⟨{}⟩, generic: '{}', has_cata_neg: {}, solid: {}}}",
-                k.to_inst_relate_key(),
-                k.to_pe_key(),
-                v.id_str(),
-                transform_hash,
-                v.generic_type.to_string(),
-                v.has_cata_neg,
-                v.is_solid,
-                // v.dt.and_utc().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
-            );
-            if let Some(t_refno) = test_refno {
-                if *k == t_refno.into() {
-                    dbg!(v);
-                    println!("inst relate sql: {}", &relate_sql);
-                }
-            }
-            inst_relate_vec.push(relate_sql);
+            delete_sql_vec.push(delete_sql);
         }
 
-        if !inst_info_vec.is_empty() {
-            for chunk in inst_info_vec.chunks(chunk_size) {
-                let sql_string = format!(
-                    "insert ignore into {} [{}];",
-                    stringify!(inst_info),
-                    chunk.join(",")
-                );
-                SUL_DB.query(sql_string).await.unwrap();
-            }
-        }
-        //inst relate 放到最后保存, 因为是被监控的
-        if !inst_relate_vec.is_empty() {
-            for chunk in inst_relate_vec.chunks(chunk_size) {
-                let inst_relate_sql =
-                    format!("INSERT RELATION INTO inst_relate [{}];", chunk.join(","));
-                // println!("inst relate sql: {}", &inst_relate_sql);
-                SUL_DB.query(inst_relate_sql).await.unwrap();
-            }
-
-            // 使用SQL函数更新zone_refno
-            let update_zone_sql = "
-                LET $records = SELECT * FROM inst_relate WHERE zone_refno = NONE;
-                FOR $record IN $records {
-                    LET $zone = fn::find_ancestor_type($record.in, 'ZONE');
-                    IF $zone != NONE {
-                        UPDATE $record SET zone_refno = $zone[0].refno;
-                    }
-                };
-            ";
-            SUL_DB.query(update_zone_sql).await.unwrap();
-
-            for chunk in keys.to_vec().chunks(chunk_size) {
-                let mut update_date_sql = String::new();
-                for &k in chunk {
-                    update_date_sql.push_str(&format!(
-                        "update inst_relate:{k} set dt=fn::ses_date(pe:{k});"
-                    ));
-                }
-                SUL_DB.query(update_date_sql).await.unwrap();
-            }
-        }
-    }
-
-    //保存aabb
-    if !aabb_map.is_empty() {
-        let keys = aabb_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut jsons = vec![];
-            for &&k in chunk {
-                let v = aabb_map.get(&k).unwrap();
-                let json = format!("{{'id':aabb:⟨{}⟩, 'd':{}}}", k, v);
-                jsons.push(json);
-            }
-            let sql = format!("INSERT IGNORE INTO aabb [{}];", jsons.join(","));
-            SUL_DB.query(sql).await.unwrap();
-        }
-    }
-    //保存transform
-    if !transform_map.is_empty() {
-        let keys = transform_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut sql_string = "".to_string();
-            for &&k in chunk {
-                let v = transform_map.get(&k).unwrap();
-                let json = format!(
-                    "INSERT IGNORE INTO trans {{'id':trans:⟨{}⟩, 'd':{}}};",
-                    k, v
-                );
-                sql_string.push_str(&json);
-            }
-            SUL_DB.query(sql_string).await.unwrap();
-        }
-    }
-
-    //保存vec3
-    if !vec3_map.is_empty() {
-        let keys = vec3_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut sql_string = "".to_string();
-            for &&k in chunk {
-                let v = vec3_map.get(&k).unwrap();
-                let json = format!("INSERT IGNORE INTO vec3 {{'id':vec3:⟨{}⟩, 'd':{}}};", k, v);
-                sql_string.push_str(&json);
-            }
-            SUL_DB.query(sql_string).await.unwrap();
-        }
-    }
-
-    //保存param
-    if !param_map.is_empty() {
-        let keys = param_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut sql_string = "".to_string();
-            for &&k in chunk {
-                let v = param_map.get(&k).unwrap();
-                let json = format!(
-                    "INSERT IGNORE INTO param {{'id':param:⟨{}⟩, 'd':{}}};",
-                    k, v
-                );
-                sql_string.push_str(&json);
-            }
-            SUL_DB.query(sql_string).await.unwrap();
+        if !delete_sql_vec.is_empty() {
+            let sql = delete_sql_vec.join("");
+            SUL_DB.query(sql).await?;
         }
     }
 
     Ok(())
 }
 
-///保存instance 数据到数据库（并发优化版本）
-pub async fn save_instance_data(
-    inst_mgr: &ShapeInstancesData,
-    replace_exist: bool,
+/// 级联删除 inst_relate 及其关联的 geo_relate 和 inst_geo 数据
+///
+/// 当 replace_mesh 开启时，需要完全删除之前生成的数据，包括：
+/// - inst_geo: 几何体节点
+/// - geo_relate: 几何关系边
+/// - inst_info: 实例信息节点
+/// - inst_relate: 实例关系边
+///
+/// # 参数
+/// * `refnos` - 需要删除的 refno 列表
+/// * `chunk_size` - 分批处理的大小
+///
+/// # 删除顺序
+/// 1. inst_geo (最外层)
+/// 2. geo_relate (关系边)
+/// 3. inst_info (信息节点)
+/// 4. inst_relate (关系边)
+pub async fn delete_inst_relate_cascade(
+    refnos: &[RefnoEnum],
+    chunk_size: usize,
 ) -> anyhow::Result<()> {
-    use crate::gen_bytes_hash;
-    use itertools::Itertools;
+    for chunk in refnos.chunks(chunk_size) {
+        let mut delete_sql_vec = vec![];
 
-    // ========== 调试信息开始 ==========
-    println!("\n=== save_instance_data 被调用 ===");
-    println!("inst_info_map.len() = {}", inst_mgr.inst_info_map.len());
-    println!("inst_geos_map.len() = {}", inst_mgr.inst_geos_map.len());
-    println!("inst_tubi_map.len() = {}", inst_mgr.inst_tubi_map.len());
-    println!("neg_relate_map.len() = {}", inst_mgr.neg_relate_map.len());
-    println!(
-        "ngmr_neg_relate_map.len() = {}",
-        inst_mgr.ngmr_neg_relate_map.len()
-    );
-    println!("replace_exist = {}", replace_exist);
-    // ========== 调试信息结束 ==========
-
-    let mut aabb_map: HashMap<u64, String> = HashMap::new();
-    let mut transform_map: HashMap<u64, String> = HashMap::new();
-    //标识单位矩阵
-    transform_map.insert(0, serde_json::to_string(&Transform::IDENTITY).unwrap());
-    let mut param_map = HashMap::new();
-    let mut vec3_map: HashMap<u64, String> = HashMap::new();
-    let test_refno = crate::get_db_option().get_test_refno();
-
-    let chunk_size = 300;
-
-    // 创建一个任务集合来管理并发操作
-    let mut db_futures = FuturesUnordered::new();
-
-    //把delete 提前，因为后面的插入都是异步的执行
-    if replace_exist {
-        let keys = inst_mgr.inst_info_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut delete_sql_vec = vec![];
-
-            for &k in chunk {
-                let v = inst_mgr.inst_info_map.get(k).unwrap();
-                let delete_old_sql = format!(
-                    r#"
-                delete array::flatten(select value out->geo_relate.out from {0});
-                delete array::flatten(select value out->geo_relate from {0});
-                delete array::flatten(select value out from {0});
-                delete {0};"#,
-                    v.refno.to_inst_relate_key()
-                );
-                delete_sql_vec.push(delete_old_sql);
-            }
-            //如果需要删除之前的，先执行
-            if !delete_sql_vec.is_empty() {
-                let sql = delete_sql_vec.join("");
-                // 这里需要同步等待删除操作完成
-                SUL_DB.query(sql).await.unwrap();
-            }
-        }
-    }
-
-    let keys = inst_mgr.inst_geos_map.keys().collect::<Vec<_>>();
-    let mut inst_geo_vec = vec![];
-    let mut geo_relate_vec = vec![];
-
-    // 准备inst_geo和geo_relate数据
-    for k in keys {
-        let v = inst_mgr.inst_geos_map.get(k).unwrap();
-        for inst in &v.insts {
-            if inst.transform.translation.is_nan()
-                || inst.transform.rotation.is_nan()
-                || inst.transform.scale.is_nan()
-            {
-                dbg!(&inst);
-                continue;
-            }
-            let transform_hash = crate::gen_bytes_hash(&inst.transform);
-            if !transform_map.contains_key(&transform_hash) {
-                transform_map.insert(
-                    transform_hash,
-                    serde_json::to_string(&inst.transform).unwrap(),
-                );
-            }
-            let param_hash = crate::gen_bytes_hash(&inst.geo_param);
-            if !param_map.contains_key(&param_hash) {
-                param_map.insert(param_hash, serde_json::to_string(&inst.geo_param).unwrap());
-            }
-            let key_pts = inst.geo_param.key_points();
-            let mut pt_hashes = vec![];
-            for k in key_pts {
-                let pts_hash = k.gen_hash();
-                pt_hashes.push(format!("vec3:⟨{}⟩", pts_hash));
-                if !vec3_map.contains_key(&pts_hash) {
-                    vec3_map.insert(pts_hash, serde_json::to_string(&k).unwrap());
-                }
-            }
-            //还需要加入geo_param的指向，param 是否填原始参数？ param=param:{}
-            //使用cata_key -> inst_geos
-            let cat_negs_str = if !inst.cata_neg_refnos.is_empty() {
-                format!(
-                    ", cata_neg: [{}]",
-                    inst.cata_neg_refnos.iter().map(|x| x.to_pe_key()).join(",")
-                )
-            } else {
-                "".to_string()
-            };
-            //如果是replace, 直接这里需要先删除之前的sql语句
-            let mut relate_json = format!(
-                r#"in: inst_info:⟨{0}⟩, out: inst_geo:⟨{1}⟩, trans: trans:⟨{2}⟩, geom_refno: pe:{3}, pts: [{4}], geo_type: '{5}', visible: {6} {7}"#,
-                v.id(),
-                inst.geo_hash,
-                transform_hash,
-                inst.refno,
-                pt_hashes.join(","),
-                inst.geo_type.to_string(),
-                inst.visible,
-                cat_negs_str
+        let mut inst_ids = vec![];
+        for &refno in chunk {
+            inst_ids.push(refno.to_inst_relate_key());
+            let delete_sql = format!(
+                r#"
+                    delete array::flatten(select value [out, id, in] from {}->inst_info->geo_relate);
+                "#,
+                refno.to_inst_relate_key()
             );
-            //将 string 转成一个 hash id
-            let id = crate::gen_bytes_hash(&relate_json);
-            let final_json = format!("{{ {relate_json}, id: '{id}' }}");
-            geo_relate_vec.push(final_json);
-            //保存 unit shape 的几何参数
-            inst_geo_vec.push(inst.gen_unit_geo_sur_json());
+            delete_sql_vec.push(delete_sql);
+        }
+
+        if !delete_sql_vec.is_empty() {
+            let mut sql = "BEGIN TRANSACTION;\n".to_string();
+            sql.push_str(&delete_sql_vec.join(""));
+            sql.push_str(&format!("delete [{}];", inst_ids.join(",")));
+            sql.push_str("\nCOMMIT TRANSACTION;");
+
+            println!("Delete Sql is {}", &sql);
+            SUL_DB
+                .query(sql)
+                .await
+                .expect("delete model insts info failed");
         }
     }
 
-    // 并发保存inst_geo数据
-    if !inst_geo_vec.is_empty() {
-        for chunk in inst_geo_vec.chunks(chunk_size) {
-            let sql_string = format!(
-                "insert ignore into {} [{}];",
-                stringify!(inst_geo),
-                chunk.join(",")
-            );
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(sql_string).await });
-            db_futures.push(future);
-        }
-    }
-
-    // 并发保存geo_relate数据
-    if !geo_relate_vec.is_empty() {
-        for chunk in geo_relate_vec.chunks(chunk_size) {
-            let sql = format!("INSERT RELATION INTO geo_relate [{}];", chunk.join(","));
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(sql).await });
-            db_futures.push(future);
-        }
-    }
-
-    // 处理tubi数据
-    let keys = inst_mgr.inst_tubi_map.keys().collect::<Vec<_>>();
-    for chunk in keys.chunks(chunk_size) {
-        for &k in chunk {
-            let v = inst_mgr.inst_tubi_map.get(k).unwrap();
-            //更新aabb 和 transform，保存relate已经在别的地方加了，这里后面需要重构
-            let aabb = v.aabb.unwrap();
-            let aabb_hash = crate::gen_bytes_hash(&aabb);
-            let transform_hash = crate::gen_bytes_hash(&v.world_transform);
-            if !aabb_map.contains_key(&aabb_hash) {
-                aabb_map.insert(aabb_hash, serde_json::to_string(&aabb).unwrap());
-            }
-            if !transform_map.contains_key(&transform_hash) {
-                transform_map.insert(
-                    transform_hash,
-                    serde_json::to_string(&v.world_transform).unwrap(),
-                );
-            }
-        }
-    }
-
-    // 处理负关系数据并并发保存
-    if !inst_mgr.neg_relate_map.is_empty() {
-        let mut neg_relate_vec = vec![];
-        for (k, refnos) in &inst_mgr.neg_relate_map {
-            for (indx, r) in refnos.into_iter().enumerate() {
-                neg_relate_vec.push(format!(
-                    "{{ in: {}, id: [{}, {indx}], out: {} }}",
-                    r.to_pe_key(),
-                    r.to_string(),
-                    k.to_pe_key(),
-                ));
-            }
-        }
-        if !neg_relate_vec.is_empty() {
-            for chunk in neg_relate_vec.chunks(chunk_size) {
-                let neg_relate_sql =
-                    format!("INSERT RELATION INTO neg_relate [{}];", chunk.join(","));
-                let db = SUL_DB.clone();
-                let future = tokio::spawn(async move { db.query(neg_relate_sql).await });
-                db_futures.push(future);
-            }
-        }
-    }
-
-    // 处理ngmr负关系数据并并发保存
-    if !inst_mgr.ngmr_neg_relate_map.is_empty() {
-        let mut ngmr_relate_vec = vec![];
-        for (k, refnos) in &inst_mgr.ngmr_neg_relate_map {
-            let kpe = k.to_pe_key();
-            for (ele_refno, ngmr_geom_refno) in refnos {
-                let ele_pe = ele_refno.to_pe_key();
-                let ngmr_pe = ngmr_geom_refno.to_pe_key();
-                ngmr_relate_vec.push(format!(
-                    "{{ in: {0}, id: [{0}, {1}, {2}], out: {1}, ngmr: {2}}}",
-                    ele_pe, kpe, ngmr_pe
-                ));
-            }
-        }
-        if !ngmr_relate_vec.is_empty() {
-            for chunk in ngmr_relate_vec.chunks(chunk_size) {
-                let ngmr_relate_sql =
-                    format!("INSERT RELATION INTO ngmr_relate [{}];", chunk.join(","));
-                let db = SUL_DB.clone();
-                let future = tokio::spawn(async move { db.query(ngmr_relate_sql).await });
-                db_futures.push(future);
-            }
-        }
-    }
-
-    // 处理inst_info数据
-    let keys = inst_mgr.inst_info_map.keys().collect::<Vec<_>>();
-    let mut inst_info_vec = vec![];
-    let mut inst_relate_vec = vec![];
-
-    for k in keys.clone() {
-        let v = inst_mgr.inst_info_map.get(k).unwrap();
-        if v.world_transform.translation.is_nan()
-            || v.world_transform.rotation.is_nan()
-            || v.world_transform.scale.is_nan()
-        {
-            continue;
-        }
-        inst_info_vec.push(v.gen_sur_json(&mut vec3_map));
-
-        let transform_hash = crate::gen_bytes_hash(&v.world_transform);
-        if !transform_map.contains_key(&transform_hash) {
-            transform_map.insert(
-                transform_hash,
-                serde_json::to_string(&v.world_transform).unwrap(),
-            );
-        }
-
-        let relate_sql = format!(
-            "{{id: {0},  in: {1}, out: inst_info:⟨{2}⟩, world_trans: trans:⟨{3}⟩, generic: '{4}', zone_refno: fn::find_ancestor_type({1}, 'ZONE'), dt: fn::ses_date({1}), has_cata_neg: {5}, solid: {6}}}",
-            k.to_inst_relate_key(),
-            k.to_pe_key(),
-            v.id_str(),
-            transform_hash,
-            v.generic_type.to_string(),
-            v.has_cata_neg,
-            v.is_solid,
-        );
-        if let Some(t_refno) = test_refno {
-            if *k == t_refno.into() {
-                dbg!(v);
-                println!("inst relate sql: {}", &relate_sql);
-            }
-        }
-        inst_relate_vec.push(relate_sql);
-    }
-
-    if !inst_relate_vec.is_empty() {
-        println!("准备插入 inst_relate: {} 条记录", inst_relate_vec.len());
-        for chunk in inst_relate_vec.chunks(chunk_size) {
-            let inst_relate_sql =
-                format!("INSERT RELATION INTO inst_relate [{}];", chunk.join(","));
-            println!("inst_relate SQL chunk size: {}", chunk.len());
-            // 打印第一条SQL的前200个字符用于调试
-            if inst_relate_vec.len() > 0 {
-                let sample = &inst_relate_sql[..200.min(inst_relate_sql.len())];
-                println!("inst_relate SQL sample: {}...", sample);
-            }
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(inst_relate_sql).await });
-            db_futures.push(future);
-        }
-    } else {
-        println!("⚠️ inst_relate_vec 为空，没有数据需要插入！");
-    }
-
-    // 并发保存inst_info数据
-    if !inst_info_vec.is_empty() {
-        for chunk in inst_info_vec.chunks(chunk_size) {
-            let sql_string = format!(
-                "insert ignore into {} [{}];",
-                stringify!(inst_info),
-                chunk.join(",")
-            );
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(sql_string).await });
-            db_futures.push(future);
-        }
-    }
-
-    // 并发保存aabb数据
-    if !aabb_map.is_empty() {
-        let keys = aabb_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut jsons = vec![];
-            for &&k in chunk {
-                let v = aabb_map.get(&k).unwrap();
-                let json = format!("{{'id':aabb:⟨{}⟩, 'd':{}}}", k, v);
-                jsons.push(json);
-            }
-            let sql = format!("INSERT IGNORE INTO aabb [{}];", jsons.join(","));
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(sql).await });
-            db_futures.push(future);
-        }
-    }
-
-    // 并发保存transform数据（优化批量插入语法）
-    if !transform_map.is_empty() {
-        let keys = transform_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut jsons = vec![];
-            for &&k in chunk {
-                let v = transform_map.get(&k).unwrap();
-                jsons.push(format!("{{'id':trans:⟨{}⟩, 'd':{}}}", k, v));
-            }
-            let sql = format!("INSERT IGNORE INTO trans [{}];", jsons.join(","));
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(sql).await });
-            db_futures.push(future);
-        }
-    }
-
-    // 并发保存vec3数据（优化批量插入语法）
-    if !vec3_map.is_empty() {
-        let keys = vec3_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut jsons = vec![];
-            for &&k in chunk {
-                let v = vec3_map.get(&k).unwrap();
-                jsons.push(format!("{{'id':vec3:⟨{}⟩, 'd':{}}}", k, v));
-            }
-            let sql = format!("INSERT IGNORE INTO vec3 [{}];", jsons.join(","));
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(sql).await });
-            db_futures.push(future);
-        }
-    }
-
-    // 并发保存param数据
-    if !param_map.is_empty() {
-        let keys = param_map.keys().collect::<Vec<_>>();
-        for chunk in keys.chunks(chunk_size) {
-            let mut jsons = vec![];
-            for &&k in chunk {
-                let v = param_map.get(&k).unwrap();
-                jsons.push(format!("{{'id':param:⟨{}⟩, 'd':{}}}", k, v));
-            }
-            let sql = format!("INSERT IGNORE INTO param [{}];", jsons.join(","));
-            let db = SUL_DB.clone();
-            let future = tokio::spawn(async move { db.query(sql).await });
-            db_futures.push(future);
-        }
-    }
-
-    // 等待所有并发任务完成
-    println!("等待 {} 个数据库任务完成...", db_futures.len());
-    let mut completed = 0;
-    let mut errors = 0;
-    while let Some(result) = db_futures.next().await {
-        completed += 1;
-        if let Err(e) = result {
-            errors += 1;
-            eprintln!("❌ Task join error #{}: {:?}", errors, e);
-        } else if let Ok(query_result) = result {
-            if let Err(db_err) = query_result {
-                errors += 1;
-                eprintln!("❌ Database query error #{}: {:?}", errors, db_err);
-            }
-        }
-    }
-    println!("✅ 完成 {} 个任务，{} 个错误", completed, errors);
-
-    // 注意：zone_refno 和 dt 已经在 inst_relate SQL 中直接设置了
-    // 使用 SQL 函数 fn::find_ancestor_type 和 fn::ses_date
-    // 所以不需要额外的更新操作
-
-    println!("=== save_instance_data 完成 ===\n");
     Ok(())
 }

@@ -35,6 +35,7 @@ debug_expr = []
 debug_wire = []
 debug_spatial = []
 web = ["render"]
+web_ui = []  # Web UI feature for database management interface
 sql = ["dep:sqlx"]
 mem-kv-save = []  # 额外保存PE数据到内存KV数据库
 hh = []

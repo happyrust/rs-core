@@ -215,6 +215,18 @@ impl BrepShapeTrait for Extrusion {
     fn need_use_csg(&self) -> bool {
         false
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        // Extrusion 是复杂的 Mesh 类型，只返回中心点
+        vec![(
+            transform.transform_point(Vec3::new(0.0, 0.0, self.height / 2.0)),
+            "Center".to_string(),
+            100,
+        )]
+    }
 }
 
 #[cfg(feature = "truck")]

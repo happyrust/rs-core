@@ -207,4 +207,67 @@ impl BrepShapeTrait for LPyramid {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimLPyramid(self.clone()))
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+
+        let a_dir = self.paax_dir.normalize();
+        let b_dir = self.pbax_dir.normalize();
+        let c_dir = self.pcax_dir.normalize();
+
+        // 顶面和底面的中心
+        let top_center = self.paax_pt + a_dir * self.ptdi + b_dir * self.pbof + c_dir * self.pcof;
+        let bottom_center = self.paax_pt + a_dir * self.pbdi;
+
+        // 1. 顶面和底面中心（优先级100）
+        points.push((
+            transform.transform_point(top_center),
+            "Center".to_string(),
+            100,
+        ));
+        points.push((
+            transform.transform_point(bottom_center),
+            "Center".to_string(),
+            100,
+        ));
+
+        // 2. 顶面的4个顶点（如果不是退化为点）
+        if self.pbtp > 0.001 && self.pctp > 0.001 {
+            let top_corners = [
+                top_center + b_dir * self.pbtp / 2.0 + c_dir * self.pctp / 2.0,
+                top_center + b_dir * self.pbtp / 2.0 - c_dir * self.pctp / 2.0,
+                top_center - b_dir * self.pbtp / 2.0 + c_dir * self.pctp / 2.0,
+                top_center - b_dir * self.pbtp / 2.0 - c_dir * self.pctp / 2.0,
+            ];
+            for corner in &top_corners {
+                points.push((
+                    transform.transform_point(*corner),
+                    "Endpoint".to_string(),
+                    90,
+                ));
+            }
+        }
+
+        // 3. 底面的4个顶点
+        if self.pbbt > 0.001 && self.pcbt > 0.001 {
+            let bottom_corners = [
+                bottom_center + b_dir * self.pbbt / 2.0 + c_dir * self.pcbt / 2.0,
+                bottom_center + b_dir * self.pbbt / 2.0 - c_dir * self.pcbt / 2.0,
+                bottom_center - b_dir * self.pbbt / 2.0 + c_dir * self.pcbt / 2.0,
+                bottom_center - b_dir * self.pbbt / 2.0 - c_dir * self.pcbt / 2.0,
+            ];
+            for corner in &bottom_corners {
+                points.push((
+                    transform.transform_point(*corner),
+                    "Endpoint".to_string(),
+                    90,
+                ));
+            }
+        }
+
+        points
+    }
 }

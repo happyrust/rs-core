@@ -224,6 +224,69 @@ impl BrepShapeTrait for LCylinder {
     fn need_use_csg(&self) -> bool {
         false
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+
+        let dir = self.paxi_dir.normalize();
+        let radius = self.pdia / 2.0;
+
+        // 底面中心和顶面中心
+        let bottom_center = self.paxi_pt + dir * self.pbdi;
+        let top_center = self.paxi_pt + dir * self.ptdi;
+
+        // 计算垂直于轴的两个向量
+        let (u, v) = calculate_perpendicular_vectors(dir);
+
+        // 1. 底面中心和顶面中心（优先级100）
+        points.push((
+            transform.transform_point(bottom_center),
+            "Center".to_string(),
+            100,
+        ));
+        points.push((
+            transform.transform_point(top_center),
+            "Center".to_string(),
+            100,
+        ));
+
+        // 2. 底面和顶面的圆周点（8个点，优先级80）
+        for i in 0..8 {
+            let angle = i as f32 * std::f32::consts::PI / 4.0;
+            let offset = u * angle.cos() * radius + v * angle.sin() * radius;
+
+            // 底面圆周点
+            points.push((
+                transform.transform_point(bottom_center + offset),
+                "Endpoint".to_string(),
+                80,
+            ));
+
+            // 顶面圆周点
+            points.push((
+                transform.transform_point(top_center + offset),
+                "Endpoint".to_string(),
+                80,
+            ));
+        }
+
+        // 3. 侧面中线点（4个点，优先级70）
+        let mid_center = self.paxi_pt + dir * (self.pbdi + self.ptdi) / 2.0;
+        for i in 0..4 {
+            let angle = i as f32 * std::f32::consts::PI / 2.0;
+            let offset = u * angle.cos() * radius + v * angle.sin() * radius;
+            points.push((
+                transform.transform_point(mid_center + offset),
+                "Midpoint".to_string(),
+                70,
+            ));
+        }
+
+        points
+    }
 }
 
 #[derive(
@@ -465,6 +528,79 @@ impl BrepShapeTrait for SCylinder {
         // !self.is_sscl()
         false
     }
+
+    /// 为圆柱体生成增强的关键点
+    ///
+    /// 包括：
+    /// - 2个面中心（顶面和底面，优先级100）
+    /// - 16个圆周点（顶面8个+底面8个，优先级80）
+    /// - 8个侧面中线点（优先级70）
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+        let radius = self.pdia / 2.0;
+        let half_height = self.phei / 2.0;
+
+        // 顶面中心（优先级：100）
+        let top_center = self.paxi_pt + self.paxi_dir * half_height;
+        let world_top_center = transform.transform_point(top_center);
+        points.push((world_top_center, "Center".to_string(), 100));
+
+        // 底面中心（优先级：100）
+        let bottom_center = self.paxi_pt - self.paxi_dir * half_height;
+        let world_bottom_center = transform.transform_point(bottom_center);
+        points.push((world_bottom_center, "Center".to_string(), 100));
+
+        // 计算垂直于轴的两个正交向量
+        let (u, v) = calculate_perpendicular_vectors(self.paxi_dir);
+
+        // 顶面圆周8个点（优先级：80）
+        for i in 0..8 {
+            let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+            let offset = (u * angle.cos() + v * angle.sin()) * radius;
+            let local_pos = top_center + offset;
+            let world_pos = transform.transform_point(local_pos);
+            points.push((world_pos, "Endpoint".to_string(), 80));
+        }
+
+        // 底面圆周8个点（优先级：80）
+        for i in 0..8 {
+            let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+            let offset = (u * angle.cos() + v * angle.sin()) * radius;
+            let local_pos = bottom_center + offset;
+            let world_pos = transform.transform_point(local_pos);
+            points.push((world_pos, "Endpoint".to_string(), 80));
+        }
+
+        // 侧面中线8个点（优先级：70）
+        for i in 0..8 {
+            let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+            let offset = (u * angle.cos() + v * angle.sin()) * radius;
+            let local_pos = self.paxi_pt + offset;
+            let world_pos = transform.transform_point(local_pos);
+            points.push((world_pos, "Midpoint".to_string(), 70));
+        }
+
+        points
+    }
+}
+
+/// 计算垂直于给定轴的两个正交向量
+///
+/// 返回：(u, v) 两个单位向量，满足 u ⊥ axis, v ⊥ axis, u ⊥ v
+fn calculate_perpendicular_vectors(axis: Vec3) -> (Vec3, Vec3) {
+    let axis = axis.normalize();
+    // 选择一个不平行于轴的向量
+    let reference = if axis.x.abs() < 0.9 {
+        Vec3::X
+    } else {
+        Vec3::Y
+    };
+    let u = reference.cross(axis).normalize();
+    let v = axis.cross(u).normalize();
+    (u, v)
 }
 
 impl From<&AttrMap> for SCylinder {

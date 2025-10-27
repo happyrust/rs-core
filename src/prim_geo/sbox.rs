@@ -89,6 +89,84 @@ impl BrepShapeTrait for SBox {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimBox(self.clone()))
     }
+
+    /// 为长方体生成增强的关键点
+    ///
+    /// 包括：
+    /// - 8个顶点（优先级100）
+    /// - 12条边的中点（优先级80）
+    /// - 6个面的中心点（优先级70）
+    /// - 1个中心点（优先级60）
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+        let half_size = self.size / 2.0;
+
+        // 8个顶点（优先级最高：100）
+        for x in [-1.0, 1.0] {
+            for y in [-1.0, 1.0] {
+                for z in [-1.0, 1.0] {
+                    let local_pos = self.center + Vec3::new(
+                        x * half_size.x,
+                        y * half_size.y,
+                        z * half_size.z,
+                    );
+                    let world_pos = transform.transform_point(local_pos);
+                    points.push((world_pos, "Endpoint".to_string(), 100));
+                }
+            }
+        }
+
+        // 12条边的中点（优先级：80）
+        let edges = [
+            // 底面4条边
+            (Vec3::new(-1.0, -1.0, -1.0), Vec3::new(1.0, -1.0, -1.0)),
+            (Vec3::new(1.0, -1.0, -1.0), Vec3::new(1.0, 1.0, -1.0)),
+            (Vec3::new(1.0, 1.0, -1.0), Vec3::new(-1.0, 1.0, -1.0)),
+            (Vec3::new(-1.0, 1.0, -1.0), Vec3::new(-1.0, -1.0, -1.0)),
+            // 顶面4条边
+            (Vec3::new(-1.0, -1.0, 1.0), Vec3::new(1.0, -1.0, 1.0)),
+            (Vec3::new(1.0, -1.0, 1.0), Vec3::new(1.0, 1.0, 1.0)),
+            (Vec3::new(1.0, 1.0, 1.0), Vec3::new(-1.0, 1.0, 1.0)),
+            (Vec3::new(-1.0, 1.0, 1.0), Vec3::new(-1.0, -1.0, 1.0)),
+            // 4条竖边
+            (Vec3::new(-1.0, -1.0, -1.0), Vec3::new(-1.0, -1.0, 1.0)),
+            (Vec3::new(1.0, -1.0, -1.0), Vec3::new(1.0, -1.0, 1.0)),
+            (Vec3::new(1.0, 1.0, -1.0), Vec3::new(1.0, 1.0, 1.0)),
+            (Vec3::new(-1.0, 1.0, -1.0), Vec3::new(-1.0, 1.0, 1.0)),
+        ];
+
+        for (start, end) in edges {
+            let midpoint = (start + end) / 2.0;
+            let local_pos = self.center + midpoint * half_size;
+            let world_pos = transform.transform_point(local_pos);
+            points.push((world_pos, "Midpoint".to_string(), 80));
+        }
+
+        // 6个面的中心点（优先级：70）
+        let face_centers = [
+            Vec3::new(0.0, 0.0, -1.0),  // 底面
+            Vec3::new(0.0, 0.0, 1.0),   // 顶面
+            Vec3::new(-1.0, 0.0, 0.0),  // 左面
+            Vec3::new(1.0, 0.0, 0.0),   // 右面
+            Vec3::new(0.0, -1.0, 0.0),  // 前面
+            Vec3::new(0.0, 1.0, 0.0),   // 后面
+        ];
+
+        for face_center in face_centers {
+            let local_pos = self.center + face_center * half_size;
+            let world_pos = transform.transform_point(local_pos);
+            points.push((world_pos, "Center".to_string(), 70));
+        }
+
+        // 中心点（优先级：60）
+        let world_center = transform.transform_point(self.center);
+        points.push((world_center, "Center".to_string(), 60));
+
+        points
+    }
 }
 
 impl From<&AttrMap> for SBox {

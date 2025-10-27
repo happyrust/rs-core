@@ -56,7 +56,7 @@ pub async fn get_mdb_world_site_ele_nodes(
         db_type = db_type,
         mdb = mdb_name
     );
-    // println!("SQL: {}", sql);
+    // 
     // 执行查询
     let mut response = SUL_DB.query(&sql).await?;
     // 获取结果
@@ -279,7 +279,7 @@ pub async fn get_mdb_world_site_pes(
         db_type = db_type,
         mdb = mdb_name
     );
-    // println!("SQL: {}", sql);
+    // 
     let mut response = SUL_DB.query(&sql).await?;
     let pe: Vec<SPdmsElement> = response.take(2)?;
     Ok(pe)

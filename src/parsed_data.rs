@@ -209,6 +209,22 @@ pub mod geo_params_data {
         CompoundShape,
     }
 
+    impl SurrealValue for PdmsGeoParam {
+        fn kind_of() -> surrealdb_types::Kind {
+            surrealdb_types::Kind::Object
+        }
+
+        fn into_value(self) -> surrealdb_types::Value {
+            let json = serde_json::to_value(&self).expect("序列化 PdmsGeoParam 失败");
+            json.into_value()
+        }
+
+        fn from_value(value: surrealdb_types::Value) -> anyhow::Result<Self> {
+            let json = serde_json::Value::from_value(value)?;
+            Ok(serde_json::from_value(json)?)
+        }
+    }
+
     impl VerifiedShape for PdmsGeoParam {
         fn check_valid(&self) -> bool {
             match self {
@@ -251,6 +267,33 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimExtrusion(s) => s.key_points(),
                 PdmsGeoParam::PrimPolyhedron(s) => s.key_points(),
                 PdmsGeoParam::PrimLoft(s) => s.key_points(),
+                PdmsGeoParam::CompoundShape => vec![],
+            }
+        }
+
+        /// 获得增强的关键点（带类型分类和优先级）
+        ///
+        /// 返回：(点位置, 点类型字符串, 吸附优先级)
+        pub fn enhanced_key_points(
+            &self,
+            transform: &bevy_transform::prelude::Transform,
+        ) -> Vec<(glam::Vec3, String, u8)> {
+            match self {
+                PdmsGeoParam::Unknown => vec![],
+                PdmsGeoParam::PrimBox(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimLSnout(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimDish(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimSphere(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimCTorus(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimRTorus(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimPyramid(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimLPyramid(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimSCylinder(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimLCylinder(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimRevolution(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimExtrusion(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimPolyhedron(s) => s.enhanced_key_points(transform),
+                PdmsGeoParam::PrimLoft(s) => s.enhanced_key_points(transform),
                 PdmsGeoParam::CompoundShape => vec![],
             }
         }

@@ -160,4 +160,33 @@ impl BrepShapeTrait for Polyhedron {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimPolyhedron(self.clone()))
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        // Polyhedron 是复杂的 Mesh 类型，只返回中心点
+        // 计算所有顶点的平均位置作为中心点
+        let mut center = Vec3::ZERO;
+        let mut count = 0;
+
+        for polygon in &self.polygons {
+            for loop_verts in &polygon.loops {
+                for vert in loop_verts {
+                    center += *vert;
+                    count += 1;
+                }
+            }
+        }
+
+        if count > 0 {
+            center /= count as f32;
+        }
+
+        vec![(
+            transform.transform_point(center),
+            "Center".to_string(),
+            100,
+        )]
+    }
 }

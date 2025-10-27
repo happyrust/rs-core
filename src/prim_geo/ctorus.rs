@@ -276,6 +276,84 @@ impl BrepShapeTrait for CTorus {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimCTorus(self.clone()))
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+
+        let r_major = (self.rins + self.rout) / 2.0; // 主半径（圆环中心到管中心）
+        let r_minor = (self.rout - self.rins) / 2.0; // 次半径（管半径）
+
+        // 1. 中心点（优先级100）
+        points.push((
+            transform.transform_point(Vec3::ZERO),
+            "Center".to_string(),
+            100,
+        ));
+
+        // 2. 圆环起点和终点（优先级90）
+        let start_angle = 0.0f32;
+        let end_angle = self.angle.to_radians();
+
+        // 起点外侧
+        points.push((
+            transform.transform_point(Vec3::new(self.rout, 0.0, 0.0)),
+            "Endpoint".to_string(),
+            90,
+        ));
+        // 起点内侧
+        points.push((
+            transform.transform_point(Vec3::new(self.rins, 0.0, 0.0)),
+            "Endpoint".to_string(),
+            90,
+        ));
+
+        // 终点外侧
+        points.push((
+            transform.transform_point(Vec3::new(
+                self.rout * end_angle.cos(),
+                self.rout * end_angle.sin(),
+                0.0,
+            )),
+            "Endpoint".to_string(),
+            90,
+        ));
+        // 终点内侧
+        points.push((
+            transform.transform_point(Vec3::new(
+                self.rins * end_angle.cos(),
+                self.rins * end_angle.sin(),
+                0.0,
+            )),
+            "Endpoint".to_string(),
+            90,
+        ));
+
+        // 3. 中间角度的关键点（优先级70）
+        let mid_angle = end_angle / 2.0;
+        points.push((
+            transform.transform_point(Vec3::new(
+                r_major * mid_angle.cos(),
+                r_major * mid_angle.sin(),
+                r_minor,
+            )),
+            "Midpoint".to_string(),
+            70,
+        ));
+        points.push((
+            transform.transform_point(Vec3::new(
+                r_major * mid_angle.cos(),
+                r_major * mid_angle.sin(),
+                -r_minor,
+            )),
+            "Midpoint".to_string(),
+            70,
+        ));
+
+        points
+    }
 }
 
 impl From<&AttrMap> for CTorus {

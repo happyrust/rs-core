@@ -693,6 +693,34 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
         { Default::default() }
     }
 
+    /// 【新增】获得增强的关键点（带类型分类和优先级）
+    ///
+    /// 返回：(点位置, 点类型字符串, 吸附优先级)
+    ///
+    /// 点类型字符串：
+    /// - "Endpoint" - 端点（优先级最高）
+    /// - "Midpoint" - 中点
+    /// - "Center" - 中心点
+    /// - "Intersection" - 交点
+    /// - "SurfacePoint" - 表面点
+    ///
+    /// 默认实现：调用 key_points() 并标记为 SurfacePoint
+    ///
+    /// 各几何体可以重写此方法以提供更精确的关键点分类
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        // 默认实现：将所有关键点标记为表面点，优先级50
+        self.key_points()
+            .into_iter()
+            .map(|pt| {
+                let world_pos = transform.transform_point(*pt);
+                (world_pos, "SurfacePoint".to_string(), 50)
+            })
+            .collect()
+    }
+
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, _limit_size: f32) {}
 

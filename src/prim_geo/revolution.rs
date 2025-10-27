@@ -226,4 +226,16 @@ impl BrepShapeTrait for Revolution {
     fn need_use_csg(&self) -> bool {
         false
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        // Revolution 是复杂的 Mesh 类型，只返回旋转中心点
+        vec![(
+            transform.transform_point(self.rot_pt),
+            "Center".to_string(),
+            100,
+        )]
+    }
 }

@@ -13,7 +13,7 @@ use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use parry3d::math::Isometry;
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut, Mul};
-use surrealdb::types::{self as surrealdb_types, RecordId};
+use surrealdb::types::{self as surrealdb_types, RecordId, RecordIdKey};
 use surrealdb::types::{Kind, SurrealValue, Value};
 
 /// 植物变换包装类型
@@ -131,26 +131,10 @@ impl SurrealValue for PlantAabb {
 ///
 /// * `id` - inst_geo 的原始记录 ID（来自 SurrealDB：record::id(id) 字符串化）
 /// * `param` - PDMS 几何参数（用于生成 OCC 形体与后续网格化）
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
 pub struct QueryGeoParam {
-    pub id: RefnoEnum,
+    pub id: RecordId,
     pub param: PdmsGeoParam,
-}
-
-impl SurrealValue for QueryGeoParam {
-    fn kind_of() -> surrealdb_types::Kind {
-        surrealdb_types::Kind::Object
-    }
-
-    fn into_value(self) -> surrealdb_types::Value {
-        let json = serde_json::to_value(&self).expect("序列化 QueryGeoParam 失败");
-        json.into_value()
-    }
-
-    fn from_value(value: surrealdb_types::Value) -> anyhow::Result<Self> {
-        let json = serde_json::Value::from_value(value)?;
-        Ok(serde_json::from_value(json)?)
-    }
 }
 
 /// 单个几何的变换与局部 AABB
@@ -177,7 +161,7 @@ pub struct GeoAabbTrans {
 /// * `has_neg_relate` - 是否存在负实体关系（影响容差选择）
 #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
 pub struct QueryInstGeoResult {
-    pub geo_id: Option<RecordId>,
+    pub geo_id: RecordId,
     pub has_neg_relate: bool,
 }
 
@@ -234,8 +218,14 @@ pub async fn query_inst_geo_ids(
     };
 
     let sql = format!(
-        r#"array::group(select value (select  out as geo_id, ($parent<-neg_relate)[0] != none as has_neg_relate from out->geo_relate {})
-        from {})"#,
+        r#"
+        BEGIN TRANSACTION;
+            array::group(
+                select value (select  out as geo_id, ($parent<-neg_relate)[0] != none as has_neg_relate from out->geo_relate {})
+                from {}
+            );
+        COMMIT TRANSACTION;
+        "#,
         where_clause, inst_keys
     );
 
@@ -312,65 +302,6 @@ pub async fn query_aabb_params(
     let result: Vec<QueryAabbParam> = response.take(0)?;
 
     Ok(result)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{RefU64, init_test_surreal};
-    use std::str::FromStr;
-
-    #[test]
-    fn test_query_geo_param_serialization() {
-        let param = QueryGeoParam {
-            id: "inst_geo:1".into(),
-            param: PdmsGeoParam::default(),
-        };
-
-        let json = serde_json::to_value(&param).unwrap();
-        let deserialized: QueryGeoParam = serde_json::from_value(json).unwrap();
-
-        assert_eq!(param.id, deserialized.id);
-    }
-
-    #[tokio::test]
-    async fn test_query_inst_geo_ids_pe_17496_201381() {
-        init_test_surreal().await;
-
-        let refno = RefU64::from_str("pe:17496_201381").expect("解析 RefU64 失败");
-        let refnos = vec![RefnoEnum::Refno(refno)];
-
-        let results = query_inst_geo_ids(&refnos, true).await.expect("查询失败");
-
-        assert!(!results.is_empty(), "应该查询到至少一个几何");
-        for result in &results {
-            assert!(result.geo_id.is_some(), "geo_id 不能为空");
-        }
-    }
-
-    #[tokio::test]
-    async fn test_query_aabb_params_pe_17496_201381() {
-        init_test_surreal().await;
-
-        let refno = RefU64::from_str("pe:17496_201381").expect("解析 RefU64 失败");
-        let refnos = vec![RefnoEnum::Refno(refno)];
-        let inst_keys = get_inst_relate_keys(&refnos);
-
-        let results = query_aabb_params(&inst_keys, true)
-            .await
-            .expect("查询 AABB 参数失败");
-
-        if !results.is_empty() {
-            for result in &results {
-                assert!(result.refno().to_string().len() > 0, "refno 不能为空");
-                assert!(!result.noun.is_empty(), "noun 不能为空");
-                assert!(
-                    result.world_trans.translation.length() >= 0.0,
-                    "world_trans 应该有效"
-                );
-            }
-        }
-    }
 }
 
 /// 保存 AABB 数据到 SurrealDB

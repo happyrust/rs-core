@@ -325,6 +325,86 @@ impl BrepShapeTrait for RTorus {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimRTorus(self.clone()))
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+
+        let r_center = (self.rins + self.rout) / 2.0;
+        let half_height = self.height / 2.0;
+
+        // 1. 中心点（优先级100）
+        points.push((
+            transform.transform_point(Vec3::ZERO),
+            "Center".to_string(),
+            100,
+        ));
+
+        // 2. 矩形截面的4个顶点（起点和终点，优先级90）
+        let end_angle = self.angle.to_radians();
+
+        // 起点的4个顶点
+        let start_corners = [
+            Vec3::new(self.rins, 0.0, half_height),
+            Vec3::new(self.rins, 0.0, -half_height),
+            Vec3::new(self.rout, 0.0, half_height),
+            Vec3::new(self.rout, 0.0, -half_height),
+        ];
+
+        for corner in &start_corners {
+            points.push((
+                transform.transform_point(*corner),
+                "Endpoint".to_string(),
+                90,
+            ));
+        }
+
+        // 终点的4个顶点
+        let cos_end = end_angle.cos();
+        let sin_end = end_angle.sin();
+        let end_corners = [
+            Vec3::new(self.rins * cos_end, self.rins * sin_end, half_height),
+            Vec3::new(self.rins * cos_end, self.rins * sin_end, -half_height),
+            Vec3::new(self.rout * cos_end, self.rout * sin_end, half_height),
+            Vec3::new(self.rout * cos_end, self.rout * sin_end, -half_height),
+        ];
+
+        for corner in &end_corners {
+            points.push((
+                transform.transform_point(*corner),
+                "Endpoint".to_string(),
+                90,
+            ));
+        }
+
+        // 3. 中间角度的关键点（优先级70）
+        let mid_angle = end_angle / 2.0;
+        let cos_mid = mid_angle.cos();
+        let sin_mid = mid_angle.sin();
+
+        points.push((
+            transform.transform_point(Vec3::new(
+                r_center * cos_mid,
+                r_center * sin_mid,
+                half_height,
+            )),
+            "Midpoint".to_string(),
+            70,
+        ));
+        points.push((
+            transform.transform_point(Vec3::new(
+                r_center * cos_mid,
+                r_center * sin_mid,
+                -half_height,
+            )),
+            "Midpoint".to_string(),
+            70,
+        ));
+
+        points
+    }
 }
 
 impl From<&AttrMap> for RTorus {

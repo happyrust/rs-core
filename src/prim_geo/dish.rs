@@ -281,6 +281,52 @@ impl BrepShapeTrait for Dish {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimDish(self.clone()))
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        let mut points = Vec::new();
+
+        let axis_dir = self.paax_dir.normalize();
+        let radius = self.pdia / 2.0;
+
+        // 碟形的底部中心
+        let base_center = self.paax_pt + axis_dir * self.pdis;
+        // 碟形的顶部中心
+        let top_center = base_center + axis_dir * self.pheig;
+
+        // 1. 顶部中心（优先级100）
+        points.push((
+            transform.transform_point(top_center),
+            "Center".to_string(),
+            100,
+        ));
+
+        // 2. 底部中心（优先级90）
+        points.push((
+            transform.transform_point(base_center),
+            "Center".to_string(),
+            90,
+        ));
+
+        // 3. 底部圆周的8个点（优先级80）
+        let ref_axis = cal_ref_axis(&axis_dir);
+        let perp1 = ref_axis.normalize();
+        let perp2 = axis_dir.cross(perp1).normalize();
+
+        for i in 0..8 {
+            let angle = i as f32 * std::f32::consts::PI / 4.0;
+            let offset = perp1 * angle.cos() * radius + perp2 * angle.sin() * radius;
+            points.push((
+                transform.transform_point(base_center + offset),
+                "Endpoint".to_string(),
+                80,
+            ));
+        }
+
+        points
+    }
 }
 
 impl From<&AttrMap> for Dish {

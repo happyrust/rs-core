@@ -96,93 +96,6 @@ pub fn resolve_paragon_gm_params(
     }
 }
 
-// impl CataExprContext {
-
-//     //todo 逐步剥离对arango的依赖
-//     pub async fn create(des_refno: RefU64, database: &ArDatabase) -> anyhow::Result<Option<Self>> {
-//         let catr_refno = query_foreign_refno_aql(&database, des_refno, &["SPRE", "CATR"]).await?;
-//         if catr_refno.is_none() { return Ok(None); }
-//         let catr_refno = catr_refno.unwrap();
-//         //todo 重新计算para的值
-//         let params = query_para_value(catr_refno, &database).await?;
-//         if params.is_none() { return Ok(None); }
-//         let dtse_map = query_dtse_ppro_from_catr_refno(catr_refno, &database).await?;
-//         if dtse_map.is_none() { return Ok(None); }
-//         let mut dtse_expr_map = HashMap::new();
-//         let mut dtse_default_map = HashMap::new();
-//         for (k, v) in dtse_map.unwrap().into_iter() {
-//             dtse_expr_map.entry(k.clone()).or_insert(v.ppro);
-//             dtse_default_map.entry(k).or_insert(v.dpro);
-//         }
-//         Ok(Some(Self {
-//             params: params.unwrap(),
-//             dtse_expr_map,
-//             dtse_default_map,
-//         }))
-//     }
-//     //需要获取design的数据
-//     pub async fn build(&self, mgr: &AiosDBManager, des_refno: RefU64) -> BTreeMap<String, String> {
-//         let mut context: DashMap<String, String> = Default::default();
-//         if let Ok(attr_map) = mgr.get_attr(des_refno).await {
-//             let mut desp = attr_map.get_f32_vec("DESP").unwrap_or_default();
-//             for i in 0..desp.len() {
-//                 context.insert(
-//                     format!("DESI{}", i + 1).into(),
-//                     desp[i].to_string().into(),
-//                 );
-//                 context.insert(
-//                     format!("DDES{}", i + 1).into(),
-//                     desp[i].to_string().into(),
-//                 );
-//                 context.insert(
-//                     format!("DESP{}", i + 1).into(),
-//                     desp[i].to_string().into(),
-//                 );
-//             }
-//             let height: String = attr_map.get_as_string("HEIG").unwrap_or("0.0".into()).into();
-//             context.insert(DDHEIGHT_STR.into(), height.clone());
-//             context.insert("HEIG".into(), height);
-//             let angle: String = attr_map.get_as_string("ANGL").unwrap_or("0.0".into()).into();
-//             context.insert(DDANGLE_STR.into(), angle.clone());
-//             context.insert("ANGL".into(), angle);
-//             let radi: String = attr_map.get_as_string("RADI").unwrap_or("0.0".into()).into();
-//             context.insert(DDRADIUS_STR.into(), radi.clone());
-//             context.insert("RADI".into(), radi);
-//         } else {
-//             //默认值
-//             context
-//                 .entry(DDHEIGHT_STR.into())
-//                 .or_insert("0.0".into());
-//             context
-//                 .entry(DDRADIUS_STR.into())
-//                 .or_insert("0.0".into());
-//             context
-//                 .entry(DDANGLE_STR.into())
-//                 .or_insert("0.0".into());
-//         }
-
-//         //获取DTSE的expression
-//         // process_dtse_params(&scom_info.attr_map, &mut cur_context).await;
-
-//         //保温层厚度
-//         context.insert("IPARA0".into(), "0".into());
-//         context.insert("IPARA".into(), "0".into());
-
-//         // let parent_cat_ref = interface
-
-//         for i in 0..self.params.len() {
-//             //todo OPAR需要去有catalog的父节点里去找
-//             // context.insert(format!("OPAR{}", i + 1).into(), self.params[i].to_string().into());
-//             // context.insert(format!("APAR{}", i + 1).into(), self.params[i].to_string().into());
-//             // context.insert(format!("CPAR{}", i + 1).into(), self.params[i].to_string().into());
-//             context.insert(format!("PARA{}", i + 1).into(), self.params[i].to_string().into());
-//             // context.insert(format!("IPARA{}", i + 1).into(), "0".to_string().into());
-//             // context.insert(format!("IPAR{}", i + 1).into(), "0".to_string().into());
-//         }
-//         context
-//     }
-// }
-
 pub fn resolve_gmse_params(
     gm: &GmParam,
     jusl_param: &Option<PlinParam>,
@@ -190,9 +103,6 @@ pub fn resolve_gmse_params(
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
 ) -> anyhow::Result<GmseParamData> {
-    // if gm.refno == "13245_892211".into(){
-    //     dbg!(gm);
-    // }
     let angle = context
         .get(DDANGLE_STR)
         .unwrap()
@@ -210,10 +120,38 @@ pub fn resolve_gmse_params(
         .parse::<f32>()
         .unwrap_or(0.0);
     // dbg!(&gm.diameters);
-    let diameters = gm
+    let diameters: Vec<f32> = gm
         .diameters
         .iter()
-        .map(|exp| eval_str_to_f32_or_default(exp, context, "DIST"))
+        .map(|exp| {
+            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+
+            // 🔍 如果表达式包含 PARAM 2，打印详细信息
+            if exp.contains("PARAM 2") || exp.contains("PARAM2") {
+                println!(
+                    "🔍 [diameter 使用 PARAM 2] refno={:?}, gm_type='{}', expr='{}', value={}",
+                    gm.refno, gm.gm_type, exp, val
+                );
+            } else {
+                // 🔍 调试输出：打印表达式和计算结果
+                println!(
+                    "🔍 [diameter] refno={:?}, expr='{}', value={}",
+                    gm.refno, exp, val
+                );
+            }
+
+            // 如果值异常大，打印 context 中的 PARAM 值
+            if val > 10000.0 && exp.contains("PARAM") {
+                println!("   ⚠️  异常大的 diameter 值！打印 context 中的 PARAM:");
+                for entry in context.context.iter() {
+                    let key = entry.key();
+                    if key.contains("PARAM") {
+                        println!("      {} = {}", key, entry.value());
+                    }
+                }
+            }
+            val
+        })
         .collect();
     // dbg!(&diameters);
 
@@ -240,6 +178,20 @@ pub fn resolve_gmse_params(
     }
 
     let phei = eval_str_to_f32_or_default(&gm.phei, context, "DIST");
+
+    // 🔍 如果表达式包含 PARAM 2，打印详细信息
+    if gm.phei.contains("PARAM 2") || gm.phei.contains("PARAM2") {
+        println!(
+            "🔍 [phei 使用 PARAM 2] refno={:?}, gm_type='{}', expr='{}', value={}",
+            gm.refno, gm.gm_type, gm.phei, phei
+        );
+    } else {
+        // 🔍 调试输出：打印 phei 表达式和计算结果
+        println!(
+            "🔍 [phei] refno={:?}, expr='{}', value={}",
+            gm.refno, gm.phei, phei
+        );
+    }
     let offset = eval_str_to_f32_or_default(&gm.offset, context, "DIST");
 
     let pang = eval_str_to_f32_or_default(&gm.pang, context, "DIST");

@@ -111,6 +111,9 @@ pub mod expression;
 
 pub mod utils;
 
+
+#[cfg(feature = "web_ui")]
+pub mod web_ui;
 pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{

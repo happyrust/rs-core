@@ -142,6 +142,10 @@ pub async fn get_or_create_cata_context(
         );
         // dbg!(&cata_attmap);
         let params = cata_attmap.get_f32_vec("PARA").unwrap_or_default();
+
+        // 🔍 调试输出：打印 PARA 数组
+        println!("🔍 [PARA] desi_refno={:?}, PARA array: {:?}", desi_refno, params);
+
         for i in 0..params.len() {
             context.insert(format!("CPAR{}", i + 1), params[i].to_string());
             context.insert(format!("PARA{}", i + 1), params[i].to_string());
