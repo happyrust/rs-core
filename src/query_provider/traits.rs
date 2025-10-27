@@ -106,6 +106,17 @@ pub trait TypeQuery: Send + Sync {
         has_children: Option<bool>,
     ) -> QueryResult<Vec<RefnoEnum>>;
 
+    /// 按类型与名称片段查询
+    ///
+    /// 结合 SurrealDB `string::contains`，根据关键字过滤 `name`
+    async fn query_by_type_name_contains(
+        &self,
+        nouns: &[&str],
+        dbnum: i32,
+        keyword: &str,
+        case_sensitive: bool,
+    ) -> QueryResult<Vec<RefnoEnum>>;
+
     /// 按类型和多个数据库编号查询
     ///
     /// # 参数

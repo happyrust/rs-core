@@ -144,7 +144,10 @@ pub async fn get_or_create_cata_context(
         let params = cata_attmap.get_f32_vec("PARA").unwrap_or_default();
 
         // 🔍 调试输出：打印 PARA 数组
-        println!("🔍 [PARA] desi_refno={:?}, PARA array: {:?}", desi_refno, params);
+        println!(
+            "🔍 [PARA] desi_refno={:?}, PARA array: {:?}",
+            desi_refno, params
+        );
 
         for i in 0..params.len() {
             context.insert(format!("CPAR{}", i + 1), params[i].to_string());
@@ -461,8 +464,13 @@ pub fn eval_str_to_f64(
 
             #[cfg(feature = "debug_expr")]
             if input_expr.contains("PARAM") {
-                println!("Checking key: k='{}', s='{}', is_some_param={}, contains_key={}",
-                    &k, s, is_some_param, context.contains_key(&k));
+                println!(
+                    "Checking key: k='{}', s='{}', is_some_param={}, contains_key={}",
+                    &k,
+                    s,
+                    is_some_param,
+                    context.contains_key(&k)
+                );
             }
 
             if context.contains_key(&k) {

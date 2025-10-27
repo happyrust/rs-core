@@ -122,8 +122,8 @@ async fn test_collect_descendant_filter_ids_with_layer_data() -> anyhow::Result<
 
 #[tokio::test]
 async fn test_collect_descendant_with_expr_generic() -> anyhow::Result<()> {
-    use crate::pe::SPdmsElement;
     use crate::NamedAttrMap;
+    use crate::pe::SPdmsElement;
 
     // 使用内存数据库初始化全局 SUL_DB
     init_sul_db_with_memory().await?;
@@ -190,11 +190,7 @@ async fn test_collect_descendant_with_expr_generic() -> anyhow::Result<()> {
     // 测试 5: 使用便利函数 collect_descendant_full_attrs
     println!("\n=== 测试 5: 便利函数 collect_descendant_full_attrs ===");
     let attrs2 = collect_descendant_full_attrs(&[site_refno.clone()], &["ZONE"], None).await?;
-    assert_eq!(
-        attrs.len(),
-        attrs2.len(),
-        "便利函数应该返回相同数量的属性"
-    );
+    assert_eq!(attrs.len(), attrs2.len(), "便利函数应该返回相同数量的属性");
 
     println!("\n=== 所有测试通过 ===");
 

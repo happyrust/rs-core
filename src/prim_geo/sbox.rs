@@ -108,11 +108,8 @@ impl BrepShapeTrait for SBox {
         for x in [-1.0, 1.0] {
             for y in [-1.0, 1.0] {
                 for z in [-1.0, 1.0] {
-                    let local_pos = self.center + Vec3::new(
-                        x * half_size.x,
-                        y * half_size.y,
-                        z * half_size.z,
-                    );
+                    let local_pos =
+                        self.center + Vec3::new(x * half_size.x, y * half_size.y, z * half_size.z);
                     let world_pos = transform.transform_point(local_pos);
                     points.push((world_pos, "Endpoint".to_string(), 100));
                 }
@@ -147,12 +144,12 @@ impl BrepShapeTrait for SBox {
 
         // 6个面的中心点（优先级：70）
         let face_centers = [
-            Vec3::new(0.0, 0.0, -1.0),  // 底面
-            Vec3::new(0.0, 0.0, 1.0),   // 顶面
-            Vec3::new(-1.0, 0.0, 0.0),  // 左面
-            Vec3::new(1.0, 0.0, 0.0),   // 右面
-            Vec3::new(0.0, -1.0, 0.0),  // 前面
-            Vec3::new(0.0, 1.0, 0.0),   // 后面
+            Vec3::new(0.0, 0.0, -1.0), // 底面
+            Vec3::new(0.0, 0.0, 1.0),  // 顶面
+            Vec3::new(-1.0, 0.0, 0.0), // 左面
+            Vec3::new(1.0, 0.0, 0.0),  // 右面
+            Vec3::new(0.0, -1.0, 0.0), // 前面
+            Vec3::new(0.0, 1.0, 0.0),  // 后面
         ];
 
         for face_center in face_centers {

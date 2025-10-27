@@ -538,7 +538,7 @@ pub async fn delete_inst_relate_cascade(
             sql.push_str(&format!("delete [{}];", inst_ids.join(",")));
             sql.push_str("\nCOMMIT TRANSACTION;");
 
-            println!("Delete Sql is {}", &sql);
+            // println!("Delete Sql is {}", &sql);
             SUL_DB
                 .query(sql)
                 .await

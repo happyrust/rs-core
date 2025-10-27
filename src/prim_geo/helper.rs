@@ -350,7 +350,8 @@ fn test_pa_axis_pos_not_corret() {
     .unwrap();
 
     // dbg!((&pa, &pb));
-    let info = RotateInfo::cal_rotate_info(pa.dir.unwrap().0, pa.pt.0, pb.dir.unwrap().0, pb.pt.0, 1.0);
+    let info =
+        RotateInfo::cal_rotate_info(pa.dir.unwrap().0, pa.pt.0, pb.dir.unwrap().0, pb.pt.0, 1.0);
     dbg!(&info);
 }
 

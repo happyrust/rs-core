@@ -125,31 +125,6 @@ pub fn resolve_gmse_params(
         .iter()
         .map(|exp| {
             let val = eval_str_to_f32_or_default(exp, context, "DIST");
-
-            // 🔍 如果表达式包含 PARAM 2，打印详细信息
-            if exp.contains("PARAM 2") || exp.contains("PARAM2") {
-                println!(
-                    "🔍 [diameter 使用 PARAM 2] refno={:?}, gm_type='{}', expr='{}', value={}",
-                    gm.refno, gm.gm_type, exp, val
-                );
-            } else {
-                // 🔍 调试输出：打印表达式和计算结果
-                println!(
-                    "🔍 [diameter] refno={:?}, expr='{}', value={}",
-                    gm.refno, exp, val
-                );
-            }
-
-            // 如果值异常大，打印 context 中的 PARAM 值
-            if val > 10000.0 && exp.contains("PARAM") {
-                println!("   ⚠️  异常大的 diameter 值！打印 context 中的 PARAM:");
-                for entry in context.context.iter() {
-                    let key = entry.key();
-                    if key.contains("PARAM") {
-                        println!("      {} = {}", key, entry.value());
-                    }
-                }
-            }
             val
         })
         .collect();
@@ -179,19 +154,6 @@ pub fn resolve_gmse_params(
 
     let phei = eval_str_to_f32_or_default(&gm.phei, context, "DIST");
 
-    // 🔍 如果表达式包含 PARAM 2，打印详细信息
-    if gm.phei.contains("PARAM 2") || gm.phei.contains("PARAM2") {
-        println!(
-            "🔍 [phei 使用 PARAM 2] refno={:?}, gm_type='{}', expr='{}', value={}",
-            gm.refno, gm.gm_type, gm.phei, phei
-        );
-    } else {
-        // 🔍 调试输出：打印 phei 表达式和计算结果
-        println!(
-            "🔍 [phei] refno={:?}, expr='{}', value={}",
-            gm.refno, gm.phei, phei
-        );
-    }
     let offset = eval_str_to_f32_or_default(&gm.offset, context, "DIST");
 
     let pang = eval_str_to_f32_or_default(&gm.pang, context, "DIST");

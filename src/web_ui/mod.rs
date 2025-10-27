@@ -1,12 +1,12 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::Arc;
+use surrealdb::Surreal;
 use surrealdb::engine::remote::ws::{Client, Ws, Wss};
 use surrealdb::opt::auth::Root;
-use surrealdb::Surreal;
 use tokio::sync::RwLock;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 /// SurrealDB WebSocket 连接配置。
 #[derive(Clone, Debug)]
@@ -183,8 +183,12 @@ pub async fn create_required_tables(
         port,
         username: username.to_string(),
         password: password.to_string(),
-        namespace: namespace.map(|s| s.to_string()).or_else(|| Some("1516".into())),
-        database: database.map(|s| s.to_string()).or_else(|| Some("AvevaMarineSample".into())),
+        namespace: namespace
+            .map(|s| s.to_string())
+            .or_else(|| Some("1516".into())),
+        database: database
+            .map(|s| s.to_string())
+            .or_else(|| Some("AvevaMarineSample".into())),
         secure: false,
     };
 

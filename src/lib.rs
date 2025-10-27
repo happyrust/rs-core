@@ -16,6 +16,9 @@ extern crate bitflags;
 extern crate core;
 extern crate phf;
 
+// Re-export debug macros from debug_macros module
+pub use debug_macros::*;
+
 pub mod accel_tree;
 pub mod aios_db_mgr;
 pub mod aql_types;
@@ -111,6 +114,7 @@ pub mod expression;
 
 pub mod utils;
 
+pub mod debug_macros;
 
 #[cfg(feature = "web_ui")]
 pub mod web_ui;

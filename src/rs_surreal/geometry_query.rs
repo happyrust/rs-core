@@ -228,9 +228,6 @@ pub async fn query_inst_geo_ids(
         "#,
         where_clause, inst_keys
     );
-
-    println!("SQL: {}", sql);
-
     let mut response = SUL_DB.query(sql).await?;
     let results: Vec<QueryInstGeoResult> = response.take(0)?;
     Ok(results)

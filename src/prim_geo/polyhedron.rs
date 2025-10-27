@@ -183,10 +183,6 @@ impl BrepShapeTrait for Polyhedron {
             center /= count as f32;
         }
 
-        vec![(
-            transform.transform_point(center),
-            "Center".to_string(),
-            100,
-        )]
+        vec![(transform.transform_point(center), "Center".to_string(), 100)]
     }
 }

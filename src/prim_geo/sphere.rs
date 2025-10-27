@@ -114,12 +114,12 @@ impl BrepShapeTrait for Sphere {
 
         // 6个主轴端点（优先级：90）
         let axis_points = [
-            Vec3::new(self.radius, 0.0, 0.0),   // +X
-            Vec3::new(-self.radius, 0.0, 0.0),  // -X
-            Vec3::new(0.0, self.radius, 0.0),   // +Y
-            Vec3::new(0.0, -self.radius, 0.0),  // -Y
-            Vec3::new(0.0, 0.0, self.radius),   // +Z
-            Vec3::new(0.0, 0.0, -self.radius),  // -Z
+            Vec3::new(self.radius, 0.0, 0.0),  // +X
+            Vec3::new(-self.radius, 0.0, 0.0), // -X
+            Vec3::new(0.0, self.radius, 0.0),  // +Y
+            Vec3::new(0.0, -self.radius, 0.0), // -Y
+            Vec3::new(0.0, 0.0, self.radius),  // +Z
+            Vec3::new(0.0, 0.0, -self.radius), // -Z
         ];
 
         for axis_point in axis_points {

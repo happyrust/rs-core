@@ -30,6 +30,38 @@ pub enum DBType {
     UNSET,     // 未设置类型
 }
 
+/// 名称过滤条件
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NameFilter {
+    /// 关键字，使用 `string::contains` 匹配
+    pub keyword: String,
+    /// 是否区分大小写
+    pub case_sensitive: bool,
+}
+
+impl NameFilter {
+    /// 创建新的名称过滤条件
+    pub fn new(keyword: impl Into<String>, case_sensitive: bool) -> Self {
+        Self {
+            keyword: keyword.into(),
+            case_sensitive,
+        }
+    }
+
+    fn normalized_keyword(&self) -> Option<String> {
+        let trimmed = self.keyword.trim();
+        if trimmed.is_empty() {
+            return None;
+        }
+
+        if self.case_sensitive {
+            Some(trimmed.to_string())
+        } else {
+            Some(trimmed.to_lowercase())
+        }
+    }
+}
+
 /// 从数据库中获取MDB和DB表的信息
 ///
 /// # 参数说明
@@ -56,7 +88,7 @@ pub async fn get_mdb_world_site_ele_nodes(
         db_type = db_type,
         mdb = mdb_name
     );
-    // 
+    //
     // 执行查询
     let mut response = SUL_DB.query(&sql).await?;
     // 获取结果
@@ -167,23 +199,65 @@ pub async fn query_type_refnos_by_dbnum(
     has_children: Option<bool>,
     only_history: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    // 将 nouns 转换为 SQL 数组格式 ['SITE', 'ZONE', ...]
+    query_type_refnos_by_dbnum_with_filter(nouns, dbnum, has_children, only_history, None).await
+}
+
+/// 带名称过滤能力的类型查询
+///
+/// # 参数
+/// * `nouns` - 类型列表
+/// * `dbnum` - 数据库编号
+/// * `has_children` - 子节点过滤，同 `query_type_refnos_by_dbnum`
+/// * `only_history` - 历史记录开关（暂未实现，保持占位）
+/// * `name_filter` - 可选的名称过滤条件
+pub async fn query_type_refnos_by_dbnum_with_filter(
+    nouns: &[&str],
+    dbnum: u32,
+    has_children: Option<bool>,
+    only_history: bool,
+    name_filter: Option<&NameFilter>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    if let Some(filter) = name_filter {
+        if let Some(keyword) = filter.normalized_keyword() {
+            let mut result = Vec::new();
+            for noun in nouns {
+                let mut sql = format!(
+                    "select value REFNO from {noun} where REFNO.dbnum = $dbnum and NAME != NONE"
+                );
+
+                if filter.case_sensitive {
+                    sql.push_str(" and string::contains(NAME, $keyword)");
+                } else {
+                    sql.push_str(" and string::contains(string::lowercase(NAME), $keyword)");
+                }
+
+                let kw = keyword.clone();
+                let mut query = SUL_DB
+                    .query(&sql)
+                    .bind(("dbnum", dbnum))
+                    .bind(("keyword", kw));
+
+                let mut response = query.await?;
+                let mut refnos: Vec<RefnoEnum> = response.take(0)?;
+                result.append(&mut refnos);
+            }
+            return Ok(result);
+        }
+    }
+
     let nouns_array = nouns
         .iter()
         .map(|n| format!("'{}'", n))
         .collect::<Vec<_>>()
         .join(", ");
 
-    // 构建 SQL 查询，直接查询 pe 表，使用 noun IN 条件
-    // 根据 has_children 参数动态拼接子节点过滤条件
     let mut sql =
         format!("SELECT value id FROM pe WHERE dbnum = {dbnum} AND noun IN [{nouns_array}]");
 
-    // 根据 has_children 参数添加额外的过滤条件
     match has_children {
         Some(true) => sql.push_str(" AND array::len(children) > 0"),
         Some(false) => sql.push_str(" AND (children == none OR array::len(children) = 0)"),
-        None => {} // 不添加任何子节点过滤条件
+        None => {}
     }
 
     let mut response = SUL_DB.query(&sql).await?;
@@ -221,17 +295,109 @@ pub async fn query_use_cate_refnos_by_dbnum(
     Ok(result)
 }
 
-/// 去掉父类型是BRAN和HANGER的记录
-// pub async fn query_type_refnos_by_dbnum_exclude_bran_hang(nouns: &[&str], dbnum: u32) -> anyhow::Result<Vec<RefnoEnum>> {
-//     let mut result = vec![];
-//     for noun in nouns {
-//         let sql = format!("select value id from {noun} where REFNO.dbnum={dbnum} and OWNER.noun not in ['BRAN', 'HANG']");
-//         let mut response = SUL_DB.query(&sql).await?;
-//         let refnos: Vec<RefnoEnum> = response.take(0)?;
-//         result.extend(refnos);
-//     }
-//     Ok(result)
-// }
+/// 通过 MDB 名称和数据库类型查询指定类型的数据
+///
+/// 这个函数提供了更灵活的查询方式，可以通过 MDB 名称和 DB 类型来确定查询范围，
+/// 而不需要手动指定单个 dbnum。
+///
+/// # 参数
+/// * `nouns` - 类型列表（例如 ["SITE", "ZONE", "BRAN"]）
+/// * `mdb_name` - MDB 名称（例如 "/651YK"）
+/// * `db_type` - 数据库类型（1=DESI, 2=CATA, 3=PROP 等）
+/// * `name_filter` - 可选的名称过滤条件
+///
+/// # 实现说明
+/// 1. 首先通过 `fn::query_mdb_db_nums` 获取该 MDB 下指定类型的数据库编号列表
+/// 2. 使用逗号拼接多表语法，在单个查询中从所有表中获取数据
+/// 3. 使用 `REFNO.dbnum IN [...]` 来过滤数据库编号
+///
+/// # 示例
+/// ```rust
+/// let filter = NameFilter::new("R", false);
+/// let results = query_type_refnos_in_mdb(
+///     &["SITE", "BRAN"],
+///     "/651YK",
+///     DBType::DESI,
+///     Some(&filter)
+/// ).await?;
+/// ```
+pub async fn query_type_refnos_in_mdb(
+    nouns: &[&str],
+    mdb_name: &str,
+    db_type: DBType,
+    name_filter: Option<&NameFilter>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let processed_mdb = crate::helper::to_e3d_name(mdb_name).into_owned();
+    let db_type_num: u8 = db_type.into();
+    
+    // 构建逗号拼接的表名
+    let tables = nouns.join(", ");
+    
+    // 使用 fn::query_mdb_db_nums 获取该 MDB 下的数据库编号
+    let sql = format!(
+        "let $dbnums = fn::query_mdb_db_nums($mdb, {db_type_num}); \
+         select value REFNO from {tables} where NAME != NONE \
+         and REFNO.dbnum in $dbnums"
+    );
+
+    let mut sql = sql;
+
+    // 如果需要名称过滤，添加名称匹配条件
+    if let Some(filter) = name_filter {
+        if let Some(keyword) = filter.normalized_keyword() {
+            if filter.case_sensitive {
+                sql.push_str(" and string::contains(NAME, $keyword)");
+            } else {
+                sql.push_str(" and string::contains(string::lowercase(NAME), $keyword)");
+            }
+
+            let mut query = SUL_DB
+                .query(&sql)
+                .bind(("mdb", processed_mdb.clone()))
+                .bind(("keyword", keyword));
+
+            let mut response = query.await?;
+            let refnos: Vec<RefnoEnum> = response.take(1)?;  // 注意：这里应该是 take(1) 因为有 let 语句
+            return Ok(refnos);
+        }
+    }
+
+    // 不需要名称过滤时
+    let mut query = SUL_DB
+        .query(&sql)
+        .bind(("mdb", processed_mdb));
+
+    let mut response = query.await?;
+    let refnos: Vec<RefnoEnum> = response.take(1)?;  // 注意：这里应该是 take(1) 因为有 let 语句
+    Ok(refnos)
+}
+
+/// 使用默认 MDB 配置查询指定类型的数据
+///
+/// 这是 `query_type_refnos_in_mdb` 的便捷包装器，自动使用 `DbOption` 中配置的 `mdb_name`。
+///
+/// # 参数
+/// * `nouns` - 类型列表（例如 ["SITE", "ZONE", "BRAN"]）
+/// * `db_type` - 数据库类型（1=DESI, 2=CATA, 3=PROP 等）
+/// * `name_filter` - 可选的名称过滤条件
+///
+/// # 示例
+/// ```rust
+/// let filter = NameFilter::new("B", false);
+/// let results = query_type_refnos(
+///     &["BRAN"],
+///     DBType::DESI,
+///     Some(&filter)
+/// ).await?;
+/// ```
+pub async fn query_type_refnos(
+    nouns: &[&str],
+    db_type: DBType,
+    name_filter: Option<&NameFilter>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let mdb_name = &get_db_option().mdb_name;
+    query_type_refnos_in_mdb(nouns, mdb_name, db_type, name_filter).await
+}
 
 /// 查询MDB数据库编号
 ///
@@ -279,7 +445,7 @@ pub async fn get_mdb_world_site_pes(
         db_type = db_type,
         mdb = mdb_name
     );
-    // 
+    //
     let mut response = SUL_DB.query(&sql).await?;
     let pe: Vec<SPdmsElement> = response.take(2)?;
     Ok(pe)
@@ -510,6 +676,92 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_query_type_refnos_by_dbnum_with_name_filter() {
+        init_test_surreal().await;
+
+        let db_nums = query_mdb_db_nums(Some(get_db_option().mdb_name.clone()), DBType::DESI)
+            .await
+            .unwrap();
+        if db_nums.is_empty() {
+            println!("⚠️  没有可用的数据库编号，跳过测试");
+            return;
+        }
+
+        let dbnum = db_nums[0];
+        let nouns = &["BRAN", "PIPE", "SITE", "ZONE"];
+        let baseline = match query_type_refnos_by_dbnum(nouns, dbnum, None, false).await {
+            Ok(data) => data,
+            Err(err) => {
+                panic!("查询基础数据失败: {err}");
+            }
+        };
+
+        if baseline.is_empty() {
+            println!("⚠️  当前数据库下没有匹配的参考号，跳过测试");
+            return;
+        }
+
+        let mut target_pe: Option<SPdmsElement> = None;
+        for refno in &baseline {
+            if let Ok(Some(pe)) = crate::rs_surreal::query::get_pe(*refno).await {
+                if !pe.name.trim().is_empty() {
+                    target_pe = Some(pe);
+                    break;
+                }
+            }
+        }
+
+        let Some(target_pe) = target_pe else {
+            println!("⚠️  未找到带名称的节点，跳过测试");
+            return;
+        };
+
+        let target_refno = target_pe.refno;
+        let noun = target_pe.noun.clone();
+        let mut keyword: String = target_pe.name.chars().take(3).collect();
+        if keyword.is_empty() {
+            keyword = target_pe.name.clone();
+        }
+
+        if keyword.trim().is_empty() {
+            println!("⚠️  目标节点名称为空，跳过测试");
+            return;
+        }
+
+        let noun_refs = vec![noun.as_str()];
+
+        let filter_cs = NameFilter::new(keyword.clone(), true);
+        let result_cs = query_type_refnos_by_dbnum_with_filter(
+            &noun_refs,
+            dbnum,
+            None,
+            false,
+            Some(&filter_cs),
+        )
+        .await
+        .expect("名称过滤（区分大小写）执行失败");
+        assert!(
+            result_cs.contains(&target_refno),
+            "名称过滤（区分大小写）应命中目标节点"
+        );
+
+        let filter_ci = NameFilter::new(keyword.to_lowercase(), false);
+        let result_ci = query_type_refnos_by_dbnum_with_filter(
+            &noun_refs,
+            dbnum,
+            None,
+            false,
+            Some(&filter_ci),
+        )
+        .await
+        .expect("名称过滤（忽略大小写）执行失败");
+        assert!(
+            result_ci.contains(&target_refno),
+            "名称过滤（忽略大小写）应命中目标节点"
+        );
+    }
+
+    #[tokio::test]
     async fn test_get_mdb_world_site_pes() {
         init_test_surreal().await;
 
@@ -601,6 +853,41 @@ mod tests {
 
         let refnos = result.unwrap();
         println!("   ✅ 查询到 {} 个有类别信息的参考号", refnos.len());
+    }
+
+    #[tokio::test]
+    async fn test_query_type_refnos_with_name_filter() {
+        init_test_surreal().await;
+
+        println!("🧪 测试 query_type_refnos - 查询 DESI 的 BRAN，名称包含 'B'");
+
+        let filter = NameFilter::new("B", false);
+        let result = query_type_refnos(&["BRAN"], DBType::DESI, Some(&filter)).await;
+
+        if let Err(ref e) = result {
+            println!("   ❌ 查询失败: {:?}", e);
+        }
+        assert!(result.is_ok(), "查询应该成功: {:?}", result.err());
+
+        let refnos = result.unwrap();
+        println!("   ✅ 查询到 {} 个 BRAN 节点（名称包含 'B'）", refnos.len());
+
+        // 验证结果
+        if !refnos.is_empty() {
+            println!("   前3个参考号: {:?}", &refnos[..refnos.len().min(3)]);
+
+            // 验证查询到的节点名称确实包含 'B'
+            for refno in refnos.iter().take(5) {
+                if let Ok(Some(pe)) = crate::rs_surreal::query::get_pe(*refno).await {
+                    println!("      BRAN: noun={}, name={}", pe.noun, pe.name);
+                    assert_eq!(pe.noun, "BRAN", "节点类型应为 BRAN");
+                    assert!(
+                        pe.name.to_lowercase().contains("b"),
+                        "名称应包含字符 'B'（不区分大小写）"
+                    );
+                }
+            }
+        }
     }
 }
 

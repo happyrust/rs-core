@@ -294,6 +294,26 @@ impl TypeQuery for QueryRouter {
         .await
     }
 
+    async fn query_by_type_name_contains(
+        &self,
+        nouns: &[&str],
+        dbnum: i32,
+        keyword: &str,
+        case_sensitive: bool,
+    ) -> QueryResult<Vec<RefnoEnum>> {
+        self.execute_with_fallback("query_by_type_name_contains", |provider| {
+            let nouns: Vec<String> = nouns.iter().map(|s| s.to_string()).collect();
+            let keyword = keyword.to_string();
+            Box::pin(async move {
+                let noun_refs: Vec<&str> = nouns.iter().map(|s| s.as_str()).collect();
+                provider
+                    .query_by_type_name_contains(&noun_refs, dbnum, &keyword, case_sensitive)
+                    .await
+            })
+        })
+        .await
+    }
+
     async fn query_by_type_multi_db(
         &self,
         nouns: &[&str],

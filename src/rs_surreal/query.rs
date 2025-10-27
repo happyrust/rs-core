@@ -588,7 +588,7 @@ pub(crate) async fn get_named_attmap_with_uda(
         refno_enum.to_pe_key(),
         refno_enum.refno()
     );
-    
+
     let mut response = SUL_DB.query(sql).await?;
 
     #[derive(Deserialize, SurrealValue)]
@@ -705,7 +705,7 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
         "#,
         refno.to_pe_key()
     );
-    // 
+    //
     let mut response = SUL_DB.query(sql).await?;
     let mut nodes: Vec<EleTreeNode> = response.take(0)?;
     //检查名称，如果没有给名字的，需要给上默认值, todo 后续如果是删除了又增加，名称后面的数字可能会继续增加

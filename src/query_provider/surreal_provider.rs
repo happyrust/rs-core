@@ -149,6 +149,34 @@ impl TypeQuery for SurrealQueryProvider {
             .map_err(|e| QueryError::ExecutionError(e.to_string()))
     }
 
+    async fn query_by_type_name_contains(
+        &self,
+        nouns: &[&str],
+        dbnum: i32,
+        keyword: &str,
+        case_sensitive: bool,
+    ) -> QueryResult<Vec<RefnoEnum>> {
+        debug!(
+            "[{}] query_by_type_name_contains: nouns={:?}, dbnum={}, keyword={}, case_sensitive={}",
+            self.name, nouns, dbnum, keyword, case_sensitive
+        );
+
+        if keyword.trim().is_empty() {
+            return self.query_by_type(nouns, dbnum, None).await;
+        }
+
+        let name_filter = rs_surreal::NameFilter::new(keyword, case_sensitive);
+        rs_surreal::query_type_refnos_by_dbnum_with_filter(
+            nouns,
+            dbnum as u32,
+            None,
+            false,
+            Some(&name_filter),
+        )
+        .await
+        .map_err(|e| QueryError::ExecutionError(e.to_string()))
+    }
+
     async fn query_by_type_multi_db(
         &self,
         nouns: &[&str],

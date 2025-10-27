@@ -593,11 +593,7 @@ impl BrepShapeTrait for SCylinder {
 fn calculate_perpendicular_vectors(axis: Vec3) -> (Vec3, Vec3) {
     let axis = axis.normalize();
     // 选择一个不平行于轴的向量
-    let reference = if axis.x.abs() < 0.9 {
-        Vec3::X
-    } else {
-        Vec3::Y
-    };
+    let reference = if axis.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
     let u = reference.cross(axis).normalize();
     let v = axis.cross(u).normalize();
     (u, v)

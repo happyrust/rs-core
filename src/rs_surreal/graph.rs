@@ -483,7 +483,7 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
         refno_list, types_expr, range, select_expr
     );
 
-    // 
+    //
 
     let mut response = SUL_DB.query(&sql).await?;
     // dbg!(&response);

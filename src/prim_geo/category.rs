@@ -230,7 +230,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = axis.dir.as_ref().map(|d| d.0.normalize_or_zero()).unwrap_or(Vec3::X);
+            let mut dir = axis
+                .dir
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
+                .unwrap_or(Vec3::X);
             if dir.length() == 0.0 {
                 return None;
             }
@@ -362,8 +366,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let pdia = d.diameter as f32;
 
             // 🔍 调试输出：打印原始的 diameter 和 height 值
-            println!("🔍 [SCylinder] refno={:?}, diameter={}, height={}",
-                d.refno, d.diameter, d.height);
+            println!(
+                "🔍 [SCylinder] refno={:?}, diameter={}, height={}",
+                d.refno, d.diameter, d.height
+            );
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
             let transform = Transform {
                 rotation,
