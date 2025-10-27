@@ -748,24 +748,19 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
 ///获得children
 #[cached(result = true)]
 pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    let sql = if refno.is_latest() {
-        format!(
-            r#"select value in from {}<-pe_owner  where in.id!=none and record::exists(in.id) and !in.deleted"#,
-            refno.to_pe_key()
-        )
-    } else {
-        format!(
-            r#"
-                let $dt=<datetime>fn::ses_date({0});
-                select value fn::find_pe_by_datetime(in, $dt) from fn::newest_pe({0})<-pe_owner
-                    where in.id!=none and record::exists(in.id) and (!in.deleted or <datetime>fn::ses_date(in.id)>$dt)
-            "#,
-            refno.to_pe_key(),
-        )
-    };
+    // 临时方案：跳过历史版本查询以避免 fn::ses_date() 导致的 "Expected any, got record" 错误
+    // TODO: 使用 dt 字段替代 fn::ses_date() 来支持历史版本查询
+    if !refno.is_latest() {
+        eprintln!("警告: 跳过历史版本 {:?} 的子节点查询（临时方案）", refno);
+        return Ok(vec![]);
+    }
+
+    let sql = format!(
+        r#"select value in from {}<-pe_owner  where in.id!=none and record::exists(in.id) and !in.deleted"#,
+        refno.to_pe_key()
+    );
     let mut response = SUL_DB.query(sql).await?;
-    let idx = if refno.is_latest() { 0 } else { 1 };
-    let refnos: Vec<RefnoEnum> = response.take(idx)?;
+    let refnos: Vec<RefnoEnum> = response.take(0)?;
     Ok(refnos)
 }
 

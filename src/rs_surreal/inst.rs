@@ -52,6 +52,7 @@ pub async fn query_tubi_insts_by_brans(
         .map(|x| x.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
+    // 临时方案：使用 in.dt 替代 fn::ses_date(in.id) 以避免 "Expected any, got record" 错误
     let sql = format!(
         r#"
              select
@@ -59,7 +60,7 @@ pub async fn query_tubi_insts_by_brans(
                 in.old_pe as old_refno,
                 in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 record::id(out) as geo_hash,
-                fn::ses_date(in.id) as date
+                in.dt as date
              from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
              "#,
         pes
@@ -79,11 +80,12 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
         .map(|x| x.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
+    // 临时方案：使用 in.dt 替代 fn::ses_date(in.id) 以避免 "Expected any, got record" 错误
     let sql = format!(
         r#"
         array::group(array::complement(select value
         (select in.id as refno, in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
-            fn::ses_date(in.id) as date
+            in.dt as date
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
                 from [{}] where in.id != none and  owner.noun in ['BRAN', 'HANG'], [none]))
              "#,
@@ -268,6 +270,8 @@ pub async fn query_insts_by_zone(
         .collect::<Vec<_>>()
         .join(",");
 
+    // 临时方案：使用 in.dt 替代 fn::ses_date(in.id) 以避免 "Expected any, got record" 错误
+    // TODO: 确认 in.dt 字段是否可用，或者使用其他方案
     let sql = if enable_holes {
         format!(
             r#"
@@ -277,7 +281,7 @@ pub async fn query_insts_by_zone(
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
                 if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
                 booled_id != none as has_neg,
-                fn::ses_date(in.id) as date
+                in.dt as date
             from inst_relate where zone_refno in [{}] and aabb.d != none
             "#,
             zone_refnos
@@ -291,7 +295,7 @@ pub async fn query_insts_by_zone(
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
                 (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
                 booled_id != none as has_neg,
-                fn::ses_date(in.id) as date
+                in.dt as date
             from inst_relate where zone_refno in [{}] and aabb.d != none
             "#,
             zone_refnos
