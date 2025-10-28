@@ -21,7 +21,6 @@ pub use debug_macros::*;
 
 pub mod accel_tree;
 pub mod aios_db_mgr;
-pub mod aql_types;
 pub mod attlib_parser;
 pub mod axis_param;
 
@@ -83,7 +82,7 @@ pub mod threed_review;
 pub mod runtime;
 pub mod transform;
 
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "test")]
 pub mod test;
 
 pub mod db_adapter;

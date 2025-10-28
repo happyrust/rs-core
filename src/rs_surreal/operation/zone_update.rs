@@ -1,5 +1,5 @@
 use crate::utils::take_vec;
-use crate::{RefnoEnum, SUL_DB};
+use crate::{RefnoEnum, SUL_DB, SurrealQueryExt};
 use anyhow::Result;
 use serde::Deserialize;
 
@@ -14,11 +14,11 @@ struct CountResult {
 pub async fn update_missing_zone_refno() -> Result<usize> {
     // First, get count of records that need updating
     let count_sql = r#"
-        SELECT count() FROM inst_relate 
+        SELECT count() FROM inst_relate
         WHERE zone_refno = NONE AND in != NONE;
     "#;
 
-    let mut count_response = SUL_DB.query(count_sql).await?;
+    let mut count_response = SUL_DB.query_response(count_sql).await?;
     let count_result: Vec<CountResult> = take_vec(&mut count_response, 0)?;
     let record_count = count_result.first().map(|r| r.count).unwrap_or(0);
 
@@ -28,10 +28,10 @@ pub async fn update_missing_zone_refno() -> Result<usize> {
 
     // Then, update the records
     let update_sql = r#"
-        LET $missing_zone_records = SELECT id, in FROM inst_relate 
-                                    WHERE zone_refno = NONE 
+        LET $missing_zone_records = SELECT id, in FROM inst_relate
+                                    WHERE zone_refno = NONE
                                     AND in != NONE;
-        
+
         FOR $record IN $missing_zone_records {
             LET $zone = fn::find_ancestor_type($record.in, 'ZONE');
             IF $zone != NONE && $zone.refno != NONE {
@@ -40,7 +40,7 @@ pub async fn update_missing_zone_refno() -> Result<usize> {
         }
     "#;
 
-    SUL_DB.query(update_sql).await?;
+    SUL_DB.query_response(update_sql).await?;
 
     Ok(record_count)
 }

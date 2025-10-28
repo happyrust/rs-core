@@ -4,7 +4,6 @@ use super::query::create_table_sql;
 use super::query::save_material_value;
 #[cfg(feature = "sql")]
 use super::query::save_material_value_test;
-use crate::SUL_DB;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::aios_db_mgr::aios_mgr::{self, AiosDBMgr};
 use crate::init_test_surreal;
@@ -16,6 +15,7 @@ use crate::{
     RefU64, RefnoEnum, get_pe, insert_into_table_with_chunks, query_filter_ancestors,
     query_filter_deep_children,
 };
+use crate::{SUL_DB, SurrealQueryExt};
 use anyhow::anyhow;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
@@ -452,7 +452,7 @@ pub async fn query_yk_bran_belong_gy_valv_name(
     for _ in 0..5 {
         let mut sql = format!("select id,noun ,name?:'' as name, string::contains(fn::find_ancestor_type(id,'SITE').name?:'','PIPE') as site,
                     <-pe_owner.in.filter(|$x| $x.noun == 'VALV').name as valv from {}.refno.HREF", bran.to_pe_key());
-        let mut resp = SUL_DB.query(&sql).await?;
+        let mut resp = SUL_DB.query_response(&sql).await?;
         let r: Vec<BelongGyValvResponse> = take_vec(&mut resp, 0)?;
         // 没有填href，返回的就是空
         if r.is_empty() {

@@ -8,7 +8,7 @@ use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
 use crate::utils::RecordIdExt;
 use crate::{NamedAttrMap, RefU64};
-use crate::{SUL_DB, SurlValue};
+use crate::{SUL_DB, SurlValue, SurrealQueryExt};
 use crate::{graph::QUERY_DEEP_CHILDREN_REFNOS, types::*};
 use cached::Cached;
 use cached::proc_macro::cached;
@@ -30,7 +30,7 @@ pub async fn get_children_pbs_nodes(id: &RecordId) -> anyhow::Result<Vec<PbsElem
         id.to_raw()
     );
     // dbg!(&sql);
-    let mut response = SUL_DB.query(sql).await.unwrap();
+    let mut response = SUL_DB.query_response(&sql).await.unwrap();
     // dbg!(&response);
     let nodes: Vec<PbsElement> = response.take(0)?;
     Ok(nodes)

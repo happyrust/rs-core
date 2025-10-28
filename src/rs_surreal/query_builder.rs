@@ -1,12 +1,12 @@
 //! 查询构建器模块
-//! 
+//!
 //! 提供统一的 SurrealDB 查询构建和执行接口，减少重复代码并提高查询的一致性。
 
 use crate::types::*;
-use crate::{SurlValue, SUL_DB};
+use crate::{SUL_DB, SurlValue, SurrealQueryExt};
 use anyhow::Result;
-use surrealdb::IndexedResults;
 use std::fmt::Display;
+use surrealdb::IndexedResults;
 
 /// 查询构建器 - 用于构建和执行 SurrealDB 查询
 pub struct QueryBuilder {
@@ -16,16 +16,12 @@ pub struct QueryBuilder {
 impl QueryBuilder {
     /// 创建新的查询构建器
     pub fn new() -> Self {
-        Self {
-            sql: String::new(),
-        }
+        Self { sql: String::new() }
     }
 
     /// 从 SQL 字符串创建查询构建器
     pub fn from_sql(sql: impl Into<String>) -> Self {
-        Self {
-            sql: sql.into(),
-        }
+        Self { sql: sql.into() }
     }
 
     /// 添加 SELECT 子句
@@ -55,7 +51,8 @@ impl QueryBuilder {
     /// 添加 ORDER BY 子句
     pub fn order_by(mut self, field: &str, desc: bool) -> Self {
         let direction = if desc { "DESC" } else { "ASC" };
-        self.sql.push_str(&format!(" ORDER BY {} {}", field, direction));
+        self.sql
+            .push_str(&format!(" ORDER BY {} {}", field, direction));
         self
     }
 
@@ -66,7 +63,7 @@ impl QueryBuilder {
 
     /// 执行查询并返回响应
     pub async fn execute(&self) -> Result<IndexedResults> {
-        let response = SUL_DB.query(&self.sql).await?;
+        let response = SUL_DB.query_response(&self.sql).await?;
         Ok(response)
     }
 
@@ -163,16 +160,23 @@ impl BatchQueryBuilder {
 
     /// 构建批量类型查询
     pub fn types_query(&self) -> QueryBuilder {
-        let pe_keys = self.refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
-        QueryBuilder::from_sql(format!(
-            "SELECT value noun FROM [{}]",
-            pe_keys
-        ))
+        let pe_keys = self
+            .refnos
+            .iter()
+            .map(|x| x.to_pe_key())
+            .collect::<Vec<_>>()
+            .join(",");
+        QueryBuilder::from_sql(format!("SELECT value noun FROM [{}]", pe_keys))
     }
 
     /// 构建批量全名查询
     pub fn full_names_query(&self) -> QueryBuilder {
-        let pe_keys = self.refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
+        let pe_keys = self
+            .refnos
+            .iter()
+            .map(|x| x.to_pe_key())
+            .collect::<Vec<_>>()
+            .join(",");
         QueryBuilder::from_sql(format!(
             "SELECT value fn::default_full_name(id) FROM [{}]",
             pe_keys
@@ -181,7 +185,12 @@ impl BatchQueryBuilder {
 
     /// 构建批量子元素查询
     pub fn all_children_query(&self) -> QueryBuilder {
-        let pe_keys = self.refnos.iter().map(|x| x.to_pe_key()).collect::<Vec<_>>().join(",");
+        let pe_keys = self
+            .refnos
+            .iter()
+            .map(|x| x.to_pe_key())
+            .collect::<Vec<_>>()
+            .join(",");
         QueryBuilder::from_sql(format!(
             "array::flatten(SELECT value in FROM [{}]<-pe_owner WHERE record::exists(in.id) AND !in.deleted)",
             pe_keys
@@ -195,10 +204,7 @@ pub struct FunctionQueryBuilder;
 impl FunctionQueryBuilder {
     /// 构建默认名称查询
     pub fn default_name(refno: RefnoEnum) -> QueryBuilder {
-        QueryBuilder::from_sql(format!(
-            "RETURN fn::default_name({})",
-            refno.to_pe_key()
-        ))
+        QueryBuilder::from_sql(format!("RETURN fn::default_name({})", refno.to_pe_key()))
     }
 
     /// 构建默认全名查询
@@ -220,18 +226,12 @@ impl FunctionQueryBuilder {
 
     /// 构建会话日期查询
     pub fn session_date(refno: RefnoEnum) -> QueryBuilder {
-        QueryBuilder::from_sql(format!(
-            "RETURN fn::ses_date({})",
-            refno.to_pe_key()
-        ))
+        QueryBuilder::from_sql(format!("RETURN fn::ses_date({})", refno.to_pe_key()))
     }
 
     /// 构建通过数据库编号获取 WORLD 的查询
     pub fn get_world(dbnum: u32) -> QueryBuilder {
-        QueryBuilder::from_sql(format!(
-            "RETURN fn::get_world({})",
-            dbnum
-        ))
+        QueryBuilder::from_sql(format!("RETURN fn::get_world({})", dbnum))
     }
 
     /// 构建查询 WORLD 下所有 SITE 节点的查询
@@ -244,10 +244,7 @@ impl FunctionQueryBuilder {
 
     /// 构建通过数据库编号直接获取所有 SITE 节点的查询
     pub fn get_sites_of_dbnum(dbnum: u32) -> QueryBuilder {
-        QueryBuilder::from_sql(format!(
-            "RETURN fn::get_sites_of_dbnum({})",
-            dbnum
-        ))
+        QueryBuilder::from_sql(format!("RETURN fn::get_sites_of_dbnum({})", dbnum))
     }
 }
 
@@ -263,7 +260,7 @@ mod tests {
             .where_clause("noun = 'PIPE'")
             .limit(10)
             .order_by("name", false);
-        
+
         assert_eq!(
             query.build(),
             "SELECT * FROM pe WHERE noun = 'PIPE' LIMIT 10 ORDER BY name ASC"
@@ -275,7 +272,7 @@ mod tests {
         let refno = RefnoEnum::from("12345_67890");
         let builder = PeQueryBuilder::new(refno);
         let query = builder.basic_query();
-        
+
         assert!(query.build().contains("SELECT * OMIT id FROM ONLY"));
         assert!(query.build().contains("pe:['12345_67890']"));
     }

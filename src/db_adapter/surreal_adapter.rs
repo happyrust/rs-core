@@ -2,6 +2,7 @@
 
 use super::traits::*;
 use crate::rs_surreal;
+use crate::rs_surreal::SurrealQueryExt;
 use crate::types::*;
 use async_trait::async_trait;
 
@@ -45,7 +46,7 @@ impl DatabaseAdapter for SurrealAdapter {
 
     async fn health_check(&self) -> anyhow::Result<bool> {
         // 简单的健康检查：尝试执行一个查询
-        match rs_surreal::SUL_DB.query("SELECT 1").await {
+        match rs_surreal::SUL_DB.query_response("SELECT 1").await {
             Ok(_) => Ok(true),
             Err(e) => {
                 log::warn!("SurrealDB 健康检查失败: {}", e);

@@ -4,3 +4,10 @@ SELECT NAME FROM MDB LIMIT 10;
 SELECT NAME, CURD FROM MDB WHERE 1112 IN (SELECT value DBNO FROM CURD.refno WHERE STYP=1);
 INFO FOR ROOT;
 INFO FOR ROOT
+-- 查找适合 boolean_query 测试的数据
+-- 这个脚本用于从 SurrealDB 中找到符合各个查询函数条件的测试数据
+-- ============================================
+-- 1. 查找 query_cata_neg_boolean_groups 的测试数据
+-- ============================================
+-- 需要找到具有 has_cata_neg=true 的 inst_relate 记录
+-- 查找有 catalog negative 的实例

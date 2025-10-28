@@ -34,23 +34,19 @@ impl RsTransform {
     pub fn translation(&self) -> Vec3 {
         self.0.translation
     }
-    
+
     /// 获取旋转分量
     pub fn rotation(&self) -> Quat {
         self.0.rotation
     }
-    
+
     /// 获取缩放分量
     pub fn scale(&self) -> Vec3 {
         self.0.scale
     }
-    
+
     /// 从平移、旋转、缩放创建Transform
-    pub fn from_translation_rotation_scale(
-        translation: Vec3,
-        rotation: Quat,
-        scale: Vec3,
-    ) -> Self {
+    pub fn from_translation_rotation_scale(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self(Transform {
             translation,
             rotation,
@@ -63,32 +59,48 @@ impl SurrealValue for RsTransform {
     fn kind_of() -> surrealdb::types::Kind {
         surrealdb::types::Kind::Array(Box::new(surrealdb::types::Kind::Number), None)
     }
-    
+
     fn into_value(self) -> surrealdb::types::Value {
         surrealdb::types::Value::Array(surrealdb::types::Array::from(vec![
             // translation: x, y, z
-            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.translation.x as f64)),
-            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.translation.y as f64)),
-            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.translation.z as f64)),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(
+                self.0.translation.x as f64,
+            )),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(
+                self.0.translation.y as f64,
+            )),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(
+                self.0.translation.z as f64,
+            )),
             // rotation: x, y, z, w
-            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.rotation.x as f64)),
-            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.rotation.y as f64)),
-            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.rotation.z as f64)),
-            surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.rotation.w as f64)),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(
+                self.0.rotation.x as f64,
+            )),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(
+                self.0.rotation.y as f64,
+            )),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(
+                self.0.rotation.z as f64,
+            )),
+            surrealdb::types::Value::Number(surrealdb::types::Number::Float(
+                self.0.rotation.w as f64,
+            )),
             // scale: x, y, z
             surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.scale.x as f64)),
             surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.scale.y as f64)),
             surrealdb::types::Value::Number(surrealdb::types::Number::Float(self.0.scale.z as f64)),
         ]))
     }
-    
+
     fn from_value(value: surrealdb::types::Value) -> anyhow::Result<Self> {
         match value {
             surrealdb::types::Value::Array(arr) => {
                 if arr.len() != 10 {
-                    return Err(anyhow::anyhow!("数组长度必须为 10 才能转换为 RsTransform (x,y,z + qx,qy,qz,qw + sx,sy,sz)"));
+                    return Err(anyhow::anyhow!(
+                        "数组长度必须为 10 才能转换为 RsTransform (x,y,z + qx,qy,qz,qw + sx,sy,sz)"
+                    ));
                 }
-                
+
                 let tx = match &arr[0] {
                     surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
                     _ => return Err(anyhow::anyhow!("Transform translation.x 必须是数字")),
@@ -129,13 +141,13 @@ impl SurrealValue for RsTransform {
                     surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
                     _ => return Err(anyhow::anyhow!("Transform scale.z 必须是数字")),
                 };
-                
+
                 let transform = Transform {
                     translation: Vec3::new(tx, ty, tz),
                     rotation: Quat::from_xyzw(qx, qy, qz, qw),
                     scale: Vec3::new(sx, sy, sz),
                 };
-                
+
                 Ok(RsTransform(transform))
             }
             _ => Err(anyhow::anyhow!("值必须是数组类型才能转换为 RsTransform")),

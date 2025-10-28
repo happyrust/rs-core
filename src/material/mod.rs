@@ -9,7 +9,7 @@ use crate::material::tx::save_tx_material_equi;
 use crate::material::yk::{save_yk_material_dzcl, save_yk_material_equi, save_yk_material_pipe};
 use crate::pdms_user::RefnoMajor;
 use crate::ssc_setting::{gen_pdms_major_table, query_all_site_with_major, set_pdms_major_code};
-use crate::{RefU64, SUL_DB, query_filter_ancestors};
+use crate::{RefU64, SUL_DB, SurrealQueryExt, query_filter_ancestors};
 use std::collections::HashMap;
 use std::io::Read;
 use strum::IntoEnumIterator;
@@ -347,7 +347,7 @@ pub async fn get_refnos_belong_major(
             zone.to_pe_key(),
             zone.to_pe_key()
         );
-        let Ok(mut response) = SUL_DB.query(sql).await else {
+        let Ok(mut response) = SUL_DB.query_response(&sql).await else {
             continue;
         };
         let zone_major: Vec<Option<String>> = response.take(0)?;

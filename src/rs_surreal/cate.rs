@@ -8,7 +8,7 @@ use crate::table::ToTable;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::tool::math_tool::*;
 use crate::{NamedAttrMap, RefU64};
-use crate::{SUL_DB, SurlValue};
+use crate::{SUL_DB, SurlValue, SurrealQueryExt};
 use crate::{get_default_pdms_db_info, graph::QUERY_DEEP_CHILDREN_REFNOS, types::*};
 use cached::Cached;
 use cached::proc_macro::cached;
@@ -79,7 +79,7 @@ pub async fn build_cate_relate(replace_exist: bool) -> anyhow::Result<()> {
     "#,
         all_cate_types
     ));
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     Ok(())
 }
 
@@ -93,7 +93,7 @@ pub async fn query_ele_refnos_by_spres(spres: &[RefU64]) -> anyhow::Result<Vec<R
         "#,
         spres.into_iter().map(|x| x.to_pe_key()).join(",")
     );
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let refnos: Vec<RefU64> = response.take(0).unwrap();
     Ok(refnos)
 }

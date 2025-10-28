@@ -39,3 +39,5 @@ pub mod test_geom;
 pub mod test_type_hierarchy;
 
 pub mod test_collect_inst;
+
+pub mod test_boolean_query;

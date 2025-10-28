@@ -10,9 +10,9 @@ use crate::tool::hash_tool::{hash_str, hash_two_str};
 use crate::types::*;
 use crate::utils::{IntoRecordId, RecordIdExt};
 use crate::{
-    DBType, SUL_DB, get_db_option, get_mdb_world_site_pes, insert_into_table,
+    DBType, SUL_DB, SurrealQueryExt, get_db_option, get_mdb_world_site_pes, insert_into_table,
     insert_into_table_with_chunks, insert_pe_into_table_with_chunks, insert_relate_to_table,
-    query_ele_filter_deep_children, query_filter_deep_children, rs_surreal,
+    query_ele_filter_deep_children, query_filter_deep_children, query_response, rs_surreal,
 };
 use anyhow::anyhow;
 use bevy_ecs::resource::Resource;
@@ -30,8 +30,6 @@ use std::str::FromStr;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::thread;
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::{RecordId, SurrealValue};
 use tokio::task;
@@ -360,7 +358,7 @@ pub async fn get_room_level_from_excel_refactor() -> anyhow::Result<SscMajorCode
         index += 1;
     }
 
-    SUL_DB.query(configs_sql).await?;
+    query_response(&SUL_DB, &configs_sql).await?;
 
     Ok(SscMajorCodeConfig {
         level,
@@ -1196,7 +1194,7 @@ async fn query_pbs_room_nodes(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<PBSRoo
         "#,
         refnos
     );
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = query_response(&SUL_DB, &sql).await?;
     match response.take::<Vec<PBSRoomNode>>(0) {
         Ok(r) => {
             return Ok(r);
@@ -1222,7 +1220,7 @@ async fn query_pbs_children_by_refnos(
         r#"select fn::default_name(id) as name, noun, refno, type::record('pbs',record::id(id)) as id, type::record('pbs',record::id(owner)) as owner, array::len(<-pe_owner) as children_cnt  from array::flatten(select value in from [{}]<-pe_owner)"#,
         pes
     );
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = query_response(&SUL_DB, &sql).await?;
     let result: Vec<PbsElement> = response.take(0)?;
     for r in result {
         map.entry(r.owner.clone().into())

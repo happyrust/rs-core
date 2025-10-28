@@ -1,13 +1,12 @@
 use crate::RefnoEnum;
-use crate::room::room::GLOBAL_AABB_TREE;
+use crate::spatial::sqlite;
 use crate::tool::math_tool;
 use crate::tool::math_tool::{
     cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str,
 };
 use crate::utils::take_vec;
 use crate::{
-    NamedAttrMap, RefU64, SUL_DB,
-    accel_tree::acceleration_tree::QueryRay,
+    NamedAttrMap, RefU64, SUL_DB, SurrealQueryExt,
     consts::HAS_PLIN_TYPES,
     get_named_attmap,
     pdms_data::{PlinParam, PlinParamData},
@@ -26,11 +25,10 @@ use cached::proc_macro::cached;
 use futures::future::{BoxFuture, FutureExt};
 use glam::{DMat3, DMat4, DQuat, DVec3, Mat3, Mat4, Quat, Vec3};
 use parry3d::bounding_volume::Aabb;
-use parry3d::query::Ray;
 use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
-use std::{collections::HashSet, f32::consts::E, time::Instant};
+use std::{f32::consts::E, time::Instant};
 
 pub fn cal_ori_by_z_axis_ref_x(v: DVec3) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
@@ -176,8 +174,8 @@ pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat {
 }
 
 pub async fn get_spline_pts(refno: RefnoEnum) -> anyhow::Result<Vec<DVec3>> {
-    let mut response = SUL_DB.query(
-        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key())).await?;
+    let sql = format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key());
+    let mut response = SUL_DB.query_response(&sql).await?;
     let raw_pts: Vec<Vec<f64>> = take_vec(&mut response, 0)?;
     let pts: Vec<DVec3> = raw_pts
         .into_iter()
@@ -192,8 +190,8 @@ pub async fn get_spline_pts(refno: RefnoEnum) -> anyhow::Result<Vec<DVec3>> {
 }
 
 pub async fn get_spline_line_dir(refno: RefnoEnum) -> anyhow::Result<DVec3> {
-    let mut response = SUL_DB.query(
-        format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key())).await?;
+    let sql = format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key());
+    let mut response = SUL_DB.query_response(&sql).await?;
     let raw_pts: Vec<Vec<f64>> = take_vec(&mut response, 0)?;
     let pts: Vec<DVec3> = raw_pts
         .into_iter()
@@ -810,19 +808,8 @@ pub async fn query_neareast_along_axis(
         .await?
         .unwrap_or_default()
         .translation;
-    //不用 room 的方法查询一次，直接用射线去查找
-    let parry_pos = parry3d::math::Point::new(pos.x, pos.y, pos.z);
-    let parry_dir = parry3d::math::Vector::new(dir.x, dir.y, dir.z);
-    let ray = Ray::new(parry_pos, parry_dir);
-    // dbg!(&ray);
-    let rtree = GLOBAL_AABB_TREE.read().await;
-    let mut filter = HashSet::new();
-    filter.insert(target_type.to_string());
-    let nearest = rtree
-        .query_nearest_by_ray(QueryRay::new(ray, filter, true))
-        .await;
-
-    nearest
+    let exclude = Some(refno.refno());
+    query_nearest_by_dir_internal(pos, dir, target_type, exclude).await
 }
 
 pub async fn query_neareast_by_pos_dir(
@@ -830,20 +817,7 @@ pub async fn query_neareast_by_pos_dir(
     dir: Vec3,
     target_type: &str,
 ) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
-    // let pos = get_world_transform(refno).await?.unwrap_or_default().translation;
-    //不用 room 的方法查询一次，直接用射线去查找
-    let parry_pos = parry3d::math::Point::new(pos.x, pos.y, pos.z);
-    let parry_dir = parry3d::math::Vector::new(dir.x, dir.y, dir.z);
-    let ray = Ray::new(parry_pos, parry_dir);
-    // dbg!(&ray);
-    let rtree = GLOBAL_AABB_TREE.read().await;
-    let mut filter = HashSet::new();
-    filter.insert(target_type.to_string());
-    let nearest = rtree
-        .query_nearest_by_ray(QueryRay::new(ray, filter, true))
-        .await;
-
-    nearest
+    query_nearest_by_dir_internal(pos, dir, target_type, None).await
 }
 
 /// 查询指定节点的包围盒，需要遍历子节点的所有包围盒, 如果是含有负实体的，取父节点的包围盒
@@ -854,4 +828,49 @@ pub async fn query_bbox(refno: RefnoEnum) -> anyhow::Result<Option<(RefnoEnum, f
     //还是所有的包围盒的
 
     Ok(None)
+}
+
+async fn query_nearest_by_dir_internal(
+    origin: Vec3,
+    dir: Vec3,
+    target_type: &str,
+    exclude: Option<RefU64>,
+) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
+    let dir_len = dir.length();
+    if dir_len <= f32::EPSILON {
+        return Ok(None);
+    }
+    let dir_norm = dir / dir_len;
+    let max_distance = 50_000.0;
+    let origin_point = parry3d::math::Point::new(origin.x, origin.y, origin.z);
+    let dir_vector = parry3d::math::Vector::new(dir_norm.x, dir_norm.y, dir_norm.z);
+    let exclude_ref = exclude.map(|r| r.0);
+    let target = target_type.to_string();
+
+    let hits = tokio::task::spawn_blocking(move || -> anyhow::Result<Vec<(RefU64, Aabb)>> {
+        let filter = vec![target];
+        let raw = sqlite::query_knn(origin, 256, Some(max_distance), Some(filter.as_slice()))?;
+        Ok(raw
+            .into_iter()
+            .map(|(refno, aabb, _, _)| (refno, aabb))
+            .collect())
+    })
+    .await??;
+
+    let mut best: Option<(RefU64, f32)> = None;
+    for (candidate_refno, aabb) in hits {
+        if exclude_ref == Some(candidate_refno.0) {
+            continue;
+        }
+        if let Some(toi) = sqlite::ray_aabb_toi(origin_point, dir_vector, &aabb, max_distance) {
+            if toi >= 0.0 {
+                match best {
+                    Some((_, dist)) if dist <= toi => {}
+                    _ => best = Some((candidate_refno, toi)),
+                }
+            }
+        }
+    }
+
+    Ok(best.map(|(refno, dist)| (RefnoEnum::Refno(refno), dist)))
 }

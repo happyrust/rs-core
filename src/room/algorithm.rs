@@ -1,5 +1,5 @@
 use crate::pdms_types::RoomNodes;
-use crate::{RefU64, RefnoEnum, SUL_DB};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
@@ -35,8 +35,7 @@ impl PartialOrd for RoomInfo {
 /// 返回值: k 厂房 v 房间编号
 pub async fn query_all_room_name() -> anyhow::Result<HashMap<String, BTreeSet<RoomInfo>>> {
     let mut map = HashMap::new();
-    let mut response = SUL_DB
-        .query(r#"
+    let mut response = SUL_DB.query_response(r#"
            let $f = array::flatten(select value array::flatten(array::flatten(<-pe_owner.in<-pe_owner.in<-pe_owner[where in.noun == 'FRMW'].in.refno.id) )
             from (select value REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH')));
 
@@ -82,7 +81,7 @@ pub async fn query_room_name_from_refnos(
         .collect::<Vec<String>>()
         .join(",");
     let sql = format!("select id,fn::room_code(id)[0] as room from [{}]", owners);
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let result: Vec<RoomNameQueryRequest> = response.take(0)?;
     let r = result
         .into_iter()
@@ -113,7 +112,7 @@ pub async fn query_equi_or_valv_belong_floors(
         "select id,(->nearest_relate.out.REFNO)[0] as floor,(->nearest_relate.dist)[0] as height from {}",
         request
     );
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let result: Vec<BelongFloorResponse> = response.take(0)?;
     let r = result
         .into_iter()

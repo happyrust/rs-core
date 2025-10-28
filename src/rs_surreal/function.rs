@@ -1,4 +1,4 @@
-use crate::{NamedAttrMap, RefU64, SUL_DB, SurlValue};
+use crate::{NamedAttrMap, RefU64, SUL_DB, SurlValue, SurrealQueryExt};
 use cached::proc_macro::cached;
 use std::io::Read;
 use std::path::PathBuf;
@@ -19,7 +19,7 @@ pub async fn define_common_functions(script_dir: &str) -> anyhow::Result<()> {
         let mut file = std::fs::File::open(file)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
-        SUL_DB.query(content).await?;
+        SUL_DB.query_response(&content).await?;
     }
     Ok(())
 }
@@ -32,8 +32,7 @@ pub async fn define_common_functions(script_dir: &str) -> anyhow::Result<()> {
 ///
 /// 如果数据库操作失败,将返回错误
 pub async fn define_dbnum_event() -> anyhow::Result<()> {
-    SUL_DB
-        .query(r#"
+    SUL_DB.query_response(r#"
         DEFINE EVENT OVERWRITE update_dbnum_event ON pe WHEN $event = "CREATE" OR $event = "UPDATE" OR $event = "DELETE" THEN {
             -- 获取当前记录的 dbnum
             LET $dbnum = $value.dbnum;

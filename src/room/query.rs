@@ -1,9 +1,3 @@
-use crate::accel_tree::acceleration_tree::RStarBoundingBox;
-use crate::room::data::RoomElement;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::room::room::{
-    GLOBAL_AABB_TREE, GLOBAL_ROOM_AABB_TREE, load_aabb_tree, load_room_aabb_tree,
-};
 use crate::shape::pdms_shape::PlantMesh;
 use crate::{RefU64, RefnoEnum, SUL_DB, query_insts};
 use glam::Vec3;
@@ -12,6 +6,11 @@ use parry3d::bounding_volume::Aabb;
 use parry3d::math::Isometry;
 use parry3d::query::PointQuery;
 use parry3d::shape::TriMeshFlags;
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::spatial::sqlite;
+#[cfg(not(target_arch = "wasm32"))]
+use anyhow::Context;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<String>> {
@@ -34,32 +33,29 @@ pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<St
 //传进来的是世界坐标系下的点
 #[cfg(not(target_arch = "wasm32"))]
 pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<RefnoEnum>> {
-    //通过rtree 找到所在的几个房间可能
-    load_room_aabb_tree().await.unwrap();
-    let pt: Point3<f32> = point.into();
-    // 转换为 parry 使用的 nalgebra Point3
-    let parry_pt = parry3d::math::Point::new(pt.x, pt.y, pt.z);
-    let point_aabb = Aabb::new(parry_pt, parry_pt);
-    let read = GLOBAL_ROOM_AABB_TREE.read().await;
-    let mut contains_query = read
-        .locate_intersecting_bounds(&point_aabb)
-        .collect::<Vec<_>>();
-
-    // dbg!(&contains_query);
-    let refnos: Vec<RefnoEnum> = contains_query
+    let candidates =
+        tokio::task::spawn_blocking(move || sqlite::query_containing_point(point, 256))
+            .await
+            .context("查询房间空间索引失败")??;
+    if candidates.is_empty() {
+        return Ok(None);
+    }
+    let refnos: Vec<RefnoEnum> = candidates
         .iter()
-        .map(|r| r.refno.into())
-        .collect::<Vec<_>>();
+        .map(|(refno, _)| RefnoEnum::Refno(*refno))
+        .collect();
     let insts = query_insts(&refnos, true).await?;
-    // dbg!(&insts);
-    for RStarBoundingBox { refno, aabb, .. } in contains_query {
-        let Some(geom_inst) = insts.iter().find(|x| x.refno.refno() == *refno) else {
+    let pt: Point3<f32> = point.into();
+    let parry_pt = parry3d::math::Point::new(pt.x, pt.y, pt.z);
+
+    for (refno, aabb) in candidates {
+        if aabb.mins.x > 1_000_000.0 {
+            continue;
+        }
+        let Some(geom_inst) = insts.iter().find(|x| x.refno.refno() == refno) else {
             continue;
         };
         for inst in &geom_inst.insts {
-            if (aabb.mins[0] > 1000000.0) {
-                return continue;
-            }
             let Ok(mesh) =
                 PlantMesh::des_mesh_file(&format!("assets/meshes/{}.mesh", inst.geo_hash))
             else {
@@ -72,8 +68,7 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
                 continue;
             };
             if tri_mesh.contains_point(&Isometry::identity(), &parry_pt) {
-                // dbg!(refno);
-                return Ok(Some((*refno).into()));
+                return Ok(Some(RefnoEnum::Refno(refno)));
             }
         }
     }

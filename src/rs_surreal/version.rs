@@ -1,4 +1,4 @@
-use crate::{RefU64, RefnoEnum, SUL_DB};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 
 /// 将数据备份到history
 pub async fn backup_data(
@@ -13,7 +13,7 @@ pub async fn backup_data(
         .join(",");
     let sql = format!("fn::backup_data([{}], {}, {});", pe_keys, is_deleted, sesno);
     // println!("sql is {}", &sql);
-    let mut response = SUL_DB.query(&sql).await.unwrap();
+    let mut response = SUL_DB.query_response(&sql).await.unwrap();
     // dbg!(&response);
     let mut erros = response.take_errors();
     if !erros.is_empty() {
@@ -32,7 +32,7 @@ pub async fn backup_owner_relate(refnos: impl Iterator<Item = &RefU64>) -> anyho
         .join(",");
     let sql = format!("fn::backup_owner_relate([{}], true);", pe_keys);
     println!("sql is {}", &sql);
-    let mut response = SUL_DB.query(&sql).await.unwrap();
+    let mut response = SUL_DB.query_response(&sql).await.unwrap();
     // dbg!(&response);
     let mut erros = response.take_errors();
     if !erros.is_empty() {

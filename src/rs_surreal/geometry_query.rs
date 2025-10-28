@@ -5,7 +5,7 @@ use crate::error::init_save_database_error;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::{RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
-use crate::{SUL_DB, gen_bytes_hash, get_inst_relate_keys};
+use crate::{SUL_DB, SurrealQueryExt, gen_bytes_hash, get_inst_relate_keys};
 use anyhow::anyhow;
 use bevy_transform::prelude::Transform;
 use dashmap::DashMap;
@@ -228,7 +228,7 @@ pub async fn query_inst_geo_ids(
         "#,
         where_clause, inst_keys
     );
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let results: Vec<QueryInstGeoResult> = response.take(0)?;
     Ok(results)
 }
@@ -252,7 +252,7 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
         inst_geo_ids
     );
 
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let raw_values: Vec<serde_json::Value> = response.take(0)?;
 
     let result: Vec<QueryGeoParam> = raw_values
@@ -295,7 +295,7 @@ pub async fn query_aabb_params(
     }
 
     // println!("Executing SQL: {}", sql);
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let result: Vec<QueryAabbParam> = response.take(0)?;
 
     Ok(result)
@@ -325,7 +325,7 @@ pub async fn save_aabb_to_surreal(aabb_map: &DashMap<String, Aabb>) {
                 );
                 sql.push_str(&format!("INSERT IGNORE INTO aabb {};", json));
             }
-            match SUL_DB.query(&sql).await {
+            match SUL_DB.query_response(&sql).await {
                 Ok(_) => {}
                 Err(_) => {
                     init_save_database_error(&sql, &std::panic::Location::caller().to_string());
@@ -352,7 +352,7 @@ pub async fn save_pts_to_surreal(vec3_map: &DashMap<u64, String>) {
                 let json = format!("{{'id':vec3:⟨{}⟩, 'd':{}}}", k, v.value());
                 sql.push_str(&format!("INSERT IGNORE INTO vec3 {};", json));
             }
-            match SUL_DB.query(&sql).await {
+            match SUL_DB.query_response(&sql).await {
                 Ok(_) => {}
                 Err(_e) => {
                     init_save_database_error(&sql, &std::panic::Location::caller().to_string());
@@ -437,7 +437,7 @@ pub async fn update_inst_relate_aabbs_by_refnos(
         }
 
         if !update_sql.is_empty() {
-            SUL_DB.query(&update_sql).await?;
+            SUL_DB.query_response(&update_sql).await?;
         }
     }
 

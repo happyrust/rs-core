@@ -1,7 +1,7 @@
 use crate::tool::dir_tool::*;
 use crate::tool::direction_parse::parse_expr_to_dir;
 use crate::{RefU64, RefnoEnum, RefnoSesno};
-use crate::{room::room::load_aabb_tree, rs_surreal, tool::math_tool};
+use crate::{rs_surreal, tool::math_tool};
 use glam::{DMat3, DQuat, DVec3, Mat3, Quat, Vec3};
 use std::sync::Arc;
 use surrealdb::types::RecordId;
@@ -640,7 +640,6 @@ async fn test_query_fixing() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_query_nearest_along() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
-    load_aabb_tree().await.unwrap();
     let nearest = rs_surreal::query_neareast_along_axis("24383/66745".into(), Vec3::NEG_Z, "FLOOR")
         .await
         .unwrap();

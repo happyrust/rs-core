@@ -4,7 +4,7 @@ use crate::noun_graph::gen_noun_outcoming_relate_sql;
 use crate::pdms_types::CATA_WITHOUT_REUSE_GEO_NAMES;
 use crate::petgraph::PetRefnoGraph;
 use crate::tool::db_tool::db1_hash;
-use crate::{RefnoEnum, SUL_DB};
+use crate::{RefnoEnum, SUL_DB, SurrealQueryExt};
 use petgraph::algo::all_simple_paths;
 use petgraph::graph::Graph;
 use petgraph::graph::NodeIndex;
@@ -25,7 +25,7 @@ async fn test_collect_descendant_filter_ids_with_layer_data() -> anyhow::Result<
 
     // 直接插入文件中的 JSON 数组
     let insert_sql = format!("INSERT INTO pe {};", test_data);
-    SUL_DB.query(&insert_sql).await?;
+    SUL_DB.query_response(&insert_sql).await?;
 
     // 测试 1: 从 WORL 节点查询所有 SITE 类型的子孙
     let worl_refno: RefnoEnum = "9304/0".into();
@@ -115,7 +115,7 @@ async fn test_collect_descendant_filter_ids_with_layer_data() -> anyhow::Result<
         ];
     "#;
 
-    SUL_DB.query(cleanup_sql).await?;
+    SUL_DB.query_response(cleanup_sql).await?;
 
     Ok(())
 }
@@ -134,7 +134,7 @@ async fn test_collect_descendant_with_expr_generic() -> anyhow::Result<()> {
 
     // 直接插入文件中的 JSON 数组
     let insert_sql = format!("INSERT INTO pe {};", test_data);
-    SUL_DB.query(&insert_sql).await?;
+    SUL_DB.query_response(&insert_sql).await?;
 
     let worl_refno: RefnoEnum = "9304/0".into();
     let site_refno: RefnoEnum = "17496/169982".into();
@@ -211,7 +211,7 @@ async fn test_collect_descendant_filter_ids_with_range_str() -> anyhow::Result<(
 
     // 直接插入文件中的 JSON 数组
     let insert_sql = format!("INSERT INTO pe {};", test_data);
-    SUL_DB.query(&insert_sql).await?;
+    SUL_DB.query_response(&insert_sql).await?;
 
     let worl_refno: RefnoEnum = "9304/0".into();
     let site_refno: RefnoEnum = "17496/169982".into();
@@ -296,7 +296,7 @@ async fn test_collect_descendant_filter_ids_with_range_str() -> anyhow::Result<(
         ];
     "#;
 
-    SUL_DB.query(cleanup_sql).await?;
+    SUL_DB.query_response(cleanup_sql).await?;
 
     Ok(())
 }

@@ -3,7 +3,7 @@
 //! This module contains all the database query methods and utilities
 //! for geometry generation and boolean operations.
 
-use crate::error::{init_deserialize_error, init_query_error, init_save_database_error};
+use crate::SurrealQueryExt;
 use crate::rs_surreal::query_structs::*;
 use anyhow::{Result, anyhow};
 use serde_json::Value as JsonValue;
@@ -32,7 +32,7 @@ macro_rules! query_db {
         let location = format!("{}:{}", file!(), line!());
         log::trace!("📝 执行查询: {}", $sql);
 
-        match crate::rs_surreal::SUL_DB.query($sql).await {
+        match crate::rs_surreal::SUL_DB.query_response($sql).await {
             Ok(response) => {
                 log::trace!("✅ 查询成功");
                 Ok(response)

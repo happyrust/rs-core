@@ -15,6 +15,13 @@ pub struct DbOption {
     /// 是否启用索引
     #[clap(long)]
     pub enable_index: Option<bool>,
+    /// 是否启用 SQLite RTree 空间索引
+    #[clap(long)]
+    #[serde(default)]
+    pub enable_sqlite_rtree: bool,
+    /// SQLite 空间索引文件路径
+    #[clap(long)]
+    pub sqlite_index_path: Option<String>,
     /// 是否同步图数据库
     #[clap(long)]
     pub sync_graph_db: Option<bool>,
@@ -358,6 +365,19 @@ impl DbOption {
     #[inline]
     pub fn is_save_db(&self) -> bool {
         self.save_db.unwrap_or(true)
+    }
+
+    #[inline]
+    pub fn sqlite_index_enabled(&self) -> bool {
+        self.enable_sqlite_rtree
+    }
+
+    #[inline]
+    pub fn get_sqlite_index_path(&self) -> PathBuf {
+        self.sqlite_index_path
+            .as_ref()
+            .map(|p| Path::new(p).to_path_buf())
+            .unwrap_or_else(|| PathBuf::from("aabb_cache.sqlite"))
     }
 
     #[inline]

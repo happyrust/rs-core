@@ -1,7 +1,7 @@
-use crate::SUL_DB;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::*;
 use crate::{NamedAttrMap, RefU64, rs_surreal};
+use crate::{SUL_DB, SurrealQueryExt};
 use glam::Vec3;
 use std::sync::Arc;
 use surrealdb::types::RecordId;
@@ -251,7 +251,7 @@ async fn test_query_attmap() -> anyhow::Result<()> {
 //     crate::init_test_surreal().await;
 //     use std::collections::BTreeMap;
 //     let sql = "select value ptset from inst_info limit 1";
-//     let mut response = SUL_DB.query(sql).await?;
+//     let mut response = SUL_DB.query_response(sql).await?;
 //     dbg!(&response);
 //     let ptset: Option<BTreeMap<String, CateAxisParam>> = response.take(0).unwrap();
 //     dbg!(ptset);
@@ -390,7 +390,7 @@ async fn test_query_attmap() -> anyhow::Result<()> {
 //         .await
 //         .unwrap();
 //     dbg!(q);
-//     // let q1 = SUL_DB.query("select owner.* from pe:17496_100102;").await.unwrap();
+//     // let q1 = SUL_DB.query_response("select owner.* from pe:17496_100102;").await.unwrap();
 //     // dbg!(q1);
 //     //
 //     Ok(())

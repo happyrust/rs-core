@@ -10,6 +10,7 @@ default = [
     "bevy_math",
     "bevy_ecs",
     "bevy_reflect",
+    "test",
     # "render",
     # "occ",
     # "gen_model",
@@ -39,6 +40,7 @@ web_ui = []  # Web UI feature for database management interface
 sql = ["dep:sqlx"]
 mem-kv-save = []  # 额外保存PE数据到内存KV数据库
 hh = []
+test = []  # Test module feature
 bevy_transform = ["dep:bevy_transform"]
 bevy_math = ["dep:bevy_math"]
 bevy_ecs = ["dep:bevy_ecs"]
@@ -160,6 +162,7 @@ parking_lot = "0.12"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
 redb = { version = "2.6.0", optional = true }
 manifold-sys = { git = "https://gitee.com/happydpc/manifold-sys", optional = true }
 # 使用本地更新版本的 occt-rs (glam 0.30.8)

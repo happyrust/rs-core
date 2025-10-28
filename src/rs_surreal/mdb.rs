@@ -3,7 +3,7 @@ use crate::helper::to_e3d_name;
 use crate::pdms_types::EleTreeNode;
 use crate::pe::SPdmsElement;
 use crate::{NamedAttrMap, RefnoEnum};
-use crate::{SUL_DB, SurlValue};
+use crate::{SUL_DB, SurlValue, SurrealQueryExt};
 use crate::{get_db_option, helper, types::*};
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
@@ -90,7 +90,7 @@ pub async fn get_mdb_world_site_ele_nodes(
     );
     //
     // 执行查询
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     // 获取结果
     let mut nodes: Vec<EleTreeNode> = response.take(2).unwrap();
     // 处理节点顺序和名称
@@ -163,7 +163,7 @@ pub async fn query_type_refnos_by_dbnums(
                 dbnums.into_iter().map(|x| x.to_string()).join(",")
             )
         };
-        let mut response = SUL_DB.query(&sql).await?;
+        let mut response = SUL_DB.query_response(&sql).await?;
         let refnos: Vec<RefnoEnum> = response.take(0)?;
         result.extend(refnos);
     }
@@ -260,7 +260,7 @@ pub async fn query_type_refnos_by_dbnum_with_filter(
         None => {}
     }
 
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let refnos: Vec<RefnoEnum> = response.take(0)?;
 
     Ok(refnos)
@@ -288,7 +288,7 @@ pub async fn query_use_cate_refnos_by_dbnum(
         let sql = format!(
             "select value id from {table} where REFNO.dbnum={dbnum} and (SPRE != none or CATR != none)"
         );
-        let mut response = SUL_DB.query(&sql).await?;
+        let mut response = SUL_DB.query_response(&sql).await?;
         let refnos: Vec<RefnoEnum> = response.take(0)?;
         result.extend(refnos);
     }
@@ -329,10 +329,10 @@ pub async fn query_type_refnos_in_mdb(
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     let processed_mdb = crate::helper::to_e3d_name(mdb_name).into_owned();
     let db_type_num: u8 = db_type.into();
-    
+
     // 构建逗号拼接的表名
     let tables = nouns.join(", ");
-    
+
     // 使用 fn::query_mdb_db_nums 获取该 MDB 下的数据库编号
     let sql = format!(
         "let $dbnums = fn::query_mdb_db_nums($mdb, {db_type_num}); \
@@ -357,18 +357,17 @@ pub async fn query_type_refnos_in_mdb(
                 .bind(("keyword", keyword));
 
             let mut response = query.await?;
-            let refnos: Vec<RefnoEnum> = response.take(1)?;  // 注意：这里应该是 take(1) 因为有 let 语句
+            let refnos: Vec<RefnoEnum> = response.take(1)?; // 注意：这里应该是 take(1) 因为有 let 语句
             return Ok(refnos);
         }
     }
 
     // 不需要名称过滤时
-    let mut query = SUL_DB
+    let mut response = SUL_DB
         .query(&sql)
-        .bind(("mdb", processed_mdb));
-
-    let mut response = query.await?;
-    let refnos: Vec<RefnoEnum> = response.take(1)?;  // 注意：这里应该是 take(1) 因为有 let 语句
+        .bind(("mdb", processed_mdb))
+        .await?;
+    let refnos: Vec<RefnoEnum> = response.take(1)?; // 注意：这里应该是 take(1) 因为有 let 语句
     Ok(refnos)
 }
 
@@ -416,7 +415,7 @@ pub async fn query_mdb_db_nums(mdb: Option<String>, module: DBType) -> anyhow::R
         " select value (select value DBNO from CURD.refno where STYP={db_type}) from only MDB where NAME='{processed_mdb}' limit 1"
     );
     println!("Executing SQL: {}", sql);
-    let mut response = SUL_DB.query(&sql).await.unwrap();
+    let mut response = SUL_DB.query_response(&sql).await.unwrap();
     let pe: Vec<u32> = response.take(0)?;
     Ok(pe)
 }
@@ -446,7 +445,7 @@ pub async fn get_mdb_world_site_pes(
         mdb = mdb_name
     );
     //
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let pe: Vec<SPdmsElement> = response.take(2)?;
     Ok(pe)
 }
@@ -507,7 +506,7 @@ pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
         mdb_name
     );
     // println!("Executing SQL: {}", sql);
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     // dbg!(&response);
     let pe: Option<SPdmsElement> = response.take(1)?;
     Ok(pe)
@@ -545,7 +544,7 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     );
 
     // 执行查询并获取结果
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let id: Option<RefnoEnum> = response.take(1)?;
     Ok(id.unwrap_or_default())
 }
@@ -893,7 +892,7 @@ mod tests {
 
 /// 测试简单的数据库连接
 pub async fn test_simple_query() -> anyhow::Result<()> {
-    let mut response = SUL_DB.query("RETURN 1").await?;
+    let mut response = SUL_DB.query_response("RETURN 1").await?;
     let result: Vec<i32> = response.take(0)?;
     println!("Simple query result: {:?}", result);
     Ok(())

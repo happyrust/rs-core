@@ -1,5 +1,5 @@
 use crate::rs_surreal::query_insts;
-use crate::{RefnoEnum, SUL_DB};
+use crate::{RefnoEnum, SUL_DB, SurrealQueryExt};
 
 use super::test_helpers::init_sul_db_with_memory;
 
@@ -50,7 +50,7 @@ async fn query_insts_returns_single_instance_from_mem_db() -> anyhow::Result<()>
         };
     "#;
 
-    SUL_DB.query(setup_sql).await?;
+    SUL_DB.query_response(setup_sql).await?;
 
     let refno: RefnoEnum = "17496/100".into();
     let insts = query_insts(&[refno.clone()], true).await?;

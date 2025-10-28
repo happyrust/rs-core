@@ -1,9 +1,9 @@
-use crate::{rs_surreal, SUL_DB, tool::math_tool};
+use crate::{SUL_DB, SurrealQueryExt, rs_surreal, tool::math_tool};
 
-use std::sync::Arc;
-use glam::Mat3;
-use surrealdb::types::RecordId;
 use crate::room::data::RoomElement;
+use glam::Mat3;
+use std::sync::Arc;
+use surrealdb::types::RecordId;
 
 #[tokio::test]
 async fn test_load_rooms() -> anyhow::Result<()> {
@@ -12,18 +12,23 @@ async fn test_load_rooms() -> anyhow::Result<()> {
     //     .await
     //     .unwrap();
 
-
     Ok(())
 }
 
 #[tokio::test]
 async fn test_save_room_data() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
-    let d = RoomElement{
+    let d = RoomElement {
         name: "ROOM-1".to_string(),
         ..Default::default()
     };
-    SUL_DB.query(format!("insert ignore into room_ele {}", serde_json::to_string(&d).unwrap())).await.unwrap();
+    SUL_DB
+        .query_response(format!(
+            "insert ignore into room_ele {}",
+            serde_json::to_string(&d).unwrap()
+        ))
+        .await
+        .unwrap();
 
     Ok(())
 }

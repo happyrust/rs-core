@@ -2,7 +2,7 @@
 //!
 //! 提供内存数据库初始化等公共辅助功能
 
-use crate::SUL_DB;
+use crate::{SUL_DB, SurrealQueryExt};
 use anyhow::Result;
 use std::io::Read;
 use surrealdb::Surreal;
@@ -84,7 +84,7 @@ pub async fn create_memory_db() -> Result<Surreal<Db>> {
 /// async fn test_something() -> Result<()> {
 ///     init_sul_db_with_memory().await?;
 ///     // 现在可以使用全局 SUL_DB 进行测试
-///     SUL_DB.query("SELECT * FROM pe").await?;
+///     SUL_DB.query_response("SELECT * FROM pe").await?;
 ///     Ok(())
 /// }
 /// ```

@@ -1,10 +1,11 @@
 use crate::pdms_types::EleOperation;
-use crate::{RefU64, RefnoEnum, SUL_DB};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use anyhow::Result;
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::{Datetime, SurrealValue};
+use surrealdb::IndexedResults as Response;
 
 /// 版本信息，包含版本号、日期、作者、变更统计
 #[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
@@ -84,7 +85,7 @@ pub async fn query_pe_history_data(refno: RefU64) -> Result<Vec<PEHistoryData>> 
             from his_pe:{0}.refnos, pe:{0} order by sesno desc"#,
         refno.to_string()
     );
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response: Response = SUL_DB.query_response(&sql).await?;
     let his_data: Vec<PEHistoryData> = response.take(0)?;
     Ok(his_data)
 }

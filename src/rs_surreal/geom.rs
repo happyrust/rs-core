@@ -2,7 +2,7 @@ use crate::pdms_pluggin::heat_dissipation::InstPointMap;
 use crate::pe::SPdmsElement;
 use crate::utils::{take_option, take_vec};
 use crate::{NamedAttrMap, RefnoEnum};
-use crate::{SUL_DB, SurlValue};
+use crate::{SUL_DB, SurlValue, SurrealQueryExt};
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{pdms_types::*, to_table_key, to_table_keys};
 use bevy_transform::components::Transform;
@@ -40,7 +40,7 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec
         refno.to_pe_key()
     );
     // println!(" fetch_loops_and_height sql is {}", &sql);
-    let mut response = SUL_DB.query(&sql).await.unwrap();
+    let mut response = SUL_DB.query_response(&sql).await.unwrap();
     let raw_points: Vec<Vec<Vec<f64>>> = response.take(0)?;
     let points: Vec<Vec<Vec3>> = raw_points
         .into_iter()
@@ -146,7 +146,7 @@ pub async fn query_refno_has_pos_neg_map(
             .join(","),
     );
     // println!("query_refno_has_pos_neg_map sql is {}", &sql);
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let mut result = HashMap::new();
     if let Ok(infos) = take_vec::<RefnoHasNegPosInfo>(&mut response, 0) {
         for info in infos {
@@ -182,7 +182,7 @@ pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<V
         "select in.id as refno,in.id->inst_relate.out.ptset[0]?:{{}} as ptset_map,in.noun as att_type from pe:{}<-pe_owner;",
         refno.to_string()
     );
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     match take_vec::<InstPointMap>(&mut response, 0) {
         Ok(r) => Ok(r),
         Err(e) => {
@@ -207,7 +207,7 @@ pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPoin
         "select id as refno,id->inst_relate.out.ptset[0]?:{{}} as ptset_map,noun as att_type from {};",
         refno.to_pe_key()
     );
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let Ok(mut result) = take_vec::<InstPointMap>(&mut response, 0) else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(None);
@@ -230,7 +230,7 @@ pub async fn query_refnos_point_map(
         "select id as refno,id->inst_relate.out.ptset[0]?:{{}} as ptset_map,noun as att_type from [{}];",
         refnos.join(",")
     );
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let Ok(result) = take_vec::<InstPointMap>(&mut response, 0) else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(HashMap::default());
@@ -244,7 +244,7 @@ pub async fn query_refnos_by_geo_hash(id: &str) -> anyhow::Result<Vec<RefnoEnum>
         "array::distinct(array::flatten(select value in<-inst_relate.in from inst_geo:⟨{}⟩<-geo_relate));",
         id
     );
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let result = take_vec::<RefnoEnum>(&mut response, 0)?;
     Ok(result)
 }
@@ -320,7 +320,7 @@ pub async fn query_ptset(refno: RefnoEnum) -> anyhow::Result<Option<PtsetResult>
         to_table_key!(refno, "inst_relate")
     );
     // 执行查询
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     // 解析查询结果为PtsetResult类型
     let result = take_option::<PtsetResult>(&mut response, 0)?;
     // dbg!(&result);

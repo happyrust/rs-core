@@ -1,4 +1,5 @@
 pub mod adapter;
+pub mod boolean_query;
 pub mod datacenter_query;
 pub mod geom;
 pub mod geometry_query;
@@ -6,8 +7,9 @@ pub mod graph;
 pub mod index;
 pub mod mdb;
 pub mod query;
-pub mod query_structs;
+pub mod query_ext;
 pub mod query_methods;
+pub mod query_structs;
 
 // 新的重构模块
 // pub mod query_builder;
@@ -40,6 +42,7 @@ pub mod operation;
 // XKT 生成相关查询
 pub mod type_hierarchy;
 
+pub use boolean_query::*;
 pub use cate::*;
 pub use e3d_db::*;
 pub use geom::*;
@@ -52,8 +55,9 @@ pub use mdb::*;
 pub use pbs::*;
 pub use point::*;
 pub use query::*;
-pub use query_structs::*;
+pub use query_ext::{SurrealQueryExt, query_response};
 pub use query_methods::*;
+pub use query_structs::*;
 pub use resolve::*;
 pub use spatial::*;
 pub use topology::*;

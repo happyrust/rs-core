@@ -5,8 +5,8 @@ use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
 use crate::{
-    AttrMap, NamedAttrMap, RefU64, SUL_DB, SurlValue, get_children_ele_nodes, get_db_option,
-    get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world,
+    AttrMap, NamedAttrMap, RefU64, SUL_DB, SurlValue, SurrealQueryExt, get_children_ele_nodes,
+    get_db_option, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world,
     get_world_transform, init_second_unit_surreal,
 };
 use async_trait::async_trait;
@@ -19,6 +19,7 @@ use sqlx::{MySql, Pool};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::Duration;
+use surrealdb::IndexedResults as Response;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
@@ -87,7 +88,7 @@ impl AiosDBMgr {
             refno.to_pe_key(),
             refno.to_pe_key()
         );
-        let mut response = SUL_DB.query(sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let min: Vec<f32> = response.take(0).unwrap_or(vec![]);
         let max: Vec<f32> = response.take(1).unwrap_or(vec![]);
         let min = min.get(0).map_or(0.0, |x| *x);
@@ -139,7 +140,7 @@ impl PdmsDataInterface for AiosDBMgr {
         owner.refno.ISPE<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
         and $parent.owner.refno.TEMP >=refno.ANSW and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.*
         where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1) from pe:{};", refno.to_string());
-        let mut response = SUL_DB.query(sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let result: Vec<Vec<f32>> = response.take(0).unwrap_or(vec![]);
         Ok(result.into_iter().flatten().collect())
     }
@@ -151,7 +152,7 @@ impl PdmsDataInterface for AiosDBMgr {
             format!("/{}", name)
         };
         let sql = format!("select * from pe where name = '{}';", name);
-        let mut response = SUL_DB.query(sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let pe: Option<SPdmsElement> = response.take(0)?;
         if pe.is_none() {
             return Ok(None);
@@ -169,7 +170,7 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_spre_attr(&self, refno: RefU64) -> anyhow::Result<Option<NamedAttrMap>> {
         let sql = format!("(select * from {}.refno.SPRE.refno)[0]", refno.to_pe_key());
-        let mut response = SUL_DB.query(sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
         if named_attmap.map.is_empty() {
@@ -183,7 +184,7 @@ impl PdmsDataInterface for AiosDBMgr {
             "(select * from {}.refno.SPRE.refno.CATR.refno)[0]",
             refno.to_pe_key()
         );
-        let mut response = SUL_DB.query(sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
         if named_attmap.map.is_empty() {
@@ -202,7 +203,7 @@ impl PdmsDataInterface for AiosDBMgr {
             refno.to_pe_key(),
             foreign_type
         );
-        let mut response = SUL_DB.query(sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
         if named_attmap.map.is_empty() {
@@ -218,7 +219,7 @@ impl PdmsDataInterface for AiosDBMgr {
         ",
             refno.to_pe_key()
         );
-        let mut response = SUL_DB.query(sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let o: Option<String> = response.take(0)?;
         Ok(o.unwrap_or("".to_string()))
     }
@@ -230,7 +231,7 @@ impl PdmsDataInterface for AiosDBMgr {
         // ",
         //     refno.to_pe_key()
         // );
-        // let mut response = SUL_DB.query(sql).await?;
+        // let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         // let transform: Option<Transform> = response.take(0)?;
         get_world_transform(refno.into()).await
         // Ok(transform)
@@ -246,7 +247,7 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {
         let sql = format!("return fn::room_code({})[0];", refno.to_pe_key());
-        let mut response = SUL_DB.query(&sql).await?;
+        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
         let r: Option<String> = response.take(0)?;
         match r {
             Some(room_code) => {

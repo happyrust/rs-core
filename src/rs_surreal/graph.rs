@@ -1,5 +1,3 @@
-use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
-use crate::error::{HandleError, init_deserialize_error, init_query_error};
 use crate::noun_graph::*;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
@@ -9,8 +7,7 @@ use crate::three_dimensional_review::ModelDataIndex;
 use crate::types::*;
 use crate::utils::RecordIdExt;
 use crate::{NamedAttrMap, RefU64, query_types, rs_surreal};
-use crate::{SUL_DB, SurlValue};
-use anyhow::anyhow;
+use crate::{SUL_DB, SurlValue, SurrealQueryExt};
 use cached::proc_macro::cached;
 use indexmap::IndexMap;
 use itertools::Itertools;
@@ -45,24 +42,9 @@ pub async fn query_deep_children_refnos_pbs(refno: RecordId) -> anyhow::Result<V
                    from only {pe_key} ) )[? !deleted];
             "#
     );
-    return match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RecordId>>(0) {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                init_deserialize_error(
-                    "Vec<RefU64>",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
-            }
-        },
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
-    };
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let data = response.take::<Vec<RecordId>>(0)?;
+    Ok(data)
 }
 
 pub async fn query_filter_deep_children(
@@ -111,19 +93,12 @@ pub async fn query_ele_filter_deep_children_pbs(
     let pe_keys = refnos.into_iter().map(|rid| rid.to_raw()).join(",");
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let sql = format!(r#"select * from [{pe_keys}] where noun in [{nouns_str}]"#);
-    // println!("sql is {}", &sql);
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => {
-            if let Ok(result) = response.take::<Vec<PbsElement>>(0) {
-                return Ok(result);
-            }
-        }
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            return Err(anyhow!(e.to_string()));
-        }
+    if pe_keys.is_empty() {
+        return Ok(vec![]);
     }
-    Ok(vec![])
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let result = response.take::<Vec<PbsElement>>(0)?;
+    Ok(result)
 }
 
 /// 深度查询子孙节点并返回完整元素信息
@@ -162,7 +137,7 @@ pub async fn query_filter_deep_children_by_path(
             "select value refno from array::flatten(object::values(select {relate_sql} from only {pe_key})) where noun in [{nouns_str}]",
         );
         // println!("sql is {}", &sql);
-        let mut response = SUL_DB.query(&sql).await?;
+        let mut response = SUL_DB.query_response(&sql).await?;
         if let Ok(result) = response.take::<Vec<RefnoEnum>>(0) {
             return Ok(result);
         }
@@ -219,24 +194,12 @@ pub async fn query_deep_children_refnos_filter_spre(
         refno_list, filter_str
     );
 
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
-            Ok(result) => Ok(result),
-            Err(e) => {
-                init_deserialize_error(
-                    "Vec<RefnoEnum>",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
-            }
-        },
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
+    if refnos.is_empty() {
+        return Ok(vec![]);
     }
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let result = response.take::<Vec<RefnoEnum>>(0)?;
+    Ok(result)
 }
 
 /// 查询深层子孙节点并过滤（支持版本化查询）
@@ -274,24 +237,9 @@ async fn query_versioned_deep_children_filter_inst(
             pe_key, types_expr, filter_str
         );
 
-        match SUL_DB.query(&sql).await {
-            Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
-                Ok(refnos) => Ok(refnos),
-                Err(e) => {
-                    init_deserialize_error(
-                        "Vec<RefnoEnum>",
-                        &e,
-                        &sql,
-                        &std::panic::Location::caller().to_string(),
-                    );
-                    Err(anyhow!(e.to_string()))
-                }
-            },
-            Err(e) => {
-                init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-                Err(anyhow!(e.to_string()))
-            }
-        }
+        let mut response = SUL_DB.query_response(&sql).await?;
+        let refnos = response.take::<Vec<RefnoEnum>>(0)?;
+        Ok(refnos)
     } else {
         // 历史版本查询：仍使用原有逻辑确保准确性
         let candidates = collect_descendant_filter_ids(&[refno], nouns, None).await?;
@@ -312,17 +260,9 @@ async fn query_versioned_deep_children_filter_inst(
             };
             let sql = format!("select value id from [{}]{};", pe_keys, filter_clause);
 
-            match SUL_DB.query(&sql).await {
-                Ok(mut response) => {
-                    if let Ok(mut chunk_refnos) = response.take::<Vec<RefnoEnum>>(0) {
-                        result.append(&mut chunk_refnos);
-                    }
-                }
-                Err(e) => {
-                    init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-                    return Err(anyhow!(e.to_string()));
-                }
-            }
+            let mut response = SUL_DB.query_response(&sql).await?;
+            let mut chunk_refnos = response.take::<Vec<RefnoEnum>>(0)?;
+            result.append(&mut chunk_refnos);
         }
         Ok(result)
     }
@@ -394,24 +334,12 @@ pub async fn query_deep_children_filter_inst(
         refno_list, types_expr, filter_str
     );
 
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
-            Ok(refnos) => Ok(refnos.into_iter().map(|r| r.refno()).collect()),
-            Err(e) => {
-                init_deserialize_error(
-                    "Vec<RefnoEnum>",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
-            }
-        },
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
+    if refnos.is_empty() {
+        return Ok(vec![]);
     }
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let refnos = response.take::<Vec<RefnoEnum>>(0)?;
+    Ok(refnos.into_iter().map(|r| r.refno()).collect())
 }
 
 /// 批量查询多个节点的深层子孙节点（泛型版本，支持自定义 SELECT 表达式）
@@ -485,7 +413,7 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
 
     //
 
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     // dbg!(&response);
 
     // 跳过第一个结果（let $ids 的赋值），取第二个结果（SELECT 的结果）
@@ -640,7 +568,7 @@ pub async fn collect_children_with_expr<T: SurrealValue>(
         types_array
     );
 
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let result: Vec<T> = response.take(0)?;
     Ok(result)
 }
@@ -760,7 +688,7 @@ pub async fn query_filter_ancestors(
         "select value refno from [{}] where refno.TYPE in [{nouns_str}] or refno.TYPEX in [{nouns_str}]",
         ancestors.iter().map(|x| x.to_pe_key()).join(","),
     );
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let reuslt: Vec<RefnoEnum> = response.take(0)?;
 
     Ok(reuslt)
@@ -787,29 +715,17 @@ pub async fn get_uda_type_refnos_from_select_refnos(
             .map(|refno| refno.to_pe_key())
             .collect::<Vec<String>>()
             .join(",");
-        let sql = format!("let $ukey = select value UKEY from UDET where DYUDNA = '{}';
-        select refno,fn::default_name(id) as name,noun,owner,0 as children_count from [{}] where refno.TYPEX in $ukey;", &uda_type, refnos_str);
-        match SUL_DB.query(&sql).await {
-            Ok(mut response) => match response.take::<Vec<EleTreeNode>>(1) {
-                Ok(query_r) => {
-                    let mut query_r = query_r.into_iter().map(|x| x.into()).collect();
-                    result.append(&mut query_r);
-                }
-                Err(e) => {
-                    dbg!(&e.to_string());
-                    init_deserialize_error(
-                        "Vec<EleTreeNode>",
-                        e,
-                        &sql,
-                        &std::panic::Location::caller().to_string(),
-                    );
-                }
-            },
-            Err(e) => {
-                init_query_error(&sql, e, &std::panic::Location::caller().to_string());
-                continue;
-            }
+        if refnos_str.is_empty() {
+            continue;
         }
+        let sql = format!(
+            "let $ukey = select value UKEY from UDET where DYUDNA = '{}';
+        select refno,fn::default_name(id) as name,noun,owner,0 as children_count from [{}] where refno.TYPEX in $ukey;",
+            &uda_type, refnos_str
+        );
+        let mut response = SUL_DB.query_response(&sql).await?;
+        let query_r = response.take::<Vec<EleTreeNode>>(1)?;
+        result.extend(query_r.into_iter().map(|x| x.into()));
     }
     Ok(result)
 }
@@ -857,24 +773,9 @@ pub async fn query_visible_geo_descendants(
         pe_key, include_self_str, range
     );
 
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
-            Ok(result) => Ok(result),
-            Err(e) => {
-                init_deserialize_error(
-                    "Vec<RefnoEnum>",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
-            }
-        },
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
-    }
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let result = response.take::<Vec<RefnoEnum>>(0)?;
+    Ok(result)
 }
 
 /// 查询负实体几何子孙节点
@@ -920,24 +821,9 @@ pub async fn query_negative_geo_descendants(
         pe_key, include_self_str, range
     );
 
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
-            Ok(result) => Ok(result),
-            Err(e) => {
-                init_deserialize_error(
-                    "Vec<RefnoEnum>",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
-            }
-        },
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
-    }
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let result = response.take::<Vec<RefnoEnum>>(0)?;
+    Ok(result)
 }
 
 /// 查询有 inst_relate 关系的子孙节点
@@ -1013,22 +899,10 @@ pub async fn collect_descendant_ids_has_inst(
         refno_list, types_str, include_self_option
     );
 
-    match SUL_DB.query(&sql).await {
-        Ok(mut response) => match response.take::<Vec<RefnoEnum>>(0) {
-            Ok(result) => Ok(result),
-            Err(e) => {
-                init_deserialize_error(
-                    "Vec<RefnoEnum>",
-                    &e,
-                    &sql,
-                    &std::panic::Location::caller().to_string(),
-                );
-                Err(anyhow!(e.to_string()))
-            }
-        },
-        Err(e) => {
-            init_query_error(&sql, &e, &std::panic::Location::caller().to_string());
-            Err(anyhow!(e.to_string()))
-        }
+    if refnos.is_empty() {
+        return Ok(vec![]);
     }
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let result = response.take::<Vec<RefnoEnum>>(0)?;
+    Ok(result)
 }

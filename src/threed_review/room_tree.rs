@@ -1,5 +1,5 @@
 use crate::pdms_types::PdmsElement;
-use crate::{RefU64, SUL_DB};
+use crate::{RefU64, SUL_DB, SurrealQueryExt};
 use id_tree::Tree;
 
 /// 获取房间树
@@ -12,7 +12,6 @@ pub async fn get_room_tree(refno: RefU64) -> anyhow::Result<Tree<PdmsElement>> {
 /// 获取 bran 穿过的所有房间
 async fn get_rooms_by_bran(refno: RefU64) -> anyhow::Result<Vec<String>> {
     let sql = format!("return fn::get_room_names({});", refno.to_pe_key());
-    let mut res = SUL_DB.query(sql).await?;
-    let rooms = res.take(0)?;
+    let rooms: Vec<String> = SUL_DB.query_take(&sql, 0).await?;
     Ok(rooms)
 }

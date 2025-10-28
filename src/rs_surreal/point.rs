@@ -2,7 +2,7 @@ use crate::basic::aabb::ParryAabb;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::PdmsGenericType;
 use crate::utils::take_vec;
-use crate::{RefU64, RefnoEnum, SUL_DB};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use bevy_transform::components::Transform;
 use dashmap::DashMap;
 use glam::Vec3;
@@ -47,7 +47,7 @@ pub async fn query_arrive_leave_points(
              "#,
         pes
     );
-    let mut response = SUL_DB.query(&sql).await.unwrap();
+    let mut response = SUL_DB.query_response(&sql).await.unwrap();
 
     #[derive(Deserialize)]
     struct PointRow(
@@ -95,7 +95,7 @@ pub async fn query_arrive_leave_points_by_cata_hash(
         pes
     );
     // dbg!(&sql);
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
 
     #[derive(Deserialize)]
     struct CataRow(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>);

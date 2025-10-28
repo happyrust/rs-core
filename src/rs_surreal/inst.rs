@@ -1,6 +1,6 @@
 use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
-use crate::{RefU64, RefnoEnum, SUL_DB, SurlValue, get_inst_relate_keys};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_inst_relate_keys};
 use anyhow::Context;
 use bevy_transform::components::Transform;
 use chrono::{DateTime, Local, NaiveDateTime};
@@ -17,7 +17,7 @@ pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
     let create_index_sql = "
         DEFINE INDEX idx_inst_relate_zone_refno ON TABLE inst_relate COLUMNS zone_refno TYPE BTREE;
     ";
-    let _ = SUL_DB.query(create_index_sql).await;
+    let _ = SUL_DB.query_response(create_index_sql).await;
     Ok(())
 }
 
@@ -66,7 +66,7 @@ pub async fn query_tubi_insts_by_brans(
         pes
     );
     // println!("Query tubi insts: {}", &sql);
-    let mut response = SUL_DB.query(&sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     // dbg!(&response);
 
     let values: Vec<SurlValue> = response.take(0)?;
@@ -92,7 +92,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
         pes
     );
     // println!("Sql query_tubi_insts_by_flow: {}", &sql);
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
 
     let values: Vec<SurlValue> = response.take(0)?;
     let r = decode_values(values)?;
@@ -212,7 +212,7 @@ pub async fn query_insts(
         )
     };
     // println!("Query insts sql: {}", &sql);
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let values: Vec<SurlValue> = response.take(0)?;
     let mut geom_insts: Vec<GeomInstQuery> = decode_values(values)?;
     // dbg!(&geom_insts);
@@ -244,7 +244,7 @@ pub async fn query_insts(
 //             "#
 //     );
 //     // println!("Query insts: {}", &sql);
-//     let mut response = SUL_DB.query(sql).await?;
+//     let mut response = SUL_DB.query_response(sql).await?;
 //     let mut geom_insts: Vec<GeomInstQuery> = response.take(0).unwrap();
 
 //     Ok(geom_insts)
@@ -304,7 +304,7 @@ pub async fn query_insts_by_zone(
 
     println!("Query insts by zone sql: {}", &sql);
 
-    let mut response = SUL_DB.query(sql).await?;
+    let mut response = SUL_DB.query_response(&sql).await?;
     let values: Vec<SurlValue> = response.take(0)?;
     let geom_insts: Vec<GeomInstQuery> = decode_values(values)?;
 
@@ -435,7 +435,7 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
         };
     "#;
 
-    SUL_DB.query(event_sql).await?;
+    SUL_DB.query_response(event_sql).await?;
     Ok(())
 }
 
@@ -493,7 +493,7 @@ pub async fn delete_instance_data(
 
         if !delete_sql_vec.is_empty() {
             let sql = delete_sql_vec.join("");
-            SUL_DB.query(sql).await?;
+            SUL_DB.query_response(&sql).await?;
         }
     }
 
