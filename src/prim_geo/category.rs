@@ -366,10 +366,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let pdia = d.diameter as f32;
 
             // 🔍 调试输出：打印原始的 diameter 和 height 值
-            println!(
-                "🔍 [SCylinder] refno={:?}, diameter={}, height={}",
-                d.refno, d.diameter, d.height
-            );
+            // println!(
+            //     "🔍 [SCylinder] refno={:?}, diameter={}, height={}",
+            //     d.refno, d.diameter, d.height
+            // );
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
             let transform = Transform {
                 rotation,

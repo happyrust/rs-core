@@ -6,6 +6,8 @@ pub mod graph;
 pub mod index;
 pub mod mdb;
 pub mod query;
+pub mod query_structs;
+pub mod query_methods;
 
 // 新的重构模块
 // pub mod query_builder;
@@ -50,6 +52,8 @@ pub use mdb::*;
 pub use pbs::*;
 pub use point::*;
 pub use query::*;
+pub use query_structs::*;
+pub use query_methods::*;
 pub use resolve::*;
 pub use spatial::*;
 pub use topology::*;
