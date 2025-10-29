@@ -50,5 +50,3 @@ async fn test_query_simple_cata_negative_bool() -> anyhow::Result<()> {
     assert!(result.is_ok());
     Ok(())
 }
-
-

@@ -56,6 +56,12 @@ impl Mul<Transform> for PlantTransform {
     }
 }
 
+impl Default for PlantTransform {
+    fn default() -> Self {
+        PlantTransform(Transform::IDENTITY)
+    }
+}
+
 impl Mul<&PlantTransform> for PlantTransform {
     type Output = PlantTransform;
     fn mul(self, other: &PlantTransform) -> PlantTransform {

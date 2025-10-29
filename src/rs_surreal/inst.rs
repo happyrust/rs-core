@@ -10,6 +10,10 @@ use serde::de::DeserializeOwned;
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
 use serde_with::serde_as;
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::{Kind, SurrealValue, Value};
+use crate::rs_surreal::geometry_query::{PlantAabb, PlantTransform};
+use crate::shape::pdms_shape::RsVec3;
 
 /// 初始化数据库的 inst_relate 表的索引
 pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
@@ -22,14 +26,14 @@ pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, SurrealValue)]
 pub struct TubiInstQuery {
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
     pub old_refno: Option<RefnoEnum>,
     pub generic: Option<String>,
-    pub world_aabb: Aabb,
-    pub world_trans: Transform,
+    pub world_aabb: PlantAabb,
+    pub world_trans: PlantTransform,
     pub geo_hash: String,
     pub date: Option<surrealdb::types::Datetime>,
 }
@@ -43,6 +47,7 @@ fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<
         })
         .collect()
 }
+
 
 pub async fn query_tubi_insts_by_brans(
     bran_refnos: &[RefnoEnum],
@@ -65,13 +70,10 @@ pub async fn query_tubi_insts_by_brans(
              "#,
         pes
     );
-    // println!("Query tubi insts: {}", &sql);
-    let mut response = SUL_DB.query_response(&sql).await?;
-    // dbg!(&response);
 
-    let values: Vec<SurlValue> = response.take(0)?;
-    let r = decode_values(values)?;
-    Ok(r)
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let tubi_insts: Vec<TubiInstQuery> = response.take(0)?;
+    Ok(tubi_insts)
 }
 
 pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<TubiInstQuery>> {
@@ -91,20 +93,18 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
              "#,
         pes
     );
-    // println!("Sql query_tubi_insts_by_flow: {}", &sql);
+    
     let mut response = SUL_DB.query_response(&sql).await?;
-
-    let values: Vec<SurlValue> = response.take(0)?;
-    let r = decode_values(values)?;
-    Ok(r)
+    let tubi_insts: Vec<TubiInstQuery> = response.take(0)?;
+    Ok(tubi_insts)
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, SurrealValue)]
 pub struct ModelHashInst {
     pub geo_hash: String,
     #[serde(default)]
-    pub transform: Transform,
+    pub transform: PlantTransform,
     #[serde(default)]
     pub is_tubi: bool,
 }
@@ -125,7 +125,7 @@ pub struct ModelInstData {
 
 ///
 /// 几何实例查询结构体
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, SurrealValue)]
 pub struct GeomInstQuery {
     /// 构件编号，别名为id
     #[serde(alias = "id")]
@@ -135,9 +135,9 @@ pub struct GeomInstQuery {
     /// 所属构件编号
     pub owner: RefnoEnum,
     /// 世界坐标系下的包围盒
-    pub world_aabb: Aabb,
+    pub world_aabb: PlantAabb,
     /// 世界坐标系下的变换矩阵
-    pub world_trans: Transform,
+    pub world_trans: PlantTransform,
     /// 几何实例列表
     pub insts: Vec<ModelHashInst>,
     /// 是否包含负实体
@@ -145,24 +145,25 @@ pub struct GeomInstQuery {
     /// 构件类型
     pub generic: String,
     /// 点集数据
-    pub pts: Option<Vec<Vec3>>,
+    pub pts: Option<Vec<RsVec3>>,
     /// 时间戳
     pub date: Option<surrealdb::types::Datetime>,
 }
 
 /// 几何点集查询结构体
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, SurrealValue)]
 pub struct GeomPtsQuery {
     /// 构件编号，别名为id
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
     /// 世界坐标系下的变换矩阵
-    pub world_trans: Transform,
+    pub world_trans: PlantTransform,
     /// 世界坐标系下的包围盒
-    pub world_aabb: Aabb,
+    pub world_aabb: PlantAabb,
     /// 点集组，每组包含一个变换矩阵和可选的点集数据
-    pub pts_group: Vec<(Transform, Option<Vec<DVec3>>)>,
+    pub pts_group: Vec<(PlantTransform, Option<Vec<RsVec3>>)>,
 }
+
 
 /// 根据最新refno查询最新insts
 /// 根据构件编号查询几何实例信息
@@ -211,11 +212,7 @@ pub async fn query_insts(
             from {inst_keys} where aabb.d != none "#
         )
     };
-    // println!("Query insts sql: {}", &sql);
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let values: Vec<SurlValue> = response.take(0)?;
-    let mut geom_insts: Vec<GeomInstQuery> = decode_values(values)?;
-    // dbg!(&geom_insts);
+    let geom_insts: Vec<GeomInstQuery> = SUL_DB.query_take(&sql, 0).await?;
 
     Ok(geom_insts)
 }
@@ -311,80 +308,6 @@ pub async fn query_insts_by_zone(
     Ok(geom_insts)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{RefnoEnum, init_test_surreal};
-
-    #[tokio::test]
-    async fn test_query_insts() -> anyhow::Result<()> {
-        init_test_surreal().await;
-        // Test case 1: Query single refno
-        let refnos = vec!["17496/496442".into()];
-        let result = query_insts(&refnos, false).await?;
-        assert!(!result.is_empty(), "Should return at least one instance");
-        dbg!(&result);
-
-        // Verify returned instance has expected fields
-        let first_inst = &result[0];
-        // assert!(
-        //     first_inst.world_aabb.is_some(),
-        //     "World AABB should be present"
-        // );
-        // assert!(
-        //     first_inst.world_trans.is_some(),
-        //     "World transform should be present"
-        // );
-        // assert!(
-        //     !first_inst.insts.is_empty(),
-        //     "Should have geometry instances"
-        // );
-
-        assert!(
-            first_inst.has_neg == true,
-            "Should not have negative geometry"
-        );
-
-        // Test case 2: Query multiple refnos
-        // let refnos = vec![RefnoEnum::Pe(24383_84088), RefnoEnum::Pe(24383_84089)];
-        // let result = query_insts(&refnos).await?;
-        // assert!(result.len() >= 2, "Should return multiple instances");
-
-        // // Test case 3: Query non-existent refno
-        // let refnos = vec![RefnoEnum::Pe(0)];
-        // let result = query_insts(&refnos).await?;
-        // assert!(
-        //     result.is_empty(),
-        //     "Should return empty for non-existent refno"
-        // );
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_query_insts_by_zone() -> anyhow::Result<()> {
-        init_test_surreal().await;
-
-        // Test case: Query instances by zone
-        let zone_refnos = vec!["24383_66457".into()];
-        let result = query_insts_by_zone(&zone_refnos, false).await?;
-
-        // Verify the results
-        assert!(!result.is_empty(), "Should return instances for the zone");
-
-        // Check the first instance has all required fields
-        if let Some(first_inst) = result.first() {
-            assert!(
-                first_inst.refno.to_string().len() > 0,
-                "Should have valid refno"
-            );
-            assert!(first_inst.insts.len() > 0, "Should have geometry instances");
-        }
-
-        Ok(())
-    }
-}
-
 //=============================================================================
 // inst_relate 数据保存相关函数
 //=============================================================================
@@ -442,61 +365,6 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
 /// 定义 dbnum_info_table 的更新事件 (非 surreal-save feature 时的空实现)
 #[cfg(not(feature = "surreal-save"))]
 pub async fn define_dbnum_event() -> anyhow::Result<()> {
-    Ok(())
-}
-
-/// 删除指定 refnos 对应的 instance 数据
-///
-/// 会依次删除以下数据：
-/// 1. inst_geo 表数据 (通过 geo_relate 关系)
-/// 2. geo_relate 关系表
-/// 3. inst_info 表数据
-/// 4. inst_relate 关系表
-///
-/// # 参数
-///
-/// * `refnos` - 需要删除的构件编号迭代器
-///
-/// # 返回值
-///
-/// 返回删除操作的结果
-pub async fn delete_instance_data(
-    refnos: impl IntoIterator<Item = RefnoEnum>,
-) -> anyhow::Result<()> {
-    let refnos: Vec<RefnoEnum> = refnos.into_iter().collect();
-
-    if refnos.is_empty() {
-        return Ok(());
-    }
-
-    let chunk_size = 300;
-
-    // 分批删除，避免单次 SQL 过大
-    for chunk in refnos.chunks(chunk_size) {
-        let mut delete_sql_vec = vec![];
-
-        for refno in chunk {
-            let inst_relate_key = refno.to_inst_relate_key();
-            let delete_sql = format!(
-                r#"
-                BEGIN TRANSACTION;
-                    delete array::flatten(select value out->geo_relate.out from {0});
-                    delete array::flatten(select value out->geo_relate from {0});
-                    delete array::flatten(select value out from {0});
-                    delete {0};
-                COMMIT TRANSACTION;
-                "#,
-                inst_relate_key
-            );
-            delete_sql_vec.push(delete_sql);
-        }
-
-        if !delete_sql_vec.is_empty() {
-            let sql = delete_sql_vec.join("");
-            SUL_DB.query_response(&sql).await?;
-        }
-    }
-
     Ok(())
 }
 

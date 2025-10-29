@@ -3,9 +3,9 @@ use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use anyhow::Result;
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
+use surrealdb::IndexedResults as Response;
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::{Datetime, SurrealValue};
-use surrealdb::IndexedResults as Response;
 
 /// 版本信息，包含版本号、日期、作者、变更统计
 #[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]

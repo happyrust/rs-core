@@ -363,10 +363,7 @@ pub async fn query_type_refnos_in_mdb(
     }
 
     // 不需要名称过滤时
-    let mut response = SUL_DB
-        .query(&sql)
-        .bind(("mdb", processed_mdb))
-        .await?;
+    let mut response = SUL_DB.query(&sql).bind(("mdb", processed_mdb)).await?;
     let refnos: Vec<RefnoEnum> = response.take(1)?; // 注意：这里应该是 take(1) 因为有 let 语句
     Ok(refnos)
 }

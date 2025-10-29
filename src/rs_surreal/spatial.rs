@@ -174,7 +174,10 @@ pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat {
 }
 
 pub async fn get_spline_pts(refno: RefnoEnum) -> anyhow::Result<Vec<DVec3>> {
-    let sql = format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key());
+    let sql = format!(
+        "select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}",
+        refno.to_pe_key()
+    );
     let mut response = SUL_DB.query_response(&sql).await?;
     let raw_pts: Vec<Vec<f64>> = take_vec(&mut response, 0)?;
     let pts: Vec<DVec3> = raw_pts
@@ -190,7 +193,10 @@ pub async fn get_spline_pts(refno: RefnoEnum) -> anyhow::Result<Vec<DVec3>> {
 }
 
 pub async fn get_spline_line_dir(refno: RefnoEnum) -> anyhow::Result<DVec3> {
-    let sql = format!("select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}", refno.to_pe_key());
+    let sql = format!(
+        "select value (select in.refno.POS as pos, order_num from <-pe_owner[where in.noun='SPINE'].in<-pe_owner order by order_num).pos from only {}",
+        refno.to_pe_key()
+    );
     let mut response = SUL_DB.query_response(&sql).await?;
     let raw_pts: Vec<Vec<f64>> = take_vec(&mut response, 0)?;
     let pts: Vec<DVec3> = raw_pts

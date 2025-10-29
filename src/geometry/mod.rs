@@ -458,7 +458,8 @@ impl PlantGeoData {
     pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
         let mut mesh = Mesh::new(
             PrimitiveTopology::TriangleList,
-            RenderAssetUsages::RENDER_WORLD,
+            // 保留 MAIN_WORLD 数据以支持 CPU 侧访问（如 ray picking）
+            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
         );
         let d = PlantMesh::default();
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, d.vertices.clone());

@@ -295,7 +295,7 @@ impl PipelineQueryService {
                 name,
                 spec,
                 attrs,
-                transform: world_trans,
+                transform: *world_trans,
                 geo_hash,
                 arrive_number,
                 leave_number,

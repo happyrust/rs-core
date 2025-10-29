@@ -88,7 +88,7 @@ impl AiosDBMgr {
             refno.to_pe_key(),
             refno.to_pe_key()
         );
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let min: Vec<f32> = response.take(0).unwrap_or(vec![]);
         let max: Vec<f32> = response.take(1).unwrap_or(vec![]);
         let min = min.get(0).map_or(0.0, |x| *x);
@@ -140,7 +140,7 @@ impl PdmsDataInterface for AiosDBMgr {
         owner.refno.ISPE<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
         and $parent.owner.refno.TEMP >=refno.ANSW and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.*
         where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1) from pe:{};", refno.to_string());
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let result: Vec<Vec<f32>> = response.take(0).unwrap_or(vec![]);
         Ok(result.into_iter().flatten().collect())
     }
@@ -152,7 +152,7 @@ impl PdmsDataInterface for AiosDBMgr {
             format!("/{}", name)
         };
         let sql = format!("select * from pe where name = '{}';", name);
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let pe: Option<SPdmsElement> = response.take(0)?;
         if pe.is_none() {
             return Ok(None);
@@ -170,7 +170,7 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_spre_attr(&self, refno: RefU64) -> anyhow::Result<Option<NamedAttrMap>> {
         let sql = format!("(select * from {}.refno.SPRE.refno)[0]", refno.to_pe_key());
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
         if named_attmap.map.is_empty() {
@@ -184,7 +184,7 @@ impl PdmsDataInterface for AiosDBMgr {
             "(select * from {}.refno.SPRE.refno.CATR.refno)[0]",
             refno.to_pe_key()
         );
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
         if named_attmap.map.is_empty() {
@@ -203,7 +203,7 @@ impl PdmsDataInterface for AiosDBMgr {
             refno.to_pe_key(),
             foreign_type
         );
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let o: SurlValue = response.take(0)?;
         let named_attmap: NamedAttrMap = o.into();
         if named_attmap.map.is_empty() {
@@ -219,7 +219,7 @@ impl PdmsDataInterface for AiosDBMgr {
         ",
             refno.to_pe_key()
         );
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let o: Option<String> = response.take(0)?;
         Ok(o.unwrap_or("".to_string()))
     }
@@ -231,7 +231,7 @@ impl PdmsDataInterface for AiosDBMgr {
         // ",
         //     refno.to_pe_key()
         // );
-        // let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        // let mut response: Response = SUL_DB.query_response(sql).await?;
         // let transform: Option<Transform> = response.take(0)?;
         get_world_transform(refno.into()).await
         // Ok(transform)
@@ -247,20 +247,21 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>> {
         let sql = format!("return fn::room_code({})[0];", refno.to_pe_key());
-        let mut response: Response = SUL_DB.query_response(sql.as_ref()).await?;
+        let sql_debug = sql.clone();
+        let mut response: Response = SUL_DB.query_response(sql).await?;
         let r: Option<String> = response.take(0)?;
         match r {
             Some(room_code) => {
                 if room_code.is_empty() {
                     dbg!("未查找到对应房间号");
-                    dbg!(&sql);
+                    dbg!(&sql_debug);
                 } else {
                     return Ok(Some(room_code));
                 }
             }
             None => {
                 dbg!("未查找到对应房间号");
-                dbg!(&sql);
+                dbg!(&sql_debug);
             }
         }
         Ok(None)

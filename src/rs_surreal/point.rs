@@ -1,7 +1,6 @@
 use crate::basic::aabb::ParryAabb;
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::PdmsGenericType;
-use crate::utils::take_vec;
 use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use bevy_transform::components::Transform;
 use dashmap::DashMap;
@@ -9,6 +8,8 @@ use glam::Vec3;
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
+use surrealdb::types::SurrealValue;
+use crate::rs_surreal::geometry_query::PlantTransform;
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,7 +35,6 @@ pub async fn query_arrive_leave_points(
         return Ok(DashMap::new());
     }
     dbg!(&pes);
-    //[? owner.noun in ['BRAN', 'HANG']]
     let sql = format!(
         r#"
              select value [
@@ -47,26 +47,19 @@ pub async fn query_arrive_leave_points(
              "#,
         pes
     );
-    let mut response = SUL_DB.query_response(&sql).await.unwrap();
 
-    #[derive(Deserialize)]
-    struct PointRow(
-        RefU64,
-        Transform,
-        Option<CateAxisParam>,
-        Option<CateAxisParam>,
-    );
-
-    let rows: Vec<PointRow> = take_vec(&mut response, 0)?;
+    let rows: Vec<(RefU64, PlantTransform, Option<CateAxisParam>, Option<CateAxisParam>)> =
+        SUL_DB.query_take(&sql, 0).await?;
     let mut map = DashMap::new();
-    for PointRow(refno, trans, a_pt, l_pt) in rows {
-        if a_pt.is_none() || l_pt.is_none() {
+    for (refno, trans, arri, leav) in rows {
+        if arri.is_none() || leav.is_none() {
             continue;
         }
-        let mut pts = [a_pt.unwrap(), l_pt.unwrap()];
+        let mut pts = [arri.unwrap(), leav.unwrap()];
         if !local {
-            pts[0].transform(&trans);
-            pts[1].transform(&trans);
+            let t: Transform = *trans;
+            pts[0].transform(&t);
+            pts[1].transform(&t);
         }
         map.insert(refno, pts);
     }
@@ -94,19 +87,15 @@ pub async fn query_arrive_leave_points_by_cata_hash(
              "#,
         pes
     );
-    // dbg!(&sql);
-    let mut response = SUL_DB.query_response(&sql).await?;
 
-    #[derive(Deserialize)]
-    struct CataRow(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>);
-
-    let rows: Vec<CataRow> = take_vec(&mut response, 0)?;
+    let rows: Vec<(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>)> =
+        SUL_DB.query_take(&sql, 0).await?;
     let mut map = DashMap::new();
-    for CataRow(refno, a_pt, l_pt) in rows {
-        if a_pt.is_none() || l_pt.is_none() {
+    for (refno, arri, leav) in rows {
+        if arri.is_none() || leav.is_none() {
             continue;
         }
-        let mut pts = [a_pt.unwrap(), l_pt.unwrap()];
+        let mut pts = [arri.unwrap(), leav.unwrap()];
         map.insert(refno, pts);
     }
     Ok(map)

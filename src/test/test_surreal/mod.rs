@@ -27,6 +27,8 @@ pub mod test_serde;
 
 pub mod test_spatial;
 
+pub mod test_pipeline;
+
 // pub mod test_room;
 
 pub mod test_geom;

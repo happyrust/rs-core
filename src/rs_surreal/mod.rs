@@ -11,12 +11,6 @@ pub mod query_ext;
 pub mod query_methods;
 pub mod query_structs;
 
-// 新的重构模块
-// pub mod query_builder;
-// pub mod error_handler;
-// pub mod cache_manager;
-// pub mod queries;
-
 pub mod cate;
 pub mod resolve;
 pub mod spatial;
@@ -38,6 +32,7 @@ pub mod e3d_db;
 pub mod topology;
 
 pub mod operation;
+pub mod pipeline;
 
 // XKT 生成相关查询
 pub mod type_hierarchy;
