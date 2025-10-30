@@ -3,7 +3,7 @@
 /// 本模块提供了用于从 SurrealDB 批量查询几何参数和 AABB 数据的结构体和辅助方法
 use crate::error::init_save_database_error;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::types::{RefnoEnum, Thing};
+use crate::types::{RefnoEnum, Thing, PlantAabb};
 use crate::utils::RecordIdExt;
 use crate::{SUL_DB, SurrealQueryExt, gen_bytes_hash, get_inst_relate_keys};
 use anyhow::anyhow;
@@ -83,49 +83,6 @@ impl SurrealValue for PlantTransform {
     fn from_value(value: Value) -> anyhow::Result<Self> {
         let json = serde_json::Value::from_value(value)?;
         Ok(PlantTransform(serde_json::from_value(json)?))
-    }
-}
-
-/// 植物 AABB 包装类型
-///
-/// 为 parry3d::bounding_volume::Aabb 提供 SurrealValue 实现的包装类型
-/// 支持序列化、反序列化和数据库存储
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub struct PlantAabb(pub Aabb);
-
-impl Deref for PlantAabb {
-    type Target = Aabb;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for PlantAabb {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl From<Aabb> for PlantAabb {
-    fn from(aabb: Aabb) -> Self {
-        PlantAabb(aabb)
-    }
-}
-
-impl SurrealValue for PlantAabb {
-    fn kind_of() -> Kind {
-        Kind::Object
-    }
-
-    fn into_value(self) -> Value {
-        serde_json::to_value(&self.0)
-            .expect("序列化 PlantAabb 失败")
-            .into_value()
-    }
-
-    fn from_value(value: Value) -> anyhow::Result<Self> {
-        let json = serde_json::Value::from_value(value)?;
-        Ok(PlantAabb(serde_json::from_value(json)?))
     }
 }
 

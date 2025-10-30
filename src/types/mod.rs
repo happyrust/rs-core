@@ -10,7 +10,7 @@ pub mod whole_attmap;
 
 pub mod hash;
 pub mod pe;
-pub mod rs_aabb;
+pub mod plant_aabb;
 pub mod table;
 
 use glam::u32;
@@ -28,8 +28,8 @@ pub use hash::*;
 pub use named_attmap::*;
 pub use named_attvalue::*;
 pub use pe::*;
+pub use plant_aabb::*;
 pub use query_sql::*;
 pub use ref64vec::*;
 pub use refno::*;
-pub use rs_aabb::*;
 pub use whole_attmap::*;

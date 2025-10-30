@@ -1,6 +1,7 @@
 use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
-use crate::rs_surreal::geometry_query::{PlantAabb, PlantTransform};
+use crate::rs_surreal::geometry_query::PlantTransform;
+use crate::types::PlantAabb;
 use crate::shape::pdms_shape::RsVec3;
 use crate::{RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_inst_relate_keys};
 use anyhow::Context;

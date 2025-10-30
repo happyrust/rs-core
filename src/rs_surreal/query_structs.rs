@@ -4,7 +4,7 @@
 //! in geometry generation and boolean operations.
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::types::{RecordId, RefnoEnum, RsAabb};
+use crate::types::{RecordId, RefnoEnum, PlantAabb};
 use crate::rs_surreal::geometry_query::PlantTransform;
 use serde::{Deserialize, Serialize};
 use surrealdb::types as surrealdb_types;
@@ -32,7 +32,7 @@ pub struct NegInfo {
     /// Transform
     pub trans: PlantTransform,
     /// Optional AABB
-    pub aabb: Option<RsAabb>,
+    pub aabb: Option<PlantAabb>,
 }
 
 /// Manifold geometry transformation query
@@ -47,7 +47,7 @@ pub struct ManiGeoTransQuery {
     /// World transform
     pub wt: PlantTransform,
     /// AABB
-    pub aabb: RsAabb,
+    pub aabb: PlantAabb,
     /// Transform list
     pub ts: Vec<(RecordId, PlantTransform)>,
     /// Negative transform list
@@ -66,7 +66,7 @@ pub struct ParamNegInfo {
     /// Transform
     pub trans: PlantTransform,
     /// Optional AABB
-    pub aabb: Option<RsAabb>,
+    pub aabb: Option<PlantAabb>,
 }
 
 /// OpenCascade geometry transformation query
@@ -79,7 +79,7 @@ pub struct OccGeoTransQuery {
     /// World transform
     pub wt: PlantTransform,
     /// AABB
-    pub aabb: RsAabb,
+    pub aabb: PlantAabb,
     /// Transform list with parameters
     pub ts: Vec<(PdmsGeoParam, PlantTransform)>,
     /// Negative transform list
