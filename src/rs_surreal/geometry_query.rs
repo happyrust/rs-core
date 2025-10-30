@@ -3,7 +3,7 @@
 /// 本模块提供了用于从 SurrealDB 批量查询几何参数和 AABB 数据的结构体和辅助方法
 use crate::error::init_save_database_error;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::types::{RefnoEnum, Thing, PlantAabb};
+use crate::types::{PlantAabb, RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
 use crate::{SUL_DB, SurrealQueryExt, gen_bytes_hash, get_inst_relate_keys};
 use anyhow::anyhow;
@@ -211,18 +211,11 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
     use crate::SUL_DB;
 
     let sql = format!(
-        "select <string> record::id(id) as id, param from [{}] where param != NONE",
+        "select id, param from [{}] where param != NONE",
         inst_geo_ids
     );
 
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let raw_values: Vec<serde_json::Value> = response.take(0)?;
-
-    let result: Vec<QueryGeoParam> = raw_values
-        .into_iter()
-        .map(serde_json::from_value)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| anyhow!("反序列化 QueryGeoParam 失败: {}", e))?;
+    let mut result = SUL_DB.query_take(&sql, 0).await?;
 
     Ok(result)
 }

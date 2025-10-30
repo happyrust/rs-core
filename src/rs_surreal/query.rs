@@ -673,7 +673,10 @@ pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let result: anyhow::Result<NamedAttrMap> = take_single(&mut response, 0);
     match &result {
         Ok(named_attmap) => {
-            crate::debug_model_debug!("   ✅ 成功获取 cat_attmap, refno: {}", named_attmap.get_refno_or_default());
+            crate::debug_model_debug!(
+                "   ✅ 成功获取 cat_attmap, refno: {}",
+                named_attmap.get_refno_or_default()
+            );
         }
         Err(e) => {
             crate::debug_model_debug!("   ❌ 获取 cat_attmap 失败: {}", e);
@@ -935,14 +938,12 @@ pub async fn query_single_by_paths(
 pub async fn query_refnos_by_type(noun: &str, module: DBType) -> anyhow::Result<Vec<RefU64>> {
     let mdb = crate::get_db_option().mdb_name.clone();
     let dbnums = query_mdb_db_nums(Some(mdb), module).await?;
-    let mut response = SUL_DB
-        .query(format!(
-            r#"select value record::id(id) from {} where dbnum in [{}]"#,
-            noun.to_uppercase(),
-            dbnums.iter().map(|x| x.to_string()).join(",")
-        ))
-        .await?;
-    let refnos: Vec<RefU64> = response.take(0)?;
+    let sql = format!(
+        r#"select value id from {} where dbnum in [{}]"#,
+        noun.to_uppercase(),
+        dbnums.iter().map(|x| x.to_string()).join(",")
+    );
+    let mut refnos = SUL_DB.query_take(&sql, 0).await?;
     Ok(refnos)
 }
 

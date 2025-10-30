@@ -74,7 +74,7 @@ pub async fn query_geom_mesh_data(
 
     let sql = format!(
         r#"
-        select record::id(out) as id, geom_refno, trans.d as trans, out.param as param, out.aabb as aabb_id
+        select out as id, geom_refno, trans.d as trans, out.param as param, out.aabb as aabb_id
         from {}->inst_relate->inst_info->geo_relate
         where !out.bad and geom_refno in [{}]  and out.aabb!=none and out.param!=none"#,
         refno.to_pe_key(),
@@ -112,9 +112,9 @@ pub async fn query_manifold_boolean_operations(
                 in.noun as noun,
                 world_trans.d as wt,
                 aabb.d as aabb,
-                (select value [record::id(out), trans.d] from out->geo_relate where geo_type in ["Compound", "Pos"] and trans.d != NONE ) as ts,
+                (select value [out, trans.d] from out->geo_relate where geo_type in ["Compound", "Pos"] and trans.d != NONE ) as ts,
                 (select value [in, world_trans.d,
-                    (select record::id(out) as id, geo_type, trans.d as trans, out.aabb.d as aabb
+                    (select out as id, geo_type, trans.d as trans, out.aabb.d as aabb
                     from array::flatten(out->geo_relate) where trans.d != NONE and ( geo_type=="Neg" or (geo_type=="CataCrossNeg"
                         and geom_refno in (select value ngmr from pe:{refno}<-ngmr_relate) ) ))]
                         from array::flatten([array::flatten(in<-neg_relate.in->inst_relate), array::flatten(in<-ngmr_relate.in->inst_relate)]) where world_trans.d!=none
