@@ -120,11 +120,17 @@ pub fn resolve_gmse_params(
         .parse::<f32>()
         .unwrap_or(0.0);
     // dbg!(&gm.diameters);
+    crate::debug_model_debug!("🎯 开始求值 DIAMETERS: refno={}, type={}, count={}", gm.refno, gm.gm_type, gm.diameters.len());
     let diameters: Vec<f32> = gm
         .diameters
         .iter()
-        .map(|exp| {
+        .enumerate()
+        .map(|(i, exp)| {
+            crate::debug_model_debug!("   DIAMETERS[{}]: {}", i, exp);
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DIAMETERS", i);
             let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            crate::debug_model_debug!("   DIAMETERS[{}] 求值结果: {}", i, val);
+            crate::clear_expr_debug_info!(context);
             val
         })
         .collect();
@@ -133,48 +139,94 @@ pub fn resolve_gmse_params(
     let distances = gm
         .distances
         .iter()
-        .map(|exp| eval_str_to_f32_or_default(exp, context, "DIST"))
+        .enumerate()
+        .map(|(i, exp)| {
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DISTANCES", i);
+            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            crate::clear_expr_debug_info!(context);
+            val
+        })
         .collect();
 
     let shears = gm
         .shears
         .iter()
-        .map(|exp| eval_str_to_f32_or_default(exp, context, "DIST"))
+        .enumerate()
+        .map(|(i, exp)| {
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "SHEARS", i);
+            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            crate::clear_expr_debug_info!(context);
+            val
+        })
         .collect();
 
     let mut verts = vec![];
-    for vert in &gm.verts {
+    for (i, vert) in gm.verts.iter().enumerate() {
+        crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "VERTS_X", i);
         let f0 = eval_str_to_f32_or_default(&vert[0], context, "DIST");
+        crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "VERTS_Y", i);
         let f1 = eval_str_to_f32_or_default(&vert[1], context, "DIST");
+        crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "VERTS_Z", i);
         let f2 = eval_str_to_f32_or_default(&vert[2].as_str(), context, "DIST");
+        crate::clear_expr_debug_info!(context);
         {
             verts.push(Vec3::new(f0, f1, f2));
         }
     }
 
+    crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PHEI");
+    crate::debug_model_debug!("🎯 开始求值 PHEI: refno={}, type={}", gm.refno, gm.gm_type);
+    crate::debug_model_debug!("   原始 PHEI 表达式: {}", gm.phei);
     let phei = eval_str_to_f32_or_default(&gm.phei, context, "DIST");
+    crate::debug_model_debug!("   PHEI 求值结果: {}", phei);
+    crate::clear_expr_debug_info!(context);
 
+    crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "OFFSET");
     let offset = eval_str_to_f32_or_default(&gm.offset, context, "DIST");
+    crate::clear_expr_debug_info!(context);
 
+    crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PANG");
     let pang = eval_str_to_f32_or_default(&gm.pang, context, "DIST");
+    crate::clear_expr_debug_info!(context);
+
+    crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PWID");
     let pwid = eval_str_to_f32_or_default(&gm.pwid, context, "DIST");
+    crate::clear_expr_debug_info!(context);
+
+    crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DRAD");
     let drad = eval_str_to_f32_or_default(&gm.drad, context, "DIST");
+    crate::clear_expr_debug_info!(context);
+
+    crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DWID");
     let dwid = eval_str_to_f32_or_default(&gm.dwid, context, "DIST");
+    crate::clear_expr_debug_info!(context);
 
     let mut frads = gm
         .frads
         .iter()
-        .map(|exp| eval_str_to_f32_or_default(exp, context, "DIST"))
+        .enumerate()
+        .map(|(i, exp)| {
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "FRADS", i);
+            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            crate::clear_expr_debug_info!(context);
+            val
+        })
         .collect();
 
+    crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PRAD");
     let prad = eval_str_to_f32_or_default(&gm.prad, context, "DIST");
+    crate::clear_expr_debug_info!(context);
 
     let dxy = gm
         .dxy
         .iter()
-        .try_fold::<_, _, anyhow::Result<_>>(vec![], |mut acc, exp| {
+        .enumerate()
+        .try_fold::<_, _, anyhow::Result<_>>(vec![], |mut acc, (i, exp)| {
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DXY_X", i);
             let f0 = eval_str_to_f32_or_default(&exp[0], context, "DIST");
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DXY_Y", i);
             let f1 = eval_str_to_f32_or_default(&exp[1], context, "DIST");
+            crate::clear_expr_debug_info!(context);
             acc.push(Vec2::new(f0, f1));
             Ok(acc)
         })?;
@@ -182,13 +234,28 @@ pub fn resolve_gmse_params(
     let lengths = gm
         .lengths
         .iter()
-        .map(|exp| eval_str_to_f32_or_default(exp, context, "DIST"))
+        .enumerate()
+        .map(|(i, exp)| {
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "LENGTHS", i);
+            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            crate::clear_expr_debug_info!(context);
+            val
+        })
         .collect();
 
+    crate::debug_model_debug!("🎯 开始求值 XYZ: refno={}, type={}, count={}", gm.refno, gm.gm_type, gm.xyz.len());
     let xyz = gm
         .xyz
         .iter()
-        .map(|exp| eval_str_to_f32_or_default(exp, context, "DIST"))
+        .enumerate()
+        .map(|(i, exp)| {
+            crate::debug_model_debug!("   XYZ[{}]: {}", i, exp);
+            crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "XYZ", i);
+            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            crate::debug_model_debug!("   XYZ[{}] 求值结果: {}", i, val);
+            crate::clear_expr_debug_info!(context);
+            val
+        })
         .collect();
 
     let mut paxises: Vec<Option<CateAxisParam>> = Vec::new();

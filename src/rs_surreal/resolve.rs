@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::{collections::HashMap, str::FromStr};
+use std::cell::RefCell;
 
 use crate::RefnoEnum;
 use crate::pdms_types::PdmsGenericType;
@@ -46,12 +47,31 @@ pub const INTERNAL_PDMS_EXPRESS: [&'static str; 27] = [
 ];
 
 /// 元件库表达式相关的参数
-#[derive(Debug, Default, Clone, Deref, DerefMut)]
+#[derive(Debug, Clone, Deref, DerefMut)]
 pub struct CataContext {
     #[deref]
     #[deref_mut]
     pub context: DashMap<String, String>,
     pub is_tubi: bool,
+
+    // 调试信息字段（使用 RefCell 实现内部可变性，仅在 debug_model 开启时使用）
+    pub debug_geo_refno: RefCell<Option<String>>,      // 当前几何体参考号
+    pub debug_geo_type: RefCell<Option<String>>,       // 几何体类型 (SCYL, SBOX等)
+    pub debug_attr_name: RefCell<Option<String>>,      // 当前属性名 (PRAD, PHEI等)
+    pub debug_attr_index: RefCell<Option<usize>>,      // 数组属性的索引
+}
+
+impl Default for CataContext {
+    fn default() -> Self {
+        Self {
+            context: DashMap::new(),
+            is_tubi: false,
+            debug_geo_refno: RefCell::new(None),
+            debug_geo_type: RefCell::new(None),
+            debug_attr_name: RefCell::new(None),
+            debug_attr_index: RefCell::new(None),
+        }
+    }
 }
 
 impl CataContext {
@@ -134,17 +154,30 @@ pub async fn get_or_create_cata_context(
     context.insert("RS_DES_REFNO".to_string(), desi_refno.to_string());
     // dbg!(&desi_refno);
     //添加cata的信息
-    if let Ok(cata_attmap) = crate::get_cat_attmap(desi_refno).await {
-        // dbg!(&cata_attmap);
-        context.insert(
-            "RS_CATR_REFNO".to_string(),
-            cata_attmap.get_refno_or_default().to_string(),
-        );
+    crate::debug_model_debug!("🔍 get_or_create_cata_context for desi_refno: {}", desi_refno);
+
+    // 先尝试获取元件库参考号
+    let cat_refno_opt = crate::get_cat_refno(desi_refno).await.ok().flatten();
+    crate::debug_model_debug!("   元件库参考号: {:?}", cat_refno_opt);
+
+    // 🔧 修复：如果有元件库参考号，直接使用它获取属性
+    if let Some(cat_refno) = cat_refno_opt {
+        crate::debug_model_debug!("   使用元件库参考号: {}", cat_refno);
+
+        // 直接获取元件库的属性映射
+        if let Ok(cata_attmap) = crate::get_named_attmap(cat_refno).await {
+            crate::debug_model_debug!("   ✅ 成功获取元件库 attmap, type: {}", cata_attmap.get_type_str());
+
+            // dbg!(&cata_attmap);
+            context.insert(
+                "RS_CATR_REFNO".to_string(),
+                cata_attmap.get_refno_or_default().to_string(),
+            );
         // dbg!(&cata_attmap);
         let params = cata_attmap.get_f32_vec("PARA").unwrap_or_default();
 
         // 🔍 调试输出：打印 PARA 数组
-        println!(
+        crate::debug_model_debug!(
             "🔍 [PARA] desi_refno={:?}, PARA array: {:?}",
             desi_refno, params
         );
@@ -171,7 +204,9 @@ pub async fn get_or_create_cata_context(
 
         //dtse 的信息处理
         let dtre_refno = cata_attmap.get_foreign_refno("DTRE").unwrap_or_default();
+        crate::debug_model_debug!("🔍 DTRE refno: {}", dtre_refno);
         let children = crate::get_children_named_attmaps(dtre_refno).await?;
+        crate::debug_model_debug!("🔍 DTRE children count: {}", children.len());
         //如果只查部分数据，可以改一下接口
         for child in children {
             if let Some(k) = child.get_as_string("DKEY") {
@@ -181,6 +216,7 @@ pub async fn get_or_create_cata_context(
                 let default_expr = child.get_as_string("DPRO").unwrap_or_default();
                 let type_key = format!("{}_default_type", key);
                 let type_value = child.get_as_string("PTYP").unwrap_or_default();
+                crate::debug_model_debug!("🔍 添加 RPRO 键: {} = {}", key, exp);
                 context.insert(key, exp);
                 context.insert(default_key, default_expr);
                 context.insert(type_key, type_value);
@@ -215,6 +251,11 @@ pub async fn get_or_create_cata_context(
                 }
             }
         }
+        } else {
+            crate::debug_model_debug!("   ❌ 无法获取元件库 attmap for cat_refno: {}", cat_refno);
+        }
+    } else {
+        crate::debug_model_debug!("   ❌ 没有元件库参考号 for desi_refno: {}", desi_refno);
     }
     // dbg!(&context);
     Ok(context)
@@ -238,7 +279,12 @@ fn replace_all_result<E>(
 }
 
 pub fn prepare_eval_str(input: &str) -> String {
-    input
+    // 🔧 修复：先处理 ATTRIB RPRO 组合，再删除 ATTRIB
+    // 将 "ATTRIB RPRO LENG" 转换为 "RPRO_LENG"
+    let attrib_rpro_re = Regex::new(r"ATTRIB\s+RPRO\s+([a-zA-Z0-9_]+)").unwrap();
+    let step1 = attrib_rpro_re.replace_all(input, "RPRO_$1").to_string();
+
+    step1
         .replace("IFTRUE", "if")
         .replace(" LT ", "<")
         .replace(" GT ", ">")
@@ -256,6 +302,32 @@ pub fn eval_str_to_f64(
     context: &CataContext,
     dtse_unit: &str,
 ) -> anyhow::Result<f64> {
+    // 🔍 调试：记录输入的表达式（特别是包含 RPRO 的）
+    if crate::debug_macros::is_debug_model_enabled() && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB")) {
+        crate::debug_model_debug!("🔍 eval_str_to_f64 输入表达式: {}", input_expr);
+
+        // 如果表达式缺少右括号，打印警告
+        let left_count = input_expr.matches('(').count();
+        let right_count = input_expr.matches(')').count();
+        if left_count != right_count {
+            crate::debug_model_debug!("   ⚠️  括号不匹配！左括号: {}, 右括号: {}", left_count, right_count);
+        }
+
+        // 打印 context 中所有包含 RPRO 的键
+        crate::debug_model_debug!("   Context 中的 RPRO 相关键:");
+        let mut found_rpro = false;
+        for entry in context.context.iter() {
+            let key = entry.key();
+            if key.contains("RPRO") {
+                crate::debug_model_debug!("     {} = {}", key, entry.value());
+                found_rpro = true;
+            }
+        }
+        if !found_rpro {
+            crate::debug_model_debug!("     (没有找到 RPRO 相关的键)");
+        }
+    }
+
     if input_expr.is_empty() || input_expr == "UNSET" {
         return Ok(0.0);
     }
@@ -279,6 +351,12 @@ pub fn eval_str_to_f64(
         .unwrap_or_default();
     //处理引用的情况 OF 的情况, 如果需要获取 att value，还是需要用数据库去获取值
     let mut new_exp = prepare_eval_str(input_expr);
+
+    // 🔍 调试：记录 prepare_eval_str 后的表达式
+    if crate::debug_macros::is_debug_model_enabled() && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB")) {
+        crate::debug_model_debug!("   📝 prepare_eval_str 后: {}", new_exp);
+    }
+
     #[cfg(feature = "debug_expr")]
     dbg!(&new_exp);
     if new_exp.contains(" OF ") {
@@ -389,7 +467,14 @@ pub fn eval_str_to_f64(
         Regex::new(r"(DESI(GN)?\s+)?([I|C|O|A)]?PARA?M?)|DESP|(O|A|W|D)DESP?").unwrap();
     let mut uda_context_added = false;
     let mut uda_context = HashMap::new();
-    for _ in 0..30 {
+
+    // 🔍 调试：记录循环开始
+    let is_debug_rpro = crate::debug_macros::is_debug_model_enabled() && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB"));
+    if is_debug_rpro {
+        crate::debug_model_debug!("   🔁 开始替换循环，初始表达式: {}", result_exp);
+    }
+
+    for loop_idx in 0..30 {
         for caps in re.captures_iter(&new_exp) {
             let s = caps[0].trim();
             if INTERNAL_PDMS_EXPRESS.contains(&s) {
@@ -500,29 +585,55 @@ pub fn eval_str_to_f64(
                 }
             }
         }
+
+        // 先处理 ATTRIB RPRO 组合（在删除 ATTRIB 之前）
+        // 将 "ATTRIB RPRO LENG" 转换为 "RPRO_LENG"
+        let attrib_rpro_re = Regex::new(r"ATTRIB\s+RPRO\s+([a-zA-Z0-9_]+)").unwrap();
+        if result_exp.contains("ATTRIB") && result_exp.contains("RPRO") {
+            crate::debug_model_debug!("   🔄 替换前: {}", result_exp);
+            result_exp = attrib_rpro_re.replace_all(&result_exp, "RPRO_$1").to_string();
+            crate::debug_model_debug!("   🔄 替换 ATTRIB RPRO 后: {}", result_exp);
+            found_replaced = true;
+        }
+
         //如果有RPRO 需要执行两次处理
         result_exp = result_exp.replace("ATTRIB", "");
+        crate::debug_model_debug!("   🔄 删除 ATTRIB 后: {}", result_exp);
+
         if result_exp.contains("RPRO") {
+            crate::debug_model_debug!("   🔄 开始替换 RPRO 引用");
             result_exp = rpro_re
                 .replace_all(&result_exp, |caps: &Captures| {
                     let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
                     let default_key: String =
                         format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
 
-                    context.get(&key).map(|x| x.to_string()).unwrap_or(
+                    let value = context.get(&key).map(|x| x.to_string()).unwrap_or(
                         context
                             .get(&default_key)
                             .map(|x| x.to_string())
                             .unwrap_or("0".to_string()),
-                    )
+                    );
+                    crate::debug_model_debug!("     {} -> {}", key, value);
+                    value
                 })
                 .trim()
                 .to_string();
+            crate::debug_model_debug!("   🔄 替换 RPRO 后: {}", result_exp);
             found_replaced = true;
         }
         // dbg!(&result_exp);
         new_exp = result_exp.clone();
+
+        // 🔍 调试：记录每次循环后的结果
+        if is_debug_rpro {
+            crate::debug_model_debug!("   🔁 循环 {} 结束，当前表达式: {}", loop_idx, result_exp);
+        }
+
         if !found_replaced {
+            if is_debug_rpro {
+                crate::debug_model_debug!("   ✅ 替换循环结束（没有更多替换）");
+            }
             break;
         }
         found_replaced = false;
@@ -623,13 +734,41 @@ pub fn eval_str_to_f64(
                     &input_expr
                 )))
             } else {
-                #[cfg(debug_assertions)]
-                println!("输入表达式有误 : {}", &input_expr);
-                // dbg!(&context);
-                // println!("计算后表达式 : {}", &result_string);
-                // let refno_str = context.get("RS_CATR_REFNO").unwrap().as_str();
-                // let refno = RefU64::from_str(refno_str)?;
-                // dbg!(interface.unwrap().aios_core::get_named_attmap(refno).await.unwrap());
+                // #[cfg(debug_assertions)]
+                let des_refno_str: String = context.get("RS_DES_REFNO").unwrap_or_default();
+                let cata_refno_str: String = context.get("RS_CATR_REFNO").unwrap_or_default();
+
+                // 获取调试信息（仅在 debug_model 开启时有值）
+                let geo_refno_str = context.debug_geo_refno.borrow().clone().unwrap_or_default();
+                let geo_type_str = context.debug_geo_type.borrow().clone().unwrap_or_default();
+                let attr_name_str = context.debug_attr_name.borrow().clone().unwrap_or_default();
+                let attr_index_str = context.debug_attr_index.borrow()
+                    .map(|i| format!("[{}]", i))
+                    .unwrap_or_default();
+
+                // 根据是否有调试信息，输出不同格式的错误
+                if !geo_refno_str.is_empty() && !attr_name_str.is_empty() {
+                    // 有完整调试信息
+                    println!(
+                        "处理{}时，元件库{}里的输入表达式有误:\n  几何体: {} ({})\n  属性: {}{}\n  表达式: {}",
+                        des_refno_str,
+                        cata_refno_str,
+                        geo_refno_str,
+                        geo_type_str,
+                        attr_name_str,
+                        attr_index_str,
+                        &input_expr
+                    );
+                } else {
+                    // 没有调试信息，使用原有格式
+                    println!(
+                        "处理{}时，{}元件库里的输入表达式有误 : {}",
+                        des_refno_str,
+                        cata_refno_str,
+                        &input_expr
+                    );
+                }
+
                 Err(anyhow::anyhow!(format!("求解失败 {}", &input_expr)))
             };
         }

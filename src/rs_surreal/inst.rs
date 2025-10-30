@@ -1,5 +1,7 @@
 use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
+use crate::rs_surreal::geometry_query::{PlantAabb, PlantTransform};
+use crate::shape::pdms_shape::RsVec3;
 use crate::{RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_inst_relate_keys};
 use anyhow::Context;
 use bevy_transform::components::Transform;
@@ -12,8 +14,6 @@ use serde_json;
 use serde_with::serde_as;
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::{Kind, SurrealValue, Value};
-use crate::rs_surreal::geometry_query::{PlantAabb, PlantTransform};
-use crate::shape::pdms_shape::RsVec3;
 
 /// 初始化数据库的 inst_relate 表的索引
 pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
@@ -30,6 +30,7 @@ pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
 pub struct TubiInstQuery {
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
+    pub leave: RefnoEnum,
     pub old_refno: Option<RefnoEnum>,
     pub generic: Option<String>,
     pub world_aabb: PlantAabb,
@@ -38,6 +39,15 @@ pub struct TubiInstQuery {
     pub date: Option<surrealdb::types::Datetime>,
 }
 
+/// 将 SurrealDB 的原始值向量解码为目标类型列表
+///
+/// # 参数
+///
+/// * `values` - 从查询结果中获取的 `SurlValue` 向量
+///
+/// # 返回值
+///
+/// 返回解码后的目标类型向量，若解码失败则返回错误
 fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<Vec<T>> {
     values
         .into_iter()
@@ -48,54 +58,64 @@ fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<
         .collect()
 }
 
-
+/// 根据分支构件编号批量查询 Tubi 实例数据
+///
+/// # 参数
+///
+/// * `bran_refnos` - 需要查询的分支构件编号切片
+///
+/// # 返回值
+///
+/// 返回符合条件的 `TubiInstQuery` 列表
 pub async fn query_tubi_insts_by_brans(
     bran_refnos: &[RefnoEnum],
 ) -> anyhow::Result<Vec<TubiInstQuery>> {
-    let pes: String = bran_refnos
-        .iter()
-        .map(|x| x.to_pe_key())
-        .collect::<Vec<_>>()
-        .join(",");
-    // 临时方案：使用 in.dt 替代 fn::ses_date(in.id) 以避免 "Expected any, got record" 错误
+    let pes = crate::join_pe_keys(bran_refnos.iter());
     let sql = format!(
         r#"
-             select
-                in.id as refno,
-                in.old_pe as old_refno,
-                in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans,
-                record::id(out) as geo_hash,
-                in.dt as date
-             from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none
-             "#,
+            BEGIN TRANSACTION;
+                select
+                    in.id as refno,
+                    leave as leave,
+                    in.old_pe as old_refno,
+                    in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                    record::id(out) as geo_hash,
+                    in.dt as date
+                from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none;
+             COMMIT TRANSACTION;
+        "#,
         pes
     );
+    // println!("query_tubi_insts_by_brans sql: {}", sql);
 
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let tubi_insts: Vec<TubiInstQuery> = response.take(0)?;
+    let tubi_insts: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
     Ok(tubi_insts)
 }
 
+/// 根据流程构件编号批量查询 Tubi 实例数据
+///
+/// # 参数
+///
+/// * `refnos` - 需要查询的流程构件编号切片
+///
+/// # 返回值
+///
+/// 返回符合条件的 `TubiInstQuery` 列表
 pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<TubiInstQuery>> {
-    let pes: String = refnos
-        .iter()
-        .map(|x| x.to_pe_key())
-        .collect::<Vec<_>>()
-        .join(",");
+    let pes = crate::join_pe_keys(refnos.iter());
     // 临时方案：使用 in.dt 替代 fn::ses_date(in.id) 以避免 "Expected any, got record" 错误
     let sql = format!(
         r#"
         array::group(array::complement(select value
-        (select in.id as refno, in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
+        (select in.id as refno, leave as leave, in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
             in.dt as date
             from tubi_relate where leave=$parent.id or arrive=$parent.id)
                 from [{}] where in.id != none and  owner.noun in ['BRAN', 'HANG'], [none]))
              "#,
         pes
     );
-    
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let tubi_insts: Vec<TubiInstQuery> = response.take(0)?;
+
+    let tubi_insts: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
     Ok(tubi_insts)
 }
 
@@ -164,7 +184,6 @@ pub struct GeomPtsQuery {
     pub pts_group: Vec<(PlantTransform, Option<Vec<RsVec3>>)>,
 }
 
-
 /// 根据最新refno查询最新insts
 /// 根据构件编号查询几何实例信息
 ///
@@ -193,9 +212,9 @@ pub async fn query_insts(
                 in.id as refno,
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
                 booled_id != none as has_neg,
-                dt as date
+                <datetime>dt as date
             from {inst_keys} where aabb.d != none
         "#
         )
@@ -206,9 +225,9 @@ pub async fn query_insts(
                 in.id as refno,
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset.d.pt as pts,
-                (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi  from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
                 booled_id != none as has_neg,
-                dt as date
+                <datetime>dt as date
             from {inst_keys} where aabb.d != none "#
         )
     };
@@ -216,9 +235,6 @@ pub async fn query_insts(
 
     Ok(geom_insts)
 }
-
-// 根据历史refno查询历史insts
-// (legacy implementation removed during SurrealDB v3 migration)
 
 // todo 生成一个测试案例
 // pub async fn query_history_insts(
@@ -407,7 +423,7 @@ pub async fn delete_inst_relate_cascade(
         if !delete_sql_vec.is_empty() {
             let mut sql = "BEGIN TRANSACTION;\n".to_string();
             sql.push_str(&delete_sql_vec.join(""));
-            sql.push_str(&format!("delete [{}];", inst_ids.join(",")));
+            sql.push_str(&format!("delete {};", inst_ids.join(",")));
             sql.push_str("\nCOMMIT TRANSACTION;");
 
             // println!("Delete Sql is {}", &sql);
@@ -418,5 +434,25 @@ pub async fn delete_inst_relate_cascade(
         }
     }
 
+    Ok(())
+}
+
+/// 删除所有模型生成相关的数据
+///
+/// 删除 inst_relate、inst_geo、inst_info、geo_relate 四个表中的所有数据
+///
+/// # 参数
+/// * `chunk_size` - 分批处理的大小
+pub async fn delete_all_model_data() -> anyhow::Result<()> {
+    let tables = ["inst_relate", "inst_geo", "inst_info", "geo_relate"];
+    let mut sql = "BEGIN TRANSACTION;\n".to_string();
+
+    for table in &tables {
+        sql.push_str(&format!("delete select value id from {};\n", table));
+    }
+
+    sql.push_str("COMMIT TRANSACTION;");
+
+    SUL_DB.query(sql).await?;
     Ok(())
 }

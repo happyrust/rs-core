@@ -651,12 +651,14 @@ pub async fn get_cat_refno(refno: RefnoEnum) -> anyhow::Result<Option<RefnoEnum>
 
 #[cached(result = true)]
 pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
+    crate::debug_model_debug!("🔍 get_cat_attmap for refno: {}", refno);
     let sql = format!(
         r#"
         (select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]].refno.*
         from only {} limit 1 fetch SCOM)[0] "#,
         refno.to_pe_key()
     );
+    crate::debug_model_debug!("   SQL: {}", sql);
     // dbg!(&sql);
     // println!("sql is {}", &sql);
     let mut response: Response = SUL_DB.query_response(sql).await?;
@@ -668,8 +670,16 @@ pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
         v: SurlValue,
     }
 
-    let named_attmap: NamedAttrMap = take_single(&mut response, 0)?;
-    Ok(named_attmap)
+    let result: anyhow::Result<NamedAttrMap> = take_single(&mut response, 0);
+    match &result {
+        Ok(named_attmap) => {
+            crate::debug_model_debug!("   ✅ 成功获取 cat_attmap, refno: {}", named_attmap.get_refno_or_default());
+        }
+        Err(e) => {
+            crate::debug_model_debug!("   ❌ 获取 cat_attmap 失败: {}", e);
+        }
+    }
+    result
 }
 
 /// 获取直接子节点的属性映射

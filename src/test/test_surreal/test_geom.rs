@@ -58,7 +58,7 @@ fn test_quat() {
 #[tokio::test]
 async fn test_query_la_points() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
-    let result = crate::point::query_arrive_leave_points_by_cata_hash(&[
+    let result = crate::point::query_arrive_leave_points_of_component(&[
         "24381_105223".into(),
         "24381_105231".into(),
     ])

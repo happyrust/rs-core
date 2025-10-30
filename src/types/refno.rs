@@ -1334,6 +1334,59 @@ impl Display for RefnoEnum {
     }
 }
 
+/// 提供统一的 `to_pe_key` 能力抽象，便于对集合执行拼接
+pub trait HasPeKey {
+    fn to_pe_key(&self) -> String;
+}
+
+impl HasPeKey for RefU64 {
+    #[inline]
+    fn to_pe_key(&self) -> String { RefU64::to_pe_key(self) }
+}
+
+impl HasPeKey for RefnoSesno {
+    #[inline]
+    fn to_pe_key(&self) -> String { RefnoSesno::to_pe_key(self) }
+}
+
+impl HasPeKey for RefnoEnum {
+    #[inline]
+    fn to_pe_key(&self) -> String { RefnoEnum::to_pe_key(self) }
+}
+
+// 让引用类型同样可用，便于直接传入 slice 的迭代器
+impl<T: HasPeKey + ?Sized> HasPeKey for &T {
+    #[inline]
+    fn to_pe_key(&self) -> String { (*self).to_pe_key() }
+}
+
+/// 将一组 refno（当前或历史）拼接为以逗号分隔的 pe 字符串，例如：
+/// pe:17496_123,pe:['17496_456',3]
+#[inline]
+pub fn join_pe_keys<I, T>(items: I) -> String
+where
+    I: IntoIterator<Item = T>,
+    T: HasPeKey,
+{
+    join_pe_keys_with_sep(items, ",")
+}
+
+/// 同上，但可自定义分隔符
+#[inline]
+pub fn join_pe_keys_with_sep<I, T>(items: I, sep: &str) -> String
+where
+    I: IntoIterator<Item = T>,
+    T: HasPeKey,
+{
+    let mut out = String::new();
+    let mut first = true;
+    for item in items {
+        if !first { out.push_str(sep); } else { first = false; }
+        out.push_str(&item.to_pe_key());
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

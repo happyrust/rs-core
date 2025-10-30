@@ -17,7 +17,8 @@ async fn main() -> anyhow::Result<()> {
     println!("🔎 Fetching annotation segments for BRAN: {}", bran_arg);
 
     let segments: Vec<aios_core::pipeline::PipelineSegmentRecord> =
-        PipelineQueryService::fetch_branch_segments(branch.clone()).await?;
+        PipelineQueryService::fetch_branch_segments(branch.clone()).await.unwrap();
+        
 
     println!("Segments total: {}", segments.len());
     for (idx, seg) in segments.iter().enumerate() {

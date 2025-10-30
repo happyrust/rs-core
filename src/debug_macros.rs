@@ -36,7 +36,7 @@ macro_rules! debug_model_trace {
 macro_rules! debug_model_debug {
     ($($arg:tt)*) => {{
         if $crate::debug_macros::is_debug_model_enabled() {
-            tracing::debug!($($arg)*);
+            println!($($arg)*);
         }
     }};
 }
@@ -57,6 +57,47 @@ macro_rules! debug_model_warn {
     ($($arg:tt)*) => {{
         if $crate::debug_macros::is_debug_model_enabled() {
             tracing::warn!($($arg)*);
+        }
+    }};
+}
+
+/// Set expression debug info in CataContext (only when debug_model is enabled)
+///
+/// Usage:
+/// ```
+/// set_expr_debug_info!(context, geo_refno, geo_type, attr_name);
+/// set_expr_debug_info!(context, geo_refno, geo_type, attr_name, index);
+/// ```
+#[macro_export]
+macro_rules! set_expr_debug_info {
+    // 不带索引的版本
+    ($context:expr, $geo_refno:expr, $geo_type:expr, $attr_name:expr) => {{
+        if $crate::debug_macros::is_debug_model_enabled() {
+            *$context.debug_geo_refno.borrow_mut() = Some($geo_refno.to_string());
+            *$context.debug_geo_type.borrow_mut() = Some($geo_type.to_string());
+            *$context.debug_attr_name.borrow_mut() = Some($attr_name.to_string());
+            *$context.debug_attr_index.borrow_mut() = None;
+        }
+    }};
+
+    // 带索引的版本
+    ($context:expr, $geo_refno:expr, $geo_type:expr, $attr_name:expr, $index:expr) => {{
+        if $crate::debug_macros::is_debug_model_enabled() {
+            *$context.debug_geo_refno.borrow_mut() = Some($geo_refno.to_string());
+            *$context.debug_geo_type.borrow_mut() = Some($geo_type.to_string());
+            *$context.debug_attr_name.borrow_mut() = Some($attr_name.to_string());
+            *$context.debug_attr_index.borrow_mut() = Some($index);
+        }
+    }};
+}
+
+/// Clear expression debug info in CataContext (only when debug_model is enabled)
+#[macro_export]
+macro_rules! clear_expr_debug_info {
+    ($context:expr) => {{
+        if $crate::debug_macros::is_debug_model_enabled() {
+            *$context.debug_attr_name.borrow_mut() = None;
+            *$context.debug_attr_index.borrow_mut() = None;
         }
     }};
 }

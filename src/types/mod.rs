@@ -11,7 +11,6 @@ pub mod whole_attmap;
 pub mod hash;
 pub mod pe;
 pub mod rs_aabb;
-pub mod rs_transform;
 pub mod table;
 
 use glam::u32;
@@ -33,5 +32,4 @@ pub use query_sql::*;
 pub use ref64vec::*;
 pub use refno::*;
 pub use rs_aabb::*;
-pub use rs_transform::*;
 pub use whole_attmap::*;

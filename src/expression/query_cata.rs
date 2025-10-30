@@ -202,6 +202,13 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
     let mut dxy = vec![];
     let refno = att.get_refno().unwrap_or_default();
     let type_name = att.get_type_str();
+
+    // 🔍 调试：记录从数据库读取的几何体信息
+    crate::debug_model_debug!(
+        "📦 query_gm_param: 几何体 {} ({})",
+        refno,
+        type_name
+    );
     if type_name == "SEXT" || type_name == "NSEX" || type_name == "SREV" || type_name == "NSRE" {
         //先暂时不考虑负实体
         let children = crate::get_children_named_attmaps(refno).await.ok()?;
@@ -256,7 +263,7 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
         }
     }
 
-    Some(GmParam {
+    let gm_param = GmParam {
         refno: att.get_refno().unwrap_or_default(),
         gm_type: att.get_type_str().to_owned(),
         prad: (att.get_as_string("PRAD").unwrap_or_default()),
@@ -280,5 +287,95 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
         centre_line_flag,
         visible_flag: tube_flag,
         plax: att.get_as_string("PLAX"),
-    })
+    };
+
+    // 🔍 调试：记录提取的表达式（只记录非空的）
+    // 特别关注包含 "ATTRIB RPRO" 或 "RPRO" 的表达式
+    let mut has_rpro = false;
+    let mut rpro_attrs = vec![];
+
+    if !gm_param.prad.is_empty() {
+        if gm_param.prad.contains("RPRO") || gm_param.prad.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("PRAD: {}", gm_param.prad));
+        }
+    }
+    if !gm_param.phei.is_empty() {
+        if gm_param.phei.contains("RPRO") || gm_param.phei.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("PHEI: {}", gm_param.phei));
+        }
+    }
+    if !gm_param.pang.is_empty() {
+        if gm_param.pang.contains("RPRO") || gm_param.pang.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("PANG: {}", gm_param.pang));
+        }
+    }
+    if !gm_param.pwid.is_empty() {
+        if gm_param.pwid.contains("RPRO") || gm_param.pwid.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("PWID: {}", gm_param.pwid));
+        }
+    }
+    if !gm_param.drad.is_empty() {
+        if gm_param.drad.contains("RPRO") || gm_param.drad.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("DRAD: {}", gm_param.drad));
+        }
+    }
+    if !gm_param.dwid.is_empty() {
+        if gm_param.dwid.contains("RPRO") || gm_param.dwid.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("DWID: {}", gm_param.dwid));
+        }
+    }
+    if !gm_param.offset.is_empty() {
+        if gm_param.offset.contains("RPRO") || gm_param.offset.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("POFF: {}", gm_param.offset));
+        }
+    }
+
+    // 检查数组属性
+    for (i, val) in gm_param.diameters.iter().enumerate() {
+        if val.contains("RPRO") || val.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("DIAMETERS[{}]: {}", i, val));
+        }
+    }
+    for (i, val) in gm_param.distances.iter().enumerate() {
+        if val.contains("RPRO") || val.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("DISTANCES[{}]: {}", i, val));
+        }
+    }
+    for (i, val) in gm_param.shears.iter().enumerate() {
+        if val.contains("RPRO") || val.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("SHEARS[{}]: {}", i, val));
+        }
+    }
+    for (i, val) in gm_param.lengths.iter().enumerate() {
+        if val.contains("RPRO") || val.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("LENGTHS[{}]: {}", i, val));
+        }
+    }
+    for (i, val) in gm_param.xyz.iter().enumerate() {
+        if val.contains("RPRO") || val.contains("ATTRIB") {
+            has_rpro = true;
+            rpro_attrs.push(format!("XYZ[{}]: {}", i, val));
+        }
+    }
+
+    // 如果包含 RPRO 或 ATTRIB，打印详细信息
+    if has_rpro {
+        crate::debug_model_debug!("   ⚠️  发现包含 RPRO/ATTRIB 的属性:");
+        for attr in rpro_attrs {
+            crate::debug_model_debug!("     {}", attr);
+        }
+    }
+
+    Some(gm_param)
 }

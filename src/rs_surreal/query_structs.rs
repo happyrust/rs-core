@@ -4,7 +4,8 @@
 //! in geometry generation and boolean operations.
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::types::{RecordId, RefnoEnum, RsAabb, RsTransform};
+use crate::types::{RecordId, RefnoEnum, RsAabb};
+use crate::rs_surreal::geometry_query::PlantTransform;
 use serde::{Deserialize, Serialize};
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::SurrealValue;
@@ -29,7 +30,7 @@ pub struct NegInfo {
     #[serde(default)]
     pub para_type: String,
     /// Transform
-    pub trans: RsTransform,
+    pub trans: PlantTransform,
     /// Optional AABB
     pub aabb: Option<RsAabb>,
 }
@@ -44,13 +45,13 @@ pub struct ManiGeoTransQuery {
     /// Noun
     pub noun: String,
     /// World transform
-    pub wt: RsTransform,
+    pub wt: PlantTransform,
     /// AABB
     pub aabb: RsAabb,
     /// Transform list
-    pub ts: Vec<(RecordId, RsTransform)>,
+    pub ts: Vec<(RecordId, PlantTransform)>,
     /// Negative transform list
-    pub neg_ts: Vec<(RefnoEnum, RsTransform, Vec<NegInfo>)>,
+    pub neg_ts: Vec<(RefnoEnum, PlantTransform, Vec<NegInfo>)>,
 }
 
 /// Parameter negative information
@@ -63,7 +64,7 @@ pub struct ParamNegInfo {
     /// Parameter type
     pub para_type: String,
     /// Transform
-    pub trans: RsTransform,
+    pub trans: PlantTransform,
     /// Optional AABB
     pub aabb: Option<RsAabb>,
 }
@@ -76,13 +77,13 @@ pub struct OccGeoTransQuery {
     /// Noun
     pub noun: String,
     /// World transform
-    pub wt: RsTransform,
+    pub wt: PlantTransform,
     /// AABB
     pub aabb: RsAabb,
     /// Transform list with parameters
-    pub ts: Vec<(PdmsGeoParam, RsTransform)>,
+    pub ts: Vec<(PdmsGeoParam, PlantTransform)>,
     /// Negative transform list
-    pub neg_ts: Vec<(RefnoEnum, RsTransform, Vec<ParamNegInfo>)>,
+    pub neg_ts: Vec<(RefnoEnum, PlantTransform, Vec<ParamNegInfo>)>,
 }
 
 /// Catalog negative group
@@ -104,7 +105,7 @@ pub struct GmGeoData {
     /// Geometry reference number
     pub geom_refno: RefnoEnum,
     /// Transform
-    pub trans: RsTransform,
+    pub trans: PlantTransform,
     /// Parameters
     pub param: PdmsGeoParam,
     /// AABB ID - temporarily unchanged

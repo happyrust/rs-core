@@ -6,6 +6,7 @@ use surrealdb::opt::QueryResult as SurrealQueryResult;
 use surrealdb::types::SurrealValue;
 
 use crate::error::init_query_error;
+use log::error;
 
 /// 为 `Surreal<Any>` 提供更友好的查询接口。
 pub trait SurrealQueryExt {
@@ -66,7 +67,10 @@ impl SurrealQueryExt for Surreal<Any> {
         let mut response: Response = query_response_with_location(self, sql_str, location).await?;
         response
             .take::<T>(index)
-            .map_err(anyhow::Error::from)
+            .map_err(|e| {
+                error!("query_take error at {}: {}", location, e);
+                anyhow::Error::from(e)
+            })
             .with_context(|| format!("SQL: {sql_str} @ {}", location))
     }
 }
