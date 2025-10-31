@@ -1,4 +1,5 @@
 use crate::RefnoEnum;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::spatial::sqlite;
 use crate::tool::math_tool;
 use crate::tool::math_tool::{
@@ -805,6 +806,7 @@ pub async fn get_spline_path(refno: RefnoEnum) -> anyhow::Result<Vec<Spine3D>> {
 }
 
 ///沿着 dir 方向找到最近的目标构件
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn query_neareast_along_axis(
     refno: RefnoEnum,
     dir: Vec3,
@@ -818,6 +820,7 @@ pub async fn query_neareast_along_axis(
     query_nearest_by_dir_internal(pos, dir, target_type, exclude).await
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn query_neareast_by_pos_dir(
     pos: Vec3,
     dir: Vec3,
@@ -836,6 +839,7 @@ pub async fn query_bbox(refno: RefnoEnum) -> anyhow::Result<Option<(RefnoEnum, f
     Ok(None)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 async fn query_nearest_by_dir_internal(
     origin: Vec3,
     dir: Vec3,
