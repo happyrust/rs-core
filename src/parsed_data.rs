@@ -298,6 +298,27 @@ pub mod geo_params_data {
             }
         }
 
+        pub fn type_name(&self) -> &'static str {
+            match self {
+                PdmsGeoParam::Unknown => "Unknown",
+                PdmsGeoParam::CompoundShape => "CompoundShape",
+                PdmsGeoParam::PrimBox(_) => "PrimBox",
+                PdmsGeoParam::PrimLSnout(_) => "PrimLSnout",
+                PdmsGeoParam::PrimDish(_) => "PrimDish",
+                PdmsGeoParam::PrimSphere(_) => "PrimSphere",
+                PdmsGeoParam::PrimCTorus(_) => "PrimCTorus",
+                PdmsGeoParam::PrimRTorus(_) => "PrimRTorus",
+                PdmsGeoParam::PrimPyramid(_) => "PrimPyramid",
+                PdmsGeoParam::PrimLPyramid(_) => "PrimLPyramid",
+                PdmsGeoParam::PrimSCylinder(_) => "PrimSCylinder",
+                PdmsGeoParam::PrimLCylinder(_) => "PrimLCylinder",
+                PdmsGeoParam::PrimRevolution(_) => "PrimRevolution",
+                PdmsGeoParam::PrimExtrusion(_) => "PrimExtrusion",
+                PdmsGeoParam::PrimPolyhedron(_) => "PrimPolyhedron",
+                PdmsGeoParam::PrimLoft(_) => "PrimLoft",
+            }
+        }
+
         pub fn convert_to_unit_param(&self) -> Self {
             use std::any::Any;
             match self {

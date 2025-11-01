@@ -225,16 +225,7 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn get_world_transform(&self, refno: RefU64) -> anyhow::Result<Option<Transform>> {
-        // let sql = format!(
-        //     "
-        // (select (->inst_relate.world_trans.d)[0] as length from {})[0].length;
-        // ",
-        //     refno.to_pe_key()
-        // );
-        // let mut response: Response = SUL_DB.query_response(sql).await?;
-        // let transform: Option<Transform> = response.take(0)?;
         get_world_transform(refno.into()).await
-        // Ok(transform)
     }
 
     async fn get_prev(&self, refno: RefU64) -> anyhow::Result<RefU64> {

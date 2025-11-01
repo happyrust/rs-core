@@ -46,7 +46,7 @@ macro_rules! debug_model_debug {
 macro_rules! debug_model {
     ($($arg:tt)*) => {{
         if $crate::debug_macros::is_debug_model_enabled() {
-            tracing::info!($($arg)*);
+            println!($($arg)*);
         }
     }};
 }
@@ -56,7 +56,7 @@ macro_rules! debug_model {
 macro_rules! debug_model_warn {
     ($($arg:tt)*) => {{
         if $crate::debug_macros::is_debug_model_enabled() {
-            tracing::warn!($($arg)*);
+            println!("[WARN] {}", format!($($arg)*));
         }
     }};
 }

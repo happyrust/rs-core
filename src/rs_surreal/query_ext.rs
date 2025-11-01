@@ -11,17 +11,17 @@ use log::error;
 /// 为 `Surreal<Any>` 提供更友好的查询接口。
 pub trait SurrealQueryExt {
     /// 执行查询并返回完整的 `Response`。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `sql` - SQL 查询语句，可以是 `&str`, `String`, 或任何实现了 `AsRef<str>` 的类型
     #[track_caller]
     async fn query_response(&self, sql: impl AsRef<str>) -> Result<Response>;
 
     /// 执行查询并将第 `index` 个结果反序列化为目标类型。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `sql` - SQL 查询语句，可以是 `&str`, `String`, 或任何实现了 `AsRef<str>` 的类型
     /// * `index` - 要提取的结果索引
     #[track_caller]

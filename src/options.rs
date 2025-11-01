@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use crate::mesh_precision::MeshPrecisionSettings;
 use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
@@ -95,6 +96,9 @@ pub struct DbOption {
     #[clap(long)]
     pub gen_model: bool,
     pub build_cate_relate: Option<bool>,
+    #[clap(skip)]
+    #[serde(default)]
+    pub mesh_precision: MeshPrecisionSettings,
     #[clap(long)]
     pub mesh_tol_ratio: Option<f32>,
     #[clap(long)]
@@ -344,15 +348,26 @@ impl DbOption {
     }
 
     pub fn get_meshes_path(&self) -> PathBuf {
-        let pathbuf = self
+        let mut pathbuf = self
             .meshes_path
             .as_ref()
             .map(|x| Path::new(x).to_path_buf())
             .unwrap_or("assets/meshes".into());
+        if let Some(subdir) = self
+            .mesh_precision
+            .output_subdir(self.mesh_precision.default_lod)
+        {
+            pathbuf = pathbuf.join(subdir);
+        }
         if !pathbuf.exists() {
             std::fs::create_dir_all(&pathbuf).unwrap();
         }
         pathbuf
+    }
+
+    #[inline]
+    pub fn mesh_precision(&self) -> &MeshPrecisionSettings {
+        &self.mesh_precision
     }
 
     #[inline]

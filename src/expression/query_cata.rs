@@ -204,11 +204,7 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
     let type_name = att.get_type_str();
 
     // 🔍 调试：记录从数据库读取的几何体信息
-    crate::debug_model_debug!(
-        "📦 query_gm_param: 几何体 {} ({})",
-        refno,
-        type_name
-    );
+    crate::debug_model_debug!("📦 query_gm_param: 几何体 {} ({})", refno, type_name);
     if type_name == "SEXT" || type_name == "NSEX" || type_name == "SREV" || type_name == "NSRE" {
         //先暂时不考虑负实体
         let children = crate::get_children_named_attmaps(refno).await.ok()?;

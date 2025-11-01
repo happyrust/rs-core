@@ -96,6 +96,7 @@ pub mod types;
 
 pub mod material;
 pub mod math;
+pub mod mesh_precision;
 pub mod room;
 
 pub mod file_helper;
@@ -147,7 +148,9 @@ pub fn get_db_option() -> &'static DbOption {
             .add_source(File::with_name("DbOption"))
             .build()
             .unwrap();
-        s.try_deserialize::<DbOption>().unwrap()
+        let option = s.try_deserialize::<DbOption>().unwrap();
+        crate::mesh_precision::set_active_precision(option.mesh_precision.clone());
+        option
     })
 }
 

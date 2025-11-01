@@ -1,9 +1,9 @@
-use std::env;
 use aios_core::RefnoEnum;
 use aios_core::pipeline::PipelineQueryService;
-use aios_core::{get_named_attmap, RefU64};
-use aios_core::rs_surreal::point::query_arrive_leave_points;
 use aios_core::rs_surreal::geom::query_refnos_point_map;
+use aios_core::rs_surreal::point::query_arrive_leave_points;
+use aios_core::{RefU64, get_named_attmap};
+use std::env;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -11,14 +11,18 @@ async fn main() -> anyhow::Result<()> {
 
     // Accept BRAN refno from CLI or fall back to default
     let args: Vec<String> = env::args().collect();
-    let bran_arg = args.get(1).cloned().unwrap_or_else(|| "21491/16521".to_string());
+    let bran_arg = args
+        .get(1)
+        .cloned()
+        .unwrap_or_else(|| "21491/16521".to_string());
     let branch = RefnoEnum::from(bran_arg.as_str());
 
     println!("🔎 Fetching annotation segments for BRAN: {}", bran_arg);
 
     let segments: Vec<aios_core::pipeline::PipelineSegmentRecord> =
-        PipelineQueryService::fetch_branch_segments(branch.clone()).await.unwrap();
-        
+        PipelineQueryService::fetch_branch_segments(branch.clone())
+            .await
+            .unwrap();
 
     println!("Segments total: {}", segments.len());
     for (idx, seg) in segments.iter().enumerate() {
@@ -36,11 +40,19 @@ async fn main() -> anyhow::Result<()> {
         if let Some(span) = main_span {
             println!(
                 "  - main: start(role={:?}, no={}) -> end(role={:?}, no={}), length={:.3}, straight={:.3}",
-                span.start.role, span.start.number, span.end.role, span.end.number, span.length, span.straight_length
+                span.start.role,
+                span.start.number,
+                span.end.role,
+                span.end.number,
+                span.length,
+                span.straight_length
             );
         }
         for e in &seg.extra_ports {
-            println!("  - extra: role={:?}, no={}, pos=({:.3},{:.3},{:.3})", e.role, e.number, e.world_pos.x, e.world_pos.y, e.world_pos.z);
+            println!(
+                "  - extra: role={:?}, no={}, pos=({:.3},{:.3},{:.3})",
+                e.role, e.number, e.world_pos.x, e.world_pos.y, e.world_pos.z
+            );
         }
     }
 
@@ -64,11 +76,15 @@ async fn main() -> anyhow::Result<()> {
     }
     // 3) ARRI/LEAV named attributes
     let attrs = get_named_attmap(branch.clone()).await?;
-    let arri = attrs.get("ARRI").map(|v| format!("{:?}", v)).unwrap_or("<none>".to_string());
-    let leav = attrs.get("LEAV").map(|v| format!("{:?}", v)).unwrap_or("<none>".to_string());
+    let arri = attrs
+        .get("ARRI")
+        .map(|v| format!("{:?}", v))
+        .unwrap_or("<none>".to_string());
+    let leav = attrs
+        .get("LEAV")
+        .map(|v| format!("{:?}", v))
+        .unwrap_or("<none>".to_string());
     println!("attrs: ARRI={}, LEAV={}", arri, leav);
 
     Ok(())
 }
-
-

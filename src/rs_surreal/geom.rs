@@ -64,7 +64,7 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec
 ///通过surql查询pe数据
 #[cached(result = true)]
 pub async fn query_deep_visible_inst_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    let types = super::get_self_and_owner_type_name(refno).await?;
+    let types = super::get_type_and_owner_type(refno).await?;
     if types[1] == "BRAN" || types[1] == "HANG" {
         return Ok(vec![refno]);
     }

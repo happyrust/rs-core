@@ -10,7 +10,10 @@ async fn main() -> anyhow::Result<()> {
 
     // 1. 检查 BRAN 本身的基本信息
     println!("\n【1】检查 BRAN 基本信息:");
-    let sql = format!("SELECT id, noun, dbnum, sesno, deleted FROM {};", bran_refno.to_pe_key());
+    let sql = format!(
+        "SELECT id, noun, dbnum, sesno, deleted FROM {};",
+        bran_refno.to_pe_key()
+    );
     println!("SQL: {}", sql);
     let result: Result<Vec<serde_json::Value>, _> = SUL_DB.query_take(&sql, 0).await;
     match result {
@@ -28,35 +31,47 @@ async fn main() -> anyhow::Result<()> {
 
     // 3. 检查 tubi_relate 关系
     println!("\n【3】检查 tubi_relate 关系:");
-    let sql = format!("SELECT id, arrive, leave FROM {}->tubi_relate;", bran_refno.to_pe_key());
+    let sql = format!(
+        "SELECT id, arrive, leave FROM {}->tubi_relate;",
+        bran_refno.to_pe_key()
+    );
     println!("SQL: {}", sql);
     let result: Result<Vec<serde_json::Value>, _> = SUL_DB.query_take(&sql, 0).await;
     match result {
         Ok(tubi_relates) => {
             println!("tubi_relate 数量: {}", tubi_relates.len());
             println!("结果: {}", serde_json::to_string_pretty(&tubi_relates)?);
-        },
+        }
         Err(e) => println!("错误: {:?}", e),
     }
 
     // 4. 检查 inst_relate 关系
     println!("\n【4】检查 inst_relate 关系:");
-    let sql = format!("SELECT id, in, out FROM {}->inst_relate LIMIT 1;", bran_refno.to_pe_key());
+    let sql = format!(
+        "SELECT id, in, out FROM {}->inst_relate LIMIT 1;",
+        bran_refno.to_pe_key()
+    );
     println!("SQL: {}", sql);
     let result: Result<Vec<serde_json::Value>, _> = SUL_DB.query_take(&sql, 0).await;
     match result {
         Ok(inst_relates) => {
             println!("inst_relate 数量: {}", inst_relates.len());
             if !inst_relates.is_empty() {
-                println!("第一个 inst_relate: {}", serde_json::to_string_pretty(&inst_relates[0])?);
+                println!(
+                    "第一个 inst_relate: {}",
+                    serde_json::to_string_pretty(&inst_relates[0])?
+                );
             }
-        },
+        }
         Err(e) => println!("错误: {:?}", e),
     }
 
     // 5. 检查 inst_relate 中的 ptset
     println!("\n【5】检查 inst_relate 中的 ptset:");
-    let sql = format!("SELECT out.ptset FROM {}->inst_relate LIMIT 1;", bran_refno.to_pe_key());
+    let sql = format!(
+        "SELECT out.ptset FROM {}->inst_relate LIMIT 1;",
+        bran_refno.to_pe_key()
+    );
     println!("SQL: {}", sql);
     let result: Result<Vec<serde_json::Value>, _> = SUL_DB.query_take(&sql, 0).await;
     match result {
@@ -76,7 +91,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("  [{}] {}", i + 1, child);
             }
             c
-        },
+        }
         Err(e) => {
             println!("错误: {:?}", e);
             vec![]
@@ -99,8 +114,11 @@ async fn main() -> anyhow::Result<()> {
             let result: Result<Vec<serde_json::Value>, _> = SUL_DB.query_take(&sql, 0).await;
             match result {
                 Ok(child_inst) if !child_inst.is_empty() => {
-                    println!("  inst_relate 存在: {}", serde_json::to_string_pretty(&child_inst[0])?);
-                },
+                    println!(
+                        "  inst_relate 存在: {}",
+                        serde_json::to_string_pretty(&child_inst[0])?
+                    );
+                }
                 _ => println!("  inst_relate: 无"),
             }
         }
@@ -127,7 +145,7 @@ async fn main() -> anyhow::Result<()> {
             for (i, detail) in tubi_details.iter().take(5).enumerate() {
                 println!("\n  [{}] {}", i + 1, serde_json::to_string_pretty(detail)?);
             }
-        },
+        }
         Err(e) => println!("错误: {:?}", e),
     }
 
@@ -151,7 +169,7 @@ async fn main() -> anyhow::Result<()> {
         Ok(arrive_leave) => {
             println!("arrive/leave 查询结果数量: {}", arrive_leave.len());
             println!("结果: {}", serde_json::to_string_pretty(&arrive_leave)?);
-        },
+        }
         Err(e) => println!("错误: {:?}", e),
     }
 
@@ -160,4 +178,3 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-

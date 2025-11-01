@@ -380,7 +380,6 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
     if refnos.is_empty() {
         return Ok(Vec::new());
     }
-
     // 将类型列表转换为 SQL 字符串数组格式
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let types_expr = if nouns.is_empty() {
@@ -411,13 +410,8 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
         refno_list, types_expr, range, select_expr
     );
 
-    //
-
-    let mut response = SUL_DB.query_response(&sql).await?;
-    // dbg!(&response);
-
     // 跳过第一个结果（let $ids 的赋值），取第二个结果（SELECT 的结果）
-    let result: Vec<T> = response.take(1)?;
+    let result: Vec<T> = SUL_DB.query_take(&sql, 1).await?;
 
     Ok(result)
 }

@@ -3,7 +3,7 @@ use glam::Vec3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use parry3d::math::Point;
 use serde::{Deserialize, Serialize};
-use surrealdb::types::{SurrealValue, Kind, Value};
+use surrealdb::types::{Kind, SurrealValue, Value};
 
 use crate::shape::pdms_shape::RsVec3;
 

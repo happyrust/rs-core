@@ -48,145 +48,492 @@ pub const LEVEL_VISBLE: u32 = 6;
 
 ///非负实体基本体的种类
 pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA",
+    "BOX", // 盒子
+    "CYLI", // 圆柱体
+    "SLCY", // 斜圆柱体
+    "CONE", // 圆锥体
+    "DISH", // 碟形
+    "CTOR", // 圆环
+    "RTOR", // 圆环
+    "PYRA", // 棱锥
 ];
 
 ///基本体几何体相关的属性
 pub const PRIMITIVE_GEO_ATTR_NAMES: [&'static str; 8] = [
-    "XLEN", "YLEN", "ZLEN", "XRAD", "YRAD", "ZRAD", "XANG", "YANG",
+    "XLEN", // X方向长度
+    "YLEN", // Y方向长度
+    "ZLEN", // Z方向长度
+    "XRAD", // X方向半径
+    "YRAD", // Y方向半径
+    "ZRAD", // Z方向半径
+    "XANG", // X方向角度
+    "YANG", // Y方向角度
 ];
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
 pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "NBOX", "NCYL",
-    "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NCTO", "NRTO", "NSCY", "NREV", "POLYHE",
+    "BOX", // 盒子
+    "CYLI", // 圆柱体
+    "SLCY", // 斜圆柱体
+    "CONE", // 圆锥体
+    "DISH", // 碟形
+    "CTOR", // 圆环
+    "RTOR", // 圆环
+    "PYRA", // 棱锥
+    "SNOU", // 球体
+    "POHE", // 多面体
+    "NBOX", // 负盒子
+    "NCYL", // 负圆柱体
+    "NSBO", // 负球体
+    "NCON", // 负圆锥体
+    "NSNO", // 负球体
+    "NPYR", // 负棱锥
+    "NDIS", // 负碟形
+    "NCTO", // 负圆环
+    "NRTO", // 负圆环
+    "NSCY", // 负斜圆柱体
+    "NREV", // 负旋转体
+    "POLYHE", // 多面体
 ];
 
 ///有loop的几何体
 pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
-    "AEXTR", "NXTR", "EXTR", "PANE", "FLOOR", "SCREED", "GWALL", "NREV", "REVO",
+    "AEXTR", // 轴向拉伸
+    "NXTR", // 负拉伸
+    "EXTR", // 拉伸
+    "PANE", // 面板
+    "FLOOR", // 地板
+    "SCREED", // 找平层
+    "GWALL", // 玻璃墙/通用墙
+    "NREV", // 负旋转体
+    "REVO", // 旋转体
 ];
 
+///使用元件库的实体类型名称
 pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
-    "FIXING", "GENSEC", "SCREED", "CMPF", "GWALL", "EQUI", "ANCI", "FITT", "SJOI", "SBFI", "CABLE",
-    "CNODE", "SCTN", "SCOJ", "PAVE", "SUBE", "SEVE", "SUBJ", "PLOO", "RNODE", "PJOI", "SELJ",
-    "STWALL", "WALL", "PALJ", "TUBI", "FLOOR", "CMFI", "PANE", "PFIT", "GPART", "PRTELE", "NOZZ",
-    "SPCO", "ELCONN",
+    "FIXING", // 固定件
+    "GENSEC", // 通用截面
+    "SCREED", // 找平层
+    "CMPF", // 复合件
+    "GWALL", // 玻璃墙/通用墙
+    "EQUI", // 设备
+    "ANCI", // 锚固件
+    "FITT", // 管件
+    "SJOI", // 结构连接
+    "SBFI", // 结构基座固定
+    "CABLE", // 电缆
+    "CNODE", // 连接节点
+    "SCTN", // 截面
+    "SCOJ", // 结构连接
+    "PAVE", // 铺装
+    "SUBE", // 子元素
+    "SEVE", // 服务
+    "SUBJ", // 子连接
+    "PLOO", // 管道循环
+    "RNODE", // 节点
+    "PJOI", // 管道连接
+    "SELJ", // 选择连接
+    "STWALL", // 结构墙
+    "WALL", // 墙
+    "PALJ", // 管道对齐
+    "TUBI", // 管道
+    "FLOOR", // 地板
+    "CMFI", // 复合安装
+    "PANE", // 面板
+    "PFIT", // 管道配件
+    "GPART", // 通用零件
+    "PRTELE", // 主要元素
+    "NOZZ", // 接管
+    "SPCO", // 规范组件
+    "ELCONN", // 电气连接
 ];
 
 ///使用元件库的几何体相关的属性, todo 继续完善
-pub const CATA_GEO_ATTR_NAMES: [&'static str; 4] = ["SPRE", "CATR", "ZDIS", "DESP"];
+pub const CATA_GEO_ATTR_NAMES: [&'static str; 4] = [
+    "SPRE", // 规范引用
+    "CATR", // 元件库引用
+    "ZDIS", // Z方向偏移
+    "DESP", // 描述
+];
 
 ///方位的相关属性, todo 继续完善
-pub const TRANSFORM_ATTR_NAMES: [&'static str; 4] = ["POS", "ORI", "POSS", "POSE"];
+pub const TRANSFORM_ATTR_NAMES: [&'static str; 4] = [
+    "POS", // 位置
+    "ORI", // 方向
+    "POSS", // 位置集合
+    "POSE", // 位置元素
+];
 
 ///管道的类型
 pub const PIPING_NOUN_NAMES: [&'static str; 26] = [
-    "WELD", "ELBO", "VALV", "FLAN", "GASK", "ATTA", "OLET", "FBLI", "REDU", "TEE", "BEND", "INST",
-    "TRNS", "DAMP", "STRT", "TAPE", "THRE", "UNIO", "BRCO", "OFST", "CAP", "PCOM", "FTUB", "STIF",
-    "SILE", "COUP",
+    "WELD", // 焊缝
+    "ELBO", // 弯头
+    "VALV", // 阀门
+    "FLAN", // 法兰
+    "GASK", // 垫片
+    "ATTA", // 附件
+    "OLET", // 支管
+    "FBLI", // 法兰盲板
+    "REDU", // 异径管
+    "TEE", // 三通
+    "BEND", // 弯管
+    "INST", // 仪表
+    "TRNS", // 过渡件
+    "DAMP", // 阻尼器
+    "STRT", // 直管段
+    "TAPE", // 胶带
+    "THRE", // 螺纹
+    "UNIO", // 接头
+    "BRCO", // 分支连接
+    "OFST", // 偏移
+    "CAP", // 封头
+    "PCOM", // 管道组件
+    "FTUB", // 管件
+    "STIF", // 加强环
+    "SILE", // 静音器
+    "COUP", // 联轴器
 ];
 
 ///负实体基本体的种类
 pub const GENRAL_NEG_NOUN_NAMES: [&'static str; 13] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
-    "NSCY",
+    "NBOX", // 负盒子
+    "NCYL", // 负圆柱体
+    "NLCY", // 负斜圆柱体
+    "NSBO", // 负球体
+    "NCON", // 负圆锥体
+    "NSNO", // 负球体
+    "NPYR", // 负棱锥
+    "NDIS", // 负碟形
+    "NXTR", // 负拉伸
+    "NCTO", // 负圆环
+    "NRTO", // 负圆环
+    "NREV", // 负旋转体
+    "NSCY", // 负斜圆柱体
 ];
 
 ///元件库的负实体类型
 pub const CATE_NEG_NOUN_NAMES: [&'static str; 13] = [
-    "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX",
-    "NSRE",
+    "NSBO", // 负球体
+    "NSCO", // 负圆锥体
+    "NLSN", // 负长球体
+    "NSSP", // 负球体
+    "NLCY", // 负斜圆柱体
+    "NSCY", // 负斜圆柱体
+    "NSCT", // 负圆锥体
+    "NSRT", // 负圆环
+    "NSDS", // 负碟形
+    "NSSL", // 负球体
+    "NLPY", // 负棱锥
+    "NSEX", // 负拉伸
+    "NSRE", // 负旋转体
 ];
 
+///所有负实体类型的名称（包括基本体和元件库的负实体）
 pub const TOTAL_NEG_NOUN_NAMES: [&'static str; 26] = [
-    "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
-    "NSCY", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY",
-    "NSEX", "NSRE",
+    "NBOX", // 负盒子（基本体）
+    "NCYL", // 负圆柱体（基本体）
+    "NLCY", // 负斜圆柱体（基本体）
+    "NSBO", // 负球体（基本体）
+    "NCON", // 负圆锥体（基本体）
+    "NSNO", // 负球体（基本体）
+    "NPYR", // 负棱锥（基本体）
+    "NDIS", // 负碟形（基本体）
+    "NXTR", // 负拉伸（基本体）
+    "NCTO", // 负圆环（基本体）
+    "NRTO", // 负圆环（基本体）
+    "NREV", // 负旋转体（基本体）
+    "NSCY", // 负斜圆柱体（基本体）
+    "NSBO", // 负球体（元件库）
+    "NSCO", // 负圆锥体（元件库）
+    "NLSN", // 负长球体（元件库）
+    "NSSP", // 负球体（元件库）
+    "NLCY", // 负斜圆柱体（元件库）
+    "NSCY", // 负斜圆柱体（元件库）
+    "NSCT", // 负圆锥体（元件库）
+    "NSRT", // 负圆环（元件库）
+    "NSDS", // 负碟形（元件库）
+    "NSSL", // 负球体（元件库）
+    "NLPY", // 负棱锥（元件库）
+    "NSEX", // 负拉伸（元件库）
+    "NSRE", // 负旋转体（元件库）
 ];
 
-pub const TOTAL_VERT_NOUN_NAMES: [&'static str; 2] = ["VERT", "PAVE"];
+///顶点相关的实体类型名称
+pub const TOTAL_VERT_NOUN_NAMES: [&'static str; 2] = [
+    "VERT", // 顶点
+    "PAVE", // 铺装
+];
 
-pub const TOTAL_LOOP_NOUN_NAMES: [&'static str; 2] = ["LOOP", "PLOO"];
+///循环相关的实体类型名称
+pub const TOTAL_LOOP_NOUN_NAMES: [&'static str; 2] = [
+    "LOOP", // 循环
+    "PLOO", // 管道循环
+];
 
-pub const JOINT_TYPES: [&'static str; 2] = ["SJOI", "PJOI"];
+///连接点类型
+pub const JOINT_TYPES: [&'static str; 2] = [
+    "SJOI", // 结构连接
+    "PJOI", // 管道连接
+];
 
+///正实体基本体的种类
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "FLOOR", "PANEL",
-    "SBOX", "SCYL", "LCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV",
-    "SRTO", "SSLC",
+    "BOX", // 盒子
+    "CYLI", // 圆柱体
+    "SLCY", // 斜圆柱体
+    "CONE", // 圆锥体
+    "DISH", // 碟形
+    "CTOR", // 圆环
+    "RTOR", // 圆环
+    "PYRA", // 棱锥
+    "SNOU", // 球体
+    "FLOOR", // 地板
+    "PANEL", // 面板
+    "SBOX", // 元件库盒子
+    "SCYL", // 元件库圆柱体
+    "LCYL", // 长圆柱体
+    "SSPH", // 元件库球体
+    "LCYL", // 长圆柱体（重复）
+    "SCON", // 元件库圆锥体
+    "LSNO", // 长球体
+    "LPYR", // 长棱锥
+    "SDSH", // 元件库碟形
+    "SCTO", // 元件库圆环
+    "SEXT", // 元件库拉伸
+    "SREV", // 元件库旋转体
+    "SRTO", // 元件库圆环
+    "SSLC", // 元件库斜圆柱体
 ];
 
+///所有几何体类型的名称（包括正实体和负实体）
 pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "PLOO", "LOOP", "POHE",
-    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO",
-    "SSLC", "SPRO", "SREC", "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR",
-    "NCTO", "NRTO", "NREV", "NSCY",
+    "BOX", // 盒子
+    "CYLI", // 圆柱体
+    "SLCY", // 斜圆柱体
+    "CONE", // 圆锥体
+    "DISH", // 碟形
+    "CTOR", // 圆环
+    "RTOR", // 圆环
+    "PYRA", // 棱锥
+    "SNOU", // 球体
+    "PLOO", // 管道循环
+    "LOOP", // 循环
+    "POHE", // 多面体
+    "SBOX", // 元件库盒子
+    "SCYL", // 元件库圆柱体
+    "SSPH", // 元件库球体
+    "LCYL", // 长圆柱体
+    "SCON", // 元件库圆锥体
+    "LSNO", // 长球体
+    "LPYR", // 长棱锥
+    "SDSH", // 元件库碟形
+    "SCTO", // 元件库圆环
+    "SEXT", // 元件库拉伸
+    "SREV", // 元件库旋转体
+    "SRTO", // 元件库圆环
+    "SSLC", // 元件库斜圆柱体
+    "SPRO", // 元件库投影
+    "SREC", // 元件库矩形
+    "NBOX", // 负盒子
+    "NCYL", // 负圆柱体
+    "NLCY", // 负斜圆柱体
+    "NSBO", // 负球体
+    "NCON", // 负圆锥体
+    "NSNO", // 负球体
+    "NPYR", // 负棱锥
+    "NDIS", // 负碟形
+    "NXTR", // 负拉伸
+    "NCTO", // 负圆环
+    "NRTO", // 负圆环
+    "NREV", // 负旋转体
+    "NSCY", // 负斜圆柱体
 ];
 
+///所有元件库几何体类型的名称（包括正实体和负实体）
 pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 31] = [
-    "SBOX", "SCYL", "SSPH", "LCYL", "SCON", "LSNO", "LPYR", "SDSH", "SCTO", "SEXT", "SREV", "SRTO",
-    "SSLC", "SPRO", "SANN", "BOXI", "TUBE", "SREC", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY",
-    "NSCT", "NSRT", "NSDS", "NSSL", "NLPY", "NSEX", "NSRE",
+    "SBOX", // 元件库盒子
+    "SCYL", // 元件库圆柱体
+    "SSPH", // 元件库球体
+    "LCYL", // 长圆柱体
+    "SCON", // 元件库圆锥体
+    "LSNO", // 长球体
+    "LPYR", // 长棱锥
+    "SDSH", // 元件库碟形
+    "SCTO", // 元件库圆环
+    "SEXT", // 元件库拉伸
+    "SREV", // 元件库旋转体
+    "SRTO", // 元件库圆环
+    "SSLC", // 元件库斜圆柱体
+    "SPRO", // 元件库投影
+    "SANN", // 元件库环
+    "BOXI", // 盒子实例
+    "TUBE", // 管
+    "SREC", // 元件库矩形
+    "NSBO", // 负球体
+    "NSCO", // 负圆锥体
+    "NLSN", // 负长球体
+    "NSSP", // 负球体
+    "NLCY", // 负斜圆柱体
+    "NSCY", // 负斜圆柱体
+    "NSCT", // 负圆锥体
+    "NSRT", // 负圆环
+    "NSDS", // 负碟形
+    "NSSL", // 负球体
+    "NLPY", // 负棱锥
+    "NSEX", // 负拉伸
+    "NSRE", // 负旋转体
 ];
 
 ///可能会与ngmr发生作用的类型
-pub const TOTAL_CONTAIN_NGMR_GEO_NAEMS: [&'static str; 6] =
-    ["WALL", "STWALL", "GWALL", "SCTN", "PANEL", "FLOOR"];
+pub const TOTAL_CONTAIN_NGMR_GEO_NAEMS: [&'static str; 6] = [
+    "WALL", // 墙
+    "STWALL", // 结构墙
+    "GWALL", // 玻璃墙/通用墙
+    "SCTN", // 截面
+    "PANEL", // 面板
+    "FLOOR", // 地板
+];
 
-///POHE
+///多面体（Polyhedron）类型
 pub const POHE_GEO_NAMES: [&'static str; 1] = ["POHE"];
 
 ///元件库的种类
 pub const CATA_GEO_NAMES: [&'static str; 26] = [
-    "BRAN", "HANG", "ELCONN", "CMPF", "WALL", "STWALL", "GWALL", "FIXING", "SJOI", "PJOI", "PFIT",
-    "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "NOZZ", "PALJ", "CABLE", "BATT", "CMFI",
-    "SCOJ", "SEVE", "SBFI", "SCTN", "FITT",
+    "BRAN", // 分支
+    "HANG", // 悬挂
+    "ELCONN", // 电气连接
+    "CMPF", // 复合件
+    "WALL", // 墙
+    "STWALL", // 结构墙
+    "GWALL", // 玻璃墙/通用墙
+    "FIXING", // 固定件
+    "SJOI", // 结构连接
+    "PJOI", // 管道连接
+    "PFIT", // 管道配件
+    "GENSEC", // 通用截面
+    "RNODE", // 节点
+    "PRTELE", // 主要元素
+    "GPART", // 通用零件
+    "SCREED", // 找平层
+    "NOZZ", // 接管
+    "PALJ", // 管道对齐
+    "CABLE", // 电缆
+    "BATT", // 护板/电池
+    "CMFI", // 复合安装
+    "SCOJ", // 结构连接
+    "SEVE", // 服务
+    "SBFI", // 结构基座固定
+    "SCTN", // 截面
+    "FITT", // 管件
 ];
 
 ///有tubi的类型
-pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = ["BRAN", "HANG"];
+pub const CATA_HAS_TUBI_GEO_NAMES: [&'static str; 2] = [
+    "BRAN", // 分支
+    "HANG", // 悬挂
+];
 
 ///可以重用的类型
 pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 0] = [];
 
-pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 24] = [
-    "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT", "FIXING", "PJOI", "GENSEC", "RNODE",
-    "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT", "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL",
-    "SCTN", "NOZZ",
+///不可重用的元件库几何体类型名称
+pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 23] = [
+    "ELCONN", // 电气连接
+    "CMPF", // 复合件
+    "WALL", // 墙
+    "GWALL", // 玻璃墙/通用墙
+    "SJOI", // 结构连接
+    "FITT", // 管件
+    "PFIT", // 管道配件
+    "FIXING", // 固定件
+    "PJOI", // 管道连接
+    "GENSEC", // 通用截面
+    "RNODE", // 节点
+    "PRTELE", // 主要元素
+    "GPART", // 通用零件
+    "SCREED", // 找平层
+    "PALJ", // 管道对齐
+    "CABLE", // 电缆
+    "BATT", // 护板/电池
+    "CMFI", // 复合安装
+    "SCOJ", // 结构连接
+    "SEVE", // 服务
+    "SBFI", // 结构基座固定
+    "STWALL", // 结构墙
+    "SCTN", // 截面
 ];
 
+///可见的几何体类型名称
 pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
-    "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE",
-    "EXTR", "REVO", "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT",
-    "FIXING", "PJOI", "GENSEC", "RNODE", "PRTELE", "GPART", "SCREED", "PALJ", "CABLE", "BATT",
-    "CMFI", "SCOJ", "SEVE", "SBFI", "STWALL", "SCTN", "NOZZ",
+    "BOX", // 盒子
+    "CYLI", // 圆柱体
+    "SLCY", // 斜圆柱体
+    "CONE", // 圆锥体
+    "DISH", // 碟形
+    "CTOR", // 圆环
+    "RTOR", // 圆环
+    "PYRA", // 棱锥
+    "SNOU", // 球体
+    "POHE", // 多面体
+    "POLYHE", // 多面体
+    "EXTR", // 拉伸
+    "REVO", // 旋转体
+    "FLOOR", // 地板
+    "PANE", // 面板
+    "ELCONN", // 电气连接
+    "CMPF", // 复合件
+    "WALL", // 墙
+    "GWALL", // 玻璃墙/通用墙
+    "SJOI", // 结构连接
+    "FITT", // 管件
+    "PFIT", // 管道配件
+    "FIXING", // 固定件
+    "PJOI", // 管道连接
+    "GENSEC", // 通用截面
+    "RNODE", // 节点
+    "PRTELE", // 主要元素
+    "GPART", // 通用零件
+    "SCREED", // 找平层
+    "PALJ", // 管道对齐
+    "CABLE", // 电缆
+    "BATT", // 护板/电池
+    "CMFI", // 复合安装
+    "SCOJ", // 结构连接
+    "SEVE", // 服务
+    "SBFI", // 结构基座固定
+    "STWALL", // 结构墙
+    "SCTN", // 截面
+    "NOZZ", // 接管
 ];
 
+///连接类型枚举
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub enum SjusType {
     #[default]
-    UNSET,
-    UTOP,
-    UBOT,
-    UCEN,
+    UNSET, // 未设置
+    UTOP, // 顶部连接
+    UBOT, // 底部连接
+    UCEN, // 中心连接
 }
 
+///JSGF结构体（用于序列化/反序列化）
 #[derive(Serialize, Deserialize, Debug)]
 struct Jsgf {
     #[serde(with = "string")]
-    u: u64,
+    u: u64, // 无符号整数
     #[serde(with = "string")]
-    i: i64,
+    i: i64, // 有符号整数
 }
 
+///字符串序列化/反序列化模块
 pub mod string {
     use std::fmt::Display;
     use std::str::FromStr;
 
     use serde::{Deserialize, Deserializer, Serializer, de};
 
+    ///将值序列化为字符串
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         T: Display,
@@ -195,6 +542,7 @@ pub mod string {
         serializer.collect_str(value)
     }
 
+    ///从字符串反序列化值
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
     where
         T: FromStr,
@@ -207,17 +555,23 @@ pub mod string {
     }
 }
 
+///属性值差异结构体，用于记录属性值的变化
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifferenceValue {
+    ///属性名称
     pub noun: String,
+    ///旧值，新增时old_value为None
     pub old_value: Option<NamedAttrValue>,
-    // 新增 old_value 为 none
-    pub new_value: Option<NamedAttrValue>, // 删除 new_value 为 none
+    ///新值，删除时new_value为None
+    pub new_value: Option<NamedAttrValue>,
 }
 
+///默认的属性名称哈希值数组
 pub const DEFAULT_NOUNS: [NounHash; 4] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
+///默认的属性名称数组
 pub const DEFAULT_NAMED_NOUNS: [&'static str; 4] = ["TYPE", "NAME", "REFNO", "OWNER"];
 
+///PDMS通用类型枚举
 #[repr(C)]
 #[derive(
     Component,
@@ -238,34 +592,35 @@ pub const DEFAULT_NAMED_NOUNS: [&'static str; 4] = ["TYPE", "NAME", "REFNO", "OW
 )]
 pub enum PdmsGenericType {
     #[default]
-    UNKOWN = 0,
-    CE,
-    PIPE,
-    STRU,
-    EQUI,
-    ROOM,
-    SCTN,
-    WALL,
-    STWALL,
-    CWALL,
-    GWALL,
-    GENSEC,
-    HANG,
-    HANDRA,
-    PANE,
-    CFLOOR,
-    FLOOR,
-    EXTR,
-    CWBRAN,
-    REVO,
-    CTWALL,
-    AREADEF,
-    DEMOPA,
-    INSURQ,
-    STRLNG,
-    HVAC,
+    UNKOWN = 0, // 未知类型
+    CE, // 设备
+    PIPE, // 管道
+    STRU, // 结构
+    EQUI, // 设备
+    ROOM, // 房间
+    SCTN, // 截面
+    WALL, // 墙
+    STWALL, // 结构墙
+    CWALL, // 混凝土墙
+    GWALL, // 玻璃墙/通用墙
+    GENSEC, // 通用截面
+    HANG, // 悬挂
+    HANDRA, // 扶手
+    PANE, // 面板
+    CFLOOR, // 混凝土地板
+    FLOOR, // 地板
+    EXTR, // 拉伸
+    CWBRAN, // 冷弯分支
+    REVO, // 旋转体
+    CTWALL, // 混凝土墙
+    AREADEF, // 区域定义
+    DEMOPA, // 演示面板
+    INSURQ, // 安装请求
+    STRLNG, // 结构长度
+    HVAC, // 暖通空调
 }
 
+///从字符串反序列化为u64
 fn de_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
 where
     D: Deserializer<'de>,
@@ -274,6 +629,7 @@ where
     s.parse::<u64>().map_err(de::Error::custom)
 }
 
+///从字符串反序列化为RefU64
 fn de_refno_from_str<'de, D>(deserializer: D) -> Result<RefU64, D::Error>
 where
     D: Deserializer<'de>,
@@ -282,6 +638,7 @@ where
     RefU64::from_str(&s).map_err(de::Error::custom)
 }
 
+///从字符串反序列化为RefU64的HashSet
 fn de_hashset_from_str<'de, D>(deserializer: D) -> Result<HashSet<RefU64>, D::Error>
 where
     D: Deserializer<'de>,
@@ -294,6 +651,7 @@ where
         .collect())
 }
 
+///将RefU64的HashSet序列化为JSON字符串
 pub fn ser_hashset_as_str<S>(refnos: &HashSet<RefU64>, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -306,6 +664,7 @@ where
     // s.ser(&set)
 }
 
+///将u64序列化为字符串
 pub fn ser_u64_as_str<S>(id: &u64, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -313,6 +672,7 @@ where
     s.serialize_str((*id).to_string().as_str())
 }
 
+///将RefU64序列化为字符串
 pub fn ser_refno_as_str<S>(refno: &RefU64, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -320,76 +680,97 @@ where
     s.serialize_str(refno.to_string().as_str())
 }
 
+///PDMS节点特征trait，定义了PDMS节点应具备的基本功能
 pub trait PdmsNodeTrait: Default {
+    ///获取节点的参考号
     #[inline]
     fn get_refno(&self) -> RefU64 {
         RefU64::default()
     }
 
+    ///获取节点的记录ID
     #[inline]
     fn get_id(&self) -> Option<&RecordId> {
         None
     }
 
+    ///获取节点的名称
     #[inline]
     fn get_name(&self) -> &str {
         ""
     }
 
+    ///获取节点的修改次数
     #[inline]
     fn get_mod_cnt(&self) -> u32 {
         0
     }
 
+    ///获取节点的状态
     #[inline]
     fn get_status(&self) -> &str {
         ""
     }
 
+    ///获取节点类型的哈希值
     #[inline]
     fn get_noun_hash(&self) -> u32 {
         0
     }
 
+    ///获取节点类型名称
     #[inline]
     fn get_type_name(&self) -> &str {
         ""
     }
 
+    ///获取子节点数量
     #[inline]
     fn get_children_count(&self) -> usize {
         0
     }
 
+    ///获取节点的顺序
     #[inline]
     fn get_order(&self) -> usize {
         0
     }
 }
 
+///初始状态码
 pub const STATE_CODE_INIT: &'static str = "D00";
 
+///元素树节点结构体，表示PDMS中的树形结构节点
 #[derive(Serialize, Deserialize, Clone, Debug, Default, SurrealValue)]
 pub struct EleTreeNode {
+    ///节点参考号
     pub refno: RefnoEnum,
+    ///节点类型名称
     pub noun: String,
+    ///节点名称
     #[serde(default)]
     pub name: String,
+    ///父节点参考号
     pub owner: RefnoEnum,
+    ///节点顺序
     #[serde(default)]
     #[surreal(value = 0)]
     pub order: u16,
+    ///子节点数量
     pub children_count: u16,
     // #[serde(default)]
     // pub op: EleOperation,
-    //修改次数
+    ///修改次数
     pub mod_cnt: Option<u32>,
+    ///子节点是否已更新
     #[serde(default)]
     pub children_updated: Option<bool>,
+    ///状态码
     pub status_code: Option<String>,
 }
 
 impl EleTreeNode {
+    ///创建新的元素树节点
     pub fn new(
         refno: RefnoEnum,
         noun: String,
@@ -413,6 +794,7 @@ impl EleTreeNode {
         }
     }
 
+    ///转换为对外接口的结构体
     pub fn into_handle_struct(self) -> PdmsElementHandle {
         PdmsElementHandle {
             refno: self.refno.to_pdms_str(),
@@ -424,11 +806,13 @@ impl EleTreeNode {
         }
     }
 
+    ///获取最新的参考号
     #[inline]
     pub fn latest_refno(&self) -> RefU64 {
         self.refno.refno()
     }
 
+    ///获取最新的父节点参考号
     #[inline]
     pub fn latest_owner(&self) -> RefU64 {
         self.owner.refno()
@@ -494,48 +878,71 @@ impl PdmsNodeTrait for EleTreeNode {
     }
 }
 
+///元素节点结构体，用于表示PDMS元素的简化信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EleNode {
+    ///参考号
     pub refno: RefU64,
+    ///父节点参考号
     pub owner: RefU64,
+    ///名称哈希值
     pub name_hash: AiosStrHash,
     // pub name: AiosStr,
+    ///类型哈希值
     pub noun: u32,
+    ///版本号
     pub version: u32,
     // pub children_count: usize,
+    ///子节点数量
     pub children_count: usize,
 }
 
+///子节点结构体，用于表示子节点的基本信息
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ChildrenNode {
+    ///参考号
     pub refno: RefU64,
+    ///名称
     pub name: String,
+    ///类型名称
     pub noun: String,
 }
 
+///元件库哈希值与参考号的键值对结构体
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct CataHashRefnoKV {
+    ///元件库哈希值
     #[serde(default)]
     pub cata_hash: String,
+    ///分组参考号列表
     #[serde(default)]
     pub group_refnos: Vec<RefnoEnum>,
+    ///是否存在实例
     pub exist_inst: bool,
+    ///参数点集合
     pub ptset: Option<BTreeMap<i32, CateAxisParam>>,
 }
 
+///PDMS元素结构体，表示PDMS数据库中的基本元素
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component)]
 pub struct PdmsElement {
+    ///参考号（主键）
     #[serde_as(as = "DisplayFromStr")]
     #[serde(rename = "_key")]
     pub refno: RefU64,
+    ///父节点参考号
     #[serde_as(as = "DisplayFromStr")]
     pub owner: RefU64,
+    ///元素名称
     pub name: String,
+    ///元素类型名称
     pub noun: String,
+    ///版本号
     #[serde(default)]
     pub version: u32,
+    ///子节点数量
     #[serde(default)]
     pub children_count: usize,
 }
@@ -568,6 +975,7 @@ impl PdmsNodeTrait for PdmsElement {
 }
 
 impl PdmsElement {
+    ///获取Enso表格的表头
     pub fn get_enso_headers() -> Vec<String> {
         vec![
             "refno".to_string(),
@@ -579,6 +987,7 @@ impl PdmsElement {
         ]
     }
 
+    ///转换为Enso值JSON格式
     pub fn into_enso_value_json(self) -> Vec<NamedAttrValue> {
         vec![
             NamedAttrValue::StringType(self.refno.to_string()),
@@ -589,7 +998,7 @@ impl PdmsElement {
             NamedAttrValue::IntegerType(self.children_count as i32),
         ]
     }
-    /// 转为对外接口的结构体
+    ///转换为对外接口的结构体
     pub fn into_handle_struct(self) -> PdmsElementHandle {
         PdmsElementHandle {
             refno: self.refno.to_pdms_str(),
@@ -628,10 +1037,12 @@ impl From<SPdmsElement> for PdmsElement {
     }
 }
 
+///PDMS元素向量包装结构体
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct PdmsElementVec(pub Vec<PdmsElement>);
 
 impl EleNode {
+    ///设置默认名称哈希值
     pub fn set_default_name(name_hash: AiosStrHash) -> EleNode {
         EleNode {
             name_hash,
@@ -640,24 +1051,34 @@ impl EleNode {
     }
 }
 
+///PDMS节点ID包装结构体
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PdmsNodeId(pub NodeId);
 
-/// 每个dbno对应的version
+///数据库编号与版本对应关系结构体
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DbnoVersion {
+    ///数据库编号
     pub dbno: u32,
+    ///版本号
     pub version: u32,
 }
 
+///PDMS元素句柄结构体，用于对外接口
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PdmsElementHandle {
+    ///参考号（字符串格式）
     pub refno: String,
+    ///父节点参考号（字符串格式）
     pub owner: String,
+    ///元素名称
     pub name: String,
+    ///元素类型名称
     pub noun: String,
+    ///版本号
     #[serde(default)]
     pub version: u32,
+    ///子节点数量
     #[serde(default)]
     pub children_count: usize,
 }
@@ -677,58 +1098,76 @@ fn test_dashmap() {
     });
 }
 
+///数据库属性类型枚举
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum DbAttributeType {
     #[default]
-    Unknown,
-    INTEGER = 1,
-    DOUBLE,
-    BOOL,
-    STRING,
-    ELEMENT,
-    WORD,
-    DIRECTION,
-    POSITION,
-    ORIENTATION,
-    DATETIME,
+    Unknown, // 未知类型
+    INTEGER = 1, // 整数
+    DOUBLE, // 双精度浮点数
+    BOOL, // 布尔值
+    STRING, // 字符串
+    ELEMENT, // 元素引用
+    WORD, // 字
+    DIRECTION, // 方向
+    POSITION, // 位置
+    ORIENTATION, // 方向
+    DATETIME, // 日期时间
 
     //todo remove these
-    DOUBLEVEC,
-    INTVEC,
-    FLOATVEC,
-    TYPEX,
-    Vec3Type,
-    RefU64Vec,
+    DOUBLEVEC, // 双精度向量
+    INTVEC, // 整数向量
+    FLOATVEC, // 浮点向量
+    TYPEX, // 类型X
+    Vec3Type, // 三维向量类型
+    RefU64Vec, // RefU64向量
 }
 
+///属性信息结构体
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AttrInfo {
+    ///属性名称
     pub name: String,
+    ///属性哈希值
     pub hash: i32,
+    ///属性偏移量
     pub offset: u32,
+    ///默认值
     pub default_val: AttrVal,
+    ///属性类型
     pub att_type: DbAttributeType,
 }
 
 impl AttrInfo {}
 
+///PDMS数据库信息结构体
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PDMSDBInfo {
+    ///数据库名称
     pub name: String,
+    ///数据库编号
     pub db_no: i32,
+    ///数据库类型
     pub db_type: String,
+    ///版本号
     pub version: u32,
 }
 
+///PDMS参考号结构体
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PdmsRefno {
+    ///参考号
     pub ref_no: String,
+    ///数据库
     pub db: String,
+    ///类型名称
     pub type_name: String,
 }
 
+///Aios字符串哈希值类型别名
 pub type AiosStrHash = u32;
 
+///Aios字符串包装结构体
 #[derive(
     Debug,
     Clone,
@@ -745,6 +1184,7 @@ pub type AiosStrHash = u32;
 pub struct AiosStr(pub String);
 
 impl AiosStr {
+    ///获取u32哈希值
     #[inline]
     pub fn get_u32_hash(&self) -> u32 {
         use hash32::{FnvHasher, Hasher};
@@ -753,10 +1193,12 @@ impl AiosStr {
         self.hash(&mut fnv);
         fnv.finish32()
     }
+    ///消费自身，返回内部字符串
     pub fn take(self) -> String {
         self.0
     }
 
+    ///获取字符串切片
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
@@ -770,64 +1212,86 @@ impl Deref for AiosStr {
     }
 }
 
+///参考号与节点ID关联结构体
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefnoNodeId {
+    ///参考号
     pub refno: u64,
-    //  参考号对应的小版本
+    ///参考号对应的小版本
     pub version: u32,
-    // 参考号在树中对应的nodeId
+    ///参考号在树中对应的nodeId
     pub node_id: NodeId,
 }
 
+///项目数据库编号结构体
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
 pub struct ProjectDbno {
+    ///主数据库编号
     pub mdb: u32,
+    ///主数据库编号
     pub main_db: u32,
-    // 每个模块（DESI,CATA .. ）对应得dbno
+    ///每个模块（DESI,CATA等）对应的数据库编号列表
     pub dbs: HashMap<String, Vec<u32>>,
 }
 
+///TxXt结构体（用于存储键值对映射）
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TxXt {
+    ///映射表
     pub map: HashMap<String, String>,
 }
 
+///YkGd结构体（用于存储键值对映射）
 #[derive(Debug, Serialize, Deserialize)]
 pub struct YkGd {
+    ///映射表
     pub map: HashMap<String, String>,
 }
 
-/// 每种 type 对应的所有 uda name 和 default value
+///每种类型对应的所有UDA名称和默认值
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Uda {
+    ///引用类型
     pub reference_type: String,
+    ///数据列表（名称，默认值）
     pub data: Vec<(String, String)>,
 }
 
-/// 数据状态对应的数据结构
+///数据状态对应的数据结构
 #[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
 pub struct DataState {
+    ///参考号
     pub refno: RefU64,
+    ///属性类型
     pub att_type: String,
+    ///名称
     pub name: String,
+    ///状态
     pub state: String,
 }
 
+///数据状态向量结构体
 #[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
 pub struct DataStateVec {
+    ///数据状态列表
     pub data_states: Vec<DataState>,
 }
 
-/// 数据状态需要显示的pdms属性
+///数据状态需要显示的PDMS属性
 #[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
 pub struct DataScope {
+    ///参考号
     pub refno: RefU64,
+    ///属性类型
     pub att_type: String,
+    ///名称
     pub name: String,
 }
 
+///数据范围向量结构体
 #[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
 pub struct DataScopeVec {
+    ///数据范围列表
     pub data_scopes: Vec<DataScope>,
 }
 
@@ -835,18 +1299,28 @@ unsafe impl Send for DataScopeVec {}
 
 unsafe impl Sync for DataScopeVec {}
 
+///增量数据SQL结构体，用于记录数据的增量变化
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct IncrementDataSql {
+    ///记录ID
     pub id: String,
+    ///参考号
     pub refno: RefU64,
+    ///操作类型
     pub operate: EleOperation,
+    ///版本号
     pub version: u32,
+    ///用户
     pub user: String,
+    ///旧数据
     pub old_data: AttrMap,
+    ///新数据
     pub new_data: AttrMap,
+    ///时间戳
     pub time: String,
 }
 
+///UDA专业类型枚举，表示PDMS中UDA（用户定义属性）的专业分类
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum UdaMajorType {
     /// 工艺
@@ -890,10 +1364,12 @@ pub enum UdaMajorType {
     /// 多专业
     X,
 
+    /// 未知/空值
     NULL,
 }
 
 impl UdaMajorType {
+    ///从字符串创建UDA专业类型
     pub fn from_str(input: &str) -> Self {
         match input.to_uppercase().as_str() {
             "T" => Self::T,
@@ -909,6 +1385,7 @@ impl UdaMajorType {
         }
     }
 
+    ///转换为专业类型字符串
     pub fn to_major_str(&self) -> String {
         match self {
             UdaMajorType::T => "T".to_string(),
@@ -935,6 +1412,7 @@ impl UdaMajorType {
         }
     }
 
+    ///转换为中文名称
     pub fn to_chinese_name(&self) -> String {
         match self {
             UdaMajorType::T => "工艺".to_string(),
@@ -961,6 +1439,7 @@ impl UdaMajorType {
         }
     }
 
+    ///从中文描述创建UDA专业类型
     pub fn from_chinese_description(input: &str) -> Self {
         match input {
             "管道" | "工艺" => Self::T,
@@ -989,56 +1468,69 @@ impl UdaMajorType {
     }
 }
 
+///PDMS属性ArangoDB结构体
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PdmsAttrArangodb {
+    ///主键
     pub _key: String,
+    ///属性映射表
     #[serde(flatten)]
     pub map: HashMap<String, AttrValAql>,
 }
 
-/// 参考号属于哪个房间
+///参考号属于哪个房间的结构体
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PdmsNodeBelongRoomName {
+    ///参考号
     #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
+    ///房间名称
     pub room_name: String,
 }
 
+///PDMS名称与房间名称关联结构体
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PdmsNameBelongRoomName {
+    ///参考号
     #[serde_as(as = "DisplayFromStr")]
     pub refno: RefU64,
+    ///名称
     #[serde_as(as = "DisplayFromStr")]
     pub name: String,
+    ///房间名称
     pub room_name: String,
 }
 
-/// 房间下的所有节点
+///房间下的所有节点结构体
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RoomNodes {
+    ///房间名称
     #[serde_as(as = "DisplayFromStr")]
     pub room_name: String,
+    ///节点列表
     pub nodes: Vec<String>,
 }
 
+///元素操作类型枚举
 #[derive(
     PartialEq, Debug, Default, Clone, Copy, Serialize_repr, Deserialize_repr, SurrealValue,
 )]
 #[repr(i32)]
 pub enum EleOperation {
     #[default]
-    Add = 0,
-    Modified = 1,
-    GeometryModified = 2,
-    Deleted = 3,
-    Duplicate = 4,
-    None = 5,
+    Add = 0, // 添加
+    Modified = 1, // 修改
+    GeometryModified = 2, // 几何修改
+    Deleted = 3, // 删除
+    Duplicate = 4, // 复制
+    None = 5, // 无操作
 }
 
 impl EleOperation {
+    ///转换为数字
     pub fn into_num(&self) -> i32 {
         match &self {
             EleOperation::Add => 0,

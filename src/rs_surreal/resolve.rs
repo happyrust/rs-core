@@ -1,6 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::{collections::HashMap, str::FromStr};
-use std::cell::RefCell;
 
 use crate::RefnoEnum;
 use crate::pdms_types::PdmsGenericType;
@@ -55,10 +55,10 @@ pub struct CataContext {
     pub is_tubi: bool,
 
     // 调试信息字段（使用 RefCell 实现内部可变性，仅在 debug_model 开启时使用）
-    pub debug_geo_refno: RefCell<Option<String>>,      // 当前几何体参考号
-    pub debug_geo_type: RefCell<Option<String>>,       // 几何体类型 (SCYL, SBOX等)
-    pub debug_attr_name: RefCell<Option<String>>,      // 当前属性名 (PRAD, PHEI等)
-    pub debug_attr_index: RefCell<Option<usize>>,      // 数组属性的索引
+    pub debug_geo_refno: RefCell<Option<String>>, // 当前几何体参考号
+    pub debug_geo_type: RefCell<Option<String>>,  // 几何体类型 (SCYL, SBOX等)
+    pub debug_attr_name: RefCell<Option<String>>, // 当前属性名 (PRAD, PHEI等)
+    pub debug_attr_index: RefCell<Option<usize>>, // 数组属性的索引
 }
 
 impl Default for CataContext {
@@ -154,7 +154,10 @@ pub async fn get_or_create_cata_context(
     context.insert("RS_DES_REFNO".to_string(), desi_refno.to_string());
     // dbg!(&desi_refno);
     //添加cata的信息
-    crate::debug_model_debug!("🔍 get_or_create_cata_context for desi_refno: {}", desi_refno);
+    crate::debug_model_debug!(
+        "🔍 get_or_create_cata_context for desi_refno: {}",
+        desi_refno
+    );
 
     // 先尝试获取元件库参考号
     let cat_refno_opt = crate::get_cat_refno(desi_refno).await.ok().flatten();
@@ -166,91 +169,95 @@ pub async fn get_or_create_cata_context(
 
         // 直接获取元件库的属性映射
         if let Ok(cata_attmap) = crate::get_named_attmap(cat_refno).await {
-            crate::debug_model_debug!("   ✅ 成功获取元件库 attmap, type: {}", cata_attmap.get_type_str());
+            crate::debug_model_debug!(
+                "   ✅ 成功获取元件库 attmap, type: {}",
+                cata_attmap.get_type_str()
+            );
 
             // dbg!(&cata_attmap);
             context.insert(
                 "RS_CATR_REFNO".to_string(),
                 cata_attmap.get_refno_or_default().to_string(),
             );
-        // dbg!(&cata_attmap);
-        let params = cata_attmap.get_f32_vec("PARA").unwrap_or_default();
+            // dbg!(&cata_attmap);
+            let params = cata_attmap.get_f32_vec("PARA").unwrap_or_default();
 
-        // 🔍 调试输出：打印 PARA 数组
-        crate::debug_model_debug!(
-            "🔍 [PARA] desi_refno={:?}, PARA array: {:?}",
-            desi_refno, params
-        );
+            // 🔍 调试输出：打印 PARA 数组
+            crate::debug_model_debug!(
+                "🔍 [PARA] desi_refno={:?}, PARA array: {:?}",
+                desi_refno,
+                params
+            );
 
-        for i in 0..params.len() {
-            context.insert(format!("CPAR{}", i + 1), params[i].to_string());
-            context.insert(format!("PARA{}", i + 1), params[i].to_string());
-            context.insert(format!("PARAM{}", i + 1), params[i].to_string());
-            context.insert(format!("IPARA{}", i + 1), "0".to_string());
-            context.insert(format!("IPAR{}", i + 1), "0".to_string());
-        }
-        let mut owner_ref = desi_att.get_owner();
-        //todo 需要换掉
-        let mut owner_att = crate::get_named_attmap(owner_ref).await?;
-        //todo use a single query to get all the ancestors' attmap
-        while !owner_att.contains_key("GTYP") {
-            if owner_att.get_refno().is_none() || owner_att.get_type_str() == "ZONE" {
-                break;
-            }
-            owner_ref = owner_att.get_owner();
-            // owner_att = crate::get_named_attmap(owner_ref).await.unwrap_or_default();
-            owner_att = crate::get_named_attmap(owner_ref).await?;
-        }
-
-        //dtse 的信息处理
-        let dtre_refno = cata_attmap.get_foreign_refno("DTRE").unwrap_or_default();
-        crate::debug_model_debug!("🔍 DTRE refno: {}", dtre_refno);
-        let children = crate::get_children_named_attmaps(dtre_refno).await?;
-        crate::debug_model_debug!("🔍 DTRE children count: {}", children.len());
-        //如果只查部分数据，可以改一下接口
-        for child in children {
-            if let Some(k) = child.get_as_string("DKEY") {
-                let key = format!("RPRO_{}", &k);
-                let exp = child.get_as_string("PPRO").unwrap_or_default();
-                let default_key = format!("{}_default_expr", key);
-                let default_expr = child.get_as_string("DPRO").unwrap_or_default();
-                let type_key = format!("{}_default_type", key);
-                let type_value = child.get_as_string("PTYP").unwrap_or_default();
-                crate::debug_model_debug!("🔍 添加 RPRO 键: {} = {}", key, exp);
-                context.insert(key, exp);
-                context.insert(default_key, default_expr);
-                context.insert(type_key, type_value);
-            }
-        }
-
-        let desp = owner_att.get_f32_vec("DESP").unwrap_or_default();
-        for i in 0..desp.len() {
-            context.insert(format!("ODES{}", i + 1), desp[i].to_string());
-        }
-        //找到owner 参考号，再找到它的元件库params
-        if let Ok(parent_cat_am) = crate::get_cat_attmap(owner_ref).await {
-            let params = parent_cat_am.get_f32_vec("PARA").unwrap_or_default();
             for i in 0..params.len() {
-                context.insert(format!("OPAR{}", i + 1), params[i].to_string());
+                context.insert(format!("CPAR{}", i + 1), params[i].to_string());
+                context.insert(format!("PARA{}", i + 1), params[i].to_string());
+                context.insert(format!("PARAM{}", i + 1), params[i].to_string());
+                context.insert(format!("IPARA{}", i + 1), "0".to_string());
+                context.insert(format!("IPAR{}", i + 1), "0".to_string());
             }
-        }
-        let cref = desi_att.get_foreign_refno("CREF");
-        if cref.is_some()
-            && let Ok(c_att) = crate::get_named_attmap(cref.unwrap()).await
-        {
-            let desp = c_att.get_f32_vec("DESP").unwrap_or_default();
-            for i in 0..desp.len() {
-                context.insert(format!("ADES{}", i + 1), desp[i].to_string());
+            let mut owner_ref = desi_att.get_owner();
+            //todo 需要换掉
+            let mut owner_att = crate::get_named_attmap(owner_ref).await?;
+            //todo use a single query to get all the ancestors' attmap
+            while !owner_att.contains_key("GTYP") {
+                if owner_att.get_refno().is_none() || owner_att.get_type_str() == "ZONE" {
+                    break;
+                }
+                owner_ref = owner_att.get_owner();
+                // owner_att = crate::get_named_attmap(owner_ref).await.unwrap_or_default();
+                owner_att = crate::get_named_attmap(owner_ref).await?;
             }
-            let c_refno = c_att.get_refno().unwrap_or_default();
 
-            if let Ok(attach_cat_am) = crate::get_cat_attmap(c_refno).await {
-                let params = attach_cat_am.get_f32_vec("PARA").unwrap_or_default();
-                for i in 0..params.len() {
-                    context.insert(format!("APAR{}", i + 1), params[i].to_string());
+            //dtse 的信息处理
+            let dtre_refno = cata_attmap.get_foreign_refno("DTRE").unwrap_or_default();
+            crate::debug_model_debug!("🔍 DTRE refno: {}", dtre_refno);
+            let children = crate::get_children_named_attmaps(dtre_refno).await?;
+            crate::debug_model_debug!("🔍 DTRE children count: {}", children.len());
+            //如果只查部分数据，可以改一下接口
+            for child in children {
+                if let Some(k) = child.get_as_string("DKEY") {
+                    let key = format!("RPRO_{}", &k);
+                    let exp = child.get_as_string("PPRO").unwrap_or_default();
+                    let default_key = format!("{}_default_expr", key);
+                    let default_expr = child.get_as_string("DPRO").unwrap_or_default();
+                    let type_key = format!("{}_default_type", key);
+                    let type_value = child.get_as_string("PTYP").unwrap_or_default();
+                    // crate::debug_model_debug!("🔍 添加 RPRO 键: {} = {}", key, exp);
+                    context.insert(key, exp);
+                    context.insert(default_key, default_expr);
+                    context.insert(type_key, type_value);
                 }
             }
-        }
+
+            let desp = owner_att.get_f32_vec("DESP").unwrap_or_default();
+            for i in 0..desp.len() {
+                context.insert(format!("ODES{}", i + 1), desp[i].to_string());
+            }
+            //找到owner 参考号，再找到它的元件库params
+            if let Ok(parent_cat_am) = crate::get_cat_attmap(owner_ref).await {
+                let params = parent_cat_am.get_f32_vec("PARA").unwrap_or_default();
+                for i in 0..params.len() {
+                    context.insert(format!("OPAR{}", i + 1), params[i].to_string());
+                }
+            }
+            let cref = desi_att.get_foreign_refno("CREF");
+            if cref.is_some()
+                && let Ok(c_att) = crate::get_named_attmap(cref.unwrap()).await
+            {
+                let desp = c_att.get_f32_vec("DESP").unwrap_or_default();
+                for i in 0..desp.len() {
+                    context.insert(format!("ADES{}", i + 1), desp[i].to_string());
+                }
+                let c_refno = c_att.get_refno().unwrap_or_default();
+
+                if let Ok(attach_cat_am) = crate::get_cat_attmap(c_refno).await {
+                    let params = attach_cat_am.get_f32_vec("PARA").unwrap_or_default();
+                    for i in 0..params.len() {
+                        context.insert(format!("APAR{}", i + 1), params[i].to_string());
+                    }
+                }
+            }
         } else {
             crate::debug_model_debug!("   ❌ 无法获取元件库 attmap for cat_refno: {}", cat_refno);
         }
@@ -303,14 +310,20 @@ pub fn eval_str_to_f64(
     dtse_unit: &str,
 ) -> anyhow::Result<f64> {
     // 🔍 调试：记录输入的表达式（特别是包含 RPRO 的）
-    if crate::debug_macros::is_debug_model_enabled() && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB")) {
-        crate::debug_model_debug!("🔍 eval_str_to_f64 输入表达式: {}", input_expr);
+    if crate::debug_macros::is_debug_model_enabled()
+        && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB"))
+    {
+        // crate::debug_model_debug!("🔍 eval_str_to_f64 输入表达式: {}", input_expr);
 
         // 如果表达式缺少右括号，打印警告
         let left_count = input_expr.matches('(').count();
         let right_count = input_expr.matches(')').count();
         if left_count != right_count {
-            crate::debug_model_debug!("   ⚠️  括号不匹配！左括号: {}, 右括号: {}", left_count, right_count);
+            crate::debug_model_debug!(
+                "   ⚠️  括号不匹配！左括号: {}, 右括号: {}",
+                left_count,
+                right_count
+            );
         }
 
         // 打印 context 中所有包含 RPRO 的键
@@ -319,7 +332,7 @@ pub fn eval_str_to_f64(
         for entry in context.context.iter() {
             let key = entry.key();
             if key.contains("RPRO") {
-                crate::debug_model_debug!("     {} = {}", key, entry.value());
+                // crate::debug_model_debug!("     {} = {}", key, entry.value());
                 found_rpro = true;
             }
         }
@@ -353,7 +366,9 @@ pub fn eval_str_to_f64(
     let mut new_exp = prepare_eval_str(input_expr);
 
     // 🔍 调试：记录 prepare_eval_str 后的表达式
-    if crate::debug_macros::is_debug_model_enabled() && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB")) {
+    if crate::debug_macros::is_debug_model_enabled()
+        && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB"))
+    {
         crate::debug_model_debug!("   📝 prepare_eval_str 后: {}", new_exp);
     }
 
@@ -469,7 +484,8 @@ pub fn eval_str_to_f64(
     let mut uda_context = HashMap::new();
 
     // 🔍 调试：记录循环开始
-    let is_debug_rpro = crate::debug_macros::is_debug_model_enabled() && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB"));
+    let is_debug_rpro = crate::debug_macros::is_debug_model_enabled()
+        && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB"));
     if is_debug_rpro {
         crate::debug_model_debug!("   🔁 开始替换循环，初始表达式: {}", result_exp);
     }
@@ -591,7 +607,9 @@ pub fn eval_str_to_f64(
         let attrib_rpro_re = Regex::new(r"ATTRIB\s+RPRO\s+([a-zA-Z0-9_]+)").unwrap();
         if result_exp.contains("ATTRIB") && result_exp.contains("RPRO") {
             crate::debug_model_debug!("   🔄 替换前: {}", result_exp);
-            result_exp = attrib_rpro_re.replace_all(&result_exp, "RPRO_$1").to_string();
+            result_exp = attrib_rpro_re
+                .replace_all(&result_exp, "RPRO_$1")
+                .to_string();
             crate::debug_model_debug!("   🔄 替换 ATTRIB RPRO 后: {}", result_exp);
             found_replaced = true;
         }
@@ -742,7 +760,9 @@ pub fn eval_str_to_f64(
                 let geo_refno_str = context.debug_geo_refno.borrow().clone().unwrap_or_default();
                 let geo_type_str = context.debug_geo_type.borrow().clone().unwrap_or_default();
                 let attr_name_str = context.debug_attr_name.borrow().clone().unwrap_or_default();
-                let attr_index_str = context.debug_attr_index.borrow()
+                let attr_index_str = context
+                    .debug_attr_index
+                    .borrow()
                     .map(|i| format!("[{}]", i))
                     .unwrap_or_default();
 
@@ -763,9 +783,7 @@ pub fn eval_str_to_f64(
                     // 没有调试信息，使用原有格式
                     println!(
                         "处理{}时，{}元件库里的输入表达式有误 : {}",
-                        des_refno_str,
-                        cata_refno_str,
-                        &input_expr
+                        des_refno_str, cata_refno_str, &input_expr
                     );
                 }
 

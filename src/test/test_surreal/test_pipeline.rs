@@ -1,6 +1,6 @@
-use crate::{RefnoEnum, query_filter_all_bran_hangs};
 use crate::pdms_types::PdmsGenericType;
 use crate::pipeline::{PipelineQueryService, PipelineSegmentRecord};
+use crate::{RefnoEnum, query_filter_all_bran_hangs};
 
 #[tokio::test]
 async fn pipeline_fetch_branch_segments_provides_spans() -> anyhow::Result<()> {
@@ -16,7 +16,8 @@ async fn pipeline_fetch_branch_segments_provides_spans() -> anyhow::Result<()> {
 
     let mut chosen = None;
     for branch in branches {
-        let segments: Vec<PipelineSegmentRecord> = PipelineQueryService::fetch_branch_segments(branch.clone()).await?;
+        let segments: Vec<PipelineSegmentRecord> =
+            PipelineQueryService::fetch_branch_segments(branch.clone()).await?;
         if !segments.is_empty() {
             chosen = Some((branch, segments));
             break;

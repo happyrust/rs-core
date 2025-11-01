@@ -54,23 +54,48 @@ pub struct CataHashGroupQueryResult {
     pub v: Vec<RefnoEnum>,
 }
 
-///通过surql查询pe数据
+#[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
+pub struct RefnoDatetime {
+    pub refno: RefnoEnum,
+    pub dt: Datetime,
+}
+
+/// 通过surql查询PE（Plant Element）数据
+///
+/// 根据参考号查询对应的工厂元素数据，结果会被缓存以提高性能。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+///
+/// # 返回值
+/// * `Result<Option<SPdmsElement>>` - 成功时返回可选的工厂元素数据
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
 #[cached(result = true)]
 pub async fn get_pe(refno: RefnoEnum) -> anyhow::Result<Option<SPdmsElement>> {
     let sql = format!(
         r#"select * omit id from only {} limit 1;"#,
         refno.to_pe_key()
     );
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let pe: Option<SPdmsElement> = response.take(0)?;
-    Ok(pe)
+    SUL_DB.query_take::<Option<SPdmsElement>>(&sql, 0).await
 }
 
+/// 获取元素的默认名称
+///
+/// 查询指定参考号对应的默认名称。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+///
+/// # 返回值
+/// * `Result<Option<String>>` - 成功时返回可选的名称字符串
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
 pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>> {
     let sql = format!("return fn::default_name({});", refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let pe: Option<String> = response.take(0)?;
-    Ok(pe)
+    SUL_DB.query_take::<Option<String>>(&sql, 0).await
 }
 
 ///查询到祖先节点列表
@@ -87,9 +112,7 @@ pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>
 #[cached(result = true)]
 pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!("return fn::ancestor({}).refno;", refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let s = response.take::<Vec<RefnoEnum>>(0);
-    Ok(s?)
+    SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }
 
 /// 查询指定类型的第一个祖先节点
@@ -103,32 +126,41 @@ pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<Refno
 ///
 /// # 错误
 /// * 如果查询失败会返回错误
-#[cached(result = true)]
-pub async fn query_ancestor_of_type(
+#[cached(
+    result = true,
+    key = "(RefnoEnum, String)",
+    convert = r#"{ (refno, ancestor_type.to_string()) }"#
+)]
+pub async fn query_ancestor_refno_by_type(
     refno: RefnoEnum,
-    ancestor_type: String,
+    ancestor_type: &str,
 ) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(
-        "return fn::find_ancestor_type({}, '{}');",
+        "return fn::ancestor({})[where noun='{}'][0]?.refno;",
         refno.to_pe_key(),
         ancestor_type
     );
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let ancestor: Option<RefnoEnum> = response.take(0)?;
-    Ok(ancestor)
+    SUL_DB.query_take::<Option<RefnoEnum>>(&sql, 0).await
 }
 
 // #[cached(result = true)]
-/// 通过名称查询refno
+/// 通过元素名称查询参考号
+///
+/// 根据元素的完整路径名称查询对应的参考号。
 ///
 /// # 参数
-/// * `name` - 要查询的名称
+/// * `name` - 要查询的元素完整路径名称（以'/'开头）
 ///
 /// # 返回值
-/// * `Option<RefnoEnum>` - 如果找到则返回对应的refno,否则返回None
+/// * `Result<Option<RefnoEnum>>` - 成功时返回可选的参考号
 ///
 /// # 错误
-/// * 如果查询失败会返回错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let refno = get_refno_by_name("/plant/equipment/pump1").await?;
+/// ```
 pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(
         r#"select value id from only pe where name="/{}" limit 1;"#,
@@ -153,9 +185,7 @@ pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> 
 #[cached(result = true)]
 pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
     let sql = format!("return fn::ancestor({}).noun;", refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let s = response.take::<Vec<String>>(0);
-    Ok(s?)
+    SUL_DB.query_take::<Vec<String>>(&sql, 0).await
 }
 
 ///查询到祖先节点属性数据
@@ -171,8 +201,7 @@ pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>>
 /// * 如果查询失败会返回错误
 pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
     let sql = format!("return fn::ancestor({}).refno.*;", refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let raw_values: Vec<SurlValue> = response.take(0)?;
+    let raw_values: Vec<SurlValue> = SUL_DB.query_take(&sql, 0).await?;
     // 过滤掉 NONE 值
     let named_attmaps: Vec<NamedAttrMap> = raw_values
         .into_iter()
@@ -194,53 +223,118 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
 #[cached(result = true)]
 pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
     let sql = format!("select value noun from only {} limit 1", refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let type_name: Option<String> = response.take(0)?;
+    let type_name: Option<String> = SUL_DB.query_take(&sql, 0).await?;
     Ok(type_name.unwrap_or("unset".to_owned()))
 }
 
-/// 批量获取多个refno的类型名称
+/// 批量获取多个参考号的类型名称
+///
+/// 根据提供的参考号迭代器，批量查询每个参考号对应的类型名称。
 ///
 /// # 参数
-/// * `refnos` - refno迭代器
+/// * `refnos` - 参考号迭代器，包含要查询的参考号列表
 ///
 /// # 返回值
-/// * `Vec<String>` - 类型名称列表
+/// * `Result<Vec<String>>` - 成功时返回类型名称列表，与输入参考号顺序一致
+///
+/// # 错误
+/// 如果查询过程中发生错误，返回错误信息
+///
+/// # 示例
+/// ```
+/// let refnos = vec![refno1, refno2, refno3];
+/// let type_names = get_type_names(refnos.iter()).await?;
+/// ```
 pub async fn get_type_names(
     refnos: impl Iterator<Item = &RefnoEnum>,
 ) -> anyhow::Result<Vec<String>> {
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let mut response = SUL_DB
-        .query(format!(r#"select value noun from [{}]"#, pe_keys))
-        .await?;
-    let type_names: Vec<String> = response.take(0)?;
+    let sql = format!(r#"select value noun from [{}]"#, pe_keys);
+    let type_names: Vec<String> = SUL_DB.query_take(&sql, 0).await?;
     Ok(type_names)
 }
 
-#[cached(result = true)]
+/// 获取拥有者类型名称
+///
+/// 根据参考号查询其拥有者（owner）的类型名称。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+///
+/// # 返回值
+/// * `Result<String>` - 成功时返回拥有者的类型名称
+///
+/// # 错误
+/// 如果查询失败或找不到拥有者，返回错误信息
+///
+/// # 注意
+/// 此函数会查询参考号对应的拥有者，然后返回拥有者的类型名称。
+/// 如果参考号没有拥有者或查询失败，将返回错误。
 pub async fn get_owner_type_name(refno: RefU64) -> anyhow::Result<String> {
     let sql = format!(
         "return (select value owner.noun from only (type::record('pe', {})));",
         refno.to_pe_key()
     );
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    // dbg!(&response);
-    let type_name: Option<String> = response.take(0)?;
-    Ok(type_name.unwrap_or_default())
+    let owner_type: Option<String> = SUL_DB.query_take(&sql, 0).await?;
+    owner_type.ok_or_else(|| anyhow::anyhow!("Owner not found for refno: {}", refno))
 }
-
+/// 获取元素自身及其拥有者的类型名称
+///
+/// 查询指定参考号对应的元素类型名称及其直接拥有者的类型名称。
+/// 结果会被缓存以提高性能。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+///
+/// # 返回值
+/// * `Result<Vec<String>>` - 包含两个元素的向量：
+///   - 第一个元素是元素自身的类型名称
+///   - 第二个元素是拥有者的类型名称（如果没有拥有者则为空字符串）
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let types = get_type_and_owner_type(refno).await?;
+/// let self_type = &types[0];  // 元素自身类型
+/// let owner_type = &types[1]; // 拥有者类型
+/// ```
 #[cached(result = true)]
-pub async fn get_self_and_owner_type_name(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
+pub async fn get_type_and_owner_type(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
     let sql = format!(
         "select value [noun, owner.noun] from only {} limit 1",
         refno.to_pe_key()
     );
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let type_name: Vec<String> = response.take(0)?;
-    Ok(type_name)
+    SUL_DB.query_take::<Vec<String>>(&sql, 0).await
 }
 
-///在父节点下的index, noun 有值时按照 noun 过滤
+/// 获取元素在父节点下的索引位置
+///
+/// 根据元素在父节点下的位置返回其索引值，可选按类型过滤。
+///
+/// # 参数
+/// * `parent` - 父节点的参考号
+/// * `refno` - 要查询的子节点参考号
+/// * `noun` - 可选参数，如果提供则只统计该类型的子节点
+///
+/// # 返回值
+/// * `Result<Option<u32>>` - 成功时返回子节点的索引（从0开始），如果未找到则返回None
+///
+/// # 错误
+/// 如果查询子节点列表或类型名称时出错，返回错误信息
+///
+/// # 示例
+/// ```
+/// // 获取在父节点下的所有子节点中的索引
+/// let index = get_index_by_noun_in_parent(parent_refno, child_refno, None).await?;
+///
+/// // 只统计特定类型的子节点中的索引
+/// let index = get_index_by_noun_in_parent(parent_refno, child_refno, Some("PIPE")).await?;
+/// ```
+///
+/// 该函数使用 SurrealDB 的图查询功能直接获取元素在父节点下的索引。
+/// 通过使用图查询，可以提高性能并减少数据库查询次数。
 pub async fn get_index_by_noun_in_parent(
     parent: RefnoEnum,
     refno: RefnoEnum,
@@ -258,45 +352,73 @@ pub async fn get_index_by_noun_in_parent(
         },
         refno.to_pe_key()
     );
-    // println!("sql is {}", &sql);
-
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    // dbg!(&response);
-    let type_name: Option<u32> = response.take(0)?;
-    Ok(type_name)
+    SUL_DB.query_take(&sql, 0).await
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
-pub struct RefnoDatetime {
-    pub refno: RefnoEnum,
-    pub dt: Datetime,
-}
-
-///获取上一个版本的参考号
+/// 获取上一个版本的参考号及时间戳
+///
+/// 查询指定参考号的上一个历史版本的参考号及其对应的时间戳。
+///
+/// # 参数
+/// * `refno_enum` - 当前版本的参考号
+///
+/// # 返回值
+/// * `Result<Option<RefnoDatetime>>` - 成功时返回包含参考号和时间戳的元组，如果没有上一个版本则返回None
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 注意
+/// 此函数通过查询`old_pe`字段获取上一个版本的参考号
 pub async fn query_prev_dt_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoDatetime>> {
     let sql = format!(
         "select old_pe as refno, fn::ses_date(old_pe) as dt from only {} where old_pe!=none limit 1;",
         refno_enum.to_pe_key(),
     );
     // println!("query_prev_version_refno sql is {}", &sql);
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let refno: Option<RefnoDatetime> = response.take(0)?;
-    Ok(refno)
+    SUL_DB.query_take::<Option<RefnoDatetime>>(&sql, 0).await
 }
 
-///获取当前版本的参考号, 带日期的参考号
+/// 获取带时间戳的当前版本参考号
+///
+/// 查询指定参考号及其对应的时间戳信息。
+///
+/// # 参数
+/// * `refno_enum` - 要查询的参考号
+///
+/// # 返回值
+/// * `Result<Option<RefnoDatetime>>` - 成功时返回包含参考号和时间戳的元组
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 注意
+/// 此函数通过`fn::ses_date`函数获取参考号对应的时间戳
 pub async fn query_dt_refno(refno_enum: RefnoEnum) -> anyhow::Result<Option<RefnoDatetime>> {
     let sql = format!(
         "select id as refno, fn::ses_date(id) as dt from only {} limit 1;",
         refno_enum.to_pe_key(),
     );
     // println!("query_dt_refno sql is {}", &sql);
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let refno: Option<RefnoDatetime> = response.take(0)?;
-    Ok(refno)
+    SUL_DB.query_take::<Option<RefnoDatetime>>(&sql, 0).await
 }
 
-// //获取上一个版本的属性数据
+/// 获取上一个版本的UI属性映射
+///
+/// 查询指定参考号的上一个历史版本的UI属性映射。
+///
+/// # 参数
+/// * `refno_enum` - 当前版本的参考号
+///
+/// # 返回值
+/// * `Result<NamedAttrMap>` - 成功时返回上一个版本的属性映射，如果不存在上一个版本则返回空映射
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 注意
+/// 此函数会先通过`query_prev_dt_refno`获取上一个版本的参考号，
+/// 然后调用`get_ui_named_attmap`获取该版本的属性映射
 pub async fn get_ui_named_attmap_prev_version(
     refno_enum: RefnoEnum,
 ) -> anyhow::Result<NamedAttrMap> {
@@ -306,6 +428,21 @@ pub async fn get_ui_named_attmap_prev_version(
     Ok(NamedAttrMap::default())
 }
 
+/// 查询子节点的完整名称映射
+///
+/// 获取指定父节点下所有子节点的参考号与完整名称的映射关系。
+///
+/// # 参数
+/// * `refno` - 父节点的参考号
+///
+/// # 返回值
+/// * `Result<IndexMap<RefnoEnum, String>>` - 成功时返回子节点参考号到完整名称的映射
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 注意
+/// 使用图查询获取所有通过pe_owner关系连接的子节点，并获取它们的完整路径名称
 pub async fn query_children_full_names_map(
     refno: RefnoEnum,
 ) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
@@ -320,28 +457,60 @@ pub async fn query_children_full_names_map(
     Ok(map)
 }
 
+/// 批量查询多个参考号的完整名称映射
+///
+/// 获取多个参考号对应的完整名称映射关系。
+///
+/// # 参数
+/// * `refnos` - 参考号切片
+///
+/// # 返回值
+/// * `Result<IndexMap<RefnoEnum, String>>` - 成功时返回参考号到完整名称的映射
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 注意
+/// 此函数会批量查询多个参考号的完整路径名称，适用于需要获取多个元素的完整路径名称的场景
 pub async fn query_full_names_map(
     refnos: &[RefnoEnum],
 ) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
     let mut response = SUL_DB
         .query(format!(
-            "select value fn::default_full_name(id) from [{}]",
-            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+            "select value [id, fn::default_full_name(id)] from {}",
+            refnos
+                .iter()
+                .map(|x| x.to_pe_key())
+                .collect::<Vec<_>>()
+                .join(",")
         ))
         .await?;
-    let names: Vec<String> = response.take(0)?;
-    let map = IndexMap::from_iter(refnos.iter().cloned().zip(names));
+    let map: Vec<(RefnoEnum, String)> = response.take(0)?;
+    let map = IndexMap::from_iter(map);
     Ok(map)
 }
 
+/// 批量查询多个参考号的完整名称列表
+///
+/// 获取多个参考号对应的完整名称列表，保持与输入参考号相同的顺序。
+///
+/// # 参数
+/// * `refnos` - 参考号切片
+///
+/// # 返回值
+/// * `Result<Vec<String>>` - 成功时返回完整名称的列表，与输入参考号顺序一致
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 注意
+/// 此函数返回的名称列表顺序与输入参考号的顺序一致
 pub async fn query_full_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String>> {
-    let mut response = SUL_DB
-        .query(format!(
-            "select value fn::default_full_name(id) from [{}]",
-            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
-        ))
-        .await?;
-    let names: Vec<String> = response.take(0)?;
+    let sql = format!(
+        "select value fn::default_full_name(id) from [{}]",
+        refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+    );
+    let names: Vec<String> = SUL_DB.query_take(&sql, 0).await?;
     Ok(names)
 }
 
@@ -363,13 +532,11 @@ pub async fn query_full_names(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String
 pub async fn query_data_with_refno_to_name(
     refno: RefnoEnum,
 ) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
-    let mut response = SUL_DB
-        .query(format!(
-            "select value [in, fn::default_full_name(in)] from {}<-pe_owner where record::exists(in)",
-            refno.to_pe_key()
-        ))
-        .await?;
-    let map: Vec<(RefnoEnum, String)> = response.take(0)?;
+    let sql = format!(
+        "select value [in, fn::default_full_name(in)] from {}<-pe_owner where record::exists(in)",
+        refno.to_pe_key()
+    );
+    let map: Vec<(RefnoEnum, String)> = SUL_DB.query_take(&sql, 0).await?;
     let map = IndexMap::from_iter(map);
     Ok(map)
 }
@@ -390,13 +557,11 @@ pub async fn query_data_with_refno_to_name(
 pub async fn query_multiple_refnos_to_names(
     refnos: &[RefnoEnum],
 ) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
-    let mut response = SUL_DB
-        .query(format!(
-            "select value fn::default_full_name(id) from [{}]",
-            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
-        ))
-        .await?;
-    let names: Vec<String> = response.take(0)?;
+    let sql = format!(
+        "select value fn::default_full_name(id) from [{}]",
+        refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+    );
+    let names: Vec<String> = SUL_DB.query_take(&sql, 0).await?;
     let map = IndexMap::from_iter(refnos.iter().cloned().zip(names));
     Ok(map)
 }
@@ -415,13 +580,11 @@ pub async fn query_multiple_refnos_to_names(
 ///
 /// 如果查询失败，将返回一个错误
 pub async fn query_refnos_to_names_list(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<String>> {
-    let mut response = SUL_DB
-        .query(format!(
-            "select value fn::default_full_name(id) from [{}]",
-            refnos.into_iter().map(|x| x.to_pe_key()).join(",")
-        ))
-        .await?;
-    let names: Vec<String> = response.take(0)?;
+    let sql = format!(
+        "select value fn::default_full_name(id) from [{}]",
+        refnos.into_iter().map(|x| x.to_pe_key()).join(",")
+    );
+    let names: Vec<String> = SUL_DB.query_take(&sql, 0).await?;
     Ok(names)
 }
 
@@ -531,17 +694,14 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
 #[cached(result = true)]
 pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(r#"(select * from {}.refno)[0];"#, refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let named_attmap: Option<NamedAttrMap> = response.take(0)?;
+    let named_attmap: Option<NamedAttrMap> = SUL_DB.query_take(&sql, 0).await?;
     Ok(named_attmap.unwrap_or_default())
 }
 
 #[cached(result = true)]
 pub async fn get_siblings(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!("select value in from {}<-pe_owner", refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let refnos: Vec<RefnoEnum> = response.take(0)?;
-    Ok(refnos)
+    SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }
 
 #[cached(result = true)]
@@ -567,122 +727,157 @@ pub async fn get_next_prev(refno: RefnoEnum, next: bool) -> anyhow::Result<Refno
 #[cached(result = true)]
 pub async fn get_default_full_name(refno: RefnoEnum) -> anyhow::Result<String> {
     let sql = format!("RETURN fn::default_full_name({})", refno.to_pe_key());
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let result: Option<String> = response.take(0)?;
-
+    let result: Option<String> = SUL_DB.query_take(&sql, 0).await?;
     Ok(result.unwrap_or_default())
 }
 
-///通过surql查询属性数据，包含UDA数据
+/// 通过surql查询属性数据，包含UDA数据
+///
+/// 这个函数用于获取指定参考号的属性映射，包括其UDA（用户定义属性）数据。
+/// 如果结果已被缓存，则直接返回缓存的结果。
+///
+/// # 参数
+///
+/// * `refno_enum` - 要查询的参考号
+///
+/// # 返回值
+///
+/// 返回一个包含所有属性和UDA的`NamedAttrMap`
+///
+/// # 错误
+///
+/// 如果查询失败，返回错误信息
 #[cached(result = true)]
 pub(crate) async fn get_named_attmap_with_uda(
     refno_enum: RefnoEnum,
 ) -> anyhow::Result<NamedAttrMap> {
+    // 构建SQL查询语句，包含三个主要部分：
+    // 1. 查询元素的基本属性和PE（Plant Element）信息
+    // 2. 查询默认的UDA（用户定义属性）
+    // 3. 查询覆盖的UDA值
     let sql = format!(
         r#"
-        --通过传递refno，查询属性值
+        -- 1. 通过refno查询元素的完整名称和所有属性
         select fn::default_full_name(REFNO) as NAME, * from only {0}.refno fetch pe;
-        select string::concat(':', if UDNA==none || string::len(UDNA)==0 {{ DYUDNA }} else {{ UDNA }}) as u, DFLT as v, UTYP as t from UDA where !UHIDE and {0}.noun in ELEL;
-        -- uda 单独做个查询？
-        select string::concat(':', if u.UDNA==none || string::len( u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u, u.UTYP as t, v from (ATT_UDA:{1}).udas where u.UTYP != none;
+        
+        -- 2. 查询默认的UDA（用户定义属性）
+        -- 如果UDNA为空，则使用DYUDNA作为属性名
+        select string::concat(':', if UDNA==none || string::len(UDNA)==0 {{ DYUDNA }} else {{ UDNA }}) as u, 
+               DFLT as v, 
+               UTYP as t 
+        from UDA 
+        where !UHIDE and {0}.noun in ELEL;
+        
+        -- 3. 查询覆盖的UDA值
+        -- 从ATT_UDA表中获取覆盖的UDA值
+        select string::concat(':', if u.UDNA==none || string::len(u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u, 
+               u.UTYP as t, 
+               v 
+        from (ATT_UDA:{1}).udas 
+        where u.UTYP != none;
         "#,
-        refno_enum.to_pe_key(),
-        refno_enum.refno()
+        refno_enum.to_pe_key(),  // 转换为PE键名格式
+        refno_enum.refno()       // 获取参考号
     );
 
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-
-    #[derive(Deserialize, SurrealValue)]
-    struct AttrKV {
+    // 定义用于反序列化UDA键值对的结构体
+    #[derive(Debug, Deserialize, SurrealValue)]
+    struct UdaKv {
         u: String,
-        t: String,
+        t: Option<String>,
         v: SurlValue,
     }
-    //获得uda的 map
-    // dbg!(&response);
+
+    // 执行查询并依次处理三个结果集
+    let mut response = SUL_DB.query_response(&sql).await?;
     let mut named_attmap = response
         .take::<Option<NamedAttrMap>>(0)?
         .unwrap_or_default();
-    // dbg!(&named_attmap);
-    let uda_kvs: Vec<AttrKV> = response.take(1)?;
-    for AttrKV {
-        u: uname,
-        t: utype,
-        v,
-    } in uda_kvs
-    {
-        if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
-            continue;
+
+    let mut apply_uda_entries = |entries: Vec<UdaKv>| {
+        for UdaKv { u: uname, t, v } in entries {
+            if uname == ":NONE" || uname == ":unset" || uname.is_empty() {
+                continue;
+            }
+            let type_name = t.as_deref().unwrap_or("TEXT");
+            let att_value = NamedAttrValue::from((type_name, v));
+            named_attmap.insert(uname, att_value);
         }
-        let att_value = NamedAttrValue::from((utype.as_str(), v));
-        named_attmap.insert(uname, att_value);
-    }
-    let overwrite_kvs: Vec<AttrKV> = response.take(2)?;
-    for AttrKV {
-        u: uname,
-        t: utype,
-        v,
-    } in overwrite_kvs
-    {
-        if uname.as_str() == ":NONE" || uname.as_str() == ":unset" || uname.is_empty() {
-            continue;
-        }
-        let att_value = NamedAttrValue::from((utype.as_str(), v));
-        named_attmap.insert(uname, att_value);
-    }
+    };
+
+    apply_uda_entries(response.take(1)?);
+    apply_uda_entries(response.take(2)?);
+
     Ok(named_attmap)
 }
 
 pub const CATR_QUERY_STR: &'static str = "refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE, refno.SPRE.refno.CATR, refno.CATR";
 
+/// 获取元素的CATR参考号
+///
+/// 这个函数会尝试通过两种方式获取元素的CATR参考号：
+/// 1. 直接查询元素的CATR属性
+/// 2. 查询元素的SPRE属性，并从其中获取CATR参考号
 #[cached(result = true)]
 pub async fn get_cat_refno(refno: RefnoEnum) -> anyhow::Result<Option<RefnoEnum>> {
-    let sql = format!(
+    // 尝试通过查询属性获取CATR参考号
+    if let Ok(spre_map) = query_single_by_paths(refno, &["->SPRE", "->SPRE->CATR"], &[]).await {
+        // 从SPRE属性中获取CATR参考号
+        if let Some(cat_value) = spre_map.map.get("CATR") {
+            // 从获取的CATR值中提取RefnoEnum类型的参考号
+            if let Some(cat_refno) = extract_refno_enum(cat_value) {
+                return Ok(Some(cat_refno));
+            }
+        }
+    }
+
+    // 尝试通过SQL查询获取CATR参考号
+    query_catr_via_sql(refno).await
+}
+
+/// 通过SQL查询获取元素的CATR参考号
+///
+/// 这个函数会查询元素的CATR属性和SPRE属性，并从中获取CATR参考号。
+/// 如果查询结果为空，则返回None。
+async fn query_catr_via_sql(refno: RefnoEnum) -> anyhow::Result<Option<RefnoEnum>> {
+    let catr_sql = format!(
         r#"
-        select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]]
+        select value array::first(array::flatten([
+            refno.CATR.refno.CATR[where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]],
+            refno.CATR.refno.PRTREF.refno.CATR[where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]],
+            refno.CATR[where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]]
+        ]))
         from only {} limit 1;
     "#,
         refno.to_pe_key()
     );
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let r: Option<RefnoEnum> = response.take(0)?;
-    Ok(r)
+
+    SUL_DB.query_take::<Option<RefnoEnum>>(&catr_sql, 0).await
+}
+
+/// 从命名属性值中提取RefnoEnum类型的参考号
+///
+/// 这个函数会尝试从命名属性值中提取RefnoEnum类型的参考号，
+/// 如果提取失败，则返回None。
+fn extract_refno_enum(value: &NamedAttrValue) -> Option<RefnoEnum> {
+    match value {
+        NamedAttrValue::RefU64Type(r) => Some((*r).clone().into()),
+        NamedAttrValue::RefnoEnumType(r) => Some(*r),
+        NamedAttrValue::RefU64Array(arr) => arr.first().cloned(),
+        _ => None,
+    }
 }
 
 #[cached(result = true)]
 pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
-    crate::debug_model_debug!("🔍 get_cat_attmap for refno: {}", refno);
     let sql = format!(
         r#"
-        (select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN"]].refno.*
+        (select value [{CATR_QUERY_STR}][where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]].refno.*
         from only {} limit 1 fetch SCOM)[0] "#,
         refno.to_pe_key()
     );
-    crate::debug_model_debug!("   SQL: {}", sql);
-    // dbg!(&sql);
-    // println!("sql is {}", &sql);
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    // dbg!(&response);
-    #[derive(Deserialize)]
-    struct AttrKV {
-        u: String,
-        t: String,
-        v: SurlValue,
-    }
-
-    let result: anyhow::Result<NamedAttrMap> = take_single(&mut response, 0);
-    match &result {
-        Ok(named_attmap) => {
-            crate::debug_model_debug!(
-                "   ✅ 成功获取 cat_attmap, refno: {}",
-                named_attmap.get_refno_or_default()
-            );
-        }
-        Err(e) => {
-            crate::debug_model_debug!("   ❌ 获取 cat_attmap 失败: {}", e);
-        }
-    }
-    result
+    let result: Option<NamedAttrMap> = SUL_DB.query_take(&sql, 0).await?;
+    Ok(result.unwrap_or_default())
 }
 
 /// 获取直接子节点的属性映射
@@ -770,12 +965,10 @@ pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEn
     }
 
     let sql = format!(
-        r#"select value in from {}<-pe_owner  where in.id!=none and record::exists(in.id) and !in.deleted"#,
+        r#"select value in from {}<-pe_owner where in.id!=none and record::exists(in.id) and !in.deleted"#,
         refno.to_pe_key()
     );
-    let mut response: Response = SUL_DB.query_response(sql).await?;
-    let refnos: Vec<RefnoEnum> = response.take(0)?;
-    Ok(refnos)
+    SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }
 
 pub async fn query_multi_children_refnos(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<RefnoEnum>> {

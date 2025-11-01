@@ -120,7 +120,12 @@ pub fn resolve_gmse_params(
         .parse::<f32>()
         .unwrap_or(0.0);
     // dbg!(&gm.diameters);
-    crate::debug_model_debug!("🎯 开始求值 DIAMETERS: refno={}, type={}, count={}", gm.refno, gm.gm_type, gm.diameters.len());
+    crate::debug_model_debug!(
+        "🎯 开始求值 DIAMETERS: refno={}, type={}, count={}",
+        gm.refno,
+        gm.gm_type,
+        gm.diameters.len()
+    );
     let diameters: Vec<f32> = gm
         .diameters
         .iter()
@@ -243,7 +248,12 @@ pub fn resolve_gmse_params(
         })
         .collect();
 
-    crate::debug_model_debug!("🎯 开始求值 XYZ: refno={}, type={}, count={}", gm.refno, gm.gm_type, gm.xyz.len());
+    crate::debug_model_debug!(
+        "🎯 开始求值 XYZ: refno={}, type={}, count={}",
+        gm.refno,
+        gm.gm_type,
+        gm.xyz.len()
+    );
     let xyz = gm
         .xyz
         .iter()
