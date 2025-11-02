@@ -1,7 +1,6 @@
-use crate::parsed_data::geo_params_data::CateGeoParam;
-use crate::prim_geo::LCylinder;
-use crate::prim_geo::ctorus::SCTorus;
 use crate::debug_model_debug;
+use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::prim_geo::ctorus::SCTorus;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;
 use crate::prim_geo::extrusion::Extrusion;
@@ -11,6 +10,7 @@ use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
+use crate::prim_geo::LCylinder;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::types::*;
 use bevy_math::prelude::*;
@@ -25,9 +25,9 @@ pub enum ShapeErr {
 }
 
 #[derive(Debug, Clone)]
-pub struct CateBrepShape {
+pub struct CateCsgShape {
     pub refno: RefnoEnum,
-    pub brep_shape: Box<dyn BrepShapeTrait>,
+    pub csg_shape: Box<dyn BrepShapeTrait>,
     pub transform: Transform,
     pub visible: bool,
     pub is_tubi: bool,
@@ -38,10 +38,21 @@ pub struct CateBrepShape {
     pub is_ngmr: bool,
 }
 
-///转换成brep shape
-pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
+/// 将几何参数（CateGeoParam）转换为CSG形状（CateCsgShape）
+///
+/// 该函数根据输入的几何参数类型（如金字塔、圆环、盒子等）
+/// 创建相应的CSG形状对象，并计算其变换矩阵（位置、旋转）
+/// 返回Some(CateCsgShape)如果转换成功，否则返回None
+///
+/// # 参数
+/// * `geom` - 几何参数枚举，包含各种PDMS几何体信息
+///
+/// # 返回值
+/// - `Option<CateCsgShape>` - 转换后的CSG形状，如果失败则为None
+pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
     match geom {
         CateGeoParam::Pyramid(d) => {
+            // 金字塔几何体的转换逻辑
             // dbg!(d);
             let pa = d.pa.as_ref()?;
             let pb = d.pb.as_ref()?;
@@ -113,10 +124,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             // dbg!(&pyramid);
             //需要偏移到 btm
             let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt.0;
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
-            return Some(CateBrepShape {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform: Transform {
                     translation,
                     rotation,
@@ -130,6 +141,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
         }
         CateGeoParam::Torus(d) => {
+            // 圆环（Torus）几何体的转换逻辑
             let pa = d.pa.as_ref()?;
             let pb = d.pb.as_ref()?;
             let mut pts = Vec::default();
@@ -154,10 +166,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             };
             // dbg!(d);
             if let Some((torus, transform)) = sc_torus.convert_to_ctorus() {
-                let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
-                return Some(CateBrepShape {
+                let csg_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
+                return Some(CateCsgShape {
                     refno: d.refno,
-                    brep_shape,
+                    csg_shape,
                     transform,
                     visible: d.tube_flag,
                     is_tubi: false,
@@ -168,6 +180,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
         }
         CateGeoParam::RectTorus(d) => {
+            // 矩形圆环（RectTorus）几何体的转换逻辑
             let pa = d.pa.as_ref()?;
             let pb = d.pb.as_ref()?;
             let mut pts = Vec::default();
@@ -194,10 +207,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 pdia: d.diameter as f32,
             };
             if let Some((torus, transform)) = sr_torus.convert_to_rtorus() {
-                let brep_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
-                return Some(CateBrepShape {
+                let csg_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
+                return Some(CateCsgShape {
                     refno: d.refno,
-                    brep_shape,
+                    csg_shape,
                     transform,
                     visible: d.tube_flag,
                     is_tubi: false,
@@ -208,7 +221,8 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             }
         }
         CateGeoParam::Box(d) => {
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SBox {
+            // 盒子（Box）几何体的转换逻辑
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(SBox {
                 size: d.size,
                 ..Default::default()
             });
@@ -216,9 +230,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation: d.offset,
                 ..Default::default()
             };
-            return Some(CateBrepShape {
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -228,46 +242,51 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
         }
         CateGeoParam::Dish(d) => {
+            // 碟形（Dish）几何体的转换逻辑
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = axis
+            let mut axis_dir = axis
                 .dir
                 .as_ref()
                 .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(Vec3::X);
-            if dir.length() == 0.0 {
+            if axis_dir.length() == 0.0 {
                 return None;
             }
-            dir = dir
+            axis_dir = axis_dir
                 .is_normalized()
-                .then(|| dir)
+                .then(|| axis_dir)
                 .unwrap_or(axis.dir_flag * Vec3::X);
-            let translation = dir * (d.dist_to_btm as f32) + axis.pt.0;
-            let mut height = d.height;
-            if d.height < 0.0 {
-                height = -d.height;
-                dir = -dir;
+
+            let axis_pt = axis.pt.0;
+            let bottom = axis_pt + axis_dir * (d.dist_to_btm as f32);
+            let top = bottom + axis_dir * (d.height as f32);
+            let axis_vec = top - bottom;
+            let height = axis_vec.length();
+            if height <= f32::EPSILON {
+                return None;
             }
 
+            let dir = axis_vec / height;
             let transform = Transform {
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
-                translation,
+                translation: bottom,
                 ..Default::default()
             };
             let pdia = d.diameter as f32;
             let prad = d.radius as f32;
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Dish {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(Dish {
                 pdis: 0.0,
                 pheig: height,
                 pdia,
                 prad,
                 ..Default::default()
             });
-            // dbg!(&brep_shape);
-            return Some(CateBrepShape {
+            // dbg!(&csg_shape);
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -277,6 +296,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
         }
         CateGeoParam::Snout(d) | CateGeoParam::Cone(d) => {
+            // 锥形（Snout/Cone）几何体的转换逻辑
             let pa = d.pa.as_ref()?;
             let mut x_dir = Vec3::Y;
             let mut pts = Vec::default();
@@ -328,7 +348,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation,
                 ..Default::default()
             };
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LSnout {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(LSnout {
                 ptdi: height / 2.0,
                 pbdi: -height / 2.0,
                 ptdm,
@@ -337,9 +357,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 btm_on_top,
                 ..Default::default()
             });
-            return Some(CateBrepShape {
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -352,25 +372,41 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = axis
+
+            // 轴向方向，优先使用 axis.dir，没有的话使用 dir_flag
+            let axis_dir = axis
                 .dir
                 .as_ref()
                 .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(axis.dir_flag * Vec3::Y);
-            let mut phei = d.height as f32;
-            //如果height是负数，相当于要额外旋转一下
-            if phei < 0.0 {
-                phei = -phei;
-                dir = -dir;
+
+            let axis_pt = axis.pt.0;
+            let dist_to_btm = d.dist_to_btm;
+            let height_raw = d.height as f32;
+
+            // 根据原始参数计算底部和顶部位置
+            let bottom = axis_pt + axis_dir * dist_to_btm;
+            let top = bottom + axis_dir * height_raw;
+            let axis_vec = top - bottom;
+            let phei = axis_vec.length();
+            if phei <= f32::EPSILON {
+                return None;
             }
+
+            let dir = axis_vec / phei;
+
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
-            // 方案2：在这里只设置标志，让 get_trans() 处理位置偏移
-            let (translation, center_in_mid) = (axis.pt.0 + dir * d.dist_to_btm, d.centre_line_flag);
+            let translation = if d.centre_line_flag {
+                bottom + dir * (phei * 0.5)
+            } else {
+                bottom
+            };
+
             let scyl = SCylinder {
                 phei,
                 pdia,
-                center_in_mid,
+                center_in_mid: d.centre_line_flag,
                 ..Default::default()
             };
             let transform = Transform {
@@ -378,10 +414,10 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation,
                 ..Default::default()
             };
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(scyl);
-            return Some(CateBrepShape {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(scyl);
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -391,37 +427,57 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             });
         }
         CateGeoParam::LCylinder(d) => {
+            // 长圆柱（LCylinder）几何体的转换逻辑
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
-            let mut dir = axis
+
+            let axis_dir = axis
                 .dir
                 .as_ref()
                 .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(axis.dir_flag * Vec3::Y);
-            let translation = (dir * d.dist_to_btm + axis.pt.0);
-            let phei = d.dist_to_top - d.dist_to_btm;
-            if phei < 0.0 {
-                dir = -dir;
+
+            let axis_pt = axis.pt.0;
+            let mut bottom_dist = d.dist_to_btm;
+            let mut top_dist = d.dist_to_top;
+            if top_dist < bottom_dist {
+                std::mem::swap(&mut bottom_dist, &mut top_dist);
             }
 
+            let bottom = axis_pt + axis_dir * bottom_dist;
+            let top = axis_pt + axis_dir * top_dist;
+            let axis_vec = top - bottom;
+            let height = axis_vec.length();
+            if height <= f32::EPSILON {
+                return None;
+            }
+
+            let dir = axis_vec / height;
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+            let translation = if d.centre_line_flag {
+                bottom + dir * (height * 0.5)
+            } else {
+                bottom
+            };
+
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(LCylinder {
+                pbdi: bottom_dist,
+                ptdi: top_dist,
+                pdia,
+                centre_line_flag: d.centre_line_flag,
+                ..Default::default()
+            });
             let transform = Transform {
                 rotation,
                 translation,
                 ..Default::default()
             };
-            // 是以原点为起点，所以需要移动到中心位置
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LCylinder {
-                pbdi: d.dist_to_btm,
-                ptdi: d.dist_to_top,
-                pdia,
-                ..Default::default()
-            });
-            return Some(CateBrepShape {
+
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -432,6 +488,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
 
         CateGeoParam::SlopeBottomCylinder(d) => {
+            // 斜底圆柱（SlopeBottomCylinder）几何体的转换逻辑
             let axis = d.axis.as_ref()?;
             let mut pts = Vec::default();
             pts.push(axis.number);
@@ -460,7 +517,11 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                     } else if z_axis.z < -0.01 {
                         1.0
                     } else {
-                        if z_axis.x > 0.01 { -1.0 } else { 1.0 }
+                        if z_axis.x > 0.01 {
+                            -1.0
+                        } else {
+                            1.0
+                        }
                     };
                     // dbg!(t);
                     rot2 = Quat::from_axis_angle(z_axis, t * FRAC_PI_2);
@@ -481,7 +542,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 ..Default::default()
             };
             // 是以中心为原点，所以需要移动到中心位置
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 paxi_dir: z_axis,
                 phei,
                 pdia,
@@ -489,9 +550,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 top_shear_angles: [d.x_shear, d.y_shear],
                 ..Default::default()
             });
-            return Some(CateBrepShape {
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -502,8 +563,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
 
         CateGeoParam::Sphere(d) => {
+            // 球体（Sphere）几何体的转换逻辑
             // dbg!(d);
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Sphere {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(Sphere {
                 radius: d.diameter as f32 / 2.0,
                 ..Default::default()
             });
@@ -514,9 +576,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation: axis.pt.0,
                 ..Default::default()
             };
-            return Some(CateBrepShape {
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -527,6 +589,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
 
         CateGeoParam::Revolution(d) => {
+            // 旋转体（Revolution）几何体的转换逻辑
             let pa = d.pa.as_ref()?;
             let pb = d.pb.as_ref()?;
             let mut pts = Vec::default();
@@ -557,7 +620,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
             if d.verts.len() <= 2 {
                 return None;
             }
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(Revolution {
                 verts: vec![d.verts.clone()],
                 angle: d.angle,
                 ..Default::default()
@@ -569,9 +632,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation: translation.into(),
                 ..Default::default()
             };
-            return Some(CateBrepShape {
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -582,6 +645,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
         }
 
         CateGeoParam::Extrusion(d) => {
+            // 挤出体（Extrusion）几何体的转换逻辑
             let pa = d.pa.as_ref()?;
             let pb = d.pb.as_ref()?;
             let mut pts = Vec::default();
@@ -603,7 +667,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 return None;
             }
             let pbax_dir = z_dir.cross(paax_dir).normalize_or_zero();
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
+            let csg_shape: Box<dyn BrepShapeTrait> = Box::new(Extrusion {
                 verts: vec![d.verts.clone()],
                 height: d.height,
                 ..Default::default()
@@ -615,9 +679,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation,
                 ..Default::default()
             };
-            return Some(CateBrepShape {
+            return Some(CateCsgShape {
                 refno: d.refno,
-                brep_shape,
+                csg_shape,
                 transform,
                 visible: d.tube_flag,
                 is_tubi: false,
@@ -626,7 +690,9 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 is_ngmr: false,
             });
         }
-        _ => {}
+        _ => {
+            // 未处理的几何类型，返回None
+        }
     }
 
     return None;
