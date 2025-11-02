@@ -10,19 +10,15 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::sync::Arc;
 
+use crate::mesh_precision::LodMeshSettings;
 use crate::prim_geo::basic::*;
 use crate::prim_geo::helper::cal_ref_axis;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 use crate::types::attmap::AttrMap;
-use crate::mesh_precision::LodMeshSettings;
 
 use crate::NamedAttrMap;
-#[cfg(feature = "occ")]
-use opencascade::primitives::*;
-#[cfg(feature = "occ")]
-use opencascade::workplane::Workplane;
 #[cfg(feature = "truck")]
 use truck_modeling::*;
 
@@ -48,6 +44,7 @@ pub struct LCylinder {
     //diameter
     pub pdia: f32,
     pub negative: bool,
+    pub centre_line_flag: bool,
 }
 
 impl Default for LCylinder {
@@ -60,6 +57,7 @@ impl Default for LCylinder {
             ptdi: 0.5,
             pdia: 1.0,
             negative: false,
+            centre_line_flag: false,
         }
     }
 }
@@ -109,8 +107,7 @@ impl BrepShapeTrait for LCylinder {
     }
 
     /// 如果是常规的基本体生成，直接跳过, 复用已经生成好的
-    #[cfg(feature = "occ")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+    fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
         if !self.check_valid() {
             return Err(anyhow::anyhow!("Not valid LCylinder"));
         }
@@ -127,13 +124,31 @@ impl BrepShapeTrait for LCylinder {
         Vec3::new(self.pdia, self.pdia, (self.pbdi - self.ptdi).abs())
     }
 
-    ///直接通过基本体的参数，生成模型
-    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
-        Some(crate::geometry::csg::unit_cylinder_mesh(&LodMeshSettings::default(), false))
+    #[inline]
+    fn get_trans(&self) -> Transform {
+        let height = (self.ptdi - self.pbdi).abs();
+        Transform {
+            rotation: Default::default(),
+            translation: if self.centre_line_flag {
+                // 如果 centre_line_flag = true，paxi_pt 在圆柱体中心
+                // 单位圆柱体的中心在 z=0.5，应用 scale 后中心在 z=height/2
+                // 需要向下偏移 -height/2 使中心对齐到原点
+                Vec3::new(0.0, 0.0, -height / 2.0)
+            } else {
+                // 如果 centre_line_flag = false，paxi_pt 在底部（pbdi位置）
+                // 单位圆柱体的底部在 z=0，不需要偏移
+                Vec3::ZERO
+            },
+            scale: self.get_scaled_vec3(),
+        }
     }
 
-    fn need_use_csg(&self) -> bool {
-        false
+    ///直接通过基本体的参数，生成模型
+    fn gen_csg_mesh(&self) -> Option<PlantMesh> {
+        Some(crate::geometry::csg::unit_cylinder_mesh(
+            &LodMeshSettings::default(),
+            false,
+        ))
     }
 
     fn enhanced_key_points(
@@ -336,41 +351,16 @@ impl BrepShapeTrait for SCylinder {
         self.pdia = self.pdia.min(l);
     }
 
-    #[cfg(feature = "occ")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+    fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
         if self.is_sscl() {
-            let dir = DVec3::Z;
-            let r = self.pdia as f64 / 2.0;
-            let ext_len = self.phei as f64;
-            let mut circle = Workplane::xy().circle(0.0, 0.0, r)?;
-
-            //还是要和extrude 区分出来
-            let scale_x = 1.0 / self.btm_shear_angles[0].to_radians().cos() as f64;
-            let scale_y = 1.0 / self.btm_shear_angles[1].to_radians().cos() as f64;
-            let scale_mat = DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
-            // dbg!(&self.btm_shear_angles);
-            let transform_btm =
-                DMat4::from_axis_angle(DVec3::Y, -(self.btm_shear_angles[0].to_radians() as f64))
-                    * DMat4::from_axis_angle(
-                        DVec3::X,
-                        (self.btm_shear_angles[1].to_radians() as f64),
-                    )
-                    * scale_mat;
-
-            // dbg!(&self.top_shear_angles);
-            let scale_x = 1.0 / self.top_shear_angles[0].to_radians().cos() as f64;
-            let scale_y = 1.0 / self.top_shear_angles[1].to_radians().cos() as f64;
-            let scale_mat = DMat4::from_scale(DVec3::new(scale_x, scale_y, 1.0));
-            let transform_top = DMat4::from_translation(dir * ext_len as f64)
-                * DMat4::from_axis_angle(DVec3::Y, -(self.top_shear_angles[0].to_radians() as f64))
-                * DMat4::from_axis_angle(DVec3::X, (self.top_shear_angles[1].to_radians() as f64))
-                * scale_mat;
-            let btm_circe = circle.transformed_by_gmat(&transform_btm)?;
-            let top_circle = circle.transformed_by_gmat(&transform_top)?;
-
-            Ok(OccSharedShape::new(
-                Solid::loft([btm_circe, top_circle].iter()).into(),
-            ))
+            // 对于斜切圆柱，使用 CSG 生成
+            use crate::geometry::csg::generate_scylinder_mesh;
+            use crate::mesh_precision::LodMeshSettings;
+            if let Some(generated) = generate_scylinder_mesh(self, &LodMeshSettings::default(), false) {
+                Ok(crate::prim_geo::basic::CsgSharedMesh::new(generated.mesh))
+            } else {
+                Err(anyhow::anyhow!("Failed to generate CSG mesh for SSCL"))
+            }
         } else {
             Ok(CYLINDER_SHAPE.clone())
         }
@@ -432,12 +422,10 @@ impl BrepShapeTrait for SCylinder {
 
     ///直接通过基本体的参数，生成模型
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
-        Some(crate::geometry::csg::unit_cylinder_mesh(&LodMeshSettings::default(), false))
-    }
-
-    fn need_use_csg(&self) -> bool {
-        // !self.is_sscl()
-        false
+        Some(crate::geometry::csg::unit_cylinder_mesh(
+            &LodMeshSettings::default(),
+            false,
+        ))
     }
 
     /// 为圆柱体生成增强的关键点

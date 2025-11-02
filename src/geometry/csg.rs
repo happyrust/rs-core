@@ -394,29 +394,23 @@ pub fn generate_csg_mesh(
 /// 生成线性圆柱体（LCylinder）网格
 ///
 /// LCylinder由轴向方向、直径和两个端面的偏移距离定义
+/// 与 SCylinder 一致，使用单位圆柱体，通过 transform 的 scale 来缩放
 fn generate_lcylinder_mesh(
     cyl: &LCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
-    // 归一化轴向方向向量
-    let dir = safe_normalize(cyl.paxi_dir)?;
-    let radius = (cyl.pdia * 0.5).abs();
-    if radius <= MIN_LEN {
+    // 验证参数有效性
+    let height = (cyl.ptdi - cyl.pbdi).abs();
+    if cyl.pdia.abs() <= MIN_LEN || height <= MIN_LEN {
         return None;
     }
-    // 确定底部和顶部的偏移距离（确保bottom_offset < top_offset）
-    let (bottom_offset, top_offset) = if cyl.pbdi <= cyl.ptdi {
-        (cyl.pbdi, cyl.ptdi)
-    } else {
-        (cyl.ptdi, cyl.pbdi)
-    };
-    if (top_offset - bottom_offset).abs() <= MIN_LEN {
-        return None;
-    }
-    let bottom_center = cyl.paxi_pt + dir * bottom_offset;
-    let top_center = cyl.paxi_pt + dir * top_offset;
-    build_cylinder_mesh(bottom_center, top_center, radius, settings, non_scalable)
+
+    // 使用单位圆柱体，通过 get_trans() 返回的 scale 来缩放
+    Some(GeneratedMesh {
+        mesh: unit_cylinder_mesh(settings, non_scalable),
+        aabb: None,
+    })
 }
 
 /// 生成剪切圆柱体（SSCL，Shear Cylinder）网格
@@ -1164,7 +1158,7 @@ fn generate_dish_mesh(
 /// 生成圆环（CTorus）网格
 ///
 /// 圆环由外半径（rout）和内半径（rins）定义
-/// 当前实现仅支持完整圆环（360度）
+/// 支持任意角度（包括部分圆环）
 fn generate_torus_mesh(
     torus: &CTorus,
     settings: &LodMeshSettings,
@@ -1179,57 +1173,155 @@ fn generate_torus_mesh(
     if tube_radius <= MIN_LEN {
         return None;
     }
-    let major_radius = torus.rins + tube_radius; // 主圆环的半径
+    let major_radius = torus.rins + tube_radius; // 主圆环的半径（toroidal radius）
     let sweep_angle = torus.angle.to_radians();
     if sweep_angle <= MIN_LEN {
         return None;
     }
 
-    // 仅支持完整圆环（接近2π）
-    if sweep_angle < std::f32::consts::TAU - 1e-3 {
-        return None;
-    }
-
+    // 计算分段数（参考 rvmparser 的 sagittaBasedSegmentCount）
+    let scale = if non_scalable {
+        settings.non_scalable_factor
+    } else {
+        1.0
+    };
+    
+    // 使用现有的 compute_radial_segments，但需要考虑角度
     let major_segments = compute_radial_segments(settings, major_radius, non_scalable, 3);
+    // 根据角度调整分段数
+    let angle_ratio = sweep_angle / std::f32::consts::TAU;
+    let major_segments = ((major_segments as f32 * angle_ratio).ceil() as usize).max(2);
+    
     let tube_segments = compute_radial_segments(settings, tube_radius, non_scalable, 3);
-    let stride = tube_segments + 1;
+    
+    // 对于部分圆环，需要额外的采样点
+    let samples_l = major_segments + 1; // toroidal 方向（不闭合）
+    let samples_s = tube_segments; // poloidal 方向（闭合）
 
-    let mut vertices = Vec::with_capacity((major_segments + 1) * stride);
+    let mut vertices = Vec::with_capacity(samples_l * samples_s);
     let mut normals = Vec::with_capacity(vertices.capacity());
-    let mut indices = Vec::with_capacity(major_segments * tube_segments * 6);
+    let mut indices = Vec::with_capacity((samples_l - 1) * samples_s * 6);
     let mut aabb = Aabb::new_invalid();
 
-    // 生成圆环顶点
-    // i: 主圆环方向的段数（大圆）
-    // j: 管截面的段数（小圆）
-    for i in 0..=major_segments {
-        let u = std::f32::consts::TAU * (i as f32 / major_segments as f32); // 主圆环角度
-        let (sin_u, cos_u) = u.sin_cos();
-        // 主圆环上的中心点
-        let center = Vec3::new(major_radius * cos_u, major_radius * sin_u, 0.0);
-        for j in 0..=tube_segments {
-            let v = std::f32::consts::TAU * (j as f32 / tube_segments as f32); // 管截面角度
-            let (sin_v, cos_v) = v.sin_cos();
-            // 计算管截面上的法向量和顶点
-            let normal = Vec3::new(cos_u * cos_v, sin_u * cos_v, sin_v);
-            let vertex = center + normal * tube_radius;
+    // 生成 toroidal 方向的三角函数值
+    let mut t0_cos = Vec::with_capacity(samples_l);
+    let mut t0_sin = Vec::with_capacity(samples_l);
+    for i in 0..samples_l {
+        let theta = if samples_l > 1 {
+            (sweep_angle / (samples_l - 1) as f32) * i as f32
+        } else {
+            0.0
+        };
+        t0_cos.push(theta.cos());
+        t0_sin.push(theta.sin());
+    }
+
+    // 生成 poloidal 方向的三角函数值
+    let mut t1_cos = Vec::with_capacity(samples_s);
+    let mut t1_sin = Vec::with_capacity(samples_s);
+    for i in 0..samples_s {
+        let phi = (std::f32::consts::TAU / samples_s as f32) * i as f32;
+        t1_cos.push(phi.cos());
+        t1_sin.push(phi.sin());
+    }
+
+    // 生成 shell 顶点
+    for u in 0..samples_l {
+        for v in 0..samples_s {
+            let cos_phi = t1_cos[v];
+            let sin_phi = t1_sin[v];
+            let cos_theta = t0_cos[u];
+            let sin_theta = t0_sin[u];
+
+            // 法线：(cos(phi) * cos(theta), cos(phi) * sin(theta), sin(phi))
+            let normal = Vec3::new(
+                cos_phi * cos_theta,
+                cos_phi * sin_theta,
+                sin_phi,
+            );
+
+            // 顶点：((radius * cos(phi) + offset) * cos(theta), (radius * cos(phi) + offset) * sin(theta), radius * sin(phi))
+            let r = tube_radius * cos_phi + major_radius;
+            let vertex = Vec3::new(
+                r * cos_theta,
+                r * sin_theta,
+                tube_radius * sin_phi,
+            );
+            
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
-            normals.push(normal.normalize());
+            normals.push(normal);
         }
     }
 
-    for i in 0..major_segments {
-        for j in 0..tube_segments {
-            let current = i * stride + j;
-            let next = (i + 1) * stride + j;
+    // 生成 shell 索引
+    for u in 0..(samples_l - 1) {
+        for v in 0..samples_s {
+            let v_next = (v + 1) % samples_s;
+            let idx00 = (u * samples_s + v) as u32;
+            let idx01 = (u * samples_s + v_next) as u32;
+            let idx10 = ((u + 1) * samples_s + v) as u32;
+            let idx11 = ((u + 1) * samples_s + v_next) as u32;
+
+            // 第一个三角形
+            indices.push(idx00);
+            indices.push(idx10);
+            indices.push(idx11);
+
+            // 第二个三角形
+            indices.push(idx11);
+            indices.push(idx01);
+            indices.push(idx00);
+        }
+    }
+
+    // 对于部分圆环，需要添加端面
+    // 起始端面（角度=0）
+    if sweep_angle < std::f32::consts::TAU - 1e-3 {
+        let start_offset = vertices.len() as u32;
+        for v in 0..samples_s {
+            let cos_phi = t1_cos[v];
+            let sin_phi = t1_sin[v];
+            let r = tube_radius * cos_phi + major_radius;
+            let vertex = Vec3::new(r, 0.0, tube_radius * sin_phi);
+            extend_aabb(&mut aabb, vertex);
+            vertices.push(vertex);
+            // 法向量指向起始方向
+            normals.push(Vec3::new(-1.0, 0.0, 0.0));
+        }
+        // 扇状三角化起始端面
+        for i in 1..(samples_s - 1) {
             indices.extend_from_slice(&[
-                current as u32,
-                (current + 1) as u32,
-                next as u32,
-                (current + 1) as u32,
-                (next + 1) as u32,
-                next as u32,
+                start_offset,
+                start_offset + i as u32,
+                start_offset + (i + 1) as u32,
+            ]);
+        }
+
+        // 结束端面（角度=sweep_angle）
+        let end_offset = vertices.len() as u32;
+        let cos_end = t0_cos[samples_l - 1];
+        let sin_end = t0_sin[samples_l - 1];
+        for v in 0..samples_s {
+            let cos_phi = t1_cos[v];
+            let sin_phi = t1_sin[v];
+            let r = tube_radius * cos_phi + major_radius;
+            let vertex = Vec3::new(
+                r * cos_end,
+                r * sin_end,
+                tube_radius * sin_phi,
+            );
+            extend_aabb(&mut aabb, vertex);
+            vertices.push(vertex);
+            // 法向量指向结束方向
+            normals.push(Vec3::new(-cos_end, -sin_end, 0.0));
+        }
+        // 扇状三角化结束端面
+        for i in 1..(samples_s - 1) {
+            indices.extend_from_slice(&[
+                end_offset,
+                end_offset + (i + 1) as u32,
+                end_offset + i as u32,
             ]);
         }
     }
@@ -1423,22 +1515,18 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
 /// 生成矩形圆环（RTorus）网格
 ///
 /// RTorus是一个空心圆柱体，由外半径、内半径和高度定义
-/// 当前实现仅支持完整圆环（360度）
+/// 支持任意角度（包括部分圆环）
 ///
 /// 该形状由以下部分组成：
 /// - 外圆柱面
 /// - 内圆柱面
-/// - 顶部和底部环形端面
+/// - 顶部和底部环形端面（如果角度 < 360度，还有起始和结束端面）
 fn generate_rect_torus_mesh(
     rtorus: &RTorus,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
     if !rtorus.check_valid() {
-        return None;
-    }
-    // 仅支持完整圆环
-    if (rtorus.angle.to_radians() - std::f32::consts::TAU).abs() > 1e-3 {
         return None;
     }
 
@@ -1448,7 +1536,16 @@ fn generate_rect_torus_mesh(
         .abs()
         .max(MIN_LEN)
         .min((outer_radius - MIN_LEN).max(MIN_LEN));
-    let major_segments = compute_radial_segments(settings, outer_radius, non_scalable, 3);
+    
+    let sweep_angle = rtorus.angle.to_radians();
+    if sweep_angle <= MIN_LEN {
+        return None;
+    }
+
+    // 计算分段数
+    let angle_ratio = sweep_angle / std::f32::consts::TAU;
+    let major_segments_base = compute_radial_segments(settings, outer_radius, non_scalable, 3);
+    let major_segments = ((major_segments_base as f32 * angle_ratio).ceil() as usize).max(2);
     let height_segments = compute_height_segments(settings, rtorus.height.abs(), non_scalable, 1);
     let radial_span = (outer_radius - inner_radius).abs().max(MIN_LEN);
     let radial_segments = compute_height_segments(
@@ -1459,50 +1556,99 @@ fn generate_rect_torus_mesh(
     );
 
     let half_height = rtorus.height * 0.5;
+    let samples = major_segments + 1; // 对于部分圆环，需要额外的采样点
     let mut combined = PlantMesh::default();
     combined.aabb = Some(Aabb::new_invalid());
 
+    // 生成 toroidal 方向的三角函数值
+    let mut t0_cos = Vec::with_capacity(samples);
+    let mut t0_sin = Vec::with_capacity(samples);
+    for i in 0..samples {
+        let theta = if samples > 1 {
+            (sweep_angle / (samples - 1) as f32) * i as f32
+        } else {
+            0.0
+        };
+        t0_cos.push(theta.cos());
+        t0_sin.push(theta.sin());
+    }
+
     // 生成外圆柱面（法向量向外）
-    let (outer_mesh, outer_aabb) = generate_cylinder_surface(
-        rtorus.rout,
+    let (outer_mesh, outer_aabb) = generate_partial_cylinder_surface(
+        outer_radius,
         half_height,
-        major_segments,
+        samples,
         height_segments,
+        &t0_cos,
+        &t0_sin,
         true, // outward = true
     );
     merge_meshes(&mut combined, outer_mesh, outer_aabb);
 
     // 生成内圆柱面（法向量向内）
-    let (inner_mesh, inner_aabb) = generate_cylinder_surface(
-        rtorus.rins,
+    let (inner_mesh, inner_aabb) = generate_partial_cylinder_surface(
+        inner_radius,
         half_height,
-        major_segments,
+        samples,
         height_segments,
+        &t0_cos,
+        &t0_sin,
         false, // outward = false
     );
     merge_meshes(&mut combined, inner_mesh, inner_aabb);
 
     // 生成顶部环形端面
-    let (top_mesh, top_aabb) = generate_annulus_surface(
+    let (top_mesh, top_aabb) = generate_partial_annulus_surface(
         half_height,
-        rtorus.rins,
-        rtorus.rout,
-        major_segments,
+        inner_radius,
+        outer_radius,
+        samples,
         radial_segments,
+        &t0_cos,
+        &t0_sin,
         1.0, // normal_sign = 1.0 (向上)
     );
     merge_meshes(&mut combined, top_mesh, top_aabb);
 
     // 生成底部环形端面
-    let (bottom_mesh, bottom_aabb) = generate_annulus_surface(
+    let (bottom_mesh, bottom_aabb) = generate_partial_annulus_surface(
         -half_height,
-        rtorus.rins,
-        rtorus.rout,
-        major_segments,
+        inner_radius,
+        outer_radius,
+        samples,
         radial_segments,
+        &t0_cos,
+        &t0_sin,
         -1.0, // normal_sign = -1.0 (向下)
     );
     merge_meshes(&mut combined, bottom_mesh, bottom_aabb);
+
+    // 对于部分圆环，需要添加起始和结束端面
+    if sweep_angle < std::f32::consts::TAU - 1e-3 {
+        // 起始端面（角度=0）
+        let (start_mesh, start_aabb) = generate_rect_torus_end_face(
+            inner_radius,
+            outer_radius,
+            half_height,
+            radial_segments,
+            height_segments,
+            0.0, // angle = 0
+            true, // is_start
+        );
+        merge_meshes(&mut combined, start_mesh, start_aabb);
+
+        // 结束端面（角度=sweep_angle）
+        let (end_mesh, end_aabb) = generate_rect_torus_end_face(
+            inner_radius,
+            outer_radius,
+            half_height,
+            radial_segments,
+            height_segments,
+            sweep_angle,
+            false, // is_start
+        );
+        merge_meshes(&mut combined, end_mesh, end_aabb);
+    }
 
     let final_aabb = combined.cal_aabb();
     combined.aabb = final_aabb;
@@ -1511,6 +1657,187 @@ fn generate_rect_torus_mesh(
         mesh: combined,
         aabb: final_aabb,
     })
+}
+
+/// 生成部分圆柱面网格（支持任意角度）
+fn generate_partial_cylinder_surface(
+    radius: f32,
+    half_height: f32,
+    samples: usize,
+    height_segments: usize,
+    t0_cos: &[f32],
+    t0_sin: &[f32],
+    outward: bool,
+) -> (PlantMesh, Aabb) {
+    let mut vertices = Vec::with_capacity((height_segments + 1) * samples);
+    let mut normals = Vec::with_capacity(vertices.capacity());
+    let mut indices = Vec::with_capacity(height_segments * (samples - 1) * 6);
+    let mut aabb = Aabb::new_invalid();
+
+    for h in 0..=height_segments {
+        let t = h as f32 / height_segments as f32;
+        let z = -half_height + t * (2.0 * half_height);
+        for seg in 0..samples {
+            let cos_theta = t0_cos[seg];
+            let sin_theta = t0_sin[seg];
+            let position = Vec3::new(radius * cos_theta, radius * sin_theta, z);
+            extend_aabb(&mut aabb, position);
+            let mut normal = Vec3::new(cos_theta, sin_theta, 0.0);
+            if !outward {
+                normal = -normal;
+            }
+            vertices.push(position);
+            normals.push(normal);
+        }
+    }
+
+    let ring_stride = samples;
+    for h in 0..height_segments {
+        for seg in 0..(samples - 1) {
+            let current = h * ring_stride + seg;
+            let next = current + ring_stride;
+            let mut tri1 = [current as u32, (current + 1) as u32, next as u32];
+            let mut tri2 = [(current + 1) as u32, (next + 1) as u32, next as u32];
+            if !outward {
+                tri1.swap(0, 2);
+                tri2.swap(0, 2);
+            }
+            indices.extend_from_slice(&tri1);
+            indices.extend_from_slice(&tri2);
+        }
+    }
+
+    (
+        PlantMesh {
+            indices,
+            vertices,
+            normals,
+            wire_vertices: vec![],
+            aabb: Some(aabb),
+        },
+        aabb,
+    )
+}
+
+/// 生成部分环形端面网格（支持任意角度）
+fn generate_partial_annulus_surface(
+    z: f32,
+    inner_radius: f32,
+    outer_radius: f32,
+    samples: usize,
+    radial_segments: usize,
+    t0_cos: &[f32],
+    t0_sin: &[f32],
+    normal_sign: f32,
+) -> (PlantMesh, Aabb) {
+    let mut vertices = Vec::with_capacity((radial_segments + 1) * samples);
+    let mut normals = Vec::with_capacity(vertices.capacity());
+    let mut indices = Vec::with_capacity(radial_segments * (samples - 1) * 6);
+    let mut aabb = Aabb::new_invalid();
+    let normal = Vec3::new(0.0, 0.0, normal_sign);
+
+    for radial in 0..=radial_segments {
+        let t = radial as f32 / radial_segments as f32;
+        let radius = inner_radius + (outer_radius - inner_radius) * t;
+        for seg in 0..samples {
+            let cos_theta = t0_cos[seg];
+            let sin_theta = t0_sin[seg];
+            let position = Vec3::new(radius * cos_theta, radius * sin_theta, z);
+            extend_aabb(&mut aabb, position);
+            vertices.push(position);
+            normals.push(normal);
+        }
+    }
+
+    let ring_stride = samples;
+    for radial in 0..radial_segments {
+        for seg in 0..(samples - 1) {
+            let current = radial * ring_stride + seg;
+            let next = current + ring_stride;
+            if normal_sign > 0.0 {
+                indices.extend_from_slice(&[current as u32, next as u32, (current + 1) as u32]);
+                indices.extend_from_slice(&[(current + 1) as u32, next as u32, (next + 1) as u32]);
+            } else {
+                indices.extend_from_slice(&[current as u32, (current + 1) as u32, next as u32]);
+                indices.extend_from_slice(&[(current + 1) as u32, (next + 1) as u32, next as u32]);
+            }
+        }
+    }
+
+    (
+        PlantMesh {
+            indices,
+            vertices,
+            normals,
+            wire_vertices: vec![],
+            aabb: Some(aabb),
+        },
+        aabb,
+    )
+}
+
+/// 生成矩形环面体的端面（起始或结束）
+fn generate_rect_torus_end_face(
+    inner_radius: f32,
+    outer_radius: f32,
+    half_height: f32,
+    radial_segments: usize,
+    height_segments: usize,
+    angle: f32,
+    is_start: bool,
+) -> (PlantMesh, Aabb) {
+    let mut vertices = Vec::new();
+    let mut normals = Vec::new();
+    let mut indices = Vec::new();
+    let mut aabb = Aabb::new_invalid();
+
+    let (cos_angle, sin_angle) = angle.sin_cos();
+    let normal_dir = if is_start {
+        Vec3::new(-1.0, 0.0, 0.0)
+    } else {
+        Vec3::new(-cos_angle, -sin_angle, 0.0)
+    };
+
+    // 生成矩形截面的顶点
+    for h_idx in 0..=height_segments {
+        let t = h_idx as f32 / height_segments as f32;
+        let z = -half_height + t * (2.0 * half_height);
+        for r_idx in 0..=radial_segments {
+            let r_t = r_idx as f32 / radial_segments as f32;
+            let radius = inner_radius + (outer_radius - inner_radius) * r_t;
+            let position = Vec3::new(radius * cos_angle, radius * sin_angle, z);
+            extend_aabb(&mut aabb, position);
+            vertices.push(position);
+            normals.push(normal_dir);
+        }
+    }
+
+    // 生成索引
+    let ring_stride = radial_segments + 1;
+    for h in 0..height_segments {
+        for r in 0..radial_segments {
+            let current = h * ring_stride + r;
+            let next = current + ring_stride;
+            if is_start {
+                indices.extend_from_slice(&[current as u32, next as u32, (current + 1) as u32]);
+                indices.extend_from_slice(&[(current + 1) as u32, next as u32, (next + 1) as u32]);
+            } else {
+                indices.extend_from_slice(&[current as u32, (current + 1) as u32, next as u32]);
+                indices.extend_from_slice(&[(current + 1) as u32, (next + 1) as u32, next as u32]);
+            }
+        }
+    }
+
+    (
+        PlantMesh {
+            indices,
+            vertices,
+            normals,
+            wire_vertices: vec![],
+            aabb: Some(aabb),
+        },
+        aabb,
+    )
 }
 
 /// 生成拉伸体（Extrusion）网格
