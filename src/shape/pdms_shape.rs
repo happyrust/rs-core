@@ -40,10 +40,6 @@ use crate::tool::float_tool::f32_round_3;
 use parry3d::bounding_volume::BoundingVolume;
 
 use crate::geometry::PlantGeoData;
-#[cfg(feature = "occ")]
-use crate::prim_geo::basic::OccSharedShape;
-#[cfg(feature = "occ")]
-use opencascade::primitives::{Compound, IntoShape, Shape};
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -110,9 +106,9 @@ impl PlantMesh {
 }
 
 impl PlantMesh {
-    ///生成occ mesh
+    ///生成occ mesh (仅在启用 occ feature 时可用)
     #[cfg(feature = "occ")]
-    pub fn gen_occ_mesh(shape: &Shape, tol: f64) -> anyhow::Result<Self> {
+    pub fn gen_occ_mesh(shape: &opencascade::primitives::Shape, tol: f64) -> anyhow::Result<Self> {
         let mut aabb = Aabb::new_invalid();
         let mesh = shape.mesh_with_tolerance(tol)?;
         let vertices = mesh
@@ -724,9 +720,8 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
     ///限制参数大小，主要是对负实体的不合理进行限制
     fn apply_limit_by_size(&mut self, _limit_size: f32) {}
 
-    #[cfg(feature = "occ")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        return Err(anyhow!("不存在该occ shape"));
+    fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        return Err(anyhow!("不存在该csg shape"));
     }
 
     //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
@@ -778,32 +773,32 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
         TRI_TOL
     }
 
-    #[cfg(feature = "occ")]
     fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
         let geo_hash = self.hash_unit_mesh_params();
 
-        let shape = self.gen_occ_shape()?;
-
-        let mut aabb = Aabb::new_invalid();
-        for edge in shape.edges() {
-            for point in edge.approximation_segments() {
-                aabb.take_point(nalgebra::Point3::new(
-                    point.x as f32,
-                    point.y as f32,
-                    point.z as f32,
-                ));
+        // 使用 CSG 生成网格
+        if let Some(csg_mesh) = self.gen_csg_mesh() {
+            let mut aabb = Aabb::new_invalid();
+            for vertex in &csg_mesh.vertices {
+                aabb.take_point((*vertex).into());
             }
+            Ok(PlantGeoData {
+                geo_hash,
+                aabb: Some(aabb),
+            })
+        } else {
+            // 尝试使用 gen_csg_shape
+            let csg_shape = self.gen_csg_shape()?;
+            let mesh = csg_shape.as_ref();
+            let mut aabb = Aabb::new_invalid();
+            for vertex in &mesh.vertices {
+                aabb.take_point((*vertex).into());
+            }
+            Ok(PlantGeoData {
+                geo_hash,
+                aabb: Some(aabb),
+            })
         }
-
-        let mesh =
-            shape.mesh_with_tolerance(self.tol() as f64 * tol_ratio.unwrap_or(2.0) as f64)?;
-
-        Ok(PlantGeoData {
-            geo_hash,
-            aabb: Some(aabb),
-        })
-
-        // Err(anyhow!("occ shape meshed failed"))
     }
 
     ///生成mesh
