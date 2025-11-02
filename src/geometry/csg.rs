@@ -1053,94 +1053,188 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
 /// 生成圆盘（Dish）网格
 ///
 /// 圆盘是一个球形帽面，由球面的一部分和底部圆面组成
-/// 当前实现仅支持prad=0的情况（完整圆盘）
+/// 支持两种类型：
+/// - prad=0: 球形圆盘（Spherical Dish）
+/// - prad>0: 椭圆圆盘（Elliptical Dish），z轴缩放形成椭球面
 fn generate_dish_mesh(
     dish: &Dish,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
-    // 仅支持prad=0的情况
-    if dish.prad.abs() > MIN_LEN {
-        return None;
-    }
     let axis = safe_normalize(dish.paax_dir)?;
     let radius_rim = dish.pdia * 0.5; // 边缘半径
     let height = dish.pheig;
     if radius_rim <= MIN_LEN || height <= MIN_LEN {
         return None;
     }
-    // 计算形成圆盘表面的球面半径
-    // 使用几何关系：R² = r² + (R-h)²，解得 R = (r² + h²) / (2h)
-    let radius_sphere = (radius_rim * radius_rim + height * height) / (2.0 * height);
-    if !radius_sphere.is_finite() || radius_sphere <= MIN_LEN {
-        return None;
-    }
 
-    // 计算底部中心点和球心位置
+    let is_elliptical = dish.prad.abs() > MIN_LEN;
     let base_center = dish.paax_pt + axis * dish.pdis;
-    let center_offset = height - radius_sphere; // 球心相对于底部中心的偏移
-    let sphere_center = base_center + axis * center_offset;
     let (basis_u, basis_v) = orthonormal_basis(axis);
 
-    let radial_segments = compute_radial_segments(settings, radius_rim, non_scalable, 3);
-    let height_segments = compute_height_segments(settings, height, non_scalable, 1);
-    let stride = radial_segments + 1;
+    // 根据 dish 类型选择不同的参数
+    let (radius_sphere, arc, center_offset, scale_z) = if is_elliptical {
+        // 椭圆 dish: 使用 baseRadius 作为球半径，z轴缩放为 height/baseRadius
+        // 参考 rvmparser: sphereBasedShape(baseRadius, π/2, 0, height/baseRadius)
+        let scale_z = height / radius_rim;
+        let scale_z = if scale_z.is_finite() && scale_z > MIN_LEN {
+            scale_z
+        } else {
+            1.0
+        };
+        (radius_rim, std::f32::consts::PI / 2.0, 0.0, scale_z)
+    } else {
+        // 球形 dish: 计算球面半径
+        // 使用几何关系：R² = r² + (R-h)²，解得 R = (r² + h²) / (2h)
+        let radius_sphere = (radius_rim * radius_rim + height * height) / (2.0 * height);
+        if !radius_sphere.is_finite() || radius_sphere <= MIN_LEN {
+            return None;
+        }
+        // 计算弧角
+        let sinval = (radius_rim / radius_sphere).max(-1.0).min(1.0);
+        let mut arc = sinval.asin();
+        if radius_rim < height {
+            arc = std::f32::consts::PI - arc;
+        }
+        let center_offset = height - radius_sphere;
+        (radius_sphere, arc, center_offset, 1.0)
+    };
 
-    let mut vertices = Vec::with_capacity((height_segments + 1) * stride + radial_segments + 1);
+    let radial_segments = compute_radial_segments(settings, radius_rim, non_scalable, 3);
+    // 对于椭圆 dish，根据 arc 和 scale_z 计算合适的 rings 数
+    // 参考 rvmparser: rings = max(min_rings, scale_z * samples * arc / (2π))
+    let min_rings = 3u16;
+    let samples = radial_segments;
+    let rings = if is_elliptical {
+        let calculated_rings = (scale_z * samples as f32 * arc / std::f32::consts::TAU).ceil() as u32;
+        calculated_rings.max(min_rings as u32)
+    } else {
+        compute_height_segments(settings, height, non_scalable, min_rings) as u32
+    };
+
+    // 估算容量：每环最多 radial_segments + 1 个顶点
+    let max_vertices_per_ring = radial_segments + 1;
+    let mut vertices = Vec::with_capacity((rings as usize + 1) * max_vertices_per_ring + 1);
     let mut normals = Vec::with_capacity(vertices.capacity());
     let mut indices =
-        Vec::with_capacity(height_segments * radial_segments * 6 + radial_segments * 3);
+        Vec::with_capacity(rings as usize * radial_segments * 6 + radial_segments * 3);
     let mut aabb = Aabb::new_invalid();
+    let mut ring_offsets = Vec::with_capacity((rings + 1) as usize);
 
-    for lat in 0..=height_segments {
-        let t = lat as f32 / height_segments as f32;
-        let z = t * height;
-        let axis_point = base_center + axis * z;
-        // 计算当前高度环的半径（使用球面几何）
-        let dist_from_center = z - center_offset; // 当前点到球心的距离（沿轴向）
-        let ring_radius_sq = radius_sphere * radius_sphere - dist_from_center * dist_from_center;
-        // 如果距离超过球半径，环半径为0
-        let ring_radius = if ring_radius_sq <= 0.0 {
-            0.0
+    // 生成顶点并跟踪环偏移
+    for lat in 0..=rings {
+        ring_offsets.push(vertices.len() as u32);
+        
+        let theta = if rings > 1 {
+            (lat as f32 / (rings - 1) as f32) * arc
         } else {
-            ring_radius_sq.sqrt()
+            0.0
+        };
+        let cos_theta = theta.cos();
+        let sin_theta = theta.sin();
+
+        // 计算 z 坐标（考虑 scale_z 缩放）
+        let z = radius_sphere * scale_z * cos_theta + center_offset;
+        let axis_point = base_center + axis * z;
+
+        // 计算当前环的半径
+        let w = sin_theta; // 当前环的半径系数
+        let ring_radius = radius_sphere * w;
+
+        // 为每个环生成顶点
+        let n_in_ring = if lat == 0 || (lat == rings && !is_elliptical) {
+            1 // 顶部和底部（球形 dish）使用单个顶点
+        } else {
+            // 根据 w (sin_theta) 计算每环的顶点数
+            let n = (w * samples as f32).max(3.0).ceil() as u32;
+            n
         };
 
-        for lon in 0..=radial_segments {
-            let angle = lon as f32 / radial_segments as f32 * std::f32::consts::TAU;
-            let dir = basis_u * angle.cos() + basis_v * angle.sin();
+        for lon in 0..n_in_ring {
+            let phi = if n_in_ring > 1 {
+                lon as f32 / n_in_ring as f32 * std::f32::consts::TAU
+            } else {
+                0.0
+            };
+            let dir = basis_u * phi.cos() + basis_v * phi.sin();
             let vertex = axis_point + dir * ring_radius;
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
-            let normal = (vertex - sphere_center).normalize();
+
+            // 计算法线（对于椭圆 dish，需要考虑 scale_z）
+            let nx = w * phi.cos();
+            let ny = w * phi.sin();
+            let nz = cos_theta / scale_z;
+            let normal = (basis_u * nx + basis_v * ny + axis * nz).normalize();
             normals.push(normal);
         }
     }
 
-    for lat in 0..height_segments {
-        for lon in 0..radial_segments {
-            let current = lat * stride + lon;
-            let next = current + stride;
-            indices.extend_from_slice(&[
-                current as u32,
-                (current + 1) as u32,
-                next as u32,
-                (current + 1) as u32,
-                (next + 1) as u32,
-                next as u32,
-            ]);
+    // 生成索引（连接相邻环）
+    // ring_offsets 有 rings + 1 个元素，索引从 0 到 rings
+    // 每个环从 ring_offsets[lat] 开始，到 ring_offsets[lat + 1] 结束
+    for lat in 0..(rings as usize) {
+        let n_c = ring_offsets[lat + 1] - ring_offsets[lat]; // 当前环的顶点数
+        // 下一环的顶点数（lat + 1 是下一环的索引，lat + 2 是下下环的索引）
+        let n_n = if lat + 2 < ring_offsets.len() {
+            ring_offsets[lat + 2] - ring_offsets[lat + 1]
+        } else {
+            // 如果是最后一个环，使用当前环的顶点数（实际上不应该发生，因为 lat < rings）
+            n_c
+        };
+
+        let o_c = ring_offsets[lat];
+        let o_n = ring_offsets[lat + 1];
+
+        if n_c < n_n {
+            // 下一环顶点更多
+            for i_n in 0..n_n {
+                let ii_n = (i_n + 1) % n_n;
+                let i_c = (n_c * (i_n + 1)) / n_n;
+                let ii_c = (n_c * (i_n + 2)) / n_n;
+                let i_c = i_c % n_c;
+                let ii_c = ii_c % n_c;
+
+                if i_c != ii_c {
+                    indices.extend_from_slice(&[o_c + i_c, o_n + ii_n, o_c + ii_c]);
+                }
+                indices.extend_from_slice(&[o_c + i_c, o_n + i_n, o_n + ii_n]);
+            }
+        } else {
+            // 当前环顶点更多或相等
+            for i_c in 0..n_c {
+                let ii_c = (i_c + 1) % n_c;
+                let i_n = (n_n * i_c) / n_c;
+                let ii_n = (n_n * (i_c + 1)) / n_c;
+                let i_n = i_n % n_n;
+                let ii_n = ii_n % n_n;
+
+                indices.extend_from_slice(&[o_c + i_c, o_n + ii_n, o_c + ii_c]);
+                if i_n != ii_n {
+                    indices.extend_from_slice(&[o_c + i_c, o_n + i_n, o_n + ii_n]);
+                }
+            }
         }
     }
 
-    let base_ring_offset = height_segments * stride;
-    let base_center_index = vertices.len() as u32;
-    vertices.push(base_center);
-    normals.push(-axis);
-    extend_aabb(&mut aabb, base_center);
-    for lon in 0..radial_segments {
-        let curr = base_ring_offset + lon;
-        let next = base_ring_offset + ((lon + 1) % stride);
-        indices.extend_from_slice(&[base_center_index, next as u32, curr as u32]);
+    // 添加底部圆面（仅对球形 dish 或椭圆 dish 的底部）
+    if !is_elliptical || height > MIN_LEN {
+        let base_ring_idx = rings as usize;
+        if base_ring_idx < ring_offsets.len() - 1 {
+            let base_ring_start = ring_offsets[base_ring_idx];
+            let base_ring_count = ring_offsets[base_ring_idx + 1] - base_ring_start;
+            if base_ring_count > 1 {
+                let base_center_index = vertices.len() as u32;
+                vertices.push(base_center);
+                normals.push(-axis);
+                extend_aabb(&mut aabb, base_center);
+                for lon in 0..base_ring_count {
+                    let curr = base_ring_start + lon;
+                    let next = base_ring_start + ((lon + 1) % base_ring_count);
+                    indices.extend_from_slice(&[base_center_index, next, curr]);
+                }
+            }
+        }
     }
 
     Some(GeneratedMesh {
