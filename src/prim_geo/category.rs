@@ -1,6 +1,7 @@
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::prim_geo::LCylinder;
 use crate::prim_geo::ctorus::SCTorus;
+use crate::debug_model_debug;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;
 use crate::prim_geo::extrusion::Extrusion;
@@ -356,7 +357,6 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 .as_ref()
                 .map(|d| d.0.normalize_or_zero())
                 .unwrap_or(axis.dir_flag * Vec3::Y);
-            let translation = (dir * d.dist_to_btm + axis.pt.0);
             let mut phei = d.height as f32;
             //如果height是负数，相当于要额外旋转一下
             if phei < 0.0 {
@@ -364,24 +364,21 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 dir = -dir;
             }
             let pdia = d.diameter as f32;
-
-            // 🔍 调试输出：打印原始的 diameter 和 height 值
-            // println!(
-            //     "🔍 [SCylinder] refno={:?}, diameter={}, height={}",
-            //     d.refno, d.diameter, d.height
-            // );
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+            // 方案2：在这里只设置标志，让 get_trans() 处理位置偏移
+            let (translation, center_in_mid) = (axis.pt.0 + dir * d.dist_to_btm, d.centre_line_flag);
+            let scyl = SCylinder {
+                phei,
+                pdia,
+                center_in_mid,
+                ..Default::default()
+            };
             let transform = Transform {
                 rotation,
                 translation,
                 ..Default::default()
             };
-            // 是以中心为原点，所以需要移动到中心位置
-            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
-                phei,
-                pdia,
-                ..Default::default()
-            });
+            let brep_shape: Box<dyn BrepShapeTrait> = Box::new(scyl);
             return Some(CateBrepShape {
                 refno: d.refno,
                 brep_shape,
@@ -415,7 +412,7 @@ pub fn convert_to_brep_shapes(geom: &CateGeoParam) -> Option<CateBrepShape> {
                 translation,
                 ..Default::default()
             };
-            // 是以远点为起点，所以需要移动到中心位置
+            // 是以原点为起点，所以需要移动到中心位置
             let brep_shape: Box<dyn BrepShapeTrait> = Box::new(LCylinder {
                 pbdi: d.dist_to_btm,
                 ptdi: d.dist_to_top,

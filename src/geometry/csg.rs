@@ -1,3 +1,18 @@
+//! CSG（构造实体几何）网格生成模块
+//! 
+//! 本模块实现了多种基本几何形状的三角网格生成算法，包括：
+//! - 圆柱体（LCylinder, SCylinder）
+//! - 球体（Sphere）
+//! - 圆台（LSnout）
+//! - 盒子（SBox）
+//! - 圆盘（Dish）
+//! - 圆环（CTorus, RTorus）
+//! - 棱锥（Pyramid, LPyramid）
+//! - 拉伸体（Extrusion）
+//!
+//! 所有网格生成算法都支持自适应细分，根据几何形状的尺寸和LOD设置
+//! 自动调整网格分辨率，以平衡渲染质量和性能。
+
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::ctorus::CTorus;
@@ -16,23 +31,134 @@ use glam::Vec3;
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 
+/// 最小长度阈值，用于判断几何形状是否有效
 const MIN_LEN: f32 = 1e-6;
 
+/// 生成单位圆柱体网格（用于简单圆柱体的基础网格）
+/// 
+/// 返回一个高度为1、半径为0.5的单位圆柱体，包含侧面和两个端面
+/// 
+/// # 参数
+/// - `settings`: LOD网格设置，控制网格的细分程度
+/// - `non_scalable`: 是否不可缩放（固定分段数）
+pub(crate) fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> PlantMesh {
+    let height = 1.0;
+    let radius = 0.5;
+    
+    // 使用LOD设置计算分段数
+    let resolution = compute_radial_segments(settings, radius, non_scalable, 3);
+    let segments = compute_height_segments(settings, height, non_scalable, 1);
+    
+    let num_rings = segments + 1;
+    let num_vertices = resolution * 2 + num_rings * (resolution + 1);
+    let num_faces = resolution * (num_rings - 2);
+    let num_indices = (2 * num_faces + 2 * (resolution - 1) * 2) * 3;
+    let mut vertices: Vec<Vec3> = Vec::with_capacity(num_vertices as usize);
+    let mut normals: Vec<Vec3> = Vec::with_capacity(num_vertices as usize);
+    let mut indices = Vec::with_capacity(num_indices as usize);
+
+    let step_theta = std::f32::consts::TAU / resolution as f32;
+    let step_z = height / segments as f32;
+
+    for ring in 0..num_rings {
+        let z = ring as f32 * step_z;
+        for segment in 0..=resolution {
+            let theta = segment as f32 * step_theta;
+            let (sin, cos) = theta.sin_cos();
+            vertices.push([radius * cos, radius * sin, z].into());
+            normals.push([cos, sin, 0.0].into());
+        }
+    }
+
+    for i in 0..segments {
+        let ring = i * (resolution + 1);
+        let next_ring = (i + 1) * (resolution + 1);
+        for j in 0..resolution {
+            indices.extend_from_slice(&[
+                ring + j + 1,
+                next_ring + j,
+                ring + j,
+                ring + j + 1,
+                next_ring + j + 1,
+                next_ring + j,
+            ]);
+        }
+    }
+
+    // 构建端面的闭包函数（顶部或底部）
+    let mut build_cap = |top: bool| {
+        let offset = vertices.len() as u32;
+        // 根据是顶部还是底部设置不同的z坐标、法向量和绕序
+        let (z, normal_z, winding) = if top {
+            (height, 1.0, (1, 0))
+        } else {
+            (0.0, -1.0, (0, 1))
+        };
+
+        for i in 0..resolution {
+            let theta = i as f32 * step_theta;
+            let (sin, cos) = theta.sin_cos();
+            vertices.push([cos * radius, sin * radius, z].into());
+            normals.push([0.0, 0.0, normal_z].into());
+        }
+
+        for i in 1..(resolution - 1) {
+            indices.extend_from_slice(&[offset, offset + i + winding.1, offset + i + winding.0]);
+        }
+    };
+
+    build_cap(true);
+    build_cap(false);
+
+    PlantMesh {
+        vertices,
+        normals,
+        indices,
+        wire_vertices: vec![],
+        aabb: Some(Aabb::new(
+            Point3::new(-0.5, -0.5, 0.0),
+            Point3::new(0.5, 0.5, 1.0),
+        )),
+    }
+}
+
+/// 计算径向分段数（圆周方向的细分段数）
+/// 
+/// # 参数
+/// - `settings`: LOD网格设置
+/// - `radius`: 半径
+/// - `non_scalable`: 是否不可缩放（固定分段数）
+/// - `required_min`: 最小分段数要求
+/// 
+/// # 返回
+/// 径向分段数，至少为3
 fn compute_radial_segments(
     settings: &LodMeshSettings,
     radius: f32,
     non_scalable: bool,
     required_min: u16,
 ) -> usize {
+    // 计算周长（如果半径有效）
     let circumference = if radius > 0.0 {
         Some(2.0 * std::f32::consts::PI * radius)
     } else {
         None
     };
     let base = settings.adaptive_radial_segments(radius, circumference, non_scalable);
+    // 确保分段数至少为3（最小三角形数）和required_min中的较大值
     base.max(required_min.max(3)) as usize
 }
 
+/// 计算高度分段数（轴向的细分段数）
+/// 
+/// # 参数
+/// - `settings`: LOD网格设置
+/// - `span`: 高度范围
+/// - `non_scalable`: 是否不可缩放（固定分段数）
+/// - `required_min`: 最小分段数要求
+/// 
+/// # 返回
+/// 高度分段数，至少为1
 fn compute_height_segments(
     settings: &LodMeshSettings,
     span: f32,
@@ -43,12 +169,26 @@ fn compute_height_segments(
     base.max(required_min.max(1)) as usize
 }
 
+/// 生成的网格及其包围盒
 #[derive(Debug)]
 pub struct GeneratedMesh {
+    /// 生成的三角网格
     pub mesh: PlantMesh,
+    /// 轴向对齐包围盒（AABB）
     pub aabb: Option<Aabb>,
 }
 
+/// 根据几何参数生成CSG网格
+/// 
+/// 这是本模块的主要入口函数，根据不同的几何参数类型调用相应的生成函数
+/// 
+/// # 参数
+/// - `param`: PDMS几何参数，可以是圆柱、球体、盒子等各种基本形状
+/// - `settings`: LOD网格设置，控制网格的细分程度
+/// - `non_scalable`: 是否不可缩放（对于固定细节级别的对象）
+/// 
+/// # 返回
+/// 如果几何参数有效，返回生成的网格和包围盒；否则返回None
 pub fn generate_csg_mesh(
     param: &PdmsGeoParam,
     settings: &LodMeshSettings,
@@ -72,16 +212,21 @@ pub fn generate_csg_mesh(
     }
 }
 
+/// 生成线性圆柱体（LCylinder）网格
+/// 
+/// LCylinder由轴向方向、直径和两个端面的偏移距离定义
 fn generate_lcylinder_mesh(
     cyl: &LCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
+    // 归一化轴向方向向量
     let dir = safe_normalize(cyl.paxi_dir)?;
     let radius = (cyl.pdia * 0.5).abs();
     if radius <= MIN_LEN {
         return None;
     }
+    // 确定底部和顶部的偏移距离（确保bottom_offset < top_offset）
     let (bottom_offset, top_offset) = if cyl.pbdi <= cyl.ptdi {
         (cyl.pbdi, cyl.ptdi)
     } else {
@@ -95,6 +240,11 @@ fn generate_lcylinder_mesh(
     build_cylinder_mesh(bottom_center, top_center, radius, settings, non_scalable)
 }
 
+/// 生成剪切圆柱体（SSCL，Shear Cylinder）网格
+/// 
+/// SSCL是SCylinder的一种特殊形式，具有剪切变形：
+/// - 底面和顶面可以在X和Y方向有不同的剪切角度
+/// - 侧面会沿着高度方向进行插值变形，形成斜向的圆柱体
 fn generate_sscl_mesh(
     cyl: &SCylinder,
     settings: &LodMeshSettings,
@@ -111,10 +261,7 @@ fn generate_sscl_mesh(
     }
 
     // 计算底面和顶面的中心点
-    let (bottom_center, top_center) = if cyl.center_in_mid {
-        let half = dir * (height * 0.5);
-        (cyl.paxi_pt - half, cyl.paxi_pt + half)
-    } else if height >= 0.0 {
+    let (bottom_center, top_center) = if height >= 0.0 {
         (cyl.paxi_pt, cyl.paxi_pt + dir * height)
     } else {
         let top = cyl.paxi_pt;
@@ -271,35 +418,40 @@ fn generate_sscl_mesh(
     })
 }
 
+/// 生成简单圆柱体（SCylinder）网格
+/// 
+/// SCylinder由轴向方向、直径和高度定义
+/// 如果检测到剪切参数，则委托给`generate_sscl_mesh`处理
 fn generate_scylinder_mesh(
     cyl: &SCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
+    // 如果是剪切圆柱体，使用专门的生成函数
     if cyl.is_sscl() {
         return generate_sscl_mesh(cyl, settings, non_scalable);
     }
-    let dir = safe_normalize(cyl.paxi_dir)?;
-    let radius = (cyl.pdia * 0.5).abs();
-    if radius <= MIN_LEN {
+    if cyl.pdia.abs() <= MIN_LEN || cyl.phei.abs() <= MIN_LEN {
         return None;
     }
-    let height = cyl.phei;
-    if height.abs() <= MIN_LEN {
-        return None;
-    }
-    let (bottom_center, top_center) = if cyl.center_in_mid {
-        let half = dir * (height * 0.5);
-        (cyl.paxi_pt - half, cyl.paxi_pt + half)
-    } else if height >= 0.0 {
-        (cyl.paxi_pt, cyl.paxi_pt + dir * height)
-    } else {
-        let top = cyl.paxi_pt;
-        (top + dir * height, top)
-    };
-    build_cylinder_mesh(bottom_center, top_center, radius, settings, non_scalable)
+
+    Some(GeneratedMesh {
+        mesh: unit_cylinder_mesh(settings, non_scalable),
+        aabb: None,
+    })
 }
 
+/// 构建圆柱体网格的通用函数
+/// 
+/// # 参数
+/// - `bottom_center`: 底部中心点
+/// - `top_center`: 顶部中心点
+/// - `radius`: 圆柱体半径
+/// - `settings`: LOD网格设置
+/// - `non_scalable`: 是否不可缩放
+/// 
+/// # 返回
+/// 生成的圆柱体网格和包围盒
 fn build_cylinder_mesh(
     bottom_center: Vec3,
     top_center: Vec3,
@@ -310,12 +462,14 @@ fn build_cylinder_mesh(
     if radius <= MIN_LEN {
         return None;
     }
+    // 计算轴向向量和高度
     let axis_vec = top_center - bottom_center;
     let height = axis_vec.length();
     if height <= MIN_LEN {
         return None;
     }
     let axis_dir = axis_vec / height;
+    // 构建垂直于轴向的正交基（用于计算圆周上的点）
     let (basis_u, basis_v) = orthonormal_basis(axis_dir);
 
     let radial = compute_radial_segments(settings, radius, non_scalable, 3);
@@ -389,6 +543,9 @@ fn build_cylinder_mesh(
     })
 }
 
+/// 生成球体网格
+/// 
+/// 使用球坐标系生成球面网格，沿纬度（高度）和经度（径向）方向细分
 fn generate_sphere_mesh(
     sphere: &Sphere,
     settings: &LodMeshSettings,
@@ -399,8 +556,10 @@ fn generate_sphere_mesh(
         return None;
     }
 
+    // 计算径向和高度分段数
     let radial = compute_radial_segments(settings, radius, non_scalable, 3);
     let mut height = compute_height_segments(settings, radius * 2.0, non_scalable, 2);
+    // 确保高度分段数为偶数（便于对称分布）
     if height % 2 != 0 {
         height += 1;
     }
@@ -410,15 +569,18 @@ fn generate_sphere_mesh(
     let mut indices = Vec::with_capacity(height * radial * 6);
     let mut aabb = Aabb::new_invalid();
 
+    // 生成球面顶点
     for lat in 0..=height {
+        // 纬度参数 [0, 1] 映射到 [0, π]
         let v = lat as f32 / height as f32;
-        let theta = v * std::f32::consts::PI;
+        let theta = v * std::f32::consts::PI; // 极角（纬度角）
         let sin_theta = theta.sin();
         let cos_theta = theta.cos();
 
         for lon in 0..=radial {
+            // 经度参数 [0, 1] 映射到 [0, 2π]
             let u = lon as f32 / radial as f32;
-            let phi = u * std::f32::consts::TAU;
+            let phi = u * std::f32::consts::TAU; // 方位角（经度角）
             let (sin_phi, cos_phi) = phi.sin_cos();
 
             let normal = Vec3::new(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
@@ -457,17 +619,26 @@ fn generate_sphere_mesh(
     })
 }
 
+/// 生成圆台（LSnout）网格
+/// 
+/// 圆台是一个截顶圆锥，具有：
+/// - 底部半径（pbdm）和顶部半径（ptdm）
+/// - 底部和顶部的中心点可以沿轴向偏移
+/// - 中心偏移方向由pbax_dir定义
 fn generate_snout_mesh(
     snout: &LSnout,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
+    // 归一化轴向方向
     let axis_dir = safe_normalize(snout.paax_dir)?;
+    // 偏移方向，如果无效则使用垂直于轴向的方向
     let offset_dir = snout
         .pbax_dir
         .try_normalize()
         .unwrap_or_else(|| orthonormal_basis(axis_dir).0);
 
+    // 计算底部和顶部半径
     let bottom_radius = (snout.pbdm * 0.5).max(0.0);
     let top_radius = (snout.ptdm * 0.5).max(0.0);
     if bottom_radius <= MIN_LEN && top_radius <= MIN_LEN {
@@ -507,11 +678,16 @@ fn generate_snout_mesh(
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
 
+            // 计算法向量：使用切向量的叉积
+            // tangent_theta: 圆周方向的切向量
             let tangent_theta = (-sin) * basis_u + cos * basis_v;
             let tangent_theta = tangent_theta * radius;
+            // tangent_height: 高度方向的切向量（考虑半径变化）
             let tangent_height = center_delta + radial_dir * radius_delta;
+            // 法向量 = tangent_theta × tangent_height
             let mut normal = tangent_theta.cross(tangent_height);
             if normal.length_squared() <= 1e-8 {
+                // 如果法向量太小（退化情况），使用径向方向作为法向量
                 normal = radial_dir;
             } else {
                 normal = normal.normalize();
@@ -572,16 +748,21 @@ fn generate_snout_mesh(
     })
 }
 
+/// 生成盒子（SBox）网格
+/// 
+/// 盒子由中心点和尺寸定义，包含6个面（每个面由2个三角形组成）
 fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     if !sbox.check_valid() {
         return None;
     }
-    let half = sbox.size * 0.5;
-    let mut vertices = Vec::with_capacity(24);
+    let half = sbox.size * 0.5; // 半尺寸
+    let mut vertices = Vec::with_capacity(24); // 6个面 × 4个顶点 = 24
     let mut normals = Vec::with_capacity(24);
-    let mut indices = Vec::with_capacity(36);
+    let mut indices = Vec::with_capacity(36); // 6个面 × 2个三角形 × 3个索引 = 36
 
+    // 定义6个面的法向量和4个角点（在单位坐标系中）
     let faces = [
+        // +Z面（前面）
         (
             Vec3::Z,
             [
@@ -591,6 +772,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(-1.0, 1.0, 1.0),
             ],
         ),
+        // -Z面（后面）
         (
             Vec3::NEG_Z,
             [
@@ -600,6 +782,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
         ),
+        // +X面（右面）
         (
             Vec3::X,
             [
@@ -609,6 +792,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, -1.0, 1.0),
             ],
         ),
+        // -X面（左面）
         (
             Vec3::NEG_X,
             [
@@ -618,6 +802,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
         ),
+        // +Y面（上面）
         (
             Vec3::Y,
             [
@@ -627,6 +812,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(-1.0, 1.0, 1.0),
             ],
         ),
+        // -Y面（下面）
         (
             Vec3::NEG_Y,
             [
@@ -691,27 +877,35 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     })
 }
 
+/// 生成圆盘（Dish）网格
+/// 
+/// 圆盘是一个球形帽面，由球面的一部分和底部圆面组成
+/// 当前实现仅支持prad=0的情况（完整圆盘）
 fn generate_dish_mesh(
     dish: &Dish,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
+    // 仅支持prad=0的情况
     if dish.prad.abs() > MIN_LEN {
         return None;
     }
     let axis = safe_normalize(dish.paax_dir)?;
-    let radius_rim = dish.pdia * 0.5;
+    let radius_rim = dish.pdia * 0.5; // 边缘半径
     let height = dish.pheig;
     if radius_rim <= MIN_LEN || height <= MIN_LEN {
         return None;
     }
+    // 计算形成圆盘表面的球面半径
+    // 使用几何关系：R² = r² + (R-h)²，解得 R = (r² + h²) / (2h)
     let radius_sphere = (radius_rim * radius_rim + height * height) / (2.0 * height);
     if !radius_sphere.is_finite() || radius_sphere <= MIN_LEN {
         return None;
     }
 
+    // 计算底部中心点和球心位置
     let base_center = dish.paax_pt + axis * dish.pdis;
-    let center_offset = height - radius_sphere;
+    let center_offset = height - radius_sphere; // 球心相对于底部中心的偏移
     let sphere_center = base_center + axis * center_offset;
     let (basis_u, basis_v) = orthonormal_basis(axis);
 
@@ -729,8 +923,10 @@ fn generate_dish_mesh(
         let t = lat as f32 / height_segments as f32;
         let z = t * height;
         let axis_point = base_center + axis * z;
-        let dist_from_center = z - center_offset;
+        // 计算当前高度环的半径（使用球面几何）
+        let dist_from_center = z - center_offset; // 当前点到球心的距离（沿轴向）
         let ring_radius_sq = radius_sphere * radius_sphere - dist_from_center * dist_from_center;
+        // 如果距离超过球半径，环半径为0
         let ring_radius = if ring_radius_sq <= 0.0 {
             0.0
         } else {
@@ -786,6 +982,10 @@ fn generate_dish_mesh(
     })
 }
 
+/// 生成圆环（CTorus）网格
+/// 
+/// 圆环由外半径（rout）和内半径（rins）定义
+/// 当前实现仅支持完整圆环（360度）
 fn generate_torus_mesh(
     torus: &CTorus,
     settings: &LodMeshSettings,
@@ -795,16 +995,18 @@ fn generate_torus_mesh(
         return None;
     }
 
-    let tube_radius = (torus.rout - torus.rins) * 0.5;
+    // 计算管半径和主半径
+    let tube_radius = (torus.rout - torus.rins) * 0.5; // 管的半径
     if tube_radius <= MIN_LEN {
         return None;
     }
-    let major_radius = torus.rins + tube_radius;
+    let major_radius = torus.rins + tube_radius; // 主圆环的半径
     let sweep_angle = torus.angle.to_radians();
     if sweep_angle <= MIN_LEN {
         return None;
     }
 
+    // 仅支持完整圆环（接近2π）
     if sweep_angle < std::f32::consts::TAU - 1e-3 {
         return None;
     }
@@ -818,13 +1020,18 @@ fn generate_torus_mesh(
     let mut indices = Vec::with_capacity(major_segments * tube_segments * 6);
     let mut aabb = Aabb::new_invalid();
 
+    // 生成圆环顶点
+    // i: 主圆环方向的段数（大圆）
+    // j: 管截面的段数（小圆）
     for i in 0..=major_segments {
-        let u = std::f32::consts::TAU * (i as f32 / major_segments as f32);
+        let u = std::f32::consts::TAU * (i as f32 / major_segments as f32); // 主圆环角度
         let (sin_u, cos_u) = u.sin_cos();
+        // 主圆环上的中心点
         let center = Vec3::new(major_radius * cos_u, major_radius * sin_u, 0.0);
         for j in 0..=tube_segments {
-            let v = std::f32::consts::TAU * (j as f32 / tube_segments as f32);
+            let v = std::f32::consts::TAU * (j as f32 / tube_segments as f32); // 管截面角度
             let (sin_v, cos_v) = v.sin_cos();
+            // 计算管截面上的法向量和顶点
             let normal = Vec3::new(cos_u * cos_v, sin_u * cos_v, sin_v);
             let vertex = center + normal * tube_radius;
             extend_aabb(&mut aabb, vertex);
@@ -860,32 +1067,44 @@ fn generate_torus_mesh(
     })
 }
 
+/// 生成棱锥（Pyramid）网格
+/// 
+/// 棱锥具有：
+/// - 底部矩形（由pbbt和pcbt定义）
+/// - 顶部矩形或点（由pbtp和pctp定义）
+/// - 如果顶部尺寸为0，则顶部为顶点
 fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
     if !pyr.check_valid() {
         return None;
     }
 
+    // 归一化轴向方向
     let axis_dir = safe_normalize(pyr.paax_dir)?;
     let (fallback_u, fallback_v) = orthonormal_basis(axis_dir);
 
+    // 计算B方向（垂直于轴向）
     let mut pb_dir = safe_normalize(pyr.pbax_dir).unwrap_or(fallback_u);
-    pb_dir = pb_dir - axis_dir * pb_dir.dot(axis_dir);
+    pb_dir = pb_dir - axis_dir * pb_dir.dot(axis_dir); // 投影到垂直于轴向的平面
     if pb_dir.length_squared() <= MIN_LEN * MIN_LEN {
         pb_dir = fallback_u;
     }
     pb_dir = pb_dir.normalize();
 
+    // 计算C方向（垂直于轴向和B方向）
     let mut pc_dir = safe_normalize(pyr.pcax_dir).unwrap_or(fallback_v);
-    pc_dir = pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir);
+    pc_dir = pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir); // 正交化
     if pc_dir.length_squared() <= MIN_LEN * MIN_LEN {
         pc_dir = fallback_v;
     }
     pc_dir = pc_dir.normalize();
 
+    // 计算底部和顶部中心点
     let bottom_center = pyr.paax_pt + axis_dir * pyr.pbdi;
+    // 顶部中心点可以沿B和C方向偏移
     let top_center =
         pyr.paax_pt + axis_dir * pyr.ptdi + pb_dir * (pyr.pbof * 0.5) + pc_dir * (pyr.pcof * 0.5);
 
+    // 底部和顶部的半尺寸
     let bottom_half = Vec3::new(pyr.pbbt * 0.5, pyr.pcbt * 0.5, 0.0);
     let top_half = Vec3::new(pyr.pbtp * 0.5, pyr.pctp * 0.5, 0.0);
 
@@ -902,10 +1121,11 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
             (vertices.len() - 1) as u32
         };
 
+    // 生成底部四个角点（如果底部尺寸有效）
     let bottom_corners = if bottom_half.x <= MIN_LEN || bottom_half.y <= MIN_LEN {
-        None
+        None // 底部退化为点或线
     } else {
-        let offsets = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)];
+        let offsets = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]; // 四个角的偏移
         let mut idxs = [0u32; 4];
         for (i, (ox, oy)) in offsets.iter().enumerate() {
             let pos = bottom_center + pb_dir * (ox * bottom_half.x) + pc_dir * (oy * bottom_half.y);
@@ -914,10 +1134,13 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
         Some(idxs)
     };
 
+    // 生成顶部顶点或四个角点
     let (top_vertices, apex_index) = if top_half.x <= MIN_LEN || top_half.y <= MIN_LEN {
+        // 顶部退化为点（尖锥）
         let apex = add_vertex(top_center, &mut vertices, &mut normals, &mut aabb);
         (None, Some(apex))
     } else {
+        // 顶部是矩形
         let offsets = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)];
         let mut idxs = [0u32; 4];
         for (i, (ox, oy)) in offsets.iter().enumerate() {
@@ -957,23 +1180,27 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
         return None;
     }
 
+    // 计算顶点法向量：对共享该顶点的所有面的法向量求和（平滑着色）
     for tri in indices.chunks_exact(3) {
         let a = vertices[tri[0] as usize];
         let b = vertices[tri[1] as usize];
         let c = vertices[tri[2] as usize];
-        let normal = (b - a).cross(c - a);
+        let normal = (b - a).cross(c - a); // 面的法向量
         if normal.length_squared() > MIN_LEN * MIN_LEN {
             let norm = normal.normalize();
+            // 将面的法向量累加到三个顶点上
             normals[tri[0] as usize] += norm;
             normals[tri[1] as usize] += norm;
             normals[tri[2] as usize] += norm;
         }
     }
 
+    // 归一化所有法向量
     for n in normals.iter_mut() {
         if n.length_squared() > MIN_LEN * MIN_LEN {
             *n = n.normalize();
         } else {
+            // 如果法向量无效，使用轴向方向作为默认值
             *n = axis_dir;
         }
     }
@@ -990,7 +1217,11 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
     })
 }
 
+/// 生成线性棱锥（LPyramid）网格
+/// 
+/// LPyramid是Pyramid的变体，通过将LPyramid参数转换为Pyramid参数来生成网格
 fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
+    // 将LPyramid转换为Pyramid格式
     let pyramid = Pyramid {
         pbax_pt: lpyr.pbax_pt,
         pbax_dir: lpyr.pbax_dir,
@@ -1010,6 +1241,15 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
     generate_pyramid_mesh(&pyramid)
 }
 
+/// 生成矩形圆环（RTorus）网格
+/// 
+/// RTorus是一个空心圆柱体，由外半径、内半径和高度定义
+/// 当前实现仅支持完整圆环（360度）
+/// 
+/// 该形状由以下部分组成：
+/// - 外圆柱面
+/// - 内圆柱面
+/// - 顶部和底部环形端面
 fn generate_rect_torus_mesh(
     rtorus: &RTorus,
     settings: &LodMeshSettings,
@@ -1018,6 +1258,7 @@ fn generate_rect_torus_mesh(
     if !rtorus.check_valid() {
         return None;
     }
+    // 仅支持完整圆环
     if (rtorus.angle.to_radians() - std::f32::consts::TAU).abs() > 1e-3 {
         return None;
     }
@@ -1042,41 +1283,45 @@ fn generate_rect_torus_mesh(
     let mut combined = PlantMesh::default();
     combined.aabb = Some(Aabb::new_invalid());
 
+    // 生成外圆柱面（法向量向外）
     let (outer_mesh, outer_aabb) = generate_cylinder_surface(
         rtorus.rout,
         half_height,
         major_segments,
         height_segments,
-        true,
+        true, // outward = true
     );
     merge_meshes(&mut combined, outer_mesh, outer_aabb);
 
+    // 生成内圆柱面（法向量向内）
     let (inner_mesh, inner_aabb) = generate_cylinder_surface(
         rtorus.rins,
         half_height,
         major_segments,
         height_segments,
-        false,
+        false, // outward = false
     );
     merge_meshes(&mut combined, inner_mesh, inner_aabb);
 
+    // 生成顶部环形端面
     let (top_mesh, top_aabb) = generate_annulus_surface(
         half_height,
         rtorus.rins,
         rtorus.rout,
         major_segments,
         radial_segments,
-        1.0,
+        1.0, // normal_sign = 1.0 (向上)
     );
     merge_meshes(&mut combined, top_mesh, top_aabb);
 
+    // 生成底部环形端面
     let (bottom_mesh, bottom_aabb) = generate_annulus_surface(
         -half_height,
         rtorus.rins,
         rtorus.rout,
         major_segments,
         radial_segments,
-        -1.0,
+        -1.0, // normal_sign = -1.0 (向下)
     );
     merge_meshes(&mut combined, bottom_mesh, bottom_aabb);
 
@@ -1089,6 +1334,13 @@ fn generate_rect_torus_mesh(
     })
 }
 
+/// 生成拉伸体（Extrusion）网格
+/// 
+/// 拉伸体将一个2D轮廓沿Z轴方向拉伸一定高度形成3D形状
+/// 当前实现仅支持：
+/// - 单一轮廓（单个顶点列表）
+/// - 填充类型（CurveType::Fill）
+/// - 轮廓位于XY平面（所有点的z坐标相同）
 fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
     if extrusion.height.abs() <= MIN_LEN {
         return None;
@@ -1096,15 +1348,18 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
     if extrusion.verts.is_empty() || extrusion.verts[0].len() < 3 {
         return None;
     }
+    // 仅支持单一轮廓
     if extrusion.verts.len() > 1 {
         return None;
     }
+    // 仅支持填充类型
     if !matches!(&extrusion.cur_type, CurveType::Fill) {
         return None;
     }
 
     let profile = &extrusion.verts[0];
     let base_z = profile[0].z;
+    // 检查所有点是否在同一平面上（z坐标相同）
     if profile.iter().any(|p| (p.z - base_z).abs() > 1e-3) {
         return None;
     }
@@ -1114,6 +1369,8 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
         return None;
     }
 
+    // 使用鞋带公式（Shoelace formula）计算轮廓面积
+    // 面积的正负号表示轮廓的绕向（逆时针为正，顺时针为负）
     let area = profile
         .iter()
         .enumerate()
@@ -1167,9 +1424,12 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
         ));
     }
 
+    // 根据面积的正负判断轮廓的绕向（ccw = counter-clockwise，逆时针）
     let ccw = area > 0.0;
+    // 生成顶部和底部的三角形索引（扇形三角化）
     for i in 1..(n - 1) {
         if ccw {
+            // 逆时针：顶部和底部的索引顺序保持一致性
             indices.extend_from_slice(&[top_indices[0], top_indices[i], top_indices[i + 1]]);
             indices.extend_from_slice(&[
                 bottom_indices[0],
@@ -1177,6 +1437,7 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
                 bottom_indices[i],
             ]);
         } else {
+            // 顺时针：反转索引顺序
             indices.extend_from_slice(&[top_indices[0], top_indices[i + 1], top_indices[i]]);
             indices.extend_from_slice(&[
                 bottom_indices[0],
@@ -1221,6 +1482,17 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
     })
 }
 
+/// 生成圆柱面网格（用于RTorus的组成部分）
+/// 
+/// # 参数
+/// - `radius`: 圆柱半径
+/// - `half_height`: 半高度（圆柱从-half_height到+half_height）
+/// - `major_segments`: 圆周方向的段数
+/// - `height_segments`: 高度方向的段数
+/// - `outward`: 法向量方向（true=向外，false=向内）
+/// 
+/// # 返回
+/// 生成的圆柱面网格和包围盒
 fn generate_cylinder_surface(
     radius: f32,
     half_height: f32,
@@ -1278,6 +1550,18 @@ fn generate_cylinder_surface(
     )
 }
 
+/// 生成环形端面网格（用于RTorus的顶部和底部）
+/// 
+/// # 参数
+/// - `z`: Z坐标（端面的高度位置）
+/// - `inner_radius`: 内半径
+/// - `outer_radius`: 外半径
+/// - `major_segments`: 圆周方向的段数
+/// - `radial_segments`: 径向的段数（从内半径到外半径）
+/// - `normal_sign`: 法向量符号（1.0=向上，-1.0=向下）
+/// 
+/// # 返回
+/// 生成的环形端面网格和包围盒
 fn generate_annulus_surface(
     z: f32,
     inner_radius: f32,
@@ -1332,15 +1616,23 @@ fn generate_annulus_surface(
     )
 }
 
+/// 合并两个网格
+/// 
+/// 将另一个网格的顶点、法向量、索引合并到基础网格中，并更新包围盒
 fn merge_meshes(base: &mut PlantMesh, mut other: PlantMesh, other_aabb: Aabb) {
     other.aabb = Some(other_aabb);
     base.merge(&other);
+    // 更新基础网格的包围盒
     if let Some(base_aabb) = base.aabb.as_mut() {
         base_aabb.merge(&other_aabb);
     } else {
         base.aabb = Some(other_aabb);
     }
 }
+
+/// 安全归一化向量
+/// 
+/// 如果向量长度过小（接近零），返回None；否则返回归一化后的向量
 fn safe_normalize(v: Vec3) -> Option<Vec3> {
     if v.length_squared() <= MIN_LEN * MIN_LEN {
         None
@@ -1349,21 +1641,34 @@ fn safe_normalize(v: Vec3) -> Option<Vec3> {
     }
 }
 
+/// 扩展包围盒以包含给定点
 fn extend_aabb(aabb: &mut Aabb, v: Vec3) {
     aabb.take_point(Point3::new(v.x, v.y, v.z));
 }
 
+/// 构建正交基
+/// 
+/// 给定一个法向量，生成两个与之正交的切向量，形成正交基（u, v, n）
+/// 
+/// # 参数
+/// - `normal`: 法向量（将被归一化）
+/// 
+/// # 返回
+/// (tangent, bitangent) 两个切向量，与normal一起形成右手坐标系
 fn orthonormal_basis(normal: Vec3) -> (Vec3, Vec3) {
     let n = normal.normalize();
+    // 选择一个与n不平行的向量进行叉积，生成切向量
     let mut tangent = if n.z.abs() < 0.999 {
-        Vec3::Z.cross(n)
+        Vec3::Z.cross(n) // 如果n不接近Z轴，使用Z轴
     } else {
-        Vec3::X.cross(n)
+        Vec3::X.cross(n) // 如果n接近Z轴，使用X轴
     };
+    // 如果切向量仍然太小，尝试使用Y轴
     if tangent.length_squared() <= MIN_LEN {
         tangent = Vec3::Y.cross(n);
     }
     tangent = tangent.normalize();
+    // 副切向量 = n × tangent（确保右手坐标系）
     let bitangent = n.cross(tangent).normalize();
     (tangent, bitangent)
 }
