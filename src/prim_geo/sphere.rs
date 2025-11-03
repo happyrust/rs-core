@@ -12,8 +12,6 @@ use truck_modeling::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::basic::*;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, VerifiedShape};
-#[cfg(feature = "occ")]
-use opencascade::primitives::*;
 use serde::{Deserialize, Serialize};
 
 use crate::NamedAttrMap;
@@ -71,12 +69,9 @@ impl BrepShapeTrait for Sphere {
         vec![self.center.into()]
     }
 
-    //OCC 的生成
-    #[cfg(feature = "occ")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        Ok(OccSharedShape::new(
-            Shape::sphere(self.radius as f64).build(),
-        ))
+    //CSG 的生成
+    fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        Ok(SPHERE_SHAPE.clone())
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
@@ -178,10 +173,6 @@ impl BrepShapeTrait for Sphere {
             wire_vertices: vec![],
             aabb: None,
         });
-    }
-
-    fn need_use_csg(&self) -> bool {
-        true
     }
 }
 

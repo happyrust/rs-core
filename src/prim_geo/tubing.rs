@@ -1,4 +1,4 @@
-use crate::prim_geo::category::CateBrepShape;
+use crate::prim_geo::category::CateCsgShape;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::tubing::TubiSize::{BoreSize, BoxSize};
@@ -200,45 +200,35 @@ impl PdmsTubing {
         })
     }
 
-    pub fn convert_to_shape(&self) -> Option<CateBrepShape> {
+    pub fn convert_to_shape(&self) -> Option<CateCsgShape> {
         let dir = (self.end_pt - self.start_pt).normalize();
-        let brep_shape: Option<Box<dyn BrepShapeTrait>> = match &self.tubi_size {
+        let csg_shape: Option<Box<dyn BrepShapeTrait>> = match &self.tubi_size {
             TubiSize::BoreSize(d) => {
                 let cylinder = SCylinder {
                     phei: self.start_pt.distance(self.end_pt),
-                    pdia: *d,
-                    center_in_mid: false,
+                    pdia: *d as f32,
                     ..Default::default()
                 };
                 Some(Box::new(cylinder))
             }
-            TubiSize::BoxSize((w, h)) => {
-                let len = self.start_pt.distance(self.end_pt);
-                let size = Vec3::new(*w, *h, len);
-                let cube = SBox {
-                    center: Default::default(),
-                    size,
-                };
-                Some(Box::new(cube))
-            }
             _ => None,
         };
-        if brep_shape.is_none() {
+        if csg_shape.is_none() {
             return None;
         }
 
-        Some(CateBrepShape {
+        Some(CateCsgShape {
             refno: self.leave_refno,
-            brep_shape: brep_shape.unwrap(),
+            csg_shape: csg_shape.unwrap(),
             transform: Transform {
                 rotation: Quat::from_rotation_arc(Vec3::Z, dir),
                 translation: self.start_pt,
-                scale: Vec3::ONE,
+                ..Default::default()
             },
             visible: true,
             is_tubi: true,
             shape_err: None,
-            pts: Default::default(),
+            pts: vec![],
             is_ngmr: false,
         })
     }

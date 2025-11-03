@@ -26,7 +26,7 @@ pub mod basic;
 
 pub mod profile;
 
-use crate::prim_geo::category::CateBrepShape;
+use crate::prim_geo::category::CateCsgShape;
 use crate::{RefU64, RefnoEnum};
 pub use ctorus::*;
 pub use cylinder::*;
@@ -45,4 +45,4 @@ pub use sphere::*;
 pub use sweep_solid::*;
 pub use tubing::*;
 
-pub type CateBrepShapeMap = DashMap<RefnoEnum, Vec<CateBrepShape>>;
+pub type CateCsgShapeMap = DashMap<RefnoEnum, Vec<CateCsgShape>>;

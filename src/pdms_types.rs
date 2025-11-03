@@ -48,7 +48,7 @@ pub const LEVEL_VISBLE: u32 = 6;
 
 ///非负实体基本体的种类
 pub const PRIMITIVE_NOUN_NAMES: [&'static str; 8] = [
-    "BOX", // 盒子
+    "BOX",  // 盒子
     "CYLI", // 圆柱体
     "SLCY", // 斜圆柱体
     "CONE", // 圆锥体
@@ -73,41 +73,41 @@ pub const PRIMITIVE_GEO_ATTR_NAMES: [&'static str; 8] = [
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
 pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
-    "BOX", // 盒子
-    "CYLI", // 圆柱体
-    "SLCY", // 斜圆柱体
-    "CONE", // 圆锥体
-    "DISH", // 碟形
-    "CTOR", // 圆环
-    "RTOR", // 圆环
-    "PYRA", // 棱锥
-    "SNOU", // 球体
-    "POHE", // 多面体
-    "NBOX", // 负盒子
-    "NCYL", // 负圆柱体
-    "NSBO", // 负球体
-    "NCON", // 负圆锥体
-    "NSNO", // 负球体
-    "NPYR", // 负棱锥
-    "NDIS", // 负碟形
-    "NCTO", // 负圆环
-    "NRTO", // 负圆环
-    "NSCY", // 负斜圆柱体
-    "NREV", // 负旋转体
+    "BOX",    // 盒子
+    "CYLI",   // 圆柱体
+    "SLCY",   // 斜圆柱体
+    "CONE",   // 圆锥体
+    "DISH",   // 碟形
+    "CTOR",   // 圆环
+    "RTOR",   // 圆环
+    "PYRA",   // 棱锥
+    "SNOU",   // 球体
+    "POHE",   // 多面体
+    "NBOX",   // 负盒子
+    "NCYL",   // 负圆柱体
+    "NSBO",   // 负球体
+    "NCON",   // 负圆锥体
+    "NSNO",   // 负球体
+    "NPYR",   // 负棱锥
+    "NDIS",   // 负碟形
+    "NCTO",   // 负圆环
+    "NRTO",   // 负圆环
+    "NSCY",   // 负斜圆柱体
+    "NREV",   // 负旋转体
     "POLYHE", // 多面体
 ];
 
 ///有loop的几何体
 pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
-    "AEXTR", // 轴向拉伸
-    "NXTR", // 负拉伸
-    "EXTR", // 拉伸
-    "PANE", // 面板
-    "FLOOR", // 地板
+    "AEXTR",  // 轴向拉伸
+    "NXTR",   // 负拉伸
+    "EXTR",   // 拉伸
+    "PANE",   // 面板
+    "FLOOR",  // 地板
     "SCREED", // 找平层
-    "GWALL", // 玻璃墙/通用墙
-    "NREV", // 负旋转体
-    "REVO", // 旋转体
+    "GWALL",  // 玻璃墙/通用墙
+    "NREV",   // 负旋转体
+    "REVO",   // 旋转体
 ];
 
 ///使用元件库的实体类型名称
@@ -115,37 +115,37 @@ pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
     "FIXING", // 固定件
     "GENSEC", // 通用截面
     "SCREED", // 找平层
-    "CMPF", // 复合件
-    "GWALL", // 玻璃墙/通用墙
-    "EQUI", // 设备
-    "ANCI", // 锚固件
-    "FITT", // 管件
-    "SJOI", // 结构连接
-    "SBFI", // 结构基座固定
-    "CABLE", // 电缆
-    "CNODE", // 连接节点
-    "SCTN", // 截面
-    "SCOJ", // 结构连接
-    "PAVE", // 铺装
-    "SUBE", // 子元素
-    "SEVE", // 服务
-    "SUBJ", // 子连接
-    "PLOO", // 管道循环
-    "RNODE", // 节点
-    "PJOI", // 管道连接
-    "SELJ", // 选择连接
+    "CMPF",   // 复合件
+    "GWALL",  // 玻璃墙/通用墙
+    "EQUI",   // 设备
+    "ANCI",   // 锚固件
+    "FITT",   // 管件
+    "SJOI",   // 结构连接
+    "SBFI",   // 结构基座固定
+    "CABLE",  // 电缆
+    "CNODE",  // 连接节点
+    "SCTN",   // 截面
+    "SCOJ",   // 结构连接
+    "PAVE",   // 铺装
+    "SUBE",   // 子元素
+    "SEVE",   // 服务
+    "SUBJ",   // 子连接
+    "PLOO",   // 管道循环
+    "RNODE",  // 节点
+    "PJOI",   // 管道连接
+    "SELJ",   // 选择连接
     "STWALL", // 结构墙
-    "WALL", // 墙
-    "PALJ", // 管道对齐
-    "TUBI", // 管道
-    "FLOOR", // 地板
-    "CMFI", // 复合安装
-    "PANE", // 面板
-    "PFIT", // 管道配件
-    "GPART", // 通用零件
+    "WALL",   // 墙
+    "PALJ",   // 管道对齐
+    "TUBI",   // 管道
+    "FLOOR",  // 地板
+    "CMFI",   // 复合安装
+    "PANE",   // 面板
+    "PFIT",   // 管道配件
+    "GPART",  // 通用零件
     "PRTELE", // 主要元素
-    "NOZZ", // 接管
-    "SPCO", // 规范组件
+    "NOZZ",   // 接管
+    "SPCO",   // 规范组件
     "ELCONN", // 电气连接
 ];
 
@@ -159,8 +159,8 @@ pub const CATA_GEO_ATTR_NAMES: [&'static str; 4] = [
 
 ///方位的相关属性, todo 继续完善
 pub const TRANSFORM_ATTR_NAMES: [&'static str; 4] = [
-    "POS", // 位置
-    "ORI", // 方向
+    "POS",  // 位置
+    "ORI",  // 方向
     "POSS", // 位置集合
     "POSE", // 位置元素
 ];
@@ -176,7 +176,7 @@ pub const PIPING_NOUN_NAMES: [&'static str; 26] = [
     "OLET", // 支管
     "FBLI", // 法兰盲板
     "REDU", // 异径管
-    "TEE", // 三通
+    "TEE",  // 三通
     "BEND", // 弯管
     "INST", // 仪表
     "TRNS", // 过渡件
@@ -187,7 +187,7 @@ pub const PIPING_NOUN_NAMES: [&'static str; 26] = [
     "UNIO", // 接头
     "BRCO", // 分支连接
     "OFST", // 偏移
-    "CAP", // 封头
+    "CAP",  // 封头
     "PCOM", // 管道组件
     "FTUB", // 管件
     "STIF", // 加强环
@@ -279,36 +279,36 @@ pub const JOINT_TYPES: [&'static str; 2] = [
 
 ///正实体基本体的种类
 pub const GENRAL_POS_NOUN_NAMES: [&'static str; 25] = [
-    "BOX", // 盒子
-    "CYLI", // 圆柱体
-    "SLCY", // 斜圆柱体
-    "CONE", // 圆锥体
-    "DISH", // 碟形
-    "CTOR", // 圆环
-    "RTOR", // 圆环
-    "PYRA", // 棱锥
-    "SNOU", // 球体
+    "BOX",   // 盒子
+    "CYLI",  // 圆柱体
+    "SLCY",  // 斜圆柱体
+    "CONE",  // 圆锥体
+    "DISH",  // 碟形
+    "CTOR",  // 圆环
+    "RTOR",  // 圆环
+    "PYRA",  // 棱锥
+    "SNOU",  // 球体
     "FLOOR", // 地板
     "PANEL", // 面板
-    "SBOX", // 元件库盒子
-    "SCYL", // 元件库圆柱体
-    "LCYL", // 长圆柱体
-    "SSPH", // 元件库球体
-    "LCYL", // 长圆柱体（重复）
-    "SCON", // 元件库圆锥体
-    "LSNO", // 长球体
-    "LPYR", // 长棱锥
-    "SDSH", // 元件库碟形
-    "SCTO", // 元件库圆环
-    "SEXT", // 元件库拉伸
-    "SREV", // 元件库旋转体
-    "SRTO", // 元件库圆环
-    "SSLC", // 元件库斜圆柱体
+    "SBOX",  // 元件库盒子
+    "SCYL",  // 元件库圆柱体
+    "LCYL",  // 长圆柱体
+    "SSPH",  // 元件库球体
+    "LCYL",  // 长圆柱体（重复）
+    "SCON",  // 元件库圆锥体
+    "LSNO",  // 长球体
+    "LPYR",  // 长棱锥
+    "SDSH",  // 元件库碟形
+    "SCTO",  // 元件库圆环
+    "SEXT",  // 元件库拉伸
+    "SREV",  // 元件库旋转体
+    "SRTO",  // 元件库圆环
+    "SSLC",  // 元件库斜圆柱体
 ];
 
 ///所有几何体类型的名称（包括正实体和负实体）
 pub const TOTAL_GEO_NOUN_NAMES: [&'static str; 40] = [
-    "BOX", // 盒子
+    "BOX",  // 盒子
     "CYLI", // 圆柱体
     "SLCY", // 斜圆柱体
     "CONE", // 圆锥体
@@ -387,12 +387,12 @@ pub const TOTAL_CATA_GEO_NOUN_NAMES: [&'static str; 31] = [
 
 ///可能会与ngmr发生作用的类型
 pub const TOTAL_CONTAIN_NGMR_GEO_NAEMS: [&'static str; 6] = [
-    "WALL", // 墙
+    "WALL",   // 墙
     "STWALL", // 结构墙
-    "GWALL", // 玻璃墙/通用墙
-    "SCTN", // 截面
-    "PANEL", // 面板
-    "FLOOR", // 地板
+    "GWALL",  // 玻璃墙/通用墙
+    "SCTN",   // 截面
+    "PANEL",  // 面板
+    "FLOOR",  // 地板
 ];
 
 ///多面体（Polyhedron）类型
@@ -400,32 +400,32 @@ pub const POHE_GEO_NAMES: [&'static str; 1] = ["POHE"];
 
 ///元件库的种类
 pub const CATA_GEO_NAMES: [&'static str; 26] = [
-    "BRAN", // 分支
-    "HANG", // 悬挂
+    "BRAN",   // 分支
+    "HANG",   // 悬挂
     "ELCONN", // 电气连接
-    "CMPF", // 复合件
-    "WALL", // 墙
+    "CMPF",   // 复合件
+    "WALL",   // 墙
     "STWALL", // 结构墙
-    "GWALL", // 玻璃墙/通用墙
+    "GWALL",  // 玻璃墙/通用墙
     "FIXING", // 固定件
-    "SJOI", // 结构连接
-    "PJOI", // 管道连接
-    "PFIT", // 管道配件
+    "SJOI",   // 结构连接
+    "PJOI",   // 管道连接
+    "PFIT",   // 管道配件
     "GENSEC", // 通用截面
-    "RNODE", // 节点
+    "RNODE",  // 节点
     "PRTELE", // 主要元素
-    "GPART", // 通用零件
+    "GPART",  // 通用零件
     "SCREED", // 找平层
-    "NOZZ", // 接管
-    "PALJ", // 管道对齐
-    "CABLE", // 电缆
-    "BATT", // 护板/电池
-    "CMFI", // 复合安装
-    "SCOJ", // 结构连接
-    "SEVE", // 服务
-    "SBFI", // 结构基座固定
-    "SCTN", // 截面
-    "FITT", // 管件
+    "NOZZ",   // 接管
+    "PALJ",   // 管道对齐
+    "CABLE",  // 电缆
+    "BATT",   // 护板/电池
+    "CMFI",   // 复合安装
+    "SCOJ",   // 结构连接
+    "SEVE",   // 服务
+    "SBFI",   // 结构基座固定
+    "SCTN",   // 截面
+    "FITT",   // 管件
 ];
 
 ///有tubi的类型
@@ -440,71 +440,71 @@ pub const CATA_SINGLE_REUSE_GEO_NAMES: [&'static str; 0] = [];
 ///不可重用的元件库几何体类型名称
 pub const CATA_WITHOUT_REUSE_GEO_NAMES: [&'static str; 23] = [
     "ELCONN", // 电气连接
-    "CMPF", // 复合件
-    "WALL", // 墙
-    "GWALL", // 玻璃墙/通用墙
-    "SJOI", // 结构连接
-    "FITT", // 管件
-    "PFIT", // 管道配件
+    "CMPF",   // 复合件
+    "WALL",   // 墙
+    "GWALL",  // 玻璃墙/通用墙
+    "SJOI",   // 结构连接
+    "FITT",   // 管件
+    "PFIT",   // 管道配件
     "FIXING", // 固定件
-    "PJOI", // 管道连接
+    "PJOI",   // 管道连接
     "GENSEC", // 通用截面
-    "RNODE", // 节点
+    "RNODE",  // 节点
     "PRTELE", // 主要元素
-    "GPART", // 通用零件
+    "GPART",  // 通用零件
     "SCREED", // 找平层
-    "PALJ", // 管道对齐
-    "CABLE", // 电缆
-    "BATT", // 护板/电池
-    "CMFI", // 复合安装
-    "SCOJ", // 结构连接
-    "SEVE", // 服务
-    "SBFI", // 结构基座固定
+    "PALJ",   // 管道对齐
+    "CABLE",  // 电缆
+    "BATT",   // 护板/电池
+    "CMFI",   // 复合安装
+    "SCOJ",   // 结构连接
+    "SEVE",   // 服务
+    "SBFI",   // 结构基座固定
     "STWALL", // 结构墙
-    "SCTN", // 截面
+    "SCTN",   // 截面
 ];
 
 ///可见的几何体类型名称
 pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
-    "BOX", // 盒子
-    "CYLI", // 圆柱体
-    "SLCY", // 斜圆柱体
-    "CONE", // 圆锥体
-    "DISH", // 碟形
-    "CTOR", // 圆环
-    "RTOR", // 圆环
-    "PYRA", // 棱锥
-    "SNOU", // 球体
-    "POHE", // 多面体
+    "BOX",    // 盒子
+    "CYLI",   // 圆柱体
+    "SLCY",   // 斜圆柱体
+    "CONE",   // 圆锥体
+    "DISH",   // 碟形
+    "CTOR",   // 圆环
+    "RTOR",   // 圆环
+    "PYRA",   // 棱锥
+    "SNOU",   // 球体
+    "POHE",   // 多面体
     "POLYHE", // 多面体
-    "EXTR", // 拉伸
-    "REVO", // 旋转体
-    "FLOOR", // 地板
-    "PANE", // 面板
+    "EXTR",   // 拉伸
+    "REVO",   // 旋转体
+    "FLOOR",  // 地板
+    "PANE",   // 面板
     "ELCONN", // 电气连接
-    "CMPF", // 复合件
-    "WALL", // 墙
-    "GWALL", // 玻璃墙/通用墙
-    "SJOI", // 结构连接
-    "FITT", // 管件
-    "PFIT", // 管道配件
+    "CMPF",   // 复合件
+    "WALL",   // 墙
+    "GWALL",  // 玻璃墙/通用墙
+    "SJOI",   // 结构连接
+    "FITT",   // 管件
+    "PFIT",   // 管道配件
     "FIXING", // 固定件
-    "PJOI", // 管道连接
+    "PJOI",   // 管道连接
     "GENSEC", // 通用截面
-    "RNODE", // 节点
+    "RNODE",  // 节点
     "PRTELE", // 主要元素
-    "GPART", // 通用零件
+    "GPART",  // 通用零件
     "SCREED", // 找平层
-    "PALJ", // 管道对齐
-    "CABLE", // 电缆
-    "BATT", // 护板/电池
-    "CMFI", // 复合安装
-    "SCOJ", // 结构连接
-    "SEVE", // 服务
-    "SBFI", // 结构基座固定
+    "PALJ",   // 管道对齐
+    "CABLE",  // 电缆
+    "BATT",   // 护板/电池
+    "CMFI",   // 复合安装
+    "SCOJ",   // 结构连接
+    "SEVE",   // 服务
+    "SBFI",   // 结构基座固定
     "STWALL", // 结构墙
-    "SCTN", // 截面
-    "NOZZ", // 接管
+    "SCTN",   // 截面
+    "NOZZ",   // 接管
 ];
 
 ///连接类型枚举
@@ -593,31 +593,31 @@ pub const DEFAULT_NAMED_NOUNS: [&'static str; 4] = ["TYPE", "NAME", "REFNO", "OW
 pub enum PdmsGenericType {
     #[default]
     UNKOWN = 0, // 未知类型
-    CE, // 设备
-    PIPE, // 管道
-    STRU, // 结构
-    EQUI, // 设备
-    ROOM, // 房间
-    SCTN, // 截面
-    WALL, // 墙
-    STWALL, // 结构墙
-    CWALL, // 混凝土墙
-    GWALL, // 玻璃墙/通用墙
-    GENSEC, // 通用截面
-    HANG, // 悬挂
-    HANDRA, // 扶手
-    PANE, // 面板
-    CFLOOR, // 混凝土地板
-    FLOOR, // 地板
-    EXTR, // 拉伸
-    CWBRAN, // 冷弯分支
-    REVO, // 旋转体
-    CTWALL, // 混凝土墙
+    CE,      // 设备
+    PIPE,    // 管道
+    STRU,    // 结构
+    EQUI,    // 设备
+    ROOM,    // 房间
+    SCTN,    // 截面
+    WALL,    // 墙
+    STWALL,  // 结构墙
+    CWALL,   // 混凝土墙
+    GWALL,   // 玻璃墙/通用墙
+    GENSEC,  // 通用截面
+    HANG,    // 悬挂
+    HANDRA,  // 扶手
+    PANE,    // 面板
+    CFLOOR,  // 混凝土地板
+    FLOOR,   // 地板
+    EXTR,    // 拉伸
+    CWBRAN,  // 冷弯分支
+    REVO,    // 旋转体
+    CTWALL,  // 混凝土墙
     AREADEF, // 区域定义
-    DEMOPA, // 演示面板
-    INSURQ, // 安装请求
-    STRLNG, // 结构长度
-    HVAC, // 暖通空调
+    DEMOPA,  // 演示面板
+    INSURQ,  // 安装请求
+    STRLNG,  // 结构长度
+    HVAC,    // 暖通空调
 }
 
 ///从字符串反序列化为u64
@@ -1104,22 +1104,22 @@ pub enum DbAttributeType {
     #[default]
     Unknown, // 未知类型
     INTEGER = 1, // 整数
-    DOUBLE, // 双精度浮点数
-    BOOL, // 布尔值
-    STRING, // 字符串
-    ELEMENT, // 元素引用
-    WORD, // 字
-    DIRECTION, // 方向
-    POSITION, // 位置
+    DOUBLE,      // 双精度浮点数
+    BOOL,        // 布尔值
+    STRING,      // 字符串
+    ELEMENT,     // 元素引用
+    WORD,        // 字
+    DIRECTION,   // 方向
+    POSITION,    // 位置
     ORIENTATION, // 方向
-    DATETIME, // 日期时间
+    DATETIME,    // 日期时间
 
     //todo remove these
     DOUBLEVEC, // 双精度向量
-    INTVEC, // 整数向量
-    FLOATVEC, // 浮点向量
-    TYPEX, // 类型X
-    Vec3Type, // 三维向量类型
+    INTVEC,    // 整数向量
+    FLOATVEC,  // 浮点向量
+    TYPEX,     // 类型X
+    Vec3Type,  // 三维向量类型
     RefU64Vec, // RefU64向量
 }
 
@@ -1522,11 +1522,11 @@ pub struct RoomNodes {
 pub enum EleOperation {
     #[default]
     Add = 0, // 添加
-    Modified = 1, // 修改
+    Modified = 1,         // 修改
     GeometryModified = 2, // 几何修改
-    Deleted = 3, // 删除
-    Duplicate = 4, // 复制
-    None = 5, // 无操作
+    Deleted = 3,          // 删除
+    Duplicate = 4,        // 复制
+    None = 5,             // 无操作
 }
 
 impl EleOperation {

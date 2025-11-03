@@ -776,8 +776,8 @@ pub(crate) async fn get_named_attmap_with_uda(
         from (ATT_UDA:{1}).udas 
         where u.UTYP != none;
         "#,
-        refno_enum.to_pe_key(),  // 转换为PE键名格式
-        refno_enum.refno()       // 获取参考号
+        refno_enum.to_pe_key(), // 转换为PE键名格式
+        refno_enum.refno()      // 获取参考号
     );
 
     // 定义用于反序列化UDA键值对的结构体

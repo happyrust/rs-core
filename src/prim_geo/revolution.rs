@@ -1,8 +1,4 @@
-#[cfg(feature = "gen_model")]
-use crate::csg::manifold::*;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-#[cfg(feature = "occ")]
-use crate::prim_geo::basic::OccSharedShape;
 use crate::prim_geo::wire::*;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
@@ -11,10 +7,6 @@ use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
 use approx::AbsDiffEq;
 use approx::abs_diff_eq;
 use glam::{Vec2, Vec3};
-#[cfg(feature = "occ")]
-use opencascade::angle::ToAngle;
-#[cfg(feature = "occ")]
-use opencascade::primitives::*;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -122,26 +114,6 @@ impl BrepShapeTrait for Revolution {
         None
     }
 
-    #[cfg(feature = "occ")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        let wires = gen_occ_wires(&self.verts)?;
-        let angle = if abs_diff_eq!(self.angle, 360.0, epsilon = 0.01)
-            || self.angle > 360.0
-            || self.angle == 0.0
-        {
-            360.0
-        } else {
-            self.angle as f64
-        };
-        // dbg!(angle);
-        let r = Face::from_wires(&wires)?.revolve(
-            self.rot_pt.as_dvec3(),
-            self.rot_dir.as_dvec3(),
-            Some(angle.degrees()),
-        );
-        return Ok(OccSharedShape::new(r.into_shape()));
-    }
-
     fn hash_unit_mesh_params(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
         self.verts.iter().flatten().for_each(|v| {
@@ -173,58 +145,21 @@ impl BrepShapeTrait for Revolution {
         Some(PdmsGeoParam::PrimRevolution(self.clone()))
     }
 
-    ///使用manifold生成拉身体的mesh
-    #[cfg(all(feature = "gen_model", feature = "truck"))]
+    ///使用CSG生成旋转体的mesh
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
-        #[cfg(feature = "truck")]
-        use truck_meshalgo::prelude::*;
-        #[cfg(feature = "truck")]
-        use truck_modeling::{Shell, Surface, Wire, builder};
-        if !self.check_valid() {
-            return None;
-        }
-        let mut wire = gen_wire(&self.verts, &self.fradius_vec).ok()?;
-        if let Ok(face) = builder::try_attach_plane(&[wire.clone()]) {
-            if let Surface::Plane(plane) = face.surface() {
-                let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
-                if plane.normal().dot(extrude_dir) < 0.0 {
-                    wire = wire.inverse();
-                }
-                let e_len = wire.len();
-                let pts = wire
-                    .edge_iter()
-                    .enumerate()
-                    .map(|(i, e)| {
-                        let curve = e.oriented_curve();
-                        let polyline =
-                            PolylineCurve::from_curve(&curve, curve.range_tuple(), self.tol() as _);
-                        let mut v = polyline
-                            .iter()
-                            .map(|x| Vec2::new(x.x as _, x.y as _))
-                            .collect::<Vec<_>>();
-                        if !v.is_empty() && i != (e_len - 1) {
-                            v.pop();
-                        }
-                        v
-                    })
-                    .flatten()
-                    .collect::<Vec<Vec2>>();
-                // dbg!(&pts);
-                unsafe {
-                    let mut cross_section = ManifoldCrossSectionRust::from_points(&pts);
-                    let manifold = cross_section.extrude_rotate(300, 360.0);
-                    dbg!(manifold.num_tri(), manifold.get_properties());
-                    //直接保存到文件，下次要做负实体计算时，直接读取
-                    return Some(PlantMesh::from(manifold));
-                }
-            }
-        }
-        None
+        use crate::geometry::csg::generate_revolution_mesh;
+        use crate::mesh_precision::LodMeshSettings;
+        generate_revolution_mesh(self, &LodMeshSettings::default(), false).map(|g| g.mesh)
     }
 
-    #[inline]
-    fn need_use_csg(&self) -> bool {
-        false
+    fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        if let Some(mesh) = self.gen_csg_mesh() {
+            Ok(crate::prim_geo::basic::CsgSharedMesh::new(mesh))
+        } else {
+            Err(anyhow::anyhow!(
+                "Failed to generate CSG mesh for Revolution"
+            ))
+        }
     }
 
     fn enhanced_key_points(

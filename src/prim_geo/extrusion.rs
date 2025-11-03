@@ -212,10 +212,6 @@ impl BrepShapeTrait for Extrusion {
         None
     }
 
-    fn need_use_csg(&self) -> bool {
-        false
-    }
-
     fn enhanced_key_points(
         &self,
         transform: &bevy_transform::prelude::Transform,

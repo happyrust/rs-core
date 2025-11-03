@@ -267,15 +267,8 @@ impl BrepShapeTrait for Dish {
     }
 
     fn get_scaled_vec3(&self) -> Vec3 {
-        if self.prad > 0.0 {
-            Vec3::new(
-                self.pdia,
-                self.pdia,
-                (self.pheig / (self.pdia / 2.0)) * self.pdia,
-            )
-        } else {
-            Vec3::new(self.pdia, self.pdia, self.pdia)
-        }
+        // Unit Dish 的高度已经按直径归一化，因此统一使用直径缩放即可还原真实尺寸。
+        Vec3::new(self.pdia, self.pdia, self.pdia)
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

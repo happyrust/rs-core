@@ -128,8 +128,6 @@ impl Default for CateAxisParam {
 }
 
 pub mod geo_params_data {
-    #[cfg(feature = "occ")]
-    use crate::prim_geo::basic::OccSharedShape;
     use crate::prim_geo::ctorus::CTorus;
     use crate::prim_geo::dish::Dish;
     use crate::prim_geo::extrusion::Extrusion;
@@ -389,26 +387,18 @@ pub mod geo_params_data {
             }
         }
 
-        #[cfg(feature = "occ")]
-        pub fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+        pub fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             if !self.check_valid() {
                 return Err(anyhow!("Invalid shape"));
             }
             match self {
-                PdmsGeoParam::PrimSCylinder(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimLCylinder(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimExtrusion(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimLoft(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimBox(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimLSnout(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimDish(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimSphere(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimCTorus(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimRTorus(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimPyramid(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimLPyramid(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimRevolution(s) => s.gen_occ_shape(),
-                PdmsGeoParam::PrimPolyhedron(s) => s.gen_occ_shape(),
+                PdmsGeoParam::PrimSCylinder(s) => s.gen_csg_shape(),
+                PdmsGeoParam::PrimLCylinder(s) => s.gen_csg_shape(),
+                PdmsGeoParam::PrimBox(s) => s.gen_csg_shape(),
+                PdmsGeoParam::PrimSphere(s) => s.gen_csg_shape(),
+                PdmsGeoParam::PrimPolyhedron(s) => s.gen_csg_shape(),
+                PdmsGeoParam::PrimRevolution(s) => s.gen_csg_shape(),
+                // 其他形状暂时返回错误，需要后续实现
                 _ => Err(anyhow!("Not support this shape")),
             }
         }

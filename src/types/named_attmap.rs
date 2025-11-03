@@ -937,7 +937,7 @@ impl NamedAttrMap {
     }
 
     ///生成具有几何属性的element的shape
-    pub fn create_brep_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
+    pub fn create_csg_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
         let type_noun = self.get_type_str();
         let mut r: Option<Box<dyn BrepShapeTrait>> = match type_noun {
             "BOX" | "NBOX" => Some(Box::new(SBox::from(self))),

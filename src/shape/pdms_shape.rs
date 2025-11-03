@@ -806,18 +806,16 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
     fn gen_plant_geo_data_truck(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
         let mut aabb = Aabb::new_invalid();
         let geo_hash = self.hash_unit_mesh_params();
-        if self.need_use_csg() {
-            if let Some(csg_mesh) = self.gen_csg_mesh() {
-                for vertex in &csg_mesh.vertices {
-                    aabb.take_point((*vertex).into());
-                }
-                return Some(PlantGeoData {
-                    geo_hash,
-                    mesh: Some(csg_mesh),
-                    aabb: Some(aabb),
-                });
+        // 优先尝试使用 CSG 生成网格
+        if let Some(csg_mesh) = self.gen_csg_mesh() {
+            for vertex in &csg_mesh.vertices {
+                aabb.take_point((*vertex).into());
             }
-            return None;
+            return Some(PlantGeoData {
+                geo_hash,
+                mesh: Some(csg_mesh),
+                aabb: Some(aabb),
+            });
         }
         if let Some(brep) = self.gen_brep_shell() {
             let brep_bbox = gen_bounding_box(&brep);
@@ -888,10 +886,6 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
 
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         None
-    }
-
-    fn need_use_csg(&self) -> bool {
-        false
     }
 }
 

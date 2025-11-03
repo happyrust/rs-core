@@ -356,7 +356,9 @@ impl BrepShapeTrait for SCylinder {
             // 对于斜切圆柱，使用 CSG 生成
             use crate::geometry::csg::generate_scylinder_mesh;
             use crate::mesh_precision::LodMeshSettings;
-            if let Some(generated) = generate_scylinder_mesh(self, &LodMeshSettings::default(), false) {
+            if let Some(generated) =
+                generate_scylinder_mesh(self, &LodMeshSettings::default(), false)
+            {
                 Ok(crate::prim_geo::basic::CsgSharedMesh::new(generated.mesh))
             } else {
                 Err(anyhow::anyhow!("Failed to generate CSG mesh for SSCL"))
@@ -399,6 +401,7 @@ impl BrepShapeTrait for SCylinder {
         Transform {
             rotation: Default::default(),
             translation: if self.center_in_mid {
+                dbg!(&self);
                 Vec3::new(0.0, 0.0, -self.phei / 2.0)
             } else {
                 Vec3::ZERO

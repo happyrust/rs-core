@@ -1073,7 +1073,7 @@ fn generate_dish_mesh(
     let (basis_u, basis_v) = orthonormal_basis(axis);
 
     // 根据 dish 类型选择不同的参数
-    let (radius_sphere, arc, center_offset, scale_z) = if is_elliptical {
+    let (radius_sphere, mut arc, center_offset, scale_z) = if is_elliptical {
         // 椭圆 dish: 使用 baseRadius 作为球半径，z轴缩放为 height/baseRadius
         // 参考 rvmparser: sphereBasedShape(baseRadius, π/2, 0, height/baseRadius)
         let scale_z = height / radius_rim;
@@ -1100,36 +1100,56 @@ fn generate_dish_mesh(
         (radius_sphere, arc, center_offset, 1.0)
     };
 
+    if arc <= MIN_LEN {
+        return None;
+    }
+
     let radial_segments = compute_radial_segments(settings, radius_rim, non_scalable, 3);
     // 对于椭圆 dish，根据 arc 和 scale_z 计算合适的 rings 数
     // 参考 rvmparser: rings = max(min_rings, scale_z * samples * arc / (2π))
     let min_rings = 3u16;
     let samples = radial_segments;
-    let rings = if is_elliptical {
-        let calculated_rings = (scale_z * samples as f32 * arc / std::f32::consts::TAU).ceil() as u32;
-        calculated_rings.max(min_rings as u32)
+    let mut rings = if is_elliptical {
+        let calculated_rings =
+            (scale_z * samples as f32 * arc / std::f32::consts::TAU).max(min_rings as f32);
+        calculated_rings as usize
     } else {
-        compute_height_segments(settings, height, non_scalable, min_rings) as u32
+        compute_height_segments(settings, height, non_scalable, min_rings)
+    };
+    if rings < min_rings as usize {
+        rings = min_rings as usize;
+    }
+    if rings < 2 {
+        return None;
+    }
+
+    let is_full_sphere = if arc >= std::f32::consts::PI - 1e-3 {
+        arc = std::f32::consts::PI;
+        true
+    } else {
+        false
     };
 
     // 估算容量：每环最多 radial_segments + 1 个顶点
     let max_vertices_per_ring = radial_segments + 1;
-    let mut vertices = Vec::with_capacity((rings as usize + 1) * max_vertices_per_ring + 1);
+    let mut vertices = Vec::with_capacity((rings + 1) * max_vertices_per_ring + 1);
     let mut normals = Vec::with_capacity(vertices.capacity());
-    let mut indices =
-        Vec::with_capacity(rings as usize * radial_segments * 6 + radial_segments * 3);
+    let mut indices = Vec::with_capacity(rings * radial_segments * 6 + radial_segments * 3);
     let mut aabb = Aabb::new_invalid();
-    let mut ring_offsets = Vec::with_capacity((rings + 1) as usize);
+    let mut ring_offsets = Vec::with_capacity(rings + 1);
+    let mut ring_vertex_counts = Vec::with_capacity(rings);
 
     // 生成顶点并跟踪环偏移
-    for lat in 0..=rings {
+    let theta_step = if rings > 1 {
+        arc / (rings as f32 - 1.0)
+    } else {
+        0.0
+    };
+
+    for lat in 0..rings {
         ring_offsets.push(vertices.len() as u32);
-        
-        let theta = if rings > 1 {
-            (lat as f32 / (rings - 1) as f32) * arc
-        } else {
-            0.0
-        };
+
+        let theta = theta_step * lat as f32;
         let cos_theta = theta.cos();
         let sin_theta = theta.sin();
 
@@ -1142,13 +1162,13 @@ fn generate_dish_mesh(
         let ring_radius = radius_sphere * w;
 
         // 为每个环生成顶点
-        let n_in_ring = if lat == 0 || (lat == rings && !is_elliptical) {
+        let n_in_ring = if lat == 0 || (is_full_sphere && lat == rings - 1) {
             1 // 顶部和底部（球形 dish）使用单个顶点
         } else {
             // 根据 w (sin_theta) 计算每环的顶点数
-            let n = (w * samples as f32).max(3.0).ceil() as u32;
-            n
+            ((w * samples as f32).max(3.0).ceil() as u32).max(3)
         };
+        ring_vertex_counts.push(n_in_ring);
 
         for lon in 0..n_in_ring {
             let phi = if n_in_ring > 1 {
@@ -1164,54 +1184,70 @@ fn generate_dish_mesh(
             // 计算法线（对于椭圆 dish，需要考虑 scale_z）
             let nx = w * phi.cos();
             let ny = w * phi.sin();
-            let nz = cos_theta / scale_z;
+            let nz = if scale_z.abs() > MIN_LEN {
+                cos_theta / scale_z
+            } else {
+                cos_theta
+            };
             let normal = (basis_u * nx + basis_v * ny + axis * nz).normalize();
             normals.push(normal);
         }
     }
+    ring_offsets.push(vertices.len() as u32);
 
     // 生成索引（连接相邻环）
     // ring_offsets 有 rings + 1 个元素，索引从 0 到 rings
     // 每个环从 ring_offsets[lat] 开始，到 ring_offsets[lat + 1] 结束
-    for lat in 0..(rings as usize) {
-        let n_c = ring_offsets[lat + 1] - ring_offsets[lat]; // 当前环的顶点数
-        // 下一环的顶点数（lat + 1 是下一环的索引，lat + 2 是下下环的索引）
-        let n_n = if lat + 2 < ring_offsets.len() {
-            ring_offsets[lat + 2] - ring_offsets[lat + 1]
-        } else {
-            // 如果是最后一个环，使用当前环的顶点数（实际上不应该发生，因为 lat < rings）
-            n_c
-        };
+    for lat in 0..(rings - 1) {
+        let n_c = ring_vertex_counts[lat];
+        let n_n = ring_vertex_counts[lat + 1];
 
         let o_c = ring_offsets[lat];
         let o_n = ring_offsets[lat + 1];
 
         if n_c < n_n {
             // 下一环顶点更多
-            for i_n in 0..n_n {
-                let ii_n = (i_n + 1) % n_n;
-                let i_c = (n_c * (i_n + 1)) / n_n;
-                let ii_c = (n_c * (i_n + 2)) / n_n;
-                let i_c = i_c % n_c;
-                let ii_c = ii_c % n_c;
+            for i_n in 0..(n_n as usize) {
+                let i_n_u32 = i_n as u32;
+                let mut ii_n = i_n_u32 + 1;
+                let mut i_c = (n_c * (i_n_u32 + 1)) / n_n;
+                let mut ii_c = (n_c * (i_n_u32 + 2)) / n_n;
+                if n_c > 0 {
+                    i_c %= n_c;
+                    ii_c %= n_c;
+                }
+                if n_n > 0 {
+                    ii_n %= n_n;
+                }
 
                 if i_c != ii_c {
                     indices.extend_from_slice(&[o_c + i_c, o_n + ii_n, o_c + ii_c]);
                 }
-                indices.extend_from_slice(&[o_c + i_c, o_n + i_n, o_n + ii_n]);
+                indices.extend_from_slice(&[o_c + i_c, o_n + i_n_u32, o_n + ii_n]);
             }
         } else {
             // 当前环顶点更多或相等
-            for i_c in 0..n_c {
-                let ii_c = (i_c + 1) % n_c;
-                let i_n = (n_n * i_c) / n_c;
-                let ii_n = (n_n * (i_c + 1)) / n_c;
-                let i_n = i_n % n_n;
-                let ii_n = ii_n % n_n;
+            for i_c in 0..(n_c as usize) {
+                let i_c_u32 = i_c as u32;
+                let mut ii_c = i_c_u32 + 1;
+                let mut i_n = if n_c > 0 { (n_n * i_c_u32) / n_c } else { 0 };
+                let mut ii_n = if n_c > 0 {
+                    (n_n * (i_c_u32 + 1)) / n_c
+                } else {
+                    0
+                };
 
-                indices.extend_from_slice(&[o_c + i_c, o_n + ii_n, o_c + ii_c]);
+                if n_n > 0 {
+                    i_n %= n_n;
+                    ii_n %= n_n;
+                }
+                if n_c > 0 {
+                    ii_c %= n_c;
+                }
+
+                indices.extend_from_slice(&[o_c + i_c_u32, o_n + ii_n, o_c + ii_c]);
                 if i_n != ii_n {
-                    indices.extend_from_slice(&[o_c + i_c, o_n + i_n, o_n + ii_n]);
+                    indices.extend_from_slice(&[o_c + i_c_u32, o_n + i_n, o_n + ii_n]);
                 }
             }
         }
@@ -1219,7 +1255,7 @@ fn generate_dish_mesh(
 
     // 添加底部圆面（仅对球形 dish 或椭圆 dish 的底部）
     if !is_elliptical || height > MIN_LEN {
-        let base_ring_idx = rings as usize;
+        let base_ring_idx = rings - 1;
         if base_ring_idx < ring_offsets.len() - 1 {
             let base_ring_start = ring_offsets[base_ring_idx];
             let base_ring_count = ring_offsets[base_ring_idx + 1] - base_ring_start;
@@ -1228,9 +1264,9 @@ fn generate_dish_mesh(
                 vertices.push(base_center);
                 normals.push(-axis);
                 extend_aabb(&mut aabb, base_center);
-                for lon in 0..base_ring_count {
-                    let curr = base_ring_start + lon;
-                    let next = base_ring_start + ((lon + 1) % base_ring_count);
+                for lon in 0..(base_ring_count as usize) {
+                    let curr = base_ring_start + lon as u32;
+                    let next = base_ring_start + ((lon as u32 + 1) % base_ring_count);
                     indices.extend_from_slice(&[base_center_index, next, curr]);
                 }
             }
@@ -1279,15 +1315,15 @@ fn generate_torus_mesh(
     } else {
         1.0
     };
-    
+
     // 使用现有的 compute_radial_segments，但需要考虑角度
     let major_segments = compute_radial_segments(settings, major_radius, non_scalable, 3);
     // 根据角度调整分段数
     let angle_ratio = sweep_angle / std::f32::consts::TAU;
     let major_segments = ((major_segments as f32 * angle_ratio).ceil() as usize).max(2);
-    
+
     let tube_segments = compute_radial_segments(settings, tube_radius, non_scalable, 3);
-    
+
     // 对于部分圆环，需要额外的采样点
     let samples_l = major_segments + 1; // toroidal 方向（不闭合）
     let samples_s = tube_segments; // poloidal 方向（闭合）
@@ -1328,20 +1364,12 @@ fn generate_torus_mesh(
             let sin_theta = t0_sin[u];
 
             // 法线：(cos(phi) * cos(theta), cos(phi) * sin(theta), sin(phi))
-            let normal = Vec3::new(
-                cos_phi * cos_theta,
-                cos_phi * sin_theta,
-                sin_phi,
-            );
+            let normal = Vec3::new(cos_phi * cos_theta, cos_phi * sin_theta, sin_phi);
 
             // 顶点：((radius * cos(phi) + offset) * cos(theta), (radius * cos(phi) + offset) * sin(theta), radius * sin(phi))
             let r = tube_radius * cos_phi + major_radius;
-            let vertex = Vec3::new(
-                r * cos_theta,
-                r * sin_theta,
-                tube_radius * sin_phi,
-            );
-            
+            let vertex = Vec3::new(r * cos_theta, r * sin_theta, tube_radius * sin_phi);
+
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
             normals.push(normal);
@@ -1400,11 +1428,7 @@ fn generate_torus_mesh(
             let cos_phi = t1_cos[v];
             let sin_phi = t1_sin[v];
             let r = tube_radius * cos_phi + major_radius;
-            let vertex = Vec3::new(
-                r * cos_end,
-                r * sin_end,
-                tube_radius * sin_phi,
-            );
+            let vertex = Vec3::new(r * cos_end, r * sin_end, tube_radius * sin_phi);
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
             // 法向量指向结束方向
@@ -1630,7 +1654,7 @@ fn generate_rect_torus_mesh(
         .abs()
         .max(MIN_LEN)
         .min((outer_radius - MIN_LEN).max(MIN_LEN));
-    
+
     let sweep_angle = rtorus.angle.to_radians();
     if sweep_angle <= MIN_LEN {
         return None;
@@ -1726,7 +1750,7 @@ fn generate_rect_torus_mesh(
             half_height,
             radial_segments,
             height_segments,
-            0.0, // angle = 0
+            0.0,  // angle = 0
             true, // is_start
         );
         merge_meshes(&mut combined, start_mesh, start_aabb);
@@ -2739,14 +2763,14 @@ pub(crate) fn generate_revolution_mesh(
     // 将轮廓投影到垂直于旋转轴的平面上
     // 计算轮廓点到轴的距离（沿轴方向的距离和垂直于轴的距离）
     let mut profile_points_3d = Vec::new();
-    
+
     for &profile_pt in profile.iter() {
         let offset = profile_pt - rot_pt;
         // 沿轴方向的距离
         let along_axis = offset.dot(rot_dir);
         // 垂直于轴的距离
         let perp_offset = offset - rot_dir * along_axis;
-        
+
         // 保存沿轴距离和垂直偏移
         profile_points_3d.push((along_axis, perp_offset));
     }
@@ -2754,7 +2778,7 @@ pub(crate) fn generate_revolution_mesh(
     // 生成顶点：对每个轮廓点，绕轴旋转生成环形顶点
     for (profile_idx, &(along_axis, perp_offset)) in profile_points_3d.iter().enumerate() {
         let perp_dist = perp_offset.length();
-        
+
         // 如果点在轴上，创建一条线
         if perp_dist < MIN_LEN {
             // 在轴上的点，旋转后仍然是同一点

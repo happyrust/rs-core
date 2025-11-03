@@ -353,11 +353,11 @@ impl DbOption {
             .as_ref()
             .map(|x| Path::new(x).to_path_buf())
             .unwrap_or("assets/meshes".into());
-        if let Some(subdir) = self
-            .mesh_precision
-            .output_subdir(self.mesh_precision.default_lod)
-        {
+        let lod = self.mesh_precision.default_lod;
+        if let Some(subdir) = self.mesh_precision.output_subdir(lod) {
             pathbuf = pathbuf.join(subdir);
+        } else {
+            pathbuf = pathbuf.join(format!("lod_{:?}", lod));
         }
         if !pathbuf.exists() {
             std::fs::create_dir_all(&pathbuf).unwrap();

@@ -5,8 +5,6 @@ use crate::shape::pdms_shape::*;
 use crate::types::attmap::AttrMap;
 use bevy_ecs::prelude::*;
 use glam::Vec3;
-#[cfg(feature = "occ")]
-use opencascade::primitives::*;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "truck")]
 use truck_base::cgmath64::Vector3;
@@ -68,8 +66,7 @@ impl BrepShapeTrait for SBox {
         self.size.z = self.size.z.min(l);
     }
 
-    #[cfg(feature = "occ")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
+    fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
         Ok(BOX_SHAPE.clone())
     }
 

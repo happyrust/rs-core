@@ -4,9 +4,9 @@ use std::f32::consts::{FRAC_PI_2, PI};
 use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
 use crate::parsed_data::{CateGeomsInfo, CateProfileParam};
 use crate::pdms_types::*;
-use crate::prim_geo::category::CateBrepShape;
+use crate::prim_geo::category::CateCsgShape;
 use crate::prim_geo::spine::{Line3D, Spine3D, SpineCurveType, SweepPath3D};
-use crate::prim_geo::{CateBrepShapeMap, SweepSolid};
+use crate::prim_geo::{CateCsgShapeMap, SweepSolid};
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::math_tool::{
@@ -22,7 +22,7 @@ use std::vec::Vec;
 pub async fn create_profile_geos(
     refno: RefnoEnum,
     geom_info: &CateGeomsInfo,
-    brep_shapes_map: &CateBrepShapeMap,
+    csg_shapes_map: &CateCsgShapeMap,
 ) -> anyhow::Result<bool> {
     let geos = &geom_info.geometries;
     if geos.len() == 0 {
@@ -159,17 +159,17 @@ pub async fn create_profile_geos(
                         path: SweepPath3D::Line(path),
                         lmirror: att.get_bool("LMIRR").unwrap_or_default(),
                     };
-                    brep_shapes_map
+                    csg_shapes_map
                         .entry(refno)
                         .or_insert(Vec::new())
-                        .push(CateBrepShape {
+                        .push(CateCsgShape {
                             refno: profile_refno,
-                            brep_shape: Box::new(solid),
+                            csg_shape: Box::new(solid),
                             transform: Transform::IDENTITY,
                             visible: true,
                             is_tubi: false,
                             shape_err: None,
-                            pts: Default::default(),
+                            pts: vec![],
                             is_ngmr: false,
                         });
                 }
@@ -199,18 +199,18 @@ pub async fn create_profile_geos(
                             .get_refno()
                             .unwrap()
                             .hash_with_another_refno(spine.refno);
-                        brep_shapes_map
+                        csg_shapes_map
                             .entry(refno)
                             .or_insert(Vec::new())
-                            .push(CateBrepShape {
+                            .push(CateCsgShape {
                                 //这里需要混合在一起，可能有多个profile 和 多个 spine的点 生成的
                                 refno: RefU64(hash).into(),
-                                brep_shape: Box::new(loft),
+                                csg_shape: Box::new(loft),
                                 transform,
                                 visible: true,
                                 is_tubi: false,
                                 shape_err: None,
-                                pts: Default::default(),
+                                pts: vec![],
                                 is_ngmr: false,
                             });
                     }
