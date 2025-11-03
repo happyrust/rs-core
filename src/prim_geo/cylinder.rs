@@ -401,7 +401,6 @@ impl BrepShapeTrait for SCylinder {
         Transform {
             rotation: Default::default(),
             translation: if self.center_in_mid {
-                dbg!(&self);
                 Vec3::new(0.0, 0.0, -self.phei / 2.0)
             } else {
                 Vec3::ZERO
