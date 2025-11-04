@@ -35,8 +35,8 @@ pub async fn query_arrive_leave_points(
              select value [
                     in,
                     world_trans.d,
-                    (select * from object::values(out.ptset) where number=$parent.in.refno.ARRI)[0],
-                    (select * from object::values(out.ptset) where number=$parent.in.refno.LEAV)[0]
+                    (select * from out.ptset where number=$parent.in.refno.ARRI)[0],
+                    (select * from out.ptset where number=$parent.in.refno.LEAV)[0]
                 ]
               from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']]->inst_relate) where world_trans.d!=none
              "#,
@@ -77,8 +77,8 @@ pub async fn query_arrive_leave_points_of_component(
     let sql = format!(
         r#"
              select value [id,
-                (select * from object::values(type::record("inst_info", cata_hash).ptset) where number=$parent.refno.ARRI)[0],
-                (select * from object::values(type::record("inst_info", cata_hash).ptset) where number=$parent.refno.LEAV)[0]
+                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.ARRI)[0],
+                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.LEAV)[0]
             ] from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']])
              "#,
         pes
@@ -105,9 +105,9 @@ pub async fn query_arrive_leave_points_of_branch(
     let sql = format!(
         r#"
              select value [id,
-                (select * from object::values(type::record("inst_info", cata_hash).ptset) where number=$parent.refno.ARRI)[0],
-                (select * from object::values(type::record("inst_info", cata_hash).ptset) where number=$parent.refno.LEAV)[0]
-            ] from array::flatten({}.children[? owner.noun in ['BRAN', 'HANG']])
+                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.ARRI)[0],
+                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.LEAV)[0]
+            ] from {}.children
              "#,
         branch_refno.to_pe_key()
     );

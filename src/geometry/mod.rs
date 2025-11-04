@@ -107,10 +107,12 @@ impl EleGeosInfo {
     ///生成surreal的json文件
     pub fn gen_sur_json(&self, vec3_map: &mut HashMap<u64, String>) -> String {
         let id = self.id_str();
+        // 只序列化 ptset_map 的 values，不包含键
+        let ptset_values: Vec<&CateAxisParam> = self.ptset_map.values().collect();
         let mut json = serde_json::to_string_pretty(&serde_json::json!({
             "visible": self.visible,
             "generic_type": self.generic_type,
-            "ptset": self.ptset_map,
+            "ptset": ptset_values,
         }))
         .unwrap();
 

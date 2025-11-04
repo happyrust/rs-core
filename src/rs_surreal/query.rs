@@ -9,7 +9,7 @@
 //! - 批量操作
 
 use super::query_mdb_db_nums;
-use crate::consts::MAX_INSERT_LENGTH;
+use crate::consts::{MAX_INSERT_LENGTH, WORD_HASH};
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
@@ -50,7 +50,7 @@ struct KV<K: SurrealValue, V: SurrealValue> {
 /// v 是分组的 refnos
 #[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
 pub struct CataHashGroupQueryResult {
-    pub k: (String, bool, Option<BTreeMap<String, CateAxisParam>>),
+    pub k: (String, bool, Option<Vec<CateAxisParam>>),
     pub v: Vec<RefnoEnum>,
 }
 
@@ -651,9 +651,11 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
                 if k == "DESP" {
                     let mut vec = vec![];
                     for (v, n) in d.iter().zip(&unip) {
-                        if *n == 623723 {
+                        // 检查 UNIPAR 类型：如果是 WORD 类型，需要还原为字符串
+                        if *n == WORD_HASH as i32 {
                             vec.push(db1_dehash(*v as u32));
                         } else {
+                            // 数值类型直接转换为字符串
                             vec.push(v.to_string());
                         }
                     }
@@ -1029,19 +1031,9 @@ pub async fn query_group_by_cata_hash(
                             group_refnos,
                             exist_inst,
                             ptset: ptset.map(|x| {
+                                // ptset 现在是数组，需要转换为 BTreeMap<i32, CateAxisParam>
                                 x.into_iter()
-                                    .filter_map(|(k, v)| {
-                                        // 尝试直接解析为 i32
-                                        if let Ok(key) = k.parse::<i32>() {
-                                            Some((key, v))
-                                        } else if let Ok(refno) = RefU64::from_str(&k) {
-                                            // 如果是 RefU64 格式（如 pe:⟨21895_68780⟩），转换为 i32
-                                            Some((refno.0 as i32, v))
-                                        } else {
-                                            eprintln!("Warning: Failed to parse ptset key: {}", k);
-                                            None
-                                        }
-                                    })
+                                    .map(|param| (param.number, param))
                                     .collect()
                             }),
                         },

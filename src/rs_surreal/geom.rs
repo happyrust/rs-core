@@ -1,4 +1,5 @@
 use crate::pdms_pluggin::heat_dissipation::InstPointMap;
+use crate::parsed_data::CateAxisParam;
 use crate::pe::SPdmsElement;
 use crate::utils::{take_option, take_vec};
 use crate::{NamedAttrMap, RefnoEnum};
@@ -178,19 +179,26 @@ pub async fn query_refnos_has_pos_neg_map(
 
 /// 查询bran下所有元件的点集
 pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<Vec<InstPointMap>> {
+    // ptset 现在是数组，需要转换为 BTreeMap<String, CateAxisParam>
     let sql = format!(
-        "select in.id as refno,in.id->inst_relate.out.ptset[0]?:{{}} as ptset_map,in.noun as att_type from pe:{}<-pe_owner;",
+        "select in.id as refno, out.ptset as ptset_array, in.noun as att_type from pe:{}<-pe_owner->inst_relate;",
         refno.to_string()
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    match take_vec::<InstPointMap>(&mut response, 0) {
-        Ok(r) => Ok(r),
-        Err(e) => {
-            dbg!(format!("sql 查询出错: {}", sql));
-            dbg!(&e);
-            Ok(vec![])
+    let mut results: Vec<(RefnoEnum, Option<Vec<CateAxisParam>>, String)> = take_vec(&mut response, 0)?;
+    
+    Ok(results.into_iter().map(|(refno, ptset_array, att_type)| {
+        let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
+            .unwrap_or_default()
+            .into_iter()
+            .map(|param| (param.number.to_string(), param))
+            .collect();
+        InstPointMap {
+            refno,
+            att_type,
+            ptset_map,
         }
-    }
+    }).collect())
 }
 
 #[tokio::test]
@@ -203,19 +211,30 @@ async fn test_query_bran_children_point_map() {
 
 /// 查询参考号对应的点集
 pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPointMap>> {
+    // ptset 现在是数组，需要转换为 BTreeMap<String, CateAxisParam>
     let sql = format!(
-        "select id as refno,id->inst_relate.out.ptset[0]?:{{}} as ptset_map,noun as att_type from {};",
+        "select id as refno, id->inst_relate.out.ptset as ptset_array, noun as att_type from {};",
         refno.to_pe_key()
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let Ok(mut result) = take_vec::<InstPointMap>(&mut response, 0) else {
+    let Ok(mut result) = take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0) else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(None);
     };
     if result.is_empty() {
         return Ok(None);
     }
-    Ok(Some(result.remove(0)))
+    let (refno, ptset_array, att_type) = result.remove(0);
+    let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
+        .unwrap_or_default()
+        .into_iter()
+        .map(|param| (param.number.to_string(), param))
+        .collect();
+    Ok(Some(InstPointMap {
+        refno,
+        att_type,
+        ptset_map,
+    }))
 }
 
 /// 查询多个参考号对应的点集
@@ -226,16 +245,28 @@ pub async fn query_refnos_point_map(
         .into_iter()
         .map(|refno| refno.to_pe_key())
         .collect::<Vec<_>>();
+    // ptset 现在是数组，需要转换为 BTreeMap<String, CateAxisParam>
     let sql = format!(
-        "select id as refno,id->inst_relate.out.ptset[0]?:{{}} as ptset_map,noun as att_type from [{}];",
+        "select id as refno, id->inst_relate.out.ptset as ptset_array, noun as att_type from [{}];",
         refnos.join(",")
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let Ok(result) = take_vec::<InstPointMap>(&mut response, 0) else {
+    let Ok(result) = take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0) else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(HashMap::default());
     };
-    Ok(result.into_iter().map(|r| (r.refno, r)).collect())
+    Ok(result.into_iter().map(|(refno, ptset_array, att_type)| {
+        let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
+            .unwrap_or_default()
+            .into_iter()
+            .map(|param| (param.number.to_string(), param))
+            .collect();
+        (refno, InstPointMap {
+            refno,
+            att_type,
+            ptset_map,
+        })
+    }).collect())
 }
 
 ///通过geo hash 查询参考号
@@ -314,9 +345,9 @@ pub struct PtsetResult {
 pub async fn query_ptset(refno: RefnoEnum) -> anyhow::Result<Option<PtsetResult>> {
     // 构建SQL查询语句:
     // - world_trans.d 获取世界坐标变换矩阵
-    // - object::values(out.ptset?:{}).pt 获取点集,如果ptset为空则返回空对象
+    // - out.ptset[*].pt 获取点集（ptset 现在是数组，直接提取 pt 字段）
     let sql = format!(
-        "(select world_trans.d as transform, object::values(out.ptset?:{{}}).pt as points from {0})[0]",
+        "(select world_trans.d as transform, out.ptset[*].pt as points from {0})[0]",
         to_table_key!(refno, "inst_relate")
     );
     // 执行查询
