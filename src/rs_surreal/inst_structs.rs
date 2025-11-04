@@ -4,12 +4,15 @@
 //! 以及相应的 to_surql 方法用于生成 SurrealDB 插入语句
 
 use crate::RefnoEnum;
+use crate::shape::pdms_shape::RsVec3;
 use bevy_transform::components::Transform;
 use chrono::NaiveDateTime;
 use glam::Vec3;
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::SurrealValue;
 
 /// inst_relate 表结构体
 /// 表示实例关系，连接PE元素和几何实例
@@ -110,10 +113,10 @@ pub struct PtsetData {
 }
 
 /// 点集内容
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, SurrealValue)]
 pub struct PtsetContent {
     /// 点坐标数组
-    pub pt: Vec<Vec3>,
+    pub pt: Vec<RsVec3>,
 }
 
 impl InstRelate {
@@ -178,7 +181,7 @@ impl InstRelate {
     }
 
     /// 设置点集数据
-    pub fn with_ptset(mut self, points: Vec<Vec3>) -> Self {
+    pub fn with_ptset(mut self, points: Vec<RsVec3>) -> Self {
         self.ptset = Some(PtsetData {
             d: PtsetContent { pt: points },
         });
