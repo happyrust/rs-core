@@ -20,7 +20,7 @@ use clap::builder::TypedValueParser;
 use glam::{DVec2, DVec3, Quat, Vec3};
 use nalgebra::{ComplexField, DimAdd};
 use num_traits::signum;
-use rust_ploop_processor::{PLoop, PLoopProcessor, Vertex as PLoopVertex};
+use ploop_rs::{PloopProcessor, Vertex};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::f32::consts::PI;
@@ -765,7 +765,7 @@ pub fn resolve_basic_intersection(
 //如果有两个以上的PLOO，需要执行boolean operation
 ///根据传进去的参数生成 Polyline, x, y 为坐标，z 为 fradius
 ///
-/// 这个方法使用 rust-ploop-processor 的 process_ploop 方法处理顶点数据，
+/// 这个方法使用 ploop-rs 的 process_ploop 方法处理顶点数据，
 /// 然后生成对应的 Polyline。这是对原有 gen_polyline 方法的增强版本。
 ///
 /// # 参数
@@ -792,13 +792,13 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
         return Err(anyhow!("顶点数量不够，小于3。"));
     }
 
-    println!("🔧 使用 rust-ploop-processor 统一处理 {} 个顶点", pts.len());
+    println!("🔧 使用 ploop-rs 统一处理 {} 个顶点", pts.len());
 
-    // 统一使用 rust-ploop-processor 处理所有顶点
+    // 统一使用 ploop-rs 处理所有顶点
     let processed_vertices = process_ploop_vertices(pts, "POLYLINE_GENERATION")?;
 
     println!(
-        "   rust-ploop-processor 处理完成，得到 {} 个顶点",
+        "   ploop-rs 处理完成，得到 {} 个顶点",
         processed_vertices.len()
     );
 
@@ -806,7 +806,7 @@ pub fn gen_polyline(pts: &Vec<Vec3>) -> anyhow::Result<Polyline> {
     convert_vertices_to_polyline(&processed_vertices)
 }
 
-/// 将已经被 rust-ploop-processor 处理过的顶点直接转换为 Polyline
+/// 将已经被 ploop-rs 处理过的顶点直接转换为 Polyline
 ///
 /// 这个函数用于处理已经被 process_ploop_from_content 或 process_ploop_vertices
 /// 处理过的顶点，避免重复处理
@@ -823,13 +823,13 @@ pub fn gen_polyline_from_processed_vertices(vertices: &Vec<Vec3>) -> anyhow::Res
 
     println!("🔧 直接转换已处理的 {} 个顶点为 Polyline", vertices.len());
 
-    // 直接转换为 Polyline，不再调用 rust-ploop-processor
+    // 直接转换为 Polyline，不再调用 ploop-rs
     convert_vertices_to_polyline(vertices)
 }
 
-/// 将 rust-ploop-processor 处理后的顶点转换为 Polyline
+/// 将 ploop-rs 处理后的顶点转换为 Polyline
 ///
-/// rust-ploop-processor 已经处理了 FRADIUS 并生成了正确的切点，
+/// ploop-rs 已经处理了 FRADIUS 并生成了正确的切点，
 /// 我们只需要将 FRADIUS 值转换为对应的 bulge 值
 ///
 /// # 参数
@@ -1591,16 +1591,16 @@ pub fn test_gen_polyline_complex_shape() {
     );
 }
 
-/// 使用 rust-ploop-processor 处理顶点数据
+/// 使用 ploop-rs 处理顶点数据
 ///
-/// 这个方法接收包含 xy 坐标和 fradius 的顶点数据，使用 rust-ploop-processor 进行处理
+/// 这个方法接收包含 xy 坐标和 fradius 的顶点数据，使用 ploop-rs 进行处理
 ///
 /// # 参数
-/// * `vertices` - 顶点数据，Vec3 格式：x,y 为坐标，z 为 fradius 值
+/// * `vertices` - 顶点数据，Vec3 格式：**x,y 为坐标，z 为 FRADIUS 值（不是 z 坐标）**
 /// * `ploop_name` - PLOOP 名称（用于日志显示）
 ///
 /// # 返回值
-/// * `Result<Vec<Vec3>>` - 处理后的顶点列表，Vec3 格式：x,y 为坐标，z 为 fradius 值
+/// * `Result<Vec<Vec3>>` - 处理后的顶点列表，Vec3 格式：**x,y 为坐标，z 为 fradius 值（处理后的顶点通常是切点，z 通常为 0.0）**
 ///
 /// # 示例
 /// ```rust
@@ -1623,33 +1623,25 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
     println!("🔧 开始处理PLOOP顶点: {}", ploop_name);
     println!("   输入顶点数: {}", vertices.len());
 
-    // 创建 PLOOP 处理器
-    let processor = PLoopProcessor::new();
+    // 创建 PLOOP 处理器（使用默认容差 0.01，不输出调试信息）
+    let processor = PloopProcessor::new(0.01, false);
 
-    // 将 Vec3 转换为 PLoopVertex
-    let ploop_vertices: Vec<PLoopVertex> = vertices
+    // 将 Vec3 转换为 Vertex
+    let ploop_vertices: Vec<Vertex> = vertices
         .iter()
         .map(|v| {
             if v.z > 0.0 {
                 // 有 fradius 的顶点
-                PLoopVertex::with_fradius(v.x as f64, v.y as f64, 0.0, v.z as f64)
+                Vertex::with_fradius(v.x, v.y, 0.0, Some(v.z))
             } else {
                 // 普通顶点
-                PLoopVertex::new(v.x as f64, v.y as f64, 0.0)
+                Vertex::new(v.x, v.y)
             }
         })
         .collect();
 
-    // 创建 PLoop 对象
-    let mut ploop = PLoop::new(ploop_name.to_string(), 0.0);
-    for vertex in ploop_vertices {
-        ploop.add_vertex(vertex);
-    }
-
-    // 使用 rust-ploop-processor 处理 PLOOP
-    let processed_vertices = processor
-        .process_ploop(&ploop)
-        .map_err(|e| anyhow::anyhow!("处理PLOOP失败: {}", e))?;
+    // 使用 ploop-rs 处理 PLOOP（直接传递顶点切片）
+    let (processed_vertices, _arcs) = processor.process_ploop(&ploop_vertices);
 
     println!("   处理后顶点数: {}", processed_vertices.len());
 
@@ -1658,9 +1650,9 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
         .iter()
         .map(|vertex| {
             Vec3::new(
-                vertex.x() as f32,
-                vertex.y() as f32,
-                vertex.get_fradius() as f32, // z 存储 fradius 值
+                vertex.x,
+                vertex.y,
+                vertex.fradius.unwrap_or(0.0), // z 存储 fradius 值
             )
         })
         .collect();
@@ -1674,7 +1666,19 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
 
 /// 从 PLOOP 文件内容解析并处理顶点数据
 ///
-/// 这个方法从 PLOOP 文件内容中解析数据，然后使用 rust-ploop-processor 进行处理
+/// 这个方法从 PLOOP 文件内容中解析数据，然后使用 ploop-rs 进行处理
+///
+/// PLOOP 文件格式：
+/// ```
+/// NEW FRMWORK <name>
+/// NEW PLOOP
+/// VERTEX <x> <y> <z> [FRADIUS <r>]
+/// ...
+/// END PLOOP
+/// END FRMWORK
+/// ```
+///
+/// 注意：在返回的 Vec3 中，x、y 为坐标，z 存储 FRADIUS 值（如果没有 FRADIUS 则为 0.0）
 ///
 /// # 参数
 /// * `ploop_content` - PLOOP 文件的内容字符串
@@ -1682,68 +1686,101 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
 ///
 /// # 返回值
 /// * `Result<Vec<Vec3>>` - 处理后的顶点列表，Vec3 格式：x,y 为坐标，z 为 fradius 值
-///
-/// # 示例
-/// ```rust
-/// use aios_core::prim_geo::wire::process_ploop_from_content;
-///
-/// let content = std::fs::read_to_string("717.txt")?;
-/// let processed_vertices = process_ploop_from_content(&content, Some("K717"))?;
-/// println!("处理完成，得到 {} 个顶点", processed_vertices.len());
-/// ```
 pub fn process_ploop_from_content(
     ploop_content: &str,
     ploop_name: Option<&str>,
 ) -> anyhow::Result<Vec<Vec3>> {
-    // 创建 PLOOP 处理器
-    let processor = PLoopProcessor::new();
+    use regex::Regex;
 
-    // 解析 PLOOP 文件
-    let ploops = processor
-        .parse_file(ploop_content)
-        .map_err(|e| anyhow::anyhow!("解析PLOOP文件失败: {}", e))?;
+    // 解析 PLOOP 文件内容
+    let vertex_regex = Regex::new(r"(?i)VERTEX\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)(?:\s+FRADIUS\s+([-\d.]+))?").unwrap();
+    
+    let mut vertices = Vec::new();
+    let mut current_ploop_name: Option<String> = None;
+    let mut in_ploop = false;
+    let mut found_ploop: Option<Vec<Vec3>> = None;
 
-    if ploops.is_empty() {
-        return Err(anyhow::anyhow!("没有找到任何有效的PLOOP数据"));
+    for line in ploop_content.lines() {
+        let line = line.trim();
+        
+        // 检查是否进入新的 PLOOP
+        if line.to_uppercase().starts_with("NEW PLOOP") {
+            in_ploop = true;
+            vertices.clear();
+            continue;
+        }
+        
+        // 检查是否结束 PLOOP
+        if line.to_uppercase().starts_with("END PLOOP") {
+            if in_ploop && !vertices.is_empty() {
+                // 处理当前 PLOOP
+                let ploop_name_str = current_ploop_name.as_deref().unwrap_or("UNNAMED");
+                
+                // 如果指定了名称，检查是否匹配
+                if let Some(name) = ploop_name {
+                    if current_ploop_name.as_deref().map_or(false, |n| n.contains(name)) {
+                        found_ploop = Some(vertices.clone());
+                        break;
+                    }
+                } else if found_ploop.is_none() {
+                    // 如果没有指定名称，使用第一个找到的 PLOOP
+                    found_ploop = Some(vertices.clone());
+                }
+            }
+            in_ploop = false;
+            vertices.clear();
+            continue;
+        }
+        
+        // 检查 FRMWORK 名称
+        if line.to_uppercase().starts_with("NEW FRMWORK") {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 3 {
+                current_ploop_name = Some(parts[2..].join(" "));
+            }
+            continue;
+        }
+        
+        // 解析 VERTEX 行
+        if in_ploop {
+            if let Some(caps) = vertex_regex.captures(line) {
+                let x: f32 = caps.get(1).unwrap().as_str().parse()
+                    .map_err(|e| anyhow::anyhow!("解析 x 坐标失败: {}", e))?;
+                let y: f32 = caps.get(2).unwrap().as_str().parse()
+                    .map_err(|e| anyhow::anyhow!("解析 y 坐标失败: {}", e))?;
+                let _z: f32 = caps.get(3).unwrap().as_str().parse()
+                    .map_err(|e| anyhow::anyhow!("解析 z 坐标失败: {}", e))?;
+                
+                // 提取 FRADIUS（如果存在）
+                let fradius = caps.get(4)
+                    .and_then(|m| m.as_str().parse::<f32>().ok())
+                    .filter(|&r| r > 0.0);
+                
+                // Vec3 的 z 存储 FRADIUS 值（注意：不是 z 坐标）
+                vertices.push(Vec3::new(x, y, fradius.unwrap_or(0.0)));
+            }
+        }
     }
 
-    // 查找指定的 PLOOP 或使用第一个
-    let target_ploop = if let Some(name) = ploop_name {
-        ploops
-            .iter()
-            .find(|ploop| ploop.name.contains(name))
-            .ok_or_else(|| anyhow::anyhow!("没有找到名为 '{}' 的PLOOP", name))?
+    // 如果没有找到匹配的 PLOOP，尝试使用最后一个解析的 PLOOP
+    let vertices_to_process = if let Some(ploop) = found_ploop {
+        ploop
+    } else if !vertices.is_empty() {
+        vertices
     } else {
-        &ploops[0]
+        return Err(anyhow::anyhow!("没有找到任何有效的PLOOP数据"));
     };
 
-    println!("🔧 开始处理PLOOP文件: {}", target_ploop.name);
-    println!("   原始顶点数: {}", target_ploop.vertices.len());
+    if vertices_to_process.len() < 3 {
+        return Err(anyhow::anyhow!("顶点数量不足，至少需要3个顶点"));
+    }
 
-    // 使用 rust-ploop-processor 处理 PLOOP
-    let processed_vertices = processor
-        .process_ploop(target_ploop)
-        .map_err(|e| anyhow::anyhow!("处理PLOOP失败: {}", e))?;
+    let ploop_name_str = current_ploop_name.as_deref().unwrap_or("UNNAMED");
+    println!("🔧 开始处理PLOOP文件: {}", ploop_name_str);
+    println!("   原始顶点数: {}", vertices_to_process.len());
 
-    println!("   处理后顶点数: {}", processed_vertices.len());
-
-    // 转换为 Vec3 格式（x,y 为坐标，z 为 fradius）
-    let result: Vec<Vec3> = processed_vertices
-        .iter()
-        .map(|vertex| {
-            Vec3::new(
-                vertex.x() as f32,
-                vertex.y() as f32,
-                vertex.get_fradius() as f32, // z 存储 fradius 值
-            )
-        })
-        .collect();
-
-    let fradius_count = result.iter().filter(|v| v.z > 0.0).count();
-    println!("   其中包含 {} 个FRADIUS顶点", fradius_count);
-    println!("✅ PLOOP文件处理完成，返回 {} 个顶点", result.len());
-
-    Ok(result)
+    // 使用 process_ploop_vertices 处理顶点
+    process_ploop_vertices(&vertices_to_process, ploop_name_str)
 }
 
 #[test]
@@ -1779,7 +1816,7 @@ fn test_process_ploop_vertices() {
         }
         Err(e) => {
             println!("❌ 顶点处理测试失败: {}", e);
-            // 在测试环境中，这可能会失败，因为 rust-ploop-processor 可能不可用
+            // 在测试环境中，这可能会失败，因为 ploop-rs 可能不可用
             // 这是正常的，我们只是验证方法的接口
         }
     }
@@ -1825,7 +1862,7 @@ END FRMWORK
         }
         Err(e) => {
             println!("❌ 内容解析测试失败: {}", e);
-            // 在测试环境中，这可能会失败，因为 rust-ploop-processor 可能不可用
+            // 在测试环境中，这可能会失败，因为 ploop-rs 可能不可用
             // 这是正常的，我们只是验证方法的接口
         }
     }
@@ -1861,7 +1898,7 @@ fn test_gen_polyline_with_ploop_processor() {
         }
         Err(e) => {
             println!("❌ 带 FRADIUS 测试失败: {}", e);
-            // 这可能会失败，因为 rust-ploop-processor 可能不可用
+            // 这可能会失败，因为 ploop-rs 可能不可用
         }
     }
 

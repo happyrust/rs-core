@@ -27,8 +27,9 @@ use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::prim_geo::wire::CurveType;
+use crate::prim_geo::wire::{CurveType, process_ploop_vertices};
 use crate::shape::pdms_shape::{PlantMesh, VerifiedShape};
+use crate::utils::svg_generator::SpineSvgGenerator;
 use glam::Vec3;
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
@@ -1958,13 +1959,310 @@ fn generate_rect_torus_end_face(
     )
 }
 
+/// 导出 PLOOP 数据为 JSON 格式（用于 ploop-rs 测试）
+///
+/// 生成符合 ploop-rs 输入格式的 JSON 文件
+fn export_ploop_json(original: &[Vec3], name: &str, height: f32) -> anyhow::Result<()> {
+    use serde_json::json;
+    use std::fs;
+
+    // 创建输出目录
+    let output_dir = "output/ploop-json";
+    fs::create_dir_all(output_dir)?;
+
+    // 生成时间戳作为文件名
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let json_filename = format!("{}/ploop_{}_{}.json", output_dir, name, timestamp);
+    let txt_filename = format!("{}/ploop_{}_{}.txt", output_dir, name, timestamp);
+
+    // 生成 JSON 格式（用于 3D 可视化）
+    let vertices: Vec<_> = original
+        .iter()
+        .map(|v| {
+            if v.z > 0.0 {
+                json!({
+                    "x": v.x,
+                    "y": v.y,
+                    "z": 0.0,
+                    "fradius": v.z
+                })
+            } else {
+                json!({
+                    "x": v.x,
+                    "y": v.y,
+                    "z": 0.0,
+                    "fradius": null
+                })
+            }
+        })
+        .collect();
+
+    let fradius_count = original.iter().filter(|v| v.z > 0.0).count();
+
+    let json_data = json!({
+        "name": name,
+        "height": height,
+        "vertices": vertices,
+        "fradius_count": fradius_count
+    });
+
+    fs::write(&json_filename, serde_json::to_string_pretty(&json_data)?)?;
+    println!("📄 [CSG] PLOOP JSON 已保存: {}", json_filename);
+
+    // 生成 TXT 格式（用于 ploop-rs 解析器）
+    let mut txt_content = String::new();
+    txt_content.push_str(&format!("NEW FRMWORK {}\n", name));
+    txt_content.push_str("NEW PLOOP\n");
+    txt_content.push_str(&format!("HEIG {:.1}mm\n", height));
+
+    for v in original.iter() {
+        txt_content.push_str("NEW PAVERT\n");
+        txt_content.push_str(&format!("POS E {:.1}mm N {:.1}mm U 0mm\n", v.x, v.y));
+        if v.z > 0.0 {
+            txt_content.push_str(&format!("FRAD {:.1}mm\n", v.z));
+        }
+    }
+
+    txt_content.push_str("END\n");
+
+    fs::write(&txt_filename, txt_content)?;
+    println!("📄 [CSG] PLOOP TXT 已保存: {}", txt_filename);
+
+    Ok(())
+}
+
+/// 生成 PLOOP 轮廓对比 SVG
+///
+/// 将原始轮廓和处理后的轮廓绘制在同一个 SVG 中，方便对比
+/// - 原始轮廓：红色，使用真实的圆弧
+/// - 处理后轮廓：蓝色直线段（ploop-rs 展开后的结果）
+fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3]) -> anyhow::Result<()> {
+    use std::fs;
+    use std::path::Path;
+
+    // 创建输出目录
+    let output_dir = "output/ploop-svg";
+    fs::create_dir_all(output_dir)?;
+
+    // 生成时间戳作为文件名
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let filename = format!("{}/ploop_comparison_{}.svg", output_dir, timestamp);
+
+    // 计算边界框（考虑圆角半径）
+    let mut min_x = f32::MAX;
+    let mut min_y = f32::MAX;
+    let mut max_x = f32::MIN;
+    let mut max_y = f32::MIN;
+
+    for v in original.iter().chain(processed.iter()) {
+        let radius = v.z; // FRADIUS 存储在 z 中
+        min_x = min_x.min(v.x - radius);
+        min_y = min_y.min(v.y - radius);
+        max_x = max_x.max(v.x + radius);
+        max_y = max_y.max(v.y + radius);
+    }
+
+    let width = max_x - min_x;
+    let height = max_y - min_y;
+    let margin = 100.0; // 增加边距以容纳圆角
+    let canvas_width = 1400.0;
+    let canvas_height = 1000.0;
+
+    // 计算缩放比例
+    let scale_x = (canvas_width - 2.0 * margin) / width;
+    let scale_y = (canvas_height - 2.0 * margin) / height;
+    let scale = scale_x.min(scale_y);
+
+    // 坐标转换函数
+    let to_svg = |v: &Vec3| -> (f32, f32) {
+        let x = (v.x - min_x) * scale + margin;
+        let y = canvas_height - ((v.y - min_y) * scale + margin); // SVG Y轴向下
+        (x, y)
+    };
+
+    // 生成 SVG 内容
+    let mut svg = String::new();
+    svg.push_str(&format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<svg width="{}" height="{}" viewBox="0 0 {} {}" xmlns="http://www.w3.org/2000/svg">
+<style>
+    .original-line {{ stroke: #ff4444; stroke-width: 2; stroke-dasharray: 5,5; fill: none; }}
+    .processed-line {{ stroke: #4444ff; stroke-width: 2; fill: none; }}
+    .original-point {{ fill: #ff4444; }}
+    .processed-point {{ fill: #4444ff; }}
+    .fradius-point {{ fill: #ff8800; stroke: #ff4400; stroke-width: 1; }}
+    .label {{ font-family: Arial; font-size: 12px; fill: #333; }}
+    .title {{ font-family: Arial; font-size: 16px; font-weight: bold; fill: #000; }}
+</style>
+"#,
+        canvas_width, canvas_height, canvas_width, canvas_height
+    ));
+
+    // 标题
+    svg.push_str(&format!(
+        r#"<text x="{}" y="30" class="title" text-anchor="middle">PLOOP 轮廓对比：原始 vs 处理后</text>
+"#,
+        canvas_width / 2.0
+    ));
+
+    // 图例
+    svg.push_str(r#"<g transform="translate(50, 50)">
+    <line x1="0" y1="0" x2="40" y2="0" class="original-line" />
+    <text x="50" y="5" class="label">原始轮廓 (红色虚线)</text>
+    <line x1="0" y1="20" x2="40" y2="20" class="processed-line" />
+    <text x="50" y="25" class="label">处理后轮廓 (蓝色实线)</text>
+    <circle cx="5" cy="40" r="4" class="fradius-point" />
+    <text x="15" y="45" class="label">FRADIUS 顶点 (橙色)</text>
+</g>
+"#);
+
+    // 绘制原始轮廓（使用真实的圆弧）
+    svg.push_str("<g id=\"original-profile\">\n");
+    svg.push_str("<path class=\"original-line\" d=\"");
+
+    let n = original.len();
+    for i in 0..n {
+        let curr = &original[i];
+        let next = &original[(i + 1) % n];
+        let (x1, y1) = to_svg(curr);
+        let (x2, y2) = to_svg(next);
+
+        if i == 0 {
+            svg.push_str(&format!("M {:.1} {:.1} ", x1, y1));
+        }
+
+        // 检查下一个顶点是否有 FRADIUS
+        if next.z > 0.0 {
+            // 有圆角：需要绘制到圆角起点，然后绘制圆弧
+            let next_next = &original[(i + 2) % n];
+            let fradius = next.z * scale; // 缩放圆角半径
+
+            // 计算从当前点到圆角起点的向量
+            let dx1 = next.x - curr.x;
+            let dy1 = next.y - curr.y;
+            let len1 = (dx1 * dx1 + dy1 * dy1).sqrt();
+
+            // 计算从圆角点到下一个点的向量
+            let dx2 = next_next.x - next.x;
+            let dy2 = next_next.y - next.y;
+            let len2 = (dx2 * dx2 + dy2 * dy2).sqrt();
+
+            if len1 > 0.0 && len2 > 0.0 {
+                // 归一化向量
+                let ux1 = dx1 / len1;
+                let uy1 = dy1 / len1;
+                let ux2 = dx2 / len2;
+                let uy2 = dy2 / len2;
+
+                // 计算圆角的起点和终点（在原始坐标系中）
+                let arc_start_x = next.x - ux1 * next.z;
+                let arc_start_y = next.y - uy1 * next.z;
+                let arc_end_x = next.x + ux2 * next.z;
+                let arc_end_y = next.y + uy2 * next.z;
+
+                // 转换到 SVG 坐标
+                let (arc_start_svg_x, arc_start_svg_y) = to_svg(&Vec3::new(arc_start_x, arc_start_y, 0.0));
+                let (arc_end_svg_x, arc_end_svg_y) = to_svg(&Vec3::new(arc_end_x, arc_end_y, 0.0));
+
+                // 绘制直线到圆角起点
+                svg.push_str(&format!("L {:.1} {:.1} ", arc_start_svg_x, arc_start_svg_y));
+
+                // 绘制圆弧（使用 SVG 的 A 命令）
+                // A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+                // large-arc-flag = 0 (小弧)
+                // sweep-flag = 1 (顺时针) 或 0 (逆时针)
+                let sweep_flag = 1; // 假设顺时针
+                svg.push_str(&format!(
+                    "A {:.1} {:.1} 0 0 {} {:.1} {:.1} ",
+                    fradius, fradius, sweep_flag, arc_end_svg_x, arc_end_svg_y
+                ));
+            } else {
+                // 如果向量长度为0，退化为直线
+                svg.push_str(&format!("L {:.1} {:.1} ", x2, y2));
+            }
+        } else {
+            // 没有圆角：直接绘制直线
+            svg.push_str(&format!("L {:.1} {:.1} ", x2, y2));
+        }
+    }
+
+    svg.push_str("Z\" />\n");
+
+    // 绘制原始顶点
+    for (i, v) in original.iter().enumerate() {
+        let (x, y) = to_svg(v);
+        let class = if v.z > 0.0 { "fradius-point" } else { "original-point" };
+        svg.push_str(&format!(
+            "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"4\" class=\"{}\" />\n",
+            x, y, class
+        ));
+        // 如果有 FRADIUS，显示数值
+        if v.z > 0.0 {
+            svg.push_str(&format!(
+                "<text x=\"{:.1}\" y=\"{:.1}\" class=\"label\" text-anchor=\"middle\">R={:.0}</text>\n",
+                x, y - 10.0, v.z
+            ));
+        }
+    }
+    svg.push_str("</g>\n");
+
+    // 绘制处理后轮廓
+    svg.push_str("<g id=\"processed-profile\">\n");
+    svg.push_str("<path class=\"processed-line\" d=\"");
+    for (i, v) in processed.iter().enumerate() {
+        let (x, y) = to_svg(v);
+        if i == 0 {
+            svg.push_str(&format!("M {:.1} {:.1} ", x, y));
+        } else {
+            svg.push_str(&format!("L {:.1} {:.1} ", x, y));
+        }
+    }
+    svg.push_str("Z\" />\n");
+
+    // 绘制处理后顶点
+    for v in processed.iter() {
+        let (x, y) = to_svg(v);
+        svg.push_str(&format!(
+            "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"3\" class=\"processed-point\" />\n",
+            x, y
+        ));
+    }
+    svg.push_str("</g>\n");
+
+    // 统计信息
+    let fradius_count = original.iter().filter(|v| v.z > 0.0).count();
+    svg.push_str(&format!(
+        r#"<text x="{}" y="{}" class="label" text-anchor="middle">原始顶点: {} | 处理后顶点: {} | FRADIUS 顶点: {}</text>
+"#,
+        canvas_width / 2.0,
+        canvas_height - 20.0,
+        original.len(),
+        processed.len(),
+        fradius_count
+    ));
+
+    svg.push_str("</svg>");
+
+    // 保存文件
+    fs::write(&filename, svg)?;
+    println!("📊 [CSG] SVG 对比图已保存: {}", filename);
+
+    Ok(())
+}
+
 /// 生成拉伸体（Extrusion）网格
 ///
 /// 拉伸体将一个2D轮廓沿Z轴方向拉伸一定高度形成3D形状
 /// 当前实现仅支持：
 /// - 单一轮廓（单个顶点列表）
 /// - 填充类型（CurveType::Fill）
-/// - 轮廓位于XY平面（所有点的z坐标相同）
+/// - 轮廓的 z 坐标存储 FRADIUS（圆角半径），会被 ploop-rs 处理
 fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
     if extrusion.height.abs() <= MIN_LEN {
         return None;
@@ -1981,12 +2279,35 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
         return None;
     }
 
-    let profile = &extrusion.verts[0];
-    let base_z = profile[0].z;
-    // 检查所有点是否在同一平面上（z坐标相同）
-    if profile.iter().any(|p| (p.z - base_z).abs() > 1e-3) {
+    let original_profile = &extrusion.verts[0];
+    if original_profile.len() < 3 {
         return None;
     }
+
+    // 使用 ploop-rs 处理 FRADIUS 圆角
+    // Vec3.z 存储的是 FRADIUS 值，需要展开为多个顶点
+    let profile = match process_ploop_vertices(original_profile, "EXTRUSION") {
+        Ok(processed) => {
+            println!("🔧 [CSG] FRADIUS 处理完成: {} 个原始顶点 → {} 个处理后顶点",
+                     original_profile.len(), processed.len());
+
+            // 导出 PLOOP JSON 数据（用于 ploop-rs 测试）
+            if let Err(e) = export_ploop_json(original_profile, "FLOOR", extrusion.height) {
+                println!("⚠️  [CSG] JSON 导出失败: {}", e);
+            }
+
+            // 生成 SVG 对比图：原始轮廓 vs 处理后轮廓
+            if let Err(e) = generate_ploop_comparison_svg(original_profile, &processed) {
+                println!("⚠️  [CSG] SVG 生成失败: {}", e);
+            }
+
+            processed
+        }
+        Err(e) => {
+            println!("⚠️  [CSG] FRADIUS 处理失败，使用原始顶点: {}", e);
+            original_profile.clone()
+        }
+    };
 
     let n = profile.len();
     if n < 3 {
@@ -1995,11 +2316,12 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
 
     // 使用鞋带公式（Shoelace formula）计算轮廓面积
     // 面积的正负号表示轮廓的绕向（逆时针为正，顺时针为负）
+    // 注意：处理后的顶点 z 坐标可能仍包含 FRADIUS 信息，只使用 x 和 y
     let area = profile
         .iter()
         .enumerate()
         .map(|(i, p)| {
-            let next = profile[(i + 1) % n];
+            let next = &profile[(i + 1) % n];
             p.x * next.y - next.x * p.y
         })
         .sum::<f32>()
@@ -2008,7 +2330,9 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
         return None;
     }
 
-    let top_z = base_z + extrusion.height;
+    // 底面 z 坐标固定为 0，顶面 z 坐标为拉伸高度
+    let base_z = 0.0;
+    let top_z = extrusion.height;
     let mut vertices: Vec<Vec3> = Vec::new();
     let mut normals: Vec<Vec3> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
@@ -2029,7 +2353,8 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
     let mut bottom_indices = Vec::with_capacity(n);
     let mut top_indices = Vec::with_capacity(n);
 
-    for p in profile {
+    // 底面顶点：忽略 z 坐标（FRADIUS），统一使用 base_z (0.0)
+    for p in &profile {
         bottom_indices.push(add_vertex(
             Vec3::new(p.x, p.y, base_z),
             Vec3::new(0.0, 0.0, -1.0),
@@ -2038,7 +2363,8 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
             &mut aabb,
         ));
     }
-    for p in profile {
+    // 顶面顶点：忽略 z 坐标（FRADIUS），统一使用 top_z
+    for p in &profile {
         top_indices.push(add_vertex(
             Vec3::new(p.x, p.y, top_z),
             Vec3::new(0.0, 0.0, 1.0),
