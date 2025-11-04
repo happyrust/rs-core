@@ -146,167 +146,182 @@ impl PipelineQueryService {
         if tubi_insts.is_empty() {
             return Ok(Vec::new());
         }
-        dbg!(&tubi_insts);
 
-        let mut unique_refnos: Vec<RefnoEnum> = tubi_insts.iter().map(|inst| inst.leave).collect();
-        // unique_refnos.sort();
+        // 收集所有唯一的 refno（使用 inst.refno，不是 inst.leave）
+        let mut unique_refnos: Vec<RefnoEnum> = tubi_insts.iter().map(|inst| inst.refno.clone()).collect();
         unique_refnos.dedup();
 
         let refno_ids: Vec<RefU64> = unique_refnos.iter().map(|refno| refno.refno()).collect();
-        dbg!(&refno_ids);
 
+        // 获取 arrive/leave 点对（已包含世界坐标）
         let arrive_leave_pairs = query_arrive_leave_points_of_branch(branch_refno).await?;
-        // let arrive_leave_map: HashMap<RefU64, [CateAxisParam; 2]> =
-        //     arrive_leave_pairs.into_iter().collect();
 
-        // let point_maps: HashMap<RefnoEnum, InstPointMap> =
-        //     query_refnos_point_map(unique_refnos.clone()).await?;
+        // 获取点映射（用于多端口元件如三通）
+        let point_maps: HashMap<RefnoEnum, InstPointMap> =
+            query_refnos_point_map(unique_refnos.clone()).await?;
 
-        // let attr_pairs = try_join_all(unique_refnos.iter().map(|&refno| async move {
-        //     let attrs = get_named_attmap(refno).await?;
-        //     Ok::<(RefnoEnum, NamedAttrMap), anyhow::Error>((refno, attrs))
-        // }))
-        // .await?;
-        // let attr_map: HashMap<RefnoEnum, NamedAttrMap> = attr_pairs.into_iter().collect();
+        // 批量获取属性
+        let attr_pairs = try_join_all(unique_refnos.iter().map(|refno| {
+            let refno_clone = refno.clone();
+            async move {
+                let attrs = get_named_attmap(refno_clone).await?;
+                Ok::<(RefnoEnum, NamedAttrMap), anyhow::Error>((refno_clone, attrs))
+            }
+        }))
+        .await?;
+        let attr_map: HashMap<RefnoEnum, NamedAttrMap> = attr_pairs.into_iter().collect();
 
-        // let length_pairs = try_join_all(refno_ids.iter().map(|refno| {
-        //     let refno_copy = *refno;
-        //     async move {
-        //         let length = query_bran_fixing_length(refno_copy).await?;
-        //         Ok::<(RefU64, f32), anyhow::Error>((refno_copy, length))
-        //     }
-        // }))
-        // .await?;
-        // let length_map: HashMap<RefU64, f32> = length_pairs.into_iter().collect();
+        // 批量获取长度
+        let length_pairs = try_join_all(refno_ids.iter().map(|refno| {
+            let refno_copy = *refno;
+            async move {
+                let length = query_bran_fixing_length(refno_copy).await?;
+                Ok::<(RefU64, f32), anyhow::Error>((refno_copy, length))
+            }
+        }))
+        .await?;
+        let length_map: HashMap<RefU64, f32> = length_pairs.into_iter().collect();
 
         let mut records = Vec::with_capacity(tubi_insts.len());
-        // for inst in tubi_insts {
-        //     let super::inst::TubiInstQuery {
-        //         refno,
-        //         generic,
-        //         world_trans,
-        //         geo_hash,
-        //         ..
-        //     } = inst;
+        for inst in tubi_insts {
+            let super::inst::TubiInstQuery {
+                refno,
+                generic,
+                world_trans,
+                geo_hash,
+                ..
+            } = inst;
 
-        //     let attrs = attr_map.get(&refno).cloned().unwrap_or_default();
+            let attrs = attr_map.get(&refno).cloned().unwrap_or_default();
 
-        //     let mut arrive_number = attr_to_i32(&attrs, "ARRI");
-        //     let mut leave_number = attr_to_i32(&attrs, "LEAV");
+            let mut arrive_number = attr_to_i32(&attrs, "ARRI");
+            let mut leave_number = attr_to_i32(&attrs, "LEAV");
 
-        //     let mut arrive_port = None;
-        //     let mut leave_port = None;
-        //     if let Some(axes) = arrive_leave_map.get(&refno.refno()) {
-        //         arrive_number = arrive_number.or(Some(axes[0].number));
-        //         leave_number = leave_number.or(Some(axes[1].number));
-        //         arrive_port = Some(PipelinePort::from_axis(
-        //             &axes[0],
-        //             PortRole::Arrive,
-        //             arrive_number,
-        //         ));
-        //         leave_port = Some(PipelinePort::from_axis(
-        //             &axes[1],
-        //             PortRole::Leave,
-        //             leave_number,
-        //         ));
-        //     }
+            // 从 arrive_leave_pairs 获取主端口
+            let mut arrive_port = None;
+            let mut leave_port = None;
+            if let Some(axes_ref) = arrive_leave_pairs.get(&refno) {
+                let axes = axes_ref.value();
+                arrive_number = arrive_number.or(Some(axes[0].number));
+                leave_number = leave_number.or(Some(axes[1].number));
+                arrive_port = Some(PipelinePort::from_axis(
+                    &axes[0],
+                    PortRole::Arrive,
+                    arrive_number,
+                ));
+                leave_port = Some(PipelinePort::from_axis(
+                    &axes[1],
+                    PortRole::Leave,
+                    leave_number,
+                ));
+            }
 
-        //     let mut world_axes: Vec<CateAxisParam> = point_maps
-        //         .get(&refno)
-        //         .map(|map| {
-        //             map.ptset_map
-        //                 .values()
-        //                 .map(|axis| axis.transformed(&world_trans))
-        //                 .collect()
-        //         })
-        //         .unwrap_or_default();
-        //     world_axes.sort_by_key(|axis| axis.number);
+            // 获取所有端口（用于三通等多端口元件）
+            let mut world_axes: Vec<CateAxisParam> = point_maps
+                .get(&refno)
+                .map(|map| {
+                    map.ptset_map
+                        .values()
+                        .map(|axis| axis.transformed(&*world_trans))
+                        .collect()
+                })
+                .unwrap_or_default();
+            world_axes.sort_by_key(|axis| axis.number);
 
-        //     let mut extra_ports = Vec::new();
-        //     for axis in &world_axes {
-        //         let number = axis.number;
-        //         if arrive_number == Some(number) {
-        //             if arrive_port.is_none() {
-        //                 arrive_port = Some(PipelinePort::from_axis(
-        //                     axis,
-        //                     PortRole::Arrive,
-        //                     Some(number),
-        //                 ));
-        //             }
-        //             continue;
-        //         }
-        //         if leave_number == Some(number) {
-        //             if leave_port.is_none() {
-        //                 leave_port =
-        //                     Some(PipelinePort::from_axis(axis, PortRole::Leave, Some(number)));
-        //             }
-        //             continue;
-        //         }
-        //         extra_ports.push(PipelinePort::from_axis(axis, PortRole::Extra, Some(number)));
-        //     }
+            // 处理额外端口（不是 ARRI/LEAV 的端口）
+            let mut extra_ports = Vec::new();
+            for axis in &world_axes {
+                let number = axis.number;
+                if arrive_number == Some(number) {
+                    if arrive_port.is_none() {
+                        arrive_port = Some(PipelinePort::from_axis(
+                            axis,
+                            PortRole::Arrive,
+                            Some(number),
+                        ));
+                    }
+                    continue;
+                }
+                if leave_number == Some(number) {
+                    if leave_port.is_none() {
+                        leave_port = Some(PipelinePort::from_axis(
+                            axis,
+                            PortRole::Leave,
+                            Some(number),
+                        ));
+                    }
+                    continue;
+                }
+                extra_ports.push(PipelinePort::from_axis(axis, PortRole::Extra, Some(number)));
+            }
 
-        //     if arrive_port.is_none() {
-        //         if let Some(axis) = world_axes.first() {
-        //             arrive_number = Some(axis.number);
-        //             arrive_port = Some(PipelinePort::from_axis(
-        //                 axis,
-        //                 PortRole::Arrive,
-        //                 Some(axis.number),
-        //             ));
-        //         }
-        //     }
-        //     if leave_port.is_none() {
-        //         if let Some(axis) = world_axes
-        //             .iter()
-        //             .find(|axis| Some(axis.number) != arrive_number)
-        //         {
-        //             leave_number = Some(axis.number);
-        //             leave_port = Some(PipelinePort::from_axis(
-        //                 axis,
-        //                 PortRole::Leave,
-        //                 Some(axis.number),
-        //             ));
-        //         }
-        //     }
+            // 如果没有找到 arrive 端口，使用第一个端口
+            if arrive_port.is_none() {
+                if let Some(axis) = world_axes.first() {
+                    arrive_number = Some(axis.number);
+                    arrive_port = Some(PipelinePort::from_axis(
+                        axis,
+                        PortRole::Arrive,
+                        Some(axis.number),
+                    ));
+                }
+            }
+            // 如果没有找到 leave 端口，使用与 arrive 不同的第一个端口
+            if leave_port.is_none() {
+                if let Some(axis) = world_axes
+                    .iter()
+                    .find(|axis| Some(axis.number) != arrive_number)
+                {
+                    leave_number = Some(axis.number);
+                    leave_port = Some(PipelinePort::from_axis(
+                        axis,
+                        PortRole::Leave,
+                        Some(axis.number),
+                    ));
+                }
+            }
 
-        //     let straight_length = match (arrive_port.as_ref(), leave_port.as_ref()) {
-        //         (Some(a), Some(l)) => a.world_pos.distance(l.world_pos),
-        //         _ => 0.0,
-        //     };
-        //     let length = match length_map.get(&refno.refno()).copied() {
-        //         Some(len) if len > 0.0 => len,
-        //         _ => straight_length,
-        //     };
+            // 计算长度
+            let straight_length = match (arrive_port.as_ref(), leave_port.as_ref()) {
+                (Some(a), Some(l)) => a.world_pos.distance(l.world_pos),
+                _ => 0.0,
+            };
+            let length = match length_map.get(&refno.refno()).copied() {
+                Some(len) if len > 0.0 => len,
+                _ => straight_length,
+            };
 
-        //     let type_name = attr_to_string(&attrs, "TYPE");
-        //     let name = attr_to_string(&attrs, "NAME");
-        //     let spec = attr_to_string(&attrs, "SPEC");
+            // 提取属性
+            let type_name = attr_to_string(&attrs, "TYPE");
+            let name = attr_to_string(&attrs, "NAME");
+            let spec = attr_to_string(&attrs, "SPEC");
 
-        //     let noun = generic
-        //         .as_deref()
-        //         .and_then(|g| g.parse::<PdmsGenericType>().ok())
-        //         .unwrap_or(PdmsGenericType::UNKOWN);
+            // 解析 noun 类型
+            let noun = generic
+                .as_deref()
+                .and_then(|g| g.parse::<PdmsGenericType>().ok())
+                .unwrap_or(PdmsGenericType::UNKOWN);
 
-        //     records.push(PipelineSegmentRecord {
-        //         refno,
-        //         branch: branch_refno.clone(),
-        //         noun,
-        //         noun_raw: generic,
-        //         type_name,
-        //         name,
-        //         spec,
-        //         attrs,
-        //         transform: *world_trans,
-        //         geo_hash,
-        //         arrive_number,
-        //         leave_number,
-        //         arrive: arrive_port,
-        //         leave: leave_port,
-        //         extra_ports,
-        //         length,
-        //         straight_length,
-        //     });
-        // }
+            records.push(PipelineSegmentRecord {
+                refno,
+                branch: branch_refno.clone(),
+                noun,
+                noun_raw: generic,
+                type_name,
+                name,
+                spec,
+                attrs,
+                transform: *world_trans,
+                geo_hash,
+                arrive_number,
+                leave_number,
+                arrive: arrive_port,
+                leave: leave_port,
+                extra_ports,
+                length,
+                straight_length,
+            });
+        }
 
         Ok(records)
     }
