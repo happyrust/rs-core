@@ -72,8 +72,121 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
     bdd_box
 }
 
+/// 表示一条边，由顶点序列组成
+///
+/// 边可以包含多个顶点，用于表示直线段或曲线段
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Edge {
+    /// 边的顶点序列
+    pub vertices: Vec<Vec3>,
+}
+
+impl Edge {
+    /// 创建新边
+    pub fn new(vertices: Vec<Vec3>) -> Self {
+        Self { vertices }
+    }
+
+    /// 从 Vec<Vec3> 创建边
+    pub fn from_vec(vertices: Vec<Vec3>) -> Self {
+        Self { vertices }
+    }
+
+    /// 获取起点
+    pub fn start(&self) -> Option<Vec3> {
+        self.vertices.first().copied()
+    }
+
+    /// 获取终点
+    pub fn end(&self) -> Option<Vec3> {
+        self.vertices.last().copied()
+    }
+
+    /// 计算边的总长度（遍历所有顶点）
+    pub fn length(&self) -> f32 {
+        if self.vertices.len() < 2 {
+            return 0.0;
+        }
+        let mut total_length = 0.0;
+        for i in 0..(self.vertices.len() - 1) {
+            total_length += self.vertices[i].distance(self.vertices[i + 1]);
+        }
+        total_length
+    }
+
+    /// 获取线段数量（顶点数-1）
+    pub fn segment_count(&self) -> usize {
+        if self.vertices.is_empty() {
+            0
+        } else {
+            self.vertices.len() - 1
+        }
+    }
+
+    /// 转换为 Vec<Vec3>（兼容现有代码）
+    pub fn to_vec(&self) -> Vec<Vec3> {
+        self.vertices.clone()
+    }
+}
+
+impl From<Vec<Vec3>> for Edge {
+    fn from(vertices: Vec<Vec3>) -> Self {
+        Self { vertices }
+    }
+}
+
+impl Into<Vec<Vec3>> for Edge {
+    fn into(self) -> Vec<Vec3> {
+        self.vertices
+    }
+}
+
+/// 边的集合类型
+pub type Edges = Vec<Edge>;
+
+/// 从三角网格索引中提取唯一的边（内部辅助函数）
+fn extract_edges_from_mesh_internal(indices: &[u32], vertices: &[Vec3]) -> Edges {
+    use std::collections::HashSet;
+
+    if indices.len() < 3 || vertices.is_empty() {
+        return Vec::new();
+    }
+
+    // 使用 HashSet 存储标准化的边（较小的索引在前）
+    let mut edge_set: HashSet<(u32, u32)> = HashSet::new();
+
+    // 遍历所有三角形，提取每条边
+    for triangle in indices.chunks_exact(3) {
+        let v0 = triangle[0];
+        let v1 = triangle[1];
+        let v2 = triangle[2];
+
+        // 三条边，标准化为较小的索引在前
+        let edges = [
+            if v0 < v1 { (v0, v1) } else { (v1, v0) },
+            if v1 < v2 { (v1, v2) } else { (v2, v1) },
+            if v2 < v0 { (v2, v0) } else { (v0, v2) },
+        ];
+
+        for edge in edges {
+            edge_set.insert(edge);
+        }
+    }
+
+    // 将边索引转换为顶点坐标
+    let mut edges = Vec::with_capacity(edge_set.len());
+    for (idx0, idx1) in edge_set {
+        if idx0 < vertices.len() as u32 && idx1 < vertices.len() as u32 {
+            let edge = Edge::new(vec![vertices[idx0 as usize], vertices[idx1 as usize]]);
+            edges.push(edge);
+        }
+    }
+
+    edges
+}
+
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Component, Debug, Clone)]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<Vec3>,
@@ -81,10 +194,51 @@ pub struct PlantMesh {
     #[serde(skip)]
     pub wire_vertices: Vec<Vec<Vec3>>,
     #[serde(skip)]
+    pub edges: Edges,
+    #[serde(skip)]
     pub aabb: Option<Aabb>,
 }
 
+impl Default for PlantMesh {
+    fn default() -> Self {
+        Self {
+            indices: Vec::new(),
+            vertices: Vec::new(),
+            normals: Vec::new(),
+            wire_vertices: Vec::new(),
+            edges: Vec::new(),
+            aabb: None,
+        }
+    }
+}
+
 impl PlantMesh {
+    /// 获取边的集合
+    pub fn edges(&self) -> &Edges {
+        &self.edges
+    }
+
+    /// 设置边的集合
+    pub fn set_edges(&mut self, edges: Edges) {
+        self.edges = edges;
+        // 同步更新 wire_vertices 以保持向后兼容
+        self.wire_vertices = self.edges.iter().map(|e| e.to_vec()).collect();
+    }
+
+    /// 从 wire_vertices 更新 edges
+    pub fn sync_edges_from_wire_vertices(&mut self) {
+        self.edges = self
+            .wire_vertices
+            .iter()
+            .map(|v| Edge::from_vec(v.clone()))
+            .collect();
+    }
+
+    /// 从 edges 更新 wire_vertices
+    pub fn sync_wire_vertices_from_edges(&mut self) {
+        self.wire_vertices = self.edges.iter().map(|e| e.to_vec()).collect();
+    }
+
     ///合并两个mesh
     pub fn merge(&mut self, other: &Self) {
         let vertex_offset = self.vertices.len() as u32;
@@ -92,7 +246,10 @@ impl PlantMesh {
             .extend(other.indices.iter().map(|&i| i + vertex_offset));
         self.vertices.extend(other.vertices.iter());
         self.normals.extend(other.normals.iter());
-        // self.wire_vertices.extend(other.wire_vertices.iter());
+        // 合并 edges
+        self.edges.extend(other.edges.iter().cloned());
+        // 同步更新 wire_vertices 以保持向后兼容
+        self.sync_wire_vertices_from_edges();
 
         // Merge aabb if present
         if let Some(other_aabb) = &other.aabb {
@@ -124,13 +281,18 @@ impl PlantMesh {
             ));
         }
         ///生成mesh
-        Ok(PlantMesh {
-            indices: mesh.indices.iter().map(|&x| x as u32).collect(),
+        let indices: Vec<u32> = mesh.indices.iter().map(|&x| x as u32).collect();
+        let edges = extract_edges_from_mesh_internal(&indices, &vertices);
+        let mut mesh = PlantMesh {
+            indices,
             vertices,
             normals: mesh.normals.iter().map(|&x| x.as_vec3()).collect(),
             wire_vertices: vec![],
+            edges,
             aabb: Some(aabb),
-        })
+        };
+        mesh.sync_wire_vertices_from_edges();
+        Ok(mesh)
     }
 
     ///生成tri mesh
@@ -215,13 +377,29 @@ impl PlantMesh {
                 );
             }
         }
-        Self {
+        // 变换边
+        let transformed_edges: Edges = self
+            .edges
+            .iter()
+            .map(|edge| {
+                Edge::new(
+                    edge.vertices
+                        .iter()
+                        .map(|v| t.transform_point3(v.as_dvec3()).as_vec3())
+                        .collect(),
+                )
+            })
+            .collect();
+        let mut mesh = Self {
             indices: self.indices.clone(),
             vertices,
             normals,
             wire_vertices: vec![],
+            edges: transformed_edges,
             aabb: None,
-        }
+        };
+        mesh.sync_wire_vertices_from_edges();
+        mesh
     }
 
     ///缩放mesh
@@ -866,6 +1044,7 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
                 .map(|poly| poly.iter().map(|x| x.vec3()).collect::<Vec<_>>())
                 .collect();
 
+            let edges: Edges = wire_vertices.iter().map(|v| Edge::from_vec(v.clone())).collect();
             return Some(PlantGeoData {
                 geo_hash,
                 mesh: Some(PlantMesh {
@@ -873,6 +1052,8 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
                     vertices,
                     normals,
                     wire_vertices,
+                    edges,
+                    aabb: Some(aabb),
                 }),
                 aabb: Some(aabb),
             });

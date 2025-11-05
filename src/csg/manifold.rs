@@ -1,7 +1,7 @@
 use std::alloc::{Layout, alloc};
 use std::{mem, panic};
 
-use crate::shape::pdms_shape::PlantMesh;
+use crate::shape::pdms_shape::{Edge, Edges, PlantMesh};
 use crate::tool::float_tool::*;
 use derive_more::{Deref, DerefMut};
 use glam::{DMat4, Mat4, Vec2, Vec3};
@@ -388,13 +388,43 @@ impl From<&ManifoldRust> for PlantMesh {
 
             // m.destroy();
 
-            Self {
+            // 提取边
+            use std::collections::HashSet;
+            let mut edge_set: HashSet<(u32, u32)> = HashSet::new();
+            for triangle in indices.chunks_exact(3) {
+                let v0 = triangle[0];
+                let v1 = triangle[1];
+                let v2 = triangle[2];
+                let edges = [
+                    if v0 < v1 { (v0, v1) } else { (v1, v0) },
+                    if v1 < v2 { (v1, v2) } else { (v2, v1) },
+                    if v2 < v0 { (v2, v0) } else { (v0, v2) },
+                ];
+                for edge in edges {
+                    edge_set.insert(edge);
+                }
+            }
+            let edges: Edges = edge_set
+                .iter()
+                .filter_map(|(idx0, idx1)| {
+                    if *idx0 < vertices.len() as u32 && *idx1 < vertices.len() as u32 {
+                        Some(Edge::new(vec![vertices[*idx0 as usize], vertices[*idx1 as usize]]))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            let mut mesh = Self {
                 indices,
                 vertices,
                 normals,
                 wire_vertices: vec![],
+                edges,
                 aabb: None,
-            }
+            };
+            mesh.sync_wire_vertices_from_edges();
+            mesh
         }
     }
 }

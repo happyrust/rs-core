@@ -11,7 +11,7 @@ use truck_modeling::*;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::basic::*;
-use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, VerifiedShape};
+use crate::shape::pdms_shape::{BrepShapeTrait, Edge, Edges, PlantMesh, RsVec3, VerifiedShape};
 use serde::{Deserialize, Serialize};
 
 use crate::NamedAttrMap;
@@ -166,13 +166,41 @@ impl BrepShapeTrait for Sphere {
         }
 
         //球也需要提供wireframe的绘制
-        return Some(PlantMesh {
+        use std::collections::HashSet;
+        let mut edge_set: HashSet<(u32, u32)> = HashSet::new();
+        for triangle in indices.chunks_exact(3) {
+            let v0 = triangle[0];
+            let v1 = triangle[1];
+            let v2 = triangle[2];
+            let edges = [
+                if v0 < v1 { (v0, v1) } else { (v1, v0) },
+                if v1 < v2 { (v1, v2) } else { (v2, v1) },
+                if v2 < v0 { (v2, v0) } else { (v0, v2) },
+            ];
+            for edge in edges {
+                edge_set.insert(edge);
+            }
+        }
+        let edges: Edges = edge_set
+            .iter()
+            .filter_map(|(idx0, idx1)| {
+                if *idx0 < points.len() as u32 && *idx1 < points.len() as u32 {
+                    Some(Edge::new(vec![points[*idx0 as usize], points[*idx1 as usize]]))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let mut mesh = PlantMesh {
             indices,
             vertices: points,
             normals,
             wire_vertices: vec![],
+            edges,
             aabb: None,
-        });
+        };
+        mesh.sync_wire_vertices_from_edges();
+        return Some(mesh);
     }
 }
 

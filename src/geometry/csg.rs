@@ -28,7 +28,7 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::wire::{CurveType, process_ploop_vertices};
-use crate::shape::pdms_shape::{PlantMesh, VerifiedShape};
+use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::utils::svg_generator::SpineSvgGenerator;
 use glam::Vec3;
 use nalgebra::Point3;
@@ -129,16 +129,20 @@ pub fn unit_box_mesh() -> PlantMesh {
 
     use nalgebra::Point3;
     use parry3d::bounding_volume::Aabb;
-    PlantMesh {
+    let edges = extract_edges_from_mesh(&indices, &vertices);
+    let mut mesh = PlantMesh {
         vertices,
         normals,
         indices,
         wire_vertices: Vec::new(),
+        edges,
         aabb: Some(Aabb::new(
             Point3::new(-half, -half, -half),
             Point3::new(half, half, half),
         )),
-    }
+    };
+    mesh.sync_wire_vertices_from_edges();
+    mesh
 }
 
 /// 生成单位球体网格（用于简单球体的基础网格）
@@ -199,13 +203,17 @@ pub fn unit_sphere_mesh() -> PlantMesh {
         }
     }
 
-    PlantMesh {
+    let edges = extract_edges_from_mesh(&indices, &vertices);
+    let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
         wire_vertices: vec![],
+        edges,
         aabb: Some(aabb),
-    }
+    };
+    mesh.sync_wire_vertices_from_edges();
+    mesh
 }
 
 /// 生成单位圆柱体网格（用于简单圆柱体的基础网格）
@@ -288,16 +296,20 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
     build_cap(true);
     build_cap(false);
 
-    PlantMesh {
+    let edges = extract_edges_from_mesh(&indices, &vertices);
+    let mut mesh = PlantMesh {
         vertices,
         normals,
         indices,
         wire_vertices: Vec::new(),
+        edges,
         aabb: Some(Aabb::new(
             Point3::new(-0.5, -0.5, 0.0),
             Point3::new(0.5, 0.5, 1.0),
         )),
-    }
+    };
+    mesh.sync_wire_vertices_from_edges();
+    mesh
 }
 
 /// 计算径向分段数（圆周方向的细分段数）
@@ -345,6 +357,76 @@ fn compute_height_segments(
 ) -> usize {
     let base = settings.adaptive_height_segments(span, non_scalable);
     base.max(required_min.max(1)) as usize
+}
+
+/// 从三角网格索引中提取唯一的边
+///
+/// # 参数
+/// - `indices`: 三角网格的索引数组，每3个元素表示一个三角形
+/// - `vertices`: 顶点数组
+///
+/// # 返回
+/// 边的集合，每条边由两个顶点组成（起点和终点）
+fn extract_edges_from_mesh(indices: &[u32], vertices: &[Vec3]) -> Edges {
+    use std::collections::HashSet;
+
+    if indices.len() < 3 || vertices.is_empty() {
+        return Vec::new();
+    }
+
+    // 使用 HashSet 存储标准化的边（较小的索引在前）
+    let mut edge_set: HashSet<(u32, u32)> = HashSet::new();
+
+    // 遍历所有三角形，提取每条边
+    for triangle in indices.chunks_exact(3) {
+        let v0 = triangle[0];
+        let v1 = triangle[1];
+        let v2 = triangle[2];
+
+        // 三条边，标准化为较小的索引在前
+        let edges = [
+            if v0 < v1 { (v0, v1) } else { (v1, v0) },
+            if v1 < v2 { (v1, v2) } else { (v2, v1) },
+            if v2 < v0 { (v2, v0) } else { (v0, v2) },
+        ];
+
+        for edge in edges {
+            edge_set.insert(edge);
+        }
+    }
+
+    // 将边索引转换为顶点坐标
+    let mut edges = Vec::with_capacity(edge_set.len());
+    for (idx0, idx1) in edge_set {
+        if idx0 < vertices.len() as u32 && idx1 < vertices.len() as u32 {
+            let edge = Edge::new(vec![vertices[idx0 as usize], vertices[idx1 as usize]]);
+            edges.push(edge);
+        }
+    }
+
+    edges
+}
+
+/// 创建一个带有边信息的 PlantMesh
+///
+/// 辅助函数，用于创建 PlantMesh 并自动提取边信息
+fn create_mesh_with_edges(
+    indices: Vec<u32>,
+    vertices: Vec<Vec3>,
+    normals: Vec<Vec3>,
+    aabb: Option<Aabb>,
+) -> PlantMesh {
+    let edges = extract_edges_from_mesh(&indices, &vertices);
+    let mut mesh = PlantMesh {
+        indices,
+        vertices,
+        normals,
+        wire_vertices: Vec::new(),
+        edges,
+        aabb,
+    };
+    mesh.sync_wire_vertices_from_edges();
+    mesh
 }
 
 /// 生成的网格及其包围盒
@@ -581,13 +663,7 @@ fn generate_sscl_mesh(
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -706,13 +782,7 @@ fn build_cylinder_mesh(
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -782,13 +852,7 @@ fn generate_sphere_mesh(
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -911,13 +975,7 @@ fn generate_snout_mesh(
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -1040,13 +1098,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     let max = sbox.center + half;
     let aabb = Aabb::new(Point3::from(min), Point3::from(max));
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -1275,13 +1327,7 @@ fn generate_dish_mesh(
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -1446,13 +1492,7 @@ fn generate_torus_mesh(
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -1596,13 +1636,7 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -1827,13 +1861,7 @@ fn generate_partial_cylinder_surface(
     }
 
     (
-        PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb,
     )
 }
@@ -1884,13 +1912,7 @@ fn generate_partial_annulus_surface(
     }
 
     (
-        PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb,
     )
 }
@@ -1948,13 +1970,7 @@ fn generate_rect_torus_end_face(
     }
 
     (
-        PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb,
     )
 }
@@ -2418,16 +2434,8 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
         indices.extend_from_slice(&[a, c, d]);
     }
 
-    let mesh = PlantMesh {
-        indices,
-        vertices,
-        normals,
-        wire_vertices: vec![],
-        aabb: Some(aabb),
-    };
-
     Some(GeneratedMesh {
-        mesh,
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -2489,13 +2497,7 @@ fn generate_cylinder_surface(
     }
 
     (
-        PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb,
     )
 }
@@ -2555,13 +2557,7 @@ fn generate_annulus_surface(
     }
 
     (
-        PlantMesh {
-            indices,
-            vertices,
-            normals,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb,
     )
 }
@@ -3018,13 +3014,7 @@ pub(crate) fn generate_polyhedron_mesh(poly: &Polyhedron) -> Option<GeneratedMes
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            vertices: all_vertices,
-            normals: all_normals,
-            indices: all_indices,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(all_indices, all_vertices, all_normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }
@@ -3223,13 +3213,7 @@ pub(crate) fn generate_revolution_mesh(
     }
 
     Some(GeneratedMesh {
-        mesh: PlantMesh {
-            vertices,
-            normals,
-            indices,
-            wire_vertices: vec![],
-            aabb: Some(aabb),
-        },
+        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
         aabb: Some(aabb),
     })
 }

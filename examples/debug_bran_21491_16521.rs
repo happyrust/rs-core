@@ -156,8 +156,8 @@ async fn main() -> anyhow::Result<()> {
         SELECT value [
             in,
             world_trans.d,
-            (SELECT * FROM object::values(out.ptset) WHERE number=$parent.in.refno.ARRI)[0],
-            (SELECT * FROM object::values(out.ptset) WHERE number=$parent.in.refno.LEAV)[0]
+            (SELECT * FROM object::values(out.ptset?:{{}}) WHERE number=$parent.in.refno.ARRI)[0],
+            (SELECT * FROM object::values(out.ptset?:{{}}) WHERE number=$parent.in.refno.LEAV)[0]
         ]
         FROM array::flatten([{}][? owner.noun in ['BRAN', 'HANG']]->inst_relate) WHERE world_trans.d!=none
         "#,
