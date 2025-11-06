@@ -116,8 +116,8 @@ pub mod utils;
 
 pub mod debug_macros;
 
-#[cfg(feature = "web_ui")]
-pub mod web_ui;
+#[cfg(feature = "web_server")]
+pub mod web_server;
 pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{
@@ -125,8 +125,8 @@ pub use runtime::{
     try_connect_database,
 };
 
-#[cfg(feature = "web_ui")]
-pub use web_ui::{
+#[cfg(feature = "web_server")]
+pub use web_server::{
     ConnectionConfig, ConnectionHandle, DeploymentConnectionPool, connect_with_config,
     create_required_tables, test_database_connection, verify_connection,
 };
@@ -253,8 +253,8 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         })
         .unwrap();
 
-    // Define common functions
-    define_common_functions(db_option.get_surreal_script_dir())
+    // Define common functions (使用 None 从配置文件自动读取路径)
+    define_common_functions(None)
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
@@ -292,8 +292,8 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             password: db_option.v_password.clone(),
         })
         .await?;
-    // Define common functions
-    define_common_functions(db_option.get_surreal_script_dir())
+    // Define common functions (使用 None 从配置文件自动读取路径)
+    define_common_functions(None)
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
@@ -388,8 +388,8 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
             msg: format!("Failed to sign in: {}", e),
         })?;
 
-    // Define common functions
-    define_common_functions(db_option.get_surreal_script_dir())
+    // Define common functions (使用 None 从配置文件自动读取路径)
+    define_common_functions(None)
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),

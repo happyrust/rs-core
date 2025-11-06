@@ -105,7 +105,7 @@ pub async fn init_sul_db_with_memory() -> Result<()> {
         .map_err(|e| anyhow::anyhow!("Failed to set namespace/database: {}", e))?;
 
     // 加载 SurrealDB 函数定义（从 resource/surreal/*.surql 文件）
-    crate::function::define_common_functions("resource/surreal")
+    crate::function::define_common_functions(Some("resource/surreal"))
         .await
         .map_err(|e| anyhow::anyhow!("Failed to define common functions: {}", e))?;
 

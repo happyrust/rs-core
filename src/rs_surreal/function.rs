@@ -3,8 +3,34 @@ use cached::proc_macro::cached;
 use std::io::Read;
 use std::path::PathBuf;
 
-pub async fn define_common_functions(script_dir: &str) -> anyhow::Result<()> {
-    let target_dir = std::fs::read_dir(script_dir)?
+/// 执行 SurrealDB 脚本目录中的所有脚本
+///
+/// # 参数
+/// * `script_dir` - 脚本目录路径，如果为 None，则从 DbOption 配置中读取
+///
+/// # 示例
+/// ```no_run
+/// // 使用默认配置路径
+/// define_common_functions(None).await?;
+/// 
+/// // 使用指定路径
+/// define_common_functions(Some("resource/surreal")).await?;
+/// ```
+pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result<()> {
+    // 如果传入 None，从 DbOption 配置中读取路径
+    let dir_path = if let Some(dir) = script_dir {
+        dir.to_string()
+    } else {
+        // 读取配置文件获取脚本目录
+        use config::{Config, File};
+        let s = Config::builder()
+            .add_source(File::with_name("DbOption"))
+            .build()?;
+        let db_option: crate::options::DbOption = s.try_deserialize()?;
+        db_option.get_surreal_script_dir().to_string()
+    };
+    
+    let target_dir = std::fs::read_dir(&dir_path)?
         .into_iter()
         .map(|entry| {
             let entry = entry.unwrap();

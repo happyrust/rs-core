@@ -157,9 +157,9 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
         }
     }
 
-    // 4. 初始化 SurrealDB 通用函数定义
+    // 4. 初始化 SurrealDB 通用函数定义 (使用 None 从配置文件自动读取路径)
     if let Err(e) =
-        crate::function::define_common_functions(db_option.get_surreal_script_dir()).await
+        crate::function::define_common_functions(None).await
     {
         eprintln!("初始化通用函数失败: {} (忽略并继续)", e);
     }

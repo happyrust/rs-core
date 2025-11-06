@@ -4,6 +4,7 @@ use crate::rs_surreal;
 use glam::Vec3;
 
 #[tokio::test]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 async fn test_query_point_room() -> anyhow::Result<()> {
     init_test_surreal().await;
     // let refno = "13292_92".into();
@@ -15,7 +16,7 @@ async fn test_query_point_room() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 async fn test_query_room_by_point(point: Vec3) {
     let mut time = std::time::Instant::now();
     let result = query_room_number_by_point(point).await.unwrap();
