@@ -11,6 +11,38 @@
 
 **外部系统命名约定**：AVEVA PDMS/E3D 系统的内部缩写和数据结构命名请参考 `docs/attlib_naming_conventions.md`。
 
+## SurrealDB Types & Query Patterns
+项目使用 SurrealDB 作为主要数据库，类型系统与查询模式遵循以下规范：
+
+**类型别名与导入**：
+- `surrealdb_types` 仅为 `surrealdb::types` 的模块别名
+- 应始终使用完整路径 `use surrealdb::types::SurrealValue;` 导入核心值类型
+- 查询接口通过 `SurrealQueryExt` trait 扩展 `Surreal<Any>`
+
+**查询方法规范**：
+- **禁止**直接使用 `.query().await?.take()` 并 unwrap，必须使用项目提供的扩展方法
+- **推荐**使用 `query_take::<T>(sql, index)` 执行查询并反序列化第 `index` 个结果
+- 使用 `query_response(sql)` 获取完整的 `Response` 对象以便多结果处理
+- 所有查询方法已集成 `#[track_caller]` 实现精确错误定位
+
+**类型约束与转换**：
+- 查询目标类型 `T` 必须满足 `T: SurrealValue` 和 `usize: SurrealQueryResult<T>`
+- 反序列化失败会通过 `anyhow::Error` 传播，并附带 SQL 语句和调用位置信息
+- 优先使用具体类型（如 `Vec<RefNo>`）而非手动解析 `SurrealValue` 枚举
+
+**使用示例**：
+```rust
+use crate::rs_surreal::query_ext::SurrealQueryExt;
+
+// 单结果查询
+let result: Vec<RefNo> = db.query_take("SELECT REFNO FROM pe WHERE noun = 'SITE'", 0).await?;
+
+// 多结果查询
+let response = db.query_response("SELECT * FROM pe LIMIT 10; SELECT count() FROM pe;").await?;
+let data: Vec<PeData> = response.take(0)?;
+let count: i64 = response.take(1)?;
+```
+
 ## Testing Guidelines
 测试框架依赖 Cargo 内建机制，建议在本地同时执行 `cargo test` 与 `cargo test --lib` 对比输出；针对数据库差异，可运行 `cargo run --example test_unified_query` 并比对 `surreal_perf.log`；独立模块可使用 `cargo test test_memory_database_init`、`cargo test test_gensec_spine -- --nocapture` 等现有命令作为模板；新增集成夹具放入 `test-files/`，输出日志放入 `test_output/`，文件命名遵循 `test_模块_场景.log` 以便归档。
 
