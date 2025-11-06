@@ -16,7 +16,8 @@
 
 **类型别名与导入**：
 - `surrealdb_types` 仅为 `surrealdb::types` 的模块别名
-- 应始终使用完整路径 `use surrealdb::types::SurrealValue;` 导入核心值类型
+- 使用时需要导入模块别名：`use surrealdb::types as surrealdb_types;`
+- 具体类型应使用完整路径导入：`use surrealdb::types::SurrealValue;`
 - 查询接口通过 `SurrealQueryExt` trait 扩展 `Surreal<Any>`
 
 **查询方法规范**：
@@ -32,6 +33,8 @@
 
 **使用示例**：
 ```rust
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::SurrealValue;
 use crate::rs_surreal::query_ext::SurrealQueryExt;
 
 // 单结果查询
