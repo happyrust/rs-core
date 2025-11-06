@@ -7,12 +7,12 @@ use parry3d::math::Isometry;
 use parry3d::query::PointQuery;
 use parry3d::shape::TriMeshFlags;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 use crate::spatial::sqlite;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 use anyhow::Context;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<String>> {
     let Some(refno) = query_room_panel_by_point(point).await? else {
         return Ok(None);
@@ -31,7 +31,7 @@ pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<St
 }
 
 //传进来的是世界坐标系下的点
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<RefnoEnum>> {
     let candidates =
         tokio::task::spawn_blocking(move || sqlite::query_containing_point(point, 256))
@@ -62,7 +62,7 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
                 continue;
             };
             let Some(mut tri_mesh) = mesh.get_tri_mesh_with_flag(
-                (geom_inst.world_trans * inst.transform).to_matrix(),
+                (geom_inst.world_trans * &inst.transform).to_matrix(),
                 TriMeshFlags::ORIENTED,
             ) else {
                 continue;

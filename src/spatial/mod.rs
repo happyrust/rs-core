@@ -1,3 +1,3 @@
 pub mod pipe;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub mod sqlite;

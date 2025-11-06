@@ -938,8 +938,9 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
 
 pub async fn clear_all_caches(refno: RefnoEnum) {
     // crate::GET_WORLD_TRANSFORM.lock().await.cache_remove(&refno);
-    crate::GET_WORLD_TRANSFORM.lock().await.cache_clear();
-    crate::GET_WORLD_MAT4.lock().await.cache_clear();
+    // 暂时注释掉，等待 cached 宏类型推断问题解决
+    // crate::GET_WORLD_TRANSFORM.lock().await.cache_clear();
+    // crate::GET_WORLD_MAT4.lock().await.cache_clear();
     QUERY_ANCESTOR_REFNOS.lock().await.cache_remove(&refno);
     QUERY_DEEP_CHILDREN_REFNOS.lock().await.cache_remove(&refno);
     GET_PE.lock().await.cache_remove(&refno);

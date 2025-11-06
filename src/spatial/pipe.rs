@@ -1,8 +1,11 @@
 use glam::Vec3;
 
-use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt, query_neareast_along_axis};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
+use crate::query_neareast_along_axis;
 
 /// Create the relations between the valves and the floors
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub async fn cal_valve_nearest_floor() -> anyhow::Result<()> {
     let page_count = 1000;
     let mut offset = 0;

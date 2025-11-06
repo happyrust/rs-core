@@ -1,5 +1,5 @@
 use crate::RefnoEnum;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 use crate::spatial::sqlite;
 use crate::tool::math_tool;
 use crate::tool::math_tool::{
@@ -305,10 +305,10 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                     let jlin_pos = param.pt;
                     let jlin_plax = param.plax;
                     // dbg!((&jlin_pos, &jlin_plax));
-                    let c_t = Box::pin(get_world_transform(c_ref))
+                    let c_t: Transform = Box::pin(get_world_transform(c_ref))
                         .await?
                         .unwrap_or_default();
-                    let o_t = Box::pin(get_world_transform(o_att.get_owner()))
+                    let o_t: Transform = Box::pin(get_world_transform(o_att.get_owner()))
                         .await?
                         .unwrap_or_default();
                     let jlin_offset = c_t.rotation.as_dquat() * jlin_pos;
@@ -806,7 +806,7 @@ pub async fn get_spline_path(refno: RefnoEnum) -> anyhow::Result<Vec<Spine3D>> {
 }
 
 ///沿着 dir 方向找到最近的目标构件
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub async fn query_neareast_along_axis(
     refno: RefnoEnum,
     dir: Vec3,
@@ -820,13 +820,31 @@ pub async fn query_neareast_along_axis(
     query_nearest_by_dir_internal(pos, dir, target_type, exclude).await
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "sqlite")))]
+pub async fn query_neareast_along_axis(
+    _refno: RefnoEnum,
+    _dir: Vec3,
+    _target_type: &str,
+) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
+    Ok(None)
+}
+
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub async fn query_neareast_by_pos_dir(
     pos: Vec3,
     dir: Vec3,
     target_type: &str,
 ) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
     query_nearest_by_dir_internal(pos, dir, target_type, None).await
+}
+
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "sqlite")))]
+pub async fn query_neareast_by_pos_dir(
+    _pos: Vec3,
+    _dir: Vec3,
+    _target_type: &str,
+) -> anyhow::Result<Option<(RefnoEnum, f32)>> {
+    Ok(None)
 }
 
 /// 查询指定节点的包围盒，需要遍历子节点的所有包围盒, 如果是含有负实体的，取父节点的包围盒
@@ -839,7 +857,7 @@ pub async fn query_bbox(refno: RefnoEnum) -> anyhow::Result<Option<(RefnoEnum, f
     Ok(None)
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 async fn query_nearest_by_dir_internal(
     origin: Vec3,
     dir: Vec3,

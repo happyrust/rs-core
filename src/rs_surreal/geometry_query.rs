@@ -367,7 +367,7 @@ pub async fn update_inst_relate_aabbs_by_refnos(
             // 计算合并后的 AABB
             let mut aabb = Aabb::new_invalid();
             for g in &r.geo_aabbs {
-                let t = r.world_trans * g.trans;
+                let t = r.world_trans * &g.trans;
                 let tmp_aabb = g.aabb.scaled(&t.scale.into());
                 let tmp_aabb = tmp_aabb.transform_by(&Isometry {
                     rotation: t.rotation.into(),

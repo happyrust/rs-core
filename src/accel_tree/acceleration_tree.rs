@@ -294,7 +294,7 @@ impl AccelerationTree {
                 if mesh.vertices.is_empty() {
                     continue;
                 }
-                let trans = g.world_trans * inst.transform;
+                let trans = g.world_trans * &inst.transform;
                 let Some(tri_mesh) = mesh.get_tri_mesh(trans.to_matrix()) else {
                     continue;
                 };
