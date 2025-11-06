@@ -260,6 +260,13 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
             msg: format!("Failed to define common functions: {}", e),
         })?;
 
+    // 加载属性中文名缓存
+    rs_surreal::load_attr_cn_names()
+        .await
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to load attribute Chinese names: {}", e),
+        })?;
+
     Ok(db_option)
 }
 
@@ -291,6 +298,10 @@ pub async fn init_surreal() -> anyhow::Result<()> {
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
         })?;
+    
+    // 加载属性中文名缓存
+    rs_surreal::load_attr_cn_names().await?;
+    
     Ok(())
 }
 

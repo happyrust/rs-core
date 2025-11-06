@@ -1,4 +1,5 @@
 pub mod adapter;
+pub mod attr_cache;
 pub mod boolean_query;
 pub mod datacenter_query;
 pub mod geom;
@@ -37,6 +38,7 @@ pub mod pipeline;
 // XKT 生成相关查询
 pub mod type_hierarchy;
 
+pub use attr_cache::*;
 pub use boolean_query::*;
 pub use cate::*;
 pub use e3d_db::*;
