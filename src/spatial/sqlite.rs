@@ -27,6 +27,55 @@ pub fn open_connection() -> Result<Connection> {
         .with_context(|| format!("无法打开 SQLite 空间索引文件 {}", path.display()))
 }
 
+/// 打开可读写的 SQLite 连接（用于创建表或插入数据）
+pub fn open_connection_rw() -> Result<Connection> {
+    ensure_sqlite_enabled()?;
+    let db_option = get_db_option();
+    let path = db_option.get_sqlite_index_path();
+    Connection::open(&path)
+        .with_context(|| format!("无法打开 SQLite 空间索引文件 {}", path.display()))
+}
+
+/// 创建 RTree 虚拟表
+/// 
+/// 如果表已存在，则不会报错（使用 IF NOT EXISTS）
+/// 
+/// # 注意
+/// RTree 虚拟表只能存储 id 和坐标信息，其他元数据需要存储在 items 表中
+pub fn create_rtree_table(conn: &Connection) -> Result<()> {
+    conn.execute(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS aabb_index USING rtree(
+            id INTEGER PRIMARY KEY,
+            min_x REAL, max_x REAL,
+            min_y REAL, max_y REAL,
+            min_z REAL, max_z REAL
+        )",
+        [],
+    )?;
+    
+    // 创建 items 表用于存储额外的元数据（如 noun 类型）
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS items (
+            id INTEGER PRIMARY KEY,
+            noun TEXT
+        )",
+        [],
+    )?;
+    
+    // 为 items 表创建索引以提高 JOIN 性能
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_items_id ON items(id)",
+        [],
+    )?;
+    
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_items_noun ON items(noun)",
+        [],
+    )?;
+    
+    Ok(())
+}
+
 fn map_row_to_aabb(row: &Row<'_>) -> rusqlite::Result<Aabb> {
     let min_x: f64 = row.get(1)?;
     let max_x: f64 = row.get(2)?;
@@ -50,12 +99,12 @@ pub fn query_containing_point_with_conn(
     point: Vec3,
     limit: usize,
 ) -> Result<Vec<(RefU64, Aabb)>> {
+    // 使用 RTree MATCH 语法进行点查询
+    // 点查询：将点视为一个极小的包围盒 (x, x, y, y, z, z)
     let mut stmt = conn.prepare(
         "SELECT id, min_x, max_x, min_y, max_y, min_z, max_z
          FROM aabb_index
-         WHERE min_x <= ?1 AND max_x >= ?1
-           AND min_y <= ?2 AND max_y >= ?2
-           AND min_z <= ?3 AND max_z >= ?3
+         WHERE id MATCH rtree(?1, ?1, ?2, ?2, ?3, ?3)
          LIMIT ?4",
     )?;
     let rows = stmt.query_map(
@@ -79,6 +128,7 @@ pub fn query_aabb(refno: RefU64) -> Result<Option<Aabb>> {
 }
 
 pub fn query_aabb_with_conn(conn: &Connection, refno: RefU64) -> Result<Option<Aabb>> {
+    // RTree 表也支持普通的 WHERE id = ? 查询
     Ok(conn
         .query_row(
             "SELECT id, min_x, max_x, min_y, max_y, min_z, max_z
@@ -89,6 +139,79 @@ pub fn query_aabb_with_conn(conn: &Connection, refno: RefU64) -> Result<Option<A
             |row| map_row_to_aabb(row),
         )
         .optional()?)
+}
+
+/// 插入或更新 AABB 数据到 RTree 表
+/// 
+/// # 参数
+/// * `refno` - 参考号
+/// * `aabb` - 包围盒
+/// * `noun` - 可选的类型名称（存储到 items 表）
+pub fn insert_or_update_aabb(
+    refno: RefU64,
+    aabb: &Aabb,
+    noun: Option<&str>,
+) -> Result<()> {
+    let conn = open_connection_rw()?;
+    
+    // 插入或更新 RTree 表
+    conn.execute(
+        "INSERT OR REPLACE INTO aabb_index (id, min_x, max_x, min_y, max_y, min_z, max_z)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            refno.0 as i64,
+            aabb.mins.x as f64,
+            aabb.maxs.x as f64,
+            aabb.mins.y as f64,
+            aabb.maxs.y as f64,
+            aabb.mins.z as f64,
+            aabb.maxs.z as f64,
+        ],
+    )?;
+    
+    // 如果有 noun，插入或更新 items 表
+    if let Some(noun_str) = noun {
+        conn.execute(
+            "INSERT OR REPLACE INTO items (id, noun) VALUES (?1, ?2)",
+            params![refno.0 as i64, noun_str],
+        )?;
+    }
+    
+    Ok(())
+}
+
+/// 批量插入或更新 AABB 数据
+pub fn insert_or_update_aabbs_batch(
+    data: &[(RefU64, Aabb, Option<String>)],
+) -> Result<()> {
+    let mut conn = open_connection_rw()?;
+    let tx = conn.transaction()?;
+    
+    for (refno, aabb, noun) in data {
+        tx.execute(
+            "INSERT OR REPLACE INTO aabb_index (id, min_x, max_x, min_y, max_y, min_z, max_z)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                refno.0 as i64,
+                aabb.mins.x as f64,
+                aabb.maxs.x as f64,
+                aabb.mins.y as f64,
+                aabb.maxs.y as f64,
+                aabb.mins.z as f64,
+                aabb.maxs.z as f64,
+            ],
+        )?;
+        
+        if let Some(noun_str) = noun {
+            tx.execute(
+                "INSERT OR REPLACE INTO items (id, noun) VALUES (?1, ?2)",
+                params![refno.0 as i64, noun_str.as_str()],
+            )?;
+        }
+    }
+    
+    tx.commit()?;
+    Ok(())
 }
 
 pub fn query_overlap(
@@ -110,13 +233,13 @@ pub fn query_overlap_with_conn(
 ) -> Result<Vec<(RefU64, Aabb, Option<String>)>> {
     use rusqlite::{ToSql, params_from_iter};
 
+    // 使用 RTree MATCH 语法进行重叠查询
+    // RTree MATCH 语法：rtree(min_x, max_x, min_y, max_y, min_z, max_z)
     let mut sql = String::from(
         "SELECT aabb_index.id, min_x, max_x, min_y, max_y, min_z, max_z, items.noun
          FROM aabb_index
          LEFT JOIN items ON items.id = aabb_index.id
-         WHERE max_x >= ?1 AND min_x <= ?2
-           AND max_y >= ?3 AND min_y <= ?4
-           AND max_z >= ?5 AND min_z <= ?6",
+         WHERE aabb_index.id MATCH rtree(?1, ?2, ?3, ?4, ?5, ?6)",
     );
     let mut params: Vec<Box<dyn ToSql>> = vec![
         Box::new(expanded.mins.x as f64),
