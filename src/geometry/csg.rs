@@ -30,6 +30,7 @@ use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::wire::{CurveType, process_ploop_vertices};
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::utils::svg_generator::SpineSvgGenerator;
+use crate::types::refno::RefU64;
 use glam::Vec3;
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
@@ -327,6 +328,7 @@ fn compute_radial_segments(
     radius: f32,
     non_scalable: bool,
     required_min: u16,
+    characteristic_size: Option<f32>,
 ) -> usize {
     // 计算周长（如果半径有效）
     let circumference = if radius > 0.0 {
@@ -334,7 +336,18 @@ fn compute_radial_segments(
     } else {
         None
     };
-    let base = settings.adaptive_radial_segments(radius, circumference, non_scalable);
+    let inferred_size = if radius > 0.0 {
+        Some(radius.abs() * 2.0)
+    } else {
+        None
+    };
+    let feature_size = characteristic_size.or(inferred_size);
+    let base = settings.adaptive_radial_segments(
+        radius,
+        circumference,
+        non_scalable,
+        feature_size,
+    );
     // 确保分段数至少为3（最小三角形数）和required_min中的较大值
     base.max(required_min.max(3)) as usize
 }
@@ -354,8 +367,11 @@ fn compute_height_segments(
     span: f32,
     non_scalable: bool,
     required_min: u16,
+    characteristic_size: Option<f32>,
 ) -> usize {
-    let base = settings.adaptive_height_segments(span, non_scalable);
+    let inferred_size = if span > 0.0 { Some(span.abs()) } else { None };
+    let feature_size = characteristic_size.or(inferred_size);
+    let base = settings.adaptive_height_segments(span, non_scalable, feature_size);
     base.max(required_min.max(1)) as usize
 }
 
@@ -446,6 +462,7 @@ pub struct GeneratedMesh {
 /// - `param`: PDMS几何参数，可以是圆柱、球体、盒子等各种基本形状
 /// - `settings`: LOD网格设置，控制网格的细分程度
 /// - `non_scalable`: 是否不可缩放（对于固定细节级别的对象）
+/// - `refno`: 可选的参考号，用于调试输出文件名
 ///
 /// # 返回
 /// 如果几何参数有效，返回生成的网格和包围盒；否则返回None
@@ -453,6 +470,7 @@ pub fn generate_csg_mesh(
     param: &PdmsGeoParam,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: Option<RefU64>,
 ) -> Option<GeneratedMesh> {
     match param {
         PdmsGeoParam::PrimLCylinder(cyl) => generate_lcylinder_mesh(cyl, settings, non_scalable),
@@ -467,7 +485,7 @@ pub fn generate_csg_mesh(
         }
         PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr),
         PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr),
-        PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion),
+        PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly),
         PdmsGeoParam::PrimRevolution(rev) => generate_revolution_mesh(rev, settings, non_scalable),
         _ => None,
@@ -1978,7 +1996,13 @@ fn generate_rect_torus_end_face(
 /// 导出 PLOOP 数据为 JSON 格式（用于 ploop-rs 测试）
 ///
 /// 生成符合 ploop-rs 输入格式的 JSON 文件
-fn export_ploop_json(original: &[Vec3], name: &str, height: f32) -> anyhow::Result<()> {
+/// 
+/// # 参数
+/// - `original`: 原始顶点数据
+/// - `name`: PLOOP 名称（如 "FLOOR"）
+/// - `height`: 拉伸高度
+/// - `refno`: 可选的参考号，如果提供则使用 RefU64 的 to_string 格式作为文件名
+fn export_ploop_json(original: &[Vec3], name: &str, height: f32, refno: Option<RefU64>) -> anyhow::Result<()> {
     use serde_json::json;
     use std::fs;
 
@@ -1986,13 +2010,21 @@ fn export_ploop_json(original: &[Vec3], name: &str, height: f32) -> anyhow::Resu
     let output_dir = "output/ploop-json";
     fs::create_dir_all(output_dir)?;
 
-    // 生成时间戳作为文件名
-    let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let json_filename = format!("{}/ploop_{}_{}.json", output_dir, name, timestamp);
-    let txt_filename = format!("{}/ploop_{}_{}.txt", output_dir, name, timestamp);
+    // 根据是否有 refno 决定文件名格式
+    let file_suffix = if let Some(refno_val) = refno {
+        // 使用 RefU64 的 to_string 格式：ref_0_ref_1
+        refno_val.to_string()
+    } else {
+        // 如果没有 refno，使用时间戳作为后备方案
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            .to_string()
+    };
+    
+    let json_filename = format!("{}/ploop_{}_{}.json", output_dir, name, file_suffix);
+    let txt_filename = format!("{}/ploop_{}_{}.txt", output_dir, name, file_suffix);
 
     // 生成 JSON 格式（用于 3D 可视化）
     let vertices: Vec<_> = original
@@ -2055,7 +2087,12 @@ fn export_ploop_json(original: &[Vec3], name: &str, height: f32) -> anyhow::Resu
 /// 将原始轮廓和处理后的轮廓绘制在同一个 SVG 中，方便对比
 /// - 原始轮廓：红色，使用真实的圆弧
 /// - 处理后轮廓：蓝色直线段（ploop-rs 展开后的结果）
-fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3]) -> anyhow::Result<()> {
+/// 
+/// # 参数
+/// - `original`: 原始顶点数据
+/// - `processed`: 处理后的顶点数据
+/// - `refno`: 可选的参考号，如果提供则使用 RefU64 的 to_string 格式作为文件名
+fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: Option<RefU64>) -> anyhow::Result<()> {
     use std::fs;
     use std::path::Path;
 
@@ -2063,12 +2100,20 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3]) -> anyho
     let output_dir = "output/ploop-svg";
     fs::create_dir_all(output_dir)?;
 
-    // 生成时间戳作为文件名
-    let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let filename = format!("{}/ploop_comparison_{}.svg", output_dir, timestamp);
+    // 根据是否有 refno 决定文件名格式
+    let file_suffix = if let Some(refno_val) = refno {
+        // 使用 RefU64 的 to_string 格式：ref_0_ref_1
+        refno_val.to_string()
+    } else {
+        // 如果没有 refno，使用时间戳作为后备方案
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            .to_string()
+    };
+    
+    let filename = format!("{}/ploop_comparison_{}.svg", output_dir, file_suffix);
 
     // 计算边界框（考虑圆角半径）
     let mut min_x = f32::MAX;
@@ -2279,7 +2324,11 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3]) -> anyho
 /// - 单一轮廓（单个顶点列表）
 /// - 填充类型（CurveType::Fill）
 /// - 轮廓的 z 坐标存储 FRADIUS（圆角半径），会被 ploop-rs 处理
-fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
+/// 
+/// # 参数
+/// - `extrusion`: 拉伸体参数
+/// - `refno`: 可选的参考号，用于调试输出文件名
+fn generate_extrusion_mesh(extrusion: &Extrusion, refno: Option<RefU64>) -> Option<GeneratedMesh> {
     if extrusion.height.abs() <= MIN_LEN {
         return None;
     }
@@ -2308,12 +2357,12 @@ fn generate_extrusion_mesh(extrusion: &Extrusion) -> Option<GeneratedMesh> {
                      original_profile.len(), processed.len());
 
             // 导出 PLOOP JSON 数据（用于 ploop-rs 测试）
-            if let Err(e) = export_ploop_json(original_profile, "FLOOR", extrusion.height) {
+            if let Err(e) = export_ploop_json(original_profile, "FLOOR", extrusion.height, refno) {
                 println!("⚠️  [CSG] JSON 导出失败: {}", e);
             }
 
             // 生成 SVG 对比图：原始轮廓 vs 处理后轮廓
-            if let Err(e) = generate_ploop_comparison_svg(original_profile, &processed) {
+            if let Err(e) = generate_ploop_comparison_svg(original_profile, &processed, refno) {
                 println!("⚠️  [CSG] SVG 生成失败: {}", e);
             }
 
