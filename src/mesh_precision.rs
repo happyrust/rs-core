@@ -171,24 +171,6 @@ impl LodMeshSettings {
 /// 单个 LOD 档位对应的精度参数
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MeshPrecisionProfile {
-    /// OCC 容差系数，乘以几何尺度
-    pub occ_linear_coeff: f64,
-    /// 容差最小值
-    pub occ_linear_min: f64,
-    /// 容差最大值
-    pub occ_linear_max: f64,
-    /// 负实体（或参与布尔运算）时的额外系数
-    pub neg_multiplier: f64,
-    /// 拉伸/旋转体的额外系数
-    pub sweep_multiplier: f64,
-    /// 多面体固定容差（部分几何要求固定值）
-    pub polyhedron_fixed_tol: Option<f64>,
-    /// 球体细分等级（仅当使用 CSG 时生效）
-    pub sphere_subdiv: u8,
-    /// 圆柱/圆锥等旋转体的圆周分段数（CSG 情况）
-    pub radial_segments: u16,
-    /// 参考 mesh_tol_ratio（供后续使用）
-    pub mesh_tol_ratio: f32,
     /// 该 LOD 对应的 mesh 子目录（基于 meshes_path）
     #[serde(default)]
     pub output_subdir: Option<String>,
@@ -200,15 +182,6 @@ pub struct MeshPrecisionProfile {
 impl Default for MeshPrecisionProfile {
     fn default() -> Self {
         Self {
-            occ_linear_coeff: 0.005,
-            occ_linear_min: 0.0005,
-            occ_linear_max: 50.0,
-            neg_multiplier: 0.2,
-            sweep_multiplier: 0.1,
-            polyhedron_fixed_tol: Some(0.01),
-            sphere_subdiv: 24,
-            radial_segments: 32,
-            mesh_tol_ratio: 3.0,
             output_subdir: None,
             csg_settings: LodMeshSettings::default(),
         }
@@ -245,15 +218,6 @@ impl MeshPrecisionSettings {
         map.insert(
             LodLevel::L0,
             MeshPrecisionProfile {
-                occ_linear_coeff: 0.02,
-                occ_linear_min: 0.005,
-                occ_linear_max: 100.0,
-                neg_multiplier: 0.5,
-                sweep_multiplier: 0.2,
-                polyhedron_fixed_tol: Some(0.05),
-                sphere_subdiv: 12,
-                radial_segments: 16,
-                mesh_tol_ratio: 8.0,
                 output_subdir: Some("lod_L0".to_string()),
                 csg_settings: LodMeshSettings {
                     radial_segments: 12,
@@ -272,15 +236,6 @@ impl MeshPrecisionSettings {
         map.insert(
             LodLevel::L1,
             MeshPrecisionProfile {
-                occ_linear_coeff: 0.025,
-                occ_linear_min: 0.005,
-                occ_linear_max: 120.0,
-                neg_multiplier: 0.6,
-                sweep_multiplier: 0.25,
-                polyhedron_fixed_tol: Some(0.04),
-                sphere_subdiv: 12,
-                radial_segments: 16,
-                mesh_tol_ratio: 10.0,
                 output_subdir: Some("lod_L1".to_string()),
                 csg_settings: LodMeshSettings {
                     radial_segments: 16,
@@ -314,15 +269,6 @@ impl MeshPrecisionSettings {
         map.insert(
             LodLevel::L3,
             MeshPrecisionProfile {
-                occ_linear_coeff: 0.003,
-                occ_linear_min: 0.0003,
-                occ_linear_max: 20.0,
-                neg_multiplier: 0.1,
-                sweep_multiplier: 0.05,
-                polyhedron_fixed_tol: Some(0.005),
-                sphere_subdiv: 36,
-                radial_segments: 48,
-                mesh_tol_ratio: 1.5,
                 output_subdir: Some("lod_L3".to_string()),
                 csg_settings: LodMeshSettings {
                     radial_segments: 32,
@@ -341,15 +287,6 @@ impl MeshPrecisionSettings {
         map.insert(
             LodLevel::L4,
             MeshPrecisionProfile {
-                occ_linear_coeff: 0.0015,
-                occ_linear_min: 0.0001,
-                occ_linear_max: 10.0,
-                neg_multiplier: 0.05,
-                sweep_multiplier: 0.025,
-                polyhedron_fixed_tol: Some(0.002),
-                sphere_subdiv: 48,
-                radial_segments: 64,
-                mesh_tol_ratio: 1.0,
                 output_subdir: Some("lod_L4".to_string()),
                 csg_settings: LodMeshSettings {
                     radial_segments: 48,
