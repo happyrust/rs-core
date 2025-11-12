@@ -60,6 +60,23 @@ pub struct RefnoDatetime {
     pub dt: Datetime,
 }
 
+/// 按 NOUN 类型查询的层次结构数据项
+#[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
+pub struct NounHierarchyItem {
+    /// 元素名称
+    pub name: String,
+    /// 元素 ID（REFNO）
+    pub id: RefnoEnum,
+    /// 元素类型（NOUN）
+    pub noun: String,
+    /// 所有者名称
+    pub owner_name: Option<String>,
+    /// 所有者参考号
+    pub owner: RefnoEnum,
+    /// 最后修改日期（通过 fn::ses_date(id) 获取）
+    pub last_modified_date: Option<Datetime>,
+}
+
 /// 通过surql查询PE（Plant Element）数据
 ///
 /// 根据参考号查询对应的工厂元素数据，结果会被缓存以提高性能。
@@ -1033,9 +1050,7 @@ pub async fn query_group_by_cata_hash(
                             exist_inst,
                             ptset: ptset.map(|x| {
                                 // ptset 现在是数组，需要转换为 BTreeMap<i32, CateAxisParam>
-                                x.into_iter()
-                                    .map(|param| (param.number, param))
-                                    .collect()
+                                x.into_iter().map(|param| (param.number, param)).collect()
                             }),
                         },
                     )
@@ -1353,6 +1368,66 @@ pub async fn get_uda_value(refno: RefU64, uda: &str) -> anyhow::Result<Option<St
     Ok(r[0].clone())
 }
 
+/// 按 NOUN 类型查询层次结构数据
+///
+/// 直接查询 NOUN 对应的类型表（如 SITE、ZONE、PIPE、BRAN、NOZZ 表），
+/// 返回每个记录的 name、id、noun、owner_name、owner 和最后修改日期。
+///
+/// # 参数
+/// * `noun` - 要查询的 NOUN 类型（如 "SITE", "ZONE", "PIPE", "BRAN", "NOZZ"）
+/// * `name_filter` - 可选的名称过滤关键字，使用 `string::contains` 进行模糊匹配（匹配 NAME 字段）
+///
+/// # 返回值
+/// * `Result<Vec<NounHierarchyItem>>` - 成功时返回匹配的记录列表
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```no_run
+/// use aios_core::query_noun_hierarchy;
+///
+/// # async fn example() -> anyhow::Result<()> {
+/// // 查询所有 SITE
+/// let sites = query_noun_hierarchy("SITE", None).await?;
+///
+/// // 查询名称包含 "107" 的 NOZZ
+/// let nozzles = query_noun_hierarchy("NOZZ", Some("107")).await?;
+/// # Ok(())
+/// # }
+/// ```
+pub async fn query_noun_hierarchy(noun: &str, name_filter: Option<&str>) -> anyhow::Result<Vec<NounHierarchyItem>> {
+    let where_clause = if let Some(filter) = name_filter {
+        format!(
+            "WHERE NAME != none AND string::contains(NAME, '{}')",
+            filter.replace("'", "\\'")
+        )
+    } else {
+        "WHERE NAME != none".to_string()
+    };
+
+    let sql = format!(
+        r#"
+        SELECT
+            fn::default_name(REFNO) as name,
+            REFNO as id,
+            TYPE as noun,
+            fn::default_name(REFNO.owner) as owner_name,
+            REFNO.owner as owner,
+            <datetime> fn::ses_date(REFNO) as last_modified_date
+        FROM {}
+        {}
+        "#,
+        noun,
+        where_clause
+    );
+
+    // 打印 SQL 以便调试
+    println!("执行 SQL:\n{}", sql);
+
+    SUL_DB.query_take::<Vec<NounHierarchyItem>>(&sql, 0).await
+}
+
 //添加query_his_dates 的 testcase
 mod test {
     use std::str::FromStr;
@@ -1392,5 +1467,31 @@ mod test {
         .unwrap();
         dbg!(&r);
         assert_eq!(r.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_query_noun_hierarchy_pipe_tg105() {
+        init_test_surreal().await;
+
+        // 查询 PIPE 类型中名称包含 "TG-105" 的记录
+        let result = crate::query_noun_hierarchy("PIPE", Some("TG-105")).await;
+        
+        match result {
+            Ok(items) => {
+                println!("找到 {} 条匹配的记录:", items.len());
+                for (i, item) in items.iter().enumerate() {
+                    println!("\n记录 {}:", i + 1);
+                    println!("  名称: {}", item.name);
+                    println!("  类型: {}", item.noun);
+                    println!("  所有者: {:?}", item.owner);
+                    println!("  最后修改日期: {:?}", item.last_modified_date);
+                }
+                dbg!(&items);
+            }
+            Err(e) => {
+                eprintln!("查询失败: {}", e);
+                panic!("查询失败: {}", e);
+            }
+        }
     }
 }
