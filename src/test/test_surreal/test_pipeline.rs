@@ -55,20 +55,23 @@ async fn pipeline_fetch_branch_segments_provides_spans() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_branch_38293_8916_segments() -> anyhow::Result<()> {
     crate::init_test_surreal().await;
-    
+
     let branch_refno = RefnoEnum::from("38293/8916");
     let segments = PipelineQueryService::fetch_branch_segments(branch_refno.clone()).await?;
-    
+
     assert!(!segments.is_empty(), "BRAN 38293/8916 应该包含至少一个管段");
-    
+
     // 验证所有管段都有有效的 main_span
-    let segments_with_spans: Vec<_> = segments.iter()
+    let segments_with_spans: Vec<_> = segments
+        .iter()
         .filter(|seg| seg.main_span().is_some())
         .collect();
-    
-    assert!(!segments_with_spans.is_empty(), 
-        "至少应有一个管段具备有效的主跨度（arrive/leave）");
-    
+
+    assert!(
+        !segments_with_spans.is_empty(),
+        "至少应有一个管段具备有效的主跨度（arrive/leave）"
+    );
+
     // 验证端口坐标数据
     for segment in &segments {
         if let Some(span) = segment.main_span() {
@@ -77,20 +80,21 @@ async fn test_branch_38293_8916_segments() -> anyhow::Result<()> {
             assert!(span.length > 0.0, "长度应大于0");
         }
     }
-    
+
     println!("✅ BRAN 38293/8916 验证通过:");
     println!("   - 管段总数: {}", segments.len());
     println!("   - 有主跨度的管段: {}", segments_with_spans.len());
-    
+
     // 打印详细信息用于调试
     for (idx, segment) in segments.iter().take(5).enumerate() {
-        println!("   [{}] {} ({:?}) 长度: {:.1}mm", 
-            idx + 1, 
+        println!(
+            "   [{}] {} ({:?}) 长度: {:.1}mm",
+            idx + 1,
             segment.refno.to_string(),
             segment.noun,
             segment.length
         );
     }
-    
+
     Ok(())
 }

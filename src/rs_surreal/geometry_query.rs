@@ -182,17 +182,14 @@ pub async fn query_inst_geo_ids(
 
     let sql = format!(
         r#"
-        BEGIN TRANSACTION;
             array::group(
                 select value (select  out as geo_id, ($parent<-neg_relate)[0] != none as has_neg_relate from out->geo_relate {})
                 from {}
             );
-        COMMIT TRANSACTION;
         "#,
         where_clause, inst_keys
     );
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let results: Vec<QueryInstGeoResult> = response.take(0)?;
+    let results: Vec<QueryInstGeoResult> = SUL_DB.query_take(&sql, 0).await?;
     Ok(results)
 }
 

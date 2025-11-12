@@ -193,7 +193,7 @@ pub struct PlantMesh {
     pub normals: Vec<Vec3>,
     #[serde(skip)]
     pub wire_vertices: Vec<Vec<Vec3>>,
-    #[serde(skip)]
+    // edges 现在会被序列化，以支持在 plant3d 中渲染边
     pub edges: Edges,
     #[serde(skip)]
     pub aabb: Option<Aabb>,
@@ -1044,7 +1044,10 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
                 .map(|poly| poly.iter().map(|x| x.vec3()).collect::<Vec<_>>())
                 .collect();
 
-            let edges: Edges = wire_vertices.iter().map(|v| Edge::from_vec(v.clone())).collect();
+            let edges: Edges = wire_vertices
+                .iter()
+                .map(|v| Edge::from_vec(v.clone()))
+                .collect();
             return Some(PlantGeoData {
                 geo_hash,
                 mesh: Some(PlantMesh {

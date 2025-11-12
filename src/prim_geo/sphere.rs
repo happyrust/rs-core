@@ -185,7 +185,10 @@ impl BrepShapeTrait for Sphere {
             .iter()
             .filter_map(|(idx0, idx1)| {
                 if *idx0 < points.len() as u32 && *idx1 < points.len() as u32 {
-                    Some(Edge::new(vec![points[*idx0 as usize], points[*idx1 as usize]]))
+                    Some(Edge::new(vec![
+                        points[*idx0 as usize],
+                        points[*idx1 as usize],
+                    ]))
                 } else {
                     None
                 }

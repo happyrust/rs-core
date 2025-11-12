@@ -408,7 +408,10 @@ impl From<&ManifoldRust> for PlantMesh {
                 .iter()
                 .filter_map(|(idx0, idx1)| {
                     if *idx0 < vertices.len() as u32 && *idx1 < vertices.len() as u32 {
-                        Some(Edge::new(vec![vertices[*idx0 as usize], vertices[*idx1 as usize]]))
+                        Some(Edge::new(vec![
+                            vertices[*idx0 as usize],
+                            vertices[*idx1 as usize],
+                        ]))
                     } else {
                         None
                     }

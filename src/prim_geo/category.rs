@@ -1,5 +1,6 @@
 use crate::debug_model_debug;
 use crate::parsed_data::geo_params_data::CateGeoParam;
+use crate::prim_geo::LCylinder;
 use crate::prim_geo::ctorus::SCTorus;
 use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::dish::Dish;
@@ -10,7 +11,6 @@ use crate::prim_geo::rtorus::SRTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
-use crate::prim_geo::LCylinder;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::types::*;
 use bevy_math::prelude::*;
@@ -517,11 +517,7 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
                     } else if z_axis.z < -0.01 {
                         1.0
                     } else {
-                        if z_axis.x > 0.01 {
-                            -1.0
-                        } else {
-                            1.0
-                        }
+                        if z_axis.x > 0.01 { -1.0 } else { 1.0 }
                     };
                     // dbg!(t);
                     rot2 = Quat::from_axis_angle(z_axis, t * FRAC_PI_2);

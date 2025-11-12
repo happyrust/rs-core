@@ -1,8 +1,8 @@
 use glam::Vec3;
 
-use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 #[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 use crate::query_neareast_along_axis;
+use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 
 /// Create the relations between the valves and the floors
 #[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]

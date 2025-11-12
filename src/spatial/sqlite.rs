@@ -37,9 +37,9 @@ pub fn open_connection_rw() -> Result<Connection> {
 }
 
 /// 创建 RTree 虚拟表
-/// 
+///
 /// 如果表已存在，则不会报错（使用 IF NOT EXISTS）
-/// 
+///
 /// # 注意
 /// RTree 虚拟表只能存储 id 和坐标信息，其他元数据需要存储在 items 表中
 pub fn create_rtree_table(conn: &Connection) -> Result<()> {
@@ -52,7 +52,7 @@ pub fn create_rtree_table(conn: &Connection) -> Result<()> {
         )",
         [],
     )?;
-    
+
     // 创建 items 表用于存储额外的元数据（如 noun 类型）
     conn.execute(
         "CREATE TABLE IF NOT EXISTS items (
@@ -61,18 +61,15 @@ pub fn create_rtree_table(conn: &Connection) -> Result<()> {
         )",
         [],
     )?;
-    
+
     // 为 items 表创建索引以提高 JOIN 性能
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_items_id ON items(id)",
-        [],
-    )?;
-    
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_items_id ON items(id)", [])?;
+
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_items_noun ON items(noun)",
         [],
     )?;
-    
+
     Ok(())
 }
 
@@ -142,18 +139,14 @@ pub fn query_aabb_with_conn(conn: &Connection, refno: RefU64) -> Result<Option<A
 }
 
 /// 插入或更新 AABB 数据到 RTree 表
-/// 
+///
 /// # 参数
 /// * `refno` - 参考号
 /// * `aabb` - 包围盒
 /// * `noun` - 可选的类型名称（存储到 items 表）
-pub fn insert_or_update_aabb(
-    refno: RefU64,
-    aabb: &Aabb,
-    noun: Option<&str>,
-) -> Result<()> {
+pub fn insert_or_update_aabb(refno: RefU64, aabb: &Aabb, noun: Option<&str>) -> Result<()> {
     let conn = open_connection_rw()?;
-    
+
     // 插入或更新 RTree 表
     conn.execute(
         "INSERT OR REPLACE INTO aabb_index (id, min_x, max_x, min_y, max_y, min_z, max_z)
@@ -168,7 +161,7 @@ pub fn insert_or_update_aabb(
             aabb.maxs.z as f64,
         ],
     )?;
-    
+
     // 如果有 noun，插入或更新 items 表
     if let Some(noun_str) = noun {
         conn.execute(
@@ -176,17 +169,15 @@ pub fn insert_or_update_aabb(
             params![refno.0 as i64, noun_str],
         )?;
     }
-    
+
     Ok(())
 }
 
 /// 批量插入或更新 AABB 数据
-pub fn insert_or_update_aabbs_batch(
-    data: &[(RefU64, Aabb, Option<String>)],
-) -> Result<()> {
+pub fn insert_or_update_aabbs_batch(data: &[(RefU64, Aabb, Option<String>)]) -> Result<()> {
     let mut conn = open_connection_rw()?;
     let tx = conn.transaction()?;
-    
+
     for (refno, aabb, noun) in data {
         tx.execute(
             "INSERT OR REPLACE INTO aabb_index (id, min_x, max_x, min_y, max_y, min_z, max_z)
@@ -201,7 +192,7 @@ pub fn insert_or_update_aabbs_batch(
                 aabb.maxs.z as f64,
             ],
         )?;
-        
+
         if let Some(noun_str) = noun {
             tx.execute(
                 "INSERT OR REPLACE INTO items (id, noun) VALUES (?1, ?2)",
@@ -209,7 +200,7 @@ pub fn insert_or_update_aabbs_batch(
             )?;
         }
     }
-    
+
     tx.commit()?;
     Ok(())
 }

@@ -114,7 +114,7 @@ pub async fn query_manifold_boolean_operations(
                 aabb.d as aabb,
                 (select value [out, trans.d] from out->geo_relate where geo_type in ["Compound", "Pos"] and trans.d != NONE ) as ts,
                 (select value [in, world_trans.d,
-                    (select out as id, geo_type, trans.d as trans, out.aabb.d as aabb
+                    (select out as id, geo_type, para_type ?? "" as para_type, trans.d as trans, out.aabb.d as aabb
                     from array::flatten(out->geo_relate) where trans.d != NONE and ( geo_type=="Neg" or (geo_type=="CataCrossNeg"
                         and geom_refno in (select value ngmr from pe:{refno}<-ngmr_relate) ) ))]
                         from array::flatten([array::flatten(in<-neg_relate.in->inst_relate), array::flatten(in<-ngmr_relate.in->inst_relate)]) where world_trans.d!=none

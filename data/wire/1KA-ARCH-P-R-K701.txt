@@ -1,0 +1,153 @@
+-- K701框架PLOOP测试数据
+-- 提取自717.txt，专门用于测试PLOOP处理器
+-- 特征：包含FRADIUS圆角的复杂多边形，面板有旋转角度
+
+NEW FRMWORK /1KA-ARCH-P-R-K701
+BUIL false
+SHOP false
+GRADE 0
+FIRE 0
+PTSP unset
+INSC unset
+PDNAME unset
+
+NEW PANEL
+POS W 12810mm S 22742.79mm U 14300mm
+ORI Y is N 44.0548 W and Z is U
+BUIL false
+SHOP false
+GRADE 0
+FIRE 0
+
+NEW PLOOP
+HEIG 5700mm
+SJUS DBOT
+
+NEW PAVERT
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 2296.37mm N 7613.15mm U 0mm
+BUIL false
+SHOP false
+FRAD 26363.23mm
+END
+
+NEW PAVERT
+POS E 0mm N 15226.34mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS E 0mm N 15226.34mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 117.45mm N 15339.98mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 117.45mm N 15339.98mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 6792.77mm N 8440.7mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 6792.77mm N 8440.7mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 6073.38mm N 7744.65mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 6073.38mm N 7744.65mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 6212.45mm N 7600.92mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 6212.45mm N 7600.92mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 7603.14mm N 6163.57mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 7603.14mm N 6163.57mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 5044.66mm N 3688.14mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 5044.66mm N 3688.14mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 596.06mm S 616.06mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 596.06mm S 616.06mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 15.44mm S 15.96mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+POS W 15.44mm S 15.96mm U 0mm
+BUIL false
+SHOP false
+END
+
+NEW PAVERT
+BUIL false
+SHOP false
+END
+
+END
+END
+END 

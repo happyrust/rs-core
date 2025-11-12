@@ -829,11 +829,11 @@ pub fn gen_polyline_from_processed_vertices(vertices: &Vec<Vec3>) -> anyhow::Res
 
 /// 将 ploop-rs 处理后的顶点转换为 Polyline
 ///
-/// ploop-rs 已经处理了 FRADIUS 并生成了正确的切点，
-/// 我们只需要将 FRADIUS 值转换为对应的 bulge 值
+/// ploop-rs 已经处理了 FRADIUS 并生成了正确的切点和 bulge 值，
+/// 我们只需要将这些值直接转换为 Polyline
 ///
 /// # 参数
-/// * `vertices` - 处理后的顶点数据，Vec3 格式：x,y 为坐标，z 为 fradius 值
+/// * `vertices` - 处理后的顶点数据，Vec3 格式：x,y 为坐标，z 为 bulge 值
 ///
 /// # 返回值
 /// * `Result<Polyline>` - 转换后的多段线
@@ -848,45 +848,13 @@ fn convert_vertices_to_polyline(vertices: &[Vec3]) -> anyhow::Result<Polyline> {
     let remove_pos_tol = 0.1;
     let len = vertices.len();
 
-    // 直接转换顶点，将 fradius 转换为 bulge
+    // 直接转换顶点，z 值就是 bulge
     for i in 0..len {
         let vertex = vertices[i];
-        let fradius = vertex.z;
+        let bulge = vertex.z as f64;
 
-        if fradius > 0.0 {
-            // 有 fradius 的顶点，计算对应的 bulge 值
-            let last_index = (i + len - 1) % len;
-            let next_index = (i + 1) % len;
-
-            let cur_pt = DVec2::new(vertex.x as f64, vertex.y as f64);
-            let last_pt = DVec2::new(vertices[last_index].x as f64, vertices[last_index].y as f64);
-            let next_pt = DVec2::new(vertices[next_index].x as f64, vertices[next_index].y as f64);
-
-            let v1 = (cur_pt - last_pt).normalize();
-            let v2 = (next_pt - cur_pt).normalize();
-            let angle = (-v1).angle_between(v2);
-
-            if angle.abs() < 0.001 {
-                // 角度太小，作为直线处理
-                polyline.add(vertex.x as f64, vertex.y as f64, 0.0);
-                continue;
-            }
-
-            // 计算 bulge 值
-            let cur_ccw_sig = -angle.signum();
-            let bulge = cur_ccw_sig * bulge_from_angle(std::f64::consts::PI - angle.abs());
-
-            if bulge.abs() < 0.001 {
-                // bulge 太小，作为直线处理
-                polyline.add(vertex.x as f64, vertex.y as f64, 0.0);
-            } else {
-                // 添加带 bulge 的顶点
-                polyline.add(vertex.x as f64, vertex.y as f64, bulge);
-            }
-        } else {
-            // 普通顶点，直接添加
-            polyline.add(vertex.x as f64, vertex.y as f64, 0.0);
-        }
+        // 直接添加顶点和 bulge 值
+        polyline.add(vertex.x as f64, vertex.y as f64, bulge);
     }
 
     // 移除重复位置
@@ -1641,24 +1609,38 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
         .collect();
 
     // 使用 ploop-rs 处理 PLOOP（直接传递顶点切片）
-    let (processed_vertices, _arcs) = processor.process_ploop(&ploop_vertices);
+    // process_ploop 返回四元组：(processed_vertices, bulges, arcs, fradius_reports)
+    let (processed_vertices, bulges, arcs, _fradius_reports) =
+        processor.process_ploop(&ploop_vertices);
 
     println!("   处理后顶点数: {}", processed_vertices.len());
+    println!("   生成圆弧数: {}", arcs.len());
 
-    // 转换回 Vec3 格式（x,y 为坐标，z 为 fradius）
+    // 检查 bulges 和 vertices 数量是否匹配
+    if bulges.len() != processed_vertices.len() {
+        return Err(anyhow::anyhow!(
+            "bulges 数量 ({}) 与顶点数量 ({}) 不匹配",
+            bulges.len(),
+            processed_vertices.len()
+        ));
+    }
+
+    // 转换回 Vec3 格式（x,y 为坐标，z 为 bulge 值）
+    // 注意：这里 z 存储的是 bulge，不是 fradius！
     let result: Vec<Vec3> = processed_vertices
         .iter()
-        .map(|vertex| {
+        .zip(bulges.iter())
+        .map(|(vertex, &bulge)| {
             Vec3::new(
                 vertex.x,
                 vertex.y,
-                vertex.fradius.unwrap_or(0.0), // z 存储 fradius 值
+                bulge as f32, // z 存储 bulge 值（转换为 f32）
             )
         })
         .collect();
 
-    let fradius_count = result.iter().filter(|v| v.z > 0.0).count();
-    println!("   其中包含 {} 个FRADIUS顶点", fradius_count);
+    let bulge_count = result.iter().filter(|v| v.z.abs() > 0.001).count();
+    println!("   其中包含 {} 个圆弧段（bulge > 0.001）", bulge_count);
     println!("✅ PLOOP顶点处理完成，返回 {} 个顶点", result.len());
 
     Ok(result)
@@ -1693,8 +1675,10 @@ pub fn process_ploop_from_content(
     use regex::Regex;
 
     // 解析 PLOOP 文件内容
-    let vertex_regex = Regex::new(r"(?i)VERTEX\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)(?:\s+FRADIUS\s+([-\d.]+))?").unwrap();
-    
+    let vertex_regex =
+        Regex::new(r"(?i)VERTEX\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)(?:\s+FRADIUS\s+([-\d.]+))?")
+            .unwrap();
+
     let mut vertices = Vec::new();
     let mut current_ploop_name: Option<String> = None;
     let mut in_ploop = false;
@@ -1702,23 +1686,26 @@ pub fn process_ploop_from_content(
 
     for line in ploop_content.lines() {
         let line = line.trim();
-        
+
         // 检查是否进入新的 PLOOP
         if line.to_uppercase().starts_with("NEW PLOOP") {
             in_ploop = true;
             vertices.clear();
             continue;
         }
-        
+
         // 检查是否结束 PLOOP
         if line.to_uppercase().starts_with("END PLOOP") {
             if in_ploop && !vertices.is_empty() {
                 // 处理当前 PLOOP
                 let ploop_name_str = current_ploop_name.as_deref().unwrap_or("UNNAMED");
-                
+
                 // 如果指定了名称，检查是否匹配
                 if let Some(name) = ploop_name {
-                    if current_ploop_name.as_deref().map_or(false, |n| n.contains(name)) {
+                    if current_ploop_name
+                        .as_deref()
+                        .map_or(false, |n| n.contains(name))
+                    {
                         found_ploop = Some(vertices.clone());
                         break;
                     }
@@ -1731,7 +1718,7 @@ pub fn process_ploop_from_content(
             vertices.clear();
             continue;
         }
-        
+
         // 检查 FRMWORK 名称
         if line.to_uppercase().starts_with("NEW FRMWORK") {
             let parts: Vec<&str> = line.split_whitespace().collect();
@@ -1740,22 +1727,35 @@ pub fn process_ploop_from_content(
             }
             continue;
         }
-        
+
         // 解析 VERTEX 行
         if in_ploop {
             if let Some(caps) = vertex_regex.captures(line) {
-                let x: f32 = caps.get(1).unwrap().as_str().parse()
+                let x: f32 = caps
+                    .get(1)
+                    .unwrap()
+                    .as_str()
+                    .parse()
                     .map_err(|e| anyhow::anyhow!("解析 x 坐标失败: {}", e))?;
-                let y: f32 = caps.get(2).unwrap().as_str().parse()
+                let y: f32 = caps
+                    .get(2)
+                    .unwrap()
+                    .as_str()
+                    .parse()
                     .map_err(|e| anyhow::anyhow!("解析 y 坐标失败: {}", e))?;
-                let _z: f32 = caps.get(3).unwrap().as_str().parse()
+                let _z: f32 = caps
+                    .get(3)
+                    .unwrap()
+                    .as_str()
+                    .parse()
                     .map_err(|e| anyhow::anyhow!("解析 z 坐标失败: {}", e))?;
-                
+
                 // 提取 FRADIUS（如果存在）
-                let fradius = caps.get(4)
+                let fradius = caps
+                    .get(4)
                     .and_then(|m| m.as_str().parse::<f32>().ok())
                     .filter(|&r| r > 0.0);
-                
+
                 // Vec3 的 z 存储 FRADIUS 值（注意：不是 z 坐标）
                 vertices.push(Vec3::new(x, y, fradius.unwrap_or(0.0)));
             }

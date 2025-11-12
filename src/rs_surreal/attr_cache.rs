@@ -32,12 +32,12 @@ pub async fn load_attr_cn_names() -> anyhow::Result<()> {
 
     let mut response = SUL_DB.query(sql).await?;
     let records: Vec<AttrMeta> = response.take(0)?;
-    
+
     tracing::info!("📊 从数据库查询到 {} 条 att_meta 记录", records.len());
 
     let mut cache = ATTR_CN_NAME_CACHE.write();
     cache.clear();
-    
+
     let mut none_count = 0;
     let mut empty_count = 0;
 
@@ -57,11 +57,17 @@ pub async fn load_attr_cn_names() -> anyhow::Result<()> {
     }
 
     let count = cache.len();
-    tracing::info!("已加载 {} 个属性中文名称到缓存 (跳过 {} 个空值, {} 个 NONE)", count, empty_count, none_count);
-    
+    tracing::info!(
+        "已加载 {} 个属性中文名称到缓存 (跳过 {} 个空值, {} 个 NONE)",
+        count,
+        empty_count,
+        none_count
+    );
+
     // 输出前5个样例用于验证
     if count > 0 {
-        let samples: Vec<String> = cache.iter()
+        let samples: Vec<String> = cache
+            .iter()
             .take(5)
             .map(|(k, v)| format!("{} -> {}", k, v))
             .collect();
@@ -95,5 +101,3 @@ pub fn is_cache_loaded() -> bool {
 pub fn cache_size() -> usize {
     ATTR_CN_NAME_CACHE.read().len()
 }
-
-

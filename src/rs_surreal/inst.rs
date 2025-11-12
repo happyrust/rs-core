@@ -74,7 +74,6 @@ pub async fn query_tubi_insts_by_brans(
     let pes = crate::join_pe_keys(bran_refnos.iter());
     let sql = format!(
         r#"
-            BEGIN TRANSACTION;
                 select
                     in.id as refno,
                     leave as leave,
@@ -83,7 +82,6 @@ pub async fn query_tubi_insts_by_brans(
                     record::id(out) as geo_hash,
                     in.dt as date
                 from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none;
-             COMMIT TRANSACTION;
         "#,
         pes
     );
@@ -213,10 +211,10 @@ pub async fn query_insts(
                 in.id as refno,
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset[*].pt as pts,
-                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                if booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date
-            from {inst_keys} where aabb.d != none
+            from {inst_keys} where aabb.d != none && world_trans.d != none
         "#
         )
     } else {
@@ -229,9 +227,10 @@ pub async fn query_insts(
                 (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi  from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date
-            from {inst_keys} where aabb.d != none "#
+            from {inst_keys} where aabb.d != none && world_trans.d != none "#
         )
     };
+    // println!("query geo insts: {}", &sql);
     let geom_insts: Vec<GeomInstQuery> = SUL_DB.query_take(&sql, 0).await?;
 
     Ok(geom_insts)
@@ -406,22 +405,11 @@ pub async fn delete_inst_relate_cascade(
     refnos: &[RefnoEnum],
     chunk_size: usize,
 ) -> anyhow::Result<()> {
-    eprintln!(
-        "🔍 [DEBUG] delete_inst_relate_cascade called: refnos_len={}, chunk_size={}, refnos={:?}",
-        refnos.len(),
-        chunk_size,
-        refnos
-    );
     for chunk in refnos.chunks(chunk_size) {
-        eprintln!("🔍 [DEBUG] delete_inst_relate_cascade processing chunk: {:?}", chunk);
         let mut delete_sql_vec = vec![];
 
         let mut inst_ids = vec![];
         for &refno in chunk {
-            eprintln!(
-                "🔍 [DEBUG] delete_inst_relate_cascade will delete inst_relate for refno={}",
-                refno
-            );
             inst_ids.push(refno.to_inst_relate_key());
             let delete_sql = format!(
                 r#"
@@ -437,17 +425,11 @@ pub async fn delete_inst_relate_cascade(
             sql.push_str(&delete_sql_vec.join(""));
             sql.push_str(&format!("delete {};", inst_ids.join(",")));
             sql.push_str("\nCOMMIT TRANSACTION;");
-            eprintln!(
-                "🔍 [DEBUG] delete_inst_relate_cascade executing SQL: {}",
-                sql
-            );
-
             // println!("Delete Sql is {}", &sql);
             SUL_DB
                 .query(sql)
                 .await
                 .expect("delete model insts info failed");
-            eprintln!("✅ [DEBUG] delete_inst_relate_cascade SQL executed");
         }
     }
 

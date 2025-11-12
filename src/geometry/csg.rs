@@ -29,8 +29,8 @@ use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::wire::{CurveType, process_ploop_vertices};
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
-use crate::utils::svg_generator::SpineSvgGenerator;
 use crate::types::refno::RefU64;
+use crate::utils::svg_generator::SpineSvgGenerator;
 use glam::Vec3;
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
@@ -328,7 +328,6 @@ fn compute_radial_segments(
     radius: f32,
     non_scalable: bool,
     required_min: u16,
-    characteristic_size: Option<f32>,
 ) -> usize {
     // 计算周长（如果半径有效）
     let circumference = if radius > 0.0 {
@@ -336,18 +335,7 @@ fn compute_radial_segments(
     } else {
         None
     };
-    let inferred_size = if radius > 0.0 {
-        Some(radius.abs() * 2.0)
-    } else {
-        None
-    };
-    let feature_size = characteristic_size.or(inferred_size);
-    let base = settings.adaptive_radial_segments(
-        radius,
-        circumference,
-        non_scalable,
-        feature_size,
-    );
+    let base = settings.adaptive_radial_segments(radius, circumference, non_scalable);
     // 确保分段数至少为3（最小三角形数）和required_min中的较大值
     base.max(required_min.max(3)) as usize
 }
@@ -367,11 +355,8 @@ fn compute_height_segments(
     span: f32,
     non_scalable: bool,
     required_min: u16,
-    characteristic_size: Option<f32>,
 ) -> usize {
-    let inferred_size = if span > 0.0 { Some(span.abs()) } else { None };
-    let feature_size = characteristic_size.or(inferred_size);
-    let base = settings.adaptive_height_segments(span, non_scalable, feature_size);
+    let base = settings.adaptive_height_segments(span, non_scalable);
     base.max(required_min.max(1)) as usize
 }
 
@@ -1175,7 +1160,9 @@ fn generate_dish_mesh(
         return None;
     }
 
-    let radial_segments = compute_radial_segments(settings, radius_rim, non_scalable, 3);
+    let min_dish_segments = settings.min_radial_segments.max(10);
+    let radial_segments =
+        compute_radial_segments(settings, radius_rim, non_scalable, min_dish_segments);
     // 对于椭圆 dish，根据 arc 和 scale_z 计算合适的 rings 数
     // 参考 rvmparser: rings = max(min_rings, scale_z * samples * arc / (2π))
     let min_rings = 3u16;
@@ -1996,13 +1983,18 @@ fn generate_rect_torus_end_face(
 /// 导出 PLOOP 数据为 JSON 格式（用于 ploop-rs 测试）
 ///
 /// 生成符合 ploop-rs 输入格式的 JSON 文件
-/// 
+///
 /// # 参数
 /// - `original`: 原始顶点数据
 /// - `name`: PLOOP 名称（如 "FLOOR"）
 /// - `height`: 拉伸高度
 /// - `refno`: 可选的参考号，如果提供则使用 RefU64 的 to_string 格式作为文件名
-fn export_ploop_json(original: &[Vec3], name: &str, height: f32, refno: Option<RefU64>) -> anyhow::Result<()> {
+fn export_ploop_json(
+    original: &[Vec3],
+    name: &str,
+    height: f32,
+    refno: Option<RefU64>,
+) -> anyhow::Result<()> {
     use serde_json::json;
     use std::fs;
 
@@ -2022,7 +2014,7 @@ fn export_ploop_json(original: &[Vec3], name: &str, height: f32, refno: Option<R
             .as_secs()
             .to_string()
     };
-    
+
     let json_filename = format!("{}/ploop_{}_{}.json", output_dir, name, file_suffix);
     let txt_filename = format!("{}/ploop_{}_{}.txt", output_dir, name, file_suffix);
 
@@ -2087,12 +2079,16 @@ fn export_ploop_json(original: &[Vec3], name: &str, height: f32, refno: Option<R
 /// 将原始轮廓和处理后的轮廓绘制在同一个 SVG 中，方便对比
 /// - 原始轮廓：红色，使用真实的圆弧
 /// - 处理后轮廓：蓝色直线段（ploop-rs 展开后的结果）
-/// 
+///
 /// # 参数
 /// - `original`: 原始顶点数据
 /// - `processed`: 处理后的顶点数据
 /// - `refno`: 可选的参考号，如果提供则使用 RefU64 的 to_string 格式作为文件名
-fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: Option<RefU64>) -> anyhow::Result<()> {
+fn generate_ploop_comparison_svg(
+    original: &[Vec3],
+    processed: &[Vec3],
+    refno: Option<RefU64>,
+) -> anyhow::Result<()> {
     use std::fs;
     use std::path::Path;
 
@@ -2112,7 +2108,7 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: O
             .as_secs()
             .to_string()
     };
-    
+
     let filename = format!("{}/ploop_comparison_{}.svg", output_dir, file_suffix);
 
     // 计算边界框（考虑圆角半径）
@@ -2173,7 +2169,8 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: O
     ));
 
     // 图例
-    svg.push_str(r#"<g transform="translate(50, 50)">
+    svg.push_str(
+        r#"<g transform="translate(50, 50)">
     <line x1="0" y1="0" x2="40" y2="0" class="original-line" />
     <text x="50" y="5" class="label">原始轮廓 (红色虚线)</text>
     <line x1="0" y1="20" x2="40" y2="20" class="processed-line" />
@@ -2181,7 +2178,8 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: O
     <circle cx="5" cy="40" r="4" class="fradius-point" />
     <text x="15" y="45" class="label">FRADIUS 顶点 (橙色)</text>
 </g>
-"#);
+"#,
+    );
 
     // 绘制原始轮廓（使用真实的圆弧）
     svg.push_str("<g id=\"original-profile\">\n");
@@ -2228,7 +2226,8 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: O
                 let arc_end_y = next.y + uy2 * next.z;
 
                 // 转换到 SVG 坐标
-                let (arc_start_svg_x, arc_start_svg_y) = to_svg(&Vec3::new(arc_start_x, arc_start_y, 0.0));
+                let (arc_start_svg_x, arc_start_svg_y) =
+                    to_svg(&Vec3::new(arc_start_x, arc_start_y, 0.0));
                 let (arc_end_svg_x, arc_end_svg_y) = to_svg(&Vec3::new(arc_end_x, arc_end_y, 0.0));
 
                 // 绘制直线到圆角起点
@@ -2258,7 +2257,11 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: O
     // 绘制原始顶点
     for (i, v) in original.iter().enumerate() {
         let (x, y) = to_svg(v);
-        let class = if v.z > 0.0 { "fradius-point" } else { "original-point" };
+        let class = if v.z > 0.0 {
+            "fradius-point"
+        } else {
+            "original-point"
+        };
         svg.push_str(&format!(
             "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"4\" class=\"{}\" />\n",
             x, y, class
@@ -2324,7 +2327,7 @@ fn generate_ploop_comparison_svg(original: &[Vec3], processed: &[Vec3], refno: O
 /// - 单一轮廓（单个顶点列表）
 /// - 填充类型（CurveType::Fill）
 /// - 轮廓的 z 坐标存储 FRADIUS（圆角半径），会被 ploop-rs 处理
-/// 
+///
 /// # 参数
 /// - `extrusion`: 拉伸体参数
 /// - `refno`: 可选的参考号，用于调试输出文件名
@@ -2353,8 +2356,11 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, refno: Option<RefU64>) -> Opti
     // Vec3.z 存储的是 FRADIUS 值，需要展开为多个顶点
     let profile = match process_ploop_vertices(original_profile, "EXTRUSION") {
         Ok(processed) => {
-            println!("🔧 [CSG] FRADIUS 处理完成: {} 个原始顶点 → {} 个处理后顶点",
-                     original_profile.len(), processed.len());
+            println!(
+                "🔧 [CSG] FRADIUS 处理完成: {} 个原始顶点 → {} 个处理后顶点",
+                original_profile.len(),
+                processed.len()
+            );
 
             // 导出 PLOOP JSON 数据（用于 ploop-rs 测试）
             if let Err(e) = export_ploop_json(original_profile, "FLOOR", extrusion.height, refno) {

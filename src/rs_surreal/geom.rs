@@ -1,5 +1,5 @@
-use crate::pdms_pluggin::heat_dissipation::InstPointMap;
 use crate::parsed_data::CateAxisParam;
+use crate::pdms_pluggin::heat_dissipation::InstPointMap;
 use crate::pe::SPdmsElement;
 use crate::utils::{take_option, take_vec};
 use crate::{NamedAttrMap, RefnoEnum};
@@ -185,20 +185,24 @@ pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<V
         refno.to_string()
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let mut results: Vec<(RefnoEnum, Option<Vec<CateAxisParam>>, String)> = take_vec(&mut response, 0)?;
-    
-    Ok(results.into_iter().map(|(refno, ptset_array, att_type)| {
-        let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
-            .unwrap_or_default()
-            .into_iter()
-            .map(|param| (param.number.to_string(), param))
-            .collect();
-        InstPointMap {
-            refno,
-            att_type,
-            ptset_map,
-        }
-    }).collect())
+    let mut results: Vec<(RefnoEnum, Option<Vec<CateAxisParam>>, String)> =
+        take_vec(&mut response, 0)?;
+
+    Ok(results
+        .into_iter()
+        .map(|(refno, ptset_array, att_type)| {
+            let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
+                .unwrap_or_default()
+                .into_iter()
+                .map(|param| (param.number.to_string(), param))
+                .collect();
+            InstPointMap {
+                refno,
+                att_type,
+                ptset_map,
+            }
+        })
+        .collect())
 }
 
 #[tokio::test]
@@ -217,7 +221,9 @@ pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPoin
         refno.to_pe_key()
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let Ok(mut result) = take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0) else {
+    let Ok(mut result) =
+        take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0)
+    else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(None);
     };
@@ -251,22 +257,29 @@ pub async fn query_refnos_point_map(
         refnos.join(",")
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let Ok(result) = take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0) else {
+    let Ok(result) = take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0)
+    else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(HashMap::default());
     };
-    Ok(result.into_iter().map(|(refno, ptset_array, att_type)| {
-        let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
-            .unwrap_or_default()
-            .into_iter()
-            .map(|param| (param.number.to_string(), param))
-            .collect();
-        (refno, InstPointMap {
-            refno,
-            att_type,
-            ptset_map,
+    Ok(result
+        .into_iter()
+        .map(|(refno, ptset_array, att_type)| {
+            let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
+                .unwrap_or_default()
+                .into_iter()
+                .map(|param| (param.number.to_string(), param))
+                .collect();
+            (
+                refno,
+                InstPointMap {
+                    refno,
+                    att_type,
+                    ptset_map,
+                },
+            )
         })
-    }).collect())
+        .collect())
 }
 
 ///通过geo hash 查询参考号

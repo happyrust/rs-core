@@ -34,7 +34,7 @@ debug_expr = []
 debug_wire = []
 debug_spatial = []
 web = ["render"]
-web_ui = []  # Web UI feature for database management interface
+web_server = []  # Web UI feature for database management interface
 sql = ["dep:sqlx"]
 sqlite = ["dep:rusqlite"]  # SQLite 空间索引功能
 mem-kv-save = []  # 额外保存PE数据到内存KV数据库
@@ -140,7 +140,7 @@ once_cell = "1.18.0"
 urlencoding = "2.1.3"
 chrono = "0.4"
 
-surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "feature/recursion-prune", default-features = false, features = [
+surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "updated", default-features = false, features = [
     "protocol-ws",
     "kv-mem"
 ] }
@@ -152,19 +152,20 @@ async-recursion = "1.0.5"
 async-trait = "0.1.78"
 num_enum = "0.7.1"
 tokio = { version = "1", features = ["rt", "sync", "macros"] }
-downcast-rs = "1.2.0"
+downcast-rs = "2.0.2"
 futures = "0.3.30"
-evalexpr = "12.0.1"
+evalexpr = "13.0.0"
 serde_repr = "0.1.19"
-ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev", package = "ploop-rs" }
+# ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev", package = "ploop-rs" }
+ploop-rs = { path = "../rust-ploop-processor/ploop-rs" }
 parking_lot = "0.12"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }
-rusqlite = { version = "0.30", features = ["bundled"], optional = true }
+rusqlite = { version = "0.37.0", features = ["bundled"], optional = true }
 redb = { version = "2.6.0", optional = true }
 manifold-sys = { git = "https://gitee.com/happydpc/manifold-sys", optional = true }
-sqlx = { version = "0.7.4", default-features = false, features = [
+sqlx = { version = "0.8.6", default-features = false, features = [
     "runtime-async-std-rustls",
     "rust_decimal",
     "mysql",
@@ -172,7 +173,7 @@ sqlx = { version = "0.7.4", default-features = false, features = [
 
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }
+criterion = { version = "0.7", features = ["html_reports", "async_tokio"] }
 async-trait = "0.1"
 tempfile = "3"
 

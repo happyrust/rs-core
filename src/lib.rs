@@ -1,6 +1,7 @@
 #![feature(let_chains)]
 #![feature(trivial_bounds)]
 #![feature(result_flattening)]
+#![feature(async_fn_track_caller)]
 #![allow(warnings)]
 
 use crate::error::HandleError;
@@ -298,10 +299,10 @@ pub async fn init_surreal() -> anyhow::Result<()> {
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
         })?;
-    
+
     // 加载属性中文名缓存
     rs_surreal::load_attr_cn_names().await?;
-    
+
     Ok(())
 }
 

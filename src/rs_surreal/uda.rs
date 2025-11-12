@@ -28,7 +28,7 @@ pub async fn get_uda_refno(hash: i32) -> Option<RefU64> {
             return if $a {
                 return $a;
             } else {
-                return (select value id from (select * from UDA where string::contains(UDNA, $name) order by UKEY))[$i];
+                return (select value id from (select * from UDA where string::contains(UDNA, $name) order by UKEY))[$i];W
             };
             "#,
         )

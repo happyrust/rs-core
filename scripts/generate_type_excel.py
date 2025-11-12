@@ -104,3 +104,18 @@ print(f'共包含 {len(att_types) + len(default_val_types)} 个类型')
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

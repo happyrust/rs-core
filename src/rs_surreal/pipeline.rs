@@ -148,7 +148,8 @@ impl PipelineQueryService {
         }
 
         // 收集所有唯一的 refno（使用 inst.refno，不是 inst.leave）
-        let mut unique_refnos: Vec<RefnoEnum> = tubi_insts.iter().map(|inst| inst.refno.clone()).collect();
+        let mut unique_refnos: Vec<RefnoEnum> =
+            tubi_insts.iter().map(|inst| inst.refno.clone()).collect();
         unique_refnos.dedup();
 
         let refno_ids: Vec<RefU64> = unique_refnos.iter().map(|refno| refno.refno()).collect();
@@ -244,11 +245,8 @@ impl PipelineQueryService {
                 }
                 if leave_number == Some(number) {
                     if leave_port.is_none() {
-                        leave_port = Some(PipelinePort::from_axis(
-                            axis,
-                            PortRole::Leave,
-                            Some(number),
-                        ));
+                        leave_port =
+                            Some(PipelinePort::from_axis(axis, PortRole::Leave, Some(number)));
                     }
                     continue;
                 }

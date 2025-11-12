@@ -12,7 +12,7 @@ use std::path::PathBuf;
 /// ```no_run
 /// // 使用默认配置路径
 /// define_common_functions(None).await?;
-/// 
+///
 /// // 使用指定路径
 /// define_common_functions(Some("resource/surreal")).await?;
 /// ```
@@ -29,7 +29,7 @@ pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result
         let db_option: crate::options::DbOption = s.try_deserialize()?;
         db_option.get_surreal_script_dir().to_string()
     };
-    
+
     let target_dir = std::fs::read_dir(&dir_path)?
         .into_iter()
         .map(|entry| {
