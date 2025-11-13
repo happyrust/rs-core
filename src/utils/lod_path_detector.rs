@@ -9,7 +9,7 @@
 /// * `lod_level` - LOD 等级，如 "L1", "L2", "L3"，空字符串表示无LOD
 /// 
 /// # 返回值
-/// 返回检测到的最佳路径，如果都不存在则返回默认路径
+/// 返回指定LOD等级的路径，如果不存在则返回默认路径
 /// 
 /// # 支持的路径格式
 /// 1. 新结构：`meshes/lod_{lod_level}/{geo_hash}_{lod_level}.mesh`
@@ -19,30 +19,17 @@
 /// 5. 默认结构：`meshes/{geo_hash}.mesh`
 /// 
 /// # 检测策略
-/// - 有指定LOD时：优先尝试指定级别，然后回退到其他级别
-/// - 无指定LOD时：尝试所有可能的LOD级别
-/// - 回退顺序：指定LOD > 其他LOD > 默认路径
+/// - 有指定LOD时：严格按照指定LOD等级访问，不回退到其他级别
+/// - 无指定LOD时：使用默认路径
 pub fn detect_best_mesh_path(geo_hash: &str, lod_level: &str) -> String {
     // 构建候选路径列表，按优先级排序
     let mut candidate_paths = Vec::new();
     
     if lod_level.is_empty() {
-        // 无LOD配置时，尝试所有可能的LOD级别和结构
+        // 无LOD配置时，使用默认路径
         candidate_paths.push(format!("meshes/{}.mesh", geo_hash));
-        
-        // 尝试所有LOD级别的新结构
-        for level in ["L1", "L2", "L3"] {
-            candidate_paths.push(format!("meshes/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_{}/{}.mesh", level, geo_hash));
-        }
-        
-        // 尝试所有LOD级别的兼容结构（lod_L3嵌套）
-        for level in ["L1", "L2", "L3"] {
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}.mesh", level, geo_hash));
-        }
     } else {
-        // 有指定LOD时，优先尝试指定级别
+        // 有指定LOD时，严格按照指定级别访问，不回退
         // 指定级别的新结构
         candidate_paths.push(format!("meshes/lod_{}/{}_{}.mesh", lod_level, geo_hash, lod_level));
         candidate_paths.push(format!("meshes/lod_{}/{}.mesh", lod_level, geo_hash));
@@ -51,19 +38,7 @@ pub fn detect_best_mesh_path(geo_hash: &str, lod_level: &str) -> String {
         candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}_{}.mesh", lod_level, geo_hash, lod_level));
         candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}.mesh", lod_level, geo_hash));
         
-        // 如果指定级别不存在，尝试其他级别（L3 > L2 > L1）
-        let other_levels = if lod_level == "L1" { ["L2", "L3"] }
-                         else if lod_level == "L2" { ["L1", "L3"] }
-                         else { ["L1", "L2"] }; // lod_level == "L3"
-        
-        for &level in &other_levels {
-            candidate_paths.push(format!("meshes/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_{}/{}.mesh", level, geo_hash));
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}.mesh", level, geo_hash));
-        }
-        
-        // 最后尝试无LOD的默认路径
+        // 最后尝试默认路径作为回退
         candidate_paths.push(format!("meshes/{}.mesh", geo_hash));
     }
 
@@ -78,43 +53,29 @@ pub fn detect_best_mesh_path(geo_hash: &str, lod_level: &str) -> String {
     candidate_paths.first().unwrap().clone()
 }
 
-/// 获取所有可能的网格文件路径候选列表
+/// 获取指定LOD等级的所有可能网格文件路径候选列表
 /// 
 /// # 参数
 /// * `geo_hash` - 几何体哈希值
 /// * `lod_level` - LOD 等级
 /// 
 /// # 返回值
-/// 返回所有可能的路径候选列表，按优先级排序
+/// 返回指定LOD等级的所有可能路径候选列表，按优先级排序
 pub fn get_mesh_path_candidates(geo_hash: &str, lod_level: &str) -> Vec<String> {
     let mut candidate_paths = Vec::new();
     
     if lod_level.is_empty() {
         candidate_paths.push(format!("meshes/{}.mesh", geo_hash));
-        
-        for level in ["L1", "L2", "L3"] {
-            candidate_paths.push(format!("meshes/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_{}/{}.mesh", level, geo_hash));
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}.mesh", level, geo_hash));
-        }
     } else {
+        // 指定级别的新结构
         candidate_paths.push(format!("meshes/lod_{}/{}_{}.mesh", lod_level, geo_hash, lod_level));
         candidate_paths.push(format!("meshes/lod_{}/{}.mesh", lod_level, geo_hash));
+        
+        // 指定级别的兼容结构
         candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}_{}.mesh", lod_level, geo_hash, lod_level));
         candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}.mesh", lod_level, geo_hash));
         
-        let other_levels = if lod_level == "L1" { ["L2", "L3"] }
-                         else if lod_level == "L2" { ["L1", "L3"] }
-                         else { ["L1", "L2"] };
-        
-        for &level in &other_levels {
-            candidate_paths.push(format!("meshes/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_{}/{}.mesh", level, geo_hash));
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}_{}.mesh", level, geo_hash, level));
-            candidate_paths.push(format!("meshes/lod_L3/lod_{}/{}.mesh", level, geo_hash));
-        }
-        
+        // 默认路径作为最后回退
         candidate_paths.push(format!("meshes/{}.mesh", geo_hash));
     }
     
@@ -134,14 +95,23 @@ mod tests {
     #[test]
     fn test_detect_best_mesh_path_with_lod() {
         let path = detect_best_mesh_path("test_hash", "L2");
+        // 应该包含L2或默认路径，不会包含L1或L3
         assert!(path.contains("test_hash"));
-        assert!(path.contains("L2") || path.contains("L1") || path.contains("L3") || path == "meshes/test_hash.mesh");
+        assert!(path.contains("L2") || path == "meshes/test_hash.mesh");
+        // 确保不会回退到其他LOD级别
+        assert!(!path.contains("L1"));
+        assert!(!path.contains("L3"));
     }
 
     #[test]
     fn test_get_mesh_path_candidates() {
         let candidates = get_mesh_path_candidates("test_hash", "L1");
-        assert!(!candidates.is_empty());
-        assert!(candidates.len() > 10); // 应该有多个候选路径
+        // 应该只有L1相关的路径和默认路径
+        assert_eq!(candidates.len(), 5); // L1新结构(2) + L1兼容结构(2) + 默认(1)
+        
+        // 验证所有路径要么包含L1，要么是默认路径
+        for candidate in &candidates {
+            assert!(candidate.contains("L1") || candidate == "meshes/test_hash.mesh");
+        }
     }
 }
