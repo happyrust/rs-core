@@ -326,6 +326,243 @@ pub async fn get_type_and_owner_type(refno: RefnoEnum) -> anyhow::Result<Vec<Str
     SUL_DB.query_take::<Vec<String>>(&sql, 0).await
 }
 
+/// 判断元素的拥有者是否为指定类型
+///
+/// 查询指定参考号的拥有者类型，并判断是否匹配给定的类型。
+/// 结果会被缓存以提高性能。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+/// * `owner_type` - 要检查的拥有者类型
+///
+/// # 返回值
+/// * `Result<bool>` - 如果拥有者类型匹配则返回 true，否则返回 false
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let is_pipe_owner = is_owner_type(refno, "PIPE").await?;
+/// if is_pipe_owner {
+///     println!("该元素的拥有者是管道类型");
+/// }
+/// ```
+#[cached(
+    result = true,
+    key = "(RefnoEnum, String)",
+    convert = r#"{ (refno, owner_type.to_string()) }"#
+)]
+pub async fn is_owner_type(refno: RefnoEnum, owner_type: &str) -> anyhow::Result<bool> {
+    let sql = format!(
+        "select value owner.noun from only {} limit 1",
+        refno.to_pe_key()
+    );
+    let actual_owner_type: Option<String> = SUL_DB.query_take(&sql, 0).await?;
+    Ok(actual_owner_type.as_deref() == Some(owner_type))
+}
+
+/// 判断元素的拥有者是否在指定类型列表中
+///
+/// 查询指定参考号的拥有者类型，并判断是否在给定的类型列表中。
+/// 结果会被缓存以提高性能。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+/// * `owner_types` - 要检查的拥有者类型切片
+///
+/// # 返回值
+/// * `Result<bool>` - 如果拥有者类型在列表中则返回 true，否则返回 false
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let types = ["PIPE", "EQUIPMENT", "VALVE"];
+/// let is_special_owner = is_owner_type_in(refno, &types).await?;
+/// if is_special_owner {
+///     println!("该元素的拥有者是特殊类型");
+/// }
+/// ```
+#[cached(
+    result = true,
+    key = "(RefnoEnum, String)",
+    convert = r#"{ (refno, format!("{:?}", owner_types)) }"#
+)]
+pub async fn is_owner_type_in(refno: RefnoEnum, owner_types: &[&str]) -> anyhow::Result<bool> {
+    if owner_types.is_empty() {
+        return Ok(false);
+    }
+    let types_str = owner_types.iter().map(|t| format!("'{}'", t)).join(",");
+    let sql = format!(
+        "select value owner.noun from only {} where owner.noun IN ({}) limit 1",
+        refno.to_pe_key(),
+        types_str
+    );
+    let actual_owner_type: Option<String> = SUL_DB.query_take(&sql, 0).await?;
+    Ok(actual_owner_type.is_some())
+}
+
+/// 获取指定类型的拥有者参考号
+///
+/// 查询指定参考号的拥有者参考号，并确保拥有者是指定类型。
+/// 结果会被缓存以提高性能。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+/// * `owner_type` - 要求的拥有者类型
+///
+/// # 返回值
+/// * `Result<Option<RefnoEnum>>` - 如果拥有者存在且类型匹配则返回拥有者参考号，否则返回 None
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let pipe_owner_refno = get_owner_refno_by_type(refno, "PIPE").await?;
+/// if let Some(owner_refno) = pipe_owner_refno {
+///     println!("找到管道类型的拥有者: {:?}", owner_refno);
+/// }
+/// ```
+#[cached(
+    result = true,
+    key = "(RefnoEnum, String)",
+    convert = r#"{ (refno, owner_type.to_string()) }"#
+)]
+pub async fn get_owner_refno_by_type(refno: RefnoEnum, owner_type: &str) -> anyhow::Result<Option<RefnoEnum>> {
+    let sql = format!(
+        "select value owner from only {} where owner.noun = '{}' limit 1",
+        refno.to_pe_key(),
+        owner_type
+    );
+    SUL_DB.query_take::<Option<RefnoEnum>>(&sql, 0).await
+}
+
+/// 获取指定类型列表中的拥有者参考号
+///
+/// 查询指定参考号的拥有者参考号，并确保拥有者是在指定的类型列表中。
+/// 结果会被缓存以提高性能。
+///
+/// # 参数
+/// * `refno` - 要查询的参考号
+/// * `owner_types` - 要求的拥有者类型切片
+///
+/// # 返回值
+/// * `Result<Option<RefnoEnum>>` - 如果拥有者存在且类型在列表中则返回拥有者参考号，否则返回 None
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let types = ["PIPE", "EQUIPMENT", "VALVE"];
+/// let special_owner_refno = get_owner_refno_by_types(refno, &types).await?;
+/// if let Some(owner_refno) = special_owner_refno {
+///     println!("找到特殊类型的拥有者: {:?}", owner_refno);
+/// }
+/// ```
+#[cached(
+    result = true,
+    key = "(RefnoEnum, String)",
+    convert = r#"{ (refno, format!("{:?}", owner_types)) }"#
+)]
+pub async fn get_owner_refno_by_types(refno: RefnoEnum, owner_types: &[&str]) -> anyhow::Result<Option<RefnoEnum>> {
+    if owner_types.is_empty() {
+        return Ok(None);
+    }
+    let types_str = owner_types.iter().map(|t| format!("'{}'", t)).join(",");
+    let sql = format!(
+        "select value owner from only {} where owner.noun IN ({}) limit 1",
+        refno.to_pe_key(),
+        types_str
+    );
+    SUL_DB.query_take::<Option<RefnoEnum>>(&sql, 0).await
+}
+
+/// 批量获取指定类型的拥有者参考号
+///
+/// 批量查询多个参考号的拥有者参考号，并过滤出拥有者是指定类型的项。
+///
+/// # 参数
+/// * `refnos` - 要查询的参考号迭代器
+/// * `owner_type` - 要求的拥有者类型
+///
+/// # 返回值
+/// * `Result<Vec<Option<RefnoEnum>>>` - 返回与输入顺序对应的拥有者参考号列表，
+///   如果拥有者不存在或类型不匹配则对应位置为 None
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let refnos = vec![refno1, refno2, refno3];
+/// let pipe_owners = get_owner_refnos_by_type(refnos.iter(), "PIPE").await?;
+/// for (i, owner_refno) in pipe_owners.iter().enumerate() {
+///     if let Some(owner) = owner_refno {
+///         println!("refno {:?} 的管道拥有者: {:?}", refnos[i], owner);
+///     }
+/// }
+/// ```
+pub async fn get_owner_refnos_by_type(
+    refnos: impl Iterator<Item = &RefnoEnum>,
+    owner_type: &str,
+) -> anyhow::Result<Vec<Option<RefnoEnum>>> {
+    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
+    let sql = format!(
+        "select value owner from [{}] where owner.noun = '{}'",
+        pe_keys,
+        owner_type
+    );
+    SUL_DB.query_take::<Vec<Option<RefnoEnum>>>(&sql, 0).await
+}
+
+/// 批量获取指定类型列表中的拥有者参考号
+///
+/// 批量查询多个参考号的拥有者参考号，并过滤出拥有者是在指定类型列表中的项。
+///
+/// # 参数
+/// * `refnos` - 要查询的参考号迭代器
+/// * `owner_types` - 要求的拥有者类型切片
+///
+/// # 返回值
+/// * `Result<Vec<Option<RefnoEnum>>>` - 返回与输入顺序对应的拥有者参考号列表，
+///   如果拥有者不存在或类型不在列表中则对应位置为 None
+///
+/// # 错误
+/// 如果查询失败，返回错误信息
+///
+/// # 示例
+/// ```
+/// let refnos = vec![refno1, refno2, refno3];
+/// let types = ["PIPE", "EQUIPMENT", "VALVE"];
+/// let special_owners = get_owner_refnos_by_types(refnos.iter(), &types).await?;
+/// for (i, owner_refno) in special_owners.iter().enumerate() {
+///     if let Some(owner) = owner_refno {
+///         println!("refno {:?} 的特殊类型拥有者: {:?}", refnos[i], owner);
+///     }
+/// }
+/// ```
+pub async fn get_owner_refnos_by_types(
+    refnos: impl Iterator<Item = &RefnoEnum>,
+    owner_types: &[&str],
+) -> anyhow::Result<Vec<Option<RefnoEnum>>> {
+    if owner_types.is_empty() {
+        return Ok(vec![]);
+    }
+    let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
+    let types_str = owner_types.iter().map(|t| format!("'{}'", t)).join(",");
+    let sql = format!(
+        "array::distinct(select value owner from [{}] where owner.noun IN [{}])",
+        pe_keys,
+        types_str
+    );
+    println!("DEBUG: get_owner_refnos_by_types SQL: {}", sql);
+    SUL_DB.query_take::<Vec<Option<RefnoEnum>>>(&sql, 0).await
+}
+
 /// 获取元素在父节点下的索引位置
 ///
 /// 根据元素在父节点下的位置返回其索引值，可选按类型过滤。
@@ -1376,6 +1613,7 @@ pub async fn get_uda_value(refno: RefU64, uda: &str) -> anyhow::Result<Option<St
 /// # 参数
 /// * `noun` - 要查询的 NOUN 类型（如 "SITE", "ZONE", "PIPE", "BRAN", "NOZZ"）
 /// * `name_filter` - 可选的名称过滤关键字，使用 `string::contains` 进行模糊匹配（匹配 NAME 字段）
+/// * `parent_refnos` - 可选的父节点参考号列表，当提供时只查询这些父节点的直接子元素
 ///
 /// # 返回值
 /// * `Result<Vec<NounHierarchyItem>>` - 成功时返回匹配的记录列表
@@ -1385,47 +1623,104 @@ pub async fn get_uda_value(refno: RefU64, uda: &str) -> anyhow::Result<Option<St
 ///
 /// # 示例
 /// ```no_run
-/// use aios_core::query_noun_hierarchy;
+/// use aios_core::{pe_key, query_noun_hierarchy};
 ///
 /// # async fn example() -> anyhow::Result<()> {
 /// // 查询所有 SITE
-/// let sites = query_noun_hierarchy("SITE", None).await?;
+/// let sites = query_noun_hierarchy("SITE", None, None).await?;
 ///
 /// // 查询名称包含 "107" 的 NOZZ
-/// let nozzles = query_noun_hierarchy("NOZZ", Some("107")).await?;
+/// let nozzles = query_noun_hierarchy("NOZZ", Some("107"), None).await?;
+///
+/// // 查询指定父节点下的 PIPE
+/// let some_parent = pe_key!("12345_6789");
+/// let pipes = query_noun_hierarchy("PIPE", None, Some(vec![some_parent])).await?;
 /// # Ok(())
 /// # }
 /// ```
-pub async fn query_noun_hierarchy(noun: &str, name_filter: Option<&str>) -> anyhow::Result<Vec<NounHierarchyItem>> {
-    let where_clause = if let Some(filter) = name_filter {
-        format!(
-            "WHERE NAME != none AND string::contains(NAME, '{}')",
-            filter.replace("'", "\\'")
-        )
-    } else {
-        "WHERE NAME != none".to_string()
-    };
+pub async fn query_noun_hierarchy(
+    noun: &str,
+    name_filter: Option<&str>,
+    parent_refnos: Option<Vec<RefnoEnum>>,
+) -> anyhow::Result<Vec<NounHierarchyItem>> {
+    let sanitized_filter = name_filter.map(|filter| filter.replace('\'', "\\'"));
 
-    let sql = format!(
-        r#"
+    if let Some(parent_refnos) = parent_refnos {
+        let mut aggregated_items = Vec::new();
+
+        for parent_refno in parent_refnos {
+            let name_filter_clause = sanitized_filter
+                .as_ref()
+                .map(|filter| {
+                    format!(
+                        "        AND string::contains(fn::default_name(refno) ?? '', '{}')",
+                        filter
+                    )
+                })
+                .unwrap_or_default();
+
+            let sql = format!(
+                r#"
+        SELECT
+            fn::default_name(refno) as name,
+            refno as id,
+            noun as noun,
+            fn::default_name(owner) as owner_name,
+            owner as owner,
+            IF fn::ses_date(refno) != NONE THEN <datetime> fn::ses_date(refno) ELSE NONE END as last_modified_date
+        FROM {parent}.children
+        WHERE refno != none
+            AND record::exists(refno.id)
+            AND !deleted
+            AND noun = '{noun}'
+{name_filter_clause}
+        "#,
+                parent = parent_refno.to_pe_key(),
+                noun = noun,
+                name_filter_clause = name_filter_clause
+            );
+
+            // 打印 SQL 以便调试
+            println!("执行 SQL:\n{}", sql);
+
+            let mut items = SUL_DB
+                .query_take::<Vec<NounHierarchyItem>>(&sql, 0)
+                .await?;
+            aggregated_items.append(&mut items);
+        }
+
+        Ok(aggregated_items)
+    } else {
+        let where_clause = if let Some(filter) = sanitized_filter {
+            format!(
+                "WHERE NAME != none AND string::contains(NAME, '{}')",
+                filter
+            )
+        } else {
+            "WHERE NAME != none".to_string()
+        };
+
+        let sql = format!(
+            r#"
         SELECT
             fn::default_name(REFNO) as name,
             REFNO as id,
             TYPE as noun,
             fn::default_name(REFNO.owner) as owner_name,
             REFNO.owner as owner,
-            <datetime> fn::ses_date(REFNO) as last_modified_date
-        FROM {}
-        {}
+            IF fn::ses_date(REFNO) != NONE THEN <datetime> fn::ses_date(REFNO) ELSE NONE END as last_modified_date
+        FROM {noun}
+        {where_clause}
         "#,
-        noun,
-        where_clause
-    );
+            noun = noun,
+            where_clause = where_clause
+        );
 
-    // 打印 SQL 以便调试
-    println!("执行 SQL:\n{}", sql);
+        // 打印 SQL 以便调试
+        println!("执行 SQL:\n{}", sql);
 
-    SUL_DB.query_take::<Vec<NounHierarchyItem>>(&sql, 0).await
+        SUL_DB.query_take::<Vec<NounHierarchyItem>>(&sql, 0).await
+    }
 }
 
 //添加query_his_dates 的 testcase
@@ -1474,8 +1769,8 @@ mod test {
         init_test_surreal().await;
 
         // 查询 PIPE 类型中名称包含 "TG-105" 的记录
-        let result = crate::query_noun_hierarchy("PIPE", Some("TG-105")).await;
-        
+        let result = crate::query_noun_hierarchy("PIPE", Some("TG-105"), None).await;
+
         match result {
             Ok(items) => {
                 println!("找到 {} 条匹配的记录:", items.len());
@@ -1487,6 +1782,24 @@ mod test {
                     println!("  最后修改日期: {:?}", item.last_modified_date);
                 }
                 dbg!(&items);
+
+                if let Some(first) = items.first() {
+                    let scoped = crate::query_noun_hierarchy(
+                        "PIPE",
+                        None,
+                        Some(vec![first.owner]),
+                    )
+                    .await
+                    .unwrap();
+                    assert!(
+                        scoped.iter().all(|item| item.owner == first.owner),
+                        "Scoped query返回的所有元素都应该属于同一父节点"
+                    );
+                    assert!(
+                        scoped.iter().any(|item| item.id == first.id),
+                        "Scoped query 应该包含原查询中的元素"
+                    );
+                }
             }
             Err(e) => {
                 eprintln!("查询失败: {}", e);
