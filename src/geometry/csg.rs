@@ -2695,8 +2695,8 @@ mod tests {
         };
         let param = PdmsGeoParam::PrimLCylinder(cyl.clone());
         let settings = LodMeshSettings::default();
-        let csg =
-            generate_csg_mesh(&param, &settings, false).expect("CSG cylinder generation failed");
+        let csg = generate_csg_mesh(&param, &settings, false, None)
+            .expect("CSG cylinder generation failed");
         #[cfg(feature = "occ")]
         let occ_mesh = {
             let shape = param
@@ -2746,7 +2746,8 @@ mod tests {
             height_segments: 4,
             ..Default::default()
         };
-        let csg = generate_csg_mesh(&param, &settings, false).expect("CSG snout generation failed");
+        let csg =
+            generate_csg_mesh(&param, &settings, false, None).expect("CSG snout generation failed");
         #[cfg(feature = "occ")]
         let occ_mesh = {
             // 对于测试，如果启用 OCC feature，可以转换为 OCC 进行比较
@@ -2790,6 +2791,7 @@ mod tests {
                 ..Default::default()
             },
             false,
+            None,
         )
         .expect("SSCL CSG generation failed");
 
@@ -2813,6 +2815,7 @@ mod tests {
                 ..Default::default()
             },
             false,
+            None,
         )
         .expect("Regular SCylinder CSG generation failed");
 
@@ -2833,6 +2836,7 @@ mod tests {
             &PdmsGeoParam::PrimBox(sbox.clone()),
             &LodMeshSettings::default(),
             false,
+            None,
         )
         .expect("SBox CSG generation failed");
         let aabb = generated.mesh.aabb.expect("missing box aabb");
@@ -2887,6 +2891,7 @@ mod tests {
                 ..Default::default()
             },
             false,
+            None,
         )
         .expect("Dish CSG generation failed");
         let aabb = generated.mesh.aabb.expect("missing dish aabb");
@@ -2920,6 +2925,7 @@ mod tests {
                 ..Default::default()
             },
             false,
+            None,
         )
         .expect("CTorus CSG generation failed");
         let aabb = generated.mesh.aabb.expect("missing torus aabb");
@@ -2955,6 +2961,7 @@ mod tests {
             &PdmsGeoParam::PrimPyramid(pyramid.clone()),
             &LodMeshSettings::default(),
             false,
+            None,
         )
         .expect("Pyramid CSG generation failed");
         let aabb = generated.mesh.aabb.expect("missing pyramid aabb");
@@ -2984,6 +2991,7 @@ mod tests {
             &PdmsGeoParam::PrimExtrusion(extrusion),
             &LodMeshSettings::default(),
             false,
+            None,
         )
         .expect("Extrusion CSG generation failed");
         let aabb = generated.mesh.aabb.expect("missing extrusion aabb");

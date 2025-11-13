@@ -1653,7 +1653,7 @@ pub async fn query_noun_hierarchy(
                 .as_ref()
                 .map(|filter| {
                     format!(
-                        "        AND string::contains(fn::default_name(refno) ?? '', '{}')",
+                        "        AND string::contains(name ?? '', '{}')",
                         filter
                     )
                 })
@@ -1662,15 +1662,15 @@ pub async fn query_noun_hierarchy(
             let sql = format!(
                 r#"
         SELECT
-            fn::default_name(refno) as name,
-            refno as id,
-            noun as noun,
+            fn::default_name(id) as name,
+            id,
+            noun,
             fn::default_name(owner) as owner_name,
             owner as owner,
-            IF fn::ses_date(refno) != NONE THEN <datetime> fn::ses_date(refno) ELSE NONE END as last_modified_date
+            IF fn::ses_date(id) != NONE THEN <datetime> fn::ses_date(id) ELSE NONE END as last_modified_date
         FROM {parent}.children
-        WHERE refno != none
-            AND record::exists(refno.id)
+        WHERE id != none
+            AND record::exists(id)
             AND !deleted
             AND noun = '{noun}'
 {name_filter_clause}

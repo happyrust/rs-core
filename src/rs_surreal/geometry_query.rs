@@ -125,6 +125,8 @@ pub struct GeoAabbTrans {
 #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
 pub struct QueryInstGeoResult {
     pub geo_id: RecordId,
+    #[serde(default)]
+    pub refno: Option<RefnoEnum>,
     pub has_neg_relate: bool,
 }
 

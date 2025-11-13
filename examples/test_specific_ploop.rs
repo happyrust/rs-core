@@ -174,12 +174,7 @@ async fn process_ploop(ploop_id: RefU64, output_dir: &Path) -> Result<String> {
     println!("\n🎨 生成 SVG...");
     let svg_path = output_dir.join(format!("ploop_{}.svg", ploop_id.0));
     let svg_gen = SvgGenerator::new(1500.0, 50.0);
-    svg_gen.generate(
-        &processed_vertices,
-        &arcs,
-        Some(&ploop_vertices),
-        &svg_path,
-    )?;
+    svg_gen.generate(&processed_vertices, &arcs, Some(&ploop_vertices), &svg_path)?;
     println!("  SVG 文件: {}", svg_path.display());
 
     Ok(format!(
@@ -190,5 +185,3 @@ async fn process_ploop(ploop_id: RefU64, output_dir: &Path) -> Result<String> {
         svg_path.file_name().unwrap().to_string_lossy()
     ))
 }
-
-

@@ -121,7 +121,7 @@ room_keyword = "-R-" # 2016  K-R-K100   (-R-)
 
 #test_refno = "24381_46952"
 
-#debug_model_refnos = ["24381_46952"]
+debug_model_refnos = ["24381_46952"]
 gen_history_model = false
 
 # debug_model_refnos = ["17496_201376"]  # 注释掉，这会干扰解析过程

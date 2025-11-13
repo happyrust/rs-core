@@ -198,15 +198,27 @@ pub async fn query_insts(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
     enable_holes: bool,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
+    query_insts_with_batch(refnos, enable_holes, None).await
+}
+
+pub async fn query_insts_with_batch(
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    enable_holes: bool,
+    batch_size: Option<usize>,
+) -> anyhow::Result<Vec<GeomInstQuery>> {
     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
 
-    //需要区分历史模型和当前最新模型
+    let batch = batch_size.unwrap_or(50).max(1);
+    let mut results = Vec::new();
+    for chunk in refnos.chunks(batch) {
+        let inst_keys = get_inst_relate_keys(chunk);
 
-    let inst_keys = get_inst_relate_keys(&refnos);
-
-    let sql = if enable_holes {
-        format!(
-            r#"
+        let sql = if enable_holes {
+            format!(
+                r#"
             select
                 in.id as refno,
                 in.old_pe as old_refno,
@@ -216,10 +228,10 @@ pub async fn query_insts(
                 <datetime>dt as date
             from {inst_keys} where aabb.d != none && world_trans.d != none
         "#
-        )
-    } else {
-        format!(
-            r#"
+            )
+        } else {
+            format!(
+                r#"
             select
                 in.id as refno,
                 in.old_pe as old_refno,
@@ -228,12 +240,14 @@ pub async fn query_insts(
                 booled_id != none as has_neg,
                 <datetime>dt as date
             from {inst_keys} where aabb.d != none && world_trans.d != none "#
-        )
-    };
-    // println!("query geo insts: {}", &sql);
-    let geom_insts: Vec<GeomInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+            )
+        };
 
-    Ok(geom_insts)
+        let mut chunk_result: Vec<GeomInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        results.append(&mut chunk_result);
+    }
+
+    Ok(results)
 }
 
 // todo 生成一个测试案例
@@ -279,7 +293,7 @@ pub async fn query_insts_by_zone(
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
     let zone_refnos = refnos
         .into_iter()
-        .map(|x| format!("ZONE:{}", x))
+        .map(|x| x.to_pe_key())
         .collect::<Vec<_>>()
         .join(",");
 
