@@ -139,14 +139,22 @@ use crate::options::{DbOption, SecondUnitDbOption};
 use once_cell_serde::sync::OnceCell;
 use surrealdb::opt::auth::Root;
 
+/// 获取配置文件名，支持环境变量
+fn get_config_file_name() -> String {
+    std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string())
+}
+
 ///获得db option
 #[inline]
 pub fn get_db_option() -> &'static DbOption {
     static INSTANCE: OnceCell<DbOption> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         use config::{Config, ConfigError, Environment, File};
+        
+        let config_file_name = get_config_file_name();
+        
         let s = Config::builder()
-            .add_source(File::with_name("DbOption"))
+            .add_source(File::with_name(&config_file_name))
             .build()
             .unwrap();
         let option = s.try_deserialize::<DbOption>().unwrap();
@@ -187,8 +195,9 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
         let mut ukey_udna_map = DashMap::new();
         let mut udna_ukey_map = DashMap::new();
         use config::{Config, ConfigError, Environment, File};
+        let config_file_name = get_config_file_name();
         let Ok(s) = Config::builder()
-            .add_source(File::with_name("DbOption"))
+            .add_source(File::with_name(&config_file_name))
             .build()
         else {
             return (DashMap::new(), DashMap::new());
@@ -211,8 +220,9 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
 }
 
 pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
+    let config_file_name = get_config_file_name();
     let s = Config::builder()
-        .add_source(File::with_name("DbOption"))
+        .add_source(File::with_name(&config_file_name))
         .build()
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to load DbOption config: {}", e),
@@ -272,8 +282,9 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
 }
 
 pub async fn init_surreal() -> anyhow::Result<()> {
+    let config_file_name = get_config_file_name();
     let s = Config::builder()
-        .add_source(File::with_name("DbOption"))
+        .add_source(File::with_name(&config_file_name))
         .build()
         .unwrap();
     let db_option: DbOption = s.try_deserialize()?;

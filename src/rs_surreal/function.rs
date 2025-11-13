@@ -23,8 +23,10 @@ pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result
     } else {
         // 读取配置文件获取脚本目录
         use config::{Config, File};
+        // 读取配置文件
+        let config_file_name = std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
         let s = Config::builder()
-            .add_source(File::with_name("DbOption"))
+            .add_source(File::with_name(&config_file_name))
             .build()?;
         let db_option: crate::options::DbOption = s.try_deserialize()?;
         db_option.get_surreal_script_dir().to_string()

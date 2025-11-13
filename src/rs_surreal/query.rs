@@ -75,6 +75,8 @@ pub struct NounHierarchyItem {
     pub owner: RefnoEnum,
     /// 最后修改日期（通过 fn::ses_date(id) 获取）
     pub last_modified_date: Option<Datetime>,
+    /// 直接子节点数量
+    pub children_cnt: Option<i32>,
 }
 
 /// 通过surql查询PE（Plant Element）数据
@@ -1665,6 +1667,7 @@ pub async fn query_noun_hierarchy(
             fn::default_name(id) as name,
             id,
             noun,
+            array::len(children) as children_cnt,
             fn::default_name(owner) as owner_name,
             owner as owner,
             IF fn::ses_date(id) != NONE THEN <datetime> fn::ses_date(id) ELSE NONE END as last_modified_date
@@ -1693,11 +1696,11 @@ pub async fn query_noun_hierarchy(
     } else {
         let where_clause = if let Some(filter) = sanitized_filter {
             format!(
-                "WHERE NAME != none AND string::contains(NAME, '{}')",
+                "WHERE REFNO!=NONE AND NAME != none AND string::contains(NAME, '{}')",
                 filter
             )
         } else {
-            "WHERE NAME != none".to_string()
+            "WHERE REFNO!=NONE ".to_string()
         };
 
         let sql = format!(
@@ -1706,6 +1709,7 @@ pub async fn query_noun_hierarchy(
             fn::default_name(REFNO) as name,
             REFNO as id,
             TYPE as noun,
+            array::len(REFNO.children) as children_cnt,
             fn::default_name(REFNO.owner) as owner_name,
             REFNO.owner as owner,
             IF fn::ses_date(REFNO) != NONE THEN <datetime> fn::ses_date(REFNO) ELSE NONE END as last_modified_date

@@ -24,6 +24,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[test]
     fn test_build_mesh_path_no_lod() {
         let path = build_mesh_path("test_hash", "");
         assert_eq!(path, "meshes/test_hash.mesh");
