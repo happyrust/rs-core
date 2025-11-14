@@ -13,6 +13,7 @@
 //! 所有网格生成算法都支持自适应细分，根据几何形状的尺寸和LOD设置
 //! 自动调整网格分辨率，以平衡渲染质量和性能。
 
+use crate::debug_macros::is_debug_model_enabled;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::ctorus::CTorus;
@@ -34,9 +35,22 @@ use crate::utils::svg_generator::SpineSvgGenerator;
 use glam::Vec3;
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
+use std::collections::HashSet;
+use std::sync::Mutex;
 
 /// 最小长度阈值，用于判断几何形状是否有效
 const MIN_LEN: f32 = 1e-6;
+
+/// 跟踪已经生成过PLOOP调试文件的refno，避免重复生成
+static PLOOP_DEBUG_GENERATED: std::sync::LazyLock<Mutex<HashSet<String>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));
+
+/// 清理PLOOP调试文件生成记录（用于新的运行周期）
+pub fn clear_ploop_debug_cache() {
+    if let Ok(mut generated_set) = PLOOP_DEBUG_GENERATED.lock() {
+        generated_set.clear();
+    }
+}
 
 /// 生成单位盒子网格（用于简单盒子的基础网格）
 ///
@@ -2362,14 +2376,32 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, refno: Option<RefU64>) -> Opti
                 processed.len()
             );
 
-            // 导出 PLOOP JSON 数据（用于 ploop-rs 测试）
-            if let Err(e) = export_ploop_json(original_profile, "FLOOR", extrusion.height, refno) {
-                println!("⚠️  [CSG] JSON 导出失败: {}", e);
-            }
+            // 只在启用debug-model且尚未为此refno生成过调试文件时才生成
+            if is_debug_model_enabled() {
+                let refno_key = refno
+                    .map(|r| r.to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                let mut generated_set = PLOOP_DEBUG_GENERATED.lock().unwrap();
 
-            // 生成 SVG 对比图：原始轮廓 vs 处理后轮廓
-            if let Err(e) = generate_ploop_comparison_svg(original_profile, &processed, refno) {
-                println!("⚠️  [CSG] SVG 生成失败: {}", e);
+                if !generated_set.contains(&refno_key) {
+                    // 导出 PLOOP JSON 数据（用于 ploop-rs 测试）
+                    if let Err(e) =
+                        export_ploop_json(original_profile, "FLOOR", extrusion.height, refno)
+                    {
+                        println!("⚠️  [CSG] JSON 导出失败: {}", e);
+                    }
+
+                    // 生成 SVG 对比图：原始轮廓 vs 处理后轮廓
+                    if let Err(e) =
+                        generate_ploop_comparison_svg(original_profile, &processed, refno)
+                    {
+                        println!("⚠️  [CSG] SVG 生成失败: {}", e);
+                    }
+
+                    // 标记此refno已生成过调试文件
+                    generated_set.insert(refno_key);
+                    println!("📄 [CSG] PLOOP 调试文件已生成（仅生成一次）");
+                }
             }
 
             processed
