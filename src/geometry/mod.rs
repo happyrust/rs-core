@@ -1,4 +1,5 @@
 pub mod csg;
+pub mod sweep_mesh;
 
 use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;

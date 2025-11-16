@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="254" height="208" viewBox="-204 -50 254 208">
-  <circle cx="0" cy="0" r="2" fill="red" opacity="0.5"/>
-  <circle cx="-46" cy="108" r="2" fill="red" opacity="0.5"/>
-  <circle cx="-154" cy="108" r="2" fill="red" opacity="0.5"/>
-  <circle cx="-154" cy="0" r="2" fill="red" opacity="0.5"/>
-  <path d="M 0,0 L -46,108 L -141,108 L -154,95 L -154,0 Z" fill="none" stroke="blue" stroke-width="1"/>
-</svg>

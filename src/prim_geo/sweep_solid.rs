@@ -1,5 +1,5 @@
 use crate::parsed_data::{CateProfileParam, SProfileData, SannData};
-use crate::prim_geo::spine::*;
+use crate::prim_geo::spine::{*, SegmentPath};
 use crate::prim_geo::wire;
 use crate::shape::pdms_shape::{ANGLE_RAD_F64_TOL, BrepShapeTrait, VerifiedShape};
 #[cfg(feature = "truck")]
@@ -129,36 +129,32 @@ impl SweepSolid {
         let mut r_translation = DVec3::ZERO;
         offset_pt.x = -sann.plin_pos.x as f64;
         offset_pt.y = -sann.plin_pos.y as f64;
-        match &self.path {
-            SweepPath3D::SpineArc(d) => {
-                let y_axis = d.pref_axis.as_dvec3();
-                let mut z_axis = self.plax.as_dvec3();
-                r_translation.x = d.radius as f64;
-                if d.clock_wise {
-                    z_axis = -z_axis;
-                }
-                if self.lmirror {
-                    z_axis = -z_axis;
-                }
-                let x_axis = y_axis.cross(z_axis).normalize();
-                // dbg!((x_axis, y_axis, z_axis));
-                rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
-                beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as _);
-                rot_mat =
-                    DMat3::from_quat(DQuat::from_rotation_arc(self.plax.as_dvec3(), DVec3::Z));
+        if let Some(arc) = self.path.as_single_arc() {
+            let y_axis = arc.pref_axis.as_dvec3();
+            let mut z_axis = self.plax.as_dvec3();
+            r_translation.x = arc.radius as f64;
+            if arc.clock_wise {
+                z_axis = -z_axis;
             }
-
-            SweepPath3D::Line(d) => {
-                if d.is_spine {
-                    //     dbg!(self.bangle);
-                    beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as _);
-                }
-                {
-                    rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
-                        sann.na_axis.as_dvec3(),
-                        self.plax.as_dvec3(),
-                    ));
-                }
+            if self.lmirror {
+                z_axis = -z_axis;
+            }
+            let x_axis = y_axis.cross(z_axis).normalize();
+            // dbg!((x_axis, y_axis, z_axis));
+            rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
+            beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as _);
+            rot_mat =
+                DMat3::from_quat(DQuat::from_rotation_arc(self.plax.as_dvec3(), DVec3::Z));
+        } else if let Some(d) = self.path.as_single_line() {
+            if d.is_spine {
+                //     dbg!(self.bangle);
+                beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as _);
+            }
+            {
+                rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
+                    sann.na_axis.as_dvec3(),
+                    self.plax.as_dvec3(),
+                ));
             }
         }
         let p1 = DVec3::new(r1, 0.0, 0.0);
@@ -252,29 +248,25 @@ impl SweepSolid {
         let mut r_translation = Vector3::new(0.0, 0.0, 0.0);
         offset_pt.x = -sann.plin_pos.x;
         offset_pt.y = -sann.plin_pos.y;
-        match &self.path {
-            SweepPath3D::SpineArc(d) => {
-                let y_axis = d.pref_axis;
-                let mut z_axis = self.plax;
-                r_translation.x = d.radius as f64;
-                if d.clock_wise {
-                    z_axis = -z_axis;
-                }
-                if self.lmirror {
-                    z_axis = -z_axis;
-                }
-                let x_axis = y_axis.cross(z_axis).normalize();
-                rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
-                beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Z));
+        if let Some(arc) = self.path.as_single_arc() {
+            let y_axis = arc.pref_axis;
+            let mut z_axis = self.plax;
+            r_translation.x = arc.radius as f64;
+            if arc.clock_wise {
+                z_axis = -z_axis;
             }
-
-            SweepPath3D::Line(d) => {
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
-                if d.is_spine {
-                    dbg!(self.bangle.to_radians());
-                    beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
-                }
+            if self.lmirror {
+                z_axis = -z_axis;
+            }
+            let x_axis = y_axis.cross(z_axis).normalize();
+            rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
+            beta_rot = Quat::from_axis_angle(z_axis, self.bangle.to_radians());
+            rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Z));
+        } else if let Some(d) = self.path.as_single_line() {
+            rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
+            if d.is_spine {
+                dbg!(self.bangle.to_radians());
+                beta_rot = Quat::from_axis_angle(Vec3::Z, self.bangle.to_radians());
             }
         }
         let p1 = Vec3::new(r1, 0.0, 0.0);
@@ -351,32 +343,29 @@ impl SweepSolid {
         offset_pt.x = -plin_pos.x as f64;
         offset_pt.y = -plin_pos.y as f64;
 
-        match &self.path {
-            SweepPath3D::SpineArc(d) => {
-                let y_axis = d.pref_axis.as_dvec3();
-                let mut z_axis = self.plax.as_dvec3();
-                r_translation.x = d.radius as f64;
-                if d.clock_wise {
-                    z_axis = -z_axis;
-                }
-                if self.lmirror {
-                    z_axis = -z_axis;
-                }
-                let x_axis = y_axis.cross(z_axis).normalize();
-                //旋转到期望的平面
-                rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
-                beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as f64);
+        if let Some(arc) = self.path.as_single_arc() {
+            let y_axis = arc.pref_axis.as_dvec3();
+            let mut z_axis = self.plax.as_dvec3();
+            r_translation.x = arc.radius as f64;
+            if arc.clock_wise {
+                z_axis = -z_axis;
             }
-            SweepPath3D::Line(d) => {
-                if d.is_spine {
-                    // dbg!(self.bangle);
-                    beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
-                }
-                rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
-                    profile.na_axis.as_dvec3(),
-                    self.plax.as_dvec3(),
-                ));
+            if self.lmirror {
+                z_axis = -z_axis;
             }
+            let x_axis = y_axis.cross(z_axis).normalize();
+            //旋转到期望的平面
+            rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
+            beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as f64);
+        } else if let Some(d) = self.path.as_single_line() {
+            if d.is_spine {
+                // dbg!(self.bangle);
+                beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
+            }
+            rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
+                profile.na_axis.as_dvec3(),
+                self.plax.as_dvec3(),
+            ));
         }
         let mut points = vec![];
         for i in 0..len {
@@ -417,26 +406,23 @@ impl SweepSolid {
         // dbg!(&profile);
         offset_pt.x = -plin_pos.x;
         offset_pt.y = -plin_pos.y;
-        match &self.path {
-            SweepPath3D::SpineArc(d) => {
-                let y_axis = d.pref_axis;
-                let mut z_axis = self.plax;
-                r_translation.x = d.radius as f64;
-                if d.clock_wise {
-                    z_axis = -z_axis;
-                }
-                if self.lmirror {
-                    z_axis = -z_axis;
-                }
-                let x_axis = y_axis.cross(z_axis).normalize();
-                //旋转到期望的平面
-                rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
+        if let Some(arc) = self.path.as_single_arc() {
+            let y_axis = arc.pref_axis;
+            let mut z_axis = self.plax;
+            r_translation.x = arc.radius as f64;
+            if arc.clock_wise {
+                z_axis = -z_axis;
             }
-            SweepPath3D::Line(d) => {
-                rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
-                // dbg!(rot_mat);
-                // dbg!(to_pdms_ori_str(&rot_mat));
+            if self.lmirror {
+                z_axis = -z_axis;
             }
+            let x_axis = y_axis.cross(z_axis).normalize();
+            //旋转到期望的平面
+            rot_mat = Mat3::from_cols(x_axis, y_axis, z_axis);
+        } else if let Some(_d) = self.path.as_single_line() {
+            rot_mat = Mat3::from_quat(Quat::from_rotation_arc(self.plax, Vec3::Y));
+            // dbg!(rot_mat);
+            // dbg!(to_pdms_ori_str(&rot_mat));
         }
 
         // dbg!(&offset_pt);
@@ -494,7 +480,10 @@ impl VerifiedShape for SweepSolid {
 
 impl BrepShapeTrait for SweepSolid {
     fn is_reuse_unit(&self) -> bool {
-        matches!(&self.path, SweepPath3D::Line(_)) && !self.is_sloped()
+        // 单段直线路径且无倾斜才可复用
+        self.path.is_single_segment()
+            && matches!(self.path.segments.first(), Some(SegmentPath::Line(_)))
+            && !self.is_sloped()
     }
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -541,28 +530,26 @@ impl BrepShapeTrait for SweepSolid {
                 println!("drns or drne is nan");
                 return None;
             }
-            match &self.path {
-                SweepPath3D::SpineArc(arc) => {
-                    let mut face_s = builder::try_attach_plane(&[wire]).unwrap();
-                    if let Surface::Plane(plane) = face_s.surface() {
-                        let is_rev_face = (plane.normal().y * arc.axis.z as f64) < 0.0;
-                        if is_rev_face {
-                            dbg!("Face inveted");
-                            face_s.invert();
-                        }
+            if let Some(arc) = self.path.as_single_arc() {
+                let mut face_s = builder::try_attach_plane(&[wire]).unwrap();
+                if let Surface::Plane(plane) = face_s.surface() {
+                    let is_rev_face = (plane.normal().y * arc.axis.z as f64) < 0.0;
+                    if is_rev_face {
+                        dbg!("Face inveted");
+                        face_s.invert();
                     }
-                    let rot_angle = arc.angle;
-                    let rot_axis = if arc.clock_wise { -Vec3::Z } else { Vec3::Z };
-                    let solid = builder::rsweep(
-                        &face_s,
-                        Point3::origin(),
-                        rot_axis.vector3(),
-                        Rad(rot_angle as f64),
-                    );
-                    let shell: Shell = solid.into_boundaries().pop()?;
-                    return Some(shell);
                 }
-                SweepPath3D::Line(l) => {
+                let rot_angle = arc.angle;
+                let rot_axis = if arc.clock_wise { -Vec3::Z } else { Vec3::Z };
+                let solid = builder::rsweep(
+                    &face_s,
+                    Point3::origin(),
+                    rot_axis.vector3(),
+                    Rad(rot_angle as f64),
+                );
+                let shell: Shell = solid.into_boundaries().pop()?;
+                return Some(shell);
+            } else if let Some(_l) = self.path.as_single_line() {
                     let mut transform_btm = Mat4::IDENTITY;
                     let mut transform_top = Mat4::IDENTITY;
                     if self.drns.is_normalized() && self.is_drns_sloped() {
@@ -611,13 +598,12 @@ impl BrepShapeTrait for SweepSolid {
                         let c2 = &wire_e[i];
                         faces.push(builder::homotopy(c1, c2).inverse());
                     }
-                    let face_s = builder::try_attach_plane(&[wire_s]).ok()?;
-                    let face_e = builder::try_attach_plane(&[wire_e]).ok()?;
-                    faces.push(face_s);
-                    faces.push(face_e.inverse());
-                    let shell: Shell = faces.into();
-                    return Some(shell);
-                }
+                let face_s = builder::try_attach_plane(&[wire_s]).ok()?;
+                let face_e = builder::try_attach_plane(&[wire_e]).ok()?;
+                faces.push(face_s);
+                faces.push(face_e.inverse());
+                let shell: Shell = faces.into();
+                return Some(shell);
             }
         }
         None
@@ -675,39 +661,36 @@ impl BrepShapeTrait for SweepSolid {
         };
         // dbg!(other_half_shape.is_some());
         if let Some(mut wire) = profile_wire {
-            match &self.path {
-                SweepPath3D::SpineArc(arc) => {
-                    let rot_angle = arc.angle;
-                    let rot_axis = if arc.clock_wise { -DVec3::Z } else { DVec3::Z };
-                    let r =
-                        wire.to_face()
-                            .revolve(DVec3::ZERO, rot_axis, Some(rot_angle.radians()));
-                    let shape = r.into_shape();
-                    if let Some(other_half) = other_half_shape {
-                        let mut new_shape = shape.union(&other_half).shape;
-                        return Ok(new_shape.into());
-                    }
-                    return Ok(shape.into_shape().into());
+            if let Some(arc) = self.path.as_single_arc() {
+                let rot_angle = arc.angle;
+                let rot_axis = if arc.clock_wise { -DVec3::Z } else { DVec3::Z };
+                let r =
+                    wire.to_face()
+                        .revolve(DVec3::ZERO, rot_axis, Some(rot_angle.radians()));
+                let shape = r.into_shape();
+                if let Some(other_half) = other_half_shape {
+                    let mut new_shape = shape.union(&other_half).shape;
+                    return Ok(new_shape.into());
                 }
-                SweepPath3D::Line(l) => {
-                    let mut wires = vec![];
-                    let mut transform_btm = self.get_face_mat4(true);
-                    let mut transform_top = self.get_face_mat4(false);
-                    transform_top =
-                        DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
-                    wires.push(wire.transformed_by_gmat(&transform_btm)?);
-                    if let Some(mut top_wire) = top_profile_wire {
-                        wires.push(top_wire.transformed_by_gmat(&transform_top)?);
-                    } else {
-                        wires.push(wire.transformed_by_gmat(&transform_top)?);
-                    }
-                    let shape = Solid::loft(wires.iter()).into_shape();
-                    if let Some(other_half) = other_half_shape {
-                        let mut new_shape = shape.union(&other_half).shape;
-                        return Ok(new_shape.into());
-                    }
-                    return Ok(shape.into_shape().into());
+                return Ok(shape.into_shape().into());
+            } else if let Some(l) = self.path.as_single_line() {
+                let mut wires = vec![];
+                let mut transform_btm = self.get_face_mat4(true);
+                let mut transform_top = self.get_face_mat4(false);
+                transform_top =
+                    DMat4::from_translation(DVec3::Z * l.length() as f64) * transform_top;
+                wires.push(wire.transformed_by_gmat(&transform_btm)?);
+                if let Some(mut top_wire) = top_profile_wire {
+                    wires.push(top_wire.transformed_by_gmat(&transform_top)?);
+                } else {
+                    wires.push(wire.transformed_by_gmat(&transform_top)?);
                 }
+                let shape = Solid::loft(wires.iter()).into_shape();
+                if let Some(other_half) = other_half_shape {
+                    let mut new_shape = shape.union(&other_half).shape;
+                    return Ok(new_shape.into());
+                }
+                return Ok(shape.into_shape().into());
             }
         }
 
@@ -719,7 +702,7 @@ impl BrepShapeTrait for SweepSolid {
         let mut hasher = DefaultHasher::default();
         let bytes = if self.is_drns_sloped() || self.is_drne_sloped() {
             bincode::serialize(&self).unwrap()
-        } else if let SweepPath3D::SpineArc(_) = self.path {
+        } else if self.path.as_single_arc().is_some() {
             bincode::serialize(&self).unwrap()
         } else {
             bincode::serialize(&self.profile).unwrap()
@@ -732,11 +715,9 @@ impl BrepShapeTrait for SweepSolid {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let mut unit = self.clone();
-        if let SweepPath3D::Line(_) = unit.path
-            && !self.is_sloped()
-        {
+        if unit.path.as_single_line().is_some() && !self.is_sloped() {
             unit.extrude_dir = DVec3::Z;
-            unit.path = SweepPath3D::Line(Line3D {
+            unit.path = SweepPath3D::from_line(Line3D {
                 start: Default::default(),
                 end: Vec3::Z * 10.0,
                 is_spine: false,
@@ -750,9 +731,10 @@ impl BrepShapeTrait for SweepSolid {
         if self.is_sloped() {
             return Vec3::ONE;
         }
-        match &self.path {
-            SweepPath3D::Line(l) => Vec3::new(1.0, 1.0, l.length() / 10.0),
-            _ => Vec3::ONE,
+        if let Some(l) = self.path.as_single_line() {
+            Vec3::new(1.0, 1.0, l.length() / 10.0)
+        } else {
+            Vec3::ONE
         }
     }
 
@@ -788,6 +770,37 @@ impl BrepShapeTrait for SweepSolid {
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimLoft(self.clone()))
+    }
+
+    /// 生成 CSG 网格
+    /// 
+    /// 支持单段路径（Line/SpineArc）和多段路径（MultiSegment）
+    fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
+        use crate::mesh_precision::LodMeshSettings;
+        
+        let settings = LodMeshSettings::default();
+        
+        if let Some(mesh) = generate_sweep_solid_mesh(self, &settings) {
+            Ok(crate::prim_geo::basic::CsgSharedMesh::new(mesh))
+        } else {
+            let path_desc = if self.path.is_single_segment() {
+                match self.path.segments.first() {
+                    Some(SegmentPath::Line(_)) => "单段直线",
+                    Some(SegmentPath::Arc(_)) => "单段圆弧",
+                    None => "空路径",
+                }
+            } else {
+                &format!("{}段混合路径", self.path.segment_count())
+            };
+            
+            Err(anyhow::anyhow!(
+                "SweepSolid 的 CSG 网格生成失败。\n\
+                路径类型: {}\n\
+                可能原因: 不支持的截面类型或路径类型",
+                path_desc
+            ))
+        }
     }
 }
 

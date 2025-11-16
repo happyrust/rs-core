@@ -675,9 +675,9 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
         mdb_name
     );
 
+
     // 执行查询并获取结果
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let id: Option<RefnoEnum> = response.take(1)?;
+    let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 0).await?;
     Ok(id.unwrap_or_default())
 }
 
