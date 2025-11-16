@@ -271,3 +271,168 @@ fn test_h_beam_normal_ends() {
 
     println!("✅ H型钢垂直端面测试通过");
 }
+
+/// 测试H型钢沿圆弧路径扫描（验证 generate_arc_sweep 端面修复）
+#[test]
+fn test_h_beam_arc_sweep() {
+    println!("\n=== 测试H型钢圆弧扫描端面 ===");
+
+    // 创建H型钢截面
+    let h_beam_points = create_h_beam_profile();
+    println!("  H型钢截面: 200x200mm");
+
+    let profile = CateProfileParam::SPRO(SProfileData {
+        refno: RefnoEnum::default(),
+        verts: h_beam_points.clone(),
+        frads: vec![0.0; h_beam_points.len()],
+        plin_pos: Vec2::ZERO,
+        plin_axis: Vec3::Y,
+        plax: Vec3::Y,
+        na_axis: Vec3::Z,
+    });
+
+    // 创建90度圆弧路径（半径1000mm，从X轴正方向开始）
+    use crate::prim_geo::spine::Arc3D;
+    let arc = Arc3D {
+        center: Vec3::ZERO,
+        radius: 1000.0,
+        angle: PI / 2.0, // 90度
+        start_pt: Vec3::X * 1000.0, // 从X轴正方向开始
+        clock_wise: false,
+        axis: Vec3::Z,
+        pref_axis: Vec3::Y,
+    };
+
+    let arc_path = SweepPath3D::from_arc(arc);
+    println!("  路径类型: 90度圆弧, 半径1000mm");
+
+    let sweep_solid = SweepSolid {
+        profile,
+        drns: None,
+        drne: None,
+        bangle: 0.0,
+        plax: Vec3::Y,
+        extrude_dir: DVec3::Z,
+        height: 0.0,
+        path: arc_path,
+        lmirror: false,
+    };
+
+    // 生成 CSG mesh
+    use crate::shape::pdms_shape::BrepShapeTrait;
+    match sweep_solid.gen_csg_shape() {
+        Ok(csg_mesh) => {
+            println!("  ✅ CSG Mesh 生成成功！");
+            println!("  顶点数: {}", csg_mesh.vertices.len());
+            println!("  三角形数: {}", csg_mesh.indices.len() / 3);
+
+            // 导出为 OBJ 文件
+            if let Err(e) = csg_mesh.export_obj(false, "test_output/h_beam_arc_sweep.obj") {
+                println!("  ⚠️  OBJ文件导出失败: {}", e);
+            } else {
+                println!("  ✅ OBJ文件导出成功: test_output/h_beam_arc_sweep.obj");
+                println!("  📐 可以在Blender/MeshLab中验证圆弧端面是否完整");
+            }
+        }
+        Err(e) => {
+            println!("  ❌ CSG Shape生成失败: {}", e);
+            panic!("H型钢圆弧扫描mesh生成失败");
+        }
+    }
+
+    println!("✅ H型钢圆弧扫描端面测试通过");
+}
+
+/// 测试H型钢沿多段路径扫描（验证 generate_multi_segment_sweep 端面修复）
+#[test]
+fn test_h_beam_multi_segment_sweep() {
+    println!("\n=== 测试H型钢多段路径扫描端面 ===");
+
+    // 创建H型钢截面
+    let h_beam_points = create_h_beam_profile();
+    println!("  H型钢截面: 200x200mm");
+
+    let profile = CateProfileParam::SPRO(SProfileData {
+        refno: RefnoEnum::default(),
+        verts: h_beam_points.clone(),
+        frads: vec![0.0; h_beam_points.len()],
+        plin_pos: Vec2::ZERO,
+        plin_axis: Vec3::Y,
+        plax: Vec3::Y,
+        na_axis: Vec3::Z,
+    });
+
+    // 创建多段路径：直线 + 圆弧 + 直线
+    use crate::prim_geo::spine::{Arc3D, SegmentPath};
+    
+    // 第一段：直线 500mm
+    let line1 = Line3D {
+        start: Vec3::ZERO,
+        end: Vec3::Z * 500.0,
+        is_spine: false,
+    };
+
+    // 第二段：90度圆弧，半径800mm（在YZ平面上）
+    let arc = Arc3D {
+        center: Vec3::new(800.0, 0.0, 500.0),
+        radius: 800.0,
+        angle: PI / 2.0,
+        start_pt: Vec3::new(0.0, 0.0, 500.0), // 从-Z方向开始
+        clock_wise: false,
+        axis: Vec3::Y,
+        pref_axis: Vec3::NEG_Z,
+    };
+
+    // 第三段：直线 500mm
+    let line2 = Line3D {
+        start: Vec3::new(800.0, 0.0, 500.0) + Vec3::X * 800.0,
+        end: Vec3::new(800.0, 0.0, 500.0) + Vec3::X * 800.0 + Vec3::Z * 500.0,
+        is_spine: false,
+    };
+
+    let segments = vec![
+        SegmentPath::Line(line1),
+        SegmentPath::Arc(arc),
+        SegmentPath::Line(line2),
+    ];
+
+    let multi_path = SweepPath3D::from_segments(segments);
+    println!("  路径类型: 3段混合路径 (直线-圆弧-直线)");
+
+    let sweep_solid = SweepSolid {
+        profile,
+        drns: None,
+        drne: None,
+        bangle: 0.0,
+        plax: Vec3::Y,
+        extrude_dir: DVec3::Z,
+        height: 0.0,
+        path: multi_path,
+        lmirror: false,
+    };
+
+    // 生成 CSG mesh
+    use crate::shape::pdms_shape::BrepShapeTrait;
+    match sweep_solid.gen_csg_shape() {
+        Ok(csg_mesh) => {
+            println!("  ✅ CSG Mesh 生成成功！");
+            println!("  顶点数: {}", csg_mesh.vertices.len());
+            println!("  三角形数: {}", csg_mesh.indices.len() / 3);
+
+            // 导出为 OBJ 文件
+            if let Err(e) = csg_mesh.export_obj(false, "test_output/h_beam_multi_segment_sweep.obj")
+            {
+                println!("  ⚠️  OBJ文件导出失败: {}", e);
+            } else {
+                println!("  ✅ OBJ文件导出成功: test_output/h_beam_multi_segment_sweep.obj");
+                println!("  📐 可以在Blender/MeshLab中验证多段路径端面是否完整");
+            }
+        }
+        Err(e) => {
+            println!("  ❌ CSG Shape生成失败: {}", e);
+            panic!("H型钢多段路径扫描mesh生成失败");
+        }
+    }
+
+    println!("✅ H型钢多段路径扫描端面测试通过");
+}

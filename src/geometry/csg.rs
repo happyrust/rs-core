@@ -284,14 +284,16 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
 
     // 构建端面的闭包函数（顶部或底部）
     let mut build_cap = |top: bool| {
-        let offset = vertices.len() as u32;
-        // 根据是顶部还是底部设置不同的z坐标、法向量和绕序
-        let (z, normal_z, winding) = if top {
-            (height, 1.0, (1, 0))
-        } else {
-            (0.0, -1.0, (0, 1))
-        };
+        // 根据是顶部还是底部设置不同的z坐标和法向量
+        let (z, normal_z) = if top { (height, 1.0) } else { (0.0, -1.0) };
 
+        // 先插入中心顶点
+        let center_index = vertices.len() as u32;
+        vertices.push([0.0, 0.0, z].into());
+        normals.push([0.0, 0.0, normal_z].into());
+
+        // 再插入圆周顶点
+        let rim_base = vertices.len() as u32;
         for i in 0..resolution {
             let theta = i as f32 * step_theta;
             let (sin, cos) = theta.sin_cos();
@@ -299,12 +301,19 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
             normals.push([0.0, 0.0, normal_z].into());
         }
 
-        for i in 1..(resolution - 1) {
-            indices.extend_from_slice(&[
-                offset,
-                offset + (i as u32) + (winding.1 as u32),
-                offset + (i as u32) + (winding.0 as u32),
-            ]);
+        // 使用扇形三角形生成端面索引
+        // 顶面：从外侧看为逆时针，底面：从外侧看为逆时针（法线向外）
+        for i in 0..(resolution - 1) {
+            let v0 = center_index;
+            let v1 = rim_base + i as u32;
+            let v2 = rim_base + i as u32 + 1;
+            if top {
+                // 顶部法线指向 +Z
+                indices.extend_from_slice(&[v0, v1, v2]);
+            } else {
+                // 底部法线指向 -Z，反转绕序
+                indices.extend_from_slice(&[v0, v2, v1]);
+            }
         }
     };
 

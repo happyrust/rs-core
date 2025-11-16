@@ -374,68 +374,62 @@ fn generate_arc_sweep(
         }
     }
 
-    // 添加起始端面
-    let start_tangent = arc_segment.tangent_at(0.0);
-    let start_center_idx = vertices.len() as u32;
-    let profile_center =
-        profile_points.iter().fold(Vec2::ZERO, |acc, &p| acc + p) / profile_points.len() as f32;
-
-    let (right, up) = {
-        let ref_vec = if start_tangent.y.abs() < 0.9 {
-            Vec3::Y
-        } else {
-            Vec3::X
+    // 添加起始端面和结束端面（使用三角剖分）
+    let cap_triangulation = triangulate_polygon(profile_points);
+    if let Some(cap) = cap_triangulation.as_ref() {
+        // 起始端面
+        let start_tangent = arc_segment.tangent_at(0.0);
+        let start_position = arc_segment.point_at(0.0);
+        let (right_start, up_start) = {
+            let ref_vec = if start_tangent.y.abs() < 0.9 {
+                Vec3::Y
+            } else {
+                Vec3::X
+            };
+            let right = ref_vec.cross(start_tangent).normalize();
+            let up = start_tangent.cross(right).normalize();
+            (right, up)
         };
-        let right = ref_vec.cross(start_tangent).normalize();
-        let up = start_tangent.cross(right).normalize();
-        (right, up)
-    };
 
-    let center_3d_start =
-        arc_segment.point_at(0.0) + right * profile_center.x + up * profile_center.y;
-    vertices.push(center_3d_start);
-    normals.push(-start_tangent);
+        append_cap(
+            cap,
+            start_position,
+            right_start,
+            up_start,
+            start_tangent,
+            -start_tangent,
+            true,
+            &mut vertices,
+            &mut normals,
+            &mut indices,
+        );
 
-    for i in 0..(n_profile - 1) {
-        indices.extend_from_slice(&[start_center_idx, i as u32, (i + 1) as u32]);
-    }
-    if profile_points.len() > 3 {
-        indices.extend_from_slice(&[start_center_idx, (n_profile - 1) as u32, 0]);
-    }
-
-    // 添加结束端面
-    let end_tangent = arc_segment.tangent_at(1.0);
-    let end_center_idx = vertices.len() as u32;
-    let (right_end, up_end) = {
-        let ref_vec = if end_tangent.y.abs() < 0.9 {
-            Vec3::Y
-        } else {
-            Vec3::X
+        // 结束端面
+        let end_tangent = arc_segment.tangent_at(1.0);
+        let end_position = arc_segment.point_at(1.0);
+        let (right_end, up_end) = {
+            let ref_vec = if end_tangent.y.abs() < 0.9 {
+                Vec3::Y
+            } else {
+                Vec3::X
+            };
+            let right = ref_vec.cross(end_tangent).normalize();
+            let up = end_tangent.cross(right).normalize();
+            (right, up)
         };
-        let right = ref_vec.cross(end_tangent).normalize();
-        let up = end_tangent.cross(right).normalize();
-        (right, up)
-    };
 
-    let center_3d_end =
-        arc_segment.point_at(1.0) + right_end * profile_center.x + up_end * profile_center.y;
-    vertices.push(center_3d_end);
-    normals.push(end_tangent);
-
-    let last_ring_base = (arc_segments * n_profile) as u32;
-    for i in 0..(n_profile - 1) {
-        indices.extend_from_slice(&[
-            end_center_idx,
-            last_ring_base + (i + 1) as u32,
-            last_ring_base + i as u32,
-        ]);
-    }
-    if profile_points.len() > 3 {
-        indices.extend_from_slice(&[
-            end_center_idx,
-            last_ring_base,
-            last_ring_base + (n_profile - 1) as u32,
-        ]);
+        append_cap(
+            cap,
+            end_position,
+            right_end,
+            up_end,
+            end_tangent,
+            end_tangent,
+            false,
+            &mut vertices,
+            &mut normals,
+            &mut indices,
+        );
     }
 
     Some(PlantMesh {
@@ -566,67 +560,62 @@ fn generate_multi_segment_sweep(
         }
     }
 
-    // 添加起始端面
-    let first_tangent = path_samples[0].1;
-    let start_center_idx = vertices.len() as u32;
-    let profile_center =
-        profile_points.iter().fold(Vec2::ZERO, |acc, &p| acc + p) / profile_points.len() as f32;
-
-    let (right, up) = {
-        let ref_vec = if first_tangent.y.abs() < 0.9 {
-            Vec3::Y
-        } else {
-            Vec3::X
+    // 添加起始端面和结束端面（使用三角剖分）
+    let cap_triangulation = triangulate_polygon(profile_points);
+    if let Some(cap) = cap_triangulation.as_ref() {
+        // 起始端面
+        let first_tangent = path_samples[0].1;
+        let first_position = path_samples[0].0;
+        let (right_start, up_start) = {
+            let ref_vec = if first_tangent.y.abs() < 0.9 {
+                Vec3::Y
+            } else {
+                Vec3::X
+            };
+            let right = ref_vec.cross(first_tangent).normalize();
+            let up = first_tangent.cross(right).normalize();
+            (right, up)
         };
-        let right = ref_vec.cross(first_tangent).normalize();
-        let up = first_tangent.cross(right).normalize();
-        (right, up)
-    };
 
-    let center_3d_start = path_samples[0].0 + right * profile_center.x + up * profile_center.y;
-    vertices.push(center_3d_start);
-    normals.push(-first_tangent);
+        append_cap(
+            cap,
+            first_position,
+            right_start,
+            up_start,
+            first_tangent,
+            -first_tangent,
+            true,
+            &mut vertices,
+            &mut normals,
+            &mut indices,
+        );
 
-    for i in 0..(n_profile - 1) {
-        indices.extend_from_slice(&[start_center_idx, i as u32, (i + 1) as u32]);
-    }
-    if profile_points.len() > 3 {
-        indices.extend_from_slice(&[start_center_idx, (n_profile - 1) as u32, 0]);
-    }
-
-    // 添加结束端面
-    let last_tangent = path_samples.last().unwrap().1;
-    let end_center_idx = vertices.len() as u32;
-    let (right_end, up_end) = {
-        let ref_vec = if last_tangent.y.abs() < 0.9 {
-            Vec3::Y
-        } else {
-            Vec3::X
+        // 结束端面
+        let last_tangent = path_samples.last().unwrap().1;
+        let last_position = path_samples.last().unwrap().0;
+        let (right_end, up_end) = {
+            let ref_vec = if last_tangent.y.abs() < 0.9 {
+                Vec3::Y
+            } else {
+                Vec3::X
+            };
+            let right = ref_vec.cross(last_tangent).normalize();
+            let up = last_tangent.cross(right).normalize();
+            (right, up)
         };
-        let right = ref_vec.cross(last_tangent).normalize();
-        let up = last_tangent.cross(right).normalize();
-        (right, up)
-    };
 
-    let center_3d_end =
-        path_samples.last().unwrap().0 + right_end * profile_center.x + up_end * profile_center.y;
-    vertices.push(center_3d_end);
-    normals.push(last_tangent);
-
-    let last_ring_base = ((path_samples.len() - 1) * n_profile) as u32;
-    for i in 0..(n_profile - 1) {
-        indices.extend_from_slice(&[
-            end_center_idx,
-            last_ring_base + (i + 1) as u32,
-            last_ring_base + i as u32,
-        ]);
-    }
-    if profile_points.len() > 3 {
-        indices.extend_from_slice(&[
-            end_center_idx,
-            last_ring_base,
-            last_ring_base + (n_profile - 1) as u32,
-        ]);
+        append_cap(
+            cap,
+            last_position,
+            right_end,
+            up_end,
+            last_tangent,
+            last_tangent,
+            false,
+            &mut vertices,
+            &mut normals,
+            &mut indices,
+        );
     }
 
     Some(PlantMesh {
