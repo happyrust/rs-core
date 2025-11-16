@@ -926,7 +926,7 @@ pub struct CataHashRefnoKV {
 
 ///PDMS元素结构体，表示PDMS数据库中的基本元素
 #[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component, SurrealValue)]
 pub struct PdmsElement {
     ///参考号（主键）
     #[serde_as(as = "DisplayFromStr")]

@@ -6,9 +6,11 @@ use super::query::save_material_value;
 use super::query::save_material_value_test;
 
 use crate::SUL_DB;
-use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+#[cfg(feature = "sql")]
+use crate::db_pool;
 use crate::{
-    RefU64, get_children_pes, get_pe, insert_into_table_with_chunks, query_filter_deep_children,
+    RefU64, get_children_pes, get_db_option, get_pe, insert_into_table_with_chunks,
+    query_filter_deep_children,
 };
 use crate::{RefnoEnum, init_test_surreal};
 use calamine::{RangeDeserializerBuilder, Reader, Xls, open_workbook};
@@ -152,7 +154,8 @@ pub async fn save_dq_material(refno: RefU64) -> Vec<JoinHandle<()>> {
             }
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return handles;
                 };

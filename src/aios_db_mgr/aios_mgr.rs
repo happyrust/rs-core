@@ -4,6 +4,8 @@ use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
+use crate::RefnoEnum;
+use tracing::info;
 use crate::{
     AttrMap, NamedAttrMap, RefU64, SUL_DB, SurlValue, SurrealQueryExt, get_children_ele_nodes,
     get_db_option, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world,
@@ -48,7 +50,8 @@ pub struct AiosDBMgr {
 
 impl AiosDBMgr {
     pub async fn init_from_db_option() -> anyhow::Result<Self> {
-        let config_file_name = std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
+        let config_file_name =
+            std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
         let s = Config::builder()
             .add_source(File::with_name(&config_file_name))
             .build()
@@ -257,6 +260,54 @@ impl PdmsDataInterface for AiosDBMgr {
             }
         }
         Ok(None)
+    }
+
+    async fn query_all_rooms(&self) -> anyhow::Result<Vec<PdmsElement>> {
+        let mut response = SUL_DB.query_response(r#"
+            SELECT 
+                id,
+                refno,
+                name,
+                noun,
+                owner,
+                description,
+                purp,
+                status
+            FROM pe 
+            WHERE noun IN ['ROOM', 'FRMW'] 
+            AND name != NONE
+            ORDER BY name
+        "#).await?;
+        
+        let rooms: Vec<PdmsElement> = response.take(0)?;
+        info!("🏠 查询到 {} 个房间", rooms.len());
+        Ok(rooms)
+    }
+
+    async fn query_room_elements(&self, room_refno: RefU64) -> anyhow::Result<Vec<PdmsElement>> {
+        let room_refno_enum: RefnoEnum = room_refno.into();
+        
+        let mut response = SUL_DB.query_response(&format!(r#"
+            SELECT 
+                id,
+                refno,
+                name,
+                noun,
+                owner,
+                description,
+                purp,
+                status,
+                solid,
+                (SELECT VALUE noun FROM pe WHERE refno = $parent.owner LIMIT 1) as owner_noun
+            FROM pe 
+            WHERE room_relate CONTAINS {}
+            AND solid = true
+            ORDER BY noun, name
+        "#, room_refno_enum.to_pe_key())).await?;
+        
+        let elements: Vec<PdmsElement> = response.take(0)?;
+        info!("🔍 房间 {} 查询到 {} 个元素", room_refno.0, elements.len());
+        Ok(elements)
     }
 }
 

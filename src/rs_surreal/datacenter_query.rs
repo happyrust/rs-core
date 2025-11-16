@@ -1,6 +1,5 @@
 use crate::RefU64;
 use crate::aios_db_mgr::PdmsDataInterface;
-use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 
 /// 获取材料编码，通过分割spre或hstu
 ///
@@ -8,7 +7,7 @@ use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 pub async fn get_spre_material_code(
     refno: RefU64,
     foreign_name: &str,
-    aios_mgr: &AiosDBMgr,
+    aios_mgr: &dyn PdmsDataInterface,
 ) -> Option<String> {
     let Ok(Some(spre_attr)) = aios_mgr.get_foreign_attr(refno, foreign_name).await else {
         return None;

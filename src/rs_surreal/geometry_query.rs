@@ -201,7 +201,7 @@ pub async fn query_inst_geo_ids(
 ///
 /// # 参数
 ///
-/// * `inst_geo_ids` - inst_geo 的 Thing ID 字符串列表（逗号分隔）
+/// * `inst_geo_ids` - inst_geo 的 Thing ID 字符串列表（逗号分隔的数字 ID）
 ///
 /// # 返回值
 ///
@@ -209,9 +209,16 @@ pub async fn query_inst_geo_ids(
 pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeoParam>> {
     use crate::SUL_DB;
 
+    // 将逗号分隔的数字 ID 转换为 Thing ID 格式：inst_geo:⟨id⟩
+    let thing_ids = inst_geo_ids
+        .split(',')
+        .map(|id| format!("inst_geo:⟨{}⟩", id.trim()))
+        .collect::<Vec<_>>()
+        .join(", ");
+
     let sql = format!(
         "select id, param from [{}] where param != NONE",
-        inst_geo_ids
+        thing_ids
     );
 
     let mut result = SUL_DB.query_take(&sql, 0).await?;

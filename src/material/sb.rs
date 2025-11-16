@@ -6,10 +6,11 @@ use super::query::save_material_value;
 use super::query::save_material_value_test;
 
 use crate::SUL_DB;
-use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+#[cfg(feature = "sql")]
+use crate::db_pool;
 use crate::init_test_surreal;
 use crate::utils::RecordIdExt;
-use crate::{RefU64, get_pe, insert_into_table_with_chunks, query_filter_deep_children};
+use crate::{RefU64, get_db_option, get_pe, insert_into_table_with_chunks, query_filter_deep_children};
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -57,7 +58,8 @@ pub async fn save_sb_material_dzcl(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return handles;
                 };

@@ -170,17 +170,87 @@ pub async fn query_type_refnos_by_dbnums(
     Ok(result)
 }
 
+/// 统计指定 Noun 在全库范围内的实例数量
+pub async fn count_refnos_by_noun(noun: &str) -> anyhow::Result<u64> {
+    let sql = format!(
+        "select value count() from only {noun} group all limit 1"
+    );
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let count: Option<u64> = response.take(0)?;
+    Ok(count.unwrap_or(0))
+}
+
+/// 按照 LIMIT / START 分页查询指定 Noun 的实例列表
+pub async fn query_refnos_by_noun_page(
+    noun: &str,
+    start: usize,
+    limit: usize,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+
+    let sql = format!(
+        "select value id from {noun} order by id limit {limit} start {start}"
+    );
+
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let refnos: Vec<RefnoEnum> = response.take(0)?;
+    Ok(refnos)
+}
+
+/// 根据 has_children 条件过滤 refnos
+///
+/// # 参数
+/// * `refnos` - 待过滤的 refno 列表
+/// * `has_children` - true 表示只保留有子节点的，false 表示只保留没有子节点的
+///
+/// # 返回
+/// 过滤后的 refno 列表
+async fn filter_refnos_by_children(
+    refnos: Vec<RefnoEnum>,
+    has_children: bool,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    if refnos.is_empty() {
+        return Ok(refnos);
+    }
+
+    // 分批处理，每批最多 500 个，避免 SQL 语句过长
+    const BATCH_SIZE: usize = 500;
+    let mut result = Vec::new();
+
+    for chunk in refnos.chunks(BATCH_SIZE) {
+        let pe_keys: Vec<String> = chunk
+            .iter()
+            .map(|r| r.to_pe_key())
+            .collect();
+        
+        let pe_keys_str = pe_keys.join(", ");
+        let sql = format!(
+            "select value id from [{}] where array::len(children) {} 0",
+            pe_keys_str,
+            if has_children { ">" } else { "=" }
+        );
+
+        let mut response = SUL_DB.query_response(&sql).await?;
+        let mut filtered_refnos: Vec<RefnoEnum> = response.take(0)?;
+        result.append(&mut filtered_refnos);
+    }
+    
+    Ok(result)
+}
+
 /// 通过dbnum过滤指定类型的参考号
 ///
 /// # 参数
 /// * `nouns` - 要查询的类型名称列表
 /// * `dbnum` - 数据库编号
 /// * `has_children` - 是否需要有children，方便跳过一些不必要的节点
-/// * `only_history` - 是否只查询历史记录（暂未实现）
+/// * `only_history` - 是否只查询历史记录
 ///
 /// # 实现说明
-/// 直接查询 pe 表，使用 `noun IN [...]` 条件一次性获取所有类型的数据，
-/// 比循环查询多个类型表更高效。
+/// 使用 SurrealDB 的多表查询语法，直接从类型表（如 ZONE、PLOO 等）查询，
+/// 使用逗号分隔的表名实现一次性查询多个类型。
 ///
 /// # 示例
 /// ```ignore
@@ -217,51 +287,66 @@ pub async fn query_type_refnos_by_dbnum_with_filter(
     only_history: bool,
     name_filter: Option<&NameFilter>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
+    // 构建表名列表（支持历史表）
+    let tables: Vec<String> = nouns
+        .iter()
+        .map(|noun| {
+            if only_history {
+                format!("{noun}_H")
+            } else {
+                noun.to_string()
+            }
+        })
+        .collect();
+    
+    let tables_str = tables.join(", ");
+
+    // 如果有名称过滤，使用多表查询语法
     if let Some(filter) = name_filter {
         if let Some(keyword) = filter.normalized_keyword() {
-            let mut result = Vec::new();
-            for noun in nouns {
-                let mut sql = format!(
-                    "select value REFNO from {noun} where REFNO.dbnum = $dbnum and NAME != NONE"
-                );
+            let mut sql = format!(
+                "select value REFNO from {} where REFNO.dbnum = $dbnum and NAME != NONE",
+                tables_str
+            );
 
-                if filter.case_sensitive {
-                    sql.push_str(" and string::contains(NAME, $keyword)");
-                } else {
-                    sql.push_str(" and string::contains(string::lowercase(NAME), $keyword)");
-                }
-
-                let kw = keyword.clone();
-                let mut query = SUL_DB
-                    .query(&sql)
-                    .bind(("dbnum", dbnum))
-                    .bind(("keyword", kw));
-
-                let mut response = query.await?;
-                let mut refnos: Vec<RefnoEnum> = response.take(0)?;
-                result.append(&mut refnos);
+            if filter.case_sensitive {
+                sql.push_str(" and string::contains(NAME, $keyword)");
+            } else {
+                sql.push_str(" and string::contains(string::lowercase(NAME), $keyword)");
             }
-            return Ok(result);
+
+            let kw = keyword.clone();
+            let mut query = SUL_DB
+                .query(&sql)
+                .bind(("dbnum", dbnum))
+                .bind(("keyword", kw));
+
+            let mut response = query.await?;
+            let refnos: Vec<RefnoEnum> = response.take(0)?;
+            
+            // 如果需要过滤 has_children，通过 pe 表来过滤
+            return if let Some(has_children_flag) = has_children {
+                filter_refnos_by_children(refnos, has_children_flag).await
+            } else {
+                Ok(refnos)
+            };
         }
     }
 
-    let nouns_array = nouns
-        .iter()
-        .map(|n| format!("'{}'", n))
-        .collect::<Vec<_>>()
-        .join(", ");
+    // 基本的多表查询：从类型表查询 REFNO
+    let mut sql = format!(
+        "select value REFNO from {} where REFNO.dbnum = $dbnum",
+        tables_str
+    );
 
-    let mut sql =
-        format!("SELECT value id FROM pe WHERE dbnum = {dbnum} AND noun IN [{nouns_array}]");
+    let mut query = SUL_DB.query(&sql).bind(("dbnum", dbnum));
+    let mut response = query.await?;
+    let mut refnos: Vec<RefnoEnum> = response.take(0)?;
 
-    match has_children {
-        Some(true) => sql.push_str(" AND array::len(children) > 0"),
-        Some(false) => sql.push_str(" AND (children == none OR array::len(children) = 0)"),
-        None => {}
+    // 如果需要过滤 has_children，通过 pe 表来过滤
+    if let Some(has_children_flag) = has_children {
+        refnos = filter_refnos_by_children(refnos, has_children_flag).await?;
     }
-
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let refnos: Vec<RefnoEnum> = response.take(0)?;
 
     Ok(refnos)
 }

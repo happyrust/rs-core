@@ -1,9 +1,13 @@
 use crate::pdms_types::{EleTreeNode, PdmsElement};
+use crate::room::algorithm::RoomInfo;
 use crate::{AttrMap, NamedAttrMap, RefU64};
 use async_trait::async_trait;
 use bevy_transform::prelude::Transform;
+use std::collections::HashMap;
+use std::collections::BTreeSet;
 
 pub mod aios_mgr;
+pub mod provider_impl;
 
 #[async_trait]
 pub trait PdmsDataInterface {
@@ -40,4 +44,8 @@ pub trait PdmsDataInterface {
     async fn get_next(&self, refno: RefU64) -> anyhow::Result<RefU64>;
     /// 获取房间号,包括BRAN以及EQUI
     async fn get_room_code(&self, refno: RefU64) -> anyhow::Result<Option<String>>;
+    /// 查询所有房间
+    async fn query_all_rooms(&self) -> anyhow::Result<Vec<PdmsElement>>;
+    /// 查询房间内的元素
+    async fn query_room_elements(&self, room_refno: RefU64) -> anyhow::Result<Vec<PdmsElement>>;
 }

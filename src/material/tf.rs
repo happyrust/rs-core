@@ -3,11 +3,13 @@ use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::save_material_value;
 use crate::SUL_DB;
-use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
+#[cfg(feature = "sql")]
+use crate::db_pool;
 use crate::init_test_surreal;
 use crate::utils::take_vec;
 use crate::{
-    NamedAttrValue, RefU64, get_pe, insert_into_table_with_chunks, query_ele_filter_deep_children,
+    NamedAttrValue, RefU64, get_db_option, get_pe, insert_into_table_with_chunks,
+    query_ele_filter_deep_children,
 };
 use serde_derive::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
@@ -39,7 +41,8 @@ pub async fn save_tf_material_hvac(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return handles;
                 };

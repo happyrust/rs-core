@@ -461,11 +461,13 @@ pub async fn delete_all_model_data() -> anyhow::Result<()> {
     let mut sql = "BEGIN TRANSACTION;\n".to_string();
 
     for table in &tables {
-        sql.push_str(&format!("delete select value id from {};\n", table));
+        sql.push_str(&format!("delete {};\n", table));
     }
 
     sql.push_str("COMMIT TRANSACTION;");
 
-    SUL_DB.query(sql).await?;
+    println!("Delete Sql is: \n {}", &sql);
+
+    SUL_DB.query(sql).await.unwrap();
     Ok(())
 }

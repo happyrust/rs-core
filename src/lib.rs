@@ -87,6 +87,7 @@ pub mod transform;
 pub mod test;
 
 pub mod db_adapter;
+pub mod db_pool;
 #[cfg(feature = "sea-orm")]
 pub mod orm;
 pub mod query_provider;
@@ -116,6 +117,8 @@ pub mod expression;
 pub mod utils;
 
 pub mod debug_macros;
+
+pub mod color_scheme;
 
 #[cfg(feature = "web_server")]
 pub mod web_server;
@@ -150,9 +153,9 @@ pub fn get_db_option() -> &'static DbOption {
     static INSTANCE: OnceCell<DbOption> = OnceCell::new();
     INSTANCE.get_or_init(|| {
         use config::{Config, ConfigError, Environment, File};
-        
+
         let config_file_name = get_config_file_name();
-        
+
         let s = Config::builder()
             .add_source(File::with_name(&config_file_name))
             .build()
@@ -283,11 +286,22 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
 
 pub async fn init_surreal() -> anyhow::Result<()> {
     let config_file_name = get_config_file_name();
+    println!("🔧 正在初始化数据库连接...");
+    println!("📄 使用配置文件: {}.toml", config_file_name);
+
     let s = Config::builder()
         .add_source(File::with_name(&config_file_name))
         .build()
         .unwrap();
     let db_option: DbOption = s.try_deserialize()?;
+
+    // 打印服务器连接信息
+    let connection_str = db_option.get_version_db_conn_str();
+    println!("🌐 连接服务器: {}", connection_str);
+    println!("🏷️  命名空间: {}", db_option.surreal_ns);
+    println!("💾 数据库名: {}", db_option.project_name);
+    println!("👤 用户名: {}", db_option.v_user);
+
     // 创建配置
     let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
     SUL_DB
@@ -304,6 +318,9 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             password: db_option.v_password.clone(),
         })
         .await?;
+
+    println!("✅ 数据库连接成功！");
+
     // Define common functions (使用 None 从配置文件自动读取路径)
     define_common_functions(None)
         .await

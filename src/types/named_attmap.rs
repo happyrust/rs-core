@@ -678,9 +678,11 @@ impl NamedAttrMap {
         let mut records_map: IndexMap<String, Vec<RefnoEnum>> = IndexMap::new();
         let type_name = self.get_type();
         let refno = self.get_refno_or_default();
+        let dbnum = refno.refno().get_0();
         // map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
         let id_str = format!("['{}',{}]", refno.refno(), sesno);
         map.insert("TYPE".into(), type_name.into());
+        map.insert("dbnum".into(), serde_json::Value::from(dbnum));
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
@@ -775,8 +777,10 @@ impl NamedAttrMap {
         let mut records_map: IndexMap<String, Vec<RefU64>> = IndexMap::new();
         let type_name = self.get_type();
         let refno = self.get_refno_or_default();
+        let dbnum = refno.refno().get_0();
         map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
         map.insert("TYPE".into(), type_name.into());
+        map.insert("dbnum".into(), serde_json::Value::from(dbnum));
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
@@ -858,9 +862,11 @@ impl NamedAttrMap {
 
         let type_name = self.get_type();
         let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
+        let dbnum = refno.refno().get_0();
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         map.insert("id".into(), refno.to_string().into());
         map.insert("TYPE".into(), type_name.clone().into());
+        map.insert("dbnum".into(), serde_json::Value::from(dbnum));
 
         for key in excludes {
             map.remove(*key);

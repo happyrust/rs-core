@@ -433,7 +433,10 @@ pub async fn is_owner_type_in(refno: RefnoEnum, owner_types: &[&str]) -> anyhow:
     key = "(RefnoEnum, String)",
     convert = r#"{ (refno, owner_type.to_string()) }"#
 )]
-pub async fn get_owner_refno_by_type(refno: RefnoEnum, owner_type: &str) -> anyhow::Result<Option<RefnoEnum>> {
+pub async fn get_owner_refno_by_type(
+    refno: RefnoEnum,
+    owner_type: &str,
+) -> anyhow::Result<Option<RefnoEnum>> {
     let sql = format!(
         "select value owner from only {} where owner.noun = '{}' limit 1",
         refno.to_pe_key(),
@@ -470,7 +473,10 @@ pub async fn get_owner_refno_by_type(refno: RefnoEnum, owner_type: &str) -> anyh
     key = "(RefnoEnum, String)",
     convert = r#"{ (refno, format!("{:?}", owner_types)) }"#
 )]
-pub async fn get_owner_refno_by_types(refno: RefnoEnum, owner_types: &[&str]) -> anyhow::Result<Option<RefnoEnum>> {
+pub async fn get_owner_refno_by_types(
+    refno: RefnoEnum,
+    owner_types: &[&str],
+) -> anyhow::Result<Option<RefnoEnum>> {
     if owner_types.is_empty() {
         return Ok(None);
     }
@@ -515,8 +521,7 @@ pub async fn get_owner_refnos_by_type(
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
     let sql = format!(
         "select value owner from [{}] where owner.noun = '{}'",
-        pe_keys,
-        owner_type
+        pe_keys, owner_type
     );
     SUL_DB.query_take::<Vec<Option<RefnoEnum>>>(&sql, 0).await
 }
@@ -558,8 +563,7 @@ pub async fn get_owner_refnos_by_types(
     let types_str = owner_types.iter().map(|t| format!("'{}'", t)).join(",");
     let sql = format!(
         "array::distinct(select value owner from [{}] where owner.noun IN [{}])",
-        pe_keys,
-        types_str
+        pe_keys, types_str
     );
     println!("DEBUG: get_owner_refnos_by_types SQL: {}", sql);
     SUL_DB.query_take::<Vec<Option<RefnoEnum>>>(&sql, 0).await
@@ -1653,12 +1657,7 @@ pub async fn query_noun_hierarchy(
         for parent_refno in parent_refnos {
             let name_filter_clause = sanitized_filter
                 .as_ref()
-                .map(|filter| {
-                    format!(
-                        "        AND string::contains(name ?? '', '{}')",
-                        filter
-                    )
-                })
+                .map(|filter| format!("        AND string::contains(name ?? '', '{}')", filter))
                 .unwrap_or_default();
 
             let sql = format!(
@@ -1686,9 +1685,7 @@ pub async fn query_noun_hierarchy(
             // 打印 SQL 以便调试
             println!("执行 SQL:\n{}", sql);
 
-            let mut items = SUL_DB
-                .query_take::<Vec<NounHierarchyItem>>(&sql, 0)
-                .await?;
+            let mut items = SUL_DB.query_take::<Vec<NounHierarchyItem>>(&sql, 0).await?;
             aggregated_items.append(&mut items);
         }
 
@@ -1788,13 +1785,9 @@ mod test {
                 dbg!(&items);
 
                 if let Some(first) = items.first() {
-                    let scoped = crate::query_noun_hierarchy(
-                        "PIPE",
-                        None,
-                        Some(vec![first.owner]),
-                    )
-                    .await
-                    .unwrap();
+                    let scoped = crate::query_noun_hierarchy("PIPE", None, Some(vec![first.owner]))
+                        .await
+                        .unwrap();
                     assert!(
                         scoped.iter().all(|item| item.owner == first.owner),
                         "Scoped query返回的所有元素都应该属于同一父节点"

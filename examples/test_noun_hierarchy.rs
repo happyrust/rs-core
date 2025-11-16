@@ -1,19 +1,19 @@
-use aios_core::{init_surreal, query_noun_hierarchy, RefnoEnum};
+use aios_core::{RefnoEnum, init_surreal, query_noun_hierarchy};
 use chrono::{Local, TimeZone};
 
 /// query_noun_hierarchy 函数完整测试案例
-/// 
+///
 /// 本测试程序演示了 query_noun_hierarchy 函数的所有使用方式：
 /// 1. 基础查询：根据名词类型和名称过滤查询
 /// 2. 指定父节点查询：查询特定父节点下的子节点
 /// 3. 组合查询：指定父节点 + 名称过滤
 /// 4. 多父节点查询：同时查询多个父节点下的子节点
-/// 
+///
 /// 运行方式：
 /// ```bash
 /// cargo run --example test_noun_hierarchy
 /// ```
-/// 
+///
 /// 注意事项：
 /// - 指定父节点查询时，父节点ID必须是真实存在的节点
 /// - 可以通过先运行基础查询获取一些节点ID，然后用这些ID作为父节点进行测试
@@ -74,10 +74,13 @@ async fn main() -> anyhow::Result<()> {
     // 1. 先运行基础查询获取一些节点ID
     // 2. 使用已知的设备或区域ID作为父节点
     // 3. 从其他查询结果中获取父节点ID
-    
+
     // 这里我们使用一个示例父节点ID（实际使用时请替换为真实存在的ID）
     let parent_refno = RefnoEnum::from("21491_18944"); // 示例：使用测试1中出现的所有者ID
-    println!("🔍 查询父节点 {:} 下的所有 PIPE 类型记录...\n", parent_refno);
+    println!(
+        "🔍 查询父节点 {:} 下的所有 PIPE 类型记录...\n",
+        parent_refno
+    );
     println!("💡 提示：如果返回空结果，说明该父节点下没有 PIPE 类型的子节点\n");
 
     let result_with_parent = query_noun_hierarchy("PIPE", None, Some(vec![parent_refno])).await;
@@ -123,12 +126,16 @@ async fn main() -> anyhow::Result<()> {
     // 1. 在特定设备或区域内查找特定名称的组件
     // 2. 精确定位某个父节点下的特定子节点
     // 3. 减少查询结果范围，提高查询效率
-    
+
     let parent_refno2 = RefnoEnum::from("21491_18944"); // 使用相同的父节点
-    println!("🔍 查询父节点 {:} 下名称包含 'B1' 的记录...\n", parent_refno2);
+    println!(
+        "🔍 查询父节点 {:} 下名称包含 'B1' 的记录...\n",
+        parent_refno2
+    );
     println!("💡 提示：这是最常用的查询方式之一，结合了层级关系和名称匹配\n");
 
-    let result_with_filter = query_noun_hierarchy("PIPE", Some("火车"), Some(vec![parent_refno2])).await;
+    let result_with_filter =
+        query_noun_hierarchy("PIPE", Some("火车"), Some(vec![parent_refno2])).await;
 
     match result_with_filter {
         Ok(items) => {
@@ -158,10 +165,10 @@ async fn main() -> anyhow::Result<()> {
     // 1. 批量查询多个设备或区域下的特定类型组件
     // 2. 汇总多个父节点的子节点信息
     // 3. 提高查询效率，避免多次单独查询
-    
+
     let parent_refnos = vec![
-        RefnoEnum::from("21900/1040"),  // 第一个父节点
-        RefnoEnum::from("30101/21"),    // 第二个父节点
+        RefnoEnum::from("21900/1040"), // 第一个父节点
+        RefnoEnum::from("30101/21"),   // 第二个父节点
     ];
     println!("🔍 查询多个父节点下的所有 EQUIPMENT 记录...\n");
     println!("💡 提示：这种方式可以一次性获取多个父节点的子节点，提高查询效率\n");
@@ -197,13 +204,13 @@ async fn main() -> anyhow::Result<()> {
     println!("2. 指定父节点查询：查询特定父节点下的子节点");
     println!("3. 组合查询：指定父节点 + 名称过滤");
     println!("4. 多父节点查询：同时查询多个父节点下的子节点");
-    
+
     println!("\n💡 使用建议：");
     println!("- 在实际使用时，请确保父节点ID真实存在");
     println!("- 可以通过基础查询先获取一些节点ID，然后作为父节点进行测试");
     println!("- 多父节点查询可以显著提高批量查询的效率");
     println!("- 名称过滤支持模糊匹配，不区分大小写");
-    
+
     println!("\n🔧 调试提示：");
     println!("- 如果查询返回空结果，检查父节点ID是否存在");
     println!("- 查看控制台输出的SQL语句，了解实际的查询逻辑");

@@ -56,6 +56,15 @@ pub async fn init_surreal_with_retry(db_option: &DbOption) -> Result<()> {
         .validate_connection_config()
         .map_err(|e| anyhow::anyhow!("配置验证失败: {}", e))?;
 
+    // 打印配置信息
+    let config_file_name =
+        std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
+    println!("📄 使用配置文件: {}.toml", config_file_name);
+    println!("🌐 连接服务器: {}", db_option.get_version_db_conn_str());
+    println!("🏷️  命名空间: {}", db_option.surreal_ns);
+    println!("💾 数据库名: {}", db_option.project_name);
+    println!("👤 用户名: {}", db_option.v_user);
+
     let max_retries = 3;
     let mut last_error = None;
 

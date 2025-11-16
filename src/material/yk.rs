@@ -5,15 +5,16 @@ use super::query::save_material_value;
 #[cfg(feature = "sql")]
 use super::query::save_material_value_test;
 use crate::aios_db_mgr::PdmsDataInterface;
-use crate::aios_db_mgr::aios_mgr::{self, AiosDBMgr};
+#[cfg(feature = "sql")]
+use crate::db_pool;
 use crate::init_test_surreal;
 use crate::material::get_refnos_belong_major;
 use crate::material::gy::MaterialGyData;
 use crate::pe::SPdmsElement;
 use crate::utils::take_vec;
 use crate::{
-    RefU64, RefnoEnum, get_pe, insert_into_table_with_chunks, query_filter_ancestors,
-    query_filter_deep_children,
+    RefU64, RefnoEnum, get_db_option, get_pe, insert_into_table_with_chunks,
+    query_filter_ancestors, query_filter_deep_children,
 };
 use crate::{SUL_DB, SurrealQueryExt};
 use anyhow::anyhow;
@@ -112,7 +113,8 @@ pub async fn save_yk_material_dzcl(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return handles;
                 };
@@ -172,7 +174,8 @@ pub async fn save_yk_material_pipe(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return handles;
                 };
@@ -232,7 +235,8 @@ pub async fn save_yk_material_equi(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return handles;
                 };
@@ -447,7 +451,7 @@ struct BelongGyValvResponse {
 /// 查找仪控管段所属工艺管道的根阀
 pub async fn query_yk_bran_belong_gy_valv_name(
     mut bran: RefU64,
-    aios_mgr: &AiosDBMgr,
+    aios_mgr: &dyn PdmsDataInterface,
 ) -> anyhow::Result<Option<(String, String)>> {
     for _ in 0..5 {
         let mut sql = format!("select id,noun ,name?:'' as name, string::contains(fn::find_ancestor_type(id,'SITE').name?:'','PIPE') as site,
@@ -503,7 +507,7 @@ pub async fn query_yk_bran_belong_gy_valv_name(
 /// 查找仪控管段所属工艺管道或设备
 pub async fn query_yk_bran_belong_gy_pipe_name(
     mut bran: RefU64,
-    aios_mgr: &AiosDBMgr,
+    aios_mgr: &dyn PdmsDataInterface,
 ) -> anyhow::Result<Option<SPdmsElement>> {
     loop {
         // 获取href
@@ -545,7 +549,11 @@ pub async fn query_yk_bran_belong_gy_pipe_name(
 
 #[tokio::test]
 async fn test_query_yk_bran_belong_gy_pipe_name() -> anyhow::Result<()> {
-    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    use crate::aios_db_mgr::provider_impl::ProviderPdmsInterface;
+    use crate::query_provider::QueryRouter;
+    use std::sync::Arc;
+    let provider = QueryRouter::surreal_only()?;
+    let aios_mgr = ProviderPdmsInterface::new(Arc::new(provider));
     let refno = RefU64::from_str("24381/177397").unwrap();
     let r = query_yk_bran_belong_gy_valv_name(refno, &aios_mgr).await?;
     dbg!(&r);

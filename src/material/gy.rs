@@ -2,12 +2,13 @@
 use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::{save_material_data_to_mysql, save_two_material_data_to_mysql};
-use crate::aios_db_mgr::aios_mgr::{self, AiosDBMgr};
 use crate::material::define_core_material_surreal_funtions;
 #[cfg(feature = "sql")]
 use crate::material::query::save_material_value_test;
+#[cfg(feature = "sql")]
+use crate::db_pool;
 use crate::{
-    RefU64, SUL_DB, get_pe, init_test_surreal, insert_into_table_with_chunks,
+    RefU64, SUL_DB, get_db_option, get_pe, init_test_surreal, insert_into_table_with_chunks,
     query_filter_deep_children,
 };
 use anyhow::anyhow;
@@ -147,7 +148,8 @@ pub async fn save_gy_material_dzcl(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return vec![];
                 };
@@ -210,7 +212,8 @@ pub async fn save_gy_material_equi(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return vec![];
                 };
@@ -267,7 +270,8 @@ pub async fn save_gy_material_valv(refno: RefU64) -> Vec<JoinHandle<()>> {
             handles.push(task);
             #[cfg(feature = "sql")]
             {
-                let Ok(pool) = AiosDBMgr::get_project_pool().await else {
+                let db_option = get_db_option();
+                let Ok(pool) = db_pool::get_project_pool(&db_option).await else {
                     dbg!("无法连接到数据库");
                     return vec![];
                 };

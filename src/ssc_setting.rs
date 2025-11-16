@@ -1,10 +1,9 @@
 use crate::aios_db_mgr::PdmsDataInterface;
-use crate::aios_db_mgr::aios_mgr::AiosDBMgr;
 use crate::options::DbOption;
 use crate::pdms_types::UdaMajorType::S;
 use crate::pdms_types::{PdmsElement, PdmsNodeTrait};
 use crate::pe::SPdmsElement;
-use crate::room::algorithm::{RoomInfo, query_all_room_name};
+use crate::room::algorithm::{RoomInfo, query_all_room_infos, query_room_codes_of_arch};
 use crate::table_const::{PBS_OWNER, PBS_TABLE, PDMS_MAJOR};
 use crate::tool::hash_tool::{hash_str, hash_two_str};
 use crate::types::*;
@@ -189,15 +188,18 @@ pub async fn gen_pdms_major_table() -> anyhow::Result<()> {
 }
 
 /// 设置site和zone所属的专业
-pub async fn set_pdms_major_code(aios_mgr: &AiosDBMgr) -> anyhow::Result<()> {
+pub async fn set_pdms_major_code(
+    aios_mgr: &dyn PdmsDataInterface,
+    mdb_name: &str,
+) -> anyhow::Result<()> {
     // 读取专业配置表
     let major_codes = get_room_level_from_excel_refactor().await?.name_code_map;
     // 找到所有的site和zone
     let mut site_children_map = HashMap::new();
-    let mdb = if aios_mgr.db_option.mdb_name.starts_with("/") {
-        aios_mgr.db_option.mdb_name.clone()
+    let mdb = if mdb_name.starts_with("/") {
+        mdb_name.to_string()
     } else {
-        format!("/{}", aios_mgr.db_option.mdb_name)
+        format!("/{}", mdb_name)
     };
     let sites = get_mdb_world_site_pes(mdb, DBType::DESI).await?;
     let mut site_name_map = HashMap::new();
@@ -533,20 +535,20 @@ pub async fn set_pbs_room_node(
 ) -> anyhow::Result<HashMap<String, BTreeSet<RoomInfo>>> {
     let mut result = Vec::new();
     let mut relate_result = Vec::new();
-    let rooms = query_all_room_name().await?;
+    let rooms: HashMap<String, BTreeSet<RoomInfo>> = query_room_codes_of_arch().await?;
     let mut name_set = HashSet::new();
     name_set.insert("一号机组".to_string());
     let first_jizhu: RecordId =
         ("pbs".to_string(), PbsElement::id("一号机组").to_string()).into_record_id();
     // 将项目中所有的房间，通过厂房 、 层位 、 房间号进行排列和存储
-    for (factory_idx, (factory, room)) in rooms.clone().into_iter().enumerate() {
+    for (factory_idx, (factory, room_set)) in rooms.clone().into_iter().enumerate() {
         let factory_hash = PbsElement::id(&factory).to_string();
         let factory_id: RecordId = ("pbs".to_string(), factory_hash).into_record_id();
         // 存放厂房
         result.push(PbsElement {
             id: factory_id.clone(),
             owner: first_jizhu.clone(),
-            name: factory.clone(),
+            name: factory.to_string(),
             ..Default::default()
         });
         relate_result.push(
@@ -592,7 +594,7 @@ pub async fn set_pbs_room_node(
         );
         // 存放层位以及房间信息
         let mut level_map = HashSet::new();
-        for (idx, r) in room.into_iter().enumerate() {
+        for (idx, r) in room_set.into_iter().enumerate() {
             let level = r.name[1..2].to_string(); // 房间号第二位就是层位,之前已经做过长度的判断，所以直接切片
             let Ok(level_num) = level.parse::<u32>() else {
                 continue;
@@ -625,7 +627,7 @@ pub async fn set_pbs_room_node(
                 id: room_id.clone(),
                 owner: level_id.clone(),
                 name: r.name,
-                refno: Some(r.refno),
+                refno: Some(r.id.into()),
                 noun: Some("FRMW".to_string()),
                 ..Default::default()
             });
@@ -1281,8 +1283,14 @@ pub fn find_supp_fix_room_code(name: &str) -> Option<[String; 2]> {
 
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
-    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
-    set_pdms_major_code(&aios_mgr).await?;
+    use crate::aios_db_mgr::provider_impl::ProviderPdmsInterface;
+    use crate::query_provider::QueryRouter;
+    use crate::get_db_option;
+    use std::sync::Arc;
+    let provider = QueryRouter::surreal_only()?;
+    let aios_mgr = ProviderPdmsInterface::new(Arc::new(provider));
+    let db_option = get_db_option();
+    set_pdms_major_code(&aios_mgr, &db_option.mdb_name).await?;
     let mut handles = vec![];
     set_pbs_fixed_node(&mut handles).await?;
     let rooms = set_pbs_room_node(&mut handles).await?;
@@ -1294,14 +1302,22 @@ async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_set_pdms_major_code() -> anyhow::Result<()> {
-    let aios_mgr = AiosDBMgr::init_from_db_option().await?;
+    use crate::aios_db_mgr::provider_impl::ProviderPdmsInterface;
+    use crate::query_provider::QueryRouter;
+    use std::sync::Arc;
+    let provider = QueryRouter::surreal_only()?;
+    let _aios_mgr = ProviderPdmsInterface::new(Arc::new(provider));
 
     Ok(())
 }
 
 #[tokio::test]
 async fn test_set_pbs_room_node() -> anyhow::Result<()> {
-    AiosDBMgr::init_from_db_option().await?;
+    use crate::aios_db_mgr::provider_impl::ProviderPdmsInterface;
+    use crate::query_provider::QueryRouter;
+    use std::sync::Arc;
+    let provider = QueryRouter::surreal_only()?;
+    let _aios_mgr = ProviderPdmsInterface::new(Arc::new(provider));
     // set_pbs_node().await?;
     Ok(())
 }
