@@ -216,10 +216,7 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
         .collect::<Vec<_>>()
         .join(", ");
 
-    let sql = format!(
-        "select id, param from [{}] where param != NONE",
-        thing_ids
-    );
+    let sql = format!("select id, param from [{}] where param != NONE", thing_ids);
 
     let mut result = SUL_DB.query_take(&sql, 0).await?;
 

@@ -1284,8 +1284,8 @@ pub fn find_supp_fix_room_code(name: &str) -> Option<[String; 2]> {
 #[tokio::test]
 async fn test_set_pbs_fixed_node() -> anyhow::Result<()> {
     use crate::aios_db_mgr::provider_impl::ProviderPdmsInterface;
-    use crate::query_provider::QueryRouter;
     use crate::get_db_option;
+    use crate::query_provider::QueryRouter;
     use std::sync::Arc;
     let provider = QueryRouter::surreal_only()?;
     let aios_mgr = ProviderPdmsInterface::new(Arc::new(provider));

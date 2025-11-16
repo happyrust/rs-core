@@ -89,13 +89,7 @@ impl Spine3D {
 
 /// 基础路径段：直线或圆弧
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub enum SegmentPath {
     Line(Line3D),
@@ -174,11 +168,7 @@ impl SegmentPath {
                 let rot = Quat::from_axis_angle(arc.axis, angle_at_t);
                 let radial = rot.mul_vec3(arc.start_pt - arc.center);
                 let tangent = arc.axis.cross(radial).normalize();
-                if arc.clock_wise {
-                    -tangent
-                } else {
-                    tangent
-                }
+                if arc.clock_wise { -tangent } else { tangent }
             }
         }
     }
@@ -264,20 +254,20 @@ impl SweepPath3D {
     /// t: 归一化参数 [0.0, 1.0]，0 表示起点，1 表示终点
     pub fn tangent_at(&self, t: f32) -> Vec3 {
         let t = t.clamp(0.0, 1.0);
-        
+
         if self.segments.is_empty() {
             return Vec3::Z;
         }
-        
+
         // 计算总长度和每段的累积长度
         let total_length = self.length();
         if total_length < 1e-6 {
             return Vec3::Z;
         }
-        
+
         let target_length = total_length * t;
         let mut accumulated_length = 0.0;
-        
+
         for segment in &self.segments {
             let seg_length = segment.length();
             if accumulated_length + seg_length >= target_length {
@@ -291,7 +281,7 @@ impl SweepPath3D {
             }
             accumulated_length += seg_length;
         }
-        
+
         // 如果到达这里，返回最后一段的切线
         self.segments.last().unwrap().tangent_at(1.0)
     }
@@ -300,7 +290,7 @@ impl SweepPath3D {
     /// 返回 (是否连续, 第一个不连续的段索引)
     pub fn validate_continuity(&self) -> (bool, Option<usize>) {
         const EPSILON: f32 = 1e-3;
-        
+
         for i in 0..self.segments.len().saturating_sub(1) {
             let end_pt = self.segments[i].end_point();
             let start_pt = self.segments[i + 1].start_point();
@@ -308,7 +298,7 @@ impl SweepPath3D {
                 return (false, Some(i));
             }
         }
-        
+
         (true, None)
     }
 }
@@ -406,7 +396,7 @@ impl Spine3D {
     pub fn generate_paths(&self) -> (SweepPath3D, Transform) {
         let mut transform = Transform::IDENTITY;
         let pref_axis = self.preferred_dir.normalize();
-        
+
         let path = match self.curve_type {
             SpineCurveType::THRU => {
                 let center = circum_center(self.pt0, self.pt1, self.thru_pt);
@@ -456,7 +446,7 @@ impl Spine3D {
                 let y_axis = ref_axis.cross(x_axis).normalize();
                 let z_axis = x_axis.cross(y_axis).normalize();
                 transform.rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
-                
+
                 let arc = Arc3D {
                     center: vec3_round_3(center),
                     radius: f32_round_3(center.distance(self.pt0)),
@@ -467,7 +457,7 @@ impl Spine3D {
                     pref_axis,
                 };
                 transform.translation = center;
-                
+
                 SweepPath3D::from_arc(arc)
             }
             SpineCurveType::LINE => {
@@ -485,18 +475,16 @@ impl Spine3D {
                 let y_axis = extru_dir.cross(p_axis).normalize();
                 transform.rotation =
                     Quat::from_mat3(&glam::f32::Mat3::from_cols(p_axis, y_axis, extru_dir));
-                
+
                 SweepPath3D::from_line(Line3D {
                     start: Default::default(),
                     end: Vec3::Z * extru.length(),
                     is_spine: true,
                 })
             }
-            SpineCurveType::UNKNOWN => {
-                SweepPath3D::default()
-            }
+            SpineCurveType::UNKNOWN => SweepPath3D::default(),
         };
-        
+
         (path, transform)
     }
 }

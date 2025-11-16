@@ -172,9 +172,7 @@ pub async fn query_type_refnos_by_dbnums(
 
 /// 统计指定 Noun 在全库范围内的实例数量
 pub async fn count_refnos_by_noun(noun: &str) -> anyhow::Result<u64> {
-    let sql = format!(
-        "select value count() from only {noun} group all limit 1"
-    );
+    let sql = format!("select value count() from only {noun} group all limit 1");
     let mut response = SUL_DB.query_response(&sql).await?;
     let count: Option<u64> = response.take(0)?;
     Ok(count.unwrap_or(0))
@@ -191,7 +189,11 @@ pub async fn count_refnos_by_noun_with_dbnums(noun: &str, dbnums: &[u32]) -> any
     } else {
         format!(
             "select value count() from only {noun} where REFNO.dbnum in [{}] group all limit 1",
-            dbnums.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",")
+            dbnums
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(",")
         )
     };
     let mut response = SUL_DB.query_response(&sql).await?;
@@ -209,9 +211,7 @@ pub async fn query_refnos_by_noun_page(
         return Ok(Vec::new());
     }
 
-    let sql = format!(
-        "select value id from {noun} order by id limit {limit} start {start}"
-    );
+    let sql = format!("select value id from {noun} order by id limit {limit} start {start}");
 
     let mut response = SUL_DB.query_response(&sql).await?;
     let refnos: Vec<RefnoEnum> = response.take(0)?;
@@ -240,7 +240,11 @@ pub async fn query_refnos_by_noun_page_with_dbnums(
     } else {
         format!(
             "select value id from {noun} where REFNO.dbnum in [{}] order by id limit {limit} start {start}",
-            dbnums.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",")
+            dbnums
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(",")
         )
     };
 
@@ -270,11 +274,8 @@ async fn filter_refnos_by_children(
     let mut result = Vec::new();
 
     for chunk in refnos.chunks(BATCH_SIZE) {
-        let pe_keys: Vec<String> = chunk
-            .iter()
-            .map(|r| r.to_pe_key())
-            .collect();
-        
+        let pe_keys: Vec<String> = chunk.iter().map(|r| r.to_pe_key()).collect();
+
         let pe_keys_str = pe_keys.join(", ");
         let sql = format!(
             "select value id from [{}] where array::len(children) {} 0",
@@ -286,7 +287,7 @@ async fn filter_refnos_by_children(
         let mut filtered_refnos: Vec<RefnoEnum> = response.take(0)?;
         result.append(&mut filtered_refnos);
     }
-    
+
     Ok(result)
 }
 
@@ -348,7 +349,7 @@ pub async fn query_type_refnos_by_dbnum_with_filter(
             }
         })
         .collect();
-    
+
     let tables_str = tables.join(", ");
 
     // 如果有名称过滤，使用多表查询语法
@@ -373,7 +374,7 @@ pub async fn query_type_refnos_by_dbnum_with_filter(
 
             let mut response = query.await?;
             let refnos: Vec<RefnoEnum> = response.take(0)?;
-            
+
             // 如果需要过滤 has_children，通过 pe 表来过滤
             return if let Some(has_children_flag) = has_children {
                 filter_refnos_by_children(refnos, has_children_flag).await
@@ -674,7 +675,6 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
             (select value REFNO from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         mdb_name
     );
-
 
     // 执行查询并获取结果
     let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 0).await?;

@@ -11,7 +11,7 @@ use crate::{
     consts::HAS_PLIN_TYPES,
     get_named_attmap,
     pdms_data::{PlinParam, PlinParamData},
-    prim_geo::spine::{Spine3D, SpineCurveType, SweepPath3D, SegmentPath},
+    prim_geo::spine::{SegmentPath, Spine3D, SpineCurveType, SweepPath3D},
     shape::pdms_shape::LEN_TOL,
     tool::{
         direction_parse::parse_expr_to_dir,
@@ -646,7 +646,11 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
     let spine_ydir = spline_paths[0].preferred_dir.as_dvec3();
 
     let sweep_path = spline_paths[0].generate_paths().0;
-    let lens: Vec<f32> = sweep_path.segments.iter().map(|x| x.length()).collect::<Vec<_>>();
+    let lens: Vec<f32> = sweep_path
+        .segments
+        .iter()
+        .map(|x| x.length())
+        .collect::<Vec<_>>();
     let total_len: f32 = lens.iter().sum();
     let world_mat4 = Box::pin(get_world_mat4(refno, false))
         .await?

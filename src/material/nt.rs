@@ -10,7 +10,9 @@ use crate::SUL_DB;
 use crate::db_pool;
 use crate::init_test_surreal;
 use crate::utils::take_vec;
-use crate::{RefU64, get_db_option, get_pe, insert_into_table_with_chunks, query_filter_deep_children};
+use crate::{
+    RefU64, get_db_option, get_pe, insert_into_table_with_chunks, query_filter_deep_children,
+};
 use anyhow::anyhow;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;

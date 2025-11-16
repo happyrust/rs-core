@@ -1,11 +1,10 @@
+use crate::RefnoEnum;
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::init_surreal;
 use crate::options::DbOption;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::table_const::{GLOBAL_DATABASE, PUHUA_MATERIAL_DATABASE};
-use crate::RefnoEnum;
-use tracing::info;
 use crate::{
     AttrMap, NamedAttrMap, RefU64, SUL_DB, SurlValue, SurrealQueryExt, get_children_ele_nodes,
     get_db_option, get_named_attmap, get_named_attmap_with_uda, get_next_prev, get_pe, get_world,
@@ -25,6 +24,7 @@ use surrealdb::IndexedResults as Response;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
+use tracing::info;
 
 pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()> {
     SUL_DB
@@ -263,7 +263,9 @@ impl PdmsDataInterface for AiosDBMgr {
     }
 
     async fn query_all_rooms(&self) -> anyhow::Result<Vec<PdmsElement>> {
-        let mut response = SUL_DB.query_response(r#"
+        let mut response = SUL_DB
+            .query_response(
+                r#"
             SELECT 
                 id,
                 refno,
@@ -277,8 +279,10 @@ impl PdmsDataInterface for AiosDBMgr {
             WHERE noun IN ['ROOM', 'FRMW'] 
             AND name != NONE
             ORDER BY name
-        "#).await?;
-        
+        "#,
+            )
+            .await?;
+
         let rooms: Vec<PdmsElement> = response.take(0)?;
         info!("🏠 查询到 {} 个房间", rooms.len());
         Ok(rooms)
@@ -286,8 +290,10 @@ impl PdmsDataInterface for AiosDBMgr {
 
     async fn query_room_elements(&self, room_refno: RefU64) -> anyhow::Result<Vec<PdmsElement>> {
         let room_refno_enum: RefnoEnum = room_refno.into();
-        
-        let mut response = SUL_DB.query_response(&format!(r#"
+
+        let mut response = SUL_DB
+            .query_response(&format!(
+                r#"
             SELECT 
                 id,
                 refno,
@@ -303,8 +309,11 @@ impl PdmsDataInterface for AiosDBMgr {
             WHERE room_relate CONTAINS {}
             AND solid = true
             ORDER BY noun, name
-        "#, room_refno_enum.to_pe_key())).await?;
-        
+        "#,
+                room_refno_enum.to_pe_key()
+            ))
+            .await?;
+
         let elements: Vec<PdmsElement> = response.take(0)?;
         info!("🔍 房间 {} 查询到 {} 个元素", room_refno.0, elements.len());
         Ok(elements)

@@ -7,13 +7,13 @@ use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::query_provider::QueryProvider;
 use crate::{
-    NamedAttrMap, RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt,
-    get_children_ele_nodes, get_named_attmap_with_uda, get_next_prev, get_world_transform,
+    NamedAttrMap, RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_children_ele_nodes,
+    get_named_attmap_with_uda, get_next_prev, get_world_transform,
 };
 use async_trait::async_trait;
 use bevy_transform::components::Transform;
-use surrealdb::IndexedResults as Response;
 use std::sync::Arc;
+use surrealdb::IndexedResults as Response;
 use tracing::info;
 
 /// 基于 QueryProvider 的 PdmsDataInterface 实现
@@ -36,7 +36,7 @@ impl PdmsDataInterface for ProviderPdmsInterface {
         } else {
             format!("/{}", mdb_name)
         };
-        
+
         // 使用 SUL_DB 查询，因为 QueryProvider 没有直接的 get_world 按名称查询
         let sql = format!(
             "SELECT * FROM pe WHERE noun = 'WORL' AND name = '{}' LIMIT 1;",
@@ -44,7 +44,7 @@ impl PdmsDataInterface for ProviderPdmsInterface {
         );
         let mut response: Response = SUL_DB.query_response(sql).await?;
         let pe: Option<SPdmsElement> = response.take(0)?;
-        
+
         if let Some(pe) = pe {
             Ok(Some(PdmsElement {
                 refno: pe.refno(),
@@ -204,7 +204,9 @@ impl PdmsDataInterface for ProviderPdmsInterface {
     }
 
     async fn query_all_rooms(&self) -> anyhow::Result<Vec<PdmsElement>> {
-        let mut response = SUL_DB.query_response(r#"
+        let mut response = SUL_DB
+            .query_response(
+                r#"
             SELECT 
                 id,
                 refno,
@@ -218,8 +220,10 @@ impl PdmsDataInterface for ProviderPdmsInterface {
             WHERE noun IN ['ROOM', 'FRMW'] 
             AND name != NONE
             ORDER BY name
-        "#).await?;
-        
+        "#,
+            )
+            .await?;
+
         let rooms: Vec<PdmsElement> = response.take(0)?;
         info!("🏠 查询到 {} 个房间", rooms.len());
         Ok(rooms)
@@ -227,8 +231,10 @@ impl PdmsDataInterface for ProviderPdmsInterface {
 
     async fn query_room_elements(&self, room_refno: RefU64) -> anyhow::Result<Vec<PdmsElement>> {
         let room_refno_enum: RefnoEnum = room_refno.into();
-        
-        let mut response = SUL_DB.query_response(&format!(r#"
+
+        let mut response = SUL_DB
+            .query_response(&format!(
+                r#"
             SELECT 
                 id,
                 refno,
@@ -244,8 +250,11 @@ impl PdmsDataInterface for ProviderPdmsInterface {
             WHERE room_relate CONTAINS {}
             AND solid = true
             ORDER BY noun, name
-        "#, room_refno_enum.to_pe_key())).await?;
-        
+        "#,
+                room_refno_enum.to_pe_key()
+            ))
+            .await?;
+
         let elements: Vec<PdmsElement> = response.take(0)?;
         info!("🔍 房间 {} 查询到 {} 个元素", room_refno.0, elements.len());
         Ok(elements)

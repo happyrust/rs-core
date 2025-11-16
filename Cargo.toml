@@ -132,6 +132,7 @@ serde_with = { version = "3.9.0", features = ["macros"] }
 cavalier_contours = { git = "https://gitee.com/happydpc/cavalier_contours", features = [
     "serde",
 ] }
+i_triangle = "0.37.2"
 indexmap = { version = "2.0.0", features = ["serde"] }
 pretty-hex = "0.4.0"
 once_cell_serde = "1.17.1"

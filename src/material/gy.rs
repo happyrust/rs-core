@@ -2,11 +2,11 @@
 use super::query::create_table_sql;
 #[cfg(feature = "sql")]
 use super::query::{save_material_data_to_mysql, save_two_material_data_to_mysql};
+#[cfg(feature = "sql")]
+use crate::db_pool;
 use crate::material::define_core_material_surreal_funtions;
 #[cfg(feature = "sql")]
 use crate::material::query::save_material_value_test;
-#[cfg(feature = "sql")]
-use crate::db_pool;
 use crate::{
     RefU64, SUL_DB, get_db_option, get_pe, init_test_surreal, insert_into_table_with_chunks,
     query_filter_deep_children,

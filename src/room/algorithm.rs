@@ -49,20 +49,28 @@ pub async fn query_all_room_infos(room_keywords: &[String]) -> anyhow::Result<Ve
     // 构建关键词过滤条件
     let keyword_conditions: Vec<String> = room_keywords
         .iter()
-        .map(|keyword| format!("(string::contains(string::lowercase(name), '{}'))", keyword.to_lowercase()))
+        .map(|keyword| {
+            format!(
+                "(string::contains(string::lowercase(name), '{}'))",
+                keyword.to_lowercase()
+            )
+        })
         .collect();
     let keyword_filter = if keyword_conditions.is_empty() {
         "true".to_string()
     } else {
         keyword_conditions.join(" || ")
     };
-    let sql = format!(r#"
+    let sql = format!(
+        r#"
         let $sites = (select value REFNO from SITE where NAME != NONE && string::contains(string::lowercase(NAME),'arch'));
          array::flatten(
             select value @.{{3+collect}}(.children).{{id, noun, name}}
             from array::flatten($sites) 
         )[? noun='FRMW' && name != NONE && ({} )].{{id, name}};
-    "#, keyword_filter);
+    "#,
+        keyword_filter
+    );
     println!("query_all_room_infos sql is {}", &sql);
     // dbg!(&sql);
     let mut response = SUL_DB.query_response(&sql).await?;
@@ -107,7 +115,6 @@ pub async fn query_room_codes_of_arch() -> anyhow::Result<HashMap<String, BTreeS
     }
     Ok(map)
 }
-
 
 /// 根据一组房间 Refno 查询其房间号
 ///
@@ -219,4 +226,3 @@ mod tests {
         }
     }
 }
-

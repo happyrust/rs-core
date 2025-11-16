@@ -1,6 +1,6 @@
+use crate::pdms_types::PdmsGenericType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::pdms_types::PdmsGenericType;
 
 /// 配色方案定义
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -110,11 +110,14 @@ impl ColorSchemeManager {
         standard_colors.insert("INSURQ".to_string(), [255, 182, 193, 255]);
         standard_colors.insert("STRLNG".to_string(), [0, 255, 255, 255]);
 
-        schemes.insert("standard_pdms".to_string(), ColorScheme {
-            name: "标准 PDMS 配色".to_string(),
-            description: "与原始 PDMS 系统一致的标准配色方案".to_string(),
-            colors: standard_colors,
-        });
+        schemes.insert(
+            "standard_pdms".to_string(),
+            ColorScheme {
+                name: "标准 PDMS 配色".to_string(),
+                description: "与原始 PDMS 系统一致的标准配色方案".to_string(),
+                colors: standard_colors,
+            },
+        );
 
         Self {
             available_schemes: schemes,

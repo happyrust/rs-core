@@ -9,7 +9,9 @@ use crate::SUL_DB;
 #[cfg(feature = "sql")]
 use crate::db_pool;
 use crate::init_test_surreal;
-use crate::{RefU64, get_db_option, get_pe, insert_into_table_with_chunks, query_filter_deep_children};
+use crate::{
+    RefU64, get_db_option, get_pe, insert_into_table_with_chunks, query_filter_deep_children,
+};
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;

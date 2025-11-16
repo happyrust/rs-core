@@ -347,6 +347,9 @@ pub async fn query_room_panels_by_keywords(
     let start_time = Instant::now();
 
     // 构建 OR 条件过滤器
+    if room_keywords.is_empty() {
+        return Ok(vec![]);
+    }
     let filter = room_keywords
         .iter()
         .map(|x| format!("'{}' in NAME", x))
@@ -382,9 +385,8 @@ pub async fn query_room_panels_by_keywords(
 
     // 执行查询
     let mut response = SUL_DB.query(sql).await.context("房间面板查询失败")?;
-    let raw_result: Vec<(RecordId, String, Vec<RecordId>)> = response
-        .take(0)
-        .context("解析查询结果失败")?;
+    let raw_result: Vec<(RecordId, String, Vec<RecordId>)> =
+        response.take(0).context("解析查询结果失败")?;
 
     debug!("原始查询结果数: {}", raw_result.len());
 
@@ -402,11 +404,7 @@ pub async fn query_room_panels_by_keywords(
                 .into_iter()
                 .filter_map(|id| {
                     let refno = RefnoEnum::from(id);
-                    if refno.is_valid() {
-                        Some(refno)
-                    } else {
-                        None
-                    }
+                    if refno.is_valid() { Some(refno) } else { None }
                 })
                 .collect();
 
@@ -486,19 +484,12 @@ pub async fn query_elements_in_room_by_spatial_index(
     }
 
     // 1. 查询所有面板的几何信息（AABB）
-    let panel_keys: Vec<String> = panel_refnos
-        .iter()
-        .map(|r| r.to_pe_key())
-        .collect();
+    let panel_keys: Vec<String> = panel_refnos.iter().map(|r| r.to_pe_key()).collect();
 
-    let sql = format!(
-        "SELECT value [id, PXYZ] FROM [{}]",
-        panel_keys.join(",")
-    );
+    let sql = format!("SELECT value [id, PXYZ] FROM [{}]", panel_keys.join(","));
 
-    let mut response = SUL_DB.query(sql).await
-        .context("查询面板几何信息失败")?;
-    
+    let mut response = SUL_DB.query(sql).await.context("查询面板几何信息失败")?;
+
     // 解析面板数据并计算 AABB
     let panel_aabbs = parse_panel_aabbs(&mut response).await?;
 
@@ -553,8 +544,8 @@ pub async fn query_elements_in_room_by_spatial_index(
 async fn parse_panel_aabbs(
     response: &mut surrealdb::IndexedResults,
 ) -> anyhow::Result<Vec<(RefU64, Aabb)>> {
-    use nalgebra::Point3;
     use crate::types::RecordId;
+    use nalgebra::Point3;
 
     // 使用元组类型反序列化 (id, PXYZ)
     let panels: Vec<(RecordId, Option<Vec<f64>>)> = response.take(0)?;
@@ -562,15 +553,11 @@ async fn parse_panel_aabbs(
 
     for (record_id, pxyz_opt) in panels {
         let refno = RefU64::from(record_id);
-        
+
         // 提取位置
         if let Some(pxyz_vec) = pxyz_opt {
             if pxyz_vec.len() >= 3 {
-                let pxyz = Vec3::new(
-                    pxyz_vec[0] as f32,
-                    pxyz_vec[1] as f32,
-                    pxyz_vec[2] as f32
-                );
+                let pxyz = Vec3::new(pxyz_vec[0] as f32, pxyz_vec[1] as f32, pxyz_vec[2] as f32);
 
                 // 简单处理：使用位置创建一个小的 AABB
                 // TODO: 实际应该根据面板的完整几何信息计算
@@ -660,20 +647,25 @@ mod tests {
     #[ignore = "需要真实数据库连接"]
     async fn test_query_room_panels_by_keywords_basic() {
         // 基本功能测试
-        use crate::{init_surreal, get_db_option};
-        
+        use crate::{get_db_option, init_surreal};
+
         init_surreal().await.expect("初始化数据库失败");
         let db_option = get_db_option();
         let keywords = db_option.get_room_key_word();
-        
+
         let result = query_room_panels_by_keywords(&keywords).await;
         assert!(result.is_ok(), "查询应该成功");
-        
+
         let rooms = result.unwrap();
         println!("找到 {} 个房间", rooms.len());
-        
+
         for (room_refno, room_num, panels) in &rooms {
-            println!("  房间 {}: RefNo={}, 面板数={}", room_num, room_refno, panels.len());
+            println!(
+                "  房间 {}: RefNo={}, 面板数={}",
+                room_num,
+                room_refno,
+                panels.len()
+            );
             assert!(room_refno.is_valid(), "房间 RefnoEnum 应该有效");
             assert!(!panels.is_empty(), "房间应该至少有一个面板");
         }
@@ -684,12 +676,12 @@ mod tests {
     async fn test_query_room_panels_by_keywords_empty() {
         // 测试空关键词
         use crate::init_surreal;
-        
+
         init_surreal().await.expect("初始化数据库失败");
-        
+
         let keywords = vec![];
         let result = query_room_panels_by_keywords(&keywords).await;
-        
+
         // 空关键词应该返回空结果或所有房间
         assert!(result.is_ok(), "查询应该成功");
     }
@@ -699,23 +691,23 @@ mod tests {
     async fn test_query_room_panels_by_keywords_multiple() {
         // 测试多个关键词
         use crate::init_surreal;
-        
+
         init_surreal().await.expect("初始化数据库失败");
-        
+
         let keywords = vec!["-R-".to_string(), "-RM-".to_string()];
         let result = query_room_panels_by_keywords(&keywords).await;
-        
+
         assert!(result.is_ok(), "查询应该成功");
-        
+
         let rooms = result.unwrap();
         println!("使用多个关键词找到 {} 个房间", rooms.len());
-        
+
         // 验证数据完整性
         for (room_refno, room_num, panels) in &rooms {
             assert!(room_refno.is_valid(), "房间 RefnoEnum 应该有效");
             assert!(!room_num.is_empty(), "房间号不应为空");
             assert!(!panels.is_empty(), "面板列表不应为空");
-            
+
             // 验证所有面板 RefnoEnum 都有效
             for panel in panels {
                 assert!(panel.is_valid(), "面板 RefnoEnum 应该有效");

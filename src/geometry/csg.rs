@@ -616,66 +616,97 @@ fn generate_sscl_mesh(
         }
     }
 
-    // 生成底面
-    let bottom_center_index = vertices.len() as u32;
-    vertices.push(bottom_center);
-    normals.push(-dir);
-    extend_aabb(&mut aabb, bottom_center);
+    // 计算底面法向（考虑剪切角度）
+    let bottom_normal = if btm_shear_x.abs() > f32::EPSILON || btm_shear_y.abs() > f32::EPSILON {
+        // 计算斜切平面的法向
+        // 平面方程: z = tan_x * x + tan_y * y
+        // 法向: (-tan_x, -tan_y, 1) 归一化
+        let normal_unnorm = Vec3::new(-tan_btm_x, -tan_btm_y, 1.0);
+        safe_normalize(normal_unnorm).unwrap_or(-dir)
+    } else {
+        -dir
+    };
 
-    // 计算底面椭圆上的点
+    // 生成底面独立顶点
+    let bottom_cap_base = vertices.len() as u32;
     for slice in 0..=radial {
         let angle = slice as f32 * step_theta;
         let (sin, cos) = angle.sin_cos();
 
-        // 底面剪切变换
-        let x_sheared = radius * cos;
-        let y_sheared = radius * sin;
+        // 计算圆周点在 XY 平面的位置
+        let x_local = radius * cos;
+        let y_local = radius * sin;
 
-        let vertex = bottom_center + basis_u * x_sheared + basis_v * y_sheared;
+        // 计算该点沿轴向的偏移（使其位于斜切平面上）
+        // 平面方程: z_offset = tan_x * x + tan_y * y
+        let z_offset = tan_btm_x * x_local + tan_btm_y * y_local;
+
+        // 顶点位置
+        let vertex = bottom_center + basis_u * x_local + basis_v * y_local + dir * z_offset;
         vertices.push(vertex);
-        normals.push(-dir);
+        normals.push(bottom_normal);
         extend_aabb(&mut aabb, vertex);
     }
 
-    // 底面索引
+    // 底面中心点（在斜切平面的中心）
+    let bottom_center_index = vertices.len() as u32;
+    vertices.push(bottom_center);
+    normals.push(bottom_normal);
+    extend_aabb(&mut aabb, bottom_center);
+
+    // 底面索引（注意缠绕方向）
     for slice in 0..radial {
-        let next = (slice + 1) % (radial + 1);
+        let next = slice + 1;
         indices.extend_from_slice(&[
             bottom_center_index,
-            bottom_center_index + 1 + next as u32,
-            bottom_center_index + 1 + slice as u32,
+            bottom_cap_base + next as u32,
+            bottom_cap_base + slice as u32,
         ]);
     }
 
-    // 生成顶面
-    let top_center_index = vertices.len() as u32;
-    vertices.push(top_center);
-    normals.push(dir);
-    extend_aabb(&mut aabb, top_center);
+    // 计算顶面法向（考虑剪切角度）
+    let top_normal = if top_shear_x.abs() > f32::EPSILON || top_shear_y.abs() > f32::EPSILON {
+        // 计算斜切平面的法向
+        let normal_unnorm = Vec3::new(-tan_top_x, -tan_top_y, 1.0);
+        safe_normalize(normal_unnorm).unwrap_or(dir)
+    } else {
+        dir
+    };
 
-    // 计算顶面椭圆上的点
+    // 生成顶面独立顶点
+    let top_cap_base = vertices.len() as u32;
     for slice in 0..=radial {
         let angle = slice as f32 * step_theta;
         let (sin, cos) = angle.sin_cos();
 
-        // 顶面剪切变换
-        let x_sheared = radius * cos + height * tan_top_x;
-        let y_sheared = radius * sin + height * tan_top_y;
+        // 计算圆周点在 XY 平面的位置
+        let x_local = radius * cos;
+        let y_local = radius * sin;
 
-        let vertex = top_center + basis_u * x_sheared + basis_v * y_sheared;
+        // 计算该点沿轴向的偏移（使其位于斜切平面上）
+        // 相对于顶面中心的偏移
+        let z_offset = tan_top_x * x_local + tan_top_y * y_local;
+
+        // 顶点位置
+        let vertex = top_center + basis_u * x_local + basis_v * y_local + dir * z_offset;
         vertices.push(vertex);
-        normals.push(dir);
+        normals.push(top_normal);
         extend_aabb(&mut aabb, vertex);
     }
 
+    // 顶面中心点（在斜切平面的中心）
+    let top_center_index = vertices.len() as u32;
+    vertices.push(top_center);
+    normals.push(top_normal);
+    extend_aabb(&mut aabb, top_center);
+
     // 顶面索引
-    let top_ring_start = top_center_index + 1;
     for slice in 0..radial {
-        let next = (slice + 1) % (radial + 1);
+        let next = slice + 1;
         indices.extend_from_slice(&[
             top_center_index,
-            top_ring_start + slice as u32,
-            top_ring_start + next as u32,
+            top_cap_base + slice as u32,
+            top_cap_base + next as u32,
         ]);
     }
 

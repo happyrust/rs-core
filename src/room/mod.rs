@@ -10,7 +10,7 @@ pub mod query_v2;
 
 // 导出常用的房间查询函数
 #[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
-pub use query_v2::{query_room_panels_by_keywords, query_elements_in_room_by_spatial_index};
+pub use query_v2::{query_elements_in_room_by_spatial_index, query_room_panels_by_keywords};
 
 // 房间系统监控模块
 pub mod monitoring;
