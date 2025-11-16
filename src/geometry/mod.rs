@@ -64,6 +64,12 @@ pub enum GeoBasicType {
 pub struct EleGeosInfo {
     pub refno: RefnoEnum,
     pub sesno: i32,
+    /// 所属元素的参考号
+    #[serde(default)]
+    pub owner_refno: RefnoEnum,
+    /// 所属元素的类型
+    #[serde(default)]
+    pub owner_type: String,
     #[serde(default)]
     pub cata_hash: Option<String>,
     //记录对应的元件库参考号

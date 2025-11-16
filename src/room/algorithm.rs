@@ -49,7 +49,7 @@ pub async fn query_all_room_infos(room_keywords: &[String]) -> anyhow::Result<Ve
     // 构建关键词过滤条件
     let keyword_conditions: Vec<String> = room_keywords
         .iter()
-        .map(|keyword| format!("string::contains(NAME, '{}')", keyword))
+        .map(|keyword| format!("(string::contains(string::lowercase(name), '{}'))", keyword.to_lowercase()))
         .collect();
     let keyword_filter = if keyword_conditions.is_empty() {
         "true".to_string()
@@ -57,12 +57,13 @@ pub async fn query_all_room_infos(room_keywords: &[String]) -> anyhow::Result<Ve
         keyword_conditions.join(" || ")
     };
     let sql = format!(r#"
-        let $sites = (select value REFNO from SITE where NAME != NONE && string::contains(NAME,'ARCH'));
+        let $sites = (select value REFNO from SITE where NAME != NONE && string::contains(string::lowercase(NAME),'arch'));
          array::flatten(
             select value @.{{3+collect}}(.children).{{id, noun, name}}
             from array::flatten($sites) 
-        )[? noun=='FRMW' && name != NONE && ({} )].{{id, name}};
+        )[? noun='FRMW' && name != NONE && ({} )].{{id, name}};
     "#, keyword_filter);
+    println!("query_all_room_infos sql is {}", &sql);
     // dbg!(&sql);
     let mut response = SUL_DB.query_response(&sql).await?;
     let results: Vec<RoomInfo> = response.take(1)?;

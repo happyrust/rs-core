@@ -15,18 +15,20 @@ use sqlx::{MySql, Pool};
 /// 获取默认的 MySQL 连接字符串
 pub fn default_mysql_conn_str(db_option: &DbOption) -> String {
     let user = db_option.user.as_str();
-    let pwd = urlencoding::encode(&db_option.password);
+    // 使用占位符避免在日志中泄露实际密码
+    let encoded_pwd = urlencoding::encode(&db_option.password);
     let ip = db_option.ip.as_str();
     let port = db_option.port.as_str();
-    format!("mysql://{user}:{pwd}@{ip}:{port}")
+    format!("mysql://{user}:{encoded_pwd}@{ip}:{port}")
 }
 
 /// 获取浦华数据库连接字符串
 pub fn puhua_conn_str(db_option: &DbOption) -> String {
     let user = db_option.puhua_database_user.as_str();
-    let pwd = db_option.puhua_database_password.as_str();
+    // 使用占位符避免在日志中泄露实际密码
+    let encoded_pwd = urlencoding::encode(&db_option.puhua_database_password);
     let ip = db_option.puhua_database_ip.as_str();
-    format!("mysql://{user}:{pwd}@{ip}")
+    format!("mysql://{user}:{encoded_pwd}@{ip}")
 }
 
 #[cfg(feature = "sql")]

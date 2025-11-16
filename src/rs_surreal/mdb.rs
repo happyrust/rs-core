@@ -180,6 +180,25 @@ pub async fn count_refnos_by_noun(noun: &str) -> anyhow::Result<u64> {
     Ok(count.unwrap_or(0))
 }
 
+/// 统计指定 Noun 在指定数据库中的实例数量
+///
+/// # 参数
+/// - `noun`: Noun 类型名称
+/// - `dbnums`: 要查询的数据库编号列表（空列表表示查询所有数据库）
+pub async fn count_refnos_by_noun_with_dbnums(noun: &str, dbnums: &[u32]) -> anyhow::Result<u64> {
+    let sql = if dbnums.is_empty() {
+        format!("select value count() from only {noun} group all limit 1")
+    } else {
+        format!(
+            "select value count() from only {noun} where REFNO.dbnum in [{}] group all limit 1",
+            dbnums.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",")
+        )
+    };
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let count: Option<u64> = response.take(0)?;
+    Ok(count.unwrap_or(0))
+}
+
 /// 按照 LIMIT / START 分页查询指定 Noun 的实例列表
 pub async fn query_refnos_by_noun_page(
     noun: &str,
@@ -193,6 +212,37 @@ pub async fn query_refnos_by_noun_page(
     let sql = format!(
         "select value id from {noun} order by id limit {limit} start {start}"
     );
+
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let refnos: Vec<RefnoEnum> = response.take(0)?;
+    Ok(refnos)
+}
+
+/// 按照 LIMIT / START 分页查询指定 Noun 在指定数据库中的实例列表
+///
+/// # 参数
+/// - `noun`: Noun 类型名称
+/// - `start`: 起始偏移量
+/// - `limit`: 每页数量
+/// - `dbnums`: 要查询的数据库编号列表（空列表表示查询所有数据库）
+pub async fn query_refnos_by_noun_page_with_dbnums(
+    noun: &str,
+    start: usize,
+    limit: usize,
+    dbnums: &[u32],
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+
+    let sql = if dbnums.is_empty() {
+        format!("select value id from {noun} order by id limit {limit} start {start}")
+    } else {
+        format!(
+            "select value id from {noun} where REFNO.dbnum in [{}] order by id limit {limit} start {start}",
+            dbnums.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(",")
+        )
+    };
 
     let mut response = SUL_DB.query_response(&sql).await?;
     let refnos: Vec<RefnoEnum> = response.take(0)?;

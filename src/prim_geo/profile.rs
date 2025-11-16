@@ -183,6 +183,8 @@ pub async fn create_profile_geos(
                     let (paths, mut transform) = spine.generate_paths();
                     let bangle = att.get_f32("BANG").unwrap_or_default();
                     for path in paths {
+                        // 从 path 计算 height（使用 SweepPath3D 的 length() 方法）
+                        let height = path.length();
                         let loft = SweepSolid {
                             profile: profile.clone(),
                             drns,
@@ -190,7 +192,7 @@ pub async fn create_profile_geos(
                             bangle,
                             plax,
                             extrude_dir,
-                            height: 0.0,
+                            height,
                             path,
                             lmirror: att.get_bool("LMIRR").unwrap_or_default(),
                         };
