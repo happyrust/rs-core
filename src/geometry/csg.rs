@@ -566,9 +566,47 @@ fn generate_sscl_mesh(
     let (basis_u, basis_v) = orthonormal_basis(dir);
 
     let radial = compute_radial_segments(settings, radius, non_scalable, 3);
-    let height_segments = compute_height_segments(settings, height.abs(), non_scalable, 1);
     let ring_stride = radial + 1;
     let step_theta = std::f32::consts::TAU / radial as f32;
+
+    // 预先计算每个切片在底部和顶部的椭圆边界点
+    struct SliceData {
+        radial_dir: Vec3,
+        bottom_point: Vec3,
+        span: Vec3,
+    }
+
+    let mut slice_data = Vec::with_capacity(ring_stride);
+    let mut max_span = 0.0f32;
+    for slice in 0..=radial {
+        let angle = slice as f32 * step_theta;
+        let (sin, cos) = angle.sin_cos();
+        let radial_dir = basis_u * cos + basis_v * sin;
+        let x_local = radius * cos;
+        let y_local = radius * sin;
+
+        let z_offset_bottom = tan_btm_x * x_local + tan_btm_y * y_local;
+        let z_offset_top = tan_top_x * x_local + tan_top_y * y_local;
+
+        let bottom_point =
+            bottom_center + radial_dir * radius + dir * z_offset_bottom;
+        let top_point = top_center + radial_dir * radius + dir * z_offset_top;
+        let span = top_point - bottom_point;
+        max_span = max_span.max(span.length());
+
+        slice_data.push(SliceData {
+            radial_dir,
+            bottom_point,
+            span,
+        });
+    }
+
+    // 使用最长母线长度决定高度分段，确保剪切越大细分越多
+    let mut height_segments =
+        compute_height_segments(settings, max_span.max(height.abs()), non_scalable, 1);
+    if height_segments == 0 {
+        height_segments = 1;
+    }
 
     // 计算顶点、法线和索引的数量
     let vertex_count = (height_segments + 1) * ring_stride + 2 * (radial + 1);
@@ -577,35 +615,14 @@ fn generate_sscl_mesh(
     let mut indices = Vec::with_capacity(height_segments * radial * 6 + radial * 6);
     let mut aabb = Aabb::new_invalid();
 
-    // 生成侧面顶点
+    // 生成侧面顶点（沿每条母线插值）
     for ring in 0..=height_segments {
         let t = ring as f32 / height_segments as f32;
-        let z_local = t * height; // 局部z坐标
-
-        // 在底面和顶面之间插值剪切角度
-        let tan_x = tan_btm_x + t * (tan_top_x - tan_btm_x);
-        let tan_y = tan_btm_y + t * (tan_top_y - tan_btm_y);
-
-        // 计算当前环的中心点
-        let center = bottom_center + dir * z_local;
-
-        for slice in 0..=radial {
-            let angle = slice as f32 * step_theta;
-            let (sin, cos) = angle.sin_cos();
-
-            // 应用剪切变换
-            let x_sheared = radius * cos + z_local * tan_x;
-            let y_sheared = radius * sin + z_local * tan_y;
-
-            // 转换到世界坐标
-            let vertex = center + basis_u * x_sheared + basis_v * y_sheared;
+        for data in &slice_data {
+            let vertex = data.bottom_point + data.span * t;
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
-
-            // 计算法线（近似）
-            // 对于剪切圆柱体，法线需要考虑剪切变换的影响
-            let radial_dir = basis_u * cos + basis_v * sin;
-            normals.push(radial_dir);
+            normals.push(data.radial_dir);
         }
     }
 
