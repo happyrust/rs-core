@@ -6,11 +6,6 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = [
-    "bevy_transform",
-    "bevy_math",
-    "bevy_ecs",
-    "bevy_reflect",
-    "test",
     # "render",
     # "gen_model",
     # "sql",
@@ -40,10 +35,6 @@ sqlite = ["dep:rusqlite"]  # SQLite 空间索引功能
 mem-kv-save = []  # 额外保存PE数据到内存KV数据库
 hh = []
 test = []  # Test module feature
-bevy_transform = ["dep:bevy_transform"]
-bevy_math = ["dep:bevy_math"]
-bevy_ecs = ["dep:bevy_ecs"]
-bevy_reflect = ["dep:bevy_reflect"]
 
 
 [dependencies]
