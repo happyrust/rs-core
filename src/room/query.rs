@@ -56,9 +56,13 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
             continue;
         };
         for inst in &geom_inst.insts {
-            let Ok(mesh) =
-                PlantMesh::des_mesh_file(&format!("assets/meshes/{}.mesh", inst.geo_hash))
-            else {
+            // 使用配置路径和 L0 最低精度 LOD
+            use crate::utils::lod_path_detector::build_mesh_path;
+            let mesh_path = crate::get_db_option()
+                .get_meshes_path()
+                .join(build_mesh_path(&inst.geo_hash, "L0"));
+            
+            let Ok(mesh) = PlantMesh::des_mesh_file(&mesh_path) else {
                 continue;
             };
             let Some(mut tri_mesh) = mesh.get_tri_mesh_with_flag(

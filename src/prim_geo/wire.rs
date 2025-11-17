@@ -1609,38 +1609,28 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
         .collect();
 
     // 使用 ploop-rs 处理 PLOOP（直接传递顶点切片）
-    // process_ploop 返回四元组：(processed_vertices, bulges, arcs, fradius_reports)
-    let (processed_vertices, bulges, arcs, _fradius_reports) =
+    // process_ploop 返回二元组：(processed_vertices, arcs)
+    let (processed_vertices, arcs) =
         processor.process_ploop(&ploop_vertices);
 
     println!("   处理后顶点数: {}", processed_vertices.len());
     println!("   生成圆弧数: {}", arcs.len());
 
-    // 检查 bulges 和 vertices 数量是否匹配
-    if bulges.len() != processed_vertices.len() {
-        return Err(anyhow::anyhow!(
-            "bulges 数量 ({}) 与顶点数量 ({}) 不匹配",
-            bulges.len(),
-            processed_vertices.len()
-        ));
-    }
-
-    // 转换回 Vec3 格式（x,y 为坐标，z 为 bulge 值）
-    // 注意：这里 z 存储的是 bulge，不是 fradius！
+    // 转换回 Vec3 格式（x,y 为坐标，z 为 0）
+    // 注意：新版本 ploop-rs 不再返回 bulge 数组，bulge 信息已经在顶点展开中处理
+    // 所有圆弧都被展开为直线段，因此 z 设为 0
     let result: Vec<Vec3> = processed_vertices
         .iter()
-        .zip(bulges.iter())
-        .map(|(vertex, &bulge)| {
+        .map(|vertex| {
             Vec3::new(
-                vertex.x,
-                vertex.y,
-                bulge as f32, // z 存储 bulge 值（转换为 f32）
+                vertex.x as f32,
+                vertex.y as f32,
+                0.0, // 新版本已展开圆弧，不需要 bulge
             )
         })
         .collect();
 
-    let bulge_count = result.iter().filter(|v| v.z.abs() > 0.001).count();
-    println!("   其中包含 {} 个圆弧段（bulge > 0.001）", bulge_count);
+    println!("   生成的圆弧已被展开为 {} 条直线段", arcs.len());
     println!("✅ PLOOP顶点处理完成，返回 {} 个顶点", result.len());
 
     Ok(result)
