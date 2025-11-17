@@ -1,0 +1,97 @@
+name: Release
+
+# 发布工作流 - 创建 tag 时自动发布
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    
+    steps:
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          body: |
+            ## aios_core ${{ steps.get_version.outputs.version }}
+            
+            自动发布版本
+            
+            ### 更新内容
+            - 查看 CHANGELOG.md 获取详细信息
+            
+            ### 安装方法
+            ```toml
+            [dependencies]
+            aios_core = "${{ steps.get_version.outputs.version }}"
+            ```
+
+  build-release:
+    name: Build Release - ${{ matrix.os }}
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: aios_core-linux
+          - os: windows-latest
+            artifact_name: aios_core-windows
+          - os: macos-latest
+            artifact_name: aios_core-macos
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+      
+      - name: Fix dependencies
+        shell: bash
+        run: |
+          sed -i.bak '/\[patch/,/^$/d' Cargo.toml || true
+          sed -i.bak 's|path = "../rust-ploop-processor/ploop-rs"|git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev"|' Cargo.toml || true
+      
+      - name: Build release
+        run: cargo build --release --verbose
+      
+      - name: Create archive
+        shell: bash
+        run: |
+          cd target/release
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a ../../${{ matrix.artifact_name }}.zip aios_core.exe
+          else
+            tar czf ../../${{ matrix.artifact_name }}.tar.gz aios_core
+          fi
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ matrix.artifact_name }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
+          asset_name: ${{ matrix.artifact_name }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
+          asset_content_type: application/octet-stream

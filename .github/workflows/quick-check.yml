@@ -1,0 +1,56 @@
+name: Quick Check
+
+# 快速检查工作流 - 仅做基本的编译检查，适合频繁的 PR
+on:
+  pull_request:
+    branches: [ "master", "main" ]
+  push:
+    branches: [ "dev", "feature/*" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quick-check:
+    name: Quick Build Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+      
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "rs-core-quick"
+      
+      # 修复本地依赖问题
+      - name: Prepare Cargo.toml for CI
+        run: |
+          echo "Original Cargo.toml:"
+          tail -20 Cargo.toml
+          
+          # 移除本地 patch
+          if grep -q '\[patch' Cargo.toml; then
+            echo "Removing local patches..."
+            sed -i.bak '/\[patch/,/^$/d' Cargo.toml
+          fi
+          
+          # 替换本地路径依赖为 git 依赖
+          if grep -q 'path = "../rust-ploop-processor' Cargo.toml; then
+            echo "Fixing ploop-rs dependency..."
+            sed -i.bak 's|ploop-rs = { path = "../rust-ploop-processor/ploop-rs" }|ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev", package = "ploop-rs" }|' Cargo.toml
+          fi
+          
+          echo "Modified Cargo.toml:"
+          tail -20 Cargo.toml
+      
+      - name: Check default features
+        run: cargo check --verbose
+      
+      - name: Check all features
+        run: cargo check --all-features --verbose
+        continue-on-error: true

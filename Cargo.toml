@@ -1,6 +1,6 @@
 [package]
 name = "aios_core"
-version = "0.2.0"
+version = "0.2.3"
 edition = "2024"
 resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -158,8 +158,7 @@ downcast-rs = "2.0.2"
 futures = "0.3.30"
 evalexpr = "13.0.0"
 serde_repr = "0.1.19"
-# ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev", package = "ploop-rs" }
-ploop-rs = { path = "../rust-ploop-processor/ploop-rs" }
+ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev", package = "ploop-rs" }
 parking_lot = "0.12"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -182,9 +181,3 @@ tempfile = "3"
 [[bench]]
 name = "room_query_bench"
 harness = false
-
-[patch."https://gitee.com/happydpc/surrealdb"]
-surrealdb = { path = "/Volumes/DPC/work/database/surrealdb/crates/sdk", default-features = false, features = [
-    "protocol-ws",
-    "kv-mem"
-] }
