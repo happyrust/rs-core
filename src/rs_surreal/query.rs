@@ -1021,21 +1021,21 @@ pub(crate) async fn get_named_attmap_with_uda(
         r#"
         -- 1. 通过refno查询元素的完整名称和所有属性
         select fn::default_full_name(REFNO) as NAME, * from only {0}.refno fetch pe;
-        
+
         -- 2. 查询默认的UDA（用户定义属性）
         -- 如果UDNA为空，则使用DYUDNA作为属性名
-        select string::concat(':', if UDNA==none || string::len(UDNA)==0 {{ DYUDNA }} else {{ UDNA }}) as u, 
-               DFLT as v, 
-               UTYP as t 
-        from UDA 
+        select string::concat(':', if UDNA==none || string::len(UDNA)==0 {{ DYUDNA }} else {{ UDNA }}) as u,
+               DFLT as v,
+               UTYP as t
+        from UDA
         where !UHIDE and {0}.noun in ELEL;
-        
+
         -- 3. 查询覆盖的UDA值
         -- 从ATT_UDA表中获取覆盖的UDA值
-        select string::concat(':', if u.UDNA==none || string::len(u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u, 
-               u.UTYP as t, 
-               v 
-        from (ATT_UDA:{1}).udas 
+        select string::concat(':', if u.UDNA==none || string::len(u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u,
+               u.UTYP as t,
+               v
+        from (ATT_UDA:{1}).udas
         where u.UTYP != none;
         "#,
         refno_enum.to_pe_key(), // 转换为PE键名格式
@@ -1706,8 +1706,8 @@ pub async fn query_noun_hierarchy(
             fn::default_name(REFNO) as name,
             REFNO as id,
             TYPE as noun,
-            array::len(REFNO.children) as children_cnt,
-            fn::default_name(REFNO.owner) as owner_name,
+            array::len(REFNO.children?:[]) as children_cnt,
+            fn::default_name(REFNO.owner?:pe:0_0) as owner_name,
             REFNO.owner as owner,
             IF fn::ses_date(REFNO) != NONE THEN <datetime> fn::ses_date(REFNO) ELSE NONE END as last_modified_date
         FROM {noun}
