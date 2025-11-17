@@ -96,12 +96,12 @@ lru = "0.12"
 num_cpus = "1.16"
 
 
-bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", optional = true, features = [
+bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", features = [
     "serialize",
 ] }
-bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math", optional = true }
-bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs", optional = true }
-bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect", optional = true }
+bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math" }
+bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs" }
+bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect" }
 bevy_render = { git = "https://github.com/happyrust/bevy", package = "bevy_render", optional = true }
 bevy_mesh = { git = "https://github.com/happyrust/bevy", package = "bevy_mesh", optional = true }
 bevy_asset = { git = "https://github.com/happyrust/bevy", package = "bevy_asset", optional = true }
