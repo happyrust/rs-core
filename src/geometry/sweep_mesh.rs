@@ -79,6 +79,30 @@ fn triangulate_polygon(profile_points: &[Vec2]) -> Option<CapTriangulation> {
     })
 }
 
+fn polygon_signed_area(points: &[Vec2]) -> f32 {
+    let mut area = 0.0f32;
+    if points.len() < 3 {
+        return area;
+    }
+
+    for i in 0..points.len() {
+        let p0 = points[i];
+        let p1 = points[(i + 1) % points.len()];
+        area += p0.x * p1.y - p1.x * p0.y;
+    }
+
+    area * 0.5
+}
+
+fn compute_path_offset(local: Vec3, path_dir: Vec3, plane_normal: Vec3) -> f32 {
+    let denom = plane_normal.dot(path_dir);
+    if denom.abs() > 1e-6 {
+        -plane_normal.dot(local) / denom
+    } else {
+        0.0
+    }
+}
+
 fn append_cap(
     cap: &CapTriangulation,
     origin: Vec3,
@@ -86,7 +110,7 @@ fn append_cap(
     up: Vec3,
     path_dir: Vec3,
     normal: Vec3,
-    is_start: bool,
+    _is_start: bool,
     vertices: &mut Vec<Vec3>,
     normals: &mut Vec<Vec3>,
     indices: &mut Vec<u32>,
@@ -94,17 +118,9 @@ fn append_cap(
     let base = vertices.len() as u32;
 
     for point in &cap.points {
-        let normal_z = normal.dot(path_dir);
-        let normal_y = normal.dot(up);
-        let z_offset = if normal_z.abs() > 0.001 {
-            let sign = if is_start { -1.0 } else { 1.0 };
-            sign * point.y * (normal_y / normal_z)
-        } else {
-            0.0
-        };
-
         let local = right * point.x + up * point.y;
-        let vertex = origin + local + path_dir * z_offset;
+        let offset = compute_path_offset(local, path_dir, normal);
+        let vertex = origin + local + path_dir * offset;
         vertices.push(vertex);
         normals.push(normal);
     }
@@ -151,7 +167,12 @@ fn generate_line_sweep(
     }
 
     let n_profile = profile_points.len();
-    let path_dir = (line.end - line.start).normalize();
+    let path_vec = line.end - line.start;
+    if path_vec.length_squared() < 1e-6 {
+        return None;
+    }
+
+    let path_dir = path_vec.normalize();
     // 构建局部坐标系
     let (right, up) = {
         let ref_vec = if path_dir.y.abs() < 0.9 {
@@ -164,95 +185,107 @@ fn generate_line_sweep(
         (right, up)
     };
 
+    let resolve_cap_normal = |dir: Option<DVec3>, fallback: Vec3| {
+        if let Some(candidate) = dir {
+            let vec = candidate.as_vec3();
+            if let Some(mut norm) = vec.try_normalize() {
+                if norm.dot(path_dir).abs() > 0.9 {
+                    if fallback.dot(path_dir).is_sign_negative() {
+                        if norm.dot(path_dir) > 0.0 {
+                            norm = -norm;
+                        }
+                    } else if norm.dot(path_dir) < 0.0 {
+                        norm = -norm;
+                    }
+                    return norm;
+                }
+            }
+        }
+        fallback
+    };
+
+    let mut start_normal = resolve_cap_normal(drns, -path_dir);
+    let mut end_normal = resolve_cap_normal(drne, path_dir);
+
+    if start_normal.length_squared() < 1e-6 {
+        start_normal = -path_dir;
+    }
+    if end_normal.length_squared() < 1e-6 {
+        end_normal = path_dir;
+    }
+
+    let mut start_positions = Vec::with_capacity(n_profile);
+    let mut end_positions = Vec::with_capacity(n_profile);
+
+    for &profile_pt in profile_points.iter() {
+        let local_3d = right * profile_pt.x + up * profile_pt.y;
+
+        let start_offset = compute_path_offset(local_3d, path_dir, start_normal);
+        let end_offset = compute_path_offset(local_3d, path_dir, end_normal);
+
+        let start_vertex = line.start + local_3d + path_dir * start_offset;
+        let end_vertex = line.end + local_3d + path_dir * end_offset;
+
+        start_positions.push(start_vertex);
+        end_positions.push(end_vertex);
+    }
+
     let mut vertices = Vec::new();
     let mut normals = Vec::new();
     let mut indices = Vec::new();
 
-    // 计算端面方向
-    let start_normal = if let Some(dir) = drns {
-        -dir.as_vec3().normalize()
-    } else {
-        -path_dir
-    };
+    let area = polygon_signed_area(profile_points);
+    let is_ccw = area >= 0.0;
 
-    let end_normal = if let Some(dir) = drne {
-        dir.as_vec3().normalize()
-    } else {
-        path_dir
-    };
+    for i in 0..n_profile {
+        let next = (i + 1) % n_profile;
 
-    // 生成起始位置的顶点（考虑drns倾斜）
-    for &profile_pt in profile_points.iter() {
-        let local_3d = right * profile_pt.x + up * profile_pt.y;
+        let edge_2d = profile_points[next] - profile_points[i];
+        if edge_2d.length_squared() < 1e-8 {
+            continue;
+        }
 
-        // 计算该点沿路径方向的偏移，使其位于倾斜的端面上
-        // 对于斜切端面，不同Y坐标的点需要不同的Z偏移
-        let z_offset = if drns.is_some() {
-            // 计算倾斜导致的路径方向偏移
-            // start_normal 和 path_dir 之间的夹角决定了倾斜程度
-            let normal_z = start_normal.dot(path_dir);
-            let normal_y = start_normal.dot(up);
-
-            if normal_z.abs() > 0.001 {
-                // y坐标越大，沿path_dir的偏移越大
-                -profile_pt.y * (normal_y / normal_z)
-            } else {
-                0.0
-            }
+        let normal_2d = if is_ccw {
+            Vec2::new(edge_2d.y, -edge_2d.x)
         } else {
-            0.0
+            Vec2::new(-edge_2d.y, edge_2d.x)
         };
 
-        let vertex = line.start + local_3d + path_dir * z_offset;
-        vertices.push(vertex);
+        if normal_2d.length_squared() < 1e-8 {
+            continue;
+        }
 
-        let normal = local_3d.normalize();
-        normals.push(normal);
-    }
-
-    // 生成结束位置的顶点（考虑drne倾斜）
-    for &profile_pt in profile_points.iter() {
-        let local_3d = right * profile_pt.x + up * profile_pt.y;
-
-        // 计算该点沿路径方向的偏移
-        let z_offset = if drne.is_some() {
-            let normal_z = end_normal.dot(path_dir);
-            let normal_y = end_normal.dot(up);
-
-            if normal_z.abs() > 0.001 {
-                profile_pt.y * (normal_y / normal_z)
-            } else {
-                0.0
-            }
-        } else {
-            0.0
+        let mut face_normal = right * normal_2d.x + up * normal_2d.y;
+        let Some(mut face_normal) = face_normal.try_normalize() else {
+            continue;
         };
 
-        let vertex = line.end + local_3d + path_dir * z_offset;
-        vertices.push(vertex);
+        let start_a = start_positions[i];
+        let end_a = end_positions[i];
+        let start_b = start_positions[next];
+        let end_b = end_positions[next];
 
-        let normal = local_3d.normalize();
-        normals.push(normal);
-    }
+        let tri_normal = (end_a - start_a).cross(start_b - start_a);
+        if tri_normal.length_squared() < 1e-8 {
+            continue;
+        }
 
-    // 生成侧面索引
-    for i in 0..(n_profile - 1) {
-        let i0 = i as u32;
-        let i1 = (i + 1) as u32;
-        let i2 = (i + n_profile) as u32;
-        let i3 = (i + 1 + n_profile) as u32;
+        if tri_normal.dot(face_normal) < 0.0 {
+            face_normal = -face_normal;
+        }
 
-        // 两个三角形组成一个四边形
-        indices.extend_from_slice(&[i0, i2, i1, i1, i2, i3]);
-    }
+        let base = vertices.len() as u32;
 
-    // 封闭轮廓（连接最后一点和第一点）
-    if profile_points.len() > 3 {
-        let i0 = (n_profile - 1) as u32;
-        let i1 = 0u32;
-        let i2 = (2 * n_profile - 1) as u32;
-        let i3 = n_profile as u32;
-        indices.extend_from_slice(&[i0, i2, i1, i1, i2, i3]);
+        vertices.push(start_a);
+        normals.push(face_normal);
+        vertices.push(end_a);
+        normals.push(face_normal);
+        vertices.push(start_b);
+        normals.push(face_normal);
+        vertices.push(end_b);
+        normals.push(face_normal);
+
+        indices.extend_from_slice(&[base, base + 1, base + 2, base + 2, base + 1, base + 3]);
     }
 
     let cap_triangulation = triangulate_polygon(profile_points);
@@ -334,8 +367,15 @@ fn generate_arc_sweep(
             let vertex = position + local_3d;
             vertices.push(vertex);
 
-            // 法向量指向外部（径向方向）
-            let normal = local_3d.normalize();
+            // 计算表面法向量
+            // 对于扫掠表面，法向量应该垂直于扫掠方向和轮廓切线方向
+            // 这里使用径向方向作为法向量的近似（对于简单轮廓）
+            let normal = if local_3d.length_squared() > 1e-6 {
+                local_3d.normalize()
+            } else {
+                // 如果轮廓点太靠近中心，使用up方向作为法向量
+                up
+            };
             normals.push(normal);
         }
     }

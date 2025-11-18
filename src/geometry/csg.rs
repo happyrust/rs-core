@@ -28,6 +28,7 @@ use crate::prim_geo::rtorus::RTorus;
 use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
+use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::prim_geo::wire::{CurveType, process_ploop_vertices};
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::types::refno::RefU64;
@@ -496,6 +497,7 @@ pub fn generate_csg_mesh(
         PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly),
         PdmsGeoParam::PrimRevolution(rev) => generate_revolution_mesh(rev, settings, non_scalable),
+        PdmsGeoParam::PrimLoft(sweep) => generate_prim_loft_mesh(sweep, settings, non_scalable),
         _ => None,
     }
 }
@@ -3366,6 +3368,37 @@ pub(crate) fn generate_revolution_mesh(
 
     Some(GeneratedMesh {
         mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        aabb: Some(aabb),
+    })
+}
+
+/// 生成PrimLoft（SweepSolid）网格
+///
+/// PrimLoft是一个通用的扫掠实体，通过将截面轮廓沿着路径扫掠来生成实体
+/// 支持多种路径类型：直线、圆弧、多段路径等
+fn generate_prim_loft_mesh(
+    sweep: &SweepSolid,
+    settings: &LodMeshSettings,
+    non_scalable: bool,
+) -> Option<GeneratedMesh> {
+    use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
+    
+    // 使用sweep mesh生成器创建网格
+    let mesh = generate_sweep_solid_mesh(sweep, settings)?;
+    
+    // 计算AABB
+    let aabb = if mesh.vertices.is_empty() {
+        Aabb::new_invalid()
+    } else {
+        let mut aabb = Aabb::new_invalid();
+        for vertex in &mesh.vertices {
+            extend_aabb(&mut aabb, *vertex);
+        }
+        aabb
+    };
+    
+    Some(GeneratedMesh {
+        mesh,
         aabb: Some(aabb),
     })
 }
