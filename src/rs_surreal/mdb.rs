@@ -657,7 +657,7 @@ pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
 /// * 使用缓存优化查询性能
 /// * 从WORL表中查询指定MDB下的世界节点参考号
 /// * 如果未找到则返回默认值
-#[cached(result = true)]
+// #[cached(result = true)]
 pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     // 标准化MDB名称,确保以'/'开头
     let mdb_name = if mdb.starts_with('/') {
@@ -676,8 +676,11 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
         mdb_name
     );
 
+    println!("Executing SQL: {}", sql);
+
     // 执行查询并获取结果
-    let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 0).await?;
+    let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 1).await?;
+    dbg!(&id);
     Ok(id.unwrap_or_default())
 }
 
