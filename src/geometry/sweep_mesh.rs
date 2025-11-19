@@ -317,14 +317,17 @@ fn generate_line_sweep(
         );
     }
 
-    Some(PlantMesh {
+    let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
+        uvs: Vec::new(),
         wire_vertices: Vec::new(),
         edges: Vec::new(),
         aabb: None,
-    })
+    };
+    mesh.generate_auto_uvs();
+    Some(mesh)
 }
 
 /// 沿单段圆弧路径生成 sweep mesh
@@ -472,14 +475,17 @@ fn generate_arc_sweep(
         );
     }
 
-    Some(PlantMesh {
+    let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
+        uvs: Vec::new(),
         wire_vertices: Vec::new(),
         edges: Vec::new(),
         aabb: None,
-    })
+    };
+    mesh.generate_auto_uvs();
+    Some(mesh)
 }
 
 /// 沿多段路径生成 sweep mesh
@@ -658,14 +664,17 @@ fn generate_multi_segment_sweep(
         );
     }
 
-    Some(PlantMesh {
+    let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
+        uvs: Vec::new(),
         wire_vertices: Vec::new(),
         edges: Vec::new(),
         aabb: None,
-    })
+    };
+    mesh.generate_auto_uvs();
+    Some(mesh)
 }
 
 /// 根据设置计算圆弧分段数

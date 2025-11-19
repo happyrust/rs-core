@@ -1,6 +1,7 @@
 pub mod test_attmap;
 pub mod test_rsvec3_conversion;
 pub mod test_shape;
+pub mod test_uv_generation;
 
 #[cfg(feature = "occ")]
 pub mod test_wire;

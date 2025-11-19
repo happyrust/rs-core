@@ -147,9 +147,10 @@ pub fn unit_box_mesh() -> PlantMesh {
     use parry3d::bounding_volume::Aabb;
     let edges = extract_edges_from_mesh(&indices, &vertices);
     let mut mesh = PlantMesh {
+        indices,
         vertices,
         normals,
-        indices,
+        uvs: Vec::new(),
         wire_vertices: Vec::new(),
         edges,
         aabb: Some(Aabb::new(
@@ -157,6 +158,7 @@ pub fn unit_box_mesh() -> PlantMesh {
             Point3::new(half, half, half),
         )),
     };
+    mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
     mesh
 }
@@ -224,10 +226,12 @@ pub fn unit_sphere_mesh() -> PlantMesh {
         indices,
         vertices,
         normals,
+        uvs: Vec::new(),
         wire_vertices: vec![],
         edges,
         aabb: Some(aabb),
     };
+    mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
     mesh
 }
@@ -323,9 +327,10 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
 
     let edges = extract_edges_from_mesh(&indices, &vertices);
     let mut mesh = PlantMesh {
+        indices,
         vertices,
         normals,
-        indices,
+        uvs: Vec::new(),
         wire_vertices: Vec::new(),
         edges,
         aabb: Some(Aabb::new(
@@ -333,6 +338,7 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
             Point3::new(0.5, 0.5, 1.0),
         )),
     };
+    mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
     mesh
 }
@@ -446,10 +452,12 @@ fn create_mesh_with_edges(
         indices,
         vertices,
         normals,
+        uvs: Vec::new(),
         wire_vertices: Vec::new(),
         edges,
         aabb,
     };
+    mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
     mesh
 }

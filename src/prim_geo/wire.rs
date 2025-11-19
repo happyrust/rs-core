@@ -1610,7 +1610,7 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
 
     // 使用 ploop-rs 处理 PLOOP（直接传递顶点切片）
     // process_ploop 返回二元组：(processed_vertices, arcs)
-    let (processed_vertices, arcs) =
+    let (processed_vertices, _bulges, arcs, _fradius_report) =
         processor.process_ploop(&ploop_vertices);
 
     println!("   处理后顶点数: {}", processed_vertices.len());

@@ -123,6 +123,8 @@ pub async fn query_manifold_boolean_operations(
         "#
     );
 
+    // println!("[query_manifold_boolean_operations] sql: {}", sql);
+
     SUL_DB.query_take(&sql, 0).await
 }
 

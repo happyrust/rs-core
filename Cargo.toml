@@ -149,7 +149,7 @@ downcast-rs = "2.0.2"
 futures = "0.3.30"
 evalexpr = "13.0.0"
 serde_repr = "0.1.19"
-ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev", package = "ploop-rs" }
+ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "1.0", package = "ploop-rs" }
 parking_lot = "0.12"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

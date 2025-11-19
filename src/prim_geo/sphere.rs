@@ -198,12 +198,14 @@ impl BrepShapeTrait for Sphere {
             indices,
             vertices: points,
             normals,
+            uvs: Vec::new(),
             wire_vertices: vec![],
             edges,
             aabb: None,
         };
+        mesh.generate_auto_uvs();
         mesh.sync_wire_vertices_from_edges();
-        return Some(mesh);
+        Some(mesh)
     }
 }
 

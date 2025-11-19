@@ -422,10 +422,12 @@ impl From<&ManifoldRust> for PlantMesh {
                 indices,
                 vertices,
                 normals,
+                uvs: Vec::new(),
                 wire_vertices: vec![],
                 edges,
                 aabb: None,
             };
+            mesh.generate_auto_uvs();
             mesh.sync_wire_vertices_from_edges();
             mesh
         }
