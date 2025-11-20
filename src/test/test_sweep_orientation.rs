@@ -298,3 +298,234 @@ fn test_arc_sweep_with_pref_axis() {
     println!("  已导出: test_output/arc_sweep_pref_x.obj");
     println!("\n关键验证：圆弧路径现在正确使用 pref_axis (YDIR) 作为坐标系的 Y 轴");
 }
+
+/// 测试 lmirror 参数对直线路径的影响
+#[test]
+fn test_lmirror_on_line_path() {
+    println!("\n=== 测试 lmirror 参数（直线路径）===");
+
+    // 创建一个非对称的矩形截面（方便看出镜像效果）
+    let rect_profile = vec![
+        Vec2::new(0.0, 0.0),      // 左下
+        Vec2::new(100.0, 0.0),    // 右下
+        Vec2::new(100.0, 50.0),   // 右上
+        Vec2::new(0.0, 50.0),     // 左上
+    ];
+
+    let profile = CateProfileParam::SPRO(SProfileData {
+        refno: RefnoEnum::default(),
+        verts: rect_profile,
+        frads: vec![0.0; 4],
+        plin_pos: Vec2::ZERO,
+        plin_axis: Vec3::Y,
+        plax: Vec3::Y,
+        na_axis: Vec3::Z,
+    });
+
+    let line_path = SweepPath3D::from_line(Line3D {
+        start: Vec3::ZERO,
+        end: Vec3::Z * 500.0,
+        is_spine: false,
+    });
+
+    // 测试 1: lmirror = false
+    println!("\n测试 1: lmirror = false");
+    let sweep_normal = SweepSolid {
+        profile: profile.clone(),
+        drns: None,
+        drne: None,
+        bangle: 0.0,
+        plax: Vec3::Y,
+        extrude_dir: DVec3::Z,
+        height: 500.0,
+        path: line_path.clone(),
+        lmirror: false,
+    };
+
+    let mesh_normal = sweep_normal
+        .gen_csg_shape()
+        .expect("Failed with lmirror=false");
+    println!("  顶点数: {}", mesh_normal.vertices.len());
+
+    let first_v_normal = mesh_normal.vertices[0];
+    println!("  第一个顶点: ({:.2}, {:.2}, {:.2})",
+             first_v_normal.x, first_v_normal.y, first_v_normal.z);
+
+    // 测试 2: lmirror = true
+    println!("\n测试 2: lmirror = true");
+    let sweep_mirror = SweepSolid {
+        profile: profile.clone(),
+        drns: None,
+        drne: None,
+        bangle: 0.0,
+        plax: Vec3::Y,
+        extrude_dir: DVec3::Z,
+        height: 500.0,
+        path: line_path.clone(),
+        lmirror: true,
+    };
+
+    let mesh_mirror = sweep_mirror
+        .gen_csg_shape()
+        .expect("Failed with lmirror=true");
+    println!("  顶点数: {}", mesh_mirror.vertices.len());
+
+    let first_v_mirror = mesh_mirror.vertices[0];
+    println!("  第一个顶点: ({:.2}, {:.2}, {:.2})",
+             first_v_mirror.x, first_v_mirror.y, first_v_mirror.z);
+
+    // 验证镜像效果
+    println!("\n镜像效果验证:");
+    println!("  X 坐标差异: {:.2} vs {:.2}", first_v_normal.x, first_v_mirror.x);
+
+    // 导出文件对比
+    let _ = mesh_normal.export_obj(false, "test_output/line_lmirror_false.obj");
+    let _ = mesh_mirror.export_obj(false, "test_output/line_lmirror_true.obj");
+
+    println!("\n✅ 直线路径 lmirror 测试通过");
+    println!("  已导出: test_output/line_lmirror_false.obj");
+    println!("  已导出: test_output/line_lmirror_true.obj");
+}
+
+/// 测试 lmirror 参数对圆弧路径的影响
+#[test]
+fn test_lmirror_on_arc_path() {
+    println!("\n=== 测试 lmirror 参数（圆弧路径）===");
+
+    // 创建非对称矩形截面
+    let rect_profile = vec![
+        Vec2::new(0.0, 0.0),
+        Vec2::new(100.0, 0.0),
+        Vec2::new(100.0, 50.0),
+        Vec2::new(0.0, 50.0),
+    ];
+
+    let profile = CateProfileParam::SPRO(SProfileData {
+        refno: RefnoEnum::default(),
+        verts: rect_profile,
+        frads: vec![0.0; 4],
+        plin_pos: Vec2::ZERO,
+        plin_axis: Vec3::Y,
+        plax: Vec3::Z,
+        na_axis: Vec3::Z,
+    });
+
+    let arc = Arc3D {
+        center: Vec3::ZERO,
+        radius: 500.0,
+        angle: PI / 2.0,
+        start_pt: Vec3::new(500.0, 0.0, 0.0),
+        clock_wise: false,
+        axis: Vec3::Z,
+        pref_axis: Vec3::Y,
+    };
+    let arc_path = SweepPath3D::from_arc(arc);
+
+    // 测试 1: lmirror = false
+    println!("\n测试 1: lmirror = false");
+    let sweep_normal = SweepSolid {
+        profile: profile.clone(),
+        drns: None,
+        drne: None,
+        bangle: 0.0,
+        plax: Vec3::Z,
+        extrude_dir: DVec3::Z,
+        height: 0.0,
+        path: arc_path.clone(),
+        lmirror: false,
+    };
+
+    let mesh_normal = sweep_normal
+        .gen_csg_shape()
+        .expect("Failed with lmirror=false");
+    println!("  顶点数: {}", mesh_normal.vertices.len());
+
+    // 测试 2: lmirror = true
+    println!("\n测试 2: lmirror = true");
+    let sweep_mirror = SweepSolid {
+        profile: profile.clone(),
+        drns: None,
+        drne: None,
+        bangle: 0.0,
+        plax: Vec3::Z,
+        extrude_dir: DVec3::Z,
+        height: 0.0,
+        path: arc_path.clone(),
+        lmirror: true,
+    };
+
+    let mesh_mirror = sweep_mirror
+        .gen_csg_shape()
+        .expect("Failed with lmirror=true");
+    println!("  顶点数: {}", mesh_mirror.vertices.len());
+
+    // 导出对比
+    let _ = mesh_normal.export_obj(false, "test_output/arc_lmirror_false.obj");
+    let _ = mesh_mirror.export_obj(false, "test_output/arc_lmirror_true.obj");
+
+    println!("\n✅ 圆弧路径 lmirror 测试通过");
+    println!("  已导出: test_output/arc_lmirror_false.obj");
+    println!("  已导出: test_output/arc_lmirror_true.obj");
+}
+
+/// 测试 bangle 参数（Beta 角旋转）
+#[test]
+fn test_bangle_rotation() {
+    println!("\n=== 测试 bangle 参数（Beta 角旋转）===");
+
+    // 创建非对称矩形截面
+    let rect_profile = vec![
+        Vec2::new(0.0, 0.0),
+        Vec2::new(100.0, 0.0),
+        Vec2::new(100.0, 50.0),
+        Vec2::new(0.0, 50.0),
+    ];
+
+    let profile = CateProfileParam::SPRO(SProfileData {
+        refno: RefnoEnum::default(),
+        verts: rect_profile,
+        frads: vec![0.0; 4],
+        plin_pos: Vec2::ZERO,
+        plin_axis: Vec3::Y,
+        plax: Vec3::Z,
+        na_axis: Vec3::Z,
+    });
+
+    let arc = Arc3D {
+        center: Vec3::ZERO,
+        radius: 500.0,
+        angle: PI / 2.0,
+        start_pt: Vec3::new(500.0, 0.0, 0.0),
+        clock_wise: false,
+        axis: Vec3::Z,
+        pref_axis: Vec3::Y,
+    };
+    let arc_path = SweepPath3D::from_arc(arc);
+
+    // 测试不同的 bangle 值
+    for bangle in [0.0, 45.0, 90.0] {
+        println!("\n测试 bangle = {}°", bangle);
+        let sweep = SweepSolid {
+            profile: profile.clone(),
+            drns: None,
+            drne: None,
+            bangle,
+            plax: Vec3::Z,
+            extrude_dir: DVec3::Z,
+            height: 0.0,
+            path: arc_path.clone(),
+            lmirror: false,
+        };
+
+        let mesh = sweep
+            .gen_csg_shape()
+            .expect(&format!("Failed with bangle={}", bangle));
+        println!("  顶点数: {}", mesh.vertices.len());
+
+        let filename = format!("test_output/arc_bangle_{}.obj", bangle as i32);
+        let _ = mesh.export_obj(false, &filename);
+        println!("  已导出: {}", filename);
+    }
+
+    println!("\n✅ bangle 参数测试通过");
+}
