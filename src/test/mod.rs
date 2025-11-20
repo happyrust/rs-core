@@ -41,6 +41,7 @@ pub mod test_different_dbs;
 pub mod test_h_beam_drns_drne;
 pub mod test_multi_segment_path;
 pub mod test_scylinder_shear;
+pub mod test_sweep_orientation;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_svg_standalone;

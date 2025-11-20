@@ -151,20 +151,16 @@ pub async fn create_profile_geos(
         let mut paths = vec![];
         for &spine_refno in children_refnos.iter() {
             let spine_att = crate::get_named_attmap(spine_refno).await?;
-            let spine_mat = crate::get_world_mat4(spine_refno, true)
-                .await?
-                .unwrap_or_default();
-            let inv_mat = spine_mat.inverse();
             //如果是墙，会有这两个属性
             drns = spine_att
                 .get_dvec3("DRNS")
-                .map(|x| inv_mat.transform_vector3(x.normalize()));
+                .map(|x| x.normalize());
             if drns.is_some() && drns.unwrap().is_nan() {
                 drns = None;
             }
             drne = spine_att
                 .get_dvec3("DRNE")
-                .map(|x| inv_mat.transform_vector3(x.normalize()));
+                .map(|x| x.normalize());
             if drne.is_some() && drne.unwrap().is_nan() {
                 drne = None;
             }
@@ -322,15 +318,16 @@ pub async fn create_profile_geos(
                             .unwrap_or(RefnoEnum::from(RefU64(0)));
                         let hash = profile_refno.hash_with_another_refno(first_spine_refno);
 
-                        // Transform 使用 IDENTITY，因为多段路径已经包含了世界坐标
                         let mut transform = Transform::IDENTITY;
-                        transform.scale = loft.get_scaled_vec3();
+                        // transform.scale = loft.get_scaled_vec3();
 
                         csg_shapes_map
                             .entry(refno)
                             .or_insert(Vec::new())
                             .push(CateCsgShape {
-                                refno: RefU64(hash).into(),
+                                //先暂时不做几何体共享
+                                // refno: RefU64(hash).into(),
+                                refno,
                                 csg_shape: Box::new(loft),
                                 transform,
                                 visible: true,

@@ -552,37 +552,41 @@ impl BrepShapeTrait for SweepSolid {
                 let mut transform_btm = Mat4::IDENTITY;
                 let mut transform_top = Mat4::IDENTITY;
                 if self.drns.is_normalized() && self.is_drns_sloped() {
-                    let x_angle = self.drns.angle_between(Vec3::X).abs();
+                    // 解包 DRNS（起始端面方向）
+                    let drns_vec = self.drns.unwrap().as_vec3();
+                    let x_angle = drns_vec.angle_between(Vec3::X).abs();
                     let scale_x = if x_angle < ANGLE_RAD_F64_TOL {
                         1.0
                     } else {
                         1.0 / (x_angle.sin())
                     };
-                    let y_angle = self.drns.angle_between(Vec3::Y).abs();
+                    let y_angle = drns_vec.angle_between(Vec3::Y).abs();
                     let scale_y = if y_angle < ANGLE_RAD_F64_TOL {
                         1.0
                     } else {
                         1.0 / (y_angle.sin())
                     };
                     transform_btm =
-                        Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, self.drns))
+                        Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, drns_vec))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                 }
                 if self.drne.is_normalized() && self.is_drne_sloped() {
-                    let x_angle = (-self.drne).angle_between(Vec3::X).abs();
+                    // 先解包 DRNE，然后取负值（因为 DRNE 是结束端面的方向）
+                    let drne_vec = -self.drne.unwrap().as_vec3();
+                    let x_angle = drne_vec.angle_between(Vec3::X).abs();
                     let scale_x = if x_angle < ANGLE_RAD_F64_TOL {
                         1.0
                     } else {
                         1.0 / (x_angle.sin())
                     };
-                    let y_angle = (-self.drne).angle_between(DVec3::Y).abs();
+                    let y_angle = drne_vec.angle_between(Vec3::Y).abs();
                     let scale_y = if y_angle < ANGLE_RAD_F64_TOL {
                         1.0
                     } else {
                         1.0 / (y_angle.sin())
                     };
                     transform_top =
-                        Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, -self.drne))
+                        Mat4::from_quat(glam::Quat::from_rotation_arc(Vec3::Z, drne_vec))
                             * Mat4::from_scale(Vec3::new(scale_x, scale_y, 1.0));
                 }
                 transform_top =

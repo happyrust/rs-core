@@ -1657,7 +1657,7 @@ pub async fn query_noun_hierarchy(
         for parent_refno in parent_refnos {
             let name_filter_clause = sanitized_filter
                 .as_ref()
-                .map(|filter| format!("        AND string::contains(name ?? '', '{}')", filter))
+                .map(|filter| format!("        AND string::contains(string::lowercase(fn::default_name(id) ?? ''), string::lowercase('{}'))", filter))
                 .unwrap_or_default();
 
             let sql = format!(
@@ -1693,7 +1693,7 @@ pub async fn query_noun_hierarchy(
     } else {
         let where_clause = if let Some(filter) = sanitized_filter {
             format!(
-                "WHERE REFNO!=NONE AND NAME != none AND string::contains(NAME, '{}')",
+                "WHERE REFNO!=NONE AND string::contains(string::lowercase(fn::default_name(REFNO) ?? ''), string::lowercase('{}'))",
                 filter
             )
         } else {

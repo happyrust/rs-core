@@ -48,6 +48,12 @@ impl NameFilter {
         }
     }
 
+    /// 获取标准化的关键字
+    ///
+    /// # 返回值
+    /// - 如果关键字为空或只有空白字符，返回 `None`
+    /// - 如果区分大小写，返回去除首尾空白的字符串
+    /// - 如果不区分大小写，返回去除首尾空白并转换为小写的字符串
     fn normalized_keyword(&self) -> Option<String> {
         let trimmed = self.keyword.trim();
         if trimmed.is_empty() {
@@ -62,16 +68,35 @@ impl NameFilter {
     }
 }
 
-/// 从数据库中获取MDB和DB表的信息
+/// 从数据库中获取 MDB 世界下的所有 SITE 节点
 ///
-/// # 参数说明
+/// # 功能说明
+/// 查询指定 MDB 和模块类型下所有 WORLD 节点的直接子节点中类型为 SITE 的节点，
+/// 并返回树形节点结构，包含节点的基本信息和子节点数量。
 ///
-/// * `mdb` - 要查询的MDB名称
-/// * `db_type` - 数据库类型过滤条件
+/// # 参数
+/// * `mdb` - 要查询的 MDB 名称（会自动标准化为 E3D 格式）
+/// * `module` - 数据库模块类型（DESI、CATA、PROP 等）
 ///
 /// # 返回值
+/// 返回包含以下字段的 SITE 节点列表：
+/// - `refno` - 节点参考号
+/// - `noun` - 节点类型（固定为 "SITE"）
+/// - `name` - 节点名称（如果为空会自动生成 "SITE N" 格式）
+/// - `owner` - 所属的 WORLD 节点
+/// - `children_count` - 子节点数量
+/// - `order` - 节点在列表中的顺序
 ///
-/// 返回包含refno、noun、name、owner和children_count字段的查询结果
+/// # 缓存
+/// 该函数使用 `#[cached]` 宏进行结果缓存，相同参数的重复调用会直接返回缓存结果
+///
+/// # 示例
+/// ```rust
+/// let sites = get_mdb_world_site_ele_nodes("/651YK".to_string(), DBType::DESI).await?;
+/// for site in sites {
+///     println!("SITE: {}, 子节点数: {}", site.name, site.children_count);
+/// }
+/// ```
 #[cached(result = true)]
 pub async fn get_mdb_world_site_ele_nodes(
     mdb: String,
@@ -104,14 +129,25 @@ pub async fn get_mdb_world_site_ele_nodes(
     Ok(nodes)
 }
 
-/// 创建MDB世界站点PE表
+/// 创建 MDB 世界站点 PE 关系表
+///
+/// # 功能说明
+/// 为指定 MDB 的所有 SITE 节点创建与 WORLD 节点的关系映射（site_relate），
+/// 用于建立站点之间的层级关系。
 ///
 /// # 参数
-/// * `mdb` - MDB名称
-/// * `module` - 数据库类型
+/// * `mdb` - MDB 名称
+/// * `module` - 数据库模块类型
 ///
 /// # 返回值
-/// * `bool` - 创建是否成功
+/// * `Ok(true)` - 成功创建关系表
+/// * `Ok(false)` - 没有找到 SITE 节点，未创建
+/// * `Err` - 查询或创建过程中发生错误
+///
+/// # 实现细节
+/// 1. 查询 MDB 下指定模块的所有 WORLD 节点
+/// 2. 获取这些 WORLD 节点下的所有 SITE 子节点
+/// 3. 为每个 SITE 创建 `site_relate` 关系，连接到其所属的 WORLD 节点
 pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> anyhow::Result<bool> {
     let db_type: u8 = module.into();
     let mut response = SUL_DB
@@ -143,12 +179,25 @@ pub async fn create_mdb_world_site_pes_table(mdb: String, module: DBType) -> any
 
 /// 通过数据库编号列表查询指定类型的参考号
 ///
+/// # 功能说明
+/// 在指定的数据库编号列表中查询特定类型的所有参考号。
+/// 如果数据库编号列表为空，则查询所有数据库。
+///
 /// # 参数
-/// * `nouns` - 要查询的类型名称列表
-/// * `dbnums` - 数据库编号列表
+/// * `nouns` - 要查询的 Noun 类型名称列表（如 ["SITE", "ZONE", "EQUI"]）
+/// * `dbnums` - 数据库编号列表（空列表表示查询所有数据库）
 ///
 /// # 返回值
-/// * `Vec<RefnoEnum>` - 参考号列表
+/// * `Vec<RefnoEnum>` - 匹配的参考号列表
+///
+/// # 示例
+/// ```rust
+/// // 查询特定数据库中的 SITE 和 ZONE
+/// let refnos = query_type_refnos_by_dbnums(&["SITE", "ZONE"], &[3001, 3002]).await?;
+///
+/// // 查询所有数据库中的 EQUI
+/// let all_equi = query_type_refnos_by_dbnums(&["EQUI"], &[]).await?;
+/// ```
 pub async fn query_type_refnos_by_dbnums(
     nouns: &[&str],
     dbnums: &[u32],
@@ -171,6 +220,18 @@ pub async fn query_type_refnos_by_dbnums(
 }
 
 /// 统计指定 Noun 在全库范围内的实例数量
+///
+/// # 参数
+/// - `noun`: Noun 类型名称（如 "SITE"、"ZONE"、"EQUI" 等）
+///
+/// # 返回值
+/// - 该类型在整个数据库中的实例数量
+///
+/// # 示例
+/// ```rust
+/// let site_count = count_refnos_by_noun("SITE").await?;
+/// println!("数据库中共有 {} 个 SITE 节点", site_count);
+/// ```
 pub async fn count_refnos_by_noun(noun: &str) -> anyhow::Result<u64> {
     let sql = format!("select value count() from only {noun} group all limit 1");
     let mut response = SUL_DB.query_response(&sql).await?;
@@ -202,6 +263,26 @@ pub async fn count_refnos_by_noun_with_dbnums(noun: &str, dbnums: &[u32]) -> any
 }
 
 /// 按照 LIMIT / START 分页查询指定 Noun 的实例列表
+///
+/// # 功能说明
+/// 对指定类型的所有实例进行分页查询，支持大数据量的分批加载。
+///
+/// # 参数
+/// - `noun`: Noun 类型名称
+/// - `start`: 起始偏移量（从 0 开始）
+/// - `limit`: 每页数量（0 表示不查询，返回空列表）
+///
+/// # 返回值
+/// - 按 ID 排序的参考号列表（最多 `limit` 个）
+///
+/// # 示例
+/// ```rust
+/// // 获取第 1 页（每页 100 条）
+/// let page1 = query_refnos_by_noun_page("EQUI", 0, 100).await?;
+///
+/// // 获取第 2 页
+/// let page2 = query_refnos_by_noun_page("EQUI", 100, 100).await?;
+/// ```
 pub async fn query_refnos_by_noun_page(
     noun: &str,
     start: usize,
@@ -253,14 +334,18 @@ pub async fn query_refnos_by_noun_page_with_dbnums(
     Ok(refnos)
 }
 
-/// 根据 has_children 条件过滤 refnos
+/// 根据子节点存在性过滤参考号列表
 ///
 /// # 参数
 /// * `refnos` - 待过滤的 refno 列表
 /// * `has_children` - true 表示只保留有子节点的，false 表示只保留没有子节点的
 ///
-/// # 返回
+/// # 返回值
 /// 过滤后的 refno 列表
+///
+/// # 实现细节
+/// - 为避免 SQL 语句过长，采用分批处理策略，每批最多处理 500 个参考号
+/// - 查询 PE 表的 children 字段长度来判断是否有子节点
 async fn filter_refnos_by_children(
     refnos: Vec<RefnoEnum>,
     has_children: bool,
@@ -402,13 +487,25 @@ pub async fn query_type_refnos_by_dbnum_with_filter(
     Ok(refnos)
 }
 
-/// 查询使用类别参考号
-/// 额外检查SPRE和CATR不能同时为空
+/// 查询使用类别的参考号
+///
+/// # 功能说明
+/// 查询指定类型中包含类别信息的参考号，即 SPRE（规格参考）或 CATR（目录参考）不为空的节点。
+/// 这些节点通常关联了设备规格或目录信息。
 ///
 /// # 参数
-/// * `nouns` - 要查询的类型名称列表
+/// * `nouns` - 要查询的 Noun 类型名称列表
 /// * `dbnum` - 数据库编号
-/// * `only_history` - 是否只查询历史记录
+/// * `only_history` - 是否只查询历史记录（true 时查询 `{NOUN}_H` 表）
+///
+/// # 返回值
+/// * `Vec<RefnoEnum>` - 包含类别信息的参考号列表
+///
+/// # 示例
+/// ```rust
+/// // 查询有规格信息的设备和管道
+/// let cate_items = query_use_cate_refnos_by_dbnum(&["EQUI", "PIPE"], 3001, false).await?;
+/// ```
 pub async fn query_use_cate_refnos_by_dbnum(
     nouns: &[&str],
     dbnum: u32,
@@ -531,14 +628,53 @@ pub async fn query_type_refnos(
     query_type_refnos_in_mdb(nouns, mdb_name, db_type, name_filter).await
 }
 
-/// 查询MDB数据库编号
+/// 查询数据库中所有 MDB 的名称列表
+///
+/// # 功能说明
+/// 从 SurrealDB 的 MDB 表中查询所有 MDB 的名称，返回去重后的名称列表。
+/// 用于在项目设置界面提供 MDB 选择下拉框。
+///
+/// # 返回值
+/// * `Vec<String>` - MDB 名称列表，按字母顺序排序，最多返回 100 个
+///
+/// # 示例
+/// ```rust
+/// let mdb_names = query_all_mdb_names().await?;
+/// for name in mdb_names {
+///     println!("MDB: {}", name);
+/// }
+/// ```
+pub async fn query_all_mdb_names() -> anyhow::Result<Vec<String>> {
+    let sql = "SELECT VALUE NAME FROM MDB WHERE NAME != NONE ORDER BY NAME LIMIT 100";
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let names: Vec<String> = response.take(0)?;
+    Ok(names)
+}
+
+/// 查询 MDB 的数据库编号列表
+///
+/// # 功能说明
+/// 根据 MDB 名称和模块类型，查询该 MDB 下对应模块的所有数据库编号（DBNO）。
+/// 一个 MDB 可能包含多个数据库，此函数返回指定模块类型的所有数据库编号。
 ///
 /// # 参数
-/// * `mdb` - MDB名称
-/// * `module` - 数据库类型
+/// * `mdb` - MDB 名称（可选，为 None 时使用默认配置中的 MDB）
+/// * `module` - 数据库模块类型（DESI=1, CATA=2, PROP=3 等）
 ///
 /// # 返回值
 /// * `Vec<u32>` - 数据库编号列表
+///
+/// # 缓存
+/// 使用 `#[cached]` 宏缓存查询结果，提高重复查询性能
+///
+/// # 示例
+/// ```rust
+/// // 查询 /651YK 的 DESI 模块数据库编号
+/// let dbnos = query_mdb_db_nums(Some("/651YK".to_string()), DBType::DESI).await?;
+///
+/// // 使用默认 MDB
+/// let dbnos = query_mdb_db_nums(None, DBType::DESI).await?;
+/// ```
 #[cached(result = true)]
 pub async fn query_mdb_db_nums(mdb: Option<String>, module: DBType) -> anyhow::Result<Vec<u32>> {
     let db_type: u8 = module.into();
@@ -553,14 +689,27 @@ pub async fn query_mdb_db_nums(mdb: Option<String>, module: DBType) -> anyhow::R
     Ok(pe)
 }
 
-/// 查询MDB的world下的所有PE
+/// 查询 MDB 的 WORLD 下的所有 SITE PE 元素
+///
+/// # 功能说明
+/// 获取指定 MDB 和模块下所有 WORLD 节点的直接 SITE 子节点的完整 PE 元素信息。
+/// 与 `get_mdb_world_site_ele_nodes` 不同，本函数返回完整的 `SPdmsElement` 数据。
 ///
 /// # 参数
-/// * `mdb` - MDB名称
-/// * `module` - 数据库类型
+/// * `mdb` - MDB 名称
+/// * `module` - 数据库模块类型
 ///
 /// # 返回值
-/// * `Vec<SPdmsElement>` - PE元素列表
+/// * `Vec<SPdmsElement>` - SITE 类型的 PE 元素列表
+///
+/// # 缓存
+/// 使用 `#[cached]` 宏缓存查询结果
+///
+/// # 实现细节
+/// 1. 查询 MDB 下指定模块的数据库编号列表
+/// 2. 找到这些数据库对应的 WORLD 节点
+/// 3. 通过 pe_owner 关系反向查找 WORLD 的子节点
+/// 4. 过滤出 noun = 'SITE' 的节点
 #[cached(result = true)]
 pub async fn get_mdb_world_site_pes(
     mdb: String,
@@ -622,13 +771,28 @@ pub async fn get_site_pes_by_dbnum(dbnum: u32) -> anyhow::Result<Vec<SPdmsElemen
     Ok(sites)
 }
 
-/// 获取世界节点
+/// 获取 WORLD 世界节点
+///
+/// # 功能说明
+/// 查询指定 MDB 的 DESI 模块下的 WORLD 根节点。
+/// WORLD 节点是整个层级结构的根，包含所有 SITE、ZONE 等子节点。
 ///
 /// # 参数
-/// * `mdb` - MDB名称
+/// * `mdb` - MDB 名称（会自动标准化为 E3D 格式）
 ///
 /// # 返回值
-/// * `Option<SPdmsElement>` - 世界节点元素
+/// * `Option<SPdmsElement>` - WORLD 节点元素（如果不存在则返回 None）
+///
+/// # 缓存
+/// 使用 `#[cached]` 宏缓存查询结果
+///
+/// # 示例
+/// ```rust
+/// let world = get_world("/651YK".to_string()).await?;
+/// if let Some(world_node) = world {
+///     println!("WORLD 节点: {:?}", world_node.refno);
+/// }
+/// ```
 #[cached(result = true)]
 pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
     let mdb_name = to_e3d_name(&mdb);
@@ -1026,6 +1190,18 @@ mod tests {
 }
 
 /// 测试简单的数据库连接
+///
+/// # 功能说明
+/// 执行一个简单的 SurrealDB 查询以验证数据库连接是否正常
+///
+/// # 返回值
+/// - `Ok(())` - 连接成功
+/// - `Err` - 连接失败或查询出错
+///
+/// # 示例
+/// ```rust
+/// test_simple_query().await?;
+/// ```
 pub async fn test_simple_query() -> anyhow::Result<()> {
     let mut response = SUL_DB.query_response("RETURN 1").await?;
     let result: Vec<i32> = response.take(0)?;

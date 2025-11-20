@@ -1074,11 +1074,14 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     let half = sbox.size * 0.5; // 半尺寸
     let mut vertices = Vec::with_capacity(24); // 6个面 × 4个顶点 = 24
     let mut normals = Vec::with_capacity(24);
+    let mut uvs = Vec::with_capacity(24);
     let mut indices = Vec::with_capacity(36); // 6个面 × 2个三角形 × 3个索引 = 36
 
-    // 定义6个面的法向量和4个角点（在单位坐标系中）
+    // 定义6个面的法向量、4个角点（在单位坐标系中）以及对应的UV轴向
+    // UV轴向：(u_axis_index, v_axis_index, u_sign, v_sign)
+    // index: 0=x, 1=y, 2=z
     let faces = [
-        // +Z面（前面）
+        // +Z面（前面）：UV = (X, Y)
         (
             Vec3::Z,
             [
@@ -1087,8 +1090,9 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, 1.0, 1.0),
                 Vec3::new(-1.0, 1.0, 1.0),
             ],
+            (0, 1, 1.0, 1.0)
         ),
-        // -Z面（后面）
+        // -Z面（后面）：UV = (-X, Y)
         (
             Vec3::NEG_Z,
             [
@@ -1097,8 +1101,9 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, -1.0, -1.0),
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
+            (0, 1, -1.0, 1.0)
         ),
-        // +X面（右面）
+        // +X面（右面）：UV = (-Z, Y)
         (
             Vec3::X,
             [
@@ -1107,8 +1112,9 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, 1.0, 1.0),
                 Vec3::new(1.0, -1.0, 1.0),
             ],
+            (2, 1, -1.0, 1.0)
         ),
-        // -X面（左面）
+        // -X面（左面）：UV = (Z, Y)
         (
             Vec3::NEG_X,
             [
@@ -1117,8 +1123,9 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(-1.0, 1.0, -1.0),
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
+            (2, 1, 1.0, 1.0)
         ),
-        // +Y面（上面）
+        // +Y面（上面）：UV = (X, -Z)
         (
             Vec3::Y,
             [
@@ -1127,8 +1134,9 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, 1.0, 1.0),
                 Vec3::new(-1.0, 1.0, 1.0),
             ],
+            (0, 2, 1.0, -1.0)
         ),
-        // -Y面（下面）
+        // -Y面（下面）：UV = (X, Z)
         (
             Vec3::NEG_Y,
             [
@@ -1137,15 +1145,53 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, -1.0, -1.0),
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
+            (0, 2, 1.0, 1.0)
         ),
     ];
 
-    for (normal, corners) in faces {
+    for (normal, corners, (u_idx, v_idx, u_sign, v_sign)) in faces {
         let base_index = vertices.len() as u32;
         for corner in corners {
             let scaled = Vec3::new(corner.x * half.x, corner.y * half.y, corner.z * half.z);
             vertices.push(sbox.center + scaled);
             normals.push(normal);
+            
+            // World Scale UV: 使用实际尺寸作为 UV 坐标
+            // 这里的 scaled 是相对于中心的偏移，加上 half 得到相对于 corner 的正值（0 to size）
+            // UV = (position_on_face)
+            // corner 取值范围是 -1 到 1，所以 (corner + 1) / 2 是 0-1
+            // 乘以尺寸得到实际物理长度
+            
+            let size_arr = [sbox.size.x, sbox.size.y, sbox.size.z];
+            let u_len = size_arr[u_idx];
+            let v_len = size_arr[v_idx];
+            
+            let u_base = match u_idx {
+                0 => corner.x,
+                1 => corner.y,
+                _ => corner.z,
+            };
+            let v_base = match v_idx {
+                0 => corner.x,
+                1 => corner.y,
+                _ => corner.z,
+            };
+            
+            // 将 -1..1 映射到 0..size
+            // 如果 sign 是负的，则反转方向
+            let u = if u_sign > 0.0 {
+                (u_base + 1.0) * 0.5 * u_len
+            } else {
+                (1.0 - u_base) * 0.5 * u_len
+            };
+            
+            let v = if v_sign > 0.0 {
+                (v_base + 1.0) * 0.5 * v_len
+            } else {
+                (1.0 - v_base) * 0.5 * v_len
+            };
+            
+            uvs.push([u, v]);
         }
         // 确保三角形的顶点顺序是逆时针的（从外部看），使法向量指向外部
         // 通过计算第一个三角形的法向量来验证方向
@@ -1181,8 +1227,19 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     let min = sbox.center - half;
     let max = sbox.center + half;
     let aabb = Aabb::new(Point3::from(min), Point3::from(max));
+    let mut mesh = create_mesh_with_edges(indices, vertices, normals, Some(aabb));
+    mesh.uvs = uvs; // 使用手动计算的 UV 覆盖默认的空 UV
+    // create_mesh_with_edges 内部会调用 generate_auto_uvs，我们之后覆盖它
+    // 但 generate_auto_uvs 是基于 bounding box 的，这里我们明确提供了 UV
+    // 为了避免重复计算，我们可以修改 create_mesh_with_edges 或者直接构造 PlantMesh
+    
+    // 重构 Mesh 构造，避免无用的 auto uv
+    let edges = extract_edges_from_mesh(&mesh.indices, &mesh.vertices);
+    mesh.edges = edges;
+    mesh.sync_wire_vertices_from_edges();
+    
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh,
         aabb: Some(aabb),
     })
 }
@@ -2579,13 +2636,21 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, refno: Option<RefU64>) -> Opti
             continue;
         }
         normal = normal.normalize();
+        if !ccw {
+            normal = -normal;
+        }
         let a = add_vertex(p0, normal, &mut vertices, &mut normals, &mut aabb);
         let b = add_vertex(p1, normal, &mut vertices, &mut normals, &mut aabb);
         let c = add_vertex(p2, normal, &mut vertices, &mut normals, &mut aabb);
         let d = add_vertex(p3, normal, &mut vertices, &mut normals, &mut aabb);
 
-        indices.extend_from_slice(&[a, b, c]);
-        indices.extend_from_slice(&[a, c, d]);
+        if ccw {
+            indices.extend_from_slice(&[a, b, c]);
+            indices.extend_from_slice(&[a, c, d]);
+        } else {
+            indices.extend_from_slice(&[a, c, b]);
+            indices.extend_from_slice(&[a, d, c]);
+        }
     }
 
     Some(GeneratedMesh {
@@ -3238,54 +3303,141 @@ pub(crate) fn generate_revolution_mesh(
         (u, v)
     };
 
-    // 将轮廓投影到垂直于旋转轴的平面上
-    // 计算轮廓点到轴的距离（沿轴方向的距离和垂直于轴的距离）
-    let mut profile_points_3d = Vec::new();
-
-    for &profile_pt in profile.iter() {
-        let offset = profile_pt - rot_pt;
-        // 沿轴方向的距离
-        let along_axis = offset.dot(rot_dir);
-        // 垂直于轴的距离
-        let perp_offset = offset - rot_dir * along_axis;
-
-        // 保存沿轴距离和垂直偏移
-        profile_points_3d.push((along_axis, perp_offset));
+    #[derive(Clone, Copy)]
+    struct RevolvedSample {
+        along_axis: f32,
+        perp_dist: f32,
+        perp_dir: Vec3,
+        circ_dir: Vec3,
     }
 
-    // 生成顶点：对每个轮廓点，绕轴旋转生成环形顶点
-    for (profile_idx, &(along_axis, perp_offset)) in profile_points_3d.iter().enumerate() {
+    let mut samples = Vec::with_capacity(n_profile);
+    let mut axis_indices = Vec::new();
+    for &profile_pt in profile.iter() {
+        let offset = profile_pt - rot_pt;
+        let along_axis = offset.dot(rot_dir);
+        let perp_offset = offset - rot_dir * along_axis;
         let perp_dist = perp_offset.length();
-
-        // 如果点在轴上，创建一条线
         if perp_dist < MIN_LEN {
-            // 在轴上的点，旋转后仍然是同一点
+            samples.push(RevolvedSample {
+                along_axis,
+                perp_dist,
+                perp_dir: Vec3::ZERO,
+                circ_dir: Vec3::ZERO,
+            });
+            axis_indices.push(samples.len() - 1);
+            continue;
+        }
+        let perp_dir = perp_offset / perp_dist;
+        let circ_dir = rot_dir.cross(perp_dir).normalize();
+        samples.push(RevolvedSample {
+            along_axis,
+            perp_dist,
+            perp_dir,
+            circ_dir,
+        });
+    }
+
+    for &idx in &axis_indices {
+        let axis_pt = profile[idx];
+        let mut fallback = Vec3::ZERO;
+        let max_step = n_profile.max(1);
+        for step in 1..max_step {
+            if idx + step < n_profile {
+                let diff = profile[idx + step] - axis_pt;
+                let projected = diff - rot_dir * diff.dot(rot_dir);
+                if projected.length_squared() > MIN_LEN * MIN_LEN {
+                    fallback = projected.normalize();
+                    break;
+                }
+            }
+            if idx >= step {
+                let diff = profile[idx - step] - axis_pt;
+                let projected = diff - rot_dir * diff.dot(rot_dir);
+                if projected.length_squared() > MIN_LEN * MIN_LEN {
+                    fallback = projected.normalize();
+                    break;
+                }
+            }
+        }
+        if fallback.length_squared() <= MIN_LEN * MIN_LEN {
+            fallback = u;
+        }
+        let mut circ_dir = rot_dir.cross(fallback);
+        if circ_dir.length_squared() <= MIN_LEN * MIN_LEN {
+            circ_dir = v;
+        } else {
+            circ_dir = circ_dir.normalize();
+        }
+        samples[idx].perp_dir = fallback;
+        samples[idx].circ_dir = circ_dir;
+    }
+
+    let rotate_position = |sample: &RevolvedSample, sin: f32, cos: f32| -> Vec3 {
+        if sample.perp_dist < MIN_LEN {
+            rot_pt + rot_dir * sample.along_axis
+        } else {
+            let rotated_perp = sample.perp_dir * cos + sample.circ_dir * sin;
+            rot_pt + rot_dir * sample.along_axis + rotated_perp * sample.perp_dist
+        }
+    };
+
+    // 生成顶点：对每个轮廓点，绕轴旋转生成环形顶点
+    for (profile_idx, sample) in samples.iter().enumerate() {
+        if sample.perp_dist < MIN_LEN {
             for seg in 0..=angular_segments {
-                let position = rot_pt + rot_dir * along_axis;
+                let theta = (seg as f32 / angular_segments as f32) * angle_rad;
+                let (sin, cos) = theta.sin_cos();
+                let rotated_perp_dir = sample.perp_dir * cos + sample.circ_dir * sin;
+                let position = rot_pt + rot_dir * sample.along_axis;
                 extend_aabb(&mut aabb, position);
                 vertices.push(position);
-                // 法向量指向旋转方向
-                normals.push(u);
+                normals.push(rotated_perp_dir.normalize());
             }
             continue;
         }
 
-        let perp_dir = perp_offset / perp_dist;
-
-        // 生成该轮廓点旋转后的环形顶点
         for seg in 0..=angular_segments {
             let theta = (seg as f32 / angular_segments as f32) * angle_rad;
             let (sin, cos) = theta.sin_cos();
 
-            // 旋转垂直于轴的方向向量
-            let rotated_perp = perp_dir * cos + (rot_dir.cross(perp_dir)) * sin;
-            let position = rot_pt + rot_dir * along_axis + rotated_perp * perp_dist;
+            let rotated_perp_dir = sample.perp_dir * cos + sample.circ_dir * sin;
+            let _rotated_circ_dir = sample.circ_dir * cos - sample.perp_dir * sin;
+            let position = rot_pt + rot_dir * sample.along_axis + rotated_perp_dir * sample.perp_dist;
 
             extend_aabb(&mut aabb, position);
-            vertices.push(position);
 
-            // 计算法向量（指向外部的方向，垂直于表面）
-            let normal = rotated_perp;
+            let tangent_theta = rot_dir.cross(rotated_perp_dir * sample.perp_dist);
+            let prev_idx = if profile_idx == 0 { profile_idx } else { profile_idx - 1 };
+            let next_idx = if profile_idx + 1 < n_profile {
+                profile_idx + 1
+            } else {
+                profile_idx
+            };
+            let prev_pos = rotate_position(&samples[prev_idx], sin, cos);
+            let next_pos = rotate_position(&samples[next_idx], sin, cos);
+            let mut tangent_profile = next_pos - prev_pos;
+            if tangent_profile.length_squared() <= MIN_LEN * MIN_LEN {
+                if next_idx != profile_idx {
+                    tangent_profile = next_pos - position;
+                } else if prev_idx != profile_idx {
+                    tangent_profile = position - prev_pos;
+                }
+            }
+            if tangent_profile.length_squared() <= MIN_LEN * MIN_LEN {
+                tangent_profile = rot_dir;
+            } else {
+                tangent_profile = tangent_profile.normalize();
+            }
+
+            let mut normal = tangent_theta.cross(tangent_profile);
+            if normal.length_squared() <= MIN_LEN * MIN_LEN {
+                normal = rotated_perp_dir;
+            } else {
+                normal = normal.normalize();
+            }
+
+            vertices.push(position);
             normals.push(normal);
         }
     }

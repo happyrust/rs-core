@@ -1,100 +1,422 @@
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
-/// Sweep Mesh Generation
-///
-/// 为 SweepSolid 生成 CSG 网格，不依赖 truck feature
-/// 参考 revolution 的实现方式，直接生成顶点、法线和索引
-use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath, SweepPath3D};
+use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath};
 use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::shape::pdms_shape::PlantMesh;
-use glam::{DVec3, Mat3, Vec2, Vec3};
+use glam::{DVec3, Mat3, Quat, Vec2, Vec3};
 use i_triangle::float::triangulatable::Triangulatable;
 
-/// 生成给定截面的2D轮廓点
-fn get_profile_points(profile: &CateProfileParam) -> Option<Vec<Vec2>> {
+/// 截面顶点数据
+#[derive(Clone, Debug)]
+struct ProfileVertex {
+    pos: Vec2,
+    normal: Vec2,
+    u: f32, // 沿截面的纹理坐标
+}
+
+struct ProfileData {
+    vertices: Vec<ProfileVertex>,
+    is_smooth: bool,
+    is_closed: bool, // 是否首尾相连 (如果是 true，会自动连接 last->first；如果是 false，视为条带)
+}
+
+/// 获取截面数据（顶点、法线、是否平滑）
+fn get_profile_data(profile: &CateProfileParam) -> Option<ProfileData> {
     match profile {
         CateProfileParam::SANN(sann) => {
-            // 圆形截面
             let radius = sann.pradius;
-            let segments = 32; // 圆形分段数
+            let segments = 32;
             let angle = sann.pangle.to_radians();
+            let start_angle = 0.0;
 
-            let mut points = Vec::new();
-            for i in 0..segments {
-                let theta = (i as f32 / segments as f32) * angle;
-                let x = radius * theta.cos();
-                let y = radius * theta.sin();
-                points.push(Vec2::new(x, y) + sann.plin_pos);
+            let mut vertices: Vec<ProfileVertex> = Vec::with_capacity(segments + 1);
+            let mut total_len = 0.0;
+
+            // 无论是闭合圆还是圆弧，都生成 segments+1 个点
+            // 对于闭合圆，最后一个点与第一个点位置重合，但 U 不同 (1.0)
+            for i in 0..=segments {
+                let theta = start_angle + (i as f32 / segments as f32) * angle;
+                let cos_t = theta.cos();
+                let sin_t = theta.sin();
+
+                let x = radius * cos_t;
+                let y = radius * sin_t;
+                let pos = Vec2::new(x, y) + sann.plin_pos;
+                let normal = Vec2::new(cos_t, sin_t); // 径向法线
+
+                if i > 0 {
+                    total_len += (pos - vertices[i - 1].pos).length();
+                }
+
+                vertices.push(ProfileVertex {
+                    pos,
+                    normal,
+                    u: total_len,
+                });
             }
-            Some(points)
+
+            // 归一化 U
+            if total_len > 0.0 {
+                for v in &mut vertices {
+                    v.u /= total_len;
+                }
+            }
+
+            Some(ProfileData {
+                vertices,
+                is_smooth: true,
+                is_closed: false, // 已生成重合点，视为 Strip
+            })
         }
         CateProfileParam::SREC(srect) => {
-            // 矩形截面
             let half_size = srect.size / 2.0;
             let center = srect.center + srect.dxy;
 
-            Some(vec![
-                center + Vec2::new(-half_size.x, -half_size.y),
-                center + Vec2::new(half_size.x, -half_size.y),
-                center + Vec2::new(half_size.x, half_size.y),
-                center + Vec2::new(-half_size.x, half_size.y),
-            ])
+            let p0 = center + Vec2::new(-half_size.x, -half_size.y);
+            let p1 = center + Vec2::new(half_size.x, -half_size.y);
+            let p2 = center + Vec2::new(half_size.x, half_size.y);
+            let p3 = center + Vec2::new(-half_size.x, half_size.y);
+
+            let ps = vec![p0, p1, p2, p3];
+            let mut vertices = Vec::new();
+
+            let perimeter = (srect.size.x + srect.size.y) * 2.0;
+            let mut curr_len = 0.0;
+
+            // 生成 5 个点 (0,1,2,3,0) 以处理 UV 接缝和闭合
+            for i in 0..=4 {
+                let idx = i % 4;
+                let curr = ps[idx];
+
+                vertices.push(ProfileVertex {
+                    pos: curr,
+                    normal: Vec2::ZERO, // Flat 模式下不需要，由面生成
+                    u: curr_len / perimeter,
+                });
+
+                if i < 4 {
+                    let next = ps[(i + 1) % 4];
+                    curr_len += curr.distance(next);
+                }
+            }
+
+            Some(ProfileData {
+                vertices,
+                is_smooth: false, // 硬表面
+                is_closed: false, // 已包含闭合点，视为 Strip
+            })
         }
         CateProfileParam::SPRO(spro) => {
-            // 通用轮廓
-            Some(spro.verts.clone())
+            let n = spro.verts.len();
+            if n < 3 {
+                return None;
+            }
+
+            // 计算总长度
+            let mut perimeter = 0.0;
+            for i in 0..n {
+                let curr = spro.verts[i];
+                let next = spro.verts[(i + 1) % n];
+                perimeter += curr.distance(next);
+            }
+
+            let mut vertices = Vec::new();
+            let mut curr_len = 0.0;
+            // 生成 N+1 个点闭合
+            for i in 0..=n {
+                let idx = i % n;
+                let pos = spro.verts[idx];
+                vertices.push(ProfileVertex {
+                    pos,
+                    normal: Vec2::ZERO,
+                    u: if perimeter > 0.0 {
+                        curr_len / perimeter
+                    } else {
+                        0.0
+                    },
+                });
+
+                if i < n {
+                    let next = spro.verts[(i + 1) % n];
+                    curr_len += pos.distance(next);
+                }
+            }
+
+            Some(ProfileData {
+                vertices,
+                is_smooth: false,
+                is_closed: false,
+            })
         }
         _ => None,
     }
 }
 
-struct CapTriangulation {
-    points: Vec<Vec2>,
-    indices: Vec<u32>,
+/// 应用截面变换
+fn transform_profile_data(data: &mut ProfileData, plax: Vec3, bangle: f32, lmirror: bool) {
+    if bangle.abs() > 0.001 {
+        let cos_b = bangle.to_radians().cos();
+        let sin_b = bangle.to_radians().sin();
+        for v in &mut data.vertices {
+            let x = v.pos.x * cos_b - v.pos.y * sin_b;
+            let y = v.pos.x * sin_b + v.pos.y * cos_b;
+            v.pos = Vec2::new(x, y);
+
+            let nx = v.normal.x * cos_b - v.normal.y * sin_b;
+            let ny = v.normal.x * sin_b + v.normal.y * cos_b;
+            v.normal = Vec2::new(nx, ny);
+        }
+    }
+
+    if lmirror {
+        for v in &mut data.vertices {
+            v.pos.x = -v.pos.x;
+            v.normal.x = -v.normal.x;
+        }
+    }
 }
 
-fn triangulate_polygon(profile_points: &[Vec2]) -> Option<CapTriangulation> {
-    if profile_points.len() < 3 {
+/// 路径采样点
+struct PathSample {
+    pos: Vec3,
+    tangent: Vec3,
+    rot: Mat3, // 局部坐标系 [Right, Up, Tangent]
+    dist: f32, // 沿路径距离
+}
+
+/// 为圆弧路径计算径向坐标系（与 OCC 和 core.dll 保持一致）
+///
+/// OCC 对圆弧的处理:
+/// - X 轴(right): 径向,从圆心指向当前点
+/// - Y 轴(up): pref_axis (固定,用户指定)
+/// - Z 轴(tangent): plax (切线方向)
+fn sample_arc_frames(
+    arc: &Arc3D,
+    arc_segments: usize,
+    plax: Vec3,
+) -> Option<Vec<PathSample>> {
+    let samples = arc_segments.max(4);
+    let mut result = Vec::with_capacity(samples + 1);
+    let mut total_dist = 0.0;
+    let mut last_pos = arc.start_pt;
+
+    // OCC 的截面坐标系定义:
+    // y_axis = arc.pref_axis (截面的"上"方向,固定不变)
+    // z_axis = plax (截面的法向,如果 clock_wise 则取反)
+    // x_axis = y_axis.cross(z_axis) (截面的"右"方向)
+    let profile_up = arc.pref_axis.normalize();
+    let mut profile_normal = plax.normalize();
+    if arc.clock_wise {
+        profile_normal = -profile_normal;
+    }
+
+    // 检查 pref_axis 和 plax 是否平行（避免零向量叉积导致 NaN）
+    let dot = profile_up.dot(profile_normal).abs();
+    let (profile_right, profile_up_ortho) = if dot > 0.999 {
+        // pref_axis 和 plax 几乎平行,使用 arc.axis 来构建坐标系
+        eprintln!("警告: pref_axis ({:?}) 和 plax ({:?}) 平行, 使用 arc.axis ({:?})",
+                  arc.pref_axis, plax, arc.axis);
+        let right = arc.axis.cross(profile_normal).normalize();
+        let up = profile_normal.cross(right).normalize();
+        (right, up)
+    } else {
+        // 正常情况：pref_axis 和 plax 不平行
+        let right = profile_up.cross(profile_normal).normalize();
+        // 重新正交化 up 向量,确保坐标系是正交的
+        let up = profile_normal.cross(right).normalize();
+        (right, up)
+    };
+
+    for i in 0..=samples {
+        let t = i as f32 / samples as f32;
+        let angle_at_t = arc.angle * t;
+
+        // 计算当前点的位置
+        let rot_quat = Quat::from_axis_angle(arc.axis, angle_at_t);
+        let pos = arc.center + rot_quat.mul_vec3(arc.start_pt - arc.center);
+
+        // 计算切线
+        let radial = (pos - arc.center).normalize();
+        let tangent = arc.axis.cross(radial).normalize();
+        let tangent = if arc.clock_wise { -tangent } else { tangent };
+
+        // PathSample 的坐标系定义:
+        // - right: 截面上的横向 (profile_right)
+        // - up: 截面上的纵向 (profile_up_ortho)
+        // - tangent: 路径切线方向 (实际切线,不是 plax)
+        // 对于圆弧,截面保持固定方向(不随路径旋转)
+        let rot = Mat3::from_cols(profile_right, profile_up_ortho, tangent);
+
+        if i > 0 {
+            total_dist += pos.distance(last_pos);
+        }
+
+        result.push(PathSample {
+            pos,
+            tangent,
+            rot,
+            dist: total_dist,
+        });
+
+        last_pos = pos;
+    }
+
+    Some(result)
+}
+
+/// 使用平行传输 (Parallel Transport / Rotation Minimizing Frame) 计算沿路径的坐标系
+/// 对于圆弧路径,使用径向坐标系(与 OCC 和 core.dll 保持一致)
+fn sample_path_frames(
+    segments: &[SegmentPath],
+    arc_segments_per_segment: usize,
+    plax: Vec3, // 截面平面的轴向（用于确定初始坐标系方向）
+) -> Option<Vec<PathSample>> {
+    if segments.is_empty() {
         return None;
     }
 
-    let contour: Vec<[f32; 2]> = profile_points.iter().map(|p| [p.x, p.y]).collect();
+    // 特殊处理：单段圆弧路径使用径向坐标系
+    if segments.len() == 1 {
+        if let SegmentPath::Arc(arc) = &segments[0] {
+            return sample_arc_frames(arc, arc_segments_per_segment, plax);
+        }
+    }
 
-    let raw = contour.as_slice().triangulate();
-    let triangulation = raw.to_triangulation::<u32>();
+    // 1. 收集所有采样点和切线
+    let mut raw_samples = Vec::new();
+    let mut total_dist = 0.0;
+    let mut last_pos = segments[0].start_point();
 
-    if triangulation.indices.is_empty() {
+    for segment in segments {
+        match segment {
+            SegmentPath::Line(line) => {
+                let start = line.start;
+                let end = line.end;
+                let dir = (end - start).normalize_or_zero();
+                let len = line.length();
+
+                if raw_samples.is_empty() {
+                    raw_samples.push((start, dir, 0.0));
+                }
+                total_dist += len;
+                raw_samples.push((end, dir, total_dist));
+                last_pos = end;
+            }
+            SegmentPath::Arc(arc) => {
+                let samples = arc_segments_per_segment.max(4);
+                let arc_seg = SegmentPath::Arc(arc.clone());
+
+                if raw_samples.is_empty() {
+                    let p = arc_seg.point_at(0.0);
+                    let t = arc_seg.tangent_at(0.0);
+                    raw_samples.push((p, t, 0.0));
+                }
+
+                for i in 1..=samples {
+                    let t_param = i as f32 / samples as f32;
+                    let pos = arc_seg.point_at(t_param);
+                    let tan = arc_seg.tangent_at(t_param);
+
+                    let step_dist = pos.distance(last_pos);
+                    total_dist += step_dist;
+
+                    raw_samples.push((pos, tan, total_dist));
+                    last_pos = pos;
+                }
+            }
+        }
+    }
+
+    if raw_samples.len() < 2 {
         return None;
     }
 
-    let points = triangulation
-        .points
-        .into_iter()
-        .map(|p| Vec2::new(p[0], p[1]))
-        .collect();
+    // 2. 计算第一点的坐标系
+    let first_tan = raw_samples[0].1;
 
-    Some(CapTriangulation {
-        points,
-        indices: triangulation.indices,
-    })
-}
+    // 修复：根据路径类型选择合适的参考方向（与 OCC 和 core.dll 保持一致）
+    // - 对于圆弧路径：使用 arc.pref_axis (YDIR) 作为 Y 轴
+    // - 对于直线路径：使用 plax 作为参考方向
+    let ref_up = match segments.first() {
+        Some(SegmentPath::Arc(arc)) => {
+            // 圆弧路径：使用 pref_axis 作为 Y 轴（对应 PDMS 的 YDIR 属性）
+            // 这与 OCC 代码中的 `let y_axis = arc.pref_axis.as_dvec3()` 一致
+            arc.pref_axis
+        }
+        _ => {
+            // 直线路径：使用 plax 作为参考方向
+            // 如果 plax 与切线几乎平行，选择垂直方向
+            if first_tan.dot(plax).abs() > 0.9 {
+                // plax 与切线平行，选择一个垂直于切线的方向
+                let perp = if first_tan.dot(Vec3::X).abs() < 0.9 {
+                    Vec3::X
+                } else {
+                    Vec3::Y
+                };
+                // 使用叉积构建垂直于切线的 up 向量
+                let temp_right = perp.cross(first_tan).normalize();
+                first_tan.cross(temp_right).normalize()
+            } else {
+                // 使用 plax 作为 up 方向的参考
+                plax
+            }
+        }
+    };
 
-fn polygon_signed_area(points: &[Vec2]) -> f32 {
-    let mut area = 0.0f32;
-    if points.len() < 3 {
-        return area;
+    let first_right = ref_up.cross(first_tan).normalize();
+    let first_up = first_tan.cross(first_right).normalize();
+
+    let mut samples = Vec::with_capacity(raw_samples.len());
+    let first_rot = Mat3::from_cols(first_right, first_up, first_tan);
+
+    samples.push(PathSample {
+        pos: raw_samples[0].0,
+        tangent: first_tan,
+        rot: first_rot,
+        dist: 0.0,
+    });
+
+    // 3. 使用平行传输递推后续坐标系
+    for i in 0..raw_samples.len() - 1 {
+        let curr = &samples[i];
+        let next_raw = &raw_samples[i + 1];
+
+        let t1 = curr.tangent;
+        let t2 = next_raw.1;
+
+        let mut next_rot = curr.rot;
+
+        let dot = t1.dot(t2).clamp(-1.0, 1.0);
+        if dot < 0.9999 {
+            let axis = t1.cross(t2);
+            if axis.length_squared() > 0.0001 {
+                let angle = dot.acos();
+                let rot_quat = Quat::from_axis_angle(axis.normalize(), angle);
+
+                let new_right = rot_quat * curr.rot.x_axis;
+                let new_up = rot_quat * curr.rot.y_axis;
+
+                // 重新正交化
+                let final_right = new_up.cross(t2).normalize();
+                let final_up = t2.cross(final_right).normalize();
+
+                next_rot = Mat3::from_cols(final_right, final_up, t2);
+            }
+        }
+
+        samples.push(PathSample {
+            pos: next_raw.0,
+            tangent: next_raw.1,
+            rot: next_rot,
+            dist: next_raw.2,
+        });
     }
 
-    for i in 0..points.len() {
-        let p0 = points[i];
-        let p1 = points[(i + 1) % points.len()];
-        area += p0.x * p1.y - p1.x * p0.y;
-    }
-
-    area * 0.5
+    Some(samples)
 }
 
-fn compute_path_offset(local: Vec3, path_dir: Vec3, plane_normal: Vec3) -> f32 {
+/// 计算平面裁剪偏移
+fn compute_offset(local: Vec3, path_dir: Vec3, plane_normal: Vec3) -> f32 {
     let denom = plane_normal.dot(path_dir);
     if denom.abs() > 1e-6 {
         -plane_normal.dot(local) / denom
@@ -103,675 +425,317 @@ fn compute_path_offset(local: Vec3, path_dir: Vec3, plane_normal: Vec3) -> f32 {
     }
 }
 
-fn append_cap(
-    cap: &CapTriangulation,
-    origin: Vec3,
-    right: Vec3,
-    up: Vec3,
-    path_dir: Vec3,
-    normal: Vec3,
-    _is_start: bool,
-    vertices: &mut Vec<Vec3>,
-    normals: &mut Vec<Vec3>,
-    indices: &mut Vec<u32>,
-) {
-    let base = vertices.len() as u32;
-
-    for point in &cap.points {
-        let local = right * point.x + up * point.y;
-        let offset = compute_path_offset(local, path_dir, normal);
-        let vertex = origin + local + path_dir * offset;
-        vertices.push(vertex);
-        normals.push(normal);
-    }
-
-    let mut cap_tris: Vec<[u32; 3]> = cap
-        .indices
-        .chunks(3)
-        .filter_map(|tri| {
-            if tri.len() == 3 {
-                Some([base + tri[0], base + tri[1], base + tri[2]])
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    if let Some(first) = cap_tris.first() {
-        let a = vertices[first[0] as usize];
-        let b = vertices[first[1] as usize];
-        let c = vertices[first[2] as usize];
-        let face_normal = (b - a).cross(c - a);
-        if face_normal.dot(normal) < 0.0 {
-            for tri in &mut cap_tris {
-                tri.swap(1, 2);
-            }
-        }
-    }
-
-    for tri in cap_tris {
-        indices.extend_from_slice(&tri);
-    }
-}
-
-/// 沿单段直线路径生成 sweep mesh
-fn generate_line_sweep(
-    profile_points: &[Vec2],
-    line: &Line3D,
-    _transform: &Mat3,
+/// 生成 Mesh
+fn generate_mesh_from_frames(
+    profile: &ProfileData,
+    path_samples: &[PathSample],
     drns: Option<DVec3>,
     drne: Option<DVec3>,
-) -> Option<PlantMesh> {
-    if profile_points.len() < 3 {
-        return None;
-    }
+) -> PlantMesh {
+    let mut vertices = Vec::new();
+    let mut normals = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    let mut indices = Vec::new();
 
-    let n_profile = profile_points.len();
-    let path_vec = line.end - line.start;
-    if path_vec.length_squared() < 1e-6 {
-        return None;
-    }
+    // 解析 Start/End 法线 (用于斜切)
+    let start_tan = path_samples.first().unwrap().tangent;
+    let end_tan = path_samples.last().unwrap().tangent;
 
-    let path_dir = path_vec.normalize();
-    // 构建局部坐标系
-    let (right, up) = {
-        let ref_vec = if path_dir.y.abs() < 0.9 {
-            Vec3::Y
-        } else {
-            Vec3::X
-        };
-        let right = ref_vec.cross(path_dir).normalize();
-        let up = path_dir.cross(right).normalize();
-        (right, up)
-    };
-
-    let resolve_cap_normal = |dir: Option<DVec3>, fallback: Vec3| {
-        if let Some(candidate) = dir {
-            let vec = candidate.as_vec3();
-            if let Some(mut norm) = vec.try_normalize() {
-                if norm.dot(path_dir).abs() > 0.9 {
-                    if fallback.dot(path_dir).is_sign_negative() {
-                        if norm.dot(path_dir) > 0.0 {
-                            norm = -norm;
-                        }
-                    } else if norm.dot(path_dir) < 0.0 {
-                        norm = -norm;
-                    }
-                    return norm;
+    let resolve_cap_normal = |dir: Option<DVec3>, tangent: Vec3, fallback: Vec3| {
+        if let Some(d) = dir {
+            let v = d.as_vec3();
+            if v.length_squared() > 0.001 {
+                let mut n = v.normalize();
+                // 若与路径方向几乎垂直，直接退回默认法线，避免偏移放大
+                if n.dot(tangent).abs() < 0.1 {
+                    return fallback;
                 }
+                // 确保法线朝向外 (背离路径方向)
+                if fallback.dot(tangent) < 0.0 {
+                    // Start
+                    if n.dot(tangent) > 0.0 {
+                        n = -n;
+                    }
+                } else {
+                    // End
+                    if n.dot(tangent) < 0.0 {
+                        n = -n;
+                    }
+                }
+                return n;
             }
         }
         fallback
     };
 
-    let mut start_normal = resolve_cap_normal(drns, -path_dir);
-    let mut end_normal = resolve_cap_normal(drne, path_dir);
+    let start_plane_normal = resolve_cap_normal(drns, start_tan, -start_tan);
+    let end_plane_normal = resolve_cap_normal(drne, end_tan, end_tan);
 
-    if start_normal.length_squared() < 1e-6 {
-        start_normal = -path_dir;
-    }
-    if end_normal.length_squared() < 1e-6 {
-        end_normal = path_dir;
-    }
+    let num_rings = path_samples.len();
+    let num_prof_verts = profile.vertices.len();
 
-    let mut start_positions = Vec::with_capacity(n_profile);
-    let mut end_positions = Vec::with_capacity(n_profile);
+    if profile.is_smooth {
+        // === 平滑模式 (Shared Vertices) ===
+        for (i, sample) in path_samples.iter().enumerate() {
+            let is_first = i == 0;
+            let is_last = i == num_rings - 1;
 
-    for &profile_pt in profile_points.iter() {
-        let local_3d = right * profile_pt.x + up * profile_pt.y;
+            for pv in &profile.vertices {
+                let local = sample.rot.x_axis * pv.pos.x + sample.rot.y_axis * pv.pos.y;
+                let mut offset = 0.0;
 
-        let start_offset = compute_path_offset(local_3d, path_dir, start_normal);
-        let end_offset = compute_path_offset(local_3d, path_dir, end_normal);
+                if is_first {
+                    offset = compute_offset(local, sample.tangent, start_plane_normal);
+                } else if is_last {
+                    offset = compute_offset(local, sample.tangent, end_plane_normal);
+                }
 
-        let start_vertex = line.start + local_3d + path_dir * start_offset;
-        let end_vertex = line.end + local_3d + path_dir * end_offset;
+                let pos = sample.pos + local + sample.tangent * offset;
+                let norm_3d =
+                    (sample.rot.x_axis * pv.normal.x + sample.rot.y_axis * pv.normal.y).normalize();
 
-        start_positions.push(start_vertex);
-        end_positions.push(end_vertex);
-    }
-
-    let mut vertices = Vec::new();
-    let mut normals = Vec::new();
-    let mut indices = Vec::new();
-
-    let area = polygon_signed_area(profile_points);
-    let is_ccw = area >= 0.0;
-
-    for i in 0..n_profile {
-        let next = (i + 1) % n_profile;
-
-        let edge_2d = profile_points[next] - profile_points[i];
-        if edge_2d.length_squared() < 1e-8 {
-            continue;
+                vertices.push(pos);
+                normals.push(norm_3d);
+                uvs.push([pv.u, sample.dist]);
+            }
         }
 
-        let normal_2d = if is_ccw {
-            Vec2::new(edge_2d.y, -edge_2d.x)
+        for i in 0..num_rings - 1 {
+            for j in 0..num_prof_verts {
+                if !profile.is_closed && j == num_prof_verts - 1 {
+                    continue;
+                }
+
+                let curr = j;
+                let next = (j + 1) % num_prof_verts;
+
+                let base_curr = (i * num_prof_verts + curr) as u32;
+                let base_next = (i * num_prof_verts + next) as u32;
+                let next_ring_curr = ((i + 1) * num_prof_verts + curr) as u32;
+                let next_ring_next = ((i + 1) * num_prof_verts + next) as u32;
+
+                indices.extend_from_slice(&[
+                    base_curr,
+                    base_next,
+                    next_ring_next,
+                    base_curr,
+                    next_ring_next,
+                    next_ring_curr,
+                ]);
+            }
+        }
+    } else {
+        // === 硬表面模式 (Faceted) ===
+        for i in 0..num_rings - 1 {
+            let s1 = &path_samples[i];
+            let s2 = &path_samples[i + 1];
+
+            let is_first_ring = i == 0;
+            let is_last_ring = i == num_rings - 2;
+
+            for j in 0..num_prof_verts {
+                if !profile.is_closed && j == num_prof_verts - 1 {
+                    continue;
+                }
+                let curr_idx = j;
+                let next_idx = (j + 1) % num_prof_verts;
+
+                let p1_2d = profile.vertices[curr_idx].pos;
+                let p2_2d = profile.vertices[next_idx].pos;
+
+                let calc_pos =
+                    |sample: &PathSample, p2d: Vec2, is_start: bool, is_end: bool| -> Vec3 {
+                        let local = sample.rot.x_axis * p2d.x + sample.rot.y_axis * p2d.y;
+                        let mut offset = 0.0;
+                        if is_start {
+                            offset = compute_offset(local, sample.tangent, start_plane_normal);
+                        } else if is_end {
+                            offset = compute_offset(local, sample.tangent, end_plane_normal);
+                        }
+                        sample.pos + local + sample.tangent * offset
+                    };
+
+                let v1 = calc_pos(s1, p1_2d, is_first_ring, false);
+                let v2 = calc_pos(s1, p2_2d, is_first_ring, false);
+                let v3 = calc_pos(s2, p2_2d, false, is_last_ring);
+                let v4 = calc_pos(s2, p1_2d, false, is_last_ring);
+
+                let normal = (v2 - v1).cross(v4 - v1).normalize_or_zero();
+
+                let base = vertices.len() as u32;
+                vertices.push(v1);
+                vertices.push(v2);
+                vertices.push(v3);
+                vertices.push(v4);
+                normals.push(normal);
+                normals.push(normal);
+                normals.push(normal);
+                normals.push(normal);
+
+                let u1 = profile.vertices[curr_idx].u;
+                let u2 = profile.vertices[next_idx].u;
+                uvs.push([u1, s1.dist]);
+                uvs.push([u2, s1.dist]);
+                uvs.push([u2, s2.dist]);
+                uvs.push([u1, s2.dist]);
+
+                indices.extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
+            }
+        }
+    }
+
+    // === 生成封口 (Caps) ===
+    // 去除末尾重复点进行三角化
+    let cap_points: Vec<Vec2> = profile
+        .vertices
+        .iter()
+        .take(if profile.vertices.len() > 0 {
+            profile.vertices.len() - 1
         } else {
-            Vec2::new(-edge_2d.y, edge_2d.x)
-        };
+            0
+        })
+        .map(|v| v.pos)
+        .collect();
 
-        if normal_2d.length_squared() < 1e-8 {
-            continue;
-        }
-
-        let mut face_normal = right * normal_2d.x + up * normal_2d.y;
-        let Some(mut face_normal) = face_normal.try_normalize() else {
-            continue;
-        };
-
-        let start_a = start_positions[i];
-        let end_a = end_positions[i];
-        let start_b = start_positions[next];
-        let end_b = end_positions[next];
-
-        let tri_normal = (end_a - start_a).cross(start_b - start_a);
-        if tri_normal.length_squared() < 1e-8 {
-            continue;
-        }
-
-        if tri_normal.dot(face_normal) < 0.0 {
-            face_normal = -face_normal;
-        }
-
-        let base = vertices.len() as u32;
-
-        vertices.push(start_a);
-        normals.push(face_normal);
-        vertices.push(end_a);
-        normals.push(face_normal);
-        vertices.push(start_b);
-        normals.push(face_normal);
-        vertices.push(end_b);
-        normals.push(face_normal);
-
-        indices.extend_from_slice(&[base, base + 1, base + 2, base + 2, base + 1, base + 3]);
-    }
-
-    let cap_triangulation = triangulate_polygon(profile_points);
-    if let Some(cap) = cap_triangulation.as_ref() {
-        append_cap(
-            cap,
-            line.start,
-            right,
-            up,
-            path_dir,
-            start_normal,
+    if let Some(cap_mesh) = triangulate_polygon(&cap_points) {
+        add_cap(
+            &mut vertices,
+            &mut normals,
+            &mut uvs,
+            &mut indices,
+            &cap_mesh,
+            &path_samples[0],
+            start_plane_normal,
             true,
-            &mut vertices,
-            &mut normals,
-            &mut indices,
         );
 
-        append_cap(
-            cap,
-            line.end,
-            right,
-            up,
-            path_dir,
-            end_normal,
-            false,
+        add_cap(
             &mut vertices,
             &mut normals,
+            &mut uvs,
             &mut indices,
+            &cap_mesh,
+            path_samples.last().unwrap(),
+            end_plane_normal,
+            false,
         );
     }
 
-    let mut mesh = PlantMesh {
+    PlantMesh {
         indices,
         vertices,
         normals,
-        uvs: Vec::new(),
+        uvs,
         wire_vertices: Vec::new(),
         edges: Vec::new(),
         aabb: None,
-    };
-    mesh.generate_auto_uvs();
-    Some(mesh)
+    }
 }
 
-/// 沿单段圆弧路径生成 sweep mesh
-fn generate_arc_sweep(
-    profile_points: &[Vec2],
-    arc: &Arc3D,
-    arc_segments: usize,
-) -> Option<PlantMesh> {
-    if profile_points.len() < 3 {
+struct CapTriangulation {
+    points: Vec<Vec2>,
+    indices: Vec<u32>,
+}
+
+fn triangulate_polygon(points: &[Vec2]) -> Option<CapTriangulation> {
+    if points.len() < 3 {
+        return None;
+    }
+    let contour: Vec<[f32; 2]> = points.iter().map(|p| [p.x, p.y]).collect();
+    let raw = contour.as_slice().triangulate();
+    let triangulation = raw.to_triangulation::<u32>();
+    if triangulation.indices.is_empty() {
         return None;
     }
 
-    let n_profile = profile_points.len();
-    let mut vertices = Vec::new();
-    let mut normals = Vec::new();
-    let mut indices = Vec::new();
-
-    // 沿圆弧采样点和切线
-    let arc_segment = SegmentPath::Arc(arc.clone());
-    for i in 0..=arc_segments {
-        let t = i as f32 / arc_segments as f32;
-        let position = arc_segment.point_at(t);
-        let tangent = arc_segment.tangent_at(t);
-
-        // 构建局部坐标系（与路径切线垂直）
-        let (right, up) = {
-            let ref_vec = if tangent.y.abs() < 0.9 {
-                Vec3::Y
-            } else {
-                Vec3::X
-            };
-            let right = ref_vec.cross(tangent).normalize();
-            let up = tangent.cross(right).normalize();
-            (right, up)
-        };
-
-        // 生成截面环
-        for &profile_pt in profile_points.iter() {
-            let local_3d = right * profile_pt.x + up * profile_pt.y;
-            let vertex = position + local_3d;
-            vertices.push(vertex);
-
-            // 计算表面法向量
-            // 对于扫掠表面，法向量应该垂直于扫掠方向和轮廓切线方向
-            // 这里使用径向方向作为法向量的近似（对于简单轮廓）
-            let normal = if local_3d.length_squared() > 1e-6 {
-                local_3d.normalize()
-            } else {
-                // 如果轮廓点太靠近中心，使用up方向作为法向量
-                up
-            };
-            normals.push(normal);
-        }
-    }
-
-    // 生成侧面索引（连接相邻的截面环）
-    for ring_idx in 0..arc_segments {
-        for i in 0..(n_profile - 1) {
-            let base = (ring_idx * n_profile + i) as u32;
-            let next_ring_base = ((ring_idx + 1) * n_profile + i) as u32;
-
-            indices.extend_from_slice(&[
-                base,
-                next_ring_base,
-                base + 1,
-                base + 1,
-                next_ring_base,
-                next_ring_base + 1,
-            ]);
-        }
-
-        // 封闭轮廓（连接最后一点和第一点）
-        if profile_points.len() > 3 {
-            let base = (ring_idx * n_profile + n_profile - 1) as u32;
-            let next_ring_base = ((ring_idx + 1) * n_profile + n_profile - 1) as u32;
-            let ring_start = (ring_idx * n_profile) as u32;
-            let next_ring_start = ((ring_idx + 1) * n_profile) as u32;
-
-            indices.extend_from_slice(&[
-                base,
-                next_ring_base,
-                ring_start,
-                ring_start,
-                next_ring_base,
-                next_ring_start,
-            ]);
-        }
-    }
-
-    // 添加起始端面和结束端面（使用三角剖分）
-    let cap_triangulation = triangulate_polygon(profile_points);
-    if let Some(cap) = cap_triangulation.as_ref() {
-        // 起始端面
-        let start_tangent = arc_segment.tangent_at(0.0);
-        let start_position = arc_segment.point_at(0.0);
-        let (right_start, up_start) = {
-            let ref_vec = if start_tangent.y.abs() < 0.9 {
-                Vec3::Y
-            } else {
-                Vec3::X
-            };
-            let right = ref_vec.cross(start_tangent).normalize();
-            let up = start_tangent.cross(right).normalize();
-            (right, up)
-        };
-
-        append_cap(
-            cap,
-            start_position,
-            right_start,
-            up_start,
-            start_tangent,
-            -start_tangent,
-            true,
-            &mut vertices,
-            &mut normals,
-            &mut indices,
-        );
-
-        // 结束端面
-        let end_tangent = arc_segment.tangent_at(1.0);
-        let end_position = arc_segment.point_at(1.0);
-        let (right_end, up_end) = {
-            let ref_vec = if end_tangent.y.abs() < 0.9 {
-                Vec3::Y
-            } else {
-                Vec3::X
-            };
-            let right = ref_vec.cross(end_tangent).normalize();
-            let up = end_tangent.cross(right).normalize();
-            (right, up)
-        };
-
-        append_cap(
-            cap,
-            end_position,
-            right_end,
-            up_end,
-            end_tangent,
-            end_tangent,
-            false,
-            &mut vertices,
-            &mut normals,
-            &mut indices,
-        );
-    }
-
-    let mut mesh = PlantMesh {
-        indices,
-        vertices,
-        normals,
-        uvs: Vec::new(),
-        wire_vertices: Vec::new(),
-        edges: Vec::new(),
-        aabb: None,
-    };
-    mesh.generate_auto_uvs();
-    Some(mesh)
+    Some(CapTriangulation {
+        points: triangulation
+            .points
+            .into_iter()
+            .map(|p| Vec2::new(p[0], p[1]))
+            .collect(),
+        indices: triangulation.indices,
+    })
 }
 
-/// 沿多段路径生成 sweep mesh
-fn generate_multi_segment_sweep(
-    profile_points: &[Vec2],
-    segments: &[SegmentPath],
-    arc_segments_per_segment: usize,
-) -> Option<PlantMesh> {
-    if profile_points.len() < 3 || segments.is_empty() {
-        return None;
+fn add_cap(
+    vertices: &mut Vec<Vec3>,
+    normals: &mut Vec<Vec3>,
+    uvs: &mut Vec<[f32; 2]>,
+    indices: &mut Vec<u32>,
+    cap: &CapTriangulation,
+    sample: &PathSample,
+    plane_normal: Vec3,
+    _is_start: bool,
+) {
+    let base = vertices.len() as u32;
+
+    for pt in &cap.points {
+        let local = sample.rot.x_axis * pt.x + sample.rot.y_axis * pt.y;
+        let offset = compute_offset(local, sample.tangent, plane_normal);
+        let pos = sample.pos + local + sample.tangent * offset;
+
+        vertices.push(pos);
+        normals.push(plane_normal);
+        uvs.push([pt.x, pt.y]);
     }
 
-    let n_profile = profile_points.len();
-
-    // 计算每段的关键点和切线
-    let mut path_samples = Vec::new();
-
-    for segment in segments {
-        match segment {
-            SegmentPath::Line(line) => {
-                let start = line.start;
-                let end = line.end;
-                let dir = (end - start).normalize();
-
-                // 直线段只需要起点
-                if path_samples.is_empty() {
-                    path_samples.push((start, dir));
-                }
-                // 总是添加终点
-                path_samples.push((end, dir));
-            }
-            SegmentPath::Arc(arc) => {
-                // 圆弧段需要采样多个点
-                let samples = arc_segments_per_segment.max(4);
-                let arc_seg = SegmentPath::Arc(arc.clone());
-
-                // 如果是第一段，添加起点
-                if path_samples.is_empty() {
-                    let start_pos = arc_seg.point_at(0.0);
-                    let start_tan = arc_seg.tangent_at(0.0);
-                    path_samples.push((start_pos, start_tan));
-                }
-
-                // 添加中间采样点和终点
-                for i in 1..=samples {
-                    let t = i as f32 / samples as f32;
-                    let pos = arc_seg.point_at(t);
-                    let tan = arc_seg.tangent_at(t);
-                    path_samples.push((pos, tan));
-                }
+    let mut tri_indices = cap.indices.clone();
+    if tri_indices.len() >= 3 {
+        let p0 = vertices[base as usize + tri_indices[0] as usize];
+        let p1 = vertices[base as usize + tri_indices[1] as usize];
+        let p2 = vertices[base as usize + tri_indices[2] as usize];
+        let n = (p1 - p0).cross(p2 - p0);
+        // 确保面法线与封口法线方向一致
+        if n.dot(plane_normal) < 0.0 {
+            for chunk in tri_indices.chunks_exact_mut(3) {
+                chunk.swap(1, 2);
             }
         }
     }
 
-    if path_samples.len() < 2 {
-        return None;
+    for idx in tri_indices {
+        indices.push(base + idx);
     }
-
-    let mut vertices = Vec::new();
-    let mut normals = Vec::new();
-    let mut indices = Vec::new();
-
-    // 为每个路径采样点生成轮廓
-    for &(position, tangent) in &path_samples {
-        // 构建局部坐标系
-        let (right, up) = {
-            let ref_vec = if tangent.y.abs() < 0.9 {
-                Vec3::Y
-            } else {
-                Vec3::X
-            };
-            let right = ref_vec.cross(tangent).normalize();
-            let up = tangent.cross(right).normalize();
-            (right, up)
-        };
-
-        for &profile_pt in profile_points.iter() {
-            let local_3d = right * profile_pt.x + up * profile_pt.y;
-            let vertex = position + local_3d;
-            vertices.push(vertex);
-
-            let normal = local_3d.normalize();
-            normals.push(normal);
-        }
-    }
-
-    // 生成侧面索引（连接相邻的轮廓环）
-    for ring_idx in 0..(path_samples.len() - 1) {
-        for i in 0..(n_profile - 1) {
-            let base = (ring_idx * n_profile + i) as u32;
-            let next_ring_base = ((ring_idx + 1) * n_profile + i) as u32;
-
-            indices.extend_from_slice(&[
-                base,
-                next_ring_base,
-                base + 1,
-                base + 1,
-                next_ring_base,
-                next_ring_base + 1,
-            ]);
-        }
-
-        // 封闭轮廓
-        if profile_points.len() > 3 {
-            let base = (ring_idx * n_profile + n_profile - 1) as u32;
-            let next_ring_base = ((ring_idx + 1) * n_profile + n_profile - 1) as u32;
-            let ring_start = (ring_idx * n_profile) as u32;
-            let next_ring_start = ((ring_idx + 1) * n_profile) as u32;
-
-            indices.extend_from_slice(&[
-                base,
-                next_ring_base,
-                ring_start,
-                ring_start,
-                next_ring_base,
-                next_ring_start,
-            ]);
-        }
-    }
-
-    // 添加起始端面和结束端面（使用三角剖分）
-    let cap_triangulation = triangulate_polygon(profile_points);
-    if let Some(cap) = cap_triangulation.as_ref() {
-        // 起始端面
-        let first_tangent = path_samples[0].1;
-        let first_position = path_samples[0].0;
-        let (right_start, up_start) = {
-            let ref_vec = if first_tangent.y.abs() < 0.9 {
-                Vec3::Y
-            } else {
-                Vec3::X
-            };
-            let right = ref_vec.cross(first_tangent).normalize();
-            let up = first_tangent.cross(right).normalize();
-            (right, up)
-        };
-
-        append_cap(
-            cap,
-            first_position,
-            right_start,
-            up_start,
-            first_tangent,
-            -first_tangent,
-            true,
-            &mut vertices,
-            &mut normals,
-            &mut indices,
-        );
-
-        // 结束端面
-        let last_tangent = path_samples.last().unwrap().1;
-        let last_position = path_samples.last().unwrap().0;
-        let (right_end, up_end) = {
-            let ref_vec = if last_tangent.y.abs() < 0.9 {
-                Vec3::Y
-            } else {
-                Vec3::X
-            };
-            let right = ref_vec.cross(last_tangent).normalize();
-            let up = last_tangent.cross(right).normalize();
-            (right, up)
-        };
-
-        append_cap(
-            cap,
-            last_position,
-            right_end,
-            up_end,
-            last_tangent,
-            last_tangent,
-            false,
-            &mut vertices,
-            &mut normals,
-            &mut indices,
-        );
-    }
-
-    let mut mesh = PlantMesh {
-        indices,
-        vertices,
-        normals,
-        uvs: Vec::new(),
-        wire_vertices: Vec::new(),
-        edges: Vec::new(),
-        aabb: None,
-    };
-    mesh.generate_auto_uvs();
-    Some(mesh)
 }
 
-/// 根据设置计算圆弧分段数
 fn compute_arc_segments(settings: &LodMeshSettings, arc_length: f32, radius: f32) -> usize {
-    // 使用 radial_segments 作为基准分段数
     let base_segments = settings.radial_segments as usize;
-
-    // 如果设置了 target_segment_length，基于目标段长计算
     if let Some(target_len) = settings.target_segment_length {
         let computed = (arc_length / target_len).ceil() as usize;
-        return computed
-            .max(settings.min_radial_segments as usize)
-            .min(settings.max_radial_segments.unwrap_or(64) as usize);
+        return computed.clamp(
+            settings.min_radial_segments as usize,
+            settings.max_radial_segments.unwrap_or(64) as usize,
+        );
     }
-
-    // 根据圆弧长度和半径进行自适应调整
-    let length_factor = (arc_length / 100.0).max(0.5).min(3.0);
-    let radius_factor = (radius / 50.0).max(0.5).min(2.0);
-
-    ((base_segments as f32 * length_factor * radius_factor) as usize)
-        .max(settings.min_radial_segments as usize)
-        .min(settings.max_radial_segments.unwrap_or(64) as usize)
+    let length_factor = (arc_length / 100.0).clamp(0.5, 3.0);
+    let radius_factor = (radius / 50.0).clamp(0.5, 2.0);
+    ((base_segments as f32 * length_factor * radius_factor) as usize).clamp(
+        settings.min_radial_segments as usize,
+        settings.max_radial_segments.unwrap_or(64) as usize,
+    )
 }
 
-/// 应用截面旋转和方向控制
-fn apply_profile_transform(
-    profile_points: &[Vec2],
-    plax: Vec3,
-    bangle: f32,
-    lmirror: bool,
-) -> Vec<Vec2> {
-    let mut transformed = profile_points.to_vec();
-
-    // 应用旋转角度 bangle
-    if bangle.abs() > 0.001 {
-        let cos_b = bangle.to_radians().cos();
-        let sin_b = bangle.to_radians().sin();
-        for pt in &mut transformed {
-            let x = pt.x * cos_b - pt.y * sin_b;
-            let y = pt.x * sin_b + pt.y * cos_b;
-            *pt = Vec2::new(x, y);
-        }
-    }
-
-    // 应用镜像
-    if lmirror {
-        for pt in &mut transformed {
-            pt.x = -pt.x;
-        }
-    }
-
-    transformed
-}
-
-/// 为 SweepSolid 生成 CSG mesh（支持完整功能）
 pub fn generate_sweep_solid_mesh(
     sweep: &SweepSolid,
     settings: &LodMeshSettings,
 ) -> Option<PlantMesh> {
-    // 获取截面轮廓点
-    let mut profile_points = get_profile_points(&sweep.profile)?;
+    let mut profile = get_profile_data(&sweep.profile)?;
+    transform_profile_data(&mut profile, sweep.plax, sweep.bangle, sweep.lmirror);
 
-    // 应用截面变换（plax, bangle, lmirror）
-    profile_points =
-        apply_profile_transform(&profile_points, sweep.plax, sweep.bangle, sweep.lmirror);
-
-    // 根据路径类型生成mesh
-    if sweep.path.is_single_segment() {
-        if let Some(line) = sweep.path.as_single_line() {
-            // 单段直线路径
-            let transform = Mat3::IDENTITY;
-            return generate_line_sweep(&profile_points, line, &transform, sweep.drns, sweep.drne);
-        } else if let Some(arc) = sweep.path.as_single_arc() {
-            // 单段圆弧路径 - 使用LOD设置计算分段数
-            let arc_segment = SegmentPath::Arc(arc.clone());
-            let arc_length = arc_segment.length();
-            let arc_segments = compute_arc_segments(settings, arc_length, arc.radius);
-
-            tracing::debug!(
-                "生成圆弧sweep: 半径={:.2}, 角度={:.2}°, 长度={:.2}, 分段数={}",
-                arc.radius,
-                arc.angle.to_degrees(),
-                arc_length,
-                arc_segments
-            );
-
-            return generate_arc_sweep(&profile_points, arc, arc_segments);
+    let arc_segments = if sweep.path.is_single_segment() {
+        if let Some(arc) = sweep.path.as_single_arc() {
+            compute_arc_segments(settings, arc.angle.abs() * arc.radius, arc.radius)
+        } else {
+            1
         }
     } else {
-        // 多段路径 - 为每个圆弧段计算合适的分段数
-        // 使用 radial_segments 的一半作为每个圆弧段的默认分段数
-        let arc_segments = (settings.radial_segments as usize / 2)
-            .max(settings.min_radial_segments as usize)
-            .min(32);
+        (settings.radial_segments as usize / 2).clamp(settings.min_radial_segments as usize, 32)
+    };
 
-        return generate_multi_segment_sweep(&profile_points, &sweep.path.segments, arc_segments);
-    }
+    let frames = sample_path_frames(&sweep.path.segments, arc_segments, sweep.plax)?;
 
-    None
+    Some(generate_mesh_from_frames(
+        &profile, &frames, sweep.drns, sweep.drne,
+    ))
 }

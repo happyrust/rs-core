@@ -610,10 +610,15 @@ impl AttrMap {
     }
 
     pub fn get_dvec3(&self, key: &str) -> Option<DVec3> {
-        if let AttrVal::Vec3Type(d) = self.get_val(key)? {
-            return Some(DVec3::new(d[0], d[1], d[2]));
+        let val = self.get_val(key)?;
+        match val {
+            AttrVal::Vec3Type(d) => Some(DVec3::new(d[0], d[1], d[2])),
+            AttrVal::StringType(s) => {
+                // 尝试解析PDMS方向字符串
+                crate::tool::direction_parse::parse_expr_to_dir(s)
+            }
+            _ => None,
         }
-        None
     }
 
     pub fn get_i32_vec(&self, key: &str) -> Option<Vec<i32>> {
@@ -669,6 +674,8 @@ impl AttrMap {
             } else {
                 results.push("".to_string());
             }
+
+
         }
         results
     }
