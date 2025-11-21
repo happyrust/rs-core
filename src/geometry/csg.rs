@@ -29,7 +29,8 @@ use crate::prim_geo::sbox::SBox;
 use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::sweep_solid::SweepSolid;
-use crate::prim_geo::wire::{CurveType, process_ploop_vertices};
+use crate::prim_geo::wire::CurveType;
+use crate::prim_geo::profile_processor::{ProfileProcessor, extrude_profile};
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::types::refno::RefU64;
 use crate::utils::svg_generator::SpineSvgGenerator;
@@ -1155,17 +1156,17 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
             let scaled = Vec3::new(corner.x * half.x, corner.y * half.y, corner.z * half.z);
             vertices.push(sbox.center + scaled);
             normals.push(normal);
-            
+
             // World Scale UV: 使用实际尺寸作为 UV 坐标
             // 这里的 scaled 是相对于中心的偏移，加上 half 得到相对于 corner 的正值（0 to size）
             // UV = (position_on_face)
             // corner 取值范围是 -1 到 1，所以 (corner + 1) / 2 是 0-1
             // 乘以尺寸得到实际物理长度
-            
+
             let size_arr = [sbox.size.x, sbox.size.y, sbox.size.z];
             let u_len = size_arr[u_idx];
             let v_len = size_arr[v_idx];
-            
+
             let u_base = match u_idx {
                 0 => corner.x,
                 1 => corner.y,
@@ -1176,7 +1177,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 1 => corner.y,
                 _ => corner.z,
             };
-            
+
             // 将 -1..1 映射到 0..size
             // 如果 sign 是负的，则反转方向
             let u = if u_sign > 0.0 {
@@ -1184,13 +1185,13 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
             } else {
                 (1.0 - u_base) * 0.5 * u_len
             };
-            
+
             let v = if v_sign > 0.0 {
                 (v_base + 1.0) * 0.5 * v_len
             } else {
                 (1.0 - v_base) * 0.5 * v_len
             };
-            
+
             uvs.push([u, v]);
         }
         // 确保三角形的顶点顺序是逆时针的（从外部看），使法向量指向外部
@@ -1232,12 +1233,12 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     // create_mesh_with_edges 内部会调用 generate_auto_uvs，我们之后覆盖它
     // 但 generate_auto_uvs 是基于 bounding box 的，这里我们明确提供了 UV
     // 为了避免重复计算，我们可以修改 create_mesh_with_edges 或者直接构造 PlantMesh
-    
+
     // 重构 Mesh 构造，避免无用的 auto uv
     let edges = extract_edges_from_mesh(&mesh.indices, &mesh.vertices);
     mesh.edges = edges;
     mesh.sync_wire_vertices_from_edges();
-    
+
     Some(GeneratedMesh {
         mesh,
         aabb: Some(aabb),
@@ -2249,18 +2250,25 @@ fn generate_ploop_comparison_svg(
 
     let filename = format!("{}/ploop_comparison_{}.svg", output_dir, file_suffix);
 
-    // 计算边界框（考虑圆角半径）
+    // 计算边界框（原始轮廓考虑圆角半径，处理后仅考虑坐标）
     let mut min_x = f32::MAX;
     let mut min_y = f32::MAX;
     let mut max_x = f32::MIN;
     let mut max_y = f32::MIN;
 
-    for v in original.iter().chain(processed.iter()) {
-        let radius = v.z; // FRADIUS 存储在 z 中
+    for v in original.iter() {
+        let radius = v.z.max(0.0); // z 存储 FRADIUS
         min_x = min_x.min(v.x - radius);
         min_y = min_y.min(v.y - radius);
         max_x = max_x.max(v.x + radius);
         max_y = max_y.max(v.y + radius);
+    }
+
+    for v in processed.iter() {
+        min_x = min_x.min(v.x);
+        min_y = min_y.min(v.y);
+        max_x = max_x.max(v.x);
+        max_y = max_y.max(v.y);
     }
 
     let width = max_x - min_x;
@@ -2464,20 +2472,16 @@ fn generate_ploop_comparison_svg(
 /// 当前实现仅支持：
 /// - 单一轮廓（单个顶点列表）
 /// - 填充类型（CurveType::Fill）
-/// - 轮廓的 z 坐标存储 FRADIUS（圆角半径），会被 ploop-rs 处理
+/// - 轮廓的 z 坐标存储 FRADIUS（圆角半径），会被 ploop-rs 展开并转换为 bulge
 ///
 /// # 参数
 /// - `extrusion`: 拉伸体参数
 /// - `refno`: 可选的参考号，用于调试输出文件名
-fn generate_extrusion_mesh(extrusion: &Extrusion, refno: Option<RefU64>) -> Option<GeneratedMesh> {
+fn generate_extrusion_mesh(extrusion: &Extrusion, _refno: Option<RefU64>) -> Option<GeneratedMesh> {
     if extrusion.height.abs() <= MIN_LEN {
         return None;
     }
     if extrusion.verts.is_empty() || extrusion.verts[0].len() < 3 {
-        return None;
-    }
-    // 仅支持单一轮廓
-    if extrusion.verts.len() > 1 {
         return None;
     }
     // 仅支持填充类型
@@ -2485,178 +2489,46 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, refno: Option<RefU64>) -> Opti
         return None;
     }
 
-    let original_profile = &extrusion.verts[0];
-    if original_profile.len() < 3 {
-        return None;
-    }
-
-    // 使用 ploop-rs 处理 FRADIUS 圆角
-    // Vec3.z 存储的是 FRADIUS 值，需要展开为多个顶点
-    let profile = match process_ploop_vertices(original_profile, "EXTRUSION") {
-        Ok(processed) => {
-            println!(
-                "🔧 [CSG] FRADIUS 处理完成: {} 个原始顶点 → {} 个处理后顶点",
-                original_profile.len(),
-                processed.len()
-            );
-
-            // 只在启用debug-model且尚未为此refno生成过调试文件时才生成
-            if is_debug_model_enabled() {
-                let refno_key = refno
-                    .map(|r| r.to_string())
-                    .unwrap_or_else(|| "unknown".to_string());
-                let mut generated_set = PLOOP_DEBUG_GENERATED.lock().unwrap();
-
-                if !generated_set.contains(&refno_key) {
-                    // 导出 PLOOP JSON 数据（用于 ploop-rs 测试）
-                    if let Err(e) =
-                        export_ploop_json(original_profile, "FLOOR", extrusion.height, refno)
-                    {
-                        println!("⚠️  [CSG] JSON 导出失败: {}", e);
-                    }
-
-                    // 生成 SVG 对比图：原始轮廓 vs 处理后轮廓
-                    if let Err(e) =
-                        generate_ploop_comparison_svg(original_profile, &processed, refno)
-                    {
-                        println!("⚠️  [CSG] SVG 生成失败: {}", e);
-                    }
-
-                    // 标记此refno已生成过调试文件
-                    generated_set.insert(refno_key);
-                    println!("📄 [CSG] PLOOP 调试文件已生成（仅生成一次）");
-                }
-            }
-
-            processed
-        }
+    // 使用统一的 ProfileProcessor 管线：
+    // 1. FRADIUS → bulge（process_ploop_vertices 在 ProfileProcessor 内部调用）
+    // 2. Polyline（cavalier_contours）
+    // 3. 圆弧按 bulge 离散化为 2D 轮廓点
+    // 4. i_triangle 三角化
+    // 5. extrude_profile 生成 3D 网格
+    let processor = match ProfileProcessor::from_wires(extrusion.verts.clone(), true) {
+        Ok(p) => p,
         Err(e) => {
-            println!("⚠️  [CSG] FRADIUS 处理失败，使用原始顶点: {}", e);
-            original_profile.clone()
+            println!("⚠️  [CSG] Extrusion ProfileProcessor 创建失败: {}", e);
+            return None;
         }
     };
 
-    let n = profile.len();
-    if n < 3 {
-        return None;
-    }
-
-    // 使用鞋带公式（Shoelace formula）计算轮廓面积
-    // 面积的正负号表示轮廓的绕向（逆时针为正，顺时针为负）
-    // 注意：处理后的顶点 z 坐标可能仍包含 FRADIUS 信息，只使用 x 和 y
-    let area = profile
-        .iter()
-        .enumerate()
-        .map(|(i, p)| {
-            let next = &profile[(i + 1) % n];
-            p.x * next.y - next.x * p.y
-        })
-        .sum::<f32>()
-        * 0.5;
-    if area.abs() <= MIN_LEN {
-        return None;
-    }
-
-    // 底面 z 坐标固定为 0，顶面 z 坐标为拉伸高度
-    let base_z = 0.0;
-    let top_z = extrusion.height;
-    let mut vertices: Vec<Vec3> = Vec::new();
-    let mut normals: Vec<Vec3> = Vec::new();
-    let mut indices: Vec<u32> = Vec::new();
-    let mut aabb = Aabb::new_invalid();
-
-    let mut add_vertex = |position: Vec3,
-                          normal: Vec3,
-                          vertices: &mut Vec<Vec3>,
-                          normals: &mut Vec<Vec3>,
-                          aabb: &mut Aabb|
-     -> u32 {
-        extend_aabb(aabb, position);
-        vertices.push(position);
-        normals.push(normal);
-        (vertices.len() - 1) as u32
+    let profile = match processor.process("EXTRUSION") {
+        Ok(p) => p,
+        Err(e) => {
+            println!("⚠️  [CSG] Extrusion ProfileProcessor 处理失败: {}", e);
+            return None;
+        }
     };
 
-    let mut bottom_indices = Vec::with_capacity(n);
-    let mut top_indices = Vec::with_capacity(n);
+    let extruded = extrude_profile(&profile, extrusion.height);
 
-    // 底面顶点：忽略 z 坐标（FRADIUS），统一使用 base_z (0.0)
-    for p in &profile {
-        bottom_indices.push(add_vertex(
-            Vec3::new(p.x, p.y, base_z),
-            Vec3::new(0.0, 0.0, -1.0),
-            &mut vertices,
-            &mut normals,
-            &mut aabb,
-        ));
-    }
-    // 顶面顶点：忽略 z 坐标（FRADIUS），统一使用 top_z
-    for p in &profile {
-        top_indices.push(add_vertex(
-            Vec3::new(p.x, p.y, top_z),
-            Vec3::new(0.0, 0.0, 1.0),
-            &mut vertices,
-            &mut normals,
-            &mut aabb,
-        ));
+    // 使用 create_mesh_with_edges 构建带 edges / wire_vertices 的 PlantMesh
+    let mut mesh = create_mesh_with_edges(
+        extruded.indices,
+        extruded.vertices,
+        extruded.normals,
+        None,
+    );
+    mesh.uvs = extruded.uvs;
+
+    // 确保 AABB 被正确计算，并同步到 mesh.aabb
+    let aabb = mesh.aabb.clone().or_else(|| mesh.cal_aabb());
+    if mesh.aabb.is_none() {
+        mesh.aabb = aabb.clone();
     }
 
-    // 根据面积的正负判断轮廓的绕向（ccw = counter-clockwise，逆时针）
-    let ccw = area > 0.0;
-    // 生成顶部和底部的三角形索引（扇形三角化）
-    for i in 1..(n - 1) {
-        if ccw {
-            // 逆时针：顶部和底部的索引顺序保持一致性
-            indices.extend_from_slice(&[top_indices[0], top_indices[i], top_indices[i + 1]]);
-            indices.extend_from_slice(&[
-                bottom_indices[0],
-                bottom_indices[i + 1],
-                bottom_indices[i],
-            ]);
-        } else {
-            // 顺时针：反转索引顺序
-            indices.extend_from_slice(&[top_indices[0], top_indices[i + 1], top_indices[i]]);
-            indices.extend_from_slice(&[
-                bottom_indices[0],
-                bottom_indices[i],
-                bottom_indices[i + 1],
-            ]);
-        }
-    }
-
-    for i in 0..n {
-        let next = (i + 1) % n;
-        let p0 = Vec3::new(profile[i].x, profile[i].y, base_z);
-        let p1 = Vec3::new(profile[next].x, profile[next].y, base_z);
-        let p2 = Vec3::new(profile[next].x, profile[next].y, top_z);
-        let p3 = Vec3::new(profile[i].x, profile[i].y, top_z);
-
-        let mut normal = (p1 - p0).cross(p3 - p0);
-        if normal.length_squared() <= MIN_LEN * MIN_LEN {
-            continue;
-        }
-        normal = normal.normalize();
-        if !ccw {
-            normal = -normal;
-        }
-        let a = add_vertex(p0, normal, &mut vertices, &mut normals, &mut aabb);
-        let b = add_vertex(p1, normal, &mut vertices, &mut normals, &mut aabb);
-        let c = add_vertex(p2, normal, &mut vertices, &mut normals, &mut aabb);
-        let d = add_vertex(p3, normal, &mut vertices, &mut normals, &mut aabb);
-
-        if ccw {
-            indices.extend_from_slice(&[a, b, c]);
-            indices.extend_from_slice(&[a, c, d]);
-        } else {
-            indices.extend_from_slice(&[a, c, b]);
-            indices.extend_from_slice(&[a, d, c]);
-        }
-    }
-
-    Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
-        aabb: Some(aabb),
-    })
+    Some(GeneratedMesh { mesh, aabb })
 }
 
 /// 生成圆柱面网格（用于RTorus的组成部分）
@@ -3166,6 +3038,49 @@ mod tests {
         assert_relative_eq!(aabb.mins.z, 0.0, epsilon = 1e-3);
         assert_relative_eq!(aabb.maxs.z, 2.0, epsilon = 1e-3);
     }
+
+    /// 测试：带 FRADIUS 的矩形截面挤出，验证圆角被离散（顶点数增加）
+    #[test]
+    fn extrusion_csg_with_fradius() {
+        // 150x150 的矩形，四个角 FRAD=20
+        let rect_with_fradius = vec![
+            Vec3::new(0.0, 0.0, 20.0),
+            Vec3::new(150.0, 0.0, 20.0),
+            Vec3::new(150.0, 150.0, 20.0),
+            Vec3::new(0.0, 150.0, 20.0),
+        ];
+
+        let extrusion = Extrusion {
+            verts: vec![rect_with_fradius],
+            height: 100.0,
+            cur_type: CurveType::Fill,
+        };
+
+        let generated = generate_csg_mesh(
+            &PdmsGeoParam::PrimExtrusion(extrusion),
+            &LodMeshSettings::default(),
+            false,
+            None,
+        )
+        .expect("Extrusion CSG generation with FRADIUS failed");
+
+        let mesh = &generated.mesh;
+        let aabb = mesh.aabb.expect("missing extrusion aabb");
+
+        // 带圆角的矩形挤出，顶点数应该明显大于简单四边形挤出
+        assert!(
+            mesh.vertices.len() > 8,
+            "expected more than 8 vertices for rounded extrusion, got {}",
+            mesh.vertices.len()
+        );
+
+        // 只检查高度方向是否符合预期（0 ~ 100），XY 范围可能因为圆角/数值略有变化
+        assert!(aabb.mins.z <= 1e-3);
+        assert!(aabb.maxs.z >= 100.0 - 1e-3);
+
+        // 导出 OBJ 文件用于可视化验证
+        let _ = mesh.export_obj(false, "test_output/extrusion_rounded_fradius.obj");
+    }
 }
 
 /// 生成多面体（Polyhedron）网格
@@ -3542,10 +3457,10 @@ fn generate_prim_loft_mesh(
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
     use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
-    
+
     // 使用sweep mesh生成器创建网格
     let mesh = generate_sweep_solid_mesh(sweep, settings)?;
-    
+
     // 计算AABB
     let aabb = if mesh.vertices.is_empty() {
         Aabb::new_invalid()
@@ -3556,7 +3471,7 @@ fn generate_prim_loft_mesh(
         }
         aabb
     };
-    
+
     Some(GeneratedMesh {
         mesh,
         aabb: Some(aabb),
