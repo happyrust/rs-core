@@ -25,9 +25,9 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::f32::consts::PI;
 use std::panic::AssertUnwindSafe;
-use std::fs;
-use std::fs::File;
-use std::io::Write;
+// use std::fs;
+// use std::fs::File;
+// use std::io::Write;
 use std::path::PathBuf;
 #[cfg(feature = "truck")]
 use truck_base::cgmath64::{InnerSpace, MetricSpace, Point3, Rad, Vector3};
@@ -198,13 +198,24 @@ pub fn polyline_to_debug_json_str(pline: &Polyline) -> String {
 }
 
 // #[cfg(feature = "debug_wire")]
-fn export_polyline_svg_for_debug(polyline: &Polyline) {
+pub(crate) fn export_polyline_svg_for_debug(polyline: &Polyline, refno: Option<&str>) {
+    use std::f64::consts::PI;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::PathBuf;
+    
     let dir = PathBuf::from("test_output/wire_svg");
-    if fs::create_dir_all(&dir).is_err() {
+    if std::fs::create_dir_all(&dir).is_err() {
         return;
     }
 
-    let path = dir.join("wire_debug.svg");
+    // 使用 refno.to_string() 作为文件名，如果 refno 为 None 则使用默认名称
+    let filename = match refno {
+        Some(r) => format!("wire_{}.svg", r),
+        None => "wire_debug.svg".to_string(),
+    };
+    
+    let path = dir.join(filename);
     let mut file = match File::create(&path) {
         Ok(f) => f,
         Err(_) => return,
@@ -241,10 +252,10 @@ fn export_polyline_svg_for_debug(polyline: &Polyline) {
     let svg_width = width + 2.0 * padding;
     let svg_height = height + 2.0 * padding;
 
-    let _ = writeln!(file, r#"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"#);
+    let _ = writeln!(file, r#"<?xml version="1.0" encoding="UTF-8"?>"#);
     let _ = writeln!(
         file,
-        r#"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"{} {} {} {}\">"#,
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="{} {} {} {}">"#,
         svg_width,
         svg_height,
         min_x - padding,
@@ -253,32 +264,44 @@ fn export_polyline_svg_for_debug(polyline: &Polyline) {
         svg_height
     );
 
-    let _ = write!(file, r#"  <path d=\"M"#);
+    let _ = write!(file, r#"  <path d="M"#);
 
-    for (i, v) in polyline.vertex_data.iter().enumerate() {
-        if i == 0 {
-            let _ = write!(file, " {},{}", v.x, v.y);
+    let mut first = true;
+    for (p, q) in polyline.iter_segments() {
+        if first {
+            let _ = write!(file, " {},{}", p.x, p.y);
+            first = false;
+        }
+
+        if p.bulge.abs() < 0.001 {
+            let _ = write!(file, " L {},{}", q.x, q.y);
         } else {
-            let prev = &polyline.vertex_data[i - 1];
-            if v.bulge.abs() < 0.001 {
-                let _ = write!(file, " L {},{}", v.x, v.y);
+            let dx = q.x - p.x;
+            let dy = q.y - p.y;
+            let chord_len = (dx * dx + dy * dy).sqrt();
+
+            // bulge = tan(角度/4)，所以角度 = 4 * atan(bulge)
+            let angle = 4.0 * p.bulge.abs().atan();
+
+            // 正确的半径计算公式：R = (L/2) / sin(角度/2)
+            let radius = if angle.abs() > 0.001 && chord_len > 0.001 {
+                (chord_len / 2.0) / (angle / 2.0).sin()
             } else {
-                let dx = v.x - prev.x;
-                let dy = v.y - prev.y;
-                let chord_len = (dx * dx + dy * dy).sqrt();
-                let radius = if v.bulge.abs() > 0.0 {
-                    chord_len / (2.0 * v.bulge.abs())
-                } else {
-                    0.0
-                };
-                let large_arc = if v.bulge.abs() > 1.0 { 1 } else { 0 };
-                let sweep = if v.bulge > 0.0 { 1 } else { 0 };
-                let _ = write!(
-                    file,
-                    " A {},{} 0 {} {} {},{}",
-                    radius, radius, large_arc, sweep, v.x, v.y
-                );
-            }
+                0.0
+            };
+
+            // large_arc 标志：角度大于 180 度（PI 弧度）
+            let large_arc = if angle > PI { 1 } else { 0 };
+
+            // sweep 标志：bulge > 0 表示顺时针，bulge < 0 表示逆时针
+            // SVG 中：1 = 顺时针，0 = 逆时针
+            let sweep = if p.bulge > 0.0 { 1 } else { 0 };
+
+            let _ = write!(
+                file,
+                " A {:.6},{:.6} 0 {} {} {:.6},{:.6}",
+                radius, radius, large_arc, sweep, q.x, q.y
+            );
         }
     }
 
@@ -286,7 +309,7 @@ fn export_polyline_svg_for_debug(polyline: &Polyline) {
         let _ = write!(file, " Z");
     }
 
-    let _ = writeln!(file, r#"" fill=\"none\" stroke=\"blue\" stroke-width=\"1\"/>"#);
+    let _ = writeln!(file, r#"" fill="none" stroke="blue" stroke-width="1"/>"#);
     let _ = writeln!(file, "</svg>");
 }
 
@@ -875,7 +898,7 @@ pub fn resolve_basic_intersection(
 ///
 /// # 返回值
 /// * `Result<Polyline>` - 转换后的多段线
-pub fn gen_polyline_from_processed_vertices(vertices: &Vec<Vec3>) -> anyhow::Result<Polyline> {
+pub fn gen_polyline_from_processed_vertices(vertices: &Vec<Vec3>, refno: Option<&str>) -> anyhow::Result<Polyline> {
     if vertices.len() < 3 {
         return Err(anyhow!("顶点数量不够，小于3。"));
     }
@@ -887,7 +910,7 @@ pub fn gen_polyline_from_processed_vertices(vertices: &Vec<Vec3>) -> anyhow::Res
 
     // #[cfg(feature = "debug_wire")]
     {
-        export_polyline_svg_for_debug(&polyline);
+        // export_polyline_svg_for_debug(&polyline, refno);
     }
 
     Ok(polyline)
@@ -951,15 +974,29 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
         return Err(anyhow!("第一个 wire 顶点数量不够，小于3。"));
     }
     // 先使用 ploop-rs 处理 FRADIUS，再基于 bulge 生成 Polyline
-    let processed_pos = process_ploop_vertices(&loops[0], "OCC_POS_WIRE")?;
-    let mut pos_poly = gen_polyline_from_processed_vertices(&processed_pos)?;
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(loops[0].len());
+    let mut frads: Vec<f32> = Vec::with_capacity(loops[0].len());
+    for v in &loops[0] {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
+    let processed_pos = process_ploop_vertices(&verts2d, &frads, "OCC_POS_WIRE")?;
+    let mut pos_poly = gen_polyline_from_processed_vertices(&processed_pos, None)?;
     if pos_poly.vertex_data.len() < 3 {
         return Err(anyhow!("pos_poly 顶点数量不够，小于3。"));
     }
 
     for (i, pts) in loops.iter().enumerate().skip(1) {
+        // 将 Vec3 拆分为 Vec2 和 frads
+        let mut verts2d: Vec<Vec2> = Vec::with_capacity(pts.len());
+        let mut frads: Vec<f32> = Vec::with_capacity(pts.len());
+        for v in pts {
+            verts2d.push(Vec2::new(v.x, v.y));
+            frads.push(v.z);
+        }
         // 逐个 wire 先通过 ploop-rs 计算 bulge，再生成 Polyline
-        let processed = match process_ploop_vertices(pts, &format!("OCC_NEG_WIRE_{}", i)) {
+        let processed = match process_ploop_vertices(&verts2d, &frads, &format!("OCC_NEG_WIRE_{}", i)) {
             Ok(p) => p,
             Err(e) => {
                 println!("⚠️  跳过第 {} 个 wire（PLOOP 处理失败: {}）", i + 1, e);
@@ -967,7 +1004,7 @@ pub fn gen_occ_wires(loops: &Vec<Vec<Vec3>>) -> anyhow::Result<Vec<Wire>> {
             }
         };
 
-        let Ok(neg) = gen_polyline_from_processed_vertices(&processed) else {
+        let Ok(neg) = gen_polyline_from_processed_vertices(&processed, None) else {
             println!("⚠️  跳过第 {} 个 wire（生成 Polyline 失败）", i + 1);
             continue;
         };
@@ -1321,9 +1358,17 @@ pub fn test_gen_polyline() {
         Vec3::new(0.0, 10.0, 0.0),  // Top-left
     ];
 
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(pts.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(pts.len());
+    for v in &pts {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
+
     let processed =
-        process_ploop_vertices(&pts, "TEST_GEN_POLYLINE").expect("Failed to process vertices");
-    let polyline = gen_polyline_from_processed_vertices(&processed)
+        process_ploop_vertices(&verts2d, &frads, "TEST_GEN_POLYLINE").expect("Failed to process vertices");
+    let polyline = gen_polyline_from_processed_vertices(&processed, None)
         .expect("Failed to generate polyline");
 
     // Verify the generated polyline has the expected properties
@@ -1357,10 +1402,17 @@ pub fn test_gen_polyline_with_multiple_fillets() {
     ];
 
     // 先通过 ploop-rs 处理 FRADIUS，再基于 bulge 生成 Polyline
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(pts.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(pts.len());
+    for v in &pts {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
     let processed =
-        process_ploop_vertices(&pts, "TEST_GEN_POLYLINE_WITH_MULTI_FILLET")
+        process_ploop_vertices(&verts2d, &frads, "TEST_GEN_POLYLINE_WITH_MULTI_FILLET")
             .expect("Failed to process vertices");
-    let polyline = gen_polyline_from_processed_vertices(&processed)
+    let polyline = gen_polyline_from_processed_vertices(&processed, None)
         .expect("Failed to generate polyline");
 
     // Verify the polyline is closed
@@ -1400,10 +1452,17 @@ pub fn test_gen_polyline_complex_shape() {
     ];
 
     // 先通过 ploop-rs 处理 FRADIUS，再基于 bulge 生成 Polyline
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(pts.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(pts.len());
+    for v in &pts {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
     let processed =
-        process_ploop_vertices(&pts, "TEST_GEN_POLYLINE_COMPLEX_SHAPE")
+        process_ploop_vertices(&verts2d, &frads, "TEST_GEN_POLYLINE_COMPLEX_SHAPE")
             .expect("Failed to process vertices");
-    let polyline = gen_polyline_from_processed_vertices(&processed)
+    let polyline = gen_polyline_from_processed_vertices(&processed, None)
         .expect("Failed to generate polyline");
 
     #[cfg(feature = "occ")]
@@ -1449,10 +1508,11 @@ pub fn test_gen_polyline_complex_shape() {
 
 /// 使用 ploop-rs 处理顶点数据
 ///
-/// 这个方法接收包含 xy 坐标和 fradius 的顶点数据，使用 ploop-rs 进行处理
+/// 这个方法接收分离的 2D 顶点和 FRADIUS 列表，使用 ploop-rs 进行处理
 ///
 /// # 参数
-/// * `vertices` - 顶点数据，Vec3 格式：**x,y 为坐标，z 为 FRADIUS 值（不是 z 坐标）**
+/// * `verts` - 2D 顶点数据，Vec2 格式
+/// * `frads` - 对应的 FRADIUS 值列表，f32
 /// * `ploop_name` - PLOOP 名称（用于日志显示）
 ///
 /// # 返回值
@@ -1461,48 +1521,61 @@ pub fn test_gen_polyline_complex_shape() {
 /// # 示例
 /// ```rust
 /// use aios_core::prim_geo::wire::process_ploop_vertices;
-/// use glam::Vec3;
+/// use glam::Vec2;
 ///
-/// let vertices = vec![
-///     Vec3::new(0.0, 0.0, 0.0),      // 起点，无圆角
-///     Vec3::new(100.0, 0.0, 0.0),    // 第二点，无圆角
-///     Vec3::new(100.0, 100.0, 15.0), // 第三点，圆角半径15
-///     Vec3::new(0.0, 100.0, 10.0),   // 第四点，圆角半径10
+/// let verts = vec![
+///     Vec2::new(0.0, 0.0),      // 起点
+///     Vec2::new(100.0, 0.0),    // 第二点
+///     Vec2::new(100.0, 100.0), // 第三点
+///     Vec2::new(0.0, 100.0),   // 第四点
 /// ];
-/// let processed = process_ploop_vertices(&vertices, "TEST_PLOOP")?;
+/// let frads = vec![0.0, 0.0, 15.0, 10.0]; // 第三点和第四点有圆角
+/// let processed = process_ploop_vertices(&verts, &frads, "TEST_PLOOP")?;
 /// ```
-pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Result<Vec<Vec3>> {
-    if vertices.len() < 3 {
+pub fn process_ploop_vertices(verts: &[Vec2], frads: &[f32], ploop_name: &str) -> anyhow::Result<Vec<Vec3>> {
+    if verts.len() < 3 {
         return Err(anyhow::anyhow!("顶点数量不足，至少需要3个顶点"));
     }
+    if verts.len() != frads.len() {
+        return Err(anyhow::anyhow!(
+            "顶点数量({})与 FRADIUS 数量({})不一致",
+            verts.len(),
+            frads.len()
+        ));
+    }
 
-    println!("🔧 开始处理PLOOP顶点: {}", ploop_name);
-    println!("   输入顶点数: {}", vertices.len());
+    // println!("🔧 开始处理PLOOP顶点: {}", ploop_name);
+    // println!("   输入顶点数: {}", verts.len());
 
     // 创建 PLOOP 处理器（使用默认容差 0.01，不输出调试信息）
     let processor = PloopProcessor::new(0.01, false);
 
-    // 将 Vec3 转换为 Vertex
-    let ploop_vertices: Vec<Vertex> = vertices
+    // 将 verts 和 frads 转换为 Vertex
+    let ploop_vertices: Vec<Vertex> = verts
         .iter()
-        .map(|v| {
-            if v.z > 0.0 {
+        .zip(frads.iter())
+        .map(|(v, &r)| {
+            if r > 0.0 {
                 // 有 fradius 的顶点
-                Vertex::with_fradius(v.x, v.y, 0.0, Some(v.z))
+                Vertex::with_fradius(v.x, v.y, 0.0, Some(r))
             } else {
                 // 普通顶点
                 Vertex::new(v.x, v.y)
             }
         })
         .collect();
+    
+    // export ploop vertices to json file
+    // let json_str = serde_json::to_string_pretty(&ploop_vertices)?;
+    // std::fs::write(format!("test_output/test_loop_case/{}.json", ploop_name), json_str)?;
 
     // 使用 ploop-rs 处理 PLOOP（直接传递顶点切片）
     // process_ploop 返回二元组：(processed_vertices, arcs)
     let (processed_vertices, bulges, arcs, _fradius_report) =
         processor.process_ploop(&ploop_vertices);
 
-    println!("   处理后顶点数: {}", processed_vertices.len());
-    println!("   生成圆弧数: {}", arcs.len());
+    // println!("   处理后顶点数: {}", processed_vertices.len());
+    // println!("   生成圆弧数: {}", arcs.len());
 
     if processed_vertices.len() != bulges.len() {
         return Err(anyhow::anyhow!(
@@ -1512,13 +1585,24 @@ pub fn process_ploop_vertices(vertices: &[Vec3], ploop_name: &str) -> anyhow::Re
         ));
     }
 
-    let result: Vec<Vec3> = processed_vertices
-        .iter()
-        .zip(bulges.iter())
-        .map(|(vertex, bulge)| Vec3::new(vertex.x as f32, vertex.y as f32, *bulge as f32))
-        .collect();
+    // 修正 bulge 索引对齐问题：
+    // ploop-rs 的 bulges[i] 表示从顶点 i-1 到顶点 i 的边
+    // cavalier_contours 的 bulge[i] 表示从顶点 i 到顶点 i+1 的边
+    // 因此需要将 bulges 向前移动一位
+    let n = processed_vertices.len();
+    let mut result = Vec::with_capacity(n);
 
-    println!("✅ PLOOP顶点处理完成，返回 {} 个顶点", result.len());
+    for i in 0..n {
+        let vertex = &processed_vertices[i];
+        // cavalier_contours 需要从当前顶点到下一个顶点的 bulge
+        // 对应 ploop-rs 的 bulges[(i+1) % n]
+        let next_i = (i + 1) % n;
+        let bulge = bulges.get(next_i).copied().unwrap_or(0.0);
+
+        result.push(Vec3::new(vertex.x as f32, vertex.y as f32, bulge as f32));
+    }
+
+    // println!("✅ PLOOP顶点处理完成，返回 {} 个顶点（bulge 索引已修正）", result.len());
 
     Ok(result)
 }
@@ -1657,7 +1741,14 @@ pub fn process_ploop_from_content(
     println!("   原始顶点数: {}", vertices_to_process.len());
 
     // 使用 process_ploop_vertices 处理顶点
-    process_ploop_vertices(&vertices_to_process, ploop_name_str)
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(vertices_to_process.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(vertices_to_process.len());
+    for v in &vertices_to_process {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
+    process_ploop_vertices(&verts2d, &frads, ploop_name_str)
 }
 
 #[test]
@@ -1671,7 +1762,14 @@ fn test_process_ploop_vertices() {
     ];
 
     // 测试 process_ploop_vertices 方法
-    match process_ploop_vertices(&test_vertices, "TEST_FRAME") {
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(test_vertices.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(test_vertices.len());
+    for v in &test_vertices {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
+    match process_ploop_vertices(&verts2d, &frads, "TEST_FRAME") {
         Ok(processed_vertices) => {
             println!(
                 "✅ 顶点处理测试成功: 处理得到 {} 个顶点",
@@ -1757,8 +1855,17 @@ fn test_gen_polyline_with_ploop_processor() {
 
     println!("🧪 测试带 FRADIUS 的 Polyline 生成方法");
 
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(vertices_with_fradius.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(vertices_with_fradius.len());
+    for v in &vertices_with_fradius {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
+
     let processed_with = match process_ploop_vertices(
-        &vertices_with_fradius,
+        &verts2d,
+        &frads,
         "GEN_POLYLINE_WITH_FRADIUS",
     ) {
         Ok(p) => p,
@@ -1768,7 +1875,7 @@ fn test_gen_polyline_with_ploop_processor() {
         }
     };
 
-    match gen_polyline_from_processed_vertices(&processed_with) {
+    match gen_polyline_from_processed_vertices(&processed_with, None) {
         Ok(polyline) => {
             println!("✅ 带 FRADIUS 测试成功！");
             println!(
@@ -1801,8 +1908,17 @@ fn test_gen_polyline_with_ploop_processor() {
 
     println!("\n🧪 测试无 FRADIUS 的 Polyline 生成方法");
 
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d_no: Vec<Vec2> = Vec::with_capacity(vertices_no_fradius.len());
+    let mut frads_no: Vec<f32> = Vec::with_capacity(vertices_no_fradius.len());
+    for v in &vertices_no_fradius {
+        verts2d_no.push(Vec2::new(v.x, v.y));
+        frads_no.push(v.z);
+    }
+
     let processed_no = match process_ploop_vertices(
-        &vertices_no_fradius,
+        &verts2d_no,
+        &frads_no,
         "GEN_POLYLINE_NO_FRADIUS",
     ) {
         Ok(p) => p,
@@ -1812,7 +1928,7 @@ fn test_gen_polyline_with_ploop_processor() {
         }
     };
 
-    match gen_polyline_from_processed_vertices(&processed_no) {
+    match gen_polyline_from_processed_vertices(&processed_no, None) {
         Ok(polyline) => {
             println!("✅ 无 FRADIUS 测试成功！");
             println!(
@@ -2056,8 +2172,15 @@ pub fn triangulate_wire_directly(vertices: &[Vec3]) -> anyhow::Result<WireTriang
     println!("   输入顶点数: {}", vertices.len());
 
     // 1. 先通过 ploop-rs 处理 FRADIUS，再基于 bulge 生成 2D Polyline
-    let processed_vertices = process_ploop_vertices(vertices, "TRIANGULATE_WIRE")?;
-    let polyline = gen_polyline_from_processed_vertices(&processed_vertices)?;
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(vertices.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(vertices.len());
+    for v in vertices {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
+    let processed_vertices = process_ploop_vertices(&verts2d, &frads, "TRIANGULATE_WIRE")?;
+    let polyline = gen_polyline_from_processed_vertices(&processed_vertices, None)?;
     println!("   生成 Polyline，包含 {} 个顶点", polyline.vertex_data.len());
     
     // 2. 提取 2D 轮廓点
@@ -2165,129 +2288,6 @@ pub fn triangulation_to_plant_mesh(triangulation: WireTriangulation) -> crate::s
     }
 }
 
-/// 高级 wire 三角化函数，支持多轮廓（带孔洞）
-///
-/// 处理包含多个封闭轮廓的情况（例如外轮廓和内孔洞）
-///
-/// # 参数
-/// * `contours` - 多个轮廓的顶点数据，Vec3 格式：x,y 为坐标，z 为 FRADIUS 值
-///   - `contours[0]`: 第一个 wire 是 position wire（正实体）
-///   - `contours[1..]`: 其他 wire 是要相减的（负实体）
-///
-/// # 返回值
-/// * `Result<WireTriangulation>` - 三角化结果
-pub fn triangulate_wire_with_holes(contours: &[Vec<Vec3>]) -> anyhow::Result<WireTriangulation> {
-    if contours.is_empty() {
-        return Err(anyhow!("没有提供轮廓数据"));
-    }
-    
-    println!("🔧 开始多轮廓 wire 三角化");
-    println!("   轮廓数量: {}", contours.len());
-    
-    if contours.len() == 1 {
-        // 单轮廓情况，使用简单三角化
-        return triangulate_wire_directly(&contours[0]);
-    }
-    
-    // 多轮廓情况：第一个 wire 是 position wire（正实体），其他都是要相减的（负实体）
-    // 1. 生成第一个轮廓（position wire）的 Polyline
-    if contours[0].len() < 3 {
-        return Err(anyhow!("第一个 wire 顶点数量不够，小于3。"));
-    }
-    
-    let processed_pos = process_ploop_vertices(&contours[0], "TRIANGULATE_POS_WIRE")?;
-    let mut pos_poly = gen_polyline_from_processed_vertices(&processed_pos)?;
-    if pos_poly.vertex_data.len() < 3 {
-        return Err(anyhow!("position wire 顶点数量不够，小于3。"));
-    }
-    
-    println!("   第一个 wire 作为 position wire，包含 {} 个顶点", pos_poly.vertex_data.len());
-    println!("   需要相减的 wire 数量: {}", contours.len() - 1);
-    
-    // 2. 处理其他 wire，从 position wire 中减去它们
-    for (i, contour) in contours.iter().enumerate().skip(1) {
-        let processed_neg = match process_ploop_vertices(
-            contour,
-            &format!("TRIANGULATE_NEG_WIRE_{}", i),
-        ) {
-            Ok(p) => p,
-            Err(e) => {
-                println!("⚠️  跳过第 {} 个 wire（PLOOP 处理失败: {}）", i + 1, e);
-                continue;
-            }
-        };
-
-        let Ok(neg_poly) = gen_polyline_from_processed_vertices(&processed_neg) else {
-            println!("⚠️  跳过第 {} 个 wire（生成 Polyline 失败）", i + 1);
-            continue;
-        };
-        
-        // 执行 boolean subtract (pos_poly - neg_poly)
-        let boolean_result = pos_poly.boolean(&neg_poly, BooleanOp::Not);
-        
-        if !boolean_result.pos_plines.is_empty() {
-            pos_poly = boolean_result.pos_plines[0].pline.clone();
-            println!("   成功从 position wire 中减去第 {} 个 wire", i + 1);
-        } else {
-            println!("⚠️  第 {} 个 wire 布尔运算失败，跳过", i + 1);
-        }
-    }
-    
-    let final_polyline = pos_poly;
-    
-    // 3. 三角化最终轮廓
-    let points_2d = polyline_to_2d_points(&final_polyline);
-    let triangulation = triangulate_2d_points(&points_2d)
-        .ok_or_else(|| anyhow!("多轮廓三角化失败"))?;
-    
-    // 4. 生成 3D 网格
-    let vertices_3d: Vec<Vec3> = triangulation
-        .points
-        .iter()
-        .map(|p| Vec3::new(p.x, 0.0, p.y))
-        .collect();
-    
-    let normals = vec![Vec3::Y; vertices_3d.len()];
-    let bounds = calculate_2d_bounds(&points_2d);
-    let uvs: Vec<[f32; 2]> = triangulation
-        .points
-        .iter()
-        .map(|p| normalize_uv(p, &bounds))
-        .collect();
-    
-    println!("✅ 多轮廓三角化完成！");
-    println!("   3D 顶点数: {}", vertices_3d.len());
-    println!("   三角形数: {}", triangulation.indices.len() / 3);
-    
-    Ok(WireTriangulation {
-        vertices: vertices_3d,
-        indices: triangulation.indices,
-        normals,
-        uvs,
-    })
-}
-
-/// 找到外轮廓（面积最大的轮廓）
-/// 
-/// ⚠️ 已弃用：现在使用第一个 wire 作为 position wire，不再需要查找最大轮廓
-#[allow(dead_code)]
-fn find_outer_contour(polylines: &[Polyline]) -> usize {
-    let mut max_area = 0.0f64;
-    let mut max_idx = 0;
-    
-    for (i, polyline) in polylines.iter().enumerate() {
-        // 计算多边形面积（可能为负，取决于方向）
-        let area = polyline.area();
-        let abs_area = area.abs();
-        
-        if abs_area > max_area {
-            max_area = abs_area;
-            max_idx = i;
-        }
-    }
-    
-    max_idx
-}
 
 #[test]
 fn test_triangulate_wire_simple() {
@@ -2373,38 +2373,6 @@ fn test_triangulate_wire_complex() {
     }
 }
 
-#[test]
-fn test_triangulate_wire_with_holes() {
-    // 外轮廓（矩形）
-    let outer_contour = vec![
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(100.0, 0.0, 0.0),
-        Vec3::new(100.0, 100.0, 0.0),
-        Vec3::new(0.0, 100.0, 0.0),
-    ];
-    
-    // 内孔洞（小矩形）
-    let inner_contour = vec![
-        Vec3::new(30.0, 30.0, 0.0),
-        Vec3::new(70.0, 30.0, 0.0),
-        Vec3::new(70.0, 70.0, 0.0),
-        Vec3::new(30.0, 70.0, 0.0),
-    ];
-    
-    let contours = vec![outer_contour, inner_contour];
-    
-    match triangulate_wire_with_holes(&contours) {
-        Ok(triangulation) => {
-            println!("✅ 带孔洞三角化测试成功！");
-            println!("   轮廓数: {}", contours.len());
-            println!("   顶点数: {}", triangulation.vertices.len());
-            println!("   三角形数: {}", triangulation.indices.len() / 3);
-        }
-        Err(e) => {
-            println!("❌ 带孔洞三角化测试失败: {}", e);
-        }
-    }
-}
 
 #[test]
 fn test_triangulation_to_plant_mesh() {

@@ -20,7 +20,10 @@ use anyhow::anyhow;
 use bevy_transform::prelude::Transform;
 use dashmap::{DashMap, DashSet};
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
+use crate::transform::calculate_plax_transform;
+
 use std::vec::Vec;
+
 
 /// 将多个 Spine3D 段连接成连续的可序列化路径
 ///
@@ -251,13 +254,15 @@ pub async fn create_profile_geos(
                         path: SweepPath3D::from_line(path),
                         lmirror: att.get_bool("LMIRR").unwrap_or_default(),
                     };
+                    let mut transform = calculate_plax_transform(plax, Vec3::Z);
+                    transform.scale = solid.get_scaled_vec3();
                     csg_shapes_map
                         .entry(refno)
                         .or_insert(Vec::new())
                         .push(CateCsgShape {
                             refno: profile_refno,
                             csg_shape: Box::new(solid),
-                            transform: Transform::IDENTITY,
+                            transform,
                             visible: true,
                             is_tubi: false,
                             shape_err: None,
@@ -318,8 +323,8 @@ pub async fn create_profile_geos(
                             .unwrap_or(RefnoEnum::from(RefU64(0)));
                         let hash = profile_refno.hash_with_another_refno(first_spine_refno);
 
-                        let mut transform = Transform::IDENTITY;
-                        // transform.scale = loft.get_scaled_vec3();
+                        let mut transform = calculate_plax_transform(plax, Vec3::Z);
+                        transform.scale = loft.get_scaled_vec3();
 
                         csg_shapes_map
                             .entry(refno)

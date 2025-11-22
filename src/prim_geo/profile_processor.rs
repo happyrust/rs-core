@@ -8,7 +8,12 @@
 /// 5. 使用 i_triangle 进行三角化
 /// 6. 输出标准化的截面数据
 
-use crate::prim_geo::wire::{gen_polyline_from_processed_vertices, process_ploop_vertices};
+use crate::prim_geo::wire::{
+    export_polyline_svg_for_debug,
+    gen_polyline_from_processed_vertices,
+    polyline_to_debug_json_str,
+    process_ploop_vertices,
+};
 use anyhow::{anyhow, Result};
 use cavalier_contours::polyline::{BooleanOp, PlineSource, Polyline};
 use glam::{Vec2, Vec3};
@@ -97,9 +102,35 @@ impl ProfileProcessor {
     /// 
     /// # 返回
     /// - `Result<Self>`: 处理后的 ProfileProcessor
-    pub fn from_wires(wires: Vec<Vec<Vec3>>, auto_detect: bool) -> Result<Self> {
-        if wires.is_empty() {
+    pub fn from_wires(
+        verts: Vec<Vec<Vec2>>,
+        frads: Vec<Vec<f32>>,
+        auto_detect: bool,
+    ) -> Result<Self> {
+        if verts.is_empty() {
             return Err(anyhow!("截面轮廓不能为空"));
+        }
+
+        if verts.len() != frads.len() {
+            return Err(anyhow!("verts 和 frads 的轮廓数量不一致"));
+        }
+
+        let mut wires: Vec<Vec<Vec3>> = Vec::with_capacity(verts.len());
+        for (wire_verts, wire_frads) in verts.into_iter().zip(frads.into_iter()) {
+            if wire_verts.len() != wire_frads.len() {
+                return Err(anyhow!(
+                    "轮廓顶点数量({})与 FRADIUS 数量({}) 不一致",
+                    wire_verts.len(),
+                    wire_frads.len(),
+                ));
+            }
+
+            let combined: Vec<Vec3> = wire_verts
+                .into_iter()
+                .zip(wire_frads.into_iter())
+                .map(|(p, r)| Vec3::new(p.x, p.y, r))
+                .collect();
+            wires.push(combined);
         }
 
         if wires.len() == 1 {
@@ -195,13 +226,13 @@ impl ProfileProcessor {
     }
 
     /// 处理截面：FRADIUS -> Polyline -> Boolean -> Triangulation
-    pub fn process(&self, debug_name: &str) -> Result<ProcessedProfile> {
+    pub fn process(&self, debug_name: &str, refno: Option<&str>) -> Result<ProcessedProfile> {
         println!("🔧 [ProfileProcessor] 开始处理截面: {}", debug_name);
         println!("   外轮廓顶点数: {}", self.outer_contour.vertices.len());
         println!("   内孔数量: {}", self.inner_contours.len());
 
         // 1. 处理外轮廓
-        let outer_polyline = self.process_single_contour(&self.outer_contour.vertices, "outer")?;
+        let outer_polyline = self.process_single_contour(&self.outer_contour.vertices, "outer", refno)?;
 
         // 2. 处理内孔并执行 boolean subtract
         let final_polyline = if self.inner_contours.is_empty() {
@@ -234,18 +265,44 @@ impl ProfileProcessor {
         })
     }
 
-    /// 处理单个轮廓：FRADIUS -> Polyline
-    fn process_single_contour(&self, vertices: &[Vec3], name: &str) -> Result<Polyline> {
+    /// 处理单个轮廓（外轮廓或内孔）
+    fn process_single_contour(
+        &self,
+        vertices: &[Vec3],
+        name: &str,
+        refno: Option<&str>,
+    ) -> Result<Polyline> {
         if vertices.len() < 3 {
             return Err(anyhow!("轮廓 {} 顶点数量不足（< 3）", name));
         }
+        
 
         // 使用 ploop-rs 处理 FRADIUS
+        // 将 Vec3 拆分为 Vec2 和 frads
+        let mut verts2d: Vec<Vec2> = Vec::with_capacity(vertices.len());
+        let mut frads: Vec<f32> = Vec::with_capacity(vertices.len());
+        for v in vertices {
+            verts2d.push(Vec2::new(v.x, v.y));
+            frads.push(v.z);
+        }
         let processed_vertices =
-            process_ploop_vertices(vertices, &format!("PROFILE_{}", name))?;
+            process_ploop_vertices(&verts2d, &frads, &format!("PROFILE_{}", &refno.unwrap_or("unknown")))?;
+
+        //export the vertices to json file
+        // let json_str = serde_json::to_string_pretty(&processed_vertices)?;
+        // let output_dir = "test_output/test_loop_case";
+        // std::fs::create_dir_all(output_dir)?;
+        // std::fs::write(format!("{}/{}.json", output_dir, &refno.unwrap_or("unknown")), json_str)?;
 
         // 生成 Polyline
-        let polyline = gen_polyline_from_processed_vertices(&processed_vertices)?;
+        let polyline = gen_polyline_from_processed_vertices(&processed_vertices, refno)?;
+
+        //todo 实现打印 polyline 的方法, 使用 polyline_to_debug_json_str
+        println!("   轮廓 {} 的 Polyline: {}", &refno.unwrap_or("unknown"), polyline_to_debug_json_str(&polyline));
+
+        //export the svg of the polyline
+        // export_polyline_svg_for_debug(&polyline, Some(name));
+
 
         Ok(polyline)
     }
@@ -259,7 +316,7 @@ impl ProfileProcessor {
 
         for (i, hole_contour) in self.inner_contours.iter().enumerate() {
             let hole_polyline =
-                self.process_single_contour(&hole_contour.vertices, &format!("hole_{}", i))?;
+                self.process_single_contour(&hole_contour.vertices, &format!("hole_{}", i), None)?;
 
             // 执行 boolean subtract (base - hole)
             let result = base.boolean(&hole_polyline, BooleanOp::Not);
@@ -739,6 +796,26 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
+    fn build_inputs_from_vec3(wires: Vec<Vec<Vec3>>) -> (Vec<Vec<Vec2>>, Vec<Vec<f32>>) {
+        let mut all_verts = Vec::with_capacity(wires.len());
+        let mut all_frads = Vec::with_capacity(wires.len());
+
+        for wire in wires.into_iter() {
+            let mut verts = Vec::with_capacity(wire.len());
+            let mut frads = Vec::with_capacity(wire.len());
+
+            for v in wire.into_iter() {
+                verts.push(Vec2::new(v.x, v.y));
+                frads.push(v.z);
+            }
+
+            all_verts.push(verts);
+            all_frads.push(frads);
+        }
+
+        (all_verts, all_frads)
+    }
+
     /// 辅助函数：确保测试输出目录存在
     fn ensure_test_output_dir() {
         let dir = "test_output/profile_processor";
@@ -769,15 +846,16 @@ mod tests {
 
         // 测试旧的 new_single API（向后兼容）
         let processor = ProfileProcessor::new_single(vertices.clone());
-        let result = processor.process("test_single").unwrap();
+        let result = processor.process("test_single", None).unwrap();
 
         assert!(result.contour_points.len() >= 4);
         assert!(!result.tri_indices.is_empty());
         assert_eq!(result.tri_indices.len() % 3, 0);
 
         // 测试新的统一入口 from_wires API
-        let processor2 = ProfileProcessor::from_wires(vec![vertices], true).unwrap();
-        let result2 = processor2.process("test_single_from_wires").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![vertices]);
+        let processor2 = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let result2 = processor2.process("test_single_from_wires", None).unwrap();
 
         assert_eq!(result.contour_points.len(), result2.contour_points.len());
         assert_eq!(result.tri_indices.len(), result2.tri_indices.len());
@@ -816,27 +894,23 @@ mod tests {
         };
 
         let processor = ProfileProcessor::new_multi(vec![outer, inner]).unwrap();
-        let result = processor.process("test_with_hole").unwrap();
+        let result = processor.process("test_with_hole", None).unwrap();
 
         assert!(!result.tri_indices.is_empty());
 
         // 测试新的统一入口 from_wires API（自动检测）
-        let processor2 = ProfileProcessor::from_wires(
-            vec![outer_vertices.clone(), inner_vertices.clone()],
-            true, // 自动检测：面积大的作为外轮廓
-        )
-        .unwrap();
-        let result2 = processor2.process("test_with_hole_from_wires_auto").unwrap();
+        let (verts2d_auto, frads_auto) =
+            build_inputs_from_vec3(vec![outer_vertices.clone(), inner_vertices.clone()]);
+        let processor2 = ProfileProcessor::from_wires(verts2d_auto, frads_auto, true).unwrap();
+        let result2 = processor2.process("test_with_hole_from_wires_auto", None).unwrap();
 
         assert_eq!(result.tri_indices.len(), result2.tri_indices.len());
 
         // 测试新的统一入口 from_wires API（遵循约定：第一个是外轮廓）
-        let processor3 = ProfileProcessor::from_wires(
-            vec![outer_vertices, inner_vertices],
-            false, // 遵循约定：第一个是外轮廓
-        )
-        .unwrap();
-        let result3 = processor3.process("test_with_hole_from_wires_convention").unwrap();
+        let (verts2d_conv, frads_conv) =
+            build_inputs_from_vec3(vec![outer_vertices, inner_vertices]);
+        let processor3 = ProfileProcessor::from_wires(verts2d_conv, frads_conv, false).unwrap();
+        let result3 = processor3.process("test_with_hole_from_wires_convention", None).unwrap();
 
         assert_eq!(result.tri_indices.len(), result3.tri_indices.len());
 
@@ -854,8 +928,9 @@ mod tests {
         ];
 
         // 使用新的统一入口 from_wires
-        let processor = ProfileProcessor::from_wires(vec![vertices], true).unwrap();
-        let profile = processor.process("test_extrude").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![vertices]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let profile = processor.process("test_extrude", None).unwrap();
         let mesh = extrude_profile(&profile, 100.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -878,8 +953,9 @@ mod tests {
             Vec3::new(0.0, 100.0, 0.0),
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![vertices], true).unwrap();
-        let profile = processor.process("rectangle_200x100").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![vertices]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let profile = processor.process("rectangle_200x100", None).unwrap();
         let mesh = extrude_profile(&profile, 300.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -907,8 +983,9 @@ mod tests {
             Vec3::new(0.0, 150.0, 20.0),   // 左上角，圆角半径 20
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![vertices], true).unwrap();
-        let profile = processor.process("rounded_rectangle_150x150").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![vertices]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let profile = processor.process("rounded_rectangle_150x150", None).unwrap();
         let mesh = extrude_profile(&profile, 250.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -938,8 +1015,9 @@ mod tests {
             Vec3::new(0.0, 150.0, 0.0),
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![vertices], true).unwrap();
-        let profile = processor.process("l_shape").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![vertices]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let profile = processor.process("l_shape", None).unwrap();
         let mesh = extrude_profile(&profile, 150.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -974,16 +1052,18 @@ mod tests {
         ];
 
         // 测试自动检测（面积大的作为外轮廓）
-        let processor = ProfileProcessor::from_wires(vec![outer.clone(), inner.clone()], true).unwrap();
-        let profile = processor.process("square_with_circular_hole_auto").unwrap();
+        let (verts2d_auto, frads_auto) = build_inputs_from_vec3(vec![outer.clone(), inner.clone()]);
+        let processor = ProfileProcessor::from_wires(verts2d_auto, frads_auto, true).unwrap();
+        let profile = processor.process("square_with_circular_hole_auto", None).unwrap();
         let mesh = extrude_profile(&profile, 300.0);
 
         assert!(!mesh.vertices.is_empty());
         assert!(!mesh.indices.is_empty());
 
         // 测试遵循约定（第一个是外轮廓）
-        let processor2 = ProfileProcessor::from_wires(vec![outer, inner], false).unwrap();
-        let profile2 = processor2.process("square_with_circular_hole_convention").unwrap();
+        let (verts2d_conv, frads_conv) = build_inputs_from_vec3(vec![outer, inner]);
+        let processor2 = ProfileProcessor::from_wires(verts2d_conv, frads_conv, false).unwrap();
+        let profile2 = processor2.process("square_with_circular_hole_convention", None).unwrap();
         let mesh2 = extrude_profile(&profile2, 300.0);
 
         assert_eq!(mesh.vertices.len(), mesh2.vertices.len());
@@ -1019,8 +1099,9 @@ mod tests {
             Vec3::new(0.0, 10.0, 0.0),
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![outer], true).unwrap();
-        let profile = processor.process("h_beam_200x200").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![outer]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let profile = processor.process("h_beam_200x200", None).unwrap();
         let mesh = extrude_profile(&profile, 1000.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -1070,12 +1151,9 @@ mod tests {
             Vec3::new(210.0, 240.0, 0.0),
         ];
 
-        let processor = ProfileProcessor::from_wires(
-            vec![outer, hole1, hole2, hole3],
-            true, // 自动检测：面积最大的作为外轮廓
-        )
-        .unwrap();
-        let profile = processor.process("multiple_holes").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![outer, hole1, hole2, hole3]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let profile = processor.process("multiple_holes", None).unwrap();
         let mesh = extrude_profile(&profile, 400.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -1102,8 +1180,9 @@ mod tests {
             Vec3::new(0.0, 0.0, 0.0),   // 底部左点（在旋转轴上）
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![profile], true).unwrap();
-        let processed = processor.process("cylinder_r50_h200").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![profile]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let processed = processor.process("cylinder_r50_h200", None).unwrap();
         let mesh = revolve_profile(
             &processed,
             360.0,           // 旋转360度
@@ -1137,8 +1216,9 @@ mod tests {
             Vec3::new(0.0, 0.0, 0.0),    // 底部左点（在旋转轴上）
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![profile], true).unwrap();
-        let processed = processor.process("cone_r60_r20_h150").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![profile]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let processed = processor.process("cone_r60_r20_h150", None).unwrap();
         let mesh = revolve_profile(
             &processed,
             360.0,
@@ -1170,8 +1250,9 @@ mod tests {
             Vec3::new(40.0, 200.0, 0.0),   // 顶部点
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![profile], true).unwrap();
-        let processed = processor.process("frustum_r80_r40_h200").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![profile]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let processed = processor.process("frustum_r80_r40_h200", None).unwrap();
         let mesh = revolve_profile(
             &processed,
             360.0,
@@ -1204,8 +1285,9 @@ mod tests {
             Vec3::new(0.0, 0.0, 0.0),    // 底部左点（在旋转轴上）
         ];
 
-        let processor = ProfileProcessor::from_wires(vec![profile], true).unwrap();
-        let processed = processor.process("half_cylinder").unwrap();
+        let (verts2d, frads) = build_inputs_from_vec3(vec![profile]);
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
+        let processed = processor.process("half_cylinder", None).unwrap();
         let mesh = revolve_profile(
             &processed,
             180.0, // 只旋转180度
@@ -1246,16 +1328,22 @@ mod tests {
         ];
 
         // 测试：小轮廓在前，大轮廓在后（应该自动识别大轮廓为外轮廓）
-        let processor = ProfileProcessor::from_wires(vec![small.clone(), large.clone()], true).unwrap();
-        let profile = processor.process("auto_detect_small_first").unwrap();
+        let (verts2d_small_first, frads_small_first) =
+            build_inputs_from_vec3(vec![small.clone(), large.clone()]);
+        let processor = ProfileProcessor::from_wires(verts2d_small_first, frads_small_first, true)
+            .unwrap();
+        let profile = processor.process("auto_detect_small_first", None).unwrap();
         let mesh = extrude_profile(&profile, 100.0);
 
         assert!(!mesh.vertices.is_empty());
         assert!(!mesh.indices.is_empty());
 
         // 测试：大轮廓在前，小轮廓在后（应该识别大轮廓为外轮廓）
-        let processor2 = ProfileProcessor::from_wires(vec![large, small], true).unwrap();
-        let profile2 = processor2.process("auto_detect_large_first").unwrap();
+        let (verts2d_large_first, frads_large_first) =
+            build_inputs_from_vec3(vec![large, small]);
+        let processor2 =
+            ProfileProcessor::from_wires(verts2d_large_first, frads_large_first, true).unwrap();
+        let profile2 = processor2.process("auto_detect_large_first", None).unwrap();
         let mesh2 = extrude_profile(&profile2, 100.0);
 
         // 两种情况下结果应该相同
@@ -1270,7 +1358,7 @@ mod tests {
     /// 测试：边界情况 - 空轮廓
     #[test]
     fn test_empty_wires() {
-        let result = ProfileProcessor::from_wires(vec![], true);
+        let result = ProfileProcessor::from_wires(Vec::new(), Vec::new(), true);
         assert!(result.is_err());
         println!("✅ 空轮廓测试通过（正确返回错误）");
     }
@@ -1278,10 +1366,11 @@ mod tests {
     /// 测试：边界情况 - 单个点
     #[test]
     fn test_single_point() {
-        let result = ProfileProcessor::from_wires(vec![vec![Vec3::new(0.0, 0.0, 0.0)]], true);
+        let (verts2d, frads) = build_inputs_from_vec3(vec![vec![Vec3::new(0.0, 0.0, 0.0)]]);
+        let result = ProfileProcessor::from_wires(verts2d, frads, true);
         assert!(result.is_ok()); // 可以创建，但处理时会失败
         let processor = result.unwrap();
-        let process_result = processor.process("single_point");
+        let process_result = processor.process("single_point", None);
         assert!(process_result.is_err()); // 处理应该失败（点数不足）
         println!("✅ 单点测试通过（正确返回错误）");
     }
@@ -1289,13 +1378,14 @@ mod tests {
     /// 测试：边界情况 - 两个点
     #[test]
     fn test_two_points() {
-        let result = ProfileProcessor::from_wires(
-            vec![vec![Vec3::new(0.0, 0.0, 0.0), Vec3::new(100.0, 0.0, 0.0)]],
-            true,
-        );
+        let (verts2d, frads) = build_inputs_from_vec3(vec![vec![
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(100.0, 0.0, 0.0),
+        ]]);
+        let result = ProfileProcessor::from_wires(verts2d, frads, true);
         assert!(result.is_ok());
         let processor = result.unwrap();
-        let process_result = processor.process("two_points");
+        let process_result = processor.process("two_points", None);
         assert!(process_result.is_err()); // 处理应该失败（点数不足，需要至少3个点）
         println!("✅ 两点测试通过（正确返回错误）");
     }

@@ -7,7 +7,7 @@
 
 use crate::rs_surreal::spatial::{
     SectionEnd, cal_cutp_ori, cal_ori_by_opdir, cal_ori_by_ydir, cal_ori_by_z_axis_ref_x,
-    cal_ori_by_z_axis_ref_y, cal_spine_ori_by_z_axis_ref_x, cal_zdis_pkdi_in_section_by_spine,
+    cal_ori_by_z_axis_ref_y, cal_spine_orientation_basis, cal_zdis_pkdi_in_section_by_spine,
     get_spline_pts, query_pline,
 };
 use crate::{
@@ -19,6 +19,34 @@ use anyhow::anyhow;
 use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
 use glam::{DMat3, DMat4, DQuat, DVec3};
+
+use glam::{Quat, Vec3};
+
+/// Compute a Transform that rotates from a standard up axis to the target PLAX.
+/// This should be applied in geo_relate.trans (orientation layer), not at mesh time.
+pub fn calculate_plax_transform(plax: Vec3, standard_up: Vec3) -> Transform {
+    use std::f32::consts::PI;
+    let target = if plax.length_squared() > 0.0 { plax.normalize() } else { standard_up };
+    let source = if standard_up.length_squared() > 0.0 { standard_up.normalize() } else { Vec3::Z };
+    let dot = source.dot(target).clamp(-1.0, 1.0);
+
+    let rotation = if (1.0 - dot).abs() < 1e-6 {
+        Quat::IDENTITY
+    } else if (1.0 + dot).abs() < 1e-6 {
+        let axis = if source.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
+        Quat::from_axis_angle(axis, PI)
+    } else {
+        let axis = source.cross(target).normalize();
+        let angle = source.angle_between(target);
+        Quat::from_axis_angle(axis, angle)
+    };
+
+    Transform {
+        translation: Vec3::ZERO,
+        rotation,
+        ..Default::default()
+    }
+}
 
 /// Calculate the local transform for an entity relative to its parent
 ///
@@ -218,7 +246,7 @@ pub async fn get_local_mat4(
                     if !z_axis.is_normalized() {
                         return Ok(None);
                     }
-                    quat = cal_spine_ori_by_z_axis_ref_x(z_axis, true);
+                    quat = cal_spine_orientation_basis(z_axis, false);
                 }
             } else {
                 if !z_axis.is_normalized() {

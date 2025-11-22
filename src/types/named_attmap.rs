@@ -7,6 +7,7 @@ use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::*;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
+use crate::tool::dir_tool::parse_ori_str_to_dquat;
 use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
 use crate::types::attmap::AttrMap;
@@ -1126,8 +1127,17 @@ impl NamedAttrMap {
                     }
                 }
                 _ => {
-                    let angs = self.get_dvec3("ORI")?;
-                    quat = angles_to_ori(angs)?;
+                    if let Some(angs) = self.get_dvec3("ORI") {
+                        quat = angles_to_ori(angs)?;
+                    } else if let Some(s) = self.get_str("ORI") {
+                        if let Ok(q) = parse_ori_str_to_dquat(s) {
+                            quat = q;
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        return None;
+                    }
                 }
             }
         }

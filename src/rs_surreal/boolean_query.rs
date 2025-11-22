@@ -119,7 +119,7 @@ pub async fn query_manifold_boolean_operations(
                         and geom_refno in (select value ngmr from pe:{refno}<-ngmr_relate) ) ))]
                         from array::flatten([array::flatten(in<-neg_relate.in->inst_relate), array::flatten(in<-ngmr_relate.in->inst_relate)]) where world_trans.d!=none
                 ) as neg_ts
-             from inst_relate:{refno} where in.id != none and !bad_bool and ((in<-neg_relate)[0] != none or in<-ngmr_relate[0] != none) and aabb.d != NONE
+             from inst_relate:{refno} where in.id != none and !bad_bool and ((in<-neg_relate)[0] != none or (in<-ngmr_relate)[0] != none) and aabb.d != NONE
         "#
     );
 

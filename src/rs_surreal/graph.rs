@@ -410,6 +410,15 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
         refno_list, types_expr, range, select_expr
     );
 
+    log::info!(
+        "[collect_descendant_with_expr] refnos={:?}, nouns={:?}, range={:?}, select_expr={}, sql=\n{}",
+        refnos,
+        nouns,
+        range_str,
+        select_expr,
+        sql
+    );
+
     // 跳过第一个结果（let $ids 的赋值），取第二个结果（SELECT 的结果）
     let result: Vec<T> = SUL_DB.query_take(&sql, 1).await?;
 

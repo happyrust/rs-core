@@ -199,3 +199,42 @@ When making changes:
 4. Material calculations follow domain-specific business rules
 5. Always test with various `DbOption.toml` configurations
 - add to memory
+
+## aios-core Surreal 查询速查
+
+- 全局实例与扩展：`aios_core::SUL_DB` + `SurrealQueryExt`（`query_take` / `query_response`）
+- 单/多结果查询：
+```rust
+use aios_core::{SUL_DB, SurrealQueryExt, RefnoEnum};
+
+// 单结果查询
+let refnos: Vec<RefnoEnum> = SUL_DB.query_take(
+  "SELECT value id FROM pe WHERE noun = 'EQUI' LIMIT 10",
+  0
+).await?;
+
+// 多结果查询
+let sql = r#"
+  SELECT * FROM pe WHERE noun = 'SITE' LIMIT 5;
+  SELECT count() FROM pe;
+"#;
+let mut resp = SUL_DB.query_response(sql).await?;
+let sites: Vec<SPdmsElement> = resp.take(0)?;
+let count: i64 = resp.take(1)?;
+```
+
+- 层级查询（子孙/子节点/祖先）：
+```rust
+// 子孙节点 ID（支持类型过滤与层级范围，如 Some("1..5")）
+let ids = aios_core::collect_descendant_filter_ids(&[root], &["EQUI", "PIPE"], None).await?;
+
+// 子节点 ID（仅一层）
+let children = aios_core::collect_children_filter_ids(root, &[]).await?;
+
+// 祖先查询（向上）
+let zones = aios_core::query_filter_ancestors(equip, &["ZONE"]).await?;
+```
+
+- 最佳实践：类型安全目标类型、批量优于循环、限制层级范围、利用 `#[cached]` 缓存
+
+> 完整说明参见 gen-model-fork 仓库的 `docs/AIOS_CORE_QUERY_GUIDE.md`。

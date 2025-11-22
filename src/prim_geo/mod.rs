@@ -26,6 +26,8 @@ pub mod basic;
 
 pub mod profile;
 
+pub mod profile_processor;
+
 use crate::prim_geo::category::CateCsgShape;
 use crate::{RefU64, RefnoEnum};
 pub use ctorus::*;

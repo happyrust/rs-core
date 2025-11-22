@@ -34,7 +34,7 @@ use crate::prim_geo::profile_processor::{ProfileProcessor, extrude_profile};
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::types::refno::RefU64;
 use crate::utils::svg_generator::SpineSvgGenerator;
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use std::collections::HashSet;
@@ -506,7 +506,7 @@ pub fn generate_csg_mesh(
         PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly),
         PdmsGeoParam::PrimRevolution(rev) => generate_revolution_mesh(rev, settings, non_scalable),
-        PdmsGeoParam::PrimLoft(sweep) => generate_prim_loft_mesh(sweep, settings, non_scalable),
+        PdmsGeoParam::PrimLoft(sweep) => generate_prim_loft_mesh(sweep, settings, non_scalable, refno),
         _ => None,
     }
 }
@@ -2495,7 +2495,20 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, _refno: Option<RefU64>) -> Opt
     // 3. 圆弧按 bulge 离散化为 2D 轮廓点
     // 4. i_triangle 三角化
     // 5. extrude_profile 生成 3D 网格
-    let processor = match ProfileProcessor::from_wires(extrusion.verts.clone(), true) {
+    let mut verts2d: Vec<Vec<Vec2>> = Vec::with_capacity(extrusion.verts.len());
+    let mut frads: Vec<Vec<f32>> = Vec::with_capacity(extrusion.verts.len());
+    for wire in &extrusion.verts {
+        let mut v2 = Vec::with_capacity(wire.len());
+        let mut r = Vec::with_capacity(wire.len());
+        for p in wire {
+            v2.push(Vec2::new(p.x, p.y));
+            r.push(p.z);
+        }
+        verts2d.push(v2);
+        frads.push(r);
+    }
+
+    let processor = match ProfileProcessor::from_wires(verts2d, frads, true) {
         Ok(p) => p,
         Err(e) => {
             println!("⚠️  [CSG] Extrusion ProfileProcessor 创建失败: {}", e);
@@ -2503,7 +2516,9 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, _refno: Option<RefU64>) -> Opt
         }
     };
 
-    let profile = match processor.process("EXTRUSION") {
+    let refno_str = _refno.map(|r| r.to_string());
+    let refno_ref = refno_str.as_deref();
+    let profile = match processor.process("EXTRUSION", refno_ref) {
         Ok(p) => p,
         Err(e) => {
             println!("⚠️  [CSG] Extrusion ProfileProcessor 处理失败: {}", e);
@@ -3455,11 +3470,12 @@ fn generate_prim_loft_mesh(
     sweep: &SweepSolid,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: Option<RefU64>,
 ) -> Option<GeneratedMesh> {
     use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
 
     // 使用sweep mesh生成器创建网格
-    let mesh = generate_sweep_solid_mesh(sweep, settings)?;
+    let mesh = generate_sweep_solid_mesh(sweep, settings, refno)?;
 
     // 计算AABB
     let aabb = if mesh.vertices.is_empty() {

@@ -51,3 +51,7 @@ pub mod test_arc_demo;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_clean_svg;
+
+pub mod test_bad_primloft;
+pub mod test_bad_primloft_simple;
+pub mod test_bad_primloft_fix;

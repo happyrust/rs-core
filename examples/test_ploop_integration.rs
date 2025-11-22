@@ -7,7 +7,7 @@
 //! cargo run --example test_ploop_integration
 //! ```
 
-use aios_core::prim_geo::wire::{gen_polyline, process_ploop_vertices};
+use aios_core::prim_geo::wire::{gen_polyline_from_processed_vertices, process_ploop_vertices};
 use anyhow::Result;
 use glam::Vec3;
 
@@ -54,13 +54,16 @@ fn test_simple_rectangle() -> Result<()> {
     // 验证结果
     assert!(processed.len() >= 4, "处理后应该至少有 4 个顶点");
 
-    // 检查是否有 FRADIUS
-    let fradius_count = processed.iter().filter(|v| v.z > 0.0).count();
-    println!("FRADIUS 顶点数: {}", fradius_count);
-    assert_eq!(fradius_count, 0, "简单矩形不应该有 FRADIUS 顶点");
+    // 检查是否有 bulge
+    let bulge_count = processed
+        .iter()
+        .filter(|v| v.z.abs() > f32::EPSILON)
+        .count();
+    println!("bulge 段数: {}", bulge_count);
+    assert_eq!(bulge_count, 0, "简单矩形不应该生成圆弧段");
 
-    // 生成 Polyline
-    let polyline = gen_polyline(&vertices)?;
+    // 基于处理后的 bulge 顶点生成 Polyline
+    let polyline = gen_polyline_from_processed_vertices(&processed)?;
     println!("生成的 Polyline 顶点数: {}", polyline.vertex_data.len());
     println!("Polyline 是否闭合: {}", polyline.is_closed);
 
@@ -97,8 +100,8 @@ fn test_rectangle_with_fradius() -> Result<()> {
     // 打印处理后的顶点
     println!("\n处理后的顶点列表:");
     for (i, v) in processed.iter().enumerate() {
-        if v.z > 0.0 {
-            println!("  [{}] ({:.2}, {:.2}) FRADIUS: {:.1}", i, v.x, v.y, v.z);
+        if v.z.abs() > f32::EPSILON {
+            println!("  [{}] ({:.2}, {:.2}) bulge: {:.4}", i, v.x, v.y, v.z);
         } else {
             println!("  [{}] ({:.2}, {:.2})", i, v.x, v.y);
         }
@@ -152,8 +155,8 @@ fn test_complex_shape() -> Result<()> {
     // 打印处理后的顶点
     println!("\n处理后的顶点列表:");
     for (i, v) in processed.iter().enumerate() {
-        if v.z > 0.0 {
-            println!("  [{}] ({:.2}, {:.2}) FRADIUS: {:.1}", i, v.x, v.y, v.z);
+        if v.z.abs() > f32::EPSILON {
+            println!("  [{}] ({:.2}, {:.2}) bulge: {:.4}", i, v.x, v.y, v.z);
         } else {
             println!("  [{}] ({:.2}, {:.2})", i, v.x, v.y);
         }

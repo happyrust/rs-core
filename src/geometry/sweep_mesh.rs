@@ -1,9 +1,11 @@
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
+use crate::prim_geo::profile_processor::ProfileProcessor;
 use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath};
 use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::shape::pdms_shape::PlantMesh;
-use glam::{DVec3, Mat3, Quat, Vec2, Vec3};
+use crate::RefU64;
+use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec2, Vec3};
 use i_triangle::float::triangulatable::Triangulatable;
 
 /// 截面顶点数据
@@ -21,9 +23,41 @@ struct ProfileData {
 }
 
 /// 获取截面数据（顶点、法线、是否平滑）
-fn get_profile_data(profile: &CateProfileParam) -> Option<ProfileData> {
-    match profile {
+/// 使用统一的 ProfileProcessor 处理，与 Extrusion 保持一致
+fn get_profile_data(profile: &CateProfileParam, _refno: Option<RefU64>) -> Option<ProfileData> {
+    // 将 CateProfileParam 转换为 ProfileProcessor 需要的格式
+    let (wires, profile_refno) = match profile {
+        CateProfileParam::SPRO(spro) => {
+            // 使用profile内部的refno，而不是传入的refno
+            let profile_refno = Some(spro.refno);
+            
+            // SPRO: verts 是 Vec<Vec2>，frads 是 Vec<f32>
+            // 需要转换为 Vec<Vec3>，其中 z 分量是 FRADIUS
+            if spro.verts.len() != spro.frads.len() {
+                return None;
+            }
+            let wire: Vec<Vec3> = spro
+                .verts
+                .iter()
+                .zip(spro.frads.iter())
+                .map(|(v, &frad)| Vec3::new(v.x, v.y, frad))
+                .collect();
+            (vec![wire], profile_refno)
+        }
+        CateProfileParam::SREC(srect) => {
+            // SREC: 转换为矩形轮廓
+            let half_size = srect.size / 2.0;
+            let center = srect.center + srect.dxy;
+            let wire = vec![
+                Vec3::new(center.x - half_size.x, center.y - half_size.y, 0.0),
+                Vec3::new(center.x + half_size.x, center.y - half_size.y, 0.0),
+                Vec3::new(center.x + half_size.x, center.y + half_size.y, 0.0),
+                Vec3::new(center.x - half_size.x, center.y + half_size.y, 0.0),
+            ];
+            (vec![wire], None)
+        }
         CateProfileParam::SANN(sann) => {
+            // SANN: 特殊处理，保持原有逻辑（圆弧截面）
             let radius = sann.pradius;
             let segments = 32;
             let angle = sann.pangle.to_radians();
@@ -62,118 +96,123 @@ fn get_profile_data(profile: &CateProfileParam) -> Option<ProfileData> {
                 }
             }
 
-            Some(ProfileData {
+            return Some(ProfileData {
                 vertices,
                 is_smooth: true,
                 is_closed: false, // 已生成重合点，视为 Strip
-            })
+            });
         }
-        CateProfileParam::SREC(srect) => {
-            let half_size = srect.size / 2.0;
-            let center = srect.center + srect.dxy;
+        _ => return None,
+    };
 
-            let p0 = center + Vec2::new(-half_size.x, -half_size.y);
-            let p1 = center + Vec2::new(half_size.x, -half_size.y);
-            let p2 = center + Vec2::new(half_size.x, half_size.y);
-            let p3 = center + Vec2::new(-half_size.x, half_size.y);
-
-            let ps = vec![p0, p1, p2, p3];
-            let mut vertices = Vec::new();
-
-            let perimeter = (srect.size.x + srect.size.y) * 2.0;
-            let mut curr_len = 0.0;
-
-            // 生成 5 个点 (0,1,2,3,0) 以处理 UV 接缝和闭合
-            for i in 0..=4 {
-                let idx = i % 4;
-                let curr = ps[idx];
-
-                vertices.push(ProfileVertex {
-                    pos: curr,
-                    normal: Vec2::ZERO, // Flat 模式下不需要，由面生成
-                    u: curr_len / perimeter,
-                });
-
-                if i < 4 {
-                    let next = ps[(i + 1) % 4];
-                    curr_len += curr.distance(next);
-                }
-            }
-
-            Some(ProfileData {
-                vertices,
-                is_smooth: false, // 硬表面
-                is_closed: false, // 已包含闭合点，视为 Strip
-            })
+    // 使用 ProfileProcessor 处理截面（与 Extrusion 一致）
+    let mut verts2d: Vec<Vec<Vec2>> = Vec::with_capacity(wires.len());
+    let mut frads: Vec<Vec<f32>> = Vec::with_capacity(wires.len());
+    for wire in &wires {
+        let mut v2 = Vec::with_capacity(wire.len());
+        let mut r = Vec::with_capacity(wire.len());
+        for p in wire {
+            v2.push(Vec2::new(p.x, p.y));
+            r.push(p.z);
         }
-        CateProfileParam::SPRO(spro) => {
-            let n = spro.verts.len();
-            if n < 3 {
-                return None;
-            }
-
-            // 计算总长度
-            let mut perimeter = 0.0;
-            for i in 0..n {
-                let curr = spro.verts[i];
-                let next = spro.verts[(i + 1) % n];
-                perimeter += curr.distance(next);
-            }
-
-            let mut vertices = Vec::new();
-            let mut curr_len = 0.0;
-            // 生成 N+1 个点闭合
-            for i in 0..=n {
-                let idx = i % n;
-                let pos = spro.verts[idx];
-                vertices.push(ProfileVertex {
-                    pos,
-                    normal: Vec2::ZERO,
-                    u: if perimeter > 0.0 {
-                        curr_len / perimeter
-                    } else {
-                        0.0
-                    },
-                });
-
-                if i < n {
-                    let next = spro.verts[(i + 1) % n];
-                    curr_len += pos.distance(next);
-                }
-            }
-
-            Some(ProfileData {
-                vertices,
-                is_smooth: false,
-                is_closed: false,
-            })
-        }
-        _ => None,
+        verts2d.push(v2);
+        frads.push(r);
     }
+
+    let processor = ProfileProcessor::from_wires(verts2d, frads, true).ok()?;
+    let profile_refno_str = profile_refno.map(|r| r.to_string());
+    let profile_refno_ref = profile_refno_str.as_deref();
+    let processed = processor.process("SWEEP", profile_refno_ref).ok()?;
+
+    // 从 ProcessedProfile 转换为 ProfileData
+    // 使用 contour_points 作为轮廓点
+    let mut vertices = Vec::new();
+    let mut total_len = 0.0;
+    let n = processed.contour_points.len();
+    
+    if n < 3 {
+        return None;
+    }
+
+    // 计算轮廓总长度
+    let mut perimeter = 0.0;
+    for i in 0..n {
+        let curr = processed.contour_points[i];
+        let next = processed.contour_points[(i + 1) % n];
+        perimeter += curr.distance(next);
+    }
+
+    // 生成顶点，计算累积长度作为 U 坐标
+    let mut curr_len = 0.0;
+    for i in 0..n {
+        let curr = processed.contour_points[i];
+        let next = processed.contour_points[(i + 1) % n];
+        
+        vertices.push(ProfileVertex {
+            pos: curr,
+            normal: Vec2::ZERO, // 法线由面生成
+            u: if perimeter > 0.0 {
+                curr_len / perimeter
+            } else {
+                0.0
+            },
+        });
+
+        curr_len += curr.distance(next);
+    }
+
+    // 添加闭合点（如果首尾不重合）
+    if !vertices.is_empty() && vertices[0].pos.distance(vertices.last().unwrap().pos) > 1e-6 {
+        let first = vertices[0].clone();
+        vertices.push(ProfileVertex {
+            pos: first.pos,
+            normal: first.normal,
+            u: 1.0,
+        });
+    }
+
+    Some(ProfileData {
+        vertices,
+        is_smooth: false, // ProfileProcessor 处理后的轮廓通常是硬表面
+        is_closed: false, // 已包含闭合点，视为 Strip
+    })
 }
 
-/// 应用截面变换
-fn transform_profile_data(data: &mut ProfileData, plax: Vec3, bangle: f32, lmirror: bool) {
-    if bangle.abs() > 0.001 {
-        let cos_b = bangle.to_radians().cos();
-        let sin_b = bangle.to_radians().sin();
-        for v in &mut data.vertices {
-            let x = v.pos.x * cos_b - v.pos.y * sin_b;
-            let y = v.pos.x * sin_b + v.pos.y * cos_b;
-            v.pos = Vec2::new(x, y);
+/// 构建截面变换矩阵（与 OCC 模式保持一致）
+/// 
+/// 变换顺序：
+/// 1. 平移：应用 plin_pos 偏移（负值，因为要移到原点）
+/// 2. 旋转：应用 bangle 绕 Z 轴旋转
+/// 3. 镜像：如果 lmirror，X 轴取反
+fn build_profile_transform_matrix(
+    plin_pos: Vec2,
+    bangle: f32,
+    lmirror: bool,
+) -> DMat4 {
+    // 1. 平移：移到原点（负 plin_pos）
+    let translation = DMat4::from_translation(DVec3::new(
+        -plin_pos.x as f64,
+        -plin_pos.y as f64,
+        0.0,
+    ));
 
-            let nx = v.normal.x * cos_b - v.normal.y * sin_b;
-            let ny = v.normal.x * sin_b + v.normal.y * cos_b;
-            v.normal = Vec2::new(nx, ny);
-        }
-    }
+    // 2. 旋转：bangle 绕 Z 轴
+    let rotation = if bangle.abs() > 0.001 {
+        DQuat::from_rotation_z(bangle.to_radians() as f64)
+    } else {
+        DQuat::IDENTITY
+    };
+    let rotation_mat = DMat4::from_quat(rotation);
 
-    if lmirror {
-        for v in &mut data.vertices {
-            v.pos.x = -v.pos.x;
-            v.normal.x = -v.normal.x;
-        }
-    }
+    // 3. 镜像：lmirror 时 X 轴取反
+    let mirror_mat = if lmirror {
+        DMat4::from_scale(DVec3::new(-1.0, 1.0, 1.0))
+    } else {
+        DMat4::IDENTITY
+    };
+
+    // 组合变换：先平移，再旋转，最后镜像
+    mirror_mat * rotation_mat * translation
 }
 
 /// 路径采样点
@@ -269,7 +308,7 @@ fn sample_arc_frames(
 fn sample_path_frames(
     segments: &[SegmentPath],
     arc_segments_per_segment: usize,
-    plax: Vec3, // 截面平面的轴向（用于确定初始坐标系方向）
+    plax: Vec3, // 标准参考方向（调用方应传 Vec3::Z；圆弧分支内部使用 pref_axis/YDIR）
 ) -> Option<Vec<PathSample>> {
     if segments.is_empty() {
         return None;
@@ -336,15 +375,46 @@ fn sample_path_frames(
 
     // 修复：根据路径类型选择合适的参考方向（与 OCC 和 core.dll 保持一致）
     // - 对于圆弧路径：使用 arc.pref_axis (YDIR) 作为 Y 轴
-    // - 对于直线路径：使用 plax 作为参考方向
+    // - 对于 SPINE 直线路径：从 segments 中查找 pref_axis（参考 OCC 做法）
+    // - 对于普通直线路径：使用 plax 作为参考方向
     let ref_up = match segments.first() {
         Some(SegmentPath::Arc(arc)) => {
             // 圆弧路径：使用 pref_axis 作为 Y 轴（对应 PDMS 的 YDIR 属性）
             // 这与 OCC 代码中的 `let y_axis = arc.pref_axis.as_dvec3()` 一致
             arc.pref_axis
         }
+        Some(SegmentPath::Line(line)) if line.is_spine => {
+            // SPINE 直线路径：参考 OCC 版本，从所有 segments 中查找 pref_axis
+            // 遍历所有 segments，找到第一个 Arc 的 pref_axis；如果没有 Arc，使用默认值
+            segments.iter()
+                .find_map(|seg| {
+                    if let SegmentPath::Arc(arc) = seg {
+                        Some(arc.pref_axis)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| {
+                    // 如果没有找到 Arc，使用 plax 作为参考方向（与 OCC 版本保持一致）
+                    // 如果 plax 与切线几乎平行，选择垂直方向
+                    if first_tan.dot(plax).abs() > 0.9 {
+                        // plax 与切线平行，选择一个垂直于切线的方向
+                        let perp = if first_tan.dot(Vec3::X).abs() < 0.9 {
+                            Vec3::X
+                        } else {
+                            Vec3::Y
+                        };
+                        // 使用叉积构建垂直于切线的 up 向量
+                        let temp_right = perp.cross(first_tan).normalize();
+                        first_tan.cross(temp_right).normalize()
+                    } else {
+                        // 使用 plax 作为 up 方向的参考
+                        plax
+                    }
+                })
+        }
         _ => {
-            // 直线路径：使用 plax 作为参考方向
+            // 普通直线路径：使用 plax 作为参考方向
             // 如果 plax 与切线几乎平行，选择垂直方向
             if first_tan.dot(plax).abs() > 0.9 {
                 // plax 与切线平行，选择一个垂直于切线的方向
@@ -632,9 +702,9 @@ fn generate_mesh_from_frames(
     }
 }
 
-struct CapTriangulation {
-    points: Vec<Vec2>,
-    indices: Vec<u32>,
+pub struct CapTriangulation {
+    pub points: Vec<Vec2>,
+    pub indices: Vec<u32>,
 }
 
 fn triangulate_polygon(points: &[Vec2]) -> Option<CapTriangulation> {
@@ -719,9 +789,10 @@ fn compute_arc_segments(settings: &LodMeshSettings, arc_length: f32, radius: f32
 pub fn generate_sweep_solid_mesh(
     sweep: &SweepSolid,
     settings: &LodMeshSettings,
+    refno: Option<RefU64>,
 ) -> Option<PlantMesh> {
-    let mut profile = get_profile_data(&sweep.profile)?;
-    transform_profile_data(&mut profile, sweep.plax, sweep.bangle, sweep.lmirror);
+    // 正常生成截面数据（不应用变换）
+    let profile = get_profile_data(&sweep.profile, refno)?;
 
     let arc_segments = if sweep.path.is_single_segment() {
         if let Some(arc) = sweep.path.as_single_arc() {
@@ -733,9 +804,24 @@ pub fn generate_sweep_solid_mesh(
         (settings.radial_segments as usize / 2).clamp(settings.min_radial_segments as usize, 32)
     };
 
-    let frames = sample_path_frames(&sweep.path.segments, arc_segments, sweep.plax)?;
+    let frames = sample_path_frames(&sweep.path.segments, arc_segments, Vec3::Z)?;
 
-    Some(generate_mesh_from_frames(
+    // 正常生成 mesh
+    let mut mesh = generate_mesh_from_frames(
         &profile, &frames, sweep.drns, sweep.drne,
-    ))
+    );
+
+    // 获取 plin_pos（用于构建变换矩阵）
+    let plin_pos = match &sweep.profile {
+        CateProfileParam::SPRO(spro) => spro.plin_pos,
+        CateProfileParam::SREC(srect) => srect.plin_pos,
+        CateProfileParam::SANN(sann) => sann.plin_pos,
+        _ => Vec2::ZERO,
+    };
+
+    // 构建变换矩阵并应用到 mesh
+    let transform_mat = build_profile_transform_matrix(plin_pos, sweep.bangle, sweep.lmirror);
+    mesh = mesh.transform_by(&transform_mat);
+
+    Some(mesh)
 }

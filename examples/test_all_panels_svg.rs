@@ -7,7 +7,7 @@
 //! cargo run --example test_all_panels_svg
 //! ```
 
-use aios_core::prim_geo::wire::{gen_polyline, process_ploop_vertices};
+use aios_core::prim_geo::wire::{gen_polyline_from_processed_vertices, process_ploop_vertices};
 use aios_core::types::RefU64;
 use aios_core::{SUL_DB, SurrealQueryExt, init_test_surreal};
 use anyhow::Result;
@@ -157,12 +157,12 @@ async fn process_ploop(ploop_id: RefU64, output_dir: &Path) -> Result<String> {
     let fradius_count = vertices.iter().filter(|v| v.z > 0.0).count();
     println!("  FRADIUS 顶点数: {}", fradius_count);
 
-    // 使用 ploop-rs 处理顶点
+    // 使用 ploop-rs 处理顶点（FRADIUS -> bulge）
     let processed = process_ploop_vertices(&vertices, &format!("PLOOP_{}", ploop_id.0))?;
     println!("  处理后顶点数: {}", processed.len());
 
-    // 生成 Polyline
-    let polyline = gen_polyline(&vertices)?;
+    // 基于已处理的 bulge 顶点生成 Polyline
+    let polyline = gen_polyline_from_processed_vertices(&processed)?;
     println!("  Polyline 顶点数: {}", polyline.vertex_data.len());
     println!("  Polyline 闭合: {}", polyline.is_closed);
 

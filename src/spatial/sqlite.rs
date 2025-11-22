@@ -23,8 +23,13 @@ pub fn open_connection() -> Result<Connection> {
     if !path.exists() {
         return Err(anyhow!("SQLite 空间索引文件不存在: {}", path.display()));
     }
-    Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY)
-        .with_context(|| format!("无法打开 SQLite 空间索引文件 {}", path.display()))
+    let conn = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .with_context(|| format!("无法打开 SQLite 空间索引文件 {}", path.display()))?;
+    
+    // 验证 RTree 扩展是否可用
+    verify_rtree_support(&conn)?;
+    
+    Ok(conn)
 }
 
 /// 打开可读写的 SQLite 连接（用于创建表或插入数据）
@@ -32,8 +37,39 @@ pub fn open_connection_rw() -> Result<Connection> {
     ensure_sqlite_enabled()?;
     let db_option = get_db_option();
     let path = db_option.get_sqlite_index_path();
-    Connection::open(&path)
-        .with_context(|| format!("无法打开 SQLite 空间索引文件 {}", path.display()))
+    let conn = Connection::open(&path)
+        .with_context(|| format!("无法打开 SQLite 空间索引文件 {}", path.display()))?;
+    
+    // 验证 RTree 扩展是否可用
+    verify_rtree_support(&conn)?;
+    
+    Ok(conn)
+}
+
+/// 验证 SQLite 连接是否支持 RTree 扩展
+fn verify_rtree_support(conn: &Connection) -> Result<()> {
+    // 检查是否已经存在 RTree 表
+    let table_exists: bool = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='aabb_index'",
+        [],
+        |row| row.get(0),
+    ).unwrap_or(false);
+    
+    if table_exists {
+        // 如果表已存在，尝试执行一次简单查询验证表是否可用
+        conn
+            .query_row::<i64, _, _>(
+                "SELECT COUNT(*) FROM aabb_index LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .map(|_| ())
+            .context("验证 SQLite RTree 表 aabb_index 时失败")
+    } else {
+        // 表不存在，尝试创建测试表来验证 RTree 支持（需要可写连接）
+        // 对于只读连接，如果表不存在，我们假设 RTree 可用（将在创建表时验证）
+        Ok(())
+    }
 }
 
 /// 创建 RTree 虚拟表
@@ -101,7 +137,9 @@ pub fn query_containing_point_with_conn(
     let mut stmt = conn.prepare(
         "SELECT id, min_x, max_x, min_y, max_y, min_z, max_z
          FROM aabb_index
-         WHERE id MATCH rtree(?1, ?1, ?2, ?2, ?3, ?3)
+         WHERE min_x <= ?1 AND max_x >= ?1
+           AND min_y <= ?2 AND max_y >= ?2
+           AND min_z <= ?3 AND max_z >= ?3
          LIMIT ?4",
     )?;
     let rows = stmt.query_map(
@@ -230,7 +268,9 @@ pub fn query_overlap_with_conn(
         "SELECT aabb_index.id, min_x, max_x, min_y, max_y, min_z, max_z, items.noun
          FROM aabb_index
          LEFT JOIN items ON items.id = aabb_index.id
-         WHERE aabb_index.id MATCH rtree(?1, ?2, ?3, ?4, ?5, ?6)",
+         WHERE max_x >= ?1 AND min_x <= ?2
+           AND max_y >= ?3 AND min_y <= ?4
+           AND max_z >= ?5 AND min_z <= ?6",
     );
     let mut params: Vec<Box<dyn ToSql>> = vec![
         Box::new(expanded.mins.x as f64),

@@ -146,7 +146,7 @@ pub async fn query_refno_has_pos_neg_map(
             .collect::<Vec<_>>()
             .join(","),
     );
-    // println!("query_refno_has_pos_neg_map sql is {}", &sql);
+    println!("query_refno_has_pos_neg_map sql is {}", &sql);
     let mut response = SUL_DB.query_response(&sql).await?;
     let mut result = HashMap::new();
     if let Ok(infos) = take_vec::<RefnoHasNegPosInfo>(&mut response, 0) {
