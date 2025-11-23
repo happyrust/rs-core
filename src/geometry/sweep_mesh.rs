@@ -1,10 +1,10 @@
+use crate::RefU64;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
 use crate::prim_geo::profile_processor::ProfileProcessor;
 use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath};
 use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::shape::pdms_shape::PlantMesh;
-use crate::RefU64;
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec2, Vec3};
 use i_triangle::float::triangulatable::Triangulatable;
 
@@ -30,7 +30,7 @@ fn get_profile_data(profile: &CateProfileParam, _refno: Option<RefU64>) -> Optio
         CateProfileParam::SPRO(spro) => {
             // 使用profile内部的refno，而不是传入的refno
             let profile_refno = Some(spro.refno);
-            
+
             // SPRO: verts 是 Vec<Vec2>，frads 是 Vec<f32>
             // 需要转换为 Vec<Vec3>，其中 z 分量是 FRADIUS
             if spro.verts.len() != spro.frads.len() {
@@ -129,7 +129,7 @@ fn get_profile_data(profile: &CateProfileParam, _refno: Option<RefU64>) -> Optio
     let mut vertices = Vec::new();
     let mut total_len = 0.0;
     let n = processed.contour_points.len();
-    
+
     if n < 3 {
         return None;
     }
@@ -147,7 +147,7 @@ fn get_profile_data(profile: &CateProfileParam, _refno: Option<RefU64>) -> Optio
     for i in 0..n {
         let curr = processed.contour_points[i];
         let next = processed.contour_points[(i + 1) % n];
-        
+
         vertices.push(ProfileVertex {
             pos: curr,
             normal: Vec2::ZERO, // 法线由面生成
@@ -179,22 +179,15 @@ fn get_profile_data(profile: &CateProfileParam, _refno: Option<RefU64>) -> Optio
 }
 
 /// 构建截面变换矩阵（与 OCC 模式保持一致）
-/// 
+///
 /// 变换顺序：
 /// 1. 平移：应用 plin_pos 偏移（负值，因为要移到原点）
 /// 2. 旋转：应用 bangle 绕 Z 轴旋转
 /// 3. 镜像：如果 lmirror，X 轴取反
-fn build_profile_transform_matrix(
-    plin_pos: Vec2,
-    bangle: f32,
-    lmirror: bool,
-) -> DMat4 {
+fn build_profile_transform_matrix(plin_pos: Vec2, bangle: f32, lmirror: bool) -> DMat4 {
     // 1. 平移：移到原点（负 plin_pos）
-    let translation = DMat4::from_translation(DVec3::new(
-        -plin_pos.x as f64,
-        -plin_pos.y as f64,
-        0.0,
-    ));
+    let translation =
+        DMat4::from_translation(DVec3::new(-plin_pos.x as f64, -plin_pos.y as f64, 0.0));
 
     // 2. 旋转：bangle 绕 Z 轴
     let rotation = if bangle.abs() > 0.001 {
@@ -229,11 +222,7 @@ struct PathSample {
 /// - X 轴(right): 径向,从圆心指向当前点
 /// - Y 轴(up): pref_axis (固定,用户指定)
 /// - Z 轴(tangent): plax (切线方向)
-fn sample_arc_frames(
-    arc: &Arc3D,
-    arc_segments: usize,
-    plax: Vec3,
-) -> Option<Vec<PathSample>> {
+fn sample_arc_frames(arc: &Arc3D, arc_segments: usize, plax: Vec3) -> Option<Vec<PathSample>> {
     let samples = arc_segments.max(4);
     let mut result = Vec::with_capacity(samples + 1);
     let mut total_dist = 0.0;
@@ -253,8 +242,10 @@ fn sample_arc_frames(
     let dot = profile_up.dot(profile_normal).abs();
     let (profile_right, profile_up_ortho) = if dot > 0.999 {
         // pref_axis 和 plax 几乎平行,使用 arc.axis 来构建坐标系
-        eprintln!("警告: pref_axis ({:?}) 和 plax ({:?}) 平行, 使用 arc.axis ({:?})",
-                  arc.pref_axis, plax, arc.axis);
+        eprintln!(
+            "警告: pref_axis ({:?}) 和 plax ({:?}) 平行, 使用 arc.axis ({:?})",
+            arc.pref_axis, plax, arc.axis
+        );
         let right = arc.axis.cross(profile_normal).normalize();
         let up = profile_normal.cross(right).normalize();
         (right, up)
@@ -386,7 +377,8 @@ fn sample_path_frames(
         Some(SegmentPath::Line(line)) if line.is_spine => {
             // SPINE 直线路径：参考 OCC 版本，从所有 segments 中查找 pref_axis
             // 遍历所有 segments，找到第一个 Arc 的 pref_axis；如果没有 Arc，使用默认值
-            segments.iter()
+            segments
+                .iter()
                 .find_map(|seg| {
                     if let SegmentPath::Arc(arc) = seg {
                         Some(arc.pref_axis)
@@ -807,9 +799,7 @@ pub fn generate_sweep_solid_mesh(
     let frames = sample_path_frames(&sweep.path.segments, arc_segments, Vec3::Z)?;
 
     // 正常生成 mesh
-    let mut mesh = generate_mesh_from_frames(
-        &profile, &frames, sweep.drns, sweep.drne,
-    );
+    let mut mesh = generate_mesh_from_frames(&profile, &frames, sweep.drns, sweep.drne);
 
     // 获取 plin_pos（用于构建变换矩阵）
     let plin_pos = match &sweep.profile {

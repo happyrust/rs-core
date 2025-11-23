@@ -25,7 +25,9 @@ impl std::fmt::Display for EndatuError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EndatuError::InvalidIndex(idx) => write!(f, "无效的 ENDATU 索引: {}", idx),
-            EndatuError::CoordinateCalculationFailed(code) => write!(f, "坐标计算失败，错误码: {}", code),
+            EndatuError::CoordinateCalculationFailed(code) => {
+                write!(f, "坐标计算失败，错误码: {}", code)
+            }
             EndatuError::AttributeMissing(attr) => write!(f, "缺少必需属性: {}", attr),
             EndatuError::TransformMatrixError => write!(f, "变换矩阵计算错误"),
             EndatuError::InvalidZdisValue(zdis) => write!(f, "ZDIS 值超出有效范围: {}", zdis),

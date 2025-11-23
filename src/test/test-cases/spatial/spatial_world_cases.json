@@ -1,5 +1,11 @@
 [
   {
+    "refno": "17496/266217",
+    "noun": "GENSEC",
+    "pos_str": "W 5375mm N 1148.7mm D 2595.69mm",
+    "ori_str": "Y is N and Z is U"
+  },
+  {
     "refno": "17496/266220",
     "noun": "POINSP",
     "pos_str": "W 5375.49mm N 1771.29mm D 2607.01mm",
@@ -16,6 +22,19 @@
     "noun": "FITT",
     "pos_str": "E 57900mm N 21200mm D 5150mm",
     "ori_str": "Y is E and Z is S"
+  },
+  {
+    "refno": "17496/268361",
+    "noun": "FIXING",
+    "pos_str": "E 63mm N 0mm D 442.3mm",
+    "ori_str": "Y is N and Z is W"
+  },
+  {
+    "refno": "17496/272475",
+    "noun": "PCLA",
+    "pos_str": "W 3810mm S 33900mm D 6089mm",
+    "ori_str": "Y is U and Z is N"
   }
+
 
 ]

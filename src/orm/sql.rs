@@ -18,7 +18,9 @@ pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
 
 #[cfg(not(feature = "reflect"))]
 pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
-    Err(anyhow!("get_all_create_table_sqls requires 'reflect' feature"))
+    Err(anyhow!(
+        "get_all_create_table_sqls requires 'reflect' feature"
+    ))
 }
 
 #[cfg(feature = "reflect")]
@@ -52,7 +54,9 @@ pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
 
 #[cfg(not(feature = "reflect"))]
 pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
-    Err(anyhow!("gen_create_table_sql_reflect requires 'reflect' feature"))
+    Err(anyhow!(
+        "gen_create_table_sql_reflect requires 'reflect' feature"
+    ))
 }
 
 #[cfg(feature = "reflect")]

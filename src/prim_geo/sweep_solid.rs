@@ -105,8 +105,6 @@ impl SweepSolid {
         DMat4::from_scale_rotation_translation(scale, rot, DVec3::ZERO)
     }
 
-
-
     #[cfg(feature = "occ")]
     ///计算SPRO的face
     /// start_vec 为起始方向
@@ -270,7 +268,6 @@ impl BrepShapeTrait for SweepSolid {
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
-
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {

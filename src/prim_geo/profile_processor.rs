@@ -1,5 +1,5 @@
 /// 统一的截面处理模块
-/// 
+///
 /// 处理流程：
 /// 1. 输入顶点数据（支持多轮廓）
 /// 2. 使用 ploop-rs 处理 FRADIUS
@@ -7,14 +7,11 @@
 /// 4. 处理多轮廓的 boolean 操作（subtract 内孔等）
 /// 5. 使用 i_triangle 进行三角化
 /// 6. 输出标准化的截面数据
-
 use crate::prim_geo::wire::{
-    export_polyline_svg_for_debug,
-    gen_polyline_from_processed_vertices,
-    polyline_to_debug_json_str,
-    process_ploop_vertices,
+    export_polyline_svg_for_debug, gen_polyline_from_processed_vertices,
+    polyline_to_debug_json_str, process_ploop_vertices,
 };
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use cavalier_contours::polyline::{BooleanOp, PlineSource, Polyline};
 use glam::{Vec2, Vec3};
 use i_triangle::float::triangulatable::Triangulatable;
@@ -90,16 +87,16 @@ impl ProfileProcessor {
     }
 
     /// 统一的入口：从多个 wire（轮廓）创建处理器
-    /// 
+    ///
     /// 自动识别外轮廓和内孔：
     /// - 如果只有一个轮廓，作为外轮廓
     /// - 如果有多个轮廓，使用面积最大的作为外轮廓，其他作为内孔
     /// - 或者遵循约定：第一个是外轮廓，其他是内孔（如果 auto_detect=false）
-    /// 
+    ///
     /// # 参数
     /// - `wires`: 多个轮廓的顶点列表，每个轮廓是一个 `Vec<Vec3>`
     /// - `auto_detect`: 是否自动检测外轮廓（通过面积），默认 true
-    /// 
+    ///
     /// # 返回
     /// - `Result<Self>`: 处理后的 ProfileProcessor
     pub fn from_wires(
@@ -162,7 +159,8 @@ impl ProfileProcessor {
                 .collect();
 
             // 按面积降序排序
-            contours_with_area.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            contours_with_area
+                .sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
             // 面积最大的作为外轮廓，其他作为内孔
             let mut outer = contours_with_area[0].0.clone();
@@ -205,7 +203,7 @@ impl ProfileProcessor {
     }
 
     /// 计算轮廓的面积（使用鞋带公式）
-    /// 
+    ///
     /// 面积的正负号表示轮廓的绕向（逆时针为正，顺时针为负）
     /// 只使用 x, y 坐标，忽略 z 坐标（z 可能存储 FRADIUS 或 bulge）
     fn compute_contour_area(vertices: &[Vec3]) -> f32 {
@@ -232,7 +230,8 @@ impl ProfileProcessor {
         println!("   内孔数量: {}", self.inner_contours.len());
 
         // 1. 处理外轮廓
-        let outer_polyline = self.process_single_contour(&self.outer_contour.vertices, "outer", refno)?;
+        let outer_polyline =
+            self.process_single_contour(&self.outer_contour.vertices, "outer", refno)?;
 
         // 2. 处理内孔并执行 boolean subtract
         let final_polyline = if self.inner_contours.is_empty() {
@@ -275,7 +274,6 @@ impl ProfileProcessor {
         if vertices.len() < 3 {
             return Err(anyhow!("轮廓 {} 顶点数量不足（< 3）", name));
         }
-        
 
         // 使用 ploop-rs 处理 FRADIUS
         // 将 Vec3 拆分为 Vec2 和 frads
@@ -285,8 +283,11 @@ impl ProfileProcessor {
             verts2d.push(Vec2::new(v.x, v.y));
             frads.push(v.z);
         }
-        let processed_vertices =
-            process_ploop_vertices(&verts2d, &frads, &format!("PROFILE_{}", &refno.unwrap_or("unknown")))?;
+        let processed_vertices = process_ploop_vertices(
+            &verts2d,
+            &frads,
+            &format!("PROFILE_{}", &refno.unwrap_or("unknown")),
+        )?;
 
         //export the vertices to json file
         // let json_str = serde_json::to_string_pretty(&processed_vertices)?;
@@ -298,11 +299,14 @@ impl ProfileProcessor {
         let polyline = gen_polyline_from_processed_vertices(&processed_vertices, refno)?;
 
         //todo 实现打印 polyline 的方法, 使用 polyline_to_debug_json_str
-        println!("   轮廓 {} 的 Polyline: {}", &refno.unwrap_or("unknown"), polyline_to_debug_json_str(&polyline));
+        println!(
+            "   轮廓 {} 的 Polyline: {}",
+            &refno.unwrap_or("unknown"),
+            polyline_to_debug_json_str(&polyline)
+        );
 
         //export the svg of the polyline
         // export_polyline_svg_for_debug(&polyline, Some(name));
-
 
         Ok(polyline)
     }
@@ -335,7 +339,7 @@ impl ProfileProcessor {
     }
 
     /// 将 Polyline 转换为 2D 点集
-    /// 
+    ///
     /// 注意：i_triangle 不支持 bulge，需要将圆弧段离散化
     fn polyline_to_2d_points(&self, polyline: &Polyline) -> Vec<Vec2> {
         let mut points = Vec::new();
@@ -471,7 +475,7 @@ impl ProfileProcessor {
 }
 
 /// 从 ProcessedProfile 生成拉伸体的顶点和索引
-/// 
+///
 /// 用于 Extrusion
 pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh {
     let mut vertices = Vec::new();
@@ -482,7 +486,7 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
     let n = profile.contour_points.len();
     for i in 0..n {
         let next = (i + 1) % n;
-        
+
         // 获取当前段的两个底面点
         let p0_2d = profile.contour_points[i];
         let p1_2d = profile.contour_points[next];
@@ -501,7 +505,7 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
         let normal = edge.cross(up).normalize();
 
         let base_idx = vertices.len() as u32;
-        
+
         // 添加顶点和法线
         vertices.push(v0);
         vertices.push(v1);
@@ -548,7 +552,7 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
 
     // 4. 生成 UV 坐标
     let mut uvs = Vec::new();
-    
+
     // 侧面的 UV：U 沿轮廓，V 沿高度
     for i in 0..n {
         let u = i as f32 / n as f32;
@@ -557,7 +561,7 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
         uvs.push([u, 1.0]); // 顶面（重复）
         uvs.push([u, 0.0]); // 底面（重复）
     }
-    
+
     // 底面和顶面的 UV：使用 2D 坐标
     for point in &profile.tri_vertices {
         uvs.push([point.x / 100.0, point.y / 100.0]); // 底面
@@ -584,7 +588,7 @@ pub struct ExtrudedMesh {
 }
 
 /// 从 ProcessedProfile 生成旋转体的顶点和索引
-/// 
+///
 /// 用于 Revolution
 pub fn revolve_profile(
     profile: &ProcessedProfile,
@@ -607,7 +611,7 @@ pub fn revolve_profile(
     // 需要构建一个坐标系，其中：
     // - 一个轴沿旋转轴方向（用于高度）
     // - 一个轴垂直于旋转轴（用于径向距离）
-    
+
     // 计算垂直于旋转轴的正交基
     // 优先选择 X 轴作为参考，如果旋转轴接近 X 轴则选择 Y 轴
     let radial_axis = if rot_axis.abs_diff_eq(Vec3::Z, 0.01) {
@@ -624,13 +628,23 @@ pub fn revolve_profile(
         Vec3::Y
     } else {
         // 任意轴，使用通用方法
-        let ref_vec = if rot_axis.z.abs() < 0.9 { Vec3::Z } else { Vec3::X };
+        let ref_vec = if rot_axis.z.abs() < 0.9 {
+            Vec3::Z
+        } else {
+            Vec3::X
+        };
         rot_axis.cross(ref_vec).normalize()
     };
-    
+
     // 确保正交（对于通用情况）
     let radial_axis = if radial_axis.dot(rot_axis).abs() > 0.001 {
-         rot_axis.cross(if rot_axis.z.abs() < 0.9 { Vec3::Z } else { Vec3::X }).normalize()
+        rot_axis
+            .cross(if rot_axis.z.abs() < 0.9 {
+                Vec3::Z
+            } else {
+                Vec3::X
+            })
+            .normalize()
     } else {
         radial_axis
     };
@@ -641,7 +655,7 @@ pub fn revolve_profile(
     for i in 0..n_profile {
         let prev_idx = if i == 0 { n_profile - 1 } else { i - 1 };
         let next_idx = (i + 1) % n_profile;
-        
+
         let p_prev = profile.contour_points[prev_idx];
         let p_curr = profile.contour_points[i];
         let p_next = profile.contour_points[next_idx];
@@ -671,7 +685,7 @@ pub fn revolve_profile(
         let current_angle = angle * t;
 
         let rotation = glam::Quat::from_axis_angle(rot_axis, current_angle.to_radians());
-        
+
         // 旋转后的径向轴
         let current_radial_axis = rotation.mul_vec3(radial_axis);
 
@@ -683,7 +697,7 @@ pub fn revolve_profile(
             // 轮廓点的坐标映射：
             // - point.x: 距离旋转轴的径向距离 (Radius)
             // - point.y: 沿旋转轴的高度 (Height)
-            
+
             // 构建当前截面上的点位置
             // Pos = Center + (Height * RotAxis) + (Radius * CurrentRadialAxis)
             let pos_3d = rot_center + (rot_axis * point.y) + (current_radial_axis * point.x);
@@ -708,7 +722,7 @@ pub fn revolve_profile(
                 // Normal = (ny * RotAxis) + (nx * CurrentRadialAxis)
                 (rot_axis * normal_2d.y) + (current_radial_axis * normal_2d.x)
             };
-            
+
             normals.push(normal_3d.normalize());
         }
     }
@@ -902,7 +916,9 @@ mod tests {
         let (verts2d_auto, frads_auto) =
             build_inputs_from_vec3(vec![outer_vertices.clone(), inner_vertices.clone()]);
         let processor2 = ProfileProcessor::from_wires(verts2d_auto, frads_auto, true).unwrap();
-        let result2 = processor2.process("test_with_hole_from_wires_auto", None).unwrap();
+        let result2 = processor2
+            .process("test_with_hole_from_wires_auto", None)
+            .unwrap();
 
         assert_eq!(result.tri_indices.len(), result2.tri_indices.len());
 
@@ -910,7 +926,9 @@ mod tests {
         let (verts2d_conv, frads_conv) =
             build_inputs_from_vec3(vec![outer_vertices, inner_vertices]);
         let processor3 = ProfileProcessor::from_wires(verts2d_conv, frads_conv, false).unwrap();
-        let result3 = processor3.process("test_with_hole_from_wires_convention", None).unwrap();
+        let result3 = processor3
+            .process("test_with_hole_from_wires_convention", None)
+            .unwrap();
 
         assert_eq!(result.tri_indices.len(), result3.tri_indices.len());
 
@@ -977,7 +995,7 @@ mod tests {
     fn test_extrude_rounded_rectangle() {
         // 150x150mm 矩形，四角圆角半径 20mm
         let vertices = vec![
-            Vec3::new(0.0, 0.0, 20.0),      // 左下角，圆角半径 20
+            Vec3::new(0.0, 0.0, 20.0),     // 左下角，圆角半径 20
             Vec3::new(150.0, 0.0, 20.0),   // 右下角，圆角半径 20
             Vec3::new(150.0, 150.0, 20.0), // 右上角，圆角半径 20
             Vec3::new(0.0, 150.0, 20.0),   // 左上角，圆角半径 20
@@ -985,7 +1003,9 @@ mod tests {
 
         let (verts2d, frads) = build_inputs_from_vec3(vec![vertices]);
         let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
-        let profile = processor.process("rounded_rectangle_150x150", None).unwrap();
+        let profile = processor
+            .process("rounded_rectangle_150x150", None)
+            .unwrap();
         let mesh = extrude_profile(&profile, 250.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -1046,7 +1066,7 @@ mod tests {
         // 内孔：使用 FRADIUS 模拟圆形（40x40方形，每角圆角20）
         let inner = vec![
             Vec3::new(80.0, 80.0, 20.0),   // 左下角，圆角半径 20
-            Vec3::new(120.0, 80.0, 20.0), // 右下角，圆角半径 20
+            Vec3::new(120.0, 80.0, 20.0),  // 右下角，圆角半径 20
             Vec3::new(120.0, 120.0, 20.0), // 右上角，圆角半径 20
             Vec3::new(80.0, 120.0, 20.0),  // 左上角，圆角半径 20
         ];
@@ -1054,7 +1074,9 @@ mod tests {
         // 测试自动检测（面积大的作为外轮廓）
         let (verts2d_auto, frads_auto) = build_inputs_from_vec3(vec![outer.clone(), inner.clone()]);
         let processor = ProfileProcessor::from_wires(verts2d_auto, frads_auto, true).unwrap();
-        let profile = processor.process("square_with_circular_hole_auto", None).unwrap();
+        let profile = processor
+            .process("square_with_circular_hole_auto", None)
+            .unwrap();
         let mesh = extrude_profile(&profile, 300.0);
 
         assert!(!mesh.vertices.is_empty());
@@ -1063,7 +1085,9 @@ mod tests {
         // 测试遵循约定（第一个是外轮廓）
         let (verts2d_conv, frads_conv) = build_inputs_from_vec3(vec![outer, inner]);
         let processor2 = ProfileProcessor::from_wires(verts2d_conv, frads_conv, false).unwrap();
-        let profile2 = processor2.process("square_with_circular_hole_convention", None).unwrap();
+        let profile2 = processor2
+            .process("square_with_circular_hole_convention", None)
+            .unwrap();
         let mesh2 = extrude_profile(&profile2, 300.0);
 
         assert_eq!(mesh.vertices.len(), mesh2.vertices.len());
@@ -1071,7 +1095,10 @@ mod tests {
 
         // 导出 OBJ 文件
         let plant_mesh: crate::shape::pdms_shape::PlantMesh = mesh.into();
-        export_mesh_to_obj(&plant_mesh, "extrusion_square_with_circular_hole_200x200x300.obj");
+        export_mesh_to_obj(
+            &plant_mesh,
+            "extrusion_square_with_circular_hole_200x200x300.obj",
+        );
 
         println!("✅ 方形外轮廓+圆形内孔测试通过");
         println!("   顶点数: {}", plant_mesh.vertices.len());
@@ -1088,14 +1115,14 @@ mod tests {
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(200.0, 0.0, 0.0),
             Vec3::new(200.0, 10.0, 0.0),
-            Vec3::new(110.0, 10.0, 0.0),   // 翼缘到腹板
-            Vec3::new(110.0, 190.0, 0.0),  // 腹板右侧
+            Vec3::new(110.0, 10.0, 0.0),  // 翼缘到腹板
+            Vec3::new(110.0, 190.0, 0.0), // 腹板右侧
             Vec3::new(200.0, 190.0, 0.0),
             Vec3::new(200.0, 200.0, 0.0),
             Vec3::new(0.0, 200.0, 0.0),
             Vec3::new(0.0, 190.0, 0.0),
-            Vec3::new(90.0, 190.0, 0.0),   // 腹板左侧
-            Vec3::new(90.0, 10.0, 0.0),    // 腹板到翼缘
+            Vec3::new(90.0, 190.0, 0.0), // 腹板左侧
+            Vec3::new(90.0, 10.0, 0.0),  // 腹板到翼缘
             Vec3::new(0.0, 10.0, 0.0),
         ];
 
@@ -1174,10 +1201,10 @@ mod tests {
         // 圆柱体：半径 50mm，高度 200mm
         // 截面是一个矩形轮廓（从底部到顶部）
         let profile = vec![
-            Vec3::new(50.0, 0.0, 0.0),    // 底部右点（距离旋转轴50mm）
+            Vec3::new(50.0, 0.0, 0.0),   // 底部右点（距离旋转轴50mm）
             Vec3::new(50.0, 200.0, 0.0), // 顶部右点
             Vec3::new(0.0, 200.0, 0.0),  // 顶部左点（在旋转轴上）
-            Vec3::new(0.0, 0.0, 0.0),   // 底部左点（在旋转轴上）
+            Vec3::new(0.0, 0.0, 0.0),    // 底部左点（在旋转轴上）
         ];
 
         let (verts2d, frads) = build_inputs_from_vec3(vec![profile]);
@@ -1185,10 +1212,10 @@ mod tests {
         let processed = processor.process("cylinder_r50_h200", None).unwrap();
         let mesh = revolve_profile(
             &processed,
-            360.0,           // 旋转360度
-            32,              // 32个分段
-            Vec3::Z,         // 绕Z轴旋转
-            Vec3::ZERO,      // 旋转中心在原点
+            360.0,      // 旋转360度
+            32,         // 32个分段
+            Vec3::Z,    // 绕Z轴旋转
+            Vec3::ZERO, // 旋转中心在原点
         );
 
         assert!(!mesh.vertices.is_empty());
@@ -1210,7 +1237,7 @@ mod tests {
         // 圆锥体：底部半径 60mm，顶部半径 20mm，高度 150mm
         // 截面是一个梯形轮廓
         let profile = vec![
-            Vec3::new(60.0, 0.0, 0.0),    // 底部右点
+            Vec3::new(60.0, 0.0, 0.0),   // 底部右点
             Vec3::new(20.0, 150.0, 0.0), // 顶部右点
             Vec3::new(0.0, 150.0, 0.0),  // 顶部左点（在旋转轴上）
             Vec3::new(0.0, 0.0, 0.0),    // 底部左点（在旋转轴上）
@@ -1219,13 +1246,7 @@ mod tests {
         let (verts2d, frads) = build_inputs_from_vec3(vec![profile]);
         let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
         let processed = processor.process("cone_r60_r20_h150", None).unwrap();
-        let mesh = revolve_profile(
-            &processed,
-            360.0,
-            32,
-            Vec3::Z,
-            Vec3::ZERO,
-        );
+        let mesh = revolve_profile(&processed, 360.0, 32, Vec3::Z, Vec3::ZERO);
 
         assert!(!mesh.vertices.is_empty());
         assert!(!mesh.indices.is_empty());
@@ -1244,22 +1265,16 @@ mod tests {
     fn test_revolve_frustum_with_rounding() {
         // 圆台：底部半径 80mm，顶部半径 40mm，高度 200mm，带圆角过渡
         let profile = vec![
-            Vec3::new(80.0, 0.0, 0.0),      // 底部点
-            Vec3::new(80.0, 50.0, 10.0),   // 底部圆角（半径10）
+            Vec3::new(80.0, 0.0, 0.0),    // 底部点
+            Vec3::new(80.0, 50.0, 10.0),  // 底部圆角（半径10）
             Vec3::new(40.0, 150.0, 10.0), // 顶部圆角（半径10）
-            Vec3::new(40.0, 200.0, 0.0),   // 顶部点
+            Vec3::new(40.0, 200.0, 0.0),  // 顶部点
         ];
 
         let (verts2d, frads) = build_inputs_from_vec3(vec![profile]);
         let processor = ProfileProcessor::from_wires(verts2d, frads, true).unwrap();
         let processed = processor.process("frustum_r80_r40_h200", None).unwrap();
-        let mesh = revolve_profile(
-            &processed,
-            360.0,
-            32,
-            Vec3::Z,
-            Vec3::ZERO,
-        );
+        let mesh = revolve_profile(&processed, 360.0, 32, Vec3::Z, Vec3::ZERO);
 
         assert!(!mesh.vertices.is_empty());
         assert!(!mesh.indices.is_empty());
@@ -1279,7 +1294,7 @@ mod tests {
         // 半圆柱：半径 50mm，高度 200mm，旋转 180度
         // 截面是一个矩形轮廓
         let profile = vec![
-            Vec3::new(50.0, 0.0, 0.0),    // 底部右点
+            Vec3::new(50.0, 0.0, 0.0),   // 底部右点
             Vec3::new(50.0, 200.0, 0.0), // 顶部右点
             Vec3::new(0.0, 200.0, 0.0),  // 顶部左点（在旋转轴上）
             Vec3::new(0.0, 0.0, 0.0),    // 底部左点（在旋转轴上）
@@ -1330,8 +1345,8 @@ mod tests {
         // 测试：小轮廓在前，大轮廓在后（应该自动识别大轮廓为外轮廓）
         let (verts2d_small_first, frads_small_first) =
             build_inputs_from_vec3(vec![small.clone(), large.clone()]);
-        let processor = ProfileProcessor::from_wires(verts2d_small_first, frads_small_first, true)
-            .unwrap();
+        let processor =
+            ProfileProcessor::from_wires(verts2d_small_first, frads_small_first, true).unwrap();
         let profile = processor.process("auto_detect_small_first", None).unwrap();
         let mesh = extrude_profile(&profile, 100.0);
 
@@ -1339,8 +1354,7 @@ mod tests {
         assert!(!mesh.indices.is_empty());
 
         // 测试：大轮廓在前，小轮廓在后（应该识别大轮廓为外轮廓）
-        let (verts2d_large_first, frads_large_first) =
-            build_inputs_from_vec3(vec![large, small]);
+        let (verts2d_large_first, frads_large_first) = build_inputs_from_vec3(vec![large, small]);
         let processor2 =
             ProfileProcessor::from_wires(verts2d_large_first, frads_large_first, true).unwrap();
         let profile2 = processor2.process("auto_detect_large_first", None).unwrap();

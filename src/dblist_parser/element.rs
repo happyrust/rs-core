@@ -1,7 +1,7 @@
 //! PDMS 元素数据结构
 
-use crate::types::named_attmap::NamedAttrMap;
 use crate::RefnoEnum;
+use crate::types::named_attmap::NamedAttrMap;
 use std::collections::VecDeque;
 
 /// PDMS 元素

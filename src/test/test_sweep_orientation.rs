@@ -213,8 +213,8 @@ fn test_arc_sweep_with_pref_axis() {
         angle: PI / 2.0, // 90 度
         start_pt: Vec3::new(arc_radius, 0.0, 0.0),
         clock_wise: false,
-        axis: Vec3::Z,           // 圆弧绕 Z 轴
-        pref_axis: Vec3::Y,      // 首选轴为 Y（这应该作为坐标系的 Y 轴）
+        axis: Vec3::Z,      // 圆弧绕 Z 轴
+        pref_axis: Vec3::Y, // 首选轴为 Y（这应该作为坐标系的 Y 轴）
     };
 
     let arc_path = SweepPath3D::from_arc(arc.clone());
@@ -247,7 +247,7 @@ fn test_arc_sweep_with_pref_axis() {
 
     // 测试 2: pref_axis = X（改变首选轴应该改变方位）
     let arc_x = Arc3D {
-        pref_axis: Vec3::X,  // 改变首选轴为 X
+        pref_axis: Vec3::X, // 改变首选轴为 X
         ..arc.clone()
     };
     let arc_path_x = SweepPath3D::from_arc(arc_x);
@@ -306,10 +306,10 @@ fn test_lmirror_on_line_path() {
 
     // 创建一个非对称的矩形截面（方便看出镜像效果）
     let rect_profile = vec![
-        Vec2::new(0.0, 0.0),      // 左下
-        Vec2::new(100.0, 0.0),    // 右下
-        Vec2::new(100.0, 50.0),   // 右上
-        Vec2::new(0.0, 50.0),     // 左上
+        Vec2::new(0.0, 0.0),    // 左下
+        Vec2::new(100.0, 0.0),  // 右下
+        Vec2::new(100.0, 50.0), // 右上
+        Vec2::new(0.0, 50.0),   // 左上
     ];
 
     let profile = CateProfileParam::SPRO(SProfileData {
@@ -348,8 +348,10 @@ fn test_lmirror_on_line_path() {
     println!("  顶点数: {}", mesh_normal.vertices.len());
 
     let first_v_normal = mesh_normal.vertices[0];
-    println!("  第一个顶点: ({:.2}, {:.2}, {:.2})",
-             first_v_normal.x, first_v_normal.y, first_v_normal.z);
+    println!(
+        "  第一个顶点: ({:.2}, {:.2}, {:.2})",
+        first_v_normal.x, first_v_normal.y, first_v_normal.z
+    );
 
     // 测试 2: lmirror = true
     println!("\n测试 2: lmirror = true");
@@ -371,12 +373,17 @@ fn test_lmirror_on_line_path() {
     println!("  顶点数: {}", mesh_mirror.vertices.len());
 
     let first_v_mirror = mesh_mirror.vertices[0];
-    println!("  第一个顶点: ({:.2}, {:.2}, {:.2})",
-             first_v_mirror.x, first_v_mirror.y, first_v_mirror.z);
+    println!(
+        "  第一个顶点: ({:.2}, {:.2}, {:.2})",
+        first_v_mirror.x, first_v_mirror.y, first_v_mirror.z
+    );
 
     // 验证镜像效果
     println!("\n镜像效果验证:");
-    println!("  X 坐标差异: {:.2} vs {:.2}", first_v_normal.x, first_v_mirror.x);
+    println!(
+        "  X 坐标差异: {:.2} vs {:.2}",
+        first_v_normal.x, first_v_mirror.x
+    );
 
     // 导出文件对比
     let _ = mesh_normal.export_obj(false, "test_output/line_lmirror_false.obj");

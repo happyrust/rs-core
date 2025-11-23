@@ -146,7 +146,7 @@ impl BrepShapeTrait for Revolution {
     }
 
     /// 使用统一的 ProfileProcessor 生成旋转体的mesh
-    /// 
+    ///
     /// 统一流程：cavalier_contours + i_triangle
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         if !self.check_valid() {

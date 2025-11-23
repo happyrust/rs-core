@@ -28,7 +28,7 @@ impl GensecExtrusionHandler {
         att: &NamedAttrMap,
     ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         let parent_is_gensec = parent_type == "GENSEC";
-        
+
         if parent_is_gensec {
             if let Ok(spine_paths) = get_spline_path(parent_refno).await {
                 if let Some(first_spine) = spine_paths.first() {
@@ -44,12 +44,14 @@ impl GensecExtrusionHandler {
                 }
             }
         }
-        
+
         // GENSEC 通常不处理 DPOSE/DPOSS，但保留兼容性
-        if let Some(end) = att.get_dpose() && let Some(start) = att.get_dposs() {
+        if let Some(end) = att.get_dpose()
+            && let Some(start) = att.get_dposs()
+        {
             return Ok((Some((end - start).normalize()), None));
         }
-        
+
         Ok((None, None))
     }
 }
@@ -84,15 +86,21 @@ impl TransformStrategy for GensecStrategy {
         let (_apply_bang, _bangle) = GensecBangHandler::should_apply_bang(att, cur_type);
 
         // 3. 处理 GENSEC 特有的挤出方向
-        let (pos_extru_dir, spine_ydir) = GensecExtrusionHandler::extract_gensec_extrusion(
-            parent_refno, parent_type, att
-        ).await?;
+        let (pos_extru_dir, spine_ydir) =
+            GensecExtrusionHandler::extract_gensec_extrusion(parent_refno, parent_type, att)
+                .await?;
 
         // 4. 处理旋转初始化
         Self::initialize_gensec_rotation(
-            att, cur_type, parent_type, pos_extru_dir, spine_ydir, 
-            &mut quat, is_world_quat
-        ).await?;
+            att,
+            cur_type,
+            parent_type,
+            pos_extru_dir,
+            spine_ydir,
+            &mut quat,
+            is_world_quat,
+        )
+        .await?;
 
         // 5. 处理 YDIR/OPDI 属性
         let ydir_axis = att.get_dvec3("YDIR");
@@ -117,7 +125,7 @@ impl TransformStrategy for GensecStrategy {
         }
 
         translation = translation + rotation * pos;
-        
+
         if !is_world_quat {
             rotation = rotation * quat;
         } else {
@@ -147,7 +155,7 @@ impl GensecStrategy {
         let parent_is_gensec = parent_type == "GENSEC";
         let quat_v = att.get_rotation();
         let has_local_ori = quat_v.is_some();
-        
+
         if (!parent_is_gensec && has_local_ori) || (parent_is_gensec && cur_type == "TMPL") {
             *quat = quat_v.unwrap_or_default();
         } else {

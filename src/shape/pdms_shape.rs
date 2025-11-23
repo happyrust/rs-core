@@ -356,13 +356,25 @@ impl PlantMesh {
             // 找到最大轴
             if ex >= ey && ex >= ez {
                 // X 为最大轴，第二轴取较大的 Y/Z
-                if ey >= ez { (0usize, 1usize) } else { (0usize, 2usize) }
+                if ey >= ez {
+                    (0usize, 1usize)
+                } else {
+                    (0usize, 2usize)
+                }
             } else if ey >= ex && ey >= ez {
                 // Y 为最大轴
-                if ex >= ez { (0usize, 1usize) } else { (1usize, 2usize) }
+                if ex >= ez {
+                    (0usize, 1usize)
+                } else {
+                    (1usize, 2usize)
+                }
             } else {
                 // Z 为最大轴
-                if ex >= ey { (0usize, 2usize) } else { (1usize, 2usize) }
+                if ex >= ey {
+                    (0usize, 2usize)
+                } else {
+                    (1usize, 2usize)
+                }
             }
         };
 

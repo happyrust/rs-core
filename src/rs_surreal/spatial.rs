@@ -388,13 +388,45 @@ pub async fn get_world_mat4_old(refno: RefnoEnum, is_local: bool) -> anyhow::Res
     #[cfg(feature = "profile")]
     println!("get_ancestor_attmaps took {:?}", elapsed_ancestors);
 
-    #[cfg(feature = "profile")]
+    // Debug: check ancestors content
+    // if ancestors.is_empty() {
+    //     println!("DEBUG: ancestors is empty for {}", refno);
+    // } else {
+    //     let first = ancestors.first().unwrap().get_refno_or_default();
+    //     let last = ancestors.last().unwrap().get_refno_or_default();
+    //     println!("DEBUG: ancestors for {}: len={}, first={}, last={}", refno, ancestors.len(), first, last);
+    // }
+
     let start_refnos = std::time::Instant::now();
     let ancestor_refnos = crate::query_ancestor_refnos(refno).await?;
-    #[cfg(feature = "profile")]
     let elapsed_refnos = start_refnos.elapsed();
-    #[cfg(feature = "profile")]
-    println!("query_ancestor_refnos took {:?}", elapsed_refnos);
+    // println!("query_ancestor_refnos took {:?}", elapsed_refnos);
+
+    // 检查 ancestors 是否包含 self
+    let has_self = ancestors.iter().any(|a| a.get_refno_or_default() == refno);
+    if !has_self {
+        // println!("DEBUG: Adding self to ancestors for {}", refno);
+        let self_att = get_named_attmap(refno).await?;
+        // 注意：get_ancestor_attmaps 返回顺序通常是 [Parent, GrandParent, ... Root] (Bottom-Up)
+        // 或者 [Root, ..., GrandParent, Parent] (Top-Down)?
+        // 根据 reverse() 的使用，推测原始是 Top-Down (Root -> Parent)? 
+        // 或者是 Bottom-Up (Parent -> Root)?
+        // 旧代码：ancestors.reverse(); ... windows(2): (Parent, Child)
+        // 如果 reverse 后是 Top-Down (Root -> Leaf)，说明原始是 Bottom-Up (Leaf -> Root)。
+        // 如果原始是 [Parent, Root]，reverse -> [Root, Parent]。
+        // 无论如何，self 应该是 Leaf，所以应该在 Root->Leaf 列表的末尾。
+        // 如果原始是 Bottom-Up，self 应该在最前面?
+        // fn::ancestor(x) -> [x, parent, root] or [root, parent, x]?
+        // SurrealDB fn::ancestor 通常返回 path。
+        
+        // 假设我们需要 [Root, Parent, Self] 顺序来进行计算。
+        // 如果原始 ancestors 是 [Parent, Root] (Bottom-Up without self)
+        // 我们 insert(0, self) -> [Self, Parent, Root]
+        // reverse -> [Root, Parent, Self]. Correct.
+        
+        ancestors.insert(0, self_att);
+    }
+
     if ancestor_refnos.len() <= 1 {
         return Ok(Some(DMat4::IDENTITY));
     }
@@ -861,6 +893,15 @@ async fn get_world_mat4_with_strategies_impl(
     #[cfg(feature = "profile")]
     println!("query_ancestor_refnos took {:?}", elapsed_refnos);
 
+    // 检查 ancestors 是否包含 self，如果不包含则添加
+    // get_ancestor_attmaps 通常返回 [Parent, GrandParent, ... Root]
+    // 我们需要将其补充为 [Self, Parent, ... Root]
+    let has_self = ancestors.iter().any(|a| a.get_refno_or_default() == refno);
+    if !has_self {
+        let self_att = get_named_attmap(refno).await?;
+        ancestors.insert(0, self_att);
+    }
+
     if ancestor_refnos.len() <= 1 {
         return Ok(Some(DMat4::IDENTITY));
     }
@@ -880,20 +921,23 @@ async fn get_world_mat4_with_strategies_impl(
     // 遍历层级，使用重构后的策略系统计算每个节点的局部变换
     let mut world_transform = DMat4::IDENTITY;
 
+    let mut mat4 = DMat4::IDENTITY;
     for (index, atts) in ancestors.windows(2).enumerate() {
         let o_att = &atts[0];
         let att = &atts[1];
         let cur_refno = att.get_refno_or_default();
         let owner = att.get_owner();
+        
+        // Debug info
+        // println!("DEBUG: Loop {} - Parent: {}, Child: {}", index, o_att.get_refno_or_default(), cur_refno);
 
-        // 使用重构后的策略系统计算局部变换
-        match get_local_mat4(cur_refno, owner).await {
-            Ok(Some(local_transform)) => {
-                // 累积变换到世界坐标系
-                let prev_world_transform = world_transform;
-                world_transform = world_transform * local_transform;
-
-                // 调试输出：追踪变换累积过程
+        // 计算局部变换
+        if let Ok(Some(local_mat)) = get_local_mat4(cur_refno, owner).await {
+            // println!("DEBUG:   Local Mat: {:?}", local_mat.w_axis);
+            mat4 = mat4 * local_mat;
+            // println!("DEBUG:   Acc Mat: {:?}", mat4.w_axis);
+        } else {
+            println!("DEBUG:   Failed to get local mat for {}", cur_refno);
                 #[cfg(feature = "debug_spatial")]
                 {
                     let local_pos = local_transform.project_point3(glam::DVec3::ZERO);

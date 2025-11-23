@@ -5,8 +5,7 @@ use crate::rs_surreal::spatial::{
     cal_zdis_pkdi_in_section_by_spine, get_spline_path, query_pline,
 };
 use crate::{
-    NamedAttrMap, RefnoEnum, SUL_DB, get_named_attmap,
-    pdms_data::PlinParam,
+    NamedAttrMap, RefnoEnum, SUL_DB, get_named_attmap, pdms_data::PlinParam,
     tool::direction_parse::parse_expr_to_dir,
 };
 use async_trait::async_trait;
@@ -92,14 +91,15 @@ impl PoslHandler {
         rotation: DQuat,
     ) -> anyhow::Result<()> {
         let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
-        
+
         if !pos_line.is_empty() {
             let mut plin_pos = DVec3::ZERO;
             let mut pline_plax = DVec3::X;
             let mut is_lmirror = false;
 
             let ancestor_refnos =
-                crate::query_filter_ancestors(att.get_owner(), &crate::consts::HAS_PLIN_TYPES).await?;
+                crate::query_filter_ancestors(att.get_owner(), &crate::consts::HAS_PLIN_TYPES)
+                    .await?;
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
@@ -118,7 +118,9 @@ impl PoslHandler {
                     pline_plax = param.plax;
                 }
 
-                if let Ok(Some(own_param)) = crate::query_pline(plin_owner, own_pos_line.into()).await {
+                if let Ok(Some(own_param)) =
+                    crate::query_pline(plin_owner, own_pos_line.into()).await
+                {
                     plin_pos -= own_param.pt;
                 }
             }
@@ -137,9 +139,9 @@ impl PoslHandler {
                 cal_ori_by_z_axis_ref_x(z_axis) * *quat
             } else {
                 if let Some(ydir) = eff_ydir {
-                     cal_ori_by_ydir(ydir.normalize(), z_axis)
+                    cal_ori_by_ydir(ydir.normalize(), z_axis)
                 } else {
-                     cal_ori_by_z_axis_ref_y(z_axis) * *quat
+                    cal_ori_by_z_axis_ref_y(z_axis) * *quat
                 }
             };
 
@@ -155,21 +157,21 @@ impl PoslHandler {
             // 5. pos: 这里的 pos 主要是 ZDIS/NPOS 等预先累加的偏移，通常也是局部 Z 轴或位移
             //    注意：如果 pos 是 ZDIS 产生的 (0,0,z)，它应该是在 local frame 下的。
             //    所以应该变换后加。
-            
+
             // 修正公式: Translation = Rotation_Parent * (Plin_Pos) + Rotation_Parent * Rotation_Self * (DELP + POS)
             // 假设 rotation (parent) 为 Identity 或已包含在 plin_pos 转换中 (query_pline通常返回Owner系坐标)
-            
+
             // 如果 pos 包含 ZDIS (局部 Z 轴偏移):
             let local_offset = delta_vec + *pos;
             let world_offset = rotation * new_quat * local_offset;
-            
+
             // plin_pos 是路径上的点，需应用父级旋转 (如果 rotation 是父级旋转)
             // 但 DefaultStrategy 中 rotation 初始为 Identity，且 translation 初始为 0
-            // 这里的 rotation 参数实际上是 accumulated rotation? 
+            // 这里的 rotation 参数实际上是 accumulated rotation?
             // 在 DefaultStrategy 调用时，rotation 是 Identity.
-            
+
             let offset = rotation * plin_pos + world_offset;
-            
+
             *translation += offset;
             *quat = new_quat;
         }
@@ -188,7 +190,7 @@ impl YdirHandler {
         has_opdir: &mut bool,
     ) -> anyhow::Result<()> {
         let ydir_axis = att.get_dvec3("YDIR");
-        
+
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
             *quat = cal_ori_by_opdir(opdir);
             *has_opdir = true;
@@ -217,7 +219,7 @@ impl BangHandler {
     pub fn should_apply_bang(att: &NamedAttrMap, cur_type: &str) -> (bool, f64) {
         let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
         let apply_bang = att.contains_key("BANG") && bangle != 0.0;
-        
+
         // GENSEC 特殊处理：不应用 BANG
         if cur_type == "GENSEC" {
             (false, bangle)
@@ -239,7 +241,7 @@ impl CutpHandler {
     ) -> anyhow::Result<()> {
         let has_cut_dir = att.contains_key("CUTP");
         let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
-        
+
         if has_cut_dir && !has_opdir && !has_local_ori {
             let mat3 = DMat3::from_quat(rotation);
             *quat = cal_cutp_ori(mat3.z_axis, cut_dir);
@@ -284,40 +286,69 @@ impl TransformStrategy for DefaultStrategy {
             ZdisHandler::handle_poinsp_zdis(att, parent_refno, &mut pos).await?;
         } else {
             ZdisHandler::handle_generic_zdis(
-                att, parent_refno, cur_type, &mut pos, &mut quat, 
-                &mut is_world_quat, &mut translation, rotation
-            ).await?;
+                att,
+                parent_refno,
+                cur_type,
+                &mut pos,
+                &mut quat,
+                &mut is_world_quat,
+                &mut translation,
+                rotation,
+            )
+            .await?;
         }
 
         // 4. 处理父级相关的变换（Spine/Extrusion）
-        let (pos_extru_dir, spine_ydir) = Self::extract_extrusion_direction(parent_refno, parent_type, att).await?;
+        let (pos_extru_dir, spine_ydir) =
+            Self::extract_extrusion_direction(parent_refno, parent_type, att).await?;
 
         // 5. 处理旋转初始化
         Self::initialize_rotation(
-            att, cur_type, parent_type, pos_extru_dir, spine_ydir, 
-            &mut quat, is_world_quat
-        ).await?;
+            att,
+            cur_type,
+            parent_type,
+            pos_extru_dir,
+            spine_ydir,
+            &mut quat,
+            is_world_quat,
+        )
+        .await?;
 
         // 6. 处理 YDIR/OPDI 属性
         let ydir_axis = att.get_dvec3("YDIR");
         let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
-        
-        if att.get_str("POSL").map(|x| x.trim()).unwrap_or_default().is_empty() {
+
+        if att
+            .get_str("POSL")
+            .map(|x| x.trim())
+            .unwrap_or_default()
+            .is_empty()
+        {
             // 没有 POSL 时的处理
             YdirHandler::handle_ydir_opdi(
-                att, pos_extru_dir, &mut quat, &mut pos, delta_vec, &mut has_opdir
+                att,
+                pos_extru_dir,
+                &mut quat,
+                &mut pos,
+                delta_vec,
+                &mut has_opdir,
             )?;
-            
+
             BangHandler::apply_bang(&mut quat, bangle, apply_bang);
-            
+
             // 处理 CUTP 属性
             let has_local_ori = att.get_rotation().is_some();
             CutpHandler::handle_cutp(
-                att, &mut quat, rotation, has_opdir, has_local_ori, &mut is_world_quat
+                att,
+                &mut quat,
+                rotation,
+                has_opdir,
+                has_local_ori,
+                &mut is_world_quat,
             )?;
-            
+
             translation = translation + rotation * pos;
-            
+
             if is_world_quat {
                 rotation = quat;
             } else {
@@ -326,10 +357,20 @@ impl TransformStrategy for DefaultStrategy {
         } else {
             // 有 POSL 时的处理
             PoslHandler::handle_posl(
-                att, parent_att, cur_type, &mut pos, &mut quat, bangle, apply_bang,
-                ydir_axis, delta_vec, &mut translation, rotation
-            ).await?;
-            
+                att,
+                parent_att,
+                cur_type,
+                &mut pos,
+                &mut quat,
+                bangle,
+                apply_bang,
+                ydir_axis,
+                delta_vec,
+                &mut translation,
+                rotation,
+            )
+            .await?;
+
             rotation = rotation * quat;
         }
 
@@ -350,7 +391,7 @@ impl DefaultStrategy {
         att: &NamedAttrMap,
     ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         let parent_is_gensec = parent_type == "GENSEC";
-        
+
         if parent_is_gensec {
             if let Ok(spine_paths) = get_spline_path(parent_refno).await {
                 if let Some(first_spine) = spine_paths.first() {
@@ -366,15 +407,17 @@ impl DefaultStrategy {
                 }
             }
         }
-        
+
         // 处理 DPOSE/DPOSS 属性
-        if let Some(end) = att.get_dpose() && let Some(start) = att.get_dposs() {
+        if let Some(end) = att.get_dpose()
+            && let Some(start) = att.get_dposs()
+        {
             return Ok((Some((end - start).normalize()), None));
         }
-        
+
         Ok((None, None))
     }
-    
+
     /// 初始化旋转
     async fn initialize_rotation(
         att: &NamedAttrMap,
@@ -388,7 +431,7 @@ impl DefaultStrategy {
         let parent_is_gensec = parent_type == "GENSEC";
         let quat_v = att.get_rotation();
         let has_local_ori = quat_v.is_some();
-        
+
         if (!parent_is_gensec && has_local_ori) || (parent_is_gensec && cur_type == "TMPL") {
             *quat = quat_v.unwrap_or_default();
         } else {

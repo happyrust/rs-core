@@ -26,14 +26,26 @@ use glam::{Quat, Vec3};
 /// This should be applied in geo_relate.trans (orientation layer), not at mesh time.
 pub fn calculate_plax_transform(plax: Vec3, standard_up: Vec3) -> Transform {
     use std::f32::consts::PI;
-    let target = if plax.length_squared() > 0.0 { plax.normalize() } else { standard_up };
-    let source = if standard_up.length_squared() > 0.0 { standard_up.normalize() } else { Vec3::Z };
+    let target = if plax.length_squared() > 0.0 {
+        plax.normalize()
+    } else {
+        standard_up
+    };
+    let source = if standard_up.length_squared() > 0.0 {
+        standard_up.normalize()
+    } else {
+        Vec3::Z
+    };
     let dot = source.dot(target).clamp(-1.0, 1.0);
 
     let rotation = if (1.0 - dot).abs() < 1e-6 {
         Quat::IDENTITY
     } else if (1.0 + dot).abs() < 1e-6 {
-        let axis = if source.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
+        let axis = if source.x.abs() < 0.9 {
+            Vec3::X
+        } else {
+            Vec3::Y
+        };
         Quat::from_axis_angle(axis, PI)
     } else {
         let axis = source.cross(target).normalize();
@@ -92,10 +104,12 @@ pub async fn get_local_mat4(
     let parent_att = get_named_attmap(parent_refno).await?;
 
     let cur_type = att.get_type_str();
-    
+
     // Use strategy factory to get the appropriate strategy
     let strategy = TransformStrategyFactory::get_strategy(cur_type);
-    strategy.get_local_transform(refno, parent_refno, &att, &parent_att).await
+    strategy
+        .get_local_transform(refno, parent_refno, &att, &parent_att)
+        .await
 }
 
 /// Calculate the world transform for an entity by combining local transforms

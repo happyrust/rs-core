@@ -170,7 +170,7 @@ impl BrepShapeTrait for Extrusion {
     }
 
     /// 使用统一的 ProfileProcessor 生成拉伸体的mesh
-    /// 
+    ///
     /// 统一流程：cavalier_contours + i_triangle
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         if !self.check_valid() {

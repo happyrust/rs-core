@@ -22,6 +22,7 @@ use crate::prim_geo::dish::Dish;
 use crate::prim_geo::extrusion::Extrusion;
 use crate::prim_geo::lpyramid::LPyramid;
 use crate::prim_geo::polyhedron::{Polygon, Polyhedron};
+use crate::prim_geo::profile_processor::{ProfileProcessor, extrude_profile};
 use crate::prim_geo::pyramid::Pyramid;
 use crate::prim_geo::revolution::Revolution;
 use crate::prim_geo::rtorus::RTorus;
@@ -30,7 +31,6 @@ use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::prim_geo::wire::CurveType;
-use crate::prim_geo::profile_processor::{ProfileProcessor, extrude_profile};
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::types::refno::RefU64;
 use crate::utils::svg_generator::SpineSvgGenerator;
@@ -506,7 +506,9 @@ pub fn generate_csg_mesh(
         PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly),
         PdmsGeoParam::PrimRevolution(rev) => generate_revolution_mesh(rev, settings, non_scalable),
-        PdmsGeoParam::PrimLoft(sweep) => generate_prim_loft_mesh(sweep, settings, non_scalable, refno),
+        PdmsGeoParam::PrimLoft(sweep) => {
+            generate_prim_loft_mesh(sweep, settings, non_scalable, refno)
+        }
         _ => None,
     }
 }
@@ -599,8 +601,7 @@ fn generate_sscl_mesh(
         let z_offset_bottom = tan_btm_x * x_local + tan_btm_y * y_local;
         let z_offset_top = tan_top_x * x_local + tan_top_y * y_local;
 
-        let bottom_point =
-            bottom_center + radial_dir * radius + dir * z_offset_bottom;
+        let bottom_point = bottom_center + radial_dir * radius + dir * z_offset_bottom;
         let top_point = top_center + radial_dir * radius + dir * z_offset_top;
         let span = top_point - bottom_point;
         max_span = max_span.max(span.length());
@@ -1091,7 +1092,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, 1.0, 1.0),
                 Vec3::new(-1.0, 1.0, 1.0),
             ],
-            (0, 1, 1.0, 1.0)
+            (0, 1, 1.0, 1.0),
         ),
         // -Z面（后面）：UV = (-X, Y)
         (
@@ -1102,7 +1103,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, -1.0, -1.0),
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
-            (0, 1, -1.0, 1.0)
+            (0, 1, -1.0, 1.0),
         ),
         // +X面（右面）：UV = (-Z, Y)
         (
@@ -1113,7 +1114,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, 1.0, 1.0),
                 Vec3::new(1.0, -1.0, 1.0),
             ],
-            (2, 1, -1.0, 1.0)
+            (2, 1, -1.0, 1.0),
         ),
         // -X面（左面）：UV = (Z, Y)
         (
@@ -1124,7 +1125,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(-1.0, 1.0, -1.0),
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
-            (2, 1, 1.0, 1.0)
+            (2, 1, 1.0, 1.0),
         ),
         // +Y面（上面）：UV = (X, -Z)
         (
@@ -1135,7 +1136,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, 1.0, 1.0),
                 Vec3::new(-1.0, 1.0, 1.0),
             ],
-            (0, 2, 1.0, -1.0)
+            (0, 2, 1.0, -1.0),
         ),
         // -Y面（下面）：UV = (X, Z)
         (
@@ -1146,7 +1147,7 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
                 Vec3::new(1.0, -1.0, -1.0),
                 Vec3::new(-1.0, -1.0, -1.0),
             ],
-            (0, 2, 1.0, 1.0)
+            (0, 2, 1.0, 1.0),
         ),
     ];
 
@@ -2529,12 +2530,8 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, _refno: Option<RefU64>) -> Opt
     let extruded = extrude_profile(&profile, extrusion.height);
 
     // 使用 create_mesh_with_edges 构建带 edges / wire_vertices 的 PlantMesh
-    let mut mesh = create_mesh_with_edges(
-        extruded.indices,
-        extruded.vertices,
-        extruded.normals,
-        None,
-    );
+    let mut mesh =
+        create_mesh_with_edges(extruded.indices, extruded.vertices, extruded.normals, None);
     mesh.uvs = extruded.uvs;
 
     // 确保 AABB 被正确计算，并同步到 mesh.aabb
@@ -3333,12 +3330,17 @@ pub(crate) fn generate_revolution_mesh(
 
             let rotated_perp_dir = sample.perp_dir * cos + sample.circ_dir * sin;
             let _rotated_circ_dir = sample.circ_dir * cos - sample.perp_dir * sin;
-            let position = rot_pt + rot_dir * sample.along_axis + rotated_perp_dir * sample.perp_dist;
+            let position =
+                rot_pt + rot_dir * sample.along_axis + rotated_perp_dir * sample.perp_dist;
 
             extend_aabb(&mut aabb, position);
 
             let tangent_theta = rot_dir.cross(rotated_perp_dir * sample.perp_dist);
-            let prev_idx = if profile_idx == 0 { profile_idx } else { profile_idx - 1 };
+            let prev_idx = if profile_idx == 0 {
+                profile_idx
+            } else {
+                profile_idx - 1
+            };
             let next_idx = if profile_idx + 1 < n_profile {
                 profile_idx + 1
             } else {

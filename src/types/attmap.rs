@@ -674,8 +674,6 @@ impl AttrMap {
             } else {
                 results.push("".to_string());
             }
-
-
         }
         results
     }

@@ -1,10 +1,8 @@
-
-
-use anyhow::Result;
 use crate::prim_geo::category::CateCsgShape;
 use crate::rs_surreal::inst_structs::GeoRelate;
-use crate::{RefnoEnum, SUL_DB};
 use crate::rs_surreal::query_ext::SurrealQueryExt;
+use crate::{RefnoEnum, SUL_DB};
+use anyhow::Result;
 
 /// Persist geo_relate edges for a batch of shapes, ensuring `trans` is written from `CateCsgShape.transform`.
 ///

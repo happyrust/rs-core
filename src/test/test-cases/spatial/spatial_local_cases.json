@@ -28,6 +28,21 @@
     "noun": "FITT",
     "pos_str": "E 0mm N 3650mm U 5100mm",
     "ori_str": "Y is U and Z is W"
+  },
+  {
+    "refno": "17496/268360",
+    "noun": "ENDATU",
+    "pos_str": "E 0mm N 0mm U 0mm",
+    "ori_str": "Y is E 89.891 U and Z is W 0.1093 U"
   }
+  ,
+  {
+    "refno": "17496/268361",
+    "noun": "FIXING",
+    "pos_str": "E 0mm N 0mm U 0mm",
+    "ori_str": "Y is W and Z is S 89.891 U"
+  }
+
+
 
 ]

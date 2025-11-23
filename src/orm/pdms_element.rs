@@ -1,7 +1,7 @@
 use crate::impl_db_op_trait;
+use crate::orm::traits::DbOpTrait;
 #[cfg(feature = "reflect")]
 use crate::orm::traits::ReflectDbOpTrait;
-use crate::orm::traits::DbOpTrait;
 use crate::types::*;
 #[cfg(feature = "reflect")]
 use bevy_reflect::{

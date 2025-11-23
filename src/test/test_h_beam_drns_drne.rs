@@ -296,7 +296,7 @@ fn test_h_beam_arc_sweep() {
     let arc = Arc3D {
         center: Vec3::ZERO,
         radius: 1000.0,
-        angle: PI / 2.0, // 90度
+        angle: PI / 2.0,            // 90度
         start_pt: Vec3::X * 1000.0, // 从X轴正方向开始
         clock_wise: false,
         axis: Vec3::Z,
@@ -364,7 +364,7 @@ fn test_h_beam_multi_segment_sweep() {
 
     // 创建多段路径：直线 + 圆弧 + 直线
     use crate::prim_geo::spine::{Arc3D, SegmentPath};
-    
+
     // 第一段：直线 500mm
     let line1 = Line3D {
         start: Vec3::ZERO,

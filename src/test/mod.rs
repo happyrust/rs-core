@@ -56,13 +56,10 @@ pub mod test_arc_demo;
 pub mod test_clean_svg;
 
 pub mod test_bad_primloft;
-pub mod test_bad_primloft_simple;
 pub mod test_bad_primloft_fix;
+pub mod test_bad_primloft_simple;
 
 pub mod test_helpers;
 
 pub mod units;
 
-// 局部空间变换测试模块
-#[cfg(test)]
-pub mod test_local_spatial;

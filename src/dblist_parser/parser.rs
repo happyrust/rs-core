@@ -1,9 +1,9 @@
 //! dblist 文件解析器
-//! 
+//!
 //! 基于 NamedAttrMap 的 PDMS dblist 文件解析器
 
-use crate::dblist_parser::element::{PdmsElement, ElementType};
 use crate::dblist_parser::attr_converter::AttrConverter;
+use crate::dblist_parser::element::{ElementType, PdmsElement};
 use anyhow::Result;
 use std::collections::BTreeMap;
 use std::fs::File;
@@ -43,19 +43,19 @@ impl DblistParser {
     pub fn parse_file<P: AsRef<Path>>(&mut self, file_path: P) -> Result<Vec<PdmsElement>> {
         let file = File::open(file_path)?;
         let reader = BufReader::new(file);
-        
+
         for line in reader.lines() {
             let line = line?;
             let trimmed = line.trim();
-            
+
             // 跳过空行和注释
             if trimmed.is_empty() || trimmed.starts_with('!') {
                 continue;
             }
-            
+
             self.process_line(trimmed)?;
         }
-        
+
         self.finalize()
     }
 
@@ -70,7 +70,7 @@ impl DblistParser {
         } else if let Some((key, value)) = self.parse_attribute(line) {
             self.add_attribute(key, value)?;
         }
-        
+
         Ok(())
     }
 
@@ -86,11 +86,11 @@ impl DblistParser {
         self.next_elno += 1;
 
         let element = PdmsElement::new(element_type, refno);
-        
+
         if let Some(current) = self.current_element.take() {
             self.element_stack.push(current);
         }
-        
+
         self.current_element = Some(element);
         Ok(())
     }
@@ -138,14 +138,14 @@ impl DblistParser {
             if key == "POSITION" {
                 element.position = Some(value.clone());
             }
-            
+
             // 使用属性转换器转换属性值
             let noun = element.get_noun();
             let mut raw_attrs = BTreeMap::new();
             raw_attrs.insert(key.clone(), value);
-            
+
             let converted_attrs = self.attr_converter.convert_attributes(noun, &raw_attrs)?;
-            
+
             // 合并到现有属性中
             for (k, v) in converted_attrs.map {
                 element.attributes.map.insert(k, v);
@@ -166,7 +166,7 @@ impl DblistParser {
                 break;
             }
         }
-        
+
         Ok(std::mem::take(&mut self.elements))
     }
 }
@@ -194,7 +194,7 @@ mod tests {
 
         let mut parser = DblistParser::new();
         let elements = parser.parse_file(temp_file.path()).unwrap();
-        
+
         assert_eq!(elements.len(), 1);
         assert_eq!(elements[0].element_type, ElementType::FrmFramework);
         assert!(elements[0].attributes.map.contains_key("NAME"));
@@ -213,7 +213,7 @@ mod tests {
 
         let mut parser = DblistParser::new();
         let elements = parser.parse_file(temp_file.path()).unwrap();
-        
+
         assert_eq!(elements.len(), 1);
         assert_eq!(elements[0].children.len(), 1);
         assert_eq!(elements[0].children[0].element_type, ElementType::Panel);

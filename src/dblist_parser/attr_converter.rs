@@ -1,11 +1,11 @@
 //! 属性类型转换器
-//! 
+//!
 //! 基于 all_attr_info.json 模板将字符串属性值转换为正确的 NamedAttrValue
 
-use crate::types::named_attvalue::NamedAttrValue;
-use crate::types::named_attmap::NamedAttrMap;
 use crate::pdms_data::ATTR_INFO_MAP;
 use crate::tool::db_tool::db1_hash;
+use crate::types::named_attmap::NamedAttrMap;
+use crate::types::named_attvalue::NamedAttrValue;
 use anyhow::Result;
 use std::collections::BTreeMap;
 
@@ -20,10 +20,10 @@ impl AttrConverter {
         raw_attrs: &BTreeMap<String, String>,
     ) -> Result<NamedAttrMap> {
         let mut named_map = NamedAttrMap::default();
-        
+
         // 获取元素类型的属性模板
         let type_hash = db1_hash(noun) as i32;
-        
+
         if let Some(type_attrs) = ATTR_INFO_MAP.get(&type_hash) {
             // 根据模板转换每个属性
             for (attr_name, attr_value) in raw_attrs {
@@ -35,7 +35,7 @@ impl AttrConverter {
                         attr_value,
                         &self.attrval_to_json(&attr_info.default_val)?,
                     )?;
-                    
+
                     named_map.map.insert(attr_name.clone(), converted_value);
                 } else {
                     // 未知属性，作为字符串处理
@@ -54,22 +54,38 @@ impl AttrConverter {
                 );
             }
         }
-        
+
         Ok(named_map)
     }
 
     /// 将 AttrVal 转换为 serde_json::Value
-    fn attrval_to_json(&self, attr_val: &crate::types::attval::AttrVal) -> Result<serde_json::Value> {
+    fn attrval_to_json(
+        &self,
+        attr_val: &crate::types::attval::AttrVal,
+    ) -> Result<serde_json::Value> {
         match attr_val {
-            crate::types::attval::AttrVal::StringType(s) => Ok(serde_json::Value::String(s.clone())),
-            crate::types::attval::AttrVal::IntegerType(i) => Ok(serde_json::Value::Number(serde_json::Number::from(*i))),
-            crate::types::attval::AttrVal::DoubleType(d) => Ok(serde_json::Value::Number(serde_json::Number::from_f64(*d).unwrap_or(serde_json::Number::from(0)))),
+            crate::types::attval::AttrVal::StringType(s) => {
+                Ok(serde_json::Value::String(s.clone()))
+            }
+            crate::types::attval::AttrVal::IntegerType(i) => {
+                Ok(serde_json::Value::Number(serde_json::Number::from(*i)))
+            }
+            crate::types::attval::AttrVal::DoubleType(d) => Ok(serde_json::Value::Number(
+                serde_json::Number::from_f64(*d).unwrap_or(serde_json::Number::from(0)),
+            )),
             crate::types::attval::AttrVal::Vec3Type(arr) => {
                 let vec = serde_json::Value::Array(
-                    arr.iter().map(|&v| serde_json::Value::Number(serde_json::Number::from_f64(v).unwrap_or(serde_json::Number::from(0)))).collect()
+                    arr.iter()
+                        .map(|&v| {
+                            serde_json::Value::Number(
+                                serde_json::Number::from_f64(v)
+                                    .unwrap_or(serde_json::Number::from(0)),
+                            )
+                        })
+                        .collect(),
                 );
                 Ok(vec)
-            },
+            }
             _ => Ok(serde_json::Value::String("".to_string())),
         }
     }
@@ -83,7 +99,7 @@ impl AttrConverter {
     ) -> Result<NamedAttrValue> {
         match attr_type {
             "STRING" => Ok(NamedAttrValue::StringType(value.to_string())),
-            
+
             "INTEGER" => {
                 if let Ok(int_val) = value.parse::<i32>() {
                     Ok(NamedAttrValue::IntegerType(int_val))
@@ -92,7 +108,7 @@ impl AttrConverter {
                     self.extract_default_integer(default_val)
                 }
             }
-            
+
             "DOUBLE" => {
                 if let Ok(float_val) = value.parse::<f64>() {
                     Ok(NamedAttrValue::F32Type(float_val as f32))
@@ -101,32 +117,32 @@ impl AttrConverter {
                     self.extract_default_f32(default_val)
                 }
             }
-            
+
             "WORD" => Ok(NamedAttrValue::WordType(value.to_string())),
-            
+
             "ELEMENT" => Ok(NamedAttrValue::ElementType(value.to_string())),
-            
+
             "ORIENTATION" => {
                 // 解析方向向量，格式如 "0 0 1 0"
                 self.parse_orientation(value)
             }
-            
+
             "INTVEC" => {
                 // 解析整数向量
                 self.parse_int_vector(value)
             }
-            
+
             "REFNO" => {
                 // 解析引用号
                 self.parse_refno(value)
             }
-            
+
             "BOOL" => {
                 // 解析布尔值
                 let bool_val = value.to_lowercase() == "true" || value == "1";
                 Ok(NamedAttrValue::BoolType(bool_val))
             }
-            
+
             _ => {
                 // 未知类型，作为字符串处理
                 Ok(NamedAttrValue::StringType(value.to_string()))
@@ -167,7 +183,7 @@ impl AttrConverter {
             } else {
                 0.0
             };
-            
+
             // 转换为 Vec3（暂时只取 x,y,z）
             Ok(NamedAttrValue::Vec3Type(glam::Vec3::new(x, y, z)))
         } else {
@@ -180,7 +196,7 @@ impl AttrConverter {
         // 整数向量格式: "1 2 3 4"
         let parts: Vec<&str> = value.split_whitespace().collect();
         let int_vec: Result<Vec<i32>, _> = parts.iter().map(|s| s.parse::<i32>()).collect();
-        
+
         match int_vec {
             Ok(vec) => Ok(NamedAttrValue::IntArrayType(vec)),
             Err(_) => Ok(NamedAttrValue::IntArrayType(vec![])),

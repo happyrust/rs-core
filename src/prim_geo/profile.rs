@@ -9,23 +9,22 @@ use crate::prim_geo::spine::{
     Arc3D, Line3D, SegmentPath, Spine3D, SpineCurveType, SweepPath3D, circum_center,
 };
 use crate::prim_geo::{CateCsgShapeMap, SweepSolid};
+use crate::rs_surreal::query::{get_owner_refno_by_type, get_owner_type_name};
+use crate::rs_surreal::spatial::{cal_spine_orientation_basis, get_spline_pts};
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 use crate::tool::math_tool::{
     dquat_to_pdms_ori_xyz_str, quat_to_pdms_ori_str, to_pdms_ori_str, to_pdms_vec_str,
 };
-use crate::rs_surreal::spatial::{get_spline_pts, cal_spine_orientation_basis};
-use crate::rs_surreal::query::{get_owner_type_name, get_owner_refno_by_type};
+use crate::transform::calculate_plax_transform;
 use crate::{RefU64, get_world_transform};
 use anyhow::anyhow;
 use bevy_transform::prelude::Transform;
 use dashmap::{DashMap, DashSet};
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
-use crate::transform::calculate_plax_transform;
 
 use std::vec::Vec;
-
 
 /// 将多个 Spine3D 段连接成连续的可序列化路径
 ///
@@ -166,15 +165,11 @@ pub async fn create_profile_geos(
         for &spine_refno in children_refnos.iter() {
             let spine_att = crate::get_named_attmap(spine_refno).await?;
             //如果是墙，会有这两个属性
-            drns = spine_att
-                .get_dvec3("DRNS")
-                .map(|x| x.normalize());
+            drns = spine_att.get_dvec3("DRNS").map(|x| x.normalize());
             if drns.is_some() && drns.unwrap().is_nan() {
                 drns = None;
             }
-            drne = spine_att
-                .get_dvec3("DRNE")
-                .map(|x| x.normalize());
+            drne = spine_att.get_dvec3("DRNE").map(|x| x.normalize());
             if drne.is_some() && drne.unwrap().is_nan() {
                 drne = None;
             }
@@ -265,7 +260,7 @@ pub async fn create_profile_geos(
                         path: SweepPath3D::from_line(path),
                         lmirror: att.get_bool("LMIRR").unwrap_or_default(),
                     };
-                    
+
                     // 对于GENSEC元素，使用SPINE方向计算rotation而不是PLAX属性
                     let mut transform = {
                         // 使用缓存的元素类型信息，避免重复查询数据库
@@ -274,9 +269,11 @@ pub async fn create_profile_geos(
                             if let Some(gensec_refno) = gensec_refno {
                                 if let Ok(spine_pts) = get_spline_pts(gensec_refno).await {
                                     if spine_pts.len() >= 2 {
-                                        let spine_direction = (spine_pts[1] - spine_pts[0]).normalize();
-                                        let spine_rotation = cal_spine_orientation_basis(spine_direction, false);
-                                        
+                                        let spine_direction =
+                                            (spine_pts[1] - spine_pts[0]).normalize();
+                                        let spine_rotation =
+                                            cal_spine_orientation_basis(spine_direction, false);
+
                                         Transform {
                                             rotation: spine_rotation.as_quat(),
                                             scale: solid.get_scaled_vec3(),
@@ -284,19 +281,22 @@ pub async fn create_profile_geos(
                                         }
                                     } else {
                                         // SPINE点数不足，回退到PLAX计算
-                                        let mut fallback_transform = calculate_plax_transform(plax, Vec3::Z);
+                                        let mut fallback_transform =
+                                            calculate_plax_transform(plax, Vec3::Z);
                                         fallback_transform.scale = solid.get_scaled_vec3();
                                         fallback_transform
                                     }
                                 } else {
                                     // 获取SPINE失败，回退到PLAX计算
-                                    let mut fallback_transform = calculate_plax_transform(plax, Vec3::Z);
+                                    let mut fallback_transform =
+                                        calculate_plax_transform(plax, Vec3::Z);
                                     fallback_transform.scale = solid.get_scaled_vec3();
                                     fallback_transform
                                 }
                             } else {
                                 // 找不到GENSEC refno，回退到PLAX计算
-                                let mut fallback_transform = calculate_plax_transform(plax, Vec3::Z);
+                                let mut fallback_transform =
+                                    calculate_plax_transform(plax, Vec3::Z);
                                 fallback_transform.scale = solid.get_scaled_vec3();
                                 fallback_transform
                             }
@@ -382,9 +382,11 @@ pub async fn create_profile_geos(
                                 if let Some(gensec_refno) = gensec_refno {
                                     if let Ok(spine_pts) = get_spline_pts(gensec_refno).await {
                                         if spine_pts.len() >= 2 {
-                                            let spine_direction = (spine_pts[1] - spine_pts[0]).normalize();
-                                            let spine_rotation = cal_spine_orientation_basis(spine_direction, false);
-                                            
+                                            let spine_direction =
+                                                (spine_pts[1] - spine_pts[0]).normalize();
+                                            let spine_rotation =
+                                                cal_spine_orientation_basis(spine_direction, false);
+
                                             Transform {
                                                 rotation: spine_rotation.as_quat(),
                                                 scale: loft.get_scaled_vec3(),
@@ -392,19 +394,22 @@ pub async fn create_profile_geos(
                                             }
                                         } else {
                                             // SPINE点数不足，回退到PLAX计算
-                                            let mut fallback_transform = calculate_plax_transform(plax, Vec3::Z);
+                                            let mut fallback_transform =
+                                                calculate_plax_transform(plax, Vec3::Z);
                                             fallback_transform.scale = loft.get_scaled_vec3();
                                             fallback_transform
                                         }
                                     } else {
                                         // 获取SPINE失败，回退到PLAX计算
-                                        let mut fallback_transform = calculate_plax_transform(plax, Vec3::Z);
+                                        let mut fallback_transform =
+                                            calculate_plax_transform(plax, Vec3::Z);
                                         fallback_transform.scale = loft.get_scaled_vec3();
                                         fallback_transform
                                     }
                                 } else {
                                     // 找不到GENSEC refno，回退到PLAX计算
-                                    let mut fallback_transform = calculate_plax_transform(plax, Vec3::Z);
+                                    let mut fallback_transform =
+                                        calculate_plax_transform(plax, Vec3::Z);
                                     fallback_transform.scale = loft.get_scaled_vec3();
                                     fallback_transform
                                 }

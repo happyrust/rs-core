@@ -4,7 +4,7 @@ use crate::rs_surreal::spatial::{
     cal_spine_orientation_basis_with_ydir, cal_zdis_pkdi_in_section_by_spine, get_spline_path,
     query_pline,
 };
-use crate::{get_named_attmap, NamedAttrMap, RefnoEnum};
+use crate::{NamedAttrMap, RefnoEnum, get_named_attmap};
 use async_trait::async_trait;
 use bevy_transform::prelude::Transform;
 use glam::{DMat3, DMat4, DQuat, DVec3};
@@ -27,15 +27,15 @@ impl SjoiCrefHandler {
         let Some(c_ref) = att.get_foreign_refno("CREF") else {
             return Ok((DVec3::Z, 0.0));
         };
-        
+
         let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
         let cut_len = att.get_f64("CUTB").unwrap_or_default();
-        
+
         // 缓存属性获取，避免重复查询
         let Ok(c_att) = get_named_attmap(c_ref).await else {
             return Ok((DVec3::Z, 0.0));
         };
-        
+
         let jline = c_att.get_str("JLIN").map(|x| x.trim()).unwrap_or("NA");
 
         if let Ok(Some(param)) = query_pline(c_ref, jline.into()).await {
@@ -46,7 +46,7 @@ impl SjoiCrefHandler {
                 crate::rs_surreal::get_world_mat4(c_ref, false),
                 crate::rs_surreal::get_world_mat4(parent_refno, false)
             );
-            
+
             let c_world = c_world_result?.unwrap_or(DMat4::IDENTITY);
             let parent_world = parent_world_result?.unwrap_or(DMat4::IDENTITY);
             let c_local_mat = parent_world.inverse() * c_world;
@@ -64,7 +64,7 @@ impl SjoiCrefHandler {
             // 优化：提前计算点积，避免重复计算
             let cutp_dot = c_axis.dot(cut_dir);
             let same_plane = cutp_dot.abs() > 0.001;
-            
+
             if same_plane {
                 let zaxis_dot = z_axis.dot(c_axis);
                 let delta = (c_wpos - *translation).dot(z_axis);
@@ -76,11 +76,11 @@ impl SjoiCrefHandler {
                 } else {
                     0.0
                 };
-                
+
                 return Ok((z_axis, final_cut_len));
             }
         }
-        
+
         Ok((DVec3::Z, 0.0))
     }
 }
@@ -106,9 +106,9 @@ impl TransformStrategy for SjoiStrategy {
         let mut is_world_quat = false;
 
         // 1. 处理 SJOI 特有的 CREF 连接逻辑
-        let (connection_axis, cut_len) = SjoiCrefHandler::handle_sjoi_cref(
-            att, parent_refno, &mut translation, rotation
-        ).await?;
+        let (connection_axis, cut_len) =
+            SjoiCrefHandler::handle_sjoi_cref(att, parent_refno, &mut translation, rotation)
+                .await?;
 
         // 2. 处理 NPOS 属性
         if att.contains_key("NPOS") {
@@ -137,13 +137,20 @@ impl TransformStrategy for SjoiStrategy {
         }
 
         // 5. 处理父级相关的变换
-        let (pos_extru_dir, spine_ydir) = Self::extract_extrusion_direction(parent_refno, parent_type, att).await?;
+        let (pos_extru_dir, spine_ydir) =
+            Self::extract_extrusion_direction(parent_refno, parent_type, att).await?;
 
         // 6. 处理旋转初始化
         Self::initialize_rotation(
-            att, cur_type, parent_type, pos_extru_dir, spine_ydir, 
-            &mut quat, is_world_quat
-        ).await?;
+            att,
+            cur_type,
+            parent_type,
+            pos_extru_dir,
+            spine_ydir,
+            &mut quat,
+            is_world_quat,
+        )
+        .await?;
 
         // 7. 处理 YDIR/OPDI 属性
         let ydir_axis = att.get_dvec3("YDIR");
@@ -153,7 +160,12 @@ impl TransformStrategy for SjoiStrategy {
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
             quat = cal_ori_by_opdir(opdir);
             has_opdir = true;
-            if att.get_str("POSL").map(|x| x.trim()).unwrap_or_default().is_empty() {
+            if att
+                .get_str("POSL")
+                .map(|x| x.trim())
+                .unwrap_or_default()
+                .is_empty()
+            {
                 pos += delta_vec;
             }
         } else {
@@ -176,7 +188,7 @@ impl TransformStrategy for SjoiStrategy {
         // 8. 处理 CUTP（通用逻辑）
         let has_local_ori = att.get_rotation().is_some();
         let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
-        
+
         if att.contains_key("CUTP") && !has_opdir && !has_local_ori {
             let mat3 = DMat3::from_quat(rotation);
             quat = cal_cutp_ori(mat3.z_axis, cut_dir);
@@ -213,7 +225,7 @@ impl SjoiStrategy {
         att: &NamedAttrMap,
     ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         let parent_is_gensec = parent_type == "GENSEC";
-        
+
         if parent_is_gensec {
             if let Ok(spine_paths) = get_spline_path(parent_refno).await {
                 if let Some(first_spine) = spine_paths.first() {
@@ -229,15 +241,17 @@ impl SjoiStrategy {
                 }
             }
         }
-        
+
         // 处理 DPOSE/DPOSS 属性
-        if let Some(end) = att.get_dpose() && let Some(start) = att.get_dposs() {
+        if let Some(end) = att.get_dpose()
+            && let Some(start) = att.get_dposs()
+        {
             return Ok((Some((end - start).normalize()), None));
         }
-        
+
         Ok((None, None))
     }
-    
+
     /// 初始化旋转
     async fn initialize_rotation(
         att: &NamedAttrMap,
@@ -251,7 +265,7 @@ impl SjoiStrategy {
         let parent_is_gensec = parent_type == "GENSEC";
         let quat_v = att.get_rotation();
         let has_local_ori = quat_v.is_some();
-        
+
         if (!parent_is_gensec && has_local_ori) || (parent_is_gensec && cur_type == "TMPL") {
             *quat = quat_v.unwrap_or_default();
         } else {
