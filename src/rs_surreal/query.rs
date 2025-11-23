@@ -1073,7 +1073,7 @@ pub(crate) async fn get_named_attmap_with_uda(
     Ok(named_attmap)
 }
 
-pub const CATR_QUERY_STR: &'static str = "refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE, refno.SPRE.refno.CATR, refno.CATR";
+pub const CATR_QUERY_STR: &'static str = "refno.CATR.refno.CATR, refno.CATR.refno.PRTREF.refno.CATR, refno.SPRE.refno.CATR, refno.SPRE, refno.CATR";
 
 /// 获取元素的CATR参考号
 ///
