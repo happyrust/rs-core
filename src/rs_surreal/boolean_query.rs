@@ -123,9 +123,31 @@ pub async fn query_manifold_boolean_operations(
         "#
     );
 
-    // println!("[query_manifold_boolean_operations] sql: {}", sql);
+    println!("[query_manifold_boolean_operations] refno: {}", refno);
+    println!("[query_manifold_boolean_operations] sql: {}", sql);
 
-    SUL_DB.query_take(&sql, 0).await
+    let result = SUL_DB.query_take::<Vec<ManiGeoTransQuery>>(&sql, 0).await;
+    match &result {
+        Ok(data) => {
+            println!("[query_manifold_boolean_operations] 查询成功，返回 {} 条结果", data.len());
+            if data.is_empty() {
+                println!("[query_manifold_boolean_operations] 结果为空，可能原因:");
+                println!("  1. inst_relate:{} 不存在", refno.to_string());
+                println!("  2. bad_bool=true");
+                println!("  3. 没有入向的neg_relate或ngmr_relate关系");
+                println!("  4. aabb.d为NONE");
+            } else {
+                for (i, item) in data.iter().take(3).enumerate() {
+                    println!("  结果 {}: refno={}, ts.len()={}, neg_ts.len()={}", 
+                        i, item.refno, item.ts.len(), item.neg_ts.len());
+                }
+            }
+        }
+        Err(e) => {
+            println!("[query_manifold_boolean_operations] 查询失败: {:?}", e);
+        }
+    }
+    result
 }
 
 /// Query OCC boolean operations

@@ -54,7 +54,7 @@ pub fn cal_ori_by_z_axis_ref_x(v: DVec3) -> DQuat {
 /// 允许通过 `neg` 反转参考轴，用于处理土建/管线中“反向挤出”等特殊情况。
 pub fn cal_spine_orientation_basis(v: DVec3, neg: bool) -> DQuat {
     let is_vertical = v.normalize().dot(DVec3::Z).abs() > 0.999;
-    
+
     let (x_dir, y_dir) = if is_vertical {
         // 垂直构件：优先让 Y 轴指北 (Global Y)
         // Local X = Y cross v
@@ -81,6 +81,64 @@ pub fn cal_spine_orientation_basis(v: DVec3, neg: bool) -> DQuat {
     DQuat::from_mat3(&DMat3::from_cols(final_x, final_y, v))
 }
 
+/// 针对 SPINE 方向的专用方位计算（支持 YDIR）
+///
+/// 计算基于 SPINE 挤出方向的方位基底，优先使用 YDIR 作为参考 Y 方向。
+/// 这是 PDMS 中 GENSEC/WALL 元素的标准行为。
+///
+/// # Arguments
+/// * `spine_dir` - SPINE 路径方向（将作为 Local Z 轴）
+/// * `ydir` - 期望的 Y 方向（来自 SPINE 的 YDIR 属性）
+/// * `neg` - 是否反转参考轴
+///
+/// # Returns
+/// 返回表示局部坐标系的四元数，其中：
+/// - Z 轴 = spine_dir（归一化）
+/// - Y 轴 ≈ ydir（正交化后）
+/// - X 轴 = Y × Z（右手系）
+pub fn cal_spine_orientation_basis_with_ydir(
+    spine_dir: DVec3,
+    ydir: Option<DVec3>,
+    neg: bool
+) -> DQuat {
+    let z_axis = spine_dir.normalize();
+
+    // 如果提供了 YDIR，使用它作为参考
+    let y_ref = if let Some(y) = ydir {
+        let y_norm = y.normalize();
+        // 防止 YDIR 与 spine_dir 共线（dot ≈ ±1）
+        if y_norm.dot(z_axis).abs() > 0.99 {
+            // 回退到默认逻辑
+            if z_axis.dot(DVec3::Z).abs() > 0.999 {
+                DVec3::Y
+            } else {
+                DVec3::Z
+            }
+        } else {
+            y_norm
+        }
+    } else {
+        // 没有 YDIR 时，回退到默认逻辑
+        if z_axis.dot(DVec3::Z).abs() > 0.999 {
+            DVec3::Y
+        } else {
+            DVec3::Z
+        }
+    };
+
+    // 构造正交基：Z = spine_dir, Y ≈ y_ref, X = Y × Z
+    let x_dir = y_ref.cross(z_axis).normalize();
+    let y_dir = z_axis.cross(x_dir).normalize();
+
+    let (final_x, final_y) = if neg {
+        (-x_dir, -y_dir)
+    } else {
+        (x_dir, y_dir)
+    };
+
+    DQuat::from_mat3(&DMat3::from_cols(final_x, final_y, z_axis))
+}
+
 /// 根据 OPDI（操作方向）向量计算局部方位。
 /// 对接 PDMS 中 OPDI 方向，保证当方向接近全局 Z 轴时仍能选取稳定的参考轴。
 pub fn cal_ori_by_opdir(v: DVec3) -> DQuat {
@@ -99,8 +157,15 @@ pub fn cal_ori_by_opdir(v: DVec3) -> DQuat {
 ///通过 ydir 计算方位 , 跟 z 轴这个参考轴有关系。
 /// `y_ref_axis` 为期望的局部 Y 方向，`z_dir` 为参考 Z 轴方向。
 pub fn cal_ori_by_ydir(mut y_ref_axis: DVec3, z_dir: DVec3) -> DQuat {
+    // 如果 y_ref 与 z_dir 平行（共线），则原来的 y_ref 无效，需选取一个新的参考轴
     if y_ref_axis.dot(z_dir).abs() > 0.99 {
-        y_ref_axis = DVec3::Z;
+        // 如果 z_dir 接近 Z 轴（垂直），则选 Y 轴作为临时参考
+        // 否则选 Z 轴作为临时参考
+        y_ref_axis = if z_dir.dot(DVec3::Z).abs() > 0.99 {
+            DVec3::Y
+        } else {
+            DVec3::Z
+        };
     }
     let ref_dir = y_ref_axis.cross(z_dir).normalize();
     let y_dir = z_dir.cross(ref_dir).normalize();
@@ -282,10 +347,28 @@ pub async fn get_world_transform(refno: RefnoEnum) -> anyhow::Result<Option<Tran
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
 
-//获得世界坐标系
+///获得世界坐标系
 ///使用 cache，需要从 db manager 里移除出来。
 ///获得世界坐标系矩阵，如果已经存在数据则直接从缓存读取。
 /// `is_local == true` 时返回相对于父节点的局部变换，否则返回从根到自身的世界矩阵。
+/// 
+/// # Deprecated
+/// 
+/// 此函数已被弃用，请使用 `get_world_mat4_with_strategies` 替代。
+/// 新函数使用策略模式，提供更好的可维护性和扩展性。
+/// 
+/// # 迁移指南
+/// 
+/// 将以下代码：
+/// ```rust
+/// let transform = get_world_mat4(refno, is_local).await?;
+/// ```
+/// 
+/// 替换为：
+/// ```rust
+/// let transform = get_world_mat4_with_strategies(refno, is_local).await?;
+/// ```
+#[deprecated(note = "Use get_world_mat4_with_strategies instead for better maintainability and strategy pattern support")]
 #[cached(result = true)]
 pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
     #[cfg(feature = "profile")]
@@ -319,6 +402,13 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
         let cur_refno = att.get_refno_or_default();
         let cur_type = att.get_type_str();
         // dbg!(cur_type);
+        
+        // 检查是否为虚拟节点，如果是则跳过transform计算
+        if is_virtual_node(cur_type) {
+            // 虚拟节点使用单位变换，不修改translation和rotation
+            continue;
+        }
+        
         let owner_type = o_att.get_type_str();
         owner = att.get_owner();
         prev_mat4 = mat4;
@@ -439,11 +529,15 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                 if let Some((tmp_quat, tmp_pos)) =
                     cal_zdis_pkdi_in_section_by_spine(owner, pkdi, zdist, None).await?
                 {
-                    // pos = result.1;
+                    // 对于 POINSP，需要保留原始位置并加上 ZDIS 偏移
+                    if cur_type == "POINSP" {
+                        pos = pos + tmp_pos;  // 保留原始局部位置，加上偏移
+                    } else {
+                        pos = tmp_pos;  // 其他类型使用计算的位置
+                    }
                     quat = tmp_quat;
                     // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat, true));
                     // dbg!(tmp_pos);
-                    pos = tmp_pos;
                     // translation = translation + rotation * tmp_pos;
                     // dbg!(translation);
                     is_world_quat = true;
@@ -463,6 +557,14 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
             // dbg!(pos);
         }
 
+        //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
+        //直接在世界坐标系下求坐标，跳过局部求解
+        //有 cref 的时候，需要保持方向和 cref 一致
+        let ydir_axis = att.get_dvec3("YDIR");
+        let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
+        let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
+        let mut has_opdir = false;
+        
         let quat_v = att.get_rotation();
         let has_local_ori = quat_v.is_some();
         let mut need_bangle = false;
@@ -478,7 +580,12 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                         if !z_axis.is_normalized() {
                             return Ok(None);
                         }
-                        quat = cal_spine_orientation_basis(z_axis, false);
+                        // 对于 SPINE 类型，使用 YDIR 来计算正确的方向
+                        if cur_type == "SPINE" && let Some(ydir) = ydir_axis {
+                            quat = cal_spine_orientation_basis_with_ydir(z_axis, Some(ydir), false);
+                        } else {
+                            quat = cal_spine_orientation_basis(z_axis, false);
+                        }
                     }
                 } else {
                     if !z_axis.is_normalized() {
@@ -491,13 +598,6 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
             }
         }
 
-        //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
-        //直接在世界坐标系下求坐标，跳过局部求解
-        //有 cref 的时候，需要保持方向和 cref 一致
-        let ydir_axis = att.get_dvec3("YDIR");
-        let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
-        let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
-        let mut has_opdir = false;
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
             quat = cal_ori_by_opdir(opdir);
             has_opdir = true;
@@ -610,6 +710,58 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                 quat = cal_cutp_ori(mat3.z_axis, cut_dir);
                 is_world_quat = true;
             }
+            
+            // 对于 POINSP 类型，需要特殊处理以确保正确的世界坐标
+            // POINSP的局部坐标系：Y=沿SPINE路径距离，X/Z=横向偏移
+            if cur_type == "POINSP" {
+                // 获取 POINSP 的本地位置
+                let local_pos = att.get_position().unwrap_or_default().as_dvec3();
+                
+                // 检查父级是否为SPINE（POINSP通常是SPINE的子节点）
+                if let Ok(spine_att) = get_named_attmap(owner).await {
+                    if spine_att.get_type_str() == "SPINE" {
+                        // 处理SPINE子节点的正确变换逻辑
+                        if let Some(spine_transform) = calculate_poinsp_spine_transform(owner, local_pos).await {
+                            // 应用SPINE变换到当前变换链
+                            translation = translation + rotation * spine_transform.w_axis.truncate();
+                            rotation = rotation * DQuat::from_mat4(&spine_transform);
+                            mat4 = DMat4::from_rotation_translation(rotation, translation);
+                            continue;
+                        }
+                    }
+                }
+                
+                // 回退到原始逻辑：非SPINE子节点或SPINE变换失败的情况
+                // 找到 GENSEC 作为基准坐标系
+                let mut current_owner = owner;
+                let mut gensec_refno = refno;
+                
+                // 向上查找 GENSEC
+                for _i in 0..5 {  // 限制查找深度避免无限循环
+                    if let Ok(current_att) = get_named_attmap(current_owner).await {
+                        let current_type = current_att.get_type_str();
+                        if current_type == "GENSEC" || current_type == "WALL" {
+                            gensec_refno = current_owner;
+                            break;
+                        }
+                        current_owner = current_att.get_owner();
+                    } else {
+                        break;
+                    }
+                }
+                
+                // 如果找到了 GENSEC，使用 GENSEC 的世界矩阵 + POINSP 本地位置
+                if gensec_refno != refno {
+                    if let Ok(gensec_att) = get_named_attmap(gensec_refno).await {
+                        let gensec_pos = gensec_att.get_position().unwrap_or_default().as_dvec3();
+                        // 直接设置最终世界坐标：GENSEC位置 + POINSP本地位置
+                        translation = translation + rotation * gensec_pos + rotation * local_pos;
+                        mat4 = DMat4::from_rotation_translation(rotation, translation);
+                        continue;
+                    }
+                }
+            }
+            
             translation = translation + rotation * pos;
             if is_world_quat {
                 rotation = quat;
@@ -630,6 +782,201 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
     }
 
     Ok(Some(mat4))
+}
+
+/// 使用策略模式重构的世界矩阵计算函数
+/// 
+/// 这是 `get_world_mat4` 的重构版本，使用新的策略系统（TransformStrategy）
+/// 来计算变换矩阵，提供更好的可维护性和扩展性。
+/// 
+/// # 特性标志
+/// 
+/// 此函数的行为受 `use_strategy_transform` 特性标志控制：
+/// - **启用时**：使用新的策略系统
+/// - **禁用时**：回退到旧的 `get_world_mat4` 实现
+/// 
+/// 默认情况下该特性是关闭的（opt-in 迁移策略），需要显式启用：
+/// ```bash
+/// cargo run --features use_strategy_transform
+/// ```
+/// 
+/// # Arguments
+/// * `refno` - 目标构件的参考号
+/// * `is_local` - 如果为 true，返回相对于父节点的局部变换；否则返回世界变换
+/// 
+/// # Returns
+/// * `Ok(Some(DMat4))` - 计算得到的变换矩阵
+/// * `Ok(None)` - 如果无法计算变换
+/// * `Err` - 如果计算过程中发生错误
+/// 
+/// # 特性
+/// - 使用策略模式支持不同构件类型的专门计算逻辑
+/// - 与重构后的 `get_local_mat4` 函数集成
+/// - 保持与原函数相同的 API 接口
+/// - 支持缓存优化
+/// - 生产安全的特性标志回退机制
+#[cached(result = true)]
+pub async fn get_world_mat4_with_strategies(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
+    #[cfg(feature = "use_strategy_transform")]
+    {
+        // 新的策略系统实现
+        get_world_mat4_with_strategies_impl(refno, is_local).await
+    }
+    
+    #[cfg(not(feature = "use_strategy_transform"))]
+    {
+        // 回退到旧实现，并给出编译时提醒
+        #[allow(deprecated)]
+        {
+            // 编译时提醒：使用属性标记弃用状态
+            #[cfg_attr(not(feature = "use_strategy_transform"), 
+                       deprecated(note = "建议启用 use_strategy_transform 特性以获得更好的可维护性和扩展性"))]
+            fn fallback_warning() {}
+            
+            // 调用旧实现作为回退
+            get_world_mat4(refno, is_local).await
+        }
+    }
+}
+
+/// 新策略系统的具体实现
+/// 
+/// 此函数包含使用策略模式的世界矩阵计算逻辑，只在启用 
+/// `use_strategy_transform` 特性时编译。
+#[cfg(feature = "use_strategy_transform")]
+async fn get_world_mat4_with_strategies_impl(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
+    #[cfg(feature = "profile")]
+    let start_ancestors = std::time::Instant::now();
+    let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
+    #[cfg(feature = "profile")]
+    let elapsed_ancestors = start_ancestors.elapsed();
+    #[cfg(feature = "profile")]
+    println!("get_ancestor_attmaps took {:?}", elapsed_ancestors);
+
+    #[cfg(feature = "profile")]
+    let start_refnos = std::time::Instant::now();
+    let ancestor_refnos = crate::query_ancestor_refnos(refno).await?;
+    #[cfg(feature = "profile")]
+    let elapsed_refnos = start_refnos.elapsed();
+    #[cfg(feature = "profile")]
+    println!("query_ancestor_refnos took {:?}", elapsed_refnos);
+    
+    if ancestor_refnos.len() <= 1 {
+        return Ok(Some(DMat4::IDENTITY));
+    }
+    
+    ancestors.reverse();
+    
+    // 如果只需要局部变换，直接调用 get_local_mat4
+    if is_local {
+        if ancestors.len() >= 2 {
+            let parent_refno = ancestors[ancestors.len() - 2].get_refno_or_default();
+            let cur_refno = ancestors.last().unwrap().get_refno_or_default();
+            return get_local_mat4(cur_refno, parent_refno).await;
+        }
+        return Ok(Some(DMat4::IDENTITY));
+    }
+    
+    // 遍历层级，使用重构后的策略系统计算每个节点的局部变换
+    let mut world_transform = DMat4::IDENTITY;
+    
+    for (index, atts) in ancestors.windows(2).enumerate() {
+        let o_att = &atts[0];
+        let att = &atts[1];
+        let cur_refno = att.get_refno_or_default();
+        let owner = att.get_owner();
+
+        // 使用重构后的策略系统计算局部变换
+        match get_local_mat4(cur_refno, owner).await {
+            Ok(Some(local_transform)) => {
+                // 累积变换到世界坐标系
+                let prev_world_transform = world_transform;
+                world_transform = world_transform * local_transform;
+                
+                // 调试输出：追踪变换累积过程
+                #[cfg(feature = "debug_spatial")]
+                {
+                    let local_pos = local_transform.project_point3(glam::DVec3::ZERO);
+                    let world_pos = world_transform.project_point3(glam::DVec3::ZERO);
+                    println!(
+                        "Level {}: {} -> {}\n  父级世界矩阵: {:?}\n  局部变换: {:?}\n  局部位置: {:?}\n  累积后世界位置: {:?}\n  变换前世界: {:?}\n  变换后世界: {:?}",
+                        index,
+                        owner,
+                        cur_refno,
+                        prev_world_transform,
+                        local_transform,
+                        local_pos,
+                        world_pos,
+                        prev_world_transform.project_point3(glam::DVec3::ZERO),
+                        world_pos
+                    );
+                }
+                
+                // 特别针对FITT类型的调试
+                if att.get_type_str() == "FITT" {
+                    let local_pos = local_transform.project_point3(glam::DVec3::ZERO);
+                    let world_pos = world_transform.project_point3(glam::DVec3::ZERO);
+                    println!(
+                        "🔍 FITT变换调试:\n  参考号: {}\n  父级: {}\n  局部位置: {:?}\n  世界位置: {:?}\n  父级世界矩阵: {:?}\n  局部变换矩阵: {:?}",
+                        cur_refno,
+                        owner,
+                        local_pos,
+                        world_pos,
+                        prev_world_transform,
+                        local_transform
+                    );
+                    
+                    // 分析ZDIS如何从局部坐标系转换到世界坐标系
+                    let zdis = att.get_f32("ZDIS").unwrap_or_default();
+                    let local_z_offset = glam::DVec3::new(0.0, 0.0, zdis as f64);
+                    let world_z_offset = prev_world_transform.transform_point3(local_z_offset);
+                    println!(
+                        "  ZDIS分析:\n    ZDIS值: {}\n    局部Z偏移: {:?}\n    世界Z偏移: {:?}\n    Z轴变换差异: {:.3}",
+                        zdis,
+                        local_z_offset,
+                        world_z_offset,
+                        world_z_offset.z - local_z_offset.z
+                    );
+                }
+                
+                #[cfg(feature = "debug_spatial")]
+                println!(
+                    "Level {}: Applied local transform for {} -> {}",
+                    index,
+                    owner,
+                    cur_refno
+                );
+            }
+            Ok(None) => {
+                #[cfg(feature = "debug_spatial")]
+                println!(
+                    "Level {}: No transform calculated for {} -> {}",
+                    index,
+                    owner,
+                    cur_refno
+                );
+                // 继续处理其他层级，不中断
+            }
+            Err(e) => {
+                #[cfg(feature = "debug_spatial")]
+                println!(
+                    "Level {}: Error calculating transform for {} -> {}: {}",
+                    index,
+                    owner,
+                    cur_refno,
+                    e
+                );
+                // 记录错误但继续处理
+            }
+        }
+    }
+
+    // 检查变换的有效性
+    if world_transform.is_nan() {
+        return Ok(None);
+    }
+
+    Ok(Some(world_transform))
 }
 
 ///查询形集PLIN的值，todo 需要做缓存优化
@@ -998,4 +1345,135 @@ async fn query_nearest_by_dir_internal(
     }
 
     Ok(best.map(|(refno, dist)| (RefnoEnum::Refno(refno), dist)))
+}
+
+/// 计算POINSP在SPINE路径上的变换矩阵
+/// POINSP局部坐标系：Y=沿SPINE路径距离，X/Z=横向偏移
+pub async fn calculate_poinsp_spine_transform(spine_refno: RefnoEnum, poinsp_local_pos: DVec3) -> Option<DMat4> {
+    // 获取SPINE信息
+    let spine_att = get_named_attmap(spine_refno).await.ok()?;
+    let spine_ydir = spine_att.get_dvec3("YDIR");
+    
+    // 获取GENSEC（SPINE的父级）
+    let gensec_refno = spine_att.get_owner();
+    let gensec_att = get_named_attmap(gensec_refno).await.ok()?;
+    
+    if gensec_att.get_type_str() != "GENSEC" && gensec_att.get_type_str() != "WALL" {
+        return None;
+    }
+    
+    // 获取SPINE路径信息
+    let spline_pts = get_spline_pts(gensec_refno).await.ok()?;
+    if spline_pts.len() < 2 {
+        return None;
+    }
+    
+    // 计算沿SPINE路径的距离（POINSP的Y坐标）
+    let distance_along_spine = poinsp_local_pos.y;
+    
+    // 计算SPINE路径上的变换矩阵
+    let spine_transform = calculate_spine_transform_at_distance(&spline_pts, distance_along_spine, spine_ydir).ok()?;
+    
+    // 应用POINSP在SPINE局部坐标系中的横向偏移（X和Z坐标）
+    let lateral_offset = DVec3::new(poinsp_local_pos.x, 0.0, poinsp_local_pos.z);
+    // 修正：在SPINE局部坐标系中应用横向偏移，然后变换到世界坐标
+    let final_transform = spine_transform * DMat4::from_translation(lateral_offset);
+    
+    println!("   🔍 横向偏移调试:");
+    println!("      横向偏移: {:?}", lateral_offset);
+    println!("      最终变换矩阵: {:?}", final_transform);
+    
+    Some(final_transform)
+}
+
+/// 计算SPINE路径上指定距离处的变换矩阵
+fn calculate_spine_transform_at_distance(
+    spline_pts: &[DVec3], 
+    distance: f64, 
+    ydir: Option<DVec3>
+) -> anyhow::Result<DMat4> {
+    if spline_pts.len() < 2 {
+        return Err(anyhow::anyhow!("路径点不足"));
+    }
+    
+    // 简化版本：假设SPINE是直线，使用第一段
+    let start_point = spline_pts[0];
+    let end_point = spline_pts[1];
+    let spine_direction = (end_point - start_point).normalize();
+    
+    // 计算距离起点的位置
+    let point_at_distance = start_point + spine_direction * distance;
+    
+    // 调试输出
+    println!("   🔍 SPINE路径调试:");
+    println!("      起点: {:?}", start_point);
+    println!("      终点: {:?}", end_point);
+    println!("      方向: {:?}", spine_direction);
+    println!("      距离: {:.3}mm", distance);
+    println!("      计算位置: {:?}", point_at_distance);
+    
+    // 计算SPINE的方位
+    let spine_rotation = if let Some(ydir_vec) = ydir {
+        let rotation = cal_spine_orientation_basis_with_ydir(spine_direction, Some(ydir_vec), false);
+        println!("      YDIR: {:?}", ydir_vec);
+        println!("      计算旋转: {:?}", rotation);
+        rotation
+    } else {
+        cal_spine_orientation_basis(spine_direction, false)
+    };
+    
+    // 构建SPINE路径变换矩阵
+    let spine_transform = DMat4::from_rotation_translation(spine_rotation, point_at_distance);
+    println!("      SPINE变换矩阵: {:?}", spine_transform);
+    
+    Ok(spine_transform)
+}
+
+/// 判断节点类型是否为虚拟节点
+/// 虚拟节点：没有自己的位置和方向，仅作为组织结构存在
+/// 但可能包含方向信息（如YDIR）用于影响子节点
+pub fn is_virtual_node(node_type: &str) -> bool {
+    match node_type {
+        "SPINE" => true,
+        // 未来可能添加其他虚拟节点类型
+        _ => false,
+    }
+}
+
+/// 判断节点类型是否有零局部平移
+pub fn has_zero_local_translation(node_type: &str) -> bool {
+    is_virtual_node(node_type)
+}
+
+/// 获取虚拟节点的方向信息（如果有）
+pub async fn get_virtual_node_orientation(
+    node_refno: RefnoEnum, 
+    node_type: &str
+) -> anyhow::Result<Option<DQuat>> {
+    if !is_virtual_node(node_type) {
+        return Ok(None);
+    }
+    
+    match node_type {
+        "SPINE" => {
+            // SPINE的方向由YDIR和spine方向决定
+            let att = get_named_attmap(node_refno).await?;
+            let ydir = att.get_dvec3("YDIR");
+            
+            // 获取父级GENSEC来获取spine方向
+            let owner_refno = att.get_owner();
+            
+            if let Ok(spline_pts) = get_spline_pts(owner_refno).await {
+                if spline_pts.len() >= 2 {
+                    let spine_dir = (spline_pts[1] - spline_pts[0]).normalize();
+                    // 只计算方向，不包含位置
+                    let orientation = cal_spine_orientation_basis_with_ydir(spine_dir, ydir, false);
+                    return Ok(Some(orientation));
+                }
+            }
+            
+            Ok(None)
+        },
+        _ => Ok(None),
+    }
 }

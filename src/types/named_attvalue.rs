@@ -3,6 +3,7 @@ use crate::tool::float_tool::f32_round_3;
 use crate::utils::{value_to_bool, value_to_f32, value_to_i32, value_to_string};
 use crate::{RefU64, RefU64Vec, SurlValue};
 use bevy_ecs::component::Component;
+#[cfg(feature = "reflect")]
 use bevy_reflect::Reflect;
 use glam::{Vec3, bool, f32, f64, i32};
 use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
@@ -263,6 +264,7 @@ impl NamedAttrValue {
 }
 
 impl NamedAttrValue {
+    #[cfg(feature = "reflect")]
     pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
         return match self {
             NamedAttrValue::StringType(v)

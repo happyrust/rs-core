@@ -3,6 +3,7 @@ use crate::attval::AttrVal::*;
 use crate::pdms_types::AiosStrHash;
 use crate::ref64vec::RefU64Vec;
 use bevy_ecs::component::Component;
+#[cfg(feature = "reflect")]
 use bevy_reflect::Reflect;
 use glam::{Vec3, bool, f32, f64, i32};
 use serde_derive::{Deserialize, Serialize};
@@ -159,6 +160,7 @@ impl AttrVal {
     }
 
     #[inline]
+    #[cfg(feature = "reflect")]
     pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
         return match self {
             InvalidType => Box::new("unset".to_string()),

@@ -6,16 +6,20 @@ use crate::types::*;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+#[cfg(feature = "reflect")]
 use bevy_reflect::{Reflect, Struct, DynamicStruct, Typed, std_traits::ReflectDefault};
 use sea_orm::{DatabaseBackend, QueryTrait, Schema};
-use crate::orm::traits::{DbOpTrait, ReflectDbOpTrait};
+use crate::orm::traits::DbOpTrait;
+#[cfg(feature = "reflect")]
+use crate::orm::traits::ReflectDbOpTrait;
 use crate::impl_db_op_trait;
 
 
         #[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug, Default, DeriveEntityModel, Reflect)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, DeriveEntityModel)]
 #[sea_orm(table_name = "CYLI")]
-#[reflect(Default, DbOpTrait)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Default, DbOpTrait))]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,

@@ -19,6 +19,7 @@ use crate::{
 };
 use crate::{pdms_types::*, query_refno_sesno};
 use bevy_ecs::component::Component;
+#[cfg(feature = "reflect")]
 use bevy_reflect::{DynamicStruct, Reflect};
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, DMat3, DQuat, DVec3, Mat3, Mat4, Quat, Vec3};

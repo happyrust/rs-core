@@ -12,6 +12,7 @@ pub mod macros;
 // pub mod generated;
 // pub use generated::*;
 
+#[cfg(feature = "reflect")]
 use bevy_reflect::TypeRegistry;
 use once_cell::sync::OnceCell;
 use std::any::TypeId;
@@ -22,7 +23,10 @@ pub use macros::*;
 pub use traits::*;
 pub use types::*;
 
-///获得类型的注册机
+/// 获得类型的注册机
+///
+/// 注意: 此功能需要 "reflect" feature 开启
+#[cfg(feature = "reflect")]
 pub fn get_type_registry() -> &'static TypeRegistry {
     static INSTANCE: OnceCell<TypeRegistry> = OnceCell::new();
     INSTANCE.get_or_init(|| {
@@ -30,6 +34,12 @@ pub fn get_type_registry() -> &'static TypeRegistry {
         type_registry.register::<pdms_element::Model>();
         type_registry
     })
+}
+
+/// 当 reflect feature 未开启时的替代实现
+#[cfg(not(feature = "reflect"))]
+pub fn get_type_registry() -> ! {
+    panic!("TypeRegistry requires 'reflect' feature to be enabled. Please enable the feature in Cargo.toml")
 }
 
 //todo 根据属性描述信息，使用宏来生成类型信息

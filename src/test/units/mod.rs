@@ -1,1 +1,1 @@
-pub mod test_spatial;
+pub mod spatial;

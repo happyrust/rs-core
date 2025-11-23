@@ -1,0 +1,976 @@
+{
+  "version": "0.1.0",
+  "created": 1763875103,
+  "updated": 1763875455,
+  "files": {
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/create-a-new-connection.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/create-a-new-connection.mdx",
+      "hash": "d677e97d9e2a4e97d359da4a1d3b3e0eec3a72f22241aad2e69001d04f551c5d",
+      "last_modified": 1763311886,
+      "size": 8599
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/invalidate.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/invalidate.mdx",
+      "hash": "d4d2ba12c4426c4ef8d8f460bfe3b1a76b04e8a30a08e1605c8616592a7cadd1",
+      "last_modified": 1763311886,
+      "size": 1082
+    },
+    "./DbOption-slyk.toml": {
+      "path": "./DbOption-slyk.toml",
+      "hash": "d2598014cf856d28dbbc5f694b20d35d4ffbb9932e4949bfcb063be7d215f99a",
+      "last_modified": 1763311885,
+      "size": 3228
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/fivetran.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/fivetran.mdx",
+      "hash": "65f71c6c47b587cf593e63b6dd5006e422458a5b72512506400db2b6698df126",
+      "last_modified": 1763311886,
+      "size": 5791
+    },
+    "./docs/docs.surrealdb.com/Makefile": {
+      "path": "./docs/docs.surrealdb.com/Makefile",
+      "hash": "f03b0765767da871d9db1d1cf60b079835f217496288c1f44457c9425a11a957",
+      "last_modified": 1763311885,
+      "size": 3168
+    },
+    "./docs/DB_Noun_structure_analysis.md": {
+      "path": "./docs/DB_Noun_structure_analysis.md",
+      "hash": "2baf8cd1480479f1f8873ac5bb996a3bad3a8203e215c0ea379fd5ac9a68c4d4",
+      "last_modified": 1763311885,
+      "size": 6124
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/signin.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/signin.mdx",
+      "hash": "6c1ed5ac5ae263f48450e816bbabb4f482e75158f8243bed23bb45a4fd7f54cf",
+      "last_modified": 1763311886,
+      "size": 4079
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/index.mdx",
+      "hash": "d17dd0aa4544c490a9c0f0f0150d677f69c43f7436342fab294c6806a8974b60",
+      "last_modified": 1763311886,
+      "size": 7997
+    },
+    "./get_full_schema.txt": {
+      "path": "./get_full_schema.txt",
+      "hash": "eecfe6aa6027814c88d93cbd21fa1abeec9a46e84bafd8e7ce1659113ed3bcf9",
+      "last_modified": 1763311886,
+      "size": 87
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/query.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/query.mdx",
+      "hash": "df46afe31826cfd94c11e0b9b2a2218b34333cec6f5554e4da30f603f24203ab",
+      "last_modified": 1763311886,
+      "size": 2029
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/index.mdx",
+      "hash": "4ce097a319a69b97a0c44766f1944061edc6a9f633265c866a0d4d34050c0276",
+      "last_modified": 1763311886,
+      "size": 3540
+    },
+    "./docs/docs.surrealdb.com/config/pages/labs/types.ts": {
+      "path": "./docs/docs.surrealdb.com/config/pages/labs/types.ts",
+      "hash": "2f838aeb06b5e6f1277f24d0c0a418d1b8d21a1b35f496e52a30eb1ba8da8c95",
+      "last_modified": 1763311885,
+      "size": 354
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/engines/wasm.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/engines/wasm.mdx",
+      "hash": "bccfe59b0439cb19e0ead41f975ed49f9f425130ff80fd6351798055d6efc7b1",
+      "last_modified": 1763311886,
+      "size": 4244
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/index.mdx",
+      "hash": "4eedcd60e9c977ee448af93dbf1bbf0fbd300f3b23ab6b247a2ae61bd39b92b0",
+      "last_modified": 1763311886,
+      "size": 1685
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/export.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/export.mdx",
+      "hash": "b08cefbd9f00077427af0f0af6313e41c97fff2b92f523a15b89c3ef4c26919a",
+      "last_modified": 1763311886,
+      "size": 1454
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/handling-authentication.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/handling-authentication.mdx",
+      "hash": "8558f6a98c12aa3182e9bc80a2fb47866a0d0210fa7118c9de8715378a35c160",
+      "last_modified": 1763311886,
+      "size": 14736
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/json-lines.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/json-lines.mdx",
+      "hash": "612e8c5cf807ac9126fcc8d6a5f62fc4836d2989e7c280c94eae28d2d13ebe8e",
+      "last_modified": 1763311886,
+      "size": 6785
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/select.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/select.mdx",
+      "hash": "c627ccc4ab7e9833338a736e955bcab857527d460e55d22389e70ecaf9c40ac4",
+      "last_modified": 1763311886,
+      "size": 1509
+    },
+    "./docs/docs.surrealdb.com/aws/viewer-request/Makefile": {
+      "path": "./docs/docs.surrealdb.com/aws/viewer-request/Makefile",
+      "hash": "2b4981d159cdf594a6399e32582ec731ce04bd588af6dedac8133c59b4b4aa65",
+      "last_modified": 1763311885,
+      "size": 846
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/upsert.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/upsert.mdx",
+      "hash": "5b6094c41c95717fd75734abd84abfc8f635afbdfe9d0ad2b4882ba87aedf5be",
+      "last_modified": 1763311886,
+      "size": 1887
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/delete.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/delete.mdx",
+      "hash": "89f5020fe203ae2de31a71a2d82e045abd2a07b7587a9d9587a67e76c960f4aa",
+      "last_modified": 1763311886,
+      "size": 1527
+    },
+    "./test_output/profile_processor/README.md": {
+      "path": "./test_output/profile_processor/README.md",
+      "hash": "277c9585ed20b9a321fb4ca87e208926a3506789c043b6b25c5c8f290f47d942",
+      "last_modified": 1763694065,
+      "size": 2451
+    },
+    "./run_bool_debug.sh": {
+      "path": "./run_bool_debug.sh",
+      "hash": "bc583569fcd25ac80c7f01019c6ae148df91a5d7beb8430b00244c2fd0d11125",
+      "last_modified": 1763796546,
+      "size": 582
+    },
+    "./Cargo-local.toml": {
+      "path": "./Cargo-local.toml",
+      "hash": "2a5f2d516d590d2bee6d859b82a4c617cc6c8cbd32ae524b53aee4c842af287b",
+      "last_modified": 1763311885,
+      "size": 2751
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/smolagents.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/smolagents.mdx",
+      "hash": "36c43ba4fb83be70376f7f942f02330730cbf578b662fabcfcaab10bb1e38b19",
+      "last_modified": 1763311886,
+      "size": 5122
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/index.mdx",
+      "hash": "3290b5aeade5ba311e2443db4d7c50aac7a15e1f96a1ede26fb7e70e5f109b92",
+      "last_modified": 1763311886,
+      "size": 1657
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/start.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/start.mdx",
+      "hash": "46287e3fe9cc658a792ae312639da2fd5525e1fa1862e774696666b69343ccad",
+      "last_modified": 1763311886,
+      "size": 17103
+    },
+    "./docs/attlib_analysis_report.md": {
+      "path": "./docs/attlib_analysis_report.md",
+      "hash": "f57546b50fc6a6306d22abbca3a8164a39978b0811e7cc32e78e9c5f1c96718a",
+      "last_modified": 1763311885,
+      "size": 5424
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/data-types.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/data-types.mdx",
+      "hash": "1a78d28a1757f6e4c048e190ad6b7fdca56ba4da87343526683abce14df669ed",
+      "last_modified": 1763311886,
+      "size": 14143
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/use.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/use.mdx",
+      "hash": "bff821d8af03d6e208e2e70658ef104ca818f0ad38734b67744c428b9c8681c4",
+      "last_modified": 1763311886,
+      "size": 1773
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/connect.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/connect.mdx",
+      "hash": "8c75c914f9a7fd4330209d6b1d13d1d141ffb5f5a338f6f31a0ac469f1400272",
+      "last_modified": 1763311886,
+      "size": 1112
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/insert.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/insert.mdx",
+      "hash": "99fc94278764268de6834c490256bf9cabf6c5d29d30c46cbfd77c217e2369b6",
+      "last_modified": 1763311886,
+      "size": 2209
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/agno.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/agno.mdx",
+      "hash": "0cffbfb6785fe31d5a63baf9fa0df95bc072a380936a65f6a7d9b926fb68bc35",
+      "last_modified": 1763311886,
+      "size": 2516
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/signin.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/signin.mdx",
+      "hash": "8a10b9b74a633dffac16f438dbe5de0953d20ea4969300d197117759575d1887",
+      "last_modified": 1763311886,
+      "size": 3351
+    },
+    "./CHANGELOG.md": {
+      "path": "./CHANGELOG.md",
+      "hash": "160735928f3b254eabe30de56a5b824b27e503fb62de82c78c6c6380847eaa7f",
+      "last_modified": 1763311885,
+      "size": 2465
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/signup.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/signup.mdx",
+      "hash": "54d404041e338afb4f2b43e49938c03787accca342cdf3fc76945a9b5257a68e",
+      "last_modified": 1763311886,
+      "size": 2692
+    },
+    "./docs/docs.surrealdb.com/src/util/rehypeCodemirrorPlugin.mjs": {
+      "path": "./docs/docs.surrealdb.com/src/util/rehypeCodemirrorPlugin.mjs",
+      "hash": "6c3c0ac46433ce481e1c9f2f4496dc18738144c494ad6448cb424c7c7e0decd1",
+      "last_modified": 1763311886,
+      "size": 8966
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/rust.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/rust.mdx",
+      "hash": "d44f31f41b7c2269b67d088a5429026f1fb5aa05589ce562f7a8c2fc24a3da8a",
+      "last_modified": 1763311886,
+      "size": 2959
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/langchain.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/langchain.mdx",
+      "hash": "49c674a73bcbc8cb042e00b97b3585ff5b81c95494ad8607c8a3c32ca3a1d886",
+      "last_modified": 1763311886,
+      "size": 6763
+    },
+    "./docs/docs.surrealdb.com/public/static/test.txt": {
+      "path": "./docs/docs.surrealdb.com/public/static/test.txt",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "last_modified": 1763311885,
+      "size": 0
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/index.mdx",
+      "hash": "9140cfc10ebcb202d706adac3907908cbd4139a7d193df56834c9dd2b91e91c2",
+      "last_modified": 1763311886,
+      "size": 8438
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/properties.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/properties.mdx",
+      "hash": "acb85bd28269c600472337ec36114ea53b21f3d1183c6312cfad083389b33131",
+      "last_modified": 1763311886,
+      "size": 3392
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/listen_live.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/listen_live.mdx",
+      "hash": "a92ac2a83a6d36a803a49d969b23f871459586e6ea90fd17f3773a84bb1d68dc",
+      "last_modified": 1763311886,
+      "size": 1096
+    },
+    "./docs/ida_rvm_export_overview.md": {
+      "path": "./docs/ida_rvm_export_overview.md",
+      "hash": "d48edb4e68f12fd6b28d727ebe7b8a5e27f8686320d47a8ae81dcd3bf0a1a356",
+      "last_modified": 1763311886,
+      "size": 8309
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/live-query.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/live-query.mdx",
+      "hash": "ce9411efdcaadd048b26ffe81b5c9fbd9b6b318176b1b02da4864d69adbcae90",
+      "last_modified": 1763311886,
+      "size": 1561
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/parameters.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/parameters.mdx",
+      "hash": "03be90380ac6443dcc960cd365a06e1d3cbd451d25ffccbc10b41c6139694879",
+      "last_modified": 1763311886,
+      "size": 3307
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/set.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/set.mdx",
+      "hash": "8232b7e99612ccdd9280da6953406e965c3885f7a042a13d25a0ae2cae4c3069",
+      "last_modified": 1763311886,
+      "size": 2192
+    },
+    "./docs/ATGTSX_OWNER_ANALYSIS.md": {
+      "path": "./docs/ATGTSX_OWNER_ANALYSIS.md",
+      "hash": "8011981e17ab7594a7bb0fdfa1a0ed652585bc42455098d79133506adfe07278",
+      "last_modified": 1763311885,
+      "size": 8967
+    },
+    "./docs/docs.surrealdb.com/src/util/railroad.ts": {
+      "path": "./docs/docs.surrealdb.com/src/util/railroad.ts",
+      "hash": "9250a168bbc9b82d2f34f206c95be249c2dc75b5b58cad6477d489a4cf0c3d49",
+      "last_modified": 1763311886,
+      "size": 5783
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/insertrelation.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/insertrelation.mdx",
+      "hash": "00f97da153e55736c3fed3d9c445913054efe116c8c789cd8c071061fbe8d467",
+      "last_modified": 1763311886,
+      "size": 2022
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/upsert.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/upsert.mdx",
+      "hash": "18cde179f533182c3e67bb6914f023d668ab48ab3f68fb988c2f3a3e4e47d36f",
+      "last_modified": 1763311886,
+      "size": 2075
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/neo4j.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/neo4j.mdx",
+      "hash": "c7899ebac4e28efd2317f7f8c3de5d7394ff95c820469272ad08c85c5c9eaf33",
+      "last_modified": 1763311886,
+      "size": 3812
+    },
+    "./docs/attlib_parsing_verification_report.md": {
+      "path": "./docs/attlib_parsing_verification_report.md",
+      "hash": "2cdd1ab09905468fc27e45ec338c7da078af6db5e5edbf6827a2d7e6ad525335",
+      "last_modified": 1763311885,
+      "size": 6825
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/openai.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/openai.mdx",
+      "hash": "1eb196a7314093b76777803e83aca16b5dfd0710a428d542658005d58dc8bfa1",
+      "last_modified": 1763311886,
+      "size": 22043
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/airbyte.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/airbyte.mdx",
+      "hash": "d3e08669afc8a48d4cf1d551d464822680efa68d8e8dd927fa4f71962a1075ba",
+      "last_modified": 1763311886,
+      "size": 3447
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/live.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/live.mdx",
+      "hash": "43d302cd35d867731b059426b648816b145161d7942be1f7e20208e7e3683390",
+      "last_modified": 1763311886,
+      "size": 4511
+    },
+    "./docs/docs.surrealdb.com/public/llms.txt": {
+      "path": "./docs/docs.surrealdb.com/public/llms.txt",
+      "hash": "4f945d03e4ae34eb50f33ad27184665019c83ab36b9f21e14db9e363a8c680c7",
+      "last_modified": 1763311885,
+      "size": 7498
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/unstructured.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/unstructured.mdx",
+      "hash": "580dc93c5d98333dfafe3c4efb8f785da22539e2f1e6703425b3e6727c0c7977",
+      "last_modified": 1763311886,
+      "size": 5531
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/feast.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/feast.mdx",
+      "hash": "efbfc71722b153bafdc377a3c5d8d31f4a95bff05769901a114a886ad955c319",
+      "last_modified": 1763311886,
+      "size": 8031
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/installation.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/installation.mdx",
+      "hash": "78a826ab406cfe2ddde953c841e8876f4cadfe628f0fcfbde01d001cd2570d70",
+      "last_modified": 1763311886,
+      "size": 2522
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/unset.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/unset.mdx",
+      "hash": "b22309ca12c22e91ccf3bf42c5aa11b0965c44cdb30b79c8d7793ce887fd7bca",
+      "last_modified": 1763311886,
+      "size": 1398
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/create.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/create.mdx",
+      "hash": "0d8b18f22742e829a1c5eabe57f45b528122edb029619898b10934162015e1d9",
+      "last_modified": 1763311886,
+      "size": 2235
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/select.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/select.mdx",
+      "hash": "14320c7040f83f74c89a5e35bdd28a4e82f7c33c2e505653fa85bf2d84dc07ff",
+      "last_modified": 1763311886,
+      "size": 1926
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/import.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/import.mdx",
+      "hash": "3319712ab90f52768a636cbd023aea1d82155ec476759ddafaac22477f313f02",
+      "last_modified": 1763311886,
+      "size": 1757
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/subscribelive.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/subscribelive.mdx",
+      "hash": "c3c6f26c158f391fc01a55d2abda0dfa48b4ac1a133227d77c81585c64e61828",
+      "last_modified": 1763311886,
+      "size": 4133
+    },
+    "./docs/docs.surrealdb.com/scripts/_utils.ts": {
+      "path": "./docs/docs.surrealdb.com/scripts/_utils.ts",
+      "hash": "28da09402d491299b5a4973246be4406886387a609dc2cc608b5660a17f9da49",
+      "last_modified": 1763311885,
+      "size": 574
+    },
+    "./test_output/profile_processor/VERIFICATION_REPORT.md": {
+      "path": "./test_output/profile_processor/VERIFICATION_REPORT.md",
+      "hash": "4f018dfce62077c245664e3022eff29ad56e47b7716f552317d13320b951e8eb",
+      "last_modified": 1763707349,
+      "size": 2454
+    },
+    "./output/ploop-json/test_floor_ploop.rs": {
+      "path": "./output/ploop-json/test_floor_ploop.rs",
+      "hash": "014498142bdf6a18ddea3eb0b62d1407fb4130e359f02983e568cc44ddc07b59",
+      "last_modified": 1763311886,
+      "size": 3150
+    },
+    "./DRNS_DRNE_FIX_SUMMARY.md": {
+      "path": "./DRNS_DRNE_FIX_SUMMARY.md",
+      "hash": "e38cf021886b0d765d39d4f6894a77abee9d69adfc111cce0ebf0c7d23668601",
+      "last_modified": 1763591994,
+      "size": 4004
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/close.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/close.mdx",
+      "hash": "b0b8e96b0865f2dd64eca19aa69ea92e4ddf28acf6e2e74c4eb22c3df867acfd",
+      "last_modified": 1763311886,
+      "size": 388
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/signup.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/signup.mdx",
+      "hash": "9ac3d9d29d589af5f136c513ee2ae5693eec5008dc992c2165a85796214481fe",
+      "last_modified": 1763311886,
+      "size": 2982
+    },
+    "./MEMORY_DB_MIGRATION.md": {
+      "path": "./MEMORY_DB_MIGRATION.md",
+      "hash": "90c81a246d518da9842e58d8ac4be564ce4fef85cc5a68c3d777620449d0eb8c",
+      "last_modified": 1763311885,
+      "size": 4398
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/engines/node.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/engines/node.mdx",
+      "hash": "8ef5c777bf31413b5bf6f7a6cd5865fdb5cb01e38d34d452773aee2f964e7507",
+      "last_modified": 1763311886,
+      "size": 4073
+    },
+    "./docs/docs.surrealdb.com/README.md": {
+      "path": "./docs/docs.surrealdb.com/README.md",
+      "hash": "28d93c5f401fd028b35be2462bb60d2e14e49ae6edf97e0c58f5356a1aa6173e",
+      "last_modified": 1763311885,
+      "size": 12198
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/index.mdx",
+      "hash": "ef6fe5a82ae9f37dd38c557800ddbd6fc8857ca33531086503971c93cbb4bb15",
+      "last_modified": 1763311886,
+      "size": 2246
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/merge.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/merge.mdx",
+      "hash": "0af27d4d34c08bf0dc9f71a03de56ceb20f12b5d500fad26e9d2170e9e2e30d5",
+      "last_modified": 1763311886,
+      "size": 2209
+    },
+    "./docs/docs.surrealdb.com/scripts/post-build.ts": {
+      "path": "./docs/docs.surrealdb.com/scripts/post-build.ts",
+      "hash": "d500f1cfd77fd6d38cab2402a158a2a5217fde9524536d4e04517e14e9558560",
+      "last_modified": 1763311885,
+      "size": 7731
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/live-raw-query.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/live-raw-query.mdx",
+      "hash": "744da04ff6abda94cb369d43867949106a813f462a813fbf547555cb217fdfec",
+      "last_modified": 1763311886,
+      "size": 1933
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/dagster.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/dagster.mdx",
+      "hash": "ff1effe4754307addbd070e37584b443a3308f4d3d86a41bc6626398dcb1ddf6",
+      "last_modified": 1763311886,
+      "size": 4660
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/live-table.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/live-table.mdx",
+      "hash": "ec5a2b0a2f2e5e3fe6e4a6f6da88b0a72e6a7c048442e4a93bd1125cd21c068f",
+      "last_modified": 1763311886,
+      "size": 1938
+    },
+    "./docs/docs.surrealdb.com/src/env.d.ts": {
+      "path": "./docs/docs.surrealdb.com/src/env.d.ts",
+      "hash": "ab9bab63b2414075966a002df99f5cc6e1a98450c33ea9b3cf7b7d700cd16a51",
+      "last_modified": 1763311886,
+      "size": 2107
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/frameworks/react.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/frameworks/react.mdx",
+      "hash": "e02956242be7f36e2777490b63fac1f3c5e394e6c7c3189421229b25d03ffad3",
+      "last_modified": 1763311886,
+      "size": 10276
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/patch.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/patch.mdx",
+      "hash": "6fca4657769443b48537befec2559e397a8fd456f85ca739e94d184e4175ac59",
+      "last_modified": 1763311886,
+      "size": 2141
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/dynamiq.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/dynamiq.mdx",
+      "hash": "f7033aea996828821e3c792aaa562303c6a3941b659e17368634eff1559c5c26",
+      "last_modified": 1763311886,
+      "size": 9984
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/crewai.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/crewai.mdx",
+      "hash": "c687758e73634ce92546710df046ebaf423ac582b6b91101e54b8da7bae9d48f",
+      "last_modified": 1763311886,
+      "size": 10969
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/kill.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/kill.mdx",
+      "hash": "daef5cab7f79c6d06600ebfcb6d31c03c5d97b5d2d47891addabbf3a064ef418",
+      "last_modified": 1763311886,
+      "size": 961
+    },
+    "./error.log": {
+      "path": "./error.log",
+      "hash": "e62b81dfcfa516a4bcaa281ee5b92930c32c8d03923039e6c0e23274c1dcd130",
+      "last_modified": 1763743492,
+      "size": 23010
+    },
+    "./docs/docs.surrealdb.com/src/util/doc.ts": {
+      "path": "./docs/docs.surrealdb.com/src/util/doc.ts",
+      "hash": "77459dd6de9c2784fb2209f9c61bc79b8408427b22e0a680974edd1d71b725bf",
+      "last_modified": 1763311886,
+      "size": 6870
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/kill.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/kill.mdx",
+      "hash": "f78d4a3256c82cae569a2aa48c4a8df55bbab56c7d3a2f745adf92723227c9db",
+      "last_modified": 1763311886,
+      "size": 1388
+    },
+    "./FIXES_SUMMARY.md": {
+      "path": "./FIXES_SUMMARY.md",
+      "hash": "e278eae39f1d8e5097534be7f9defe65cd9708b25ebc957472abcca53fab4031",
+      "last_modified": 1763311885,
+      "size": 3673
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/update.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/update.mdx",
+      "hash": "84aef9cac46e7c770335d80a09cd4168b7c0185138e57f3e88f8bef3e522ff9c",
+      "last_modified": 1763311886,
+      "size": 2274
+    },
+    "./CHANGELOG_SPINE.md": {
+      "path": "./CHANGELOG_SPINE.md",
+      "hash": "3901f5c86397d5c852ad0b1fcf41cc1b43ba6147dfb3e67577e8e8ffcb309b3c",
+      "last_modified": 1763311885,
+      "size": 10784
+    },
+    "./docs/docs.surrealdb.com/config/pages/labs/index.ts": {
+      "path": "./docs/docs.surrealdb.com/config/pages/labs/index.ts",
+      "hash": "9b1d39f0a307b620467c268eae2688211442cfd047a610eff7c66dccf16a2446",
+      "last_modified": 1763311885,
+      "size": 3618
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/let.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/let.mdx",
+      "hash": "5652f86c3135ccb6c34d68af269dc7ece28f061119841dc52d4bd3f526e6f3fa",
+      "last_modified": 1763311886,
+      "size": 1731
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/index.mdx",
+      "hash": "a5bf3338688474e04469bb76e11f502783e5b2a6f3faa73c6c9a728fff620320",
+      "last_modified": 1763311886,
+      "size": 911
+    },
+    "./docs/docs.surrealdb.com/aws/viewer-request/deploy.sh": {
+      "path": "./docs/docs.surrealdb.com/aws/viewer-request/deploy.sh",
+      "hash": "beb0cf5543a0953927b7307e0d320ccc28605c8d3203cb6f2c29903d71c1774c",
+      "last_modified": 1763311885,
+      "size": 593
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/index.mdx",
+      "hash": "b3f5e9bee488dcb306c4b8f542a3459ef35a8b26eaf17ffb7463d49f8874b308",
+      "last_modified": 1763311886,
+      "size": 4625
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/utilities.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/utilities.mdx",
+      "hash": "79a4bb35aa8902bc38880cda1be3c10cf9e31a345ba186b50dbf064dde62ce2e",
+      "last_modified": 1763311886,
+      "size": 7651
+    },
+    "./docs/ATTLIB_PYTHON_ANALYSIS_SUMMARY.md": {
+      "path": "./docs/ATTLIB_PYTHON_ANALYSIS_SUMMARY.md",
+      "hash": "496b2df5757ab2a0334d3ce35de050ebf757871e49765f01afb275c3d131be14",
+      "last_modified": 1763311885,
+      "size": 3742
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/insert-relation.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/insert-relation.mdx",
+      "hash": "f4ff167dfdeb3f069ce8d042b9af8263c14cdf493be3e657fc05e5f5cd0d6022",
+      "last_modified": 1763311886,
+      "size": 1926
+    },
+    "./docs/docs.surrealdb.com/tailwind.config.mjs": {
+      "path": "./docs/docs.surrealdb.com/tailwind.config.mjs",
+      "hash": "2527d0af3348ba07624cdc007a4ac192e90a95f3fb22b0b69a6db96a1ab875bd",
+      "last_modified": 1763311886,
+      "size": 2577
+    },
+    "./docs/docs.surrealdb.com/src/util/rehypeCopyCodePlugin.mjs": {
+      "path": "./docs/docs.surrealdb.com/src/util/rehypeCopyCodePlugin.mjs",
+      "hash": "b55df93afa3b1af6e4436893ad93bdc13f242611f73d38991ef069558bc10b6b",
+      "last_modified": 1763311886,
+      "size": 1437
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/deepeval.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/deepeval.mdx",
+      "hash": "2e237ebf842bbd257d5855d244bde39f4c5882b0fe63a57f39a938b53f55b8ad",
+      "last_modified": 1763311886,
+      "size": 9183
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/delete.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/delete.mdx",
+      "hash": "52e8638847df0d645a0cf0cbe240b84da0881a35d536793a63bf0bf944e11d2e",
+      "last_modified": 1763311886,
+      "size": 1328
+    },
+    "./docs/docs.surrealdb.com/src/util/helpers.ts": {
+      "path": "./docs/docs.surrealdb.com/src/util/helpers.ts",
+      "hash": "798bc73fc816145918b9df6b6dacce6d4bd160895aeb1074568c5bf6de66f949",
+      "last_modified": 1763311886,
+      "size": 4469
+    },
+    "./docs/PROFILE_REFACTORING_SUMMARY.md": {
+      "path": "./docs/PROFILE_REFACTORING_SUMMARY.md",
+      "hash": "8b7b621672b795fc2698e2f53989687f409009c6b334c2bc0461ee762a05a97f",
+      "last_modified": 1763620811,
+      "size": 7203
+    },
+    "./docs/docs.surrealdb.com/scripts/make-lab.ts": {
+      "path": "./docs/docs.surrealdb.com/scripts/make-lab.ts",
+      "hash": "014764ecba55f3d5798a31edc15c07309d8195c9079453ae350732532d789395",
+      "last_modified": 1763311885,
+      "size": 2256
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/info.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/info.mdx",
+      "hash": "8521de17970d229726d33c3778863d9c0cba2fce3ac3ef26137e4ea48a263a07",
+      "last_modified": 1763311886,
+      "size": 1061
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/unset.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/unset.mdx",
+      "hash": "461696b9bf98a1fd5c6d0c388da5f5d10bf856b6066b95be74ec805a29fa8cae",
+      "last_modified": 1763311886,
+      "size": 1029
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/invalidate.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/invalidate.mdx",
+      "hash": "57cbb3678f455cb07a90fc39afd3ac9ab68ae9b609b82d6fbe9a1a5e7b2e267b",
+      "last_modified": 1763311886,
+      "size": 411
+    },
+    "./docs/docs.surrealdb.com/src/util/rehypeNotesPlugin.mjs": {
+      "path": "./docs/docs.surrealdb.com/src/util/rehypeNotesPlugin.mjs",
+      "hash": "9c58ad453b12b6d5435e2424503f609507091ec933db78f278087fe6e55c5b26",
+      "last_modified": 1763311886,
+      "size": 2788
+    },
+    "./数据库架构文档.md": {
+      "path": "./数据库架构文档.md",
+      "hash": "3a82709b3b07e2ca483f67a7a0aa1f44c243d38aa6e0803e91beb41261647a20",
+      "last_modified": 1763311886,
+      "size": 14356
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/update.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/update.mdx",
+      "hash": "562ac3b732b5a38a340e179c1da5da89a3586013eaf8f2e85abbc49a62f58cb2",
+      "last_modified": 1763311886,
+      "size": 2175
+    },
+    "./docs/docs.surrealdb.com/astro.config.mjs": {
+      "path": "./docs/docs.surrealdb.com/astro.config.mjs",
+      "hash": "94c200487cc3ec3b72be2951a4c1bb63332592b25588b09465ccc78b8dc18d01",
+      "last_modified": 1763311885,
+      "size": 1547
+    },
+    "./docs/docs.surrealdb.com/netlify.toml": {
+      "path": "./docs/docs.surrealdb.com/netlify.toml",
+      "hash": "442532a163800e54bf5c2de75ea4e42a0c5c98eea7e84e8762b4423dcc8afb32",
+      "last_modified": 1763311885,
+      "size": 124
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/mistral.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/mistral.mdx",
+      "hash": "ea937c00d454f6ae1f53283c4654562807d595f63f3991bec42b380e00867043",
+      "last_modified": 1763311886,
+      "size": 28378
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/create.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/create.mdx",
+      "hash": "1ddf8295f004c75d68dce9c6af13534907818e0b7536035b724f43c432b2042a",
+      "last_modified": 1763311886,
+      "size": 2059
+    },
+    "./docs/docs.surrealdb.com/plugins/crawler/schema.surql": {
+      "path": "./docs/docs.surrealdb.com/plugins/crawler/schema.surql",
+      "hash": "3b69d7b751aa7bfc1396925285bad6745d1a8434a95d338e3948b88cbf29542a",
+      "last_modified": 1763311885,
+      "size": 2421
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/health.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/health.mdx",
+      "hash": "3c1ff571142296f30c2f3c4b75091806d32e02d5a0e111c2c0afa87c589e1b55",
+      "last_modified": 1763311886,
+      "size": 1084
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/mongodb.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/mongodb.mdx",
+      "hash": "a56daba489926d45dfa9fd77d1fa2e94c287cf5869851f12c688ed508af52384",
+      "last_modified": 1763311886,
+      "size": 2079
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/n8n.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/n8n.mdx",
+      "hash": "68dbf73f928f5351a9721c93c98d95922f71946ecc9c3a21b7bdc1ed459b9123",
+      "last_modified": 1763311886,
+      "size": 16127
+    },
+    "./README.en.md": {
+      "path": "./README.en.md",
+      "hash": "893e3d2bfa9c73d0165e6a9525d11e0000484c9ab29b781af8240239f1aed9df",
+      "last_modified": 1763311885,
+      "size": 953
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/version.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/version.mdx",
+      "hash": "2e944d063da24275cc14b85fdf3293f95a3b262767a0636f65545244a89eb13c",
+      "last_modified": 1763311886,
+      "size": 1114
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/query.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/query.mdx",
+      "hash": "c67e67d7984e0033b1e2ea4d386998afa1185183c33a5e6cd4c6b3d161ffd818",
+      "last_modified": 1763311886,
+      "size": 1718
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/run.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/run.mdx",
+      "hash": "c0e5a00f519c10fdaa8100c4499c96881709939f5b087572361bb65abf69cf0c",
+      "last_modified": 1763311886,
+      "size": 2349
+    },
+    "./DbOption_ABA.toml": {
+      "path": "./DbOption_ABA.toml",
+      "hash": "2a68e9216c8dc4ff97b48721edf5901737255cffbd5f197e6985cec3bb05dcba",
+      "last_modified": 1763311885,
+      "size": 2635
+    },
+    "./Cargo.toml": {
+      "path": "./Cargo.toml",
+      "hash": "cfccf40df9ca5002a4af7bd0ac511b2371c9dec6c33ff3e3da734336047faa73",
+      "last_modified": 1763741230,
+      "size": 5150
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/index.mdx",
+      "hash": "82ea8f3c36599a9882fa716ad23cce7c35313d1b798daec31b2363fc55f34483",
+      "last_modified": 1763311886,
+      "size": 6193
+    },
+    "./docs/docs.surrealdb.com/src/util/rehypeHeadingsConfig.ts": {
+      "path": "./docs/docs.surrealdb.com/src/util/rehypeHeadingsConfig.ts",
+      "hash": "47dc809a199f5f361fcb281c8f9a46d3719382dff5a3a83d0f1248c14bce57bb",
+      "last_modified": 1763311886,
+      "size": 984
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/engines/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/engines/index.mdx",
+      "hash": "097356a1d8ef62c33f1f1e15b0c2b3af15d4a1cd65bbf6860f070b8f0ad6b297",
+      "last_modified": 1763311886,
+      "size": 880
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/raw-query.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/raw-query.mdx",
+      "hash": "07220855db87f8e74b04c0fac29d8e54adb98766cf110e3d16b4e0fc7a0e3bf7",
+      "last_modified": 1763311886,
+      "size": 2194
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/connect.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/connect.mdx",
+      "hash": "6016d3693df874887c76020a8fa7c24eedcc6af1f464afa9c7c947d3d38a1787",
+      "last_modified": 1763311886,
+      "size": 2723
+    },
+    "./docs/docs.surrealdb.com/aws/viewer-request/index.js": {
+      "path": "./docs/docs.surrealdb.com/aws/viewer-request/index.js",
+      "hash": "a32e78661d63b9a7d9b3f366c1c4224f69faadc5d8315035f1e438dcbeda1360",
+      "last_modified": 1763311885,
+      "size": 9525
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/fastembed.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/fastembed.mdx",
+      "hash": "7c959dfcd357ec3b2a10629ae22ca30108fd0a3fda385ffa3286c1d6c38300d5",
+      "last_modified": 1763311886,
+      "size": 13139
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/import.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/import.mdx",
+      "hash": "219dcb9fc9790e6b2caadbae37bf58be94bdd7b7f905cc78e783921c0911fd06",
+      "last_modified": 1763311886,
+      "size": 787
+    },
+    "./docs/docs.surrealdb.com/src/util/tailwind.ts": {
+      "path": "./docs/docs.surrealdb.com/src/util/tailwind.ts",
+      "hash": "0a442855022e77c2c29368e5310584f5838150fdcbeaad0cd79f72695fe2f006",
+      "last_modified": 1763311886,
+      "size": 190
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/insert.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/insert.mdx",
+      "hash": "028c3ee7e768c6807d477e6f1b5afbd9d5f5cc0d0d355f5aa7f6beb6135f93bc",
+      "last_modified": 1763311886,
+      "size": 2060
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/python.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Embeddings/python.mdx",
+      "hash": "244d92f67e74a7d0173344286b881c73e679d53b1d8d1c39e5585d3505dd84b3",
+      "last_modified": 1763311886,
+      "size": 5312
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/streaming.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/streaming.mdx",
+      "hash": "60a2a381341b8d5dd63b88bc4acd74776420cd1244835833c5b00a0b88d46934",
+      "last_modified": 1763311886,
+      "size": 8052
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/llama-index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/llama-index.mdx",
+      "hash": "faf10d83966eb45401e000ea2a204c836681ff0fceb69fa41bc2972ed8ffbf4b",
+      "last_modified": 1763311886,
+      "size": 5671
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/data-maniplulation.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/data-maniplulation.mdx",
+      "hash": "84c14dcced2ae01b9ffb8105c4235ced475ce14442510313719f4c9897d629d2",
+      "last_modified": 1763311886,
+      "size": 15976
+    },
+    "./docs/attlib_parsing_logic.md": {
+      "path": "./docs/attlib_parsing_logic.md",
+      "hash": "0ffa1bb0ee2227a34c981cff5fd8143d3e1567eb1c6e1d4bfc99017194211de7",
+      "last_modified": 1763311885,
+      "size": 30404
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/info.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/info.mdx",
+      "hash": "bb270235690a429f0ecb91dea41623689cf77313e473db721ca6eef8a172b491",
+      "last_modified": 1763311886,
+      "size": 387
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/frameworks/index.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/frameworks/index.mdx",
+      "hash": "0e7ad32cb126135a80dbab311c635a1534485fafd4097cb1f8a61ac1dc53f6c7",
+      "last_modified": 1763311886,
+      "size": 2307
+    },
+    "./GITHUB_ACTIONS_QUICKSTART.md": {
+      "path": "./GITHUB_ACTIONS_QUICKSTART.md",
+      "hash": "908ae6b333f9d082fcc3ba82b8d3b7ba7c8ca463fac71773cc29d67408b7b5ea",
+      "last_modified": 1763338316,
+      "size": 6737
+    },
+    "./docs/docs.surrealdb.com/plugins/crawler/index.mjs": {
+      "path": "./docs/docs.surrealdb.com/plugins/crawler/index.mjs",
+      "hash": "bf91d1a99e4e4324ac735d8442fbf5d459d67fa25b9a061e48457cee51a1808e",
+      "last_modified": 1763311885,
+      "size": 6300
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/install.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/data-management/surreal-sync/install.mdx",
+      "hash": "ce13c46e47af751f82583a11515bcbf9f233a89825d658f82049b5872e0b4777",
+      "last_modified": 1763311886,
+      "size": 1045
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/export.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/export.mdx",
+      "hash": "fbc2d7759882fffbf0becaeac41949afa64c5048f29742e8143863d67aa5ad43",
+      "last_modified": 1763311886,
+      "size": 1726
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/merge.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/merge.mdx",
+      "hash": "7b849d9208aa5c4fb62e0c18b4a2628b41a66a371b972f16809be7a6f66d3854",
+      "last_modified": 1763311886,
+      "size": 2959
+    },
+    "./docs/IDA_VERIFICATION_SUMMARY.md": {
+      "path": "./docs/IDA_VERIFICATION_SUMMARY.md",
+      "hash": "98c533aa85d084f6d9faab729fe005039c637d6a838685444b0a8bba0b3ec911",
+      "last_modified": 1763311885,
+      "size": 5122
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/authenticate.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/authenticate.mdx",
+      "hash": "0340c43c50edb13770a0dcb070f68a6f6fb16c7e3a39483484300e179d15acfa",
+      "last_modified": 1763311886,
+      "size": 1423
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/use.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/use.mdx",
+      "hash": "9ede94a9d7aa5ecb0742222e5024a73f6abb8e0a53107ece5f1323a64d35e3b9",
+      "last_modified": 1763311886,
+      "size": 1519
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/googleagent.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/googleagent.mdx",
+      "hash": "75b2a7b7b5f0d207b100e355f1c950b746dace1dc85c7f4851335ccb2bfb17de",
+      "last_modified": 1763311886,
+      "size": 13405
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/camel.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-integrations/Frameworks/camel.mdx",
+      "hash": "79655a09ad664ff6f51f67797c124d14234168058a6ca96d34c85977815d136d",
+      "last_modified": 1763311886,
+      "size": 3771
+    },
+    "./test_panels_run.log": {
+      "path": "./test_panels_run.log",
+      "hash": "f0bbbd3852ac33f1b124f554bb35e9e5c194b59506b14eafa152240e085a1cc9",
+      "last_modified": 1763311886,
+      "size": 115354
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/patch.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/methods/patch.mdx",
+      "hash": "fb88b6db2fb06044a2740387c540dd8528edc5233e9e6ffe6ed42edce8fd3fe0",
+      "last_modified": 1763311886,
+      "size": 2033
+    },
+    "./docs/docs.surrealdb.com/scripts/make-llms-txt.ts": {
+      "path": "./docs/docs.surrealdb.com/scripts/make-llms-txt.ts",
+      "hash": "94d38ee691a41e28686ec5558a295e80c6f9f71d4357b20cc6846ce440d28d92",
+      "last_modified": 1763311885,
+      "size": 16561
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/writing-surrealql.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/core/writing-surrealql.mdx",
+      "hash": "dcb173344be8900687920a81487254bf6e2e22d05fa1e7b1e726bbf1734cb755",
+      "last_modified": 1763311886,
+      "size": 3666
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/frameworks/solidjs.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-javascript/frameworks/solidjs.mdx",
+      "hash": "5585657ac0301dd5c64db48b2d8d3a8da2dd2937760018f9114a3deae5c3dd7f",
+      "last_modified": 1763311886,
+      "size": 11923
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/authenticate.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/authenticate.mdx",
+      "hash": "f541e36a547f203c4b455b2aec34e49c052a8d75ee4285a272f2ad0f65a94f3d",
+      "last_modified": 1763311886,
+      "size": 1875
+    },
+    "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/relate.mdx": {
+      "path": "./docs/docs.surrealdb.com/src/content/doc-sdk-dotnet/methods/relate.mdx",
+      "hash": "96a26d44efb57d7df63b8d8538c77044035533cf6eaf99d7a297c2343b9da47a",
+      "last_modified": 1763311886,
+      "size": 2651
+    }
+  },
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "embedding_dimensions": 384,
+  "chunk_hash_version": 2
+}

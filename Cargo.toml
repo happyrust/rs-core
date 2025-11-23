@@ -6,11 +6,14 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = [
+    # "reflect",  # 默认开启 reflect 支持,保持向后兼容
     # "render",
     # "gen_model",
     # "sql",
     # "debug_spatial",
 ] #"occ", "gen_model", "sql"
+reflect = ["dep:bevy_reflect"]  # bevy_reflect 反射系统支持 (用于 ORM 框架)
+use_strategy_transform = []  # 新的策略系统变换计算，默认关闭（opt-in 迁移）
 redb = ["dep:redb"]
 render = ["dep:bevy_render", "dep:bevy_mesh", "dep:bevy_asset"]
 manifold = ["dep:manifold-sys"]
@@ -92,7 +95,7 @@ bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_tr
 ] }
 bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math" }
 bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs" }
-bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect" }
+bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect", optional = true }
 bevy_render = { git = "https://github.com/happyrust/bevy", package = "bevy_render", optional = true }
 bevy_mesh = { git = "https://github.com/happyrust/bevy", package = "bevy_mesh", optional = true }
 bevy_asset = { git = "https://github.com/happyrust/bevy", package = "bevy_asset", optional = true }

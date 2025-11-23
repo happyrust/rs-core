@@ -55,6 +55,7 @@ pub mod bin_data;
 pub mod create_attas_structs;
 pub mod data_center;
 pub mod datacenter_options;
+pub mod dblist_parser;
 pub mod metadata;
 pub mod metadata_manager;
 pub mod negative_mesh_type;
@@ -426,3 +427,6 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
 
     Ok(db_option)
 }
+
+#[cfg(test)]
+pub mod test;

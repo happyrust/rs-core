@@ -14,6 +14,7 @@ pub use crate::types::*;
 use bevy_ecs::component::Component;
 use bevy_ecs::prelude::*;
 use bevy_math::*;
+#[cfg(feature = "reflect")]
 use bevy_reflect::Reflect;
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;

@@ -2,9 +2,11 @@ use crate::orm::traits::*;
 use crate::tool::db_tool::db1_dehash;
 use crate::{get_default_pdms_db_info, orm};
 use anyhow::anyhow;
+#[cfg(feature = "reflect")]
 use bevy_reflect::{DynamicStruct, ReflectFromReflect};
 use sea_orm::DatabaseBackend;
 
+#[cfg(feature = "reflect")]
 pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
     let db_info = get_default_pdms_db_info(); // 获取默认的数据库信息
 
@@ -14,6 +16,12 @@ pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
     Ok(sqls)
 }
 
+#[cfg(not(feature = "reflect"))]
+pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
+    Err(anyhow!("get_all_create_table_sqls requires 'reflect' feature"))
+}
+
+#[cfg(feature = "reflect")]
 pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
     // dbg!(&type_name);
     let type_id = orm::get_type_name_cache()
@@ -42,6 +50,12 @@ pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
     Ok(create_sql)
 }
 
+#[cfg(not(feature = "reflect"))]
+pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
+    Err(anyhow!("gen_create_table_sql_reflect requires 'reflect' feature"))
+}
+
+#[cfg(feature = "reflect")]
 pub fn gen_insert_many_sql(
     type_name: &str,
     data_vec: Vec<DynamicStruct>,
@@ -67,7 +81,16 @@ pub fn gen_insert_many_sql(
     Ok(sql)
 }
 
+#[cfg(not(feature = "reflect"))]
+pub fn gen_insert_many_sql(
+    type_name: &str,
+    data_vec: Vec<serde_json::Value>,
+) -> anyhow::Result<String> {
+    Err(anyhow!("gen_insert_many_sql requires 'reflect' feature"))
+}
+
 #[test]
+#[cfg(feature = "reflect")]
 fn test_do_op_reflect_sql() {
     let sqls = get_all_create_table_sqls().unwrap_or_default();
     let merged_sql = sqls.join(";");

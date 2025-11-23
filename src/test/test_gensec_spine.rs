@@ -1,5 +1,5 @@
 use crate::{
-    init_test_surreal, get_pe, get_named_attmap, query_filter_children,
+    init_test_surreal, get_pe, get_named_attmap, query_filter_deep_children,
     RefU64, RefnoEnum, SUL_DB,
 };
 use crate::material::dq::{get_dq_bran_list, save_dq_material};

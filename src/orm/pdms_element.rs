@@ -1,6 +1,9 @@
 use crate::impl_db_op_trait;
-use crate::orm::traits::{DbOpTrait, ReflectDbOpTrait};
+#[cfg(feature = "reflect")]
+use crate::orm::traits::ReflectDbOpTrait;
+use crate::orm::traits::DbOpTrait;
 use crate::types::*;
+#[cfg(feature = "reflect")]
 use bevy_reflect::{
     DynamicStruct, Reflect, ReflectFromReflect, Struct, TypeRegistry, Typed,
     std_traits::ReflectDefault,
@@ -15,8 +18,8 @@ use surrealdb::types::RecordId;
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, DeriveEntityModel)]
 #[sea_orm(table_name = "PdmsElement")]
-#[derive(Reflect)]
-#[reflect(Default, DbOpTrait)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Default, DbOpTrait))]
 pub struct Model {
     //todo 用来作为sql的主键
     #[sea_orm(primary_key, auto_increment = false)]
@@ -63,6 +66,7 @@ impl Model {
 }
 
 #[test]
+#[cfg(feature = "reflect")]
 fn test_ele_reflect() {
     let mut data = Model::default();
     data.name = "PdmsElement".to_owned();

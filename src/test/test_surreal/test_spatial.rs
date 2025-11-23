@@ -42,6 +42,7 @@ mod test_transform {
         RefU64, RefnoEnum, RefnoSesno, cal_ori_by_extru_axis, cal_ori_by_z_axis_ref_x, rs_surreal,
     };
     use crate::{cal_ori_by_ydir, init_test_surreal};
+    #[cfg(feature = "reflect")]
     use bevy_reflect::Array;
     use glam::{DMat3, DQuat, DVec3, Mat3};
 
