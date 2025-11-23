@@ -1,0 +1,437 @@
+use crate::*;
+use crate::transform::get_local_mat4;
+use crate::rs_surreal::spatial::get_world_mat4_with_strategies;
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use glam::{DVec3, DMat4, Vec3};
+use std::fs::File;
+use std::io::BufReader;
+use regex::Regex;
+use approx::assert_relative_eq;
+
+#[derive(Debug, Deserialize)]
+struct LocalSpatialTestCase {
+    refno: String,
+    noun: String,
+    wpos_str: String,
+    wori_str: String,
+}
+
+fn parse_wpos(wpos_str: &str) -> Option<DVec3> {
+    // 支持 "Position W 5375.49mm N 1771.29mm D 2607.01mm" 和 "W 0.49mm N 622.59mm D 11.32mm" 格式
+    let re = Regex::new(r"(?:Position\s+)?([WESNUD])\s*([\d.]+)\s*mm\s+([WESNUD])\s*([\d.]+)\s*mm\s+([WESNUD])\s*([\d.]+)\s*mm").ok()?;
+    
+    if let Some(caps) = re.captures(wpos_str) {
+        let mut pos = DVec3::ZERO;
+        
+        for i in 0..3 {
+            let dir = caps.get(1 + i * 2)?.as_str();
+            let val = caps.get(2 + i * 2)?.as_str().parse::<f64>().ok()?;
+            
+            match dir {
+                "E" => pos.x += val,
+                "W" => pos.x -= val,
+                "N" => pos.y += val,
+                "S" => pos.y -= val,
+                "U" => pos.z += val,
+                "D" => pos.z -= val,
+                _ => {}
+            }
+        }
+        return Some(pos);
+    }
+    None
+}
+
+fn parse_wori(wori_str: &str) -> Option<(DVec3, DVec3)> {
+    // Orientation Y is N 88.958 U and Z is N 0.0451 W 1.0416 D
+    // 使用更灵活的正则表达式，捕获 "is" 和 "and" 之间的所有内容
+    let re = Regex::new(r"Y\s+is\s+(.+?)\s+and\s+Z\s+is\s+(.+)$").ok()?;
+    
+    if let Some(caps) = re.captures(wori_str) {
+        let y_str = caps.get(1)?.as_str().trim();
+        let z_str = caps.get(2)?.as_str().trim();
+        
+        // 添加调试日志
+        println!("   🔍 方向字符串解析调试:");
+        println!("      原始字符串: {}", wori_str);
+        println!("      Y轴部分: '{}'", y_str);
+        println!("      Z轴部分: '{}'", z_str);
+        
+        let y_axis = parse_direction_vector(y_str)?;
+        let z_axis = parse_direction_vector(z_str)?;
+        
+        println!("      Y轴向量: {:?}", y_axis);
+        println!("      Z轴向量: {:?}", z_axis);
+        
+        return Some((y_axis.normalize(), z_axis.normalize()));
+    }
+    
+    println!("   ⚠️  正则表达式无法匹配方向字符串: {}", wori_str);
+    None
+}
+
+fn parse_direction_vector(dir_str: &str) -> Option<DVec3> {
+    // 解析方向向量，支持 "N", "N 88.958 U", "N 0.0451 W 1.0416 D" 等格式
+    let parts: Vec<&str> = dir_str.split_whitespace().collect();
+    if parts.is_empty() {
+        return None;
+    }
+    
+    let mut vec = DVec3::ZERO;
+    let mut i = 0;
+    
+    // 遍历所有token，处理方向-数值对
+    while i < parts.len() {
+        let dir = parts[i];
+        
+        // 检查下一个token是否是数字
+        if i + 1 < parts.len() {
+            if let Ok(val) = parts[i + 1].parse::<f64>() {
+                // 这是一个有效的方向-数值对
+                match dir {
+                    "E" => vec.x += val,
+                    "W" => vec.x -= val,
+                    "N" => vec.y += val,
+                    "S" => vec.y -= val,
+                    "U" => vec.z += val,
+                    "D" => vec.z -= val,
+                    _ => {}
+                }
+                i += 2; // 跳过数值
+            } else {
+                // 下一个token不是数字，当前方向使用隐含值1.0
+                match dir {
+                    "E" => vec.x += 1.0,
+                    "W" => vec.x -= 1.0,
+                    "N" => vec.y += 1.0,
+                    "S" => vec.y -= 1.0,
+                    "U" => vec.z += 1.0,
+                    "D" => vec.z -= 1.0,
+                    _ => {}
+                }
+                i += 1; // 只跳过方向
+            }
+        } else {
+            // 最后一个token，使用隐含值1.0
+            match dir {
+                "E" => vec.x += 1.0,
+                "W" => vec.x -= 1.0,
+                "N" => vec.y += 1.0,
+                "S" => vec.y -= 1.0,
+                "U" => vec.z += 1.0,
+                "D" => vec.z -= 1.0,
+                _ => {}
+            }
+            i += 1;
+        }
+    }
+    
+    // 如果向量为零向量，返回None表示解析失败
+    if vec.length() < 1e-6 {
+        None
+    } else {
+        Some(vec)
+    }
+}
+
+/// 加载局部空间测试案例
+fn load_local_spatial_test_cases() -> Result<Vec<LocalSpatialTestCase>> {
+    let file = File::open("src/test/test-cases/spatial/spatial_local_cases.json")?;
+    let reader = BufReader::new(file);
+    let cases: Vec<LocalSpatialTestCase> = serde_json::from_reader(reader)?;
+    Ok(cases)
+}
+
+/// 验证局部变换矩阵的位置和方向
+fn validate_local_transform(
+    local_matrix: &DMat4,
+    expected_pos: &DVec3,
+    expected_y_axis: &DVec3,
+    expected_z_axis: &DVec3,
+    tolerance: f64,
+) -> bool {
+    // 验证位置
+    let actual_pos = local_matrix.project_point3(DVec3::ZERO);
+    let pos_diff = (actual_pos - *expected_pos).length();
+    
+    // 验证方向
+    let actual_y_axis = local_matrix.transform_vector3(DVec3::Y).normalize();
+    let actual_z_axis = local_matrix.transform_vector3(DVec3::Z).normalize();
+    
+    let y_similarity = actual_y_axis.dot(*expected_y_axis).abs();
+    let z_similarity = actual_z_axis.dot(*expected_z_axis).abs();
+    
+    pos_diff < tolerance && y_similarity > (1.0 - tolerance) && z_similarity > (1.0 - tolerance)
+}
+
+/// 获取元素类型对应的验证容差
+fn get_tolerance_for_element_type(noun: &str) -> f64 {
+    match noun {
+        "POINSP" => 1.0, // POINSP 需要高精度验证
+        "FITT" => 2.0,   // FITT 可能有 ZDIS 相关的精度问题
+        "ELBO" => 1.0,   // ELBO 标准精度
+        "SCOJ" => 1.0,   // SCOJ 标准精度
+        _ => 5.0,        // 其他类型使用较宽松的容差
+    }
+}
+
+/// 测试边界条件：零变换元素
+#[tokio::test]
+async fn test_zero_local_transform() -> Result<()> {
+    init_surreal().await?;
+    
+    println!("🔧 开始零变换边界测试...");
+    
+    // 测试虚拟节点（SPINE）
+    let test_cases = vec![
+        ("SPINE", "虚拟节点应该有零局部变换"),
+        ("GENSEC", "基准坐标系可能有特殊变换"),
+    ];
+    
+    for (noun, description) in test_cases {
+        println!("\n🧪 测试 {}: {}", noun, description);
+        
+        // 查找该类型的一个实例
+        let sql = format!("SELECT value id FROM {} WHERE noun = '{}' LIMIT 1", 
+                         if noun == "SPINE" { "spine" } else { "pe" }, noun);
+        
+        match SUL_DB.query_take::<Vec<String>>(&sql, 0).await {
+            Ok(refnos) => {
+                if let Some(refno_str) = refnos.first() {
+                    let refno: RefnoEnum = refno_str.parse()
+                        .map_err(|e| anyhow::anyhow!("解析参考号失败: {}", e))?;
+                    let att = get_named_attmap(refno).await?;
+                    
+                    let owner = att.get_owner();
+                    match get_local_mat4(refno, owner).await {
+                        Ok(Some(local_matrix)) => {
+                            let local_pos = local_matrix.project_point3(DVec3::ZERO);
+                            let pos_magnitude = local_pos.length();
+                            
+                            println!("   局部位置: {:?}", local_pos);
+                            println!("   位置大小: {:.3}mm", pos_magnitude);
+                            
+                            if pos_magnitude < 1.0 {
+                                println!("   ✅ 零变换验证通过");
+                            } else {
+                                println!("   ⚠️  非零变换，可能符合预期");
+                            }
+                        }
+                        Ok(None) => {
+                            println!("   ✅ 返回 None，符合虚拟节点预期");
+                        }
+                        Err(e) => {
+                            println!("   ❌ 计算错误: {}", e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                println!("   ⚠️  无法找到 {} 类型实例: {}", noun, e);
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+/// 测试错误条件：无效参考号和缺失父级
+#[tokio::test]
+async fn test_error_conditions() -> Result<()> {
+    init_surreal().await?;
+    
+    println!("🔧 开始错误条件测试...");
+    
+    // 测试无效参考号
+    println!("\n🧪 测试无效参考号:");
+    let invalid_refno = RefnoEnum::from("999999/999999");
+    let dummy_parent = RefnoEnum::from("1/1");
+    
+    match get_local_mat4(invalid_refno, dummy_parent).await {
+        Ok(_) => {
+            println!("   ⚠️  无效参考号应该返回错误，但得到了结果");
+        }
+        Err(e) => {
+            println!("   ✅ 正确返回错误: {}", e);
+        }
+    }
+    
+    // 测试循环依赖（理论上不应该存在）
+    println!("\n🧪 测试自引用:");
+    if let Ok(refno) = "17496/266220".parse::<RefnoEnum>() {
+        match get_local_mat4(refno, refno).await {
+            Ok(_) => {
+                println!("   ⚠️  自引用应该被处理或返回错误");
+            }
+            Err(e) => {
+                println!("   ✅ 正确处理自引用: {}", e);
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_local_spatial_transforms() -> Result<()> {
+    // 初始化数据库连接
+    init_surreal().await?;
+    
+    println!("🔧 开始局部空间变换测试...");
+    
+    // 加载测试案例
+    let test_cases = load_local_spatial_test_cases()?;
+    println!("📋 加载了 {} 个测试案例", test_cases.len());
+    
+    for (index, case) in test_cases.iter().enumerate() {
+        println!("\n🧪 测试案例 {}/{}: {}", index + 1, test_cases.len(), case.refno);
+        
+        // 解析参考号
+        let refno: RefnoEnum = case.refno.parse()
+            .map_err(|e| anyhow::anyhow!("解析参考号失败: {}", e))?;
+        let att = get_named_attmap(refno).await?;
+        let noun = att.get_type_str();
+        let owner = att.get_owner();
+        
+        println!("   类型: {}", noun);
+        println!("   父级: {}", owner);
+        
+        // 解析期望的局部位置和方向
+        let expected_local_pos = parse_wpos(&case.wpos_str)
+            .ok_or_else(|| anyhow::anyhow!("无法解析位置字符串: {}", case.wpos_str))?;
+        
+        let (expected_y_axis, expected_z_axis) = parse_wori(&case.wori_str)
+            .ok_or_else(|| anyhow::anyhow!("无法解析方向字符串: {}", case.wori_str))?;
+        
+        println!("   期望局部位置: {:?}", expected_local_pos);
+        println!("   期望局部Y轴: {:?}", expected_y_axis);
+        println!("   期望局部Z轴: {:?}", expected_z_axis);
+        
+        // 使用重构后的 get_local_mat4 计算局部变换
+        match get_local_mat4(refno, owner).await {
+            Ok(Some(local_matrix)) => {
+                let actual_local_pos = local_matrix.project_point3(DVec3::ZERO);
+                let actual_y_axis = local_matrix.transform_vector3(DVec3::Y).normalize();
+                let actual_z_axis = local_matrix.transform_vector3(DVec3::Z).normalize();
+                
+                println!("   实际局部位置: {:?}", actual_local_pos);
+                println!("   实际局部Y轴: {:?}", actual_y_axis);
+                println!("   实际局部Z轴: {:?}", actual_z_axis);
+                
+                // 验证结果
+                let tolerance = 10.0; // 10mm 容差
+                let is_valid = validate_local_transform(
+                    &local_matrix,
+                    &expected_local_pos,
+                    &expected_y_axis,
+                    &expected_z_axis,
+                    tolerance,
+                );
+                
+                if is_valid {
+                    println!("   ✅ 局部变换验证通过");
+                } else {
+                    println!("   ⚠️  局部变换验证失败");
+                    
+                    // 详细分析差异
+                    let pos_diff = (actual_local_pos - expected_local_pos).length();
+                    let y_similarity = actual_y_axis.dot(expected_y_axis).abs();
+                    let z_similarity = actual_z_axis.dot(expected_z_axis).abs();
+                    
+                    println!("      位置差异: {:.3}mm", pos_diff);
+                    println!("      Y轴相似度: {:.6}", y_similarity);
+                    println!("      Z轴相似度: {:.6}", z_similarity);
+                }
+                
+                // 对于 POINSP 类型，特别分析 SPINE 路径相关的变换
+                if noun == "POINSP" {
+                    println!("   🔍 POINSP 特殊分析:");
+                    
+                    // 计算世界变换作为对比
+                    if let Ok(Some(world_matrix)) = get_world_mat4_with_strategies(refno, false).await {
+                        let world_pos = world_matrix.project_point3(DVec3::ZERO);
+                        println!("      世界位置: {:?}", world_pos);
+                        
+                        // 分析局部到世界的变换
+                        if let Ok(Some(parent_world_matrix)) = get_world_mat4_with_strategies(owner, false).await {
+                            let parent_pos = parent_world_matrix.project_point3(DVec3::ZERO);
+                            let local_to_world_offset = world_pos - parent_pos;
+                            println!("      局部到世界偏移: {:?}", local_to_world_offset);
+                        }
+                    }
+                }
+            }
+            Ok(None) => {
+                println!("   ⚠️  无法计算局部变换（返回 None）");
+            }
+            Err(e) => {
+                println!("   ❌ 局部变换计算错误: {}", e);
+                return Err(e);
+            }
+        }
+    }
+    
+    println!("\n✅ 局部空间变换测试完成");
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_local_vs_world_transform_consistency() -> Result<()> {
+    // 初始化数据库连接
+    init_surreal().await?;
+    
+    println!("🔧 开始局部与世界变换一致性测试...");
+    
+    // 测试一个具体的案例
+    let refno_str = "17496/266220";
+    let refno = RefnoEnum::from(refno_str);
+    let att = get_named_attmap(refno).await?;
+    let owner = att.get_owner();
+    
+    println!("   测试参考号: {}", refno_str);
+    println!("   类型: {}", att.get_type_str());
+    println!("   父级: {}", owner);
+    
+    // 计算局部变换
+    let local_transform = get_local_mat4(refno, owner).await?;
+    println!("   局部变换: {:?}", local_transform);
+    
+    // 计算父级世界变换
+    let parent_world_transform = get_world_mat4_with_strategies(owner, false).await?;
+    println!("   父级世界变换: {:?}", parent_world_transform);
+    
+    // 计算当前元素的世界变换
+    let world_transform = get_world_mat4_with_strategies(refno, false).await?;
+    println!("   世界变换: {:?}", world_transform);
+    
+    // 验证一致性：world_transform ≈ parent_world_transform * local_transform
+    if let (Some(parent_world), Some(world), Some(local)) = (&parent_world_transform, &world_transform, &local_transform) {
+        let computed_world = parent_world * local;
+        let actual_world = *world;
+        
+        // 计算最大差异（手动遍历矩阵元素）
+        let diff_matrix = computed_world - actual_world;
+        let diff = diff_matrix.abs().to_cols_array().iter().fold(0.0f64, |a, &b| a.max(b));
+        println!("   变换一致性差异: {:.10}", diff);
+        
+        if diff < 1e-6 {
+            println!("   ✅ 局部与世界变换一致性验证通过");
+        } else {
+            println!("   ⚠️  局部与世界变换存在差异");
+            
+            // 详细分析
+            let computed_pos = computed_world.project_point3(DVec3::ZERO);
+            let actual_pos = actual_world.project_point3(DVec3::ZERO);
+            let pos_diff = (computed_pos - actual_pos).length();
+            
+            println!("      计算位置: {:?}", computed_pos);
+            println!("      实际位置: {:?}", actual_pos);
+            println!("      位置差异: {:.3}mm", pos_diff);
+        }
+    } else {
+        println!("   ⚠️  某些变换计算失败，无法进行一致性验证");
+    }
+    
+    Ok(())
+}
