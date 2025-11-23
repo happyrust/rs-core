@@ -1,8 +1,9 @@
 use super::TransformStrategy;
 use super::{EndatuError, EndatuResult, EndatuValidator, get_cached_endatu_index};
 use crate::rs_surreal::spatial::{
-    SectionEnd, cal_cutp_ori, cal_ori_by_opdir, cal_ori_by_ydir, cal_ori_by_z_axis_ref_y,
-    cal_spine_orientation_basis_with_ydir, cal_zdis_pkdi_in_section_by_spine, get_spline_path,
+    SectionEnd, construct_basis_x_cutplane, construct_basis_z_opdir, construct_basis_z_y_exact,
+    construct_basis_z_ref_y, construct_basis_z_y_hint, cal_zdis_pkdi_in_section_by_spine,
+    get_spline_path,
 };
 use crate::{NamedAttrMap, RefnoEnum};
 use async_trait::async_trait;
@@ -147,7 +148,7 @@ impl EndAtuStrategy {
             if opdir.length_squared() == 0.0 {
                 return Err(EndatuError::ZeroDirectionVector);
             }
-            quat = cal_ori_by_opdir(opdir.normalize());
+            quat = construct_basis_z_opdir(opdir.normalize());
             has_opdir = true;
         }
 
@@ -155,7 +156,7 @@ impl EndAtuStrategy {
         if !has_opdir {
             // 获取父级挤出方向
             let (pos_extru_dir, spine_ydir) =
-                Self::extract_extrusion_direction(parent_refno, parent_type, att).await?;
+                Self::extract_extrusion_direction(parent_refno, parent_type, att, parent_att).await?;
 
             // 初始化基础旋转
             Self::initialize_rotation(
@@ -176,7 +177,7 @@ impl EndAtuStrategy {
                 }
 
                 let z_axis = if let Some(axis) =
-                    Self::extract_extrusion_direction(parent_refno, parent_type, att)
+                    Self::extract_extrusion_direction(parent_refno, parent_type, att, parent_att)
                         .await?
                         .0
                 {
@@ -185,7 +186,7 @@ impl EndAtuStrategy {
                     DVec3::X
                 };
 
-                quat = cal_ori_by_ydir(ydir_axis.normalize(), z_axis);
+                quat = construct_basis_z_y_exact(ydir_axis.normalize(), z_axis);
             }
 
             // 5. BANG (基础角度) - 在方向确定后应用
@@ -197,8 +198,9 @@ impl EndAtuStrategy {
             // 6. CUTP (切割方向) - 仅在没有明确方向时使用
             let has_local_ori = att.get_rotation().is_some();
             let has_cut_dir = att.contains_key("CUTP");
+            let has_opdir_ref = has_opdir;
 
-            if has_cut_dir && !has_opdir && !has_local_ori {
+            if has_cut_dir && !has_opdir_ref && !has_local_ori {
                 let cut_dir = att
                     .get_dvec3("CUTP")
                     .ok_or_else(|| EndatuError::AttributeMissing("CUTP".to_string()))?;
@@ -208,7 +210,7 @@ impl EndAtuStrategy {
                 }
 
                 let mat3 = DMat3::from_quat(rotation);
-                quat = cal_cutp_ori(mat3.z_axis, cut_dir);
+                quat = construct_basis_x_cutplane(mat3.z_axis, cut_dir);
             }
         }
 
@@ -237,6 +239,7 @@ impl EndAtuStrategy {
         parent_refno: RefnoEnum,
         parent_type: &str,
         att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
     ) -> EndatuResult<(Option<DVec3>, Option<DVec3>)> {
         let parent_is_gensec = parent_type == "GENSEC";
 
@@ -246,9 +249,18 @@ impl EndAtuStrategy {
                     let dir = (first_spine.pt1 - first_spine.pt0).normalize();
                     if dir.length_squared() > 0.01 {
                         let pos_extru_dir = Some(dir.as_dvec3());
-                        let ydir = first_spine.preferred_dir;
+                        let mut ydir = first_spine.preferred_dir.as_dvec3();
+
+                        // 考虑 Parent BANG 对截面方向的影响
+                        let parent_bangle = parent_att.get_f32("BANG").unwrap_or(0.0) as f64;
+                        if parent_bangle.abs() > 0.001 {
+                            let rot =
+                                DQuat::from_axis_angle(dir.as_dvec3(), parent_bangle.to_radians());
+                            ydir = rot * ydir;
+                        }
+
                         let spine_ydir = if ydir.length_squared() > 0.01 {
-                            Some(ydir.as_dvec3())
+                            Some(ydir)
                         } else {
                             None
                         };
@@ -294,9 +306,9 @@ impl EndAtuStrategy {
                 }
 
                 if parent_is_gensec {
-                    *quat = cal_spine_orientation_basis_with_ydir(z_axis, spine_ydir, false);
+                    *quat = construct_basis_z_y_hint(z_axis, spine_ydir, false);
                 } else {
-                    *quat = cal_ori_by_z_axis_ref_y(z_axis);
+                    *quat = construct_basis_z_ref_y(z_axis);
                 }
             }
         }

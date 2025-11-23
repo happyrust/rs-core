@@ -1,8 +1,8 @@
 use super::TransformStrategy;
 use crate::rs_surreal::spatial::{
-    cal_cutp_ori, cal_ori_by_opdir, cal_ori_by_ydir, cal_ori_by_z_axis_ref_y,
-    cal_spine_orientation_basis_with_ydir, cal_zdis_pkdi_in_section_by_spine, get_spline_path,
-    query_pline,
+    construct_basis_x_cutplane, construct_basis_z_opdir, construct_basis_z_y_exact,
+    construct_basis_z_ref_y, construct_basis_z_y_hint, cal_zdis_pkdi_in_section_by_spine,
+    get_spline_path, query_pline,
 };
 use crate::{NamedAttrMap, RefnoEnum, get_named_attmap};
 use async_trait::async_trait;
@@ -43,8 +43,8 @@ impl SjoiCrefHandler {
 
             // 并行获取世界坐标变换（优化性能）
             let (c_world_result, parent_world_result) = tokio::join!(
-                crate::rs_surreal::get_world_mat4(c_ref, false),
-                crate::rs_surreal::get_world_mat4(parent_refno, false)
+                crate::transform::get_world_mat4(c_ref, false),
+                crate::transform::get_world_mat4(parent_refno, false)
             );
 
             let c_world = c_world_result?.unwrap_or(DMat4::IDENTITY);
@@ -138,7 +138,7 @@ impl TransformStrategy for SjoiStrategy {
 
         // 5. 处理父级相关的变换
         let (pos_extru_dir, spine_ydir) =
-            Self::extract_extrusion_direction(parent_refno, parent_type, att).await?;
+            Self::extract_extrusion_direction(parent_refno, parent_type, att, parent_att).await?;
 
         // 6. 处理旋转初始化
         Self::initialize_rotation(
@@ -158,7 +158,7 @@ impl TransformStrategy for SjoiStrategy {
         let mut has_opdir = false;
 
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
-            quat = cal_ori_by_opdir(opdir);
+            quat = construct_basis_z_opdir(opdir);
             has_opdir = true;
             if att
                 .get_str("POSL")
@@ -176,7 +176,7 @@ impl TransformStrategy for SjoiStrategy {
                 } else {
                     DVec3::X
                 };
-                quat = cal_ori_by_ydir(v.normalize(), z_axis);
+                quat = construct_basis_z_y_exact(v.normalize(), z_axis);
             }
 
             // 应用 BANG
@@ -191,7 +191,7 @@ impl TransformStrategy for SjoiStrategy {
 
         if att.contains_key("CUTP") && !has_opdir && !has_local_ori {
             let mat3 = DMat3::from_quat(rotation);
-            quat = cal_cutp_ori(mat3.z_axis, cut_dir);
+            quat = construct_basis_x_cutplane(mat3.z_axis, cut_dir);
             is_world_quat = true;
         }
 
@@ -223,6 +223,7 @@ impl SjoiStrategy {
         parent_refno: RefnoEnum,
         parent_type: &str,
         att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
     ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         let parent_is_gensec = parent_type == "GENSEC";
 
@@ -231,9 +232,18 @@ impl SjoiStrategy {
                 if let Some(first_spine) = spine_paths.first() {
                     let dir = (first_spine.pt1 - first_spine.pt0).normalize();
                     let pos_extru_dir = Some(dir.as_dvec3());
-                    let ydir = first_spine.preferred_dir;
+                    let mut ydir = first_spine.preferred_dir.as_dvec3();
+
+                    // 考虑 Parent BANG 对截面方向的影响
+                    let parent_bangle = parent_att.get_f32("BANG").unwrap_or(0.0) as f64;
+                    if parent_bangle.abs() > 0.001 {
+                        let rot =
+                            DQuat::from_axis_angle(dir.as_dvec3(), parent_bangle.to_radians());
+                        ydir = rot * ydir;
+                    }
+
                     let spine_ydir = if ydir.length_squared() > 0.01 {
-                        Some(ydir.as_dvec3())
+                        Some(ydir)
                     } else {
                         None
                     };
@@ -275,13 +285,13 @@ impl SjoiStrategy {
                         if !z_axis.is_normalized() {
                             return Ok(());
                         }
-                        *quat = cal_spine_orientation_basis_with_ydir(z_axis, spine_ydir, false);
+                        *quat = construct_basis_z_y_hint(z_axis, spine_ydir, false);
                     }
                 } else {
                     if !z_axis.is_normalized() {
                         return Ok(());
                     }
-                    *quat = cal_ori_by_z_axis_ref_y(z_axis);
+                    *quat = construct_basis_z_ref_y(z_axis);
                 }
             }
         }

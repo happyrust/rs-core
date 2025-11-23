@@ -1,7 +1,7 @@
 use super::TransformStrategy;
 use crate::rs_surreal::spatial::{
-    cal_ori_by_opdir, cal_ori_by_ydir, cal_ori_by_z_axis_ref_y,
-    cal_spine_orientation_basis_with_ydir, get_spline_path,
+    construct_basis_z_opdir, construct_basis_z_y_exact, construct_basis_z_ref_y,
+    construct_basis_z_y_hint, get_spline_path,
 };
 use crate::{NamedAttrMap, RefnoEnum};
 use async_trait::async_trait;
@@ -26,6 +26,7 @@ impl GensecExtrusionHandler {
         parent_refno: RefnoEnum,
         parent_type: &str,
         att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
     ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         let parent_is_gensec = parent_type == "GENSEC";
 
@@ -87,7 +88,7 @@ impl TransformStrategy for GensecStrategy {
 
         // 3. 处理 GENSEC 特有的挤出方向
         let (pos_extru_dir, spine_ydir) =
-            GensecExtrusionHandler::extract_gensec_extrusion(parent_refno, parent_type, att)
+            GensecExtrusionHandler::extract_gensec_extrusion(parent_refno, parent_type, att, parent_att)
                 .await?;
 
         // 4. 处理旋转初始化
@@ -108,7 +109,7 @@ impl TransformStrategy for GensecStrategy {
         let mut has_opdir = false;
 
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
-            quat = cal_ori_by_opdir(opdir);
+            quat = construct_basis_z_opdir(opdir);
             has_opdir = true;
             pos += delta_vec;
         } else {
@@ -119,7 +120,7 @@ impl TransformStrategy for GensecStrategy {
                 } else {
                     DVec3::X
                 };
-                quat = cal_ori_by_ydir(v.normalize(), z_axis);
+                quat = construct_basis_z_y_exact(v.normalize(), z_axis);
             }
             // GENSEC: 不应用 BANG
         }
@@ -164,12 +165,12 @@ impl GensecStrategy {
                     if !z_axis.is_normalized() {
                         return Ok(());
                     }
-                    *quat = cal_spine_orientation_basis_with_ydir(z_axis, spine_ydir, false);
+                    *quat = construct_basis_z_y_hint(z_axis, spine_ydir, false);
                 } else {
                     if !z_axis.is_normalized() {
                         return Ok(());
                     }
-                    *quat = cal_ori_by_z_axis_ref_y(z_axis);
+                    *quat = construct_basis_z_ref_y(z_axis);
                 }
             }
         }

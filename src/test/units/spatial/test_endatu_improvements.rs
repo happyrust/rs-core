@@ -306,7 +306,7 @@ async fn test_endatu_backward_compatibility() -> Result<()> {
         let original_result = crate::rs_surreal::get_world_mat4(test_refno, false).await?;
 
         // 获取改进后的策略实现结果
-        let strategy_result = crate::transform::get_world_mat4(test_refno).await?;
+        let strategy_result = crate::transform::get_world_mat4(test_refno, false).await?;
 
         // 对比结果
         match (original_result, strategy_result) {

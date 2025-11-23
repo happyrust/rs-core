@@ -1,8 +1,9 @@
 use super::TransformStrategy;
 use crate::rs_surreal::spatial::{
-    SectionEnd, cal_cutp_ori, cal_ori_by_opdir, cal_ori_by_ydir, cal_ori_by_z_axis_ref_x,
-    cal_ori_by_z_axis_ref_y, cal_spine_orientation_basis, cal_spine_orientation_basis_with_ydir,
-    cal_zdis_pkdi_in_section_by_spine, get_spline_path, query_pline,
+    SectionEnd, construct_basis_x_cutplane, construct_basis_z_opdir, construct_basis_z_y_exact,
+    construct_basis_z_ref_x, construct_basis_z_ref_y, construct_basis_z_default,
+    construct_basis_z_y_hint, cal_zdis_pkdi_in_section_by_spine, get_spline_path, is_virtual_node,
+    query_pline,
 };
 use crate::{
     NamedAttrMap, RefnoEnum, SUL_DB, get_named_attmap, pdms_data::PlinParam,
@@ -136,12 +137,12 @@ impl PoslHandler {
             };
 
             let mut new_quat = if cur_type == "SCOJ" {
-                cal_ori_by_z_axis_ref_x(z_axis) * *quat
+                construct_basis_z_ref_x(z_axis) * *quat
             } else {
                 if let Some(ydir) = eff_ydir {
-                    cal_ori_by_ydir(ydir.normalize(), z_axis)
+                    construct_basis_z_y_exact(ydir.normalize(), z_axis)
                 } else {
-                    cal_ori_by_z_axis_ref_y(z_axis) * *quat
+                    construct_basis_z_ref_y(z_axis) * *quat
                 }
             };
 
@@ -192,7 +193,7 @@ impl YdirHandler {
         let ydir_axis = att.get_dvec3("YDIR");
 
         if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
-            *quat = cal_ori_by_opdir(opdir);
+            *quat = construct_basis_z_opdir(opdir);
             *has_opdir = true;
             *pos += delta_vec;
         } else if let Some(v) = ydir_axis {
@@ -201,7 +202,7 @@ impl YdirHandler {
             } else {
                 DVec3::X
             };
-            *quat = cal_ori_by_ydir(v.normalize(), z_axis);
+            *quat = construct_basis_z_y_exact(v.normalize(), z_axis);
         }
         Ok(())
     }
@@ -244,7 +245,7 @@ impl CutpHandler {
 
         if has_cut_dir && !has_opdir && !has_local_ori {
             let mat3 = DMat3::from_quat(rotation);
-            *quat = cal_cutp_ori(mat3.z_axis, cut_dir);
+            *quat = construct_basis_x_cutplane(mat3.z_axis, cut_dir);
             *is_world_quat = true;
         }
         Ok(())
@@ -263,6 +264,12 @@ impl TransformStrategy for DefaultStrategy {
         parent_att: &NamedAttrMap,
     ) -> anyhow::Result<Option<DMat4>> {
         let cur_type = att.get_type_str();
+        
+        // 虚拟节点（如 SPINE）没有变换，直接跳过
+        if is_virtual_node(cur_type) {
+            return Ok(Some(DMat4::IDENTITY));
+        }
+
         let parent_type = parent_att.get_type_str();
 
         let mut rotation = DQuat::IDENTITY;
@@ -300,7 +307,7 @@ impl TransformStrategy for DefaultStrategy {
 
         // 4. 处理父级相关的变换（Spine/Extrusion）
         let (pos_extru_dir, spine_ydir) =
-            Self::extract_extrusion_direction(parent_refno, parent_type, att).await?;
+            Self::extract_extrusion_direction(parent_refno, parent_type, att, parent_att).await?;
 
         // 5. 处理旋转初始化
         Self::initialize_rotation(
@@ -389,6 +396,7 @@ impl DefaultStrategy {
         parent_refno: RefnoEnum,
         parent_type: &str,
         att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
     ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         let parent_is_gensec = parent_type == "GENSEC";
 
@@ -397,9 +405,18 @@ impl DefaultStrategy {
                 if let Some(first_spine) = spine_paths.first() {
                     let dir = (first_spine.pt1 - first_spine.pt0).normalize();
                     let pos_extru_dir = Some(dir.as_dvec3());
-                    let ydir = first_spine.preferred_dir;
+                    let mut ydir = first_spine.preferred_dir.as_dvec3();
+
+                    // 考虑 Parent BANG 对截面方向的影响
+                    let parent_bangle = parent_att.get_f32("BANG").unwrap_or(0.0) as f64;
+                    if parent_bangle.abs() > 0.001 {
+                        let rot =
+                            DQuat::from_axis_angle(dir.as_dvec3(), parent_bangle.to_radians());
+                        ydir = rot * ydir;
+                    }
+
                     let spine_ydir = if ydir.length_squared() > 0.01 {
-                        Some(ydir.as_dvec3())
+                        Some(ydir)
                     } else {
                         None
                     };
@@ -441,13 +458,13 @@ impl DefaultStrategy {
                         if !z_axis.is_normalized() {
                             return Ok(());
                         }
-                        *quat = cal_spine_orientation_basis_with_ydir(z_axis, spine_ydir, false);
+                        *quat = construct_basis_z_y_hint(z_axis, spine_ydir, false);
                     }
                 } else {
                     if !z_axis.is_normalized() {
                         return Ok(());
                     }
-                    *quat = cal_ori_by_z_axis_ref_y(z_axis);
+                    *quat = construct_basis_z_ref_y(z_axis);
                 }
             }
         }

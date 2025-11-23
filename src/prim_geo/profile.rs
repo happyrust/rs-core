@@ -10,14 +10,14 @@ use crate::prim_geo::spine::{
 };
 use crate::prim_geo::{CateCsgShapeMap, SweepSolid};
 use crate::rs_surreal::query::{get_owner_refno_by_type, get_owner_type_name};
-use crate::rs_surreal::spatial::{cal_spine_orientation_basis, get_spline_pts};
+use crate::rs_surreal::spatial::{construct_basis_z_default, get_spline_pts};
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 use crate::tool::math_tool::{
     dquat_to_pdms_ori_xyz_str, quat_to_pdms_ori_str, to_pdms_ori_str, to_pdms_vec_str,
 };
-use crate::transform::calculate_plax_transform;
+use crate::transform::{calculate_plax_transform, get_local_transform};
 use crate::{RefU64, get_world_transform};
 use anyhow::anyhow;
 use bevy_transform::prelude::Transform;
@@ -119,6 +119,26 @@ fn connect_spine_segments(segments: Vec<Spine3D>) -> anyhow::Result<Vec<SegmentP
     Ok(result)
 }
 
+/// 为给定 PDMS 元素构建与剖面（Profile）相关的 CSG 几何体。
+///
+/// 该函数会根据元素的属性与几何描述生成 Sweep / Loft 实体：
+/// - 当只有 `POSS` / `POSE` 两点时，沿两点连线进行直线拉伸生成剖面实体；
+/// - 当存在 `SPINE` / `POINSP` / `CURVE` 子元素时，将多段 Spine 曲线连接成一条
+///   连续路径，并沿该路径进行放样生成剖面实体；
+/// - 对 `GENSEC` 元素，会优先根据 SPINE 方向计算旋转朝向，其它类型则使用
+///   `PLAX` 属性计算朝向。
+///
+/// 参数：
+/// - `refno`：当前元素的 Refno，用于查询属性且作为结果映射的键；
+/// - `geom_info`：类别几何信息，其中的 `Profile` 描述剖面形状及其 `PLAX` 等参数；
+/// - `csg_shapes_map`：输出用的 CSG 形体映射，本函数会向其中追加生成的
+///   `CateCsgShape`。
+///
+/// 返回值：
+/// - `Ok(true)`：已根据当前元素尝试生成剖面几何（可能包含直线拉伸或沿 Spine 放样）；
+/// - `Ok(false)`：不存在可用的几何或 Spine 路径（例如没有 Profile 或路径为空），
+///   跳过当前元素；
+/// - `Err`：在查询属性或组装路径/几何过程中发生错误。
 pub async fn create_profile_geos(
     refno: RefnoEnum,
     geom_info: &CateGeomsInfo,
@@ -132,20 +152,27 @@ pub async fn create_profile_geos(
     let type_name = att.get_type_str();
     let mut plax = Vec3::Y;
     let mut extrude_dir = DVec3::Z;
-    let mat = crate::get_world_mat4(refno, true)
-        .await?
-        .unwrap_or_default();
-    // dbg!(&mat);
-    let (_, rot, _) = mat.to_scale_rotation_translation();
-    // dbg!(dquat_to_pdms_ori_xyz_str(&rot));
-    let inv_quat = rot.inverse();
-    // dbg!((refno, att.get_dvec3("DRNS"), att.get_dvec3("DRNE")));
+
+    // 使用统一的变换策略计算局部旋转：
+    // 优先通过 get_local_transform(refno, owner) 获取当前构件相对于父节点的局部 Transform，
+    // 然后用其 rotation 的逆把 Parent 空间下的 DRNS/DRNE 转换到本地截面坐标系。
+    // 如果局部变换无法计算，则回退到 ORI 提供的旋转逻辑。
+    let parent_refno = att.get_owner();
+    let inv_local_rot = if parent_refno.is_unset() {
+        att.get_rotation().unwrap_or(DQuat::IDENTITY).inverse()
+    } else {
+        match get_local_transform(refno, parent_refno).await? {
+            Some(local_t) => local_t.rotation.as_dquat().inverse(),
+            None => att.get_rotation().unwrap_or(DQuat::IDENTITY).inverse(),
+        }
+    };
+
     let mut drns = att
         .get_dvec3("DRNS")
-        .map(|x| inv_quat.mul_vec3(x.normalize()));
+        .map(|x| inv_local_rot.mul_vec3(x.normalize()));
     let mut drne = att
         .get_dvec3("DRNE")
-        .map(|x| inv_quat.mul_vec3(x.normalize()));
+        .map(|x| inv_local_rot.mul_vec3(x.normalize()));
     // dbg!((refno, drns, drne));
 
     // 性能优化：提前缓存元素类型信息，避免在循环中重复处理
@@ -156,7 +183,7 @@ pub async fn create_profile_geos(
     } else {
         None
     };
-    let parent_refno = att.get_owner();
+    // let parent_refno = att.get_owner();
     let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" {
         let children_refnos = crate::collect_descendant_filter_ids(&[refno], &["SPINE"], None)
             .await
@@ -272,7 +299,7 @@ pub async fn create_profile_geos(
                                         let spine_direction =
                                             (spine_pts[1] - spine_pts[0]).normalize();
                                         let spine_rotation =
-                                            cal_spine_orientation_basis(spine_direction, false);
+                                            construct_basis_z_default(spine_direction, false);
 
                                         Transform {
                                             rotation: spine_rotation.as_quat(),
@@ -385,7 +412,7 @@ pub async fn create_profile_geos(
                                             let spine_direction =
                                                 (spine_pts[1] - spine_pts[0]).normalize();
                                             let spine_rotation =
-                                                cal_spine_orientation_basis(spine_direction, false);
+                                                construct_basis_z_default(spine_direction, false);
 
                                             Transform {
                                                 rotation: spine_rotation.as_quat(),

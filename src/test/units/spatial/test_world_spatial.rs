@@ -22,7 +22,7 @@ async fn test_world_spatial() -> Result<()> {
         let refno = RefnoEnum::from(case.refno.as_str());
 
         // 使用重构后的策略计算世界坐标
-        let strategy_result = crate::transform::get_world_mat4(refno).await?;
+        let strategy_result = crate::transform::get_world_mat4(refno, false).await?;
         
         if let Some(strategy_mat) = strategy_result {
             // 提取位置和方向
@@ -89,8 +89,8 @@ async fn test_world_spatial_consistency() -> Result<()> {
         let refno = RefnoEnum::from(case.refno.as_str());
 
         // 多次计算验证一致性
-        let result1 = crate::transform::get_world_mat4(refno).await?;
-        let result2 = crate::transform::get_world_mat4(refno).await?;
+        let result1 = crate::transform::get_world_mat4(refno, false).await?;
+        let result2 = crate::transform::get_world_mat4(refno, false).await?;
 
         match (result1, result2) {
             (Some(mat1), Some(mat2)) => {

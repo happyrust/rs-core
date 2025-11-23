@@ -658,6 +658,15 @@ pub enum RefnoEnum {
     SesRef(RefnoSesno),
 }
 
+impl RefnoEnum {
+    pub fn is_unset(&self) -> bool {
+        match self {
+            RefnoEnum::Refno(r) => r.is_unset(),
+            RefnoEnum::SesRef(s) => s.refno.is_unset(),
+        }
+    }
+}
+
 impl Default for RefnoEnum {
     fn default() -> Self {
         RefnoEnum::Refno(Default::default())

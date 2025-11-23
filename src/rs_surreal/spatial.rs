@@ -5,10 +5,10 @@ use crate::RefnoEnum;
 use crate::spatial::sqlite;
 use crate::tool::math_tool;
 use crate::tool::math_tool::{
-    cal_quat_by_zdir_with_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str,
+    construct_basis_z_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str,
 };
 use crate::utils::take_vec;
-use crate::transform::get_local_mat4;
+pub use crate::transform::{get_local_mat4, get_world_mat4};
 use crate::{
     NamedAttrMap, RefU64, SUL_DB, SurrealQueryExt,
     consts::HAS_PLIN_TYPES,
@@ -37,7 +37,7 @@ use std::{f32::consts::E, time::Instant};
 
 /// 根据给定的方向向量 `v` 构造一个右手坐标系，
 /// 使 `v` 作为局部坐标系的 Z 轴，并返回对应的双精度四元数。
-pub fn cal_ori_by_z_axis_ref_x(v: DVec3) -> DQuat {
+pub fn construct_basis_z_ref_x(v: DVec3) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::Y
     } else {
@@ -53,7 +53,7 @@ pub fn cal_ori_by_z_axis_ref_x(v: DVec3) -> DQuat {
 /// 针对 SPINE 方向的专用方位计算：
 /// 计算基于 SPINE 挤出方向的方位基底（orientation basis），
 /// 允许通过 `neg` 反转参考轴，用于处理土建/管线中“反向挤出”等特殊情况。
-pub fn cal_spine_orientation_basis(v: DVec3, neg: bool) -> DQuat {
+pub fn construct_basis_z_default(v: DVec3, neg: bool) -> DQuat {
     let is_vertical = v.normalize().dot(DVec3::Z).abs() > 0.999;
 
     let (x_dir, y_dir) = if is_vertical {
@@ -97,7 +97,7 @@ pub fn cal_spine_orientation_basis(v: DVec3, neg: bool) -> DQuat {
 /// - Z 轴 = spine_dir（归一化）
 /// - Y 轴 ≈ ydir（正交化后）
 /// - X 轴 = Y × Z（右手系）
-pub fn cal_spine_orientation_basis_with_ydir(
+pub fn construct_basis_z_y_hint(
     spine_dir: DVec3,
     ydir: Option<DVec3>,
     neg: bool,
@@ -142,7 +142,7 @@ pub fn cal_spine_orientation_basis_with_ydir(
 
 /// 根据 OPDI（操作方向）向量计算局部方位。
 /// 对接 PDMS 中 OPDI 方向，保证当方向接近全局 Z 轴时仍能选取稳定的参考轴。
-pub fn cal_ori_by_opdir(v: DVec3) -> DQuat {
+pub fn construct_basis_z_opdir(v: DVec3) -> DQuat {
     let ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::NEG_Y * v.z.signum()
     } else {
@@ -157,7 +157,7 @@ pub fn cal_ori_by_opdir(v: DVec3) -> DQuat {
 
 ///通过 ydir 计算方位 , 跟 z 轴这个参考轴有关系。
 /// `y_ref_axis` 为期望的局部 Y 方向，`z_dir` 为参考 Z 轴方向。
-pub fn cal_ori_by_ydir(mut y_ref_axis: DVec3, z_dir: DVec3) -> DQuat {
+pub fn construct_basis_z_y_exact(mut y_ref_axis: DVec3, z_dir: DVec3) -> DQuat {
     // 如果 y_ref 与 z_dir 平行（共线），则原来的 y_ref 无效，需选取一个新的参考轴
     if y_ref_axis.dot(z_dir).abs() > 0.99 {
         // 如果 z_dir 接近 Z 轴（垂直），则选 Y 轴作为临时参考
@@ -185,13 +185,13 @@ fn test_cal_ydir_ori() {
     let z_dir = parse_expr_to_dir("-X").unwrap();
     let y_ref_axis = parse_expr_to_dir("X 30 Y").unwrap();
 
-    let rot = cal_ori_by_ydir(y_ref_axis, z_dir);
+    let rot = construct_basis_z_y_exact(y_ref_axis, z_dir);
     assert_eq!(dquat_to_pdms_ori_xyz_str(&rot, true), "Y is Y and Z is -X");
 
     let z_dir = parse_expr_to_dir("-X").unwrap();
     let y_ref_axis = parse_expr_to_dir("Z 30 XY").unwrap();
 
-    let rot = cal_ori_by_ydir(y_ref_axis, z_dir);
+    let rot = construct_basis_z_y_exact(y_ref_axis, z_dir);
     assert_eq!(dquat_to_pdms_ori_xyz_str(&rot, true), "Y is Z and Z is -X");
 }
 
@@ -229,7 +229,7 @@ fn test_named_attmap_get_rotation_with_string() {
     }
 }
 
-pub fn cal_spine_ori(v: DVec3, y_ref_dir: DVec3) -> DQuat {
+pub fn construct_basis_z_y_raw(v: DVec3, y_ref_dir: DVec3) -> DQuat {
     let x_dir = y_ref_dir.cross(v).normalize();
     let y_dir = v.cross(x_dir).normalize();
 
@@ -237,9 +237,9 @@ pub fn cal_spine_ori(v: DVec3, y_ref_dir: DVec3) -> DQuat {
     rotation
 }
 
-/// 与 `cal_ori_by_z_axis_ref_x` 类似，但以 Y 轴为参考来构造局部坐标系，
+/// 与 `construct_basis_z_ref_x` 类似，但以 Y 轴为参考来构造局部坐标系，
 /// 主要用于需要约束局部 Y 方向的场景（例如部分土建截面）。
-pub fn cal_ori_by_z_axis_ref_y(v: DVec3) -> DQuat {
+pub fn construct_basis_z_ref_y(v: DVec3) -> DQuat {
     let mut ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::Y
     } else {
@@ -255,7 +255,7 @@ pub fn cal_ori_by_z_axis_ref_y(v: DVec3) -> DQuat {
 
 /// 根据挤出方向 `v` 计算截面方位，`neg` 为 true 时反转参考 Y 轴。
 /// 主要用于 GENSEC / SCTN 等“沿轴挤出”几何的局部坐标构造。
-pub fn cal_ori_by_extru_axis(v: DVec3, neg: bool) -> DQuat {
+pub fn construct_basis_z_extrusion(v: DVec3, neg: bool) -> DQuat {
     let mut y_ref_dir = if v.normalize().dot(DVec3::Z).abs() > 0.999 {
         DVec3::X
     } else {
@@ -274,7 +274,7 @@ pub fn cal_ori_by_extru_axis(v: DVec3, neg: bool) -> DQuat {
 
 ///根据 CUTP 和轴方向，来计算 JOINT 的方位，
 /// 当 CUTP 与轴接近平行时会退化为固定 Z 轴的稳定解。
-pub fn cal_cutp_ori(axis_dir: DVec3, cutp: DVec3) -> DQuat {
+pub fn construct_basis_x_cutplane(axis_dir: DVec3, cutp: DVec3) -> DQuat {
     // let cutp = parse_expr_to_dir("Y 36.85 -X").unwrap();
     // let axis_dir = parse_expr_to_dir("Y 36.85 -X").unwrap();
     let mut y_axis = cutp.cross(axis_dir).normalize();
@@ -354,667 +354,8 @@ pub async fn get_world_transform(refno: RefnoEnum) -> anyhow::Result<Option<Tran
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
 
-///获得世界坐标系
-///使用 cache，需要从 db manager 里移除出来。
-///获得世界坐标系矩阵，如果已经存在数据则直接从缓存读取。
-/// `is_local == true` 时返回相对于父节点的局部变换，否则返回从根到自身的世界矩阵。
-///
-/// # Deprecated
-///
-/// 此函数已被弃用，请使用 `get_world_mat4` 替代。
-/// 新函数使用策略模式，提供更好的可维护性和扩展性。
-///
-/// # 迁移指南
-///
-/// 将以下代码：
-/// ```rust
-/// let transform = get_world_mat4_old(refno, is_local).await?;
-/// ```
-///
-/// 替换为：
-/// ```rust
-/// let transform = get_world_mat4(refno, is_local).await?;
-/// ```
-#[deprecated(
-    note = "Use get_world_mat4 instead for better maintainability and strategy pattern support"
-)]
-#[cached(result = true)]
-pub async fn get_world_mat4_old(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
-    #[cfg(feature = "profile")]
-    let start_ancestors = std::time::Instant::now();
-    let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
-    #[cfg(feature = "profile")]
-    let elapsed_ancestors = start_ancestors.elapsed();
-    #[cfg(feature = "profile")]
-    println!("get_ancestor_attmaps took {:?}", elapsed_ancestors);
 
-    // Debug: check ancestors content
-    // if ancestors.is_empty() {
-    //     println!("DEBUG: ancestors is empty for {}", refno);
-    // } else {
-    //     let first = ancestors.first().unwrap().get_refno_or_default();
-    //     let last = ancestors.last().unwrap().get_refno_or_default();
-    //     println!("DEBUG: ancestors for {}: len={}, first={}, last={}", refno, ancestors.len(), first, last);
-    // }
 
-    let start_refnos = std::time::Instant::now();
-    let ancestor_refnos = crate::query_ancestor_refnos(refno).await?;
-    let elapsed_refnos = start_refnos.elapsed();
-    // println!("query_ancestor_refnos took {:?}", elapsed_refnos);
-
-    // 检查 ancestors 是否包含 self
-    let has_self = ancestors.iter().any(|a| a.get_refno_or_default() == refno);
-    if !has_self {
-        // println!("DEBUG: Adding self to ancestors for {}", refno);
-        let self_att = get_named_attmap(refno).await?;
-        // 注意：get_ancestor_attmaps 返回顺序通常是 [Parent, GrandParent, ... Root] (Bottom-Up)
-        // 或者 [Root, ..., GrandParent, Parent] (Top-Down)?
-        // 根据 reverse() 的使用，推测原始是 Top-Down (Root -> Parent)? 
-        // 或者是 Bottom-Up (Parent -> Root)?
-        // 旧代码：ancestors.reverse(); ... windows(2): (Parent, Child)
-        // 如果 reverse 后是 Top-Down (Root -> Leaf)，说明原始是 Bottom-Up (Leaf -> Root)。
-        // 如果原始是 [Parent, Root]，reverse -> [Root, Parent]。
-        // 无论如何，self 应该是 Leaf，所以应该在 Root->Leaf 列表的末尾。
-        // 如果原始是 Bottom-Up，self 应该在最前面?
-        // fn::ancestor(x) -> [x, parent, root] or [root, parent, x]?
-        // SurrealDB fn::ancestor 通常返回 path。
-        
-        // 假设我们需要 [Root, Parent, Self] 顺序来进行计算。
-        // 如果原始 ancestors 是 [Parent, Root] (Bottom-Up without self)
-        // 我们 insert(0, self) -> [Self, Parent, Root]
-        // reverse -> [Root, Parent, Self]. Correct.
-        
-        ancestors.insert(0, self_att);
-    }
-
-    if ancestor_refnos.len() <= 1 {
-        return Ok(Some(DMat4::IDENTITY));
-    }
-    ancestors.reverse();
-    let mut rotation = DQuat::IDENTITY;
-    let mut translation = DVec3::ZERO;
-    let mut prev_mat4 = DMat4::IDENTITY;
-    let mut mat4 = DMat4::IDENTITY;
-
-    let mut owner = refno;
-    for (index, atts) in ancestors.windows(2).enumerate() {
-        let o_att = &atts[0];
-        let att = &atts[1];
-        let cur_refno = att.get_refno_or_default();
-        let cur_type = att.get_type_str();
-        // dbg!(cur_type);
-
-        // 检查是否为虚拟节点，如果是则跳过transform计算
-        if is_virtual_node(cur_type) {
-            // 虚拟节点使用单位变换，不修改translation和rotation
-            continue;
-        }
-
-        let owner_type = o_att.get_type_str();
-        owner = att.get_owner();
-        prev_mat4 = mat4;
-
-        let mut pos = att.get_position().unwrap_or_default().as_dvec3();
-        // dbg!(pos);
-        let mut quat = DQuat::IDENTITY;
-        let mut is_world_quat = false;
-        let mut bangle = att.get_f32("BANG").unwrap_or_default() as f64;
-        let mut apply_bang = att.contains_key("BANG") && bangle != 0.0;
-        //只有GENSEC需要隐藏自己的方位
-        if cur_type == "GENSEC" {
-            apply_bang = false;
-        }
-        //土建特殊情况的一些处理
-        let owner_is_gensec = owner_type == "GENSEC";
-        let mut pos_extru_dir: Option<DVec3> = None;
-        if owner_is_gensec {
-            //找到spine，获取spine的两个顶点
-            if let Ok(pts) = get_spline_pts(owner).await {
-                if pts.len() == 2 {
-                    pos_extru_dir = Some((pts[1] - pts[0]).normalize());
-                }
-            }
-        } else if let Some(end) = att.get_dpose()
-            && let Some(start) = att.get_dposs()
-        {
-            pos_extru_dir = Some((end - start).normalize());
-            // dbg!(pos_extru_dir);
-        }
-        let is_sjoi = cur_type == "SJOI";
-        let has_cut_dir = att.contains_key("CUTP");
-        let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
-        if is_sjoi {
-            let cut_len = att.get_f64("CUTB").unwrap_or_default();
-            // dbg!(&cut_dir);
-            //先判断是否有cref
-            //如果CUTP 没有z分量，则不考虑这些
-            if let Some(c_ref) = att.get_foreign_refno("CREF")
-                && let Ok(c_att) = get_named_attmap(c_ref).await
-            {
-                let jline = c_att.get_str("JLIN").map(|x| x.trim()).unwrap_or("NA");
-                // dbg!(jline);
-                if let Ok(Some(param)) = query_pline(c_ref, jline.into()).await {
-                    let jlin_pos = param.pt;
-                    let jlin_plax = param.plax;
-                    // dbg!((&jlin_pos, &jlin_plax));
-                    let c_t: Transform = Box::pin(get_world_transform(c_ref))
-                        .await?
-                        .unwrap_or_default();
-                    let o_t: Transform = Box::pin(get_world_transform(o_att.get_owner()))
-                        .await?
-                        .unwrap_or_default();
-                    let jlin_offset = c_t.rotation.as_dquat() * jlin_pos;
-                    // dbg!(jlin_offset);
-                    let c_axis = c_t.rotation.as_dquat() * DVec3::Z;
-                    // dbg!(c_axis);
-                    let c_wpos = c_t.translation.as_dvec3() + jlin_offset;
-                    // dbg!(c_wpos);
-                    // 是沿着附属的梁的轴方向再平移
-                    let z_axis = o_t.rotation.as_dquat() * DVec3::Z;
-                    // dbg!(z_axis);
-                    // 取cref 对应构件的PLIN的位置
-                    //如果垂直了，CUTP就是失效，不用考虑加冗余
-                    let same_plane = c_axis.dot(cut_dir).abs() > 0.001;
-                    if same_plane {
-                        // dbg!(o_t.translation);
-                        let delta = (c_wpos - o_t.translation.as_dvec3()).dot(z_axis);
-                        // dbg!(delta);
-                        translation = o_t.translation.as_dvec3() + delta * z_axis;
-                        // dbg!(translation);
-                        //如果 jlin_axis 和 z_axis 垂直
-                        let perpendicular = z_axis.dot(c_axis).abs() < 0.001;
-                        if !perpendicular {
-                            translation += z_axis * cut_len;
-                            // dbg!(translation);
-                        }
-                    }
-                }
-            } else {
-            }
-        }
-        if att.contains_key("ZDIS") {
-            if cur_type == "ENDATU" {
-                //需要判断是第几个ENDATU
-                let endatu_index: Option<u32> =
-                    crate::get_index_by_noun_in_parent(owner, cur_refno, Some("ENDATU"))
-                        .await
-                        .unwrap();
-                let section_end = if endatu_index == Some(0) {
-                    Some(SectionEnd::START)
-                } else if endatu_index == Some(1) {
-                    Some(SectionEnd::END)
-                } else {
-                    None
-                };
-                // dbg!(&section_end);
-                if let Some(result) = cal_zdis_pkdi_in_section_by_spine(
-                    owner,
-                    0.0,
-                    att.get_f32("ZDIS").unwrap_or_default(),
-                    section_end,
-                )
-                .await?
-                {
-                    pos += result.1;
-                    quat = result.0;
-                    // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat, true));
-                    translation = translation + rotation * pos;
-                    rotation = quat;
-                    mat4 = DMat4::from_rotation_translation(rotation, translation);
-                    continue;
-                }
-            } else {
-                let zdist = att.get_f32("ZDIS").unwrap_or_default();
-                let pkdi = att.get_f32("PKDI").unwrap_or_default();
-                //zdis 起点应该是从poss 开始，所以这里需要加上这个偏移
-                if let Some((tmp_quat, tmp_pos)) =
-                    cal_zdis_pkdi_in_section_by_spine(owner, pkdi, zdist, None).await?
-                {
-                    // 对于 POINSP，需要保留原始位置并加上 ZDIS 偏移
-                    if cur_type == "POINSP" {
-                        pos = pos + tmp_pos; // 保留原始局部位置，加上偏移
-                    } else {
-                        pos = tmp_pos; // 其他类型使用计算的位置
-                    }
-                    quat = tmp_quat;
-                    // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat, true));
-                    // dbg!(tmp_pos);
-                    // translation = translation + rotation * tmp_pos;
-                    // dbg!(translation);
-                    is_world_quat = true;
-                    // rotation = quat;
-                    // mat4 = DMat4::from_rotation_translation(rotation, translation);
-                    // continue;
-                } else {
-                    translation += rotation * DVec3::Z * zdist as f64;
-                    // dbg!(translation);
-                }
-            }
-        }
-        if att.contains_key("NPOS") {
-            let npos = att.get_vec3("NPOS").unwrap_or_default();
-            // dbg!(npos);
-            pos += npos.as_dvec3();
-            // dbg!(pos);
-        }
-
-        //如果posl有，就不起用CUTB，相当于CUTB是一个手动对齐
-        //直接在世界坐标系下求坐标，跳过局部求解
-        //有 cref 的时候，需要保持方向和 cref 一致
-        let ydir_axis = att.get_dvec3("YDIR");
-        let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
-        let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
-        let mut has_opdir = false;
-
-        let quat_v = att.get_rotation();
-        let has_local_ori = quat_v.is_some();
-        let mut need_bangle = false;
-        //特殊处理的类型
-        if (!owner_is_gensec && has_local_ori) || (owner_is_gensec && cur_type == "TMPL") {
-            quat = quat_v.unwrap_or_default();
-        } else {
-            if let Some(z_axis) = pos_extru_dir {
-                need_bangle = true;
-                if owner_is_gensec {
-                    //todo 待测试特殊情况
-                    if !is_world_quat {
-                        if !z_axis.is_normalized() {
-                            return Ok(None);
-                        }
-                        // 对于 SPINE 类型，使用 YDIR 来计算正确的方向
-                        if cur_type == "SPINE"
-                            && let Some(ydir) = ydir_axis
-                        {
-                            quat = cal_spine_orientation_basis_with_ydir(z_axis, Some(ydir), false);
-                        } else {
-                            quat = cal_spine_orientation_basis(z_axis, false);
-                        }
-                    }
-                } else {
-                    if !z_axis.is_normalized() {
-                        return Ok(None);
-                    }
-                    //跳过是owner sctn或者 WALL 的计算
-                    quat = cal_ori_by_z_axis_ref_y(z_axis);
-                    // dbg!(math_tool::dquat_to_pdms_ori_xyz_str(&quat, false));
-                }
-            }
-        }
-
-        if let Some(opdir) = att.get_dvec3("OPDI").map(|x| x.normalize()) {
-            quat = cal_ori_by_opdir(opdir);
-            has_opdir = true;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
-            if pos_line.is_empty() {
-                pos += delta_vec;
-            }
-        }
-
-        //todo fix 处理 posl的计算
-        if !pos_line.is_empty() {
-            // dbg!(&cur_type);
-            //plin里的位置偏移
-            let mut plin_pos = DVec3::ZERO;
-            let mut pline_plax = DVec3::X;
-            // POSL 的处理, 获得父节点的形集, 自身的形集处理，已经在profile里处理过
-            let mut is_lmirror = false;
-            let ancestor_refnos = crate::query_filter_ancestors(owner, &HAS_PLIN_TYPES).await?;
-            if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
-                let target_own_att = crate::get_named_attmap(plin_owner)
-                    .await
-                    .unwrap_or_default();
-                is_lmirror = target_own_att.get_bool("LMIRR").unwrap_or_default();
-                let own_pos_line = target_own_att.get_str("JUSL").unwrap_or("NA");
-                let own_pos_line = if own_pos_line.is_empty() {
-                    "NA"
-                } else {
-                    own_pos_line
-                };
-
-                if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
-                    plin_pos = param.pt;
-                    pline_plax = param.plax;
-                    #[cfg(feature = "debug_spatial")]
-                    {
-                        dbg!(plin_owner);
-                        dbg!(pos_line);
-                        dbg!(&param);
-                    }
-                }
-                if let Ok(Some(own_param)) =
-                    crate::query_pline(plin_owner, own_pos_line.into()).await
-                {
-                    plin_pos -= own_param.pt;
-                    #[cfg(feature = "debug_spatial")]
-                    {
-                        dbg!(own_pos_line);
-                        dbg!(&own_param);
-                    }
-                }
-                #[cfg(feature = "debug_spatial")]
-                {
-                    dbg!(&plin_pos);
-                }
-            }
-            let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
-            let plin_pos = if is_lmirror { -plin_pos } else { plin_pos };
-            let mut new_quat = {
-                if cur_type == "FITT" {
-                    //受到bang的影响，需要变换
-                    //绕着z轴旋转
-                    let y_axis = DQuat::from_axis_angle(z_axis, bangle.to_radians()) * DVec3::Z;
-                    let x_axis = y_axis.cross(z_axis).normalize();
-                    // dbg!((x_axis, y_axis, z_axis));
-                    DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis))
-                } else if cur_type == "SCOJ" {
-                    cal_ori_by_z_axis_ref_x(z_axis) * quat
-                } else {
-                    cal_ori_by_z_axis_ref_y(z_axis) * quat
-                }
-            };
-            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
-            //处理有YDIR的情况
-            if let Some(v) = ydir_axis {
-                new_quat = cal_ori_by_ydir(v.normalize(), z_axis);
-            }
-            if apply_bang {
-                new_quat = new_quat * DQuat::from_rotation_z(bangle.to_radians());
-            }
-            // dbg!(dquat_to_pdms_ori_xyz_str(&new_quat, true));
-            let offset = rotation * (pos + plin_pos) + rotation * new_quat * delta_vec;
-            #[cfg(feature = "debug_spatial")]
-            {
-                dbg!(&pos);
-                dbg!(&plin_pos);
-                dbg!(&delta_vec);
-                dbg!(offset);
-            }
-            translation += offset;
-            rotation = rotation * new_quat;
-            // dbg!(dquat_to_pdms_ori_xyz_str(&rotation, true));
-        } else {
-            if let Some(v) = ydir_axis {
-                let z_axis = if let Some(axis) = pos_extru_dir {
-                    axis
-                } else {
-                    DVec3::X
-                };
-                // dbg!((v, z_axis));
-                quat = cal_ori_by_ydir(v.normalize(), z_axis);
-                // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
-            }
-            if apply_bang {
-                quat = quat * DQuat::from_rotation_z(bangle.to_radians());
-            }
-            if has_cut_dir && !has_opdir && !has_local_ori {
-                // dbg!(cut_dir);
-                let mat3 = DMat3::from_quat(rotation);
-                // dbg!((mat3.z_axis, cut_dir));
-                quat = cal_cutp_ori(mat3.z_axis, cut_dir);
-                is_world_quat = true;
-            }
-
-            // 对于 POINSP 类型，需要特殊处理以确保正确的世界坐标
-            // POINSP的局部坐标系：Y=沿SPINE路径距离，X/Z=横向偏移
-            if cur_type == "POINSP" {
-                // 获取 POINSP 的本地位置
-                let local_pos = att.get_position().unwrap_or_default().as_dvec3();
-
-                // 检查父级是否为SPINE（POINSP通常是SPINE的子节点）
-                if let Ok(spine_att) = get_named_attmap(owner).await {
-                    if spine_att.get_type_str() == "SPINE" {
-                        // 处理SPINE子节点的正确变换逻辑
-                        if let Some(spine_transform) =
-                            calculate_poinsp_spine_transform(owner, local_pos).await
-                        {
-                            // 应用SPINE变换到当前变换链
-                            translation =
-                                translation + rotation * spine_transform.w_axis.truncate();
-                            rotation = rotation * DQuat::from_mat4(&spine_transform);
-                            mat4 = DMat4::from_rotation_translation(rotation, translation);
-                            continue;
-                        }
-                    }
-                }
-
-                // 回退到原始逻辑：非SPINE子节点或SPINE变换失败的情况
-                // 找到 GENSEC 作为基准坐标系
-                let mut current_owner = owner;
-                let mut gensec_refno = refno;
-
-                // 向上查找 GENSEC
-                for _i in 0..5 {
-                    // 限制查找深度避免无限循环
-                    if let Ok(current_att) = get_named_attmap(current_owner).await {
-                        let current_type = current_att.get_type_str();
-                        if current_type == "GENSEC" || current_type == "WALL" {
-                            gensec_refno = current_owner;
-                            break;
-                        }
-                        current_owner = current_att.get_owner();
-                    } else {
-                        break;
-                    }
-                }
-
-                // 如果找到了 GENSEC，使用 GENSEC 的世界矩阵 + POINSP 本地位置
-                if gensec_refno != refno {
-                    if let Ok(gensec_att) = get_named_attmap(gensec_refno).await {
-                        let gensec_pos = gensec_att.get_position().unwrap_or_default().as_dvec3();
-                        // 直接设置最终世界坐标：GENSEC位置 + POINSP本地位置
-                        translation = translation + rotation * gensec_pos + rotation * local_pos;
-                        mat4 = DMat4::from_rotation_translation(rotation, translation);
-                        continue;
-                    }
-                }
-            }
-
-            translation = translation + rotation * pos;
-            if is_world_quat {
-                rotation = quat;
-            } else {
-                rotation = rotation * quat;
-            }
-        }
-
-        mat4 = DMat4::from_rotation_translation(rotation, translation);
-    }
-
-    if rotation.is_nan() || translation.is_nan() {
-        return Ok(None);
-    }
-
-    if is_local {
-        mat4 = prev_mat4.inverse() * mat4;
-    }
-
-    Ok(Some(mat4))
-}
-
-/// 使用策略模式重构的世界矩阵计算函数
-///
-/// 这是 `get_world_mat4` 的重构版本，使用新的策略系统（TransformStrategy）
-/// 来计算变换矩阵，提供更好的可维护性和扩展性。
-///
-/// # 特性标志
-///
-/// 此函数的行为受 `use_strategy_transform` 特性标志控制：
-/// - **启用时**：使用新的策略系统
-/// - **禁用时**：回退到旧的 `get_world_mat4` 实现
-///
-/// 默认情况下该特性是关闭的（opt-in 迁移策略），需要显式启用：
-/// ```bash
-/// cargo run --features use_strategy_transform
-/// ```
-///
-/// # Arguments
-/// * `refno` - 目标构件的参考号
-/// * `is_local` - 如果为 true，返回相对于父节点的局部变换；否则返回世界变换
-///
-/// # Returns
-/// * `Ok(Some(DMat4))` - 计算得到的变换矩阵
-/// * `Ok(None)` - 如果无法计算变换
-/// * `Err` - 如果计算过程中发生错误
-///
-/// # 特性
-/// - 使用策略模式支持不同构件类型的专门计算逻辑
-/// - 与重构后的 `get_local_mat4` 函数集成
-/// - 保持与原函数相同的 API 接口
-/// - 支持缓存优化
-/// - 生产安全的特性标志回退机制
-pub async fn get_world_mat4(
-    refno: RefnoEnum,
-    is_local: bool,
-) -> anyhow::Result<Option<DMat4>> {
-    // 新的策略系统实现
-    get_world_mat4_with_strategies_impl(refno, is_local).await
-}
-
-/// 新策略系统的具体实现
-///
-/// 此函数包含使用策略模式的世界矩阵计算逻辑
-async fn get_world_mat4_with_strategies_impl(
-    refno: RefnoEnum,
-    is_local: bool,
-) -> anyhow::Result<Option<DMat4>> {
-    #[cfg(feature = "profile")]
-    let start_ancestors = std::time::Instant::now();
-    let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
-    #[cfg(feature = "profile")]
-    let elapsed_ancestors = start_ancestors.elapsed();
-    #[cfg(feature = "profile")]
-    println!("get_ancestor_attmaps took {:?}", elapsed_ancestors);
-
-    #[cfg(feature = "profile")]
-    let start_refnos = std::time::Instant::now();
-    let ancestor_refnos = crate::query_ancestor_refnos(refno).await?;
-    #[cfg(feature = "profile")]
-    let elapsed_refnos = start_refnos.elapsed();
-    #[cfg(feature = "profile")]
-    println!("query_ancestor_refnos took {:?}", elapsed_refnos);
-
-    // 检查 ancestors 是否包含 self，如果不包含则添加
-    // get_ancestor_attmaps 通常返回 [Parent, GrandParent, ... Root]
-    // 我们需要将其补充为 [Self, Parent, ... Root]
-    let has_self = ancestors.iter().any(|a| a.get_refno_or_default() == refno);
-    if !has_self {
-        let self_att = get_named_attmap(refno).await?;
-        ancestors.insert(0, self_att);
-    }
-
-    if ancestor_refnos.len() <= 1 {
-        return Ok(Some(DMat4::IDENTITY));
-    }
-
-    ancestors.reverse();
-
-    // 如果只需要局部变换，直接调用 get_local_mat4
-    if is_local {
-        if ancestors.len() >= 2 {
-            let parent_refno = ancestors[ancestors.len() - 2].get_refno_or_default();
-            let cur_refno = ancestors.last().unwrap().get_refno_or_default();
-            return get_local_mat4(cur_refno, parent_refno).await;
-        }
-        return Ok(Some(DMat4::IDENTITY));
-    }
-
-    // 遍历层级，使用重构后的策略系统计算每个节点的局部变换
-    let mut world_transform = DMat4::IDENTITY;
-
-    let mut mat4 = DMat4::IDENTITY;
-    for (index, atts) in ancestors.windows(2).enumerate() {
-        let o_att = &atts[0];
-        let att = &atts[1];
-        let cur_refno = att.get_refno_or_default();
-        let owner = att.get_owner();
-        
-        // Debug info
-        // println!("DEBUG: Loop {} - Parent: {}, Child: {}", index, o_att.get_refno_or_default(), cur_refno);
-
-        // 计算局部变换
-        if let Ok(Some(local_mat)) = get_local_mat4(cur_refno, owner).await {
-            // println!("DEBUG:   Local Mat: {:?}", local_mat.w_axis);
-            mat4 = mat4 * local_mat;
-            // println!("DEBUG:   Acc Mat: {:?}", mat4.w_axis);
-        } else {
-            println!("DEBUG:   Failed to get local mat for {}", cur_refno);
-                #[cfg(feature = "debug_spatial")]
-                {
-                    let local_pos = local_transform.project_point3(glam::DVec3::ZERO);
-                    let world_pos = world_transform.project_point3(glam::DVec3::ZERO);
-                    println!(
-                        "Level {}: {} -> {}\n  父级世界矩阵: {:?}\n  局部变换: {:?}\n  局部位置: {:?}\n  累积后世界位置: {:?}\n  变换前世界: {:?}\n  变换后世界: {:?}",
-                        index,
-                        owner,
-                        cur_refno,
-                        prev_world_transform,
-                        local_transform,
-                        local_pos,
-                        world_pos,
-                        prev_world_transform.project_point3(glam::DVec3::ZERO),
-                        world_pos
-                    );
-                }
-
-                // 特别针对FITT类型的调试
-                if att.get_type_str() == "FITT" {
-                    let local_pos = local_transform.project_point3(glam::DVec3::ZERO);
-                    let world_pos = world_transform.project_point3(glam::DVec3::ZERO);
-                    println!(
-                        "🔍 FITT变换调试:\n  参考号: {}\n  父级: {}\n  局部位置: {:?}\n  世界位置: {:?}\n  父级世界矩阵: {:?}\n  局部变换矩阵: {:?}",
-                        cur_refno,
-                        owner,
-                        local_pos,
-                        world_pos,
-                        prev_world_transform,
-                        local_transform
-                    );
-
-                    // 分析ZDIS如何从局部坐标系转换到世界坐标系
-                    let zdis = att.get_f32("ZDIS").unwrap_or_default();
-                    let local_z_offset = glam::DVec3::new(0.0, 0.0, zdis as f64);
-                    let world_z_offset = prev_world_transform.transform_point3(local_z_offset);
-                    println!(
-                        "  ZDIS分析:\n    ZDIS值: {}\n    局部Z偏移: {:?}\n    世界Z偏移: {:?}\n    Z轴变换差异: {:.3}",
-                        zdis,
-                        local_z_offset,
-                        world_z_offset,
-                        world_z_offset.z - local_z_offset.z
-                    );
-                }
-
-                #[cfg(feature = "debug_spatial")]
-                println!(
-                    "Level {}: Applied local transform for {} -> {}",
-                    index, owner, cur_refno
-                );
-            }
-            Ok(None) => {
-                #[cfg(feature = "debug_spatial")]
-                println!(
-                    "Level {}: No transform calculated for {} -> {}",
-                    index, owner, cur_refno
-                );
-                // 继续处理其他层级，不中断
-            }
-            Err(e) => {
-                #[cfg(feature = "debug_spatial")]
-                println!(
-                    "Level {}: Error calculating transform for {} -> {}: {}",
-                    index, owner, cur_refno, e
-                );
-                // 记录错误但继续处理
-            }
-        }
-    }
-
-    // 检查变换的有效性
-    if world_transform.is_nan() {
-        return Ok(None);
-    }
-
-    Ok(Some(world_transform))
-}
 
 ///查询形集PLIN的值，todo 需要做缓存优化
 // #[cached]
@@ -1134,7 +475,7 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
                         // quat = DQuat::from_mat3(&DMat3::from_cols(x_dir, y_dir, z_dir));
                         quat = w_quat;
                     } else {
-                        quat = cal_spine_ori(z_dir, spine_ydir);
+                        quat = construct_basis_z_y_raw(z_dir, spine_ydir);
                         z_dir = DMat3::from_quat(quat).z_axis;
                         quat = w_quat * quat;
                     }
@@ -1455,12 +796,12 @@ fn calculate_spine_transform_at_distance(
     // 计算SPINE的方位
     let spine_rotation = if let Some(ydir_vec) = ydir {
         let rotation =
-            cal_spine_orientation_basis_with_ydir(spine_direction, Some(ydir_vec), false);
+            construct_basis_z_y_hint(spine_direction, Some(ydir_vec), false);
         println!("      YDIR: {:?}", ydir_vec);
         println!("      计算旋转: {:?}", rotation);
         rotation
     } else {
-        cal_spine_orientation_basis(spine_direction, false)
+        construct_basis_z_default(spine_direction, false)
     };
 
     // 构建SPINE路径变换矩阵
@@ -1508,7 +849,7 @@ pub async fn get_virtual_node_orientation(
                 if spline_pts.len() >= 2 {
                     let spine_dir = (spline_pts[1] - spline_pts[0]).normalize();
                     // 只计算方向，不包含位置
-                    let orientation = cal_spine_orientation_basis_with_ydir(spine_dir, ydir, false);
+                    let orientation = construct_basis_z_y_hint(spine_dir, ydir, false);
                     return Ok(Some(orientation));
                 }
             }
