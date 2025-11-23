@@ -8,6 +8,7 @@ use crate::rs_surreal::spatial::{
 use crate::{NamedAttrMap, RefnoEnum};
 use async_trait::async_trait;
 use glam::{DMat3, DMat4, DQuat, DVec3};
+use super::NposHandler;
 
 /// ENDATU 专用的 ZDIS 处理器
 ///
@@ -135,12 +136,7 @@ impl EndAtuStrategy {
         }
 
         // 2. NPOS (次高优先级)
-        if att.contains_key("NPOS") {
-            let npos = att
-                .get_vec3("NPOS")
-                .ok_or_else(|| EndatuError::AttributeMissing("NPOS".to_string()))?;
-            pos += npos.as_dvec3();
-        }
+        NposHandler::try_apply_npos_offset_strict(&mut pos, att)?;
 
         // 3. OPDI (操作方向) - 高优先级，覆盖其他方向计算
         let mut has_opdir = false;

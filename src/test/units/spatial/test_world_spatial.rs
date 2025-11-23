@@ -202,9 +202,35 @@ fn parse_position_string(pos_str: &str) -> Option<DVec3> {
 
 /// 解析方向字符串 "Orientation Y is N 88.958 U and Z is N 0.0451 W 1.0416 D"
 fn parse_orientation_string(ori_str: &str) -> Option<(DVec3, DVec3)> {
-    // 简化解析，实际应该根据具体格式解析
-    // 这里返回 None 表示跳过方向验证
-    None
+    // 分割Y轴和Z轴定义
+    let parts: Vec<&str> = ori_str.split(" and ").collect();
+    if parts.len() != 2 {
+        return None;
+    }
+    
+    let parse_axis = |axis_def: &str| -> Option<DVec3> {
+        // 提取 "Y is ..." 或 "Z is ..." 后面的方向表达式
+        if let Some(dir_expr) = axis_def.split(" is ").nth(1) {
+            // 转换PDMS方向格式到parse_expr_to_dir支持的格式
+            let converted = convert_pdms_direction(dir_expr.trim());
+            crate::tool::direction_parse::parse_expr_to_dir(&converted)
+        } else {
+            None
+        }
+    };
+    
+    let ydir = parse_axis(parts[0])?;
+    let zdir = parse_axis(parts[1])?;
+    
+    Some((ydir, zdir))
+}
+
+/// 转换PDMS方向格式到标准格式
+/// "N 88.958 U" -> "N 88.958 U"
+/// "W" -> "W"
+/// "N 0.0451 W 1.0416 D" -> "N 0.0451 W 1.0416 D"
+fn convert_pdms_direction(dir_str: &str) -> String {
+    dir_str.trim().to_string()
 }
 
 /// 测试局部空间变换
@@ -223,10 +249,12 @@ async fn test_local_spatial() -> Result<()> {
         let refno = RefnoEnum::from(case.refno.as_str());
         let att = get_named_attmap(refno).await?;
         let parent_refno = att.get_owner();
-        let parent_att = get_named_attmap(parent_refno).await?;
+        
+        // 使用虚拟节点属性合并机制获取父节点属性
+        let parent_att = crate::transform::get_effective_parent_att(parent_refno).await?;
 
         let strategy = crate::transform::strategies::TransformStrategyFactory::get_strategy(
-            att.get_type_str(),
+            parent_att.get_type_str(),
         );
 
         // 计算局部变换
@@ -245,6 +273,7 @@ async fn test_local_spatial() -> Result<()> {
         let local_quat = DQuat::from_mat4(&local_mat);
 
         println!("   📍 计算局部位置: {:?}", local_pos);
+        println!("   🧭 计算局部方位: {:?}", local_quat);
 
         // 验证位置
         if let Some(expected_pos) = parse_position_string(&case.pos_str) {
@@ -257,6 +286,31 @@ async fn test_local_spatial() -> Result<()> {
                 println!("   ✅ 局部位置验证通过");
             } else {
                 println!("   ⚠️  局部位置差异较大");
+            }
+        }
+
+        // 验证方位
+        if let Some((expected_ydir, expected_zdir)) = parse_orientation_string(&case.ori_str) {
+            println!("   🧭 预期局部方位 - Y轴: {:?}, Z轴: {:?}", expected_ydir, expected_zdir);
+            
+            // 从四元数提取方向向量
+            let local_ydir = local_quat * DVec3::Y;
+            let local_zdir = local_quat * DVec3::Z;
+            
+            println!("   🧭 实际局部方位 - Y轴: {:?}, Z轴: {:?}", local_ydir, local_zdir);
+            
+            // 计算方向差异（角度）
+            let ydir_angle_diff = local_ydir.angle_between(expected_ydir).to_degrees();
+            let zdir_angle_diff = local_zdir.angle_between(expected_zdir).to_degrees();
+            
+            println!("   📐 Y轴方位差异: {:.6}°", ydir_angle_diff);
+            println!("   📐 Z轴方位差异: {:.6}°", zdir_angle_diff);
+            
+            if ydir_angle_diff < 1.0 && zdir_angle_diff < 1.0 {
+                // 1度容差
+                println!("   ✅ 局部方位验证通过");
+            } else {
+                println!("   ⚠️  局部方位差异较大");
             }
         }
 

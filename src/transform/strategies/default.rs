@@ -1,4 +1,4 @@
-use super::TransformStrategy;
+use super::{TransformStrategy, BangHandler};
 use crate::rs_surreal::spatial::{
     SectionEnd, construct_basis_x_cutplane, construct_basis_z_opdir, construct_basis_z_y_exact,
     construct_basis_z_ref_x, construct_basis_z_ref_y, construct_basis_z_default,
@@ -11,6 +11,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use glam::{DMat3, DMat4, DQuat, DVec3};
+use super::NposHandler;
 
 /// ZDIS 属性处理器
 pub struct ZdisHandler;
@@ -20,9 +21,6 @@ pub struct PoslHandler;
 
 /// YDIR/OPDI 属性处理器
 pub struct YdirHandler;
-
-/// BANG 属性处理器
-pub struct BangHandler;
 
 /// CUTP 属性处理器
 pub struct CutpHandler;
@@ -84,8 +82,8 @@ impl PoslHandler {
         cur_type: &str,
         pos: &mut DVec3,
         quat: &mut DQuat,
-        bangle: f64,
-        apply_bang: bool,
+        effective_att: &NamedAttrMap,
+        should_apply_bang: bool,
         ydir_axis: Option<DVec3>,
         delta_vec: DVec3,
         translation: &mut DVec3,
@@ -146,8 +144,9 @@ impl PoslHandler {
                 }
             };
 
-            if apply_bang {
-                new_quat = new_quat * DQuat::from_rotation_z(bangle.to_radians());
+            // 应用 BANG（如果需要且不是 GENSEC）
+            if should_apply_bang {
+                BangHandler::apply_bang(&mut new_quat, effective_att);
             }
 
             // 位置计算：
@@ -208,28 +207,6 @@ impl YdirHandler {
     }
 }
 
-impl BangHandler {
-    /// 处理 BANG 属性
-    pub fn apply_bang(quat: &mut DQuat, bangle: f64, apply_bang: bool) {
-        if apply_bang {
-            *quat = *quat * DQuat::from_rotation_z(bangle.to_radians());
-        }
-    }
-
-    /// 判断是否应该应用 BANG
-    pub fn should_apply_bang(att: &NamedAttrMap, cur_type: &str) -> (bool, f64) {
-        let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
-        let apply_bang = att.contains_key("BANG") && bangle != 0.0;
-
-        // GENSEC 特殊处理：不应用 BANG
-        if cur_type == "GENSEC" {
-            (false, bangle)
-        } else {
-            (apply_bang, bangle)
-        }
-    }
-}
-
 impl CutpHandler {
     /// 处理 CUTP 属性
     pub fn handle_cutp(
@@ -270,6 +247,39 @@ impl TransformStrategy for DefaultStrategy {
             return Ok(Some(DMat4::IDENTITY));
         }
 
+        // 默认策略：只处理基本的 POS + ORI 变换
+        let position = att.get_position().unwrap_or_default().as_dvec3();
+        let rotation = att.get_rotation().unwrap_or(DQuat::IDENTITY);
+        
+        let mat4 = DMat4::from_rotation_translation(rotation, position);
+        
+        if rotation.is_nan() || position.is_nan() {
+            return Ok(None);
+        }
+
+        Ok(Some(mat4))
+    }
+}
+
+/// 复杂策略：处理需要复杂属性逻辑的元素（如STWALL、FITT、POINSP等）
+pub struct ComplexStrategy;
+
+#[async_trait]
+impl TransformStrategy for ComplexStrategy {
+    async fn get_local_transform(
+        &self,
+        refno: RefnoEnum,
+        parent_refno: RefnoEnum,
+        att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
+    ) -> anyhow::Result<Option<DMat4>> {
+        let cur_type = att.get_type_str();
+        
+        // 虚拟节点（如 SPINE）没有变换，直接跳过
+        if is_virtual_node(cur_type) {
+            return Ok(Some(DMat4::IDENTITY));
+        }
+
         let parent_type = parent_att.get_type_str();
 
         let mut rotation = DQuat::IDENTITY;
@@ -280,13 +290,18 @@ impl TransformStrategy for DefaultStrategy {
         let mut has_opdir = false;
 
         // 1. 处理 NPOS 属性
-        if att.contains_key("NPOS") {
-            let npos = att.get_vec3("NPOS").unwrap_or_default();
-            pos += npos.as_dvec3();
-        }
+        NposHandler::apply_npos_offset(&mut pos, att);
 
         // 2. 处理 BANG 属性
-        let (apply_bang, bangle) = BangHandler::should_apply_bang(att, cur_type);
+        // 检查是否应该应用 BANG（GENSEC 类型除外）
+        let should_apply_bang = cur_type != "GENSEC" && (att.contains_key("BANG") || parent_att.contains_key("BANG"));
+        
+        // 如果父节点有 BANG，优先使用父节点属性
+        let effective_att = if parent_att.contains_key("BANG") && parent_att.get_f32("BANG").unwrap_or(0.0) != 0.0 {
+            parent_att
+        } else {
+            att
+        };
 
         // 3. 处理 ZDIS 属性（通用类型，非 ENDATU）
         if cur_type == "POINSP" {
@@ -341,7 +356,10 @@ impl TransformStrategy for DefaultStrategy {
                 &mut has_opdir,
             )?;
 
-            BangHandler::apply_bang(&mut quat, bangle, apply_bang);
+            // 应用 BANG（如果需要且不是 GENSEC）
+            if should_apply_bang {
+                BangHandler::apply_bang(&mut quat, effective_att);
+            }
 
             // 处理 CUTP 属性
             let has_local_ori = att.get_rotation().is_some();
@@ -369,8 +387,8 @@ impl TransformStrategy for DefaultStrategy {
                 cur_type,
                 &mut pos,
                 &mut quat,
-                bangle,
-                apply_bang,
+                effective_att,
+                should_apply_bang,
                 ydir_axis,
                 delta_vec,
                 &mut translation,
@@ -390,7 +408,7 @@ impl TransformStrategy for DefaultStrategy {
     }
 }
 
-impl DefaultStrategy {
+impl ComplexStrategy {
     /// 提取挤出方向信息
     async fn extract_extrusion_direction(
         parent_refno: RefnoEnum,

@@ -1,0 +1,56 @@
+[
+  {
+    "refno": "17496/257714",
+    "noun": "Q",
+    "pos_str": "E 0mm N 1005mm U 0mm",
+    "ori_str": "Y is W and Z is N"
+  },
+  {
+    "refno": "17496/266217",
+    "noun": "GENSEC",
+    "pos_str": "W 5375mm N 1148.7mm D 2595.69mm",
+    "ori_str": "Y is N and Z is U"
+  },
+  {
+    "refno": "17496/266220",
+    "noun": "POINSP",
+    "pos_str": "W 0.49mm N 622.59mm D 11.32mm",
+    "ori_str": "Y is N 88.958 U and Z is N 0.0451 W 1.0416 D"
+  },
+  {
+    "refno": "17496/266218",
+    "noun": "SPINE",
+    "pos_str": "E 0.0mm N 0.0mm U 0.0mm",
+    "ori_str": "Y is N and Z is U"
+  },
+  {
+    "refno": "25688/7958",
+    "noun": "STWALL",
+    "pos_str": "E 52800mm N 21200mm D 8800mm",
+    "ori_str": "Y is U and Z is E"
+  },
+  {
+    "refno": "25688/7960",
+    "noun": "FITT",
+    "pos_str": "E 0mm N 1450mm U 6575mm",
+    "ori_str": "Y is U and Z is W"
+  },
+  {
+    "refno": "25688/7959",
+    "noun": "FITT",
+    "pos_str": "E 0mm N 3650mm U 5100mm",
+    "ori_str": "Y is U and Z is W"
+  },
+  {
+    "refno": "17496/268360",
+    "noun": "ENDATU",
+    "pos_str": "E 0mm N 0mm U 0mm",
+    "ori_str": "Y is E 89.891 U and Z is W 0.1093 U"
+  },
+  {
+    "refno": "17496/268361",
+    "noun": "FIXING",
+    "pos_str": "E 0mm N 0mm U 0mm",
+    "ori_str": "Y is W and Z is S 89.891 U"
+  }
+]

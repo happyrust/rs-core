@@ -156,8 +156,8 @@ async fn calculate_fitt_on_stwall_transform(
         "FITT",
         &mut pos,
         &mut quat,
-        bangle,
-        true,
+        stwall_att,  // 使用父节点属性作为 effective_att
+        true,        // should_apply_bang
         ydir_axis,
         delta_vec,
         &mut translation,

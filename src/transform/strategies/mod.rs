@@ -1,6 +1,6 @@
 use crate::{NamedAttrMap, RefnoEnum};
 use async_trait::async_trait;
-use glam::DMat4;
+use glam::{DMat4, DVec3, DQuat};
 
 #[async_trait]
 pub trait TransformStrategy: Send + Sync {
@@ -18,16 +18,16 @@ pub mod endatu;
 pub mod endatu_cache;
 pub mod endatu_error;
 pub mod endatu_validation;
-pub mod gensec;
+pub mod spine_strategy;
 pub mod sjoi;
 
 // 导出策略
-use default::DefaultStrategy;
-use gensec::GensecStrategy;
+pub use default::{DefaultStrategy, ComplexStrategy};
+use spine_strategy::SpineStrategy;
 use sjoi::SjoiStrategy;
 
 // 导出属性处理器
-pub use default::{BangHandler, CutpHandler, PoslHandler, YdirHandler, ZdisHandler};
+pub use default::{CutpHandler, PoslHandler, YdirHandler, ZdisHandler};
 pub use endatu::EndAtuStrategy;
 pub use endatu::EndAtuZdisHandler;
 pub use endatu_cache::{
@@ -35,19 +35,83 @@ pub use endatu_cache::{
 };
 pub use endatu_error::{EndatuError, EndatuResult};
 pub use endatu_validation::EndatuValidator;
-pub use gensec::{GensecBangHandler, GensecExtrusionHandler};
+pub use spine_strategy::get_spline_path;
 pub use sjoi::{SjoiConnectionHandler, SjoiCrefHandler};
 
 pub struct TransformStrategyFactory;
 
 impl TransformStrategyFactory {
-    pub fn get_strategy(noun: &str) -> Box<dyn TransformStrategy> {
-        match noun {
-            "GENSEC" => Box::new(GensecStrategy),
-            "SJOI" => Box::new(SjoiStrategy),
-            "ENDATU" => Box::new(EndAtuStrategy),
-            // FITT, SCOJ and others fall back to DefaultStrategy which handles POSL/PLIN
+    pub fn get_strategy(parent_noun: &str) -> Box<dyn TransformStrategy> {
+        // 基于父节点类型进行策略分发
+        match parent_noun {
+            "SPINE" => Box::new(SpineStrategy),
+            // "SJOI" => Box::new(SjoiStrategy),
+            // "ENDATU" => Box::new(EndAtuStrategy),
+            // "STWALL" | "FITT" => Box::new(ComplexStrategy),
+            // 父节点不是特殊类型，使用默认策略（仅POS+ORI）
             _ => Box::new(DefaultStrategy),
         }
     }
 }
+
+/// NPOS 属性处理的公共函数
+pub struct NposHandler;
+
+impl NposHandler {
+    /// 应用 NPOS 偏移，使用容错处理
+    /// 
+    /// 适用于大多数策略（如 default、gensec、sjoi），当 NPOS 属性不存在或无效时
+    /// 使用默认值 (0,0,0)，不会中断变换计算流程。
+    pub fn apply_npos_offset(pos: &mut DVec3, att: &NamedAttrMap) {
+        if att.contains_key("NPOS") {
+            let npos = att.get_vec3("NPOS").unwrap_or_default();
+            *pos += npos.as_dvec3();
+        }
+    }
+    
+    /// 严格应用 NPOS 偏移，返回 anyhow 错误
+    /// 
+    /// 适用于大多数策略，当 NPOS 属性存在但无效时返回 anyhow 错误
+    pub fn try_apply_npos_offset(pos: &mut DVec3, att: &NamedAttrMap) -> anyhow::Result<()> {
+        if att.contains_key("NPOS") {
+            let npos = att.get_vec3("NPOS").ok_or_else(|| {
+                anyhow::anyhow!("NPOS 属性存在但无法解析")
+            })?;
+            *pos += npos.as_dvec3();
+        }
+        Ok(())
+    }
+    
+    /// 严格应用 NPOS 偏移，返回 EndatuError
+    /// 
+    /// 适用于需要严格验证的策略（如 endatu），当 NPOS 属性存在但无效时
+    /// 返回 EndatuError，确保数据完整性。如果 NPOS 属性不存在，则不作处理。
+    pub fn try_apply_npos_offset_strict(pos: &mut DVec3, att: &NamedAttrMap) -> Result<(), EndatuError> {
+        if att.contains_key("NPOS") {
+            let npos = att
+                .get_vec3("NPOS")
+                .ok_or_else(|| EndatuError::AttributeMissing("NPOS".to_string()))?;
+            *pos += npos.as_dvec3();
+        }
+        Ok(())
+    }
+}
+
+/// BANG 属性处理的公共函数
+pub struct BangHandler;
+
+impl BangHandler {
+
+    /// 应用 BANG 旋转到四元数
+    /// 
+    /// 统一的 BANG 应用逻辑，沿 Z 轴旋转指定角度
+    pub fn apply_bang(quat: &mut DQuat, att: &NamedAttrMap) {
+        if let Some(bangle) = att.get_f32("BANG").map(|x| x as f64) {
+            *quat = *quat * DQuat::from_rotation_z(bangle.to_radians());
+        }
+    }
+
+}
+
+
+

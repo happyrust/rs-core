@@ -552,77 +552,7 @@ pub async fn query_section_poinsp_local_points(refno: RefnoEnum) -> anyhow::Resu
 
 /// 根据 GENSEC/WALL 下的 SPINE / POINSP / CURVE 节点，
 /// 构造一组 `Spine3D` 段，供挤出、ZDIS/PKDI 位置计算等场景复用。
-pub async fn get_spline_path(refno: RefnoEnum) -> anyhow::Result<Vec<Spine3D>> {
-    let type_name = crate::get_type_name(refno).await?;
-    // dbg!(&type_name);
-    let mut paths = vec![];
-    if type_name == "GENSEC" || type_name == "WALL" {
-        let children_refs = crate::get_children_refnos(refno).await.unwrap_or_default();
-        // dbg!(&children_refs);
-        for &x in children_refs.iter() {
-            let spine_att = crate::get_named_attmap(x).await?;
-            // dbg!(&spine_att);
-            if spine_att.get_type_str() != "SPINE" {
-                continue;
-            }
-            let ch_atts = crate::get_children_named_attmaps(x)
-                .await
-                .unwrap_or_default();
-            let len = ch_atts.len();
-            if len < 1 {
-                continue;
-            }
-
-            let mut i = 0;
-            while i < ch_atts.len() - 1 {
-                let att1 = &ch_atts[i];
-                let t1 = att1.get_type_str();
-                let att2 = &ch_atts[(i + 1) % len];
-                let t2 = att2.get_type_str();
-                if t1 == "POINSP" && t2 == "POINSP" {
-                    paths.push(Spine3D {
-                        refno: att1.get_refno().unwrap(),
-                        pt0: att1.get_position().unwrap_or_default(),
-                        pt1: att2.get_position().unwrap_or_default(),
-                        curve_type: SpineCurveType::LINE,
-                        preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
-                        ..Default::default()
-                    });
-                    // dbg!(&paths);
-                    i += 1;
-                } else if t1 == "POINSP" && t2 == "CURVE" {
-                    let att3 = &ch_atts[(i + 2) % len];
-                    let pt0 = att1.get_position().unwrap_or_default();
-                    let pt1 = att3.get_position().unwrap_or_default();
-                    let mid_pt = att2.get_position().unwrap_or_default();
-                    let cur_type_str = att2.get_str("CURTYP").unwrap_or("unset");
-                    let curve_type = match cur_type_str {
-                        "CENT" => SpineCurveType::CENT,
-                        "THRU" => SpineCurveType::THRU,
-                        _ => SpineCurveType::UNKNOWN,
-                    };
-                    paths.push(Spine3D {
-                        refno: att2.get_refno().unwrap(),
-                        pt0,
-                        pt1,
-                        thru_pt: mid_pt,
-                        center_pt: mid_pt,
-                        cond_pos: att2.get_vec3("CPOS").unwrap_or_default(),
-                        curve_type,
-                        preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
-                        radius: att2.get_f32("RAD").unwrap_or_default(),
-                    });
-                    i += 2;
-                }
-            }
-        }
-    }
-
-    // dbg!(&paths);
-
-    Ok(paths)
-}
-
+pub use crate::transform::strategies::spine_strategy::get_spline_path;
 ///沿着 `dir` 方向，从给定构件位置出发，找到最近的目标构件。
 #[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub async fn query_neareast_along_axis(

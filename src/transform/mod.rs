@@ -80,6 +80,62 @@ pub mod strategies;
 
 use strategies::TransformStrategyFactory;
 
+/// 递归获取有效的父节点属性，处理虚拟节点属性合并
+///
+/// 当父节点是虚拟节点（如SPINE）时，需要递归向上查找非虚拟祖先节点，
+/// 并将非虚拟祖先的属性与虚拟节点属性合并（虚拟节点属性优先）。
+///
+/// # Arguments
+/// * `parent_refno` - 父节点引用号
+///
+/// # Returns
+/// * 合并后的属性映射
+pub async fn get_effective_parent_att(parent_refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
+    let mut current_refno = parent_refno;
+    let mut virtual_attrs: Vec<NamedAttrMap> = Vec::new();
+    let mut depth = 0;
+    const MAX_DEPTH: usize = 10; // 防止循环引用
+    
+    // 向上遍历，收集所有虚拟节点的属性
+    while depth < MAX_DEPTH {
+        let current_att = get_named_attmap(current_refno).await?;
+        let current_type = current_att.get_type_str();
+        
+        if !is_virtual_node(current_type) {
+            // 找到非虚拟节点，作为合并的基础
+            let mut merged_att = current_att;
+            
+            // 反向合并虚拟节点属性（子节点属性优先）
+            for attrs in virtual_attrs.iter().rev() {
+                for (key, value) in attrs.iter() {
+                    merged_att.insert(key.clone(), value.clone());
+                }
+            }
+            
+            return Ok(merged_att);
+        }
+        
+        // 当前节点是虚拟节点，保存其属性并继续向上查找
+        virtual_attrs.push(current_att);
+        
+        // 获取父节点
+        let next_refno = virtual_attrs.last().unwrap().get_owner();
+        if next_refno.is_unset() {
+            // 没有更多父节点，返回最后一个虚拟节点的属性
+            if let Some(last_att) = virtual_attrs.pop() {
+                return Ok(last_att);
+            } else {
+                return Err(anyhow!("No valid parent attributes found"));
+            }
+        }
+        
+        current_refno = next_refno;
+        depth += 1;
+    }
+    
+    Err(anyhow!("Maximum depth exceeded while searching for effective parent attributes"))
+}
+
 /// Calculate the local transformation matrix for an entity relative to its parent
 ///
 /// # Arguments
@@ -97,12 +153,13 @@ pub async fn get_local_mat4(
 ) -> anyhow::Result<Option<DMat4>> {
     // Get attribute maps for the entity and its parent
     let att = get_named_attmap(refno).await?;
-    let parent_att = get_named_attmap(parent_refno).await?;
+    let parent_att = get_effective_parent_att(parent_refno).await?;
 
     let cur_type = att.get_type_str();
+    let parent_type = parent_att.get_type_str();
 
     // Use strategy factory to get the appropriate strategy
-    let strategy = TransformStrategyFactory::get_strategy(cur_type);
+    let strategy = TransformStrategyFactory::get_strategy(parent_type);
     strategy
         .get_local_transform(refno, parent_refno, &att, &parent_att)
         .await

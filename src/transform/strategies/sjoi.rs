@@ -8,6 +8,7 @@ use crate::{NamedAttrMap, RefnoEnum, get_named_attmap};
 use async_trait::async_trait;
 use bevy_transform::prelude::Transform;
 use glam::{DMat3, DMat4, DQuat, DVec3};
+use super::NposHandler;
 
 /// SJOI 专用的 CREF/CUTP 处理器
 pub struct SjoiCrefHandler;
@@ -111,10 +112,7 @@ impl TransformStrategy for SjoiStrategy {
                 .await?;
 
         // 2. 处理 NPOS 属性
-        if att.contains_key("NPOS") {
-            let npos = att.get_vec3("NPOS").unwrap_or_default();
-            pos += npos.as_dvec3();
-        }
+        NposHandler::apply_npos_offset(&mut pos, att);
 
         // 3. 处理 BANG 属性
         let bangle = att.get_f32("BANG").unwrap_or_default() as f64;
