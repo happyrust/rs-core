@@ -216,49 +216,6 @@ impl TransformStrategy for SjoiStrategy {
 }
 
 impl SjoiStrategy {
-    /// 提取挤出方向信息
-    async fn extract_extrusion_direction(
-        parent_refno: RefnoEnum,
-        parent_type: &str,
-        att: &NamedAttrMap,
-        parent_att: &NamedAttrMap,
-    ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
-        let parent_is_gensec = parent_type == "GENSEC";
-
-        if parent_is_gensec {
-            if let Ok(spine_paths) = get_spline_path(parent_refno).await {
-                if let Some(first_spine) = spine_paths.first() {
-                    let dir = (first_spine.pt1 - first_spine.pt0).normalize();
-                    let pos_extru_dir = Some(dir.as_dvec3());
-                    let mut ydir = first_spine.preferred_dir.as_dvec3();
-
-                    // 考虑 Parent BANG 对截面方向的影响
-                    let parent_bangle = parent_att.get_f32("BANG").unwrap_or(0.0) as f64;
-                    if parent_bangle.abs() > 0.001 {
-                        let rot =
-                            DQuat::from_axis_angle(dir.as_dvec3(), parent_bangle.to_radians());
-                        ydir = rot * ydir;
-                    }
-
-                    let spine_ydir = if ydir.length_squared() > 0.01 {
-                        Some(ydir)
-                    } else {
-                        None
-                    };
-                    return Ok((pos_extru_dir, spine_ydir));
-                }
-            }
-        }
-
-        // 处理 DPOSE/DPOSS 属性
-        if let Some(end) = att.get_dpose()
-            && let Some(start) = att.get_dposs()
-        {
-            return Ok((Some((end - start).normalize()), None));
-        }
-
-        Ok((None, None))
-    }
 
     /// 初始化旋转
     async fn initialize_rotation(

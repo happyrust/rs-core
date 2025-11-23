@@ -14,37 +14,40 @@ pub trait TransformStrategy: Send + Sync {
 }
 
 pub mod default;
-pub mod endatu;
-pub mod endatu_cache;
-pub mod endatu_error;
-pub mod endatu_validation;
+// pub mod endatu;
+// pub mod endatu_cache;
+// pub mod endatu_error;
+// pub mod endatu_validation;
 pub mod spine_strategy;
-pub mod sjoi;
+// pub mod sjoi;
 
 // 导出策略
-pub use default::{DefaultStrategy, ComplexStrategy};
+pub use default::{DefaultStrategy};
 use spine_strategy::SpineStrategy;
-use sjoi::SjoiStrategy;
+// use sjoi::SjoiStrategy;
 
 // 导出属性处理器
 pub use default::{CutpHandler, PoslHandler, YdirHandler, ZdisHandler};
-pub use endatu::EndAtuStrategy;
-pub use endatu::EndAtuZdisHandler;
-pub use endatu_cache::{
-    clear_endatu_cache, get_cache_stats, get_cached_endatu_index, print_cache_stats,
-};
-pub use endatu_error::{EndatuError, EndatuResult};
-pub use endatu_validation::EndatuValidator;
+// pub use endatu::EndAtuStrategy;
+// pub use endatu::EndAtuZdisHandler;
+// pub use endatu_cache::{
+//     clear_endatu_cache, get_cache_stats, get_cached_endatu_index, print_cache_stats,
+// };
+// pub use endatu_error::{EndatuError, EndatuResult};
+// pub use endatu_validation::EndatuValidator;
 pub use spine_strategy::get_spline_path;
-pub use sjoi::{SjoiConnectionHandler, SjoiCrefHandler};
+// pub use sjoi::{SjoiConnectionHandler, SjoiCrefHandler};
 
 pub struct TransformStrategyFactory;
 
 impl TransformStrategyFactory {
     pub fn get_strategy(parent_noun: &str) -> Box<dyn TransformStrategy> {
+        dbg!(&parent_noun);
         // 基于父节点类型进行策略分发
         match parent_noun {
             "SPINE" => Box::new(SpineStrategy),
+            // "GENSEC" => Box::new(GensecStrategy),
+            // "STWALL" => Box::new(WallStrategy),
             // "SJOI" => Box::new(SjoiStrategy),
             // "ENDATU" => Box::new(EndAtuStrategy),
             // "STWALL" | "FITT" => Box::new(ComplexStrategy),
@@ -82,19 +85,6 @@ impl NposHandler {
         Ok(())
     }
     
-    /// 严格应用 NPOS 偏移，返回 EndatuError
-    /// 
-    /// 适用于需要严格验证的策略（如 endatu），当 NPOS 属性存在但无效时
-    /// 返回 EndatuError，确保数据完整性。如果 NPOS 属性不存在，则不作处理。
-    pub fn try_apply_npos_offset_strict(pos: &mut DVec3, att: &NamedAttrMap) -> Result<(), EndatuError> {
-        if att.contains_key("NPOS") {
-            let npos = att
-                .get_vec3("NPOS")
-                .ok_or_else(|| EndatuError::AttributeMissing("NPOS".to_string()))?;
-            *pos += npos.as_dvec3();
-        }
-        Ok(())
-    }
 }
 
 /// BANG 属性处理的公共函数

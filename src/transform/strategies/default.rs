@@ -261,231 +261,231 @@ impl TransformStrategy for DefaultStrategy {
     }
 }
 
-/// 复杂策略：处理需要复杂属性逻辑的元素（如STWALL、FITT、POINSP等）
-pub struct ComplexStrategy;
+// 复杂策略：处理需要复杂属性逻辑的元素（如STWALL、FITT、POINSP等）
+// pub struct ComplexStrategy;
 
-#[async_trait]
-impl TransformStrategy for ComplexStrategy {
-    async fn get_local_transform(
-        &self,
-        refno: RefnoEnum,
-        parent_refno: RefnoEnum,
-        att: &NamedAttrMap,
-        parent_att: &NamedAttrMap,
-    ) -> anyhow::Result<Option<DMat4>> {
-        let cur_type = att.get_type_str();
+// #[async_trait]
+// impl TransformStrategy for ComplexStrategy {
+//     async fn get_local_transform(
+//         &self,
+//         refno: RefnoEnum,
+//         parent_refno: RefnoEnum,
+//         att: &NamedAttrMap,
+//         parent_att: &NamedAttrMap,
+//     ) -> anyhow::Result<Option<DMat4>> {
+//         let cur_type = att.get_type_str();
         
-        // 虚拟节点（如 SPINE）没有变换，直接跳过
-        if is_virtual_node(cur_type) {
-            return Ok(Some(DMat4::IDENTITY));
-        }
+//         // 虚拟节点（如 SPINE）没有变换，直接跳过
+//         if is_virtual_node(cur_type) {
+//             return Ok(Some(DMat4::IDENTITY));
+//         }
 
-        let parent_type = parent_att.get_type_str();
+//         let parent_type = parent_att.get_type_str();
 
-        let mut rotation = DQuat::IDENTITY;
-        let mut translation = DVec3::ZERO;
-        let mut pos = att.get_position().unwrap_or_default().as_dvec3();
-        let mut quat = DQuat::IDENTITY;
-        let mut is_world_quat = false;
-        let mut has_opdir = false;
+//         let mut rotation = DQuat::IDENTITY;
+//         let mut translation = DVec3::ZERO;
+//         let mut pos = att.get_position().unwrap_or_default().as_dvec3();
+//         let mut quat = DQuat::IDENTITY;
+//         let mut is_world_quat = false;
+//         let mut has_opdir = false;
 
-        // 1. 处理 NPOS 属性
-        NposHandler::apply_npos_offset(&mut pos, att);
+//         // 1. 处理 NPOS 属性
+//         NposHandler::apply_npos_offset(&mut pos, att);
 
-        // 2. 处理 BANG 属性
-        // 检查是否应该应用 BANG（GENSEC 类型除外）
-        let should_apply_bang = cur_type != "GENSEC" && (att.contains_key("BANG") || parent_att.contains_key("BANG"));
+//         // 2. 处理 BANG 属性
+//         // 检查是否应该应用 BANG（GENSEC 类型除外）
+//         let should_apply_bang = cur_type != "GENSEC" && (att.contains_key("BANG") || parent_att.contains_key("BANG"));
         
-        // 如果父节点有 BANG，优先使用父节点属性
-        let effective_att = if parent_att.contains_key("BANG") && parent_att.get_f32("BANG").unwrap_or(0.0) != 0.0 {
-            parent_att
-        } else {
-            att
-        };
+//         // 如果父节点有 BANG，优先使用父节点属性
+//         let effective_att = if parent_att.contains_key("BANG") && parent_att.get_f32("BANG").unwrap_or(0.0) != 0.0 {
+//             parent_att
+//         } else {
+//             att
+//         };
 
-        // 3. 处理 ZDIS 属性（通用类型，非 ENDATU）
-        if cur_type == "POINSP" {
-            ZdisHandler::handle_poinsp_zdis(att, parent_refno, &mut pos).await?;
-        } else {
-            ZdisHandler::handle_generic_zdis(
-                att,
-                parent_refno,
-                cur_type,
-                &mut pos,
-                &mut quat,
-                &mut is_world_quat,
-                &mut translation,
-                rotation,
-            )
-            .await?;
-        }
+//         // 3. 处理 ZDIS 属性（通用类型，非 ENDATU）
+//         if cur_type == "POINSP" {
+//             ZdisHandler::handle_poinsp_zdis(att, parent_refno, &mut pos).await?;
+//         } else {
+//             ZdisHandler::handle_generic_zdis(
+//                 att,
+//                 parent_refno,
+//                 cur_type,
+//                 &mut pos,
+//                 &mut quat,
+//                 &mut is_world_quat,
+//                 &mut translation,
+//                 rotation,
+//             )
+//             .await?;
+//         }
 
-        // 4. 处理父级相关的变换（Spine/Extrusion）
-        let (pos_extru_dir, spine_ydir) =
-            Self::extract_extrusion_direction(parent_refno, parent_type, att, parent_att).await?;
+//         // 4. 处理父级相关的变换（Spine/Extrusion）
+//         let (pos_extru_dir, spine_ydir) =
+//             Self::extract_extrusion_direction(parent_refno, parent_type, att, parent_att).await?;
 
-        // 5. 处理旋转初始化
-        Self::initialize_rotation(
-            att,
-            cur_type,
-            parent_type,
-            pos_extru_dir,
-            spine_ydir,
-            &mut quat,
-            is_world_quat,
-        )
-        .await?;
+//         // 5. 处理旋转初始化
+//         Self::initialize_rotation(
+//             att,
+//             cur_type,
+//             parent_type,
+//             pos_extru_dir,
+//             spine_ydir,
+//             &mut quat,
+//             is_world_quat,
+//         )
+//         .await?;
 
-        // 6. 处理 YDIR/OPDI 属性
-        let ydir_axis = att.get_dvec3("YDIR");
-        let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
+//         // 6. 处理 YDIR/OPDI 属性
+//         let ydir_axis = att.get_dvec3("YDIR");
+//         let delta_vec = att.get_dvec3("DELP").unwrap_or_default();
 
-        if att
-            .get_str("POSL")
-            .map(|x| x.trim())
-            .unwrap_or_default()
-            .is_empty()
-        {
-            // 没有 POSL 时的处理
-            YdirHandler::handle_ydir_opdi(
-                att,
-                pos_extru_dir,
-                &mut quat,
-                &mut pos,
-                delta_vec,
-                &mut has_opdir,
-            )?;
+//         if att
+//             .get_str("POSL")
+//             .map(|x| x.trim())
+//             .unwrap_or_default()
+//             .is_empty()
+//         {
+//             // 没有 POSL 时的处理
+//             YdirHandler::handle_ydir_opdi(
+//                 att,
+//                 pos_extru_dir,
+//                 &mut quat,
+//                 &mut pos,
+//                 delta_vec,
+//                 &mut has_opdir,
+//             )?;
 
-            // 应用 BANG（如果需要且不是 GENSEC）
-            if should_apply_bang {
-                BangHandler::apply_bang(&mut quat, effective_att);
-            }
+//             // 应用 BANG（如果需要且不是 GENSEC）
+//             if should_apply_bang {
+//                 BangHandler::apply_bang(&mut quat, effective_att);
+//             }
 
-            // 处理 CUTP 属性
-            let has_local_ori = att.get_rotation().is_some();
-            CutpHandler::handle_cutp(
-                att,
-                &mut quat,
-                rotation,
-                has_opdir,
-                has_local_ori,
-                &mut is_world_quat,
-            )?;
+//             // 处理 CUTP 属性
+//             let has_local_ori = att.get_rotation().is_some();
+//             CutpHandler::handle_cutp(
+//                 att,
+//                 &mut quat,
+//                 rotation,
+//                 has_opdir,
+//                 has_local_ori,
+//                 &mut is_world_quat,
+//             )?;
 
-            translation = translation + rotation * pos;
+//             translation = translation + rotation * pos;
 
-            if is_world_quat {
-                rotation = quat;
-            } else {
-                rotation = rotation * quat;
-            }
-        } else {
-            // 有 POSL 时的处理
-            PoslHandler::handle_posl(
-                att,
-                parent_att,
-                cur_type,
-                &mut pos,
-                &mut quat,
-                effective_att,
-                should_apply_bang,
-                ydir_axis,
-                delta_vec,
-                &mut translation,
-                rotation,
-            )
-            .await?;
+//             if is_world_quat {
+//                 rotation = quat;
+//             } else {
+//                 rotation = rotation * quat;
+//             }
+//         } else {
+//             // 有 POSL 时的处理
+//             PoslHandler::handle_posl(
+//                 att,
+//                 parent_att,
+//                 cur_type,
+//                 &mut pos,
+//                 &mut quat,
+//                 effective_att,
+//                 should_apply_bang,
+//                 ydir_axis,
+//                 delta_vec,
+//                 &mut translation,
+//                 rotation,
+//             )
+//             .await?;
 
-            rotation = rotation * quat;
-        }
+//             rotation = rotation * quat;
+//         }
 
-        let mat4 = DMat4::from_rotation_translation(rotation, translation);
-        if rotation.is_nan() || translation.is_nan() {
-            return Ok(None);
-        }
+//         let mat4 = DMat4::from_rotation_translation(rotation, translation);
+//         if rotation.is_nan() || translation.is_nan() {
+//             return Ok(None);
+//         }
 
-        Ok(Some(mat4))
-    }
-}
+//         Ok(Some(mat4))
+//     }
+// }
 
-impl ComplexStrategy {
-    /// 提取挤出方向信息
-    async fn extract_extrusion_direction(
-        parent_refno: RefnoEnum,
-        parent_type: &str,
-        att: &NamedAttrMap,
-        parent_att: &NamedAttrMap,
-    ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
-        let parent_is_gensec = parent_type == "GENSEC";
+// impl ComplexStrategy {
+//     /// 提取挤出方向信息
+//     async fn extract_extrusion_direction(
+//         parent_refno: RefnoEnum,
+//         parent_type: &str,
+//         att: &NamedAttrMap,
+//         parent_att: &NamedAttrMap,
+//     ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
+//         let parent_is_gensec = parent_type == "GENSEC";
 
-        if parent_is_gensec {
-            if let Ok(spine_paths) = get_spline_path(parent_refno).await {
-                if let Some(first_spine) = spine_paths.first() {
-                    let dir = (first_spine.pt1 - first_spine.pt0).normalize();
-                    let pos_extru_dir = Some(dir.as_dvec3());
-                    let mut ydir = first_spine.preferred_dir.as_dvec3();
+//         if parent_is_gensec {
+//             if let Ok(spine_paths) = get_spline_path(parent_refno).await {
+//                 if let Some(first_spine) = spine_paths.first() {
+//                     let dir = (first_spine.pt1 - first_spine.pt0).normalize();
+//                     let pos_extru_dir = Some(dir.as_dvec3());
+//                     let mut ydir = first_spine.preferred_dir.as_dvec3();
 
-                    // 考虑 Parent BANG 对截面方向的影响
-                    let parent_bangle = parent_att.get_f32("BANG").unwrap_or(0.0) as f64;
-                    if parent_bangle.abs() > 0.001 {
-                        let rot =
-                            DQuat::from_axis_angle(dir.as_dvec3(), parent_bangle.to_radians());
-                        ydir = rot * ydir;
-                    }
+//                     // 考虑 Parent BANG 对截面方向的影响
+//                     let parent_bangle = parent_att.get_f32("BANG").unwrap_or(0.0) as f64;
+//                     if parent_bangle.abs() > 0.001 {
+//                         let rot =
+//                             DQuat::from_axis_angle(dir.as_dvec3(), parent_bangle.to_radians());
+//                         ydir = rot * ydir;
+//                     }
 
-                    let spine_ydir = if ydir.length_squared() > 0.01 {
-                        Some(ydir)
-                    } else {
-                        None
-                    };
-                    return Ok((pos_extru_dir, spine_ydir));
-                }
-            }
-        }
+//                     let spine_ydir = if ydir.length_squared() > 0.01 {
+//                         Some(ydir)
+//                     } else {
+//                         None
+//                     };
+//                     return Ok((pos_extru_dir, spine_ydir));
+//                 }
+//             }
+//         }
 
-        // 处理 DPOSE/DPOSS 属性
-        if let Some(end) = att.get_dpose()
-            && let Some(start) = att.get_dposs()
-        {
-            return Ok((Some((end - start).normalize()), None));
-        }
+//         // 处理 DPOSE/DPOSS 属性
+//         if let Some(end) = att.get_dpose()
+//             && let Some(start) = att.get_dposs()
+//         {
+//             return Ok((Some((end - start).normalize()), None));
+//         }
 
-        Ok((None, None))
-    }
+//         Ok((None, None))
+//     }
 
-    /// 初始化旋转
-    async fn initialize_rotation(
-        att: &NamedAttrMap,
-        cur_type: &str,
-        parent_type: &str,
-        pos_extru_dir: Option<DVec3>,
-        spine_ydir: Option<DVec3>,
-        quat: &mut DQuat,
-        is_world_quat: bool,
-    ) -> anyhow::Result<()> {
-        let parent_is_gensec = parent_type == "GENSEC";
-        let quat_v = att.get_rotation();
-        let has_local_ori = quat_v.is_some();
+//     /// 初始化旋转
+//     async fn initialize_rotation(
+//         att: &NamedAttrMap,
+//         cur_type: &str,
+//         parent_type: &str,
+//         pos_extru_dir: Option<DVec3>,
+//         spine_ydir: Option<DVec3>,
+//         quat: &mut DQuat,
+//         is_world_quat: bool,
+//     ) -> anyhow::Result<()> {
+//         let parent_is_gensec = parent_type == "GENSEC";
+//         let quat_v = att.get_rotation();
+//         let has_local_ori = quat_v.is_some();
 
-        if (!parent_is_gensec && has_local_ori) || (parent_is_gensec && cur_type == "TMPL") {
-            *quat = quat_v.unwrap_or_default();
-        } else {
-            if let Some(z_axis) = pos_extru_dir {
-                if parent_is_gensec {
-                    if !is_world_quat {
-                        if !z_axis.is_normalized() {
-                            return Ok(());
-                        }
-                        *quat = construct_basis_z_y_hint(z_axis, spine_ydir, false);
-                    }
-                } else {
-                    if !z_axis.is_normalized() {
-                        return Ok(());
-                    }
-                    *quat = construct_basis_z_ref_y(z_axis);
-                }
-            }
-        }
-        Ok(())
-    }
-}
+//         if (!parent_is_gensec && has_local_ori) || (parent_is_gensec && cur_type == "TMPL") {
+//             *quat = quat_v.unwrap_or_default();
+//         } else {
+//             if let Some(z_axis) = pos_extru_dir {
+//                 if parent_is_gensec {
+//                     if !is_world_quat {
+//                         if !z_axis.is_normalized() {
+//                             return Ok(());
+//                         }
+//                         *quat = construct_basis_z_y_hint(z_axis, spine_ydir, false);
+//                     }
+//                 } else {
+//                     if !z_axis.is_normalized() {
+//                         return Ok(());
+//                     }
+//                     *quat = construct_basis_z_ref_y(z_axis);
+//                 }
+//             }
+//         }
+//         Ok(())
+//     }
+// }
