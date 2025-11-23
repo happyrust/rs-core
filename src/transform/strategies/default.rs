@@ -80,6 +80,7 @@ impl PoslHandler {
     /// 处理 POSL/PLIN 属性逻辑
     pub async fn handle_posl(
         att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
         cur_type: &str,
         pos: &mut DVec3,
         quat: &mut DQuat,
@@ -125,42 +126,50 @@ impl PoslHandler {
             let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
             let plin_pos = if is_lmirror { -plin_pos } else { plin_pos };
 
-            let mut new_quat = {
-                if cur_type == "FITT" {
-                    // FITT需要特殊的坐标系构建：相对于父级旋转90度
-                    // 验证集期望：Y is E, Z is S
-                    // 父级STWALL：Y is U, Z is E
-                    // 使用z_axis作为父级实际的Z轴向量(E方向)
-                    let parent_z_axis = z_axis;                    // 父级Z轴 = E方向
-                    let parent_y_axis = DVec3::Z.cross(parent_z_axis).normalize(); // 父级Y轴 = U方向
-                    
-                    // FITT的局部坐标系：Y轴=E方向，Z轴=S方向
-                    let fitt_y_axis = parent_z_axis;           // Y轴 = 父级Z轴 (E)
-                    let fitt_z_axis = -parent_y_axis;          // Z轴 = -父级Y轴 (S)
-                    let fitt_x_axis = fitt_y_axis.cross(fitt_z_axis).normalize();
-                    
-                    DQuat::from_mat3(&DMat3::from_cols(fitt_x_axis, fitt_y_axis, fitt_z_axis))
-                } else if cur_type == "SCOJ" {
-                    cal_ori_by_z_axis_ref_x(z_axis) * *quat
-                } else {
-                    cal_ori_by_z_axis_ref_y(z_axis) * *quat
-                }
+            // YDIR 优先取自身的，如果没有则取 Owner 的 (如 FITT 继承 STWALL 的 YDIR)
+            let eff_ydir = if let Some(v) = ydir_axis {
+                Some(v)
+            } else {
+                parent_att.get_dvec3("YDIR")
             };
 
-            if let Some(v) = ydir_axis {
-                new_quat = cal_ori_by_ydir(v.normalize(), z_axis);
-            }
+            let mut new_quat = if cur_type == "SCOJ" {
+                cal_ori_by_z_axis_ref_x(z_axis) * *quat
+            } else {
+                if let Some(ydir) = eff_ydir {
+                     cal_ori_by_ydir(ydir.normalize(), z_axis)
+                } else {
+                     cal_ori_by_z_axis_ref_y(z_axis) * *quat
+                }
+            };
 
             if apply_bang {
                 new_quat = new_quat * DQuat::from_rotation_z(bangle.to_radians());
             }
 
-            let offset = if cur_type == "FITT" {
-                // FITT需要特殊的位置计算：将位置从父级坐标系转换到FITT的局部坐标系
-                new_quat.inverse() * (*pos + plin_pos) + rotation * new_quat * delta_vec
-            } else {
-                rotation * (*pos + plin_pos) + rotation * new_quat * delta_vec
-            };
+            // 位置计算：
+            // 1. plin_pos: POSL 在路径上的点 (父级/世界空间)
+            // 2. rotation: 父级当前的旋转 (通常为 Identity, 除非由外部传入)
+            // 3. new_quat: 当前元素相对于路径的旋转
+            // 4. delta_vec (DELP): 局部偏移，需应用当前旋转
+            // 5. pos: 这里的 pos 主要是 ZDIS/NPOS 等预先累加的偏移，通常也是局部 Z 轴或位移
+            //    注意：如果 pos 是 ZDIS 产生的 (0,0,z)，它应该是在 local frame 下的。
+            //    所以应该变换后加。
+            
+            // 修正公式: Translation = Rotation_Parent * (Plin_Pos) + Rotation_Parent * Rotation_Self * (DELP + POS)
+            // 假设 rotation (parent) 为 Identity 或已包含在 plin_pos 转换中 (query_pline通常返回Owner系坐标)
+            
+            // 如果 pos 包含 ZDIS (局部 Z 轴偏移):
+            let local_offset = delta_vec + *pos;
+            let world_offset = rotation * new_quat * local_offset;
+            
+            // plin_pos 是路径上的点，需应用父级旋转 (如果 rotation 是父级旋转)
+            // 但 DefaultStrategy 中 rotation 初始为 Identity，且 translation 初始为 0
+            // 这里的 rotation 参数实际上是 accumulated rotation? 
+            // 在 DefaultStrategy 调用时，rotation 是 Identity.
+            
+            let offset = rotation * plin_pos + world_offset;
+            
             *translation += offset;
             *quat = new_quat;
         }
@@ -317,7 +326,7 @@ impl TransformStrategy for DefaultStrategy {
         } else {
             // 有 POSL 时的处理
             PoslHandler::handle_posl(
-                att, cur_type, &mut pos, &mut quat, bangle, apply_bang,
+                att, parent_att, cur_type, &mut pos, &mut quat, bangle, apply_bang,
                 ydir_axis, delta_vec, &mut translation, rotation
             ).await?;
             

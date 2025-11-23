@@ -29,6 +29,8 @@ pub mod test_query_provider;
 
 pub mod test_expression;
 
+pub mod test_fitt_on_stwall;
+
 pub mod test_different_dbs;
 
 // pub mod test_transform;
