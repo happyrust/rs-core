@@ -276,6 +276,14 @@ pub async fn create_profile_geos(
                         is_spine: false,
                     };
 
+                    // 预计算单段路径的局部旋转，与多段路径保持一致
+                    let start_rotation = crate::transform::get_local_transform(profile_refno.into())
+                        .await
+                        .ok()
+                        .flatten()
+                        .map(|t| t.rotation)
+                        .unwrap_or(Quat::IDENTITY);
+
                     let solid = SweepSolid {
                         profile: profile.clone(),
                         drns,
@@ -286,56 +294,17 @@ pub async fn create_profile_geos(
                         height,
                         path: SweepPath3D::from_line(path),
                         lmirror: att.get_bool("LMIRR").unwrap_or_default(),
-                        start_rotation: Quat::IDENTITY,  // 单段路径使用单位旋转
+                        start_rotation,  // 使用预计算的局部旋转
                         spine_segments: vec![],  // 单段路径无 Spine3D 段
                         segment_transforms: vec![],  // 单段路径无变换
                     };
 
                     // 对于GENSEC元素，使用SPINE方向计算rotation而不是PLAX属性
-                    let mut transform = {
-                        // 使用缓存的元素类型信息，避免重复查询数据库
-                        if is_gensec_element {
-                            // 获取SPINE方向向量
-                            if let Some(gensec_refno) = gensec_refno {
-                                if let Ok(spine_pts) = get_spline_pts(gensec_refno).await {
-                                    if spine_pts.len() >= 2 {
-                                        let spine_direction =
-                                            (spine_pts[1] - spine_pts[0]).normalize();
-                                        let spine_rotation =
-                                            construct_basis_z_default(spine_direction, false);
-
-                                        Transform {
-                                            rotation: spine_rotation.as_quat(),
-                                            scale: solid.get_scaled_vec3(),
-                                            translation: Vec3::ZERO,
-                                        }
-                                    } else {
-                                        // SPINE点数不足，回退到PLAX计算
-                                        let mut fallback_transform =
-                                            calculate_plax_transform(plax, Vec3::Z);
-                                        fallback_transform.scale = solid.get_scaled_vec3();
-                                        fallback_transform
-                                    }
-                                } else {
-                                    // 获取SPINE失败，回退到PLAX计算
-                                    let mut fallback_transform =
-                                        calculate_plax_transform(plax, Vec3::Z);
-                                    fallback_transform.scale = solid.get_scaled_vec3();
-                                    fallback_transform
-                                }
-                            } else {
-                                // 找不到GENSEC refno，回退到PLAX计算
-                                let mut fallback_transform =
-                                    calculate_plax_transform(plax, Vec3::Z);
-                                fallback_transform.scale = solid.get_scaled_vec3();
-                                fallback_transform
-                            }
-                        } else {
-                            // 非GENSEC元素，使用原有的PLAX计算逻辑
-                            let mut plax_transform = calculate_plax_transform(plax, Vec3::Z);
-                            plax_transform.scale = solid.get_scaled_vec3();
-                            plax_transform
-                        }
+                    // 使用预计算的起始点局部旋转，保持与重构目标一致
+                    let transform = Transform {
+                        rotation: solid.start_rotation,
+                        scale: solid.get_scaled_vec3(),
+                        translation: Vec3::ZERO,
                     };
                     csg_shapes_map
                         .entry(refno)
@@ -482,8 +451,7 @@ pub async fn create_profile_geos(
                             .or_insert(Vec::new())
                             .push(CateCsgShape {
                                 //先暂时不做几何体共享
-                                // refno: RefU64(hash).into(),
-                                refno,
+                                refno: RefU64(hash).into(),
                                 csg_shape: Box::new(loft),
                                 transform,
                                 visible: true,

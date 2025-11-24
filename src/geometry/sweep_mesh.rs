@@ -352,8 +352,8 @@ fn sample_path_frames_sync(
     // 特殊处理：单段圆弧路径使用径向坐标系
     if segments.len() == 1 {
         if let SegmentPath::Arc(arc) = &segments[0] {
-            // 变换圆弧段
-            let transform = &segment_transforms[0];
+            // 变换圆弧段，安全处理空变换数组
+            let transform = segment_transforms.first().unwrap_or(&Transform::IDENTITY);
             let transformed_arc = match transform_arc(arc, transform) {
                 SegmentPath::Arc(arc) => arc,
                 _ => return None,
@@ -366,7 +366,8 @@ fn sample_path_frames_sync(
     // 1. 变换所有段
     let mut transformed_segments = Vec::new();
     for (i, segment) in segments.iter().enumerate() {
-        let transform = &segment_transforms[i];
+        // 安全获取变换，如果数组为空则使用单位变换
+        let transform = segment_transforms.get(i).unwrap_or(&Transform::IDENTITY);
         
         let transformed_segment = match segment {
             SegmentPath::Line(line) => {
