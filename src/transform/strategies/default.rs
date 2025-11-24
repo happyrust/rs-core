@@ -76,16 +76,16 @@ impl PoslHandler {
             let plin_pos = if is_lmirror { -plin_pos } else { plin_pos };
 
             // YDIR 优先取自身的，如果没有则取 Owner 的
-            let final_ydir = parent_att.get_dvec3("YDIR").unwrap_or(DVec3::Z);
+            let eff_ydir = parent_att.get_dvec3("YDIR").unwrap_or(DVec3::Y);
             let cur_type = att.get_type_str();
 
             // 对于 FITT 和 PLDATU 类型，使用 U 方向作为 Y 轴
-            // let final_ydir = if cur_type == "FITT" || cur_type == "PLDATU" {
-            //     // 根据测试用例 "Y is U and Z is W"，这些类型的 Y 轴应该指向 U 方向
-            //     DVec3::Z
-            // } else {
-            //     eff_ydir
-            // };
+            let final_ydir = if cur_type == "FITT" || cur_type == "PLDATU" {
+                // 根据测试用例 "Y is U and Z is W"，这些类型的 Y 轴应该指向 U 方向
+                DVec3::Z
+            } else {
+                eff_ydir
+            };
 
             let mut new_quat = if cur_type == "SCOJ" {
                 construct_basis_z_ref_x(z_axis)
