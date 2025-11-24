@@ -26,20 +26,27 @@ use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
 
 use std::vec::Vec;
 
-/// 将多个 Spine3D 段连接成连续的可序列化路径
+/// 将多个 Spine3D 段转换为归一化的路径段和对应的变换
+///
+/// **关键架构改进**：将路径几何与实例化变换分离
+/// - **归一化路径**：所有段都从原点 (0,0,0) 开始，沿单位方向延伸
+/// - **完整变换**：包含每段起点的 position、rotation 和 scale
 ///
 /// 参数：
-/// - segments: Spine3D 段的列表
+/// - segments: Spine3D 段的列表（包含实际世界坐标）
 ///
 /// 返回：
-/// - Ok(Vec<SegmentPath>): 转换后的连续路径段列表
+/// - Ok((Vec<SegmentPath>, Vec<Transform>)): (归一化路径段, 每段的完整变换)
 /// - Err: 如果段不连续或转换失败
-fn connect_spine_segments(segments: Vec<Spine3D>) -> anyhow::Result<Vec<SegmentPath>> {
+async fn normalize_spine_segments(
+    segments: Vec<Spine3D>,
+) -> anyhow::Result<(Vec<SegmentPath>, Vec<Transform>)> {
     const EPSILON: f32 = 1e-3;
-    let mut result = Vec::new();
+    let mut normalized_segments = Vec::new();
+    let mut transforms = Vec::new();
 
     if segments.is_empty() {
-        return Ok(result);
+        return Ok((normalized_segments, transforms));
     }
 
     for (i, spine) in segments.iter().enumerate() {
@@ -65,50 +72,104 @@ fn connect_spine_segments(segments: Vec<Spine3D>) -> anyhow::Result<Vec<SegmentP
             }
         }
 
-        // 根据曲线类型转换为 SegmentPath
+        // 根据曲线类型创建归一化的 SegmentPath 和对应的 Transform
         match spine.curve_type {
             SpineCurveType::LINE => {
-                result.push(SegmentPath::Line(Line3D {
-                    start: spine.pt0,
-                    end: spine.pt1,
+                // 计算实际方向和长度
+                let direction = (spine.pt1 - spine.pt0).normalize_or_zero();
+                let length = spine.pt0.distance(spine.pt1);
+
+                // 归一化路径：从原点沿 Z 轴单位长度
+                normalized_segments.push(SegmentPath::Line(Line3D {
+                    start: Vec3::ZERO,
+                    end: Vec3::Z,
                     is_spine: true,
                 }));
+
+                // 获取该段起点 POINSP 的局部旋转
+                let local_rotation = crate::transform::get_local_transform(spine.refno)
+                    .await
+                    .ok()
+                    .flatten()
+                    .map(|t| t.rotation)
+                    .unwrap_or(Quat::IDENTITY);
+
+                // 完整变换：包含位置、旋转和缩放
+                transforms.push(Transform {
+                    translation: spine.pt0,             // 起点位置
+                    rotation: local_rotation,           // 起点旋转（包含 bangle）
+                    scale: Vec3::new(1.0, 1.0, length), // Z 方向缩放到实际长度
+                });
             }
             SpineCurveType::THRU => {
                 // 通过三点确定圆弧
                 let center = circum_center(spine.pt0, spine.pt1, spine.thru_pt);
+                let radius = center.distance(spine.pt0);
                 let vec0 = spine.pt0 - spine.thru_pt;
                 let vec1 = spine.pt1 - spine.thru_pt;
                 let angle = (PI - vec0.angle_between(vec1)) * 2.0;
                 let axis = vec1.cross(vec0).normalize();
 
-                result.push(SegmentPath::Arc(Arc3D {
-                    center: vec3_round_3(center),
-                    radius: f32_round_3(center.distance(spine.pt0)),
+                // 归一化圆弧：从原点开始，单位半径
+                normalized_segments.push(SegmentPath::Arc(Arc3D {
+                    center: Vec3::ZERO,
+                    radius: 1.0,
                     angle,
-                    start_pt: spine.pt0,
+                    start_pt: Vec3::X, // 单位圆上的起点
                     clock_wise: axis.z < 0.0,
                     axis,
                     pref_axis: spine.preferred_dir,
                 }));
+
+                // 获取该段起点 POINSP 的局部旋转
+                let local_rotation = crate::transform::get_local_transform(spine.refno)
+                    .await
+                    .ok()
+                    .flatten()
+                    .map(|t| t.rotation)
+                    .unwrap_or(Quat::IDENTITY);
+
+                // 完整变换：位置、旋转和缩放
+                transforms.push(Transform {
+                    translation: center,        // 圆心位置
+                    rotation: local_rotation,   // 起点旋转
+                    scale: Vec3::splat(radius), // 统一缩放到实际半径
+                });
             }
             SpineCurveType::CENT => {
                 // 中心点已知的圆弧
                 let center = spine.center_pt;
+                let radius = center.distance(spine.pt0);
                 let vec0 = spine.pt0 - center;
                 let vec1 = spine.pt1 - center;
                 let angle = (PI - vec0.angle_between(vec1)) * 2.0;
                 let axis = vec1.cross(vec0).normalize();
 
-                result.push(SegmentPath::Arc(Arc3D {
-                    center: vec3_round_3(center),
-                    radius: f32_round_3(center.distance(spine.pt0)),
+                // 归一化圆弧：从原点开始，单位半径
+                normalized_segments.push(SegmentPath::Arc(Arc3D {
+                    center: Vec3::ZERO,
+                    radius: 1.0,
                     angle,
-                    start_pt: spine.pt0,
+                    start_pt: Vec3::X, // 单位圆上的起点
                     clock_wise: axis.z < 0.0,
                     axis,
                     pref_axis: spine.preferred_dir,
                 }));
+
+                // 获取该段起点 POINSP 的局部旋转
+                let local_rotation = crate::transform::get_local_transform(spine.refno)
+                    .await
+                    .ok()
+                    .flatten()
+                    .map(|t| t.rotation)
+                    .unwrap_or(Quat::IDENTITY);
+
+                // 完整变换：位置、旋转和缩放
+                transforms.push(Transform {
+                    translation: center,        // 圆心位置
+                    rotation: local_rotation,   // 起点旋转
+                    scale: Vec3::splat(radius), // 统一缩放到实际半径
+                });
             }
             SpineCurveType::UNKNOWN => {
                 tracing::warn!("遇到 UNKNOWN 类型的 Spine 曲线，跳过");
@@ -116,7 +177,7 @@ fn connect_spine_segments(segments: Vec<Spine3D>) -> anyhow::Result<Vec<SegmentP
         }
     }
 
-    Ok(result)
+    Ok((normalized_segments, transforms))
 }
 
 /// 为给定 PDMS 元素构建与剖面（Profile）相关的 CSG 几何体。
@@ -217,7 +278,7 @@ pub async fn create_profile_geos(
                 let t2 = att2.get_type_str();
                 if t1 == "POINSP" && t2 == "POINSP" {
                     paths.push(Spine3D {
-                        refno: att1.get_refno().unwrap(),
+                        refno: att1.get_refno().unwrap(), // 起点 POINSP 的 refno
                         pt0: att1.get_position().unwrap_or_default(),
                         pt1: att2.get_position().unwrap_or_default(),
                         curve_type: SpineCurveType::LINE,
@@ -237,7 +298,7 @@ pub async fn create_profile_geos(
                         _ => SpineCurveType::UNKNOWN,
                     };
                     paths.push(Spine3D {
-                        refno: att2.get_refno().unwrap(),
+                        refno: att1.get_refno().unwrap(), // 修正：使用起点 POINSP 的 refno，而不是 CURVE 的 refno
                         pt0,
                         pt1,
                         thru_pt: mid_pt,
@@ -257,6 +318,7 @@ pub async fn create_profile_geos(
     };
 
     if spine_paths.len() == 0 {
+        //if is SCTN (无 SPINE，通过 POSS/POSE 定义的简单拉伸)
         if let Some(poss) = att.get_poss()
             && let Some(pose) = att.get_pose()
         {
@@ -268,44 +330,33 @@ pub async fn create_profile_geos(
                         continue;
                     };
                     plax = profile.get_plax();
-                    let bangle = att.get_f32("BANG").unwrap_or_default();
 
                     // 为共享 mesh 生成创建单位长度的路径，实际长度存储在 height 中用于实例化时缩放
                     let path = Line3D {
                         start: Default::default(),
-                        end: Vec3::Z * 1.0,  // 使用真正的单位长度路径
+                        end: Vec3::Z * 1.0, // 使用真正的单位长度路径
                         is_spine: false,
                     };
 
-                    // 预计算单段路径的局部旋转，与多段路径保持一致
-                    let start_rotation = crate::transform::get_local_transform(profile_refno.into())
-                        .await
-                        .ok()
-                        .flatten()
-                        .map(|t| t.rotation)
-                        .unwrap_or(Quat::IDENTITY);
-
+                    // SCTN 类型（无 SPINE）：不需要局部变换
                     let solid = SweepSolid {
                         profile: profile.clone(),
-                        drns,
-                        drne,
-                        bangle,
+                        drns: None,
+                        drne: None,
                         plax,
                         extrude_dir,
-                        height,
+                        height: 1.0,
                         path: SweepPath3D::from_line(path),
                         lmirror: att.get_bool("LMIRR").unwrap_or_default(),
-                        start_rotation,  // 使用预计算的局部旋转
-                        spine_segments: vec![],  // 单段路径无 Spine3D 段
-                        segment_transforms: vec![],  // 单段路径无变换
+                        spine_segments: vec![],     // 无 SPINE 段
+                        segment_transforms: vec![], // SCTN 无需局部变换
                     };
 
-                    // 对于GENSEC元素，使用SPINE方向计算rotation而不是PLAX属性
-                    // 使用预计算的起始点局部旋转，保持与重构目标一致
+                    // SCTN 类型：直接使用 POSS 位置和缩放，不需要旋转
                     let transform = Transform {
-                        rotation: solid.start_rotation,
+                        rotation: Quat::IDENTITY,
                         scale: solid.get_scaled_vec3(),
-                        translation: poss,  // 设置实际起始位置，用于单位长度 mesh 定位
+                        translation: poss,
                     };
                     csg_shapes_map
                         .entry(refno)
@@ -325,14 +376,14 @@ pub async fn create_profile_geos(
         }
     } else {
         // 将所有 Spine3D 段连接成一条连续路径
-        match connect_spine_segments(spine_paths.clone()) {
-            Ok(connected_paths) => {
-                if connected_paths.is_empty() {
-                    tracing::warn!("连接 Spine 段后为空，跳过处理");
+        match normalize_spine_segments(spine_paths.clone()).await {
+            Ok((normalized_paths, segment_transforms)) => {
+                if normalized_paths.is_empty() {
+                    tracing::warn!("归一化 Spine 段后为空，跳过处理");
                     return Ok(false);
                 }
 
-                // 为每个 profile 创建一个包含完整路径的 SweepSolid
+                // 为每个 profile 创建一个包含归一化路径的 SweepSolid
                 for (i, geom) in geos.iter().enumerate() {
                     if let CateGeoParam::Profile(profile) = geom {
                         let Some(profile_refno) = profile.get_refno() else {
@@ -340,10 +391,8 @@ pub async fn create_profile_geos(
                         };
 
                         plax = profile.get_plax();
-                        let bangle = att.get_f32("BANG").unwrap_or_default();
 
-                        // 创建路径
-                        let sweep_path = SweepPath3D::from_segments(connected_paths.clone());
+                        let sweep_path = SweepPath3D::from_segments(normalized_paths.clone());
 
                         // 验证路径连续性
                         let (is_continuous, discontinuity_index) = sweep_path.validate_continuity();
@@ -354,43 +403,21 @@ pub async fn create_profile_geos(
                             );
                         }
 
+                        // 注意：height 现在是归一化路径的长度
+                        // 实际长度由 segment_transforms 中的 scale 控制
                         let height = sweep_path.length();
-                        // 预计算起始点的局部旋转
-                        let start_rotation = if let Some(first_spine) = spine_paths.first() {
-                            crate::transform::get_local_transform(first_spine.refno)
-                                .await
-                                .ok()
-                                .flatten()
-                                .map(|t| t.rotation)
-                                .unwrap_or(Quat::IDENTITY)
-                        } else {
-                            Quat::IDENTITY
-                        };
-
-                        // 预计算所有段的变换
-                        let mut segment_transforms = Vec::new();
-                        for spine in &spine_paths {
-                            let transform = crate::transform::get_local_transform(spine.refno)
-                                .await
-                                .ok()
-                                .flatten()
-                                .unwrap_or(Transform::IDENTITY);
-                            segment_transforms.push(transform);
-                        }
 
                         let loft = SweepSolid {
                             profile: profile.clone(),
-                            drns,
-                            drne,
-                            bangle,
+                            drns: None,
+                            drne: None,
                             plax,
                             extrude_dir,
                             height,
                             path: sweep_path,
                             lmirror: att.get_bool("LMIRR").unwrap_or_default(),
-                            start_rotation,  // 设置预计算的旋转
-                            spine_segments: spine_paths.clone(),  // 存储原始 Spine3D 段信息
-                            segment_transforms,  // 存储预计算的每段变换
+                            spine_segments: spine_paths.clone(), // 存储原始 Spine3D 段信息（用于调试）
+                            segment_transforms: segment_transforms.clone(), // 存储完整变换（位置+旋转+缩放）
                         };
 
                         // 使用第一个 spine 的 refno 生成 hash
@@ -400,12 +427,23 @@ pub async fn create_profile_geos(
                             .unwrap_or(RefnoEnum::from(RefU64(0)));
                         let hash = profile_refno.hash_with_another_refno(first_spine_refno);
 
-                        // 使用预计算的起始点局部旋转，与重构目标保持一致
-                        let transform = Transform {
-                            rotation: loft.start_rotation,
-                            scale: loft.get_scaled_vec3(),
-                            translation: spine_paths.first().map(|s| s.pt0).unwrap_or(Vec3::ZERO),  // 设置第一个 spine 点的位置
-                        };
+                        // 获取第一段的完整变换用于实例化
+                        let first_transform = segment_transforms
+                            .first()
+                            .cloned()
+                            .unwrap_or(Transform::IDENTITY);
+
+                        let orientation_str = crate::tool::math_tool::quat_to_pdms_ori_str(
+                            &first_transform.rotation,
+                            false,
+                        );
+                        println!(
+                            "DEBUG: SweepSolid first segment - pos: {:?}, rotation ENU: {}, scale: {:?}",
+                            first_transform.translation, orientation_str, first_transform.scale
+                        );
+
+                        // 使用第一段的完整变换进行实例化（包含位置、旋转和缩放）
+                        let transform = first_transform;
 
                         csg_shapes_map
                             .entry(refno)

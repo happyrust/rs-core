@@ -44,15 +44,13 @@ pub struct SweepSolid {
     pub profile: CateProfileParam,
     pub drns: Option<DVec3>,
     pub drne: Option<DVec3>,
-    pub bangle: f32,
     pub plax: Vec3,
     pub extrude_dir: DVec3,
     pub height: f32,
     pub path: SweepPath3D,
     pub lmirror: bool,
-    pub start_rotation: Quat,  // 存储路径起始点的局部旋转
-    pub spine_segments: Vec<Spine3D>,  // 存储原始 Spine3D 段信息（用于变换）
-    pub segment_transforms: Vec<Transform>,  // 存储预计算的每段变换
+    pub spine_segments: Vec<Spine3D>, // 存储原始 Spine3D 段信息（用于变换）
+    pub segment_transforms: Vec<Transform>, // 存储每段起点 POINSP 的 local transform
 }
 
 impl SweepSolid {
@@ -139,11 +137,11 @@ impl SweepSolid {
             let x_axis = y_axis.cross(z_axis).normalize();
             //旋转到期望的平面
             rot_mat = DMat3::from_cols(x_axis, y_axis, z_axis);
-            beta_rot = DQuat::from_axis_angle(z_axis, self.bangle.to_radians() as f64);
+            beta_rot = DQuat::IDENTITY; // bangle 包含在 segment_transforms 中
         } else if let Some(d) = self.path.as_single_line() {
             if d.is_spine {
-                // dbg!(self.bangle);
-                beta_rot = DQuat::from_axis_angle(DVec3::Z, self.bangle.to_radians() as f64);
+                // bangle 包含在 segment_transforms 中
+                beta_rot = DQuat::IDENTITY;
             }
             rot_mat = DMat3::from_quat(DQuat::from_rotation_arc(
                 profile.na_axis.as_dvec3(),
@@ -216,7 +214,7 @@ impl SweepSolid {
             points.push(p);
         }
         let wire = wire::gen_wire(&points, &profile.frads).ok()?;
-        // dbg!(self.bangle);
+        // bangle 已经包含在 start_rotation 中
         let translation = Matrix4::from_translation(offset_pt.vector3());
         // dbg!(translation);
         let r_trans_mat = Matrix4::from_translation(r_translation);
@@ -247,10 +245,15 @@ impl Default for SweepSolid {
     fn default() -> Self {
         Self {
             profile: CateProfileParam::UNKOWN,
-            bangle: 0.0,
+            drns: None,
+            drne: None,
             plax: Vec3::Y,
             extrude_dir: DVec3::Z,
-            ..Default::default()
+            height: 0.0,
+            path: SweepPath3D::default(),
+            lmirror: false,
+            spine_segments: Vec::new(),
+            segment_transforms: Vec::new(),
         }
     }
 }
@@ -404,10 +407,19 @@ impl BrepShapeTrait for SweepSolid {
 
     #[inline]
     fn get_trans(&self) -> bevy_transform::prelude::Transform {
-        Transform {
-            rotation: self.start_rotation,  // 使用预计算的起始点旋转
-            scale: self.get_scaled_vec3(),
-            translation: Vec3::ZERO,
+        // 使用 segment_transforms 中的第一个变换（如果存在）
+        if let Some(first_transform) = self.segment_transforms.first() {
+            Transform {
+                rotation: first_transform.rotation,
+                scale: self.get_scaled_vec3(),
+                translation: Vec3::ZERO,
+            }
+        } else {
+            Transform {
+                rotation: Quat::IDENTITY,
+                scale: self.get_scaled_vec3(),
+                translation: Vec3::ZERO,
+            }
         }
     }
 
