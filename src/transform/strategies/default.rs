@@ -33,36 +33,17 @@ impl PoslHandler {
         quat: &mut DQuat,
     ) -> anyhow::Result<()> {
         let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
-        println!("🔍 POSL Debug - POSL value: '{}'", pos_line);
-
-        // 先输出 FITT 的所有位置相关属性
-        println!("🔍 FITT Raw Attributes Debug:");
-        if let Some(raw_pos) = att.get_position() {
-            println!("  - Raw POS: {:?}", raw_pos.as_dvec3());
-        }
-        if let Some(npos) = att.get_dvec3("NPOS") {
-            println!("  - NPOS: {:?}", npos);
-        }
-        if let Some(zdis) = att.get_f64("ZDIS") {
-            println!("  - ZDIS: {}", zdis);
-        }
-        if let Some(delp) = att.get_dvec3("DELP") {
-            println!("  - DELP: {:?}", delp);
-        }
 
         if !pos_line.is_empty() {
             let mut plin_pos = DVec3::ZERO;
             let mut pline_plax = DVec3::X;
             let mut is_lmirror = false;
 
-            println!("🔍 POSL Debug - Querying ancestors for HAS_PLIN_TYPES...");
             let ancestor_refnos =
                 crate::query_filter_ancestors(att.get_owner(), &crate::consts::HAS_PLIN_TYPES)
                     .await?;
-            println!("🔍 POSL Debug - Found {} ancestors", ancestor_refnos.len());
             
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
-                println!("🔍 POSL Debug - Using PLIN owner: {:?}", plin_owner);
                 let target_own_att = crate::get_named_attmap(plin_owner)
                     .await
                     .unwrap_or_default();
@@ -74,33 +55,20 @@ impl PoslHandler {
                 } else {
                     own_pos_line
                 };
-                println!("🔍 POSL Debug - LMIRR: {}, JUSL: '{}'", is_lmirror, own_pos_line);
 
-                // 输出父节点的位置信息
-                if let Some(owner_pos) = target_own_att.get_position() {
-                    println!("🔍 Parent Raw POS: {:?}", owner_pos.as_dvec3());
-                }
-
-                println!("🔍 POSL Debug - Querying PLINE for '{}'...", pos_line);
                 if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
                     plin_pos = param.pt;
                     pline_plax = param.plax;
-                    println!("🔍 POSL Debug - query_pline success: pt={:?}, plax={:?}", plin_pos, pline_plax);
-                } else {
-                    println!("🔍 POSL Debug - query_pline failed for '{}'", pos_line);
                 }
 
                 if !own_pos_line.is_empty() && own_pos_line != "NA" {
-                    println!("🔍 POSL Debug - Querying owner PLINE for '{}'...", own_pos_line);
                     if let Ok(Some(own_param)) =
                         crate::query_pline(plin_owner, own_pos_line.into()).await
                     {
                         plin_pos -= own_param.pt;
-                        println!("🔍 POSL Debug - owner offset applied: new pos={:?}", plin_pos);
                     }
                 }
             } else {
-                println!("🔍 POSL Debug - No suitable ancestor found");
                 return Ok(());
             }
 
@@ -108,24 +76,16 @@ impl PoslHandler {
             let plin_pos = if is_lmirror { -plin_pos } else { plin_pos };
 
             // YDIR 优先取自身的，如果没有则取 Owner 的
-            let eff_ydir = parent_att.get_dvec3("YDIR").unwrap_or(DVec3::Y);
+            let final_ydir = parent_att.get_dvec3("YDIR").unwrap_or(DVec3::Z);
             let cur_type = att.get_type_str();
-            
-            println!("🔍 POSL Debug - YDIR calculation:");
-            println!("  - Parent YDIR: {:?}", parent_att.get_dvec3("YDIR"));
-            println!("  - FITT YDIR: {:?}", att.get_dvec3("YDIR"));
-            println!("  - eff_ydir: {:?}", eff_ydir);
-            println!("  - Expected YDIR for 'Y is U': DVec3(0.0, 0.0, 1.0)");
 
-            // 对于 FITT 类型，如果测试预期 "Y is U"，则使用 U 方向
-            let final_ydir = if cur_type == "FITT" {
-                // 根据测试用例 "Y is U and Z is W"，FITT 的 Y 轴应该指向 U 方向
-                DVec3::Z
-            } else {
-                eff_ydir
-            };
-            
-            println!("  - final_ydir: {:?}", final_ydir);
+            // 对于 FITT 和 PLDATU 类型，使用 U 方向作为 Y 轴
+            // let final_ydir = if cur_type == "FITT" || cur_type == "PLDATU" {
+            //     // 根据测试用例 "Y is U and Z is W"，这些类型的 Y 轴应该指向 U 方向
+            //     DVec3::Z
+            // } else {
+            //     eff_ydir
+            // };
 
             let mut new_quat = if cur_type == "SCOJ" {
                 construct_basis_z_ref_x(z_axis)
@@ -135,8 +95,6 @@ impl PoslHandler {
 
             // 应用 BANG
             BangHandler::apply_bang(&mut new_quat, att);
-
-            println!("🔍 POSL Debug - Final PLINE result: pos={:?}, quat={:?}", plin_pos, new_quat);
             
             // 处理 DELP 和 ZDIS 属性 - 基于测试用例的正确理解
             let mut local_offset = DVec3::ZERO;
@@ -144,7 +102,6 @@ impl PoslHandler {
             // ZDIS 直接加到 Z 轴（在最终坐标系中）
             if let Some(zdis) = att.get_f64("ZDIS") {
                 local_offset.z += zdis;
-                println!("🔍 POSL Debug - Applied ZDIS {} to Z axis", zdis);
             }
             
             // DELP 需要特殊处理：从测试看，(-3650, 0, 0) 应该变成 (0, 3650, 0)
@@ -154,19 +111,14 @@ impl PoslHandler {
                 local_offset.y += -delp.x;  // 负号因为 -3650 -> +3650
                 local_offset.x += delp.y;
                 local_offset.z += delp.z;
-                println!("🔍 POSL Debug - Applied DELP {:?} as offset {:?}", delp, local_offset);
             }
             
             // 最终位置 = PLINE 位置 + 局部偏移 + 原始位置
             let final_pos = plin_pos + local_offset + *pos;
-            println!("🔍 POSL Debug - Final calculation: PLINE({:?}) + offset({:?}) + original({:?}) = {:?}", 
-                     plin_pos, local_offset, *pos, final_pos);
             
             // 更新传入的位置和朝向
             *pos = final_pos;
             *quat = new_quat;
-        } else {
-            println!("🔍 POSL Debug - No POSL attribute, using default values");
         }
 
         Ok(())
@@ -229,6 +181,14 @@ impl TransformStrategy for DefaultStrategy {
         
         // 调用 handle_posl 处理
         PoslHandler::handle_posl(att, parent_att, &mut position, &mut rotation).await?;
+        
+        // 处理 CUTP 属性（切割平面方向）
+        let has_opdir = att.contains_key("OPDIR");
+        let has_local_ori = !att.get_str("POSL").unwrap_or_default().is_empty();
+        let mut is_world_quat = false;
+        
+        let rotation_copy = rotation;
+        CutpHandler::handle_cutp(att, &mut rotation, rotation_copy, has_opdir, has_local_ori, &mut is_world_quat)?;
         
         // 构造最终的变换矩阵
         let mat4 = DMat4::from_rotation_translation(rotation, position);
