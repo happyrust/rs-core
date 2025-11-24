@@ -7,12 +7,14 @@ CUTP（Cut Plane）是 PDMS 系统中用于定义切割平面方向的属性，�
 ## 1. CUTP 属性定义
 
 ### 1.1 几何意义
+
 - **功能**: 定义切割平面的方向向量
 - **坐标系**: 父节点/世界坐标系
 - **数据类型**: 3D 方向向量 (DVec3)
 - **默认值**: DVec3::Z (U 方向)
 
 ### 1.2 应用场景
+
 - 管道和构件的切割面定义
 - 几何体的端面方向控制
 - 与其他方向属性的协调使用
@@ -20,6 +22,7 @@ CUTP（Cut Plane）是 PDMS 系统中用于定义切割平面方向的属性，�
 ## 2. 技术实现
 
 ### 2.1 核心算法
+
 ```rust
 pub fn handle_cutp(
     att: &NamedAttrMap,
@@ -42,7 +45,9 @@ pub fn handle_cutp(
 ```
 
 ### 2.2 条件逻辑
+
 CUTP 属性生效的必要条件：
+
 ```rust
 if has_cut_dir && !has_opdir && !has_local_ori
 ```
@@ -52,6 +57,7 @@ if has_cut_dir && !has_opdir && !has_local_ori
 - **!has_local_ori**: 不能通过 POSL 等方式定义本地方位
 
 ### 2.3 坐标变换算法
+
 ```rust
 let mat3 = DMat3::from_quat(rotation);
 *quat = construct_basis_x_cutplane(mat3.z_axis, cut_dir);
@@ -64,6 +70,7 @@ let mat3 = DMat3::from_quat(rotation);
 ## 3. 集成架构
 
 ### 3.1 处理流程
+
 ```
 1. 虚拟节点检查 → IDENTITY
 2. 基础 position/rotation 获取
@@ -74,6 +81,7 @@ let mat3 = DMat3::from_quat(rotation);
 ```
 
 ### 3.2 集成代码
+
 ```rust
 impl TransformStrategy for DefaultStrategy {
     async fn get_local_transform(&mut self) -> anyhow::Result<Option<DMat4>> {
@@ -99,6 +107,7 @@ impl TransformStrategy for DefaultStrategy {
 ```
 
 ### 3.3 参数映射
+
 - **has_opdir**: 检查构件是否包含 OPDIR 属性
 - **has_local_ori**: 检查是否通过 POSL 定义了本地方位
 - **rotation_copy**: 解决借用检查器问题的临时变量
@@ -107,12 +116,15 @@ impl TransformStrategy for DefaultStrategy {
 ## 4. IDA Pro 分析证据
 
 ### 4.1 属性处理系统发现
+
 通过 IDA Pro 对 `core.dll` 的分析发现：
+
 - **完整的属性系统**: `DB_GetPseudoPosAttBase`、`DB_PutPseudoPosAttBase` 等专门函数
 - **向量属性支持**: 确认 PDMS 支持复杂的向量属性处理
 - **坐标变换体系**: 发现完整的几何计算和空间处理函数
 
 ### 4.2 几何处理函数
+
 ```cpp
 // IDA Pro 中发现的关键函数
 PLNPOS (0x1020313c)           // 平面位置处理
@@ -121,6 +133,7 @@ setArcToPML (0x10200c60)       // 弧线设置
 ```
 
 ### 4.3 设计一致性验证
+
 - **类型化处理**: 不同构件类型有专门的坐标处理逻辑
 - **属性互斥性**: CUTP 与 OPDIR、POSL 的互斥关系符合 PDMS 设计原则
 - **坐标空间**: CUTP 在父节点空间中定义，与原始系统一致
@@ -128,6 +141,7 @@ setArcToPML (0x10200c60)       // 弧线设置
 ## 5. 使用示例
 
 ### 5.1 基本用法
+
 ```rust
 // 构件包含 CUTP 属性
 let att = NamedAttrMap::new();
@@ -139,6 +153,7 @@ let transform = strategy.get_local_transform().await?;
 ```
 
 ### 5.2 条件验证
+
 ```rust
 // CUTP 生效的情况
 ✓ 有 CUTP 属性
@@ -154,16 +169,19 @@ let transform = strategy.get_local_transform().await?;
 ## 6. 技术细节
 
 ### 6.1 坐标系上下文
+
 - **CUTP 坐标系**: 父节点/世界坐标系
 - **变换目标**: 本地构件坐标系
 - **互斥性**: 与 OPDIR 和 POSL 定位系统互斥
 
 ### 6.2 性能考虑
+
 - **条件检查优先**: 避免不必要的坐标变换计算
 - **临时变量优化**: 解决 Rust 借用检查器约束
 - **集成点优化**: 在 POSL 处理后应用，确保正确的计算顺序
 
 ### 6.3 扩展性
+
 - **is_world_quat 标志**: 当前未使用，预留未来世界坐标系处理需求
 - **条件逻辑**: 可根据需要扩展更多属性互斥规则
 - **算法接口**: `construct_basis_x_cutplane` 可独立优化和测试
@@ -171,11 +189,13 @@ let transform = strategy.get_local_transform().await?;
 ## 7. 测试验证
 
 ### 7.1 当前测试状态
+
 - **PLDATU 测试**: ✅ 通过（位置和方位验证）
 - **编译测试**: ✅ 无错误无警告
 - **集成测试**: ✅ 不影响现有功能
 
 ### 7.2 建议扩展测试
+
 ```rust
 #[test]
 async fn test_cutp_attribute() {
