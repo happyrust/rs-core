@@ -17,6 +17,24 @@
     "noun": "POINSP",
     "pos_str": "W 2742.352mm S 17182.535mm U 0mm",
     "ori_str": "Y is U and Z is E 9.0681 S"
+  },
+  {
+    "refno": "17496/140209",
+    "noun": "JLDATU",
+    "pos_str": "W 2918.456mm S 17153.502mm U 0mm",
+    "ori_str": "Y is U and Z is E 9.6558 S"
+  },
+  {
+    "refno": "17496/140210",
+    "noun": "PLDATU",
+    "pos_str": "E 0mm N 0mm U 0mm",
+    "ori_str": "Y is U and Z is W"
+  },
+  {
+    "refno": "17496/140211",
+    "noun": "FIXING",
+    "pos_str": "W 2200mm N 64.905mm D 1350.131mm",
+    "ori_str": "Y is W and Z is S 89.768 D"
   }
 
 

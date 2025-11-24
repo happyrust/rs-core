@@ -22,11 +22,11 @@ impl SpineStrategy {
         Self { att, parent_att }
     }
 
-    /// 从 GENSEC refno 创建 SpineStrategy
-    /// 自动获取 GENSEC 下的 SPINE 和第一个 POINSP
-    pub async fn from_gensec(gensec_refno: RefnoEnum) -> anyhow::Result<Self> {
-        // 首先需要获取到GENSEC 下的 SPINE， 然后获取到 SPINE 下的第一个 POINSP
-        let spine_refnos = get_children_refnos(gensec_refno).await?;
+    /// 从 GENSEC 或 WALL refno 创建 SpineStrategy
+    /// 自动获取 GENSEC/WALL 下的 SPINE 和第一个 POINSP
+    pub async fn from_wall_or_gensec(gen_refno: RefnoEnum) -> anyhow::Result<Self> {
+        // 首先需要获取到GENSEC/WALL 下的 SPINE， 然后获取到 SPINE 下的第一个 POINSP
+        let spine_refnos = get_children_refnos(gen_refno).await?;
         let spine_refno = spine_refnos.first().cloned().unwrap_or_default();
         let poinsp_refnos = get_children_refnos(spine_refno).await?;
         let poinsp_refno = poinsp_refnos.first().cloned().unwrap_or_default();

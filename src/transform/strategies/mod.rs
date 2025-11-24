@@ -50,9 +50,6 @@ impl TransformStrategyFactory {
         match parent_att.get_type_str() {   
             "SPINE" => Box::new(SpineStrategy::new(att.clone(), parent_att.clone())),
             "GENSEC" | "WALL" => Box::new(SweepStrategy::new(att.clone(), parent_att.clone())),
-            // "SJOI" => Box::new(SjoiStrategy),
-            // "ENDATU" => Box::new(EndAtuStrategy),
-            // "STWALL" | "FITT" => Box::new(ComplexStrategy),
             // 父节点不是特殊类型，使用默认策略（仅POS+ORI）
             _ => Box::new(DefaultStrategy::new(att.clone(), parent_att.clone())),
         }

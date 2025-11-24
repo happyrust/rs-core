@@ -50,7 +50,7 @@ impl TransformStrategy for SweepStrategy {
             "JLDATU" => {
                 // JLDATU 使用标准的 ZDIS/PKDI 计算
                 // SpineStrategy 需要是有状态的，但我们这里只需要它计算一次
-                let mut strategy = SpineStrategy::from_gensec(gensec_refno).await?;
+                let mut strategy = SpineStrategy::from_wall_or_gensec(gensec_refno).await?;
                 let transform = strategy.cal_trans_by_pkdi_zdis(pkdi, zdis).await
                     .ok_or_else(|| anyhow::anyhow!("Failed to calculate transform"))?;
                 
