@@ -42,16 +42,26 @@ pub struct TransformStrategyFactory;
 
 impl TransformStrategyFactory {
     pub fn get_strategy(att: &NamedAttrMap, parent_att: &NamedAttrMap) -> Box<dyn TransformStrategy> {
+        let refno = att.get_refno_or_default();
+        let type_str = att.get_type_str();
+        let parent_type = parent_att.get_type_str();
+
           // 自身是 WALL 这种情况需要单独处理
-        if att.get_type_str() == "STWALL" {
+        if type_str == "STWALL" {
             return Box::new(WallStrategy::new(att.clone(), parent_att.clone()));
         };
         // 基于父节点类型进行策略分发
-        match parent_att.get_type_str() {   
-            "SPINE" => Box::new(SpineStrategy::new(att.clone(), parent_att.clone())),
-            "GENSEC" | "WALL" => Box::new(SweepStrategy::new(att.clone(), parent_att.clone())),
+        match parent_type {   
+            "SPINE" => {
+                Box::new(SpineStrategy::new(att.clone(), parent_att.clone()))
+            },
+            "GENSEC" | "WALL" => {
+                Box::new(SweepStrategy::new(att.clone(), parent_att.clone()))
+            },
             // 父节点不是特殊类型，使用默认策略（仅POS+ORI）
-            _ => Box::new(DefaultStrategy::new(att.clone(), parent_att.clone())),
+            _ => {
+                Box::new(DefaultStrategy::new(att.clone(), parent_att.clone()))
+            },
         }
       
     }

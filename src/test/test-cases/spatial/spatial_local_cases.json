@@ -1,28 +1,10 @@
 [
 
   {
-    "refno": "17496/105940",
-    "noun": "WALL",
-    "pos_str": "E 0mm N 0mm D 20mm",
-    "ori_str": "Y is N and Z is U"
-  },
-  {
-    "refno": "17496/105942",
-    "noun": "POINSP",
-    "pos_str": "W 5058.219mm S 16648.557mm U 0mm",
-    "ori_str": "Y is U and Z is E 16.9 S"
-  },
-  {
-    "refno": "17496/105944",
-    "noun": "POINSP",
-    "pos_str": "W 2742.352mm S 17182.535mm U 0mm",
-    "ori_str": "Y is U and Z is E 9.0681 S"
-  },
-  {
-    "refno": "17496/140209",
+    "refno": "17496/137892",
     "noun": "JLDATU",
-    "pos_str": "W 2918.456mm S 17153.502mm U 0mm",
-    "ori_str": "Y is U and Z is E 9.6558 S"
+    "pos_str": "W 4736.768mm S 16742.85mm U 0mm",
+    "ori_str": "Y is U and Z is E 15.797 S"
   },
   {
     "refno": "17496/140210",

@@ -25,16 +25,34 @@ impl SpineStrategy {
     /// 从 GENSEC 或 WALL refno 创建 SpineStrategy
     /// 自动获取 GENSEC/WALL 下的 SPINE 和第一个 POINSP
     pub async fn from_wall_or_gensec(gen_refno: RefnoEnum) -> anyhow::Result<Self> {
-        // 首先需要获取到GENSEC/WALL 下的 SPINE， 然后获取到 SPINE 下的第一个 POINSP
-        let spine_refnos = get_children_refnos(gen_refno).await?;
-        let spine_refno = spine_refnos.first().cloned().unwrap_or_default();
-        let poinsp_refnos = get_children_refnos(spine_refno).await?;
-        let poinsp_refno = poinsp_refnos.first().cloned().unwrap_or_default();
+        // 获取所有子节点属性，查找 SPINE
+        let children_atts = get_children_named_attmaps(gen_refno).await?;
         
-        let poinsp_att = get_named_attmap(poinsp_refno).await?;
-        let parent_att = get_effective_parent_att(spine_refno).await?;
+        let spine_att = children_atts.iter()
+            .find(|att| att.get_type_str() == "SPINE")
+            .ok_or_else(|| anyhow::anyhow!("No SPINE found under {}", gen_refno))?;
+            
+        let spine_refno = spine_att.get_refno().unwrap();
         
-        Ok(SpineStrategy::new(poinsp_att, parent_att))
+        // 获取 SPINE 下的第一个 POINSP
+        let spine_children = get_children_named_attmaps(spine_refno).await?;
+        let poinsp_att = spine_children.iter()
+            .find(|att| att.get_type_str() == "POINSP")
+            .ok_or_else(|| anyhow::anyhow!("No POINSP found under SPINE {}", spine_refno))?;
+
+        // 注意：parent_att 应该是 SPINE 的有效属性（可能包含虚拟属性合并）
+        // 但在这里我们直接用了 spine_att，如果 SPINE 是虚拟的且有父级继承逻辑...
+        // get_effective_parent_att(spine_refno) 会向上找非虚拟父级。
+        // 但 SPINE 本身就是 GENSEC 的子级。
+        // SpineStrategy 中的 parent_att 通常指 "SPINE" 这一层。
+        // 原代码: let parent_att = get_effective_parent_att(spine_refno).await?;
+        // 如果 SPINE 是虚拟节点， get_effective_parent_att(spine_refno) 会返回 GENSEC 的属性 + SPINE 属性合并?
+        // 不，get_effective_parent_att(child) 返回 parent 的有效属性。
+        // get_effective_parent_att(spine_refno) 返回 GENSEC 的属性。
+        // 但是 SpineStrategy 需要的是 SPINE 的属性（用于 get_spline_path 中获取 owner=spine_refno，以及 YDIR 等）。
+        
+        // 如果 SpineStrategy 期望 parent_att 是 SPINE 自身的属性：
+        Ok(SpineStrategy::new(poinsp_att.clone(), spine_att.clone()))
     }
 
     /// 处理 GENSEC 的特殊挤出方向逻辑
@@ -326,14 +344,19 @@ impl SpineStrategy {
         if paths.is_empty() {
             return None;
         }
+
+        // 收集所有段的几何路径
+        let mut all_segments = Vec::new();
+        let mut total_len = 0.0;
         
-        let sweep_path = paths[0].generate_paths().0;
-        let lens: Vec<f32> = sweep_path
-            .segments
-            .iter()
-            .map(|x| x.length())
-            .collect::<Vec<_>>();
-        let total_len: f32 = lens.iter().sum();
+        for spine in &paths {
+            let (path, _) = spine.generate_paths();
+            for segment in path.segments {
+                let len = segment.length();
+                total_len += len;
+                all_segments.push((segment, spine));
+            }
+        }
         
         if total_len <= 0.0 {
             return None;
@@ -341,18 +364,28 @@ impl SpineStrategy {
         
         let spine_ydir = paths[0].preferred_dir.as_dvec3();
         // pkdi 给了一个比例的距离，加上 zdis 手动距离
-        let start_len = (total_len * pkdi.clamp(0.0, 1.0) as f32) as f64;
-        let mut tmp_dist = start_len + zdis;
-        let mut cur_len = 0.0;
+        let start_len = (total_len as f64 * pkdi.clamp(0.0, 1.0)) as f64;
+        let mut target_dist = start_len + zdis;
+        
+        // 如果目标距离超出范围，通常应该 clamp 到末端或处理 extrapolate
+        // 这里简单处理，如果在范围外，可能落在最后一段的延伸线上（如果是直线）
+        // 或者直接 clamp 到 0..total_len
+        // target_dist = target_dist.clamp(0.0, total_len as f64); 
+        // PDMS中可能允许超出? 暂时允许
+
+        let mut cur_accum_len = 0.0;
         let mut pos = DVec3::default();
         let mut quat = DQuat::IDENTITY;
         
-        for (i, segment) in sweep_path.segments.into_iter().enumerate() {
-            tmp_dist -= cur_len;
-            cur_len = lens[i] as f64;
+        let segment_count = all_segments.len();
+        
+        for (i, (segment, spine)) in all_segments.into_iter().enumerate() {
+            let seg_len = segment.length() as f64;
             
-            // 在当前段范围内，或者是最后一段
-            if tmp_dist < cur_len || i == lens.len() - 1 {
+            // 判断是否在当前段内，或者是最后一段（处理浮点误差或超出情况）
+            if target_dist <= cur_accum_len + seg_len || i == segment_count - 1 {
+                let local_dist = target_dist - cur_accum_len;
+                
                 match segment {
                     SegmentPath::Line(_) => {
                         let mut z_dir = get_spline_line_dir(self.parent_att.get_refno().unwrap())
@@ -362,7 +395,6 @@ impl SpineStrategy {
                         
                         if z_dir.length() == 0.0 {
                             // 使用路径几何直接计算方向作为回退方案
-                            let spine = &paths[i];
                             z_dir = (spine.pt1 - spine.pt0).normalize().as_dvec3();
                             
                             if z_dir.length() == 0.0 {
@@ -374,8 +406,7 @@ impl SpineStrategy {
                             quat = construct_basis_z_y_raw(z_dir, spine_ydir);
                         }
                         
-                        let spine = &paths[i];
-                        pos = spine.pt0.as_dvec3() + z_dir * tmp_dist;
+                        pos = spine.pt0.as_dvec3() + z_dir * local_dist;
                     }
                     SegmentPath::Arc(arc) => {
                         // 使用弧长计算当前点的位置
@@ -387,7 +418,7 @@ impl SpineStrategy {
                             if DVec3::X.cross(v).z < 0.0 {
                                 start_angle = -start_angle;
                             }
-                            let mut theta = tmp_dist / arc_radius;
+                            let mut theta = local_dist / arc_radius;
                             if arc.clock_wise {
                                 theta = -theta;
                             }
@@ -411,6 +442,8 @@ impl SpineStrategy {
                 }
                 break;
             }
+            
+            cur_accum_len += seg_len;
         }
         
         Some(DMat4::from_rotation_translation(quat, pos))
@@ -432,12 +465,11 @@ impl SpineStrategy {
             return 0.0;
         }
         
-        let sweep_path = paths[0].generate_paths().0;
-        let total_len: f32 = sweep_path
-            .segments
-            .iter()
-            .map(|x: &SegmentPath| x.length())
-            .sum();
+        let mut total_len = 0.0;
+        for spine in paths {
+            let (path, _) = spine.generate_paths();
+            total_len += path.length();
+        }
             
         total_len as f64
     }
