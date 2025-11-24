@@ -161,7 +161,7 @@ pub async fn create_profile_geos(
     let inv_local_rot = if parent_refno.is_unset() {
         att.get_rotation().unwrap_or(DQuat::IDENTITY).inverse()
     } else {
-        match get_local_transform(refno, parent_refno).await? {
+        match get_local_transform(refno).await? {
             Some(local_t) => local_t.rotation.as_dquat().inverse(),
             None => att.get_rotation().unwrap_or(DQuat::IDENTITY).inverse(),
         }
@@ -286,6 +286,9 @@ pub async fn create_profile_geos(
                         height,
                         path: SweepPath3D::from_line(path),
                         lmirror: att.get_bool("LMIRR").unwrap_or_default(),
+                        start_rotation: Quat::IDENTITY,  // 单段路径使用单位旋转
+                        spine_segments: vec![],  // 单段路径无 Spine3D 段
+                        segment_transforms: vec![],  // 单段路径无变换
                     };
 
                     // 对于GENSEC元素，使用SPINE方向计算rotation而不是PLAX属性
@@ -382,6 +385,29 @@ pub async fn create_profile_geos(
                         }
 
                         let height = sweep_path.length();
+                        // 预计算起始点的局部旋转
+                        let start_rotation = if let Some(first_spine) = spine_paths.first() {
+                            crate::transform::get_local_transform(first_spine.refno)
+                                .await
+                                .ok()
+                                .flatten()
+                                .map(|t| t.rotation)
+                                .unwrap_or(Quat::IDENTITY)
+                        } else {
+                            Quat::IDENTITY
+                        };
+
+                        // 预计算所有段的变换
+                        let mut segment_transforms = Vec::new();
+                        for spine in &spine_paths {
+                            let transform = crate::transform::get_local_transform(spine.refno)
+                                .await
+                                .ok()
+                                .flatten()
+                                .unwrap_or(Transform::IDENTITY);
+                            segment_transforms.push(transform);
+                        }
+
                         let loft = SweepSolid {
                             profile: profile.clone(),
                             drns,
@@ -392,6 +418,9 @@ pub async fn create_profile_geos(
                             height,
                             path: sweep_path,
                             lmirror: att.get_bool("LMIRR").unwrap_or_default(),
+                            start_rotation,  // 设置预计算的旋转
+                            spine_segments: spine_paths.clone(),  // 存储原始 Spine3D 段信息
+                            segment_transforms,  // 存储预计算的每段变换
                         };
 
                         // 使用第一个 spine 的 refno 生成 hash

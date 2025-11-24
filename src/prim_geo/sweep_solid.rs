@@ -8,6 +8,7 @@ use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_ori_str};
 use anyhow::anyhow;
 use approx::{abs_diff_eq, abs_diff_ne};
 use bevy_ecs::prelude::*;
+use bevy_transform::prelude::Transform;
 use cavalier_contours::core::math::bulge_from_angle;
 use cavalier_contours::polyline::{PlineSource, PlineSourceMut, Polyline, seg_midpoint};
 use glam::*;
@@ -49,6 +50,9 @@ pub struct SweepSolid {
     pub height: f32,
     pub path: SweepPath3D,
     pub lmirror: bool,
+    pub start_rotation: Quat,  // 存储路径起始点的局部旋转
+    pub spine_segments: Vec<Spine3D>,  // 存储原始 Spine3D 段信息（用于变换）
+    pub segment_transforms: Vec<Transform>,  // 存储预计算的每段变换
 }
 
 impl SweepSolid {
@@ -400,25 +404,11 @@ impl BrepShapeTrait for SweepSolid {
 
     #[inline]
     fn get_trans(&self) -> bevy_transform::prelude::Transform {
-        match &self.profile {
-            CateProfileParam::SANN(_p) => {
-                return bevy_transform::prelude::Transform {
-                    rotation: Quat::IDENTITY,
-                    scale: self.get_scaled_vec3(),
-                    translation: Vec3::ZERO,
-                };
-            }
-            CateProfileParam::SPRO(_) | CateProfileParam::SREC(_) => {
-                return bevy_transform::prelude::Transform {
-                    rotation: Quat::IDENTITY,
-                    scale: self.get_scaled_vec3(),
-                    translation: Vec3::ZERO,
-                };
-            }
-            _ => {}
+        Transform {
+            rotation: self.start_rotation,  // 使用预计算的起始点旋转
+            scale: self.get_scaled_vec3(),
+            translation: Vec3::ZERO,
         }
-
-        bevy_transform::prelude::Transform::IDENTITY
     }
 
     fn tol(&self) -> f32 {

@@ -2,9 +2,11 @@ use crate::RefU64;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
 use crate::prim_geo::profile_processor::ProfileProcessor;
-use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath};
+use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath, Spine3D};
 use crate::prim_geo::sweep_solid::SweepSolid;
+use crate::prim_geo::spine::SweepPath3D;
 use crate::shape::pdms_shape::PlantMesh;
+use bevy_transform::prelude::Transform;
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec2, Vec3};
 use i_triangle::float::triangulatable::Triangulatable;
 
@@ -294,12 +296,54 @@ fn sample_arc_frames(arc: &Arc3D, arc_segments: usize, plax: Vec3) -> Option<Vec
     Some(result)
 }
 
-/// 使用平行传输 (Parallel Transport / Rotation Minimizing Frame) 计算沿路径的坐标系
-/// 对于圆弧路径,使用径向坐标系(与 OCC 和 core.dll 保持一致)
-fn sample_path_frames(
+/// 变换 Line3D 几何体
+fn transform_line(line: &Line3D, transform: &Transform) -> Line3D {
+    Line3D {
+        start: transform.transform_point(line.start),
+        end: transform.transform_point(line.end),
+        is_spine: line.is_spine,
+    }
+}
+
+/// 变换 Arc3D 几何体
+fn transform_arc(arc: &Arc3D, transform: &Transform) -> SegmentPath {
+    // 检查缩放类型
+    let scale = transform.scale;
+    let is_uniform_scale = (scale.x - scale.y).abs() < 1e-6 
+                        && (scale.y - scale.z).abs() < 1e-6;
+    
+    if is_uniform_scale {
+        // 均匀缩放：直接变换参数
+        SegmentPath::Arc(Arc3D {
+            center: transform.transform_point(arc.center),
+            start_pt: transform.transform_point(arc.start_pt),
+            radius: arc.radius * scale.x,
+            axis: (transform.rotation * arc.axis).normalize(),
+            angle: arc.angle,
+            clock_wise: arc.clock_wise,
+            pref_axis: (transform.rotation * arc.pref_axis).normalize(),
+        })
+    } else {
+        // 非均匀缩放：转换为多段线近似
+        // TODO: 实现圆弧到多段线的转换
+        SegmentPath::Arc(Arc3D {
+            center: transform.transform_point(arc.center),
+            start_pt: transform.transform_point(arc.start_pt),
+            radius: arc.radius * scale.x, // 简化处理
+            axis: (transform.rotation * arc.axis).normalize(),
+            angle: arc.angle,
+            clock_wise: arc.clock_wise,
+            pref_axis: (transform.rotation * arc.pref_axis).normalize(),
+        })
+    }
+}
+
+/// 同步版本的路径采样，使用预计算的变换
+fn sample_path_frames_sync(
     segments: &[SegmentPath],
     arc_segments_per_segment: usize,
     plax: Vec3, // 标准参考方向（调用方应传 Vec3::Z；圆弧分支内部使用 pref_axis/YDIR）
+    segment_transforms: &[Transform], // 预计算的每段变换
 ) -> Option<Vec<PathSample>> {
     if segments.is_empty() {
         return None;
@@ -308,16 +352,39 @@ fn sample_path_frames(
     // 特殊处理：单段圆弧路径使用径向坐标系
     if segments.len() == 1 {
         if let SegmentPath::Arc(arc) = &segments[0] {
-            return sample_arc_frames(arc, arc_segments_per_segment, plax);
+            // 变换圆弧段
+            let transform = &segment_transforms[0];
+            let transformed_arc = match transform_arc(arc, transform) {
+                SegmentPath::Arc(arc) => arc,
+                _ => return None,
+            };
+            
+            return sample_arc_frames(&transformed_arc, arc_segments_per_segment, plax);
         }
     }
 
-    // 1. 收集所有采样点和切线
+    // 1. 变换所有段
+    let mut transformed_segments = Vec::new();
+    for (i, segment) in segments.iter().enumerate() {
+        let transform = &segment_transforms[i];
+        
+        let transformed_segment = match segment {
+            SegmentPath::Line(line) => {
+                SegmentPath::Line(transform_line(line, transform))
+            }
+            SegmentPath::Arc(arc) => {
+                transform_arc(arc, transform)
+            }
+        };
+        transformed_segments.push(transformed_segment);
+    }
+
+    // 2. 从变换后的段收集采样点和切线
     let mut raw_samples = Vec::new();
     let mut total_dist = 0.0;
-    let mut last_pos = segments[0].start_point();
+    let mut last_pos = transformed_segments[0].start_point();
 
-    for segment in segments {
+    for segment in &transformed_segments {
         match segment {
             SegmentPath::Line(line) => {
                 let start = line.start;
@@ -796,22 +863,19 @@ pub fn generate_sweep_solid_mesh(
         (settings.radial_segments as usize / 2).clamp(settings.min_radial_segments as usize, 32)
     };
 
-    let frames = sample_path_frames(&sweep.path.segments, arc_segments, Vec3::Z)?;
+    // 使用预计算的变换进行路径采样
+    let frames = sample_path_frames_sync(&sweep.path.segments, arc_segments, Vec3::Z, &sweep.segment_transforms)?;
 
-    // 正常生成 mesh
-    let mut mesh = generate_mesh_from_frames(&profile, &frames, sweep.drns, sweep.drne);
-
-    // 获取 plin_pos（用于构建变换矩阵）
-    let plin_pos = match &sweep.profile {
-        CateProfileParam::SPRO(spro) => spro.plin_pos,
-        CateProfileParam::SREC(srect) => srect.plin_pos,
-        CateProfileParam::SANN(sann) => sann.plin_pos,
-        _ => Vec2::ZERO,
-    };
-
-    // 构建变换矩阵并应用到 mesh
-    let transform_mat = build_profile_transform_matrix(plin_pos, sweep.bangle, sweep.lmirror);
-    mesh = mesh.transform_by(&transform_mat);
+    // 正常生成 mesh（不再需要后处理变换）
+    let mesh = generate_mesh_from_frames(&profile, &frames, sweep.drns, sweep.drne);
 
     Some(mesh)
+}
+
+/// 从 SweepPath 提取 Spine3D 段信息（临时实现）
+fn extract_spine_segments_from_sweep_path(_path: &SweepPath3D) -> Option<Vec<Spine3D>> {
+    // TODO: 需要从调用方传递完整的 Spine3D 信息
+    // 暂时返回空，这会导致变换失败
+    // 需要修改调用链来传递 Spine3D 信息
+    None
 }

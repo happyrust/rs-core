@@ -56,11 +56,13 @@ pub fn calculate_plax_transform(plax: Vec3, standard_up: Vec3) -> Transform {
     }
 }
 
-/// Calculate the local transform for an entity relative to its parent
+/// Gets the local transform for an entity
+///
+/// This function calculates the local transform matrix for a given entity
+/// using the transform strategy system.
 ///
 /// # Arguments
 /// * `refno` - Reference number of the entity
-/// * `parent_refno` - Reference number of the parent entity
 ///
 /// # Returns
 /// * `Ok(Some(Transform))` - The local transform if calculation succeeds
@@ -69,7 +71,6 @@ pub fn calculate_plax_transform(plax: Vec3, standard_up: Vec3) -> Transform {
 #[cached(result = true)]
 pub async fn get_local_transform(
     refno: RefnoEnum,
-    parent_refno: RefnoEnum,
 ) -> anyhow::Result<Option<Transform>> {
     get_local_mat4(refno)
         .await
