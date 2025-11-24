@@ -2,9 +2,9 @@ use crate::RefU64;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
 use crate::prim_geo::profile_processor::ProfileProcessor;
+use crate::prim_geo::spine::SweepPath3D;
 use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath, Spine3D};
 use crate::prim_geo::sweep_solid::SweepSolid;
-use crate::prim_geo::spine::SweepPath3D;
 use crate::shape::pdms_shape::PlantMesh;
 use bevy_transform::prelude::Transform;
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec2, Vec3};
@@ -210,6 +210,25 @@ fn build_profile_transform_matrix(plin_pos: Vec2, bangle: f32, lmirror: bool) ->
     mirror_mat * rotation_mat * translation
 }
 
+/// 对截面应用 plin_pos/lmirror 变换（BANG 已在 segment_transforms 的 Frenet 标架旋转中应用，此处不再重复旋转）
+fn apply_profile_transform(mut profile: ProfileData, plin_pos: Vec2, lmirror: bool) -> ProfileData {
+    // bangle 已在 normalize_spine_segments() 中通过 Frenet 标架计算并存储在 segment_transforms 中
+    // 截面阶段只做平移和镜像，不应用 bangle
+    let mat = build_profile_transform_matrix(plin_pos, 0.0, lmirror);
+
+    for v in &mut profile.vertices {
+        let p = mat.transform_point3(DVec3::new(v.pos.x as f64, v.pos.y as f64, 0.0));
+        v.pos = Vec2::new(p.x as f32, p.y as f32);
+
+        if v.normal.length_squared() > 0.0 {
+            let n = mat.transform_vector3(DVec3::new(v.normal.x as f64, v.normal.y as f64, 0.0));
+            v.normal = Vec2::new(n.x as f32, n.y as f32).normalize();
+        }
+    }
+
+    profile
+}
+
 /// 路径采样点
 struct PathSample {
     pos: Vec3,
@@ -309,9 +328,8 @@ fn transform_line(line: &Line3D, transform: &Transform) -> Line3D {
 fn transform_arc(arc: &Arc3D, transform: &Transform) -> SegmentPath {
     // 检查缩放类型
     let scale = transform.scale;
-    let is_uniform_scale = (scale.x - scale.y).abs() < 1e-6 
-                        && (scale.y - scale.z).abs() < 1e-6;
-    
+    let is_uniform_scale = (scale.x - scale.y).abs() < 1e-6 && (scale.y - scale.z).abs() < 1e-6;
+
     if is_uniform_scale {
         // 均匀缩放：直接变换参数
         SegmentPath::Arc(Arc3D {
@@ -358,7 +376,7 @@ fn sample_path_frames_sync(
                 SegmentPath::Arc(arc) => arc,
                 _ => return None,
             };
-            
+
             return sample_arc_frames(&transformed_arc, arc_segments_per_segment, plax);
         }
     }
@@ -368,14 +386,10 @@ fn sample_path_frames_sync(
     for (i, segment) in segments.iter().enumerate() {
         // 安全获取变换，如果数组为空则使用单位变换
         let transform = segment_transforms.get(i).unwrap_or(&Transform::IDENTITY);
-        
+
         let transformed_segment = match segment {
-            SegmentPath::Line(line) => {
-                SegmentPath::Line(transform_line(line, transform))
-            }
-            SegmentPath::Arc(arc) => {
-                transform_arc(arc, transform)
-            }
+            SegmentPath::Line(line) => SegmentPath::Line(transform_line(line, transform)),
+            SegmentPath::Arc(arc) => transform_arc(arc, transform),
         };
         transformed_segments.push(transformed_segment);
     }
@@ -751,15 +765,86 @@ fn generate_mesh_from_frames(
         );
     }
 
-    PlantMesh {
+    // 🆕 从 Profile 生成扫掠体的轮廓边
+    let sweep_edges = generate_sweep_profile_edges(profile, path_samples);
+
+    let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
         uvs,
         wire_vertices: Vec::new(),
-        edges: Vec::new(),
+        edges: sweep_edges,
         aabb: None,
+    };
+
+    // 同步 wire_vertices
+    mesh.sync_wire_vertices_from_edges();
+
+    mesh
+}
+
+/// 从 Profile 和路径采样点生成扫掠体的特征边
+///
+/// 生成的边包括：
+/// - 起始截面的轮廓边
+/// - 结束截面的轮廓边
+///
+/// 注意：不生成纵向边，以避免边数过多
+fn generate_sweep_profile_edges(
+    profile: &ProfileData,
+    path_samples: &[PathSample],
+) -> Vec<crate::shape::pdms_shape::Edge> {
+    use crate::shape::pdms_shape::Edge;
+
+    if path_samples.len() < 2 || profile.vertices.is_empty() {
+        return Vec::new();
     }
+
+    let mut edges = Vec::new();
+    let n = profile.vertices.len();
+
+    // 1. 起始截面的轮廓边
+    let start_sample = &path_samples[0];
+    for i in 0..n {
+        let j = (i + 1) % n;
+        if !profile.is_closed && j == 0 {
+            break; // 开放轮廓不需要闭合边
+        }
+
+        let v0 = profile.vertices[i].pos;
+        let v1 = profile.vertices[j].pos;
+
+        let local0 = start_sample.rot.x_axis * v0.x + start_sample.rot.y_axis * v0.y;
+        let local1 = start_sample.rot.x_axis * v1.x + start_sample.rot.y_axis * v1.y;
+
+        let pos0 = start_sample.pos + local0;
+        let pos1 = start_sample.pos + local1;
+
+        edges.push(Edge::new(vec![pos0, pos1]));
+    }
+
+    // 2. 结束截面的轮廓边
+    let end_sample = path_samples.last().unwrap();
+    for i in 0..n {
+        let j = (i + 1) % n;
+        if !profile.is_closed && j == 0 {
+            break;
+        }
+
+        let v0 = profile.vertices[i].pos;
+        let v1 = profile.vertices[j].pos;
+
+        let local0 = end_sample.rot.x_axis * v0.x + end_sample.rot.y_axis * v0.y;
+        let local1 = end_sample.rot.x_axis * v1.x + end_sample.rot.y_axis * v1.y;
+
+        let pos0 = end_sample.pos + local0;
+        let pos1 = end_sample.pos + local1;
+
+        edges.push(Edge::new(vec![pos0, pos1]));
+    }
+
+    edges
 }
 
 pub struct CapTriangulation {
@@ -851,8 +936,9 @@ pub fn generate_sweep_solid_mesh(
     settings: &LodMeshSettings,
     refno: Option<RefU64>,
 ) -> Option<PlantMesh> {
-    // 正常生成截面数据（不应用变换）
+    // 正常生成截面数据并应用截面自身变换（plin_pos/bangle/lmirror）
     let profile = get_profile_data(&sweep.profile, refno)?;
+    let profile = apply_profile_transform(profile, sweep.profile.get_plin_pos(), sweep.lmirror);
 
     let arc_segments = if sweep.path.is_single_segment() {
         if let Some(arc) = sweep.path.as_single_arc() {
@@ -865,7 +951,13 @@ pub fn generate_sweep_solid_mesh(
     };
 
     // 使用预计算的变换进行路径采样
-    let frames = sample_path_frames_sync(&sweep.path.segments, arc_segments, Vec3::Z, &sweep.segment_transforms)?;
+    // plax 由 SweepSolid 提供，决定直线路径的参考朝向
+    let frames = sample_path_frames_sync(
+        &sweep.path.segments,
+        arc_segments,
+        sweep.plax,
+        &sweep.segment_transforms,
+    )?;
 
     // 正常生成 mesh（不再需要后处理变换）
     let mesh = generate_mesh_from_frames(&profile, &frames, sweep.drns, sweep.drne);

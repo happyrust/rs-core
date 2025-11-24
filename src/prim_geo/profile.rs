@@ -38,8 +38,15 @@ use std::vec::Vec;
 /// 返回：
 /// - Ok((Vec<SegmentPath>, Vec<Transform>)): (归一化路径段, 每段的完整变换)
 /// - Err: 如果段不连续或转换失败
+///
+/// 参数：
+/// - segments: Spine3D 段列表
+/// - plax: 截面参考方向，用于计算 Frenet 标架
+/// - bangle: 绕路径方向的旋转角度（度数）
 async fn normalize_spine_segments(
     segments: Vec<Spine3D>,
+    plax: Vec3,
+    bangle: f32,
 ) -> anyhow::Result<(Vec<SegmentPath>, Vec<Transform>)> {
     const EPSILON: f32 = 1e-3;
     let mut normalized_segments = Vec::new();
@@ -79,26 +86,37 @@ async fn normalize_spine_segments(
                 let direction = (spine.pt1 - spine.pt0).normalize_or_zero();
                 let length = spine.pt0.distance(spine.pt1);
 
-                // 归一化路径：从原点沿 Z 轴单位长度
+                // 归一化路径：从原点沿 Z 轴10.0单位长度（与sweep_solid.rs保持一致）
                 normalized_segments.push(SegmentPath::Line(Line3D {
                     start: Vec3::ZERO,
-                    end: Vec3::Z,
+                    end: Vec3::Z * 10.0,
                     is_spine: true,
                 }));
 
-                // 获取该段起点 POINSP 的局部旋转
-                let local_rotation = crate::transform::get_local_transform(spine.refno)
-                    .await
-                    .ok()
-                    .flatten()
-                    .map(|t| t.rotation)
-                    .unwrap_or(Quat::IDENTITY);
+                // 计算 Frenet 标架旋转
+                // 1. 参考上方向（plax 的归一化）
+                let ref_up = plax.normalize_or_zero();
 
-                // 完整变换：包含位置、旋转和缩放
+                // 2. 计算右向量：ref_up × direction
+                let right = ref_up.cross(direction).normalize_or_zero();
+
+                // 3. 计算正交化的上向量：direction × right
+                let up = direction.cross(right).normalize_or_zero();
+
+                // 4. 构建 Frenet 标架旋转（从标准坐标系 XYZ 到 right/up/direction）
+                let frenet_rotation = Quat::from_mat3(&Mat3::from_cols(right, up, direction));
+
+                // 5. 计算 bangle 旋转（绕路径方向，即 Z 轴）
+                let bangle_rotation = Quat::from_axis_angle(direction, bangle.to_radians());
+
+                // 6. 组合旋转：Frenet 标架旋转 × bangle 旋转
+                let final_rotation = frenet_rotation * bangle_rotation;
+
+                // 完整变换：包含位置、Frenet 标架 + bangle 旋转和缩放
                 transforms.push(Transform {
-                    translation: spine.pt0,             // 起点位置
-                    rotation: local_rotation,           // 起点旋转（包含 bangle）
-                    scale: Vec3::new(1.0, 1.0, length), // Z 方向缩放到实际长度
+                    translation: spine.pt0,                    // 起点位置
+                    rotation: final_rotation,                  // Frenet 标架旋转 × bangle 旋转
+                    scale: Vec3::new(1.0, 1.0, length / 10.0), // Z 方向缩放：实际长度/10.0
                 });
             }
             SpineCurveType::THRU => {
@@ -109,6 +127,7 @@ async fn normalize_spine_segments(
                 let vec1 = spine.pt1 - spine.thru_pt;
                 let angle = (PI - vec0.angle_between(vec1)) * 2.0;
                 let axis = vec1.cross(vec0).normalize();
+                let clock_wise = axis.z < 0.0;
 
                 // 归一化圆弧：从原点开始，单位半径
                 normalized_segments.push(SegmentPath::Arc(Arc3D {
@@ -116,23 +135,44 @@ async fn normalize_spine_segments(
                     radius: 1.0,
                     angle,
                     start_pt: Vec3::X, // 单位圆上的起点
-                    clock_wise: axis.z < 0.0,
+                    clock_wise,
                     axis,
                     pref_axis: spine.preferred_dir,
                 }));
 
-                // 获取该段起点 POINSP 的局部旋转
-                let local_rotation = crate::transform::get_local_transform(spine.refno)
-                    .await
-                    .ok()
-                    .flatten()
-                    .map(|t| t.rotation)
-                    .unwrap_or(Quat::IDENTITY);
+                // 计算圆弧起点处的切线方向
+                // 1. 径向量：从圆心指向起点
+                let radial = (spine.pt0 - center).normalize_or_zero();
 
-                // 完整变换：位置、旋转和缩放
+                // 2. 切线方向：axis × radial（顺时针则取反）
+                let tangent = if clock_wise {
+                    -axis.cross(radial).normalize_or_zero()
+                } else {
+                    axis.cross(radial).normalize_or_zero()
+                };
+
+                // 3. 参考方向：优先使用 spine.preferred_dir，否则使用 plax
+                let ref_dir = if spine.preferred_dir.length_squared() > 1e-6 {
+                    spine.preferred_dir.normalize_or_zero()
+                } else {
+                    plax.normalize_or_zero()
+                };
+
+                // 4. 计算 Frenet 标架（与 LINE 类似）
+                let right = ref_dir.cross(tangent).normalize_or_zero();
+                let up = tangent.cross(right).normalize_or_zero();
+                let frenet_rotation = Quat::from_mat3(&Mat3::from_cols(right, up, tangent));
+
+                // 5. 计算 bangle 旋转（绕切线方向）
+                let bangle_rotation = Quat::from_axis_angle(tangent, bangle.to_radians());
+
+                // 6. 组合旋转：Frenet 标架旋转 × bangle 旋转
+                let final_rotation = frenet_rotation * bangle_rotation;
+
+                // 完整变换：位置、Frenet 标架 + bangle 旋转和缩放
                 transforms.push(Transform {
                     translation: center,        // 圆心位置
-                    rotation: local_rotation,   // 起点旋转
+                    rotation: final_rotation,   // Frenet 标架旋转 × bangle 旋转
                     scale: Vec3::splat(radius), // 统一缩放到实际半径
                 });
             }
@@ -144,6 +184,7 @@ async fn normalize_spine_segments(
                 let vec1 = spine.pt1 - center;
                 let angle = (PI - vec0.angle_between(vec1)) * 2.0;
                 let axis = vec1.cross(vec0).normalize();
+                let clock_wise = axis.z < 0.0;
 
                 // 归一化圆弧：从原点开始，单位半径
                 normalized_segments.push(SegmentPath::Arc(Arc3D {
@@ -151,23 +192,44 @@ async fn normalize_spine_segments(
                     radius: 1.0,
                     angle,
                     start_pt: Vec3::X, // 单位圆上的起点
-                    clock_wise: axis.z < 0.0,
+                    clock_wise,
                     axis,
                     pref_axis: spine.preferred_dir,
                 }));
 
-                // 获取该段起点 POINSP 的局部旋转
-                let local_rotation = crate::transform::get_local_transform(spine.refno)
-                    .await
-                    .ok()
-                    .flatten()
-                    .map(|t| t.rotation)
-                    .unwrap_or(Quat::IDENTITY);
+                // 计算圆弧起点处的切线方向
+                // 1. 径向量：从圆心指向起点
+                let radial = (spine.pt0 - center).normalize_or_zero();
 
-                // 完整变换：位置、旋转和缩放
+                // 2. 切线方向：axis × radial（顺时针则取反）
+                let tangent = if clock_wise {
+                    -axis.cross(radial).normalize_or_zero()
+                } else {
+                    axis.cross(radial).normalize_or_zero()
+                };
+
+                // 3. 参考方向：优先使用 spine.preferred_dir，否则使用 plax
+                let ref_dir = if spine.preferred_dir.length_squared() > 1e-6 {
+                    spine.preferred_dir.normalize_or_zero()
+                } else {
+                    plax.normalize_or_zero()
+                };
+
+                // 4. 计算 Frenet 标架（与 LINE 类似）
+                let right = ref_dir.cross(tangent).normalize_or_zero();
+                let up = tangent.cross(right).normalize_or_zero();
+                let frenet_rotation = Quat::from_mat3(&Mat3::from_cols(right, up, tangent));
+
+                // 5. 计算 bangle 旋转（绕切线方向）
+                let bangle_rotation = Quat::from_axis_angle(tangent, bangle.to_radians());
+
+                // 6. 组合旋转：Frenet 标架旋转 × bangle 旋转
+                let final_rotation = frenet_rotation * bangle_rotation;
+
+                // 完整变换：位置、Frenet 标架 + bangle 旋转和缩放
                 transforms.push(Transform {
                     translation: center,        // 圆心位置
-                    rotation: local_rotation,   // 起点旋转
+                    rotation: final_rotation,   // Frenet 标架旋转 × bangle 旋转
                     scale: Vec3::splat(radius), // 统一缩放到实际半径
                 });
             }
@@ -331,10 +393,10 @@ pub async fn create_profile_geos(
                     };
                     plax = profile.get_plax();
 
-                    // 为共享 mesh 生成创建单位长度的路径，实际长度存储在 height 中用于实例化时缩放
+                    // 为共享 mesh 生成创建10.0单位长度的路径（与多段spine保持一致），实际长度存储在 height 中用于实例化时缩放
                     let path = Line3D {
                         start: Default::default(),
-                        end: Vec3::Z * 1.0, // 使用真正的单位长度路径
+                        end: Vec3::Z * 10.0, // 统一使用10.0单位长度路径
                         is_spine: false,
                     };
 
@@ -344,6 +406,7 @@ pub async fn create_profile_geos(
                         drns: None,
                         drne: None,
                         plax,
+                        bangle: att.get_f32("BANG").unwrap_or_default(),
                         extrude_dir,
                         height: 1.0,
                         path: SweepPath3D::from_line(path),
@@ -376,7 +439,19 @@ pub async fn create_profile_geos(
         }
     } else {
         // 将所有 Spine3D 段连接成一条连续路径
-        match normalize_spine_segments(spine_paths.clone()).await {
+        // 提前获取第一个 profile 的 plax 和元素的 bangle
+        let first_plax = geos.iter()
+            .find_map(|g| {
+                if let CateGeoParam::Profile(profile) = g {
+                    Some(profile.get_plax())
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(Vec3::Y);
+        let bangle = att.get_f32("BANG").unwrap_or_default();
+
+        match normalize_spine_segments(spine_paths.clone(), first_plax, bangle).await {
             Ok((normalized_paths, segment_transforms)) => {
                 if normalized_paths.is_empty() {
                     tracing::warn!("归一化 Spine 段后为空，跳过处理");
@@ -412,6 +487,7 @@ pub async fn create_profile_geos(
                             drns: None,
                             drne: None,
                             plax,
+                            bangle: att.get_f32("BANG").unwrap_or_default(),
                             extrude_dir,
                             height,
                             path: sweep_path,
