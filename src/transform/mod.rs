@@ -71,7 +71,7 @@ pub async fn get_local_transform(
     refno: RefnoEnum,
     parent_refno: RefnoEnum,
 ) -> anyhow::Result<Option<Transform>> {
-    get_local_mat4(refno, parent_refno)
+    get_local_mat4(refno)
         .await
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
@@ -149,19 +149,16 @@ pub async fn get_effective_parent_att(parent_refno: RefnoEnum) -> anyhow::Result
 #[cached(result = true)]
 pub async fn get_local_mat4(
     refno: RefnoEnum,
-    parent_refno: RefnoEnum,
 ) -> anyhow::Result<Option<DMat4>> {
     // Get attribute maps for the entity and its parent
     let att = get_named_attmap(refno).await?;
+    let parent_refno = att.get_owner();
     let parent_att = get_effective_parent_att(parent_refno).await?;
 
-    let cur_type = att.get_type_str();
-    let parent_type = parent_att.get_type_str();
-
     // Use strategy factory to get the appropriate strategy
-    let strategy = TransformStrategyFactory::get_strategy(parent_type);
+    let mut strategy = TransformStrategyFactory::get_strategy(&att, &parent_att);
     strategy
-        .get_local_transform(refno, parent_refno, &att, &parent_att)
+        .get_local_transform()
         .await
 }
 
@@ -250,7 +247,7 @@ async fn get_world_mat4_with_strategies_impl(
         if ancestors.len() >= 2 {
             let parent_refno = ancestors[ancestors.len() - 2].get_refno_or_default();
             let cur_refno = ancestors.last().unwrap().get_refno_or_default();
-            return get_local_mat4(cur_refno, parent_refno).await;
+            return get_local_mat4(cur_refno).await;
         }
         return Ok(Some(DMat4::IDENTITY));
     }
@@ -262,7 +259,7 @@ async fn get_world_mat4_with_strategies_impl(
         let cur_refno = ancestors[i].get_refno_or_default();
         let parent_refno = ancestors[i-1].get_refno_or_default();
         
-        match get_local_mat4(cur_refno, parent_refno).await {
+        match get_local_mat4(cur_refno).await {
             Ok(Some(local_mat)) => {
                 mat4 = mat4 * local_mat;
             },

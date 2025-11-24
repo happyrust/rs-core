@@ -253,13 +253,13 @@ async fn test_local_spatial() -> Result<()> {
         // 使用虚拟节点属性合并机制获取父节点属性
         let parent_att = crate::transform::get_effective_parent_att(parent_refno).await?;
 
-        let strategy = crate::transform::strategies::TransformStrategyFactory::get_strategy(
-            parent_att.get_type_str(),
+        let mut strategy = crate::transform::strategies::TransformStrategyFactory::get_strategy(
+            &att, &parent_att
         );
 
         // 计算局部变换
         let local_mat = if let Some(mat) = strategy
-            .get_local_transform(refno, parent_refno, &att, &parent_att)
+            .get_local_transform()
             .await?
         {
             mat

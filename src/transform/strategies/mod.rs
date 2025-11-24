@@ -5,15 +5,12 @@ use glam::{DMat4, DVec3, DQuat};
 #[async_trait]
 pub trait TransformStrategy: Send + Sync {
     async fn get_local_transform(
-        &self,
-        refno: RefnoEnum,
-        parent_refno: RefnoEnum,
-        att: &NamedAttrMap,
-        parent_att: &NamedAttrMap,
+        &mut self,
     ) -> anyhow::Result<Option<DMat4>>;
 }
 
 pub mod default;
+pub mod sweep_strategy;
 // pub mod endatu;
 // pub mod endatu_cache;
 // pub mod endatu_error;
@@ -23,6 +20,7 @@ pub mod spine_strategy;
 
 // 导出策略
 pub use default::{DefaultStrategy};
+pub use sweep_strategy::SweepStrategy;
 use spine_strategy::SpineStrategy;
 // use sjoi::SjoiStrategy;
 
@@ -35,24 +33,23 @@ pub use default::{CutpHandler, PoslHandler, YdirHandler, ZdisHandler};
 // };
 // pub use endatu_error::{EndatuError, EndatuResult};
 // pub use endatu_validation::EndatuValidator;
-pub use spine_strategy::get_spline_path;
+// pub use spine_strategy::get_spline_path;
 // pub use sjoi::{SjoiConnectionHandler, SjoiCrefHandler};
 
 pub struct TransformStrategyFactory;
 
 impl TransformStrategyFactory {
-    pub fn get_strategy(parent_noun: &str) -> Box<dyn TransformStrategy> {
-        dbg!(&parent_noun);
+    pub fn get_strategy(att: &NamedAttrMap, parent_att: &NamedAttrMap) -> Box<dyn TransformStrategy> {
         // 基于父节点类型进行策略分发
-        match parent_noun {
-            "SPINE" => Box::new(SpineStrategy),
-            // "GENSEC" => Box::new(GensecStrategy),
+        match parent_att.get_type_str() {
+            "SPINE" => Box::new(SpineStrategy::new(att.clone(), parent_att.clone())),
+            "GENSEC" => Box::new(SweepStrategy::new(att.clone(), parent_att.clone())),
             // "STWALL" => Box::new(WallStrategy),
             // "SJOI" => Box::new(SjoiStrategy),
             // "ENDATU" => Box::new(EndAtuStrategy),
             // "STWALL" | "FITT" => Box::new(ComplexStrategy),
             // 父节点不是特殊类型，使用默认策略（仅POS+ORI）
-            _ => Box::new(DefaultStrategy),
+            _ => Box::new(DefaultStrategy::new(att.clone())),
         }
     }
 }

@@ -2,7 +2,7 @@ use super::{TransformStrategy, BangHandler};
 use crate::rs_surreal::spatial::{
     SectionEnd, construct_basis_x_cutplane, construct_basis_z_opdir, construct_basis_z_y_exact,
     construct_basis_z_ref_x, construct_basis_z_ref_y, construct_basis_z_default,
-    construct_basis_z_y_hint, cal_zdis_pkdi_in_section_by_spine, get_spline_path, is_virtual_node,
+    construct_basis_z_y_hint, cal_zdis_pkdi_in_section_by_spine, is_virtual_node,
     query_pline,
 };
 use crate::{
@@ -229,34 +229,35 @@ impl CutpHandler {
     }
 }
 
-pub struct DefaultStrategy;
+pub struct DefaultStrategy {
+    att: NamedAttrMap,
+}
+
+impl DefaultStrategy {
+    pub fn new(att: NamedAttrMap) -> Self {
+        Self { att }
+    }
+}
 
 #[async_trait]
 impl TransformStrategy for DefaultStrategy {
     async fn get_local_transform(
-        &self,
-        refno: RefnoEnum,
-        parent_refno: RefnoEnum,
-        att: &NamedAttrMap,
-        parent_att: &NamedAttrMap,
+        &mut self,
     ) -> anyhow::Result<Option<DMat4>> {
+        // 直接使用通用查询函数获取所有需要的数据
+        let att = &self.att;
         let cur_type = att.get_type_str();
         
         // 虚拟节点（如 SPINE）没有变换，直接跳过
         if is_virtual_node(cur_type) {
             return Ok(Some(DMat4::IDENTITY));
         }
-
-        // 默认策略：只处理基本的 POS + ORI 变换
-        let position = att.get_position().unwrap_or_default().as_dvec3();
-        let rotation = att.get_rotation().unwrap_or(DQuat::IDENTITY);
         
+        // 默认策略：只处理基本的 POS + ORI 变换
+        let mut position = att.get_position().unwrap_or_default().as_dvec3();
+        let mut rotation = att.get_rotation().unwrap_or(DQuat::IDENTITY);
         let mat4 = DMat4::from_rotation_translation(rotation, position);
         
-        if rotation.is_nan() || position.is_nan() {
-            return Ok(None);
-        }
-
         Ok(Some(mat4))
     }
 }
