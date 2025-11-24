@@ -150,26 +150,22 @@ async fn calculate_fitt_on_stwall_transform(
     }
 
     // 调用 handle_posl 处理 POSL 逻辑
+    let mut pos = DVec3::ZERO;
+    let mut quat = DQuat::IDENTITY;
+    
+    // 处理 POSL 属性
     crate::transform::strategies::default::PoslHandler::handle_posl(
         fitt_att,
         stwall_att,
-        "FITT",
         &mut pos,
         &mut quat,
-        stwall_att,  // 使用父节点属性作为 effective_att
-        true,        // should_apply_bang
-        ydir_axis,
-        delta_vec,
-        &mut translation,
-        DQuat::IDENTITY,
-    )
-    .await?;
+    ).await?;
 
-    let transform = DMat4::from_rotation_translation(quat, translation);
+    let transform = DMat4::from_rotation_translation(quat, pos);
 
     println!("=== PoslHandler 计算结果 ===");
     println!("Rotation: {:?}", quat);
-    println!("Translation: {:?}", translation);
+    println!("Translation: {:?}", pos);
     println!(
         "Transform Z axis: {:?}",
         transform.transform_vector3(DVec3::Z)

@@ -25,7 +25,7 @@ use spine_strategy::SpineStrategy;
 // use sjoi::SjoiStrategy;
 
 // 导出属性处理器
-pub use default::{CutpHandler, PoslHandler, YdirHandler, ZdisHandler};
+pub use default::{CutpHandler, PoslHandler, YdirHandler};
 // pub use endatu::EndAtuStrategy;
 // pub use endatu::EndAtuZdisHandler;
 // pub use endatu_cache::{
@@ -49,7 +49,7 @@ impl TransformStrategyFactory {
             // "ENDATU" => Box::new(EndAtuStrategy),
             // "STWALL" | "FITT" => Box::new(ComplexStrategy),
             // 父节点不是特殊类型，使用默认策略（仅POS+ORI）
-            _ => Box::new(DefaultStrategy::new(att.clone())),
+            _ => Box::new(DefaultStrategy::new(att.clone(), parent_att.clone())),
         }
     }
 }
