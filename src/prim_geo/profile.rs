@@ -399,51 +399,11 @@ pub async fn create_profile_geos(
                             .unwrap_or(RefnoEnum::from(RefU64(0)));
                         let hash = profile_refno.hash_with_another_refno(first_spine_refno);
 
-                        // 对于GENSEC元素，使用SPINE方向计算rotation而不是PLAX属性
-                        let mut transform = {
-                            // 使用缓存的元素类型信息，避免重复查询数据库
-                            if is_gensec_element {
-                                // 获取SPINE方向向量
-                                if let Some(gensec_refno) = gensec_refno {
-                                    if let Ok(spine_pts) = get_spline_pts(gensec_refno).await {
-                                        if spine_pts.len() >= 2 {
-                                            let spine_direction =
-                                                (spine_pts[1] - spine_pts[0]).normalize();
-                                            let spine_rotation =
-                                                construct_basis_z_default(spine_direction, false);
-
-                                            Transform {
-                                                rotation: spine_rotation.as_quat(),
-                                                scale: loft.get_scaled_vec3(),
-                                                translation: Vec3::ZERO,
-                                            }
-                                        } else {
-                                            // SPINE点数不足，回退到PLAX计算
-                                            let mut fallback_transform =
-                                                calculate_plax_transform(plax, Vec3::Z);
-                                            fallback_transform.scale = loft.get_scaled_vec3();
-                                            fallback_transform
-                                        }
-                                    } else {
-                                        // 获取SPINE失败，回退到PLAX计算
-                                        let mut fallback_transform =
-                                            calculate_plax_transform(plax, Vec3::Z);
-                                        fallback_transform.scale = loft.get_scaled_vec3();
-                                        fallback_transform
-                                    }
-                                } else {
-                                    // 找不到GENSEC refno，回退到PLAX计算
-                                    let mut fallback_transform =
-                                        calculate_plax_transform(plax, Vec3::Z);
-                                    fallback_transform.scale = loft.get_scaled_vec3();
-                                    fallback_transform
-                                }
-                            } else {
-                                // 非GENSEC元素，使用原有的PLAX计算逻辑
-                                let mut plax_transform = calculate_plax_transform(plax, Vec3::Z);
-                                plax_transform.scale = loft.get_scaled_vec3();
-                                plax_transform
-                            }
+                        // 使用预计算的起始点局部旋转，与重构目标保持一致
+                        let transform = Transform {
+                            rotation: loft.start_rotation,
+                            scale: loft.get_scaled_vec3(),
+                            translation: Vec3::ZERO,
                         };
 
                         csg_shapes_map
