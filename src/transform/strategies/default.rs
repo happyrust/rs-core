@@ -131,18 +131,12 @@ impl CutpHandler {
     pub fn handle_cutp(
         att: &NamedAttrMap,
         quat: &mut DQuat,
-        rotation: DQuat,
-        has_opdir: bool,
-        has_local_ori: bool,
-        is_world_quat: &mut bool,
     ) -> anyhow::Result<()> {
         let has_cut_dir = att.contains_key("CUTP");
+        if has_cut_dir {
         let cut_dir = att.get_dvec3("CUTP").unwrap_or(DVec3::Z);
-
-        if has_cut_dir && !has_opdir && !has_local_ori {
-            let mat3 = DMat3::from_quat(rotation);
+            let mat3 = DMat3::from_quat(*quat);
             *quat = construct_basis_x_cutplane(mat3.z_axis, cut_dir);
-            *is_world_quat = true;
         }
         Ok(())
     }
@@ -183,12 +177,14 @@ impl TransformStrategy for DefaultStrategy {
         PoslHandler::handle_posl(att, parent_att, &mut position, &mut rotation).await?;
         
         // 处理 CUTP 属性（切割平面方向）
-        let has_opdir = att.contains_key("OPDIR");
-        let has_local_ori = !att.get_str("POSL").unwrap_or_default().is_empty();
-        let mut is_world_quat = false;
+        // let has_opdir = att.contains_key("OPDIR");
+        // let has_local_ori = !att.get_str("POSL").unwrap_or_default().is_empty();
+        // let mut is_world_quat = false;
         
-        let rotation_copy = rotation;
-        CutpHandler::handle_cutp(att, &mut rotation, rotation_copy, has_opdir, has_local_ori, &mut is_world_quat)?;
+        // dbg!(&position);
+
+        //todo need fix cutp ?
+        // CutpHandler::handle_cutp(att, &mut rotation)?;
         
         // 构造最终的变换矩阵
         let mat4 = DMat4::from_rotation_translation(rotation, position);

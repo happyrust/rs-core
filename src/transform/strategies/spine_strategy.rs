@@ -74,7 +74,7 @@ impl TransformStrategy for SpineStrategy {
     ) -> anyhow::Result<Option<DMat4>> {
         
         let cur_type = self.att.get_type_str();
-        let parent_type = self.parent_att.get_type_str();
+        // let parent_type = self.parent_att.get_type_str();
         
         let mut pos = self.att.get_position().unwrap_or_default().as_dvec3();
         let mut quat = DQuat::IDENTITY;
@@ -83,22 +83,26 @@ impl TransformStrategy for SpineStrategy {
         // 1. 处理 NPOS 属性
         NposHandler::apply_npos_offset(&mut pos, &self.att);
 
-        // 2. 处理 GENSEC 特有的挤出方向
-        let pos_extru_dir = self.extract_spine_extrusion().await?;
-        let spine_ydir = if let (_, Some(ydir)) = pos_extru_dir {
-            ydir
+        // 2. 处理 GENSEC 特有的挤出方向 (对于 GENSEC/SPINE 自身)
+        //    或者 POINSP 的切线方向 (对于 SPINE 上的点)
+        let (tangent, spine_ydir) = if cur_type == "POINSP" {
+            self.calculate_self_tangent().await?
         } else {
-            DVec3::Z
+            self.extract_spine_extrusion().await?
         };
+        
+        let spine_ydir = spine_ydir.unwrap_or(DVec3::Z);
 
         // 3. 处理旋转初始化
-        if let Some(extru_dir) = pos_extru_dir.0 {
+        if let Some(dir) = tangent {
             quat = Self::initialize_rotation(
-                extru_dir,
+                dir,
                 Some(spine_ydir),
             );
         } else {
-            return Ok(None);
+            // 如果无法计算方向（孤立点？），可能需要默认处理
+            // return Ok(None); 
+            // 保持 Identity 旋转
         }
 
 
@@ -125,6 +129,110 @@ impl TransformStrategy for SpineStrategy {
 }
 
 impl SpineStrategy {
+    /// 计算当前 POINSP 的切线方向
+    async fn calculate_self_tangent(&self) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
+        let owner_refno = self.parent_att.get_refno().unwrap();
+        let ch_atts = get_children_named_attmaps(owner_refno)
+            .await
+            .unwrap_or_default();
+        let self_refno = self.att.get_refno().unwrap_or_default();
+        let ydir = self.parent_att.get_vec3("YDIR").unwrap_or(Vec3::Z);
+        
+        let idx = match ch_atts.iter().position(|a| a.get_refno().unwrap_or_default() == self_refno) {
+            Some(i) => i,
+            None => return Ok((None, Some(ydir.as_dvec3()))),
+        };
+
+        let len = ch_atts.len();
+        println!("DEBUG: calculate_self_tangent for {:?}, idx={}, len={}", self_refno, idx, len);
+        
+        // 尝试作为线段/曲线的起点
+        if idx < len - 1 {
+            let att1 = &ch_atts[idx];
+            let att2 = &ch_atts[idx + 1];
+            let t1 = att1.get_type_str();
+            let t2 = att2.get_type_str();
+            println!("DEBUG: Checking Next Segment. t1={}, t2={}", t1, t2);
+
+            if t1 == "POINSP" && t2 == "POINSP" {
+                // 直线段起点
+                let pt0 = att1.get_position().unwrap_or_default();
+                let pt1 = att2.get_position().unwrap_or_default();
+                let dir = (pt1 - pt0).normalize().as_dvec3();
+                println!("DEBUG: Line Segment. pt0={:?}, pt1={:?}, dir={:?}", pt0, pt1, dir);
+                return Ok((Some(dir), Some(ydir.as_dvec3())));
+            } else if t1 == "POINSP" && t2 == "CURVE" && idx + 2 < len {
+                // 曲线段起点
+                let att3 = &ch_atts[idx + 2];
+                let spine = Self::construct_spine_segment(att1, att2, att3, ydir);
+                let (path, _) = spine.generate_paths();
+                let dir = path.tangent_at(0.0).as_dvec3();
+                println!("DEBUG: Curve Segment Start. pt0={:?}, mid={:?}, pt1={:?}, dir={:?}", spine.pt0, spine.center_pt, spine.pt1, dir);
+                return Ok((Some(dir), Some(ydir.as_dvec3())));
+            }
+        }
+
+        // 尝试作为线段/曲线的终点 (即最后一个点)
+        if idx > 0 && idx == len - 1 {
+            let att_end = &ch_atts[idx];
+            let att_prev = &ch_atts[idx - 1];
+            let t_end = att_end.get_type_str();
+            let t_prev = att_prev.get_type_str();
+            println!("DEBUG: Checking Prev Segment (End). t_prev={}, t_end={}", t_prev, t_end);
+
+            if t_end == "POINSP" && t_prev == "POINSP" {
+                // 直线段终点
+                let pt0 = att_prev.get_position().unwrap_or_default();
+                let pt1 = att_end.get_position().unwrap_or_default();
+                let dir = (pt1 - pt0).normalize().as_dvec3();
+                println!("DEBUG: Line Segment End. pt0={:?}, pt1={:?}, dir={:?}", pt0, pt1, dir);
+                return Ok((Some(dir), Some(ydir.as_dvec3())));
+            } else if t_end == "POINSP" && t_prev == "CURVE" && idx >= 2 {
+                // 曲线段终点
+                let att_mid = &ch_atts[idx - 1];
+                let att_start = &ch_atts[idx - 2];
+                let spine = Self::construct_spine_segment(att_start, att_mid, att_end, ydir);
+                let (path, _) = spine.generate_paths();
+                let dir = path.tangent_at(1.0).as_dvec3();
+                println!("DEBUG: Curve Segment End. pt0={:?}, mid={:?}, pt1={:?}, dir={:?}", spine.pt0, spine.center_pt, spine.pt1, dir);
+                return Ok((Some(dir), Some(ydir.as_dvec3())));
+            }
+        }
+
+        Ok((None, Some(ydir.as_dvec3())))
+    }
+
+    /// 构造单个 Spine3D 段
+    fn construct_spine_segment(
+        pt0_att: &NamedAttrMap,
+        curve_att: &NamedAttrMap,
+        pt1_att: &NamedAttrMap,
+        ydir: Vec3,
+    ) -> Spine3D {
+        let pt0 = pt0_att.get_position().unwrap_or_default();
+        let pt1 = pt1_att.get_position().unwrap_or_default();
+        let mid_pt = curve_att.get_position().unwrap_or_default();
+        let cur_type_str = curve_att.get_str("CURTYP").unwrap_or("unset");
+        
+        let curve_type = match cur_type_str {
+            "CENT" => SpineCurveType::CENT,
+            "THRU" => SpineCurveType::THRU,
+            _ => SpineCurveType::UNKNOWN,
+        };
+
+        Spine3D {
+            refno: curve_att.get_refno().unwrap_or_default(),
+            pt0,
+            pt1,
+            thru_pt: mid_pt,
+            center_pt: mid_pt,
+            cond_pos: curve_att.get_vec3("CPOS").unwrap_or_default(),
+            curve_type,
+            preferred_dir: ydir,
+            radius: curve_att.get_f32("RAD").unwrap_or_default(),
+        }
+    }
+
     /// 初始化 SPINE 的旋转逻辑：基于YDIR和两点相减方向计算方位
     fn initialize_rotation(
         pos_extru_dir: DVec3,

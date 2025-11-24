@@ -16,12 +16,14 @@ pub mod sweep_strategy;
 // pub mod endatu_error;
 // pub mod endatu_validation;
 pub mod spine_strategy;
+pub mod wall_strategy;
 // pub mod sjoi;
 
 // 导出策略
 pub use default::{DefaultStrategy};
 pub use sweep_strategy::SweepStrategy;
 use spine_strategy::SpineStrategy;
+pub use wall_strategy::WallStrategy;
 // use sjoi::SjoiStrategy;
 
 // 导出属性处理器
@@ -40,17 +42,21 @@ pub struct TransformStrategyFactory;
 
 impl TransformStrategyFactory {
     pub fn get_strategy(att: &NamedAttrMap, parent_att: &NamedAttrMap) -> Box<dyn TransformStrategy> {
+          // 自身是 WALL 这种情况需要单独处理
+        if att.get_type_str() == "STWALL" {
+            return Box::new(WallStrategy::new(att.clone(), parent_att.clone()));
+        };
         // 基于父节点类型进行策略分发
-        match parent_att.get_type_str() {
+        match parent_att.get_type_str() {   
             "SPINE" => Box::new(SpineStrategy::new(att.clone(), parent_att.clone())),
-            "GENSEC" => Box::new(SweepStrategy::new(att.clone(), parent_att.clone())),
-            // "STWALL" => Box::new(WallStrategy),
+            "GENSEC" | "WALL" => Box::new(SweepStrategy::new(att.clone(), parent_att.clone())),
             // "SJOI" => Box::new(SjoiStrategy),
             // "ENDATU" => Box::new(EndAtuStrategy),
             // "STWALL" | "FITT" => Box::new(ComplexStrategy),
             // 父节点不是特殊类型，使用默认策略（仅POS+ORI）
             _ => Box::new(DefaultStrategy::new(att.clone(), parent_att.clone())),
         }
+      
     }
 }
 
