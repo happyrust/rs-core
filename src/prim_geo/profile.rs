@@ -305,7 +305,7 @@ pub async fn create_profile_geos(
                     let transform = Transform {
                         rotation: solid.start_rotation,
                         scale: solid.get_scaled_vec3(),
-                        translation: Vec3::ZERO,
+                        translation: poss,  // 设置实际起始位置，用于单位长度 mesh 定位
                     };
                     csg_shapes_map
                         .entry(refno)
@@ -404,7 +404,7 @@ pub async fn create_profile_geos(
                         let transform = Transform {
                             rotation: loft.start_rotation,
                             scale: loft.get_scaled_vec3(),
-                            translation: Vec3::ZERO,
+                            translation: spine_paths.first().map(|s| s.pt0).unwrap_or(Vec3::ZERO),  // 设置第一个 spine 点的位置
                         };
 
                         csg_shapes_map
