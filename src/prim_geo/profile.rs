@@ -270,9 +270,10 @@ pub async fn create_profile_geos(
                     plax = profile.get_plax();
                     let bangle = att.get_f32("BANG").unwrap_or_default();
 
+                    // 为共享 mesh 生成创建单位长度的路径，实际长度存储在 height 中用于实例化时缩放
                     let path = Line3D {
                         start: Default::default(),
-                        end: pose - poss,
+                        end: Vec3::Z * 1.0,  // 使用真正的单位长度路径
                         is_spine: false,
                     };
 
