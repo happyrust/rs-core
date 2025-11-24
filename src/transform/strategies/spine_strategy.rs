@@ -144,7 +144,6 @@ impl SpineStrategy {
         };
 
         let len = ch_atts.len();
-        println!("DEBUG: calculate_self_tangent for {:?}, idx={}, len={}", self_refno, idx, len);
         
         // 尝试作为线段/曲线的起点
         if idx < len - 1 {
@@ -152,14 +151,12 @@ impl SpineStrategy {
             let att2 = &ch_atts[idx + 1];
             let t1 = att1.get_type_str();
             let t2 = att2.get_type_str();
-            println!("DEBUG: Checking Next Segment. t1={}, t2={}", t1, t2);
 
             if t1 == "POINSP" && t2 == "POINSP" {
                 // 直线段起点
                 let pt0 = att1.get_position().unwrap_or_default();
                 let pt1 = att2.get_position().unwrap_or_default();
                 let dir = (pt1 - pt0).normalize().as_dvec3();
-                println!("DEBUG: Line Segment. pt0={:?}, pt1={:?}, dir={:?}", pt0, pt1, dir);
                 return Ok((Some(dir), Some(ydir.as_dvec3())));
             } else if t1 == "POINSP" && t2 == "CURVE" && idx + 2 < len {
                 // 曲线段起点
@@ -167,7 +164,6 @@ impl SpineStrategy {
                 let spine = Self::construct_spine_segment(att1, att2, att3, ydir);
                 let (path, _) = spine.generate_paths();
                 let dir = path.tangent_at(0.0).as_dvec3();
-                println!("DEBUG: Curve Segment Start. pt0={:?}, mid={:?}, pt1={:?}, dir={:?}", spine.pt0, spine.center_pt, spine.pt1, dir);
                 return Ok((Some(dir), Some(ydir.as_dvec3())));
             }
         }
@@ -178,14 +174,12 @@ impl SpineStrategy {
             let att_prev = &ch_atts[idx - 1];
             let t_end = att_end.get_type_str();
             let t_prev = att_prev.get_type_str();
-            println!("DEBUG: Checking Prev Segment (End). t_prev={}, t_end={}", t_prev, t_end);
 
             if t_end == "POINSP" && t_prev == "POINSP" {
                 // 直线段终点
                 let pt0 = att_prev.get_position().unwrap_or_default();
                 let pt1 = att_end.get_position().unwrap_or_default();
                 let dir = (pt1 - pt0).normalize().as_dvec3();
-                println!("DEBUG: Line Segment End. pt0={:?}, pt1={:?}, dir={:?}", pt0, pt1, dir);
                 return Ok((Some(dir), Some(ydir.as_dvec3())));
             } else if t_end == "POINSP" && t_prev == "CURVE" && idx >= 2 {
                 // 曲线段终点
@@ -194,7 +188,6 @@ impl SpineStrategy {
                 let spine = Self::construct_spine_segment(att_start, att_mid, att_end, ydir);
                 let (path, _) = spine.generate_paths();
                 let dir = path.tangent_at(1.0).as_dvec3();
-                println!("DEBUG: Curve Segment End. pt0={:?}, mid={:?}, pt1={:?}, dir={:?}", spine.pt0, spine.center_pt, spine.pt1, dir);
                 return Ok((Some(dir), Some(ydir.as_dvec3())));
             }
         }
