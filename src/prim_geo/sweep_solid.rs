@@ -224,11 +224,7 @@ impl BrepShapeTrait for SweepSolid {
     fn get_trans(&self) -> bevy_transform::prelude::Transform {
         // 使用 segment_transforms 中的第一个变换（如果存在）
         if let Some(first_transform) = self.segment_transforms.first() {
-            Transform {
-                rotation: first_transform.rotation,
-                scale: self.get_scaled_vec3(),
-                translation: first_transform.translation,
-            }
+            *first_transform
         } else {
             Transform {
                 rotation: Quat::IDENTITY,

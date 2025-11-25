@@ -415,10 +415,15 @@ pub async fn create_profile_geos(
                         segment_transforms: vec![], // SCTN 无需局部变换
                     };
 
-                    // SCTN 类型：直接使用 POSS 位置和缩放，不需要旋转
+                    // SCTN 类型：使用 POSS 位置、缩放和 bangle 旋转
+                    // bangle 是绕拉伸方向（Z 轴）的旋转角度
+                    let bangle = att.get_f32("BANG").unwrap_or_default();
+                    let bangle_rotation = Quat::from_axis_angle(Vec3::Z, bangle.to_radians());
+                    // scale: 归一化路径长度为 10.0，实际高度为 height，所以 Z 方向缩放为 height / 10.0
+                    let scale = Vec3::new(1.0, 1.0, height / 10.0);
                     let transform = Transform {
-                        rotation: Quat::IDENTITY,
-                        scale: solid.get_scaled_vec3(),
+                        rotation: bangle_rotation,  // 应用 bangle 旋转
+                        scale,
                         translation: poss,
                     };
                     csg_shapes_map
@@ -501,32 +506,38 @@ pub async fn create_profile_geos(
                             .first()
                             .map(|s| s.refno)
                             .unwrap_or(RefnoEnum::from(RefU64(0)));
-                        let hash = profile_refno.hash_with_another_refno(first_spine_refno);
+                        // let hash = profile_refno.hash_with_another_refno(first_spine_refno);
 
                         // 获取第一段的完整变换用于实例化
+                        if !segment_transforms.is_empty() {
+                            println!(
+                                "DEBUG: segment_transforms[0].scale = {:?}",
+                                segment_transforms[0].scale
+                            );
+                        }
                         let first_transform = segment_transforms
                             .first()
                             .cloned()
-                            .unwrap_or(Transform::IDENTITY);
+                            .unwrap_or_else(|| {
+                                tracing::warn!("segment_transforms 为空，使用 Transform::IDENTITY");
+                                Transform::IDENTITY
+                            });
 
-                        let orientation_str = crate::tool::math_tool::quat_to_pdms_ori_str(
-                            &first_transform.rotation,
-                            false,
-                        );
-                        println!(
-                            "DEBUG: SweepSolid first segment - pos: {:?}, rotation ENU: {}, scale: {:?}",
-                            first_transform.translation, orientation_str, first_transform.scale
-                        );
+                        // let orientation_str = crate::tool::math_tool::quat_to_pdms_ori_str(
+                        //     &first_transform.rotation,
+                        //     false,
+                        // );
 
-                        // 使用第一段的完整变换进行实例化（包含位置、旋转和缩放）
+                        // 实例化 Transform：使用 translation、rotation 和 scale
+                        // mesh 是基于归一化路径生成的，所以实例化时需要应用 scale 来缩放回实际尺寸
                         let transform = first_transform;
 
                         csg_shapes_map
                             .entry(refno)
                             .or_insert(Vec::new())
                             .push(CateCsgShape {
-                                //先暂时不做几何体共享
-                                refno: RefU64(hash).into(),
+                                // refno: RefU64(hash).into(),
+                                refno: profile_refno,
                                 csg_shape: Box::new(loft),
                                 transform,
                                 visible: true,
