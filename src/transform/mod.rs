@@ -69,9 +69,7 @@ pub fn calculate_plax_transform(plax: Vec3, standard_up: Vec3) -> Transform {
 /// * `Ok(None)` - If the transform cannot be calculated
 /// * `Err` - If an error occurs during calculation
 #[cached(result = true)]
-pub async fn get_local_transform(
-    refno: RefnoEnum,
-) -> anyhow::Result<Option<Transform>> {
+pub async fn get_local_transform(refno: RefnoEnum) -> anyhow::Result<Option<Transform>> {
     get_local_mat4(refno)
         .await
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
@@ -96,29 +94,29 @@ pub async fn get_effective_parent_att(parent_refno: RefnoEnum) -> anyhow::Result
     let mut virtual_attrs: Vec<NamedAttrMap> = Vec::new();
     let mut depth = 0;
     const MAX_DEPTH: usize = 10; // 防止循环引用
-    
+
     // 向上遍历，收集所有虚拟节点的属性
     while depth < MAX_DEPTH {
         let current_att = get_named_attmap(current_refno).await?;
         let current_type = current_att.get_type_str();
-        
+
         if !is_virtual_node(current_type) {
             // 找到非虚拟节点，作为合并的基础
             let mut merged_att = current_att;
-            
+
             // 反向合并虚拟节点属性（子节点属性优先）
             for attrs in virtual_attrs.iter().rev() {
                 for (key, value) in attrs.iter() {
                     merged_att.insert(key.clone(), value.clone());
                 }
             }
-            
+
             return Ok(merged_att);
         }
-        
+
         // 当前节点是虚拟节点，保存其属性并继续向上查找
         virtual_attrs.push(current_att);
-        
+
         // 获取父节点
         let next_refno = virtual_attrs.last().unwrap().get_owner();
         if next_refno.is_unset() {
@@ -129,12 +127,14 @@ pub async fn get_effective_parent_att(parent_refno: RefnoEnum) -> anyhow::Result
                 return Err(anyhow!("No valid parent attributes found"));
             }
         }
-        
+
         current_refno = next_refno;
         depth += 1;
     }
-    
-    Err(anyhow!("Maximum depth exceeded while searching for effective parent attributes"))
+
+    Err(anyhow!(
+        "Maximum depth exceeded while searching for effective parent attributes"
+    ))
 }
 
 /// Calculate the local transformation matrix for an entity relative to its parent
@@ -148,19 +148,15 @@ pub async fn get_effective_parent_att(parent_refno: RefnoEnum) -> anyhow::Result
 /// * `Ok(None)` - If the transform cannot be calculated
 /// * `Err` - If an error occurs during calculation
 #[cached(result = true)]
-pub async fn get_local_mat4(
-    refno: RefnoEnum,
-) -> anyhow::Result<Option<DMat4>> {
+pub async fn get_local_mat4(refno: RefnoEnum) -> anyhow::Result<Option<DMat4>> {
     // Get attribute maps for the entity and its parent
     let att = get_named_attmap(refno).await?;
     let parent_refno = att.get_owner();
     let parent_att = get_effective_parent_att(parent_refno).await?;
 
     // Use strategy factory to get the appropriate strategy
-    let mut strategy = TransformStrategyFactory::get_strategy(&att, &parent_att);
-    strategy
-        .get_local_transform()
-        .await
+    let mut strategy = TransformStrategyFactory::get_strategy_from_ref(&att, &parent_att);
+    strategy.get_local_transform().await
 }
 
 /// 使用策略模式重构的世界矩阵计算函数
@@ -194,14 +190,10 @@ pub async fn get_local_mat4(
 /// - 保持与原函数相同的 API 接口
 /// - 支持缓存优化
 /// - 生产安全的特性标志回退机制
-pub async fn get_world_mat4(
-    refno: RefnoEnum,
-    is_local: bool,
-) -> anyhow::Result<Option<DMat4>> {
+pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
     // 新的策略系统实现
     get_world_mat4_with_strategies_impl(refno, is_local).await
 }
-
 
 /// 新策略系统的具体实现
 ///
@@ -212,9 +204,9 @@ async fn get_world_mat4_with_strategies_impl(
 ) -> anyhow::Result<Option<DMat4>> {
     #[cfg(feature = "profile")]
     let start_ancestors = std::time::Instant::now();
-    
+
     let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
-    
+
     #[cfg(feature = "profile")]
     let elapsed_ancestors = start_ancestors.elapsed();
     #[cfg(feature = "profile")]
@@ -255,22 +247,28 @@ async fn get_world_mat4_with_strategies_impl(
 
     // 遍历祖先链，累加所有局部变换
     let mut mat4 = DMat4::IDENTITY;
-    
+
     for i in 1..ancestors.len() {
         let cur_refno = ancestors[i].get_refno_or_default();
-        let parent_refno = ancestors[i-1].get_refno_or_default();
-        
+        let parent_refno = ancestors[i - 1].get_refno_or_default();
+
         match get_local_mat4(cur_refno).await {
             Ok(Some(local_mat)) => {
                 mat4 = mat4 * local_mat;
-            },
+            }
             Ok(None) => {
                 #[cfg(feature = "debug_spatial")]
-                println!("DEBUG: No transform calculated for {} -> {}", parent_refno, cur_refno);
-            },
+                println!(
+                    "DEBUG: No transform calculated for {} -> {}",
+                    parent_refno, cur_refno
+                );
+            }
             Err(e) => {
                 #[cfg(feature = "debug_spatial")]
-                println!("DEBUG: Error calculating transform for {} -> {}: {}", parent_refno, cur_refno, e);
+                println!(
+                    "DEBUG: Error calculating transform for {} -> {}: {}",
+                    parent_refno, cur_refno, e
+                );
             }
         }
     }

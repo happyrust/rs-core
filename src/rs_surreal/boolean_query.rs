@@ -158,55 +158,6 @@ pub async fn query_manifold_boolean_operations(
     result
 }
 
-/// Query OCC boolean operations
-///
-/// # Parameters
-///
-/// * `refnos` - Array of reference numbers
-/// * `replace_exist` - Whether to replace existing boolean operation results
-///
-/// # Returns
-///
-/// Returns `Vec<OccGeoTransQuery>` containing OCC boolean operation data
-///
-/// # Note
-///
-/// This function needs to be implemented based on the OCC boolean operation requirements.
-/// The SQL query should be similar to manifold operations but return OccGeoTransQuery instead.
-pub async fn query_occ_boolean_operations(
-    refnos: &[RefnoEnum],
-    replace_exist: bool,
-) -> anyhow::Result<Vec<OccGeoTransQuery>> {
-    // TODO: Implement OCC boolean operations query
-    // This should query instances with negative geometry relationships
-    // and return data suitable for OCC boolean operations
-
-    let inst_keys = get_inst_relate_keys(refnos);
-
-    let mut sql = format!(
-        r#"
-        select
-                in as refno,
-                in.noun as noun,
-                world_trans.d as wt,
-                aabb.d as aabb,
-                (select value [out.param, trans.d] from out->geo_relate where geo_type in ["Compound", "Pos"] and trans.d != NONE and out.param != NONE) as ts,
-                (select value [in, world_trans.d,
-                    (select out.param as param, geo_type, para_type, trans.d as trans, out.aabb.d as aabb
-                    from array::flatten(out->geo_relate) where trans.d != NONE and out.param != NONE and ( geo_type=="Neg" or (geo_type=="CataCrossNeg"
-                        and geom_refno in (select value ngmr from in<-ngmr_relate) ) ))]
-                        from array::flatten([array::flatten(in<-neg_relate.in->inst_relate), array::flatten(in<-ngmr_relate.in->inst_relate)]) where world_trans.d!=none
-                ) as neg_ts
-             from {inst_keys} where in.id != none and ((in<-neg_relate)[0] != none or in<-ngmr_relate[0] != none) and aabb.d != NONE
-        "#
-    );
-
-    if !replace_exist {
-        sql.push_str(" and !bad_bool and !booled");
-    }
-
-    SUL_DB.query_take(&sql, 0).await
-}
 
 /// Query simple catalog negative boolean operations
 ///

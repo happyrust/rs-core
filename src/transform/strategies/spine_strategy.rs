@@ -1,24 +1,27 @@
 /// SPINE 策略实现模块
-
-use super::{TransformStrategy, NposHandler, BangHandler};
+use super::{BangHandler, NposHandler, TransformStrategy};
+use crate::prim_geo::spine::{SegmentPath, Spine3D, SpineCurveType};
 use crate::rs_surreal::spatial::{
-    construct_basis_z_opdir, construct_basis_z_y_exact, construct_basis_z_ref_y,
+    construct_basis_z_opdir, construct_basis_z_ref_y, construct_basis_z_y_exact,
     construct_basis_z_y_hint, construct_basis_z_y_raw, get_spline_line_dir,
 };
-use crate::prim_geo::spine::{Spine3D, SpineCurveType, SegmentPath};
-use crate::{NamedAttrMap, RefnoEnum, get_type_name, get_children_refnos, get_named_attmap, get_children_named_attmaps, transform::get_effective_parent_att};
+use crate::{
+    NamedAttrMap, RefnoEnum, get_children_named_attmaps, get_children_refnos, get_named_attmap,
+    get_type_name, transform::get_effective_parent_att,
+};
 use async_trait::async_trait;
-use glam::{DMat4, DMat3, DQuat, DVec3, Vec3};
+use glam::{DMat3, DMat4, DQuat, DVec3, Vec3};
+use std::sync::Arc;
 
 #[derive(Debug, Default, Clone)]
 pub struct SpineStrategy {
     // POSSP  属性
-    att: NamedAttrMap,
-    parent_att: NamedAttrMap,
+    att: Arc<NamedAttrMap>,
+    parent_att: Arc<NamedAttrMap>,
 }
 
 impl SpineStrategy {
-    pub fn new(att: NamedAttrMap, parent_att: NamedAttrMap) -> Self {
+    pub fn new(att: Arc<NamedAttrMap>, parent_att: Arc<NamedAttrMap>) -> Self {
         Self { att, parent_att }
     }
 
@@ -27,16 +30,18 @@ impl SpineStrategy {
     pub async fn from_wall_or_gensec(gen_refno: RefnoEnum) -> anyhow::Result<Self> {
         // 获取所有子节点属性，查找 SPINE
         let children_atts = get_children_named_attmaps(gen_refno).await?;
-        
-        let spine_att = children_atts.iter()
+
+        let spine_att = children_atts
+            .iter()
             .find(|att| att.get_type_str() == "SPINE")
             .ok_or_else(|| anyhow::anyhow!("No SPINE found under {}", gen_refno))?;
-            
+
         let spine_refno = spine_att.get_refno().unwrap();
-        
+
         // 获取 SPINE 下的第一个 POINSP
         let spine_children = get_children_named_attmaps(spine_refno).await?;
-        let poinsp_att = spine_children.iter()
+        let poinsp_att = spine_children
+            .iter()
             .find(|att| att.get_type_str() == "POINSP")
             .ok_or_else(|| anyhow::anyhow!("No POINSP found under SPINE {}", spine_refno))?;
 
@@ -50,15 +55,16 @@ impl SpineStrategy {
         // 不，get_effective_parent_att(child) 返回 parent 的有效属性。
         // get_effective_parent_att(spine_refno) 返回 GENSEC 的属性。
         // 但是 SpineStrategy 需要的是 SPINE 的属性（用于 get_spline_path 中获取 owner=spine_refno，以及 YDIR 等）。
-        
+
         // 如果 SpineStrategy 期望 parent_att 是 SPINE 自身的属性：
-        Ok(SpineStrategy::new(poinsp_att.clone(), spine_att.clone()))
+        Ok(SpineStrategy::new(
+            Arc::new(poinsp_att.clone()),
+            Arc::new(spine_att.clone()),
+        ))
     }
 
     /// 处理 GENSEC 的特殊挤出方向逻辑
-    pub async fn extract_spine_extrusion(
-        &self,
-    ) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
+    pub async fn extract_spine_extrusion(&self) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         if let Ok(spine_paths) = self.get_spline_path().await {
             if let Some(first_spine) = spine_paths.first() {
                 let dir = (first_spine.pt1 - first_spine.pt0).normalize();
@@ -83,17 +89,12 @@ impl SpineStrategy {
     }
 }
 
-
-
 #[async_trait]
 impl TransformStrategy for SpineStrategy {
-    async fn get_local_transform(
-        &mut self,
-    ) -> anyhow::Result<Option<DMat4>> {
-        
+    async fn get_local_transform(&mut self) -> anyhow::Result<Option<DMat4>> {
         let cur_type = self.att.get_type_str();
         // let parent_type = self.parent_att.get_type_str();
-        
+
         let mut pos = self.att.get_position().unwrap_or_default().as_dvec3();
         let mut quat = DQuat::IDENTITY;
         let mut is_world_quat = false;
@@ -108,21 +109,17 @@ impl TransformStrategy for SpineStrategy {
         } else {
             self.extract_spine_extrusion().await?
         };
-        
+
         let spine_ydir = spine_ydir.unwrap_or(DVec3::Z);
 
         // 3. 处理旋转初始化
         if let Some(dir) = tangent {
-            quat = Self::initialize_rotation(
-                dir,
-                Some(spine_ydir),
-            );
+            quat = Self::initialize_rotation(dir, Some(spine_ydir));
         } else {
             // 如果无法计算方向（孤立点？），可能需要默认处理
-            // return Ok(None); 
+            // return Ok(None);
             // 保持 Identity 旋转
         }
-
 
         // 4. 处理 BETA 角度
         if self.parent_att.contains_key("BANG") {
@@ -155,14 +152,17 @@ impl SpineStrategy {
             .unwrap_or_default();
         let self_refno = self.att.get_refno().unwrap_or_default();
         let ydir = self.parent_att.get_vec3("YDIR").unwrap_or(Vec3::Z);
-        
-        let idx = match ch_atts.iter().position(|a| a.get_refno().unwrap_or_default() == self_refno) {
+
+        let idx = match ch_atts
+            .iter()
+            .position(|a| a.get_refno().unwrap_or_default() == self_refno)
+        {
             Some(i) => i,
             None => return Ok((None, Some(ydir.as_dvec3()))),
         };
 
         let len = ch_atts.len();
-        
+
         // 尝试作为线段/曲线的起点
         if idx < len - 1 {
             let att1 = &ch_atts[idx];
@@ -224,7 +224,7 @@ impl SpineStrategy {
         let pt1 = pt1_att.get_position().unwrap_or_default();
         let mid_pt = curve_att.get_position().unwrap_or_default();
         let cur_type_str = curve_att.get_str("CURTYP").unwrap_or("unset");
-        
+
         let curve_type = match cur_type_str {
             "CENT" => SpineCurveType::CENT,
             "THRU" => SpineCurveType::THRU,
@@ -245,10 +245,7 @@ impl SpineStrategy {
     }
 
     /// 初始化 SPINE 的旋转逻辑：基于YDIR和两点相减方向计算方位
-    fn initialize_rotation(
-        pos_extru_dir: DVec3,
-        spine_ydir: Option<DVec3>,
-    ) ->  DQuat {
+    fn initialize_rotation(pos_extru_dir: DVec3, spine_ydir: Option<DVec3>) -> DQuat {
         // 优先使用YDIR属性
         if let Some(ydir) = spine_ydir {
             // 基于YDIR和挤出方向计算方位
@@ -260,19 +257,19 @@ impl SpineStrategy {
     }
 
     /// 从 GENSEC/WALL 元素提取 SPINE 路径
-    /// 
+    ///
     /// 此函数从给定的 GENSEC 或 WALL 元素中提取所有子 SPINE 元素的路径信息。
     /// 每个 SPINE 由 POINSP 和 CURVE 点组成，支持直线和曲线两种类型。
     pub async fn get_spline_path(&self) -> anyhow::Result<Vec<Spine3D>> {
         let mut paths = vec![];
-        
+
         // 确保 self.att 已经加载
         if self.att.get_refno().is_none() {
             return Ok(paths);
         }
 
-        let owner_refno = self.parent_att.get_refno().unwrap(); 
-        
+        let owner_refno = self.parent_att.get_refno().unwrap();
+
         let ch_atts = get_children_named_attmaps(owner_refno)
             .await
             .unwrap_or_default();
@@ -334,13 +331,13 @@ impl SpineStrategy {
         if self.att.is_empty() || self.parent_att.is_empty() {
             return None;
         }
-        
+
         // 使用已有的路径生成逻辑
         let paths: Vec<Spine3D> = match self.get_spline_path().await {
             Ok(paths) => paths,
             Err(_) => return None,
         };
-        
+
         if paths.is_empty() {
             return None;
         }
@@ -348,7 +345,7 @@ impl SpineStrategy {
         // 收集所有段的几何路径
         let mut all_segments = Vec::new();
         let mut total_len = 0.0;
-        
+
         for spine in &paths {
             let (path, _) = spine.generate_paths();
             for segment in path.segments {
@@ -357,46 +354,46 @@ impl SpineStrategy {
                 all_segments.push((segment, spine));
             }
         }
-        
+
         if total_len <= 0.0 {
             return None;
         }
-        
+
         let spine_ydir = paths[0].preferred_dir.as_dvec3();
         // pkdi 给了一个比例的距离，加上 zdis 手动距离
         let start_len = (total_len as f64 * pkdi.clamp(0.0, 1.0)) as f64;
         let mut target_dist = start_len + zdis;
-        
+
         // 如果目标距离超出范围，通常应该 clamp 到末端或处理 extrapolate
         // 这里简单处理，如果在范围外，可能落在最后一段的延伸线上（如果是直线）
         // 或者直接 clamp 到 0..total_len
-        // target_dist = target_dist.clamp(0.0, total_len as f64); 
+        // target_dist = target_dist.clamp(0.0, total_len as f64);
         // PDMS中可能允许超出? 暂时允许
 
         let mut cur_accum_len = 0.0;
         let mut pos = DVec3::default();
         let mut quat = DQuat::IDENTITY;
-        
+
         let segment_count = all_segments.len();
-        
+
         for (i, (segment, spine)) in all_segments.into_iter().enumerate() {
             let seg_len = segment.length() as f64;
-            
+
             // 判断是否在当前段内，或者是最后一段（处理浮点误差或超出情况）
             if target_dist <= cur_accum_len + seg_len || i == segment_count - 1 {
                 let local_dist = target_dist - cur_accum_len;
-                
+
                 match segment {
                     SegmentPath::Line(_) => {
                         let mut z_dir = get_spline_line_dir(self.parent_att.get_refno().unwrap())
                             .await
                             .unwrap_or_default()
                             .normalize_or_zero();
-                        
+
                         if z_dir.length() == 0.0 {
                             // 使用路径几何直接计算方向作为回退方案
                             z_dir = (spine.pt1 - spine.pt0).normalize().as_dvec3();
-                            
+
                             if z_dir.length() == 0.0 {
                                 quat = DQuat::IDENTITY;
                             } else {
@@ -405,7 +402,7 @@ impl SpineStrategy {
                         } else {
                             quat = construct_basis_z_y_raw(z_dir, spine_ydir);
                         }
-                        
+
                         pos = spine.pt0.as_dvec3() + z_dir * local_dist;
                     }
                     SegmentPath::Arc(arc) => {
@@ -423,8 +420,9 @@ impl SpineStrategy {
                                 theta = -theta;
                             }
                             theta = start_angle + theta;
-                            pos = arc_center + arc_radius * DVec3::new(theta.cos(), theta.sin(), 0.0);
-                            
+                            pos =
+                                arc_center + arc_radius * DVec3::new(theta.cos(), theta.sin(), 0.0);
+
                             // 计算弧线在该点的切线方向作为朝向
                             let y_axis = DVec3::Z;
                             let mut x_axis = (arc_center - pos).normalize();
@@ -442,10 +440,10 @@ impl SpineStrategy {
                 }
                 break;
             }
-            
+
             cur_accum_len += seg_len;
         }
-        
+
         Some(DMat4::from_rotation_translation(quat, pos))
     }
 
@@ -454,28 +452,23 @@ impl SpineStrategy {
         if self.att.is_empty() || self.parent_att.is_empty() {
             return 0.0;
         }
-        
+
         // 使用已有的路径生成逻辑
         let paths: Vec<Spine3D> = match self.get_spline_path().await {
             Ok(paths) => paths,
             Err(_) => return 0.0,
         };
-        
+
         if paths.is_empty() {
             return 0.0;
         }
-        
+
         let mut total_len = 0.0;
         for spine in paths {
             let (path, _) = spine.generate_paths();
             total_len += path.length();
         }
-            
+
         total_len as f64
     }
-
-
-
 }
-
-

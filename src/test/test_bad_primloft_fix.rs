@@ -58,12 +58,14 @@ fn create_test_sweep_solid() -> SweepSolid {
         profile,
         drns: None,
         drne: None,
-        bangle: 0.0,
         plax: Vec3::new(0.0, 1.0, 0.0),
+        bangle: 0.0,
         extrude_dir: DVec3::new(0.0, 0.0, 1.0),
         height,
         path,
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     }
 }
 
@@ -159,12 +161,14 @@ fn test_primloft_without_fradius() {
         profile,
         drns: None,
         drne: None,
-        bangle: 0.0,
         plax: Vec3::new(0.0, 1.0, 0.0),
+        bangle: 0.0,
         extrude_dir: DVec3::new(0.0, 0.0, 1.0),
         height,
         path,
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     let settings = LodMeshSettings::default();

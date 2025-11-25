@@ -82,6 +82,7 @@ pub struct NounHierarchyItem {
 /// 通过surql查询PE（Plant Element）数据
 ///
 /// 根据参考号查询对应的工厂元素数据，结果会被缓存以提高性能。
+/// 缓存最多保存 10000 条记录，超过时使用 LRU 策略淘汰旧数据。
 ///
 /// # 参数
 /// * `refno` - 要查询的参考号
@@ -91,7 +92,7 @@ pub struct NounHierarchyItem {
 ///
 /// # 错误
 /// 如果查询失败，返回错误信息
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub async fn get_pe(refno: RefnoEnum) -> anyhow::Result<Option<SPdmsElement>> {
     let sql = format!(
         r#"select * omit id from only {} limit 1;"#,
@@ -128,7 +129,7 @@ pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>
 ///
 /// # 错误
 /// * 如果查询失败会返回错误
-#[cached(result = true)]
+#[cached(result = true, size = 5000)]
 pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!("return fn::ancestor({}).refno;", refno.to_pe_key());
     SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
@@ -147,6 +148,7 @@ pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<Refno
 /// * 如果查询失败会返回错误
 #[cached(
     result = true,
+    size = 5000,
     key = "(RefnoEnum, String)",
     convert = r#"{ (refno, ancestor_type.to_string()) }"#
 )]
@@ -201,7 +203,7 @@ pub async fn get_refno_by_name(name: &str) -> anyhow::Result<Option<RefnoEnum>> 
 ///
 /// # 错误
 /// * 如果查询失败会返回错误
-#[cached(result = true)]
+#[cached(result = true, size = 5000)]
 pub async fn get_ancestor_types(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
     let sql = format!("return fn::ancestor({}).noun;", refno.to_pe_key());
     SUL_DB.query_take::<Vec<String>>(&sql, 0).await
@@ -239,7 +241,7 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
 ///
 /// # 返回值
 /// * `String` - 类型名称，如果未找到则返回"unset"
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub async fn get_type_name(refno: RefnoEnum) -> anyhow::Result<String> {
     let sql = format!("select value noun from only {} limit 1", refno.to_pe_key());
     let type_name: Option<String> = SUL_DB.query_take(&sql, 0).await?;
@@ -319,7 +321,7 @@ pub async fn get_owner_type_name(refno: RefU64) -> anyhow::Result<String> {
 /// let self_type = &types[0];  // 元素自身类型
 /// let owner_type = &types[1]; // 拥有者类型
 /// ```
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub async fn get_type_and_owner_type(refno: RefnoEnum) -> anyhow::Result<Vec<String>> {
     let sql = format!(
         "select value [noun, owner.noun] from only {} limit 1",
@@ -352,6 +354,7 @@ pub async fn get_type_and_owner_type(refno: RefnoEnum) -> anyhow::Result<Vec<Str
 /// ```
 #[cached(
     result = true,
+    size = 3000,
     key = "(RefnoEnum, String)",
     convert = r#"{ (refno, owner_type.to_string()) }"#
 )]
@@ -389,6 +392,7 @@ pub async fn is_owner_type(refno: RefnoEnum, owner_type: &str) -> anyhow::Result
 /// ```
 #[cached(
     result = true,
+    size = 3000,
     key = "(RefnoEnum, String)",
     convert = r#"{ (refno, format!("{:?}", owner_types)) }"#
 )]
@@ -430,6 +434,7 @@ pub async fn is_owner_type_in(refno: RefnoEnum, owner_types: &[&str]) -> anyhow:
 /// ```
 #[cached(
     result = true,
+    size = 3000,
     key = "(RefnoEnum, String)",
     convert = r#"{ (refno, owner_type.to_string()) }"#
 )]
@@ -470,6 +475,7 @@ pub async fn get_owner_refno_by_type(
 /// ```
 #[cached(
     result = true,
+    size = 3000,
     key = "(RefnoEnum, String)",
     convert = r#"{ (refno, format!("{:?}", owner_types)) }"#
 )]
@@ -953,20 +959,20 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
 }
 
 ///通过surql查询属性数据
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(r#"(select * from {}.refno)[0];"#, refno.to_pe_key());
     let named_attmap: Option<NamedAttrMap> = SUL_DB.query_take(&sql, 0).await?;
     Ok(named_attmap.unwrap_or_default())
 }
 
-#[cached(result = true)]
+#[cached(result = true, size = 5000)]
 pub async fn get_siblings(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     let sql = format!("select value in from {}<-pe_owner", refno.to_pe_key());
     SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }
 
-#[cached(result = true)]
+#[cached(result = true, size = 5000)]
 pub async fn get_next_prev(refno: RefnoEnum, next: bool) -> anyhow::Result<RefnoEnum> {
     let siblings = get_siblings(refno).await?;
     let pos = siblings
@@ -986,7 +992,7 @@ pub async fn get_next_prev(refno: RefnoEnum, next: bool) -> anyhow::Result<Refno
 /// Get the default full name for a pipe element
 ///
 /// Wraps the Surreal function fn::default_full_name
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub async fn get_default_full_name(refno: RefnoEnum) -> anyhow::Result<String> {
     let sql = format!("RETURN fn::default_full_name({})", refno.to_pe_key());
     let result: Option<String> = SUL_DB.query_take(&sql, 0).await?;
@@ -1009,7 +1015,7 @@ pub async fn get_default_full_name(refno: RefnoEnum) -> anyhow::Result<String> {
 /// # 错误
 ///
 /// 如果查询失败，返回错误信息
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub(crate) async fn get_named_attmap_with_uda(
     refno_enum: RefnoEnum,
 ) -> anyhow::Result<NamedAttrMap> {
@@ -1080,7 +1086,7 @@ pub const CATR_QUERY_STR: &'static str = "refno.CATR.refno.CATR, refno.CATR.refn
 /// 这个函数会尝试通过两种方式获取元素的CATR参考号：
 /// 1. 直接查询元素的CATR属性
 /// 2. 查询元素的SPRE属性，并从其中获取CATR参考号
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub async fn get_cat_refno(refno: RefnoEnum) -> anyhow::Result<Option<RefnoEnum>> {
     // 尝试通过查询属性获取CATR参考号
     if let Ok(spre_map) = query_single_by_paths(refno, &["->SPRE", "->SPRE->CATR"], &[]).await {
@@ -1130,7 +1136,7 @@ fn extract_refno_enum(value: &NamedAttrValue) -> Option<RefnoEnum> {
     }
 }
 
-#[cached(result = true)]
+#[cached(result = true, size = 10000)]
 pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(
         r#"
@@ -1146,7 +1152,7 @@ pub async fn get_cat_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
 ///
 /// # 注意
 /// **已重构**: 现在使用 `collect_children_filter_attrs` 实现
-#[cached(result = true)]
+#[cached(result = true, size = 5000)]
 pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedAttrMap>> {
     use crate::graph::collect_children_filter_attrs;
     collect_children_filter_attrs(refno, &[]).await
@@ -1156,7 +1162,7 @@ pub async fn get_children_named_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<
 ///
 /// # 注意
 /// **已重构**: 现在使用 `collect_children_elements` 实现
-#[cached(result = true)]
+#[cached(result = true, size = 5000)]
 pub async fn get_children_pes(refno: RefnoEnum) -> anyhow::Result<Vec<SPdmsElement>> {
     use crate::graph::collect_children_elements;
     collect_children_elements(refno, &[]).await
@@ -1218,7 +1224,7 @@ pub async fn clear_all_caches(refno: RefnoEnum) {
 }
 
 ///获得children
-#[cached(result = true)]
+#[cached(result = true, size = 5000)]
 pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
     // 临时方案：跳过历史版本查询以避免 fn::ses_date() 导致的 "Expected any, got record" 错误
     // TODO: 使用 dt 字段替代 fn::ses_date() 来支持历史版本查询

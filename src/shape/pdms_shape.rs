@@ -501,17 +501,26 @@ impl PlantMesh {
     }
 
     ///序列化
+    ///
+    /// # Errors
+    /// 如果序列化失败，返回错误
     #[inline]
-    pub fn ser_to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+    pub fn ser_to_bytes(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(bincode::serialize(self)?)
     }
 
     ///序列化到文件
+    ///
+    /// # Errors
+    /// 如果文件创建或写入失败，返回错误
     #[inline]
     pub fn ser_to_file(&self, file_path: &dyn AsRef<Path>) -> anyhow::Result<()> {
+        use anyhow::Context;
         let bytes = bincode::serialize(self)?;
-        let mut file = File::create(file_path).unwrap();
-        file.write_all(&bytes)?;
+        let mut file = File::create(file_path)
+            .with_context(|| format!("无法创建文件: {:?}", file_path.as_ref()))?;
+        file.write_all(&bytes)
+            .with_context(|| format!("无法写入文件: {:?}", file_path.as_ref()))?;
         Ok(())
     }
 
@@ -531,13 +540,17 @@ impl PlantMesh {
     }
 
     ///压缩bytes
+    ///
+    /// # Errors
+    /// 如果序列化或压缩失败，返回错误
     #[inline]
-    pub fn into_compress_bytes(&self) -> Vec<u8> {
+    pub fn into_compress_bytes(&self) -> anyhow::Result<Vec<u8>> {
         use flate2::Compression;
         use flate2::write::DeflateEncoder;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&bincode::serialize(&self).unwrap());
-        e.finish().unwrap_or_default()
+        let serialized = bincode::serialize(&self)?;
+        e.write_all(&serialized)?;
+        Ok(e.finish()?)
     }
 
     ///从压缩bytes反序列化

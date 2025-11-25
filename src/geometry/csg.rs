@@ -146,14 +146,17 @@ pub fn unit_box_mesh() -> PlantMesh {
 
     use nalgebra::Point3;
     use parry3d::bounding_volume::Aabb;
-    let edges = extract_edges_from_mesh(&indices, &vertices);
+
+    // 🆕 生成盒子的12条特征边
+    let box_edges = generate_box_edges(1.0, 1.0, 1.0);
+
     let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
         uvs: Vec::new(),
         wire_vertices: Vec::new(),
-        edges,
+        edges: box_edges,
         aabb: Some(Aabb::new(
             Point3::new(-half, -half, -half),
             Point3::new(half, half, half),
@@ -222,14 +225,19 @@ pub fn unit_sphere_mesh() -> PlantMesh {
         }
     }
 
-    let edges = extract_edges_from_mesh(&indices, &vertices);
+    // 使用特征边生成函数（纬线圈数和经线条数）
+    let sphere_edges = generate_sphere_edges(
+        radius,
+        8,  // 8条经线（子午线）
+        4,  // 4条纬线（平行圈）
+    );
     let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
         uvs: Vec::new(),
         wire_vertices: vec![],
-        edges,
+        edges: sphere_edges,
         aabb: Some(aabb),
     };
     mesh.generate_auto_uvs();
@@ -309,10 +317,10 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
 
         // 使用扇形三角形生成端面索引
         // 顶面：从外侧看为逆时针，底面：从外侧看为逆时针（法线向外）
-        for i in 0..(resolution - 1) {
+        for i in 0..resolution {
             let v0 = center_index;
             let v1 = rim_base + i as u32;
-            let v2 = rim_base + i as u32 + 1;
+            let v2 = rim_base + ((i + 1) % resolution) as u32;
             if top {
                 // 顶部法线指向 +Z
                 indices.extend_from_slice(&[v0, v1, v2]);
@@ -326,14 +334,21 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
     build_cap(true);
     build_cap(false);
 
-    let edges = extract_edges_from_mesh(&indices, &vertices);
+    // 🆕 生成圆柱体的特征边（顶圆 + 底圆 + 4条纵向边）
+    let cylinder_edges = generate_cylinder_edges(
+        radius,
+        height,
+        resolution,
+        4, // 生成 4 条纵向边，均匀分布
+    );
+
     let mut mesh = PlantMesh {
         indices,
         vertices,
         normals,
         uvs: Vec::new(),
         wire_vertices: Vec::new(),
-        edges,
+        edges: cylinder_edges,
         aabb: Some(Aabb::new(
             Point3::new(-0.5, -0.5, 0.0),
             Point3::new(0.5, 0.5, 1.0),
@@ -439,6 +454,66 @@ fn extract_edges_from_mesh(indices: &[u32], vertices: &[Vec3]) -> Edges {
     edges
 }
 
+/// 从 Profile 轮廓生成特征边（用于拉伸体、旋转体等）
+///
+/// 此函数基于截面轮廓直接生成几何体的外轮廓边，避免从三角网格提取大量内部边。
+/// 适用于：
+/// - 拉伸体：底面轮廓 + 顶面轮廓 + 纵向边
+/// - 旋转体：经线 + 纬线
+/// - 扫掠体：起始截面 + 结束截面 + 沿路径的边
+///
+/// # 参数
+/// - `contour_points`: 2D 截面轮廓顶点（已处理 FRADIUS、boolean 操作、圆弧离散化）
+/// - `height`: 拉伸高度（对于拉伸体）
+/// - `include_vertical_edges`: 是否包含纵向边（连接底面和顶面）
+///
+/// # 返回
+/// 特征边集合，每条边包含起点和终点
+pub fn generate_profile_based_edges(
+    contour_points: &[Vec2],
+    height: f32,
+    include_vertical_edges: bool,
+) -> Edges {
+    if contour_points.len() < 2 {
+        return Vec::new();
+    }
+
+    let mut edges = Vec::new();
+    let n = contour_points.len();
+
+    // 1. 底面轮廓边（z=0）
+    for i in 0..n {
+        let curr = contour_points[i];
+        let next = contour_points[(i + 1) % n];
+        edges.push(Edge::new(vec![
+            Vec3::new(curr.x, curr.y, 0.0),
+            Vec3::new(next.x, next.y, 0.0),
+        ]));
+    }
+
+    // 2. 顶面轮廓边（z=height）
+    for i in 0..n {
+        let curr = contour_points[i];
+        let next = contour_points[(i + 1) % n];
+        edges.push(Edge::new(vec![
+            Vec3::new(curr.x, curr.y, height),
+            Vec3::new(next.x, next.y, height),
+        ]));
+    }
+
+    // 3. 纵向边（可选，连接底面和顶面对应顶点）
+    if include_vertical_edges {
+        for point in contour_points {
+            edges.push(Edge::new(vec![
+                Vec3::new(point.x, point.y, 0.0),
+                Vec3::new(point.x, point.y, height),
+            ]));
+        }
+    }
+
+    edges
+}
+
 /// 创建一个带有边信息的 PlantMesh
 ///
 /// 辅助函数，用于创建 PlantMesh 并自动提取边信息
@@ -461,6 +536,438 @@ fn create_mesh_with_edges(
     mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
     mesh
+}
+
+/// 创建一个带有自定义边信息的 PlantMesh
+///
+/// 与 `create_mesh_with_edges` 类似，但允许指定自定义边集合
+/// 优先使用提供的边，如果为 None 则从三角网格提取
+///
+/// # 参数
+/// - `indices`: 三角形索引
+/// - `vertices`: 顶点位置
+/// - `normals`: 顶点法向量
+/// - `aabb`: 包围盒（可选）
+/// - `custom_edges`: 自定义边集合（可选，如基于 Profile 生成的边）
+fn create_mesh_with_custom_edges(
+    indices: Vec<u32>,
+    vertices: Vec<Vec3>,
+    normals: Vec<Vec3>,
+    aabb: Option<Aabb>,
+    custom_edges: Option<Edges>,
+) -> PlantMesh {
+    let edges = custom_edges.unwrap_or_else(|| extract_edges_from_mesh(&indices, &vertices));
+    let mut mesh = PlantMesh {
+        indices,
+        vertices,
+        normals,
+        uvs: Vec::new(),
+        wire_vertices: Vec::new(),
+        edges,
+        aabb,
+    };
+    mesh.generate_auto_uvs();
+    mesh.sync_wire_vertices_from_edges();
+    mesh
+}
+
+/// 从 Profile 轮廓生成旋转体的特征边（经线和纬线）
+///
+/// 旋转体的边包括：
+/// - **纬线边**：在不同旋转角度位置的轮廓圆环（较少，用于显示旋转形状）
+/// - **经线边**（可选）：Profile 轮廓上的点沿旋转方向的圆弧轨迹
+///
+/// # 参数
+/// - `profile`: 轮廓顶点（在 3D 空间中的点）
+/// - `rot_pt`: 旋转中心点
+/// - `rot_dir`: 旋转轴方向（归一化）
+/// - `angle_rad`: 旋转角度（弧度）
+/// - `num_latitude_rings`: 纬线圆环数量（建议 2-4 个，用于起始/结束/中间位置）
+/// - `include_longitude_edges`: 是否包含经线边
+///
+/// # 返回
+/// 特征边集合
+pub fn generate_revolution_profile_edges(
+    profile: &[Vec3],
+    rot_pt: Vec3,
+    rot_dir: Vec3,
+    angle_rad: f32,
+    num_latitude_rings: usize,
+    include_longitude_edges: bool,
+) -> Edges {
+    if profile.len() < 2 {
+        return Vec::new();
+    }
+
+    let mut edges = Vec::new();
+    let n_profile = profile.len();
+    let num_rings = num_latitude_rings.max(2);
+
+    // 计算垂直于旋转轴的正交基
+    let (u_axis, v_axis) = {
+        let ref_vec = if rot_dir.x.abs() < 0.9 {
+            Vec3::X
+        } else {
+            Vec3::Y
+        };
+        let u = ref_vec.cross(rot_dir).normalize();
+        let v = rot_dir.cross(u).normalize();
+        (u, v)
+    };
+
+    // 1. 生成纬线边（轮廓圆环，在不同旋转角度）
+    for ring_idx in 0..num_rings {
+        let theta = if num_rings == 1 {
+            0.0
+        } else {
+            angle_rad * ring_idx as f32 / (num_rings - 1) as f32
+        };
+        let (sin_theta, cos_theta) = theta.sin_cos();
+
+        // 为当前角度生成轮廓的所有边
+        for i in 0..n_profile {
+            let j = (i + 1) % n_profile;
+            if j == 0 && n_profile > 2 {
+                // 如果是开放轮廓，跳过闭合边
+                continue;
+            }
+
+            let p0 = profile[i];
+            let p1 = profile[j];
+
+            // 计算旋转后的位置
+            let rotated_p0 = rotate_point_around_axis(p0, rot_pt, rot_dir, u_axis, v_axis, sin_theta, cos_theta);
+            let rotated_p1 = rotate_point_around_axis(p1, rot_pt, rot_dir, u_axis, v_axis, sin_theta, cos_theta);
+
+            edges.push(Edge::new(vec![rotated_p0, rotated_p1]));
+        }
+    }
+
+    // 2. 生成经线边（可选，Profile 轮廓点的旋转轨迹）
+    if include_longitude_edges {
+        let num_longitude_samples = (angle_rad.to_degrees() / 30.0).ceil().max(4.0) as usize;
+
+        for profile_idx in 0..n_profile {
+            let p = profile[profile_idx];
+
+            // 沿旋转方向采样
+            for seg in 0..num_longitude_samples {
+                let theta0 = angle_rad * seg as f32 / num_longitude_samples as f32;
+                let theta1 = angle_rad * (seg + 1) as f32 / num_longitude_samples as f32;
+
+                let (sin0, cos0) = theta0.sin_cos();
+                let (sin1, cos1) = theta1.sin_cos();
+
+                let pos0 = rotate_point_around_axis(p, rot_pt, rot_dir, u_axis, v_axis, sin0, cos0);
+                let pos1 = rotate_point_around_axis(p, rot_pt, rot_dir, u_axis, v_axis, sin1, cos1);
+
+                edges.push(Edge::new(vec![pos0, pos1]));
+            }
+        }
+    }
+
+    edges
+}
+
+/// 辅助函数：绕轴旋转点
+#[inline]
+fn rotate_point_around_axis(
+    point: Vec3,
+    rot_center: Vec3,
+    rot_axis: Vec3,
+    u_axis: Vec3,
+    v_axis: Vec3,
+    sin_theta: f32,
+    cos_theta: f32,
+) -> Vec3 {
+    let offset = point - rot_center;
+    let along_axis = offset.dot(rot_axis);
+    let perp_offset = offset - rot_axis * along_axis;
+    let perp_dist = perp_offset.length();
+
+    if perp_dist < MIN_LEN {
+        // 点在旋转轴上，不旋转
+        return point;
+    }
+
+    let perp_dir = perp_offset / perp_dist;
+
+    // 将 perp_dir 分解到 u_axis 和 v_axis
+    let u_comp = perp_dir.dot(u_axis);
+    let v_comp = perp_dir.dot(v_axis);
+
+    // 旋转后的方向
+    let rotated_u = u_comp * cos_theta - v_comp * sin_theta;
+    let rotated_v = u_comp * sin_theta + v_comp * cos_theta;
+    let rotated_perp_dir = u_axis * rotated_u + v_axis * rotated_v;
+
+    // 计算旋转后的位置
+    let rotated_perp_offset = rotated_perp_dir * perp_dist;
+    let rotated_offset = rotated_perp_offset + rot_axis * along_axis;
+
+    rot_center + rotated_offset
+}
+
+/// 生成圆柱体的特征边
+///
+/// 圆柱体的边包括：
+/// - 顶圆边
+/// - 底圆边
+/// - 纵向边（可选，连接顶圆和底圆）
+///
+/// # 参数
+/// - `radius`: 圆柱半径
+/// - `height`: 圆柱高度
+/// - `num_segments`: 圆周分段数
+/// - `num_vertical_edges`: 纵向边数量（0 表示不生成纵向边）
+///
+/// # 返回
+/// 特征边集合
+pub fn generate_cylinder_edges(
+    radius: f32,
+    height: f32,
+    num_segments: usize,
+    num_vertical_edges: usize,
+) -> Edges {
+    let mut edges = Vec::new();
+    let step_theta = std::f32::consts::TAU / num_segments as f32;
+
+    // 1. 底圆边（z=0）
+    for i in 0..num_segments {
+        let theta0 = i as f32 * step_theta;
+        let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
+        let (sin0, cos0) = theta0.sin_cos();
+        let (sin1, cos1) = theta1.sin_cos();
+
+        edges.push(Edge::new(vec![
+            Vec3::new(radius * cos0, radius * sin0, 0.0),
+            Vec3::new(radius * cos1, radius * sin1, 0.0),
+        ]));
+    }
+
+    // 2. 顶圆边（z=height）
+    for i in 0..num_segments {
+        let theta0 = i as f32 * step_theta;
+        let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
+        let (sin0, cos0) = theta0.sin_cos();
+        let (sin1, cos1) = theta1.sin_cos();
+
+        edges.push(Edge::new(vec![
+            Vec3::new(radius * cos0, radius * sin0, height),
+            Vec3::new(radius * cos1, radius * sin1, height),
+        ]));
+    }
+
+    // 3. 纵向边（可选，均匀分布在圆周上）
+    if num_vertical_edges > 0 {
+        let vertical_step = num_segments / num_vertical_edges.max(1);
+        for i in 0..num_vertical_edges {
+            let segment_idx = i * vertical_step;
+            let theta = segment_idx as f32 * step_theta;
+            let (sin, cos) = theta.sin_cos();
+
+            edges.push(Edge::new(vec![
+                Vec3::new(radius * cos, radius * sin, 0.0),
+                Vec3::new(radius * cos, radius * sin, height),
+            ]));
+        }
+    }
+
+    edges
+}
+
+/// 生成球体的特征边（经线和纬线）
+///
+/// # 参数
+/// - `radius`: 球体半径
+/// - `num_meridians`: 经线数量
+/// - `num_parallels`: 纬线数量（不包括两极）
+///
+/// # 返回
+/// 特征边集合
+pub fn generate_sphere_edges(
+    radius: f32,
+    num_meridians: usize,
+    num_parallels: usize,
+) -> Edges {
+    let mut edges = Vec::new();
+    let theta_step = std::f32::consts::TAU / num_meridians as f32;
+    let phi_step = std::f32::consts::PI / (num_parallels + 1) as f32;
+
+    // 1. 纬线（平行于赤道的圆）
+    for parallel_idx in 1..=num_parallels {
+        let phi = parallel_idx as f32 * phi_step;
+        let (sin_phi, cos_phi) = phi.sin_cos();
+        let ring_radius = radius * sin_phi;
+        let z = radius * cos_phi;
+
+        for i in 0..num_meridians {
+            let theta0 = i as f32 * theta_step;
+            let theta1 = ((i + 1) % num_meridians) as f32 * theta_step;
+            let (sin0, cos0) = theta0.sin_cos();
+            let (sin1, cos1) = theta1.sin_cos();
+
+            edges.push(Edge::new(vec![
+                Vec3::new(ring_radius * cos0, ring_radius * sin0, z),
+                Vec3::new(ring_radius * cos1, ring_radius * sin1, z),
+            ]));
+        }
+    }
+
+    // 2. 经线（通过南北极的半圆）
+    for meridian_idx in 0..num_meridians {
+        let theta = meridian_idx as f32 * theta_step;
+        let (sin_theta, cos_theta) = theta.sin_cos();
+
+        for segment in 0..=num_parallels {
+            let phi0 = segment as f32 * phi_step;
+            let phi1 = ((segment + 1) % (num_parallels + 2)) as f32 * phi_step;
+
+            let (sin_phi0, cos_phi0) = phi0.sin_cos();
+            let (sin_phi1, cos_phi1) = phi1.sin_cos();
+
+            let p0 = Vec3::new(
+                radius * sin_phi0 * cos_theta,
+                radius * sin_phi0 * sin_theta,
+                radius * cos_phi0,
+            );
+            let p1 = Vec3::new(
+                radius * sin_phi1 * cos_theta,
+                radius * sin_phi1 * sin_theta,
+                radius * cos_phi1,
+            );
+
+            edges.push(Edge::new(vec![p0, p1]));
+        }
+    }
+
+    edges
+}
+
+/// 生成盒子的12条边
+///
+/// # 参数
+/// - `width`: X 方向尺寸
+/// - `depth`: Y 方向尺寸
+/// - `height`: Z 方向尺寸
+///
+/// # 返回
+/// 特征边集合（12条边）
+pub fn generate_box_edges(width: f32, depth: f32, height: f32) -> Edges {
+    let hx = width / 2.0;
+    let hy = depth / 2.0;
+    let hz = height / 2.0;
+
+    vec![
+        // 底面 4 条边
+        Edge::new(vec![Vec3::new(-hx, -hy, -hz), Vec3::new(hx, -hy, -hz)]),
+        Edge::new(vec![Vec3::new(hx, -hy, -hz), Vec3::new(hx, hy, -hz)]),
+        Edge::new(vec![Vec3::new(hx, hy, -hz), Vec3::new(-hx, hy, -hz)]),
+        Edge::new(vec![Vec3::new(-hx, hy, -hz), Vec3::new(-hx, -hy, -hz)]),
+        // 顶面 4 条边
+        Edge::new(vec![Vec3::new(-hx, -hy, hz), Vec3::new(hx, -hy, hz)]),
+        Edge::new(vec![Vec3::new(hx, -hy, hz), Vec3::new(hx, hy, hz)]),
+        Edge::new(vec![Vec3::new(hx, hy, hz), Vec3::new(-hx, hy, hz)]),
+        Edge::new(vec![Vec3::new(-hx, hy, hz), Vec3::new(-hx, -hy, hz)]),
+        // 纵向 4 条边
+        Edge::new(vec![Vec3::new(-hx, -hy, -hz), Vec3::new(-hx, -hy, hz)]),
+        Edge::new(vec![Vec3::new(hx, -hy, -hz), Vec3::new(hx, -hy, hz)]),
+        Edge::new(vec![Vec3::new(hx, hy, -hz), Vec3::new(hx, hy, hz)]),
+        Edge::new(vec![Vec3::new(-hx, hy, -hz), Vec3::new(-hx, hy, hz)]),
+    ]
+}
+
+/// 生成圆锥体（snout）的特征边
+///
+/// 包括底部圆、顶部圆（如果存在）以及连接两者的竖直线
+///
+/// # 参数
+/// - `bottom_center`: 底部中心点
+/// - `top_center`: 顶部中心点
+/// - `bottom_radius`: 底部半径
+/// - `top_radius`: 顶部半径
+/// - `axis_dir`: 轴向方向（归一化）
+/// - `num_segments`: 圆周分段数
+/// - `num_vertical_edges`: 竖直边的数量
+///
+/// # 返回
+/// 特征边集合
+pub fn generate_snout_edges(
+    bottom_center: Vec3,
+    top_center: Vec3,
+    bottom_radius: f32,
+    top_radius: f32,
+    axis_dir: Vec3,
+    num_segments: usize,
+    num_vertical_edges: usize,
+) -> Edges {
+    let mut edges = Vec::new();
+
+    // 生成正交基向量（用于构建圆周点）
+    let (basis_u, basis_v) = orthonormal_basis(axis_dir);
+
+    // 1. 底部圆（如果有半径）
+    if bottom_radius > 1e-6 {
+        let mut bottom_points = Vec::with_capacity(num_segments + 1);
+        for i in 0..=num_segments {
+            let angle = (i as f32 / num_segments as f32) * std::f32::consts::TAU;
+            let (sin, cos) = angle.sin_cos();
+            let radial_dir = basis_u * cos + basis_v * sin;
+            let point = bottom_center + radial_dir * bottom_radius;
+            bottom_points.push(point);
+        }
+        edges.push(Edge::new(bottom_points));
+    }
+
+    // 2. 顶部圆（如果有半径）
+    if top_radius > 1e-6 {
+        let mut top_points = Vec::with_capacity(num_segments + 1);
+        for i in 0..=num_segments {
+            let angle = (i as f32 / num_segments as f32) * std::f32::consts::TAU;
+            let (sin, cos) = angle.sin_cos();
+            let radial_dir = basis_u * cos + basis_v * sin;
+            let point = top_center + radial_dir * top_radius;
+            top_points.push(point);
+        }
+        edges.push(Edge::new(top_points));
+    }
+
+    // 3. 连接底部和顶部的竖直线（仅当两端都有半径时）
+    if bottom_radius > 1e-6 && top_radius > 1e-6 && num_vertical_edges > 0 {
+        let angle_step = std::f32::consts::TAU / num_vertical_edges as f32;
+        for i in 0..num_vertical_edges {
+            let angle = i as f32 * angle_step;
+            let (sin, cos) = angle.sin_cos();
+            let radial_dir = basis_u * cos + basis_v * sin;
+
+            let bottom_point = bottom_center + radial_dir * bottom_radius;
+            let top_point = top_center + radial_dir * top_radius;
+
+            edges.push(Edge::new(vec![bottom_point, top_point]));
+        }
+    } else if bottom_radius > 1e-6 && top_radius <= 1e-6 {
+        // 纯圆锥情况：从顶点到底部圆周的线
+        let angle_step = std::f32::consts::TAU / num_vertical_edges as f32;
+        for i in 0..num_vertical_edges {
+            let angle = i as f32 * angle_step;
+            let (sin, cos) = angle.sin_cos();
+            let radial_dir = basis_u * cos + basis_v * sin;
+            let bottom_point = bottom_center + radial_dir * bottom_radius;
+            edges.push(Edge::new(vec![top_center, bottom_point]));
+        }
+    } else if bottom_radius <= 1e-6 && top_radius > 1e-6 {
+        // 倒圆锥情况：从底部顶点到顶部圆周的线
+        let angle_step = std::f32::consts::TAU / num_vertical_edges as f32;
+        for i in 0..num_vertical_edges {
+            let angle = i as f32 * angle_step;
+            let (sin, cos) = angle.sin_cos();
+            let radial_dir = basis_u * cos + basis_v * sin;
+            let top_point = top_center + radial_dir * top_radius;
+            edges.push(Edge::new(vec![bottom_center, top_point]));
+        }
+    }
+
+    edges
 }
 
 /// 生成的网格及其包围盒
@@ -1060,8 +1567,22 @@ fn generate_snout_mesh(
         }
     }
 
+    // 计算顶部中心点
+    let top_center = bottom_center + axis_dir * height_axis + offset_dir * snout.poff;
+
+    // 使用特征边生成函数
+    let snout_edges = generate_snout_edges(
+        bottom_center,
+        top_center,
+        bottom_radius,
+        top_radius,
+        axis_dir,
+        radial,        // 圆周分段数
+        4,             // 4条竖直边
+    );
+
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(snout_edges)),
         aabb: Some(aabb),
     })
 }
@@ -2529,9 +3050,21 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, _refno: Option<RefU64>) -> Opt
 
     let extruded = extrude_profile(&profile, extrusion.height);
 
-    // 使用 create_mesh_with_edges 构建带 edges / wire_vertices 的 PlantMesh
-    let mut mesh =
-        create_mesh_with_edges(extruded.indices, extruded.vertices, extruded.normals, None);
+    // 🆕 从 Profile 轮廓生成特征边（外轮廓边）
+    let profile_edges = generate_profile_based_edges(
+        &profile.contour_points,
+        extrusion.height,
+        false, // 暂不包含纵向边，避免过于密集
+    );
+
+    // 使用 create_mesh_with_custom_edges 构建带基于 Profile 的边的 PlantMesh
+    let mut mesh = create_mesh_with_custom_edges(
+        extruded.indices,
+        extruded.vertices,
+        extruded.normals,
+        None,
+        Some(profile_edges),
+    );
     mesh.uvs = extruded.uvs;
 
     // 确保 AABB 被正确计算，并同步到 mesh.aabb
@@ -3458,8 +3991,24 @@ pub(crate) fn generate_revolution_mesh(
         return None;
     }
 
+    // 🆕 从 Profile 轮廓生成旋转体的特征边（纬线边）
+    let revolution_edges = generate_revolution_profile_edges(
+        profile,
+        rot_pt,
+        rot_dir,
+        angle_rad,
+        3,     // 生成 3 个纬线圆环：起始、中间、结束
+        false, // 不包含经线边，避免过于密集
+    );
+
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(
+            indices,
+            vertices,
+            normals,
+            Some(aabb),
+            Some(revolution_edges),
+        ),
         aabb: Some(aabb),
     })
 }
@@ -3494,4 +4043,39 @@ fn generate_prim_loft_mesh(
         mesh,
         aabb: Some(aabb),
     })
+}
+
+#[cfg(test)]
+mod closure_tests {
+    use super::*;
+    use crate::mesh_precision::LodMeshSettings;
+
+    #[test]
+    fn test_unit_cylinder_mesh_closure() {
+        let settings = LodMeshSettings::default();
+        // 生成 mesh
+        let mesh = unit_cylinder_mesh(&settings, false);
+
+        // 获取 resolution (根据 radius=0.5 计算)
+        let resolution = compute_radial_segments(&settings, 0.5, false, 3);
+        let height_segments = compute_height_segments(&settings, 1.0, false, 1);
+
+        // 验证索引数量
+        // 侧面三角形数 = height_segments * resolution * 2 (每个quad 2个三角形)
+        // 端面三角形数 = resolution * 1 * 2 (上下两个端面，每个端面有 resolution 个三角形)
+        // 注意：修复前的 bug 是 resolution - 1，所以如果测试通过，说明修复有效
+        let expected_triangle_count = height_segments * resolution * 2 + resolution * 2;
+        let expected_indices_count = expected_triangle_count * 3;
+
+        assert_eq!(
+            mesh.indices.len(),
+            expected_indices_count,
+            "Indices count mismatch. Expected {} triangles ({} indices), but got {} indices. Resolution: {}, Height Segments: {}",
+            expected_triangle_count,
+            expected_indices_count,
+            mesh.indices.len(),
+            resolution,
+            height_segments
+        );
+    }
 }

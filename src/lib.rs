@@ -308,9 +308,9 @@ pub async fn init_surreal() -> anyhow::Result<()> {
     match SUL_DB
         .connect((db_option.get_version_db_conn_str(), config))
         .with_capacity(1000)
-        .await 
+        .await
     {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => {
             if e.to_string().contains("Already connected") {
                 // println!("⚠️  Database already connected, skipping connection");
@@ -319,7 +319,7 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             }
         }
     }
-    
+
     SUL_DB
         .use_ns(&db_option.surreal_ns)
         .use_db(&db_option.project_name)

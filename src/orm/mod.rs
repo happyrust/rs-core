@@ -26,22 +26,25 @@ pub use types::*;
 /// 获得类型的注册机
 ///
 /// 注意: 此功能需要 "reflect" feature 开启
-#[cfg(feature = "reflect")]
-pub fn get_type_registry() -> &'static TypeRegistry {
-    static INSTANCE: OnceCell<TypeRegistry> = OnceCell::new();
-    INSTANCE.get_or_init(|| {
-        let mut type_registry: TypeRegistry = TypeRegistry::default();
-        type_registry.register::<pdms_element::Model>();
-        type_registry
-    })
-}
+///
+/// # 返回值
+/// - 当 reflect feature 开启时，返回 Some(&TypeRegistry)
+/// - 当 reflect feature 未开启时，返回 None
+pub fn get_type_registry() -> Option<&'static TypeRegistry> {
+    #[cfg(feature = "reflect")]
+    {
+        static INSTANCE: OnceCell<TypeRegistry> = OnceCell::new();
+        Some(INSTANCE.get_or_init(|| {
+            let mut type_registry: TypeRegistry = TypeRegistry::default();
+            type_registry.register::<pdms_element::Model>();
+            type_registry
+        }))
+    }
 
-/// 当 reflect feature 未开启时的替代实现
-#[cfg(not(feature = "reflect"))]
-pub fn get_type_registry() -> ! {
-    panic!(
-        "TypeRegistry requires 'reflect' feature to be enabled. Please enable the feature in Cargo.toml"
-    )
+    #[cfg(not(feature = "reflect"))]
+    {
+        None
+    }
 }
 
 //todo 根据属性描述信息，使用宏来生成类型信息

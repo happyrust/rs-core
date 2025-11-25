@@ -4,6 +4,7 @@ use anyhow::Result;
 use glam::{DMat4, DQuat, DVec3};
 use serde::Deserialize;
 use serde_json;
+use std::sync::Arc;
 
 /// 测试使用重构后的策略计算方式验证空间数据
 /// 基于 spatial_pdms_cases.json 中的测试案例
@@ -23,19 +24,19 @@ async fn test_world_spatial() -> Result<()> {
 
         // 使用重构后的策略计算世界坐标
         let strategy_result = crate::transform::get_world_mat4(refno, false).await?;
-        
+
         if let Some(strategy_mat) = strategy_result {
             // 提取位置和方向
             let strategy_pos = strategy_mat.w_axis.truncate();
             let strategy_quat = DQuat::from_mat4(&strategy_mat);
-            
+
             println!("   📍 策略计算位置: {:?}", strategy_pos);
-            
+
             // 验证与预期字符串的解析结果
             if let Some(expected_pos) = parse_position_string(&case.pos_str) {
                 let expected_diff = (strategy_pos - expected_pos).length();
                 println!("   📐 与预期位置差异: {:.6}mm", expected_diff * 1000.0);
-                
+
                 if expected_diff < 10.0 {
                     // 10mm 容差
                     println!("   ✅ 位置符合预期");
@@ -43,18 +44,18 @@ async fn test_world_spatial() -> Result<()> {
                     println!("   ⚠️  位置与预期差异较大");
                 }
             }
-            
+
             if let Some((expected_y, expected_z)) = parse_orientation_string(&case.ori_str) {
                 // 验证Y轴方向
                 let strategy_y = strategy_mat.y_axis.truncate().normalize();
                 let y_diff = strategy_y.dot(expected_y).abs();
                 println!("   🧭 Y轴方向匹配度: {:.6}", y_diff);
-                
+
                 // 验证Z轴方向
                 let strategy_z = strategy_mat.z_axis.truncate().normalize();
                 let z_diff = strategy_z.dot(expected_z).abs();
                 println!("   🧭 Z轴方向匹配度: {:.6}", z_diff);
-                
+
                 if y_diff > 0.95 && z_diff > 0.95 {
                     println!("   ✅ 方向符合预期");
                 } else {
@@ -71,8 +72,6 @@ async fn test_world_spatial() -> Result<()> {
     println!("🎉 空间数据策略计算测试完成！");
     Ok(())
 }
-
-
 
 /// 测试策略计算的完整性和一致性
 #[tokio::test]
@@ -207,7 +206,7 @@ fn parse_orientation_string(ori_str: &str) -> Option<(DVec3, DVec3)> {
     if parts.len() != 2 {
         return None;
     }
-    
+
     let parse_axis = |axis_def: &str| -> Option<DVec3> {
         // 提取 "Y is ..." 或 "Z is ..." 后面的方向表达式
         if let Some(dir_expr) = axis_def.split(" is ").nth(1) {
@@ -218,10 +217,10 @@ fn parse_orientation_string(ori_str: &str) -> Option<(DVec3, DVec3)> {
             None
         }
     };
-    
+
     let ydir = parse_axis(parts[0])?;
     let zdir = parse_axis(parts[1])?;
-    
+
     Some((ydir, zdir))
 }
 
@@ -249,19 +248,17 @@ async fn test_local_spatial() -> Result<()> {
         let refno = RefnoEnum::from(case.refno.as_str());
         let att = get_named_attmap(refno).await?;
         let parent_refno = att.get_owner();
-        
+
         // 使用虚拟节点属性合并机制获取父节点属性
         let parent_att = crate::transform::get_effective_parent_att(parent_refno).await?;
 
         let mut strategy = crate::transform::strategies::TransformStrategyFactory::get_strategy(
-            &att, &parent_att
+            Arc::new(att),
+            Arc::new(parent_att),
         );
 
         // 计算局部变换
-        let local_mat = if let Some(mat) = strategy
-            .get_local_transform()
-            .await?
-        {
+        let local_mat = if let Some(mat) = strategy.get_local_transform().await? {
             mat
         } else {
             println!("   ⚠️  无法计算局部变换");
@@ -291,21 +288,27 @@ async fn test_local_spatial() -> Result<()> {
 
         // 验证方位
         if let Some((expected_ydir, expected_zdir)) = parse_orientation_string(&case.ori_str) {
-            println!("   🧭 预期局部方位 - Y轴: {:?}, Z轴: {:?}", expected_ydir, expected_zdir);
-            
+            println!(
+                "   🧭 预期局部方位 - Y轴: {:?}, Z轴: {:?}",
+                expected_ydir, expected_zdir
+            );
+
             // 从四元数提取方向向量
             let local_ydir = local_quat * DVec3::Y;
             let local_zdir = local_quat * DVec3::Z;
-            
-            println!("   🧭 实际局部方位 - Y轴: {:?}, Z轴: {:?}", local_ydir, local_zdir);
-            
+
+            println!(
+                "   🧭 实际局部方位 - Y轴: {:?}, Z轴: {:?}",
+                local_ydir, local_zdir
+            );
+
             // 计算方向差异（角度）
             let ydir_angle_diff = local_ydir.angle_between(expected_ydir).to_degrees();
             let zdir_angle_diff = local_zdir.angle_between(expected_zdir).to_degrees();
-            
+
             println!("   📐 Y轴方位差异: {:.6}°", ydir_angle_diff);
             println!("   📐 Z轴方位差异: {:.6}°", zdir_angle_diff);
-            
+
             if ydir_angle_diff < 1.0 && zdir_angle_diff < 1.0 {
                 // 1度容差
                 println!("   ✅ 局部方位验证通过");

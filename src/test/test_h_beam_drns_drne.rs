@@ -104,12 +104,14 @@ fn test_h_beam_with_45_degree_end_faces() {
         profile,
         drns: Some(drns),
         drne: Some(drne),
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: 1000.0,
         path: line_path.clone(),
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh
@@ -178,12 +180,14 @@ fn test_h_beam_different_end_angles() {
         profile,
         drns: Some(drns),
         drne: Some(drne),
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: 800.0,
         path: line_path,
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh
@@ -239,12 +243,14 @@ fn test_h_beam_normal_ends() {
         profile,
         drns: None, // 默认垂直端面
         drne: None, // 默认垂直端面
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: 1000.0,
         path: line_path,
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     println!("  端面方向: 默认（垂直于路径）");
@@ -310,12 +316,14 @@ fn test_h_beam_arc_sweep() {
         profile,
         drns: None,
         drne: None,
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: 0.0,
         path: arc_path,
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh
@@ -403,12 +411,14 @@ fn test_h_beam_multi_segment_sweep() {
         profile,
         drns: None,
         drne: None,
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: 0.0,
         path: multi_path,
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh

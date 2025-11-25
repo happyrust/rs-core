@@ -61,12 +61,14 @@ fn create_bad_sweep_solid() -> SweepSolid {
         profile,
         drns: None,
         drne: None,
-        bangle: 0.0,
         plax: Vec3::new(0.0, 1.0, 0.0),
+        bangle: 0.0,
         extrude_dir: DVec3::new(0.0, 0.0, 1.0),
         height: 803.92334,
         path,
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     }
 }
 
@@ -156,7 +158,6 @@ fn test_bad_primloft_full_generation() {
     println!("SweepSolid 参数:");
     println!("  height: {}", sweep.height);
     println!("  path length: {}", sweep.path.length());
-    println!("  bangle: {}", sweep.bangle);
     println!("  lmirror: {}", sweep.lmirror);
 
     // 检查路径与高度的一致性

@@ -152,14 +152,12 @@ async fn calculate_fitt_on_stwall_transform(
     // 调用 handle_posl 处理 POSL 逻辑
     let mut pos = DVec3::ZERO;
     let mut quat = DQuat::IDENTITY;
-    
+
     // 处理 POSL 属性
     crate::transform::strategies::default::PoslHandler::handle_posl(
-        fitt_att,
-        stwall_att,
-        &mut pos,
-        &mut quat,
-    ).await?;
+        fitt_att, stwall_att, &mut pos, &mut quat,
+    )
+    .await?;
 
     let transform = DMat4::from_rotation_translation(quat, pos);
 

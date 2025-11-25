@@ -7,8 +7,8 @@ use crate::tool::math_tool;
 use crate::tool::math_tool::{
     construct_basis_z_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str,
 };
-use crate::utils::take_vec;
 pub use crate::transform::{get_local_mat4, get_world_mat4};
+use crate::utils::take_vec;
 use crate::{
     NamedAttrMap, RefU64, SUL_DB, SurrealQueryExt,
     consts::HAS_PLIN_TYPES,
@@ -33,6 +33,7 @@ use parry3d::bounding_volume::Aabb;
 use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
+use std::sync::Arc;
 use std::{f32::consts::E, time::Instant};
 
 /// 根据给定的方向向量 `v` 构造一个右手坐标系，
@@ -97,11 +98,7 @@ pub fn construct_basis_z_default(v: DVec3, neg: bool) -> DQuat {
 /// - Z 轴 = spine_dir（归一化）
 /// - Y 轴 ≈ ydir（正交化后）
 /// - X 轴 = Y × Z（右手系）
-pub fn construct_basis_z_y_hint(
-    spine_dir: DVec3,
-    ydir: Option<DVec3>,
-    neg: bool,
-) -> DQuat {
+pub fn construct_basis_z_y_hint(spine_dir: DVec3, ydir: Option<DVec3>, neg: bool) -> DQuat {
     let z_axis = spine_dir.normalize();
 
     // 如果提供了 YDIR，使用它作为参考
@@ -354,9 +351,6 @@ pub async fn get_world_transform(refno: RefnoEnum) -> anyhow::Result<Option<Tran
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
 
-
-
-
 ///查询形集PLIN的值，todo 需要做缓存优化
 // #[cached]
 /// 根据参考号和JUSL值查询形集PLIN的参数数据
@@ -433,7 +427,7 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
     let refno_att = get_named_attmap(refno).await?;
     let parent_refno = refno_att.get_owner();
     let parent_att = get_named_attmap(parent_refno).await?;
-    let strategy = SpineStrategy::new(refno_att.clone(), parent_att);
+    let strategy = SpineStrategy::new(Arc::new(refno_att.clone()), Arc::new(parent_att));
     let mut spline_paths: Vec<Spine3D> = strategy.get_spline_path().await?;
     if spline_paths.is_empty() {
         return Ok(None);
@@ -729,8 +723,7 @@ fn calculate_spine_transform_at_distance(
 
     // 计算SPINE的方位
     let spine_rotation = if let Some(ydir_vec) = ydir {
-        let rotation =
-            construct_basis_z_y_hint(spine_direction, Some(ydir_vec), false);
+        let rotation = construct_basis_z_y_hint(spine_direction, Some(ydir_vec), false);
         println!("      YDIR: {:?}", ydir_vec);
         println!("      计算旋转: {:?}", rotation);
         rotation
@@ -760,4 +753,3 @@ pub fn is_virtual_node(node_type: &str) -> bool {
 pub fn has_zero_local_translation(node_type: &str) -> bool {
     is_virtual_node(node_type)
 }
-
