@@ -246,3 +246,8 @@ Transform 在以下场景中使用：
 **相关文件**: 
 - `src/prim_geo/profile.rs` (normalize_spine_segments, create_profile_geos)
 - `src/geometry/sweep_mesh.rs` (sample_path_frames_sync)
+
+
+
+
+

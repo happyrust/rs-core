@@ -134,3 +134,8 @@ async fn normalize_spine_segments(
 **创建时间**: 2025-01-XX  
 **状态**: 🟡 待检查  
 **关键问题**: STWALL 是否走 SPINE 路径？Transform 是否正确应用了 `bangle`？
+
+
+
+
+

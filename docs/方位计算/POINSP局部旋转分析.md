@@ -234,3 +234,7 @@ let final_rotation = path_direction_rotation * section_rotation;
 **创建时间**: 2025-01-XX  
 **状态**: 🟡 待实现  
 **关键问题**: POINSP 的局部旋转是否应该包含在 Transform 中？如何正确组合 Frenet 标架旋转和 POINSP 的额外旋转？
+
+
+
+

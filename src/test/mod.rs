@@ -58,6 +58,8 @@ pub mod test_bad_primloft;
 pub mod test_bad_primloft_fix;
 pub mod test_bad_primloft_simple;
 
+pub mod test_stwall_25688_7958;
+
 pub mod test_helpers;
 
 pub mod units;

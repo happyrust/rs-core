@@ -165,3 +165,8 @@ let relate_json = format!(
 
 **创建时间**: 2025-01-XX  
 **问题**: `geo_type` 字段保存的是布尔运算类型（`'Pos'`），而不是实际的几何类型名称（如 `'SweepSolid'`）
+
+
+
+
+

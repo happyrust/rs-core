@@ -225,9 +225,9 @@ impl ProfileProcessor {
 
     /// 处理截面：FRADIUS -> Polyline -> Boolean -> Triangulation
     pub fn process(&self, debug_name: &str, refno: Option<&str>) -> Result<ProcessedProfile> {
-        println!("🔧 [ProfileProcessor] 开始处理截面: {}", debug_name);
-        println!("   外轮廓顶点数: {}", self.outer_contour.vertices.len());
-        println!("   内孔数量: {}", self.inner_contours.len());
+        // println!("🔧 [ProfileProcessor] 开始处理截面: {}", debug_name);
+        // println!("   外轮廓顶点数: {}", self.outer_contour.vertices.len());
+        // println!("   内孔数量: {}", self.inner_contours.len());
 
         // 1. 处理外轮廓
         let outer_polyline =
@@ -242,19 +242,19 @@ impl ProfileProcessor {
 
         // 3. 提取 2D 轮廓点
         let contour_points = self.polyline_to_2d_points(&final_polyline);
-        println!(
-            "   最终轮廓点数: {} (原始: {})",
-            contour_points.len(),
-            self.outer_contour.vertices.len()
-        );
+        // println!(
+        //     "   最终轮廓点数: {} (原始: {})",
+        //     contour_points.len(),
+        //     self.outer_contour.vertices.len()
+        // );
 
         // 4. 使用 i_triangle 进行三角化
         let (tri_vertices, tri_indices) = self.triangulate_polyline(&contour_points)?;
 
-        println!(
-            "✅ [ProfileProcessor] 截面处理完成: {} 个三角形",
-            tri_indices.len() / 3
-        );
+        // println!(
+        //     "✅ [ProfileProcessor] 截面处理完成: {} 个三角形",
+        //     tri_indices.len() / 3
+        // );
 
         Ok(ProcessedProfile {
             contour_points,
@@ -326,13 +326,13 @@ impl ProfileProcessor {
             let result = base.boolean(&hole_polyline, BooleanOp::Not);
 
             if result.pos_plines.is_empty() {
-                println!("⚠️  Boolean 操作失败，保留原轮廓");
+                // println!("⚠️  Boolean 操作失败，保留原轮廓");
                 continue;
             }
 
             // 取第一个正轮廓作为结果
             base = result.pos_plines[0].pline.clone();
-            println!("   完成第 {} 个内孔的减法", i + 1);
+            // println!("   完成第 {} 个内孔的减法", i + 1);
         }
 
         Ok(base)

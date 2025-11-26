@@ -235,3 +235,8 @@ fn apply_profile_transform(mut profile: ProfileData, plin_pos: Vec2, lmirror: bo
 **创建时间**: 2025-01-XX  
 **状态**: 🟡 待实现  
 **关键修正**: `bangle` 应该在 Transform 中应用，不应该影响单位几何体的哈希
+
+
+
+
+
