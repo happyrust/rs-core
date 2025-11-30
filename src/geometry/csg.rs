@@ -1295,7 +1295,11 @@ fn generate_dish_mesh(
             1 // 顶部和底部（球形 dish）使用单个顶点
         } else {
             // 根据 w (sin_theta) 计算每环的顶点数
-            ((w * samples as f32).max(3.0).ceil() as u32).max(3)
+            // 对于 Dish，设置更高的最小顶点数以保证圆滑外观
+            // 使用 samples/2 作为最小值（确保至少有半圈的分段数）
+            let min_vertices_per_ring = (samples as u32 / 2).max(12);
+            ((w * samples as f32).max(min_vertices_per_ring as f32).ceil() as u32)
+                .max(min_vertices_per_ring)
         };
         ring_vertex_counts.push(n_in_ring);
 

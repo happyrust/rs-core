@@ -103,6 +103,7 @@ impl BrepShapeTrait for LCylinder {
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
+        // 确保返回正确的圆柱体哈希值，用于 unit_flag 判断
         CYLINDER_GEO_HASH
     }
 
@@ -240,6 +241,8 @@ pub struct SCylinder {
     // y shear
     pub negative: bool,
     pub center_in_mid: bool,
+    /// 标识是否为单位化几何体（通过 transform 缩放而非 mesh 顶点缩放）
+    pub unit_flag: bool,
 }
 
 impl Default for SCylinder {
@@ -254,6 +257,7 @@ impl Default for SCylinder {
             top_shear_angles: [0.0f32; 2],
             negative: false,
             center_in_mid: false,
+            unit_flag: false,
         }
     }
 }
@@ -381,10 +385,10 @@ impl BrepShapeTrait for SCylinder {
     }
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
-        if self.is_sscl() {
-            return Box::new(self.clone());
-        }
-        Box::new(Self::default())
+        // 斜切圆柱不复用，但需要返回单位化版本
+        let mut unit_shape = Self::default();
+        unit_shape.unit_flag = true;
+        Box::new(unit_shape)
     }
 
     #[inline]
@@ -512,6 +516,7 @@ impl From<&AttrMap> for SCylinder {
             pdia,
             negative: false,
             center_in_mid: true,
+            unit_flag: false,
             ..Default::default()
         }
     }
@@ -535,6 +540,7 @@ impl From<&NamedAttrMap> for SCylinder {
             pdia,
             negative: false,
             center_in_mid: true,
+            unit_flag: false,
             ..Default::default()
         }
     }

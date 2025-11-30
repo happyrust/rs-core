@@ -9,6 +9,7 @@ use nom::combinator::{map_res, opt, recognize};
 use nom::error::Error;
 use nom::number::complete::{double, float};
 use nom::sequence::{delimited, preceded, tuple};
+use nom::Parser;
 
 #[derive(Debug, PartialEq)]
 pub struct Coordinate {
@@ -39,16 +40,16 @@ pub struct Direction {
     coordinate: Coordinate,
 }
 
-pub fn ws<'a, F: 'a, O>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O>
+pub fn ws<'a, F: 'a, O>(inner: F) -> impl Parser<&'a str, Output = O, Error = nom::error::Error<&'a str>>
 where
-    F: FnMut(&'a str) -> IResult<&'a str, O>,
+    F: Parser<&'a str, Output = O, Error = nom::error::Error<&'a str>>,
 {
     delimited(space0, inner, space0)
 }
 
 fn parse_pos_expr(input: &str) -> IResult<&str, (String, bool)> {
-    let (input, content) = recognize(take_until(")"))(input)?;
-    // let (input, _) = tag(")")(input)?;
+    let (input, content) = recognize(take_until(")")).parse(input)?;
+    // let (input, _) = tag(")").parse(input)?;
     Ok((input, (content.trim().to_string(), false)))
 }
 
@@ -67,19 +68,19 @@ fn parse_neg_pos_expr(input: &str) -> IResult<&str, (String, bool)> {
             delimited(ws(tag("(")), ws(parse_pos_expr), ws(tag(")"))),
         ),
         |n| Ok::<_, ()>((n.0, true)),
-    )(input)
+    ).parse(input)
 }
 
 fn parse_coordinate_value(input: &str) -> IResult<&str, (String, bool)> {
     alt((
         delimited(opt(ws(tag("("))), parse_neg_pos_expr, opt(ws(tag(")")))),
         delimited(opt(ws(tag("("))), ws(parse_pos_expr), opt(ws(tag(")")))),
-    ))(input)
+    )).parse(input)
 }
 
 fn parse_axis_value(axis: &'static str) -> impl Fn(&str) -> IResult<&str, (String, String, bool)> {
     move |input: &str| {
-        let (input, _) = ws(tag(axis))(input)?;
+        let (input, _) = ws(tag(axis)).parse(input)?;
         let (input, (value, is_neg)) = parse_coordinate_value(input)?;
         Ok((input, (axis.to_string(), value, is_neg)))
     }
@@ -90,7 +91,7 @@ pub fn parse_coordinate(input: &str) -> IResult<&str, Coordinate> {
         parse_axis_value("X"),
         parse_axis_value("Y"),
         parse_axis_value("Z"),
-    )))(input)?;
+    ))).parse(input)?;
 
     let mut coord = Coordinate {
         x: None,
@@ -114,11 +115,11 @@ pub fn parse_str_to_vec3(input: &str) -> Option<DVec3> {
     // 定义解析单个坐标的解析器
     fn parse_component<'a>(
         axis: char,
-    ) -> impl FnMut(&'a str) -> IResult<&'a str, f64, Error<&'a str>> {
+    ) -> impl Parser<&'a str, Output = f64, Error = Error<&'a str>> {
         let axis_str = axis.to_string();
         move |input: &'a str| {
-            let (input, _) = tag(axis_str.as_str())(input)?;
-            double(input)
+            let (input, _) = tag(axis_str.as_str()).parse(input)?;
+            double.parse(input)
         }
     }
 
@@ -128,7 +129,7 @@ pub fn parse_str_to_vec3(input: &str) -> Option<DVec3> {
             map_res(parse_component('X'), |v| Ok::<_, ()>((0, v))),
             map_res(parse_component('Y'), |v| Ok::<_, ()>((1, v))),
             map_res(parse_component('Z'), |v| Ok::<_, ()>((2, v))),
-        )))(input)?;
+        ))).parse(input)?;
 
         let mut values = [0.0, 0.0, 0.0];
         for (idx, val) in coords {
@@ -205,7 +206,7 @@ pub fn parse_to_direction(
     input: &str,
     context: Option<&CataContext>,
 ) -> anyhow::Result<Option<DVec3>> {
-    let (remaining_input, _) = ws(tag("TO"))(input).map_err(|_| anyhow!("Parsing failed!"))?;
+    let (remaining_input, _) = ws(tag("TO")).parse(input).map_err(|_| anyhow!("Parsing failed!"))?;
     // dbg!(input);
     let (remaining_input, coordinate) =
         parse_coordinate(remaining_input).map_err(|_| anyhow!("Parsing failed!"))?;

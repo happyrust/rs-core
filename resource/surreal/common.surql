@@ -164,12 +164,12 @@ DEFINE FUNCTION fn::backup_data(
 
             if $a.noun == "BRAN" || $a.noun == "HANG" {
 
-                let $tubis = (select *, type::record('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id,
-                                 $old_pe_id as in from $pe->tubi_relate);
+                let $tubis = (select *, type::record('tubi_relate', [ $old_pe_id, record::id(id)[1] ]) as id
+                                 from tubi_relate where record::id(id)[0] = $pe.id);
                 //将 tubi relate 整体备份
                 if !array::is_empty($tubis) {
                     //删除之前的，变成历史的
-                    delete select id from $pe->tubi_relate;
+                    delete tubi_relate where record::id(id)[0] = $pe.id;
                     insert relation into tubi_relate $tubis;
                 };
             };
@@ -496,13 +496,13 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
 REMOVE FUNCTION fn::query_tubi_to;
 -- 查询连接到指定节点的直段
 DEFINE FUNCTION fn::query_tubi_to($pe:record) {
-    return select arrive from only $pe.owner->tubi_relate where leave=$pe limit 1;
+    return select out from only $pe->tubi_relate limit 1;
 };
 
 REMOVE FUNCTION fn::query_tubi_from;
 -- 查询从指定节点出发的直段
 DEFINE FUNCTION fn::query_tubi_from($pe:record) {
-    return select leave from only $pe.owner->tubi_relate where arrive=$pe limit 1;
+    return select in from only $pe<-tubi_relate limit 1;
 };
 
 REMOVE FUNCTION fn::query_bran_first_tubi;
@@ -606,7 +606,7 @@ DEFINE FUNCTION fn::collect_descendants_filter_spre(
     let $use_inclusive = $inclusive ?:true;
     let $need_filter = $filter_inst ?: false;
     
-    -- 收集子孙节点时同时获取 id, noun, refno.CATR, refno.SPRE, inst_relate_id, tubi_id 信息
+    -- 收集子孙节点时同时获取 id, noun, refno.CATR, refno.SPRE, inst_relate_id, has_tubi 信息
     let $raw_descendants = if $use_inclusive {
         (SELECT VALUE array::flatten(@.{..+collect+inclusive}.children).{ 
             id, 
@@ -614,7 +614,7 @@ DEFINE FUNCTION fn::collect_descendants_filter_spre(
             catr: refno.CATR, 
             spre: refno.SPRE,
             inst_relate_id,
-            tubi_id
+            has_tubi
         } FROM ONLY $root LIMIT 1) ?: []
     } else {
         (SELECT VALUE array::flatten(@.{..+collect}.children).{ 
@@ -623,7 +623,7 @@ DEFINE FUNCTION fn::collect_descendants_filter_spre(
             catr: refno.CATR, 
             spre: refno.SPRE,
             inst_relate_id,
-            tubi_id
+            has_tubi
         } FROM ONLY $root LIMIT 1) ?: []
     };
     
@@ -642,7 +642,7 @@ DEFINE FUNCTION fn::collect_descendants_filter_spre(
     let $filtered = if $need_filter {
         array::filter($type_filtered, |$node|
             !type::is_record($node.inst_relate_id)
-            && array::len(if type::is_array($node.tubi_id) { $node.tubi_id } else { [] }) == 0
+            && !$node.has_tubi
         )
     } else {
         $type_filtered

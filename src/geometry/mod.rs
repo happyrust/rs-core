@@ -209,6 +209,7 @@ impl ShapeInstancesData {
                     is_tubi: true,
                     geo_type: GeoBasicType::Tubi,
                     cata_neg_refnos: vec![],
+                    unit_flag: false, // 标准几何体，非 unit mesh
                 }],
                 aabb: Some(unit_cyli_aabb),
                 type_name: "TUBI".to_string(),
@@ -230,6 +231,7 @@ impl ShapeInstancesData {
                     is_tubi: true,
                     geo_type: GeoBasicType::Tubi,
                     cata_neg_refnos: vec![],
+                    unit_flag: false, // 标准几何体，非 unit mesh
                 }],
                 aabb: Some(unit_box_aabb),
                 type_name: "BOXI".to_string(),
@@ -606,6 +608,10 @@ pub struct EleInstGeo {
     //元件库里的负实体
     #[serde(default)]
     pub cata_neg_refnos: Vec<RefnoEnum>,
+    
+    /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
+    #[serde(default)]
+    pub unit_flag: bool,
 }
 
 impl EleInstGeo {
@@ -633,10 +639,11 @@ impl EleInstGeo {
         let mut json_string = "".to_string();
         let param = self.geo_param.convert_to_unit_param();
         json_string.push_str(&format!(
-            "{{'id': inst_geo:⟨{}⟩, 'param': {} }}",
+            "{{'id': inst_geo:⟨{}⟩, 'param': {}, 'unit_flag': {} }}",
             self.geo_hash,
             /* gen_bytes_hash::<_, 64>(&self.aabb),*/
-            serde_json::to_string(&param).unwrap()
+            serde_json::to_string(&param).unwrap(),
+            self.unit_flag
         ));
         json_string
     }

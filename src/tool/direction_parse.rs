@@ -8,6 +8,7 @@ use nom::branch::alt;
 use nom::bytes::complete::*;
 use nom::combinator::{complete, opt, recognize};
 use nom::sequence::{delimited, pair};
+use nom::Parser;
 
 lazy_static! {
     pub static ref AXISES_MAP: HashMap<&'static str, Vec3> = {
@@ -55,7 +56,7 @@ pub fn signed_axis(input: &str) -> IResult<&str, (Option<&str>, &str)> {
             tag("S"),
             tag("D"),
         )),
-    )(input)
+    ).parse(input)
 }
 
 use crate::tool::math_tool::convert_to_xyz;
@@ -63,12 +64,12 @@ use crate::tool::parse_to_dir::parse_to_direction;
 use nom::number::complete::double;
 
 pub fn parse_angle(input: &str) -> IResult<&str, f64> {
-    alt((double, delimited(tag("("), double, tag(")"))))(input)
+    alt((double, delimited(tag("("), double, tag(")")))).parse(input)
 }
 
 fn parse_axis_rotation(input: &str) -> IResult<&str, Rotation> {
     let (input, angle) = parse_angle(input)?;
-    let (input, axis) = recognize(signed_axis)(input)?;
+    let (input, axis) = recognize(signed_axis).parse(input)?;
     Ok((
         input,
         Rotation {
@@ -79,7 +80,7 @@ fn parse_axis_rotation(input: &str) -> IResult<&str, Rotation> {
 }
 
 pub fn parse_rotation_struct(input: &str) -> IResult<&str, RotationStruct> {
-    let (input, axis) = recognize(signed_axis)(input)?;
+    let (input, axis) = recognize(signed_axis).parse(input)?;
     if input.is_empty() {
         return Ok((
             input,
@@ -90,7 +91,7 @@ pub fn parse_rotation_struct(input: &str) -> IResult<&str, RotationStruct> {
             },
         ));
     }
-    let (input, rot1) = opt(complete(parse_axis_rotation))(input)?;
+    let (input, rot1) = opt(complete(parse_axis_rotation)).parse(input)?;
     if input.is_empty() {
         return Ok((
             input,
@@ -101,7 +102,7 @@ pub fn parse_rotation_struct(input: &str) -> IResult<&str, RotationStruct> {
             },
         ));
     }
-    let (input, rot2) = opt(complete(parse_axis_rotation))(input)?;
+    let (input, rot2) = opt(complete(parse_axis_rotation)).parse(input)?;
     Ok((
         input,
         RotationStruct {

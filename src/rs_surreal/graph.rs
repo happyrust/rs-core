@@ -254,7 +254,9 @@ async fn query_versioned_deep_children_filter_inst(
             let pe_keys = chunk.iter().map(|x| x.to_pe_key()).join(",");
             let filter_clause = if filter {
                 // 使用优化的关系检查
-                " where count(SELECT VALUE id FROM ->inst_relate LIMIT 1) = 0 and count(SELECT VALUE id FROM ->tubi_relate LIMIT 1) = 0"
+                // 过滤掉有 inst_relate 的节点，或作为 Branch 其 ID 出现在 tubi_relate 中的节点
+                // 以及作为 Leave 节点其有 outgoing tubi_relate 的节点 (->tubi_relate)
+                " where count(SELECT VALUE id FROM ->inst_relate LIMIT 1) = 0 and count(SELECT VALUE id FROM ->tubi_relate LIMIT 1) = 0 and count(select 1 from tubi_relate where record::id(id)[0] = $parent.id limit 1) = 0"
             } else {
                 ""
             };

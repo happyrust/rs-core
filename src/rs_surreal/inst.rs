@@ -29,7 +29,6 @@ pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, SurrealValue)]
 pub struct TubiInstQuery {
-    #[serde(alias = "id")]
     pub refno: RefnoEnum,
     pub leave: RefnoEnum,
     pub old_refno: Option<RefnoEnum>,
@@ -71,24 +70,33 @@ fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<
 pub async fn query_tubi_insts_by_brans(
     bran_refnos: &[RefnoEnum],
 ) -> anyhow::Result<Vec<TubiInstQuery>> {
-    let pes = crate::join_pe_keys(bran_refnos.iter());
-    let sql = format!(
-        r#"
-                select
-                    in.id as refno,
-                    leave as leave,
-                    in.old_pe as old_refno,
-                    in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans,
-                    record::id(out) as geo_hash,
-                    in.dt as date
-                from  array::flatten([{}]->tubi_relate) where leave.id != none and aabb.d != none;
-        "#,
-        pes
-    );
-    // println!("query_tubi_insts_by_brans sql: {}", sql);
+    if bran_refnos.is_empty() {
+        return Ok(Vec::new());
+    }
 
-    let tubi_insts: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
-    Ok(tubi_insts)
+    let mut all_results = Vec::new();
+    for bran_refno in bran_refnos {
+        let pe_key = bran_refno.to_pe_key();
+        let sql = format!(
+            r#"
+            SELECT
+                id[0] as refno,
+                in as leave,
+                id[0].old_pe as old_refno,
+                id[0].owner.noun as generic,
+                aabb.d as world_aabb,
+                world_trans.d as world_trans,
+                record::id(geo) as geo_hash,
+                id[0].dt as date
+            FROM tubi_relate:[{}, 0]..[{}, ..]
+            WHERE aabb.d != NONE
+            "#,
+            pe_key, pe_key
+        );
+        let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        all_results.append(&mut results);
+    }
+    Ok(all_results)
 }
 
 /// 根据流程构件编号批量查询 Tubi 实例数据
@@ -101,21 +109,36 @@ pub async fn query_tubi_insts_by_brans(
 ///
 /// 返回符合条件的 `TubiInstQuery` 列表
 pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<TubiInstQuery>> {
-    let pes = crate::join_pe_keys(refnos.iter());
-    // 临时方案：使用 in.dt 替代 fn::ses_date(in.id) 以避免 "Expected any, got record" 错误
-    let sql = format!(
-        r#"
-        array::group(array::complement(select value
-        (select in.id as refno, leave as leave, in.owner.noun as generic, aabb.d as world_aabb, world_trans.d as world_trans, record::id(out) as geo_hash,
-            in.dt as date
-            from tubi_relate where leave=$parent.id or arrive=$parent.id)
-                from [{}] where in.id != none and  owner.noun in ['BRAN', 'HANG'], [none]))
-             "#,
-        pes
-    );
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
 
-    let tubi_insts: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
-    Ok(tubi_insts)
+    let mut all_results = Vec::new();
+    for refno in refnos {
+        let pe_key = refno.to_pe_key();
+        let sql = format!(
+            r#"
+            SELECT
+                id[0] as refno,
+                in as leave,
+                id[0].old_pe as old_refno,
+                id[0].owner.noun as generic,
+                aabb.d as world_aabb,
+                world_trans.d as world_trans,
+                record::id(geo) as geo_hash,
+                id[0].dt as date
+            FROM tubi_relate
+            WHERE (in = {} OR out = {}) AND aabb.d != NONE
+            "#,
+            pe_key,
+            pe_key
+        );
+
+        let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        all_results.append(&mut results);
+    }
+
+    Ok(all_results)
 }
 
 #[serde_as]
@@ -126,6 +149,10 @@ pub struct ModelHashInst {
     pub transform: PlantTransform,
     #[serde(default)]
     pub is_tubi: bool,
+    /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
+    /// SQL 查询需使用 `?? false` 处理 NULL 值
+    #[serde(default)]
+    pub unit_flag: bool,
 }
 
 #[derive(Debug)]
@@ -216,14 +243,17 @@ pub async fn query_insts_with_batch(
     for chunk in refnos.chunks(batch) {
         let inst_keys = get_inst_relate_keys(chunk);
 
+        // pts 从 inst_geo.pts 获取（vec3 引用数组），解引用获取实际坐标 .d
+        // 使用子查询从第一个有效的 geo_relate.out.pts 获取
         let sql = if enable_holes {
             format!(
                 r#"
             select
                 in.id as refno,
                 in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset[*].pt as pts,
-                if booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
+                if booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false, "unit_flag": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date
             from {inst_keys} where aabb.d != none && world_trans.d != none
@@ -235,8 +265,9 @@ pub async fn query_insts_with_batch(
             select
                 in.id as refno,
                 in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset[*].pt as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi  from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date
             from {inst_keys} where aabb.d != none && world_trans.d != none "#
@@ -457,7 +488,15 @@ pub async fn delete_inst_relate_cascade(
 /// # 参数
 /// * `chunk_size` - 分批处理的大小
 pub async fn delete_all_model_data() -> anyhow::Result<()> {
-    let tables = ["inst_relate", "inst_geo", "inst_info", "geo_relate"];
+    let tables = [
+        "inst_relate",
+        "inst_geo",
+        "inst_info",
+        "tubi_relate",
+        "geo_relate",
+        "neg_relate",
+        "ngmr_relate",
+    ];
     let mut sql = "BEGIN TRANSACTION;\n".to_string();
 
     for table in &tables {

@@ -66,6 +66,9 @@ pub struct InstGeo {
     pub created_at: Option<NaiveDateTime>,
     /// 更新时间
     pub updated_at: Option<NaiveDateTime>,
+    /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
+    #[serde(default)]
+    pub unit_flag: bool,
 }
 
 /// geo_relate 表结构体
@@ -298,6 +301,7 @@ impl InstGeo {
         meshed: bool,
         visible: bool,
         geo_type: String,
+        unit_flag: bool,
     ) -> Self {
         Self {
             id,
@@ -308,6 +312,7 @@ impl InstGeo {
             geo_type,
             created_at: None,
             updated_at: None,
+            unit_flag,
         }
     }
 
@@ -357,7 +362,8 @@ impl InstGeo {
                 trans = {},
                 geo_type = '{}',
                 created_at = {},
-                updated_at = {};"#,
+                updated_at = {},
+                unit_flag = {};"#,
             self.id,
             self.param.to_string(),
             self.meshed,
@@ -365,7 +371,8 @@ impl InstGeo {
             trans_str,
             self.geo_type,
             created_at_str,
-            updated_at_str
+            updated_at_str,
+            self.unit_flag
         )
     }
 
@@ -379,6 +386,7 @@ impl InstGeo {
             "geo_type": self.geo_type,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "unit_flag": self.unit_flag,
         });
 
         // 添加 ID
@@ -483,10 +491,13 @@ impl GeoRelate {
 pub struct TubiRelate {
     /// 关系ID
     pub id: String,
-    /// 起点PE引用 (leave)
-    pub leave: RefnoEnum,
-    /// 终点PE引用 (arrive)
-    pub arrive: RefnoEnum,
+    /// 起点PE引用 (in)
+    #[serde(rename = "in")]
+    pub input: RefnoEnum,
+    /// 终点PE引用 (out)
+    pub out: RefnoEnum,
+    /// 几何引用
+    pub geo: Option<String>,
     /// 管道起点
     pub start_pt: Option<Vec3>,
     /// 管道终点
@@ -499,16 +510,23 @@ pub struct TubiRelate {
 
 impl TubiRelate {
     /// 创建新的 TubiRelate 实例
-    pub fn new(id: String, leave: RefnoEnum, arrive: RefnoEnum) -> Self {
+    pub fn new(id: String, input: RefnoEnum, out: RefnoEnum) -> Self {
         Self {
             id,
-            leave,
-            arrive,
+            input,
+            out,
+            geo: None,
             start_pt: None,
             end_pt: None,
             system: None,
             dt: None,
         }
+    }
+
+    /// 设置几何引用
+    pub fn with_geo(mut self, geo: String) -> Self {
+        self.geo = Some(geo);
+        self
     }
 
     /// 设置起点和终点
@@ -547,6 +565,11 @@ impl TubiRelate {
             None => "NONE".to_string(),
         };
 
+        let geo_str = match &self.geo {
+            Some(geo) => format!("inst_geo:{}", geo),
+            None => "NONE".to_string(),
+        };
+
         let dt_str = match &self.dt {
             Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
             None => "time::now()".to_string(),
@@ -554,8 +577,9 @@ impl TubiRelate {
 
         format!(
             r#"CREATE tubi_relate:{} SET
-                leave = pe:{},
-                arrive = pe:{},
+                in = pe:{},
+                out = pe:{},
+                geo = {},
                 start_pt = {},
                 end_pt = {},
                 system = {},
@@ -563,15 +587,16 @@ impl TubiRelate {
 UPDATE pe:{} SET tubi_id = array::push(tubi_id?:[], tubi_relate:{});
 UPDATE pe:{} SET tubi_id = array::push(tubi_id?:[], tubi_relate:{});"#,
             self.id,
-            self.leave,
-            self.arrive,
+            self.input,
+            self.out,
+            geo_str,
             start_pt_str,
             end_pt_str,
             system_str,
             dt_str,
-            self.leave,
+            self.input,
             self.id,
-            self.arrive,
+            self.out,
             self.id
         )
     }
@@ -679,6 +704,7 @@ mod tests {
             true,
             true,
             "Pos".to_string(),
+            true, // 单位 mesh
         );
 
         assert_eq!(inst_geo.id, "geo_123");
@@ -686,6 +712,7 @@ mod tests {
         assert_eq!(inst_geo.meshed, true);
         assert_eq!(inst_geo.visible, true);
         assert_eq!(inst_geo.geo_type, "Pos");
+        assert_eq!(inst_geo.unit_flag, true);
     }
 
     #[test]
@@ -696,13 +723,14 @@ mod tests {
             "height": 2.0
         });
 
-        let inst_geo = InstGeo::new("geo_123".to_string(), param, true, true, "Pos".to_string());
+        let inst_geo = InstGeo::new("geo_123".to_string(), param, true, true, "Pos".to_string(), true); // 单位 mesh
 
         let sql = inst_geo.to_surql();
         assert!(sql.contains("CREATE inst_geo:geo_123"));
         assert!(sql.contains("meshed = true"));
         assert!(sql.contains("visible = true"));
         assert!(sql.contains("geo_type = 'Pos'"));
+        assert!(sql.contains("unit_flag = true"));
     }
 
     #[test]
@@ -753,8 +781,8 @@ mod tests {
         );
 
         assert_eq!(tubi_relate.id, "tubi_123");
-        assert_eq!(tubi_relate.leave, RefnoEnum::from("11111"));
-        assert_eq!(tubi_relate.arrive, RefnoEnum::from("22222"));
+        assert_eq!(tubi_relate.input, RefnoEnum::from("11111"));
+        assert_eq!(tubi_relate.out, RefnoEnum::from("22222"));
     }
 
     #[test]
@@ -764,13 +792,15 @@ mod tests {
             RefnoEnum::from("11111"),
             RefnoEnum::from("22222"),
         )
-        .with_points(Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0));
+        .with_points(Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0))
+        .with_geo("geo_hash".to_string());
 
         let sql = tubi_relate.to_surql();
         println!("Generated TubiRelate SQL:\n{}", sql);
         assert!(sql.contains("CREATE tubi_relate:tubi_123"));
-        assert!(sql.contains("leave = pe:"));
-        assert!(sql.contains("arrive = pe:"));
+        assert!(sql.contains("in = pe:"));
+        assert!(sql.contains("out = pe:"));
+        assert!(sql.contains("geo = inst_geo:geo_hash"));
         // 验证UPDATE语句将tubi_id添加到pe记录
         assert!(sql.contains("UPDATE pe:"));
         assert!(sql.contains("tubi_id = array::push(tubi_id?:[], tubi_relate:tubi_123)"));

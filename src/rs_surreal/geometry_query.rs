@@ -98,6 +98,10 @@ impl SurrealValue for PlantTransform {
 pub struct QueryGeoParam {
     pub id: RecordId,
     pub param: PdmsGeoParam,
+    /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
+    /// SQL 查询需使用 `?? false` 处理 NULL 值
+    #[serde(default)]
+    pub unit_flag: bool,
 }
 
 /// 单个几何的变换与局部 AABB
@@ -216,7 +220,7 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
         .collect::<Vec<_>>()
         .join(", ");
 
-    let sql = format!("select id, param from [{}] where param != NONE", thing_ids);
+    let sql = format!("select id, param, unit_flag ?? false as unit_flag from [{}] where param != NONE", thing_ids);
 
     let mut result = SUL_DB.query_take(&sql, 0).await?;
 

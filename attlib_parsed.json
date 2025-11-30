@@ -1,0 +1,496 @@
+[
+  {
+    "hash": 74699701,
+    "name": "EEOCSP",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 0
+    },
+    "default_text": "0"
+  },
+  {
+    "hash": 292375429,
+    "name": "TJDERP",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 631901,
+    "name": "AEBUT",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 299311034,
+    "name": "TWEONW",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 4364553,
+    "name": "HETAC",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 298172484,
+    "name": "TUASTI",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 639379
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 837586,
+    "name": "AONYS",
+    "data_type": "Int",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 323945503,
+    "name": "VOOCRP",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 259672746,
+    "name": "RBPTAC",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 822818,
+    "name": "ANURT",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 162682213,
+    "name": "KICCAD",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "1"
+  },
+  {
+    "hash": 298167376,
+    "name": "TUALTD",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 11272926
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 347970064,
+    "name": "XFTSED",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 184246870,
+    "name": "LVRSED",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 865143,
+    "name": "APYTI",
+    "data_type": "Int",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 722704,
+    "name": "AISIV",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 184247490,
+    "name": "LVRTAC",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 76272573,
+    "name": "EHNAHC",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 3831741,
+    "name": "GERDI",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 803012,
+    "name": "AMUNE",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 0
+    },
+    "default_text": "0"
+  },
+  {
+    "hash": 639374,
+    "name": "AEMAN",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 5436284,
+    "name": "JFEDW",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "1"
+  },
+  {
+    "hash": 347848590,
+    "name": "XFNNOC",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 3022842,
+    "name": "EROOC",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 540514
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 193514909,
+    "name": "MMCONW",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 95417901,
+    "name": "FQNSTI",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 11272926
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 865138,
+    "name": "APYTD",
+    "data_type": "Int",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 208187948,
+    "name": "NMTADT",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "1"
+  },
+  {
+    "hash": 243802460,
+    "name": "PZTLBT",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 0
+    },
+    "default_text": "0"
+  },
+  {
+    "hash": 3445648,
+    "name": "FMANP",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 3426347,
+    "name": "FLBAT",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 208289468,
+    "name": "NMYEKT",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "2"
+  },
+  {
+    "hash": 596407,
+    "name": "ACHCD",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 0
+    },
+    "default_text": "0"
+  },
+  {
+    "hash": 1018863,
+    "name": "AXTPR",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 26764970,
+    "name": "AWIUQE",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 11272926
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 175994995,
+    "name": "LGDLTD",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 713101,
+    "name": "AIFED",
+    "data_type": "Int",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 25583299,
+    "name": "AUCTRP",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 652066,
+    "name": "AFCLP",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 0
+    },
+    "default_text": "0"
+  },
+  {
+    "hash": 849451,
+    "name": "APDFD",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 4294967295
+    },
+    "default_text": "-1"
+  },
+  {
+    "hash": 10200307,
+    "name": "SEFED",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 288291098,
+    "name": "TBLSAB",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 10822392,
+    "name": "TIVNI",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 649072,
+    "name": "AEZIS",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "1"
+  },
+  {
+    "hash": 298159589,
+    "name": "TUABAT",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 11272926
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 378772286,
+    "name": "ZJSPXE",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 3
+    },
+    "default_text": "3"
+  },
+  {
+    "hash": 94362642,
+    "name": "FOOCER",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 0
+    },
+    "default_text": "0"
+  },
+  {
+    "hash": 21586620,
+    "name": "AMPSGL",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 116939309,
+    "name": "HDACON",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 23714171,
+    "name": "AQPUSQ",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 932061,
+    "name": "ATINU",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 640481
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 173673355,
+    "name": "LBUNAM",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 604371,
+    "name": "ACSAC",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 2
+    },
+    "default_text": "TRUE"
+  },
+  {
+    "hash": 943154,
+    "name": "ATXTQ",
+    "data_type": "Text",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 1035588,
+    "name": "AYPOC",
+    "data_type": "Int",
+    "default_value": {
+      "Scalar": 0
+    },
+    "default_text": "0"
+  },
+  {
+    "hash": 7021548,
+    "name": "MESTI",
+    "data_type": "Real",
+    "default_value": {
+      "Scalar": 639379
+    },
+    "default_text": "0.000000"
+  },
+  {
+    "hash": 642215,
+    "name": "AEPYT",
+    "data_type": "Int",
+    "default_value": "None",
+    "default_text": null
+  },
+  {
+    "hash": 929276,
+    "name": "ATESQ",
+    "data_type": "Log",
+    "default_value": {
+      "Scalar": 1
+    },
+    "default_text": "TRUE"
+  }
+]
