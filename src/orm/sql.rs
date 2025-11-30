@@ -2,9 +2,11 @@ use crate::orm::traits::*;
 use crate::tool::db_tool::db1_dehash;
 use crate::{get_default_pdms_db_info, orm};
 use anyhow::anyhow;
+#[cfg(feature = "reflect")]
 use bevy_reflect::{DynamicStruct, ReflectFromReflect};
 use sea_orm::DatabaseBackend;
 
+#[cfg(feature = "reflect")]
 pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
     let db_info = get_default_pdms_db_info(); // 获取默认的数据库信息
 
@@ -14,26 +16,40 @@ pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
     Ok(sqls)
 }
 
+#[cfg(not(feature = "reflect"))]
+pub fn get_all_create_table_sqls() -> anyhow::Result<Vec<String>> {
+    Err(anyhow!(
+        "get_all_create_table_sqls requires 'reflect' feature"
+    ))
+}
+
+#[cfg(feature = "reflect")]
 pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
     // dbg!(&type_name);
     let type_id = orm::get_type_name_cache()
         .id_for_name(type_name)
-        .ok_or(anyhow!("Not exist"))
-        .unwrap();
-    let rfr = orm::get_type_registry()
+        .ok_or_else(|| anyhow!("Type '{}' not found in cache", type_name))?;
+
+    let registry = orm::get_type_registry()
+        .ok_or_else(|| anyhow!("TypeRegistry not available (reflect feature disabled)"))?;
+
+    let rfr = registry
         .get_type_data::<ReflectFromReflect>(type_id)
-        .expect("the FromReflect trait should be registered");
+        .ok_or_else(|| anyhow!("FromReflect trait not registered for type '{}'", type_name))?;
 
     //Call from_reflect
-    let mut dynamic_struct = DynamicStruct::default();
+    let dynamic_struct = DynamicStruct::default();
     let reflected = rfr
         .from_reflect(&dynamic_struct)
-        .expect("the type should be properly reflected");
+        .ok_or_else(|| anyhow!("Failed to reflect type '{}'", type_name))?;
 
-    let reflect_do_op = orm::get_type_registry()
+    let reflect_do_op = registry
         .get_type_data::<ReflectDbOpTrait>(type_id)
-        .unwrap();
-    let op_trait: &dyn DbOpTrait = reflect_do_op.get(&*reflected).unwrap();
+        .ok_or_else(|| anyhow!("DbOpTrait not registered for type '{}'", type_name))?;
+
+    let op_trait: &dyn DbOpTrait = reflect_do_op
+        .get(&*reflected)
+        .ok_or_else(|| anyhow!("Failed to get DbOpTrait for type '{}'", type_name))?;
 
     // // Which means we can now call do_thing(). Magic!
     // println!("{}", op_trait.gen_insert_many(vec![dynamic_struct], DatabaseBackend::MySql));
@@ -42,32 +58,56 @@ pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
     Ok(create_sql)
 }
 
+#[cfg(not(feature = "reflect"))]
+pub fn gen_create_table_sql_reflect(type_name: &str) -> anyhow::Result<String> {
+    Err(anyhow!(
+        "gen_create_table_sql_reflect requires 'reflect' feature"
+    ))
+}
+
+#[cfg(feature = "reflect")]
 pub fn gen_insert_many_sql(
     type_name: &str,
     data_vec: Vec<DynamicStruct>,
 ) -> anyhow::Result<String> {
     let type_id = orm::get_type_name_cache()
         .id_for_name(type_name)
-        .ok_or(anyhow!("Not exist"))?;
-    let rfr = orm::get_type_registry()
+        .ok_or_else(|| anyhow!("Type '{}' not found in cache", type_name))?;
+
+    let registry = orm::get_type_registry()
+        .ok_or_else(|| anyhow!("TypeRegistry not available (reflect feature disabled)"))?;
+
+    let rfr = registry
         .get_type_data::<ReflectFromReflect>(type_id)
-        .expect("the FromReflect trait should be registered");
+        .ok_or_else(|| anyhow!("FromReflect trait not registered for type '{}'", type_name))?;
 
     let dynamic_struct = DynamicStruct::default();
     let reflected = rfr
         .from_reflect(&dynamic_struct)
-        .expect("the type should be properly reflected");
+        .ok_or_else(|| anyhow!("Failed to reflect type '{}'", type_name))?;
 
-    let reflect_do_op = orm::get_type_registry()
+    let reflect_do_op = registry
         .get_type_data::<ReflectDbOpTrait>(type_id)
-        .unwrap();
-    let op_trait: &dyn DbOpTrait = reflect_do_op.get(&*reflected).unwrap();
+        .ok_or_else(|| anyhow!("DbOpTrait not registered for type '{}'", type_name))?;
+
+    let op_trait: &dyn DbOpTrait = reflect_do_op
+        .get(&*reflected)
+        .ok_or_else(|| anyhow!("Failed to get DbOpTrait for type '{}'", type_name))?;
 
     let sql = op_trait.gen_insert_many(data_vec, DatabaseBackend::MySql);
     Ok(sql)
 }
 
+#[cfg(not(feature = "reflect"))]
+pub fn gen_insert_many_sql(
+    type_name: &str,
+    data_vec: Vec<serde_json::Value>,
+) -> anyhow::Result<String> {
+    Err(anyhow!("gen_insert_many_sql requires 'reflect' feature"))
+}
+
 #[test]
+#[cfg(feature = "reflect")]
 fn test_do_op_reflect_sql() {
     let sqls = get_all_create_table_sqls().unwrap_or_default();
     let merged_sql = sqls.join(";");

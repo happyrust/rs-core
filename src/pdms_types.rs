@@ -14,6 +14,7 @@ pub use crate::types::*;
 use bevy_ecs::component::Component;
 use bevy_ecs::prelude::*;
 use bevy_math::*;
+#[cfg(feature = "reflect")]
 use bevy_reflect::Reflect;
 #[cfg(feature = "render")]
 use bevy_render::prelude::*;
@@ -111,7 +112,7 @@ pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
 ];
 
 ///使用元件库的实体类型名称
-pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
+pub const USE_CATE_NOUN_NAMES: [&'static str; 33] = [
     "FIXING", // 固定件
     "GENSEC", // 通用截面
     "SCREED", // 找平层
@@ -126,7 +127,7 @@ pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
     "CNODE",  // 连接节点
     "SCTN",   // 截面
     "SCOJ",   // 结构连接
-    "PAVE",   // 铺装
+    // "PAVE",   // 铺装
     "SUBE",   // 子元素
     "SEVE",   // 服务
     "SUBJ",   // 子连接
@@ -140,7 +141,7 @@ pub const USE_CATE_NOUN_NAMES: [&'static str; 35] = [
     "TUBI",   // 管道
     "FLOOR",  // 地板
     "CMFI",   // 复合安装
-    "PANE",   // 面板
+    // "PANE",   // 面板
     "PFIT",   // 管道配件
     "GPART",  // 通用零件
     "PRTELE", // 主要元素

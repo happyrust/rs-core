@@ -56,6 +56,7 @@ pub mod bin_data;
 pub mod create_attas_structs;
 pub mod data_center;
 pub mod datacenter_options;
+pub mod dblist_parser;
 pub mod metadata;
 pub mod metadata_manager;
 pub mod negative_mesh_type;
@@ -306,10 +307,21 @@ pub async fn init_surreal() -> anyhow::Result<()> {
 
     // 创建配置
     let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
-    SUL_DB
+    match SUL_DB
         .connect((db_option.get_version_db_conn_str(), config))
         .with_capacity(1000)
-        .await?;
+        .await
+    {
+        Ok(_) => {}
+        Err(e) => {
+            if e.to_string().contains("Already connected") {
+                // println!("⚠️  Database already connected, skipping connection");
+            } else {
+                return Err(e.into());
+            }
+        }
+    }
+
     SUL_DB
         .use_ns(&db_option.surreal_ns)
         .use_db(&db_option.project_name)
@@ -428,3 +440,6 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
 
     Ok(db_option)
 }
+
+#[cfg(test)]
+pub mod test;

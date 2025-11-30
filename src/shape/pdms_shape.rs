@@ -191,6 +191,9 @@ pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<Vec3>,
     pub normals: Vec<Vec3>,
+    /// 顶点 UV 坐标（长度与 vertices 一致），用于纹理映射
+    #[serde(default)]
+    pub uvs: Vec<[f32; 2]>,
     #[serde(skip)]
     pub wire_vertices: Vec<Vec<Vec3>>,
     // edges 现在会被序列化，以支持在 plant3d 中渲染边
@@ -205,6 +208,7 @@ impl Default for PlantMesh {
             indices: Vec::new(),
             vertices: Vec::new(),
             normals: Vec::new(),
+            uvs: Vec::new(),
             wire_vertices: Vec::new(),
             edges: Vec::new(),
             aabb: None,
@@ -287,6 +291,7 @@ impl PlantMesh {
             indices,
             vertices,
             normals: mesh.normals.iter().map(|&x| x.as_vec3()).collect(),
+            uvs: Vec::new(),
             wire_vertices: vec![],
             edges,
             aabb: Some(aabb),
@@ -320,6 +325,83 @@ impl PlantMesh {
         });
         let tri_mesh = TriMesh::with_flags(points, indices, flag).ok()?;
         Some(tri_mesh)
+    }
+
+    /// 根据当前顶点自动生成一套简单的 UV（按包围盒进行投影映射）
+    ///
+    /// - 选择尺寸最大的两个轴作为 U/V 投影轴；
+    /// - 将对应坐标归一化到 [0, 1]，保证所有顶点都有可用的 UV；
+    pub fn generate_auto_uvs(&mut self) {
+        if self.vertices.is_empty() {
+            self.uvs.clear();
+            return;
+        }
+
+        // 计算包围盒
+        let mut min_v = Vec3::splat(f32::INFINITY);
+        let mut max_v = Vec3::splat(f32::NEG_INFINITY);
+        for v in &self.vertices {
+            min_v = min_v.min(*v);
+            max_v = max_v.max(*v);
+        }
+
+        let ext = max_v - min_v;
+
+        // 选择两个跨度最大的轴作为投影轴
+        let (axis_u, axis_v) = {
+            let ex = ext.x.abs();
+            let ey = ext.y.abs();
+            let ez = ext.z.abs();
+
+            // 找到最大轴
+            if ex >= ey && ex >= ez {
+                // X 为最大轴，第二轴取较大的 Y/Z
+                if ey >= ez {
+                    (0usize, 1usize)
+                } else {
+                    (0usize, 2usize)
+                }
+            } else if ey >= ex && ey >= ez {
+                // Y 为最大轴
+                if ex >= ez {
+                    (0usize, 1usize)
+                } else {
+                    (1usize, 2usize)
+                }
+            } else {
+                // Z 为最大轴
+                if ex >= ey {
+                    (0usize, 2usize)
+                } else {
+                    (1usize, 2usize)
+                }
+            }
+        };
+
+        let min_arr = [min_v.x, min_v.y, min_v.z];
+        let ext_arr = [ext.x, ext.y, ext.z];
+
+        let min_u = min_arr[axis_u];
+        let min_vv = min_arr[axis_v];
+        let scale_u = if ext_arr[axis_u].abs() > f32::EPSILON {
+            ext_arr[axis_u]
+        } else {
+            1.0
+        };
+        let scale_v = if ext_arr[axis_v].abs() > f32::EPSILON {
+            ext_arr[axis_v]
+        } else {
+            1.0
+        };
+
+        self.uvs.clear();
+        self.uvs.reserve(self.vertices.len());
+        for v in &self.vertices {
+            let coords = [v.x, v.y, v.z];
+            let u = (coords[axis_u] - min_u) / scale_u;
+            let vv = (coords[axis_v] - min_vv) / scale_v;
+            self.uvs.push([u, vv]);
+        }
     }
 
     ///计算aabb
@@ -357,7 +439,15 @@ impl PlantMesh {
         );
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone());
-        // mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+
+        // 如果已有 UV，直接使用；否则生成占位 UV，避免渲染错误
+        let uvs: Vec<[f32; 2]> = if !self.uvs.is_empty() && self.uvs.len() == self.vertices.len() {
+            self.uvs.clone()
+        } else {
+            vec![[0.0f32, 0.0f32]; self.vertices.len()]
+        };
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+
         mesh.insert_indices(Indices::U32(self.indices.clone()));
         mesh
     }
@@ -394,6 +484,7 @@ impl PlantMesh {
             indices: self.indices.clone(),
             vertices,
             normals,
+            uvs: self.uvs.clone(),
             wire_vertices: vec![],
             edges: transformed_edges,
             aabb: None,
@@ -410,17 +501,26 @@ impl PlantMesh {
     }
 
     ///序列化
+    ///
+    /// # Errors
+    /// 如果序列化失败，返回错误
     #[inline]
-    pub fn ser_to_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+    pub fn ser_to_bytes(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(bincode::serialize(self)?)
     }
 
     ///序列化到文件
+    ///
+    /// # Errors
+    /// 如果文件创建或写入失败，返回错误
     #[inline]
     pub fn ser_to_file(&self, file_path: &dyn AsRef<Path>) -> anyhow::Result<()> {
+        use anyhow::Context;
         let bytes = bincode::serialize(self)?;
-        let mut file = File::create(file_path).unwrap();
-        file.write_all(&bytes)?;
+        let mut file = File::create(file_path)
+            .with_context(|| format!("无法创建文件: {:?}", file_path.as_ref()))?;
+        file.write_all(&bytes)
+            .with_context(|| format!("无法写入文件: {:?}", file_path.as_ref()))?;
         Ok(())
     }
 
@@ -440,13 +540,17 @@ impl PlantMesh {
     }
 
     ///压缩bytes
+    ///
+    /// # Errors
+    /// 如果序列化或压缩失败，返回错误
     #[inline]
-    pub fn into_compress_bytes(&self) -> Vec<u8> {
+    pub fn into_compress_bytes(&self) -> anyhow::Result<Vec<u8>> {
         use flate2::Compression;
         use flate2::write::DeflateEncoder;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&bincode::serialize(&self).unwrap());
-        e.finish().unwrap_or_default()
+        let serialized = bincode::serialize(&self)?;
+        e.write_all(&serialized)?;
+        Ok(e.finish()?)
     }
 
     ///从压缩bytes反序列化
@@ -1023,7 +1127,7 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
                 .iter()
                 .map(|&x| x.vec3())
                 .collect::<Vec<_>>();
-            let _uvs = polygon_mesh
+            let uvs = polygon_mesh
                 .uv_coords()
                 .iter()
                 .map(|x| [x[0] as f32, x[1] as f32])
@@ -1054,6 +1158,7 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
                     indices,
                     vertices,
                     normals,
+                    uvs,
                     wire_vertices,
                     edges,
                     aabb: Some(aabb),

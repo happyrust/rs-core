@@ -186,7 +186,6 @@ pub async fn query_deep_children_refnos_filter_spre(
     // 3. 最后去重（distinct）
     let sql = format!(
         r#"
-        -- 批量查询所有起点的子孙节点，使用 fn::collect_descendants_filter_spre
         array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
             fn::collect_descendants_filter_spre($refno, [], {}, none, "..")
         )), |$v| $v != none));
@@ -328,7 +327,6 @@ pub async fn query_deep_children_filter_inst(
     // 3. 最后去重（distinct）
     let sql = format!(
         r#"
-        -- 批量查询所有起点的子孙节点，使用 fn::collect_descendants_filter_inst
         array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
             fn::collect_descendants_filter_inst($refno, {}, {}, true, false)
         )), |$v| $v != none));
@@ -403,7 +401,6 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
     // 4. 使用自定义的 select_expr 从 $ids 中查询数据
     let sql = format!(
         r#"
-        -- 批量查询所有起点的子孙节点，使用 fn::collect_descendant_ids_by_types
         let $ids = array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
             fn::collect_descendant_ids_by_types($refno, {}, none, "{}")
         )), |$v| $v != none));
@@ -411,6 +408,15 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
         "#,
         refno_list, types_expr, range, select_expr
     );
+
+    // log::info!(
+    //     "[collect_descendant_with_expr] refnos={:?}, nouns={:?}, range={:?}, select_expr={}, sql=\n{}",
+    //     refnos,
+    //     nouns,
+    //     range_str,
+    //     select_expr,
+    //     sql
+    // );
 
     // 跳过第一个结果（let $ids 的赋值），取第二个结果（SELECT 的结果）
     let result: Vec<T> = SUL_DB.query_take(&sql, 1).await?;
@@ -887,7 +893,6 @@ pub async fn collect_descendant_ids_has_inst(
     // 构建批量查询语句
     let sql = format!(
         r#"
-        -- 批量查询所有起点的子孙节点，使用 fn::collect_descendant_ids_has_inst
         array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
             fn::collect_descendant_ids_has_inst($refno, {}, {})[? has_inst]
         )), |$v| $v != none))

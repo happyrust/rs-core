@@ -169,47 +169,60 @@ impl BrepShapeTrait for Extrusion {
         Some(PdmsGeoParam::PrimExtrusion(self.clone()))
     }
 
-    ///使用manifold生成拉身体的mesh
-    #[cfg(feature = "truck")]
+    /// 使用统一的 ProfileProcessor 生成拉伸体的mesh
+    ///
+    /// 统一流程：cavalier_contours + i_triangle
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         if !self.check_valid() {
             return None;
         }
-        let mut wire = gen_wire(&self.verts, &self.fradius_vec).ok()?;
-        if let Ok(mut face) = builder::try_attach_plane(&[wire.clone()]) {
-            if let Surface::Plane(plane) = face.surface() {
-                let extrude_dir = Vector3::new(0.0, 0.0, 1.0);
-                if plane.normal().dot(extrude_dir) < 0.0 {
-                    wire = wire.inverse();
-                }
-                let e_len = wire.len();
-                let pts = wire
-                    .edge_iter()
-                    .enumerate()
-                    .map(|(i, e)| {
-                        let curve = e.oriented_curve();
-                        let polyline =
-                            PolylineCurve::from_curve(&curve, curve.range_tuple(), self.tol() as _);
-                        let mut v = polyline
-                            .iter()
-                            .map(|x| Vec2::new(x.x as _, x.y as _))
-                            .collect::<Vec<_>>();
-                        if !v.is_empty() && i != (e_len - 1) {
-                            v.pop();
-                        }
-                        v
-                    })
-                    .flatten()
-                    .collect::<Vec<Vec2>>();
-                // dbg!(&pts);
-                unsafe {
-                    let mut cross_section = ManifoldCrossSectionRust::from_points(&pts);
-                    let manifold = cross_section.extrude(100.0, 0);
-                    return Some(PlantMesh::from(manifold));
-                }
-            }
+        if self.verts.is_empty() || self.verts[0].len() < 3 {
+            return None;
         }
-        None
+
+        // 使用统一的 ProfileProcessor 处理截面（支持多轮廓和孔洞）
+        use crate::prim_geo::profile_processor::{ProfileProcessor, extrude_profile};
+
+        let mut verts2d: Vec<Vec<Vec2>> = Vec::with_capacity(self.verts.len());
+        let mut frads: Vec<Vec<f32>> = Vec::with_capacity(self.verts.len());
+        for wire in &self.verts {
+            let mut v2 = Vec::with_capacity(wire.len());
+            let mut r = Vec::with_capacity(wire.len());
+            for p in wire {
+                v2.push(Vec2::new(p.x, p.y));
+                r.push(p.z);
+            }
+            verts2d.push(v2);
+            frads.push(r);
+        }
+
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true)
+            .map_err(|e| {
+                println!("⚠️  [Extrusion] ProfileProcessor 创建失败: {}", e);
+                e
+            })
+            .ok()?;
+        let profile = processor.process("EXTRUSION", None).ok()?;
+
+        // 拉伸截面
+        let extruded = extrude_profile(&profile, self.height);
+
+        // 计算 UV 坐标（简化版）
+        let uvs = extruded
+            .vertices
+            .iter()
+            .map(|v| [v.x / 100.0, v.y / 100.0])
+            .collect();
+
+        Some(PlantMesh {
+            vertices: extruded.vertices,
+            normals: extruded.normals,
+            uvs,
+            indices: extruded.indices,
+            wire_vertices: Vec::new(),
+            edges: Vec::new(),
+            aabb: None,
+        })
     }
 
     fn enhanced_key_points(

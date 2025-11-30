@@ -1,7 +1,8 @@
 use crate::init_test_surreal;
 use crate::prim_geo::basic::OccSharedShape;
 #[cfg(feature = "occ")]
-use crate::prim_geo::wire::{gen_occ_wires, gen_polyline, polyline_to_debug_json_str};
+use crate::prim_geo::wire::{gen_occ_wires, polyline_to_debug_json_str};
+use crate::prim_geo::wire::{gen_polyline_from_processed_vertices, process_ploop_vertices};
 use crate::shape::pdms_shape::PlantMesh;
 use crate::{RefU64, SUL_DB, SurrealQueryExt};
 use cavalier_contours::polyline::{BooleanOp, PlineSource, PlineVertex, Polyline, seg_midpoint};
@@ -44,7 +45,18 @@ pub async fn test_wire_from_loop(refno: RefU64) {
         })
         .collect();
 
-    let pline = gen_polyline(&points).unwrap();
+    // 将 Vec3 拆分为 Vec2 和 frads
+    let mut verts2d: Vec<Vec2> = Vec::with_capacity(points.len());
+    let mut frads: Vec<f32> = Vec::with_capacity(points.len());
+    for v in &points {
+        verts2d.push(Vec2::new(v.x, v.y));
+        frads.push(v.z);
+    }
+
+    // 先通过 ploop-rs 处理 FRADIUS，得到 bulge 顶点
+    let processed = process_ploop_vertices(&verts2d, &frads, "TEST_WIRE_FROM_LOOP").unwrap();
+    // 再基于 bulge 生成 Polyline
+    let pline = gen_polyline_from_processed_vertices(&processed, None).unwrap();
     println!("{}", polyline_to_debug_json_str(&pline));
 }
 

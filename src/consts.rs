@@ -3,7 +3,68 @@ use crate::types::NounHash;
 use lazy_static::lazy_static;
 use std::collections::HashSet;
 
+/// 默认批量插入大小
 pub const MAX_INSERT_LENGTH: usize = 10000;
+
+/// 批量操作配置
+///
+/// 提供动态调整批量大小的能力，根据网络延迟和数据大小自动优化
+pub struct BatchConfig {
+    pub max_batch_size: usize,
+    pub adaptive: bool,
+}
+
+impl Default for BatchConfig {
+    fn default() -> Self {
+        Self {
+            max_batch_size: MAX_INSERT_LENGTH,
+            adaptive: false,
+        }
+    }
+}
+
+impl BatchConfig {
+    /// 创建自适应批量配置
+    pub fn adaptive() -> Self {
+        Self {
+            max_batch_size: MAX_INSERT_LENGTH,
+            adaptive: true,
+        }
+    }
+
+    /// 根据网络延迟计算最优批量大小
+    ///
+    /// # 参数
+    /// * `network_latency_ms` - 网络延迟（毫秒）
+    ///
+    /// # 返回值
+    /// 最优的批量大小
+    pub fn calculate_optimal_size(&self, network_latency_ms: u64) -> usize {
+        if !self.adaptive {
+            return self.max_batch_size;
+        }
+
+        // 根据网络延迟动态调整批量大小
+        match network_latency_ms {
+            0..=10 => 20000,  // 低延迟：更大批量
+            11..=50 => 10000, // 中延迟：默认批量
+            51..=100 => 5000, // 高延迟：较小批量
+            _ => 1000,        // 超高延迟：最小批量
+        }
+    }
+
+    /// 根据数据大小估算批量数
+    ///
+    /// # 参数
+    /// * `total_items` - 总数据量
+    ///
+    /// # 返回值
+    /// 需要的批量操作次数
+    pub fn estimate_batch_count(&self, total_items: usize) -> usize {
+        let batch_size = self.max_batch_size;
+        (total_items + batch_size - 1) / batch_size
+    }
+}
 
 pub const UNSET_STR: &'static str = "unset";
 pub const ATT_WORLD: u32 = db1_hash_const("WORLD");

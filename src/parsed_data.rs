@@ -749,6 +749,15 @@ impl CateProfileParam {
         }
     }
 
+    pub fn get_plin_pos(&self) -> Vec2 {
+        match self {
+            CateProfileParam::UNKOWN => Vec2::ZERO,
+            CateProfileParam::SPRO(s) => s.plin_pos,
+            CateProfileParam::SANN(s) => s.plin_pos,
+            CateProfileParam::SREC(s) => s.plin_pos,
+        }
+    }
+
     pub fn get_bbox(&self) -> Option<Aabb> {
         match self {
             CateProfileParam::UNKOWN => None,

@@ -61,7 +61,7 @@ pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<Ref
             let mesh_path = crate::get_db_option()
                 .get_meshes_path()
                 .join(build_mesh_path(&inst.geo_hash, "L0"));
-            
+
             let Ok(mesh) = PlantMesh::des_mesh_file(&mesh_path) else {
                 continue;
             };

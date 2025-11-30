@@ -127,8 +127,8 @@ pub async fn query_manifold_boolean_operations(
         "#
     );
 
-    // println!("[query_manifold_boolean_operations] refno: {}", refno);
-    // println!("[query_manifold_boolean_operations] sql: {}", sql);
+println!("[query_manifold_boolean_operations] refno: {}", refno);
+    println!("[query_manifold_boolean_operations] sql: {}", sql);
 
     let result = SUL_DB.query_take::<Vec<ManiGeoTransQuery>>(&sql, 0).await;
     match &result {

@@ -6,16 +6,14 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = [
-    "bevy_transform",
-    "bevy_math",
-    "bevy_ecs",
-    "bevy_reflect",
-    "test",
+    # "reflect",  # 默认开启 reflect 支持,保持向后兼容
     # "render",
     # "gen_model",
     # "sql",
     # "debug_spatial",
 ] #"occ", "gen_model", "sql"
+reflect = ["dep:bevy_reflect"]  # bevy_reflect 反射系统支持 (用于 ORM 框架)
+use_strategy_transform = []  # 新的策略系统变换计算，默认关闭（opt-in 迁移）
 redb = ["dep:redb"]
 render = ["dep:bevy_render", "dep:bevy_mesh", "dep:bevy_asset"]
 manifold = ["dep:manifold-sys"]
@@ -40,10 +38,6 @@ sqlite = ["dep:rusqlite"]  # SQLite 空间索引功能
 mem-kv-save = []  # 额外保存PE数据到内存KV数据库
 hh = []
 test = []  # Test module feature
-bevy_transform = ["dep:bevy_transform"]
-bevy_math = ["dep:bevy_math"]
-bevy_ecs = ["dep:bevy_ecs"]
-bevy_reflect = ["dep:bevy_reflect"]
 
 
 [dependencies]
@@ -96,11 +90,11 @@ lru = "0.12"
 num_cpus = "1.16"
 
 
-bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", optional = true, features = [
+bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", features = [
     "serialize",
 ] }
-bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math", optional = true }
-bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs", optional = true }
+bevy_math = { git = "https://github.com/happyrust/bevy", package = "bevy_math" }
+bevy_ecs = { git = "https://github.com/happyrust/bevy", package = "bevy_ecs" }
 bevy_reflect = { git = "https://github.com/happyrust/bevy", package = "bevy_reflect", optional = true }
 bevy_render = { git = "https://github.com/happyrust/bevy", package = "bevy_render", optional = true }
 bevy_mesh = { git = "https://github.com/happyrust/bevy", package = "bevy_mesh", optional = true }
@@ -116,14 +110,6 @@ hash32 = "1.0.0"
 bincode = "1.3.3"
 clap = { version = "^4.0", features = ["derive"] }
 
-# truck-base = { version = "0.4.0", path = "../truck/truck-base", optional = true }
-# truck-geotrait = { version = "0.3.0", path = "../truck/truck-geotrait", optional = true }
-# truck-geometry = { version = "0.4.0", path = "../truck/truck-geometry", optional = true }
-# truck-polymesh = { version = "0.5.0", path = "../truck/truck-polymesh", optional = true }
-# truck-topology = { version = "0.5.0", path = "../truck/truck-topology", optional = true }
-# truck-modeling = { version = "0.5.1", path = "../truck/truck-modeling", optional = true }
-# truck-meshalgo = { version = "0.3.0", path = "../truck/truck-meshalgo", optional = true }
-# truck-stepio = { version = "0.2.0", path = "../truck/truck-stepio", optional = true }
 rkyv = { version = "0.8.12", features = ["alloc"] }
 serde_with = { version = "3.9.0", features = ["macros"] }
 
@@ -158,12 +144,12 @@ downcast-rs = "2.0.2"
 futures = "0.3.30"
 evalexpr = "13.0.0"
 serde_repr = "0.1.19"
-ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "dev", package = "ploop-rs" }
+ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "1.0", package = "ploop-rs" }
 parking_lot = "0.12"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }
-rusqlite = { version = "0.32.0", features = ["bundled"], optional = true }
+rusqlite = { version = "0.33", features = ["bundled"], optional = true }
 redb = { version = "2.6.0", optional = true }
 manifold-sys = { git = "https://gitee.com/happydpc/manifold-sys", optional = true }
 sqlx = { version = "0.8.6", default-features = false, features = [
@@ -181,3 +167,6 @@ tempfile = "3"
 [[bench]]
 name = "room_query_bench"
 harness = false
+
+[patch."https://gitee.com/happydpc/rust-ploop-processor.git"]   
+ploop-rs = { path = "../rust-ploop-processor/ploop-rs" }
