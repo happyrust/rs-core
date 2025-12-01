@@ -568,9 +568,9 @@ pub struct DifferenceValue {
 }
 
 ///默认的属性名称哈希值数组
-pub const DEFAULT_NOUNS: [NounHash; 4] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH];
+pub const DEFAULT_NOUNS: [NounHash; 5] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH, TAG_NAME_HASH];
 ///默认的属性名称数组
-pub const DEFAULT_NAMED_NOUNS: [&'static str; 4] = ["TYPE", "NAME", "REFNO", "OWNER"];
+pub const DEFAULT_NAMED_NOUNS: [&'static str; 5] = ["TYPE", "NAME", "REFNO", "OWNER", "TAG_NAME"];
 
 ///PDMS通用类型枚举
 #[repr(C)]

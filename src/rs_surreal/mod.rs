@@ -38,6 +38,15 @@ pub mod pipeline;
 // XKT 生成相关查询
 pub mod type_hierarchy;
 
+// Measurement 表相关查询
+pub mod measurement_query;
+
+// Annotation 表相关查询
+pub mod annotation_query;
+
+// Tag name mapping 表相关查询
+pub mod tag_name_mapping;
+
 pub use attr_cache::*;
 pub use boolean_query::*;
 pub use cate::*;
@@ -48,6 +57,9 @@ pub use graph::*;
 pub use index::*;
 pub use inst::*;
 pub use inst_structs::*;
+pub use measurement_query::*;
+pub use annotation_query::*;
+pub use tag_name_mapping::*;
 pub use mdb::*;
 pub use pbs::*;
 pub use point::*;

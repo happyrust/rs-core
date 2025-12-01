@@ -113,3 +113,67 @@ pub async fn define_ses_index_with(conn: &Surreal<Any>) -> anyhow::Result<()> {
     .unwrap();
     Ok(())
 }
+
+pub async fn define_measurement_index() -> anyhow::Result<()> {
+    define_measurement_index_with(&crate::SUL_DB).await
+}
+
+/// 在给定连接上创建 measurement 表相关索引
+pub async fn define_measurement_index_with(conn: &Surreal<Any>) -> anyhow::Result<()> {
+    // 创建测量表的索引以优化常用查询
+    conn.query(
+        r#"
+        DEFINE INDEX idx_measurement_project_id ON TABLE measurement COLUMNS project_id;
+        DEFINE INDEX idx_measurement_scene_id ON TABLE measurement COLUMNS scene_id;
+        DEFINE INDEX idx_measurement_type ON TABLE measurement COLUMNS measurement_type;
+        DEFINE INDEX idx_measurement_created_at ON TABLE measurement COLUMNS created_at;
+        DEFINE INDEX idx_measurement_status ON TABLE measurement COLUMNS status;
+        DEFINE INDEX idx_measurement_created_by ON TABLE measurement COLUMNS created_by;
+        DEFINE INDEX idx_measurement_project_scene ON TABLE measurement COLUMNS project_id, scene_id;
+                "#,
+    )
+    .await?;
+    Ok(())
+}
+
+pub async fn define_annotation_index() -> anyhow::Result<()> {
+    define_annotation_index_with(&crate::SUL_DB).await
+}
+
+/// 在给定连接上创建 annotation 表相关索引
+pub async fn define_annotation_index_with(conn: &Surreal<Any>) -> anyhow::Result<()> {
+    // 创建批注表的索引以优化常用查询
+    conn.query(
+        r#"
+        DEFINE INDEX idx_annotation_project_id ON TABLE annotation COLUMNS project_id;
+        DEFINE INDEX idx_annotation_scene_id ON TABLE annotation COLUMNS scene_id;
+        DEFINE INDEX idx_annotation_type ON TABLE annotation COLUMNS annotation_type;
+        DEFINE INDEX idx_annotation_status ON TABLE annotation COLUMNS status;
+        DEFINE INDEX idx_annotation_created_by ON TABLE annotation COLUMNS created_by;
+        DEFINE INDEX idx_annotation_assigned_to ON TABLE annotation COLUMNS assigned_to;
+        DEFINE INDEX idx_annotation_created_at ON TABLE annotation COLUMNS created_at;
+        DEFINE INDEX idx_annotation_priority ON TABLE annotation COLUMNS priority;
+        DEFINE INDEX idx_annotation_project_scene ON TABLE annotation COLUMNS project_id, scene_id;
+                "#,
+    )
+    .await?;
+    Ok(())
+}
+
+pub async fn define_tag_name_mapping_index() -> anyhow::Result<()> {
+    define_tag_name_mapping_index_with(&crate::SUL_DB).await
+}
+
+/// 在给定连接上创建 tag_name_mapping 表相关索引
+pub async fn define_tag_name_mapping_index_with(conn: &Surreal<Any>) -> anyhow::Result<()> {
+    // 创建位号映射表的索引以优化常用查询
+    conn.query(
+        r#"
+        DEFINE INDEX idx_tag_name_mapping_in ON TABLE tag_name_mapping COLUMNS in;
+        DEFINE INDEX idx_tag_name_mapping_tag_name ON TABLE tag_name_mapping COLUMNS tag_name;
+        DEFINE INDEX idx_tag_name_mapping_full_name ON TABLE tag_name_mapping COLUMNS full_name;
+                "#,
+    )
+    .await?;
+    Ok(())
+}

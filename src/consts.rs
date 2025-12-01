@@ -81,6 +81,7 @@ pub const BOX_HASH: NounHash = db1_hash_const("BOX");
 pub const NAME_HASH: NounHash = db1_hash_const("NAME");
 pub const REFNO_HASH: NounHash = db1_hash_const("REFNO");
 pub const OWNER_HASH: NounHash = db1_hash_const("OWNER");
+pub const TAG_NAME_HASH: NounHash = db1_hash_const("TAG_NAME");
 pub const CYLI_HASH: NounHash = db1_hash_const("CYLI");
 pub const SPHE_HASH: NounHash = db1_hash_const("SPHE");
 pub const CONE_HASH: NounHash = db1_hash_const("CONE");

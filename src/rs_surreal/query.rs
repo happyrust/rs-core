@@ -955,6 +955,14 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
     }
 
     attmap.remove("SESNO");
+
+    // 查询并添加位号 (TAG_NAME)
+    if let Ok(Some(tag_name)) = crate::rs_surreal::tag_name_mapping::get_tag_name_by_refno(&SUL_DB, refno_enum).await {
+        attmap.insert("TAG_NAME".to_string(), NamedAttrValue::StringType(tag_name));
+    } else {
+        attmap.insert("TAG_NAME".to_string(), NamedAttrValue::StringType("unset".to_owned()));
+    }
+
     Ok(attmap)
 }
 
