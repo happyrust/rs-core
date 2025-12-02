@@ -1,6 +1,7 @@
 /// WALL 策略实现模块
-/// 专门处理 STWALL 等墙体构件的方向和位置计算
-use super::{NposHandler, TransformStrategy};
+/// 专门处理 STWALL、SCTN 等墙体/截面构件的方向和位置计算
+/// 这些类型的 BANG 属性影响 local transform，而不是几何体本身
+use super::{BangHandler, NposHandler, TransformStrategy};
 use crate::NamedAttrMap;
 use crate::rs_surreal::spatial::construct_basis_z_y_exact;
 use async_trait::async_trait;
@@ -17,22 +18,27 @@ impl WallStrategy {
         Self { att, parent_att }
     }
 
-    /// 计算墙体的方向向量
+    /// 计算墙体/截面的方向向量
     /// 使用 DPOSE 和 DPOSS 计算扫掠方向作为 Z 轴
+    /// 对于没有这些属性的类型（如部分 SCTN），返回 None 使用默认方向
     fn calculate_wall_direction(&self) -> Option<DVec3> {
         if let Some(end) = self.att.get_dpose()
             && let Some(start) = self.att.get_dposs()
         {
             Some((end - start).normalize())
         } else {
-            // 记录警告：缺少方向定义数据
-            let refno = self.att.get_refno().unwrap_or_default();
-            tracing::warn!(
-                "STWALL {} 缺少方向定义数据: DPOSE={:?}, DPOSS={:?}",
-                refno,
-                self.att.get_dpose(),
-                self.att.get_dposs()
-            );
+            // 对于 SCTN 等类型，可能没有 DPOSE/DPOSS，使用默认方向
+            // 只有 STWALL 类型缺少这些属性时才记录警告
+            let type_name = self.att.get_type_str();
+            if type_name == "STWALL" {
+                let refno = self.att.get_refno().unwrap_or_default();
+                tracing::warn!(
+                    "STWALL {} 缺少方向定义数据: DPOSE={:?}, DPOSS={:?}",
+                    refno,
+                    self.att.get_dpose(),
+                    self.att.get_dposs()
+                );
+            }
             None
         }
     }
@@ -67,7 +73,11 @@ impl TransformStrategy for WallStrategy {
             rotation = construct_basis_z_y_exact(y_axis, z_axis);
         }
 
-        // 5. 构造最终的变换矩阵
+        // 5. 应用 BANG 旋转到 local transform
+        // BANG 影响的是 local transform，而不是几何体本身的旋转
+        BangHandler::apply_bang(&mut rotation, att);
+
+        // 6. 构造最终的变换矩阵
         let mat4 = DMat4::from_rotation_translation(rotation, position);
 
         Ok(Some(mat4))

@@ -45,17 +45,6 @@ impl SpineStrategy {
             .find(|att| att.get_type_str() == "POINSP")
             .ok_or_else(|| anyhow::anyhow!("No POINSP found under SPINE {}", spine_refno))?;
 
-        // 注意：parent_att 应该是 SPINE 的有效属性（可能包含虚拟属性合并）
-        // 但在这里我们直接用了 spine_att，如果 SPINE 是虚拟的且有父级继承逻辑...
-        // get_effective_parent_att(spine_refno) 会向上找非虚拟父级。
-        // 但 SPINE 本身就是 GENSEC 的子级。
-        // SpineStrategy 中的 parent_att 通常指 "SPINE" 这一层。
-        // 原代码: let parent_att = get_effective_parent_att(spine_refno).await?;
-        // 如果 SPINE 是虚拟节点， get_effective_parent_att(spine_refno) 会返回 GENSEC 的属性 + SPINE 属性合并?
-        // 不，get_effective_parent_att(child) 返回 parent 的有效属性。
-        // get_effective_parent_att(spine_refno) 返回 GENSEC 的属性。
-        // 但是 SpineStrategy 需要的是 SPINE 的属性（用于 get_spline_path 中获取 owner=spine_refno，以及 YDIR 等）。
-
         // 如果 SpineStrategy 期望 parent_att 是 SPINE 自身的属性：
         Ok(SpineStrategy::new(
             Arc::new(poinsp_att.clone()),

@@ -51,8 +51,9 @@ impl TransformStrategyFactory {
         let type_str = att.get_type_str();
         let parent_type = parent_att.get_type_str();
 
-        // 自身是 WALL 这种情况需要单独处理
-        if type_str == "STWALL" {
+        // STWALL 和 SCTN 类型需要特殊处理
+        // 它们的 BANG 影响 local transform，而不是几何体本身
+        if type_str == "STWALL" || type_str == "SCTN" {
             return Box::new(WallStrategy::new(att, parent_att));
         };
         // 基于父节点类型进行策略分发

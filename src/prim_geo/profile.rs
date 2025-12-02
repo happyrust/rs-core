@@ -10,7 +10,7 @@ use crate::prim_geo::spine::{
 };
 use crate::prim_geo::{CateCsgShapeMap, SweepSolid};
 use crate::rs_surreal::query::{get_owner_refno_by_type, get_owner_type_name};
-use crate::rs_surreal::spatial::{construct_basis_z_default, get_spline_pts};
+use crate::rs_surreal::spatial::{construct_basis_z_default, construct_basis_z_y_hint, get_spline_pts};
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
@@ -27,25 +27,6 @@ use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
 use std::vec::Vec;
 
 const FRAME_EPS: f32 = 1e-6;
-
-// 构建以路径切线为主轴的正交基，plax 作为滚转参考
-fn build_frenet_rotation(tangent: Vec3, ref_up: Vec3) -> Quat {
-    let tangent = tangent.normalize_or_zero();
-    if tangent.length_squared() < FRAME_EPS {
-        return Quat::IDENTITY;
-    }
-
-    // 将 ref_up 投影到切线的正交平面，优先使用该平面内的方向
-    let mut up = (ref_up - tangent * ref_up.dot(tangent)).normalize_or_zero();
-
-    // 若投影仍退化（ref_up 与切线平行或无效），选取任意正交向量兜底
-    if up.length_squared() < FRAME_EPS {
-        up = tangent.any_orthogonal_vector();
-    }
-
-    let right = up.cross(tangent).normalize_or_zero();
-    Quat::from_mat3(&Mat3::from_cols(right, up, tangent))
-}
 
 /// 将多个 Spine3D 段转换为归一化的路径段和对应的变换
 ///
@@ -115,19 +96,20 @@ async fn normalize_spine_segments(
                     is_spine: true,
                 }));
 
-                // 计算 Frenet 标架旋转：路径为主轴，plax 决定滚转参考
-                let frenet_rotation = build_frenet_rotation(direction, plax);
+                // 使用 YDIR (spine.preferred_dir) 计算方位，与 SpineStrategy.initialize_rotation 保持一致
+                let ydir = spine.preferred_dir.as_dvec3();
+                let base_rotation = construct_basis_z_y_hint(direction.as_dvec3(), Some(ydir), false);
 
-                // 计算 bangle 旋转（绕路径方向，即 Z 轴）
+                // 计算 bangle 旋转（绕路径方向）
                 let bangle_rotation = Quat::from_axis_angle(direction, bangle.to_radians());
 
-                // 组合旋转：Frenet 标架旋转 × bangle 旋转
-                let final_rotation = frenet_rotation * bangle_rotation;
+                // 组合旋转：基础方位 × bangle 旋转
+                let final_rotation = base_rotation.as_quat() * bangle_rotation;
 
-                // 完整变换：包含位置、Frenet 标架 + bangle 旋转和缩放
+                // 完整变换：包含位置、方位 + bangle 旋转和缩放
                 transforms.push(Transform {
                     translation: spine.pt0,                    // 起点位置
-                    rotation: final_rotation,                  // Frenet 标架旋转 × bangle 旋转
+                    rotation: final_rotation,                  // 方位 × bangle 旋转
                     scale: Vec3::new(1.0, 1.0, length / 10.0), // Z 方向缩放：实际长度/10.0
                 });
             }
@@ -163,26 +145,20 @@ async fn normalize_spine_segments(
                     axis.cross(radial).normalize_or_zero()
                 };
 
-                // 3. 参考方向：优先使用 spine.preferred_dir，否则使用 plax
-                let ref_dir = if spine.preferred_dir.length_squared() > 1e-6 {
-                    spine.preferred_dir.normalize_or_zero()
-                } else {
-                    plax.normalize_or_zero()
-                };
+                // 3. 使用 YDIR (spine.preferred_dir) 计算方位
+                let ydir = spine.preferred_dir.as_dvec3();
+                let base_rotation = construct_basis_z_y_hint(tangent.as_dvec3(), Some(ydir), false);
 
-                // 4. 计算 Frenet 标架（与 LINE 类似，防止 ref_dir 与 tangent 平行导致退化）
-                let frenet_rotation = build_frenet_rotation(tangent, ref_dir);
-
-                // 5. 计算 bangle 旋转（绕切线方向）
+                // 4. 计算 bangle 旋转（绕切线方向）
                 let bangle_rotation = Quat::from_axis_angle(tangent, bangle.to_radians());
 
-                // 6. 组合旋转：Frenet 标架旋转 × bangle 旋转
-                let final_rotation = frenet_rotation * bangle_rotation;
+                // 5. 组合旋转：基础方位 × bangle 旋转
+                let final_rotation = base_rotation.as_quat() * bangle_rotation;
 
-                // 完整变换：位置、Frenet 标架 + bangle 旋转和缩放
+                // 完整变换：位置、方位 + bangle 旋转和缩放
                 transforms.push(Transform {
                     translation: center,        // 圆心位置
-                    rotation: final_rotation,   // Frenet 标架旋转 × bangle 旋转
+                    rotation: final_rotation,   // 方位 × bangle 旋转
                     scale: Vec3::splat(radius), // 统一缩放到实际半径
                 });
             }
@@ -218,26 +194,20 @@ async fn normalize_spine_segments(
                     axis.cross(radial).normalize_or_zero()
                 };
 
-                // 3. 参考方向：优先使用 spine.preferred_dir，否则使用 plax
-                let ref_dir = if spine.preferred_dir.length_squared() > 1e-6 {
-                    spine.preferred_dir.normalize_or_zero()
-                } else {
-                    plax.normalize_or_zero()
-                };
+                // 3. 使用 YDIR (spine.preferred_dir) 计算方位
+                let ydir = spine.preferred_dir.as_dvec3();
+                let base_rotation = construct_basis_z_y_hint(tangent.as_dvec3(), Some(ydir), false);
 
-                // 4. 计算 Frenet 标架（与 LINE 类似，防止 ref_dir 与 tangent 平行导致退化）
-                let frenet_rotation = build_frenet_rotation(tangent, ref_dir);
-
-                // 5. 计算 bangle 旋转（绕切线方向）
+                // 4. 计算 bangle 旋转（绕切线方向）
                 let bangle_rotation = Quat::from_axis_angle(tangent, bangle.to_radians());
 
-                // 6. 组合旋转：Frenet 标架旋转 × bangle 旋转
-                let final_rotation = frenet_rotation * bangle_rotation;
+                // 5. 组合旋转：基础方位 × bangle 旋转
+                let final_rotation = base_rotation.as_quat() * bangle_rotation;
 
-                // 完整变换：位置、Frenet 标架 + bangle 旋转和缩放
+                // 完整变换：位置、方位 + bangle 旋转和缩放
                 transforms.push(Transform {
                     translation: center,        // 圆心位置
-                    rotation: final_rotation,   // Frenet 标架旋转 × bangle 旋转
+                    rotation: final_rotation,   // 方位 × bangle 旋转
                     scale: Vec3::splat(radius), // 统一缩放到实际半径
                 });
             }
@@ -447,7 +417,13 @@ pub async fn create_profile_geos(
                 }
             })
             .unwrap_or(Vec3::Y);
-        let bangle = att.get_f32("BANG").unwrap_or_default();
+        // 对于 SCTN 和 STWALL，BANG 影响的是 local transform，而不是几何体本身
+        // 这些类型的 BANG 旋转已在 TransformStrategy 中处理
+        let bangle = if type_name == "SCTN" || type_name == "STWALL" {
+            0.0
+        } else {
+            att.get_f32("BANG").unwrap_or_default()
+        };
 
         match normalize_spine_segments(spine_paths.clone(), first_plax, bangle).await {
             Ok((normalized_paths, segment_transforms)) => {
@@ -485,7 +461,7 @@ pub async fn create_profile_geos(
                             drns: None,
                             drne: None,
                             plax,
-                            bangle: att.get_f32("BANG").unwrap_or_default(),
+                            bangle, // 使用前面已计算的 bangle（对于 SCTN/STWALL 为 0）
                             extrude_dir,
                             height,
                             path: sweep_path,
@@ -515,9 +491,20 @@ pub async fn create_profile_geos(
                         //     false,
                         // );
 
-                        // 实例化 Transform：使用 translation、rotation 和 scale
-                        // mesh 是基于归一化路径生成的，所以实例化时需要应用 scale 来缩放回实际尺寸
-                        let transform = first_transform;
+                        // 根据元素类型决定是否使用 rotation
+                        // - GENSEC/WALL（有 SPINE）：使用第一个点的方位
+                        // - SCTN/STWALL（POSS/POSE）：只有偏移，不旋转
+                        let transform = if type_name == "GENSEC" || type_name == "WALL" {
+                            // 有 SPINE：使用完整的 transform（包含 rotation）
+                            first_transform
+                        } else {
+                            // SCTN/STWALL：只使用 translation，不使用 rotation
+                            Transform {
+                                translation: first_transform.translation,
+                                rotation: Quat::IDENTITY,
+                                scale: first_transform.scale,
+                            }
+                        };
 
                         csg_shapes_map
                             .entry(refno)
