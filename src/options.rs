@@ -87,6 +87,7 @@ pub struct DbOption {
     pub remote_file_server_hosts: Vec<String>,
 
     #[clap(long)]
+    #[serde(default)]
     pub file_server_host: String,
 
     #[clap(long)]
