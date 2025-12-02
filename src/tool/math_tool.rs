@@ -32,7 +32,7 @@ lazy_static! {
 }
 
 //x轴作为参考轴去当目标轴
-pub fn cal_quat_by_zdir_with_xref(zdir: DVec3) -> DQuat {
+pub fn construct_basis_z_xref(zdir: DVec3) -> DQuat {
     let mut xdir = if zdir.z.abs() < 1.0e-5 {
         -DVec3::Z * zdir.x.signum()
     } else {

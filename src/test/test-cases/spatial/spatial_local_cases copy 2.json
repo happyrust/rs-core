@@ -1,0 +1,26 @@
+[
+  {
+    "refno": "17496/266215",
+    "noun": "PLDATU",
+    "pos_str": "E 3.5mm N 0mm U 0mm",
+    "ori_str": "Y is U and Z is E"
+  },
+  {
+    "refno": "17496/266216",
+    "noun": "FIXING",
+    "pos_str": "W 0.01mm S 0.01mm U 0mm",
+    "ori_str": "Y is S and Z is U"
+  },
+  {
+    "refno": "17496/248852",
+    "noun": "STWALL",
+    "pos_str": "W 17010mm S 28600mm D 6650mm",
+    "ori_str": "Y is U and Z is E"
+  },
+  {
+    "refno": "17496/248853",
+    "noun": "FITT",
+    "pos_str": "E 0mm N 450mm U 1400mm",
+    "ori_str": "Y is U and Z is W"
+  }
+]

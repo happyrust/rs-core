@@ -54,3 +54,48 @@ let count: i64 = response.take(1)?;
 
 ## Configuration & Safety Notes
 连接配置位于 `DbOption.toml` 与 `DbOption_*.toml`，请使用本地副本并避免提交真实凭据；示例依赖的资产与中间结果存放在 `resource/`、`data/`、`all_attr_info.*`，拉取前确认体积较大的二进制已同步；日志与性能对比文件建议留在忽略目录，避免污染仓库，同时注意清理 `target/` 以减少版本库噪音。
+
+
+## Surreal 查询速查指南（aios-core）
+
+以下速查基于 aios-core 的查询封装与最佳实践，完整文档见 docs/AIOS_CORE_QUERY_GUIDE.md。
+
+- 全局连接与扩展
+  - 全局 DB 实例：aios_core::SUL_DB
+  - 扩展方法：aios_core::SurrealQueryExt（query_take / query_response）
+
+- 单/多结果查询示例
+```rust
+use aios_core::{SUL_DB, SurrealQueryExt, RefnoEnum};
+
+// 单结果查询（提取第 0 条语句结果）
+let sql = "SELECT value id FROM pe WHERE noun = 'EQUI' LIMIT 10";
+let refnos: Vec<RefnoEnum> = SUL_DB.query_take(sql, 0).await?;
+
+// 多结果查询（一次执行多条语句并分别提取）
+let sql = r#"
+  SELECT * FROM pe WHERE noun = 'SITE' LIMIT 5;
+  SELECT count() FROM pe;
+"#;
+let mut resp = SUL_DB.query_response(sql).await?;
+let sites: Vec<SPdmsElement> = resp.take(0)?;
+let count: i64 = resp.take(1)?;
+```
+
+- 层级查询（子孙/子节点/祖先）
+```rust
+// 子孙节点 ID（支持类型过滤与层级范围，如 Some("1..5")）
+let ids = aios_core::collect_descendant_filter_ids(&[root], &["EQUI", "PIPE"], None).await?;
+
+// 子节点 ID（仅一层）
+let children = aios_core::collect_children_filter_ids(root, &[]).await?;
+
+// 祖先查询（向上）
+let zones = aios_core::query_filter_ancestors(equip, &["ZONE"]).await?;
+```
+
+- 最佳实践
+  - 使用类型安全的目标类型（如 Vec<RefnoEnum>），避免泛型 JSON
+  - 批量查询优于循环查询
+  - 合理限制层级范围，避免无限深度的大范围查询
+  - 充分利用带有 #[cached] 的查询函数缓存

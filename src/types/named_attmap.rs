@@ -7,17 +7,21 @@ use crate::prim_geo::cylinder::SCylinder;
 use crate::prim_geo::*;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::db_tool::{db1_dehash, db1_hash};
+use crate::tool::dir_tool::parse_ori_str_to_dquat;
 use crate::tool::float_tool::*;
 use crate::tool::math_tool::*;
 use crate::types::attmap::AttrMap;
 use crate::types::named_attvalue::NamedAttrValue;
 use crate::utils::{value_to_bool, value_to_f32, value_to_i32, value_to_string};
 use crate::{
-    AttrVal, RefI32Tuple, RefU64, RefnoEnum, SurlValue, cal_ori_by_extru_axis,
-    cal_ori_by_z_axis_ref_x, cal_ori_by_z_axis_ref_y, get_default_pdms_db_info,
+    AttrVal, RefI32Tuple, RefU64, RefnoEnum, SurlValue, get_default_pdms_db_info,
+    rs_surreal::spatial::{
+        construct_basis_z_extrusion, construct_basis_z_ref_x, construct_basis_z_ref_y,
+    },
 };
 use crate::{pdms_types::*, query_refno_sesno};
 use bevy_ecs::component::Component;
+#[cfg(feature = "reflect")]
 use bevy_reflect::{DynamicStruct, Reflect};
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, DMat3, DQuat, DVec3, Mat3, Mat4, Quat, Vec3};
@@ -1102,14 +1106,14 @@ impl NamedAttrMap {
         if self.contains_key("ZDIR") {
             let axis_dir = self.get_dvec3("ZDIR").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = cal_quat_by_zdir_with_xref(axis_dir);
+                quat = construct_basis_z_xref(axis_dir);
                 // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
             }
         } else if self.contains_key("OPDI") {
             //PJOI 的方向
             let axis_dir = self.get_dvec3("OPDI").unwrap_or_default().normalize();
             if axis_dir.is_normalized() {
-                quat = cal_quat_by_zdir_with_xref(axis_dir);
+                quat = construct_basis_z_xref(axis_dir);
             }
         } else {
             match type_name {
@@ -1126,8 +1130,17 @@ impl NamedAttrMap {
                     }
                 }
                 _ => {
-                    let angs = self.get_dvec3("ORI")?;
-                    quat = angles_to_ori(angs)?;
+                    if let Some(angs) = self.get_dvec3("ORI") {
+                        quat = angles_to_ori(angs)?;
+                    } else if let Some(s) = self.get_str("ORI") {
+                        if let Ok(q) = parse_ori_str_to_dquat(s) {
+                            quat = q;
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        return None;
+                    }
                 }
             }
         }

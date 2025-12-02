@@ -145,11 +145,73 @@ impl BrepShapeTrait for Revolution {
         Some(PdmsGeoParam::PrimRevolution(self.clone()))
     }
 
-    ///使用CSG生成旋转体的mesh
+    /// 使用统一的 ProfileProcessor 生成旋转体的mesh
+    ///
+    /// 统一流程：cavalier_contours + i_triangle
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
-        use crate::geometry::csg::generate_revolution_mesh;
-        use crate::mesh_precision::LodMeshSettings;
-        generate_revolution_mesh(self, &LodMeshSettings::default(), false).map(|g| g.mesh)
+        if !self.check_valid() {
+            return None;
+        }
+        if self.verts.is_empty() || self.verts[0].len() < 3 {
+            return None;
+        }
+
+        // 使用统一的 ProfileProcessor 处理截面（支持多轮廓和孔洞）
+        use crate::prim_geo::profile_processor::{ProfileProcessor, revolve_profile};
+
+        let mut verts2d: Vec<Vec<Vec2>> = Vec::with_capacity(self.verts.len());
+        let mut frads: Vec<Vec<f32>> = Vec::with_capacity(self.verts.len());
+        for wire in &self.verts {
+            let mut v2 = Vec::with_capacity(wire.len());
+            let mut r = Vec::with_capacity(wire.len());
+            for p in wire {
+                v2.push(Vec2::new(p.x, p.y));
+                r.push(p.z);
+            }
+            verts2d.push(v2);
+            frads.push(r);
+        }
+
+        let processor = ProfileProcessor::from_wires(verts2d, frads, true)
+            .map_err(|e| {
+                println!("⚠️  [Revolution] ProfileProcessor 创建失败: {}", e);
+                e
+            })
+            .ok()?;
+        let profile = processor.process("REVOLUTION", None).ok()?;
+
+        // 计算旋转参数
+        let segments = ((self.angle.abs() / 10.0).ceil() as usize).clamp(8, 64);
+        let rot_axis = self.rot_dir.normalize();
+        let rot_center = self.rot_pt;
+
+        // 旋转截面
+        let revolved = revolve_profile(&profile, self.angle, segments, rot_axis, rot_center);
+
+        // 计算 UV 坐标（简化版）
+        let uvs = revolved
+            .vertices
+            .iter()
+            .enumerate()
+            .map(|(i, _)| {
+                let seg_idx = i / profile.contour_points.len();
+                let prof_idx = i % profile.contour_points.len();
+                [
+                    prof_idx as f32 / profile.contour_points.len() as f32,
+                    seg_idx as f32 / segments as f32,
+                ]
+            })
+            .collect();
+
+        Some(PlantMesh {
+            vertices: revolved.vertices,
+            normals: revolved.normals,
+            uvs,
+            indices: revolved.indices,
+            wire_vertices: Vec::new(),
+            edges: Vec::new(),
+            aabb: None,
+        })
     }
 
     fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {

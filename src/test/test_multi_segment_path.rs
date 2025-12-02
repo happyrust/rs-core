@@ -476,12 +476,14 @@ fn test_single_line_sweep_solid_creation() {
         profile,
         drns: Some(DVec3::Z),
         drne: Some(DVec3::Z),
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: 500.0,
         path: line_path.clone(),
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     println!("  创建SweepSolid: 圆形截面(dia=100mm), 直线长度500mm");
@@ -558,12 +560,14 @@ fn test_single_arc_sweep_solid_creation() {
         profile,
         drns: Some(DVec3::Z),
         drne: Some(DVec3::Z),
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: arc_length,
         path: arc_path.clone(),
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     println!("  路径段数: {}", arc_path.segment_count());
@@ -647,12 +651,14 @@ fn test_multi_segment_sweep_solid_creation() {
         profile,
         drns: Some(DVec3::Z),
         drne: Some(DVec3::Z),
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: total_length,
         path: multi_path.clone(),
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     println!("  创建SweepSolid: 矩形截面(60x40mm), 3段混合路径");
@@ -759,12 +765,14 @@ fn test_gensec_spine_sweep_solid_creation() {
         profile,
         drns: Some(DVec3::Z),
         drne: Some(DVec3::Z),
-        bangle: 0.0,
         plax: Vec3::Y,
+        bangle: 0.0,
         extrude_dir: DVec3::Z,
         height: total_length,
         path: gensec_path.clone(),
         lmirror: false,
+        spine_segments: vec![],
+        segment_transforms: vec![],
     };
 
     // 验证基本属性

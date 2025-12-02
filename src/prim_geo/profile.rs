@@ -9,33 +9,72 @@ use crate::prim_geo::spine::{
     Arc3D, Line3D, SegmentPath, Spine3D, SpineCurveType, SweepPath3D, circum_center,
 };
 use crate::prim_geo::{CateCsgShapeMap, SweepSolid};
+use crate::rs_surreal::query::{get_owner_refno_by_type, get_owner_type_name};
+use crate::rs_surreal::spatial::{construct_basis_z_default, get_spline_pts};
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 use crate::tool::math_tool::{
     dquat_to_pdms_ori_xyz_str, quat_to_pdms_ori_str, to_pdms_ori_str, to_pdms_vec_str,
 };
+use crate::transform::{calculate_plax_transform, get_local_transform};
 use crate::{RefU64, get_world_transform};
 use anyhow::anyhow;
 use bevy_transform::prelude::Transform;
 use dashmap::{DashMap, DashSet};
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec3};
+
 use std::vec::Vec;
 
-/// 将多个 Spine3D 段连接成连续的可序列化路径
+const FRAME_EPS: f32 = 1e-6;
+
+// 构建以路径切线为主轴的正交基，plax 作为滚转参考
+fn build_frenet_rotation(tangent: Vec3, ref_up: Vec3) -> Quat {
+    let tangent = tangent.normalize_or_zero();
+    if tangent.length_squared() < FRAME_EPS {
+        return Quat::IDENTITY;
+    }
+
+    // 将 ref_up 投影到切线的正交平面，优先使用该平面内的方向
+    let mut up = (ref_up - tangent * ref_up.dot(tangent)).normalize_or_zero();
+
+    // 若投影仍退化（ref_up 与切线平行或无效），选取任意正交向量兜底
+    if up.length_squared() < FRAME_EPS {
+        up = tangent.any_orthogonal_vector();
+    }
+
+    let right = up.cross(tangent).normalize_or_zero();
+    Quat::from_mat3(&Mat3::from_cols(right, up, tangent))
+}
+
+/// 将多个 Spine3D 段转换为归一化的路径段和对应的变换
+///
+/// **关键架构改进**：将路径几何与实例化变换分离
+/// - **归一化路径**：所有段都从原点 (0,0,0) 开始，沿单位方向延伸
+/// - **完整变换**：包含每段起点的 position、rotation 和 scale
 ///
 /// 参数：
-/// - segments: Spine3D 段的列表
+/// - segments: Spine3D 段的列表（包含实际世界坐标）
 ///
 /// 返回：
-/// - Ok(Vec<SegmentPath>): 转换后的连续路径段列表
+/// - Ok((Vec<SegmentPath>, Vec<Transform>)): (归一化路径段, 每段的完整变换)
 /// - Err: 如果段不连续或转换失败
-fn connect_spine_segments(segments: Vec<Spine3D>) -> anyhow::Result<Vec<SegmentPath>> {
+///
+/// 参数：
+/// - segments: Spine3D 段列表
+/// - plax: 截面参考方向，用于计算 Frenet 标架
+/// - bangle: 绕路径方向的旋转角度（度数）
+async fn normalize_spine_segments(
+    segments: Vec<Spine3D>,
+    plax: Vec3,
+    bangle: f32,
+) -> anyhow::Result<(Vec<SegmentPath>, Vec<Transform>)> {
     const EPSILON: f32 = 1e-3;
-    let mut result = Vec::new();
+    let mut normalized_segments = Vec::new();
+    let mut transforms = Vec::new();
 
     if segments.is_empty() {
-        return Ok(result);
+        return Ok((normalized_segments, transforms));
     }
 
     for (i, spine) in segments.iter().enumerate() {
@@ -61,50 +100,145 @@ fn connect_spine_segments(segments: Vec<Spine3D>) -> anyhow::Result<Vec<SegmentP
             }
         }
 
-        // 根据曲线类型转换为 SegmentPath
+        // 根据曲线类型创建归一化的 SegmentPath 和对应的 Transform
         match spine.curve_type {
             SpineCurveType::LINE => {
-                result.push(SegmentPath::Line(Line3D {
-                    start: spine.pt0,
-                    end: spine.pt1,
+                // 计算实际方向和长度
+                let direction = (spine.pt1 - spine.pt0).normalize_or_zero();
+                let length = spine.pt0.distance(spine.pt1);
+
+                // 归一化路径：从原点沿 Z 轴10.0单位长度（与sweep_solid.rs保持一致）
+                normalized_segments.push(SegmentPath::Line(Line3D {
+                    start: Vec3::ZERO,
+                    end: Vec3::Z * 10.0,
                     is_spine: true,
                 }));
+
+                // 计算 Frenet 标架旋转：路径为主轴，plax 决定滚转参考
+                let frenet_rotation = build_frenet_rotation(direction, plax);
+
+                // 计算 bangle 旋转（绕路径方向，即 Z 轴）
+                let bangle_rotation = Quat::from_axis_angle(direction, bangle.to_radians());
+
+                // 组合旋转：Frenet 标架旋转 × bangle 旋转
+                let final_rotation = frenet_rotation * bangle_rotation;
+
+                // 完整变换：包含位置、Frenet 标架 + bangle 旋转和缩放
+                transforms.push(Transform {
+                    translation: spine.pt0,                    // 起点位置
+                    rotation: final_rotation,                  // Frenet 标架旋转 × bangle 旋转
+                    scale: Vec3::new(1.0, 1.0, length / 10.0), // Z 方向缩放：实际长度/10.0
+                });
             }
             SpineCurveType::THRU => {
                 // 通过三点确定圆弧
                 let center = circum_center(spine.pt0, spine.pt1, spine.thru_pt);
+                let radius = center.distance(spine.pt0);
                 let vec0 = spine.pt0 - spine.thru_pt;
                 let vec1 = spine.pt1 - spine.thru_pt;
                 let angle = (PI - vec0.angle_between(vec1)) * 2.0;
                 let axis = vec1.cross(vec0).normalize();
+                let clock_wise = axis.z < 0.0;
 
-                result.push(SegmentPath::Arc(Arc3D {
-                    center: vec3_round_3(center),
-                    radius: f32_round_3(center.distance(spine.pt0)),
+                // 归一化圆弧：从原点开始，单位半径
+                normalized_segments.push(SegmentPath::Arc(Arc3D {
+                    center: Vec3::ZERO,
+                    radius: 1.0,
                     angle,
-                    start_pt: spine.pt0,
-                    clock_wise: axis.z < 0.0,
+                    start_pt: Vec3::X, // 单位圆上的起点
+                    clock_wise,
                     axis,
                     pref_axis: spine.preferred_dir,
                 }));
+
+                // 计算圆弧起点处的切线方向
+                // 1. 径向量：从圆心指向起点
+                let radial = (spine.pt0 - center).normalize_or_zero();
+
+                // 2. 切线方向：axis × radial（顺时针则取反）
+                let tangent = if clock_wise {
+                    -axis.cross(radial).normalize_or_zero()
+                } else {
+                    axis.cross(radial).normalize_or_zero()
+                };
+
+                // 3. 参考方向：优先使用 spine.preferred_dir，否则使用 plax
+                let ref_dir = if spine.preferred_dir.length_squared() > 1e-6 {
+                    spine.preferred_dir.normalize_or_zero()
+                } else {
+                    plax.normalize_or_zero()
+                };
+
+                // 4. 计算 Frenet 标架（与 LINE 类似，防止 ref_dir 与 tangent 平行导致退化）
+                let frenet_rotation = build_frenet_rotation(tangent, ref_dir);
+
+                // 5. 计算 bangle 旋转（绕切线方向）
+                let bangle_rotation = Quat::from_axis_angle(tangent, bangle.to_radians());
+
+                // 6. 组合旋转：Frenet 标架旋转 × bangle 旋转
+                let final_rotation = frenet_rotation * bangle_rotation;
+
+                // 完整变换：位置、Frenet 标架 + bangle 旋转和缩放
+                transforms.push(Transform {
+                    translation: center,        // 圆心位置
+                    rotation: final_rotation,   // Frenet 标架旋转 × bangle 旋转
+                    scale: Vec3::splat(radius), // 统一缩放到实际半径
+                });
             }
             SpineCurveType::CENT => {
                 // 中心点已知的圆弧
                 let center = spine.center_pt;
+                let radius = center.distance(spine.pt0);
                 let vec0 = spine.pt0 - center;
                 let vec1 = spine.pt1 - center;
                 let angle = (PI - vec0.angle_between(vec1)) * 2.0;
                 let axis = vec1.cross(vec0).normalize();
+                let clock_wise = axis.z < 0.0;
 
-                result.push(SegmentPath::Arc(Arc3D {
-                    center: vec3_round_3(center),
-                    radius: f32_round_3(center.distance(spine.pt0)),
+                // 归一化圆弧：从原点开始，单位半径
+                normalized_segments.push(SegmentPath::Arc(Arc3D {
+                    center: Vec3::ZERO,
+                    radius: 1.0,
                     angle,
-                    start_pt: spine.pt0,
-                    clock_wise: axis.z < 0.0,
+                    start_pt: Vec3::X, // 单位圆上的起点
+                    clock_wise,
                     axis,
                     pref_axis: spine.preferred_dir,
                 }));
+
+                // 计算圆弧起点处的切线方向
+                // 1. 径向量：从圆心指向起点
+                let radial = (spine.pt0 - center).normalize_or_zero();
+
+                // 2. 切线方向：axis × radial（顺时针则取反）
+                let tangent = if clock_wise {
+                    -axis.cross(radial).normalize_or_zero()
+                } else {
+                    axis.cross(radial).normalize_or_zero()
+                };
+
+                // 3. 参考方向：优先使用 spine.preferred_dir，否则使用 plax
+                let ref_dir = if spine.preferred_dir.length_squared() > 1e-6 {
+                    spine.preferred_dir.normalize_or_zero()
+                } else {
+                    plax.normalize_or_zero()
+                };
+
+                // 4. 计算 Frenet 标架（与 LINE 类似，防止 ref_dir 与 tangent 平行导致退化）
+                let frenet_rotation = build_frenet_rotation(tangent, ref_dir);
+
+                // 5. 计算 bangle 旋转（绕切线方向）
+                let bangle_rotation = Quat::from_axis_angle(tangent, bangle.to_radians());
+
+                // 6. 组合旋转：Frenet 标架旋转 × bangle 旋转
+                let final_rotation = frenet_rotation * bangle_rotation;
+
+                // 完整变换：位置、Frenet 标架 + bangle 旋转和缩放
+                transforms.push(Transform {
+                    translation: center,        // 圆心位置
+                    rotation: final_rotation,   // Frenet 标架旋转 × bangle 旋转
+                    scale: Vec3::splat(radius), // 统一缩放到实际半径
+                });
             }
             SpineCurveType::UNKNOWN => {
                 tracing::warn!("遇到 UNKNOWN 类型的 Spine 曲线，跳过");
@@ -112,9 +246,29 @@ fn connect_spine_segments(segments: Vec<Spine3D>) -> anyhow::Result<Vec<SegmentP
         }
     }
 
-    Ok(result)
+    Ok((normalized_segments, transforms))
 }
 
+/// 为给定 PDMS 元素构建与剖面（Profile）相关的 CSG 几何体。
+///
+/// 该函数会根据元素的属性与几何描述生成 Sweep / Loft 实体：
+/// - 当只有 `POSS` / `POSE` 两点时，沿两点连线进行直线拉伸生成剖面实体；
+/// - 当存在 `SPINE` / `POINSP` / `CURVE` 子元素时，将多段 Spine 曲线连接成一条
+///   连续路径，并沿该路径进行放样生成剖面实体；
+/// - 对 `GENSEC` 元素，会优先根据 SPINE 方向计算旋转朝向，其它类型则使用
+///   `PLAX` 属性计算朝向。
+///
+/// 参数：
+/// - `refno`：当前元素的 Refno，用于查询属性且作为结果映射的键；
+/// - `geom_info`：类别几何信息，其中的 `Profile` 描述剖面形状及其 `PLAX` 等参数；
+/// - `csg_shapes_map`：输出用的 CSG 形体映射，本函数会向其中追加生成的
+///   `CateCsgShape`。
+///
+/// 返回值：
+/// - `Ok(true)`：已根据当前元素尝试生成剖面几何（可能包含直线拉伸或沿 Spine 放样）；
+/// - `Ok(false)`：不存在可用的几何或 Spine 路径（例如没有 Profile 或路径为空），
+///   跳过当前元素；
+/// - `Err`：在查询属性或组装路径/几何过程中发生错误。
 pub async fn create_profile_geos(
     refno: RefnoEnum,
     geom_info: &CateGeomsInfo,
@@ -128,43 +282,51 @@ pub async fn create_profile_geos(
     let type_name = att.get_type_str();
     let mut plax = Vec3::Y;
     let mut extrude_dir = DVec3::Z;
-    let mat = crate::get_world_mat4(refno, true)
-        .await?
-        .unwrap_or_default();
-    // dbg!(&mat);
-    let (_, rot, _) = mat.to_scale_rotation_translation();
-    // dbg!(dquat_to_pdms_ori_xyz_str(&rot));
-    let inv_quat = rot.inverse();
-    // dbg!((refno, att.get_dvec3("DRNS"), att.get_dvec3("DRNE")));
+
+    // 使用统一的变换策略计算局部旋转：
+    // 优先通过 get_local_transform(refno, owner) 获取当前构件相对于父节点的局部 Transform，
+    // 然后用其 rotation 的逆把 Parent 空间下的 DRNS/DRNE 转换到本地截面坐标系。
+    // 如果局部变换无法计算，则回退到 ORI 提供的旋转逻辑。
+    let parent_refno = att.get_owner();
+    let inv_local_rot = if parent_refno.is_unset() {
+        att.get_rotation().unwrap_or(DQuat::IDENTITY).inverse()
+    } else {
+        match get_local_transform(refno).await? {
+            Some(local_t) => local_t.rotation.as_dquat().inverse(),
+            None => att.get_rotation().unwrap_or(DQuat::IDENTITY).inverse(),
+        }
+    };
+
     let mut drns = att
         .get_dvec3("DRNS")
-        .map(|x| inv_quat.mul_vec3(x.normalize()));
+        .map(|x| inv_local_rot.mul_vec3(x.normalize()));
     let mut drne = att
         .get_dvec3("DRNE")
-        .map(|x| inv_quat.mul_vec3(x.normalize()));
+        .map(|x| inv_local_rot.mul_vec3(x.normalize()));
     // dbg!((refno, drns, drne));
-    let parent_refno = att.get_owner();
-    let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" {
+
+    // 性能优化：提前缓存元素类型信息，避免在循环中重复处理
+    let is_gensec_element = type_name == "GENSEC";
+    let gensec_refno = if is_gensec_element {
+        // 如果是GENSEC，使用当前refno
+        Some(refno)
+    } else {
+        None
+    };
+    // let parent_refno = att.get_owner();
+    let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" || type_name == "STWALL" {
         let children_refnos = crate::collect_descendant_filter_ids(&[refno], &["SPINE"], None)
             .await
             .unwrap_or_default();
         let mut paths = vec![];
         for &spine_refno in children_refnos.iter() {
             let spine_att = crate::get_named_attmap(spine_refno).await?;
-            let spine_mat = crate::get_world_mat4(spine_refno, true)
-                .await?
-                .unwrap_or_default();
-            let inv_mat = spine_mat.inverse();
             //如果是墙，会有这两个属性
-            drns = spine_att
-                .get_dvec3("DRNS")
-                .map(|x| inv_mat.transform_vector3(x.normalize()));
+            drns = spine_att.get_dvec3("DRNS").map(|x| x.normalize());
             if drns.is_some() && drns.unwrap().is_nan() {
                 drns = None;
             }
-            drne = spine_att
-                .get_dvec3("DRNE")
-                .map(|x| inv_mat.transform_vector3(x.normalize()));
+            drne = spine_att.get_dvec3("DRNE").map(|x| x.normalize());
             if drne.is_some() && drne.unwrap().is_nan() {
                 drne = None;
             }
@@ -185,7 +347,7 @@ pub async fn create_profile_geos(
                 let t2 = att2.get_type_str();
                 if t1 == "POINSP" && t2 == "POINSP" {
                     paths.push(Spine3D {
-                        refno: att1.get_refno().unwrap(),
+                        refno: att1.get_refno().unwrap(), // 起点 POINSP 的 refno
                         pt0: att1.get_position().unwrap_or_default(),
                         pt1: att2.get_position().unwrap_or_default(),
                         curve_type: SpineCurveType::LINE,
@@ -205,7 +367,7 @@ pub async fn create_profile_geos(
                         _ => SpineCurveType::UNKNOWN,
                     };
                     paths.push(Spine3D {
-                        refno: att2.get_refno().unwrap(),
+                        refno: att1.get_refno().unwrap(), // 修正：使用起点 POINSP 的 refno，而不是 CURVE 的 refno
                         pt0,
                         pt1,
                         thru_pt: mid_pt,
@@ -224,63 +386,52 @@ pub async fn create_profile_geos(
         vec![]
     };
 
+    // 如果没有 SPINE 子元素，尝试通过 POSS/POSE 创建简单拉伸路径
     if spine_paths.len() == 0 {
         if let Some(poss) = att.get_poss()
             && let Some(pose) = att.get_pose()
         {
-            let height = pose.distance(poss);
-            //还原成相对坐标系下的拉升方向
-            for (i, geom) in geos.iter().enumerate() {
-                if let CateGeoParam::Profile(profile) = geom {
-                    let Some(profile_refno) = profile.get_refno() else {
-                        continue;
-                    };
-                    plax = profile.get_plax();
-                    let bangle = att.get_f32("BANG").unwrap_or_default();
-
-                    let path = Line3D {
-                        start: Default::default(),
-                        end: pose - poss,
-                        is_spine: false,
-                    };
-
-                    let solid = SweepSolid {
-                        profile: profile.clone(),
-                        drns,
-                        drne,
-                        bangle,
-                        plax,
-                        extrude_dir,
-                        height,
-                        path: SweepPath3D::from_line(path),
-                        lmirror: att.get_bool("LMIRR").unwrap_or_default(),
-                    };
-                    csg_shapes_map
-                        .entry(refno)
-                        .or_insert(Vec::new())
-                        .push(CateCsgShape {
-                            refno: profile_refno,
-                            csg_shape: Box::new(solid),
-                            transform: Transform::IDENTITY,
-                            visible: true,
-                            is_tubi: false,
-                            shape_err: None,
-                            pts: vec![],
-                            is_ngmr: false,
-                        });
-                }
+            let delta = pose - poss;
+            if delta.length_squared() < FRAME_EPS {
+                tracing::warn!("POSS 和 POSE 重合，无法计算拉伸方向，refno = {:?}", refno);
+                return Ok(false);
             }
+
+            // 将 POSS/POSE 转换为 Spine3D::LINE 段，复用 normalize_spine_segments 逻辑
+            spine_paths.push(Spine3D {
+                refno,
+                pt0: poss,
+                pt1: pose,
+                curve_type: SpineCurveType::LINE,
+                preferred_dir: Vec3::Y, // 使用默认参考方向，后续会用 plax 覆盖
+                ..Default::default()
+            });
         }
-    } else {
+    }
+
+    // 统一处理所有路径（包括 SPINE 和 POSS/POSE 转换的路径）
+    if spine_paths.len() > 0 {
         // 将所有 Spine3D 段连接成一条连续路径
-        match connect_spine_segments(spine_paths.clone()) {
-            Ok(connected_paths) => {
-                if connected_paths.is_empty() {
-                    tracing::warn!("连接 Spine 段后为空，跳过处理");
+        // 提前获取第一个 profile 的 plax 和元素的 bangle
+        let first_plax = geos.iter()
+            .find_map(|g| {
+                if let CateGeoParam::Profile(profile) = g {
+                    Some(profile.get_plax())
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(Vec3::Y);
+        let bangle = att.get_f32("BANG").unwrap_or_default();
+
+        match normalize_spine_segments(spine_paths.clone(), first_plax, bangle).await {
+            Ok((normalized_paths, segment_transforms)) => {
+                if normalized_paths.is_empty() {
+                    tracing::warn!("归一化 Spine 段后为空，跳过处理");
                     return Ok(false);
                 }
 
-                // 为每个 profile 创建一个包含完整路径的 SweepSolid
+                // 为每个 profile 创建一个包含归一化路径的 SweepSolid
                 for (i, geom) in geos.iter().enumerate() {
                     if let CateGeoParam::Profile(profile) = geom {
                         let Some(profile_refno) = profile.get_refno() else {
@@ -288,10 +439,8 @@ pub async fn create_profile_geos(
                         };
 
                         plax = profile.get_plax();
-                        let bangle = att.get_f32("BANG").unwrap_or_default();
 
-                        // 创建路径
-                        let sweep_path = SweepPath3D::from_segments(connected_paths.clone());
+                        let sweep_path = SweepPath3D::from_segments(normalized_paths.clone());
 
                         // 验证路径连续性
                         let (is_continuous, discontinuity_index) = sweep_path.validate_continuity();
@@ -302,17 +451,22 @@ pub async fn create_profile_geos(
                             );
                         }
 
+                        // 注意：height 现在是归一化路径的长度
+                        // 实际长度由 segment_transforms 中的 scale 控制
                         let height = sweep_path.length();
+
                         let loft = SweepSolid {
                             profile: profile.clone(),
-                            drns,
-                            drne,
-                            bangle,
+                            drns: None,
+                            drne: None,
                             plax,
+                            bangle: att.get_f32("BANG").unwrap_or_default(),
                             extrude_dir,
                             height,
                             path: sweep_path,
                             lmirror: att.get_bool("LMIRR").unwrap_or_default(),
+                            spine_segments: spine_paths.clone(), // 存储原始 Spine3D 段信息（用于调试）
+                            segment_transforms: segment_transforms.clone(), // 存储完整变换（位置+旋转+缩放）
                         };
 
                         // 使用第一个 spine 的 refno 生成 hash
@@ -320,17 +474,32 @@ pub async fn create_profile_geos(
                             .first()
                             .map(|s| s.refno)
                             .unwrap_or(RefnoEnum::from(RefU64(0)));
-                        let hash = profile_refno.hash_with_another_refno(first_spine_refno);
+                        // let hash = profile_refno.hash_with_another_refno(first_spine_refno);
 
-                        // Transform 使用 IDENTITY，因为多段路径已经包含了世界坐标
-                        let mut transform = Transform::IDENTITY;
-                        transform.scale = loft.get_scaled_vec3();
+                        // 获取第一段的完整变换用于实例化
+                        let first_transform = segment_transforms
+                            .first()
+                            .cloned()
+                            .unwrap_or_else(|| {
+                                tracing::warn!("segment_transforms 为空，使用 Transform::IDENTITY");
+                                Transform::IDENTITY
+                            });
+
+                        // let orientation_str = crate::tool::math_tool::quat_to_pdms_ori_str(
+                        //     &first_transform.rotation,
+                        //     false,
+                        // );
+
+                        // 实例化 Transform：使用 translation、rotation 和 scale
+                        // mesh 是基于归一化路径生成的，所以实例化时需要应用 scale 来缩放回实际尺寸
+                        let transform = first_transform;
 
                         csg_shapes_map
                             .entry(refno)
                             .or_insert(Vec::new())
                             .push(CateCsgShape {
-                                refno: RefU64(hash).into(),
+                                // refno: RefU64(hash).into(),
+                                refno: profile_refno,
                                 csg_shape: Box::new(loft),
                                 transform,
                                 visible: true,
@@ -347,6 +516,10 @@ pub async fn create_profile_geos(
                 return Err(e);
             }
         }
+    } else {
+        // 既没有 SPINE 也没有 POSS/POSE，无法生成几何
+        tracing::debug!("元素 {:?} 既没有 SPINE 子元素也没有 POSS/POSE 属性，跳过几何生成", refno);
+        return Ok(false);
     }
     Ok(true)
 }

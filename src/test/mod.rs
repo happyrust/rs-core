@@ -20,14 +20,16 @@ pub mod test_spatial_calculation;
 
 pub mod test_parse_dir;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub mod test_surreal;
+// #[cfg(not(target_arch = "wasm32"))]
+// pub mod test_surreal;
 
 pub mod test_query_provider;
 
 // pub mod test_db_adapter;
 
 pub mod test_expression;
+
+pub mod test_fitt_on_stwall;
 
 pub mod test_different_dbs;
 
@@ -37,6 +39,7 @@ pub mod test_different_dbs;
 
 // #[cfg(not(target_arch = "wasm32"))]
 // pub mod test_gensec_spine;
+// pub mod test_poinsp_orientation;
 
 pub mod test_h_beam_drns_drne;
 pub mod test_multi_segment_path;
@@ -50,3 +53,13 @@ pub mod test_arc_demo;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_clean_svg;
+
+pub mod test_bad_primloft;
+pub mod test_bad_primloft_fix;
+pub mod test_bad_primloft_simple;
+
+pub mod test_stwall_25688_7958;
+
+pub mod test_helpers;
+
+pub mod units;

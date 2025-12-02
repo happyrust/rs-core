@@ -457,7 +457,14 @@ pub async fn delete_inst_relate_cascade(
 /// # 参数
 /// * `chunk_size` - 分批处理的大小
 pub async fn delete_all_model_data() -> anyhow::Result<()> {
-    let tables = ["inst_relate", "inst_geo", "inst_info", "geo_relate"];
+    let tables = [
+        "inst_relate",
+        "inst_geo",
+        "inst_info",
+        "geo_relate",
+        "neg_relate",
+        "ngmr_relate",
+    ];
     let mut sql = "BEGIN TRANSACTION;\n".to_string();
 
     for table in &tables {

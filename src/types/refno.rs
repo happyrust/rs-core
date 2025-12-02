@@ -1,5 +1,6 @@
 use crate::utils::{IntoRecordId, RecordIdExt};
 use bevy_ecs::component::Component;
+#[cfg(feature = "reflect")]
 use bevy_reflect::Reflect;
 #[cfg(feature = "sea-orm")]
 use sea_orm::entity::prelude::*;
@@ -30,9 +31,9 @@ use surrealdb::types as surrealdb_types;
     PartialEq,
     PartialOrd,
     Ord,
-    Reflect,
     SurrealValue,
 )]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
 pub struct RefNo {
     id: String,
     sesno: Option<u16>,
@@ -54,9 +55,9 @@ pub struct ParseRefU64Error;
     PartialEq,
     PartialOrd,
     Ord,
-    Reflect,
     // SurrealValue,
 )]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
 pub struct RefU64(pub u64);
 
 impl SurrealValue for RefU64 {
@@ -655,6 +656,15 @@ impl Into<u32> for RefnoSesno {
 pub enum RefnoEnum {
     Refno(RefU64),
     SesRef(RefnoSesno),
+}
+
+impl RefnoEnum {
+    pub fn is_unset(&self) -> bool {
+        match self {
+            RefnoEnum::Refno(r) => r.is_unset(),
+            RefnoEnum::SesRef(s) => s.refno.is_unset(),
+        }
+    }
 }
 
 impl Default for RefnoEnum {

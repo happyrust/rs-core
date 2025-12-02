@@ -1,9 +1,12 @@
 use dashmap::DashMap;
 use lazy_static::lazy_static;
+use lru::LruCache;
 use memchr::memmem::{find, find_iter};
 use once_cell::sync::Lazy;
+use parking_lot::Mutex;
 use std::fs::File;
 use std::io::Read;
+use std::num::NonZeroUsize;
 
 use crate::types::db_info::PdmsDatabaseInfo;
 
@@ -11,6 +14,13 @@ lazy_static! {
     pub static ref GLOBAL_UDA_NAME_MAP: DashMap<u32, String> = DashMap::new();
     pub static ref GLOBAL_UDA_UKEY_MAP: DashMap<String, u32> = DashMap::new();
 }
+
+/// 哈希反查缓存
+///
+/// 使用 LRU 缓存最近查询的结果，避免重复计算
+/// 缓存大小设置为 1000，适合大多数使用场景
+static DEHASH_CACHE: Lazy<Mutex<LruCache<u32, String>>> =
+    Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
 
 /// 从bincode数据加载PdmsDatabaseInfo
 pub fn read_attr_info_config_from_bin(config_path: &str) -> PdmsDatabaseInfo {
@@ -52,8 +62,40 @@ pub fn get_uda_index(hash: u32) -> Option<u32> {
     }
 }
 
+/// 将哈希值反向转换为属性名称
+///
+/// 使用 LRU 缓存优化高频查询，避免重复计算
+///
+/// # 参数
+/// * `hash` - 属性的哈希值
+///
+/// # 返回值
+/// 反哈希后的属性名称字符串
 #[inline]
 pub fn db1_dehash(hash: u32) -> String {
+    // 先检查缓存
+    {
+        let mut cache = DEHASH_CACHE.lock();
+        if let Some(cached) = cache.get(&hash) {
+            return cached.clone();
+        }
+    }
+
+    // 缓存未命中，计算结果
+    let result = db1_dehash_uncached(hash);
+
+    // 将结果存入缓存
+    {
+        let mut cache = DEHASH_CACHE.lock();
+        cache.put(hash, result.clone());
+    }
+
+    result
+}
+
+/// 不使用缓存的哈希反查（内部函数）
+#[inline]
+fn db1_dehash_uncached(hash: u32) -> String {
     let mut result = String::new();
     if hash > 0x171FAD39 {
         let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
@@ -67,7 +109,7 @@ pub fn db1_dehash(hash: u32) -> String {
         }
     } else {
         if hash <= 0x81BF1 {
-            return "".to_string();
+            return String::new();
         }
         let mut k = (hash - 0x81BF1) as i32;
         while k > 0 {
