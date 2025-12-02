@@ -1,1 +1,1 @@
-pub mod test_world_spatial;
+pub mod test_spatial;
