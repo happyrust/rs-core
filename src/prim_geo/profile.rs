@@ -51,19 +51,20 @@ fn build_frenet_rotation(tangent: Vec3, ref_up: Vec3) -> Quat {
 ///
 /// **关键架构改进**：将路径几何与实例化变换分离
 /// - **归一化路径**：所有段都从原点 (0,0,0) 开始，沿单位方向延伸
-/// - **完整变换**：包含每段起点的 position、rotation 和 scale
+/// - **完整变换**：包含每段起点的 position（相对坐标）、rotation 和 scale
+///
+/// **重要**：输入的 segments 中的坐标应该是**相对坐标**（相对于第一个 POINSP 或 POSS 的位置）。
+/// 这样第一段的 `transform.translation` 就是 `Vec3::ZERO`，几何体的世界位置由外部的
+/// `inst_info.world_transform` 控制。
 ///
 /// 参数：
-/// - segments: Spine3D 段的列表（包含实际世界坐标）
+/// - segments: Spine3D 段列表（坐标为相对于参考原点的偏移）
+/// - plax: 截面参考方向，用于计算 Frenet 标架
+/// - bangle: 绕路径方向的旋转角度（度数）
 ///
 /// 返回：
 /// - Ok((Vec<SegmentPath>, Vec<Transform>)): (归一化路径段, 每段的完整变换)
 /// - Err: 如果段不连续或转换失败
-///
-/// 参数：
-/// - segments: Spine3D 段列表
-/// - plax: 截面参考方向，用于计算 Frenet 标架
-/// - bangle: 绕路径方向的旋转角度（度数）
 async fn normalize_spine_segments(
     segments: Vec<Spine3D>,
     plax: Vec3,
@@ -314,6 +315,9 @@ pub async fn create_profile_geos(
         None
     };
     // let parent_refno = att.get_owner();
+    // 记录第一个点的世界坐标作为参考原点，用于将所有路径点转换为相对坐标
+    let mut spine_origin: Option<Vec3> = None;
+
     let mut spine_paths = if type_name == "GENSEC" || type_name == "WALL" || type_name == "STWALL" {
         let children_refnos = crate::collect_descendant_filter_ids(&[refno], &["SPINE"], None)
             .await
@@ -339,6 +343,19 @@ pub async fn create_profile_geos(
                 continue;
             }
 
+            // 获取第一个 POINSP 的位置作为参考原点（如果尚未设置）
+            if spine_origin.is_none() {
+                for att in ch_atts.iter() {
+                    if att.get_type_str() == "POINSP" {
+                        if let Some(pos) = att.get_position() {
+                            spine_origin = Some(pos);
+                            break;
+                        }
+                    }
+                }
+            }
+            let origin = spine_origin.unwrap_or(Vec3::ZERO);
+
             let mut i = 0;
             while i < ch_atts.len() - 1 {
                 let att1 = &ch_atts[i];
@@ -346,10 +363,13 @@ pub async fn create_profile_geos(
                 let att2 = &ch_atts[(i + 1) % len];
                 let t2 = att2.get_type_str();
                 if t1 == "POINSP" && t2 == "POINSP" {
+                    // 使用相对于参考原点的坐标
+                    let pt0_world = att1.get_position().unwrap_or_default();
+                    let pt1_world = att2.get_position().unwrap_or_default();
                     paths.push(Spine3D {
                         refno: att1.get_refno().unwrap(), // 起点 POINSP 的 refno
-                        pt0: att1.get_position().unwrap_or_default(),
-                        pt1: att2.get_position().unwrap_or_default(),
+                        pt0: pt0_world - origin,  // 相对坐标
+                        pt1: pt1_world - origin,  // 相对坐标
                         curve_type: SpineCurveType::LINE,
                         preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
                         ..Default::default()
@@ -357,9 +377,9 @@ pub async fn create_profile_geos(
                     i += 1;
                 } else if t1 == "POINSP" && t2 == "CURVE" {
                     let att3 = &ch_atts[(i + 2) % len];
-                    let pt0 = att1.get_position().unwrap_or_default();
-                    let pt1 = att3.get_position().unwrap_or_default();
-                    let mid_pt = att2.get_position().unwrap_or_default();
+                    let pt0_world = att1.get_position().unwrap_or_default();
+                    let pt1_world = att3.get_position().unwrap_or_default();
+                    let mid_pt_world = att2.get_position().unwrap_or_default();
                     let cur_type_str = att2.get_str("CURTYP").unwrap_or("unset");
                     let curve_type = match cur_type_str {
                         "CENT" => SpineCurveType::CENT,
@@ -368,10 +388,10 @@ pub async fn create_profile_geos(
                     };
                     paths.push(Spine3D {
                         refno: att1.get_refno().unwrap(), // 修正：使用起点 POINSP 的 refno，而不是 CURVE 的 refno
-                        pt0,
-                        pt1,
-                        thru_pt: mid_pt,
-                        center_pt: mid_pt,
+                        pt0: pt0_world - origin,      // 相对坐标
+                        pt1: pt1_world - origin,      // 相对坐标
+                        thru_pt: mid_pt_world - origin,    // 相对坐标
+                        center_pt: mid_pt_world - origin,  // 相对坐标
                         cond_pos: att2.get_vec3("CPOS").unwrap_or_default(),
                         curve_type,
                         preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
@@ -397,11 +417,16 @@ pub async fn create_profile_geos(
                 return Ok(false);
             }
 
-            // 将 POSS/POSE 转换为 Spine3D::LINE 段，复用 normalize_spine_segments 逻辑
+            // 设置 POSS 作为参考原点
+            spine_origin = Some(poss);
+
+            // 将 POSS/POSE 转换为 Spine3D::LINE 段，使用相对坐标
+            // pt0 = poss - poss = Vec3::ZERO
+            // pt1 = pose - poss = delta (相对偏移)
             spine_paths.push(Spine3D {
                 refno,
-                pt0: poss,
-                pt1: pose,
+                pt0: Vec3::ZERO,  // 相对坐标：起点为原点
+                pt1: delta,       // 相对坐标：终点为相对偏移
                 curve_type: SpineCurveType::LINE,
                 preferred_dir: Vec3::Y, // 使用默认参考方向，后续会用 plax 覆盖
                 ..Default::default()

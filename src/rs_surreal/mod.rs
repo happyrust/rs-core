@@ -1,6 +1,7 @@
 pub mod adapter;
 pub mod attr_cache;
 pub mod boolean_query;
+pub mod boolean_query_optimized;
 pub mod datacenter_query;
 pub mod geom;
 pub mod geometry_query;
@@ -11,6 +12,7 @@ pub mod query;
 pub mod query_ext;
 pub mod query_methods;
 pub mod query_structs;
+pub mod connection_manager;
 
 pub mod cate;
 pub mod resolve;
@@ -74,6 +76,7 @@ pub use type_hierarchy::*;
 pub use uda::*;
 
 pub use adapter::create_surreal_adapter;
+pub use connection_manager::{CONNECTION_MANAGER, ConnectionConfig, SurrealConnectionManager};
 
 use once_cell::sync::Lazy;
 use surrealdb::Surreal;
@@ -90,7 +93,19 @@ pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 #[cfg(feature = "mem-kv-save")]
 pub static SUL_MEM_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
-///连接surreal
+/// 连接 SurrealDB，使用智能连接管理器
+///
+/// 该函数会自动处理：
+/// - 首次连接
+/// - 主机变更时的重连
+/// - 同主机时的 NS/DB 切换
+///
+/// # 参数
+/// - `conn_str`: 连接字符串（如 "ws://127.0.0.1:8000"）
+/// - `ns`: Namespace
+/// - `db`: Database
+/// - `username`: 用户名
+/// - `password`: 密码
 pub async fn connect_surdb(
     conn_str: &str,
     ns: &str,
@@ -98,22 +113,11 @@ pub async fn connect_surdb(
     username: &str,
     password: &str,
 ) -> Result<(), surrealdb::Error> {
-    // 创建配置
-    let config = surrealdb::opt::Config::default()
-        .ast_payload()  // 启用AST格式
-        ; // 设置容量
-    SUL_DB
-        .connect((conn_str, config))
-        .with_capacity(1000)
-        .await?;
-    SUL_DB.use_ns(ns).use_db(db).await?;
-    SUL_DB
-        .signin(Root {
-            username: username.to_owned(),
-            password: password.to_owned(),
-        })
-        .await?;
-    Ok(())
+    // 创建连接配置
+    let config = ConnectionConfig::new(conn_str, ns, db, username, password);
+
+    // 使用连接管理器执行智能连接
+    CONNECTION_MANAGER.connect_or_reconnect(&SUL_DB, config).await
 }
 
 pub async fn connect_kvdb(

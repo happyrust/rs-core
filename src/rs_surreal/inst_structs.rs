@@ -602,6 +602,438 @@ UPDATE pe:{} SET tubi_id = array::push(tubi_id?:[], tubi_relate:{});"#,
     }
 }
 
+/// Measurement 表结构体
+/// 表示测量数据记录
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Measurement {
+    /// 测量ID
+    pub id: String,
+    /// 测量名称
+    pub name: String,
+    /// 测量类型 (Distance|Angle|PointToMesh|Diameter|Radius|Coordinate)
+    pub measurement_type: String,
+    /// 测量点坐标数组
+    pub points: Vec<RsVec3>,
+    /// 测量结果值
+    pub value: Option<f64>,
+    /// 单位 (如 "mm", "度")
+    pub unit: Option<String>,
+    /// 优先级 (Low|Medium|High|Critical)
+    pub priority: Option<String>,
+    /// 状态 (Draft|Pending|Approved|Rejected)
+    pub status: Option<String>,
+    /// 项目ID
+    pub project_id: Option<String>,
+    /// 场景ID
+    pub scene_id: Option<String>,
+    /// 创建者ID
+    pub created_by: Option<String>,
+    /// 创建时间
+    pub created_at: Option<NaiveDateTime>,
+    /// 更新时间
+    pub updated_at: Option<NaiveDateTime>,
+    /// 备注
+    pub notes: Option<String>,
+    /// 扩展元数据
+    pub metadata: Option<serde_json::Value>,
+}
+
+impl Measurement {
+    /// 创建新的 Measurement 实例
+    pub fn new(name: String, measurement_type: String, points: Vec<RsVec3>) -> Self {
+        Self {
+            id: format!("measurement:{}", uuid::Uuid::new_v4()),
+            name,
+            measurement_type,
+            points,
+            value: None,
+            unit: None,
+            priority: Some("Medium".to_string()),
+            status: Some("Draft".to_string()),
+            project_id: None,
+            scene_id: None,
+            created_by: None,
+            created_at: Some(chrono::Utc::now().naive_utc()),
+            updated_at: Some(chrono::Utc::now().naive_utc()),
+            notes: None,
+            metadata: None,
+        }
+    }
+
+    /// 设置测量值
+    pub fn with_value(mut self, value: f64) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    /// 设置单位
+    pub fn with_unit(mut self, unit: String) -> Self {
+        self.unit = Some(unit);
+        self
+    }
+
+    /// 设置优先级
+    pub fn with_priority(mut self, priority: String) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    /// 设置状态
+    pub fn with_status(mut self, status: String) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// 设置项目ID
+    pub fn with_project(mut self, project_id: String) -> Self {
+        self.project_id = Some(project_id);
+        self
+    }
+
+    /// 设置场景ID
+    pub fn with_scene(mut self, scene_id: String) -> Self {
+        self.scene_id = Some(scene_id);
+        self
+    }
+
+    /// 设置创建者ID
+    pub fn with_created_by(mut self, created_by: String) -> Self {
+        self.created_by = Some(created_by);
+        self
+    }
+
+    /// 设置备注
+    pub fn with_notes(mut self, notes: String) -> Self {
+        self.notes = Some(notes);
+        self
+    }
+
+    /// 设置扩展元数据
+    pub fn with_metadata(mut self, metadata: serde_json::Value) -> Self {
+        self.metadata = Some(metadata);
+        self
+    }
+
+    /// 生成 SurrealDB 插入语句
+    pub fn to_surql(&self) -> String {
+        let points_json = self.points.iter()
+            .map(|pt| format!("{{ x: {}, y: {}, z: {} }}", pt.0.x, pt.0.y, pt.0.z))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        let value_str = self.value.map_or("NONE".to_string(), |v| v.to_string());
+        let unit_str = self.unit.as_ref().map_or("NONE".to_string(), |u| format!("'{}'", u));
+        let priority_str = self.priority.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let status_str = self.status.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let project_id_str = self.project_id.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let scene_id_str = self.scene_id.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let created_by_str = self.created_by.as_ref().map_or("NONE".to_string(), |c| format!("'{}'", c));
+        let notes_str = self.notes.as_ref().map_or("NONE".to_string(), |n| format!("'{}'", n));
+        let metadata_str = self.metadata.as_ref().map_or("NONE".to_string(), |m| m.to_string());
+
+        let created_at_str = match &self.created_at {
+            Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
+            None => "time::now()".to_string(),
+        };
+
+        let updated_at_str = match &self.updated_at {
+            Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
+            None => "time::now()".to_string(),
+        };
+
+        format!(
+            r#"CREATE {} SET
+                name = '{}',
+                measurement_type = '{}',
+                points = [{}],
+                value = {},
+                unit = {},
+                priority = {},
+                status = {},
+                project_id = {},
+                scene_id = {},
+                created_by = {},
+                created_at = {},
+                updated_at = {},
+                notes = {},
+                metadata = {};"#,
+            self.id,
+            self.name.replace("'", "''"),
+            self.measurement_type,
+            points_json,
+            value_str,
+            unit_str,
+            priority_str,
+            status_str,
+            project_id_str,
+            scene_id_str,
+            created_by_str,
+            created_at_str,
+            updated_at_str,
+            notes_str,
+            metadata_str
+        )
+    }
+
+    /// 生成 SurrealDB JSON 格式数据
+    pub fn gen_sur_json(&self) -> String {
+        let json = serde_json::json!({
+            "id": self.id,
+            "name": self.name,
+            "measurement_type": self.measurement_type,
+            "points": self.points,
+            "value": self.value,
+            "unit": self.unit,
+            "priority": self.priority,
+            "status": self.status,
+            "project_id": self.project_id,
+            "scene_id": self.scene_id,
+            "created_by": self.created_by,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "notes": self.notes,
+            "metadata": self.metadata,
+        });
+
+        serde_json::to_string(&json).unwrap_or_default()
+    }
+}
+
+/// Annotation 表结构体
+/// 表示批注数据记录
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Annotation {
+    /// 批注ID (格式: annotation:{uuid})
+    pub id: String,
+    /// 批注标题
+    pub title: String,
+    /// 批注描述
+    pub description: String,
+    /// 批注类型 (Text, Arrow, Rectangle, Circle, Cloud, Highlight, Selection)
+    pub annotation_type: String,
+    /// 3D 位置坐标（可选）
+    pub position: Option<RsVec3>,
+    /// 颜色（十六进制，如 "#FF0000"）
+    pub color: Option<String>,
+    /// 优先级 (Low, Medium, High, Critical)
+    pub priority: Option<String>,
+    /// 状态 (Draft, Pending, Approved, Rejected, Resolved)
+    pub status: Option<String>,
+    /// 绘制样式（线宽、透明度等）
+    pub style: Option<serde_json::Value>,
+    /// 关联的 3D 对象列表（RefU64 值）
+    pub associated_refnos: Option<Vec<u64>>,
+    /// 项目 ID
+    pub project_id: Option<String>,
+    /// 场景 ID
+    pub scene_id: Option<String>,
+    /// 创建者
+    pub created_by: Option<String>,
+    /// 指派给
+    pub assigned_to: Option<String>,
+    /// 创建时间
+    pub created_at: Option<NaiveDateTime>,
+    /// 更新时间
+    pub updated_at: Option<NaiveDateTime>,
+    /// 解决时间
+    pub resolved_at: Option<NaiveDateTime>,
+    /// 扩展元数据
+    pub metadata: Option<serde_json::Value>,
+}
+
+impl Annotation {
+    /// 创建新的 Annotation 实例
+    pub fn new(title: String, description: String, annotation_type: String) -> Self {
+        Self {
+            id: format!("annotation:{}", uuid::Uuid::new_v4()),
+            title,
+            description,
+            annotation_type,
+            position: None,
+            color: Some("#1E90FF".to_string()),  // 默认蓝色
+            priority: Some("Medium".to_string()),
+            status: Some("Draft".to_string()),
+            style: None,
+            associated_refnos: None,
+            project_id: None,
+            scene_id: None,
+            created_by: None,
+            assigned_to: None,
+            created_at: Some(chrono::Utc::now().naive_utc()),
+            updated_at: Some(chrono::Utc::now().naive_utc()),
+            resolved_at: None,
+            metadata: None,
+        }
+    }
+
+    /// Builder 模式方法：设置 3D 位置
+    pub fn with_position(mut self, position: RsVec3) -> Self {
+        self.position = Some(position);
+        self
+    }
+
+    /// Builder 模式方法：设置颜色
+    pub fn with_color(mut self, color: String) -> Self {
+        self.color = Some(color);
+        self
+    }
+
+    /// Builder 模式方法：设置优先级
+    pub fn with_priority(mut self, priority: String) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    /// Builder 模式方法：设置状态
+    pub fn with_status(mut self, status: String) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Builder 模式方法：设置样式
+    pub fn with_style(mut self, style: serde_json::Value) -> Self {
+        self.style = Some(style);
+        self
+    }
+
+    /// Builder 模式方法：设置关联对象
+    pub fn with_associated_objects(mut self, refnos: Vec<u64>) -> Self {
+        self.associated_refnos = Some(refnos);
+        self
+    }
+
+    /// Builder 模式方法：设置项目 ID
+    pub fn with_project(mut self, project_id: String) -> Self {
+        self.project_id = Some(project_id);
+        self
+    }
+
+    /// Builder 模式方法：设置场景 ID
+    pub fn with_scene(mut self, scene_id: String) -> Self {
+        self.scene_id = Some(scene_id);
+        self
+    }
+
+    /// Builder 模式方法：设置创建者
+    pub fn with_created_by(mut self, created_by: String) -> Self {
+        self.created_by = Some(created_by);
+        self
+    }
+
+    /// Builder 模式方法：设置指派给
+    pub fn with_assigned_to(mut self, assigned_to: String) -> Self {
+        self.assigned_to = Some(assigned_to);
+        self
+    }
+
+    /// Builder 模式方法：设置元数据
+    pub fn with_metadata(mut self, metadata: serde_json::Value) -> Self {
+        self.metadata = Some(metadata);
+        self
+    }
+
+    /// 生成 SurrealDB 插入语句
+    pub fn to_surql(&self) -> String {
+        let position_str = self.position.as_ref().map_or("NONE".to_string(), |pos| {
+            format!("{{ x: {}, y: {}, z: {} }}", pos.0.x, pos.0.y, pos.0.z)
+        });
+
+        let color_str = self.color.as_ref().map_or("NONE".to_string(), |c| format!("'{}'", c));
+        let priority_str = self.priority.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let status_str = self.status.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let style_str = self.style.as_ref().map_or("NONE".to_string(), |s| s.to_string());
+        let associated_refnos_str = self.associated_refnos.as_ref().map_or("NONE".to_string(), |refnos| {
+            let items: Vec<String> = refnos.iter().map(|r| r.to_string()).collect();
+            format!("[{}]", items.join(", "))
+        });
+        let project_id_str = self.project_id.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let scene_id_str = self.scene_id.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let created_by_str = self.created_by.as_ref().map_or("NONE".to_string(), |c| format!("'{}'", c));
+        let assigned_to_str = self.assigned_to.as_ref().map_or("NONE".to_string(), |a| format!("'{}'", a));
+        let metadata_str = self.metadata.as_ref().map_or("NONE".to_string(), |m| m.to_string());
+
+        let created_at_str = match &self.created_at {
+            Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
+            None => "time::now()".to_string(),
+        };
+
+        let updated_at_str = match &self.updated_at {
+            Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
+            None => "time::now()".to_string(),
+        };
+
+        let resolved_at_str = match &self.resolved_at {
+            Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
+            None => "NONE".to_string(),
+        };
+
+        format!(
+            r#"CREATE {} SET
+                title = '{}',
+                description = '{}',
+                annotation_type = '{}',
+                position = {},
+                color = {},
+                priority = {},
+                status = {},
+                style = {},
+                associated_refnos = {},
+                project_id = {},
+                scene_id = {},
+                created_by = {},
+                assigned_to = {},
+                created_at = {},
+                updated_at = {},
+                resolved_at = {},
+                metadata = {};"#,
+            self.id,
+            self.title.replace("'", "''"),
+            self.description.replace("'", "''"),
+            self.annotation_type,
+            position_str,
+            color_str,
+            priority_str,
+            status_str,
+            style_str,
+            associated_refnos_str,
+            project_id_str,
+            scene_id_str,
+            created_by_str,
+            assigned_to_str,
+            created_at_str,
+            updated_at_str,
+            resolved_at_str,
+            metadata_str
+        )
+    }
+
+    /// 生成 SurrealDB JSON 格式数据
+    pub fn gen_sur_json(&self) -> String {
+        let json = serde_json::json!({
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "annotation_type": self.annotation_type,
+            "position": self.position,
+            "color": self.color,
+            "priority": self.priority,
+            "status": self.status,
+            "style": self.style,
+            "associated_refnos": self.associated_refnos,
+            "project_id": self.project_id,
+            "scene_id": self.scene_id,
+            "created_by": self.created_by,
+            "assigned_to": self.assigned_to,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "resolved_at": self.resolved_at,
+            "metadata": self.metadata,
+        });
+
+        serde_json::to_string(&json).unwrap_or_default()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

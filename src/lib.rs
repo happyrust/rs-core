@@ -44,7 +44,6 @@ pub mod helper;
 pub mod live;
 pub mod parsed_data;
 pub mod pdms_data;
-pub mod pdms_hash;
 pub mod pdms_types;
 pub mod plot_struct;
 pub mod prim_geo;
@@ -78,7 +77,6 @@ pub mod room_setting;
 pub mod water_calculation;
 
 pub mod noun_graph;
-pub mod noun_attributes;
 
 pub mod data_state;
 pub mod threed_review;

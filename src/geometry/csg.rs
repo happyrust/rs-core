@@ -571,6 +571,43 @@ fn create_mesh_with_custom_edges(
     mesh
 }
 
+/// 将边从原点坐标系变换到目标位置和方向
+///
+/// # 参数
+/// - `edges`: 原始边（在原点，Z轴为方向）
+/// - `center`: 目标中心位置
+/// - `axis`: 目标轴方向（归一化）
+///
+/// # 返回
+/// 变换后的边
+fn transform_edges(edges: Edges, center: Vec3, axis: Vec3) -> Edges {
+    // 计算从 Z 轴到目标轴的旋转
+    let z_axis = Vec3::Z;
+    let rotation = if axis.dot(z_axis).abs() > 0.9999 {
+        // 轴接近 Z 轴，不需要旋转或需要 180 度旋转
+        if axis.dot(z_axis) > 0.0 {
+            glam::Quat::IDENTITY
+        } else {
+            glam::Quat::from_rotation_x(std::f32::consts::PI)
+        }
+    } else {
+        // 计算旋转四元数
+        glam::Quat::from_rotation_arc(z_axis, axis)
+    };
+
+    edges
+        .into_iter()
+        .map(|edge| {
+            let transformed_points: Vec<Vec3> = edge
+                .vertices
+                .iter()
+                .map(|p| center + rotation.mul_vec3(*p))
+                .collect();
+            Edge::new(transformed_points)
+        })
+        .collect()
+}
+
 /// 从 Profile 轮廓生成旋转体的特征边（经线和纬线）
 ///
 /// 旋转体的边包括：
@@ -1255,8 +1292,12 @@ fn generate_sscl_mesh(
         ]);
     }
 
+    // 生成几何边：底面圆弧 + 顶面圆弧 + 4条母线
+    let height_abs = (top_center - bottom_center).length();
+    let base_edges = generate_cylinder_edges(radius, height_abs, radial, 4);
+    let edges = transform_edges(base_edges, bottom_center, dir);
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
         aabb: Some(aabb),
     })
 }
@@ -1374,8 +1415,11 @@ fn build_cylinder_mesh(
         indices.extend_from_slice(&[top_center_index, curr as u32, next as u32]);
     }
 
+    // 生成几何边：底面圆弧 + 顶面圆弧 + 4条母线
+    let base_edges = generate_cylinder_edges(radius, height, radial, 4);
+    let edges = transform_edges(base_edges, bottom_center, axis_dir);
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
         aabb: Some(aabb),
     })
 }
@@ -1444,8 +1488,11 @@ fn generate_sphere_mesh(
         }
     }
 
+    // 生成几何边：赤道 + 2条子午线
+    let base_edges = generate_sphere_edges(radius, radial, 1);
+    let edges = transform_edges(base_edges, sphere.center, Vec3::Z);
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
         aabb: Some(aabb),
     })
 }
@@ -1750,16 +1797,13 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     let min = sbox.center - half;
     let max = sbox.center + half;
     let aabb = Aabb::new(Point3::from(min), Point3::from(max));
-    let mut mesh = create_mesh_with_edges(indices, vertices, normals, Some(aabb));
+    
+    // 生成几何边：12条边
+    let base_edges = generate_box_edges(sbox.size.x, sbox.size.y, sbox.size.z);
+    let edges = transform_edges(base_edges, sbox.center, Vec3::Z);
+    
+    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
     mesh.uvs = uvs; // 使用手动计算的 UV 覆盖默认的空 UV
-    // create_mesh_with_edges 内部会调用 generate_auto_uvs，我们之后覆盖它
-    // 但 generate_auto_uvs 是基于 bounding box 的，这里我们明确提供了 UV
-    // 为了避免重复计算，我们可以修改 create_mesh_with_edges 或者直接构造 PlantMesh
-
-    // 重构 Mesh 构造，避免无用的 auto uv
-    let edges = extract_edges_from_mesh(&mesh.indices, &mesh.vertices);
-    mesh.edges = edges;
-    mesh.sync_wire_vertices_from_edges();
 
     Some(GeneratedMesh {
         mesh,
@@ -1885,11 +1929,7 @@ fn generate_dish_mesh(
             1 // 顶部和底部（球形 dish）使用单个顶点
         } else {
             // 根据 w (sin_theta) 计算每环的顶点数
-            // 对于 Dish，设置更高的最小顶点数以保证圆滑外观
-            // 使用 samples/2 作为最小值（确保至少有半圈的分段数）
-            let min_vertices_per_ring = (samples as u32 / 2).max(12);
-            ((w * samples as f32).max(min_vertices_per_ring as f32).ceil() as u32)
-                .max(min_vertices_per_ring)
+            ((w * samples as f32).max(3.0).ceil() as u32).max(3)
         };
         ring_vertex_counts.push(n_in_ring);
 
@@ -1996,8 +2036,12 @@ fn generate_dish_mesh(
         }
     }
 
+    // 生成几何边：底面圆弧
+    let radial = compute_radial_segments(settings, radius_rim, non_scalable, 3);
+    let base_edges = generate_cylinder_edges(radius_rim, 0.0, radial, 0);
+    let edges = transform_edges(base_edges, base_center, axis);
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
         aabb: Some(aabb),
     })
 }
@@ -2161,8 +2205,11 @@ fn generate_torus_mesh(
         }
     }
 
+    // 生成几何边：主圆弧（torus 中心线，在原点，Z轴方向）
+    let base_edges = generate_cylinder_edges(major_radius, 0.0, samples_l, 0);
+    let edges = transform_edges(base_edges, Vec3::ZERO, Vec3::Z);
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
         aabb: Some(aabb),
     })
 }
@@ -2305,17 +2352,50 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
         }
     }
 
+    // 生成几何边
+    let mut edges = Vec::new();
+    
+    // 底部4条边
+    if let Some(bottom) = bottom_corners {
+        for i in 0..4 {
+            let next = (i + 1) % 4;
+            edges.push(Edge::new(vec![vertices[bottom[i] as usize], vertices[bottom[next] as usize]]));
+        }
+    }
+    
+    // 顶部边或斜边
+    if let Some(top) = top_vertices {
+        // 截锥：顶部4条边 + 4条竖边
+        for i in 0..4 {
+            let next = (i + 1) % 4;
+            edges.push(Edge::new(vec![vertices[top[i] as usize], vertices[top[next] as usize]]));
+        }
+        if let Some(bottom) = bottom_corners {
+            for i in 0..4 {
+                edges.push(Edge::new(vec![vertices[bottom[i] as usize], vertices[top[i] as usize]]));
+            }
+        }
+    } else if let (Some(bottom), Some(apex)) = (bottom_corners, apex_index) {
+        // 尖锥：4条斜边到顶点
+        for i in 0..4 {
+            edges.push(Edge::new(vec![vertices[bottom[i] as usize], vertices[apex as usize]]));
+        }
+    }
+
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(indices, vertices, normals, Some(aabb)),
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
         aabb: Some(aabb),
     })
 }
 
 /// 生成线性棱锥（LPyramid）网格
 ///
-/// LPyramid是Pyramid的变体，通过将LPyramid参数转换为Pyramid参数来生成网格
+/// LPyramid 与 Pyramid 的区别：偏移量(pbof/pcof)使用完整值而非0.5倍
+/// 为与 OCC 实现保持一致，将偏移量乘以2后传递给 generate_pyramid_mesh
 fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
     // 将LPyramid转换为Pyramid格式
+    // 注意：LPyramid 的偏移量是完整值，而 generate_pyramid_mesh 会乘以 0.5
+    // 因此这里将偏移量乘以 2，使最终效果与 OCC 的 LPyramid 实现一致
     let pyramid = Pyramid {
         pbax_pt: lpyr.pbax_pt,
         pbax_dir: lpyr.pbax_dir,
@@ -2329,8 +2409,8 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
         pcbt: lpyr.pcbt,
         ptdi: lpyr.ptdi,
         pbdi: lpyr.pbdi,
-        pbof: lpyr.pbof,
-        pcof: lpyr.pcof,
+        pbof: lpyr.pbof * 2.0,  // 乘以2，因为 generate_pyramid_mesh 会再乘以 0.5
+        pcof: lpyr.pcof * 2.0,  // 乘以2，因为 generate_pyramid_mesh 会再乘以 0.5
     };
     generate_pyramid_mesh(&pyramid)
 }
@@ -2475,6 +2555,40 @@ fn generate_rect_torus_mesh(
 
     let final_aabb = combined.cal_aabb();
     combined.aabb = final_aabb;
+
+    // 生成几何边：内外圆弧（顶部和底部）
+    let mut edges = Vec::new();
+    
+    // 顶部外圆弧
+    let mut top_outer_points = Vec::with_capacity(samples);
+    for i in 0..samples {
+        top_outer_points.push(Vec3::new(outer_radius * t0_cos[i], outer_radius * t0_sin[i], half_height));
+    }
+    edges.push(Edge::new(top_outer_points));
+    
+    // 顶部内圆弧
+    let mut top_inner_points = Vec::with_capacity(samples);
+    for i in 0..samples {
+        top_inner_points.push(Vec3::new(inner_radius * t0_cos[i], inner_radius * t0_sin[i], half_height));
+    }
+    edges.push(Edge::new(top_inner_points));
+    
+    // 底部外圆弧
+    let mut bottom_outer_points = Vec::with_capacity(samples);
+    for i in 0..samples {
+        bottom_outer_points.push(Vec3::new(outer_radius * t0_cos[i], outer_radius * t0_sin[i], -half_height));
+    }
+    edges.push(Edge::new(bottom_outer_points));
+    
+    // 底部内圆弧
+    let mut bottom_inner_points = Vec::with_capacity(samples);
+    for i in 0..samples {
+        bottom_inner_points.push(Vec3::new(inner_radius * t0_cos[i], inner_radius * t0_sin[i], -half_height));
+    }
+    edges.push(Edge::new(bottom_inner_points));
+    
+    combined.edges = edges;
+    combined.sync_wire_vertices_from_edges();
 
     Some(GeneratedMesh {
         mesh: combined,

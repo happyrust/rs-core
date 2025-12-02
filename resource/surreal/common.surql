@@ -882,6 +882,14 @@ DEFINE FUNCTION fn::ancestor_atts($r: record) {
     };
 };
 
+REMOVE FUNCTION fn::query_negative_entities;
+-- 查询指定正实体关联的负实体 refnos
+-- 参数 $pe: 正实体记录，如 pe:17496_106028
+-- 返回: 关联的负实体 refnos 数组（通过 neg_relate 和 ngmr_relate 关系)
+DEFINE FUNCTION fn::query_negative_entities($pe: record) {
+    return array::union($pe<-neg_relate.in, $pe<-ngmr_relate.in);
+};
+
 REMOVE FUNCTION fn::query_ptset;
 -- 查询点集数据
 DEFINE FUNCTION fn::query_ptset($refno: string) {

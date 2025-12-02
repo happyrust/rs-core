@@ -5,7 +5,9 @@
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::rs_surreal::geometry_query::PlantTransform;
+use crate::shape::pdms_shape::RsVec3;
 use crate::types::{PlantAabb, RecordId, RefnoEnum};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::SurrealValue;
@@ -110,4 +112,82 @@ pub struct GmGeoData {
     pub param: PdmsGeoParam,
     /// AABB ID - temporarily unchanged
     pub aabb_id: RecordId,
+}
+
+/// Measurement query result structure
+/// 用于从数据库查询返回的测量数据结构
+#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
+pub struct MeasurementQueryResult {
+    /// 测量ID
+    pub id: String,
+    /// 测量名称
+    pub name: String,
+    /// 测量类型 (Distance|Angle|PointToMesh|Diameter|Radius|Coordinate)
+    pub measurement_type: String,
+    /// 测量点坐标数组
+    pub points: Vec<RsVec3>,
+    /// 测量结果值
+    pub value: Option<f64>,
+    /// 单位 (如 "mm", "度")
+    pub unit: Option<String>,
+    /// 优先级 (Low|Medium|High|Critical)
+    pub priority: Option<String>,
+    /// 状态 (Draft|Pending|Approved|Rejected)
+    pub status: Option<String>,
+    /// 项目ID
+    pub project_id: Option<String>,
+    /// 场景ID
+    pub scene_id: Option<String>,
+    /// 创建者ID
+    pub created_by: Option<String>,
+    /// 创建时间 (RFC3339 格式字符串)
+    pub created_at: Option<String>,
+    /// 更新时间 (RFC3339 格式字符串)
+    pub updated_at: Option<String>,
+    /// 备注
+    pub notes: Option<String>,
+    /// 扩展元数据
+    pub metadata: Option<serde_json::Value>,
+}
+
+/// Annotation 查询结果 DTO
+/// 用于从数据库查询返回的批注数据结构
+#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
+pub struct AnnotationQueryResult {
+    /// 批注ID
+    pub id: String,
+    /// 批注标题
+    pub title: String,
+    /// 批注描述
+    pub description: String,
+    /// 批注类型 (Text, Arrow, Rectangle, Circle, Cloud, Highlight, Selection)
+    pub annotation_type: String,
+    /// 3D 位置坐标
+    pub position: Option<RsVec3>,
+    /// 颜色（十六进制）
+    pub color: Option<String>,
+    /// 优先级 (Low, Medium, High, Critical)
+    pub priority: Option<String>,
+    /// 状态 (Draft, Pending, Approved, Rejected, Resolved)
+    pub status: Option<String>,
+    /// 绘制样式（JSON）
+    pub style: Option<serde_json::Value>,
+    /// 关联的 3D 对象列表
+    pub associated_refnos: Option<Vec<u64>>,
+    /// 项目ID
+    pub project_id: Option<String>,
+    /// 场景ID
+    pub scene_id: Option<String>,
+    /// 创建者
+    pub created_by: Option<String>,
+    /// 指派给
+    pub assigned_to: Option<String>,
+    /// 创建时间 (RFC3339 格式字符串)
+    pub created_at: Option<String>,
+    /// 更新时间 (RFC3339 格式字符串)
+    pub updated_at: Option<String>,
+    /// 解决时间 (RFC3339 格式字符串)
+    pub resolved_at: Option<String>,
+    /// 扩展元数据
+    pub metadata: Option<serde_json::Value>,
 }

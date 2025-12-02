@@ -253,7 +253,7 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                if booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false, "unit_flag": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                if booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false, "unit_flag": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none)  }} as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date
             from {inst_keys} where aabb.d != none && world_trans.d != none
@@ -267,7 +267,7 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none) as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date
             from {inst_keys} where aabb.d != none && world_trans.d != none "#
@@ -337,7 +337,7 @@ pub async fn query_insts_by_zone(
                 in.id as refno,
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset[*].pt as pts,
-                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos')  }} as insts,
+                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none)  }} as insts,
                 booled_id != none as has_neg,
                 in.dt as date
             from inst_relate where zone_refno in [{}] and aabb.d != none
@@ -351,7 +351,7 @@ pub async fn query_insts_by_zone(
                 in.id as refno,
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset[*].pt as pts,
-                (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none && geo_type='Pos') as insts,
+                (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none) as insts,
                 booled_id != none as has_neg,
                 in.dt as date
             from inst_relate where zone_refno in [{}] and aabb.d != none
