@@ -59,8 +59,23 @@ impl TransformStrategy for WallStrategy {
         let mut rotation = DQuat::IDENTITY;
 
         if let Some(z_direction) = self.calculate_wall_direction() {
-            // Y 轴指向上方向 (U)
-            let y_axis = DVec3::Z;
+            // STWALL/WALL 的智能 YDIR 选择逻辑
+            // 默认 YDIR = 世界Z方向，如果共线则切换到世界Y方向
+            let default_y_dir = DVec3::Z;
+            let is_collinear = z_direction.dot(default_y_dir).abs() > 0.99;
+            
+            let y_axis = if is_collinear {
+                // 如果Z轴与默认YDIR共线，则切换到世界Y方向
+                tracing::debug!(
+                    "STWALL Z轴与默认YDIR共线，切换YDIR到世界Y方向: z_dir={}",
+                    z_direction
+                );
+                DVec3::Y
+            } else {
+                // 使用默认YDIR = 世界Z方向
+                default_y_dir
+            };
+            
             // Z 轴使用计算出的扫掠方向
             let z_axis = z_direction;
 
