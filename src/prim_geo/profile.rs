@@ -458,8 +458,8 @@ pub async fn create_profile_geos(
 
                         let loft = SweepSolid {
                             profile: profile.clone(),
-                            drns: None,
-                            drne: None,
+                            drns, // 使用实际读取的 DRNS 方向向量（与 core.dll 处理一致）
+                            drne, // 使用实际读取的 DRNE 方向向量（与 core.dll 处理一致）
                             plax,
                             bangle, // 使用前面已计算的 bangle（对于 SCTN/STWALL 为 0）
                             extrude_dir,
