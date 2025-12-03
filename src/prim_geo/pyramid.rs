@@ -173,30 +173,9 @@ impl BrepShapeTrait for Pyramid {
             DVec3::new(tx + ox, ty + oy, h2),
             DVec3::new(-tx + ox, ty + oy, h2),
         ];
-        // if tx * ty < f64::EPSILON {
-        //     verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
-        // } else {
-        //     polys.push(Wire::from_ordered_points(pts)?);
-        // }
         if tx + ty < 0.001 {
             verts.push(Vertex::new(DVec3::new(ox, oy, h2)));
         }
-        //todo use line to generate
-        // else if tx < 0.001 {
-        //     let mut pts = vec![
-        //         DVec3::new(tx + ox, -ty + oy, h2),
-        //         DVec3::new(tx + ox, ty + oy, h2),
-        //     ];
-        //     dbg!(&pts);
-        //     polys.push(Wire::from_ordered_points(pts)?);
-        // } else if ty < 0.001 {
-        //     let mut pts = vec![
-        //         DVec3::new(-tx + ox, ty + oy, h2),
-        //         DVec3::new(tx + ox, ty + oy, h2),
-        //     ];
-        //     dbg!(&pts);
-        //     polys.push(Wire::from_ordered_points(pts)?);
-        // }
         else {
             let mut pts = vec![
                 DVec3::new(-tx + ox, -ty + oy, h2),
@@ -211,21 +190,6 @@ impl BrepShapeTrait for Pyramid {
         if bx + by < 0.001 {
             verts.push(Vertex::new(DVec3::new(-ox, -oy, -h2)));
         }
-        // else if bx < 0.001 {
-        //     let mut pts = vec![
-        //         DVec3::new(bx - ox, -by - oy, -h2),
-        //         DVec3::new(bx - ox, by - oy, -h2),
-        //     ];
-        //     dbg!(&pts);
-        //     polys.push(Wire::from_ordered_points(pts)?);
-        // } else if by < 0.001 {
-        //     let mut pts = vec![
-        //         DVec3::new(-bx - ox, by - oy, -h2),
-        //         DVec3::new(bx - ox, by - oy, -h2),
-        //     ];
-        //     dbg!(&pts);
-        //     polys.push(Wire::from_ordered_points(pts)?);
-        // }
         else {
             let mut pts = vec![
                 DVec3::new(-bx - ox, -by - oy, -h2),

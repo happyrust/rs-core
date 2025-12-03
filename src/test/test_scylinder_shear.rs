@@ -23,6 +23,7 @@ fn test_scylinder_with_45_degree_shear() {
         top_shear_angles: [0.0, 0.0],  // 顶面垂直
         negative: false,
         center_in_mid: false,
+        unit_flag: false,
     };
 
     println!("  圆柱参数:");
@@ -78,6 +79,7 @@ fn test_scylinder_with_opposite_shear() {
         top_shear_angles: [-30.0, 0.0], // 顶面向左倾斜30度
         negative: false,
         center_in_mid: false,
+        unit_flag: false,
     };
 
     println!("  圆柱参数:");
@@ -123,6 +125,7 @@ fn test_scylinder_with_xy_shear() {
         top_shear_angles: [15.0, -15.0], // 顶面 X=15°, Y=-15°
         negative: false,
         center_in_mid: false,
+        unit_flag: false,
     };
 
     println!("  圆柱参数:");
@@ -175,6 +178,7 @@ fn test_scylinder_normal_vs_sheared() {
         top_shear_angles: [0.0, 0.0],
         negative: false,
         center_in_mid: false,
+        unit_flag: false,
     };
 
     println!("  普通圆柱:");
@@ -219,6 +223,7 @@ fn test_scylinder_extreme_shear() {
         top_shear_angles: [0.0, 60.0], // 顶面 Y 方向 60 度
         negative: false,
         center_in_mid: false,
+        unit_flag: false,
     };
 
     println!("  圆柱参数:");

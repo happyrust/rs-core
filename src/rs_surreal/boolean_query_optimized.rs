@@ -472,12 +472,12 @@ pub async fn create_boolean_query_indexes() -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::RefnoEnum;
+    use crate::types::{RefnoEnum, RefU64};
     
     #[tokio::test]
     async fn test_optimized_vs_original_query() {
         // 测试数据
-        let test_refno = RefnoEnum::U64(12345);
+        let test_refno = RefnoEnum::Refno(RefU64(12345));
         
         // 执行优化版本
         let optimized_result = query_manifold_boolean_operations_optimized(test_refno).await;

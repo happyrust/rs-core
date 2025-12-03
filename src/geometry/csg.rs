@@ -1865,12 +1865,17 @@ fn generate_dish_mesh(
         return None;
     }
 
-    let min_dish_segments = settings.min_radial_segments.max(10);
-    let radial_segments =
-        compute_radial_segments(settings, radius_rim, non_scalable, min_dish_segments);
+    // 大尺寸 dish 自适应增加分段数
+    // 基于半径计算：每米增加精度，使用 sqrt 避免过度增长
+    let base_min_segments = settings.radial_segments.max(24) as f32; // dish 最低 24 段
+    let size_factor = (radius_rim / 1000.0).max(1.0); // radius_rim 单位为 mm
+    let radial_segments = ((base_min_segments * size_factor.sqrt())
+        .min(128.0) // 上限 128
+        .max(24.0)) as usize; // 最低 24 段
+    dbg!(radius_rim, size_factor, radial_segments);
     // 对于椭圆 dish，根据 arc 和 scale_z 计算合适的 rings 数
     // 参考 rvmparser: rings = max(min_rings, scale_z * samples * arc / (2π))
-    let min_rings = 3u16;
+    let min_rings = 12u16;
     let samples = radial_segments;
     let mut rings = if is_elliptical {
         let calculated_rings =
@@ -2388,31 +2393,110 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
     })
 }
 
-/// 生成线性棱锥（LPyramid）网格
-///
-/// LPyramid 与 Pyramid 的区别：偏移量(pbof/pcof)使用完整值而非0.5倍
-/// 为与 OCC 实现保持一致，将偏移量乘以2后传递给 generate_pyramid_mesh
+/// 生成线性棱锥（LPyramid）网格 - 与 OCC 实现一致
+/// 坐标系以形状中心为原点，偏移只应用于顶面
 fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
-    // 将LPyramid转换为Pyramid格式
-    // 注意：LPyramid 的偏移量是完整值，而 generate_pyramid_mesh 会乘以 0.5
-    // 因此这里将偏移量乘以 2，使最终效果与 OCC 的 LPyramid 实现一致
-    let pyramid = Pyramid {
-        pbax_pt: lpyr.pbax_pt,
-        pbax_dir: lpyr.pbax_dir,
-        pcax_pt: lpyr.pcax_pt,
-        pcax_dir: lpyr.pcax_dir,
-        paax_pt: lpyr.paax_pt,
-        paax_dir: lpyr.paax_dir,
-        pbtp: lpyr.pbtp,
-        pctp: lpyr.pctp,
-        pbbt: lpyr.pbbt,
-        pcbt: lpyr.pcbt,
-        ptdi: lpyr.ptdi,
-        pbdi: lpyr.pbdi,
-        pbof: lpyr.pbof * 2.0,  // 乘以2，因为 generate_pyramid_mesh 会再乘以 0.5
-        pcof: lpyr.pcof * 2.0,  // 乘以2，因为 generate_pyramid_mesh 会再乘以 0.5
+    if !lpyr.check_valid() {
+        return None;
+    }
+
+    let tx = (lpyr.pbtp * 0.5).max(MIN_LEN);
+    let ty = (lpyr.pctp * 0.5).max(MIN_LEN);
+    let bx = (lpyr.pbbt * 0.5).max(MIN_LEN);
+    let by = (lpyr.pcbt * 0.5).max(MIN_LEN);
+    let offset_3d = lpyr.pbax_dir * lpyr.pbof + lpyr.pcax_dir * lpyr.pcof;
+
+    let axis_dir = safe_normalize(lpyr.paax_dir)?;
+    let (fallback_u, fallback_v) = orthonormal_basis(axis_dir);
+    let mut pb_dir = safe_normalize(lpyr.pbax_dir).unwrap_or(fallback_u);
+    pb_dir = (pb_dir - axis_dir * pb_dir.dot(axis_dir)).normalize_or_zero();
+    if pb_dir.length_squared() <= MIN_LEN * MIN_LEN { pb_dir = fallback_u; }
+    let mut pc_dir = safe_normalize(lpyr.pcax_dir).unwrap_or(fallback_v);
+    pc_dir = (pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir)).normalize_or_zero();
+    if pc_dir.length_squared() <= MIN_LEN * MIN_LEN { pc_dir = fallback_v; }
+
+    // 以底面中心为参考点（与 geo_relate transform 一致）
+    let center = lpyr.paax_pt + axis_dir * lpyr.pbdi;
+    let height = lpyr.ptdi - lpyr.pbdi;  // 总高度
+    let mut vertices = Vec::new();
+    let mut normals = Vec::new();
+    let mut indices = Vec::new();
+    let mut aabb = Aabb::new_invalid();
+
+    let add_vert = |p: Vec3, v: &mut Vec<Vec3>, n: &mut Vec<Vec3>, a: &mut Aabb| -> u32 {
+        extend_aabb(a, p); v.push(p); n.push(Vec3::ZERO); (v.len() - 1) as u32
     };
-    generate_pyramid_mesh(&pyramid)
+
+    let offsets = [(-1.0f32, -1.0f32), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)];
+
+    // 顶面：z=height，带偏移
+    let top = if tx > MIN_LEN && ty > MIN_LEN {
+        let mut idxs = [0u32; 4];
+        for (i, (ox, oy)) in offsets.iter().enumerate() {
+            let local = Vec3::new(ox * tx, oy * ty, height) + offset_3d;
+            let pos = center + pb_dir * local.x + pc_dir * local.y + axis_dir * local.z;
+            idxs[i] = add_vert(pos, &mut vertices, &mut normals, &mut aabb);
+        }
+        Some(idxs)
+    } else { None };
+
+    // 底面：z=0，无偏移
+    let bot = if bx > MIN_LEN && by > MIN_LEN {
+        let mut idxs = [0u32; 4];
+        for (i, (ox, oy)) in offsets.iter().enumerate() {
+            let local = Vec3::new(ox * bx, oy * by, 0.0);
+            let pos = center + pb_dir * local.x + pc_dir * local.y + axis_dir * local.z;
+            idxs[i] = add_vert(pos, &mut vertices, &mut normals, &mut aabb);
+        }
+        Some(idxs)
+    } else { None };
+
+    let apex = if top.is_none() {
+        let local = Vec3::new(offset_3d.x, offset_3d.y, height);
+        let pos = center + pb_dir * local.x + pc_dir * local.y + axis_dir * local.z;
+        Some(add_vert(pos, &mut vertices, &mut normals, &mut aabb))
+    } else { None };
+
+    // 底面三角形
+    if let Some(b) = bot { indices.extend([b[0], b[1], b[2], b[0], b[2], b[3]]); }
+    if bot.is_none() && top.is_some() { return None; }
+
+    // 顶面和侧面
+    if let Some(t) = top {
+        indices.extend([t[2], t[1], t[0], t[3], t[2], t[0]]);
+        if let Some(b) = bot {
+            for i in 0..4 { let n = (i + 1) % 4; indices.extend([b[i], b[n], t[n], b[i], t[n], t[i]]); }
+        }
+    } else if let (Some(b), Some(a)) = (bot, apex) {
+        for i in 0..4 { indices.extend([b[(i + 1) % 4], b[i], a]); }
+    }
+
+    if indices.is_empty() { return None; }
+
+    // 计算法向量
+    for tri in indices.chunks_exact(3) {
+        let n = (vertices[tri[1] as usize] - vertices[tri[0] as usize])
+            .cross(vertices[tri[2] as usize] - vertices[tri[0] as usize]);
+        if n.length_squared() > MIN_LEN * MIN_LEN {
+            let norm = n.normalize();
+            normals[tri[0] as usize] += norm;
+            normals[tri[1] as usize] += norm;
+            normals[tri[2] as usize] += norm;
+        }
+    }
+    for n in &mut normals { *n = if n.length_squared() > MIN_LEN * MIN_LEN { n.normalize() } else { axis_dir }; }
+
+    // 边
+    let mut edges = Vec::new();
+    if let Some(b) = bot { for i in 0..4 { edges.push(Edge::new(vec![vertices[b[i] as usize], vertices[b[(i+1)%4] as usize]])); } }
+    if let Some(t) = top {
+        for i in 0..4 { edges.push(Edge::new(vec![vertices[t[i] as usize], vertices[t[(i+1)%4] as usize]])); }
+        if let Some(b) = bot { for i in 0..4 { edges.push(Edge::new(vec![vertices[b[i] as usize], vertices[t[i] as usize]])); } }
+    } else if let (Some(b), Some(a)) = (bot, apex) {
+        for i in 0..4 { edges.push(Edge::new(vec![vertices[b[i] as usize], vertices[a as usize]])); }
+    }
+
+    Some(GeneratedMesh { mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)), aabb: Some(aabb) })
 }
 
 /// 生成矩形圆环（RTorus）网格

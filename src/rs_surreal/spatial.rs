@@ -527,27 +527,6 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
     Ok(Some((quat, pos)))
 }
 
-/// 查询截面构件（如 SCTN / GENSEC）下属的所有 POINSP 深度子节点，
-/// 并返回它们在 PDMS 本地坐标系中的 POS 位置。
-///
-/// 该函数仅负责收集“扫描 path 点”的局部坐标，
-/// 世界变换由前端在 Bevy 中通过 GlobalTransform 统一处理。
-pub async fn query_section_poinsp_local_points(refno: RefnoEnum) -> anyhow::Result<Vec<Vec3>> {
-    // 使用通用图查询接口按类型深度过滤出所有 POINSP 子节点
-    let poinsp_refnos =
-        rs_surreal::graph::collect_descendant_filter_ids(&[refno], &["POINSP"], None).await?;
-
-    let mut points = Vec::new();
-    for child_refno in poinsp_refnos {
-        let att = get_named_attmap(child_refno).await?;
-        if let Some(pos) = att.get_position() {
-            points.push(pos);
-        }
-    }
-
-    Ok(points)
-}
-
 /// 根据 GENSEC/WALL 下的 SPINE / POINSP / CURVE 节点，
 /// 构造一组 `Spine3D` 段，供挤出、ZDIS/PKDI 位置计算等场景复用。
 use crate::transform::strategies::spine_strategy::SpineStrategy;

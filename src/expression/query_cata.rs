@@ -196,7 +196,8 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
         paxises.push((v));
     }
     let centre_line_flag = att.get_bool("CLFL").unwrap_or(false);
-    let tube_flag = att.get_bool("TUFL").unwrap_or(false);
+    // TUFL 控制几何体在管道视图中的可见性，默认为 true（可见）
+    let tube_flag = att.get_bool("TUFL").unwrap_or(true);
     let mut verts = vec![];
     let mut frads = vec![];
     let mut dxy = vec![];
