@@ -2393,8 +2393,16 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
     })
 }
 
-/// 生成线性棱锥（LPyramid）网格 - 与 OCC 实现一致
-/// 坐标系以形状中心为原点，偏移只应用于顶面
+/// 生成线性棱锥（LPyramid）网格 - 与 OCC/core.dll 实现一致
+/// 
+/// LPYRA 几何体定义：
+/// - PAAX: A轴方向（高度方向）
+/// - PBAX: B轴方向（宽度方向）  
+/// - PCAX: C轴方向（深度方向）
+/// - PBTP/PCTP: 顶面 B/C 方向半尺寸
+/// - PBBT/PCBT: 底面 B/C 方向半尺寸
+/// - PTDI/PBDI: 到顶面/底面的距离
+/// - PBOF/PCOF: B/C 方向偏移（仅应用于顶面）
 fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
     if !lpyr.check_valid() {
         return None;
@@ -2404,8 +2412,8 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
     let ty = (lpyr.pctp * 0.5).max(MIN_LEN);
     let bx = (lpyr.pbbt * 0.5).max(MIN_LEN);
     let by = (lpyr.pcbt * 0.5).max(MIN_LEN);
-    let offset_3d = lpyr.pbax_dir * lpyr.pbof + lpyr.pcax_dir * lpyr.pcof;
 
+    // 计算正交化的轴方向
     let axis_dir = safe_normalize(lpyr.paax_dir)?;
     let (fallback_u, fallback_v) = orthonormal_basis(axis_dir);
     let mut pb_dir = safe_normalize(lpyr.pbax_dir).unwrap_or(fallback_u);
@@ -2414,6 +2422,9 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
     let mut pc_dir = safe_normalize(lpyr.pcax_dir).unwrap_or(fallback_v);
     pc_dir = (pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir)).normalize_or_zero();
     if pc_dir.length_squared() <= MIN_LEN * MIN_LEN { pc_dir = fallback_v; }
+
+    // 偏移使用正交化后的方向计算（与 core.dll 一致）
+    let offset_3d = pb_dir * lpyr.pbof + pc_dir * lpyr.pcof;
 
     // 以底面中心为参考点（与 geo_relate transform 一致）
     let center = lpyr.paax_pt + axis_dir * lpyr.pbdi;
@@ -2430,11 +2441,11 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
     let offsets = [(-1.0f32, -1.0f32), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)];
 
     // 顶面：z=height，带偏移
+    // 偏移 offset_3d 已经是世界坐标，直接添加到最终位置
     let top = if tx > MIN_LEN && ty > MIN_LEN {
         let mut idxs = [0u32; 4];
         for (i, (ox, oy)) in offsets.iter().enumerate() {
-            let local = Vec3::new(ox * tx, oy * ty, height) + offset_3d;
-            let pos = center + pb_dir * local.x + pc_dir * local.y + axis_dir * local.z;
+            let pos = center + pb_dir * (ox * tx) + pc_dir * (oy * ty) + axis_dir * height + offset_3d;
             idxs[i] = add_vert(pos, &mut vertices, &mut normals, &mut aabb);
         }
         Some(idxs)
@@ -2444,16 +2455,15 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
     let bot = if bx > MIN_LEN && by > MIN_LEN {
         let mut idxs = [0u32; 4];
         for (i, (ox, oy)) in offsets.iter().enumerate() {
-            let local = Vec3::new(ox * bx, oy * by, 0.0);
-            let pos = center + pb_dir * local.x + pc_dir * local.y + axis_dir * local.z;
+            let pos = center + pb_dir * (ox * bx) + pc_dir * (oy * by);
             idxs[i] = add_vert(pos, &mut vertices, &mut normals, &mut aabb);
         }
         Some(idxs)
     } else { None };
 
+    // 顶点（当顶面退化为点时）
     let apex = if top.is_none() {
-        let local = Vec3::new(offset_3d.x, offset_3d.y, height);
-        let pos = center + pb_dir * local.x + pc_dir * local.y + axis_dir * local.z;
+        let pos = center + axis_dir * height + offset_3d;
         Some(add_vert(pos, &mut vertices, &mut normals, &mut aabb))
     } else { None };
 

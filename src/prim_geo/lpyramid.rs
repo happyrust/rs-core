@@ -88,25 +88,26 @@ impl BrepShapeTrait for LPyramid {
         Box::new(self.clone())
     }
 
-    //涵盖的情况，需要考虑，上边只有一条边，和退化成点的情况
+    // truck 实现在局部坐标系中生成形状（X=B, Y=C, Z=A）
+    // 需要考虑顶面退化为边或点的情况
     #[cfg(feature = "truck")]
     fn gen_brep_shell(&self) -> Option<truck_modeling::Shell> {
-        //todo 需要解决这里的homotopy问题，能兼容point 和 line的情况
         let tx = (self.pbtp as f64 / 2.0).max(0.001);
         let ty = (self.pctp as f64 / 2.0).max(0.001);
         let bx = (self.pbbt as f64 / 2.0).max(0.001);
         let by = (self.pcbt as f64 / 2.0).max(0.001);
-        let ox = self.pbof as f64 * Vector2::new(self.pbax_dir.x as _, self.pbax_dir.y as _);
-        let oy = self.pcof as f64 * Vector2::new(self.pcax_dir.x as _, self.pcax_dir.y as _);
+        
+        // 偏移在局部坐标系中：PBOF -> X方向，PCOF -> Y方向
+        let offset_x = self.pbof as f64;
+        let offset_y = self.pcof as f64;
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
-        let offset = ox + oy;
-        let offset_3d = Vector3::new(offset.x as _, offset.y as _, 0.0);
+        // 顶面顶点（带偏移）
         let pts = vec![
-            builder::vertex(Point3::new(-tx, -ty, h2) + offset_3d),
-            builder::vertex(Point3::new(tx, -ty, h2) + offset_3d),
-            builder::vertex(Point3::new(tx, ty, h2) + offset_3d),
-            builder::vertex(Point3::new(-tx, ty, h2) + offset_3d),
+            builder::vertex(Point3::new(-tx + offset_x, -ty + offset_y, h2)),
+            builder::vertex(Point3::new(tx + offset_x, -ty + offset_y, h2)),
+            builder::vertex(Point3::new(tx + offset_x, ty + offset_y, h2)),
+            builder::vertex(Point3::new(-tx + offset_x, ty + offset_y, h2)),
         ];
         let ets = vec![
             builder::line(&pts[0], &pts[1]),
@@ -115,6 +116,7 @@ impl BrepShapeTrait for LPyramid {
             builder::line(&pts[3], &pts[0]),
         ];
 
+        // 底面顶点（无偏移）
         let pts = vec![
             builder::vertex(Point3::new(-bx, -by, -h2)),
             builder::vertex(Point3::new(bx, -by, -h2)),
@@ -146,35 +148,37 @@ impl BrepShapeTrait for LPyramid {
 
     #[cfg(feature = "occ")]
     fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        //todo 以防止出现有单个点的情况，暂时用这个模拟
+        // OCC 实现在局部坐标系中生成形状（X=B, Y=C, Z=A）
+        // 外部 transform 负责坐标系旋转和定位
         let tx = (self.pbtp / 2.0).max(0.001) as f64;
         let ty = (self.pctp / 2.0).max(0.001) as f64;
         let bx = (self.pbbt / 2.0).max(0.001) as f64;
         let by = (self.pcbt / 2.0).max(0.001) as f64;
-        //这里需要按照实际的变换方位来计算
-        let ox = self.pbof as f64 * self.pbax_dir.as_dvec3();
-        let oy = self.pcof as f64 * self.pcax_dir.as_dvec3();
-        // dbg!((ox, oy));
-        let offset_3d = ox + oy;
-        // let offset_3d = DVec3::new(offset.x as _, offset.y as _, 0.0);
-        // dbg!(offset_3d);
+        
+        // 偏移在局部坐标系中：PBOF -> X方向，PCOF -> Y方向
+        let offset_x = self.pbof as f64;
+        let offset_y = self.pcof as f64;
+        
         let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
 
         let mut polys = vec![];
         let mut verts = vec![];
 
+        // 顶面：带偏移
         let pts = vec![
-            DVec3::new(-tx, -ty, h2) + offset_3d,
-            DVec3::new(tx, -ty, h2) + offset_3d,
-            DVec3::new(tx, ty, h2) + offset_3d,
-            DVec3::new(-tx, ty, h2) + offset_3d,
+            DVec3::new(-tx + offset_x, -ty + offset_y, h2),
+            DVec3::new(tx + offset_x, -ty + offset_y, h2),
+            DVec3::new(tx + offset_x, ty + offset_y, h2),
+            DVec3::new(-tx + offset_x, ty + offset_y, h2),
         ];
         if tx + ty < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(offset_3d.x, offset_3d.y, h2)));
+            // 顶面退化为点
+            verts.push(Vertex::new(DVec3::new(offset_x, offset_y, h2)));
         } else {
             polys.push(Wire::from_ordered_points(pts)?);
         }
 
+        // 底面：无偏移
         let pts = vec![
             DVec3::new(-bx, -by, -h2),
             DVec3::new(bx, -by, -h2),
@@ -182,7 +186,8 @@ impl BrepShapeTrait for LPyramid {
             DVec3::new(-bx, by, -h2),
         ];
         if bx + by < f64::EPSILON {
-            verts.push(Vertex::new(DVec3::new(-offset_3d.x, -offset_3d.y, -h2)));
+            // 底面退化为点
+            verts.push(Vertex::new(DVec3::new(0.0, 0.0, -h2)));
         } else {
             polys.push(Wire::from_ordered_points(pts)?);
         }
