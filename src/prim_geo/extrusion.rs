@@ -229,12 +229,67 @@ impl BrepShapeTrait for Extrusion {
         &self,
         transform: &bevy_transform::prelude::Transform,
     ) -> Vec<(Vec3, String, u8)> {
-        // Extrusion 是复杂的 Mesh 类型，只返回中心点
-        vec![(
-            transform.transform_point(Vec3::new(0.0, 0.0, self.height / 2.0)),
+        let mut points = Vec::new();
+
+        // 获取所有轮廓顶点
+        let all_verts: Vec<Vec3> = self.verts.iter().flatten().cloned().collect();
+        if all_verts.is_empty() {
+            return points;
+        }
+
+        // 计算 profile 中心
+        let center_2d = all_verts
+            .iter()
+            .fold(Vec3::ZERO, |acc, v| acc + Vec3::new(v.x, v.y, 0.0))
+            / all_verts.len() as f32;
+
+        // 1. 底面和顶面中心（优先级100）
+        let bottom_center = center_2d;
+        let top_center = center_2d + Vec3::new(0.0, 0.0, self.height);
+        points.push((
+            transform.transform_point(bottom_center),
             "Center".to_string(),
             100,
-        )]
+        ));
+        points.push((
+            transform.transform_point(top_center),
+            "Center".to_string(),
+            100,
+        ));
+
+        // 2. 底面 profile 顶点（优先级90）
+        for v in &all_verts {
+            let bottom_pt = Vec3::new(v.x, v.y, 0.0);
+            points.push((
+                transform.transform_point(bottom_pt),
+                "Endpoint".to_string(),
+                90,
+            ));
+        }
+
+        // 3. 顶面 profile 顶点（优先级90）
+        for v in &all_verts {
+            let top_pt = Vec3::new(v.x, v.y, self.height);
+            points.push((
+                transform.transform_point(top_pt),
+                "Endpoint".to_string(),
+                90,
+            ));
+        }
+
+        // 4. 侧面边中点（优先级70）- 选取部分顶点的中间高度点
+        let mid_height = self.height / 2.0;
+        for v in all_verts.iter().take(8) {
+            // 最多8个中间点
+            let mid_pt = Vec3::new(v.x, v.y, mid_height);
+            points.push((
+                transform.transform_point(mid_pt),
+                "Midpoint".to_string(),
+                70,
+            ));
+        }
+
+        points
     }
 }
 

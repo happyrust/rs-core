@@ -228,11 +228,67 @@ impl BrepShapeTrait for Revolution {
         &self,
         transform: &bevy_transform::prelude::Transform,
     ) -> Vec<(Vec3, String, u8)> {
-        // Revolution 是复杂的 Mesh 类型，只返回旋转中心点
-        vec![(
+        use glam::Quat;
+
+        let mut points = Vec::new();
+
+        // 1. 旋转中心点（优先级100）
+        points.push((
             transform.transform_point(self.rot_pt),
             "Center".to_string(),
             100,
-        )]
+        ));
+
+        // 获取所有 profile 顶点
+        let all_verts: Vec<Vec3> = self.verts.iter().flatten().cloned().collect();
+        if all_verts.is_empty() {
+            return points;
+        }
+
+        let rot_axis = self.rot_dir.normalize();
+        let angle_rad = self.angle.to_radians();
+
+        // 2. 起始面 profile 顶点（优先级90）
+        for v in &all_verts {
+            let start_pt = Vec3::new(v.x, v.y, 0.0);
+            points.push((
+                transform.transform_point(start_pt),
+                "Endpoint".to_string(),
+                90,
+            ));
+        }
+
+        // 3. 终止面 profile 顶点（旋转后，优先级90）
+        let end_rotation = Quat::from_axis_angle(rot_axis, angle_rad);
+        for v in &all_verts {
+            let start_pt = Vec3::new(v.x, v.y, 0.0);
+            let relative_pt = start_pt - self.rot_pt;
+            let rotated_pt = end_rotation * relative_pt + self.rot_pt;
+            points.push((
+                transform.transform_point(rotated_pt),
+                "Endpoint".to_string(),
+                90,
+            ));
+        }
+
+        // 4. 中间角度的采样点（优先级70）- 在 1/4, 1/2, 3/4 位置
+        for fraction in [0.25, 0.5, 0.75] {
+            let mid_angle = angle_rad * fraction;
+            let mid_rotation = Quat::from_axis_angle(rot_axis, mid_angle);
+
+            // 只取部分 profile 顶点的中间位置
+            for v in all_verts.iter().take(4) {
+                let start_pt = Vec3::new(v.x, v.y, 0.0);
+                let relative_pt = start_pt - self.rot_pt;
+                let mid_pt = mid_rotation * relative_pt + self.rot_pt;
+                points.push((
+                    transform.transform_point(mid_pt),
+                    "Midpoint".to_string(),
+                    70,
+                ));
+            }
+        }
+
+        points
     }
 }

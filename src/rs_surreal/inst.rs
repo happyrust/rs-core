@@ -16,6 +16,31 @@ use serde_with::serde_as;
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::{Kind, SurrealValue, Value};
 
+/// 完整的 Ptset 点数据，包含位置和方向信息
+#[derive(Serialize, Deserialize, Debug, Clone, Default, SurrealValue)]
+pub struct FullPtsetPoint {
+    /// 点位置
+    pub pt: RsVec3,
+    /// 主方向（连接方向）
+    #[serde(default)]
+    pub dir: Option<RsVec3>,
+    /// 参考方向
+    #[serde(default)]
+    pub ref_dir: Option<RsVec3>,
+    /// 点编号
+    #[serde(default)]
+    pub number: i32,
+    /// 方向标志
+    #[serde(default)]
+    pub dir_flag: f32,
+    /// 口径
+    #[serde(default)]
+    pub pbore: f32,
+    /// 连接类型
+    #[serde(default)]
+    pub pconnect: String,
+}
+
 /// 初始化数据库的 inst_relate 表的索引
 pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
     // 创建 zone_refno 字段的索引
@@ -67,6 +92,12 @@ fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<
 /// # 返回值
 ///
 /// 返回符合条件的 `TubiInstQuery` 列表
+///
+/// # 注意
+///
+/// `tubi_relate` 表的 ID 格式是 `[pe:⟨第一个子元素refno⟩, index]`，
+/// 而不是 `[pe:⟨BRAN_refno⟩, index]`。因此需要先查询 BRAN 的第一个子元素，
+/// 然后用它来查询 `tubi_relate`。
 pub async fn query_tubi_insts_by_brans(
     bran_refnos: &[RefnoEnum],
 ) -> anyhow::Result<Vec<TubiInstQuery>> {
@@ -76,6 +107,11 @@ pub async fn query_tubi_insts_by_brans(
 
     let mut all_results = Vec::new();
     for bran_refno in bran_refnos {
+        let bran_id = bran_refno.to_e3d_id();
+        
+        // 通过 owner 字段查询 tubi_relate
+        // tubi_relate 的 id[0] 是 pe 记录，其 owner 字段指向 BRAN
+        // 注意：使用 pe_key 格式直接比较 record，避免字符串转换的性能开销
         let pe_key = bran_refno.to_pe_key();
         let sql = format!(
             r#"
@@ -88,12 +124,13 @@ pub async fn query_tubi_insts_by_brans(
                 world_trans.d as world_trans,
                 record::id(geo) as geo_hash,
                 id[0].dt as date
-            FROM tubi_relate:[{}, 0]..[{}, ..]
-            WHERE aabb.d != NONE
+            FROM tubi_relate
+            WHERE id[0].owner = {} AND aabb.d != NONE
             "#,
-            pe_key, pe_key
+            pe_key
         );
         let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        
         all_results.append(&mut results);
     }
     Ok(all_results)

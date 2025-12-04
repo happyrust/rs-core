@@ -50,6 +50,7 @@ pub mod prim_geo;
 pub mod shape;
 pub mod tiny_expr;
 pub mod tool;
+pub mod vec3_pool;
 // 全自动出图所需的结构体
 pub mod bin_data;
 pub mod create_attas_structs;

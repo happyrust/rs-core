@@ -105,40 +105,6 @@ impl SweepSolid {
         Some(DQuat::from_rotation_arc(default_normal, dir_normalized))
     }
 
-    /// 获取端面的完整变换矩阵（包含旋转和缩放）
-    /// 
-    /// 保留原有的缩放逻辑用于斜切端面的几何补偿
-    #[deprecated(note = "请使用 calculate_face_rotation() 替代")]
-    pub fn get_face_mat4(&self, is_start: bool) -> DMat4 {
-        let dir = if is_start {
-            match self.drns {
-                Some(d) => d,
-                None => return DMat4::IDENTITY,
-            }
-        } else {
-            match self.drne {
-                Some(d) => d,
-                None => return DMat4::IDENTITY,
-            }
-        };
-        
-        if dir.z.abs() < 0.1 {
-            return DMat4::IDENTITY;
-        }
-        
-        let angle_x = (dir.x / dir.z).atan();
-        let angle_y = -(dir.y / dir.z).atan();
-        
-        // 角度限制在 ±90° 以内
-        if angle_x.abs() - 0.01 >= FRAC_PI_2 || angle_y.abs() - 0.01 >= FRAC_PI_2 {
-            return DMat4::IDENTITY;
-        }
-        
-        let scale = DVec3::new(1.0 / angle_x.cos().abs(), 1.0 / angle_y.cos().abs(), 1.0);
-        let rot =
-            DQuat::from_axis_angle(DVec3::Y, angle_x) * DQuat::from_axis_angle(DVec3::X, angle_y);
-        DMat4::from_scale_rotation_translation(scale, rot, DVec3::ZERO)
-    }
 }
 
 impl Default for SweepSolid {

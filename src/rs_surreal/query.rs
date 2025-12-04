@@ -11,6 +11,7 @@
 use super::query_mdb_db_nums;
 use crate::consts::{MAX_INSERT_LENGTH, WORD_HASH};
 use crate::parsed_data::CateAxisParam;
+use crate::vec3_pool::parse_ptset_auto;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::ssc_setting::PbsElement;
@@ -48,9 +49,12 @@ struct KV<K: SurrealValue, V: SurrealValue> {
 /// CataHash 分组查询结果
 /// k 是一个元组：(cata_hash, exist_inst, ptset)
 /// v 是分组的 refnos
+/// 
+/// 注意：ptset 使用 serde_json::Value 接收，支持原始格式和压缩格式
+/// 使用 parse_ptset_auto 解析
 #[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
 pub struct CataHashGroupQueryResult {
-    pub k: (String, bool, Option<Vec<CateAxisParam>>),
+    pub k: (String, bool, Option<serde_json::Value>),
     pub v: Vec<RefnoEnum>,
 }
 
@@ -1296,7 +1300,7 @@ pub async fn query_group_by_cata_hash(
             .into_iter()
             .map(
                 |CataHashGroupQueryResult {
-                     k: (cata_hash, exist_inst, ptset),
+                     k: (cata_hash, exist_inst, ptset_json),
                      v: group_refnos,
                  }| {
                     (
@@ -1305,9 +1309,12 @@ pub async fn query_group_by_cata_hash(
                             cata_hash,
                             group_refnos,
                             exist_inst,
-                            ptset: ptset.map(|x| {
-                                // ptset 现在是数组，需要转换为 BTreeMap<i32, CateAxisParam>
-                                x.into_iter().map(|param| (param.number, param)).collect()
+                            ptset: ptset_json.and_then(|json| {
+                                // 使用 parse_ptset_auto 自动检测格式并解析
+                                // 支持原始格式和压缩格式
+                                parse_ptset_auto(&json).map(|params| {
+                                    params.into_iter().map(|param| (param.number, param)).collect()
+                                })
                             }),
                         },
                     )

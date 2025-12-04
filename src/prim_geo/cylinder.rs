@@ -440,52 +440,160 @@ impl BrepShapeTrait for SCylinder {
     /// - 2个面中心（顶面和底面，优先级100）
     /// - 16个圆周点（顶面8个+底面8个，优先级80）
     /// - 8个侧面中线点（优先级70）
+    ///
+    /// 对于 SSCL（倾斜圆柱体），会根据 btm_shear_angles/top_shear_angles 计算真实的
+    /// 顶/底面中心与法向，确保关键点与实际几何一致。
     fn enhanced_key_points(
         &self,
         transform: &bevy_transform::prelude::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
+
+        // 归一化轴向向量，处理零向量情况
+        let dir = self.paxi_dir.normalize_or_zero();
+        if dir == Vec3::ZERO {
+            // 如果轴向无效，返回空列表
+            return points;
+        }
+
         let radius = self.pdia / 2.0;
-        let half_height = self.phei / 2.0;
+        let height = self.phei.abs(); // 使用绝对值处理符号
+        let half_height = height / 2.0;
 
-        // 顶面中心（优先级：100）
-        let top_center = self.paxi_pt + self.paxi_dir * half_height;
-        let world_top_center = transform.transform_point(top_center);
-        points.push((world_top_center, "Center".to_string(), 100));
-
-        // 底面中心（优先级：100）
-        let bottom_center = self.paxi_pt - self.paxi_dir * half_height;
-        let world_bottom_center = transform.transform_point(bottom_center);
-        points.push((world_bottom_center, "Center".to_string(), 100));
+        // 根据 center_in_mid 确定基准点
+        let base_center = if self.center_in_mid {
+            self.paxi_pt // 中心在中间
+        } else {
+            self.paxi_pt + dir * half_height // 中心在底面，需要偏移到中点
+        };
 
         // 计算垂直于轴的两个正交向量
-        let (u, v) = calculate_perpendicular_vectors(self.paxi_dir);
+        let (u, v) = calculate_perpendicular_vectors(dir);
 
-        // 顶面圆周8个点（优先级：80）
-        for i in 0..8 {
-            let angle = (i as f32) * std::f32::consts::TAU / 8.0;
-            let offset = (u * angle.cos() + v * angle.sin()) * radius;
-            let local_pos = top_center + offset;
-            let world_pos = transform.transform_point(local_pos);
-            points.push((world_pos, "Endpoint".to_string(), 80));
-        }
+        // 检查是否为 SSCL（倾斜圆柱体）
+        if self.is_sscl() {
+            // SSCL 处理：根据剪切角度计算真实的顶/底面位置
+            let btm_shear_x = self.btm_shear_angles[0].to_radians();
+            let btm_shear_y = self.btm_shear_angles[1].to_radians();
+            let top_shear_x = self.top_shear_angles[0].to_radians();
+            let top_shear_y = self.top_shear_angles[1].to_radians();
 
-        // 底面圆周8个点（优先级：80）
-        for i in 0..8 {
-            let angle = (i as f32) * std::f32::consts::TAU / 8.0;
-            let offset = (u * angle.cos() + v * angle.sin()) * radius;
-            let local_pos = bottom_center + offset;
-            let world_pos = transform.transform_point(local_pos);
-            points.push((world_pos, "Endpoint".to_string(), 80));
-        }
+            // 底面中心偏移（由剪切角度引起）
+            let btm_offset = u * (radius * btm_shear_x.tan()) + v * (radius * btm_shear_y.tan());
+            let bottom_center = base_center - dir * half_height + btm_offset;
 
-        // 侧面中线8个点（优先级：70）
-        for i in 0..8 {
-            let angle = (i as f32) * std::f32::consts::TAU / 8.0;
-            let offset = (u * angle.cos() + v * angle.sin()) * radius;
-            let local_pos = self.paxi_pt + offset;
-            let world_pos = transform.transform_point(local_pos);
-            points.push((world_pos, "Midpoint".to_string(), 70));
+            // 顶面中心偏移
+            let top_offset = u * (radius * top_shear_x.tan()) + v * (radius * top_shear_y.tan());
+            let top_center = base_center + dir * half_height + top_offset;
+
+            // 底面中心（优先级：100）
+            points.push((
+                transform.transform_point(bottom_center),
+                "Center".to_string(),
+                100,
+            ));
+
+            // 顶面中心（优先级：100）
+            points.push((
+                transform.transform_point(top_center),
+                "Center".to_string(),
+                100,
+            ));
+
+            // 底面圆周8个点（考虑剪切，优先级：80）
+            for i in 0..8 {
+                let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+                let base_offset = (u * angle.cos() + v * angle.sin()) * radius;
+                // 剪切面上的点需要沿轴向调整
+                let shear_z = base_offset.dot(u) * btm_shear_x.tan()
+                    + base_offset.dot(v) * btm_shear_y.tan();
+                let local_pos = bottom_center + base_offset + dir * shear_z;
+                points.push((
+                    transform.transform_point(local_pos),
+                    "Endpoint".to_string(),
+                    80,
+                ));
+            }
+
+            // 顶面圆周8个点（考虑剪切，优先级：80）
+            for i in 0..8 {
+                let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+                let base_offset = (u * angle.cos() + v * angle.sin()) * radius;
+                let shear_z = base_offset.dot(u) * top_shear_x.tan()
+                    + base_offset.dot(v) * top_shear_y.tan();
+                let local_pos = top_center + base_offset + dir * shear_z;
+                points.push((
+                    transform.transform_point(local_pos),
+                    "Endpoint".to_string(),
+                    80,
+                ));
+            }
+
+            // 侧面中线8个点（优先级：70）
+            let mid_center = (bottom_center + top_center) / 2.0;
+            for i in 0..8 {
+                let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+                let offset = (u * angle.cos() + v * angle.sin()) * radius;
+                points.push((
+                    transform.transform_point(mid_center + offset),
+                    "Midpoint".to_string(),
+                    70,
+                ));
+            }
+        } else {
+            // 普通圆柱体处理
+            let bottom_center = base_center - dir * half_height;
+            let top_center = base_center + dir * half_height;
+
+            // 底面中心（优先级：100）
+            points.push((
+                transform.transform_point(bottom_center),
+                "Center".to_string(),
+                100,
+            ));
+
+            // 顶面中心（优先级：100）
+            points.push((
+                transform.transform_point(top_center),
+                "Center".to_string(),
+                100,
+            ));
+
+            // 顶面圆周8个点（优先级：80）
+            for i in 0..8 {
+                let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+                let offset = (u * angle.cos() + v * angle.sin()) * radius;
+                let local_pos = top_center + offset;
+                points.push((
+                    transform.transform_point(local_pos),
+                    "Endpoint".to_string(),
+                    80,
+                ));
+            }
+
+            // 底面圆周8个点（优先级：80）
+            for i in 0..8 {
+                let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+                let offset = (u * angle.cos() + v * angle.sin()) * radius;
+                let local_pos = bottom_center + offset;
+                points.push((
+                    transform.transform_point(local_pos),
+                    "Endpoint".to_string(),
+                    80,
+                ));
+            }
+
+            // 侧面中线8个点（优先级：70）
+            for i in 0..8 {
+                let angle = (i as f32) * std::f32::consts::TAU / 8.0;
+                let offset = (u * angle.cos() + v * angle.sin()) * radius;
+                let local_pos = base_center + offset;
+                points.push((
+                    transform.transform_point(local_pos),
+                    "Midpoint".to_string(),
+                    70,
+                ));
+            }
         }
 
         points

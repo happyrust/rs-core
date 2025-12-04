@@ -146,57 +146,6 @@ impl BrepShapeTrait for LPyramid {
         Some(shell)
     }
 
-    #[cfg(feature = "occ")]
-    fn gen_occ_shape(&self) -> anyhow::Result<OccSharedShape> {
-        // OCC 实现在局部坐标系中生成形状（X=B, Y=C, Z=A）
-        // 外部 transform 负责坐标系旋转和定位
-        let tx = (self.pbtp / 2.0).max(0.001) as f64;
-        let ty = (self.pctp / 2.0).max(0.001) as f64;
-        let bx = (self.pbbt / 2.0).max(0.001) as f64;
-        let by = (self.pcbt / 2.0).max(0.001) as f64;
-        
-        // 偏移在局部坐标系中：PBOF -> X方向，PCOF -> Y方向
-        let offset_x = self.pbof as f64;
-        let offset_y = self.pcof as f64;
-        
-        let h2 = 0.5 * (self.ptdi - self.pbdi) as f64;
-
-        let mut polys = vec![];
-        let mut verts = vec![];
-
-        // 顶面：带偏移
-        let pts = vec![
-            DVec3::new(-tx + offset_x, -ty + offset_y, h2),
-            DVec3::new(tx + offset_x, -ty + offset_y, h2),
-            DVec3::new(tx + offset_x, ty + offset_y, h2),
-            DVec3::new(-tx + offset_x, ty + offset_y, h2),
-        ];
-        if tx + ty < f64::EPSILON {
-            // 顶面退化为点
-            verts.push(Vertex::new(DVec3::new(offset_x, offset_y, h2)));
-        } else {
-            polys.push(Wire::from_ordered_points(pts)?);
-        }
-
-        // 底面：无偏移
-        let pts = vec![
-            DVec3::new(-bx, -by, -h2),
-            DVec3::new(bx, -by, -h2),
-            DVec3::new(bx, by, -h2),
-            DVec3::new(-bx, by, -h2),
-        ];
-        if bx + by < f64::EPSILON {
-            // 底面退化为点
-            verts.push(Vertex::new(DVec3::new(0.0, 0.0, -h2)));
-        } else {
-            polys.push(Wire::from_ordered_points(pts)?);
-        }
-
-        Ok(OccSharedShape::new(
-            Solid::loft_with_points(polys.iter(), verts.iter())?.into_shape(),
-        ))
-    }
-
     fn hash_unit_mesh_params(&self) -> u64 {
         let bytes = bincode::serialize(self).unwrap();
         let mut hasher = DefaultHasher::default();
@@ -217,15 +166,40 @@ impl BrepShapeTrait for LPyramid {
         &self,
         transform: &bevy_transform::prelude::Transform,
     ) -> Vec<(Vec3, String, u8)> {
+        use crate::geometry::csg::{orthonormal_basis, safe_normalize};
+
         let mut points = Vec::new();
 
-        let a_dir = self.paax_dir.normalize();
-        let b_dir = self.pbax_dir.normalize();
-        let c_dir = self.pcax_dir.normalize();
+        // 正交化轴方向（与 mesh 生成保持一致）
+        let axis_dir = match safe_normalize(self.paax_dir) {
+            Some(d) => d,
+            None => return points,
+        };
+        let (fallback_u, fallback_v) = orthonormal_basis(axis_dir);
 
-        // 顶面和底面的中心
-        let top_center = self.paax_pt + a_dir * self.ptdi + b_dir * self.pbof + c_dir * self.pcof;
-        let bottom_center = self.paax_pt + a_dir * self.pbdi;
+        // 正交化 B 轴方向
+        let mut pb_dir = safe_normalize(self.pbax_dir).unwrap_or(fallback_u);
+        pb_dir = (pb_dir - axis_dir * pb_dir.dot(axis_dir)).normalize_or_zero();
+        if pb_dir.length_squared() <= 0.0001 {
+            pb_dir = fallback_u;
+        }
+
+        // 正交化 C 轴方向
+        let mut pc_dir = safe_normalize(self.pcax_dir).unwrap_or(fallback_v);
+        pc_dir = (pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir))
+            .normalize_or_zero();
+        if pc_dir.length_squared() <= 0.0001 {
+            pc_dir = fallback_v;
+        }
+
+        // 偏移使用正交化后的方向（与 mesh 生成一致）
+        let offset_3d = pb_dir * self.pbof + pc_dir * self.pcof;
+
+        // 底面中心（参考点）
+        let bottom_center = self.paax_pt + axis_dir * self.pbdi;
+        // 顶面中心（带偏移）
+        let height = self.ptdi - self.pbdi;
+        let top_center = bottom_center + axis_dir * height + offset_3d;
 
         // 1. 顶面和底面中心（优先级100）
         points.push((
@@ -240,12 +214,14 @@ impl BrepShapeTrait for LPyramid {
         ));
 
         // 2. 顶面的4个顶点（如果不是退化为点）
-        if self.pbtp > 0.001 && self.pctp > 0.001 {
+        let tx = self.pbtp / 2.0;
+        let ty = self.pctp / 2.0;
+        if tx > 0.001 && ty > 0.001 {
             let top_corners = [
-                top_center + b_dir * self.pbtp / 2.0 + c_dir * self.pctp / 2.0,
-                top_center + b_dir * self.pbtp / 2.0 - c_dir * self.pctp / 2.0,
-                top_center - b_dir * self.pbtp / 2.0 + c_dir * self.pctp / 2.0,
-                top_center - b_dir * self.pbtp / 2.0 - c_dir * self.pctp / 2.0,
+                top_center + pb_dir * tx + pc_dir * ty,
+                top_center + pb_dir * tx - pc_dir * ty,
+                top_center - pb_dir * tx + pc_dir * ty,
+                top_center - pb_dir * tx - pc_dir * ty,
             ];
             for corner in &top_corners {
                 points.push((
@@ -257,12 +233,14 @@ impl BrepShapeTrait for LPyramid {
         }
 
         // 3. 底面的4个顶点
-        if self.pbbt > 0.001 && self.pcbt > 0.001 {
+        let bx = self.pbbt / 2.0;
+        let by = self.pcbt / 2.0;
+        if bx > 0.001 && by > 0.001 {
             let bottom_corners = [
-                bottom_center + b_dir * self.pbbt / 2.0 + c_dir * self.pcbt / 2.0,
-                bottom_center + b_dir * self.pbbt / 2.0 - c_dir * self.pcbt / 2.0,
-                bottom_center - b_dir * self.pbbt / 2.0 + c_dir * self.pcbt / 2.0,
-                bottom_center - b_dir * self.pbbt / 2.0 - c_dir * self.pcbt / 2.0,
+                bottom_center + pb_dir * bx + pc_dir * by,
+                bottom_center + pb_dir * bx - pc_dir * by,
+                bottom_center - pb_dir * bx + pc_dir * by,
+                bottom_center - pb_dir * bx - pc_dir * by,
             ];
             for corner in &bottom_corners {
                 points.push((

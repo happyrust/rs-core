@@ -245,6 +245,85 @@ impl BrepShapeTrait for LSnout {
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
         Some(PdmsGeoParam::PrimLSnout(self.clone()))
     }
+
+    fn enhanced_key_points(
+        &self,
+        transform: &bevy_transform::prelude::Transform,
+    ) -> Vec<(Vec3, String, u8)> {
+        use crate::prim_geo::helper::cal_ref_axis;
+
+        let mut points = Vec::new();
+
+        let a_dir = self.paax_dir.normalize();
+        let b_dir = self.pbax_dir.normalize();
+
+        // 底面中心和顶面中心
+        let bottom_center = a_dir * self.pbdi + self.paax_pt;
+        let top_center = a_dir * self.ptdi + self.paax_pt + self.poff * b_dir;
+
+        let rb = self.pbdm / 2.0; // 底面半径
+        let rt = self.ptdm / 2.0; // 顶面半径
+
+        // 1. 底面中心和顶面中心（优先级100）
+        points.push((
+            transform.transform_point(bottom_center),
+            "Center".to_string(),
+            100,
+        ));
+        points.push((
+            transform.transform_point(top_center),
+            "Center".to_string(),
+            100,
+        ));
+
+        // 计算垂直于轴的两个正交向量
+        let ref_axis = cal_ref_axis(&a_dir);
+        let perp1 = ref_axis.normalize();
+        let perp2 = a_dir.cross(perp1).normalize();
+
+        // 2. 底面圆周的8个点（优先级80）
+        if rb > EPSILON {
+            for i in 0..8 {
+                let angle = i as f32 * std::f32::consts::PI / 4.0;
+                let offset = perp1 * angle.cos() * rb + perp2 * angle.sin() * rb;
+                points.push((
+                    transform.transform_point(bottom_center + offset),
+                    "Endpoint".to_string(),
+                    80,
+                ));
+            }
+        }
+
+        // 3. 顶面圆周的8个点（优先级80）
+        if rt > EPSILON {
+            for i in 0..8 {
+                let angle = i as f32 * std::f32::consts::PI / 4.0;
+                let offset = perp1 * angle.cos() * rt + perp2 * angle.sin() * rt;
+                points.push((
+                    transform.transform_point(top_center + offset),
+                    "Endpoint".to_string(),
+                    80,
+                ));
+            }
+        }
+
+        // 4. 侧面中线点（优先级70）
+        let mid_center = (bottom_center + top_center) / 2.0;
+        let mid_radius = (rb + rt) / 2.0;
+        if mid_radius > EPSILON {
+            for i in 0..4 {
+                let angle = i as f32 * std::f32::consts::PI / 2.0;
+                let offset = perp1 * angle.cos() * mid_radius + perp2 * angle.sin() * mid_radius;
+                points.push((
+                    transform.transform_point(mid_center + offset),
+                    "Midpoint".to_string(),
+                    70,
+                ));
+            }
+        }
+
+        points
+    }
 }
 
 impl From<&AttrMap> for LSnout {

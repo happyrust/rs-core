@@ -3,6 +3,7 @@ pub mod sweep_mesh;
 
 use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::vec3_pool::{compress_ptset, CateAxisParamCompact};
 use crate::pdms_types::PdmsGenericType;
 use crate::prim_geo::basic::{BOXI_GEO_HASH, TUBI_GEO_HASH};
 use crate::prim_geo::{SBox, SCylinder};
@@ -111,7 +112,7 @@ impl EleGeosInfo {
         }
     }
 
-    ///生成surreal的json文件
+    ///生成surreal的json文件（原始格式，向后兼容）
     pub fn gen_sur_json(&self, vec3_map: &mut HashMap<u64, String>) -> String {
         let id = self.id_str();
         // 只序列化 ptset_map 的 values，不包含键
@@ -127,6 +128,36 @@ impl EleGeosInfo {
         json.push_str(",");
         json.push_str(&format!(r#""id": inst_info:⟨{}⟩, "#, id));
         json.push_str("}");
+        json
+    }
+
+    /// 生成surreal的json文件（压缩格式）
+    /// 
+    /// 使用 `CateAxisParamCompact` 压缩 ptset 数据，减少约 70-80% 的存储空间。
+    /// 
+    /// # 参数
+    /// - `include_refno`: 是否在每个点中包含 refno 字段
+    /// 
+    /// # 压缩优化
+    /// - 方向向量使用预定义 ID（常见方向只需 1 字节）
+    /// - 省略默认值字段（pwidth=0, pheight=0 等）
+    /// - 使用短字段名（n, p, d, rd 等）
+    pub fn gen_sur_json_compact(&self, include_refno: bool) -> String {
+        let id = self.id_str();
+        // 转换为压缩格式
+        let ptset_values: Vec<CateAxisParam> = self.ptset_map.values().cloned().collect();
+        let ptset_compact = compress_ptset(&ptset_values, include_refno);
+        
+        let mut json = serde_json::to_string(&serde_json::json!({
+            "visible": self.visible,
+            "generic_type": self.generic_type,
+            "ptset": ptset_compact,
+        }))
+        .unwrap();
+
+        // 移除最后的 } 并添加 id 字段
+        json.pop();
+        json.push_str(&format!(r#","id":"inst_info:⟨{}⟩"}}"#, id));
         json
     }
 

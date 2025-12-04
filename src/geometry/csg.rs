@@ -3427,7 +3427,7 @@ fn merge_meshes(base: &mut PlantMesh, mut other: PlantMesh, other_aabb: Aabb) {
 /// 安全归一化向量
 ///
 /// 如果向量长度过小（接近零），返回None；否则返回归一化后的向量
-fn safe_normalize(v: Vec3) -> Option<Vec3> {
+pub fn safe_normalize(v: Vec3) -> Option<Vec3> {
     if v.length_squared() <= MIN_LEN * MIN_LEN {
         None
     } else {
@@ -3449,7 +3449,7 @@ fn extend_aabb(aabb: &mut Aabb, v: Vec3) {
 ///
 /// # 返回
 /// (tangent, bitangent) 两个切向量，与normal一起形成右手坐标系
-fn orthonormal_basis(normal: Vec3) -> (Vec3, Vec3) {
+pub fn orthonormal_basis(normal: Vec3) -> (Vec3, Vec3) {
     let n = normal.normalize();
     // 选择一个与n不平行的向量进行叉积，生成切向量
     let mut tangent = if n.z.abs() < 0.999 {
