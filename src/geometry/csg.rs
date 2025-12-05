@@ -1872,7 +1872,7 @@ fn generate_dish_mesh(
     let radial_segments = ((base_min_segments * size_factor.sqrt())
         .min(128.0) // 上限 128
         .max(24.0)) as usize; // 最低 24 段
-    dbg!(radius_rim, size_factor, radial_segments);
+    // dbg!(radius_rim, size_factor, radial_segments);
     // 对于椭圆 dish，根据 arc 和 scale_z 计算合适的 rings 数
     // 参考 rvmparser: rings = max(min_rings, scale_z * samples * arc / (2π))
     let min_rings = 12u16;

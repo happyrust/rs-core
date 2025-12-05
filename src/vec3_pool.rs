@@ -42,10 +42,41 @@ pub type QuantizedVec3 = (i32, i32, i32);
 pub enum Vec3Id {
     /// 预定义的常见方向 (1-255)
     Common(u8),
-    /// 非常见方向，使用量化 hash
+    /// 非常见方向，使用量化 hash（序列化为字符串避免大数字问题）
+    #[serde(with = "hashed_u64_as_string")]
     Hashed(u64),
     /// 零向量
     Zero,
+}
+
+/// 将 u64 序列化为字符串，避免 SurrealDB/JSON 解析大数字时溢出
+mod hashed_u64_as_string {
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(value: &u64, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&value.to_string())
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<u64, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // 支持两种格式：字符串和数字
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrNumber {
+            String(String),
+            Number(u64),
+        }
+        
+        match StringOrNumber::deserialize(deserializer)? {
+            StringOrNumber::String(s) => s.parse().map_err(serde::de::Error::custom),
+            StringOrNumber::Number(n) => Ok(n),
+        }
+    }
 }
 
 impl Vec3Id {
