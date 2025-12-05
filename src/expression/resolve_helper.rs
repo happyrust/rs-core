@@ -186,6 +186,14 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                 tube_flag: gmse.tube_flag,
             }),
             "SSLC" | "NSSL" => {
+                crate::debug_model!(
+                    "🔍 SSLC 解析: paxises.len()={}, diameters.len()={}, shears.len()={}",
+                    gmse.paxises.len(),
+                    gmse.diameters.len(),
+                    gmse.shears.len()
+                );
+                crate::debug_model!("   shears={:?}", gmse.shears);
+
                 if gmse.paxises.len() >= 1 && gmse.diameters.len() >= 1 && gmse.shears.len() >= 4 {
                     // dbg!(&gmse);
                     CateGeoParam::SlopeBottomCylinder(CateSlopeBottomCylinderParam {
@@ -202,6 +210,7 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                         tube_flag: gmse.tube_flag,
                     })
                 } else {
+                    crate::debug_model!("❌ SSLC 解析失败: 条件不满足，返回 Unknown");
                     CateGeoParam::Unknown
                 }
             }

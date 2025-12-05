@@ -2,6 +2,7 @@ use crate::parsed_data::CateAxisParam;
 use crate::pdms_pluggin::heat_dissipation::InstPointMap;
 use crate::pe::SPdmsElement;
 use crate::utils::{take_option, take_vec};
+use crate::vec3_pool::parse_ptset_auto;
 use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SUL_DB, SurlValue, SurrealQueryExt};
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
@@ -11,10 +12,23 @@ use cached::proc_macro::cached;
 use glam::Vec3;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
+
+/// 将 ptset JSON（原始或压缩）解码为按 number 组织的映射
+#[inline]
+fn decode_ptset_map(ptset_array: &Option<Value>) -> BTreeMap<String, CateAxisParam> {
+    ptset_array
+        .as_ref()
+        .and_then(parse_ptset_auto)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|param| (param.number.to_string(), param))
+        .collect()
+}
 
 //获得参考号对应的inst keys
 pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
@@ -185,17 +199,13 @@ pub async fn query_bran_children_point_map(refno: RefnoEnum) -> anyhow::Result<V
         refno.to_string()
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let mut results: Vec<(RefnoEnum, Option<Vec<CateAxisParam>>, String)> =
+    let mut results: Vec<(RefnoEnum, Option<serde_json::Value>, String)> =
         take_vec(&mut response, 0)?;
 
     Ok(results
         .into_iter()
         .map(|(refno, ptset_array, att_type)| {
-            let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
-                .unwrap_or_default()
-                .into_iter()
-                .map(|param| (param.number.to_string(), param))
-                .collect();
+            let ptset_map = decode_ptset_map(&ptset_array);
             InstPointMap {
                 refno,
                 att_type,
@@ -222,7 +232,7 @@ pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPoin
     );
     let mut response = SUL_DB.query_response(&sql).await?;
     let Ok(mut result) =
-        take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0)
+        take_vec::<(RefnoEnum, Option<serde_json::Value>, String)>(&mut response, 0)
     else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(None);
@@ -231,11 +241,7 @@ pub async fn query_point_map(refno: RefnoEnum) -> anyhow::Result<Option<InstPoin
         return Ok(None);
     }
     let (refno, ptset_array, att_type) = result.remove(0);
-    let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
-        .unwrap_or_default()
-        .into_iter()
-        .map(|param| (param.number.to_string(), param))
-        .collect();
+    let ptset_map = decode_ptset_map(&ptset_array);
     Ok(Some(InstPointMap {
         refno,
         att_type,
@@ -257,7 +263,8 @@ pub async fn query_refnos_point_map(
         refnos.join(",")
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let Ok(result) = take_vec::<(RefnoEnum, Option<Vec<CateAxisParam>>, String)>(&mut response, 0)
+    let Ok(result) =
+        take_vec::<(RefnoEnum, Option<serde_json::Value>, String)>(&mut response, 0)
     else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(HashMap::default());
@@ -265,11 +272,7 @@ pub async fn query_refnos_point_map(
     Ok(result
         .into_iter()
         .map(|(refno, ptset_array, att_type)| {
-            let ptset_map: BTreeMap<String, CateAxisParam> = ptset_array
-                .unwrap_or_default()
-                .into_iter()
-                .map(|param| (param.number.to_string(), param))
-                .collect();
+            let ptset_map = decode_ptset_map(&ptset_array);
             (
                 refno,
                 InstPointMap {
@@ -331,6 +334,54 @@ async fn test_query_refnos_point_map() -> anyhow::Result<()> {
     let r = query_point_map(refno).await?;
     dbg!(&r);
     Ok(())
+}
+
+#[cfg(test)]
+mod ptset_decode_tests {
+    use super::*;
+    use crate::shape::pdms_shape::RsVec3;
+    use crate::vec3_pool::CateAxisParamCompact;
+    use glam::Vec3;
+
+    #[test]
+    fn decode_compressed_ptset() {
+        let compact = CateAxisParamCompact {
+            n: 1,
+            p: Some([1.0, 2.0, 3.0]),
+            d: None,
+            df: None,
+            rd: None,
+            b: None,
+            c: None,
+            w: None,
+            h: None,
+            r: None,
+        };
+        let value = serde_json::to_value(vec![compact]).unwrap();
+        let map = decode_ptset_map(&Some(value));
+        let pt = map.get("1").expect("number 1 should exist").pt.0;
+        assert!((pt - Vec3::new(1.0, 2.0, 3.0)).length() < 1e-4);
+    }
+
+    #[test]
+    fn decode_raw_ptset() {
+        let raw_param = CateAxisParam {
+            refno: Default::default(),
+            number: 2,
+            pt: RsVec3(Vec3::new(4.0, 5.0, 6.0)),
+            dir: None,
+            dir_flag: 1.0,
+            ref_dir: None,
+            pbore: 0.0,
+            pwidth: 0.0,
+            pheight: 0.0,
+            pconnect: String::new(),
+        };
+        let value = serde_json::to_value(vec![raw_param]).unwrap();
+        let map = decode_ptset_map(&Some(value));
+        let pt = map.get("2").expect("number 2 should exist").pt.0;
+        assert!((pt - Vec3::new(4.0, 5.0, 6.0)).length() < 1e-4);
+    }
 }
 
 //query_ptset

@@ -260,6 +260,14 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
         }
     }
 
+    let shears = att.get_attr_strings(&["PXTS", "PYTS", "PXBS", "PYBS"]);
+    crate::debug_model!(
+        "📊 query_gm_param: refno={}, noun={}, shears={:?}",
+        att.get_refno_or_default(),
+        att.get_type_str(),
+        shears
+    );
+
     let gm_param = GmParam {
         refno: att.get_refno().unwrap_or_default(),
         gm_type: att.get_type_str().to_owned(),
@@ -268,7 +276,7 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
         pwid: (att.get_as_string("PWID").unwrap_or_default()),
         diameters: att.get_attr_strings(&["PDIA", "PBDM", "PTDM", "DIAM"]),
         distances: att.get_attr_strings(&["PDIS", "PBDI", "PTDI"]),
-        shears: att.get_attr_strings(&["PXTS", "PYTS", "PXBS", "PYBS"]),
+        shears,
         phei: (att.get_as_string("PHEI").unwrap_or_default()),
         offset: (att.get_as_string("POFF").unwrap_or_default()),
         lengths: att.get_attr_strings(&["PXLE", "PYLE", "PZLE"]),

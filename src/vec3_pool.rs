@@ -354,7 +354,7 @@ pub struct CateAxisParamCompact {
     /// 点编号（必需）
     pub n: i32,
     /// 位置坐标（ZERO 时省略）
-    #[serde(skip_serializing_if = "is_zero_position")]
+    #[serde(skip_serializing_if = "is_zero_position", default)]
     pub p: Option<[f32; 3]>,
     /// 方向（压缩存储）
     #[serde(skip_serializing_if = "Option::is_none")]
