@@ -317,9 +317,9 @@ pub async fn query_insts_with_batch(
         let pe_keys_str = pe_keys.join(",");
 
         let sql = if enable_holes {
-            // enable_holes=true: 优先使用布尔运算后的 mesh
-            // - 如果 bool_status='Success' 且 booled_id 存在，返回布尔后的 mesh
-            // - 否则回退到原始 geo_relate 中的 mesh 列表
+            // enable_holes=true: 查询布尔运算后的结果
+            // - 查询 geo_relate 中 Pos/Compound 类型，且 booled_id = NONE（排除已被布尔替代的）
+            // - Compound 类型是布尔运算后的结果，Pos 是未参与布尔的原始几何
             format!(
                 r#"
             select
@@ -327,15 +327,15 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                if bool_status = 'Success' && booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false, "unit_flag": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none)  }} as insts,
-                bool_status = 'Success' && booled_id != none as has_neg,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'Compound'] && booled_id = NONE) as insts,
+                bool_status = 'Success' as has_neg,
                 <datetime>dt as date
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
         "#
             )
         } else {
-            // enable_holes=false: 始终返回原始 geo_relate 中的 mesh 列表
-            // 不使用布尔运算结果，但仍然计算 has_neg 标志供上层参考
+            // enable_holes=false: 返回原始 geo_relate 中的 mesh 列表（不过滤 booled_id）
+            // 用于查看原始几何，不考虑布尔运算结果
             format!(
                 r#"
             select
@@ -343,8 +343,8 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none) as insts,
-                bool_status = 'Success' && booled_id != none as has_neg,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'Compound']) as insts,
+                bool_status = 'Success' as has_neg,
                 <datetime>dt as date
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
             )
