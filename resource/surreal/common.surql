@@ -540,21 +540,21 @@ REMOVE FUNCTION fn::get_ipara;
 -- 获取保温层参数
 DEFINE FUNCTION fn::get_ipara($pe:record) {
     // 获取父节点的 ISPE 引用
-    let $ispe = $pe.owner.refno.ISPE;
+    let $ispe = $pe.refno.ISPE?:$pe.owner.refno.ISPE;
     return if $ispe == none {
         // 如果没有 ISPE 引用，返回默认参数 [0]
         return [0];
     } else {
+        //温度在 BRAN 上，也就是它的 owner
+        let $temp = $pe.owner.refno.TEMP;
+
         // 查询符合条件的 CATR 节点的 PARA 参数
-        return (select value (select value CATR.refno.PARA
-                // 从 ISPE 开始向上遍历，找到 TYPE 为 'SELE' 的节点
-                from only $ispe<-pe_owner<-pe<-pe_owner<-pe[? refno.TYPE = 'SELE'
-                // 温度条件：父节点温度在 ANSW 和 MAXA 范围内
-                and $parent.owner.refno.TEMP >=refno.ANSW
-                and $parent.owner.refno.TEMP <= refno.MAXA ]<-pe_owner<-pe.refno.*
-                // 孔径条件：父节点孔径在 ANSW 和 MAXA 范围内
-                where $parent.owner.refno.HBOR >=ANSW and $parent.owner.refno.HBOR <= MAXA limit 1)
-            from $pe)[0];
+        return select value (children[0].refno.CATR.refno.PARA)
+             from only $ispe.{2}.children.refno.{children: REFNO.children, MAXA, ANSW, TYPE}
+             where TYPE = 'SELE' and $temp >= ANSW && $temp <= MAXA
+             limit 1; 
+        --         // 孔径条件：父节点孔径在 ANSW 和 MAXA 范围内
+        --         where $parent.owner.refno.HBOR >=$answ and $parent.owner.refno.HBOR <= $maxa limit 1)
     };
 };
 
@@ -883,11 +883,15 @@ DEFINE FUNCTION fn::ancestor_atts($r: record) {
 };
 
 REMOVE FUNCTION fn::query_negative_entities;
--- 查询指定正实体关联的负实体 refnos
+-- 查询指定正实体关联的负实体载体 refnos
 -- 参数 $pe: 正实体记录，如 pe:17496_106028
--- 返回: 关联的负实体 refnos 数组（通过 neg_relate 和 ngmr_relate 关系)
+-- 返回: 关联的负载体 refnos 数组（通过 neg_relate 和 ngmr_relate 关系)
+-- 新结构说明：
+--   neg_relate/ngmr_relate.in = geo_relate (切割几何)
+--   neg_relate/ngmr_relate.pe = 负载体 pe
+--   neg_relate/ngmr_relate.out = 正实体 pe
 DEFINE FUNCTION fn::query_negative_entities($pe: record) {
-    return array::union($pe<-neg_relate.in, $pe<-ngmr_relate.in);
+    return array::union($pe<-neg_relate.pe, $pe<-ngmr_relate.pe);
 };
 
 REMOVE FUNCTION fn::query_ptset;

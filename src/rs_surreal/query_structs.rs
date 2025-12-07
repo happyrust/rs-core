@@ -24,17 +24,21 @@ pub struct GeoParam {
 /// Negative geometry information
 #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
 pub struct NegInfo {
-    /// Record ID
+    /// Record ID (geo_relate ID)
     pub id: RecordId,
     /// Geometry type
     pub geo_type: String,
     /// Parameter type
     #[serde(default)]
     pub para_type: String,
-    /// Transform
-    pub trans: PlantTransform,
+    /// 几何体局部变换（相对于载体的变换）
+    #[serde(rename = "trans")]
+    pub geo_local_trans: PlantTransform,
     /// Optional AABB
     pub aabb: Option<PlantAabb>,
+    /// 负载体的世界变换（用于计算绝对位置）
+    #[serde(default, rename = "carrier_wt")]
+    pub carrier_world_trans: Option<PlantTransform>,
 }
 
 /// Manifold geometry transformation query
@@ -46,13 +50,15 @@ pub struct ManiGeoTransQuery {
     pub sesno: u32,
     /// Noun
     pub noun: String,
-    /// World transform
-    pub wt: PlantTransform,
+    /// 实例的世界变换
+    #[serde(rename = "wt")]
+    pub inst_world_trans: PlantTransform,
     /// AABB
     pub aabb: PlantAabb,
-    /// Transform list
-    pub ts: Vec<(RecordId, PlantTransform)>,
-    /// Negative transform list
+    /// 正几何列表：(geo_relate ID, 几何体局部变换)
+    #[serde(rename = "ts")]
+    pub pos_geos: Vec<(RecordId, PlantTransform)>,
+    /// 负几何列表：(载体refno, 载体世界变换, 负几何信息列表)
     pub neg_ts: Vec<(RefnoEnum, PlantTransform, Vec<NegInfo>)>,
 }
 

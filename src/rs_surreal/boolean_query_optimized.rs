@@ -9,7 +9,7 @@ use crate::rs_surreal::query_structs::{
     ManiGeoTransQuery, NegInfo,
 };
 use crate::types::RefnoEnum;
-use crate::{SUL_DB};
+use crate::{get_inst_relate_keys, SUL_DB};
 
 /// 高度优化的布尔运算查询函数
 ///
@@ -47,15 +47,10 @@ pub async fn query_manifold_boolean_operations_optimized(
         trans: crate::rs_surreal::geometry_query::PlantTransform,
     }
     
-    #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
-    struct NegCarrier {
-        refno: RefnoEnum,
-        wt: crate::rs_surreal::geometry_query::PlantTransform,
-    }
-    
     let pe_key = refno.to_pe_key();
     
     // 步骤1：获取正实体基础信息（使用索引优化）
+    // 查询尚未成功布尔运算的实体（bool_status != 'Success'）
     let sql_base = format!(
         r#"
         SELECT 
@@ -65,7 +60,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             world_trans.d AS wt,
             aabb.d AS aabb
         FROM inst_relate:{refno}
-        WHERE in.id != NONE AND !bad_bool AND aabb.d != NONE
+        WHERE in.id != NONE AND (bool_status != 'Success' OR bool_status = NONE) AND aabb.d != NONE
         LIMIT 1
         "#
     );
@@ -87,127 +82,63 @@ pub async fn query_manifold_boolean_operations_optimized(
     let pos_geos: Vec<PosGeometry> = SUL_DB.query_take(&sql_pos_geos, 0).await?;
     let ts = pos_geos.into_iter().map(|g| (g.id, g.trans)).collect();
     
-    // 步骤3：批量获取负载体（使用UNION ALL优化）
-    let sql_neg_carriers = format!(
+    // 步骤3：直接从 neg_relate 和 ngmr_relate 获取切割几何（新结构简化版）
+    // 新结构：in = geo_relate (切割几何), out = pe (正实体), pe = 负载体
+    // pe 是负载体，需要获取其 world_trans
+    let sql_neg = format!(
         r#"
-        (SELECT in AS refno, world_trans.d AS wt FROM {pe_key}<-neg_relate.in<-inst_relate WHERE world_trans.d != NONE)
-        UNION ALL
-        (SELECT in AS refno, world_trans.d AS wt FROM {pe_key}<-ngmr_relate.in->inst_relate WHERE world_trans.d != NONE)
+        SELECT 
+            in.out AS id,
+            in.geo_type AS geo_type,
+            in.para_type ?? "" AS para_type,
+            in.trans.d AS trans,
+            in.out.aabb.d AS aabb,
+            array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+        FROM {pe_key}<-neg_relate
+        WHERE in.trans.d != NONE
         "#
     );
-    let neg_carriers: Vec<NegCarrier> = SUL_DB.query_take(&sql_neg_carriers, 0).await?;
+    let neg_results: Vec<NegInfo> = SUL_DB.query_take(&sql_neg, 0).await.unwrap_or_default();
     
-    // 步骤4：预取允许的ngmr列表（用于CataCrossNeg过滤）
     let sql_ngmr = format!(
         r#"
-        SELECT VALUE ngmr FROM {pe_key}<-ngmr_relate
+        SELECT 
+            in.out AS id,
+            in.geo_type AS geo_type,
+            in.para_type ?? "" AS para_type,
+            in.trans.d AS trans,
+            in.out.aabb.d AS aabb,
+            array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+        FROM {pe_key}<-ngmr_relate
+        WHERE in.trans.d != NONE
         "#
     );
-    let allowed_ngmr: Vec<RefnoEnum> = SUL_DB.query_take(&sql_ngmr, 0).await.unwrap_or_default();
+    let ngmr_results: Vec<NegInfo> = SUL_DB.query_take(&sql_ngmr, 0).await.unwrap_or_default();
     
-    // 步骤5：批量查询所有负载体的负几何
-    let mut neg_ts = Vec::with_capacity(neg_carriers.len());
+    // 合并切割几何
+    let mut neg_infos: Vec<NegInfo> = neg_results;
+    neg_infos.extend(ngmr_results);
     
-    if !neg_carriers.is_empty() {
-        // 构建载体refno列表，使用批量查询
-        let carrier_keys: Vec<String> = neg_carriers
-            .iter()
-            .map(|c| c.refno.to_pe_key())
-            .collect();
-        
-        // 批量查询所有负载体的负几何
-        let sql_all_neg_geos = if allowed_ngmr.is_empty() {
-            // 只有Neg类型
-            format!(
-                r#"
-                SELECT 
-                    array::first(array::filter(<-inst_relate, |$r| $r.in IN [{}])) as carrier,
-                    out AS id,
-                    geo_type,
-                    para_type ?? "" AS para_type,
-                    trans.d AS trans,
-                    out.aabb.d AS aabb
-                FROM array::flatten([{}])
-                WHERE trans.d != NONE AND geo_type == "Neg"
-                "#,
-                carrier_keys.join(","),
-                carrier_keys.iter().map(|k| format!("{}<-inst_relate.out->geo_relate", k)).collect::<Vec<_>>().join(",")
-            )
+    // 构建 neg_ts（简化版：所有切割几何放在一个虚拟 carrier 下）
+    let neg_ts: Vec<(RefnoEnum, crate::rs_surreal::geometry_query::PlantTransform, Vec<NegInfo>)> = 
+        if neg_infos.is_empty() {
+            Vec::new()
         } else {
-            // Neg和CataCrossNeg类型
-            let ngmr_keys: Vec<String> = allowed_ngmr
-                .iter()
-                .map(|n| n.to_pe_key())
-                .collect();
-            
-            format!(
-                r#"
-                SELECT 
-                    array::first(array::filter(<-inst_relate, |$r| $r.in IN [{}])) as carrier,
-                    out AS id,
-                    geo_type,
-                    para_type ?? "" AS para_type,
-                    trans.d AS trans,
-                    out.aabb.d AS aabb
-                FROM array::flatten([{}])
-                WHERE trans.d != NONE AND (
-                    geo_type == "Neg" OR 
-                    (geo_type == "CataCrossNeg" AND geom_refno IN [{}])
-                )
-                "#,
-                carrier_keys.join(","),
-                carrier_keys.iter().map(|k| format!("{}<-inst_relate.out->geo_relate", k)).collect::<Vec<_>>().join(","),
-                ngmr_keys.join(",")
-            )
+            vec![(
+                refno.clone(),
+                crate::rs_surreal::geometry_query::PlantTransform::default(),
+                neg_infos,
+            )]
         };
-        
-        #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
-        struct NegGeoWithCarrier {
-            carrier: RefnoEnum,
-            id: crate::types::RecordId,
-            geo_type: String,
-            para_type: String,
-            trans: crate::rs_surreal::geometry_query::PlantTransform,
-            aabb: crate::types::PlantAabb,
-        }
-        
-        let all_neg_geos: Vec<NegGeoWithCarrier> = SUL_DB.query_take(&sql_all_neg_geos, 0).await?;
-        
-        // 按载体分组负几何
-        use std::collections::HashMap;
-        let mut neg_geo_map: HashMap<RefnoEnum, Vec<NegInfo>> = HashMap::new();
-        
-        for geo in all_neg_geos {
-            let carrier_refno = geo.carrier;
-            let neg_info = NegInfo {
-                id: geo.id,
-                geo_type: geo.geo_type,
-                para_type: geo.para_type,
-                trans: geo.trans,
-                aabb: Some(geo.aabb),
-            };
-            
-            neg_geo_map
-                .entry(carrier_refno)
-                .or_insert_with(Vec::new)
-                .push(neg_info);
-        }
-        
-        // 组装最终的neg_ts
-        for carrier in neg_carriers {
-            let neg_infos = neg_geo_map.remove(&carrier.refno).unwrap_or_default();
-            neg_ts.push((carrier.refno, carrier.wt, neg_infos));
-        }
-    }
     
     // 步骤6：组装最终结果
     let result = ManiGeoTransQuery {
         refno: base.refno,
         sesno: base.sesno,
         noun: base.noun,
-        wt: base.wt,
+        inst_world_trans: base.wt,
         aabb: base.aabb,
-        ts,
+        pos_geos: ts,
         neg_ts,
     };
     
@@ -252,12 +183,14 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     
     #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
     struct PosGeometry {
-        refno: RefnoEnum,
         id: crate::types::RecordId,
         trans: crate::rs_surreal::geometry_query::PlantTransform,
     }
     
     // 步骤1：批量获取所有正实体基础信息
+    // 查询尚未成功布尔运算的实体（bool_status != 'Success'）
+    // 注意：需要使用 inst_relate 表的 key（inst_relate:17496_106028 格式）
+    let inst_keys = get_inst_relate_keys(refnos);
     let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
     let sql_bases = format!(
         r#"
@@ -267,10 +200,9 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in.noun AS noun,
             world_trans.d AS wt,
             aabb.d AS aabb
-        FROM [{}]
-        WHERE in.id != NONE AND !bad_bool AND aabb.d != NONE
-        "#,
-        refno_keys.join(",")
+        FROM {inst_keys}
+        WHERE in.id != NONE AND (bool_status != 'Success' OR bool_status = NONE) AND aabb.d != NONE
+        "#
     );
     
     let base_infos: Vec<PosEntityBase> = SUL_DB.query_take(&sql_bases, 0).await?;
@@ -280,150 +212,152 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     }
     
     // 步骤2：批量获取所有正几何
+    // 使用子查询模式：从 inst_relate.out (inst_info) 遍历到 geo_relate
+    // 注意：直接使用 inst_relate->out->geo_relate 语法不工作，需要用子查询
     let sql_all_pos_geos = format!(
         r#"
         SELECT 
             in as refno,
-            out AS id,
-            trans.d AS trans
-        FROM [{}]->out->geo_relate
-        WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE
-        "#,
-        refno_keys.join(",")
+            (SELECT out AS id, trans.d AS trans FROM out->geo_relate WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE) AS geos
+        FROM {inst_keys}
+        "#
     );
     
-    let pos_geos: Vec<PosGeometry> = SUL_DB.query_take(&sql_all_pos_geos, 0).await?;
-    let mut pos_geo_map: HashMap<RefnoEnum, Vec<(crate::types::RecordId, crate::rs_surreal::geometry_query::PlantTransform)>> = HashMap::new();
-    for geo in pos_geos {
-        pos_geo_map
-            .entry(geo.refno)
-            .or_insert_with(Vec::new)
-            .push((geo.id, geo.trans));
+    #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
+    struct PosGeosResult {
+        refno: RefnoEnum,
+        geos: Vec<PosGeometry>,
     }
     
-    // 步骤3：批量获取所有负载体
-    let mut all_neg_carriers: Vec<(RefnoEnum, RefnoEnum, crate::rs_surreal::geometry_query::PlantTransform)> = Vec::new();
+    let pos_geo_results: Vec<PosGeosResult> = SUL_DB.query_take(&sql_all_pos_geos, 0).await?;
+    let mut pos_geo_map: HashMap<RefnoEnum, Vec<(crate::types::RecordId, crate::rs_surreal::geometry_query::PlantTransform)>> = HashMap::new();
+    for result in pos_geo_results {
+        for geo in result.geos {
+            pos_geo_map
+                .entry(result.refno.clone())
+                .or_insert_with(Vec::new)
+                .push((geo.id, geo.trans));
+        }
+    }
+    
+    // 步骤3：直接从 neg_relate 和 ngmr_relate 获取切割几何
+    // 新结构：in = geo_relate (切割几何), out = pe (正实体), pe = 负载体
+    // 查询简化：直接 SELECT in.* FROM pe:正实体<-neg_relate/ngmr_relate
+    
+    #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
+    struct NegGeoResult {
+        id: crate::types::RecordId,
+        geo_type: String,
+        #[serde(default)]
+        para_type: String,
+        trans: crate::rs_surreal::geometry_query::PlantTransform,
+        #[serde(default)]
+        aabb: Option<crate::types::PlantAabb>,
+        /// 负载体的世界变换矩阵（从 inst_relate 获取）
+        #[serde(default)]
+        carrier_wt: Option<crate::rs_surreal::geometry_query::PlantTransform>,
+    }
+    
+    // 收集每个正实体的切割几何
+    let mut neg_geos_map: HashMap<RefnoEnum, Vec<NegInfo>> = HashMap::new();
     
     for refno in refnos {
         let pe_key = refno.to_pe_key();
         
-        // neg_relate载体
+        // 查询 neg_relate: in = geo_relate (Neg类型切割几何)
+        // pe 是负载体，需要获取其 world_trans
         let sql_neg = format!(
             r#"
-            SELECT in AS refno, world_trans.d AS wt
-            FROM {pe_key}<-neg_relate.in<-inst_relate
-            WHERE world_trans.d != NONE
+            SELECT 
+                in.out AS id,
+                in.geo_type AS geo_type, 
+                in.para_type ?? "" AS para_type,
+                in.trans.d AS trans,
+                in.out.aabb.d AS aabb,
+                array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+            FROM {pe_key}<-neg_relate
+            WHERE in.trans.d != NONE
             "#
         );
-        let neg_carriers: Vec<(RefnoEnum, crate::rs_surreal::geometry_query::PlantTransform)> = 
-            SUL_DB.query_take(&sql_neg, 0).await.unwrap_or_default();
+        let neg_results: Vec<NegGeoResult> = SUL_DB.query_take(&sql_neg, 0).await.unwrap_or_default();
         
-        for (carrier_refno, wt) in neg_carriers {
-            all_neg_carriers.push((refno.clone(), carrier_refno, wt));
-        }
-        
-        // ngmr_relate载体
+        // 查询 ngmr_relate: in = geo_relate (CataCrossNeg类型切割几何)
+        // pe 是负载体，需要获取其 world_trans
         let sql_ngmr = format!(
             r#"
-            SELECT in AS refno, world_trans.d AS wt
-            FROM {pe_key}<-ngmr_relate.in->inst_relate
-            WHERE world_trans.d != NONE
+            SELECT 
+                in.out AS id,
+                in.geo_type AS geo_type,
+                in.para_type ?? "" AS para_type,
+                in.trans.d AS trans,
+                in.out.aabb.d AS aabb,
+                array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+            FROM {pe_key}<-ngmr_relate
+            WHERE in.trans.d != NONE
             "#
         );
-        let ngmr_carriers: Vec<(RefnoEnum, crate::rs_surreal::geometry_query::PlantTransform)> = 
-            SUL_DB.query_take(&sql_ngmr, 0).await.unwrap_or_default();
+        let ngmr_results: Vec<NegGeoResult> = match SUL_DB.query_take(&sql_ngmr, 0).await {
+            Ok(results) => results,
+            Err(e) => {
+                eprintln!("[DEBUG] ngmr_relate 查询失败 for {}: {}", pe_key, e);
+                // 打印原始查询结果以便调试
+                if let Ok(raw) = SUL_DB.query(&sql_ngmr).await {
+                    eprintln!("[DEBUG] 原始查询结果: {:?}", raw);
+                }
+                Vec::new()
+            }
+        };
         
-        for (carrier_refno, wt) in ngmr_carriers {
-            all_neg_carriers.push((refno.clone(), carrier_refno, wt));
+        // 合并结果
+        let mut neg_infos = Vec::new();
+        for r in neg_results.into_iter().chain(ngmr_results.into_iter()) {
+            neg_infos.push(NegInfo {
+                id: r.id,
+                geo_type: r.geo_type,
+                para_type: r.para_type,
+                geo_local_trans: r.trans,
+                aabb: r.aabb,
+                carrier_world_trans: r.carrier_wt,
+            });
+        }
+        
+        if !neg_infos.is_empty() {
+            neg_geos_map.insert(refno.clone(), neg_infos);
         }
     }
     
-    // 步骤4：批量获取所有允许的ngmr
-    let sql_all_ngmr = format!(
-        r#"
-        SELECT 
-            in as pos_refno,
-            ngmr
-        FROM [{}]<-ngmr_relate
-        "#,
-        refno_keys.join(",")
-    );
-    
-    #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
-    struct PosNgmr {
-        pos_refno: RefnoEnum,
-        ngmr: RefnoEnum,
-    }
-    
-    let pos_ngmrs: Vec<PosNgmr> = SUL_DB.query_take(&sql_all_ngmr, 0).await.unwrap_or_default();
-    let mut ngmr_map: HashMap<RefnoEnum, Vec<RefnoEnum>> = HashMap::new();
-    for pn in pos_ngmrs {
-        ngmr_map
-            .entry(pn.pos_refno)
-            .or_insert_with(Vec::new)
-            .push(pn.ngmr);
-    }
-    
-    // 步骤5：组装最终结果
+    // 步骤4：组装最终结果（简化版）
     let mut results = Vec::with_capacity(refnos.len());
     
     for refno in refnos {
         if let Some(base) = base_map.remove(refno) {
             let ts = pos_geo_map.remove(refno).unwrap_or_default();
             
-            // 获取该正实体的所有负载体
-            let neg_carriers: Vec<_> = all_neg_carriers
-                .iter()
-                .filter(|(pos, _, _)| pos == refno)
-                .map(|(_, carrier, wt)| (*carrier, wt.clone()))
-                .collect();
+            // 直接获取该正实体的所有切割几何（新结构简化版）
+            let neg_infos = neg_geos_map.remove(refno).unwrap_or_default();
             
-            // 获取允许的ngmr列表
-            let allowed_ngmr = ngmr_map.get(refno).cloned().unwrap_or_default();
-            
-            // 为每个负载体查询负几何
-            let mut neg_ts = Vec::with_capacity(neg_carriers.len());
-            for (carrier_refno, carrier_wt) in neg_carriers {
-                let carrier_key = carrier_refno.to_pe_key();
-                
-                let sql_neg_geos = if allowed_ngmr.is_empty() {
-                    format!(
-                        r#"
-                        SELECT out AS id, geo_type, para_type ?? "" AS para_type, trans.d AS trans, out.aabb.d AS aabb
-                        FROM {carrier_key}<-inst_relate.out->geo_relate
-                        WHERE trans.d != NONE AND geo_type == "Neg"
-                        "#
-                    )
+            // 新结构：neg_ts 简化为空，所有切割几何直接放在 neg_infos 中
+            // 因为新结构下 neg_relate/ngmr_relate.in 直接指向 geo_relate，不再需要通过 carrier 间接查询
+            let neg_ts: Vec<(RefnoEnum, crate::rs_surreal::geometry_query::PlantTransform, Vec<NegInfo>)> = 
+                if neg_infos.is_empty() {
+                    Vec::new()
                 } else {
-                    let ngmr_keys: Vec<String> = allowed_ngmr
-                        .iter()
-                        .map(|n| n.to_pe_key())
-                        .collect();
-                    
-                    format!(
-                        r#"
-                        SELECT out AS id, geo_type, para_type ?? "" AS para_type, trans.d AS trans, out.aabb.d AS aabb
-                        FROM {carrier_key}<-inst_relate.out->geo_relate
-                        WHERE trans.d != NONE AND (
-                            geo_type == "Neg" OR 
-                            (geo_type == "CataCrossNeg" AND geom_refno IN [{}])
-                        )
-                        "#,
-                        ngmr_keys.join(",")
-                    )
+                    // 为兼容现有的 ManiGeoTransQuery 结构，将所有 neg_infos 放在一个虚拟 carrier 下
+                    // TODO: 后续可以简化 ManiGeoTransQuery 结构，直接使用 neg_infos
+                    vec![(
+                        refno.clone(),  // 使用正实体自身作为虚拟 carrier
+                        crate::rs_surreal::geometry_query::PlantTransform::default(),
+                        neg_infos,
+                    )]
                 };
-                
-                let neg_infos: Vec<NegInfo> = SUL_DB.query_take(&sql_neg_geos, 0).await.unwrap_or_default();
-                neg_ts.push((carrier_refno, carrier_wt, neg_infos));
-            }
             
             results.push(ManiGeoTransQuery {
                 refno: base.refno,
                 sesno: base.sesno,
                 noun: base.noun,
-                wt: base.wt,
+                inst_world_trans: base.wt,
                 aabb: base.aabb,
-                ts,
+                pos_geos: ts,
                 neg_ts,
             });
         }
@@ -445,7 +379,7 @@ pub async fn create_boolean_query_indexes() -> anyhow::Result<()> {
     let indexes = vec![
         // inst_relate表索引
         "DEFINE INDEX idx_inst_relate_in ON TABLE inst_relate COLUMNS in",
-        "DEFINE INDEX idx_inst_relate_bad_bool ON TABLE inst_relate COLUMNS bad_bool",
+        "DEFINE INDEX idx_inst_relate_bool_status ON TABLE inst_relate COLUMNS bool_status",
         "DEFINE INDEX idx_inst_relate_aabb ON TABLE inst_relate COLUMNS aabb",
         
         // neg_relate表索引

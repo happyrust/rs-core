@@ -107,12 +107,9 @@ pub async fn query_tubi_insts_by_brans(
 
     let mut all_results = Vec::new();
     for bran_refno in bran_refnos {
-        let bran_id = bran_refno.to_e3d_id();
-        
-        // 通过 owner 字段查询 tubi_relate
-        // tubi_relate 的 id[0] 是 pe 记录，其 owner 字段指向 BRAN
-        // 注意：使用 pe_key 格式直接比较 record，避免字符串转换的性能开销
         let pe_key = bran_refno.to_pe_key();
+        // 使用 ID range 查询：tubi_relate 的 ID 格式是 [pe:branch_refno, index]
+        // 直接用 range 查询比 WHERE 条件更高效
         let sql = format!(
             r#"
             SELECT
@@ -124,10 +121,10 @@ pub async fn query_tubi_insts_by_brans(
                 world_trans.d as world_trans,
                 record::id(geo) as geo_hash,
                 id[0].dt as date
-            FROM tubi_relate
-            WHERE id[0].owner = {} AND aabb.d != NONE
+            FROM tubi_relate:[{}, 0]..[{}, 999999]
+            WHERE aabb.d != NONE
             "#,
-            pe_key
+            pe_key, pe_key
         );
         let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
         
@@ -265,6 +262,42 @@ pub async fn query_insts(
     query_insts_with_batch(refnos, enable_holes, None).await
 }
 
+/// 批量查询几何实例信息（支持布尔运算结果）
+///
+/// # 参数
+///
+/// * `refnos` - 构件编号迭代器，指定要查询的实例
+/// * `enable_holes` - 是否启用孔洞/布尔运算结果查询
+///   - `true`: 优先返回布尔运算后的 mesh（如果 bool_status='Success' 且 booled_id 存在）
+///   - `false`: 始终返回原始 geo_relate 中的 mesh 列表
+/// * `batch_size` - 每批查询的数量，默认 50
+///
+/// # 返回值
+///
+/// 返回 `GeomInstQuery` 列表，包含：
+/// - `refno`: 构件编号
+/// - `world_aabb`: 世界坐标系下的包围盒
+/// - `world_trans`: 世界坐标系变换矩阵
+/// - `insts`: mesh 实例列表（geo_hash + transform）
+/// - `has_neg`: 是否有负实体布尔运算结果
+///
+/// # SQL 查询逻辑说明
+///
+/// ## enable_holes=true 时的 insts 字段逻辑：
+/// ```sql
+/// if bool_status = 'Success' && booled_id != none
+///     -- 布尔运算成功：返回布尔后的单个 mesh
+///     [{ "geo_hash": booled_id, "transform": world_trans.d, ... }]
+/// else
+///     -- 无布尔或失败：返回原始 geo_relate 中所有可见且已生成 mesh 的几何体
+///     (select ... from out->geo_relate where visible && out.meshed ...)
+/// ```
+///
+/// ## enable_holes=false 时：
+/// 始终返回原始 geo_relate 中的 mesh 列表，不使用布尔结果
+///
+/// ## has_neg 字段：
+/// 表示该实例是否有成功的布尔运算结果（bool_status='Success' && booled_id != none）
 pub async fn query_insts_with_batch(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
     enable_holes: bool,
@@ -277,12 +310,16 @@ pub async fn query_insts_with_batch(
 
     let batch = batch_size.unwrap_or(50).max(1);
     let mut results = Vec::new();
-    for chunk in refnos.chunks(batch) {
-        let inst_keys = get_inst_relate_keys(chunk);
 
-        // pts 从 inst_geo.pts 获取（vec3 引用数组），解引用获取实际坐标 .d
-        // 使用子查询从第一个有效的 geo_relate.out.pts 获取
+    for chunk in refnos.chunks(batch) {
+        // inst_relate 是关系表，需要用 WHERE in IN [...] 来查询
+        let pe_keys: Vec<String> = chunk.iter().map(|r| r.to_pe_key()).collect();
+        let pe_keys_str = pe_keys.join(",");
+
         let sql = if enable_holes {
+            // enable_holes=true: 优先使用布尔运算后的 mesh
+            // - 如果 bool_status='Success' 且 booled_id 存在，返回布尔后的 mesh
+            // - 否则回退到原始 geo_relate 中的 mesh 列表
             format!(
                 r#"
             select
@@ -290,13 +327,15 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                if booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false, "unit_flag": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none)  }} as insts,
-                booled_id != none as has_neg,
+                if bool_status = 'Success' && booled_id != none {{ [{{ "geo_hash": booled_id, "transform": world_trans.d, "is_tubi": false, "unit_flag": false }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none)  }} as insts,
+                bool_status = 'Success' && booled_id != none as has_neg,
                 <datetime>dt as date
-            from {inst_keys} where aabb.d != none && world_trans.d != none
+            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
         "#
             )
         } else {
+            // enable_holes=false: 始终返回原始 geo_relate 中的 mesh 列表
+            // 不使用布尔运算结果，但仍然计算 has_neg 标志供上层参考
             format!(
                 r#"
             select
@@ -304,10 +343,10 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? (record::id(out) INSIDE ['1', '2', '3']) as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none) as insts,
-                booled_id != none as has_neg,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none) as insts,
+                bool_status = 'Success' && booled_id != none as has_neg,
                 <datetime>dt as date
-            from {inst_keys} where aabb.d != none && world_trans.d != none "#
+            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
             )
         };
 
