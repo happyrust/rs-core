@@ -26,8 +26,10 @@ use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
+use chrono;
 
 /// 几何体的基本类型
 #[derive(
@@ -46,15 +48,19 @@ use std::path::Path;
 pub enum GeoBasicType {
     #[default]
     UNKOWN,
-    ///正实体
+    ///正实体（通用，用于兼容旧数据）
     Pos,
-    ///普通负实体
+    ///Design 的初始正实体（PRIM/LOOP 等，布尔运算前的原始几何）
+    DesiPos,
+    ///元件库的初始正实体（会被多个元素复用，不应在此设置 booled_id）
+    CataPos,
+    ///普通负实体（Design 的负实体）
     Neg,
     ///元件库的负实体
     CataNeg,
-    ///元件库的需要和design运算的负实体
+    ///元件库的需要和 Design 运算的负实体（NGMR）
     CataCrossNeg,
-    ///负实体运算过了
+    ///负实体运算后的结果（独立的，每个元素有自己的 Compound）
     Compound,
     ///属于隐含直段的类型
     Tubi,
@@ -157,7 +163,7 @@ impl EleGeosInfo {
 
         // 移除最后的 } 并添加 id 字段
         json.pop();
-        json.push_str(&format!(r#","id":"inst_info:⟨{}⟩"}}"#, id));
+        json.push_str(&format!(r#","id":inst_info:⟨{}⟩}}"#, id));
         json
     }
 
@@ -669,6 +675,81 @@ impl EleInstGeo {
     pub fn gen_unit_geo_sur_json(&self) -> String {
         let mut json_string = "".to_string();
         let param = self.geo_param.convert_to_unit_param();
+        // #region agent log
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("/Volumes/DPC/work/plant-code/rs-plant3-d/.cursor/debug.log")
+        {
+            let (is_sscl, pdia, phei, btm0, btm1, top0, top1) = match &self.geo_param {
+                PdmsGeoParam::PrimSCylinder(s) => (
+                    s.is_sscl(),
+                    s.pdia,
+                    s.phei,
+                    s.btm_shear_angles[0],
+                    s.btm_shear_angles[1],
+                    s.top_shear_angles[0],
+                    s.top_shear_angles[1],
+                ),
+                _ => (false, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            };
+            let geo_type = match &self.geo_param {
+                PdmsGeoParam::PrimBox(_) => "PrimBox",
+                PdmsGeoParam::PrimLSnout(_) => "PrimLSnout",
+                PdmsGeoParam::PrimDish(_) => "PrimDish",
+                PdmsGeoParam::PrimSphere(_) => "PrimSphere",
+                PdmsGeoParam::PrimCTorus(_) => "PrimCTorus",
+                PdmsGeoParam::PrimRTorus(_) => "PrimRTorus",
+                PdmsGeoParam::PrimPyramid(_) => "PrimPyramid",
+                PdmsGeoParam::PrimLPyramid(_) => "PrimLPyramid",
+                PdmsGeoParam::PrimSCylinder(_) => "PrimSCylinder",
+                PdmsGeoParam::PrimLCylinder(_) => "PrimLCylinder",
+                PdmsGeoParam::PrimRevolution(_) => "PrimRevolution",
+                PdmsGeoParam::PrimExtrusion(_) => "PrimExtrusion",
+                PdmsGeoParam::PrimPolyhedron(_) => "PrimPolyhedron",
+                PdmsGeoParam::PrimLoft(_) => "PrimLoft",
+                PdmsGeoParam::CompoundShape => "CompoundShape",
+                PdmsGeoParam::Unknown => "Unknown",
+            };
+            let (out_is_sscl, out_pdia, out_phei, out_btm0, out_btm1, out_top0, out_top1, out_unit) =
+                match &param {
+                    PdmsGeoParam::PrimSCylinder(s) => (
+                        s.is_sscl(),
+                        s.pdia,
+                        s.phei,
+                        s.btm_shear_angles[0],
+                        s.btm_shear_angles[1],
+                        s.top_shear_angles[0],
+                        s.top_shear_angles[1],
+                        s.unit_flag,
+                    ),
+                    _ => (false, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false),
+                };
+            let _ = writeln!(
+                f,
+                r#"{{"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"H2","location":"geometry/mod.rs:gen_unit_geo_sur_json","message":"serialize inst_geo","data":{{"geo_hash":{},"in_is_sscl":{},"in_pdia":{},"in_phei":{},"in_btm":[{},{}],"in_top":[{},{}],"in_unit_flag":{},"geo_type":"{}","out_is_sscl":{},"out_pdia":{},"out_phei":{},"out_btm":[{},{}],"out_top":[{},{}],"out_unit_flag":{}}},"timestamp":{}}}"#,
+                self.geo_hash,
+                is_sscl,
+                pdia,
+                phei,
+                btm0,
+                btm1,
+                top0,
+                top1,
+                self.unit_flag,
+                geo_type,
+                out_is_sscl,
+                out_pdia,
+                out_phei,
+                out_btm0,
+                out_btm1,
+                out_top0,
+                out_top1,
+                out_unit,
+                chrono::Utc::now().timestamp_millis()
+            );
+        }
+        // #endregion
         json_string.push_str(&format!(
             "{{'id': inst_geo:⟨{}⟩, 'param': {}, 'unit_flag': {} }}",
             self.geo_hash,

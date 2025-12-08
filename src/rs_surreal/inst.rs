@@ -317,9 +317,13 @@ pub async fn query_insts_with_batch(
         let pe_keys_str = pe_keys.join(",");
 
         let sql = if enable_holes {
-            // enable_holes=true: 查询布尔运算后的结果
-            // - 查询 geo_relate 中 Pos/Compound 类型，且 booled_id = NONE（排除已被布尔替代的）
-            // - Compound 类型是布尔运算后的结果，Pos 是未参与布尔的原始几何
+            // enable_holes=true: 根据 inst_relate.bool_status 决定使用哪种几何体
+            // - 如果 bool_status = 'Success'：使用 Compound（布尔后的独立结果）
+            // - 否则：使用 Pos（未布尔的原始几何）
+            // 类型说明：
+            //   - Pos: 初始正实体（未经布尔运算）
+            //   - CataPos/DesiPos: 布尔运算后被替换的原始几何（不应在此模式显示）
+            //   - Compound: 布尔运算后的结果
             format!(
                 r#"
             select
@@ -327,15 +331,19 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'Compound'] && booled_id = NONE) as insts,
+                if bool_status = 'Success' then
+                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type = 'Compound')
+                else
+                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type = 'Pos')
+                end as insts,
                 bool_status = 'Success' as has_neg,
                 <datetime>dt as date
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
         "#
             )
         } else {
-            // enable_holes=false: 返回原始 geo_relate 中的 mesh 列表（不过滤 booled_id）
-            // 用于查看原始几何，不考虑布尔运算结果
+            // enable_holes=false: 返回原始几何（不考虑布尔结果）
+            // 包括：Pos（未布尔）、CataPos/DesiPos（布尔后被替换的原始）
             format!(
                 r#"
             select
@@ -343,7 +351,7 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'Compound']) as insts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CataPos']) as insts,
                 bool_status = 'Success' as has_neg,
                 <datetime>dt as date
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
