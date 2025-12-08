@@ -542,8 +542,10 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
                 paxi_dir: z_axis,
                 phei,
                 pdia,
-                btm_shear_angles: [d.alt_x_shear, d.alt_y_shear],
-                top_shear_angles: [d.x_shear, d.y_shear],
+                // ✅ 修正：底部剪切角使用 x_shear, y_shear（对应alt参数）
+                btm_shear_angles: [d.x_shear, d.y_shear],
+                // ✅ 修正：顶部剪切角使用 alt_x_shear, alt_y_shear  
+                top_shear_angles: [d.alt_x_shear, d.alt_y_shear],
                 ..Default::default()
             });
             return Some(CateCsgShape {

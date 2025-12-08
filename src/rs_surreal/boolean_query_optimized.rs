@@ -83,8 +83,9 @@ pub async fn query_manifold_boolean_operations_optimized(
     let ts = pos_geos.into_iter().map(|g| (g.id, g.trans)).collect();
     
     // 步骤3：直接从 neg_relate 和 ngmr_relate 获取切割几何（新结构简化版）
-    // 新结构：in = geo_relate (切割几何), out = pe (正实体), pe = 负载体
-    // pe 是负载体，需要获取其 world_trans
+    // neg_relate/ngmr_relate 结构：in = geo_relate (切割几何), out = pe (被切割的正实体)
+    // geo_relate 结构：in = pe (负载体), out = geo
+    // 所以负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
     let sql_neg = format!(
         r#"
         SELECT 
@@ -93,7 +94,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
-            array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+            array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
         FROM {pe_key}<-neg_relate
         WHERE in.trans.d != NONE
         "#
@@ -108,7 +109,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
-            array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+            array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
         FROM {pe_key}<-ngmr_relate
         WHERE in.trans.d != NONE
         "#
@@ -265,7 +266,9 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         let pe_key = refno.to_pe_key();
         
         // 查询 neg_relate: in = geo_relate (Neg类型切割几何)
-        // pe 是负载体，需要获取其 world_trans
+        // neg_relate 结构: in = geo_relate, out = 被切割的正实体
+        // geo_relate 结构: in = 负载体 pe, out = geo
+        // 所以负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
         let sql_neg = format!(
             r#"
             SELECT 
@@ -274,7 +277,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
             FROM {pe_key}<-neg_relate
             WHERE in.trans.d != NONE
             "#
@@ -282,7 +285,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         let neg_results: Vec<NegGeoResult> = SUL_DB.query_take(&sql_neg, 0).await.unwrap_or_default();
         
         // 查询 ngmr_relate: in = geo_relate (CataCrossNeg类型切割几何)
-        // pe 是负载体，需要获取其 world_trans
+        // ngmr_relate 结构同 neg_relate: in = geo_relate, out = 被切割的正实体
+        // 负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
         let sql_ngmr = format!(
             r#"
             SELECT 
@@ -291,7 +295,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                array::first(pe<-inst_relate).world_trans.d AS carrier_wt
+                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
             FROM {pe_key}<-ngmr_relate
             WHERE in.trans.d != NONE
             "#

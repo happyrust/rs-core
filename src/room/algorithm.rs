@@ -21,6 +21,9 @@ pub struct RoomInfo {
     pub id: RefnoEnum,
     /// 房间名称，可用于显示与分组
     pub name: String,
+    /// 房间号，用于判断是否是有效房间
+    #[serde(default)]
+    pub room_code: Option<String>,
 }
 
 impl Ord for RoomInfo {
@@ -33,6 +36,61 @@ impl PartialOrd for RoomInfo {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
+}
+
+/// 从 room_panel_relate 表查询所有已计算的房间
+///
+/// # 返回
+/// - 成功时返回所有房间节点列表（Vec<RoomInfo>），只包含已经建立了房间关系的有效房间
+///
+/// # 场景
+/// 用于获取房间树显示的房间列表，只显示已经计算过房间关系的有效房间
+pub async fn query_rooms_from_room_relate() -> anyhow::Result<Vec<RoomInfo>> {
+    // 从 room_panel_relate 表查询所有有房间号的记录，按 room_num 去重
+    // out 字段是 RecordId 类型，使用 record::id() 提取 ID 字符串
+    let sql = r#"
+        SELECT record::id(out) as out_id, room_num 
+        FROM room_panel_relate 
+        ORDER BY room_num 
+        LIMIT 5000;
+    "#;
+    
+    #[derive(Debug, serde::Deserialize, SurrealValue)]
+    struct RoomPanelRelateRecord {
+        out_id: Option<String>,
+        room_num: Option<String>,
+    }
+    
+    let mut response = SUL_DB.query_response(sql).await?;
+    let records: Vec<RoomPanelRelateRecord> = response.take(0)?;
+    
+    // 转换为 RoomInfo，过滤掉无效记录并按 room_num 去重
+    let mut seen_rooms = std::collections::HashSet::new();
+    let results: Vec<RoomInfo> = records
+        .into_iter()
+        .filter_map(|r| {
+            let out_id = r.out_id?;
+            let room_code = r.room_num?;
+            // 跳过空房间号
+            if room_code.is_empty() {
+                return None;
+            }
+            // 将 out_id 字符串转换为 RefnoEnum（格式如 "17496_199037"）
+            let out_ref = RefnoEnum::from(out_id.as_str());
+            // 按 room_num 去重
+            if !seen_rooms.insert(room_code.clone()) {
+                return None;
+            }
+            Some(RoomInfo {
+                id: out_ref,
+                name: room_code.clone(), // 使用房间号作为名称
+                room_code: Some(room_code),
+            })
+        })
+        .collect();
+    
+    println!("query_rooms_from_room_relate 查询到 {} 个房间", results.len());
+    Ok(results)
 }
 
 /// 查询数据库中所有满足房间关键字条件的 FRMW 节点（房间）
@@ -65,9 +123,9 @@ pub async fn query_all_room_infos(room_keywords: &[String]) -> anyhow::Result<Ve
         r#"
         let $sites = (select value REFNO from SITE where NAME != NONE && string::contains(string::lowercase(NAME),'arch'));
          array::flatten(
-            select value @.{{3+collect}}(.children).{{id, noun, name}}
+            select value @.{{3+collect}}(.children).{{id, noun, name, room_code: fn::room_code(id)[0]}}
             from array::flatten($sites) 
-        )[? noun='FRMW' && name != NONE && ({} )].{{id, name}};
+        )[? noun='FRMW' && name != NONE && ({} )].{{id, name, room_code}};
     "#,
         keyword_filter
     );
@@ -111,6 +169,7 @@ pub async fn query_room_codes_of_arch() -> anyhow::Result<HashMap<String, BTreeS
             .insert(RoomInfo {
                 id: r.id.clone(),
                 name: last.to_string(),
+                room_code: r.room_code.clone(),
             });
     }
     Ok(map)

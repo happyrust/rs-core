@@ -34,11 +34,13 @@ use crate::prim_geo::wire::CurveType;
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::types::refno::RefU64;
 use crate::utils::svg_generator::SpineSvgGenerator;
-use glam::{Vec2, Vec3};
+use glam::{Mat3, Vec2, Vec3};
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use std::collections::HashSet;
 use std::sync::Mutex;
+use std::io::Write;
+use chrono;
 
 /// 最小长度阈值，用于判断几何形状是否有效
 const MIN_LEN: f32 = 1e-6;
@@ -813,6 +815,58 @@ pub fn generate_cylinder_edges(
     edges
 }
 
+/// 生成斜切圆柱体的特征边
+///
+/// 为SSLC生成底面圆弧 + 顶面圆弧 + 4条母线
+pub fn generate_sscyl_edges(
+    radius: f32,
+    height: f32,
+    num_segments: usize,
+    bottom_center: Vec3,
+    top_center: Vec3,
+) -> Edges {
+    let mut edges = Vec::new();
+    let step_theta = std::f32::consts::TAU / num_segments as f32;
+
+    // 1. 底圆边
+    for i in 0..num_segments {
+        let theta0 = i as f32 * step_theta;
+        let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
+        let (sin0, cos0) = theta0.sin_cos();
+        let (sin1, cos1) = theta1.sin_cos();
+
+        edges.push(Edge::new(vec![
+            bottom_center + Vec3::new(radius * cos0, radius * sin0, 0.0),
+            bottom_center + Vec3::new(radius * cos1, radius * sin1, 0.0),
+        ]));
+    }
+
+    // 2. 顶圆边
+    for i in 0..num_segments {
+        let theta0 = i as f32 * step_theta;
+        let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
+        let (sin0, cos0) = theta0.sin_cos();
+        let (sin1, cos1) = theta1.sin_cos();
+
+        edges.push(Edge::new(vec![
+            top_center + Vec3::new(radius * cos0, radius * sin0, 0.0),
+            top_center + Vec3::new(radius * cos1, radius * sin1, 0.0),
+        ]));
+    }
+
+    // 3. 4条母线（0°, 90°, 180°, 270°）
+    let meridian_angles = [0.0, std::f32::consts::PI * 0.5, std::f32::consts::PI, std::f32::consts::PI * 1.5];
+    for theta in &meridian_angles {
+        let (sin, cos) = theta.sin_cos();
+        edges.push(Edge::new(vec![
+            bottom_center + Vec3::new(radius * cos, radius * sin, 0.0),
+            top_center + Vec3::new(radius * cos, radius * sin, 0.0),
+        ]));
+    }
+
+    edges
+}
+
 /// 生成球体的特征边（经线和纬线）
 ///
 /// # 参数
@@ -1089,100 +1143,79 @@ fn generate_sscl_mesh(
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
+    // ✅ 基于您的几何定义实现
     let dir = safe_normalize(cyl.paxi_dir)?;
     let radius = (cyl.pdia * 0.5).abs();
-    if radius <= MIN_LEN {
+    if radius <= MIN_LEN || cyl.phei.abs() <= MIN_LEN {
         return None;
     }
+
+    // 基础参数
     let height = cyl.phei;
-    if height.abs() <= MIN_LEN {
-        return None;
-    }
+    let bottom_center = cyl.paxi_pt;
+    let top_center = bottom_center + dir * height; // 您的建议：沿原始轴平移
 
-    // 计算底面和顶面的中心点
-    let (bottom_center, top_center) = if height >= 0.0 {
-        (cyl.paxi_pt, cyl.paxi_pt + dir * height)
-    } else {
-        let top = cyl.paxi_pt;
-        (top + dir * height, top)
-    };
+    // 基础切向基（与标准圆柱一致）
+    let (basis_u, basis_v) = orthonormal_basis(dir); // (U, V) 是原始切向基
 
-    // 剪切角度参数（转换为弧度）
-    let btm_shear_x = cyl.btm_shear_angles[0].to_radians();
-    let btm_shear_y = cyl.btm_shear_angles[1].to_radians();
+    // ✅ 剪切角转换为弧度
+    let btm_shear_x = cyl.btm_shear_angles[0].to_radians(); // 绕局部Y轴旋转
+    let btm_shear_y = cyl.btm_shear_angles[1].to_radians(); // 绕局部X轴旋转
     let top_shear_x = cyl.top_shear_angles[0].to_radians();
     let top_shear_y = cyl.top_shear_angles[1].to_radians();
 
-    // 计算剪切变换的正切值
-    let tan_btm_x = btm_shear_x.tan();
-    let tan_btm_y = btm_shear_y.tan();
-    let tan_top_x = top_shear_x.tan();
-    let tan_top_y = top_shear_y.tan();
+    // ✅ 纯旋转变换矩阵（无缩放）
+    let rot_btm = Mat3::from_rotation_y(btm_shear_x) * Mat3::from_rotation_x(btm_shear_y);
+    let rot_top = Mat3::from_rotation_y(top_shear_x) * Mat3::from_rotation_x(top_shear_y);
 
-    // 建立局部坐标系
-    let (basis_u, basis_v) = orthonormal_basis(dir);
+    // ✅ 您的公式：生成底面局部坐标系 (Xb, Yb, Nb)
+    let Xb = rot_btm * basis_u; // 底面X轴：原始U轴旋转
+    let Yb = rot_btm * basis_v; // 底面Y轴：原始V轴旋转  
+    let Nb = rot_btm * dir;     // 底面法向：原始轴旋转
 
+    // ✅ 您的公式：生成顶面局部坐标系 (Xt, Yt, Nt)
+    let Xt = rot_top * basis_u;  // 顶面X轴
+    let Yt = rot_top * basis_v;  // 顶面Y轴
+    let Nt = rot_top * dir;      // 顶面法向
+
+    // ✅ 计算细分参数
     let radial = compute_radial_segments(settings, radius, non_scalable, 3);
+    let height_segments = compute_height_segments(settings, height.abs(), non_scalable, 1).max(1);
     let ring_stride = radial + 1;
-    let step_theta = std::f32::consts::TAU / radial as f32;
 
-    // 预先计算每个切片在底部和顶部的椭圆边界点
-    struct SliceData {
-        radial_dir: Vec3,
-        bottom_point: Vec3,
-        span: Vec3,
-    }
-
-    let mut slice_data = Vec::with_capacity(ring_stride);
-    let mut max_span = 0.0f32;
-    for slice in 0..=radial {
-        let angle = slice as f32 * step_theta;
-        let (sin, cos) = angle.sin_cos();
-        let radial_dir = basis_u * cos + basis_v * sin;
-        let x_local = radius * cos;
-        let y_local = radius * sin;
-
-        let z_offset_bottom = tan_btm_x * x_local + tan_btm_y * y_local;
-        let z_offset_top = tan_top_x * x_local + tan_top_y * y_local;
-
-        let bottom_point = bottom_center + radial_dir * radius + dir * z_offset_bottom;
-        let top_point = top_center + radial_dir * radius + dir * z_offset_top;
-        let span = top_point - bottom_point;
-        max_span = max_span.max(span.length());
-
-        slice_data.push(SliceData {
-            radial_dir,
-            bottom_point,
-            span,
-        });
-    }
-
-    // 使用最长母线长度决定高度分段，确保剪切越大细分越多
-    let mut height_segments =
-        compute_height_segments(settings, max_span.max(height.abs()), non_scalable, 1);
-    if height_segments == 0 {
-        height_segments = 1;
-    }
-
-    // 计算顶点、法线和索引的数量
-    let vertex_count = (height_segments + 1) * ring_stride + 2 * (radial + 1);
-    let mut vertices = Vec::with_capacity(vertex_count);
-    let mut normals = Vec::with_capacity(vertex_count);
+    let mut vertices = Vec::with_capacity((height_segments + 1) * ring_stride + 2 * (radial + 1));
+    let mut normals = Vec::with_capacity(vertices.capacity());
     let mut indices = Vec::with_capacity(height_segments * radial * 6 + radial * 6);
     let mut aabb = Aabb::new_invalid();
 
-    // 生成侧面顶点（沿每条母线插值）
+    let step_theta = std::f32::consts::TAU / radial as f32;
+
+    // ✅ 生成侧面：按您的描述，对同一θ的p_b、p_t做线性插值（母线）
     for ring in 0..=height_segments {
         let t = ring as f32 / height_segments as f32;
-        for data in &slice_data {
-            let vertex = data.bottom_point + data.span * t;
+        for slice in 0..=radial {
+            let angle = slice as f32 * step_theta;
+            let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
+            
+            // ✅ 您的公式：p_b(θ) = bottom_center + Xb * (r cosθ) + Yb * (r sinθ)
+            let bottom_point = bottom_center + Xb * (radius * cos_theta) + Yb * (radius * sin_theta);
+            
+            // ✅ 您的公式：p_t(θ) = top_center + Xt * (r cosθ) + Yt * (r sinθ)
+            let top_point = top_center + Xt * (radius * cos_theta) + Yt * (radius * sin_theta);
+            
+            // ✅ 线性插值形成母线
+            let vertex = bottom_point + (top_point - bottom_point) * t;
+            
+            // ✅ 法向：在侧面使用插值法向
+            let normal: Vec3 = (Nb + (Nt - Nb) * t).normalize();
+            
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
-            normals.push(data.radial_dir);
+            normals.push(normal);
         }
     }
 
-    // 生成侧面索引
+    // ✅ 生成侧面索引
     for ring in 0..height_segments {
         for slice in 0..radial {
             let current = ring * ring_stride + slice;
@@ -1198,104 +1231,59 @@ fn generate_sscl_mesh(
         }
     }
 
-    // 计算底面法向（考虑剪切角度）
-    let bottom_normal = if btm_shear_x.abs() > f32::EPSILON || btm_shear_y.abs() > f32::EPSILON {
-        // 计算斜切平面的法向
-        // 平面方程: z = tan_x * x + tan_y * y
-        // 法向: (-tan_x, -tan_y, 1) 归一化
-        let normal_unnorm = Vec3::new(-tan_btm_x, -tan_btm_y, 1.0);
-        safe_normalize(normal_unnorm).unwrap_or(-dir)
-    } else {
-        -dir
-    };
-
-    // 生成底面独立顶点
-    let bottom_cap_base = vertices.len() as u32;
+    // ✅ 底面盖子：使用 (Xb, Yb, Nb) 系统生成
+    let bottom_start = vertices.len() as u32;
     for slice in 0..=radial {
         let angle = slice as f32 * step_theta;
-        let (sin, cos) = angle.sin_cos();
-
-        // 计算圆周点在 XY 平面的位置
-        let x_local = radius * cos;
-        let y_local = radius * sin;
-
-        // 计算该点沿轴向的偏移（使其位于斜切平面上）
-        // 平面方程: z_offset = tan_x * x + tan_y * y
-        let z_offset = tan_btm_x * x_local + tan_btm_y * y_local;
-
-        // 顶点位置
-        let vertex = bottom_center + basis_u * x_local + basis_v * y_local + dir * z_offset;
+        let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
+        let vertex = bottom_center + Xb * (radius * cos_theta) + Yb * (radius * sin_theta);
         vertices.push(vertex);
-        normals.push(bottom_normal);
+        normals.push(Nb);
         extend_aabb(&mut aabb, vertex);
     }
-
-    // 底面中心点（在斜切平面的中心）
-    let bottom_center_index = vertices.len() as u32;
+    let bottom_center_idx = vertices.len() as u32;
     vertices.push(bottom_center);
-    normals.push(bottom_normal);
+    normals.push(Nb);
     extend_aabb(&mut aabb, bottom_center);
 
-    // 底面索引（注意缠绕方向）
+    // ✅ 底面索引
     for slice in 0..radial {
         let next = slice + 1;
         indices.extend_from_slice(&[
-            bottom_center_index,
-            bottom_cap_base + next as u32,
-            bottom_cap_base + slice as u32,
+            bottom_center_idx,
+            bottom_start + next as u32,
+            bottom_start + slice as u32,
         ]);
     }
 
-    // 计算顶面法向（考虑剪切角度）
-    let top_normal = if top_shear_x.abs() > f32::EPSILON || top_shear_y.abs() > f32::EPSILON {
-        // 计算斜切平面的法向
-        let normal_unnorm = Vec3::new(-tan_top_x, -tan_top_y, 1.0);
-        safe_normalize(normal_unnorm).unwrap_or(dir)
-    } else {
-        dir
-    };
-
-    // 生成顶面独立顶点
-    let top_cap_base = vertices.len() as u32;
+    // ✅ 顶面盖子：使用 (Xt, Yt, Nt) 系统生成
+    let top_start = vertices.len() as u32;
     for slice in 0..=radial {
         let angle = slice as f32 * step_theta;
-        let (sin, cos) = angle.sin_cos();
-
-        // 计算圆周点在 XY 平面的位置
-        let x_local = radius * cos;
-        let y_local = radius * sin;
-
-        // 计算该点沿轴向的偏移（使其位于斜切平面上）
-        // 相对于顶面中心的偏移
-        let z_offset = tan_top_x * x_local + tan_top_y * y_local;
-
-        // 顶点位置
-        let vertex = top_center + basis_u * x_local + basis_v * y_local + dir * z_offset;
+        let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
+        let vertex = top_center + Xt * (radius * cos_theta) + Yt * (radius * sin_theta);
         vertices.push(vertex);
-        normals.push(top_normal);
+        normals.push(Nt);
         extend_aabb(&mut aabb, vertex);
     }
-
-    // 顶面中心点（在斜切平面的中心）
-    let top_center_index = vertices.len() as u32;
+    let top_center_idx = vertices.len() as u32;
     vertices.push(top_center);
-    normals.push(top_normal);
+    normals.push(Nt);
     extend_aabb(&mut aabb, top_center);
 
-    // 顶面索引
+    // ✅ 顶面索引
     for slice in 0..radial {
         let next = slice + 1;
         indices.extend_from_slice(&[
-            top_center_index,
-            top_cap_base + slice as u32,
-            top_cap_base + next as u32,
+            top_center_idx,
+            top_start + slice as u32,
+            top_start + next as u32,
         ]);
     }
 
-    // 生成几何边：底面圆弧 + 顶面圆弧 + 4条母线
-    let height_abs = (top_center - bottom_center).length();
-    let base_edges = generate_cylinder_edges(radius, height_abs, radial, 4);
-    let edges = transform_edges(base_edges, bottom_center, dir);
+    // ✅ 生成几何边：底面圆弧 + 顶面圆弧 + 4条母线
+    let edges = generate_sscyl_edges(radius, height, radial, bottom_center, top_center);
+
     Some(GeneratedMesh {
         mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
         aabb: Some(aabb),

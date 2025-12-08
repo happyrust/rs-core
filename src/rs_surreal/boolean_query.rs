@@ -24,7 +24,7 @@ use crate::{get_inst_relate_keys, SurrealQueryExt, SUL_DB};
 ///
 /// Selects instances with catalog negative geometry:
 /// - Filters by `has_cata_neg` flag
-/// - Optionally filters by `!bad_bool and !booled` if not replacing
+/// - Optionally filters by `bool_status != 'Success'` if not replacing
 /// - Returns refno, inst_info_id, and boolean_group (flattened geom_refno and cata_neg)
 pub async fn query_cata_neg_boolean_groups(
     refnos: &[RefnoEnum],
@@ -39,7 +39,8 @@ pub async fn query_cata_neg_boolean_groups(
     );
 
     if !replace_exist {
-        sql.push_str("and !bad_bool and !booled");
+        // 仅处理尚未成功布尔运算的实体
+        sql.push_str("and (bool_status != 'Success' or bool_status = none)");
     }
 
     SUL_DB.query_take(&sql, 0).await

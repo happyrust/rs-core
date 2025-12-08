@@ -1,5 +1,8 @@
 use bevy_transform::prelude::Transform;
 use std::collections::BTreeMap;
+use std::fs::OpenOptions;
+use std::io::Write;
+use chrono;
 
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::shape::pdms_shape::RsVec3;
@@ -143,6 +146,7 @@ pub mod geo_params_data {
     use crate::rvm_types::RvmShapeTypeData;
     use crate::shape::pdms_shape::{BrepShapeTrait, RsVec3, VerifiedShape};
     use anyhow::anyhow;
+    use std::io::Write;
     #[cfg(feature = "occ")]
     use opencascade::primitives::*;
     use serde_derive::{Deserialize, Serialize};
@@ -344,9 +348,60 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimLPyramid(s) => {
                     PdmsGeoParam::PrimLPyramid(*s.gen_unit_shape().downcast::<LPyramid>().unwrap())
                 }
-                PdmsGeoParam::PrimSCylinder(s) => PdmsGeoParam::PrimSCylinder(
-                    *s.gen_unit_shape().downcast::<SCylinder>().unwrap(),
-                ),
+                PdmsGeoParam::PrimSCylinder(s) => {
+                    let is_sscl = s.is_sscl();
+                    let out_param = if is_sscl || !s.unit_flag {
+                        // SSCL/倾斜圆柱或尚未单位化的圆柱保留全量参数
+                        PdmsGeoParam::PrimSCylinder(s.clone())
+                    } else {
+                        // 已标记为 unit_flag 的普通圆柱可复用单位网格
+                        PdmsGeoParam::PrimSCylinder(
+                            *s.gen_unit_shape().downcast::<SCylinder>().unwrap(),
+                        )
+                    };
+                    // #region agent log
+                    if let Ok(mut f) = std::fs::OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open("/Volumes/DPC/work/plant-code/rs-plant3-d/.cursor/debug.log")
+                    {
+                        let (out_pdia, out_phei, out_btm0, out_btm1, out_top0, out_top1, out_unit) =
+                            match &out_param {
+                                PdmsGeoParam::PrimSCylinder(out_s) => (
+                                    out_s.pdia,
+                                    out_s.phei,
+                                    out_s.btm_shear_angles[0],
+                                    out_s.btm_shear_angles[1],
+                                    out_s.top_shear_angles[0],
+                                    out_s.top_shear_angles[1],
+                                    out_s.unit_flag,
+                                ),
+                                _ => (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false),
+                            };
+                        let _ = writeln!(
+                            f,
+                            r#"{{"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"H1","location":"parsed_data.rs:PrimSCylinder","message":"convert_to_unit_param","data":{{"is_sscl":{},"in_pdia":{},"in_phei":{},"in_btm":[{},{}],"in_top":[{},{}],"in_unit":{},"out_pdia":{},"out_phei":{},"out_btm":[{},{}],"out_top":[{},{}],"out_unit":{}}},"timestamp":{}}}"#,
+                            is_sscl,
+                            s.pdia,
+                            s.phei,
+                            s.btm_shear_angles[0],
+                            s.btm_shear_angles[1],
+                            s.top_shear_angles[0],
+                            s.top_shear_angles[1],
+                            s.unit_flag,
+                            out_pdia,
+                            out_phei,
+                            out_btm0,
+                            out_btm1,
+                            out_top0,
+                            out_top1,
+                            out_unit,
+                            chrono::Utc::now().timestamp_millis()
+                        );
+                    }
+                    // #endregion
+                    out_param
+                }
                 PdmsGeoParam::PrimLCylinder(s) => PdmsGeoParam::PrimLCylinder(
                     *s.gen_unit_shape().downcast::<LCylinder>().unwrap(),
                 ),
