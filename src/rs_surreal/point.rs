@@ -1,14 +1,17 @@
 use crate::basic::aabb::ParryAabb;
-use crate::parsed_data::CateAxisParam;
+use crate::parsed_data::{CateAxisParam, TubiInfoData};
 use crate::pdms_types::PdmsGenericType;
 use crate::rs_surreal::geometry_query::PlantTransform;
 use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use bevy_transform::components::Transform;
 use dashmap::DashMap;
 use glam::Vec3;
+use itertools::Itertools;
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
+use std::collections::HashMap;
+use surrealdb::types as surrealdb_types;
 use surrealdb::types::SurrealValue;
 
 #[serde_as]
@@ -125,4 +128,128 @@ pub async fn query_arrive_leave_points_of_branch(
         map.insert(refno, pts);
     }
     Ok(map)
+}
+
+// ============================================================================
+// tubi_info 查询函数
+// ============================================================================
+
+/// 查询 BRAN/HANG 下所有子元件的 tubi_info 和 world_transform
+/// 
+/// 返回: Vec<(元件 refno, tubi_info_id, world_transform)>
+#[derive(Serialize, Deserialize, Debug, Clone, SurrealValue)]
+pub struct BranchChildTubiQuery {
+    pub refno: RefnoEnum,
+    pub tubi_info_id: Option<String>,
+    pub world_trans: Option<PlantTransform>,
+}
+
+/// 查询 branch 下所有子元件的 tubi_info 关联信息
+pub async fn query_branch_children_tubi_info(
+    branch_refnos: &[RefnoEnum],
+) -> anyhow::Result<Vec<BranchChildTubiQuery>> {
+    if branch_refnos.is_empty() {
+        return Ok(vec![]);
+    }
+    
+    let branch_keys = branch_refnos
+        .iter()
+        .map(|r| r.to_pe_key())
+        .join(",");
+    
+    let sql = format!(
+        r#"
+        SELECT 
+            id as refno,
+            (->inst_relate->inst_info.tubi_info)[0] as tubi_info_id,
+            (->inst_relate.world_trans)[0] as world_trans
+        FROM array::flatten([{}].children)
+        WHERE (->inst_relate->inst_info.tubi_info)[0] != NONE
+        "#,
+        branch_keys
+    );
+    
+    let rows: Vec<BranchChildTubiQuery> = SUL_DB.query_take(&sql, 0).await.unwrap_or_default();
+    Ok(rows)
+}
+
+/// 批量查询 tubi_info 记录
+pub async fn query_tubi_info_by_ids(
+    ids: &[String],
+) -> anyhow::Result<HashMap<String, TubiInfoData>> {
+    if ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    
+    const BATCH_SIZE: usize = 500;
+    let mut result = HashMap::new();
+    
+    for chunk in ids.chunks(BATCH_SIZE) {
+        let id_list: String = chunk
+            .iter()
+            .map(|id| format!("tubi_info:⟨{}⟩", id))
+            .join(",");
+        
+        let sql = format!(
+            "SELECT * FROM tubi_info WHERE id IN [{}];",
+            id_list
+        );
+        
+        let rows: Vec<TubiInfoData> = SUL_DB.query_take(&sql, 0).await.unwrap_or_default();
+        for row in rows {
+            result.insert(row.id.clone(), row);
+        }
+    }
+    
+    Ok(result)
+}
+
+/// 查询 branch 下元件的 arrive/leave 点（基于 tubi_info 表）
+/// 
+/// 返回: DashMap<元件 refno, [arrive CateAxisParam, leave CateAxisParam]>
+/// 注意：返回的是 world 坐标（已应用 world_transform）
+pub async fn query_arrive_leave_from_tubi_info(
+    branch_refnos: &[RefnoEnum],
+) -> anyhow::Result<DashMap<RefnoEnum, [CateAxisParam; 2]>> {
+    // 1. 查询子元件的 tubi_info_id 和 world_trans
+    let children = query_branch_children_tubi_info(branch_refnos).await?;
+    
+    if children.is_empty() {
+        return Ok(DashMap::new());
+    }
+    
+    // 2. 收集所有 tubi_info_id
+    let tubi_info_ids: Vec<String> = children
+        .iter()
+        .filter_map(|c| c.tubi_info_id.clone())
+        .collect();
+    
+    // 3. 批量查询 tubi_info
+    let tubi_info_map = query_tubi_info_by_ids(&tubi_info_ids).await?;
+    
+    // 4. 组装结果（应用 world_transform）
+    let result = DashMap::new();
+    for child in children {
+        let Some(tubi_id) = child.tubi_info_id else {
+            continue;
+        };
+        let Some(tubi_info) = tubi_info_map.get(&tubi_id) else {
+            continue;
+        };
+        
+        // 转换为 CateAxisParam
+        let mut arrive = tubi_info.arrive.to_axis_param(child.refno);
+        let mut leave = tubi_info.leave.to_axis_param(child.refno);
+        
+        // 应用 world_transform
+        if let Some(trans) = child.world_trans {
+            let t: Transform = *trans;
+            arrive.transform(&t);
+            leave.transform(&t);
+        }
+        
+        result.insert(child.refno, [arrive, leave]);
+    }
+    
+    Ok(result)
 }

@@ -101,6 +101,11 @@ pub struct EleGeosInfo {
     pub has_cata_neg: bool,
     pub is_solid: bool,
     // pub dt: chrono::NaiveDateTime,
+
+    /// 关联的 tubi_info ID (格式: "{cata_hash}_{arrive_num}_{leave_num}")
+    /// 用于 BRAN/HANG 下元件的 arrive/leave 点复用
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tubi_info_id: Option<String>,
 }
 
 impl EleGeosInfo {
@@ -163,6 +168,12 @@ impl EleGeosInfo {
 
         // 移除最后的 } 并添加 id 字段
         json.pop();
+        
+        // 添加 tubi_info 关联（如果有）
+        if let Some(ref tubi_id) = self.tubi_info_id {
+            json.push_str(&format!(r#","tubi_info":tubi_info:⟨{}⟩"#, tubi_id));
+        }
+        
         json.push_str(&format!(r#","id":inst_info:⟨{}⟩}}"#, id));
         json
     }

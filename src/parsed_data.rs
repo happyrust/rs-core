@@ -7,6 +7,7 @@ use chrono;
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::shape::pdms_shape::RsVec3;
 use crate::types::*;
+use crate::vec3_pool::EncodedVec3;
 use glam::{Vec2, Vec3};
 use parry2d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
@@ -127,6 +128,118 @@ impl Default for CateAxisParam {
             pheight: 0.0,
             pconnect: "".to_string(),
         }
+    }
+}
+
+/// Tubi 信息数据结构
+/// 
+/// 按 `{cata_hash}_{arrive_num}_{leave_num}` 组合键存储，
+/// 用于 BRAN/HANG 元件的 arrive/leave 点复用。
+/// 存储 local 坐标，运行时结合 world_transform 计算 world 坐标。
+#[derive(Clone, Serialize, Deserialize, Debug, Default, SurrealValue)]
+pub struct TubiInfoData {
+    /// 组合键 ID: "{cata_hash}_{arrive_num}_{leave_num}"
+    pub id: String,
+    /// arrive 点 (local 坐标)
+    pub arrive: TubiPointData,
+    /// leave 点 (local 坐标)
+    pub leave: TubiPointData,
+}
+
+/// Tubi 点数据（压缩格式，使用 vec3_pool）
+#[derive(Clone, Serialize, Deserialize, Debug, Default, SurrealValue)]
+pub struct TubiPointData {
+    /// 点编号 (ARRI/LEAV number)
+    pub n: i32,
+    /// 位置 [x, y, z]（ZERO 时省略）
+    #[serde(default, skip_serializing_if = "is_zero_position")]
+    pub p: Option<[f32; 3]>,
+    /// 方向（使用 EncodedVec3 压缩，常见方向只需 1 字节）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub d: Option<EncodedVec3>,
+    /// 管径
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub bore: f32,
+    /// 宽度 (可选，非零时序列化)
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub w: f32,
+    /// 高度 (可选，非零时序列化)
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub h: f32,
+}
+
+fn is_zero_f32(v: &f32) -> bool {
+    *v == 0.0
+}
+
+fn is_zero_position(v: &Option<[f32; 3]>) -> bool {
+    v.map_or(true, |p| p[0].abs() < 0.001 && p[1].abs() < 0.001 && p[2].abs() < 0.001)
+}
+
+impl TubiPointData {
+    /// 从 CateAxisParam 创建（使用 vec3_pool 压缩）
+    pub fn from_axis_param(param: &CateAxisParam) -> Self {
+        // ZERO 位置设为 None，序列化时省略
+        let pos = [param.pt.0.x, param.pt.0.y, param.pt.0.z];
+        let p = if pos[0].abs() < 0.001 && pos[1].abs() < 0.001 && pos[2].abs() < 0.001 {
+            None
+        } else {
+            Some(pos)
+        };
+        
+        Self {
+            n: param.number,
+            p,
+            d: param.dir.as_ref().map(|d| EncodedVec3::encode(d.0)),
+            bore: param.pbore,
+            w: param.pwidth,
+            h: param.pheight,
+        }
+    }
+
+    /// 转换为 CateAxisParam（解压 vec3_pool）
+    pub fn to_axis_param(&self, refno: RefnoEnum) -> CateAxisParam {
+        // None 视为 ZERO
+        let pt = self.p.map_or(Vec3::ZERO, |p| Vec3::new(p[0], p[1], p[2]));
+        
+        CateAxisParam {
+            refno,
+            number: self.n,
+            pt: RsVec3(pt),
+            dir: self.d.as_ref().map(|e| RsVec3(e.decode())),
+            dir_flag: 1.0,
+            ref_dir: None,
+            pbore: self.bore,
+            pwidth: self.w,
+            pheight: self.h,
+            pconnect: String::new(),
+        }
+    }
+}
+
+impl TubiInfoData {
+    /// 生成组合键 ID
+    pub fn make_id(cata_hash: &str, arrive_num: i32, leave_num: i32) -> String {
+        format!("{}_{}_{}",cata_hash, arrive_num, leave_num)
+    }
+
+    /// 从 CateAxisParam 对创建
+    pub fn from_axis_params(cata_hash: &str, arrive: &CateAxisParam, leave: &CateAxisParam) -> Self {
+        Self {
+            id: Self::make_id(cata_hash, arrive.number, leave.number),
+            arrive: TubiPointData::from_axis_param(arrive),
+            leave: TubiPointData::from_axis_param(leave),
+        }
+    }
+
+    /// 生成 SurrealDB INSERT JSON
+    pub fn to_surreal_json(&self) -> String {
+        format!(
+            r#"{{ id: tubi_info:⟨{}⟩, arrive: {}, leave: {} }}"#,
+            self.id,
+            serde_json::to_string(&self.arrive).unwrap_or_default(),
+            serde_json::to_string(&self.leave).unwrap_or_default()
+        )
     }
 }
 

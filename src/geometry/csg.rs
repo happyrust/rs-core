@@ -820,15 +820,16 @@ pub fn generate_cylinder_edges(
 /// 为SSLC生成底面圆弧 + 顶面圆弧 + 4条母线
 pub fn generate_sscyl_edges(
     radius: f32,
-    height: f32,
     num_segments: usize,
     bottom_center: Vec3,
     top_center: Vec3,
+    x_basis: Vec3,
+    y_basis: Vec3,
 ) -> Edges {
     let mut edges = Vec::new();
     let step_theta = std::f32::consts::TAU / num_segments as f32;
 
-    // 1. 底圆边
+    // 1. 底圆边（使用剪切局部坐标系）
     for i in 0..num_segments {
         let theta0 = i as f32 * step_theta;
         let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
@@ -836,12 +837,12 @@ pub fn generate_sscyl_edges(
         let (sin1, cos1) = theta1.sin_cos();
 
         edges.push(Edge::new(vec![
-            bottom_center + Vec3::new(radius * cos0, radius * sin0, 0.0),
-            bottom_center + Vec3::new(radius * cos1, radius * sin1, 0.0),
+            bottom_center + x_basis * (radius * cos0) + y_basis * (radius * sin0),
+            bottom_center + x_basis * (radius * cos1) + y_basis * (radius * sin1),
         ]));
     }
 
-    // 2. 顶圆边
+    // 2. 顶圆边（使用剪切局部坐标系）
     for i in 0..num_segments {
         let theta0 = i as f32 * step_theta;
         let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
@@ -849,18 +850,18 @@ pub fn generate_sscyl_edges(
         let (sin1, cos1) = theta1.sin_cos();
 
         edges.push(Edge::new(vec![
-            top_center + Vec3::new(radius * cos0, radius * sin0, 0.0),
-            top_center + Vec3::new(radius * cos1, radius * sin1, 0.0),
+            top_center + x_basis * (radius * cos0) + y_basis * (radius * sin0),
+            top_center + x_basis * (radius * cos1) + y_basis * (radius * sin1),
         ]));
     }
 
-    // 3. 4条母线（0°, 90°, 180°, 270°）
+    // 3. 4 条母线（在剪切局部坐标系下的四个方向）
     let meridian_angles = [0.0, std::f32::consts::PI * 0.5, std::f32::consts::PI, std::f32::consts::PI * 1.5];
     for theta in &meridian_angles {
         let (sin, cos) = theta.sin_cos();
         edges.push(Edge::new(vec![
-            bottom_center + Vec3::new(radius * cos, radius * sin, 0.0),
-            top_center + Vec3::new(radius * cos, radius * sin, 0.0),
+            bottom_center + x_basis * (radius * cos) + y_basis * (radius * sin),
+            top_center + x_basis * (radius * cos) + y_basis * (radius * sin),
         ]));
     }
 
@@ -1282,7 +1283,7 @@ fn generate_sscl_mesh(
     }
 
     // ✅ 生成几何边：底面圆弧 + 顶面圆弧 + 4条母线
-    let edges = generate_sscyl_edges(radius, height, radial, bottom_center, top_center);
+    let edges = generate_sscyl_edges(radius, radial, bottom_center, top_center, Xb, Yb);
 
     Some(GeneratedMesh {
         mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),

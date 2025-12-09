@@ -30,6 +30,8 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::f32::consts::FRAC_1_SQRT_2; // 0.707...
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::SurrealValue;
 
 /// 量化精度：乘数
 const QUANTIZE_SCALE: f32 = 1000.0;
@@ -38,7 +40,7 @@ const QUANTIZE_SCALE: f32 = 1000.0;
 pub type QuantizedVec3 = (i32, i32, i32);
 
 /// Vec3 的紧凑 ID 表示
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, SurrealValue)]
 pub enum Vec3Id {
     /// 预定义的常见方向 (1-255)
     Common(u8),
@@ -333,10 +335,11 @@ pub fn common_direction_count() -> usize {
 // ============================================================================
 
 /// 编码结果，包含 ID 和可能需要存储的原始值
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
 pub struct EncodedVec3 {
     pub id: Vec3Id,
     /// 非常见向量需要存储原始值
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub raw: Option<[f32; 3]>,
 }
 
