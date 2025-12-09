@@ -165,12 +165,17 @@ impl BrepShapeTrait for Revolution {
             let mut v2 = Vec::with_capacity(wire.len());
             let mut r = Vec::with_capacity(wire.len());
             for p in wire {
-                v2.push(Vec2::new(p.x, p.y));
+                // 对于绕 X 轴旋转：
+                // - p.x (PDMS X) = 沿旋转轴的高度 -> profile.y
+                // - p.y (PDMS Y) = 径向距离 -> profile.x
+                v2.push(Vec2::new(p.y, p.x));
                 r.push(p.z);
             }
             verts2d.push(v2);
             frads.push(r);
         }
+
+        // 注意：不要强制闭合 profile，由 revolve_profile 处理开放 profile 的端面封盖
 
         let processor = ProfileProcessor::from_wires(verts2d, frads, true)
             .map_err(|e| {

@@ -3920,8 +3920,20 @@ pub(crate) fn generate_revolution_mesh(
         return None;
     }
 
-    // 使用第一个轮廓
-    let profile = &rev.verts[0];
+    // 使用第一个轮廓，并处理 360° 旋转的开放轮廓
+    let mut profile = rev.verts[0].clone();
+    let is_full_rotation = (rev.angle.abs() - 360.0).abs() < 0.01 || rev.angle.abs() > 360.0;
+    
+    // 对于 360° 旋转的开放轮廓，自动闭合
+    if is_full_rotation && profile.len() >= 2 {
+        let first = profile.first().cloned().unwrap_or_default();
+        let last = profile.last().cloned().unwrap_or_default();
+        if (first - last).length() > 0.01 {
+            // 轮廓不闭合，添加闭合点
+            profile.push(first);
+        }
+    }
+    
     let n_profile = profile.len();
     if n_profile < 3 {
         return None;
@@ -4194,7 +4206,7 @@ pub(crate) fn generate_revolution_mesh(
 
     // 🆕 从 Profile 轮廓生成旋转体的特征边（纬线边）
     let revolution_edges = generate_revolution_profile_edges(
-        profile,
+        &profile,
         rot_pt,
         rot_dir,
         angle_rad,

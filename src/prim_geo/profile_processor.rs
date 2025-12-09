@@ -727,13 +727,34 @@ pub fn revolve_profile(
         }
     }
 
+    // 判断是否为完整旋转（360°）
+    let is_full_rotation = (angle.abs() - 360.0).abs() < 0.01;
+    
+    // 检测 profile 是否闭合（首尾点重合）
+    let first_point = profile.contour_points.first().cloned().unwrap_or_default();
+    let last_point = profile.contour_points.last().cloned().unwrap_or_default();
+    let profile_is_closed = (first_point - last_point).length() < 0.01;
+    
+    println!("🔍 [REVOLVE] n_profile={}, is_full_rotation={}, profile_is_closed={}", 
+        n_profile, is_full_rotation, profile_is_closed);
+    println!("   first_point={:?}, last_point={:?}, distance={}", 
+        first_point, last_point, (first_point - last_point).length());
+    
+    // 对于开放 profile，侧面不连接最后一点到第一点
+    let n_profile_edges = if profile_is_closed { n_profile } else { n_profile - 1 };
+
     // 4. 生成侧面索引
     for i in 0..n_segments {
-        for j in 0..n_profile {
+        for j in 0..n_profile_edges {
             let next_j = (j + 1) % n_profile;
 
             let curr_ring = i * n_profile;
-            let next_ring = (i + 1) * n_profile;
+            // 对于 360° 旋转，最后一段应该连接回第一环
+            let next_ring = if is_full_rotation && i == n_segments - 1 {
+                0 // 使用第一环的索引
+            } else {
+                (i + 1) * n_profile
+            };
 
             let idx0 = (curr_ring + j) as u32;
             let idx1 = (curr_ring + next_j) as u32;
@@ -741,13 +762,65 @@ pub fn revolve_profile(
             let idx3 = (next_ring + j) as u32;
 
             // 注意三角形绕向，确保法线朝外 (Rotation x Profile)
-            // 原顺序 [idx0, idx1, idx2] 是 Profile x Rotation = Inward
-            // 修正为 [idx0, idx2, idx1] 是 Rotation x Profile = Outward
             indices.extend_from_slice(&[idx0, idx2, idx1, idx0, idx3, idx2]);
         }
     }
 
-    // 4. 生成 UV 坐标
+    // 5. 对于 360° 旋转体，开放轮廓需要添加端面封闭
+    if is_full_rotation && !profile_is_closed && n_profile >= 2 {
+        let first_pt = first_point; // 使用已计算的变量
+        let last_pt = last_point;
+        let axis_tolerance = 0.1;
+        
+        println!("🔍 [REVOLVE 端面] first_pt={:?}, last_pt={:?}", first_pt, last_pt);
+        println!("   first_on_axis={}, last_on_axis={}", first_pt.x.abs() < axis_tolerance, last_pt.x.abs() < axis_tolerance);
+        
+        // 检查首尾点是否在旋转轴上（径向距离=0）
+        let first_on_axis = first_pt.x.abs() < axis_tolerance;
+        let last_on_axis = last_pt.x.abs() < axis_tolerance;
+        
+        if first_on_axis && last_on_axis {
+            // 首尾都在轴上，不需要端面（旋转体自然闭合）
+        } else if first_on_axis {
+            // 首点在轴上，尾点形成圆环 -> 用三角形扇形封盖
+            // 首点作为中心，连接尾点形成的圆
+            for i in 0..n_segments {
+                let center = (i * n_profile) as u32; // 首点（在轴上）
+                let curr_last = (i * n_profile + n_profile - 1) as u32;
+                let next_last = if i == n_segments - 1 {
+                    (n_profile - 1) as u32
+                } else {
+                    ((i + 1) * n_profile + n_profile - 1) as u32
+                };
+                indices.extend_from_slice(&[center, curr_last, next_last]);
+            }
+        } else if last_on_axis {
+            // 尾点在轴上，首点形成圆环 -> 用三角形扇形封盖
+            // 尾点作为中心，连接首点形成的圆
+            for i in 0..n_segments {
+                let center = (i * n_profile + n_profile - 1) as u32; // 尾点（在轴上）
+                let curr_first = (i * n_profile) as u32;
+                let next_first = if i == n_segments - 1 {
+                    0
+                } else {
+                    ((i + 1) * n_profile) as u32
+                };
+                indices.extend_from_slice(&[center, next_first, curr_first]);
+            }
+        } else {
+            // 首尾都不在轴上 -> 用环形面连接两个圆环
+            for i in 0..n_segments {
+                let curr_first = (i * n_profile) as u32;
+                let curr_last = (i * n_profile + n_profile - 1) as u32;
+                let next_first = if i == n_segments - 1 { 0 } else { ((i + 1) * n_profile) as u32 };
+                let next_last = if i == n_segments - 1 { (n_profile - 1) as u32 } else { ((i + 1) * n_profile + n_profile - 1) as u32 };
+                indices.extend_from_slice(&[curr_first, next_first, next_last]);
+                indices.extend_from_slice(&[curr_first, next_last, curr_last]);
+            }
+        }
+    }
+
+    // 6. 生成 UV 坐标
     let mut uvs = Vec::new();
     for i in 0..=n_segments {
         let v = i as f32 / n_segments as f32;
@@ -755,6 +828,11 @@ pub fn revolve_profile(
             let u = j as f32 / n_profile as f32;
             uvs.push([u, v]);
         }
+    }
+    // 端面中心点的 UV
+    let extra_verts = vertices.len() - (n_segments + 1) * n_profile;
+    for _ in 0..extra_verts {
+        uvs.push([0.5, 0.5]);
     }
 
     RevolvedMesh {

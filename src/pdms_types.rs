@@ -73,7 +73,8 @@ pub const PRIMITIVE_GEO_ATTR_NAMES: [&'static str; 8] = [
 
 ///基本体的种类(包含负实体)
 //"SPINE", "GENS",
-pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
+// 注意：NREV（负旋转体）需要 loop 数据，由 loop_model 处理，不在此列表中
+pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 21] = [
     "BOX",    // 盒子
     "CYLI",   // 圆柱体
     "SLCY",   // 斜圆柱体
@@ -94,7 +95,6 @@ pub const GNERAL_PRIM_NOUN_NAMES: [&'static str; 22] = [
     "NCTO",   // 负圆环
     "NRTO",   // 负圆环
     "NSCY",   // 负斜圆柱体
-    "NREV",   // 负旋转体
     "POLYHE", // 多面体
 ];
 
