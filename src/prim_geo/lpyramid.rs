@@ -433,17 +433,32 @@ mod tests {
     }
 
     #[test]
-    fn test_lpyramid_invalid_zero_bottom() {
-        // 边界情况：底面尺寸为0
+    fn test_lpyramid_inverted_pyramid() {
+        // 边界情况：底面尺寸为0（倒立棱锥）
+        // 根据 check_valid 逻辑：顶面或底面至少有一个有面积即可
         let pyramid = create_lpyramid(
-            2.0, 3.0,
+            2.0, 3.0,  // 顶面有效
             0.0, 0.0,  // 底面尺寸为0
             10.0, 0.0,
             0.0, 0.0
         );
 
-        // 底面为0，应该无效
-        assert!(!pyramid.check_valid());
+        // 顶面有效，底面为0 = 倒立棱锥，应该有效
+        assert!(pyramid.check_valid());
+        
+        // 验证关键点
+        let transform = bevy_transform::prelude::Transform::default();
+        let points = pyramid.enhanced_key_points(&transform);
+        
+        // 应该有2个中心点
+        let centers: Vec<_> = points.iter().filter(|(_, name, _)| name == "Center").collect();
+        assert_eq!(centers.len(), 2);
+        
+        // 顶面有4个顶点，底面退化为点无顶点
+        let endpoints: Vec<_> = points.iter().filter(|(_, name, _)| name == "Endpoint").collect();
+        assert_eq!(endpoints.len(), 4);
+        
+        println!("✅ 倒立棱锥 (底面退化为点) 验证通过");
     }
 
     #[test]
