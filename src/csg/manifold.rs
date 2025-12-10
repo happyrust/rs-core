@@ -1,112 +1,76 @@
-use std::alloc::{Layout, alloc};
-use std::{mem, panic};
+use std::mem;
 
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh};
 use crate::tool::float_tool::*;
-use derive_more::{Deref, DerefMut};
-use glam::{DMat4, Mat4, Vec2, Vec3};
-use itertools::Itertools;
-use manifold_sys::bindings::*;
-use parry3d::bounding_volume::Aabb;
+use glam::{DMat4, Vec2, Vec3};
+use manifold_rs::{Manifold, Mesh};
 
-#[derive(Clone, Deref, DerefMut)]
-pub struct ManifoldSimplePolygonRust {
-    pub ptr: *mut ManifoldSimplePolygon,
+/// 布尔操作类型
+#[derive(Clone, Copy, Debug)]
+pub enum ManifoldOpType {
+    Union,
+    Intersection,
+    Difference,
 }
 
-impl ManifoldSimplePolygonRust {
-    pub fn new() -> Self {
-        unsafe {
-            let sz = manifold_simple_polygon_size();
-            let layout = Layout::from_size_align(sz, 32).unwrap();
-            Self {
-                ptr: alloc(layout) as _,
-            }
-        }
-    }
-
-    ///根据2d的点生成
-    pub fn from_points(pts: &[Vec2]) -> Self {
-        unsafe {
-            let mut polygon = Self::new();
-            let ptr = manifold_simple_polygon(polygon.ptr as _, pts.as_ptr() as _, pts.len() as _);
-            Self { ptr }
-        }
-    }
-}
-
-#[derive(Clone, Deref, DerefMut)]
+/// 2D 截面，用于生成 3D 实体
 pub struct ManifoldCrossSectionRust {
-    pub ptr: *mut ManifoldCrossSection,
+    /// 多边形数据，格式为 [x0, y0, x1, y1, ...]
+    polygon_data: Vec<f64>,
 }
 
 impl ManifoldCrossSectionRust {
-    pub fn new() -> Self {
-        unsafe {
-            let sz = manifold_cross_section_size();
-            let layout = Layout::from_size_align(sz, 32).unwrap();
-            Self {
-                ptr: alloc(layout) as _,
-            }
-        }
-    }
-
-    ///根据2d的点生成 ManifoldCrossSectionRust
+    /// 根据 2d 的点生成 ManifoldCrossSectionRust
     pub fn from_points(pts: &[Vec2]) -> Self {
-        unsafe {
-            let mut cross_section = Self::new();
-            let mut polygon = ManifoldSimplePolygonRust::from_points(pts);
-            manifold_cross_section_of_simple_polygon(
-                cross_section.ptr as _,
-                polygon.ptr as _,
-                ManifoldFillRule_MANIFOLD_FILL_RULE_POSITIVE,
-            );
-            cross_section
+        let mut polygon_data = Vec::with_capacity(pts.len() * 2);
+        for p in pts {
+            polygon_data.push(p.x as f64);
+            polygon_data.push(p.y as f64);
         }
+        Self { polygon_data }
     }
 
-    ///拉伸成manifold
-    pub fn extrude(&mut self, height: f32, slices: u32) -> ManifoldRust {
-        unsafe {
-            let mut manifold = ManifoldRust::new();
-            manifold_extrude(
-                manifold.ptr as _,
-                self.ptr as _,
-                height,
-                slices as _,
-                0.0,
-                1.0,
-                1.0,
-            );
-
-            manifold
-        }
+    /// 拉伸成 manifold
+    pub fn extrude(&self, height: f32, _slices: u32) -> ManifoldRust {
+        let polygon_slice: &[f64] = &self.polygon_data;
+        let multi_polygon: &[&[f64]] = &[polygon_slice];
+        let manifold = Manifold::extrude(multi_polygon, height as f64, 1, 0.0, 1.0, 1.0);
+        ManifoldRust { inner: manifold }
     }
 
-    //旋转成manifold
-    pub fn extrude_rotate(&mut self, segments: i32, angle: f32) -> ManifoldRust {
-        unsafe {
-            let mut manifold = ManifoldRust::new();
-            manifold_revolve(manifold.ptr as _, self.ptr as _, segments, angle);
-            manifold
-        }
+    /// 旋转成 manifold
+    pub fn extrude_rotate(&self, segments: i32, angle: f32) -> ManifoldRust {
+        let polygon_slice: &[f64] = &self.polygon_data;
+        let multi_polygon: &[&[f64]] = &[polygon_slice];
+        let manifold = Manifold::revolve(multi_polygon, segments as u32, angle as f64);
+        ManifoldRust { inner: manifold }
     }
 }
 
-#[derive(Clone, Deref, DerefMut)]
+/// Manifold 的 Rust 封装
 pub struct ManifoldRust {
-    pub ptr: *mut ManifoldManifold,
+    pub inner: Manifold,
 }
 
 unsafe impl Send for ManifoldRust {}
 
+impl Clone for ManifoldRust {
+    fn clone(&self) -> Self {
+        // manifold-rs 的 Manifold 不支持 Clone，需要通过 mesh 转换
+        let mesh = self.inner.to_mesh();
+        let vertices = mesh.vertices();
+        let indices = mesh.indices();
+        let new_mesh = Mesh::new(&vertices, &indices);
+        Self {
+            inner: new_mesh.to_manifold(),
+        }
+    }
+}
+
 impl ManifoldRust {
     pub fn new() -> Self {
-        unsafe {
-            let sz = manifold_manifold_size();
-            let layout = Layout::from_size_align(sz, 32).unwrap();
-            let ptr = manifold_empty(alloc(layout) as _);
-            Self { ptr }
+        Self {
+            inner: Manifold::empty(),
         }
     }
 
@@ -119,92 +83,65 @@ impl ManifoldRust {
     }
 
     pub fn from_mesh(m: &ManifoldMeshRust) -> Self {
-        unsafe {
-            let mut manifold = Self::new();
-            let ptr = manifold_of_meshgl(manifold.ptr as _, m.ptr);
-            manifold
+        let mesh = Mesh::new(&m.vertices, &m.indices);
+        Self {
+            inner: mesh.to_manifold(),
         }
     }
 
     pub fn get_mesh(&self) -> ManifoldMeshRust {
-        unsafe {
-            let mesh = ManifoldMeshRust::new();
-            manifold_get_meshgl(mesh.ptr as _, self.ptr);
-            mesh
+        let mesh = self.inner.to_mesh();
+        ManifoldMeshRust {
+            vertices: mesh.vertices(),
+            indices: mesh.indices(),
         }
     }
 
-    pub fn num_tri(&self) -> u32 {
-        unsafe { manifold_num_tri(self.ptr) as _ }
-    }
-
-    pub fn get_properties(&self) -> ManifoldProperties {
-        unsafe { manifold_get_properties(self.ptr) }
-    }
-
-    ///不支持subtact
+    /// 不支持 subtract
     pub fn batch_boolean(batch: &[Self], op: ManifoldOpType) -> Self {
-        unsafe {
-            let sz = manifold_manifold_vec_size();
-            let layout = Layout::from_size_align(sz, 32).unwrap();
-            let m_vec = manifold_manifold_vec(alloc(layout) as _, batch.len());
-            for b in batch {
-                manifold_manifold_vec_push_back(m_vec, b.ptr);
-            }
-            let mut result = Self::new();
-            manifold_batch_boolean(result.ptr as _, m_vec, op);
-            //todo how to release memory
-            // manifold_delete_manifold_vec(m_vec);
-            result
+        if batch.is_empty() {
+            return Self::new();
         }
+
+        let mut result = batch[0].clone();
+        for b in batch.iter().skip(1) {
+            result.inner = match op {
+                ManifoldOpType::Union => result.inner.union(&b.inner),
+                ManifoldOpType::Intersection => result.inner.intersection(&b.inner),
+                ManifoldOpType::Difference => result.inner.difference(&b.inner),
+            };
+        }
+        result
     }
 
     pub fn batch_boolean_subtract(&self, negs: &[Self]) -> Self {
-        unsafe {
-            let mut result = Self::new();
-            if negs.len() == 0 {
-                return self.clone();
-            }
-            let mut src = self.clone();
-            for (i, b) in negs.iter().enumerate() {
-                manifold_difference(result.ptr as _, src.ptr, b.ptr);
-                src.ptr = result.ptr;
-            }
-            manifold_as_original(result.ptr as _, src.ptr);
-            result
+        if negs.is_empty() {
+            return self.clone();
         }
+
+        let mut result = self.clone();
+        for b in negs.iter() {
+            result.inner = result.inner.difference(&b.inner);
+        }
+        result
     }
 
     pub fn destroy(&self) {
-        unsafe {
-            manifold_delete_manifold(self.ptr);
-        }
+        // manifold-rs 使用 RAII，无需手动释放
     }
 }
 
-#[derive(Clone, Deref, DerefMut)]
+/// Mesh 的 Rust 封装
 pub struct ManifoldMeshRust {
-    pub ptr: *mut ManifoldMeshGL,
+    pub vertices: Vec<f32>,
+    pub indices: Vec<u32>,
 }
 
 impl ManifoldMeshRust {
     pub fn new() -> Self {
-        unsafe {
-            let sz = manifold_meshgl_size();
-            let layout = Layout::from_size_align(sz, 32).unwrap();
-            Self {
-                ptr: alloc(layout) as _,
-            }
-        }
-    }
-    pub fn num_tri(&self) -> u32 {
-        unsafe { manifold_meshgl_num_tri(self.ptr) as _ }
-    }
-
-    pub fn merge(&mut self) -> bool {
-        unsafe {
-            // manifold_meshgl_merge(self.ptr) != 0
-            true
+        Self {
+            vertices: Vec::new(),
+            indices: Vec::new(),
         }
     }
 
@@ -213,31 +150,23 @@ impl ManifoldMeshRust {
         mat4: DMat4,
         ceil_or_trunc: bool,
     ) -> Self {
-        unsafe {
-            let mesh = ManifoldMeshRust::new();
-            let len = plant_mesh.vertices.len();
-            let mut verts: Vec<f32> = Vec::with_capacity(len * 3);
-            for v in mem::take(&mut plant_mesh.vertices) {
-                let pt = mat4.transform_point3(glam::DVec3::from(v));
-                if ceil_or_trunc {
-                    verts.push((num_traits::signum(pt[0]) * f64_round_2(pt[0].abs())) as f32);
-                    verts.push((num_traits::signum(pt[1]) * f64_round_2(pt[1].abs())) as f32);
-                    verts.push((num_traits::signum(pt[2]) * f64_round_2(pt[2].abs())) as f32);
-                } else {
-                    verts.push(f64_trunc_1(pt[0]) as _);
-                    verts.push(f64_trunc_1(pt[1]) as _);
-                    verts.push(f64_trunc_1(pt[2]) as _);
-                }
+        let len = plant_mesh.vertices.len();
+        let mut verts: Vec<f32> = Vec::with_capacity(len * 3);
+        for v in mem::take(&mut plant_mesh.vertices) {
+            let pt = mat4.transform_point3(glam::DVec3::from(v));
+            if ceil_or_trunc {
+                verts.push((num_traits::signum(pt[0]) * f64_round_2(pt[0].abs())) as f32);
+                verts.push((num_traits::signum(pt[1]) * f64_round_2(pt[1].abs())) as f32);
+                verts.push((num_traits::signum(pt[2]) * f64_round_2(pt[2].abs())) as f32);
+            } else {
+                verts.push(f64_trunc_1(pt[0]) as _);
+                verts.push(f64_trunc_1(pt[1]) as _);
+                verts.push(f64_trunc_1(pt[2]) as _);
             }
-            manifold_meshgl(
-                mesh.ptr as _,
-                verts.as_ptr() as _,
-                len,
-                3,
-                plant_mesh.indices.as_ptr() as _,
-                plant_mesh.indices.len() / 3,
-            );
-            mesh
+        }
+        Self {
+            vertices: verts,
+            indices: plant_mesh.indices,
         }
     }
 }
@@ -271,28 +200,16 @@ impl ManifoldMeshRust {
 
 impl From<&PlantMesh> for ManifoldMeshRust {
     fn from(m: &PlantMesh) -> Self {
-        unsafe {
-            let mesh = ManifoldMeshRust::new();
-            let mut verts = Vec::with_capacity(m.vertices.len() * 3);
-            //todo 是否要根据包围盒的大小来判断用哪个等级的round
-            for v in m.vertices.clone() {
-                // verts.push(f32_round_3(v[0]));
-                // verts.push(f32_round_3(v[1]));
-                // verts.push(f32_round_3(v[2]));
-
-                verts.push(f32_round_1(v[0]));
-                verts.push(f32_round_1(v[1]));
-                verts.push(f32_round_1(v[2]));
-            }
-            manifold_meshgl(
-                mesh.ptr as _,
-                verts.as_ptr() as _,
-                m.vertices.len(),
-                3,
-                m.indices.as_ptr() as _,
-                m.indices.len() / 3,
-            );
-            mesh
+        let mut verts = Vec::with_capacity(m.vertices.len() * 3);
+        //todo 是否要根据包围盒的大小来判断用哪个等级的round
+        for v in m.vertices.clone() {
+            verts.push(f32_round_1(v[0]));
+            verts.push(f32_round_1(v[1]));
+            verts.push(f32_round_1(v[2]));
+        }
+        Self {
+            vertices: verts,
+            indices: m.indices.clone(),
         }
     }
 }
@@ -327,109 +244,94 @@ impl From<PlantMesh> for ManifoldRust {
 
 impl From<&ManifoldRust> for PlantMesh {
     fn from(m: &ManifoldRust) -> Self {
-        unsafe {
-            let mesh = ManifoldMeshRust::new();
-            let mut aabb = Aabb::new_invalid();
-            manifold_get_meshgl(mesh.ptr as _, m.ptr);
-            let len = manifold_meshgl_tri_length(mesh.ptr as _);
-            if len == 0 {
-                return Self::default();
-            }
-            // dbg!(len);
+        use std::collections::HashSet;
 
-            let prop_num = manifold_meshgl_num_prop(mesh.ptr) as usize;
-            // dbg!(prop_num);
-            let vert_num = manifold_meshgl_num_vert(mesh.ptr) as usize;
-            // dbg!(vert_num);
-            let tri_num = manifold_meshgl_num_tri(mesh.ptr) as usize;
-            // dbg!(tri_num);
+        let rs_mesh = m.inner.to_mesh();
+        let prop_num = rs_mesh.num_props() as usize;
+        let raw_vertices = rs_mesh.vertices();
+        let old_indices = rs_mesh.indices();
 
-            let mut p: Vec<f32> = Vec::with_capacity(vert_num * prop_num);
-            p.resize(vert_num * prop_num, 0.0);
-            let mut old_indices: Vec<u32> = Vec::with_capacity(tri_num * 3);
-            old_indices.resize(tri_num * 3, 0);
-
-            let mut vert = Vec::with_capacity(vert_num);
-            manifold_meshgl_vert_properties(p.as_mut_ptr() as _, mesh.ptr);
-            manifold_meshgl_tri_verts(old_indices.as_mut_ptr() as _, mesh.ptr);
-
-            for i in 0..vert_num {
-                vert.push([
-                    p[prop_num * i + 0],
-                    p[prop_num * i + 1],
-                    p[prop_num * i + 2],
-                ]);
-            }
-
-            let index_num = tri_num * 3;
-            let mut indices = Vec::with_capacity(index_num);
-            let mut normals = Vec::with_capacity(index_num);
-            let mut vertices = Vec::with_capacity(index_num);
-
-            for (i, c) in old_indices.chunks(3).enumerate() {
-                let a: Vec3 = Vec3::from(vert[c[0] as usize].clone());
-                let b: Vec3 = Vec3::from(vert[c[1] as usize].clone());
-                let c: Vec3 = Vec3::from(vert[c[2] as usize].clone());
-
-                let normal = ((b - a).cross(c - a)).normalize();
-
-                vertices.push(a.into());
-                vertices.push(b.into());
-                vertices.push(c.into());
-
-                normals.push(normal);
-                normals.push(normal);
-                normals.push(normal);
-                let i = i as u32;
-                indices.push(i * 3 + 0);
-                indices.push(i * 3 + 1);
-                indices.push(i * 3 + 2);
-            }
-
-            // m.destroy();
-
-            // 提取边
-            use std::collections::HashSet;
-            let mut edge_set: HashSet<(u32, u32)> = HashSet::new();
-            for triangle in indices.chunks_exact(3) {
-                let v0 = triangle[0];
-                let v1 = triangle[1];
-                let v2 = triangle[2];
-                let edges = [
-                    if v0 < v1 { (v0, v1) } else { (v1, v0) },
-                    if v1 < v2 { (v1, v2) } else { (v2, v1) },
-                    if v2 < v0 { (v2, v0) } else { (v0, v2) },
-                ];
-                for edge in edges {
-                    edge_set.insert(edge);
-                }
-            }
-            let edges: Edges = edge_set
-                .iter()
-                .filter_map(|(idx0, idx1)| {
-                    if *idx0 < vertices.len() as u32 && *idx1 < vertices.len() as u32 {
-                        Some(Edge::new(vec![
-                            vertices[*idx0 as usize],
-                            vertices[*idx1 as usize],
-                        ]))
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-
-            let mut mesh = Self {
-                indices,
-                vertices,
-                normals,
-                uvs: Vec::new(),
-                wire_vertices: vec![],
-                edges,
-                aabb: None,
-            };
-            mesh.generate_auto_uvs();
-            mesh.sync_wire_vertices_from_edges();
-            mesh
+        if old_indices.is_empty() {
+            return Self::default();
         }
+
+        // 顶点数 = raw_vertices.len() / prop_num
+        let vert_num = raw_vertices.len() / prop_num;
+        let mut vert: Vec<[f32; 3]> = Vec::with_capacity(vert_num);
+        for i in 0..vert_num {
+            vert.push([
+                raw_vertices[prop_num * i + 0],
+                raw_vertices[prop_num * i + 1],
+                raw_vertices[prop_num * i + 2],
+            ]);
+        }
+
+        let tri_num = old_indices.len() / 3;
+        let index_num = tri_num * 3;
+        let mut indices = Vec::with_capacity(index_num);
+        let mut normals = Vec::with_capacity(index_num);
+        let mut vertices = Vec::with_capacity(index_num);
+
+        for (i, c) in old_indices.chunks(3).enumerate() {
+            let a: Vec3 = Vec3::from(vert[c[0] as usize]);
+            let b: Vec3 = Vec3::from(vert[c[1] as usize]);
+            let c: Vec3 = Vec3::from(vert[c[2] as usize]);
+
+            let normal = ((b - a).cross(c - a)).normalize();
+
+            vertices.push(a.into());
+            vertices.push(b.into());
+            vertices.push(c.into());
+
+            normals.push(normal);
+            normals.push(normal);
+            normals.push(normal);
+            let i = i as u32;
+            indices.push(i * 3 + 0);
+            indices.push(i * 3 + 1);
+            indices.push(i * 3 + 2);
+        }
+
+        // 提取边
+        let mut edge_set: HashSet<(u32, u32)> = HashSet::new();
+        for triangle in indices.chunks_exact(3) {
+            let v0 = triangle[0];
+            let v1 = triangle[1];
+            let v2 = triangle[2];
+            let edges = [
+                if v0 < v1 { (v0, v1) } else { (v1, v0) },
+                if v1 < v2 { (v1, v2) } else { (v2, v1) },
+                if v2 < v0 { (v2, v0) } else { (v0, v2) },
+            ];
+            for edge in edges {
+                edge_set.insert(edge);
+            }
+        }
+        let edges: Edges = edge_set
+            .iter()
+            .filter_map(|(idx0, idx1)| {
+                if *idx0 < vertices.len() as u32 && *idx1 < vertices.len() as u32 {
+                    Some(Edge::new(vec![
+                        vertices[*idx0 as usize],
+                        vertices[*idx1 as usize],
+                    ]))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        let mut mesh = Self {
+            indices,
+            vertices,
+            normals,
+            uvs: Vec::new(),
+            wire_vertices: vec![],
+            edges,
+            aabb: None,
+        };
+        mesh.generate_auto_uvs();
+        mesh.sync_wire_vertices_from_edges();
+        mesh
     }
 }
