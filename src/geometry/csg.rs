@@ -817,52 +817,37 @@ pub fn generate_cylinder_edges(
 
 /// 生成斜切圆柱体的特征边
 ///
-/// 为SSLC生成底面圆弧 + 顶面圆弧 + 4条母线
-pub fn generate_sscyl_edges(
-    radius: f32,
-    num_segments: usize,
-    bottom_center: Vec3,
-    top_center: Vec3,
-    x_basis: Vec3,
-    y_basis: Vec3,
-) -> Edges {
+/// 参数直接使用底/顶椭圆采样点，避免重复重建。
+pub fn generate_sscyl_edges(bottom_rim: &[Vec3], top_rim: &[Vec3]) -> Edges {
     let mut edges = Vec::new();
-    let step_theta = std::f32::consts::TAU / num_segments as f32;
-
-    // 1. 底圆边（使用剪切局部坐标系）
-    for i in 0..num_segments {
-        let theta0 = i as f32 * step_theta;
-        let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
-        let (sin0, cos0) = theta0.sin_cos();
-        let (sin1, cos1) = theta1.sin_cos();
-
-        edges.push(Edge::new(vec![
-            bottom_center + x_basis * (radius * cos0) + y_basis * (radius * sin0),
-            bottom_center + x_basis * (radius * cos1) + y_basis * (radius * sin1),
-        ]));
+    if bottom_rim.len() < 2 || top_rim.len() != bottom_rim.len() {
+        return edges;
     }
 
-    // 2. 顶圆边（使用剪切局部坐标系）
-    for i in 0..num_segments {
-        let theta0 = i as f32 * step_theta;
-        let theta1 = ((i + 1) % num_segments) as f32 * step_theta;
-        let (sin0, cos0) = theta0.sin_cos();
-        let (sin1, cos1) = theta1.sin_cos();
+    let n = bottom_rim.len();
 
-        edges.push(Edge::new(vec![
-            top_center + x_basis * (radius * cos0) + y_basis * (radius * sin0),
-            top_center + x_basis * (radius * cos1) + y_basis * (radius * sin1),
-        ]));
+    // 1. 底边
+    for i in 0..n {
+        let next = (i + 1) % n;
+        edges.push(Edge::new(vec![bottom_rim[i], bottom_rim[next]]));
     }
 
-    // 3. 4 条母线（在剪切局部坐标系下的四个方向）
-    let meridian_angles = [0.0, std::f32::consts::PI * 0.5, std::f32::consts::PI, std::f32::consts::PI * 1.5];
-    for theta in &meridian_angles {
-        let (sin, cos) = theta.sin_cos();
-        edges.push(Edge::new(vec![
-            bottom_center + x_basis * (radius * cos) + y_basis * (radius * sin),
-            top_center + x_basis * (radius * cos) + y_basis * (radius * sin),
-        ]));
+    // 2. 顶边
+    for i in 0..n {
+        let next = (i + 1) % n;
+        edges.push(Edge::new(vec![top_rim[i], top_rim[next]]));
+    }
+
+    // 3. 4 条母线，取四等分角对应的索引
+    let meridian_indices = [
+        0,
+        n / 4,
+        n / 2,
+        (n * 3) / 4,
+    ];
+    for idx in meridian_indices {
+        let clamped = idx % n;
+        edges.push(Edge::new(vec![bottom_rim[clamped], top_rim[clamped]]));
     }
 
     edges
@@ -1155,15 +1140,15 @@ fn normalize_shear_angle(angle: f32) -> f32 {
 
 /// 生成剪切圆柱体（SSCL，Shear Cylinder）网格
 ///
-/// SSCL是SCylinder的一种特殊形式，具有剪切变形：
-/// - 底面和顶面可以在X和Y方向有不同的剪切角度
-/// - 侧面会沿着高度方向进行插值变形，形成斜向的圆柱体
+/// 实现对齐 Core3D / gm_CreateSlopeEndedCylinder 定义：
+/// - 端面法向由四个剪切角得到（局部轴为 (u, v, dir)）
+/// - 端面是倾斜平面与圆柱的交线（椭圆边界），不再整体剪切侧面
+/// - 侧面保持径向法向，仅在 z 方向被两平面截断
 fn generate_sscl_mesh(
     cyl: &SCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
-    // ✅ 基于您的几何定义实现
     let dir = safe_normalize(cyl.paxi_dir)?;
     let radius = (cyl.pdia * 0.5).abs();
     if radius <= MIN_LEN || cyl.phei.abs() <= MIN_LEN {
@@ -1178,31 +1163,28 @@ fn generate_sscl_mesh(
     // 基础切向基（与标准圆柱一致）
     let (basis_u, basis_v) = orthonormal_basis(dir); // (U, V) 是原始切向基
 
-    // ✅ 角度规范化：将角度限制到 [-90, 90] 范围（参考 E3D CSG_BasicSLC::getPrimGeom）
     let btm_x_normalized = normalize_shear_angle(cyl.btm_shear_angles[0]);
     let btm_y_normalized = normalize_shear_angle(cyl.btm_shear_angles[1]);
     let top_x_normalized = normalize_shear_angle(cyl.top_shear_angles[0]);
     let top_y_normalized = normalize_shear_angle(cyl.top_shear_angles[1]);
 
-    // ✅ 剪切角转换为弧度（使用规范化后的角度）
-    let btm_shear_x = btm_x_normalized.to_radians(); // 绕局部Y轴旋转
-    let btm_shear_y = btm_y_normalized.to_radians(); // 绕局部X轴旋转
+    let btm_shear_x = btm_x_normalized.to_radians();
+    let btm_shear_y = btm_y_normalized.to_radians();
     let top_shear_x = top_x_normalized.to_radians();
     let top_shear_y = top_y_normalized.to_radians();
 
-    // ✅ 纯旋转变换矩阵（无缩放）
-    let rot_btm = Mat3::from_rotation_y(btm_shear_x) * Mat3::from_rotation_x(btm_shear_y);
-    let rot_top = Mat3::from_rotation_y(top_shear_x) * Mat3::from_rotation_x(top_shear_y);
+    // 端面法向（局部 -> 世界）
+    let nb_local = Vec3::new(btm_shear_x.sin(), btm_shear_y.sin(), btm_shear_x.cos() * btm_shear_y.cos()).normalize();
+    let nt_local = Vec3::new(top_shear_x.sin(), top_shear_y.sin(), top_shear_x.cos() * top_shear_y.cos()).normalize();
+    let Nb = (basis_u * nb_local.x + basis_v * nb_local.y + dir * nb_local.z).normalize();
+    let Nt = (basis_u * nt_local.x + basis_v * nt_local.y + dir * nt_local.z).normalize();
 
-    // ✅ 您的公式：生成底面局部坐标系 (Xb, Yb, Nb)
-    let Xb = rot_btm * basis_u; // 底面X轴：原始U轴旋转
-    let Yb = rot_btm * basis_v; // 底面Y轴：原始V轴旋转  
-    let Nb = rot_btm * dir;     // 底面法向：原始轴旋转
-
-    // ✅ 您的公式：生成顶面局部坐标系 (Xt, Yt, Nt)
-    let Xt = rot_top * basis_u;  // 顶面X轴
-    let Yt = rot_top * basis_v;  // 顶面Y轴
-    let Nt = rot_top * dir;      // 顶面法向
+    let nb_dir = Nb.dot(dir);
+    let nt_dir = Nt.dot(dir);
+    if nb_dir.abs() <= MIN_LEN || nt_dir.abs() <= MIN_LEN {
+        // 端面几乎与轴平行，无法稳定生成
+        return None;
+    }
 
     // ✅ 计算细分参数
     let radial = compute_radial_segments(settings, radius, non_scalable, 3);
@@ -1216,28 +1198,47 @@ fn generate_sscl_mesh(
 
     let step_theta = std::f32::consts::TAU / radial as f32;
 
-    // ✅ 生成侧面：按您的描述，对同一θ的p_b、p_t做线性插值（母线）
+    // 预计算各 θ 的径向与端面交点（椭圆边界）
+    struct RimSample {
+        radial: Vec3,
+        radial_normal: Vec3,
+        z_b: f32,
+        z_t: f32,
+    }
+    let mut rim_samples = Vec::with_capacity(ring_stride);
+    let mut bottom_rim = Vec::with_capacity(ring_stride);
+    let mut top_rim = Vec::with_capacity(ring_stride);
+    for slice in 0..=radial {
+        let angle = slice as f32 * step_theta;
+        let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
+        let radial = basis_u * (radius * cos_theta) + basis_v * (radius * sin_theta);
+        let radial_normal = radial.normalize();
+
+        let z_b = -Nb.dot(radial) / nb_dir;
+        let z_t = height - Nt.dot(radial) / nt_dir;
+
+        let p_b = bottom_center + dir * z_b + radial;
+        let p_t = bottom_center + dir * z_t + radial;
+
+        bottom_rim.push(p_b);
+        top_rim.push(p_t);
+        rim_samples.push(RimSample {
+            radial,
+            radial_normal,
+            z_b,
+            z_t,
+        });
+    }
+
+    // 侧面：固定径向，沿 z_b -> z_t 插值
     for ring in 0..=height_segments {
         let t = ring as f32 / height_segments as f32;
-        for slice in 0..=radial {
-            let angle = slice as f32 * step_theta;
-            let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
-            
-            // ✅ 您的公式：p_b(θ) = bottom_center + Xb * (r cosθ) + Yb * (r sinθ)
-            let bottom_point = bottom_center + Xb * (radius * cos_theta) + Yb * (radius * sin_theta);
-            
-            // ✅ 您的公式：p_t(θ) = top_center + Xt * (r cosθ) + Yt * (r sinθ)
-            let top_point = top_center + Xt * (radius * cos_theta) + Yt * (radius * sin_theta);
-            
-            // ✅ 线性插值形成母线
-            let vertex = bottom_point + (top_point - bottom_point) * t;
-            
-            // ✅ 法向：在侧面使用插值法向
-            let normal: Vec3 = (Nb + (Nt - Nb) * t).normalize();
-            
+        for sample in &rim_samples {
+            let z = sample.z_b + (sample.z_t - sample.z_b) * t;
+            let vertex = bottom_center + dir * z + sample.radial;
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
-            normals.push(normal);
+            normals.push(sample.radial_normal);
         }
     }
 
@@ -1257,12 +1258,9 @@ fn generate_sscl_mesh(
         }
     }
 
-    // ✅ 底面盖子：使用 (Xb, Yb, Nb) 系统生成
+    // 底面盖子（椭圆边界，法向 Nb）
     let bottom_start = vertices.len() as u32;
-    for slice in 0..=radial {
-        let angle = slice as f32 * step_theta;
-        let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
-        let vertex = bottom_center + Xb * (radius * cos_theta) + Yb * (radius * sin_theta);
+    for &vertex in &bottom_rim {
         vertices.push(vertex);
         normals.push(Nb);
         extend_aabb(&mut aabb, vertex);
@@ -1282,12 +1280,9 @@ fn generate_sscl_mesh(
         ]);
     }
 
-    // ✅ 顶面盖子：使用 (Xt, Yt, Nt) 系统生成
+    // 顶面盖子（椭圆边界，法向 Nt）
     let top_start = vertices.len() as u32;
-    for slice in 0..=radial {
-        let angle = slice as f32 * step_theta;
-        let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
-        let vertex = top_center + Xt * (radius * cos_theta) + Yt * (radius * sin_theta);
+    for &vertex in &top_rim {
         vertices.push(vertex);
         normals.push(Nt);
         extend_aabb(&mut aabb, vertex);
@@ -1307,8 +1302,8 @@ fn generate_sscl_mesh(
         ]);
     }
 
-    // ✅ 生成几何边：底面圆弧 + 顶面圆弧 + 4条母线
-    let edges = generate_sscyl_edges(radius, radial, bottom_center, top_center, Xb, Yb);
+    // 生成几何边：椭圆边界 + 4 条母线
+    let edges = generate_sscyl_edges(&bottom_rim, &top_rim);
 
     Some(GeneratedMesh {
         mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),

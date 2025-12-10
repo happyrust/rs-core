@@ -1,4 +1,4 @@
-use crate::geometry::csg::generate_scylinder_mesh;
+use crate::geometry::csg::{generate_scylinder_mesh, orthonormal_basis};
 use crate::mesh_precision::LodMeshSettings;
 use crate::prim_geo::cylinder::SCylinder;
 use glam::Vec3;
@@ -32,99 +32,72 @@ fn test_sscd_geometry_validity() {
     assert!(!generated_mesh.vertices.is_empty(), "❌ 顶点不应为空");
     assert!(!generated_mesh.indices.is_empty(), "❌ 索引不应为空");
     
-    // 验证2: 高度范围
-    let mut min_y = f32::INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    for vertex in &generated_mesh.vertices {
-        min_y = min_y.min(vertex.z); // 注意：在SSLC中高度沿Z轴
-        max_y = max_y.max(vertex.z);
-    }
-    
-    println!("📏 Z轴范围: {:.3} 到 {:.3}", min_y, max_y);
-    let expected_height = sscyl.phei;
-    let actual_height = max_y - min_y;
-    
-    println!("📏 Z轴范围: {:.3} 到 {:.3}", min_y, max_y);
-    
-    // SCylinder使用单位原语，实际尺寸通过transform缩放
-    // 1.0的单位尺寸对应sscyl.phei的高度的2倍缩放因子
-    let scale_factor = sscyl.phei / actual_height;
-    
-    println!("📐 检测到缩放因子: {:.6}", scale_factor);
-    println!("✅ SSCC使用单位原语 + transform缩放: {} -> {:.3}", actual_height, sscyl.phei);
-    
-    // 验证缩放比例是否合理（在合理范围内）
-    assert!(scale_factor > 0.5 && scale_factor < 10.0, 
-            "❌ 缩放因子异常: {:.6}", scale_factor);
-    
-    // 核心验证：高度应该是合理的（不需要精确匹配，因为有transform）
-    
-    // 验证3: 根据您的几何定义验证半径一致性
-    println!("🔍 验证半径一致性（按您的几何定义）...");
-    
-    // 在底面(z≈0)和顶部(z≈height)采样，半径应该保持一致
-    let bottom_samples: Vec<f32> = generated_mesh.vertices.iter()
-        .filter(|v| v.z.abs() < 0.5) // 底面附近
-        .map(|v| (v.x * v.x + v.y * v.y).sqrt()) // XY平面半径
-        .collect();
-        
-    let top_samples: Vec<f32> = generated_mesh.vertices.iter()
-        .filter(|v| (v.z - sscyl.phei).abs() < 0.5) // 顶部附近
-        .map(|v| (v.x * v.x + v.y * v.y).sqrt()) // XY平面半径
-        .collect();
-    
-    if !bottom_samples.is_empty() && !top_samples.is_empty() {
-        let avg_bottom_radius = bottom_samples.iter().sum::<f32>() / bottom_samples.len() as f32;
-        let avg_top_radius = top_samples.iter().sum::<f32>() / top_samples.len() as f32;
-        
-        let expected_radius = sscyl.pdia / 2.0;
-        
-        println!("📐 底面平均半径: {:.6}", avg_bottom_radius);
-        println!("📐 顶面平均半径: {:.6}", avg_top_radius);
-        println!("📐 预期半径: {:.6}", expected_radius);
-        
-        assert!((avg_bottom_radius - expected_radius).abs() < 0.2, 
-               "❌ 底面半径不太一致: 预期 {:.6}, 实际 {:.6}", expected_radius, avg_bottom_radius);
-        assert!((avg_top_radius - expected_radius).abs() < 0.2, 
-               "❌ 顶面半径不太一致: 预期 {:.6}, 实际 {:.6}", expected_radius, avg_top_radius);
-        
-        // 🔍 根据您的定义：半径在剪切时应该保持不变（允许一定误差）
-        let radius_diff = (avg_bottom_radius - avg_top_radius).abs();
-        assert!(radius_diff < 0.1, 
-               "❌ 底顶半径差异过大: {:.6}, 这可能违反了您的几何定义", radius_diff);
-        
-        println!("✅ 底顶半径差异: {:.6} (基本符合您的几何定义要求)", radius_diff);
-    }
-    
-    // 验证4: 验证法向量
-    println!("🔍 验证法向量有效性...");
-    let mut invalid_normals = 0;
-    for normal in &generated_mesh.normals {
-        if normal.length_squared() < 0.9 {
-            invalid_normals += 1;
+    // 验证2: 端面落在对应平面上（需要与生成代码使用相同的坐标系转换）
+    let dir = sscyl.paxi_dir.normalize();
+    let (basis_u, basis_v) = orthonormal_basis(dir);
+    let btm_x = sscyl.btm_shear_angles[0].to_radians();
+    let btm_y = sscyl.btm_shear_angles[1].to_radians();
+    let top_x = sscyl.top_shear_angles[0].to_radians();
+    let top_y = sscyl.top_shear_angles[1].to_radians();
+    let nb_local = Vec3::new(btm_x.sin(), btm_y.sin(), btm_x.cos() * btm_y.cos()).normalize();
+    let nt_local = Vec3::new(top_x.sin(), top_y.sin(), top_x.cos() * top_y.cos()).normalize();
+    let nb = (basis_u * nb_local.x + basis_v * nb_local.y + dir * nb_local.z).normalize();
+    let nt = (basis_u * nt_local.x + basis_v * nt_local.y + dir * nt_local.z).normalize();
+    let bottom_center = sscyl.paxi_pt;
+    let top_center = bottom_center + dir * sscyl.phei;
+
+    let mut max_bottom_err = 0.0f32;
+    let mut max_top_err = 0.0f32;
+    let mut bottom_cnt = 0;
+    let mut top_cnt = 0;
+    for (v, n) in generated_mesh.vertices.iter().zip(generated_mesh.normals.iter()) {
+        if n.dot(nb) > 0.99 {
+            max_bottom_err = max_bottom_err.max(((*v - bottom_center).dot(nb)).abs());
+            bottom_cnt += 1;
+        } else if n.dot(nt) > 0.99 {
+            max_top_err = max_top_err.max(((*v - top_center).dot(nt)).abs());
+            top_cnt += 1;
         }
     }
-    assert_eq!(invalid_normals, 0, "❌ 发现{}个无效法向量", invalid_normals);
-    
-    // 验证5: 检查AABB有效性
+    assert!(bottom_cnt > 0 && top_cnt > 0, "cap vertices should exist");
+    assert!(max_bottom_err < 1e-3, "bottom cap vertices should lie on plane, max err {}", max_bottom_err);
+    assert!(max_top_err < 1e-3, "top cap vertices should lie on plane, max err {}", max_top_err);
+
+    // 验证3: 侧面法向为径向
+    let mut max_side_ang = 0.0f32;
+    let mut side_cnt = 0;
+    for (v, n) in generated_mesh.vertices.iter().zip(generated_mesh.normals.iter()) {
+        // 过滤掉盖子（法向接近 Nb/Nt 的已经统计过），这里取与 dir 夹角接近 90° 的点
+        if n.dot(dir).abs() < 0.2 {
+            let proj = v - dir * v.dot(dir);
+            if proj.length_squared() > 1e-6 {
+                let radial = proj.normalize();
+                let ang = n.angle_between(radial);
+                max_side_ang = max_side_ang.max(ang);
+                side_cnt += 1;
+            }
+        }
+    }
+    assert!(side_cnt > 0, "side vertices should exist");
+    assert!(max_side_ang < 1e-2, "side normals should be radial, max angle {}", max_side_ang);
+
+    // 验证4: AABB 有效
     if let Some(aabb) = generated_mesh.aabb {
         println!("📦 AABB: 最小({:.3}, {:.3}, {:.3}) 到 最大({:.3}, {:.3}, {:.3})",
                  aabb.mins.x, aabb.mins.y, aabb.mins.z,
                  aabb.maxs.x, aabb.maxs.y, aabb.maxs.z);
         assert!(aabb.volume() > 0.0, "❌ AABB应该有效(体积应该>0)");
     }
-    
-    println!("🎉 所有验证通过！SSLC几何生成符合您的数学定义");
-    
-    // 输出一些统计信息
-    println!("📊 统计信息:");
-    println!("   - 总顶点数: {}", generated_mesh.vertices.len());
-    println!("   - 总索引数: {}", generated_mesh.indices.len());
-    println!("   - 总三角形数: {}", generated_mesh.indices.len() / 3);
-    println!("   - 平均法向量长度: {:.6}", 
-             generated_mesh.normals.iter()
-                 .map(|n| n.length())
-                 .sum::<f32>() / generated_mesh.normals.len() as f32);
+
+    // 导出 OBJ 文件
+    std::fs::create_dir_all("test_output").ok();
+    let obj_path = "test_output/sslc_shear_15_10_5_20.obj";
+    match generated_mesh.export_obj(false, obj_path) {
+        Ok(_) => println!("✅ OBJ 已导出: {}", obj_path),
+        Err(e) => println!("⚠️ OBJ 导出失败: {}", e),
+    }
+
+    println!("🎉 所有验证通过！SSLC几何生成符合文档定义");
 }
 
 #[test] 
@@ -143,6 +116,14 @@ fn test_sscd_no_shear() {
 
     let result = generate_scylinder_mesh(&sscyl, &LodMeshSettings::default(), false);
     assert!(result.is_some());
+    
+    let mesh = result.unwrap().mesh;
+    std::fs::create_dir_all("test_output").ok();
+    let obj_path = "test_output/sslc_no_shear.obj";
+    match mesh.export_obj(false, obj_path) {
+        Ok(_) => println!("✅ OBJ 已导出: {}", obj_path),
+        Err(e) => println!("⚠️ OBJ 导出失败: {}", e),
+    }
     
     println!("✅ 无剪切SSLC生成成功");
 }
