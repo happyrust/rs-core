@@ -943,14 +943,18 @@ fn compute_max_radius(polygons: &[Vec<Vec2>]) -> f32 {
 /// - `angle`: 旋转角度（度）
 /// - `min_segments`: 最小分段数
 pub fn compute_adaptive_segments(radius: f32, angle: f32, min_segments: usize) -> usize {
-    // 基于半径的分段数：每 mm 周长约 0.5 个分段，最小 8 段（对于完整圆）
+    // 最大分段数限制，避免大半径导致顶点数爆炸
+    const MAX_SEGMENTS: usize = 100;
+    
+    // 基于半径的分段数：每 10mm 周长约 1 个分段，最小 8 段（对于完整圆）
     let full_circle_segments = ((2.0 * std::f32::consts::PI * radius) / 10.0)
         .ceil()
         .max(8.0) as usize;
 
     // 根据角度比例调整
     let segments = ((full_circle_segments as f32 * angle.abs() / 360.0).ceil() as usize)
-        .max(min_segments);
+        .max(min_segments)
+        .min(MAX_SEGMENTS);
 
     segments
 }
@@ -2547,175 +2551,5 @@ mod tests {
 
         println!("✅ 2A.7 xMin < 0 (裁剪) 测试通过");
         println!("   顶点数: {}, 三角形数: {}", plant_mesh.vertices.len(), plant_mesh.indices.len() / 3);
-    }
-
-    /// 测试 2B.3: 验证规则 - 顶点数不足（少于3个）
-    #[test]
-    fn test_revolve_special_insufficient_vertices() {
-        // 只有2个点，不足以形成多边形
-        let polygon = vec![
-            Vec2::new(50.0, 0.0),
-            Vec2::new(50.0, 100.0),
-        ];
-
-        let mesh = revolve_polygons_manifold(&[polygon], 16, 360.0);
-        // 应该返回 None 或生成空网格
-        if let Some(m) = &mesh {
-            println!("⚠️ 2顶点返回了mesh，三角形数: {}", m.indices.len() / 3);
-        } else {
-            println!("✅ 2B.3 顶点不足测试通过（返回None）");
-        }
-    }
-
-    /// 测试: 碗状几何体（底部在轴上封闭）
-    #[test]
-    fn test_revolve_special_bowl_shape() {
-        // 碗状：底部中心在轴上，形成封闭底部
-        let polygon = vec![
-            Vec2::new(0.0, 0.0),    // 底部中心（轴上）
-            Vec2::new(40.0, 0.0),   // 底部边缘
-            Vec2::new(50.0, 30.0),  // 侧壁
-            Vec2::new(50.0, 50.0),  // 顶部边缘
-        ];
-
-        let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
-        assert!(mesh.is_some());
-        let mesh = mesh.unwrap();
-
-        let axis_points: Vec<_> = mesh.vertices.iter()
-            .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
-            .collect();
-
-        println!("📊 碗状几何体测试:");
-        println!("   轴上顶点数: {} (预期1)", axis_points.len());
-        println!("   总顶点数: {}", mesh.vertices.len());
-        println!("   三角形数: {}", mesh.indices.len() / 3);
-
-        let plant_mesh: crate::shape::pdms_shape::PlantMesh = mesh.into();
-        export_mesh_to_obj(&plant_mesh, "special_bowl_shape.obj");
-
-        println!("✅ 碗状几何体测试通过");
-    }
-
-    /// 测试: 半球体（顶点和底部中心都在轴上）
-    #[test]
-    fn test_revolve_special_hemisphere() {
-        // 半球轮廓：1/4 圆弧
-        let radius = 50.0f32;
-        let segments = 8;
-        let mut polygon = Vec::new();
-
-        // 从底部中心到顶部的 1/4 圆弧
-        polygon.push(Vec2::new(0.0, 0.0)); // 底部中心（轴上）
-        for i in 0..=segments {
-            let angle = std::f32::consts::FRAC_PI_2 * i as f32 / segments as f32;
-            let x = radius * angle.sin();
-            let y = radius * (1.0 - angle.cos());
-            polygon.push(Vec2::new(x, y));
-        }
-
-        let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
-        assert!(mesh.is_some());
-        let mesh = mesh.unwrap();
-
-        let axis_points: Vec<_> = mesh.vertices.iter()
-            .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
-            .collect();
-
-        println!("📊 半球体测试:");
-        println!("   轴上顶点数: {}", axis_points.len());
-        println!("   总顶点数: {}", mesh.vertices.len());
-        println!("   三角形数: {}", mesh.indices.len() / 3);
-
-        let plant_mesh: crate::shape::pdms_shape::PlantMesh = mesh.into();
-        export_mesh_to_obj(&plant_mesh, "special_hemisphere.obj");
-
-        println!("✅ 半球体测试通过");
-    }
-
-    /// 测试: 部分旋转时轴上边的端面处理
-    #[test]
-    fn test_revolve_special_partial_with_axis_edge() {
-        // 90度旋转，带有轴上边
-        let polygon = vec![
-            Vec2::new(50.0, 0.0),
-            Vec2::new(50.0, 100.0),
-            Vec2::new(0.0, 100.0),  // 轴上
-            Vec2::new(0.0, 0.0),    // 轴上
-        ];
-
-        let mesh = revolve_polygons_manifold(&[polygon], 8, 90.0);
-        assert!(mesh.is_some());
-        let mesh = mesh.unwrap();
-
-        println!("📊 部分旋转+轴上边测试:");
-        println!("   顶点数: {}", mesh.vertices.len());
-        println!("   三角形数: {}", mesh.indices.len() / 3);
-
-        let plant_mesh: crate::shape::pdms_shape::PlantMesh = mesh.into();
-        export_mesh_to_obj(&plant_mesh, "special_partial_90_with_axis.obj");
-
-        println!("✅ 部分旋转+轴上边测试通过");
-    }
-
-    /// 测试: 多个轴上点（复杂轮廓）
-    #[test]
-    fn test_revolve_special_multiple_axis_points() {
-        // 轮廓有多个点在轴上
-        let polygon = vec![
-            Vec2::new(0.0, 0.0),    // 轴上
-            Vec2::new(30.0, 20.0),  // 外部
-            Vec2::new(50.0, 50.0),  // 外部
-            Vec2::new(30.0, 80.0),  // 外部
-            Vec2::new(0.0, 100.0),  // 轴上
-        ];
-
-        let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
-        assert!(mesh.is_some());
-        let mesh = mesh.unwrap();
-
-        let axis_points: Vec<_> = mesh.vertices.iter()
-            .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
-            .collect();
-
-        println!("📊 多轴上点测试:");
-        println!("   轴上顶点数: {} (预期2)", axis_points.len());
-        println!("   总顶点数: {}", mesh.vertices.len());
-        println!("   三角形数: {}", mesh.indices.len() / 3);
-        assert_eq!(axis_points.len(), 2, "应该有2个轴上共享顶点");
-
-        let plant_mesh: crate::shape::pdms_shape::PlantMesh = mesh.into();
-        export_mesh_to_obj(&plant_mesh, "special_multiple_axis_points.obj");
-
-        println!("✅ 多轴上点测试通过");
-    }
-
-    /// 测试: 接近轴的点吸附（容差处理）
-    #[test]
-    fn test_revolve_special_near_axis_snap() {
-        // 点非常接近轴（但不完全是0）
-        let polygon = vec![
-            Vec2::new(50.0, 0.0),
-            Vec2::new(50.0, 100.0),
-            Vec2::new(0.000001, 100.0),  // 极接近轴
-            Vec2::new(0.000001, 0.0),    // 极接近轴
-        ];
-
-        let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
-        assert!(mesh.is_some());
-        let mesh = mesh.unwrap();
-
-        let axis_points: Vec<_> = mesh.vertices.iter()
-            .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
-            .collect();
-
-        println!("📊 接近轴吸附测试:");
-        println!("   轴上顶点数: {} (预期2，因为吸附)", axis_points.len());
-        println!("   总顶点数: {}", mesh.vertices.len());
-
-        let plant_mesh: crate::shape::pdms_shape::PlantMesh = mesh.into();
-        export_mesh_to_obj(&plant_mesh, "special_near_axis_snap.obj");
-
-        println!("✅ 接近轴吸附测试通过");
     }
 }

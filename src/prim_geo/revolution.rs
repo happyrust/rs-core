@@ -32,7 +32,7 @@ impl Default for Revolution {
         Self {
             verts: vec![],
             angle: 90.0,
-            rot_dir: Vec3::X,   //默认绕X轴旋转
+            rot_dir: Vec3::Y,   //默认绕X轴旋转
             rot_pt: Vec3::ZERO, //默认旋转点
         }
     }
@@ -263,5 +263,226 @@ impl BrepShapeTrait for Revolution {
         }
 
         points
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shape::pdms_shape::BrepShapeTrait;
+
+    fn export_mesh_to_obj(mesh: &PlantMesh, filename: &str) {
+        use std::fs;
+        use std::io::Write;
+
+        let output_dir = "test_output/revolution";
+        fs::create_dir_all(output_dir).ok();
+        let path = format!("{}/{}", output_dir, filename);
+
+        let mut file = fs::File::create(&path).expect("无法创建文件");
+        writeln!(file, "# Revolution test mesh").ok();
+
+        for (v, n) in mesh.vertices.iter().zip(mesh.normals.iter()) {
+            writeln!(file, "v {} {} {}", v.x, v.y, v.z).ok();
+            writeln!(file, "vn {} {} {}", n.x, n.y, n.z).ok();
+        }
+
+        for chunk in mesh.indices.chunks(3) {
+            if chunk.len() == 3 {
+                writeln!(file, "f {} {} {}", chunk[0] + 1, chunk[1] + 1, chunk[2] + 1).ok();
+            }
+        }
+        println!("   📄 已导出: {}", path);
+    }
+
+    /// 测试: 实际案例 24381_36946 - 带 FRAD 圆角
+    /// 
+    /// 原始数据:
+    /// [{ FRAD: 0, x: 38864, y: 23400 }, { FRAD: 0, x: 15464, y: 23400 },
+    ///  { FRAD: 23400, x: 38864, y: 23400 }, { FRAD: 0, x: 38864, y: 0 }]
+    /// 
+    /// 在 PDMS REVO 中：
+    /// - x = 沿旋转轴的位置（高度）
+    /// - y = 径向距离
+    /// - FRAD = 圆角半径
+    /// - 默认绕 X 轴旋转 360°
+    #[test]
+    fn test_revolution_case_24381_36946_with_frad() {
+        use crate::prim_geo::profile_processor::ProfileProcessor;
+
+        // 原始数据：Vec3(x, y, FRAD)
+        // x = 高度，y = 径向距离，z = FRAD 圆角半径
+        let vertices = vec![
+            Vec3::new(38864.0, 23400.0, 0.0),     // FRAD=0
+            Vec3::new(15464.0, 23400.0, 0.0),     // FRAD=0
+            Vec3::new(38864.0, 23400.0, 23400.0), // FRAD=23400 (圆角)
+            Vec3::new(38864.0, 0.0, 0.0),         // FRAD=0, 在轴上
+        ];
+
+        println!("📊 案例 24381_36946 带 FRAD 圆角:");
+        println!("   原始数据 (x=高度, y=径向, z=FRAD):");
+        for (i, v) in vertices.iter().enumerate() {
+            println!("   点{}: x={}, y={}, FRAD={}", i, v.x, v.y, v.z);
+        }
+
+        // 使用 ProfileProcessor 处理 FRAD 圆角
+        let processor = ProfileProcessor::new_single(vertices.clone());
+        let profile = processor.process("case_24381_36946", Some("24381_36946"));
+        
+        match profile {
+            Ok(processed) => {
+                println!("   FRAD处理后轮廓点数: {}", processed.contour_points.len());
+
+                // 将处理后的轮廓转换为 Revolution 的 verts 格式
+                // ProfileProcessor 输出: (x=原x, y=原y)
+                // Revolution.verts: Vec3(x, y, 0) 其中 x=高度, y=径向
+                let processed_verts: Vec<Vec3> = processed.contour_points.iter()
+                    .map(|p| Vec3::new(p.x, p.y, 0.0))
+                    .collect();
+
+                println!("   处理后顶点:");
+                for (i, v) in processed_verts.iter().enumerate() {
+                    println!("     点{}: x(高度)={:.1}, y(径向)={:.1}", i, v.x, v.y);
+                }
+
+                // 创建 Revolution
+                let revolution = Revolution {
+                    verts: vec![processed_verts],
+                    angle: 360.0,
+                    rot_dir: Vec3::X,
+                    rot_pt: Vec3::ZERO,
+                };
+
+                // 生成网格
+                if let Some(mesh) = revolution.gen_csg_mesh() {
+                    let axis_points: Vec<_> = mesh.vertices.iter()
+                        .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 1.0)
+                        .collect();
+                    
+                    export_mesh_to_obj(&mesh, "case_24381_36946_with_frad.obj");
+                    println!("   顶点数: {}", mesh.vertices.len());
+                    println!("   三角形数: {}", mesh.indices.len() / 3);
+                    println!("   轴上顶点数: {}", axis_points.len());
+                } else {
+                    println!("⚠️ Revolution::gen_csg_mesh 返回 None");
+                }
+            }
+            Err(e) => {
+                println!("⚠️ ProfileProcessor.process 失败: {}", e);
+            }
+        }
+
+        println!("✅ 案例 24381_36946 测试完成");
+    }
+
+    /// 测试: 简单圆柱（无圆角）
+    #[test]
+    fn test_revolution_simple_cylinder() {
+        // 简单圆柱：半径50，高度100
+        let revolution = Revolution {
+            verts: vec![vec![
+                Vec3::new(0.0, 50.0, 0.0),   // 底部外边缘
+                Vec3::new(100.0, 50.0, 0.0), // 顶部外边缘
+                Vec3::new(100.0, 0.0, 0.0),  // 顶部轴上
+                Vec3::new(0.0, 0.0, 0.0),    // 底部轴上
+            ]],
+            angle: 360.0,
+            rot_dir: Vec3::X,
+            rot_pt: Vec3::ZERO,
+        };
+
+        println!("📊 简单圆柱测试:");
+        if let Some(mesh) = revolution.gen_csg_mesh() {
+            let axis_points: Vec<_> = mesh.vertices.iter()
+                .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
+                .collect();
+            
+            export_mesh_to_obj(&mesh, "simple_cylinder.obj");
+            println!("   顶点数: {}", mesh.vertices.len());
+            println!("   三角形数: {}", mesh.indices.len() / 3);
+            println!("   轴上顶点数: {} (预期2)", axis_points.len());
+            assert_eq!(axis_points.len(), 2, "应有2个轴上共享顶点");
+        } else {
+            panic!("Revolution::gen_csg_mesh 返回 None");
+        }
+        println!("✅ 简单圆柱测试通过");
+    }
+
+    /// 测试: 圆锥（顶点在轴上）
+    #[test]
+    fn test_revolution_cone() {
+        // 圆锥：底部半径80，顶点在轴上
+        let revolution = Revolution {
+            verts: vec![vec![
+                Vec3::new(0.0, 80.0, 0.0),   // 底部外边缘
+                Vec3::new(150.0, 0.0, 0.0),  // 顶点（在轴上）
+                Vec3::new(0.0, 0.0, 0.0),    // 底部轴上
+            ]],
+            angle: 360.0,
+            rot_dir: Vec3::X,
+            rot_pt: Vec3::ZERO,
+        };
+
+        println!("📊 圆锥测试:");
+        if let Some(mesh) = revolution.gen_csg_mesh() {
+            let axis_points: Vec<_> = mesh.vertices.iter()
+                .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
+                .collect();
+            
+            export_mesh_to_obj(&mesh, "cone.obj");
+            println!("   顶点数: {}", mesh.vertices.len());
+            println!("   三角形数: {}", mesh.indices.len() / 3);
+            println!("   轴上顶点数: {} (预期2)", axis_points.len());
+        } else {
+            panic!("Revolution::gen_csg_mesh 返回 None");
+        }
+        println!("✅ 圆锥测试通过");
+    }
+
+    /// 测试: 半球（带圆弧轮廓）
+    #[test]
+    fn test_revolution_hemisphere_with_frad() {
+        use crate::prim_geo::profile_processor::ProfileProcessor;
+
+        // 半球：使用 FRAD 生成圆弧
+        // 三个点形成直角，FRAD 在角点处生成 1/4 圆弧
+        let radius = 50.0f32;
+        let vertices = vec![
+            Vec3::new(0.0, 0.0, 0.0),           // 底部中心（轴上）
+            Vec3::new(0.0, radius, radius),     // 角点，带圆角
+            Vec3::new(radius, 0.0, 0.0),        // 顶部（轴上）
+        ];
+
+        println!("📊 半球测试 (FRAD 圆弧):");
+        let processor = ProfileProcessor::new_single(vertices);
+        
+        match processor.process("hemisphere", Some("hemisphere")) {
+            Ok(processed) => {
+                println!("   处理后轮廓点数: {}", processed.contour_points.len());
+
+                let processed_verts: Vec<Vec3> = processed.contour_points.iter()
+                    .map(|p| Vec3::new(p.x, p.y, 0.0))
+                    .collect();
+
+                let revolution = Revolution {
+                    verts: vec![processed_verts],
+                    angle: 360.0,
+                    rot_dir: Vec3::X,
+                    rot_pt: Vec3::ZERO,
+                };
+
+                if let Some(mesh) = revolution.gen_csg_mesh() {
+                    export_mesh_to_obj(&mesh, "hemisphere_with_frad.obj");
+                    println!("   顶点数: {}", mesh.vertices.len());
+                    println!("   三角形数: {}", mesh.indices.len() / 3);
+                } else {
+                    println!("⚠️ Revolution::gen_csg_mesh 返回 None");
+                }
+            }
+            Err(e) => {
+                println!("⚠️ ProfileProcessor.process 失败: {} (可能FRAD参数不合适)", e);
+            }
+        }
+        println!("✅ 半球测试完成");
     }
 }
