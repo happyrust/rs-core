@@ -1134,6 +1134,25 @@ fn generate_lcylinder_mesh(
     })
 }
 
+/// 将角度规范化到 [-90, 90] 度范围
+///
+/// 根据 E3D/PDMS 的几何规范，倾斜角度需要规范化到有效范围：
+/// - 如果 angle > 90°，则 angle = angle - 180°
+/// - 如果 angle < -90°，则 angle = angle + 180°
+///
+/// 这确保了几何一致性和计算稳定性
+#[inline]
+fn normalize_shear_angle(angle: f32) -> f32 {
+    let mut result = angle;
+    if result > 90.0 {
+        result -= 180.0;
+    }
+    if result < -90.0 {
+        result += 180.0;
+    }
+    result
+}
+
 /// 生成剪切圆柱体（SSCL，Shear Cylinder）网格
 ///
 /// SSCL是SCylinder的一种特殊形式，具有剪切变形：
@@ -1154,16 +1173,22 @@ fn generate_sscl_mesh(
     // 基础参数
     let height = cyl.phei;
     let bottom_center = cyl.paxi_pt;
-    let top_center = bottom_center + dir * height; // 您的建议：沿原始轴平移
+    let top_center = bottom_center + dir * height; // 沿原始轴平移
 
     // 基础切向基（与标准圆柱一致）
     let (basis_u, basis_v) = orthonormal_basis(dir); // (U, V) 是原始切向基
 
-    // ✅ 剪切角转换为弧度
-    let btm_shear_x = cyl.btm_shear_angles[0].to_radians(); // 绕局部Y轴旋转
-    let btm_shear_y = cyl.btm_shear_angles[1].to_radians(); // 绕局部X轴旋转
-    let top_shear_x = cyl.top_shear_angles[0].to_radians();
-    let top_shear_y = cyl.top_shear_angles[1].to_radians();
+    // ✅ 角度规范化：将角度限制到 [-90, 90] 范围（参考 E3D CSG_BasicSLC::getPrimGeom）
+    let btm_x_normalized = normalize_shear_angle(cyl.btm_shear_angles[0]);
+    let btm_y_normalized = normalize_shear_angle(cyl.btm_shear_angles[1]);
+    let top_x_normalized = normalize_shear_angle(cyl.top_shear_angles[0]);
+    let top_y_normalized = normalize_shear_angle(cyl.top_shear_angles[1]);
+
+    // ✅ 剪切角转换为弧度（使用规范化后的角度）
+    let btm_shear_x = btm_x_normalized.to_radians(); // 绕局部Y轴旋转
+    let btm_shear_y = btm_y_normalized.to_radians(); // 绕局部X轴旋转
+    let top_shear_x = top_x_normalized.to_radians();
+    let top_shear_y = top_y_normalized.to_radians();
 
     // ✅ 纯旋转变换矩阵（无缩放）
     let rot_btm = Mat3::from_rotation_y(btm_shear_x) * Mat3::from_rotation_x(btm_shear_y);
@@ -4055,21 +4080,44 @@ pub(crate) fn generate_revolution_mesh(
         }
     };
 
+    // 记录每个 profile 点的顶点信息
+    // - 轴上的点：只生成 1 个共享顶点
+    // - 非轴上的点：生成 angular_segments + 1 个顶点
+    struct ProfileVertexInfo {
+        start_index: usize,  // 起始顶点索引
+        vertex_count: usize, // 顶点数量（轴上=1，非轴上=angular_segments+1）
+        is_on_axis: bool,    // 是否在轴上
+    }
+    let mut profile_vertex_info: Vec<ProfileVertexInfo> = Vec::with_capacity(n_profile);
+
     // 生成顶点：对每个轮廓点，绕轴旋转生成环形顶点
+    // 参考 libgm 的实现：轴上的点只生成一个共享顶点
     for (profile_idx, sample) in samples.iter().enumerate() {
-        if sample.perp_dist < MIN_LEN {
-            for seg in 0..=angular_segments {
-                let theta = (seg as f32 / angular_segments as f32) * angle_rad;
-                let (sin, cos) = theta.sin_cos();
-                let rotated_perp_dir = sample.perp_dir * cos + sample.circ_dir * sin;
-                let position = rot_pt + rot_dir * sample.along_axis;
-                extend_aabb(&mut aabb, position);
-                vertices.push(position);
-                normals.push(rotated_perp_dir.normalize());
-            }
+        let start_index = vertices.len();
+        let is_on_axis = sample.perp_dist < MIN_LEN;
+
+        if is_on_axis {
+            // 轴上的点：只生成一个共享顶点（参考 libgm movePointsOntoYAxis）
+            let position = rot_pt + rot_dir * sample.along_axis;
+            extend_aabb(&mut aabb, position);
+            vertices.push(position);
+            // 轴上点的法线使用 perp_dir（如果有效）或默认方向
+            let normal = if sample.perp_dir.length_squared() > MIN_LEN * MIN_LEN {
+                sample.perp_dir.normalize()
+            } else {
+                rot_dir // 默认沿轴向
+            };
+            normals.push(normal);
+
+            profile_vertex_info.push(ProfileVertexInfo {
+                start_index,
+                vertex_count: 1,
+                is_on_axis: true,
+            });
             continue;
         }
 
+        // 非轴上的点：为每个角度段生成顶点
         for seg in 0..=angular_segments {
             let theta = (seg as f32 / angular_segments as f32) * angle_rad;
             let (sin, cos) = theta.sin_cos();
@@ -4118,27 +4166,66 @@ pub(crate) fn generate_revolution_mesh(
             vertices.push(position);
             normals.push(normal);
         }
+
+        profile_vertex_info.push(ProfileVertexInfo {
+            start_index,
+            vertex_count: angular_segments + 1,
+            is_on_axis: false,
+        });
     }
 
-    // 生成索引：连接相邻的轮廓点和角度段
-    let stride = angular_segments + 1;
+    // 生成索引：根据边的两端点是否在轴上，生成不同的三角形
+    // 参考 libgm calcFacetsWithoutSurfaces 的实现：
+    // - 两端都在轴上：跳过（退化边，不生成面）
+    // - 一端在轴上：生成三角形扇
+    // - 两端都不在轴上：生成四边形（两个三角形）
     for profile_idx in 0..(n_profile - 1) {
-        let profile_offset = profile_idx * stride;
-        let next_profile_offset = (profile_idx + 1) * stride;
+        let curr_info = &profile_vertex_info[profile_idx];
+        let next_info = &profile_vertex_info[profile_idx + 1];
 
-        for seg in 0..angular_segments {
-            let base = profile_offset + seg;
-            let next_base = next_profile_offset + seg;
+        if curr_info.is_on_axis && next_info.is_on_axis {
+            // 两端都在轴上：退化边，跳过（参考 libgm）
+            continue;
+        }
 
-            // 两个三角形组成一个四边形
-            indices.extend_from_slice(&[
-                base as u32,
-                (base + 1) as u32,
-                next_base as u32,
-                (base + 1) as u32,
-                (next_base + 1) as u32,
-                next_base as u32,
-            ]);
+        if curr_info.is_on_axis {
+            // 当前点在轴上，下一点不在轴上：生成三角形扇
+            // 轴上点作为共享顶点，连接下一点形成的圆弧
+            let axis_vertex = curr_info.start_index as u32;
+            for seg in 0..angular_segments {
+                let next_curr = (next_info.start_index + seg) as u32;
+                let next_next = (next_info.start_index + seg + 1) as u32;
+                // 三角形: (轴上点, 外部点@seg, 外部点@seg+1)
+                indices.extend_from_slice(&[axis_vertex, next_curr, next_next]);
+            }
+        } else if next_info.is_on_axis {
+            // 当前点不在轴上，下一点在轴上：生成三角形扇
+            // 轴上点作为共享顶点，连接当前点形成的圆弧
+            let axis_vertex = next_info.start_index as u32;
+            for seg in 0..angular_segments {
+                let curr_curr = (curr_info.start_index + seg) as u32;
+                let curr_next = (curr_info.start_index + seg + 1) as u32;
+                // 三角形: (外部点@seg, 轴上点, 外部点@seg+1)
+                indices.extend_from_slice(&[curr_curr, axis_vertex, curr_next]);
+            }
+        } else {
+            // 两端都不在轴上：生成四边形（两个三角形）
+            for seg in 0..angular_segments {
+                let curr_seg = (curr_info.start_index + seg) as u32;
+                let curr_next_seg = (curr_info.start_index + seg + 1) as u32;
+                let next_seg = (next_info.start_index + seg) as u32;
+                let next_next_seg = (next_info.start_index + seg + 1) as u32;
+
+                // 两个三角形组成一个四边形
+                indices.extend_from_slice(&[
+                    curr_seg,
+                    curr_next_seg,
+                    next_seg,
+                    curr_next_seg,
+                    next_next_seg,
+                    next_seg,
+                ]);
+            }
         }
     }
 

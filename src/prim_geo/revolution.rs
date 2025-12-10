@@ -145,9 +145,13 @@ impl BrepShapeTrait for Revolution {
         Some(PdmsGeoParam::PrimRevolution(self.clone()))
     }
 
-    /// 使用统一的 ProfileProcessor 生成旋转体的mesh
+    /// 使用 Manifold 风格算法生成旋转体的 mesh
     ///
-    /// 统一流程：cavalier_contours + i_triangle
+    /// 特性：
+    /// - 自动裁剪负 X 侧轮廓（在 Y 轴插值）
+    /// - 轴上顶点优化（x=0 的点不重复复制）
+    /// - 自适应分段数
+    /// - 支持部分旋转（非 360°）的端面封闭
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         if !self.check_valid() {
             return None;
@@ -156,62 +160,26 @@ impl BrepShapeTrait for Revolution {
             return None;
         }
 
-        // 使用统一的 ProfileProcessor 处理截面（支持多轮廓和孔洞）
-        use crate::prim_geo::profile_processor::{ProfileProcessor, revolve_profile};
+        use crate::prim_geo::profile_processor::revolve_polygons_manifold;
 
-        let mut verts2d: Vec<Vec<Vec2>> = Vec::with_capacity(self.verts.len());
-        let mut frads: Vec<Vec<f32>> = Vec::with_capacity(self.verts.len());
-        for wire in &self.verts {
-            let mut v2 = Vec::with_capacity(wire.len());
-            let mut r = Vec::with_capacity(wire.len());
-            for p in wire {
-                // 对于绕 X 轴旋转：
-                // - p.x (PDMS X) = 沿旋转轴的高度 -> profile.y
-                // - p.y (PDMS Y) = 径向距离 -> profile.x
-                v2.push(Vec2::new(p.y, p.x));
-                r.push(p.z);
-            }
-            verts2d.push(v2);
-            frads.push(r);
-        }
-
-        // 注意：不要强制闭合 profile，由 revolve_profile 处理开放 profile 的端面封盖
-
-        let processor = ProfileProcessor::from_wires(verts2d, frads, true)
-            .map_err(|e| {
-                println!("⚠️  [Revolution] ProfileProcessor 创建失败: {}", e);
-                e
-            })
-            .ok()?;
-        let profile = processor.process("REVOLUTION", None).ok()?;
-
-        // 计算旋转参数
-        let segments = ((self.angle.abs() / 10.0).ceil() as usize).clamp(8, 64);
-        let rot_axis = self.rot_dir.normalize();
-        let rot_center = self.rot_pt;
-
-        // 旋转截面
-        let revolved = revolve_profile(&profile, self.angle, segments, rot_axis, rot_center);
-
-        // 计算 UV 坐标（简化版）
-        let uvs = revolved
-            .vertices
+        // 将 3D 顶点转换为 2D 轮廓
+        // 对于绕 X 轴旋转：
+        // - p.y (PDMS Y) = 径向距离 -> profile.x
+        // - p.x (PDMS X) = 沿旋转轴的高度 -> profile.y
+        let polygons: Vec<Vec<Vec2>> = self
+            .verts
             .iter()
-            .enumerate()
-            .map(|(i, _)| {
-                let seg_idx = i / profile.contour_points.len();
-                let prof_idx = i % profile.contour_points.len();
-                [
-                    prof_idx as f32 / profile.contour_points.len() as f32,
-                    seg_idx as f32 / segments as f32,
-                ]
-            })
+            .map(|wire| wire.iter().map(|p| Vec2::new(p.y, p.x)).collect())
             .collect();
+
+        // 使用 Manifold 风格的旋转生成算法
+        // segments = 0 表示使用自适应分段数
+        let revolved = revolve_polygons_manifold(&polygons, 0, self.angle)?;
 
         Some(PlantMesh {
             vertices: revolved.vertices,
             normals: revolved.normals,
-            uvs,
+            uvs: revolved.uvs,
             indices: revolved.indices,
             wire_vertices: Vec::new(),
             edges: Vec::new(),

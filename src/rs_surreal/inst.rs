@@ -262,6 +262,25 @@ pub async fn query_insts(
     query_insts_with_batch(refnos, enable_holes, None).await
 }
 
+/// 查询几何实例信息（支持负实体）
+///
+/// # 参数
+///
+/// * `refnos` - 构件编号迭代器
+/// * `enable_holes` - 是否启用孔洞查询
+/// * `include_negative` - 是否包含负实体（Neg 类型）
+///
+/// # 返回值
+///
+/// 返回几何实例查询结果的向量
+pub async fn query_insts_with_negative(
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    enable_holes: bool,
+    include_negative: bool,
+) -> anyhow::Result<Vec<GeomInstQuery>> {
+    query_insts_ext(refnos, enable_holes, include_negative, None).await
+}
+
 /// 批量查询几何实例信息（支持布尔运算结果）
 ///
 /// # 参数
@@ -348,6 +367,89 @@ pub async fn query_insts_with_batch(
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
                 (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CataPos']) as insts,
+                bool_status = 'Success' as has_neg,
+                <datetime>dt as date
+            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
+            )
+        };
+
+        let mut chunk_result: Vec<GeomInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        results.append(&mut chunk_result);
+    }
+
+    Ok(results)
+}
+
+/// 扩展的批量查询几何实例信息（支持负实体查询）
+///
+/// # 参数
+///
+/// * `refnos` - 构件编号迭代器
+/// * `enable_holes` - 是否启用孔洞查询
+/// * `include_negative` - 是否包含负实体（Neg 类型几何体）
+/// * `batch_size` - 每批查询的数量
+///
+/// # 返回值
+///
+/// 返回几何实例查询结果的向量
+pub async fn query_insts_ext(
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    enable_holes: bool,
+    include_negative: bool,
+    batch_size: Option<usize>,
+) -> anyhow::Result<Vec<GeomInstQuery>> {
+    let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let batch = batch_size.unwrap_or(50).max(1);
+    let mut results = Vec::new();
+
+    // 构建 geo_type 过滤条件
+    let geo_types = if include_negative {
+        "['Pos', 'Compound', 'Neg']"
+    } else {
+        "['Pos', 'Compound']"
+    };
+
+    let geo_types_no_holes = if include_negative {
+        "['Pos', 'DesiPos', 'CataPos', 'Neg']"
+    } else {
+        "['Pos', 'DesiPos', 'CataPos']"
+    };
+
+    for chunk in refnos.chunks(batch) {
+        let pe_keys: Vec<String> = chunk.iter().map(|r| r.to_pe_key()).collect();
+        let pe_keys_str = pe_keys.join(",");
+
+        let sql = if enable_holes {
+            format!(
+                r#"
+            select
+                in.id as refno,
+                in.old_pe as old_refno,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
+                if booled_id != none then
+                    [{{ "transform": world_trans.d, "geo_hash": booled_id, "is_tubi": false, "unit_flag": false }}]
+                else
+                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN {geo_types})
+                end as insts,
+                booled_id != none as has_neg,
+                <datetime>dt as date
+            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
+        "#
+            )
+        } else {
+            format!(
+                r#"
+            select
+                in.id as refno,
+                in.old_pe as old_refno,
+                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN {geo_types_no_holes}) as insts,
                 bool_status = 'Success' as has_neg,
                 <datetime>dt as date
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
