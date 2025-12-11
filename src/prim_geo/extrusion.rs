@@ -169,9 +169,9 @@ impl BrepShapeTrait for Extrusion {
         Some(PdmsGeoParam::PrimExtrusion(self.clone()))
     }
 
-    /// 使用统一的 ProfileProcessor 生成拉伸体的mesh
+    /// 使用统一的 ProfileProcessor 生成拉伸体的 mesh（流形版本）
     ///
-    /// 统一流程：cavalier_contours + i_triangle
+    /// 生成的 mesh 是有效的流形，适用于布尔运算。
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         if !self.check_valid() {
             return None;
@@ -204,7 +204,6 @@ impl BrepShapeTrait for Extrusion {
             .ok()?;
         let profile = processor.process("EXTRUSION", None).ok()?;
 
-        // 拉伸截面
         let extruded = extrude_profile(&profile, self.height);
 
         // 计算 UV 坐标（简化版）

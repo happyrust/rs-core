@@ -1,4 +1,5 @@
 use crate::debug_model_debug;
+use crate::geometry::csg::{construct_basis_from_z_axis, construct_basis_from_z_axis_with_ref};
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::prim_geo::LCylinder;
 use crate::prim_geo::ctorus::SCTorus;
@@ -455,7 +456,7 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
 
             let dir = axis_vec / height;
             let pdia = d.diameter as f32;
-            let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+            let rotation = construct_basis_from_z_axis(dir);
             let translation = if d.centre_line_flag {
                 bottom + dir * (height * 0.5)
             } else {
@@ -496,55 +497,36 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
                 .dir
                 .as_ref()
                 .map(|d| d.0.normalize_or_zero())
-                .unwrap_or(axis.dir_flag * Vec3::Y);
-            // dbg!(d.refno);
+                .unwrap_or(axis.dir_flag * Vec3::Z);
             if z_axis.length() == 0.0 {
                 return None;
             }
-            // dbg!(z_axis);
+            dbg!(z_axis);
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
-            let ref_axis = axis.ref_dir.as_ref().map(|r| r.0).unwrap_or_default();
-            //检查有没有参考轴，没有的话使用底部的， 不能使用这个from_rotation_arc
-            let rotation = if ref_axis.length() == 0.0 {
-                //ref_axis初始轴为X轴，先绕着y轴旋转x_shear, 再绕着x轴旋转 y_shear
-                let rot1 = Quat::from_rotation_arc(Vec3::Z, z_axis);
-                let mut rot2 = Quat::IDENTITY;
-                if d.y_shear.abs() > d.x_shear.abs() {
-                    //todo 旋转到长轴即可
-                    let t = if z_axis.z > 0.01 {
-                        -1.0
-                    } else if z_axis.z < -0.01 {
-                        1.0
-                    } else {
-                        if z_axis.x > 0.01 { -1.0 } else { 1.0 }
-                    };
-                    // dbg!(t);
-                    rot2 = Quat::from_axis_angle(z_axis, t * FRAC_PI_2);
-                }
-                rot2 * rot1
-            } else {
-                let y_axis = ref_axis;
-                let x_axis = y_axis.cross(z_axis).normalize_or_zero();
-                if !x_axis.is_normalized() {
-                    return None;
-                }
-                Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
-            };
+            // 使用 ref_dir 来确定剪切方向，保证多段 SSLC 拼接时方向一致
+            let ref_dir = axis.ref_dir.as_ref().map(|r| r.0);
+            let rotation = construct_basis_from_z_axis_with_ref(z_axis, ref_dir);
+            let rot_mat = Mat3::from_quat(rotation);
+            debug_model_debug!(
+                "SSLC rotation basis: z_axis={:?}, x_axis={:?}, y_axis={:?}",
+                z_axis,
+                rot_mat.x_axis,
+                rot_mat.y_axis,
+            );
             let translation = z_axis * (d.dist_to_btm as f32) + axis.pt.0;
             let transform = Transform {
                 rotation,
                 translation,
                 ..Default::default()
             };
-            // 是以中心为原点，所以需要移动到中心位置
+            // SSLC 网格在局部坐标系（Z轴朝上）中生成，外部 transform 负责旋转
             let csg_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
-                paxi_dir: z_axis,
                 phei,
                 pdia,
-                // ✅ 修正：底部剪切角使用 alt_x_shear, alt_y_shear（PXBS, PYBS）
+                // 底部剪切角 (PXBS, PYBS)
                 btm_shear_angles: [d.alt_x_shear, d.alt_y_shear],
-                // ✅ 修正：顶部剪切角使用 x_shear, y_shear（PXTS, PYTS）
+                // 顶部剪切角 (PXTS, PYTS)
                 top_shear_angles: [d.x_shear, d.y_shear],
                 ..Default::default()
             });

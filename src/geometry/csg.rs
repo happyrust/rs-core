@@ -34,7 +34,7 @@ use crate::prim_geo::wire::CurveType;
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::types::refno::RefU64;
 use crate::utils::svg_generator::SpineSvgGenerator;
-use glam::{Mat3, Vec2, Vec3};
+use glam::{Mat3, Quat, Vec2, Vec3};
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use std::collections::HashSet;
@@ -1141,54 +1141,64 @@ fn normalize_shear_angle(angle: f32) -> f32 {
 /// 生成剪切圆柱体（SSCL，Shear Cylinder）网格
 ///
 /// 实现对齐 Core3D / gm_CreateSlopeEndedCylinder 定义：
-/// - 端面法向由四个剪切角得到（局部轴为 (u, v, dir)）
+/// - 端面法向由四个剪切角得到（局部轴为 (X, Y, Z)）
 /// - 端面是倾斜平面与圆柱的交线（椭圆边界），不再整体剪切侧面
 /// - 侧面保持径向法向，仅在 z 方向被两平面截断
+///
+/// **重要**：网格在标准局部坐标系中生成（Z 轴朝上，原点在底部中心）
+/// 外部的 transform 负责旋转和平移到世界坐标系
 fn generate_sscl_mesh(
     cyl: &SCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
 ) -> Option<GeneratedMesh> {
-    let dir = safe_normalize(cyl.paxi_dir)?;
+    // 在标准局部坐标系中生成：Z 轴朝上，X/Y 是剪切方向
+    let dir = Vec3::Z;
+    let basis_u = Vec3::X;
+    let basis_v = Vec3::Y;
+
     let radius = (cyl.pdia * 0.5).abs();
-    if radius <= MIN_LEN || cyl.phei.abs() <= MIN_LEN {
-        return None;
-    }
-
-    // 基础参数
     let height = cyl.phei;
-    let bottom_center = cyl.paxi_pt;
-    let top_center = bottom_center + dir * height; // 沿原始轴平移
-
-    // 基础切向基（与标准圆柱一致）
-    let (basis_u, basis_v) = orthonormal_basis(dir); // (U, V) 是原始切向基
-
-    let btm_x_normalized = normalize_shear_angle(cyl.btm_shear_angles[0]);
-    let btm_y_normalized = normalize_shear_angle(cyl.btm_shear_angles[1]);
-    let top_x_normalized = normalize_shear_angle(cyl.top_shear_angles[0]);
-    let top_y_normalized = normalize_shear_angle(cyl.top_shear_angles[1]);
-
-    let btm_shear_x = btm_x_normalized.to_radians();
-    let btm_shear_y = btm_y_normalized.to_radians();
-    let top_shear_x = top_x_normalized.to_radians();
-    let top_shear_y = top_y_normalized.to_radians();
-
-    // 端面法向（局部 -> 世界）
-    let nb_local = Vec3::new(btm_shear_x.sin(), btm_shear_y.sin(), btm_shear_x.cos() * btm_shear_y.cos()).normalize();
-    let nt_local = Vec3::new(top_shear_x.sin(), top_shear_y.sin(), top_shear_x.cos() * top_shear_y.cos()).normalize();
-    let Nb = (basis_u * nb_local.x + basis_v * nb_local.y + dir * nb_local.z).normalize();
-    let Nt = (basis_u * nt_local.x + basis_v * nt_local.y + dir * nt_local.z).normalize();
-
-    let nb_dir = Nb.dot(dir);
-    let nt_dir = Nt.dot(dir);
-    if nb_dir.abs() <= MIN_LEN || nt_dir.abs() <= MIN_LEN {
-        // 端面几乎与轴平行，无法稳定生成
+    if radius <= MIN_LEN || height.abs() <= MIN_LEN {
         return None;
     }
 
-    // ✅ 计算细分参数
+    // 剪切角规范化到 (-90°, 90°)
+    let btm_x_deg = normalize_shear_angle(cyl.btm_shear_angles[0]);
+    let btm_y_deg = normalize_shear_angle(cyl.btm_shear_angles[1]);
+    let top_x_deg = normalize_shear_angle(cyl.top_shear_angles[0]);
+    let top_y_deg = normalize_shear_angle(cyl.top_shear_angles[1]);
+    for a in [btm_x_deg, btm_y_deg, top_x_deg, top_y_deg] {
+        if a <= -90.0 || a >= 90.0 {
+            return None;
+        }
+    }
+
+    // libgm 斜率：直接使用 tan(angle)
+    let btm_tan_x = btm_x_deg.to_radians().tan();
+    let btm_tan_y = btm_y_deg.to_radians().tan();
+    let top_tan_x = top_x_deg.to_radians().tan();
+    let top_tan_y = top_y_deg.to_radians().tan();
+
+    // 合法性：高度必须大于剪切差导致的最小厚度
+    let shear_delta = (top_tan_x - btm_tan_x).hypot(top_tan_y - btm_tan_y);
+    if height.abs() <= radius * shear_delta + MIN_LEN {
+        return None;
+    }
+
+    // 网格原点在底部中心，顶部在 Z = height
+    let half_h = height * 0.5;
+    let center = if cyl.center_in_mid {
+        Vec3::ZERO
+    } else {
+        dir * half_h
+    };
+    let bottom_center = center - dir * half_h;
+    let top_center = center + dir * half_h;
+
+    // 计算细分参数（libgm 仅两环，这里将轴向段固定为 1）
     let radial = compute_radial_segments(settings, radius, non_scalable, 3);
-    let height_segments = compute_height_segments(settings, height.abs(), non_scalable, 1).max(1);
+    let height_segments: usize = 1;
     let ring_stride = radial + 1;
 
     let mut vertices = Vec::with_capacity((height_segments + 1) * ring_stride + 2 * (radial + 1));
@@ -1214,11 +1224,12 @@ fn generate_sscl_mesh(
         let radial = basis_u * (radius * cos_theta) + basis_v * (radius * sin_theta);
         let radial_normal = radial.normalize();
 
-        let z_b = -Nb.dot(radial) / nb_dir;
-        let z_t = height - Nt.dot(radial) / nt_dir;
+        // libgm 公式：z = ±h/2 + r*(cosθ*tanX + sinθ*tanY)
+        let z_b = -half_h + radius * (cos_theta * btm_tan_x + sin_theta * btm_tan_y);
+        let z_t = half_h + radius * (cos_theta * top_tan_x + sin_theta * top_tan_y);
 
-        let p_b = bottom_center + dir * z_b + radial;
-        let p_t = bottom_center + dir * z_t + radial;
+        let p_b = center + dir * z_b + radial;
+        let p_t = center + dir * z_t + radial;
 
         bottom_rim.push(p_b);
         top_rim.push(p_t);
@@ -1230,19 +1241,19 @@ fn generate_sscl_mesh(
         });
     }
 
-    // 侧面：固定径向，沿 z_b -> z_t 插值
+    // 侧面：固定径向，沿 z_b -> z_t 插值（两环）
     for ring in 0..=height_segments {
         let t = ring as f32 / height_segments as f32;
         for sample in &rim_samples {
             let z = sample.z_b + (sample.z_t - sample.z_b) * t;
-            let vertex = bottom_center + dir * z + sample.radial;
+            let vertex = center + dir * z + sample.radial;
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
             normals.push(sample.radial_normal);
         }
     }
 
-    // ✅ 生成侧面索引
+    // 生成侧面索引
     for ring in 0..height_segments {
         for slice in 0..radial {
             let current = ring * ring_stride + slice;
@@ -1258,6 +1269,27 @@ fn generate_sscl_mesh(
         }
     }
 
+    // 端面法向量（与 gm_CreateSlopeEndedCylinder 一致）
+    // 公式：n = (sin(xSlope), sin(ySlope), cos(xSlope)*cos(ySlope))
+    // 底面法向朝下（取反），顶面法向朝上
+    let btm_x_rad = btm_x_deg.to_radians();
+    let btm_y_rad = btm_y_deg.to_radians();
+    let top_x_rad = top_x_deg.to_radians();
+    let top_y_rad = top_y_deg.to_radians();
+
+    let Nb = Vec3::new(
+        -btm_x_rad.sin(),
+        -btm_y_rad.sin(),
+        -btm_x_rad.cos() * btm_y_rad.cos(),
+    )
+    .normalize();
+    let Nt = Vec3::new(
+        top_x_rad.sin(),
+        top_y_rad.sin(),
+        top_x_rad.cos() * top_y_rad.cos(),
+    )
+    .normalize();
+
     // 底面盖子（椭圆边界，法向 Nb）
     let bottom_start = vertices.len() as u32;
     for &vertex in &bottom_rim {
@@ -1269,8 +1301,6 @@ fn generate_sscl_mesh(
     vertices.push(bottom_center);
     normals.push(Nb);
     extend_aabb(&mut aabb, bottom_center);
-
-    // ✅ 底面索引
     for slice in 0..radial {
         let next = slice + 1;
         indices.extend_from_slice(&[
@@ -1291,8 +1321,6 @@ fn generate_sscl_mesh(
     vertices.push(top_center);
     normals.push(Nt);
     extend_aabb(&mut aabb, top_center);
-
-    // ✅ 顶面索引
     for slice in 0..radial {
         let next = slice + 1;
         indices.extend_from_slice(&[
@@ -3449,7 +3477,72 @@ fn extend_aabb(aabb: &mut Aabb, v: Vec3) {
     aabb.take_point(Point3::new(v.x, v.y, v.z));
 }
 
-/// 构建正交基
+/// 根据 z_axis 方向构造稳定的方位四元数
+///
+/// 规则：
+/// - 如果 z_axis 垂直（与世界 Z 轴共线）：参考方向使用世界 Y
+/// - 否则（非垂直）：参考方向使用世界 Z
+///
+/// 这与 E3D 的 mthNormalToEulerAngles 行为一致
+pub fn construct_basis_from_z_axis(z_axis: Vec3) -> Quat {
+    construct_basis_from_z_axis_with_ref(z_axis, None)
+}
+
+/// 根据 z_axis 方向和可选的参考方向构造方位四元数
+///
+/// 当 ref_dir 存在时，使用它来确定局部 X 轴方向（投影到垂直于 z_axis 的平面）
+/// 当 ref_dir 不存在或无效时，回退到默认逻辑
+///
+/// 这用于 SSLC 等需要保持剪切方向一致性的几何体
+pub fn construct_basis_from_z_axis_with_ref(z_axis: Vec3, ref_dir: Option<Vec3>) -> Quat {
+    let z_axis = z_axis.normalize_or_zero();
+    if !z_axis.is_normalized() {
+        return Quat::IDENTITY;
+    }
+
+    // 如果提供了有效的参考方向，使用它来确定 X 轴
+    if let Some(ref_vec) = ref_dir {
+        let ref_vec = ref_vec.normalize_or_zero();
+        if ref_vec.is_normalized() {
+            // 将 ref_dir 投影到垂直于 z_axis 的平面上
+            let projected = ref_vec - z_axis * ref_vec.dot(z_axis);
+            let projected = projected.normalize_or_zero();
+            if projected.is_normalized() {
+                // ref_dir 作为局部 X 轴方向的参考
+                let x_axis = projected;
+                let y_axis = z_axis.cross(x_axis).normalize_or_zero();
+                if y_axis.is_normalized() {
+                    return Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
+                }
+            }
+        }
+    }
+
+    // 回退到默认逻辑
+    let is_vertical = z_axis.dot(Vec3::Z).abs() > 0.999;
+
+    let (x_axis, y_axis) = if is_vertical {
+        // 垂直构件：参考方向使用世界 Y
+        let y_target = Vec3::Y;
+        let x_res = y_target.cross(z_axis).normalize_or_zero();
+        let y_res = z_axis.cross(x_res).normalize_or_zero();
+        (x_res, y_res)
+    } else {
+        // 非垂直构件：参考方向使用世界 Z
+        let y_target = Vec3::Z;
+        let x_res = y_target.cross(z_axis).normalize_or_zero();
+        let y_res = z_axis.cross(x_res).normalize_or_zero();
+        (x_res, y_res)
+    };
+
+    if !x_axis.is_normalized() || !y_axis.is_normalized() {
+        return Quat::IDENTITY;
+    }
+
+    Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
+}
+
+/// 构建正交基（统一使用 construct_basis_from_z_axis 的逻辑）
 ///
 /// 给定一个法向量，生成两个与之正交的切向量，形成正交基（u, v, n）
 ///
@@ -3458,19 +3551,29 @@ fn extend_aabb(aabb: &mut Aabb, v: Vec3) {
 ///
 /// # 返回
 /// (tangent, bitangent) 两个切向量，与normal一起形成右手坐标系
+///
+/// 规则与 E3D 的 mthNormalToEulerAngles 一致：
+/// - 如果 normal 垂直（与世界 Z 轴共线）：tangent = Y × normal
+/// - 否则：tangent = Z × normal
 pub fn orthonormal_basis(normal: Vec3) -> (Vec3, Vec3) {
     let n = normal.normalize();
-    // 选择一个与n不平行的向量进行叉积，生成切向量
-    let mut tangent = if n.z.abs() < 0.999 {
-        Vec3::Z.cross(n) // 如果n不接近Z轴，使用Z轴
+    let is_vertical = n.dot(Vec3::Z).abs() > 0.999;
+
+    let tangent = if is_vertical {
+        // 垂直方向：使用世界 Y 作为参考
+        Vec3::Y.cross(n).normalize_or_zero()
     } else {
-        Vec3::X.cross(n) // 如果n接近Z轴，使用X轴
+        // 非垂直方向：使用世界 Z 作为参考
+        Vec3::Z.cross(n).normalize_or_zero()
     };
-    // 如果切向量仍然太小，尝试使用Y轴
-    if tangent.length_squared() <= MIN_LEN {
-        tangent = Vec3::Y.cross(n);
-    }
-    tangent = tangent.normalize();
+
+    // 退化检查
+    let tangent = if tangent.length_squared() <= MIN_LEN * MIN_LEN {
+        Vec3::X.cross(n).normalize_or_zero()
+    } else {
+        tangent
+    };
+
     // 副切向量 = n × tangent（确保右手坐标系）
     let bitangent = n.cross(tangent).normalize();
     (tangent, bitangent)

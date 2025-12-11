@@ -474,100 +474,111 @@ impl ProfileProcessor {
     }
 }
 
-/// 从 ProcessedProfile 生成拉伸体的顶点和索引
+/// 从 ProcessedProfile 生成拉伸体的顶点和索引（流形版本）
 ///
-/// 用于 Extrusion
+/// 生成的 mesh 保证是有效的流形（manifold），适用于布尔运算。
+///
+/// 特点：
+/// - 使用统一的顶点集合（底面 + 顶面各 n 个顶点）
+/// - 所有面共享边缘顶点
+/// - 底面/顶面使用 fan triangulation
 pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh {
+    let n = profile.contour_points.len();
+    if n < 3 {
+        return ExtrudedMesh {
+            vertices: Vec::new(),
+            normals: Vec::new(),
+            indices: Vec::new(),
+            uvs: Vec::new(),
+        };
+    }
+
     let mut vertices = Vec::new();
     let mut normals = Vec::new();
     let mut indices = Vec::new();
+    let mut uvs = Vec::new();
 
-    // 1. 生成侧面 (Flat Shading: 每个面独立的顶点)
-    let n = profile.contour_points.len();
+    // ========== 1. 生成顶点（共享边缘）==========
+    // 底面顶点：索引 0..n
+    // 顶面顶点：索引 n..2n
+    for point in &profile.contour_points {
+        vertices.push(Vec3::new(point.x, point.y, 0.0));
+        normals.push(Vec3::ZERO); // 稍后计算
+        uvs.push([point.x / 100.0, point.y / 100.0]);
+    }
+    for point in &profile.contour_points {
+        vertices.push(Vec3::new(point.x, point.y, height));
+        normals.push(Vec3::ZERO); // 稍后计算
+        uvs.push([point.x / 100.0, point.y / 100.0]);
+    }
+
+    // ========== 2. 生成侧面三角形 ==========
+    // 每个侧面段由两个三角形组成，共享边缘顶点
     for i in 0..n {
         let next = (i + 1) % n;
 
-        // 获取当前段的两个底面点
-        let p0_2d = profile.contour_points[i];
-        let p1_2d = profile.contour_points[next];
+        // 底面顶点索引
+        let b0 = i as u32;
+        let b1 = next as u32;
+        // 顶面顶点索引
+        let t0 = (n + i) as u32;
+        let t1 = (n + next) as u32;
 
-        // 构建4个顶点 (底面2个，顶面2个)
-        let v0 = Vec3::new(p0_2d.x, p0_2d.y, 0.0);
-        let v1 = Vec3::new(p1_2d.x, p1_2d.y, 0.0);
-        let v2 = Vec3::new(p1_2d.x, p1_2d.y, height);
-        let v3 = Vec3::new(p0_2d.x, p0_2d.y, height);
+        // 三角形1: b0 -> b1 -> t1 (逆时针，法线朝外)
+        indices.push(b0);
+        indices.push(b1);
+        indices.push(t1);
 
-        // 计算法线 (叉积)
-        // v1-v0 是沿底面边，v3-v0 是沿Z轴 (0,0,height)
-        // normal = (v1-v0) x (v3-v0)
-        let edge = v1 - v0;
-        let up = Vec3::new(0.0, 0.0, 1.0); // 简化计算，拉伸方向总是Z
-        let normal = edge.cross(up).normalize();
-
-        let base_idx = vertices.len() as u32;
-
-        // 添加顶点和法线
-        vertices.push(v0);
-        vertices.push(v1);
-        vertices.push(v2);
-        vertices.push(v3);
-
-        normals.push(normal);
-        normals.push(normal);
-        normals.push(normal);
-        normals.push(normal);
-
-        // 添加两个三角形 (0-1-2, 0-2-3)
-        indices.push(base_idx);
-        indices.push(base_idx + 1);
-        indices.push(base_idx + 2);
-
-        indices.push(base_idx);
-        indices.push(base_idx + 2);
-        indices.push(base_idx + 3);
+        // 三角形2: b0 -> t1 -> t0
+        indices.push(b0);
+        indices.push(t1);
+        indices.push(t0);
     }
 
-    // 2. 生成底面 (z=0)
-    let base_offset = vertices.len() as u32;
-    for point in &profile.tri_vertices {
-        vertices.push(Vec3::new(point.x, point.y, 0.0));
-        normals.push(Vec3::NEG_Z);
-    }
-    // 底面索引需要反转绕向 (i_triangle 通常是 CCW，底面看是 CW)
-    for chunk in profile.tri_indices.chunks(3) {
-        indices.push(base_offset + chunk[2]);
-        indices.push(base_offset + chunk[1]);
-        indices.push(base_offset + chunk[0]);
+    // ========== 3. 生成底面三角形（使用 fan triangulation）==========
+    // 底面法线朝下，需要顺时针绕向（从下方看是逆时针）
+    // Fan triangulation: 选择第一个顶点作为中心
+    for i in 1..(n - 1) {
+        // 顺时针: 0 -> i+1 -> i（从下方看是逆时针）
+        indices.push(0);
+        indices.push((i + 1) as u32);
+        indices.push(i as u32);
     }
 
-    // 3. 生成顶面 (z=height)
-    let top_offset = vertices.len() as u32;
-    for point in &profile.tri_vertices {
-        vertices.push(Vec3::new(point.x, point.y, height));
-        normals.push(Vec3::Z);
-    }
-    for idx in &profile.tri_indices {
-        indices.push(top_offset + idx);
-    }
-
-    // 4. 生成 UV 坐标
-    let mut uvs = Vec::new();
-
-    // 侧面的 UV：U 沿轮廓，V 沿高度
-    for i in 0..n {
-        let u = i as f32 / n as f32;
-        uvs.push([u, 0.0]); // 底面
-        uvs.push([u, 1.0]); // 顶面
-        uvs.push([u, 1.0]); // 顶面（重复）
-        uvs.push([u, 0.0]); // 底面（重复）
+    // ========== 4. 生成顶面三角形（使用 fan triangulation）==========
+    // 顶面法线朝上，需要逆时针绕向
+    let top_base = n as u32;
+    for i in 1..(n - 1) {
+        // 逆时针: n -> n+i -> n+i+1
+        indices.push(top_base);
+        indices.push(top_base + i as u32);
+        indices.push(top_base + (i + 1) as u32);
     }
 
-    // 底面和顶面的 UV：使用 2D 坐标
-    for point in &profile.tri_vertices {
-        uvs.push([point.x / 100.0, point.y / 100.0]); // 底面
+    // ========== 5. 计算顶点法线（平均相邻面法线）==========
+    // 对于流形 mesh，我们使用平均法线
+    let mut vertex_normals = vec![Vec3::ZERO; vertices.len()];
+
+    for chunk in indices.chunks(3) {
+        let i0 = chunk[0] as usize;
+        let i1 = chunk[1] as usize;
+        let i2 = chunk[2] as usize;
+
+        let v0 = vertices[i0];
+        let v1 = vertices[i1];
+        let v2 = vertices[i2];
+
+        let edge1 = v1 - v0;
+        let edge2 = v2 - v0;
+        let face_normal = edge1.cross(edge2); // 不归一化，面积加权
+
+        vertex_normals[i0] += face_normal;
+        vertex_normals[i1] += face_normal;
+        vertex_normals[i2] += face_normal;
     }
-    for point in &profile.tri_vertices {
-        uvs.push([point.x / 100.0, point.y / 100.0]); // 顶面
+
+    for (i, normal) in vertex_normals.iter().enumerate() {
+        normals[i] = normal.normalize_or_zero();
     }
 
     ExtrudedMesh {
@@ -1113,11 +1124,16 @@ pub fn revolve_polygons_manifold(
             }
         }
 
-        // Step 4: 生成三角形索引（参考 libgm calcFacetsWithoutSurfaces）
-        // 根据边的两端点是否在轴上，生成不同的三角形：
-        // - 两端都在轴上：跳过（退化边，不生成面）
-        // - 一端在轴上：生成三角形扇
-        // - 两端都不在轴上：生成四边形（两个三角形）
+        // Step 4: 生成三角形索引
+        // 关键：确保所有三角形的绕序一致（从外侧看是逆时针）
+        // 
+        // 对于旋转体，从轴外侧看，轮廓点沿 profile 方向移动，
+        // 旋转方向是 theta 增加的方向（从 +X 向 +Y）。
+        // 
+        // 为了保证流形，需要确保：
+        // 1. 相邻边共享相同的顶点（不是位置相同的不同顶点）
+        // 2. 每条边恰好被两个三角形共享
+        // 3. 所有三角形绕序一致
         for edge_idx in 0..n_profile {
             let v0_idx = edge_idx;
             let v1_idx = (edge_idx + 1) % n_profile;
@@ -1126,59 +1142,39 @@ pub fn revolve_polygons_manifold(
             let v1_info = &profile_vertex_info[v1_idx];
 
             if v0_info.is_on_axis && v1_info.is_on_axis {
-                // 两端都在轴上：退化边，跳过（参考分析报告 2B.7）
+                // 两端都在轴上：退化边，跳过
                 continue;
             }
 
-            let actual_segments = if is_full_revolution {
-                n_segments
-            } else {
-                n_segments
-            };
-
             if v0_info.is_on_axis {
-                // 起点在轴上：生成三角形扇
-                // 三角形: (轴上点, 外部点@seg, 外部点@seg+1)
+                // 起点在轴上：生成三角形扇（圆锥顶点）
+                // 从轴上点向外辐射的三角形
                 let axis_vertex = v0_info.start_index as u32;
-                for seg in 0..actual_segments {
+                for seg in 0..n_segments {
                     let v1_curr = (v1_info.start_index + seg) as u32;
-                    let v1_next = if is_full_revolution && seg + 1 == n_segments {
-                        v1_info.start_index as u32 // 回到起点
-                    } else {
-                        (v1_info.start_index + seg + 1) as u32
-                    };
-                    indices.extend_from_slice(&[axis_vertex, v1_next, v1_curr]);
+                    let v1_next = (v1_info.start_index + (seg + 1) % n_slices) as u32;
+                    // 绕序: 轴点 -> curr -> next (从外侧看逆时针)
+                    indices.extend_from_slice(&[axis_vertex, v1_curr, v1_next]);
                 }
             } else if v1_info.is_on_axis {
                 // 终点在轴上：生成三角形扇
-                // 三角形: (外部点@seg, 轴上点, 外部点@seg+1)
                 let axis_vertex = v1_info.start_index as u32;
-                for seg in 0..actual_segments {
+                for seg in 0..n_segments {
                     let v0_curr = (v0_info.start_index + seg) as u32;
-                    let v0_next = if is_full_revolution && seg + 1 == n_segments {
-                        v0_info.start_index as u32
-                    } else {
-                        (v0_info.start_index + seg + 1) as u32
-                    };
+                    let v0_next = (v0_info.start_index + (seg + 1) % n_slices) as u32;
+                    // 绕序: curr -> 轴点 -> next (从外侧看逆时针)
                     indices.extend_from_slice(&[v0_curr, axis_vertex, v0_next]);
                 }
             } else {
                 // 两端都不在轴上：生成四边形（两个三角形）
-                for seg in 0..actual_segments {
+                for seg in 0..n_segments {
                     let v0_curr = (v0_info.start_index + seg) as u32;
-                    let v0_next = if is_full_revolution && seg + 1 == n_segments {
-                        v0_info.start_index as u32
-                    } else {
-                        (v0_info.start_index + seg + 1) as u32
-                    };
+                    let v0_next = (v0_info.start_index + (seg + 1) % n_slices) as u32;
                     let v1_curr = (v1_info.start_index + seg) as u32;
-                    let v1_next = if is_full_revolution && seg + 1 == n_segments {
-                        v1_info.start_index as u32
-                    } else {
-                        (v1_info.start_index + seg + 1) as u32
-                    };
+                    let v1_next = (v1_info.start_index + (seg + 1) % n_slices) as u32;
 
-                    // 两个三角形组成一个四边形
+                    // 四边形由两个三角形组成，保持一致的绕序
+                    // 从外侧看：v0_curr -> v1_curr -> v1_next -> v0_next
                     indices.extend_from_slice(&[v0_curr, v1_curr, v1_next]);
                     indices.extend_from_slice(&[v0_curr, v1_next, v0_next]);
                 }

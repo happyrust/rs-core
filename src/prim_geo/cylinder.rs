@@ -243,6 +243,9 @@ pub struct SCylinder {
     pub center_in_mid: bool,
     /// 标识是否为单位化几何体（通过 transform 缩放而非 mesh 顶点缩放）
     pub unit_flag: bool,
+    /// 当需要固定剪切方向的切向基时，可传入世界坐标系下的 (u, v) 基向量
+    /// 用于避免 orthonormal_basis 选择不一致导致的 roll 跳变
+    pub basis_hint: Option<[Vec3; 2]>,
 }
 
 impl Default for SCylinder {
@@ -258,6 +261,7 @@ impl Default for SCylinder {
             negative: false,
             center_in_mid: false,
             unit_flag: false,
+            basis_hint: None,
         }
     }
 }

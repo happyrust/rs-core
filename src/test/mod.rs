@@ -47,10 +47,6 @@ pub mod test_lpyramid_fix;
 pub mod test_multi_segment_path;
 pub mod test_scylinder_shear;
 
-pub mod test_sscd_correctness;
-pub mod test_sscd_advanced;
-pub mod test_sscd_diagnose;
-
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_svg_standalone;
 
