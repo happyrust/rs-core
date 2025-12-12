@@ -69,8 +69,9 @@ impl Clone for ManifoldRust {
 
 impl ManifoldRust {
     pub fn new() -> Self {
+        // 使用极小的 cube 替代 empty()，因为 manifold-rs 没有 empty() 方法
         Self {
-            inner: Manifold::empty(),
+            inner: Manifold::cube(1e-10, 1e-10, 1e-10),
         }
     }
 
