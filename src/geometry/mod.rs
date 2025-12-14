@@ -419,10 +419,13 @@ impl ShapeInstancesData {
     ///插入neg数据
     #[inline]
     pub fn insert_negs(&mut self, refno: RefnoEnum, negs: &[RefnoEnum]) {
-        self.neg_relate_map
-            .entry(refno)
-            .or_insert_with(Vec::new)
-            .extend(negs);
+        // 只有当 negs 不为空时才插入
+        if !negs.is_empty() {
+            self.neg_relate_map
+                .entry(refno)
+                .or_insert_with(Vec::new)
+                .extend(negs);
+        }
     }
 
     #[inline]
