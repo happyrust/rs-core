@@ -574,6 +574,18 @@ DEFINE FUNCTION fn::find_ancestor_types($pe: record, $t: array){
     return select value id from $r where noun in $t;
 };
 
+REMOVE FUNCTION fn::init_site_spec_value;
+-- SITE 专业枚举初始化
+DEFINE FUNCTION fn::init_site_spec_value() {
+    UPDATE pe SET spec_value =
+        IF string::contains(name, 'PIPE') { 1 }
+        ELSE IF string::contains(name, 'ELEC') { 2 }
+        ELSE IF string::contains(name, 'INST') { 3 }
+        ELSE IF string::contains(name, 'HVAC') { 4 }
+        ELSE { 0 }
+    WHERE noun = 'SITE';
+};
+
 // 返回符合类型集合的子节点ID
 REMOVE FUNCTION fn::collect_descendant_ids_by_types;
 -- 收集符合指定类型的子孙节点ID

@@ -501,7 +501,7 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
             if z_axis.length() == 0.0 {
                 return None;
             }
-            dbg!(z_axis);
+            // dbg!(z_axis);
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
             // 使用 ref_dir 来确定剪切方向，保证多段 SSLC 拼接时方向一致

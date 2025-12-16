@@ -62,6 +62,8 @@ pub struct TubiInstQuery {
     pub world_trans: PlantTransform,
     pub geo_hash: String,
     pub date: Option<surrealdb::types::Datetime>,
+    /// 规格值（来自 ZONE 的 owner.spec_value）
+    pub spec_value: Option<i64>,
 }
 
 /// 将 SurrealDB 的原始值向量解码为目标类型列表
@@ -120,7 +122,8 @@ pub async fn query_tubi_insts_by_brans(
                 aabb.d as world_aabb,
                 world_trans.d as world_trans,
                 record::id(geo) as geo_hash,
-                id[0].dt as date
+                id[0].dt as date,
+                spec_value
             FROM tubi_relate:[{}, 0]..[{}, 999999]
             WHERE aabb.d != NONE
             "#,
@@ -160,7 +163,8 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
                 aabb.d as world_aabb,
                 world_trans.d as world_trans,
                 record::id(geo) as geo_hash,
-                id[0].dt as date
+                id[0].dt as date,
+                spec_value
             FROM tubi_relate
             WHERE (in = {} OR out = {}) AND aabb.d != NONE
             "#,
@@ -228,6 +232,8 @@ pub struct GeomInstQuery {
     pub pts: Option<Vec<RsVec3>>,
     /// 时间戳
     pub date: Option<surrealdb::types::Datetime>,
+    /// 规格值（来自 ZONE 的 owner.spec_value）
+    pub spec_value: Option<i64>,
 }
 
 /// 几何点集查询结构体
@@ -352,7 +358,8 @@ pub async fn query_insts_with_batch(
                     (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none &&  geo_type IN ['Pos', 'Compound'])
                 end as insts,
                 booled_id != none as has_neg,
-                <datetime>dt as date
+                <datetime>dt as date,
+                spec_value
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
         "#
             )
@@ -368,7 +375,8 @@ pub async fn query_insts_with_batch(
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
                 (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CataPos']) as insts,
                 bool_status = 'Success' as has_neg,
-                <datetime>dt as date
+                <datetime>dt as date,
+                spec_value
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
             )
         };
@@ -437,7 +445,8 @@ pub async fn query_insts_ext(
                     (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN {geo_types})
                 end as insts,
                 booled_id != none as has_neg,
-                <datetime>dt as date
+                <datetime>dt as date,
+                spec_value
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
         "#
             )
@@ -451,7 +460,8 @@ pub async fn query_insts_ext(
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
                 (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN {geo_types_no_holes}) as insts,
                 bool_status = 'Success' as has_neg,
-                <datetime>dt as date
+                <datetime>dt as date,
+                spec_value
             from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
             )
         };

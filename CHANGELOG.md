@@ -81,6 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   #### 相关文档
   - 详细分析见：`docs/QUERY_INSTS_TRANSACTION_ERROR_ANALYSIS.md`
 
+- **修复 neg_relate_map 生成空条目问题**
+  - `ShapeInstancesData::insert_negs` 在 `negs` 为空时不再插入 `neg_relate_map`，避免后续布尔运算扫描到无效目标
+
 ### Changed
 - **优化 SurrealDB 查询性能**
   - 使用直接字段访问替代函数调用，减少数据库负载

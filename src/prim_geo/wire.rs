@@ -204,7 +204,7 @@ pub(crate) fn export_polyline_svg_for_debug(polyline: &Polyline, refno: Option<&
     use std::io::Write;
     use std::path::PathBuf;
 
-    let dir = PathBuf::from("test_output/wire_svg");
+    let dir = PathBuf::from("output/svg");
     if std::fs::create_dir_all(&dir).is_err() {
         return;
     }
@@ -255,14 +255,18 @@ pub(crate) fn export_polyline_svg_for_debug(polyline: &Polyline, refno: Option<&
     let _ = writeln!(file, r#"<?xml version="1.0" encoding="UTF-8"?>"#);
     let _ = writeln!(
         file,
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="{} {} {} {}">"#,
-        svg_width,
-        svg_height,
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="{} {} {} {}" preserveAspectRatio="xMidYMid meet">"#,
         min_x - padding,
         min_y - padding,
         svg_width,
         svg_height
     );
+    
+    // 添加样式以改善显示效果
+    let _ = writeln!(file, r#"  <style>"#);
+    let _ = writeln!(file, r#"    svg {{ background-color: #f0f0f0; }}"#);
+    let _ = writeln!(file, r#"    path {{ stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; }}"#);
+    let _ = writeln!(file, r#"  </style>"#);
 
     let _ = write!(file, r#"  <path d="M"#);
 
@@ -309,7 +313,7 @@ pub(crate) fn export_polyline_svg_for_debug(polyline: &Polyline, refno: Option<&
         let _ = write!(file, " Z");
     }
 
-    let _ = writeln!(file, r#"" fill="none" stroke="blue" stroke-width="1"/>"#);
+    let _ = writeln!(file, r#"" fill="none" stroke="blue"/>"#);
     let _ = writeln!(file, "</svg>");
 }
 

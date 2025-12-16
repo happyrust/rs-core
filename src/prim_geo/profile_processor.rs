@@ -306,7 +306,9 @@ impl ProfileProcessor {
         );
 
         //export the svg of the polyline
-        // export_polyline_svg_for_debug(&polyline, Some(name));
+        if std::env::var("EXPORT_SVG").is_ok() {
+            export_polyline_svg_for_debug(&polyline, Some(name));
+        }
 
         Ok(polyline)
     }
@@ -421,13 +423,23 @@ impl ProfileProcessor {
 
         // 计算圆弧参数
         let angle = (4.0 * bulge.atan()).abs();
-        let segments = ((angle.to_degrees() / 10.0).ceil() as usize).clamp(2, 16);
-
-        let start_pos = Vec2::new(start.x as f32, start.y as f32);
-
+        
         // 计算圆弧中心和半径
         use cavalier_contours::polyline::seg_arc_radius_and_center;
         let (radius, center) = seg_arc_radius_and_center(*start, *end);
+        
+        // 计算弧长
+        let arc_length = radius.abs() * angle;
+        
+        // 采样策略：同时考虑角度和弧长
+        // 1. 基于角度：每5度一个点
+        let segments_by_angle = (angle.to_degrees() / 5.0).ceil() as usize;
+        // 2. 基于弧长：每100mm一个点（适应大半径弧）
+        let segments_by_length = (arc_length / 100.0).ceil() as usize;
+        // 取两者中较大的值，确保足够的采样密度
+        let segments = segments_by_angle.max(segments_by_length).clamp(2, 128);
+
+        let start_pos = Vec2::new(start.x as f32, start.y as f32);
         let center_vec2 = Vec2::new(center.x as f32, center.y as f32);
 
         let mut arc_points = Vec::new();
@@ -481,10 +493,12 @@ impl ProfileProcessor {
 /// 特点：
 /// - 使用统一的顶点集合（底面 + 顶面各 n 个顶点）
 /// - 所有面共享边缘顶点
-/// - 底面/顶面使用 fan triangulation
+/// - 底面/顶面使用 i_triangle 三角化结果（支持凹多边形）
 pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh {
-    let n = profile.contour_points.len();
-    if n < 3 {
+    let n_contour = profile.contour_points.len();
+    let n_tri = profile.tri_vertices.len();
+    
+    if n_contour < 3 || n_tri < 3 {
         return ExtrudedMesh {
             vertices: Vec::new(),
             normals: Vec::new(),
@@ -498,87 +512,125 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
     let mut indices = Vec::new();
     let mut uvs = Vec::new();
 
-    // ========== 1. 生成顶点（共享边缘）==========
-    // 底面顶点：索引 0..n
-    // 顶面顶点：索引 n..2n
-    for point in &profile.contour_points {
+    // ========== 1. 生成独立的顶点集（不共享）==========
+    // 底面顶点：索引 0..n_tri-1 (使用 tri_vertices)
+    // 顶面顶点：索引 n_tri..2*n_tri-1 (使用 tri_vertices)
+    // 侧面顶点：索引 2*n_tri..2*n_tri+2*n_contour-1（每个轮廓点对应两个侧面顶点）
+    
+    // 底面顶点（使用 tri_vertices）
+    for point in &profile.tri_vertices {
         vertices.push(Vec3::new(point.x, point.y, 0.0));
-        normals.push(Vec3::ZERO); // 稍后计算
+        normals.push(Vec3::NEG_Z); // 底面法线朝下
         uvs.push([point.x / 100.0, point.y / 100.0]);
     }
-    for point in &profile.contour_points {
+    
+    // 顶面顶点（使用 tri_vertices）
+    for point in &profile.tri_vertices {
         vertices.push(Vec3::new(point.x, point.y, height));
-        normals.push(Vec3::ZERO); // 稍后计算
+        normals.push(Vec3::Z); // 顶面法线朝上
+        uvs.push([point.x / 100.0, point.y / 100.0]);
+    }
+    
+    // 侧面顶点（使用 contour_points，每个轮廓点创建两个）
+    for point in &profile.contour_points {
+        // 底部侧面顶点
+        vertices.push(Vec3::new(point.x, point.y, 0.0));
+        normals.push(Vec3::ZERO); // 稍后计算侧面法线
+        uvs.push([point.x / 100.0, point.y / 100.0]);
+        
+        // 顶部侧面顶点
+        vertices.push(Vec3::new(point.x, point.y, height));
+        normals.push(Vec3::ZERO); // 稍后计算侧面法线
         uvs.push([point.x / 100.0, point.y / 100.0]);
     }
 
     // ========== 2. 生成侧面三角形 ==========
-    // 每个侧面段由两个三角形组成，共享边缘顶点
-    for i in 0..n {
-        let next = (i + 1) % n;
-
-        // 底面顶点索引
-        let b0 = i as u32;
-        let b1 = next as u32;
-        // 顶面顶点索引
-        let t0 = (n + i) as u32;
-        let t1 = (n + next) as u32;
-
-        // 三角形1: b0 -> b1 -> t1 (逆时针，法线朝外)
-        indices.push(b0);
-        indices.push(b1);
-        indices.push(t1);
-
-        // 三角形2: b0 -> t1 -> t0
-        indices.push(b0);
-        indices.push(t1);
-        indices.push(t0);
+    // 使用独立的侧面顶点
+    let side_base = (2 * n_tri) as u32;
+    for i in 0..n_contour {
+        let next = (i + 1) % n_contour;
+        
+        // 侧面顶点索引
+        let sb0 = side_base + (2 * i) as u32; // 当前点的底部侧面顶点
+        let sb1 = side_base + (2 * next) as u32; // 下一个点的底部侧面顶点
+        let st0 = side_base + (2 * i + 1) as u32; // 当前点的顶部侧面顶点
+        let st1 = side_base + (2 * next + 1) as u32; // 下一个点的顶部侧面顶点
+        
+        // 三角形1: sb0 -> sb1 -> st1 (逆时针，法线朝外)
+        indices.push(sb0);
+        indices.push(sb1);
+        indices.push(st1);
+        
+        // 三角形2: sb0 -> st1 -> st0
+        indices.push(sb0);
+        indices.push(st1);
+        indices.push(st0);
+    }
+    
+    // ========== 3. 生成底面三角形（使用 i_triangle 结果）==========
+    // 底面法线朝下，需要反转三角形绕向
+    for chunk in profile.tri_indices.chunks(3) {
+        if chunk.len() == 3 {
+            // 反转绕向：0 -> 2 -> 1
+            indices.push(chunk[0]);
+            indices.push(chunk[2]);
+            indices.push(chunk[1]);
+        }
+    }
+    
+    // ========== 4. 生成顶面三角形（使用 i_triangle 结果）==========
+    // 顶面法线朝上，保持原始绕向
+    let top_base = n_tri as u32;
+    for chunk in profile.tri_indices.chunks(3) {
+        if chunk.len() == 3 {
+            indices.push(top_base + chunk[0]);
+            indices.push(top_base + chunk[1]);
+            indices.push(top_base + chunk[2]);
+        }
     }
 
-    // ========== 3. 生成底面三角形（使用 fan triangulation）==========
-    // 底面法线朝下，需要顺时针绕向（从下方看是逆时针）
-    // Fan triangulation: 选择第一个顶点作为中心
-    for i in 1..(n - 1) {
-        // 顺时针: 0 -> i+1 -> i（从下方看是逆时针）
-        indices.push(0);
-        indices.push((i + 1) as u32);
-        indices.push(i as u32);
-    }
-
-    // ========== 4. 生成顶面三角形（使用 fan triangulation）==========
-    // 顶面法线朝上，需要逆时针绕向
-    let top_base = n as u32;
-    for i in 1..(n - 1) {
-        // 逆时针: n -> n+i -> n+i+1
-        indices.push(top_base);
-        indices.push(top_base + i as u32);
-        indices.push(top_base + (i + 1) as u32);
-    }
-
-    // ========== 5. 计算顶点法线（平均相邻面法线）==========
-    // 对于流形 mesh，我们使用平均法线
-    let mut vertex_normals = vec![Vec3::ZERO; vertices.len()];
-
-    for chunk in indices.chunks(3) {
-        let i0 = chunk[0] as usize;
-        let i1 = chunk[1] as usize;
-        let i2 = chunk[2] as usize;
-
-        let v0 = vertices[i0];
-        let v1 = vertices[i1];
-        let v2 = vertices[i2];
-
+    // ========== 5. 计算侧面顶点法线 ==========
+    let mut side_normals = vec![Vec3::ZERO; 2 * n_contour];
+    
+    for i in 0..n_contour {
+        let next = (i + 1) % n_contour;
+        
+        // 三角形1的法线
+        let sb0_idx = 2 * i;
+        let sb1_idx = 2 * next;
+        let st1_idx = 2 * next + 1;
+        
+        let v0 = vertices[2 * n_tri + sb0_idx];
+        let v1 = vertices[2 * n_tri + sb1_idx];
+        let v2 = vertices[2 * n_tri + st1_idx];
+        
         let edge1 = v1 - v0;
         let edge2 = v2 - v0;
-        let face_normal = edge1.cross(edge2); // 不归一化，面积加权
-
-        vertex_normals[i0] += face_normal;
-        vertex_normals[i1] += face_normal;
-        vertex_normals[i2] += face_normal;
+        let face_normal = edge1.cross(edge2).normalize_or_zero();
+        
+        side_normals[sb0_idx] += face_normal;
+        side_normals[sb1_idx] += face_normal;
+        side_normals[st1_idx] += face_normal;
+        
+        // 三角形2的法线
+        let st0_idx = 2 * i + 1;
+        
+        let v0 = vertices[2 * n_tri + sb0_idx];
+        let v1 = vertices[2 * n_tri + st1_idx];
+        let v2 = vertices[2 * n_tri + st0_idx];
+        
+        let edge1 = v1 - v0;
+        let edge2 = v2 - v0;
+        let face_normal = edge1.cross(edge2).normalize_or_zero();
+        
+        side_normals[sb0_idx] += face_normal;
+        side_normals[st1_idx] += face_normal;
+        side_normals[st0_idx] += face_normal;
     }
-
-    for (i, normal) in vertex_normals.iter().enumerate() {
-        normals[i] = normal.normalize_or_zero();
+    
+    // 将侧面法线写入 normals 数组
+    for (i, normal) in side_normals.into_iter().enumerate() {
+        normals[2 * n_tri + i] = normal.normalize_or_zero();
     }
 
     ExtrudedMesh {
