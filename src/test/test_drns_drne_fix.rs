@@ -164,7 +164,7 @@ fn test_rect_with_drns_drne_mesh() {
     println!("  ✅ is_sloped() 正确识别斜切");
     
     // 生成 mesh
-    match solid.gen_csg_shape() {
+    match solid.gen_csg_shape_compat() {
         Ok(mesh) => {
             println!("  ✅ Mesh 生成成功");
             println!("     顶点数: {}", mesh.vertices.len());
@@ -222,7 +222,7 @@ fn test_various_angles() {
             segment_transforms: vec![],
         };
         
-        match solid.gen_csg_shape() {
+        match solid.gen_csg_shape_compat() {
             Ok(mesh) => {
                 let obj_path = format!("test_output/drns_drne_{}deg.obj", angle_deg as i32);
                 mesh.export_obj(false, &obj_path).ok();
@@ -286,8 +286,8 @@ fn test_comparison_with_without_slope() {
     };
     
     // 生成并对比
-    let mesh_no_slope = solid_no_slope.gen_csg_shape().expect("无斜切 mesh 生成失败");
-    let mesh_sloped = solid_sloped.gen_csg_shape().expect("斜切 mesh 生成失败");
+    let mesh_no_slope = solid_no_slope.gen_csg_shape_compat().expect("无斜切 mesh 生成失败");
+    let mesh_sloped = solid_sloped.gen_csg_shape_compat().expect("斜切 mesh 生成失败");
     
     println!("  无斜切: {} 顶点, {} 三角形", mesh_no_slope.vertices.len(), mesh_no_slope.indices.len() / 3);
     println!("  斜切:   {} 顶点, {} 三角形", mesh_sloped.vertices.len(), mesh_sloped.indices.len() / 3);

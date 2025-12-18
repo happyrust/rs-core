@@ -1,11 +1,10 @@
 use anyhow::anyhow;
+use anyhow::Context;
 #[cfg(feature = "render")]
 use bevy_asset::RenderAssetUsages;
 use bevy_ecs::component::Component;
 #[cfg(feature = "render")]
 use bevy_mesh::{Indices, Mesh};
-#[cfg(feature = "render")]
-use bevy_render::render_resource::PrimitiveTopology;
 use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
 use downcast_rs::*;
@@ -38,8 +37,8 @@ use truck_modeling::{Curve, Shell};
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
 use parry3d::bounding_volume::BoundingVolume;
-
 use crate::geometry::PlantGeoData;
+use crate::types::refno::RefnoEnum;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 
@@ -1006,6 +1005,18 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
         return Err(anyhow!("不存在该csg shape"));
     }
 
+    fn build_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        self.gen_csg_shape()
+    }
+
+    fn build_csg_shape_with_refno(
+        &self,
+        refno: RefnoEnum,
+    ) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        self.build_csg_shape()
+            .with_context(|| format!("build_csg_shape failed: refno={}", refno.to_string()))
+    }
+
     //计算单元模型的参数hash值，也就是做成被可以复用的模型后的hash
     fn hash_unit_mesh_params(&self) -> u64 {
         0
@@ -1055,32 +1066,49 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
         TRI_TOL
     }
 
-    fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
+    fn build_plant_geo_data_with_refno(
+        &self,
+        refno: RefnoEnum,
+        tol_ratio: Option<f32>,
+    ) -> anyhow::Result<PlantGeoData> {
         let geo_hash = self.hash_unit_mesh_params();
+        let _ = tol_ratio;
 
-        // 使用 CSG 生成网格
         if let Some(csg_mesh) = self.gen_csg_mesh() {
             let mut aabb = Aabb::new_invalid();
             for vertex in &csg_mesh.vertices {
                 aabb.take_point((*vertex).into());
             }
-            Ok(PlantGeoData {
+            return Ok(PlantGeoData {
                 geo_hash,
                 aabb: Some(aabb),
-            })
-        } else {
-            // 尝试使用 gen_csg_shape
-            let csg_shape = self.gen_csg_shape()?;
-            let mesh = csg_shape.as_ref();
-            let mut aabb = Aabb::new_invalid();
-            for vertex in &mesh.vertices {
-                aabb.take_point((*vertex).into());
-            }
-            Ok(PlantGeoData {
-                geo_hash,
-                aabb: Some(aabb),
-            })
+            });
         }
+
+        let csg_shape = self.build_csg_shape_with_refno(refno)?;
+        let mesh = csg_shape.as_ref();
+        let mut aabb = Aabb::new_invalid();
+        for vertex in &mesh.vertices {
+            aabb.take_point((*vertex).into());
+        }
+        Ok(PlantGeoData {
+            geo_hash,
+            aabb: Some(aabb),
+        })
+    }
+
+    fn build_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
+        self.build_plant_geo_data_with_refno(RefnoEnum::default(), tol_ratio)
+    }
+
+    fn gen_plant_geo_data(&self, tol_ratio: Option<f32>) -> anyhow::Result<PlantGeoData> {
+        self.build_plant_geo_data(tol_ratio)
+    }
+
+    ///生成mesh
+    #[cfg(feature = "truck")]
+    fn build_plant_geo_data_truck(&self, tol_ratio: Option<f32>) -> Option<PlantGeoData> {
+        self.gen_plant_geo_data_truck(tol_ratio)
     }
 
     ///生成mesh

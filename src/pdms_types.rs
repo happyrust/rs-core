@@ -508,6 +508,62 @@ pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
     "NOZZ",   // 接管
 ];
 
+///站点规格值枚举
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
+pub enum SiteSpecValue {
+    #[default]
+    Unknown = 0,  // 未知或其他
+    Pipe = 1,     // 管道系统
+    Elec = 2,     // 电气系统
+    Inst = 3,     // 仪表系统
+    Hvac = 4,     // 暖通空调系统
+}
+
+impl SiteSpecValue {
+    /// 从站点名称解析规格值
+    pub fn from_site_name(name: &str) -> Self {
+        if name.to_uppercase().contains("PIPE") {
+            SiteSpecValue::Pipe
+        } else if name.to_uppercase().contains("ELEC") {
+            SiteSpecValue::Elec
+        } else if name.to_uppercase().contains("INST") {
+            SiteSpecValue::Inst
+        } else if name.to_uppercase().contains("HVAC") {
+            SiteSpecValue::Hvac
+        } else {
+            SiteSpecValue::Unknown
+        }
+    }
+    
+    /// 转换为 i64 值（用于存储到数据库）
+    pub fn to_i64(self) -> i64 {
+        self as i64
+    }
+    
+    /// 从 i64 值创建枚举
+    pub fn from_i64(value: i64) -> Self {
+        match value {
+            0 => SiteSpecValue::Unknown,
+            1 => SiteSpecValue::Pipe,
+            2 => SiteSpecValue::Elec,
+            3 => SiteSpecValue::Inst,
+            4 => SiteSpecValue::Hvac,
+            _ => SiteSpecValue::Unknown,
+        }
+    }
+    
+    /// 获取描述文本
+    pub fn description(self) -> &'static str {
+        match self {
+            SiteSpecValue::Unknown => "未知或其他",
+            SiteSpecValue::Pipe => "管道系统",
+            SiteSpecValue::Elec => "电气系统",
+            SiteSpecValue::Inst => "仪表系统",
+            SiteSpecValue::Hvac => "暖通空调系统",
+        }
+    }
+}
+
 ///连接类型枚举
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub enum SjusType {

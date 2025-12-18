@@ -18,17 +18,15 @@ use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
-use crate::prim_geo::dish::Dish;
-use crate::prim_geo::extrusion::Extrusion;
-use crate::prim_geo::lpyramid::LPyramid;
-use crate::prim_geo::polyhedron::{Polygon, Polyhedron};
+use crate::prim_geo::basic::CsgSharedMesh;
+use crate::prim_geo::{
+    sbox::SBox, snout::LSnout, sphere::Sphere, rtorus::RTorus, pyramid::Pyramid,
+    lpyramid::LPyramid, dish::Dish, extrusion::Extrusion, polyhedron::Polyhedron,
+    revolution::Revolution,
+};
+use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
+use crate::types::refno::RefnoEnum;
 use crate::prim_geo::profile_processor::{ProfileProcessor, extrude_profile};
-use crate::prim_geo::pyramid::Pyramid;
-use crate::prim_geo::revolution::Revolution;
-use crate::prim_geo::rtorus::RTorus;
-use crate::prim_geo::sbox::SBox;
-use crate::prim_geo::snout::LSnout;
-use crate::prim_geo::sphere::Sphere;
 use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::prim_geo::wire::CurveType;
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
@@ -49,10 +47,21 @@ const MIN_LEN: f32 = 1e-6;
 static PLOOP_DEBUG_GENERATED: std::sync::LazyLock<Mutex<HashSet<String>>> =
     std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));
 
+/// SSLC 生成计数器（用于调试，只生成第一个）
+static SSLC_GENERATION_COUNTER: std::sync::LazyLock<Mutex<usize>> =
+    std::sync::LazyLock::new(|| Mutex::new(0));
+
 /// 清理PLOOP调试文件生成记录（用于新的运行周期）
 pub fn clear_ploop_debug_cache() {
     if let Ok(mut generated_set) = PLOOP_DEBUG_GENERATED.lock() {
         generated_set.clear();
+    }
+}
+
+/// 重置 SSLC 生成计数器
+pub fn reset_sslc_counter() {
+    if let Ok(mut counter) = SSLC_GENERATION_COUNTER.lock() {
+        *counter = 0;
     }
 }
 
@@ -537,6 +546,7 @@ fn create_mesh_with_edges(
     };
     mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
+    weld_vertices_for_manifold(&mut mesh);
     mesh
 }
 
@@ -570,6 +580,7 @@ fn create_mesh_with_custom_edges(
     };
     mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
+    weld_vertices_for_manifold(&mut mesh);
     mesh
 }
 
@@ -1067,34 +1078,42 @@ pub struct GeneratedMesh {
 /// - `refno`: 可选的参考号，用于调试输出文件名
 ///
 /// # 返回
-/// 如果几何参数有效，返回生成的网格和包围盒；否则返回None
-pub fn generate_csg_mesh(
+pub fn build_csg_mesh(
     param: &PdmsGeoParam,
     settings: &LodMeshSettings,
     non_scalable: bool,
-    refno: Option<RefU64>,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     match param {
-        PdmsGeoParam::PrimLCylinder(cyl) => generate_lcylinder_mesh(cyl, settings, non_scalable),
-        PdmsGeoParam::PrimSCylinder(cyl) => generate_scylinder_mesh(cyl, settings, non_scalable),
-        PdmsGeoParam::PrimSphere(sphere) => generate_sphere_mesh(sphere, settings, non_scalable),
-        PdmsGeoParam::PrimLSnout(snout) => generate_snout_mesh(snout, settings, non_scalable),
-        PdmsGeoParam::PrimBox(sbox) => generate_box_mesh(sbox),
-        PdmsGeoParam::PrimDish(dish) => generate_dish_mesh(dish, settings, non_scalable),
-        PdmsGeoParam::PrimCTorus(torus) => generate_torus_mesh(torus, settings, non_scalable),
+        PdmsGeoParam::PrimLCylinder(cyl) => generate_lcylinder_mesh(cyl, settings, non_scalable, refno),
+        PdmsGeoParam::PrimSCylinder(cyl) => generate_scylinder_mesh(cyl, settings, non_scalable, refno),
+        PdmsGeoParam::PrimSphere(sphere) => generate_sphere_mesh(sphere, settings, non_scalable, refno),
+        PdmsGeoParam::PrimLSnout(snout) => generate_snout_mesh(snout, settings, non_scalable, refno),
+        PdmsGeoParam::PrimBox(sbox) => generate_box_mesh(sbox, refno),
+        PdmsGeoParam::PrimDish(dish) => generate_dish_mesh(dish, settings, non_scalable, refno),
+        PdmsGeoParam::PrimCTorus(torus) => generate_torus_mesh(torus, settings, non_scalable, refno),
         PdmsGeoParam::PrimRTorus(rtorus) => {
-            generate_rect_torus_mesh(rtorus, settings, non_scalable)
+            generate_rect_torus_mesh(rtorus, settings, non_scalable, refno)
         }
-        PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr),
-        PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr),
+        PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr, refno),
+        PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr, refno),
         PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
-        PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly),
-        PdmsGeoParam::PrimRevolution(rev) => generate_revolution_mesh(rev, settings, non_scalable),
+        PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly, refno),
+        PdmsGeoParam::PrimRevolution(rev) => generate_revolution_mesh(rev, settings, non_scalable, refno),
         PdmsGeoParam::PrimLoft(sweep) => {
             generate_prim_loft_mesh(sweep, settings, non_scalable, refno)
         }
         _ => None,
     }
+}
+
+pub fn generate_csg_mesh(
+    param: &PdmsGeoParam,
+    settings: &LodMeshSettings,
+    non_scalable: bool,
+    refno: Option<RefnoEnum>,
+) -> Option<GeneratedMesh> {
+    build_csg_mesh(param, settings, non_scalable, refno.unwrap_or_default())
 }
 
 /// 生成线性圆柱体（LCylinder）网格
@@ -1105,6 +1124,7 @@ fn generate_lcylinder_mesh(
     cyl: &LCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     // 验证参数有效性
     let height = (cyl.ptdi - cyl.pbdi).abs();
@@ -1151,11 +1171,27 @@ fn generate_sscl_mesh(
     cyl: &SCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
+    // 调试计数器：只生成第一个 SSLC
+    // let mut counter = SSLC_GENERATION_COUNTER.lock().ok()?;
+    // *counter += 1;
+    // let current_count = *counter;
+    // drop(counter);
+    
+    // if current_count != 5 {
+    //     println!("⏭️  跳过 SSLC #{} (refno: {})", current_count, refno);
+    //     return None;
+    // }
+    
+    // println!("🔧 生成 SSLC #{} (refno: {})", current_count, refno);
+    
     // 在标准局部坐标系中生成：Z 轴朝上，X/Y 是剪切方向
-    let dir = Vec3::Z;
-    let basis_u = Vec3::X;
-    let basis_v = Vec3::Y;
+    let dir = cyl.paxi_dir;
+    let (x_axis, y_axis) = orthonormal_basis(dir);
+    dbg!(&cyl);
+    dbg!(dir, x_axis, y_axis);
+
 
     let radius = (cyl.pdia * 0.5).abs();
     let height = cyl.phei;
@@ -1164,15 +1200,19 @@ fn generate_sscl_mesh(
     }
 
     // 剪切角规范化到 (-90°, 90°)
-    let btm_x_deg = normalize_shear_angle(cyl.btm_shear_angles[0]);
-    let btm_y_deg = normalize_shear_angle(cyl.btm_shear_angles[1]);
-    let top_x_deg = normalize_shear_angle(cyl.top_shear_angles[0]);
-    let top_y_deg = normalize_shear_angle(cyl.top_shear_angles[1]);
+    let x_sign = if x_axis.y < 0.0 { -1.0 } else { 1.0 };
+    let y_sign = if y_axis.x < 0.0 { -1.0 } else { 1.0 };
+    let btm_x_deg =  x_sign* normalize_shear_angle(cyl.btm_shear_angles[0]);
+    let btm_y_deg =  y_sign * normalize_shear_angle(cyl.btm_shear_angles[1]);
+    let top_x_deg =  x_sign * normalize_shear_angle(cyl.top_shear_angles[0]);
+    let top_y_deg =  y_sign * normalize_shear_angle(cyl.top_shear_angles[1]);
     for a in [btm_x_deg, btm_y_deg, top_x_deg, top_y_deg] {
         if a <= -90.0 || a >= 90.0 {
             return None;
         }
     }
+
+    dbg!(btm_x_deg, btm_y_deg, top_x_deg, top_y_deg );
 
     // libgm 斜率：直接使用 tan(angle)
     let btm_tan_x = btm_x_deg.to_radians().tan();
@@ -1221,7 +1261,7 @@ fn generate_sscl_mesh(
     for slice in 0..=radial {
         let angle = slice as f32 * step_theta;
         let (cos_theta, sin_theta) = (angle.cos(), angle.sin());
-        let radial = basis_u * (radius * cos_theta) + basis_v * (radius * sin_theta);
+        let radial = x_axis * (radius * cos_theta) + y_axis * (radius * sin_theta);
         let radial_normal = radial.normalize();
 
         // libgm 公式：z = ±h/2 + r*(cosθ*tanX + sinθ*tanY)
@@ -1347,10 +1387,11 @@ pub(crate) fn generate_scylinder_mesh(
     cyl: &SCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     // 如果是剪切圆柱体，使用专门的生成函数
     if cyl.is_sscl() {
-        return generate_sscl_mesh(cyl, settings, non_scalable);
+        return generate_sscl_mesh(cyl, settings, non_scalable, refno);
     }
     if cyl.pdia.abs() <= MIN_LEN || cyl.phei.abs() <= MIN_LEN {
         return None;
@@ -1468,6 +1509,7 @@ fn generate_sphere_mesh(
     sphere: &Sphere,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     let radius = sphere.radius.abs();
     if radius <= MIN_LEN {
@@ -1544,6 +1586,7 @@ fn generate_snout_mesh(
     snout: &LSnout,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     // 归一化轴向方向
     let axis_dir = safe_normalize(snout.paax_dir)?;
@@ -1674,7 +1717,7 @@ fn generate_snout_mesh(
 /// 生成盒子（SBox）网格
 ///
 /// 盒子由中心点和尺寸定义，包含6个面（每个面由2个三角形组成）
-fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
+fn generate_box_mesh(sbox: &SBox, refno: RefnoEnum) -> Option<GeneratedMesh> {
     if !sbox.check_valid() {
         return None;
     }
@@ -1848,6 +1891,72 @@ fn generate_box_mesh(sbox: &SBox) -> Option<GeneratedMesh> {
     })
 }
 
+fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
+    use std::collections::HashMap;
+
+    if mesh.vertices.is_empty() || mesh.indices.len() < 3 {
+        return;
+    }
+
+    let mut map: HashMap<(u32, u32, u32), u32> = HashMap::new();
+    let mut remap: Vec<u32> = Vec::with_capacity(mesh.vertices.len());
+    let mut new_vertices: Vec<Vec3> = Vec::new();
+    let mut new_normals: Vec<Vec3> = Vec::new();
+    let mut new_uvs: Vec<[f32; 2]> = Vec::new();
+
+    for (i, v) in mesh.vertices.iter().copied().enumerate() {
+        let key = (v.x.to_bits(), v.y.to_bits(), v.z.to_bits());
+        if let Some(&idx) = map.get(&key) {
+            remap.push(idx);
+            continue;
+        }
+        let idx = new_vertices.len() as u32;
+        map.insert(key, idx);
+        remap.push(idx);
+        new_vertices.push(v);
+        if i < mesh.normals.len() {
+            new_normals.push(mesh.normals[i]);
+        } else {
+            new_normals.push(Vec3::ZERO);
+        }
+        if i < mesh.uvs.len() {
+            new_uvs.push(mesh.uvs[i]);
+        }
+    }
+
+    let mut new_indices: Vec<u32> = Vec::with_capacity(mesh.indices.len());
+    for tri in mesh.indices.chunks(3) {
+        if tri.len() != 3 {
+            continue;
+        }
+        let a = remap[tri[0] as usize];
+        let b = remap[tri[1] as usize];
+        let c = remap[tri[2] as usize];
+        if a == b || b == c || a == c {
+            continue;
+        }
+        new_indices.push(a);
+        new_indices.push(b);
+        new_indices.push(c);
+    }
+
+    mesh.vertices = new_vertices;
+    mesh.normals = new_normals;
+    if new_uvs.len() == mesh.vertices.len() {
+        mesh.uvs = new_uvs;
+    } else {
+        mesh.uvs.clear();
+    }
+    mesh.indices = new_indices;
+    if mesh.edges.is_empty() {
+        mesh.edges = extract_edges_from_mesh(&mesh.indices, &mesh.vertices);
+    }
+    if mesh.uvs.is_empty() || mesh.uvs.len() != mesh.vertices.len() {
+        mesh.generate_auto_uvs();
+    }
+    mesh.sync_wire_vertices_from_edges();
+}
+
 /// 生成圆盘（Dish）网格
 ///
 /// 圆盘是一个球形帽面，由球面的一部分和底部圆面组成
@@ -1858,6 +1967,7 @@ fn generate_dish_mesh(
     dish: &Dish,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     let axis = safe_normalize(dish.paax_dir)?;
     let radius_rim = dish.pdia * 0.5; // 边缘半径
@@ -2096,6 +2206,7 @@ fn generate_torus_mesh(
     torus: &CTorus,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     if !torus.check_valid() {
         return None;
@@ -2262,7 +2373,7 @@ fn generate_torus_mesh(
 /// - 底部矩形（由pbbt和pcbt定义）
 /// - 顶部矩形或点（由pbtp和pctp定义）
 /// - 如果顶部尺寸为0，则顶部为顶点
-fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
+fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum) -> Option<GeneratedMesh> {
     if !pyr.check_valid() {
         return None;
     }
@@ -2440,7 +2551,7 @@ fn generate_pyramid_mesh(pyr: &Pyramid) -> Option<GeneratedMesh> {
 /// - PBBT/PCBT: 底面 B/C 方向半尺寸
 /// - PTDI/PBDI: 到顶面/底面的距离
 /// - PBOF/PCOF: B/C 方向偏移（仅应用于顶面）
-fn generate_lpyramid_mesh(lpyr: &LPyramid) -> Option<GeneratedMesh> {
+fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<GeneratedMesh> {
     if !lpyr.check_valid() {
         return None;
     }
@@ -2559,6 +2670,7 @@ fn generate_rect_torus_mesh(
     rtorus: &RTorus,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     if !rtorus.check_valid() {
         return None;
@@ -3248,7 +3360,7 @@ fn generate_ploop_comparison_svg(
 /// # 参数
 /// - `extrusion`: 拉伸体参数
 /// - `refno`: 可选的参考号，用于调试输出文件名
-fn generate_extrusion_mesh(extrusion: &Extrusion, _refno: Option<RefU64>) -> Option<GeneratedMesh> {
+fn generate_extrusion_mesh(extrusion: &Extrusion, refno: RefnoEnum) -> Option<GeneratedMesh> {
     if extrusion.height.abs() <= MIN_LEN {
         return None;
     }
@@ -3287,7 +3399,7 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, _refno: Option<RefU64>) -> Opt
         }
     };
 
-    let refno_str = _refno.map(|r| r.to_string());
+    let refno_str = Some(refno.to_string());
     let refno_ref = refno_str.as_deref();
     let profile = match processor.process("EXTRUSION", refno_ref) {
         Ok(p) => p,
@@ -3542,7 +3654,6 @@ pub fn construct_basis_from_z_axis_with_ref(z_axis: Vec3, ref_dir: Option<Vec3>)
     Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis))
 }
 
-/// 构建正交基（统一使用 construct_basis_from_z_axis 的逻辑）
 ///
 /// 给定一个法向量，生成两个与之正交的切向量，形成正交基（u, v, n）
 ///
@@ -3576,6 +3687,7 @@ pub fn orthonormal_basis(normal: Vec3) -> (Vec3, Vec3) {
 
     // 副切向量 = n × tangent（确保右手坐标系）
     let bitangent = n.cross(tangent).normalize();
+    let tangent = bitangent.cross(normal).normalize();
     (tangent, bitangent)
 }
 
@@ -3600,12 +3712,12 @@ mod tests {
         };
         let param = PdmsGeoParam::PrimLCylinder(cyl.clone());
         let settings = LodMeshSettings::default();
-        let csg = generate_csg_mesh(&param, &settings, false, None)
+        let csg = generate_csg_mesh(&param, &settings, false, Some(RefnoEnum::default()))
             .expect("CSG cylinder generation failed");
         #[cfg(feature = "occ")]
         let occ_mesh = {
             let shape = param
-                .gen_csg_shape()
+                .gen_csg_shape_compat()
                 .expect("CSG cylinder generation failed");
             // 对于测试，如果启用 OCC feature，可以转换为 OCC 进行比较
             // 这里暂时跳过 OCC 测试
@@ -3652,7 +3764,7 @@ mod tests {
             ..Default::default()
         };
         let csg =
-            generate_csg_mesh(&param, &settings, false, None).expect("CSG snout generation failed");
+            generate_csg_mesh(&param, &settings, false, Some(RefnoEnum::default())).expect("CSG snout generation failed");
         #[cfg(feature = "occ")]
         let occ_mesh = {
             // 对于测试，如果启用 OCC feature，可以转换为 OCC 进行比较
@@ -3956,7 +4068,7 @@ mod tests {
 ///
 /// Polyhedron 由多个多边形面组成，每个面可能有多个环（外环和内环）
 /// 如果已经有预生成的 mesh，直接使用；否则需要三角化多边形
-pub(crate) fn generate_polyhedron_mesh(poly: &Polyhedron) -> Option<GeneratedMesh> {
+pub(crate) fn generate_polyhedron_mesh(poly: &Polyhedron, refno: RefnoEnum) -> Option<GeneratedMesh> {
     // 如果已经有预生成的 mesh，直接使用
     if let Some(ref mesh) = poly.mesh {
         let aabb = mesh.aabb.or_else(|| mesh.cal_aabb());
@@ -4035,8 +4147,9 @@ pub(crate) fn generate_polyhedron_mesh(poly: &Polyhedron) -> Option<GeneratedMes
 /// 直接使用 Revolution::gen_csg_mesh，自动处理 FRAD 圆角
 pub(crate) fn generate_revolution_mesh(
     rev: &Revolution,
-    _settings: &LodMeshSettings,
-    _non_scalable: bool,
+    settings: &LodMeshSettings,
+    non_scalable: bool,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     use crate::shape::pdms_shape::BrepShapeTrait;
 
@@ -4068,7 +4181,7 @@ fn generate_prim_loft_mesh(
     sweep: &SweepSolid,
     settings: &LodMeshSettings,
     non_scalable: bool,
-    refno: Option<RefU64>,
+    refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
 

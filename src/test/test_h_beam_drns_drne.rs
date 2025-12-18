@@ -116,7 +116,7 @@ fn test_h_beam_with_45_degree_end_faces() {
 
     // 生成 CSG mesh
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape() {
+    match sweep_solid.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("\n  ✅ CSG Mesh 生成成功！");
             println!("  网格统计:");
@@ -192,7 +192,7 @@ fn test_h_beam_different_end_angles() {
 
     // 生成 CSG mesh
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape() {
+    match sweep_solid.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("  顶点数: {}", csg_mesh.vertices.len());
@@ -257,7 +257,7 @@ fn test_h_beam_normal_ends() {
 
     // 生成 CSG mesh
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape() {
+    match sweep_solid.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("  顶点数: {}", csg_mesh.vertices.len());
@@ -328,7 +328,7 @@ fn test_h_beam_arc_sweep() {
 
     // 生成 CSG mesh
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape() {
+    match sweep_solid.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("  顶点数: {}", csg_mesh.vertices.len());
@@ -423,7 +423,7 @@ fn test_h_beam_multi_segment_sweep() {
 
     // 生成 CSG mesh
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape() {
+    match sweep_solid.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("  顶点数: {}", csg_mesh.vertices.len());

@@ -19,6 +19,7 @@ use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::types::refno::RefnoEnum;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 use crate::prim_geo::wire::polyline_to_debug_json_str;
@@ -252,7 +253,7 @@ impl BrepShapeTrait for SweepSolid {
 
         let settings = LodMeshSettings::default();
 
-        if let Some(mesh) = generate_sweep_solid_mesh(self, &settings, None) {
+        if let Some(mesh) = generate_sweep_solid_mesh(self, &settings, RefnoEnum::default()) {
             Ok(crate::prim_geo::basic::CsgSharedMesh::new(mesh))
         } else {
             let path_desc = if self.path.is_single_segment() {

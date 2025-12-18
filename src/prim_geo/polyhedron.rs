@@ -1,4 +1,5 @@
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::types::refno::RefnoEnum;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
@@ -127,7 +128,7 @@ impl BrepShapeTrait for Polyhedron {
     ///直接通过基本体的参数，生成模型
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         use crate::geometry::csg::generate_polyhedron_mesh;
-        generate_polyhedron_mesh(self).map(|g| g.mesh)
+        generate_polyhedron_mesh(self, RefnoEnum::default()).map(|g| g.mesh)
     }
 
     fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {

@@ -166,7 +166,7 @@ async fn test_stwall_25688_7958_generation() -> Result<()> {
                         csg_shape.transform.scale);
                     
                     // 生成 mesh
-                    if let Some(mesh) = csg_shape.csg_shape.gen_csg_shape().ok() {
+                    if let Some(mesh) = csg_shape.csg_shape.gen_csg_shape_compat().ok() {
                         let plant_mesh = &mesh.0;
                         println!("  Mesh: {} 顶点, {} 面", 
                             plant_mesh.vertices.len(),

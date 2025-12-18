@@ -258,7 +258,8 @@ pub mod geo_params_data {
     use crate::prim_geo::{LPyramid, cylinder::*};
     use crate::rvm_types::RvmShapeTypeData;
     use crate::shape::pdms_shape::{BrepShapeTrait, RsVec3, VerifiedShape};
-    use anyhow::anyhow;
+    use crate::types::refno::RefnoEnum;
+    use anyhow::{anyhow, Context};
     use std::io::Write;
     #[cfg(feature = "occ")]
     use opencascade::primitives::*;
@@ -472,47 +473,6 @@ pub mod geo_params_data {
                             *s.gen_unit_shape().downcast::<SCylinder>().unwrap(),
                         )
                     };
-                    // #region agent log
-                    if let Ok(mut f) = std::fs::OpenOptions::new()
-                        .create(true)
-                        .append(true)
-                        .open("/Volumes/DPC/work/plant-code/rs-plant3-d/.cursor/debug.log")
-                    {
-                        let (out_pdia, out_phei, out_btm0, out_btm1, out_top0, out_top1, out_unit) =
-                            match &out_param {
-                                PdmsGeoParam::PrimSCylinder(out_s) => (
-                                    out_s.pdia,
-                                    out_s.phei,
-                                    out_s.btm_shear_angles[0],
-                                    out_s.btm_shear_angles[1],
-                                    out_s.top_shear_angles[0],
-                                    out_s.top_shear_angles[1],
-                                    out_s.unit_flag,
-                                ),
-                                _ => (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false),
-                            };
-                        let _ = writeln!(
-                            f,
-                            r#"{{"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"H1","location":"parsed_data.rs:PrimSCylinder","message":"convert_to_unit_param","data":{{"is_sscl":{},"in_pdia":{},"in_phei":{},"in_btm":[{},{}],"in_top":[{},{}],"in_unit":{},"out_pdia":{},"out_phei":{},"out_btm":[{},{}],"out_top":[{},{}],"out_unit":{}}},"timestamp":{}}}"#,
-                            is_sscl,
-                            s.pdia,
-                            s.phei,
-                            s.btm_shear_angles[0],
-                            s.btm_shear_angles[1],
-                            s.top_shear_angles[0],
-                            s.top_shear_angles[1],
-                            s.unit_flag,
-                            out_pdia,
-                            out_phei,
-                            out_btm0,
-                            out_btm1,
-                            out_top0,
-                            out_top1,
-                            out_unit,
-                            chrono::Utc::now().timestamp_millis()
-                        );
-                    }
-                    // #endregion
                     out_param
                 }
                 PdmsGeoParam::PrimLCylinder(s) => PdmsGeoParam::PrimLCylinder(
@@ -555,10 +515,34 @@ pub mod geo_params_data {
             }
         }
 
-        pub fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        /// 生成 CSG 形状（带 refno 上下文便于调试）
+        pub fn build_csg_shape(&self, refno: RefnoEnum) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+            if !self.check_valid() {
+                return Err(anyhow!("Invalid shape for refno: {}", refno.to_string()));
+            }
+            let type_name = self.type_name();
+            self.gen_csg_shape_internal()
+                .with_context(|| format!("Failed to generate CSG shape for refno: {} (type: {})", refno.to_string(), type_name))
+        }
+
+        pub fn gen_csg_shape(&self, refno: RefnoEnum) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+            self.build_csg_shape(refno)
+        }
+
+        /// 兼容性包装：不带 refno 的生成方法（保留给旧调用点）
+        pub fn build_csg_shape_compat(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             if !self.check_valid() {
                 return Err(anyhow!("Invalid shape"));
             }
+            self.gen_csg_shape_internal()
+        }
+
+        pub fn gen_csg_shape_compat(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+            self.build_csg_shape_compat()
+        }
+
+        /// 内部实现：实际生成逻辑
+        fn gen_csg_shape_internal(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             match self {
                 PdmsGeoParam::PrimSCylinder(s) => s.gen_csg_shape(),
                 PdmsGeoParam::PrimLCylinder(s) => s.gen_csg_shape(),

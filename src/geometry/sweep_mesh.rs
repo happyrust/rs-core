@@ -1,9 +1,12 @@
-use crate::RefU64;
+use crate::debug_macros::is_debug_model_enabled;
 use crate::mesh_precision::LodMeshSettings;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::parsed_data::CateProfileParam;
+use crate::types::refno::RefnoEnum;
 use crate::prim_geo::profile_processor::ProfileProcessor;
-use crate::prim_geo::spine::SweepPath3D;
-use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath, Spine3D};
+use crate::prim_geo::wire::CurveType;
+use crate::prim_geo::spine::{SweepPath3D, Spine3D};
+use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath};
 use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::shape::pdms_shape::PlantMesh;
 use bevy_transform::prelude::Transform;
@@ -26,7 +29,7 @@ struct ProfileData {
 
 /// 获取截面数据（顶点、法线、是否平滑）
 /// 使用统一的 ProfileProcessor 处理，与 Extrusion 保持一致
-fn get_profile_data(profile: &CateProfileParam, _refno: Option<RefU64>) -> Option<ProfileData> {
+fn get_profile_data(profile: &CateProfileParam, _refno: RefnoEnum) -> Option<ProfileData> {
     // 将 CateProfileParam 转换为 ProfileProcessor 需要的格式
     let (wires, profile_refno) = match profile {
         CateProfileParam::SPRO(spro) => {
@@ -934,7 +937,7 @@ fn compute_arc_segments(settings: &LodMeshSettings, arc_length: f32, radius: f32
 pub fn generate_sweep_solid_mesh(
     sweep: &SweepSolid,
     settings: &LodMeshSettings,
-    refno: Option<RefU64>,
+    refno: RefnoEnum,
 ) -> Option<PlantMesh> {
     // 正常生成截面数据并应用截面自身变换（plin_pos/bangle/lmirror）
     let profile = get_profile_data(&sweep.profile, refno)?;

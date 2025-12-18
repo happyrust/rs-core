@@ -377,13 +377,13 @@ use crate::shape::pdms_shape::RsVec3;
 use crate::RefnoEnum;
 
 /// 压缩版的 CateAxisParam，用于数据库存储
-/// 
+///
 /// 优化点：
 /// - dir/ref_dir 使用 Vec3Id 压缩（常见方向只需 1 字节）
 /// - 位置为 ZERO 时省略 p 字段
 /// - 省略默认值字段（pwidth=0, pheight=0 时不存储）
 /// - refno 可选存储（多数场景不需要）
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
 pub struct CateAxisParamCompact {
     /// 点编号（必需）
     pub n: i32,

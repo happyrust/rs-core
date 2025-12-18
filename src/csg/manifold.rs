@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::mem;
 
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh};

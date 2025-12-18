@@ -344,7 +344,9 @@ pub async fn query_insts_with_batch(
         let sql = if enable_holes {
             // enable_holes=true: 优先使用 booled_id（布尔后的 mesh）
             // - 如果 booled_id 存在：直接使用 booled_id 作为 geo_hash
-            // - 否则：使用原始 geo_relate 中的 Pos 类型几何
+            // - 否则：使用原始 geo_relate 中可见且已生成 mesh 的几何体
+            //   注意：unit mesh（如 geo_hash=1/2）在数据里可能属于 DesiPos/CataPos，
+            //   holes 模式下也必须保留，否则导出会缺失标准 unit geometry。
             format!(
                 r#"
             select
@@ -355,7 +357,7 @@ pub async fn query_insts_with_batch(
                 if booled_id != none then
                     [{{ "transform": world_trans.d, "geo_hash": booled_id, "is_tubi": false, "unit_flag": false }}]
                 else
-                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none &&  geo_type IN ['Pos', 'Compound'])
+                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none &&  geo_type IN ['Pos', 'Compound', 'DesiPos', 'CataPos'])
                 end as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date,
@@ -373,7 +375,7 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CataPos']) as insts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CataPos']) as insts,
                 bool_status = 'Success' as has_neg,
                 <datetime>dt as date,
                 spec_value
@@ -415,10 +417,12 @@ pub async fn query_insts_ext(
     let mut results = Vec::new();
 
     // 构建 geo_type 过滤条件
+    // enable_holes=true 时，当 booled_id 缺失会走 geo_relate fallback。
+    // 此时必须包含 DesiPos/CataPos，否则 unit mesh（geo_hash=1/2）可能会被漏掉。
     let geo_types = if include_negative {
-        "['Pos', 'Compound', 'Neg']"
+        "['Pos', 'Compound', 'DesiPos', 'CataPos', 'Neg']"
     } else {
-        "['Pos', 'Compound']"
+        "['Pos', 'Compound', 'DesiPos', 'CataPos']"
     };
 
     let geo_types_no_holes = if include_negative {
@@ -442,7 +446,7 @@ pub async fn query_insts_ext(
                 if booled_id != none then
                     [{{ "transform": world_trans.d, "geo_hash": booled_id, "is_tubi": false, "unit_flag": false }}]
                 else
-                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN {geo_types})
+                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN {geo_types})
                 end as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date,
@@ -458,7 +462,7 @@ pub async fn query_insts_ext(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && out.meshed && trans.d != none && geo_type IN {geo_types_no_holes}) as insts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN {geo_types_no_holes}) as insts,
                 bool_status = 'Success' as has_neg,
                 <datetime>dt as date,
                 spec_value

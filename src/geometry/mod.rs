@@ -689,81 +689,6 @@ impl EleInstGeo {
     pub fn gen_unit_geo_sur_json(&self) -> String {
         let mut json_string = "".to_string();
         let param = self.geo_param.convert_to_unit_param();
-        // #region agent log
-        if let Ok(mut f) = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("/Volumes/DPC/work/plant-code/rs-plant3-d/.cursor/debug.log")
-        {
-            let (is_sscl, pdia, phei, btm0, btm1, top0, top1) = match &self.geo_param {
-                PdmsGeoParam::PrimSCylinder(s) => (
-                    s.is_sscl(),
-                    s.pdia,
-                    s.phei,
-                    s.btm_shear_angles[0],
-                    s.btm_shear_angles[1],
-                    s.top_shear_angles[0],
-                    s.top_shear_angles[1],
-                ),
-                _ => (false, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            };
-            let geo_type = match &self.geo_param {
-                PdmsGeoParam::PrimBox(_) => "PrimBox",
-                PdmsGeoParam::PrimLSnout(_) => "PrimLSnout",
-                PdmsGeoParam::PrimDish(_) => "PrimDish",
-                PdmsGeoParam::PrimSphere(_) => "PrimSphere",
-                PdmsGeoParam::PrimCTorus(_) => "PrimCTorus",
-                PdmsGeoParam::PrimRTorus(_) => "PrimRTorus",
-                PdmsGeoParam::PrimPyramid(_) => "PrimPyramid",
-                PdmsGeoParam::PrimLPyramid(_) => "PrimLPyramid",
-                PdmsGeoParam::PrimSCylinder(_) => "PrimSCylinder",
-                PdmsGeoParam::PrimLCylinder(_) => "PrimLCylinder",
-                PdmsGeoParam::PrimRevolution(_) => "PrimRevolution",
-                PdmsGeoParam::PrimExtrusion(_) => "PrimExtrusion",
-                PdmsGeoParam::PrimPolyhedron(_) => "PrimPolyhedron",
-                PdmsGeoParam::PrimLoft(_) => "PrimLoft",
-                PdmsGeoParam::CompoundShape => "CompoundShape",
-                PdmsGeoParam::Unknown => "Unknown",
-            };
-            let (out_is_sscl, out_pdia, out_phei, out_btm0, out_btm1, out_top0, out_top1, out_unit) =
-                match &param {
-                    PdmsGeoParam::PrimSCylinder(s) => (
-                        s.is_sscl(),
-                        s.pdia,
-                        s.phei,
-                        s.btm_shear_angles[0],
-                        s.btm_shear_angles[1],
-                        s.top_shear_angles[0],
-                        s.top_shear_angles[1],
-                        s.unit_flag,
-                    ),
-                    _ => (false, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false),
-                };
-            let _ = writeln!(
-                f,
-                r#"{{"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"H2","location":"geometry/mod.rs:gen_unit_geo_sur_json","message":"serialize inst_geo","data":{{"geo_hash":{},"in_is_sscl":{},"in_pdia":{},"in_phei":{},"in_btm":[{},{}],"in_top":[{},{}],"in_unit_flag":{},"geo_type":"{}","out_is_sscl":{},"out_pdia":{},"out_phei":{},"out_btm":[{},{}],"out_top":[{},{}],"out_unit_flag":{}}},"timestamp":{}}}"#,
-                self.geo_hash,
-                is_sscl,
-                pdia,
-                phei,
-                btm0,
-                btm1,
-                top0,
-                top1,
-                self.unit_flag,
-                geo_type,
-                out_is_sscl,
-                out_pdia,
-                out_phei,
-                out_btm0,
-                out_btm1,
-                out_top0,
-                out_top1,
-                out_unit,
-                chrono::Utc::now().timestamp_millis()
-            );
-        }
-        // #endregion
         json_string.push_str(&format!(
             "{{'id': inst_geo:⟨{}⟩, 'param': {}, 'unit_flag': {} }}",
             self.geo_hash,
@@ -774,13 +699,17 @@ impl EleInstGeo {
         json_string
     }
 
-    pub fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
-        let mut shape = self.geo_param.gen_csg_shape()?;
+    pub fn build_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        let mut shape = self.geo_param.build_csg_shape(self.refno)?;
         //scale 不能要，已经包含在CSG的真实参数里
         let mut new_transform = self.transform;
         new_transform.scale = Vec3::ONE;
         let transform_mat = new_transform.to_matrix().as_dmat4();
         shape = shape.transformed(&transform_mat)?;
         Ok(shape)
+    }
+
+    pub fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        self.build_csg_shape()
     }
 }

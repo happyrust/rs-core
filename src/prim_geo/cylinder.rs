@@ -11,7 +11,8 @@ use std::hash::Hasher;
 use std::sync::Arc;
 
 use crate::mesh_precision::LodMeshSettings;
-use crate::prim_geo::basic::*;
+use crate::prim_geo::basic::{CsgSharedMesh, CYLINDER_GEO_HASH, CYLINDER_SHAPE};
+use crate::types::refno::RefnoEnum;
 use crate::prim_geo::helper::cal_ref_axis;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
@@ -365,7 +366,7 @@ impl BrepShapeTrait for SCylinder {
             use crate::geometry::csg::generate_scylinder_mesh;
             use crate::mesh_precision::LodMeshSettings;
             if let Some(generated) =
-                generate_scylinder_mesh(self, &LodMeshSettings::default(), false)
+                generate_scylinder_mesh(self, &LodMeshSettings::default(), false, RefnoEnum::default())
             {
                 Ok(crate::prim_geo::basic::CsgSharedMesh::new(generated.mesh))
             } else {

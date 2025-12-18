@@ -50,7 +50,7 @@ pub struct CateCsgShape {
 ///
 /// # 返回值
 /// - `Option<CateCsgShape>` - 转换后的CSG形状，如果失败则为None
-pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
+pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgShape> {
     match geom {
         CateGeoParam::Pyramid(d) => {
             // 金字塔几何体的转换逻辑
@@ -124,7 +124,7 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
             };
             // dbg!(&pyramid);
             //需要偏移到 btm
-            let translation = z_axis * (d.dist_to_btm + d.dist_to_top) / 2.0 + pa.pt.0;
+            let translation =  pa.pt.0;  //z_axis * d.dist_to_btm +
             let csg_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateCsgShape {
                 refno: d.refno,
@@ -504,19 +504,8 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
             // dbg!(z_axis);
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
-            // 使用 ref_dir 来确定剪切方向，保证多段 SSLC 拼接时方向一致
-            let ref_dir = axis.ref_dir.as_ref().map(|r| r.0);
-            let rotation = construct_basis_from_z_axis_with_ref(z_axis, ref_dir);
-            let rot_mat = Mat3::from_quat(rotation);
-            debug_model_debug!(
-                "SSLC rotation basis: z_axis={:?}, x_axis={:?}, y_axis={:?}",
-                z_axis,
-                rot_mat.x_axis,
-                rot_mat.y_axis,
-            );
             let translation = z_axis * (d.dist_to_btm as f32) + axis.pt.0;
             let transform = Transform {
-                rotation,
                 translation,
                 ..Default::default()
             };
@@ -524,6 +513,7 @@ pub fn convert_to_csg_shapes(geom: &CateGeoParam) -> Option<CateCsgShape> {
             let csg_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 phei,
                 pdia,
+                paxi_dir: z_axis,
                 // 底部剪切角 (PXBS, PYBS)
                 btm_shear_angles: [d.alt_x_shear, d.alt_y_shear],
                 // 顶部剪切角 (PXTS, PYTS)

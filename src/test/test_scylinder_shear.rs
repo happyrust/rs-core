@@ -42,7 +42,7 @@ fn test_scylinder_with_45_degree_shear() {
     assert!(cylinder.is_sscl(), "应该识别为 SSCL");
 
     // 生成 CSG mesh
-    match cylinder.gen_csg_shape() {
+    match cylinder.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("    顶点数: {}", csg_mesh.vertices.len());
@@ -90,7 +90,7 @@ fn test_scylinder_with_opposite_shear() {
 
     assert!(cylinder.is_sscl(), "应该识别为 SSCL");
 
-    match cylinder.gen_csg_shape() {
+    match cylinder.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("    顶点数: {}", csg_mesh.vertices.len());
@@ -142,7 +142,7 @@ fn test_scylinder_with_xy_shear() {
 
     assert!(cylinder.is_sscl(), "应该识别为 SSCL");
 
-    match cylinder.gen_csg_shape() {
+    match cylinder.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("    顶点数: {}", csg_mesh.vertices.len());
@@ -184,7 +184,7 @@ fn test_scylinder_normal_vs_sheared() {
     println!("  普通圆柱:");
     assert!(!normal_cylinder.is_sscl(), "应该不是 SSCL");
 
-    if let Ok(csg_mesh) = normal_cylinder.gen_csg_shape() {
+    if let Ok(csg_mesh) = normal_cylinder.gen_csg_shape_compat() {
         println!("    顶点数: {}", csg_mesh.vertices.len());
         let _ = csg_mesh.export_obj(false, "test_output/scylinder_normal.obj");
     }
@@ -201,7 +201,7 @@ fn test_scylinder_normal_vs_sheared() {
     println!("  斜切圆柱:");
     assert!(sheared_cylinder.is_sscl(), "应该是 SSCL");
 
-    if let Ok(csg_mesh) = sheared_cylinder.gen_csg_shape() {
+    if let Ok(csg_mesh) = sheared_cylinder.gen_csg_shape_compat() {
         println!("    顶点数: {}", csg_mesh.vertices.len());
         let _ = csg_mesh.export_obj(false, "test_output/scylinder_sheared.obj");
     }
@@ -232,7 +232,7 @@ fn test_scylinder_extreme_shear() {
 
     assert!(cylinder.is_sscl(), "应该识别为 SSCL");
 
-    match cylinder.gen_csg_shape() {
+    match cylinder.gen_csg_shape_compat() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("    顶点数: {}", csg_mesh.vertices.len());
