@@ -89,10 +89,10 @@ async fn normalize_spine_segments(
                 let direction = (spine.pt1 - spine.pt0).normalize_or_zero();
                 let length = spine.pt0.distance(spine.pt1);
 
-                // 归一化路径：从原点沿 Z 轴10.0单位长度（与sweep_solid.rs保持一致）
+                // 归一化路径：从原点沿 Z 轴100.0单位长度（与sweep_solid.rs保持一致）
                 normalized_segments.push(SegmentPath::Line(Line3D {
                     start: Vec3::ZERO,
-                    end: Vec3::Z * 10.0,
+                    end: Vec3::Z * 100.0,
                     is_spine: true,
                 }));
 
@@ -110,7 +110,7 @@ async fn normalize_spine_segments(
                 transforms.push(Transform {
                     translation: spine.pt0,                    // 起点位置
                     rotation: final_rotation,                  // 方位 × bangle 旋转
-                    scale: Vec3::new(1.0, 1.0, length / 10.0), // Z 方向缩放：实际长度/10.0
+                    scale: Vec3::new(1.0, 1.0, length / 100.0), // Z 方向缩放：实际长度/100.0
                 });
             }
             SpineCurveType::THRU => {

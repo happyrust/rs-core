@@ -195,7 +195,7 @@ impl BrepShapeTrait for SweepSolid {
             unit.extrude_dir = DVec3::Z;
             unit.path = SweepPath3D::from_line(Line3D {
                 start: Default::default(),
-                end: Vec3::Z * 10.0,
+                end: Vec3::Z * 100.0,
                 is_spine: false,
             });
         }
@@ -213,7 +213,7 @@ impl BrepShapeTrait for SweepSolid {
             return Vec3::ONE;
         }
         if let Some(l) = self.path.as_single_line() {
-            Vec3::new(1.0, 1.0, l.length() / 10.0)
+            Vec3::new(1.0, 1.0, l.length() / 100.0)
         } else {
             Vec3::ONE
         }

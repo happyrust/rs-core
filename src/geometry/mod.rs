@@ -53,7 +53,7 @@ pub enum GeoBasicType {
     ///Design 的初始正实体（PRIM/LOOP 等，布尔运算前的原始几何）
     DesiPos,
     ///元件库的初始正实体（会被多个元素复用，不应在此设置 booled_id）
-    CataPos,
+    CatePos,
     ///普通负实体（Design 的负实体）
     Neg,
     ///元件库的负实体

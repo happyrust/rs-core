@@ -1891,6 +1891,10 @@ fn generate_box_mesh(sbox: &SBox, refno: RefnoEnum) -> Option<GeneratedMesh> {
     })
 }
 
+/// 焊接重合顶点以生成 Manifold 兼容的网格
+///
+/// 使用自适应容差量化顶点位置，将数值上接近的顶点合并为同一顶点。
+/// 这是 Manifold 布尔运算所必需的，因为 Manifold 要求共享顶点拓扑。
 fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
     use std::collections::HashMap;
 
@@ -1898,14 +1902,53 @@ fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
         return;
     }
 
-    let mut map: HashMap<(u32, u32, u32), u32> = HashMap::new();
+    // 计算 AABB 来确定自适应精度
+    let mut min_pt = Vec3::splat(f32::MAX);
+    let mut max_pt = Vec3::splat(f32::MIN);
+    for v in &mesh.vertices {
+        min_pt = min_pt.min(*v);
+        max_pt = max_pt.max(*v);
+    }
+    
+    let extent = max_pt - min_pt;
+    let min_extent = extent.x.min(extent.y).min(extent.z);
+    
+    // 根据最小维度选择量化精度
+    // 确保每个维度至少有 100 个离散点
+    let precision: f32 = if min_extent < 0.1 {
+        // 非常小的几何体，使用 5 位小数
+        100000.0
+    } else if min_extent < 1.0 {
+        // 小几何体，使用 4 位小数
+        10000.0
+    } else if min_extent < 10.0 {
+        // 单位化的几何体，使用 3 位小数
+        1000.0
+    } else if min_extent < 100.0 {
+        // 中等几何体，使用 2 位小数
+        100.0
+    } else {
+        // 大型几何体，使用 1 位小数
+        10.0
+    };
+
+    // 量化函数：将浮点坐标转换为整数键
+    let quantize = |v: Vec3| -> (i64, i64, i64) {
+        (
+            (v.x * precision).round() as i64,
+            (v.y * precision).round() as i64,
+            (v.z * precision).round() as i64,
+        )
+    };
+
+    let mut map: HashMap<(i64, i64, i64), u32> = HashMap::new();
     let mut remap: Vec<u32> = Vec::with_capacity(mesh.vertices.len());
     let mut new_vertices: Vec<Vec3> = Vec::new();
     let mut new_normals: Vec<Vec3> = Vec::new();
     let mut new_uvs: Vec<[f32; 2]> = Vec::new();
 
     for (i, v) in mesh.vertices.iter().copied().enumerate() {
-        let key = (v.x.to_bits(), v.y.to_bits(), v.z.to_bits());
+        let key = quantize(v);
         if let Some(&idx) = map.get(&key) {
             remap.push(idx);
             continue;
@@ -1932,6 +1975,7 @@ fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
         let a = remap[tri[0] as usize];
         let b = remap[tri[1] as usize];
         let c = remap[tri[2] as usize];
+        // 跳过退化三角形（顶点重合）
         if a == b || b == c || a == c {
             continue;
         }

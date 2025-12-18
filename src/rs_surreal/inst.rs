@@ -357,7 +357,7 @@ pub async fn query_insts_with_batch(
                 if booled_id != none then
                     [{{ "transform": world_trans.d, "geo_hash": booled_id, "is_tubi": false, "unit_flag": false }}]
                 else
-                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none &&  geo_type IN ['Pos', 'Compound', 'DesiPos', 'CataPos'])
+                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none &&  geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos'])
                 end as insts,
                 booled_id != none as has_neg,
                 <datetime>dt as date,
@@ -375,7 +375,7 @@ pub async fn query_insts_with_batch(
                 in.old_pe as old_refno,
                 in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CataPos']) as insts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
                 bool_status = 'Success' as has_neg,
                 <datetime>dt as date,
                 spec_value
@@ -420,15 +420,15 @@ pub async fn query_insts_ext(
     // enable_holes=true 时，当 booled_id 缺失会走 geo_relate fallback。
     // 此时必须包含 DesiPos/CataPos，否则 unit mesh（geo_hash=1/2）可能会被漏掉。
     let geo_types = if include_negative {
-        "['Pos', 'Compound', 'DesiPos', 'CataPos', 'Neg']"
+        "['Pos', 'Compound', 'DesiPos', 'CatePos', 'Neg']"
     } else {
-        "['Pos', 'Compound', 'DesiPos', 'CataPos']"
+        "['Pos', 'Compound', 'DesiPos', 'CatePos']"
     };
 
     let geo_types_no_holes = if include_negative {
-        "['Pos', 'DesiPos', 'CataPos', 'Neg']"
+        "['Pos', 'DesiPos', 'CatePos', 'Neg']"
     } else {
-        "['Pos', 'DesiPos', 'CataPos']"
+        "['Pos', 'DesiPos', 'CatePos']"
     };
 
     for chunk in refnos.chunks(batch) {

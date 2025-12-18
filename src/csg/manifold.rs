@@ -85,10 +85,73 @@ impl ManifoldRust {
     }
 
     pub fn from_mesh(m: &ManifoldMeshRust) -> Self {
-        let mesh = Mesh::new(&m.vertices, &m.indices);
-        Self {
-            inner: mesh.to_manifold(),
+        let input_tri_count = m.indices.len() / 3;
+        let input_vert_count = m.vertices.len() / 3;
+        
+        // 如果输入为空，返回空 manifold
+        if m.indices.is_empty() || m.vertices.is_empty() {
+            eprintln!("[Manifold] 输入 mesh 为空，跳过转换");
+            return Self::new();
         }
+        
+        let mesh = Mesh::new(&m.vertices, &m.indices);
+        let result = Self {
+            inner: mesh.to_manifold(),
+        };
+        
+        // 检查转换结果
+        let result_mesh = result.inner.to_mesh();
+        let output_tri_count = result_mesh.indices().len() / 3;
+        
+        if output_tri_count == 0 && input_tri_count > 0 {
+            // Manifold 转换失败，输出诊断信息
+            eprintln!(
+                "[Manifold] ⚠️ 转换后三角形丢失: 输入 {} 顶点 {} 三角形 -> 输出 0 三角形",
+                input_vert_count, input_tri_count
+            );
+            
+            // 检查 mesh 是否有问题（如退化三角形、非流形等）
+            // 计算 AABB 来诊断几何范围
+            let mut min_x = f32::MAX;
+            let mut max_x = f32::MIN;
+            let mut min_y = f32::MAX;
+            let mut max_y = f32::MIN;
+            let mut min_z = f32::MAX;
+            let mut max_z = f32::MIN;
+            
+            for i in (0..m.vertices.len()).step_by(3) {
+                let x = m.vertices[i];
+                let y = m.vertices[i + 1];
+                let z = m.vertices[i + 2];
+                min_x = min_x.min(x);
+                max_x = max_x.max(x);
+                min_y = min_y.min(y);
+                max_y = max_y.max(y);
+                min_z = min_z.min(z);
+                max_z = max_z.max(z);
+            }
+            
+            let extent_x = max_x - min_x;
+            let extent_y = max_y - min_y;
+            let extent_z = max_z - min_z;
+            
+            eprintln!(
+                "[Manifold] AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2}), 范围: ({:.2}, {:.2}, {:.2})",
+                min_x, min_y, min_z, max_x, max_y, max_z, extent_x, extent_y, extent_z
+            );
+            
+            // 检查是否有极端的长宽比
+            let min_extent = extent_x.min(extent_y).min(extent_z);
+            let max_extent = extent_x.max(extent_y).max(extent_z);
+            if min_extent > 0.0 && max_extent / min_extent > 100.0 {
+                eprintln!(
+                    "[Manifold] ⚠️ 极端长宽比: {:.1} (最小维度 {:.4}, 最大维度 {:.2})",
+                    max_extent / min_extent, min_extent, max_extent
+                );
+            }
+        }
+        
+        result
     }
 
     pub fn get_mesh(&self) -> ManifoldMeshRust {
@@ -147,28 +210,135 @@ impl ManifoldMeshRust {
         }
     }
 
+    /// 计算适应性精度因子
+    /// 
+    /// 根据几何体的尺寸范围选择合适的精度：
+    /// - 小尺寸几何体（如单位化的扫掠体）使用更高精度
+    /// - 大尺寸几何体使用较低精度以避免数值问题
+    fn compute_adaptive_precision(vertices: &[Vec3], mat4: &DMat4) -> f64 {
+        if vertices.is_empty() {
+            return 1000.0; // 默认使用 3 位小数精度
+        }
+        
+        // 计算变换后的 AABB
+        let mut min = glam::DVec3::splat(f64::MAX);
+        let mut max = glam::DVec3::splat(f64::MIN);
+        
+        for v in vertices {
+            let pt = mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
+            min = min.min(pt);
+            max = max.max(pt);
+        }
+        
+        let extent = max - min;
+        let min_extent = extent.x.min(extent.y).min(extent.z);
+        
+        // 根据最小维度选择精度
+        // 确保每个维度至少有足够的离散点
+        if min_extent < 1.0 {
+            // 非常小的几何体，使用 4 位小数
+            10000.0
+        } else if min_extent < 10.0 {
+            // 小几何体，使用 3 位小数
+            1000.0
+        } else if min_extent < 100.0 {
+            // 中等几何体，使用 2 位小数
+            100.0
+        } else {
+            // 大型几何体，使用 1 位小数
+            10.0
+        }
+    }
+    
+    /// 将顶点坐标量化为整数键（用于顶点焊接）
+    fn quantize_vertex(x: f64, y: f64, z: f64, precision: f64) -> (i64, i64, i64) {
+        (
+            (x * precision).round() as i64,
+            (y * precision).round() as i64,
+            (z * precision).round() as i64,
+        )
+    }
+
     pub fn convert_to_manifold_mesh(
         mut plant_mesh: PlantMesh,
         mat4: DMat4,
         ceil_or_trunc: bool,
     ) -> Self {
-        let len = plant_mesh.vertices.len();
-        let mut verts: Vec<f32> = Vec::with_capacity(len * 3);
-        for v in mem::take(&mut plant_mesh.vertices) {
-            let pt = mat4.transform_point3(glam::DVec3::from(v));
-            if ceil_or_trunc {
-                verts.push((num_traits::signum(pt[0]) * f64_round_2(pt[0].abs())) as f32);
-                verts.push((num_traits::signum(pt[1]) * f64_round_2(pt[1].abs())) as f32);
-                verts.push((num_traits::signum(pt[2]) * f64_round_2(pt[2].abs())) as f32);
-            } else {
-                verts.push(f64_trunc_1(pt[0]) as _);
-                verts.push(f64_trunc_1(pt[1]) as _);
-                verts.push(f64_trunc_1(pt[2]) as _);
-            }
+        use std::collections::HashMap;
+        
+        let vertices = mem::take(&mut plant_mesh.vertices);
+        let old_indices = &plant_mesh.indices;
+        
+        if vertices.is_empty() || old_indices.is_empty() {
+            return Self::new();
         }
+        
+        // 计算适应性精度
+        let precision = Self::compute_adaptive_precision(&vertices, &mat4);
+        
+        // Step 1: 变换所有顶点，并执行顶点焊接（合并重合顶点）
+        let mut vertex_map: HashMap<(i64, i64, i64), u32> = HashMap::new();
+        let mut welded_vertices: Vec<f32> = Vec::new();
+        let mut old_to_new: Vec<u32> = Vec::with_capacity(vertices.len());
+        
+        for v in &vertices {
+            let pt = mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
+            
+            // 量化顶点坐标用于焊接
+            let key = Self::quantize_vertex(pt.x, pt.y, pt.z, precision);
+            
+            let new_idx = if let Some(&idx) = vertex_map.get(&key) {
+                // 已存在相同位置的顶点，复用
+                idx
+            } else {
+                // 新顶点
+                let idx = (welded_vertices.len() / 3) as u32;
+                
+                // 根据精度量化顶点坐标
+                let qx = key.0 as f64 / precision;
+                let qy = key.1 as f64 / precision;
+                let qz = key.2 as f64 / precision;
+                
+                if ceil_or_trunc {
+                    // 负实体：向外扩展（使用 ceil）
+                    welded_vertices.push((num_traits::signum(qx) * qx.abs().ceil()) as f32);
+                    welded_vertices.push((num_traits::signum(qy) * qy.abs().ceil()) as f32);
+                    welded_vertices.push((num_traits::signum(qz) * qz.abs().ceil()) as f32);
+                } else {
+                    // 正实体：直接使用量化坐标
+                    welded_vertices.push(qx as f32);
+                    welded_vertices.push(qy as f32);
+                    welded_vertices.push(qz as f32);
+                }
+                
+                vertex_map.insert(key, idx);
+                idx
+            };
+            
+            old_to_new.push(new_idx);
+        }
+        
+        // Step 2: 重建索引，过滤退化三角形
+        let mut new_indices: Vec<u32> = Vec::with_capacity(old_indices.len());
+        
+        for tri in old_indices.chunks_exact(3) {
+            let i0 = old_to_new[tri[0] as usize];
+            let i1 = old_to_new[tri[1] as usize];
+            let i2 = old_to_new[tri[2] as usize];
+            
+            // 跳过退化三角形（顶点重合）
+            if i0 == i1 || i1 == i2 || i2 == i0 {
+                continue;
+            }
+            
+            new_indices.push(i0);
+            new_indices.push(i1);
+            new_indices.push(i2);
+        }
+        
         Self {
-            vertices: verts,
-            indices: plant_mesh.indices,
+            vertices: welded_vertices,
+            indices: new_indices,
         }
     }
 }
