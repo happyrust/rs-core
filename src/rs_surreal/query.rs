@@ -967,6 +967,21 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
         attmap.insert("TAG_NAME".to_string(), NamedAttrValue::StringType("unset".to_owned()));
     }
 
+    // 获取世界坐标位置和方向 (WPOS, WORI)
+    if let Ok(Some(world_mat4)) = super::get_world_mat4(refno_enum, false).await {
+        let (_, rotation, translation) = world_mat4.to_scale_rotation_translation();
+        // WPOS: 世界坐标位置
+        attmap.insert(
+            "WPOS".to_string(),
+            NamedAttrValue::StringType(dvec3_to_xyz_str(translation)),
+        );
+        // WORI: 世界坐标方向
+        attmap.insert(
+            "WORI".to_string(),
+            NamedAttrValue::StringType(dquat_to_pdms_ori_xyz_str(&rotation, true)),
+        );
+    }
+
     Ok(attmap)
 }
 

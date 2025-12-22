@@ -188,16 +188,57 @@ pub async fn get_local_mat4(refno: RefnoEnum) -> anyhow::Result<Option<DMat4>> {
 /// - 使用策略模式支持不同构件类型的专门计算逻辑
 /// - 与重构后的 `get_local_mat4` 函数集成
 /// - 保持与原函数相同的 API 接口
-/// - 支持缓存优化
+/// - 支持缓存优化（从 PE 表的 world_trans 字段读取/写入缓存）
 /// - 生产安全的特性标志回退机制
 pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
-    // 新的策略系统实现
-    get_world_mat4_with_strategies_impl(refno, is_local).await
+    // 如果不是 local 模式，先尝试从数据库缓存读取
+    if !is_local {
+        if let Ok(Some(pe)) = crate::get_pe(refno).await {
+            if let Some(world_trans) = pe.world_trans {
+                // 从 PlantTransform 转换为 DMat4
+                let mat4 = bevy_transform_to_dmat4(&world_trans.0);
+                #[cfg(feature = "debug_spatial")]
+                println!("🎯 Cache hit for world_trans: {}", refno);
+                return Ok(Some(mat4));
+            }
+        }
+    }
+
+    // 缓存未命中，计算世界变换矩阵
+    let result = get_world_mat4_with_strategies_impl(refno, is_local).await?;
+
+    // 如果计算成功且不是 local 模式，缓存结果到数据库
+    if !is_local {
+        if let Some(mat4) = result {
+            let transform = dmat4_to_bevy_transform(&mat4);
+            let plant_trans = crate::rs_surreal::PlantTransform(transform);
+
+            // 异步更新 PE 表的 world_trans 字段（不阻塞返回）
+            let refno_clone = refno;
+            tokio::spawn(async move {
+                let sql = format!(
+                    "UPDATE {} SET world_trans = $trans",
+                    refno_clone.to_pe_key()
+                );
+                let _ = SUL_DB.query(&sql)
+                    .bind(("trans", plant_trans))
+                    .await;
+                #[cfg(feature = "debug_spatial")]
+                println!("💾 Cached world_trans for: {}", refno_clone);
+            });
+        }
+    }
+
+    Ok(result)
 }
 
 /// 新策略系统的具体实现
 ///
 /// 此函数包含使用策略模式的世界矩阵计算逻辑
+///
+/// # 优化策略
+/// - 在遍历祖先链时，检查是否有祖先节点已缓存 world_trans
+/// - 如果找到缓存的祖先，从该点开始计算，避免重复计算
 async fn get_world_mat4_with_strategies_impl(
     refno: RefnoEnum,
     is_local: bool,
@@ -245,10 +286,38 @@ async fn get_world_mat4_with_strategies_impl(
         return Ok(Some(DMat4::IDENTITY));
     }
 
-    // 遍历祖先链，累加所有局部变换
+    // 优化：查找祖先链中最近的有缓存 world_trans 的节点
+    let mut start_index = 0;
     let mut mat4 = DMat4::IDENTITY;
 
-    for i in 1..ancestors.len() {
+    #[cfg(feature = "profile")]
+    let cache_search_start = std::time::Instant::now();
+
+    // 从最接近目标节点的祖先开始查找（逆序遍历，从后往前）
+    for i in (1..ancestors.len()).rev() {
+        let ancestor_refno = ancestors[i].get_refno_or_default();
+
+        // 尝试从数据库读取该祖先的缓存
+        if let Ok(Some(pe)) = crate::get_pe(ancestor_refno).await {
+            if let Some(world_trans) = pe.world_trans {
+                // 找到缓存！使用这个作为起点
+                mat4 = bevy_transform_to_dmat4(&world_trans.0);
+                start_index = i;
+                #[cfg(feature = "debug_spatial")]
+                println!("🎯 Found cached world_trans at ancestor[{}]: {}", i, ancestor_refno);
+                break;
+            }
+        }
+    }
+
+    #[cfg(feature = "profile")]
+    {
+        let cache_search_elapsed = cache_search_start.elapsed();
+        println!("Cache search took {:?}, start_index={}", cache_search_elapsed, start_index);
+    }
+
+    // 从找到的缓存点（或根节点）开始，累加到目标节点的局部变换
+    for i in (start_index + 1)..ancestors.len() {
         let cur_refno = ancestors[i].get_refno_or_default();
         let parent_refno = ancestors[i - 1].get_refno_or_default();
 
@@ -278,4 +347,56 @@ async fn get_world_mat4_with_strategies_impl(
     }
 
     Ok(Some(mat4))
+}
+
+/// 将 Bevy Transform 转换为 DMat4
+///
+/// # 参数
+/// * `transform` - Bevy Transform 对象
+///
+/// # 返回值
+/// 对应的 4x4 变换矩阵
+fn bevy_transform_to_dmat4(transform: &Transform) -> DMat4 {
+    DMat4::from_scale_rotation_translation(
+        transform.scale.as_dvec3(),
+        transform.rotation.as_dquat(),
+        transform.translation.as_dvec3(),
+    )
+}
+
+/// 将 DMat4 转换为 Bevy Transform
+///
+/// # 参数
+/// * `mat4` - 4x4 变换矩阵
+///
+/// # 返回值
+/// 对应的 Bevy Transform 对象
+fn dmat4_to_bevy_transform(mat4: &DMat4) -> Transform {
+    let (scale, rotation, translation) = mat4.to_scale_rotation_translation();
+    Transform {
+        translation: translation.as_vec3(),
+        rotation: rotation.as_quat(),
+        scale: scale.as_vec3(),
+    }
+}
+
+/// 清除指定 refno 的世界变换缓存
+///
+/// 当元件的位置或方向属性（POS、ORI等）发生变化时，需要调用此函数清除缓存
+///
+/// # 参数
+/// * `refno` - 要清除缓存的参考号
+///
+/// # 返回值
+/// * `Ok(())` - 成功清除缓存
+/// * `Err` - 如果清除过程中发生错误
+pub async fn invalidate_world_trans_cache(refno: RefnoEnum) -> anyhow::Result<()> {
+    let sql = format!(
+        "UPDATE {} SET world_trans = NONE",
+        refno.to_pe_key()
+    );
+    SUL_DB.query(&sql).await?;
+    #[cfg(feature = "debug_spatial")]
+    println!("🗑️  Invalidated world_trans cache for: {}", refno);
+    Ok(())
 }

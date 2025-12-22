@@ -51,6 +51,11 @@ pub struct SPdmsElement {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tubi_id: Option<Vec<RecordId>>,
+
+    /// 缓存的世界变换矩阵 - 用于快速获取元件的世界坐标变换
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub world_trans: Option<crate::rs_surreal::PlantTransform>,
 }
 
 impl SPdmsElement {
