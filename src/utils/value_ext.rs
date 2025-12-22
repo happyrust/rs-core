@@ -1,4 +1,4 @@
-use surrealdb::types::{RecordId, ToSql, Value};
+use surrealdb::types::{RecordId, SqlFormat, ToSql, Value};
 
 use crate::utils::RecordIdExt;
 
@@ -10,7 +10,7 @@ pub fn value_to_string(value: &Value) -> String {
         Value::Bool(b) => b.to_string(),
         other => {
             let mut buf = String::new();
-            other.fmt_sql(&mut buf);
+            other.fmt_sql(&mut buf, SqlFormat::SingleLine);
             buf
         }
     }
