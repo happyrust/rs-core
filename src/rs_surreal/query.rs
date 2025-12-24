@@ -139,6 +139,49 @@ pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<Refno
     SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }
 
+/// 查找祖先链中最近的有 world_trans 缓存的层级
+///
+/// 该函数从目标节点向上遍历，找到**第一个有 world_trans 缓存**的祖先节点。
+/// 这样可以从该节点的缓存开始计算，避免从根节点重新计算。
+///
+/// # 参数
+/// * `refno` - 要查询的目标节点的refno
+///
+/// # 返回值
+/// * `Option<(usize, RefnoEnum)>` - 如果找到返回 (索引位置, 祖先refno)，否则返回 None
+///   - 索引位置是在祖先链数组中的位置（0 是根节点）
+///   - 如果所有祖先都没有缓存，返回 None
+pub async fn find_nearest_cached_ancestor(
+    refno: RefnoEnum,
+) -> anyhow::Result<Option<(usize, RefnoEnum)>> {
+    let sql = format!(
+        r#"
+        LET $ancestors = fn::ancestor({});
+        LET $reversed = array::reverse($ancestors);
+        LET $rev_index = array::find_index($reversed, |$a| $a.world_trans IS NOT NONE);
+        RETURN IF $rev_index != NONE {{
+            LET $index = array::len($ancestors) - 1 - $rev_index;
+            RETURN {{
+                index: $index,
+                refno: $ancestors[$index].refno
+            }};
+        }} ELSE {{
+            NONE
+        }};
+        "#,
+        refno.to_pe_key()
+    );
+
+    #[derive(Deserialize, SurrealValue)]
+    struct CachedResult {
+        index: usize,
+        refno: RefnoEnum,
+    }
+
+    let result: Option<CachedResult> = SUL_DB.query_take(&sql, 0).await?;
+    Ok(result.map(|r| (r.index, r.refno)))
+}
+
 /// 查询指定类型的第一个祖先节点
 ///
 /// # 参数
@@ -236,6 +279,75 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
         })
         .collect();
     Ok(named_attmaps)
+}
+
+/// 优化版本：从最近有缓存的祖先开始查询属性数据
+///
+/// 该函数结合了缓存查找和祖先查询，只返回需要计算的部分：
+/// 1. 从目标节点向上查找，找到第一个有 world_trans 缓存的祖先
+/// 2. 只查询从该缓存节点之后的祖先节点属性数据（即需要重新计算的部分）
+/// 3. 同时返回缓存节点的 world_trans 作为计算起点
+///
+/// # 参数
+/// * `refno` - 要查询的目标节点的refno
+///
+/// # 返回值
+/// * `(Vec<NamedAttrMap>, Option<crate::rs_surreal::PlantTransform>, usize)` -
+///   - Vec<NamedAttrMap>: 从有缓存的祖先之后开始的属性数据列表
+///   - Option<PlantTransform>: 如果存在，是最近的有缓存祖先的 world_trans
+///   - usize: 缓存的索引位置（在完整祖先链中的位置）
+pub async fn get_ancestor_attmaps_from_cached(
+    refno: RefnoEnum,
+) -> anyhow::Result<(Vec<NamedAttrMap>, Option<crate::rs_surreal::PlantTransform>, usize)> {
+    let sql = format!(
+        r#"
+        LET $ancestors = fn::ancestor({});
+        LET $reversed = array::reverse($ancestors);
+        LET $rev_idx = array::find_index($reversed, |$a| $a.world_trans IS NOT NONE);
+        RETURN IF $rev_idx != NONE {{
+            LET $cached_idx = array::len($ancestors) - 1 - $rev_idx;
+            RETURN {{
+                attmaps: $ancestors[$cached_idx + 1..].refno.*,
+                cached_transform: $ancestors[$cached_idx].world_trans,
+                start_index: $cached_idx
+            }};
+        }} ELSE {{
+            RETURN {{
+                attmaps: $ancestors.refno.*,
+                cached_transform: NONE,
+                start_index: 0
+            }};
+        }};
+        "#,
+        refno.to_pe_key()
+    );
+
+    #[derive(Deserialize, SurrealValue)]
+    struct AttmapResult {
+        attmaps: Vec<SurlValue>,
+        cached_transform: Option<crate::rs_surreal::PlantTransform>,
+        start_index: usize,
+    }
+
+    let result: Option<AttmapResult> = SUL_DB.query_take(&sql, 0).await?;
+    
+    let result = result.unwrap_or(AttmapResult {
+        attmaps: vec![],
+        cached_transform: None,
+        start_index: 0,
+    });
+
+    // 将 SurlValue 转换为 NamedAttrMap，过滤掉无法转换的值
+    let named_attmaps: Vec<NamedAttrMap> = result
+        .attmaps
+        .into_iter()
+        .filter_map(|x| {
+            let val: Result<NamedAttrMap, _> = x.try_into();
+            val.ok()
+        })
+        .collect();
+
+    Ok((named_attmaps, result.cached_transform, result.start_index))
 }
 
 /// 获取指定refno的类型名称
@@ -1202,7 +1314,7 @@ pub async fn get_children_ele_nodes(refno: RefnoEnum) -> anyhow::Result<Vec<EleT
         r#"
         select refno, noun, name, owner, 0 as order,
                         op?:0 as op,
-                        array::len((select value refnos from only type::record("his_pe", record::id($self.id)))?:[]) as mod_cnt,
+                        0 as mod_cnt,
                         array::len(children) as children_count,
                         status_code as status_code
                     from {}.children where id!=none and record::exists(id) and !deleted
@@ -1306,7 +1418,7 @@ pub async fn query_group_by_cata_hash(
         "#,
             chunk.join(",")
         );
-        // println!("query_group_by_cata_hash sql is {}", &sql);
+        println!("query_group_by_cata_hash sql is {}", &sql);
         let mut response: Response = SUL_DB.query_response(sql).await?;
         // dbg!(&response);
         // 使用专门的结构体接收查询结果

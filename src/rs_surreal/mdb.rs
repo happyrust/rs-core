@@ -834,7 +834,7 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     // 1. 首先获取MDB对应的DBNO(数据库编号)
     // 2. 然后查询该DBNO下类型为WORL的参考号
     let sql = format!(
-        " \
+        "
             let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
             (select value REFNO from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         mdb_name
@@ -844,7 +844,7 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
 
     // 执行查询并获取结果
     let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 1).await?;
-    dbg!(&id);
+    // dbg!(&id);
     Ok(id.unwrap_or_default())
 }
 
