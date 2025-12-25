@@ -62,7 +62,7 @@ pub struct RefU64(pub u64);
 
 impl SurrealValue for RefU64 {
     fn kind_of() -> surrealdb_types::Kind {
-        surrealdb_types::Kind::Record(vec![surrealdb_types::Table::from("pe")])
+        surrealdb_types::Kind::Record(vec!["pe".to_string().into()])
         // surrealdb_types::Kind::Any
     }
 
@@ -684,7 +684,7 @@ impl SurrealValue for RefnoEnum {
     fn kind_of() -> surrealdb_types::Kind {
         // RefnoEnum can be either a RecordId or an Array [RecordId, sesno]
         // Using Kind::Record to indicate it's primarily stored as pe table records
-        surrealdb_types::Kind::Record(vec![surrealdb_types::Table::from("pe")])
+        surrealdb_types::Kind::Record(vec!["pe".to_string().into()])
         // surrealdb_types::Kind::Any
     }
 
@@ -731,10 +731,9 @@ impl SurrealValue for RefnoEnum {
                             .map(|v| match v {
                                 surrealdb_types::Value::String(s) => s.clone(),
                                 surrealdb_types::Value::Number(n) => n.to_string(),
-                                _ => {
-                                    let mut s = String::new();
-                                    v.fmt_sql(&mut s, surrealdb_types::SqlFormat::SingleLine);
-                                    s
+                                other => {
+                                    // 使用 Display trait 替代 SqlFormat
+                                    format!("{:?}", other)
                                 }
                             })
                             .collect();
@@ -1302,9 +1301,8 @@ impl From<RecordId> for RefnoEnum {
                         Value::Number(n) => n.to_string(),
                         Value::RecordId(r) => r.to_raw(),
                         other => {
-                            let mut raw = String::new();
-                            other.fmt_sql(&mut raw, surrealdb_types::SqlFormat::SingleLine);
-                            raw
+                            // 使用 Display trait 替代 SqlFormat
+                            format!("{:?}", other)
                         }
                     })
                     .unwrap_or_default();

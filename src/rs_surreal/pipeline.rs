@@ -74,6 +74,10 @@ pub struct PipelineSegmentRecord {
     pub extra_ports: Vec<PipelinePort>,
     pub length: f32,
     pub straight_length: f32,
+    /// 外径 (mm)
+    pub outside_diameter: Option<f32>,
+    /// 通径/DN (mm)
+    pub bore: Option<f32>,
 }
 
 impl PipelineSegmentRecord {
@@ -154,7 +158,7 @@ impl PipelineQueryService {
 
         let refno_ids: Vec<RefU64> = unique_refnos.iter().map(|refno| refno.refno()).collect();
 
-        // 获取 arrive/leave 点对（已包含世界坐标）
+        // 获取 arrive/leave 点对（使用 inst_info 获取并自动应用 world_trans）
         let arrive_leave_pairs = query_arrive_leave_points_of_branch(branch_refno).await?;
 
         // 获取点映射（用于多端口元件如三通）
@@ -294,6 +298,41 @@ impl PipelineQueryService {
             let name = attr_to_string(&attrs, "NAME");
             let spec = attr_to_string(&attrs, "SPEC");
 
+            // 增强外径/通径提取
+            let bore = attr_to_f32(&attrs, "ABORE")
+                .or_else(|| attr_to_f32(&attrs, "HBOR"))
+                .or_else(|| attr_to_f32(&attrs, "TBOR"));
+
+            let outside_diameter = attr_to_f32(&attrs, "AOD").or_else(|| attr_to_f32(&attrs, "OD"));
+
+            // 端口兜底逻辑：如果 arrive/leave 依然缺失（常见于 PIPE），从 HPOS/TPOS 提取
+            if arrive_port.is_none() {
+                if let Some(hpos) = attr_to_vec3(&attrs, "HPOS") {
+                    arrive_port = Some(PipelinePort {
+                        number: arrive_number.unwrap_or(1),
+                        role: PortRole::Arrive,
+                        world_pos: hpos,
+                        world_dir: attr_to_vec3(&attrs, "HDIR"),
+                    });
+                    if arrive_number.is_none() {
+                        arrive_number = Some(1);
+                    }
+                }
+            }
+            if leave_port.is_none() {
+                if let Some(tpos) = attr_to_vec3(&attrs, "TPOS") {
+                    leave_port = Some(PipelinePort {
+                        number: leave_number.unwrap_or(2),
+                        role: PortRole::Leave,
+                        world_pos: tpos,
+                        world_dir: attr_to_vec3(&attrs, "TDIR"),
+                    });
+                    if leave_number.is_none() {
+                        leave_number = Some(2);
+                    }
+                }
+            }
+
             // 解析 noun 类型
             let noun = generic
                 .as_deref()
@@ -318,6 +357,8 @@ impl PipelineQueryService {
                 extra_ports,
                 length,
                 straight_length,
+                outside_diameter,
+                bore,
             });
         }
 
@@ -330,6 +371,15 @@ fn attr_to_i32(attrs: &NamedAttrMap, key: &str) -> Option<i32> {
         NamedAttrValue::IntegerType(v) => Some(*v),
         NamedAttrValue::LongType(v) => Some(*v as i32),
         NamedAttrValue::F32Type(v) => Some(*v as i32),
+        _ => None,
+    })
+}
+
+fn attr_to_f32(attrs: &NamedAttrMap, key: &str) -> Option<f32> {
+    attr_value(attrs, key).and_then(|value| match value {
+        NamedAttrValue::F32Type(v) => Some(*v),
+        NamedAttrValue::IntegerType(v) => Some(*v as f32),
+        NamedAttrValue::LongType(v) => Some(*v as f32),
         _ => None,
     })
 }
@@ -348,4 +398,89 @@ fn attr_value<'a>(attrs: &'a NamedAttrMap, key: &str) -> Option<&'a NamedAttrVal
         let alt = format!(":{key}");
         attrs.get(alt.as_str())
     })
+}
+
+fn attr_to_vec3(attrs: &NamedAttrMap, key: &str) -> Option<Vec3> {
+    attr_value(attrs, key).and_then(|value| match value {
+        NamedAttrValue::Vec3Type(v) => Some(*v),
+        NamedAttrValue::F32VecType(v) if v.len() >= 3 => Some(Vec3::new(v[0], v[1], v[2])),
+        _ => None,
+    })
+}
+
+/// 分支属性（用于图纸标题栏等）
+#[derive(Debug, Clone, Default)]
+pub struct BranchAttributes {
+    /// 系统
+    pub duty: Option<String>,
+    /// 管道等级
+    pub pipe_spec: Option<String>,
+    /// RCCM 编号
+    pub rccm: Option<String>,
+    /// 清洁度等级
+    pub clean_level: Option<String>,
+    /// 设计温度
+    pub temperature: Option<String>,
+    /// 设计压力
+    pub pressure: Option<f32>,
+    /// 保温规格
+    pub insulation_spec: Option<String>,
+    /// 保温厚度
+    pub insulation_thickness: Option<f32>,
+    /// 伴热规格
+    pub tracing_spec: Option<String>,
+    /// 介质
+    pub fluid: Option<String>,
+}
+
+impl BranchAttributes {
+    /// 从属性映射构建 BranchAttributes
+    ///
+    /// 属性名称映射基于 MBD/markpipe/branAttlist.txt
+    pub fn from_attr_map(attrs: &NamedAttrMap) -> Self {
+        Self {
+            duty: attr_to_string(attrs, "DUTY"),
+            pipe_spec: attr_to_string(attrs, "PSPEC"),
+            rccm: attr_to_string(attrs, "RCCM"),
+            clean_level: attr_to_string(attrs, "CLEAN"),
+            temperature: attr_to_string(attrs, "TEMP"),
+            pressure: attr_to_f32(attrs, "PRESS"),
+            insulation_spec: attr_to_string(attrs, "ISPEC"),
+            insulation_thickness: attr_to_f32(attrs, "INSUTHICK"),
+            tracing_spec: attr_to_string(attrs, "TSPEC"),
+            fluid: attr_to_string(attrs, "FLUID"),
+        }
+    }
+
+    /// 从数据库查询分支属性
+    pub async fn fetch(branch_refno: RefnoEnum) -> Result<Self> {
+        let attrs = get_named_attmap(branch_refno).await?;
+        Ok(Self::from_attr_map(&attrs))
+    }
+}
+
+/// 焊缝类型
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WeldType {
+    /// 对接焊
+    Butt,
+    /// 角焊
+    Fillet,
+    /// 承插焊
+    Socket,
+}
+
+/// 焊缝详细信息
+#[derive(Debug, Clone)]
+pub struct WeldInfo {
+    /// 焊缝位置
+    pub position: Vec3,
+    /// 焊缝编号
+    pub weld_number: String,
+    /// 是否为现场焊
+    pub is_field_weld: bool,
+    /// RCCM 焊缝号（核级管道）
+    pub rccm_number: Option<String>,
+    /// 连接的两个元件
+    pub connected_members: (RefnoEnum, RefnoEnum),
 }

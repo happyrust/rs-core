@@ -225,7 +225,7 @@ lazy_static! {
         s.insert(ATT_ALLANG);
         s.insert(ATT_PZAXI);
         s.insert(ATT_PANG);
-        s.insert(ATT_BANG);
+        // Note: ATT_BANG removed - BANG is INTEGER type, not expression
         s.insert(ATT_PTCPOS);
 
         s.insert(IMP_PAXI);

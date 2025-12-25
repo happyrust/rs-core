@@ -105,9 +105,11 @@ pub async fn query_arrive_leave_points_of_component(
 pub async fn query_arrive_leave_points_of_branch(
     branch_refno: RefnoEnum,
 ) -> anyhow::Result<DashMap<RefnoEnum, [CateAxisParam; 2]>> {
+    // 同时获取 ptset 和 world_trans，将局部坐标转换为世界坐标
     let sql = format!(
         r#"
              select value [id,
+                (->inst_relate.world_trans.d ?? ->tubi_relate.world_trans.d)[0],
                 (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.ARRI)[0],
                 (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.LEAV)[0]
             ] from {}.children
@@ -117,14 +119,24 @@ pub async fn query_arrive_leave_points_of_branch(
 
     // println!("query_arrive_leave_points_of_branch sql: {}", sql);
 
-    let rows: Vec<(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>)> =
-        SUL_DB.query_take(&sql, 0).await?;
+    let rows: Vec<(
+        RefnoEnum,
+        Option<PlantTransform>,
+        Option<CateAxisParam>,
+        Option<CateAxisParam>,
+    )> = SUL_DB.query_take(&sql, 0).await?;
     let mut map = DashMap::new();
-    for (refno, arri, leav) in rows {
+    for (refno, world_trans, arri, leav) in rows {
         if arri.is_none() || leav.is_none() {
             continue;
         }
         let mut pts = [arri.unwrap(), leav.unwrap()];
+        // 应用 world_trans 转换为世界坐标
+        if let Some(trans) = world_trans {
+            let t: Transform = *trans;
+            pts[0].transform(&t);
+            pts[1].transform(&t);
+        }
         map.insert(refno, pts);
     }
     Ok(map)

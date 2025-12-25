@@ -98,3 +98,55 @@ async fn test_branch_38293_8916_segments() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn test_pipeline_segment_diameter_fields() -> anyhow::Result<()> {
+    crate::init_test_surreal().await;
+
+    let branch_refno = RefnoEnum::from("38293/8916");
+    let segments = PipelineQueryService::fetch_branch_segments(branch_refno.clone()).await?;
+
+    if segments.is_empty() {
+        println!("⚠️ 跳过测试：BRAN 38293/8916 没有管段数据");
+        return Ok(());
+    }
+
+    // 统计有外径数据的管段
+    let segments_with_od: Vec<_> = segments
+        .iter()
+        .filter(|seg| seg.outside_diameter.is_some())
+        .collect();
+
+    let segments_with_bore: Vec<_> = segments
+        .iter()
+        .filter(|seg| seg.bore.is_some())
+        .collect();
+
+    println!("✅ 管道尺寸字段测试:");
+    println!("   - 管段总数: {}", segments.len());
+    println!(
+        "   - 有外径(AOD)数据: {} ({:.1}%)",
+        segments_with_od.len(),
+        segments_with_od.len() as f32 / segments.len() as f32 * 100.0
+    );
+    println!(
+        "   - 有通径(ABORE)数据: {} ({:.1}%)",
+        segments_with_bore.len(),
+        segments_with_bore.len() as f32 / segments.len() as f32 * 100.0
+    );
+
+    // 显示前 5 个有尺寸数据的管段
+    println!("\n   前 5 个带尺寸数据的管段:");
+    for (idx, segment) in segments_with_od.iter().take(5).enumerate() {
+        println!(
+            "   [{}] {} noun={:?} OD={:?}mm BORE={:?}mm",
+            idx + 1,
+            segment.refno.to_string(),
+            segment.noun,
+            segment.outside_diameter,
+            segment.bore,
+        );
+    }
+
+    Ok(())
+}

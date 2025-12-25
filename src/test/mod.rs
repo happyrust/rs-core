@@ -56,9 +56,10 @@ pub mod test_arc_demo;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_clean_svg;
 
-pub mod test_bad_primloft;
-pub mod test_bad_primloft_fix;
-pub mod test_bad_primloft_simple;
+// TODO: 这些模块文件缺失，暂时注释
+// pub mod test_bad_primloft;
+// pub mod test_bad_primloft_fix;
+// pub mod test_bad_primloft_simple;
 
 pub mod test_stwall_25688_7958;
 
