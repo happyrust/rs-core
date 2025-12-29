@@ -40,8 +40,6 @@ pub struct InstRelate {
     pub dt: Option<NaiveDateTime>,
     /// 区域参考号
     pub zone_refno: Option<RefnoEnum>,
-    /// 历史PE编号
-    pub old_pe: Option<RefnoEnum>,
     /// 点集数据
     pub ptset: Option<PtsetData>,
 }
@@ -142,7 +140,6 @@ impl InstRelate {
             booled_id: None,
             dt: None,
             zone_refno: None,
-            old_pe: None,
             ptset: None,
         }
     }
@@ -174,12 +171,6 @@ impl InstRelate {
     /// 设置区域参考号
     pub fn with_zone_refno(mut self, zone_refno: RefnoEnum) -> Self {
         self.zone_refno = Some(zone_refno);
-        self
-    }
-
-    /// 设置历史PE编号
-    pub fn with_old_pe(mut self, old_pe: RefnoEnum) -> Self {
-        self.old_pe = Some(old_pe);
         self
     }
 
@@ -233,11 +224,6 @@ impl InstRelate {
             None => "NONE".to_string(),
         };
 
-        let old_pe_str = match &self.old_pe {
-            Some(refno) => format!("'{}'", refno),
-            None => "NONE".to_string(),
-        };
-
         format!(
             r#"CREATE inst_relate:{} SET
                 in = pe:{},
@@ -249,7 +235,6 @@ impl InstRelate {
                 booled_id = {},
                 dt = {},
                 zone_refno = {},
-                old_pe = {},
                 ptset = {};
 UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             self.id,
@@ -262,7 +247,6 @@ UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             booled_id_str,
             dt_str,
             zone_refno_str,
-            old_pe_str,
             ptset_str,
             self.input,
             self.id
@@ -282,7 +266,6 @@ UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             "booled_id": self.booled_id,
             "dt": self.dt,
             "zone_refno": self.zone_refno,
-            "old_pe": self.old_pe,
             "ptset": self.ptset,
         });
 

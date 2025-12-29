@@ -1,4 +1,4 @@
-use surrealdb::types::{RecordId, RecordIdKey};
+use surrealdb::types::{RecordId, RecordIdKey, ToSql};
 
 /// 将表名与主键元组便捷地转换为 `RecordId`
 pub trait IntoRecordId {
@@ -44,8 +44,8 @@ pub trait RecordIdExt {
 
 impl RecordIdExt for RecordId {
     fn to_raw(&self) -> String {
-        // 使用 Display trait 替代 SqlFormat
-        format!("{:?}", self)
+        // 使用 ToSql 生成 SurrealQL 兼容字符串
+        self.to_sql()
     }
 
     fn to_mesh_id(&self) -> String {
@@ -55,8 +55,8 @@ impl RecordIdExt for RecordId {
 
 impl RecordIdExt for RecordIdKey {
     fn to_raw(&self) -> String {
-        // 使用 Display trait 替代 SqlFormat
-        format!("{:?}", self)
+        // 使用 ToSql 生成 SurrealQL 兼容字符串
+        self.to_sql()
     }
 
     fn to_mesh_id(&self) -> String {
@@ -67,4 +67,3 @@ impl RecordIdExt for RecordIdKey {
         }
     }
 }
-

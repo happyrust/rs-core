@@ -549,10 +549,10 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
         let $temp = $pe.owner.refno.TEMP;
 
         // 查询符合条件的 CATR 节点的 PARA 参数
-        return select value (children[0].refno.CATR.refno.PARA)
+        return (select value (children[0].refno.CATR.refno.PARA)
              from only $ispe.{2}.children.refno.{children: REFNO.children, MAXA, ANSW, TYPE}
              where TYPE = 'SELE' and $temp >= ANSW && $temp <= MAXA
-             limit 1; 
+             limit 1)??[]; 
         --         // 孔径条件：父节点孔径在 ANSW 和 MAXA 范围内
         --         where $parent.owner.refno.HBOR >=$answ and $parent.owner.refno.HBOR <= $maxa limit 1)
     };

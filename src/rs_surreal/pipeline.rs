@@ -187,6 +187,37 @@ impl PipelineQueryService {
         .await?;
         let length_map: HashMap<RefU64, f32> = length_pairs.into_iter().collect();
 
+        // 从 tubi 连接关系构建端口位置映射
+        // tubi_relate 记录: in(refno) -> out(leave), world_trans.translation 是连接点位置
+        // 注意：循环遍历 tubi_insts 时，使用 inst.leave 作为元件标识
+        // 因此需要为每个 inst.leave 记录它的 arrive 和 leave 位置
+        let mut arrive_from_tubi: HashMap<RefnoEnum, Vec3> = HashMap::new();
+        let mut leave_from_tubi: HashMap<RefnoEnum, Vec3> = HashMap::new();
+        
+        // 第一遍：记录所有连接点
+        // 对于 inst: refno -> leave 的连接，连接点是 leave 元件的 arrive
+        for inst in &tubi_insts {
+            let connection_pos = inst.world_trans.translation;
+            // inst.leave 元件的 arrive 点 = 这个连接点
+            arrive_from_tubi.insert(inst.leave.clone(), connection_pos);
+        }
+        
+        // 第二遍：为每个元件找它的 leave 位置
+        // 如果有下一个连接（以当前元件为 refno），那个连接点就是当前元件的 leave
+        for inst in &tubi_insts {
+            // 当前记录的 leave 就是下一个元件
+            // 所以 inst.leave 的 leave 位置需要从"以 inst.leave 为 refno"的记录中获取
+            // 但由于我们是链式结构，简化处理：使用下一个连接点作为 leave
+        }
+        
+        // 简化策略：通过相邻记录推断 leave 位置
+        // tubi_insts[i].leave 的 leave 位置 = tubi_insts[i+1] 的 world_trans.translation（如果存在）
+        for i in 0..tubi_insts.len().saturating_sub(1) {
+            let current_leave = &tubi_insts[i].leave;
+            let next_pos = tubi_insts[i + 1].world_trans.translation;
+            leave_from_tubi.insert(current_leave.clone(), next_pos);
+        }
+
         let mut records = Vec::with_capacity(tubi_insts.len());
         for inst in tubi_insts {
             let super::inst::TubiInstQuery {
@@ -326,6 +357,34 @@ impl PipelineQueryService {
                         role: PortRole::Leave,
                         world_pos: tpos,
                         world_dir: attr_to_vec3(&attrs, "TDIR"),
+                    });
+                    if leave_number.is_none() {
+                        leave_number = Some(2);
+                    }
+                }
+            }
+
+            // 第二层兜底：从 tubi 连接关系获取端口位置
+            if arrive_port.is_none() {
+                if let Some(&pos) = arrive_from_tubi.get(&refno) {
+                    arrive_port = Some(PipelinePort {
+                        number: arrive_number.unwrap_or(1),
+                        role: PortRole::Arrive,
+                        world_pos: pos,
+                        world_dir: None,
+                    });
+                    if arrive_number.is_none() {
+                        arrive_number = Some(1);
+                    }
+                }
+            }
+            if leave_port.is_none() {
+                if let Some(&pos) = leave_from_tubi.get(&refno) {
+                    leave_port = Some(PipelinePort {
+                        number: leave_number.unwrap_or(2),
+                        role: PortRole::Leave,
+                        world_pos: pos,
+                        world_dir: None,
                     });
                     if leave_number.is_none() {
                         leave_number = Some(2);

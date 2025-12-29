@@ -38,3 +38,4 @@ rs-plant
 rs-plant.exe
 dist/
 assets/mesh/
+.ace-tool/

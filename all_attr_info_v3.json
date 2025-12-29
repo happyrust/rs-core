@@ -1,0 +1,6245 @@
+{
+  "noun_attr_info_map": {
+    "270276429": {},
+    "223712400": {},
+    "939199": {},
+    "919309": {},
+    "223712394": {},
+    "640481": {},
+    "500000": {},
+    "8797174": {},
+    "10513063": {},
+    "243803566": {
+      "722578": {
+        "name": "DESI",
+        "hash": 722578,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "ORIENTATION"
+      }
+    },
+    "639374": {},
+    "920043": {},
+    "555256": {
+      "722578": {
+        "name": "DESI",
+        "hash": 722578,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "ORIENTATION"
+      }
+    },
+    "2528752": {
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      }
+    },
+    "711154": {},
+    "620516": {
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      }
+    },
+    "545713": {},
+    "865141": {},
+    "535241": {
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      }
+    },
+    "298320251": {},
+    "79902432": {
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      }
+    },
+    "640105": {},
+    "46619692": {
+      "679457": {
+        "name": "BANG",
+        "hash": 679457,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "5383700": {
+      "89667327": {
+        "name": "CLOSEF",
+        "hash": 89667327,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "900355": {
+        "name": "MATR",
+        "hash": 900355,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "896732": {
+        "name": "HBOR",
+        "hash": 896732,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892412": {
+        "name": "HDIR",
+        "hash": 892412,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916793": {
+        "name": "HPOS",
+        "hash": 916793,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896744": {
+        "name": "TBOR",
+        "hash": 896744,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892424": {
+        "name": "TDIR",
+        "hash": 892424,
+        "offset": 0,
+        "default_val": {
+          "BoolType": false
+        },
+        "att_type": "BOOL"
+      },
+      "916805": {
+        "name": "TPOS",
+        "hash": 916805,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "74647259": {
+        "name": "HULLDE",
+        "hash": 74647259,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "267560342": {
+        "name": "HULLPR",
+        "hash": 267560342,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2430332": {
+        "name": "HULOC",
+        "hash": 2430332,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "13197662": {
+        "name": "HUMVW",
+        "hash": 13197662,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "176019083": {
+        "name": "HUREFL",
+        "hash": 176019083,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "194482466": {
+        "name": "HUSYMM",
+        "hash": 194482466,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      }
+    },
+    "549344": {
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "810996": {
+        "name": "XLEN",
+        "hash": 810996,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "810997": {
+        "name": "YLEN",
+        "hash": 810997,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "810998": {
+        "name": "ZLEN",
+        "hash": 810998,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "640470": {
+        "name": "CONE",
+        "hash": 640470,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857848": {
+        "name": "DTOP",
+        "hash": 857848,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936094": {
+        "name": "DBOT",
+        "hash": 936094,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "897213": {
+        "name": "CTOR",
+        "hash": 897213,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "915885": {
+        "name": "RINS",
+        "hash": 915885,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "940833": {
+        "name": "ROUT",
+        "hash": 940833,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "718014": {
+        "name": "CYLI",
+        "hash": 718014,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703003": {
+        "name": "DISH",
+        "hash": 703003,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711549": {
+        "name": "RADI",
+        "hash": 711549,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "895415": {
+        "name": "NGMR",
+        "hash": 895415,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "865141": {
+        "name": "GTYP",
+        "hash": 865141,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711574": {
+        "name": "PBDI",
+        "hash": 711574,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712060": {
+        "name": "PTDI",
+        "hash": 712060,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926629": {
+        "name": "PBBT",
+        "hash": 926629,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660544": {
+        "name": "PBOF",
+        "hash": 660544,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861019": {
+        "name": "PBTP",
+        "hash": 861019,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004659": {
+        "name": "PCAX",
+        "hash": 1004659,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926656": {
+        "name": "PCBT",
+        "hash": 926656,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660571": {
+        "name": "PCOF",
+        "hash": 660571,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861046": {
+        "name": "PCTP",
+        "hash": 861046,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790306": {
+        "name": "PBDM",
+        "hash": 790306,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654334": {
+        "name": "POFF",
+        "hash": 654334,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790792": {
+        "name": "PTDM",
+        "hash": 790792,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "897213": {
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "915885": {
+        "name": "RINS",
+        "hash": 915885,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "940833": {
+        "name": "ROUT",
+        "hash": 940833,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "718014": {
+        "name": "CYLI",
+        "hash": 718014,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703003": {
+        "name": "DISH",
+        "hash": 703003,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711549": {
+        "name": "RADI",
+        "hash": 711549,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "895415": {
+        "name": "NGMR",
+        "hash": 895415,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "865141": {
+        "name": "GTYP",
+        "hash": 865141,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711574": {
+        "name": "PBDI",
+        "hash": 711574,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712060": {
+        "name": "PTDI",
+        "hash": 712060,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926629": {
+        "name": "PBBT",
+        "hash": 926629,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660544": {
+        "name": "PBOF",
+        "hash": 660544,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861019": {
+        "name": "PBTP",
+        "hash": 861019,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004659": {
+        "name": "PCAX",
+        "hash": 1004659,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926656": {
+        "name": "PCBT",
+        "hash": 926656,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660571": {
+        "name": "PCOF",
+        "hash": 660571,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861046": {
+        "name": "PCTP",
+        "hash": 861046,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790306": {
+        "name": "PBDM",
+        "hash": 790306,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654334": {
+        "name": "POFF",
+        "hash": 654334,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790792": {
+        "name": "PTDM",
+        "hash": 790792,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "8116282": {
+        "name": "ALIGN",
+        "hash": 8116282,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939529": {
+        "name": "JUST",
+        "hash": 939529,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "240105349": {
+        "name": "SPPURP",
+        "hash": 240105349,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "917781": {
+        "name": "XYPS",
+        "hash": 917781,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      }
+    },
+    "718014": {
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703003": {
+        "name": "DISH",
+        "hash": 703003,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711549": {
+        "name": "RADI",
+        "hash": 711549,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "895415": {
+        "name": "NGMR",
+        "hash": 895415,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "865141": {
+        "name": "GTYP",
+        "hash": 865141,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711574": {
+        "name": "PBDI",
+        "hash": 711574,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712060": {
+        "name": "PTDI",
+        "hash": 712060,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926629": {
+        "name": "PBBT",
+        "hash": 926629,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660544": {
+        "name": "PBOF",
+        "hash": 660544,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861019": {
+        "name": "PBTP",
+        "hash": 861019,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004659": {
+        "name": "PCAX",
+        "hash": 1004659,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926656": {
+        "name": "PCBT",
+        "hash": 926656,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660571": {
+        "name": "PCOF",
+        "hash": 660571,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861046": {
+        "name": "PCTP",
+        "hash": 861046,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790306": {
+        "name": "PBDM",
+        "hash": 790306,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654334": {
+        "name": "POFF",
+        "hash": 654334,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790792": {
+        "name": "PTDM",
+        "hash": 790792,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "8116282": {
+        "name": "ALIGN",
+        "hash": 8116282,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939529": {
+        "name": "JUST",
+        "hash": 939529,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "240105349": {
+        "name": "SPPURP",
+        "hash": 240105349,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "917781": {
+        "name": "XYPS",
+        "hash": 917781,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      }
+    },
+    "703003": {
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "711549": {
+        "name": "RADI",
+        "hash": 711549,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "895415": {
+        "name": "NGMR",
+        "hash": 895415,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "865141": {
+        "name": "GTYP",
+        "hash": 865141,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711574": {
+        "name": "PBDI",
+        "hash": 711574,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712060": {
+        "name": "PTDI",
+        "hash": 712060,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926629": {
+        "name": "PBBT",
+        "hash": 926629,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660544": {
+        "name": "PBOF",
+        "hash": 660544,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861019": {
+        "name": "PBTP",
+        "hash": 861019,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004659": {
+        "name": "PCAX",
+        "hash": 1004659,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "926656": {
+        "name": "PCBT",
+        "hash": 926656,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "660571": {
+        "name": "PCOF",
+        "hash": 660571,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "861046": {
+        "name": "PCTP",
+        "hash": 861046,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790306": {
+        "name": "PBDM",
+        "hash": 790306,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654334": {
+        "name": "POFF",
+        "hash": 654334,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "790792": {
+        "name": "PTDM",
+        "hash": 790792,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "8116282": {
+        "name": "ALIGN",
+        "hash": 8116282,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939529": {
+        "name": "JUST",
+        "hash": 939529,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "240105349": {
+        "name": "SPPURP",
+        "hash": 240105349,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "917781": {
+        "name": "XYPS",
+        "hash": 917781,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "900345": {
+        "name": "CATR",
+        "hash": 900345,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "653673": {
+        "name": "CREF",
+        "hash": 653673,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "642042": {
+        "name": "ISPE",
+        "hash": 642042,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "914668": {
+        "name": "PRLS",
+        "hash": 914668,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643429": {
+        "name": "SPRE",
+        "hash": 643429,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "896725": {
+        "name": "ABOR",
+        "hash": 896725,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896736": {
+        "name": "LBOR",
+        "hash": 896736,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "77028748": {
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "564937": {
+        "name": "PYRA",
+        "hash": 564937,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "654342": {
+        "name": "XOFF",
+        "hash": 654342,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654343": {
+        "name": "YOFF",
+        "hash": 654343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936114": {
+        "name": "XBOT",
+        "hash": 936114,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857868": {
+        "name": "XTOP",
+        "hash": 857868,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936115": {
+        "name": "YBOT",
+        "hash": 936115,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857869": {
+        "name": "YTOP",
+        "hash": 857869,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "564937": {
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "654342": {
+        "name": "XOFF",
+        "hash": 654342,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654343": {
+        "name": "YOFF",
+        "hash": 654343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936114": {
+        "name": "XBOT",
+        "hash": 936114,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857868": {
+        "name": "XTOP",
+        "hash": 857868,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936115": {
+        "name": "YBOT",
+        "hash": 936115,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857869": {
+        "name": "YTOP",
+        "hash": 857869,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "900968": {
+        "name": "EXTR",
+        "hash": 900968,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "897228": {
+        "name": "RTOR",
+        "hash": 897228,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "915885": {
+        "name": "RINS",
+        "hash": 915885,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "940833": {
+        "name": "ROUT",
+        "hash": 940833,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "532105": {
+        "name": "PX",
+        "hash": 532105,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639268": {
+        "name": "PXLE",
+        "hash": 639268,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532132": {
+        "name": "PY",
+        "hash": 532132,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639295": {
+        "name": "PYLE",
+        "hash": 639295,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532159": {
+        "name": "PZ",
+        "hash": 532159,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639322": {
+        "name": "PZLE",
+        "hash": 639322,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "912103": {
+        "name": "PDIS",
+        "hash": 912103,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712465": {
+        "name": "PHEI",
+        "hash": 712465,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "611404": {
+        "name": "PRAD",
+        "hash": 611404,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1026046": {
+        "name": "SLCY",
+        "hash": 1026046,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "702834": {
+        "name": "XBSH",
+        "hash": 702834,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703320": {
+        "name": "XTSH",
+        "hash": 703320,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "702835": {
+        "name": "YBSH",
+        "hash": 702835,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703321": {
+        "name": "YTSH",
+        "hash": 703321,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "956116": {
+        "name": "SNOU",
+        "hash": 956116,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "542283": {
+        "name": "OWN",
+        "hash": 542283,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936094": {
+        "name": "DBOT",
+        "hash": 936094,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857848": {
+        "name": "DTOP",
+        "hash": 857848,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "679471": {
+        "name": "PANG",
+        "hash": 679471,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "900968": {
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "897228": {
+        "name": "RTOR",
+        "hash": 897228,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "915885": {
+        "name": "RINS",
+        "hash": 915885,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "940833": {
+        "name": "ROUT",
+        "hash": 940833,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "532105": {
+        "name": "PX",
+        "hash": 532105,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639268": {
+        "name": "PXLE",
+        "hash": 639268,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532132": {
+        "name": "PY",
+        "hash": 532132,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639295": {
+        "name": "PYLE",
+        "hash": 639295,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532159": {
+        "name": "PZ",
+        "hash": 532159,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639322": {
+        "name": "PZLE",
+        "hash": 639322,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "912103": {
+        "name": "PDIS",
+        "hash": 912103,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712465": {
+        "name": "PHEI",
+        "hash": 712465,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "611404": {
+        "name": "PRAD",
+        "hash": 611404,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1026046": {
+        "name": "SLCY",
+        "hash": 1026046,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "702834": {
+        "name": "XBSH",
+        "hash": 702834,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703320": {
+        "name": "XTSH",
+        "hash": 703320,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "702835": {
+        "name": "YBSH",
+        "hash": 702835,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703321": {
+        "name": "YTSH",
+        "hash": 703321,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "956116": {
+        "name": "SNOU",
+        "hash": 956116,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654342": {
+        "name": "XOFF",
+        "hash": 654342,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654343": {
+        "name": "YOFF",
+        "hash": 654343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "542283": {
+        "name": "OWN",
+        "hash": 542283,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936094": {
+        "name": "DBOT",
+        "hash": 936094,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857848": {
+        "name": "DTOP",
+        "hash": 857848,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "679471": {
+        "name": "PANG",
+        "hash": 679471,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "897228": {
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "915885": {
+        "name": "RINS",
+        "hash": 915885,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "940833": {
+        "name": "ROUT",
+        "hash": 940833,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "532105": {
+        "name": "PX",
+        "hash": 532105,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639268": {
+        "name": "PXLE",
+        "hash": 639268,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532132": {
+        "name": "PY",
+        "hash": 532132,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639295": {
+        "name": "PYLE",
+        "hash": 639295,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532159": {
+        "name": "PZ",
+        "hash": 532159,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "639322": {
+        "name": "PZLE",
+        "hash": 639322,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "912103": {
+        "name": "PDIS",
+        "hash": 912103,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712465": {
+        "name": "PHEI",
+        "hash": 712465,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "611404": {
+        "name": "PRAD",
+        "hash": 611404,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1026046": {
+        "name": "SLCY",
+        "hash": 1026046,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "702834": {
+        "name": "XBSH",
+        "hash": 702834,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703320": {
+        "name": "XTSH",
+        "hash": 703320,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "702835": {
+        "name": "YBSH",
+        "hash": 702835,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703321": {
+        "name": "YTSH",
+        "hash": 703321,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "956116": {
+        "name": "SNOU",
+        "hash": 956116,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654342": {
+        "name": "XOFF",
+        "hash": 654342,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654343": {
+        "name": "YOFF",
+        "hash": 654343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "542283": {
+        "name": "OWN",
+        "hash": 542283,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936094": {
+        "name": "DBOT",
+        "hash": 936094,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857848": {
+        "name": "DTOP",
+        "hash": 857848,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "679471": {
+        "name": "PANG",
+        "hash": 679471,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "907540": {
+        "name": "PXBS",
+        "hash": 907540,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "920662": {
+        "name": "PXTS",
+        "hash": 920662,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "907567": {
+        "name": "PYBS",
+        "hash": 907567,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "920689": {
+        "name": "PYTS",
+        "hash": 920689,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "1026046": {
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "702834": {
+        "name": "XBSH",
+        "hash": 702834,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703320": {
+        "name": "XTSH",
+        "hash": 703320,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "702835": {
+        "name": "YBSH",
+        "hash": 702835,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "703321": {
+        "name": "YTSH",
+        "hash": 703321,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "956116": {
+        "name": "SNOU",
+        "hash": 956116,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654342": {
+        "name": "XOFF",
+        "hash": 654342,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654343": {
+        "name": "YOFF",
+        "hash": 654343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "542283": {
+        "name": "OWN",
+        "hash": 542283,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936094": {
+        "name": "DBOT",
+        "hash": 936094,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857848": {
+        "name": "DTOP",
+        "hash": 857848,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "679471": {
+        "name": "PANG",
+        "hash": 679471,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532105": {
+        "name": "PX",
+        "hash": 532105,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532132": {
+        "name": "PY",
+        "hash": 532132,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532159": {
+        "name": "PZ",
+        "hash": 532159,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712465": {
+        "name": "PHEI",
+        "hash": 712465,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "912103": {
+        "name": "PDIS",
+        "hash": 912103,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "907540": {
+        "name": "PXBS",
+        "hash": 907540,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "920662": {
+        "name": "PXTS",
+        "hash": 920662,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "907567": {
+        "name": "PYBS",
+        "hash": 907567,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "920689": {
+        "name": "PYTS",
+        "hash": 920689,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "900968": {
+        "name": "EXTR",
+        "hash": 900968,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "187887400": {
+        "name": "PARNAM",
+        "hash": 187887400,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "17892916": {
+        "name": "PLAREA",
+        "hash": 17892916,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "12010101": {
+        "name": "OTDPU",
+        "hash": 12010101,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "3475239": {
+        "name": "OCONE",
+        "hash": 3475239,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "259452084": {
+        "name": "LINEAR",
+        "hash": 259452084,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "722197": {
+        "name": "ARRI",
+        "hash": 722197,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "653673": {
+        "name": "CREF",
+        "hash": 653673,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "642042": {
+        "name": "ISPE",
+        "hash": 642042,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "965343": {
+        "name": "LEAV",
+        "hash": 965343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "601978": {
+        "name": "MTOC",
+        "hash": 601978,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936589": {
+        "name": "MTOT",
+        "hash": 936589,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "837448": {
+        "name": "PTNO",
+        "hash": 837448,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643429": {
+        "name": "SPRE",
+        "hash": 643429,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "642053": {
+        "name": "TSPE",
+        "hash": 642053,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "774767": {
+        "name": "BUIL",
+        "hash": 774767,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "857539": {
+        "name": "SHOP",
+        "hash": 857539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "914668": {
+        "name": "PRLS",
+        "hash": 914668,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896725": {
+        "name": "ABOR",
+        "hash": 896725,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "8258194": {
+        "name": "ACONN",
+        "hash": 8258194,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892405": {
+        "name": "ADIR",
+        "hash": 892405,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132499882": {
+        "name": "ARRHEI",
+        "hash": 132499882,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63176356": {
+        "name": "ARRWID",
+        "hash": 63176356,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896736": {
+        "name": "LBOR",
+        "hash": 896736,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "818031": {
+        "name": "LCON",
+        "hash": 818031,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892416": {
+        "name": "LDIR",
+        "hash": 892416,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132487149": {
+        "name": "LEAHEI",
+        "hash": 132487149,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63163623": {
+        "name": "LEAWID",
+        "hash": 63163623,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "347970684": {
+        "name": "CATTEX",
+        "hash": 347970684,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "900355": {
+        "name": "MATR",
+        "hash": 900355,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "916786": {
+        "name": "APOS",
+        "hash": 916786,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916797": {
+        "name": "LPOS",
+        "hash": 916797,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "934300": {
+        "name": "SPLT",
+        "hash": 934300,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      }
+    },
+    "956116": {
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 0,
+        "default_val": {
+          "StringType": ""
+        },
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "89649875": {
+        "name": "TMRREF",
+        "hash": 89649875,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "654342": {
+        "name": "XOFF",
+        "hash": 654342,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "654343": {
+        "name": "YOFF",
+        "hash": 654343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "542283": {
+        "name": "OWN",
+        "hash": 542283,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936094": {
+        "name": "DBOT",
+        "hash": 936094,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "857848": {
+        "name": "DTOP",
+        "hash": 857848,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "1004605": {
+        "name": "PAAX",
+        "hash": 1004605,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "679471": {
+        "name": "PANG",
+        "hash": 679471,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1004632": {
+        "name": "PBAX",
+        "hash": 1004632,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532105": {
+        "name": "PX",
+        "hash": 532105,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532132": {
+        "name": "PY",
+        "hash": 532132,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "532159": {
+        "name": "PZ",
+        "hash": 532159,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "557809": {
+        "name": "PDIA",
+        "hash": 557809,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "712465": {
+        "name": "PHEI",
+        "hash": 712465,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "726127": {
+        "name": "PAXI",
+        "hash": 726127,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "912103": {
+        "name": "PDIS",
+        "hash": 912103,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "907540": {
+        "name": "PXBS",
+        "hash": 907540,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "920662": {
+        "name": "PXTS",
+        "hash": 920662,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "907567": {
+        "name": "PYBS",
+        "hash": 907567,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "920689": {
+        "name": "PYTS",
+        "hash": 920689,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "900968": {
+        "name": "EXTR",
+        "hash": 900968,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "187887400": {
+        "name": "PARNAM",
+        "hash": 187887400,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "17892916": {
+        "name": "PLAREA",
+        "hash": 17892916,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "12010101": {
+        "name": "OTDPU",
+        "hash": 12010101,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "3475239": {
+        "name": "OCONE",
+        "hash": 3475239,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "259452084": {
+        "name": "LINEAR",
+        "hash": 259452084,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "722197": {
+        "name": "ARRI",
+        "hash": 722197,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "653673": {
+        "name": "CREF",
+        "hash": 653673,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "642042": {
+        "name": "ISPE",
+        "hash": 642042,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "965343": {
+        "name": "LEAV",
+        "hash": 965343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "601978": {
+        "name": "MTOC",
+        "hash": 601978,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936589": {
+        "name": "MTOT",
+        "hash": 936589,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "837448": {
+        "name": "PTNO",
+        "hash": 837448,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643429": {
+        "name": "SPRE",
+        "hash": 643429,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "642053": {
+        "name": "TSPE",
+        "hash": 642053,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "774767": {
+        "name": "BUIL",
+        "hash": 774767,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "857539": {
+        "name": "SHOP",
+        "hash": 857539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "914668": {
+        "name": "PRLS",
+        "hash": 914668,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896725": {
+        "name": "ABOR",
+        "hash": 896725,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "8258194": {
+        "name": "ACONN",
+        "hash": 8258194,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892405": {
+        "name": "ADIR",
+        "hash": 892405,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132499882": {
+        "name": "ARRHEI",
+        "hash": 132499882,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63176356": {
+        "name": "ARRWID",
+        "hash": 63176356,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896736": {
+        "name": "LBOR",
+        "hash": 896736,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "818031": {
+        "name": "LCON",
+        "hash": 818031,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892416": {
+        "name": "LDIR",
+        "hash": 892416,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132487149": {
+        "name": "LEAHEI",
+        "hash": 132487149,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63163623": {
+        "name": "LEAWID",
+        "hash": 63163623,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "347970684": {
+        "name": "CATTEX",
+        "hash": 347970684,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "900355": {
+        "name": "MATR",
+        "hash": 900355,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "916786": {
+        "name": "APOS",
+        "hash": 916786,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916797": {
+        "name": "LPOS",
+        "hash": 916797,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "934300": {
+        "name": "SPLT",
+        "hash": 934300,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "82927477": {
+        "name": "ACDATE",
+        "hash": 82927477,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "160267816": {
+        "name": "ACLOCK",
+        "hash": 160267816,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "240105349": {
+        "name": "SPPURP",
+        "hash": 240105349,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "535241": {
+        "name": "TEE",
+        "hash": 535241,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "263683364": {
+        "name": "NOMDIR",
+        "hash": 263683364,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "711549": {
+        "name": "RADI",
+        "hash": 711549,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "217104707": {
+        "name": "BRANBO",
+        "hash": 217104707,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132074147": {
+        "name": "BRANDI",
+        "hash": 132074147,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "259452084": {
+      "722197": {
+        "name": "ARRI",
+        "hash": 722197,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "641779": {
+      "642042": {
+        "name": "ISPE",
+        "hash": 642042,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "900355": {
+        "name": "MATR",
+        "hash": 900355,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "939294": {
+        "name": "RLST",
+        "hash": 939294,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "ORIENTATION"
+      },
+      "1027477": {
+        "name": "SKEY",
+        "hash": 1027477,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "89647660": {
+        "name": "SLOREF",
+        "hash": 89647660,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "642053": {
+        "name": "TSPE",
+        "hash": 642053,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "642049": {
+        "name": "PSPE",
+        "hash": 642049,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "901374": {
+        "name": "FLUR",
+        "hash": 901374,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "21878156": {
+        "name": "BENDMA",
+        "hash": 21878156,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643385": {
+        "name": "BORE",
+        "hash": 643385,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "861339": {
+        "name": "LNTP",
+        "hash": 861339,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "909565": {
+        "name": "PRES",
+        "hash": 909565,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "856001": {
+        "name": "TEMP",
+        "hash": 856001,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "679457": {
+        "name": "BANG",
+        "hash": 679457,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "653673": {
+        "name": "CREF",
+        "hash": 653673,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "283359308": {
+        "name": "EXCESS",
+        "hash": 283359308,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "865141": {
+        "name": "GTYP",
+        "hash": 865141,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643429": {
+        "name": "SPRE",
+        "hash": 643429,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "259452084": {
+        "name": "LINEAR",
+        "hash": 259452084,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "722197": {
+        "name": "ARRI",
+        "hash": 722197,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "965343": {
+        "name": "LEAV",
+        "hash": 965343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "601978": {
+        "name": "MTOC",
+        "hash": 601978,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936589": {
+        "name": "MTOT",
+        "hash": 936589,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "837448": {
+        "name": "PTNO",
+        "hash": 837448,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892429": {
+        "name": "YDIR",
+        "hash": 892429,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "6447616": {
+        "name": "PLOCK",
+        "hash": 6447616,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "781909": {
+        "name": "POSL",
+        "hash": 781909,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "774767": {
+        "name": "BUIL",
+        "hash": 774767,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "857539": {
+        "name": "SHOP",
+        "hash": 857539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "914668": {
+        "name": "PRLS",
+        "hash": 914668,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896725": {
+        "name": "ABOR",
+        "hash": 896725,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "8258194": {
+        "name": "ACONN",
+        "hash": 8258194,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892405": {
+        "name": "ADIR",
+        "hash": 892405,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132499882": {
+        "name": "ARRHEI",
+        "hash": 132499882,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63176356": {
+        "name": "ARRWID",
+        "hash": 63176356,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896736": {
+        "name": "LBOR",
+        "hash": 896736,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "818031": {
+        "name": "LCON",
+        "hash": 818031,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892416": {
+        "name": "LDIR",
+        "hash": 892416,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132487149": {
+        "name": "LEAHEI",
+        "hash": 132487149,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63163623": {
+        "name": "LEAWID",
+        "hash": 63163623,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "347970684": {
+        "name": "CATTEX",
+        "hash": 347970684,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916786": {
+        "name": "APOS",
+        "hash": 916786,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916797": {
+        "name": "LPOS",
+        "hash": 916797,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "934300": {
+        "name": "SPLT",
+        "hash": 934300,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      }
+    },
+    "8830234": {},
+    "821683": {},
+    "24475897": {},
+    "89638978": {
+      "2900181": {
+        "name": "CHILD",
+        "hash": 2900181,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      }
+    },
+    "108663841": {
+      "89667327": {
+        "name": "CLOSEF",
+        "hash": 89667327,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "225410588": {
+        "name": "HEADRO",
+        "hash": 225410588,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "90110271": {
+        "name": "LABOFF",
+        "hash": 90110271,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "900355": {
+        "name": "MATR",
+        "hash": 900355,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "207327836": {
+        "name": "THICKN",
+        "hash": 207327836,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "259452084": {
+        "name": "LINEAR",
+        "hash": 259452084,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "722197": {
+        "name": "ARRI",
+        "hash": 722197,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "653673": {
+        "name": "CREF",
+        "hash": 653673,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "642042": {
+        "name": "ISPE",
+        "hash": 642042,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "965343": {
+        "name": "LEAV",
+        "hash": 965343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "601978": {
+        "name": "MTOC",
+        "hash": 601978,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936589": {
+        "name": "MTOT",
+        "hash": 936589,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "837448": {
+        "name": "PTNO",
+        "hash": 837448,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643429": {
+        "name": "SPRE",
+        "hash": 643429,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "642053": {
+        "name": "TSPE",
+        "hash": 642053,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "774767": {
+        "name": "BUIL",
+        "hash": 774767,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "857539": {
+        "name": "SHOP",
+        "hash": 857539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "914668": {
+        "name": "PRLS",
+        "hash": 914668,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896725": {
+        "name": "ABOR",
+        "hash": 896725,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "818020": {
+        "name": "ACON",
+        "hash": 818020,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892405": {
+        "name": "ADIR",
+        "hash": 892405,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132499882": {
+        "name": "ARRHEI",
+        "hash": 132499882,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63176356": {
+        "name": "ARRWID",
+        "hash": 63176356,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896736": {
+        "name": "LBOR",
+        "hash": 896736,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "818031": {
+        "name": "LCON",
+        "hash": 818031,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892416": {
+        "name": "LDIR",
+        "hash": 892416,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132487149": {
+        "name": "LEAHEI",
+        "hash": 132487149,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63163623": {
+        "name": "LEAWID",
+        "hash": 63163623,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "347970684": {
+        "name": "CATTEX",
+        "hash": 347970684,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916786": {
+        "name": "APOS",
+        "hash": 916786,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916797": {
+        "name": "LPOS",
+        "hash": 916797,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "934300": {
+        "name": "SPLT",
+        "hash": 934300,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "263683447": {
+        "name": "PRMDIR",
+        "hash": 263683447,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "126037451": {
+        "name": "TWIDTH",
+        "hash": 126037451,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1027477": {
+        "name": "SKEY",
+        "hash": 1027477,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "89639791": {
+        "name": "GRDREF",
+        "hash": 89639791,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "887070": {
+      "1716822": {
+        "name": " AFFB",
+        "hash": 1716822,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1716840": {
+        "name": "RAFFB",
+        "hash": 1716840,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "889994": {
+      "1662120": {
+        "name": "  LCB",
+        "hash": 1662120,
+        "offset": 3,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1662147": {
+        "name": " ALCB",
+        "hash": 1662147,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1662166": {
+        "name": "SALCB",
+        "hash": 1662166,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "897010": {
+      "1725570": {
+        "name": " ARFB",
+        "hash": 1725570,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1725588": {
+        "name": "RARFB",
+        "hash": 1725588,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "916572": {
+      "1703052": {
+        "name": " DNEB",
+        "hash": 1703052,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "919312": {
+      "1627236": {
+        "name": " DRAB",
+        "hash": 1627236,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1627245": {
+        "name": "IDRAB",
+        "hash": 1627245,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "928874": {
+      "1839267": {
+        "name": "  LLB",
+        "hash": 1839267,
+        "offset": 3,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1839402": {
+        "name": " ELLB",
+        "hash": 1839402,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1839416": {
+        "name": "NELLB",
+        "hash": 1839416,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "939021": {
+      "1627263": {
+        "name": " ERAB",
+        "hash": 1627263,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1627264": {
+        "name": "AERAB",
+        "hash": 1627264,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "943686": {
+      "1788372": {
+        "name": " EWIB",
+        "hash": 1788372,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1788381": {
+        "name": "IEWIB",
+        "hash": 1788381,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "1018105": {
+      "1706022": {
+        "name": " FREB",
+        "hash": 1706022,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1706023": {
+        "name": "AFREB",
+        "hash": 1706023,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "1038645": {
+      "1489509": {
+        "name": " FRUA",
+        "hash": 1489509,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "1194617": {
+      "1835082": {
+        "name": " GFLB",
+        "hash": 1835082,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1837458": {
+        "name": " NILB",
+        "hash": 1837458,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1837463": {
+        "name": "ENILB",
+        "hash": 1837463,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "1662803": {
+      "1686366": {
+        "name": " GRDB",
+        "hash": 1686366,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "2761552": {
+      "1755675": {
+        "name": " IEHB",
+        "hash": 1755675,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1755682": {
+        "name": "GIEHB",
+        "hash": 1755682,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "2777749": {
+      "1519479": {
+        "name": " IEWA",
+        "hash": 1519479,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1519486": {
+        "name": "GIEWA",
+        "hash": 1519486,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "2851166": {
+      "1838781": {
+        "name": " IKLB",
+        "hash": 1838781,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1838785": {
+        "name": "DIKLB",
+        "hash": 1838785,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "3428611": {
+      "1841022": {
+        "name": " KNLB",
+        "hash": 1841022,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "3574777": {
+      "1835217": {
+        "name": " LFLB",
+        "hash": 1835217,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1835218": {
+        "name": "ALFLB",
+        "hash": 1835218,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "3831978": {
+      "1664631": {
+        "name": " LOCB",
+        "hash": 1664631,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1664646": {
+        "name": "OLOCB",
+        "hash": 1664646,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "3849580": {
+      "1685043": {
+        "name": " LPDB",
+        "hash": 1685043,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1685052": {
+        "name": "ILPDB",
+        "hash": 1685052,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "4089780": {
+      "1752867": {
+        "name": " MAHB",
+        "hash": 1752867,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1752873": {
+        "name": "FMAHB",
+        "hash": 1752873,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "5276279": {
+      "1657017": {
+        "name": "  ECB",
+        "hash": 1657017,
+        "offset": 3,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1657395": {
+        "name": " NECB",
+        "hash": 1657395,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1657415": {
+        "name": "TNECB",
+        "hash": 1657415,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "7146012": {
+      "1664307": {
+        "name": "  OCB",
+        "hash": 1664307,
+        "offset": 3,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1664685": {
+        "name": " NOCB",
+        "hash": 1664685,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1664699": {
+        "name": "NNOCB",
+        "hash": 1664699,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "7309513": {
+      "1763600": {
+        "name": "NEPHB",
+        "hash": 1763600,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1763829": {
+        "name": " NPHB",
+        "hash": 1763829,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "7309516": {
+      "1842318": {
+        "name": " EPLB",
+        "hash": 1842318,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "8079460": {
+      "1721574": {
+        "name": " OLFB",
+        "hash": 1721574,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1721597": {
+        "name": "WOLFB",
+        "hash": 1721597,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "8126653": {
+      "1840401": {
+        "name": " OMLB",
+        "hash": 1840401,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1840405": {
+        "name": "DOMLB",
+        "hash": 1840405,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "9333889": {
+      "1715769": {
+        "name": " PDFB",
+        "hash": 1715769,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1715787": {
+        "name": "RPDFB",
+        "hash": 1715787,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "10736975": {
+      "1753002": {
+        "name": " RAHB",
+        "hash": 1753002,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1753021": {
+        "name": "SRAHB",
+        "hash": 1753021,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "11347869": {
+      "1685205": {
+        "name": " RPDB",
+        "hash": 1685205,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1685220": {
+        "name": "ORPDB",
+        "hash": 1685220,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "11445708": {
+      "1628343": {
+        "name": " RSAB",
+        "hash": 1628343,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1628348": {
+        "name": "ERSAB",
+        "hash": 1628348,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "11469072": {
+      "1628586": {
+        "name": "  TAB",
+        "hash": 1628586,
+        "offset": 3,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1629072": {
+        "name": " RTAB",
+        "hash": 1629072,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1629077": {
+        "name": "ERTAB",
+        "hash": 1629077,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "12077047": {
+      "1502982": {
+        "name": " SIVA",
+        "hash": 1502982,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1502991": {
+        "name": "ISIVA",
+        "hash": 1502991,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "12414952": {
+      "1763235": {
+        "name": " SOHB",
+        "hash": 1763235,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1763243": {
+        "name": "HSOHB",
+        "hash": 1763243,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "13472788": {
+      "1710747": {
+        "name": " SXEB",
+        "hash": 1710747,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "14225094": {
+      "1677240": {
+        "name": " TEDB",
+        "hash": 1677240,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1677241": {
+        "name": "ATEDB",
+        "hash": 1677241,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "25889520": {
+      "1815156": {
+        "name": " YEKB",
+        "hash": 1815156,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "25898307": {
+      "1629261": {
+        "name": " YTAB",
+        "hash": 1629261,
+        "offset": 4,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "1629277": {
+        "name": "PYTAB",
+        "hash": 1629277,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "37063865": {
+      "1648081": {
+        "name": "ATSBB",
+        "hash": 1648081,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "46681961": {
+      "1762186": {
+        "name": "DGNHB",
+        "hash": 1762186,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "48687548": {
+      "1840243": {
+        "name": "DIMLB",
+        "hash": 1840243,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "51916271": {
+      "1714829": {
+        "name": "EHCFB",
+        "hash": 1714829,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "63174445": {
+      "1636288": {
+        "name": "GOCBB",
+        "hash": 1636288,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "67603440": {
+      "1719318": {
+        "name": "LLIFB",
+        "hash": 1719318,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "78765135": {
+      "1717674": {
+        "name": "OEGFB",
+        "hash": 1717674,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "81876131": {
+      "1784691": {
+        "name": "RCRIB",
+        "hash": 1784691,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "82167304": {
+      "1710388": {
+        "name": "SEXEB",
+        "hash": 1710388,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "89375443": {
+      "1837613": {
+        "name": "TSILB",
+        "hash": 1837613,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "89637940": {
+      "1648100": {
+        "name": "TTSBB",
+        "hash": 1648100,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "89645268": {
+      "1717789": {
+        "name": "VIGFB",
+        "hash": 1717789,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "89645553": {
+      "1717870": {
+        "name": "VLGFB",
+        "hash": 1717870,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "89646631": {
+      "1718032": {
+        "name": "VRGFB",
+        "hash": 1718032,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "89647157": {
+      "1718086": {
+        "name": "VTGFB",
+        "hash": 1718086,
+        "offset": 5,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "98953610": {
+      "1839416": {
+        "name": "NELLB",
+        "hash": 1839416,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "105861659": {
+      "1645777": {
+        "name": "SOPBB",
+        "hash": 1645777,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "108603228": {
+      "1831504": {
+        "name": "MIALB",
+        "hash": 1831504,
+        "offset": 7,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "114667500": {
+      "1839416": {
+        "name": "NELLB",
+        "hash": 1839416,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "117319981": {
+      "1645777": {
+        "name": "SOPBB",
+        "hash": 1645777,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "119960549": {
+      "1840888": {
+        "name": "AFNLB",
+        "hash": 1840888,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "139967693": {
+      "1837515": {
+        "name": "CPILB",
+        "hash": 1837515,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "142696514": {
+      "1841972": {
+        "name": "ESOLB",
+        "hash": 1841972,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "162688992": {
+      "1701819": {
+        "name": "ILLEB",
+        "hash": 1701819,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "163029574": {
+      "1489734": {
+        "name": "INRUA",
+        "hash": 1489734,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "175109301": {
+      "1840821": {
+        "name": "OCNLB",
+        "hash": 1840821,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "175760542": {
+      "1628952": {
+        "name": "OMTAB",
+        "hash": 1628952,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "181089975": {
+      "1753009": {
+        "name": "GRAHB",
+        "hash": 1753009,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "181133428": {
+      "1840545": {
+        "name": "ITMLB",
+        "hash": 1840545,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "181333493": {
+      "1755524": {
+        "name": "KCEHB",
+        "hash": 1755524,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "182706015": {
+      "1638939": {
+        "name": "LEGBB",
+        "hash": 1638939,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "183459469": {
+      "1840872": {
+        "name": "LENLB",
+        "hash": 1840872,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "184234924": {
+      "1648686": {
+        "name": "LOTBB",
+        "hash": 1648686,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "184241677": {
+      "1638561": {
+        "name": "LRFBB",
+        "hash": 1638561,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "184246373": {
+      "1636455": {
+        "name": "LUCBB",
+        "hash": 1636455,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "190128559": {
+      "1717839": {
+        "name": "RKGFB",
+        "hash": 1717839,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "195108590": {
+      "1664811": {
+        "name": "RROCB",
+        "hash": 1664811,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "195353467": {
+      "1766196": {
+        "name": "RTSHB",
+        "hash": 1766196,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "197297972": {
+      "1832023": {
+        "name": "SABLB",
+        "hash": 1832023,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "204325267": {
+      "1836113": {
+        "name": "ERGLB",
+        "hash": 1836113,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "205249088": {
+      "1701977": {
+        "name": "ERLEB",
+        "hash": 1701977,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "206472523": {
+      "1486922": {
+        "name": "ERNUA",
+        "hash": 1486922,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "207846360": {
+      "1645844": {
+        "name": "ERPBB",
+        "hash": 1645844,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "210187090": {
+      "1841972": {
+        "name": "ESOLB",
+        "hash": 1841972,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "211804313": {
+      "1619520": {
+        "name": "FOGAB",
+        "hash": 1619520,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "213938065": {
+      "1522700": {
+        "name": "HTIWA",
+        "hash": 1522700,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "237087521": {
+      "1522280": {
+        "name": "TDIWA",
+        "hash": 1522280,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "240105252": {
+      "1701833": {
+        "name": "WLLEB",
+        "hash": 1701833,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "240706816": {
+      "1840946": {
+        "name": "EHNLB",
+        "hash": 1840946,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "243007294": {
+      "1628004": {
+        "name": "LESAB",
+        "hash": 1628004,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "243795979": {
+      "1510124": {
+        "name": "NMSVA",
+        "hash": 1510124,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "243798189": {
+      "1841334": {
+        "name": "OVNLB",
+        "hash": 1841334,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "243807090": {
+      "1510134": {
+        "name": "XMSVA",
+        "hash": 1510134,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "261716659": {
+      "1494819": {
+        "name": "RMYUA",
+        "hash": 1494819,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "266681881": {
+      "1755682": {
+        "name": "GIEHB",
+        "hash": 1755682,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "266812259": {
+      "1647439": {
+        "name": "GWRBB",
+        "hash": 1647439,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "268404092": {
+      "1509852": {
+        "name": "LCSVA",
+        "hash": 1509852,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "268675678": {
+      "1510124": {
+        "name": "NMSVA",
+        "hash": 1510124,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "269185981": {
+      "1754799": {
+        "name": "OCDHB",
+        "hash": 1754799,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "276086962": {
+      "1510134": {
+        "name": "XMSVA",
+        "hash": 1510134,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "276204079": {
+      "1766203": {
+        "name": "YTSHB",
+        "hash": 1766203,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "277478347": {
+      "1717903": {
+        "name": "ANGFB",
+        "hash": 1717903,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "282173536": {
+      "1752915": {
+        "name": "UNAHB",
+        "hash": 1752915,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "283437418": {
+      "1840395": {
+        "name": "UNMLB",
+        "hash": 1840395,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "288134488": {
+      "1498504": {
+        "name": "DOCVA",
+        "hash": 1498504,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "288153118": {
+      "1752845": {
+        "name": "ELAHB",
+        "hash": 1752845,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "290405852": {
+      "1509901": {
+        "name": "GESVA",
+        "hash": 1509901,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "291830947": {
+      "1833125": {
+        "name": "NOCLB",
+        "hash": 1833125,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "297964783": {
+      "1754391": {
+        "name": "LOCHB",
+        "hash": 1754391,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "297965433": {
+      "1833123": {
+        "name": "LOCLB",
+        "hash": 1833123,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "308547746": {
+      "1701830": {
+        "name": "TLLEB",
+        "hash": 1701830,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "309605293": {
+      "1615654": {
+        "name": "AGBAB",
+        "hash": 1615654,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "355567378": {
+      "1720600": {
+        "name": "YEKFB",
+        "hash": 1720600,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "355863148": {
+      "1718089": {
+        "name": "YTGFB",
+        "hash": 1718089,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "362130407": {
+      "1841290": {
+        "name": "YTNLB",
+        "hash": 1841290,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "858142": {
+      "1701830": {
+        "name": "TLLEB",
+        "hash": 1701830,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "915386": {
+      "1717951": {
+        "name": "VOGFB",
+        "hash": 1717951,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "916848": {
+      "1634523": {
+        "name": "XCABB",
+        "hash": 1634523,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "918702": {
+      "1664817": {
+        "name": "XROCB",
+        "hash": 1664817,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "1215869": {
+      "1647201": {
+        "name": "LNRBB",
+        "hash": 1647201,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "1270904": {
+      "1647309": {
+        "name": "LRRBB",
+        "hash": 1647309,
+        "offset": 6,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      }
+    },
+    "828473": {
+      "642042": {
+        "name": "ISPE",
+        "hash": 642042,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "900355": {
+        "name": "MATR",
+        "hash": 900355,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "939294": {
+        "name": "RLST",
+        "hash": 939294,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "ORIENTATION"
+      },
+      "1027477": {
+        "name": "SKEY",
+        "hash": 1027477,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "POSITION"
+      },
+      "89647660": {
+        "name": "SLOREF",
+        "hash": 89647660,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "642053": {
+        "name": "TSPE",
+        "hash": 642053,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "817539": {
+        "name": "FLNN",
+        "hash": 817539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "642049": {
+        "name": "PSPE",
+        "hash": 642049,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "901374": {
+        "name": "FLUR",
+        "hash": 901374,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "21878156": {
+        "name": "BENDMA",
+        "hash": 21878156,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643385": {
+        "name": "BORE",
+        "hash": 643385,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "861339": {
+        "name": "LNTP",
+        "hash": 861339,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "909565": {
+        "name": "PRES",
+        "hash": 909565,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "856001": {
+        "name": "TEMP",
+        "hash": 856001,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "679457": {
+        "name": "BANG",
+        "hash": 679457,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "653673": {
+        "name": "CREF",
+        "hash": 653673,
+        "offset": 0,
+        "default_val": {
+          "ElementType": ""
+        },
+        "att_type": "ELEMENT"
+      },
+      "283359308": {
+        "name": "EXCESS",
+        "hash": 283359308,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "865141": {
+        "name": "GTYP",
+        "hash": 865141,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "643429": {
+        "name": "SPRE",
+        "hash": 643429,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "259452084": {
+        "name": "LINEAR",
+        "hash": 259452084,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      },
+      "722197": {
+        "name": "ARRI",
+        "hash": 722197,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "965343": {
+        "name": "LEAV",
+        "hash": 965343,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "601978": {
+        "name": "MTOC",
+        "hash": 601978,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "936589": {
+        "name": "MTOT",
+        "hash": 936589,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "837448": {
+        "name": "PTNO",
+        "hash": 837448,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892429": {
+        "name": "YDIR",
+        "hash": 892429,
+        "offset": 0,
+        "default_val": {
+          "Vec3Type": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "att_type": "DIRECTION"
+      },
+      "6447616": {
+        "name": "PLOCK",
+        "hash": 6447616,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "781909": {
+        "name": "POSL",
+        "hash": 781909,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "774767": {
+        "name": "BUIL",
+        "hash": 774767,
+        "offset": 0,
+        "default_val": {
+          "IntArrayType": []
+        },
+        "att_type": "INTVEC"
+      },
+      "857539": {
+        "name": "SHOP",
+        "hash": 857539,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "914668": {
+        "name": "PRLS",
+        "hash": 914668,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896725": {
+        "name": "ABOR",
+        "hash": 896725,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "8258194": {
+        "name": "ACONN",
+        "hash": 8258194,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892405": {
+        "name": "ADIR",
+        "hash": 892405,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132499882": {
+        "name": "ARRHEI",
+        "hash": 132499882,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63176356": {
+        "name": "ARRWID",
+        "hash": 63176356,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "896736": {
+        "name": "LBOR",
+        "hash": 896736,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "818031": {
+        "name": "LCON",
+        "hash": 818031,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "892416": {
+        "name": "LDIR",
+        "hash": 892416,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "132487149": {
+        "name": "LEAHEI",
+        "hash": 132487149,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "63163623": {
+        "name": "LEAWID",
+        "hash": 63163623,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "347970684": {
+        "name": "CATTEX",
+        "hash": 347970684,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916786": {
+        "name": "APOS",
+        "hash": 916786,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "916797": {
+        "name": "LPOS",
+        "hash": 916797,
+        "offset": 0,
+        "default_val": {},
+        "att_type": "UNKNOWN"
+      },
+      "934300": {
+        "name": "SPLT",
+        "hash": 934300,
+        "offset": 0,
+        "default_val": {
+          "IntegerType": 0
+        },
+        "att_type": "INTEGER"
+      },
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 0,
+        "default_val": {
+          "DoubleType": 0.0
+        },
+        "att_type": "DOUBLE"
+      }
+    }
+  }
+}

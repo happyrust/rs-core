@@ -179,6 +179,14 @@ pub struct DbOption {
     /// 是否保存到数据库
     #[clap(long)]
     pub save_db: Option<bool>,
+    /// 是否导出 JSON 实例文件
+    #[clap(long)]
+    #[serde(default)]
+    pub export_json: bool,
+    /// 是否导出 Parquet 文件
+    #[clap(long, default_value = "true")]
+    #[serde(default = "default_true")]
+    pub export_parquet: bool,
     /// 是否需要同步基础引用号
     #[clap(long)]
     pub need_sync_refno_basic: bool,
@@ -550,4 +558,8 @@ fn default_mem_kv_user() -> String {
 
 fn default_mem_kv_password() -> String {
     "root".to_string()
+}
+
+fn default_true() -> bool {
+    true
 }

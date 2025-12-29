@@ -112,7 +112,7 @@ pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
 ];
 
 ///使用元件库的实体类型名称
-pub const USE_CATE_NOUN_NAMES: [&'static str; 33] = [
+pub const USE_CATE_NOUN_NAMES: [&'static str; 32] = [
     "FIXING", // 固定件
     "GENSEC", // 通用截面
     "SCREED", // 找平层
@@ -138,7 +138,7 @@ pub const USE_CATE_NOUN_NAMES: [&'static str; 33] = [
     "STWALL", // 结构墙
     "WALL",   // 墙
     "PALJ",   // 管道对齐
-    "TUBI",   // 管道
+    // "TUBI",   // 管道 - 注释掉，TUBI 数据通过 tubi_relate 关系获取，不是独立表
     "FLOOR",  // 地板
     "CMFI",   // 复合安装
     // "PANE",   // 面板

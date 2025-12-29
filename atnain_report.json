@@ -1,0 +1,12918 @@
+{
+  "unk_2471": {
+    "ERNUA": 6
+  },
+  "unk_351": {
+    " FRUA": 4
+  },
+  "unk_2085": {
+    "INRUA": 6
+  },
+  "unk_2876": {
+    "RMYUA": 6
+  },
+  "unk_3197": {
+    "DOCVA": 6
+  },
+  "unk_907": {
+    " SIVA": 4,
+    "ISIVA": 5
+  },
+  "unk_2961": {
+    "LCSVA": 6
+  },
+  "unk_3231": {
+    "GESVA": 6
+  },
+  "unk_2970": {
+    "NMSVA": 6
+  },
+  "unk_2799": {
+    "NMSVA": 6
+  },
+  "unk_3041": {
+    "XMSVA": 6
+  },
+  "unk_2832": {
+    "XMSVA": 6
+  },
+  "unk_426": {
+    " IEWA": 4,
+    "GIEWA": 5
+  },
+  "unk_2719": {
+    "TDIWA": 6
+  },
+  "unk_2528": {
+    "HTIWA": 6
+  },
+  "unk_4313": {
+    "OBBAB": 6
+  },
+  "unk_3444": {
+    "AGBAB": 6
+  },
+  "unk_4062": {
+    "NIBAB": 6
+  },
+  "unk_2514": {
+    "FOGAB": 6
+  },
+  "unk_4418": {
+    "ISGAB": 6
+  },
+  "unk_177": {
+    " DRAB": 4,
+    "IDRAB": 5
+  },
+  "unk_233": {
+    " ERAB": 4,
+    "AERAB": 5
+  },
+  "unk_2781": {
+    "LESAB": 6
+  },
+  "unk_868": {
+    " RSAB": 4,
+    "ERSAB": 5
+  },
+  "unk_870": {
+    "  TAB": 3,
+    " RTAB": 4,
+    "ERTAB": 5
+  },
+  "unk_2160": {
+    "OMTAB": 6
+  },
+  "unk_4300": {
+    "ETTAB": 6
+  },
+  "unk_1113": {
+    " YTAB": 4,
+    "PYTAB": 5
+  },
+  "unk_3775": {
+    "XCABB": 6
+  },
+  "unk_1344": {
+    "GOCBB": 5
+  },
+  "unk_2262": {
+    "LUCBB": 6
+  },
+  "unk_2261": {
+    "LRFBB": 6
+  },
+  "unk_2240": {
+    "LEGBB": 6
+  },
+  "unk_4270": {
+    "CUNBB": 6
+  },
+  "unk_1933": {
+    "SOPBB": 6
+  },
+  "unk_1862": {
+    "SOPBB": 6
+  },
+  "unk_2476": {
+    "ERPBB": 6
+  },
+  "unk_3857": {
+    "LNRBB": 6
+  },
+  "unk_3860": {
+    "LRRBB": 6
+  },
+  "unk_2940": {
+    "GWRBB": 6
+  },
+  "unk_1156": {
+    "ATSBB": 5
+  },
+  "unk_1661": {
+    "TTSBB": 5
+  },
+  "unk_2260": {
+    "LOTBB": 6
+  },
+  "unk_2632": {
+    "IEWBB": 5
+  },
+  "unk_590": {
+    "  ECB": 3,
+    " NECB": 4,
+    "TNECB": 5
+  },
+  "unk_57": {
+    "  LCB": 3,
+    " ALCB": 4,
+    "SALCB": 5
+  },
+  "unk_630": {
+    "  OCB": 3,
+    " NOCB": 4,
+    "NNOCB": 5
+  },
+  "unk_514": {
+    " LOCB": 4,
+    "OLOCB": 5
+  },
+  "unk_2347": {
+    "RROCB": 6
+  },
+  "unk_3778": {
+    "XROCB": 6
+  },
+  "unk_973": {
+    " TEDB": 4,
+    "ATEDB": 5
+  },
+  "unk_528": {
+    " LPDB": 4,
+    "ILPDB": 5
+  },
+  "unk_856": {
+    " RPDB": 4,
+    "ORPDB": 5
+  },
+  "unk_392": {
+    " GRDB": 4
+  },
+  "unk_2080": {
+    "ILLEB": 6
+  },
+  "unk_3750": {
+    "TLLEB": 6
+  },
+  "unk_3428": {
+    "TLLEB": 6
+  },
+  "unk_2737": {
+    "WLLEB": 6
+  },
+  "unk_2462": {
+    "ERLEB": 6
+  },
+  "unk_156": {
+    " DNEB": 4
+  },
+  "unk_326": {
+    " FREB": 4,
+    "AFREB": 5
+  },
+  "unk_1573": {
+    "SEXEB": 5
+  },
+  "unk_954": {
+    " SXEB": 4
+  },
+  "unk_1238": {
+    "EHCFB": 5
+  },
+  "unk_736": {
+    " PDFB": 4,
+    "RPDFB": 5
+  },
+  "unk_42": {
+    " AFFB": 4,
+    "RAFFB": 5
+  },
+  "unk_4327": {
+    "TCGFB": 6
+  },
+  "unk_1481": {
+    "OEGFB": 5
+  },
+  "unk_4231": {
+    "AIGFB": 6
+  },
+  "unk_1693": {
+    "VIGFB": 5
+  },
+  "unk_2322": {
+    "RKGFB": 6
+  },
+  "unk_4232": {
+    "ALGFB": 6
+  },
+  "unk_1695": {
+    "VLGFB": 5
+  },
+  "unk_3057": {
+    "ANGFB": 6
+  },
+  "unk_3773": {
+    "VOGFB": 6
+  },
+  "unk_4233": {
+    "ARGFB": 6
+  },
+  "unk_1700": {
+    "VRGFB": 5
+  },
+  "unk_1702": {
+    "VTGFB": 5
+  },
+  "unk_3577": {
+    "YTGFB": 6
+  },
+  "unk_1401": {
+    "LLIFB": 5
+  },
+  "unk_3557": {
+    "YEKFB": 6
+  },
+  "unk_683": {
+    " OLFB": 4,
+    "WOLFB": 5
+  },
+  "unk_83": {
+    " ARFB": 4,
+    "RARFB": 5
+  },
+  "unk_3202": {
+    "ELAHB": 6
+  },
+  "unk_542": {
+    " MAHB": 4,
+    "FMAHB": 5
+  },
+  "unk_3146": {
+    "UNAHB": 6
+  },
+  "unk_802": {
+    " RAHB": 4,
+    "SRAHB": 5
+  },
+  "unk_2221": {
+    "GRAHB": 6
+  },
+  "unk_3363": {
+    "LOCHB": 6
+  },
+  "unk_4203": {
+    "NOCHB": 6
+  },
+  "unk_2975": {
+    "OCDHB": 6
+  },
+  "unk_2233": {
+    "KCEHB": 6
+  },
+  "unk_423": {
+    " IEHB": 4,
+    "GIEHB": 5
+  },
+  "unk_2939": {
+    "GIEHB": 6
+  },
+  "unk_4336": {
+    "TIEHB": 6
+  },
+  "unk_3962": {
+    "ADKHB": 6
+  },
+  "unk_1197": {
+    "DGNHB": 5
+  },
+  "unk_925": {
+    " SOHB": 4,
+    "HSOHB": 5
+  },
+  "unk_4350": {
+    "TSOHB": 6
+  },
+  "unk_645": {
+    "NEPHB": 5,
+    " NPHB": 4
+  },
+  "unk_2357": {
+    "RTSHB": 6
+  },
+  "unk_3046": {
+    "YTSHB": 6
+  },
+  "unk_1541": {
+    "RCRIB": 5
+  },
+  "unk_259": {
+    " EWIB": 4,
+    "IEWIB": 5
+  },
+  "unk_1105": {
+    " YEKB": 4
+  },
+  "unk_1907": {
+    "MIALB": 7
+  },
+  "unk_2368": {
+    "SABLB": 6
+  },
+  "unk_4054": {
+    "NCCLB": 6
+  },
+  "unk_3364": {
+    "LOCLB": 6
+  },
+  "unk_4204": {
+    "NOCLB": 6
+  },
+  "unk_3255": {
+    "NOCLB": 6
+  },
+  "unk_373": {
+    " GFLB": 4,
+    " NILB": 4,
+    "ENILB": 5
+  },
+  "unk_493": {
+    " LFLB": 4,
+    "ALFLB": 5
+  },
+  "unk_2453": {
+    "ERGLB": 6
+  },
+  "unk_2048": {
+    "CPILB": 6
+  },
+  "unk_1651": {
+    "TSILB": 5
+  },
+  "unk_437": {
+    " IKLB": 4,
+    "DIKLB": 5
+  },
+  "unk_206": {
+    "  LLB": 3,
+    " ELLB": 4,
+    "NELLB": 5
+  },
+  "unk_1922": {
+    "NELLB": 6
+  },
+  "unk_1830": {
+    "NELLB": 6
+  },
+  "unk_1203": {
+    "DIMLB": 5
+  },
+  "unk_3160": {
+    "UNMLB": 6
+  },
+  "unk_689": {
+    " OMLB": 4,
+    "DOMLB": 5
+  },
+  "unk_2231": {
+    "ITMLB": 6
+  },
+  "unk_2145": {
+    "OCNLB": 6
+  },
+  "unk_2248": {
+    "LENLB": 6
+  },
+  "unk_1942": {
+    "AFNLB": 6
+  },
+  "unk_2755": {
+    "EHNLB": 6
+  },
+  "unk_470": {
+    " KNLB": 4
+  },
+  "unk_3593": {
+    "YTNLB": 6
+  },
+  "unk_2804": {
+    "OVNLB": 6
+  },
+  "unk_2505": {
+    "ESOLB": 6
+  },
+  "unk_2063": {
+    "ESOLB": 6
+  },
+  "unk_646": {
+    " EPLB": 4,
+    "NEPLB": 5,
+    " NPLB": 4
+  },
+  "unk_1599": {
+    "SOPLB": 5
+  },
+  "unk_1182": {
+    "DARLB": 5
+  },
+  "unk_332": {
+    " FRLB": 4
+  },
+  "unk_3930": {
+    "SIRLB": 6
+  },
+  "unk_4420": {
+    "ISRLB": 6
+  },
+  "unk_2488": {
+    "ERSLB": 6
+  },
+  "unk_2358": {
+    "RTSLB": 6
+  },
+  "unk_3047": {
+    "YTSLB": 6
+  },
+  "unk_2703": {
+    "CTULB": 6
+  },
+  "unk_1399": {
+    "LLAMB": 5
+  },
+  "unk_1315": {
+    "FXAMB": 5
+  },
+  "unk_4227": {
+    "UOBMB": 6
+  },
+  "unk_3946": {
+    "UOBMB": 6
+  },
+  "unk_3540": {
+    "UOBMB": 6
+  },
+  "unk_3028": {
+    "UOBMB": 6
+  },
+  "unk_2598": {
+    "UOBMB": 6
+  },
+  "unk_1884": {
+    "UOBMB": 6
+  },
+  "unk_1726": {
+    "XOBMB": 5
+  },
+  "unk_1617": {
+    "TACMB": 5
+  },
+  "unk_1227": {
+    "EDCMB": 5
+  },
+  "unk_2104": {
+    "ITCMB": 6
+  },
+  "unk_2017": {
+    "SEDMB": 6
+  },
+  "unk_1711": {
+    "WLFMB": 5
+  },
+  "unk_1306": {
+    "FNIMB": 5
+  },
+  "unk_1685": {
+    "VCLMB": 5
+  },
+  "unk_1237": {
+    "EGMMB": 5
+  },
+  "unk_2170": {
+    "REPMB": 6
+  },
+  "unk_1545": {
+    "REPMB": 5
+  },
+  "unk_2862": {
+    "NLPMB": 6
+  },
+  "unk_861": {
+    " RPMB": 4,
+    "ERPMB": 5
+  },
+  "unk_1787": {
+    "FRPMB": 6
+  },
+  "unk_3942": {
+    "TSPMB": 6
+  },
+  "unk_1881": {
+    "TSPMB": 6
+  },
+  "unk_3506": {
+    "RUPMB": 6
+  },
+  "unk_1094": {
+    " XPMB": 4
+  },
+  "unk_1283": {
+    "FERMB": 5
+  },
+  "unk_1686": {
+    "VCTMB": 5
+  },
+  "unk_1520": {
+    "PYTMB": 5
+  },
+  "unk_1687": {
+    "VCVMB": 5
+  },
+  "unk_1410": {
+    "LOVMB": 5
+  },
+  "unk_544": {
+    " MANB": 4,
+    "EMANB": 5
+  },
+  "unk_4304": {
+    "IFGNB": 6
+  },
+  "unk_2454": {
+    "ERGNB": 6
+  },
+  "unk_3578": {
+    "YTGNB": 6
+  },
+  "unk_172": {
+    " DONB": 4,
+    "EDONB": 5
+  },
+  "unk_3169": {
+    "UNTNB": 6
+  },
+  "unk_580": {
+    " MUNB": 4,
+    "BMUNB": 5
+  },
+  "unk_2317": {
+    "RDCOB": 6
+  },
+  "unk_3257": {
+    "NOCOB": 6
+  },
+  "unk_2336": {
+    "ROCOB": 6
+  },
+  "unk_3777": {
+    "XOCOB": 6
+  },
+  "unk_3079": {
+    "ASCOB": 6
+  },
+  "unk_3262": {
+    "OCLOB": 6
+  },
+  "unk_2976": {
+    "OCLOB": 6
+  },
+  "unk_3156": {
+    "UNLOB": 6
+  },
+  "unk_2697": {
+    "CSLOB": 6
+  },
+  "unk_4402": {
+    "TSLOB": 6
+  },
+  "unk_3758": {
+    "TSLOB": 6
+  },
+  "unk_3523": {
+    "SXLOB": 6
+  },
+  "unk_3526": {
+    "SYLOB": 6
+  },
+  "unk_3403": {
+    "OBMOB": 6
+  },
+  "unk_564": {
+    " MMOB": 4,
+    "EMMOB": 5
+  },
+  "unk_4128": {
+    "SMMOB": 6
+  },
+  "unk_3148": {
+    "TMMOB": 8
+  },
+  "unk_1637": {
+    "TNMOB": 5
+  },
+  "unk_3226": {
+    "EPMOB": 6
+  },
+  "unk_2341": {
+    "RPMOB": 6
+  },
+  "unk_4393": {
+    "TPMOB": 6
+  },
+  "unk_1880": {
+    "TSMOB": 6
+  },
+  "unk_3759": {
+    "TSMOB": 6
+  },
+  "unk_2107": {
+    "IUMOB": 6
+  },
+  "unk_4137": {
+    "SUMOB": 6
+  },
+  "unk_1425": {
+    "MANOB": 5
+  },
+  "unk_3732": {
+    "RANOB": 6
+  },
+  "unk_3938": {
+    "TANOB": 6
+  },
+  "unk_1849": {
+    "RBNOB": 6
+  },
+  "unk_1188": {
+    "DCNOB": 5
+  },
+  "unk_161": {
+    " DNOB": 4,
+    "IDNOB": 5
+  },
+  "unk_3806": {
+    "EDNOB": 6
+  },
+  "unk_3670": {
+    "GDNOB": 6
+  },
+  "unk_3647": {
+    "ENNOB": 6
+  },
+  "unk_1963": {
+    "ENNOB": 10
+  },
+  "unk_1244": {
+    "ENNOB": 5
+  },
+  "unk_2695": {
+    "ENNOB": 12
+  },
+  "unk_2328": {
+    "RNNOB": 6
+  },
+  "unk_1594": {
+    "SNNOB": 5
+  },
+  "unk_3844": {
+    "ISNOB": 6
+  },
+  "unk_3541": {
+    "USNOB": 6
+  },
+  "unk_1857": {
+    "RTNOB": 6
+  },
+  "unk_3594": {
+    "YTNOB": 6
+  },
+  "unk_448": {
+    " IPOB": 4,
+    "EIPOB": 5
+  },
+  "unk_1914": {
+    "DYPOB": 6
+  },
+  "unk_86": {
+    " AROB": 4,
+    "LAROB": 5
+  },
+  "unk_3669": {
+    "GCROB": 6
+  },
+  "unk_3265": {
+    "OCROB": 6
+  },
+  "unk_4264": {
+    "UNROB": 6
+  },
+  "unk_3166": {
+    "UNROB": 6
+  },
+  "unk_3909": {
+    "ORROB": 6
+  },
+  "unk_2690": {
+    "URROB": 6
+  },
+  "unk_2607": {
+    "ATROB": 6
+  },
+  "unk_3817": {
+    "ETSOB": 6
+  },
+  "unk_659": {
+    " NUOB": 4,
+    "TNUOB": 5
+  },
+  "unk_662": {
+    " NWOB": 4,
+    "ENWOB": 5
+  },
+  "unk_410": {
+    "DIAPB": 5
+  },
+  "unk_806": {
+    " RAPB": 4,
+    "ARAPB": 5
+  },
+  "unk_3940": {
+    "TRAPB": 6
+  },
+  "unk_601": {
+    " NEPB": 4
+  },
+  "unk_47": {
+    " AFPB": 4,
+    "RAFPB": 5
+  },
+  "unk_686": {
+    " OLPB": 4,
+    "TOLPB": 5
+  },
+  "unk_319": {
+    " FOPB": 4,
+    "FFOPB": 5
+  },
+  "unk_4330": {
+    "TFOPB": 6
+  },
+  "unk_928": {
+    " SOPB": 4,
+    "ISOPB": 5
+  },
+  "unk_711": {
+    " ORPB": 4,
+    "PORPB": 5
+  },
+  "unk_539": {
+    " LUPB": 4,
+    "LLUPB": 5
+  },
+  "unk_1020": {
+    " TUPB": 4,
+    "WTUPB": 5
+  },
+  "unk_2648": {
+    "NACRB": 6
+  },
+  "unk_1710": {
+    "WLCRB": 5
+  },
+  "unk_1102": {
+    " YCRB": 4
+  },
+  "unk_2385": {
+    "TADRB": 6
+  },
+  "unk_1981": {
+    "NAERB": 6
+  },
+  "unk_278": {
+    " FERB": 4,
+    "EFERB": 5
+  },
+  "unk_3767": {
+    "TXERB": 6
+  },
+  "unk_48": {
+    "  FRB": 3,
+    " AFRB": 4,
+    "RAFRB": 5
+  },
+  "unk_3340": {
+    "FNIRB": 5
+  },
+  "unk_981": {
+    " TIRB": 4,
+    "ETIRB": 5
+  },
+  "unk_3927": {
+    "SESRB": 6
+  },
+  "unk_360": {
+    " FSRB": 4
+  },
+  "unk_3655": {
+    "ESURB": 6
+  },
+  "unk_1604": {
+    "SSESB": 5
+  },
+  "unk_1537": {
+    "RBFSB": 5
+  },
+  "unk_4314": {
+    "OBGSB": 6
+  },
+  "unk_1124": {
+    " ZISB": 4,
+    "EZISB": 5
+  },
+  "unk_77": {
+    " APSB": 4,
+    "CAPSB": 5
+  },
+  "unk_4324": {
+    "TAPSB": 6
+  },
+  "unk_127": {
+    " CPSB": 4
+  },
+  "unk_226": {
+    " EPSB": 4,
+    "CEPSB": 5
+  },
+  "unk_93": {
+    " ATSB": 4,
+    "NATSB": 5
+  },
+  "unk_3646": {
+    "EMTSB": 6
+  },
+  "unk_3277": {
+    "RMTSB": 6
+  },
+  "unk_874": {
+    " RTSB": 4,
+    "ERTSB": 5
+  },
+  "unk_2437": {
+    "ERCTB": 6
+  },
+  "unk_3529": {
+    "TAHTB": 6
+  },
+  "unk_3337": {
+    "FCHTB": 6
+  },
+  "unk_1967": {
+    "FCHTB": 6
+  },
+  "unk_3531": {
+    "TCHTB": 6
+  },
+  "unk_2840": {
+    "CIHTB": 6
+  },
+  "unk_1201": {
+    "DIHTB": 5
+  },
+  "unk_3836": {
+    "ILHTB": 6
+  },
+  "unk_3785": {
+    "AMHTB": 6
+  },
+  "unk_2455": {
+    "ERHTB": 6
+  },
+  "unk_2928": {
+    "ESHTB": 6
+  },
+  "unk_4146": {
+    "TSHTB": 6
+  },
+  "unk_1874": {
+    "TSHTB": 6
+  },
+  "unk_4297": {
+    "ETHTB": 6
+  },
+  "unk_2990": {
+    "OTHTB": 6
+  },
+  "unk_2786": {
+    "LWHTB": 6
+  },
+  "unk_1247": {
+    "EPSTB": 5
+  },
+  "unk_1525": {
+    "PYTTB": 5
+  },
+  "unk_1024": {
+    " TXTB": 4
+  },
+  "unk_1": {
+    " ANDT": 4,
+    "MANDT": 5
+  },
+  "unk_262": {
+    " EYTB": 4,
+    "NEYTB": 5
+  },
+  "unk_720": {
+    " OYTB": 4,
+    "WOYTB": 5
+  },
+  "unk_790": {
+    " PYTB": 4,
+    "EPYTB": 5
+  },
+  "unk_2785": {
+    "LPYTB": 6
+  },
+  "unk_957": {
+    " SYTB": 4,
+    "TSYTB": 5
+  },
+  "unk_182": {
+    " DRUB": 4,
+    "BDRUB": 5
+  },
+  "unk_352": {
+    " FRUB": 4,
+    "IFRUB": 5
+  },
+  "unk_1994": {
+    "OLRUB": 5
+  },
+  "unk_3227": {
+    "ERRUB": 6
+  },
+  "unk_4193": {
+    "FRRUB": 8
+  },
+  "unk_3602": {
+    "YTRUB": 5
+  },
+  "unk_2064": {
+    "EVRUB": 6
+  },
+  "unk_2893": {
+    "AVSUB": 6
+  },
+  "unk_106": {
+    " BTUB": 4,
+    "ABTUB": 5
+  },
+  "unk_538": {
+    " LTUB": 4,
+    "ELTUB": 5,
+    "UCREC": 6
+  },
+  "unk_3625": {
+    "ALTUB": 6
+  },
+  "unk_3073": {
+    "ANTUB": 6
+  },
+  "unk_3250": {
+    "MNTUB": 6
+  },
+  "unk_788": {
+    " PTUB": 4,
+    "LPTUB": 5
+  },
+  "unk_427": {
+    " IEWB": 4,
+    "GIEWB": 5
+  },
+  "unk_2031": {
+    "AEHWB": 6
+  },
+  "unk_3891": {
+    "OPHWB": 6
+  },
+  "unk_2720": {
+    "TDIWB": 6
+  },
+  "unk_3016": {
+    "SUJWB": 6
+  },
+  "unk_4116": {
+    "SILWB": 6
+  },
+  "unk_2941": {
+    "IATWB": 6
+  },
+  "unk_3903": {
+    "OPTWB": 6
+  },
+  "unk_113": {
+    " CCAC": 4,
+    "ECCAC": 5
+  },
+  "unk_1799": {
+    "LCCAC": 6
+  },
+  "unk_3495": {
+    "OCCAC": 6
+  },
+  "unk_2714": {
+    "OCCAC": 6
+  },
+  "unk_2312": {
+    "RCCAC": 6
+  },
+  "unk_2917": {
+    "EDCAC": 6
+  },
+  "unk_3409": {
+    "RDCAC": 6
+  },
+  "unk_3735": {
+    "RECAC": 6
+  },
+  "unk_3544": {
+    "XECAC": 6
+  },
+  "unk_2738": {
+    "XECAC": 6
+  },
+  "unk_3929": {
+    "SICAC": 6
+  },
+  "unk_2152": {
+    "OMCAC": 6
+  },
+  "unk_4150": {
+    "UOCAC": 6
+  },
+  "unk_2736": {
+    "UOCAC": 6
+  },
+  "unk_2964": {
+    "LXEAC": 6
+  },
+  "unk_1273": {
+    "FERAC": 5
+  },
+  "unk_2482": {
+    "ERRAC": 6
+  },
+  "unk_2742": {
+    "CSSAC": 6
+  },
+  "unk_3910": {
+    "OSSAC": 6
+  },
+  "unk_3422": {
+    "SATAC": 6
+  },
+  "unk_3267": {
+    "OCTAC": 6
+  },
+  "unk_255": {
+    " ETAC": 4
+  },
+  "unk_2835": {
+    "AETAC": 6
+  },
+  "unk_3639": {
+    "CETAC": 6
+  },
+  "unk_3082": {
+    "CETAC": 6
+  },
+  "unk_3338": {
+    "FETAC": 6
+  },
+  "unk_3865": {
+    "METAC": 6
+  },
+  "unk_2132": {
+    "NETAC": 6
+  },
+  "unk_3502": {
+    "RETAC": 6
+  },
+  "unk_3276": {
+    "RETAC": 6
+  },
+  "unk_2874": {
+    "RETAC": 6
+  },
+  "unk_2171": {
+    "RETAC": 6
+  },
+  "unk_3280": {
+    "SETAC": 6
+  },
+  "unk_3010": {
+    "   ZO": 2
+  },
+  "unk_1430": {
+    "MITAC": 5
+  },
+  "unk_4067": {
+    "NITAC": 6
+  },
+  "unk_2283": {
+    "NOTAC": 6
+  },
+  "unk_3436": {
+    "WTTAC": 6
+  },
+  "unk_4176": {
+    "XTTAC": 6
+  },
+  "unk_110": {
+    " CABC": 4,
+    "CCABC": 5
+  },
+  "unk_1398": {
+    "LLABC": 5
+  },
+  "unk_1659": {
+    "TTABC": 5
+  },
+  "unk_477": {
+    " LCBC": 4,
+    "ALCBC": 5
+  },
+  "unk_3023": {
+    "TNCBC": 6
+  },
+  "unk_4030": {
+    "IRCBC": 6
+  },
+  "unk_741": {
+    "PEDBC": 5,
+    " PEDC": 4,
+    "TPEDC": 5
+  },
+  "unk_4001": {
+    "ELEBC": 6
+  },
+  "unk_3400": {
+    "NXEBC": 6
+  },
+  "unk_17": {
+    "  FBC": 3
+  },
+  "unk_433": {
+    " IFBC": 4,
+    "LIFBC": 5
+  },
+  "unk_607": {
+    " NFBC": 4,
+    "UNFBC": 5
+  },
+  "unk_911": {
+    "  LBC": 3,
+    " SLBC": 4
+  },
+  "unk_120": {
+    " CLBC": 4
+  },
+  "unk_3482": {
+    "KNLBC": 6
+  },
+  "unk_4194": {
+    "FSLBC": 8
+  },
+  "unk_68": {
+    " ANBC": 4,
+    "MANBC": 5
+  },
+  "unk_690": {
+    " ONBC": 4,
+    "DBMUM": 6
+  },
+  "unk_1036": {
+    " UNBC": 4,
+    "MUNBC": 5
+  },
+  "unk_993": {
+    "  OBC": 3,
+    " TOBC": 4,
+    "TTOBC": 5
+  },
+  "unk_855": {
+    " RPBC": 4,
+    "IRPBC": 5
+  },
+  "unk_2617": {
+    "EBRBC": 6
+  },
+  "unk_1274": {
+    "FERBC": 5
+  },
+  "unk_2131": {
+    "NERBC": 6
+  },
+  "unk_3926": {
+    "SESBC": 5
+  },
+  "unk_3017": {
+    "TESBC": 7
+  },
+  "unk_2230": {
+    " HSBC": 4,
+    "IHSBC": 5
+  },
+  "unk_4247": {
+    "ELSBC": 5
+  },
+  "unk_3840": {
+    "ILSBC": 5
+  },
+  "unk_3539": {
+    "TSSBC": 6
+  },
+  "unk_1314": {
+    " TSBC": 4,
+    "FTSBC": 5
+  },
+  "unk_256": {
+    " ETBC": 4,
+    "NETBC": 5
+  },
+  "unk_1114": {
+    " YTBC": 4,
+    "PYTBC": 5
+  },
+  "unk_3653": {
+    "ESUBC": 7
+  },
+  "unk_4322": {
+    "RSUBC": 6
+  },
+  "unk_1535": {
+    "RAVBC": 5
+  },
+  "unk_4138": {
+    "SWVBC": 6
+  },
+  "unk_4032": {
+    "IRWBC": 5
+  },
+  "unk_58": {
+    " ALCC": 4,
+    "IALCC": 5
+  },
+  "unk_3322": {
+    "CNLCC": 6
+  },
+  "unk_2226": {
+    "HNLCC": 6
+  },
+  "unk_4392": {
+    "TNLCC": 6
+  },
+  "unk_1231": {
+    "EDOCC": 5
+  },
+  "unk_631": {
+    " NOCC": 4,
+    "NNOCC": 5
+  },
+  "unk_3416": {
+    "RROCC": 6
+  },
+  "unk_1137": {
+    "AFRCC": 5
+  },
+  "unk_2604": {
+    "YTSCC": 6
+  },
+  "unk_4041": {
+    "LITCC": 6
+  },
+  "unk_270": {
+    " FDDC": 4,
+    "AFDDC": 5
+  },
+  "unk_272": {
+    " FEDC": 4,
+    "AFEDC": 5
+  },
+  "unk_370": {
+    " GEDC": 4,
+    "RGEDC": 5
+  },
+  "unk_4333": {
+    "TGEDC": 6
+  },
+  "unk_891": {
+    " SEDC": 4,
+    "PSEDC": 5
+  },
+  "unk_833": {
+    " RIDC": 4,
+    "ERIDC": 5
+  },
+  "unk_566": {
+    " ANDC": 4,
+    "MANDC": 5,
+    " MNDC": 4
+  },
+  "unk_4412": {
+    "XMNDC": 6
+  },
+  "unk_1725": {
+    "XMNDC": 5
+  },
+  "unk_1739": {
+    "YMNDC": 5
+  },
+  "unk_1089": {
+    " XNDC": 4
+  },
+  "unk_3917": {
+    "ROODC": 6
+  },
+  "unk_857": {
+    " RPDC": 4,
+    "ORPDC": 5
+  },
+  "unk_1140": {
+    "AFRDC": 5
+  },
+  "unk_2884": {
+    "ALAEC": 6
+  },
+  "unk_1908": {
+    "DLAEC": 6
+  },
+  "unk_3445": {
+    "AGCEC": 6
+  },
+  "unk_2153": {
+    "OMCEC": 6
+  },
+  "unk_2509": {
+    "FOCEC": 6
+  },
+  "unk_733": {
+    " PCEC": 4,
+    "LPCEC": 5
+  },
+  "unk_3465": {
+    "ERCEC": 6
+  },
+  "unk_4416": {
+    "ISCEC": 6
+  },
+  "unk_39": {
+    " AFEC": 4,
+    "UAFEC": 5
+  },
+  "unk_4142": {
+    "TAFEC": 6
+  },
+  "unk_2169": {
+    "REFEC": 6
+  },
+  "unk_3121": {
+    "OHFEC": 6
+  },
+  "unk_2858": {
+    "NLFEC": 6
+  },
+  "unk_3377": {
+    "LSFEC": 6
+  },
+  "unk_2870": {
+    "PSFEC": 6
+  },
+  "unk_2657": {
+    "NALEC": 6
+  },
+  "unk_3963": {
+    "ADLEC": 6
+  },
+  "unk_2688": {
+    "SDLEC": 6
+  },
+  "unk_747": {
+    " PLEC": 4,
+    "OPLEC": 5
+  },
+  "unk_1246": {
+    "EPLEC": 5,
+    "XPLEC": 5
+  },
+  "unk_1471": {
+    "NPLEC": 5,
+    "YPLEC": 5
+  },
+  "unk_1673": {
+    "UPLEC": 5,
+    "ZPLEC": 5
+  },
+  "unk_4186": {
+    "ATLEC": 6
+  },
+  "unk_3188": {
+    "ATLEC": 6
+  },
+  "unk_2192": {
+    "ATLEC": 6
+  },
+  "unk_1723": {
+    "XIMEC": 5
+  },
+  "unk_4361": {
+    "DRMEC": 6
+  },
+  "unk_2998": {
+    "OVMEC": 6
+  },
+  "unk_920": {
+    " SNEC": 4,
+    "ISNEC": 5
+  },
+  "unk_4143": {
+    "TAPEC": 6
+  },
+  "unk_4215": {
+    "OCPEC": 6
+  },
+  "unk_175": {
+    " DPEC": 4,
+    "EDPEC": 5
+  },
+  "unk_2130": {
+    "NEPEC": 6
+  },
+  "unk_529": {
+    " LPEC": 4,
+    "ILPEC": 5
+  },
+  "unk_4074": {
+    "NPPEC": 6
+  },
+  "unk_860": {
+    " RPEC": 4,
+    "ORPEC": 5
+  },
+  "unk_2478": {
+    "ERPEC": 6
+  },
+  "unk_1358": {
+    "HTPEC": 5
+  },
+  "unk_3599": {
+    "YTPEC": 6
+  },
+  "unk_391": {
+    "ELREC": 6,
+    " GNEK": 4,
+    "TGNEK": 5
+  },
+  "unk_1681": {
+    "OPREC": 7,
+    "USPRC": 5,
+    "ZSPRC": 5
+  },
+  "unk_1478": {
+    "OPREC": 7,
+    "NSPRC": 5,
+    "YSPRC": 5
+  },
+  "unk_1262": {
+    "OPREC": 7,
+    "ESPRC": 5,
+    "XSPRC": 5
+  },
+  "unk_941": {
+    "OPREC": 6,
+    " SPRC": 4
+  },
+  "unk_129": {
+    " CSEC": 4,
+    "RCSEC": 5
+  },
+  "unk_2881": {
+    "ACSEC": 6
+  },
+  "unk_2251": {
+    "LESEC": 6
+  },
+  "unk_3336": {
+    "EGSEC": 5
+  },
+  "unk_2864": {
+    "NLSEC": 6
+  },
+  "unk_1995": {
+    "OLSEC": 6
+  },
+  "unk_2159": {
+    "OMSEC": 6
+  },
+  "unk_768": {
+    " PSEC": 4,
+    "APSEC": 5
+  },
+  "unk_2486": {
+    "ERSEC": 6
+  },
+  "unk_1005": {
+    " TSEC": 4
+  },
+  "unk_2911": {
+    "CXSEC": 6
+  },
+  "unk_90": {
+    "  TEC": 3,
+    " ATEC": 4,
+    "IATEC": 5
+  },
+  "unk_872": {
+    " RTEC": 4,
+    "ERTEC": 5
+  },
+  "unk_2034": {
+    "ARBFC": 6
+  },
+  "unk_491": {
+    " LFFC": 4,
+    "ELFFC": 5
+  },
+  "unk_2278": {
+    "MOHFC": 6
+  },
+  "unk_59": {
+    " ALFC": 4,
+    "GALFC": 5
+  },
+  "unk_303": {
+    " FLFC": 4,
+    "AFLFC": 5
+  },
+  "unk_3327": {
+    "CRLFC": 6
+  },
+  "unk_2228": {
+    "HRLFC": 6
+  },
+  "unk_4397": {
+    "TRLFC": 6
+  },
+  "unk_984": {
+    " TLFC": 4
+  },
+  "unk_1155": {
+    "ATLFC": 5
+  },
+  "unk_1168": {
+    "BTLFC": 5
+  },
+  "unk_1180": {
+    "CTLFC": 5
+  },
+  "unk_1226": {
+    "DTLFC": 5
+  },
+  "unk_568": {
+    " MNFC": 4
+  },
+  "unk_637": {
+    " NOFC": 4,
+    "TNOFC": 5
+  },
+  "unk_3289": {
+    "TNOFC": 6
+  },
+  "unk_658": {
+    "  UFC": 3,
+    " NUFC": 4,
+    "INUFC": 5
+  },
+  "unk_4108": {
+    "SETHC": 6
+  },
+  "unk_4164": {
+    "XETHC": 6
+  },
+  "unk_543": {
+    "  AIC": 3,
+    " MAIC": 4,
+    "EMAIC": 5
+  },
+  "unk_3550": {
+    "XGAIC": 6
+  },
+  "unk_3558": {
+    "YGAIC": 6
+  },
+  "unk_2426": {
+    " RAIC": 4,
+    "ERAIC": 5
+  },
+  "unk_218": {
+    " EMIC": 4,
+    "NEMIC": 5
+  },
+  "unk_3896": {
+    "OPMIC": 5
+  },
+  "unk_4171": {
+    "XTMIC": 6
+  },
+  "unk_3656": {
+    "ETNIC": 6
+  },
+  "unk_2852": {
+    "HTNIC": 6
+  },
+  "unk_26": {
+    "  RIC": 3,
+    " ERIC": 4,
+    "CERIC": 5
+  },
+  "unk_2147": {
+    "OCRIC": 6
+  },
+  "unk_1690": {
+    "VERIC": 5
+  },
+  "unk_1516": {
+    "PXRIC": 5
+  },
+  "unk_2530": {
+    "ICSIC": 6
+  },
+  "unk_770": {
+    " PSIC": 4,
+    "LPSIC": 5
+  },
+  "unk_1006": {
+    " TSIC": 4
+  },
+  "unk_2608": {
+    "ATSIC": 6
+  },
+  "unk_3474": {
+    "FTSIC": 6
+  },
+  "unk_3230": {
+    "FTSIC": 6
+  },
+  "unk_2708": {
+    "FTSIC": 6
+  },
+  "unk_1440": {
+    "MTSIC": 5
+  },
+  "unk_1106": {
+    " YEKC": 4
+  },
+  "unk_2793": {
+    "MNCLC": 6
+  },
+  "unk_3142": {
+    "TNCLC": 6
+  },
+  "unk_3365": {
+    "LOCLC": 6
+  },
+  "unk_4205": {
+    "NOCLC": 6
+  },
+  "unk_1054": {
+    " VELC": 4,
+    "EVELC": 5
+  },
+  "unk_374": {
+    " GFLC": 4
+  },
+  "unk_558": {
+    " MILC": 4,
+    "IMILC": 5
+  },
+  "unk_1652": {
+    "TSILC": 5
+  },
+  "unk_647": {
+    "NEPLC": 5,
+    " NPLC": 4
+  },
+  "unk_2359": {
+    "RTSLC": 6
+  },
+  "unk_3048": {
+    "YTSLC": 6
+  },
+  "unk_44": {
+    " AFMC": 4,
+    "RAFMC": 5
+  },
+  "unk_494": {
+    " LFMC": 4,
+    "ELFMC": 5
+  },
+  "unk_2070": {
+    "IDOMC": 6
+  },
+  "unk_773": {
+    " PSMC": 4,
+    "APSMC": 5
+  },
+  "unk_4347": {
+    "TPSMC": 6
+  },
+  "unk_2576": {
+    "RTSMC": 6
+  },
+  "unk_1098": {
+    " XTMC": 4,
+    "TXTMC": 5
+  },
+  "unk_1115": {
+    " YTMC": 4,
+    "PYTMC": 5
+  },
+  "unk_1241": {
+    "EMANC": 5
+  },
+  "unk_1011": {
+    " TSNC": 4,
+    "YTSNC": 5
+  },
+  "unk_3147": {
+    "UNCOC": 6
+  },
+  "unk_2435": {
+    " RCOC": 4,
+    "ERCOC": 5
+  },
+  "unk_2582": {
+    "RXCOC": 5
+  },
+  "unk_289": {
+    " FFOC": 4,
+    "SFFOC": 5
+  },
+  "unk_1397": {
+    "LIFOC": 5
+  },
+  "unk_3672": {
+    "GPUOC": 6
+  },
+  "unk_668": {
+    " OBPC": 4,
+    "ROBPC": 5
+  },
+  "unk_678": {
+    " OCPC": 4,
+    "NOCPC": 5
+  },
+  "unk_1671": {
+    "UOCPC": 5
+  },
+  "unk_417": {
+    " IDPC": 4,
+    "RIDPC": 5
+  },
+  "unk_608": {
+    " NFPC": 4,
+    "ANFPC": 5
+  },
+  "unk_829": {
+    " RGPC": 4,
+    "ARGPC": 5
+  },
+  "unk_2098": {
+    "IRGPC": 5
+  },
+  "unk_1736": {
+    "YEKPC": 5
+  },
+  "unk_913": {
+    " SLPC": 4,
+    "TSLPC": 5
+  },
+  "unk_4311": {
+    "NIOPC": 6
+  },
+  "unk_929": {
+    " SOPC": 4,
+    "ISOPC": 5
+  },
+  "unk_1754": {
+    "CSOPC": 6
+  },
+  "unk_940": {
+    " SPPC": 4
+  },
+  "unk_2788": {
+    "MERPC": 6
+  },
+  "unk_1811": {
+    "MERPC": 6
+  },
+  "unk_712": {
+    " ORPC": 4,
+    "PORPC": 5
+  },
+  "unk_358": {
+    " FSPC": 4
+  },
+  "unk_458": {
+    " IVPC": 4,
+    "SIVPC": 5
+  },
+  "unk_138": {
+    " DARC": 4,
+    "IDARC": 5
+  },
+  "unk_3139": {
+    "TFARC": 6
+  },
+  "unk_3399": {
+    "NWARC": 6
+  },
+  "unk_4359": {
+    "AVERC": 6
+  },
+  "unk_2258": {
+    "LIFRC": 6
+  },
+  "unk_3150": {
+    "UNFRC": 6
+  },
+  "unk_3574": {
+    "YTFRC": 6
+  },
+  "unk_744": {
+    " PGRC": 4,
+    "RPGRC": 5
+  },
+  "unk_3026": {
+    "TXMRC": 6
+  },
+  "unk_223": {
+    " ENRC": 4,
+    "NENRC": 5
+  },
+  "unk_924": {
+    " SNRC": 4,
+    "TSNRC": 5
+  },
+  "unk_340": {
+    " FRRC": 4
+  },
+  "unk_2348": {
+    " SSRC": 4,
+    "RSSRC": 5
+  },
+  "unk_3019": {
+    "TITRC": 6
+  },
+  "unk_3725": {
+    " MTRC": 4,
+    "PMTRC": 5
+  },
+  "unk_1458": {
+    "NGWRC": 5
+  },
+  "unk_680": {
+    " OCSC": 4,
+    "DOCSC": 5
+  },
+  "unk_1605": {
+    "SSESC": 5
+  },
+  "unk_976": {
+    " TESC": 4,
+    "FTESC": 5
+  },
+  "unk_3288": {
+    "TNGSC": 6
+  },
+  "unk_2655": {
+    "NAHSC": 6
+  },
+  "unk_3999": {
+    "EEHSC": 5
+  },
+  "unk_3890": {
+    "OPHSC": 6
+  },
+  "unk_2352": {
+    "RTHSC": 5
+  },
+  "unk_4103": {
+    "SAISC": 6
+  },
+  "unk_2942": {
+    "IFISC": 6
+  },
+  "unk_696": {
+    " ONSC": 4
+  },
+  "unk_2616": {
+    "DLPSC": 5
+  },
+  "unk_3988": {
+    "BUSSC": 6
+  },
+  "unk_3020": {
+    "TITSC": 6
+  },
+  "unk_2199": {
+    "CNTSC": 6
+  },
+  "unk_2492": {
+    "ERTSC": 6
+  },
+  "unk_1118": {
+    " YTSC": 4,
+    "LYTSC": 5
+  },
+  "unk_2618": {
+    "EDATC": 6
+  },
+  "unk_3477": {
+    "GDATC": 6
+  },
+  "unk_584": {
+    " NATC": 4,
+    "GNATC": 5
+  },
+  "unk_3744": {
+    "SNATC": 6
+  },
+  "unk_3011": {
+    "SNATC": 6
+  },
+  "unk_1860": {
+    "SNATC": 6
+  },
+  "unk_393": {
+    " HCTC": 4,
+    "EHCTC": 5
+  },
+  "unk_4334": {
+    "THCTC": 6
+  },
+  "unk_3371": {
+    "LOCTC": 6
+  },
+  "unk_4210": {
+    "NOCTC": 6
+  },
+  "unk_821": {
+    " RETC": 4,
+    "MRETC": 5
+  },
+  "unk_2095": {
+    "IRETC": 6
+  },
+  "unk_3745": {
+    "SRETC": 6
+  },
+  "unk_3012": {
+    "SRETC": 6
+  },
+  "unk_1866": {
+    "SRETC": 6
+  },
+  "unk_497": {
+    " LFTC": 4,
+    "ALFTC": 5
+  },
+  "unk_982": {
+    " TITC": 4,
+    "LTITC": 5
+  },
+  "unk_2246": {
+    "LELTC": 6
+  },
+  "unk_396": {
+    " HLTC": 4,
+    "EHLTC": 5
+  },
+  "unk_3837": {
+    "ILLTC": 6
+  },
+  "unk_4135": {
+    "STLTC": 6
+  },
+  "unk_2794": {
+    "MPMTC": 6
+  },
+  "unk_1815": {
+    "MPMTC": 6
+  },
+  "unk_758": {
+    "  OTC": 3,
+    " POTC": 4
+  },
+  "unk_320": {
+    " FOTC": 4,
+    "FFOTC": 5
+  },
+  "unk_4331": {
+    "TFOTC": 6
+  },
+  "unk_651": {
+    "NEPTC": 5,
+    " NPTC": 4
+  },
+  "unk_88": {
+    " ARTC": 4,
+    "DARTC": 5
+  },
+  "unk_4326": {
+    "TARTC": 6
+  },
+  "unk_247": {
+    " ERTC": 4,
+    "FERTC": 5
+  },
+  "unk_540": {
+    " LUTC": 4,
+    "ILUTC": 5
+  },
+  "unk_2909": {
+    "CTWTC": 6
+  },
+  "unk_881": {
+    " RXTC": 4,
+    "TRXTC": 5
+  },
+  "unk_955": {
+    " SXTC": 4,
+    "TSXTC": 5
+  },
+  "unk_1025": {
+    " TXTC": 4,
+    "TTXTC": 5
+  },
+  "unk_2229": {
+    "HTCUC": 6
+  },
+  "unk_2718": {
+    "STCUC": 6
+  },
+  "unk_2831": {
+    "WTCUC": 6
+  },
+  "unk_443": {
+    " INUC": 4,
+    "TINUC": 5
+  },
+  "unk_1484": {
+    "OINUC": 5
+  },
+  "unk_1971": {
+    "ILPUC": 6
+  },
+  "unk_1121": {
+    "  TUC": 3,
+    " YTUC": 4
+  },
+  "unk_2083": {
+    "INEVC": 6
+  },
+  "unk_499": {
+    " LFVC": 4,
+    "ALFVC": 5
+  },
+  "unk_1391": {
+    "LCSVC": 5
+  },
+  "unk_408": {
+    " HTVC": 4,
+    "RHTVC": 5
+  },
+  "unk_4043": {
+    "LLAWC": 6
+  },
+  "unk_1552": {
+    "RIDWC": 5
+  },
+  "unk_298": {
+    " FGWC": 4,
+    "IFGWC": 5
+  },
+  "unk_152": {
+    " DIWC": 4,
+    "TDIWC": 5
+  },
+  "unk_2819": {
+    "SNIWC": 6
+  },
+  "unk_1600": {
+    "SOPWC": 5
+  },
+  "unk_22": {
+    "  LXC": 3
+  },
+  "unk_3001": {
+    "OVXAL": 6
+  },
+  "unk_2387": {
+    "TADYC": 6
+  },
+  "unk_23": {
+    "  LYC": 3
+  },
+  "unk_1827": {
+    "NDUYC": 6
+  },
+  "unk_2": {
+    "    D": 1,
+    "   AD": 2,
+    "  SAD": 3,
+    " TSAD": 4,
+    "    W": 1
+  },
+  "unk_3242": {
+    "ITSAD": 7
+  },
+  "unk_190": {
+    "  CCD": 3,
+    " ECCD": 4,
+    "NECCD": 5
+  },
+  "unk_461": {
+    " JCCD": 4,
+    "OJCCD": 5
+  },
+  "unk_3920": {
+    "SALCD": 5
+  },
+  "unk_1138": {
+    " FRCD": 4,
+    "AFRCD": 5
+  },
+  "unk_2241": {
+    "LEGDD": 6
+  },
+  "unk_2172": {
+    "RGGDD": 6
+  },
+  "unk_1875": {
+    "TSIDD": 5
+  },
+  "unk_1703": {
+    "VUPDD": 5
+  },
+  "unk_10": {
+    " CAFD": 4,
+    "TCAFD": 5
+  },
+  "unk_850": {
+    " ROFD": 4,
+    "CROFD": 5
+  },
+  "unk_1634": {
+    "NCCLD": 6,
+    "TNCCG": 5
+  },
+  "unk_2581": {
+    "RXCLD": 5
+  },
+  "unk_1868": {
+    "TADLD": 6
+  },
+  "unk_1746": {
+    "ZSDLD": 5
+  },
+  "unk_484": {
+    "  ELD": 3,
+    " LELD": 4,
+    "ILELD": 5
+  },
+  "unk_2313": {
+    "RCELD": 6
+  },
+  "unk_2013": {
+    "RCELD": 7
+  },
+  "unk_2919": {
+    "EDELD": 6
+  },
+  "unk_1960": {
+    "EDELD": 7
+  },
+  "unk_2883": {
+    "AGELD": 6
+  },
+  "unk_2154": {
+    "OMELD": 5
+  },
+  "unk_2001": {
+    "OMELD": 7
+  },
+  "unk_3754": {
+    "TPELD": 6
+  },
+  "unk_1747": {
+    "ZSELD": 5
+  },
+  "unk_3985": {
+    "AVELD": 6
+  },
+  "unk_2110": {
+    "IVELD": 6
+  },
+  "unk_1807": {
+    "LVELD": 6
+  },
+  "unk_1708": {
+    "VVELD": 5
+  },
+  "unk_2821": {
+    "TARLD": 6
+  },
+  "unk_2012": {
+    "PYTLD": 6
+  },
+  "unk_3286": {
+    "SRVLD": 6
+  },
+  "unk_572": {
+    " MOMD": 4,
+    "EMOMD": 5
+  },
+  "unk_1911": {
+    "DOCND": 6
+  },
+  "unk_32": {
+    " ADND": 4,
+    "NADND": 5
+  },
+  "unk_2238": {
+    "LEDND": 6
+  },
+  "unk_2512": {
+    "FODND": 6
+  },
+  "unk_3887": {
+    "OPDND": 6
+  },
+  "unk_2801": {
+    "OPDND": 6
+  },
+  "unk_2442": {
+    "ERDND": 6
+  },
+  "unk_1777": {
+    "FRDND": 6
+  },
+  "unk_3104": {
+    "ITDND": 6
+  },
+  "unk_2859": {
+    "NLGND": 6
+  },
+  "unk_3579": {
+    "YTGND": 6
+  },
+  "unk_2867": {
+    "OOHND": 6
+  },
+  "unk_2053": {
+    "CYTND": 6
+  },
+  "unk_3076": {
+    "ARAPD": 6
+  },
+  "unk_1362": {
+    "IDKPD": 5
+  },
+  "unk_3430": {
+    "TSOPD": 6
+  },
+  "unk_4370": {
+    "PERPD": 6
+  },
+  "unk_4319": {
+    "PERPD": 6
+  },
+  "unk_4258": {
+    "PERPD": 6
+  },
+  "unk_3784": {
+    "ALCQD": 6
+  },
+  "unk_2293": {
+    "PYTQD": 6
+  },
+  "unk_115": {
+    " CERD": 4,
+    "TCERD": 5
+  },
+  "unk_485": {
+    " LERD": 4,
+    "ELERD": 5
+  },
+  "unk_1080": {
+    " XETD": 4,
+    "TXETD": 5
+  },
+  "unk_3458": {
+    "CTIVD": 6
+  },
+  "unk_1757": {
+    "CTIVD": 6
+  },
+  "unk_4169": {
+    "XTIVD": 6
+  },
+  "unk_3553": {
+    "XTIVD": 6
+  },
+  "unk_520": {
+    " LOVD": 4,
+    "ULOVD": 5
+  },
+  "unk_4296": {
+    "ETBXD": 5
+  },
+  "unk_3924": {
+    "SECXD": 6
+  },
+  "unk_2694": {
+    "CLCXD": 6
+  },
+  "unk_3204": {
+    "ELCXD": 6
+  },
+  "unk_2925": {
+    "ELCXD": 6
+  },
+  "unk_4013": {
+    "FLCXD": 6
+  },
+  "unk_3663": {
+    "FLCXD": 6
+  },
+  "unk_2773": {
+    "HLCXD": 6
+  },
+  "unk_1842": {
+    "PLCXD": 6
+  },
+  "unk_3427": {
+    "TLCXD": 6
+  },
+  "unk_3149": {
+    "UNCXD": 6
+  },
+  "unk_3134": {
+    "RPCXD": 6
+  },
+  "unk_4021": {
+    "GRCXD": 6
+  },
+  "unk_2537": {
+    "LTCXD": 6
+  },
+  "unk_2687": {
+    "RTCXD": 6
+  },
+  "unk_4111": {
+    "SIDXD": 6
+  },
+  "unk_4343": {
+    "TMDXD": 5
+  },
+  "unk_1129": {
+    "ACEXD": 5
+  },
+  "unk_1160": {
+    "BCEXD": 5
+  },
+  "unk_3292": {
+    "TXEXD": 6
+  },
+  "unk_2394": {
+    "TXEXD": 6
+  },
+  "unk_436": {
+    " IFXD": 4,
+    "LIFXD": 5
+  },
+  "unk_3252": {
+    "NCHXD": 6
+  },
+  "unk_1982": {
+    "NCHXD": 6
+  },
+  "unk_3260": {
+    "OCHXD": 6
+  },
+  "unk_2631": {
+    "IEHXD": 6
+  },
+  "unk_3326": {
+    "CRHXD": 6
+  },
+  "unk_3193": {
+    "CRHXD": 6
+  },
+  "unk_1173": {
+    "COMXD": 5
+  },
+  "unk_1218": {
+    "DOMXD": 5
+  },
+  "unk_2713": {
+    "LCNXD": 6
+  },
+  "unk_3135": {
+    "RPOXD": 6
+  },
+  "unk_79": {
+    " APXD": 4,
+    "NAPXD": 5
+  },
+  "unk_4372": {
+    "RIPXD": 6
+  },
+  "unk_4340": {
+    "TLPXD": 5
+  },
+  "unk_2157": {
+    "OMPXD": 6
+  },
+  "unk_2003": {
+    "OMPXD": 6
+  },
+  "unk_867": {
+    " RPXD": 4,
+    "ERPXD": 5
+  },
+  "unk_3600": {
+    "YTPXD": 6
+  },
+  "unk_3821": {
+    "FERXD": 6
+  },
+  "unk_3848": {
+    " ATXD": 4,
+    "LATXD": 5
+  },
+  "unk_4052": {
+    "NATXD": 6
+  },
+  "unk_4318": {
+    "OBTXD": 6
+  },
+  "unk_2143": {
+    "OBTXD": 6
+  },
+  "unk_1927": {
+    "OBTXD": 6
+  },
+  "unk_1840": {
+    "OBTXD": 6
+  },
+  "unk_3853": {
+    " CTXD": 4,
+    "LCTXD": 5
+  },
+  "unk_3253": {
+    "NCTXD": 6
+  },
+  "unk_1983": {
+    "NCTXD": 6
+  },
+  "unk_3268": {
+    "OCTXD": 6
+  },
+  "unk_3809": {
+    "EDTXD": 5
+  },
+  "unk_3691": {
+    "IDTXD": 6
+  },
+  "unk_2836": {
+    "AETXD": 6
+  },
+  "unk_2693": {
+    "AETXD": 6
+  },
+  "unk_1894": {
+    "AETXD": 6
+  },
+  "unk_1748": {
+    "AETXD": 6
+  },
+  "unk_2224": {
+    "HETXD": 6
+  },
+  "unk_3054": {
+    " FTXD": 4,
+    "AFTXD": 5
+  },
+  "unk_1368": {
+    "IHTXD": 5
+  },
+  "unk_2277": {
+    "MITXD": 6
+  },
+  "unk_1485": {
+    "OLTXD": 5
+  },
+  "unk_3787": {
+    "AMTXD": 5
+  },
+  "unk_2325": {
+    "RMTXD": 6
+  },
+  "unk_1489": {
+    "ONTXD": 5
+  },
+  "unk_3283": {
+    "SNTXD": 6
+  },
+  "unk_2525": {
+    "FOTXD": 6
+  },
+  "unk_3308": {
+    "WOTXD": 5
+  },
+  "unk_3329": {
+    "CRTXD": 6
+  },
+  "unk_3194": {
+    "CRTXD": 6
+  },
+  "unk_1177": {
+    "CRTXD": 5
+  },
+  "unk_2495": {
+    "ERTXD": 6
+  },
+  "unk_3995": {
+    "DIWXD": 6
+  },
+  "unk_421": {
+    " IDZD": 4,
+    "SIDZD": 5
+  },
+  "unk_583": {
+    " NAAE": 4,
+    "GNAAE": 5
+  },
+  "unk_1988": {
+    "OLBAE": 6
+  },
+  "unk_2211": {
+    "DOCAE": 6
+  },
+  "unk_3320": {
+    " LIAE": 4,
+    "CLIAE": 5
+  },
+  "unk_1132": {
+    "AERAE": 5
+  },
+  "unk_3603": {
+    "YTSAE": 6
+  },
+  "unk_3974": {
+    "AOCBE": 6
+  },
+  "unk_2382": {
+    "TADCE": 6
+  },
+  "unk_3751": {
+    "TNECE": 6
+  },
+  "unk_3522": {
+    "SXLCE": 6
+  },
+  "unk_3525": {
+    "SYLCE": 6
+  },
+  "unk_3782": {
+    "AEMCE": 6
+  },
+  "unk_1618": {
+    "TAOCE": 5
+  },
+  "unk_1232": {
+    "EDOCE": 5
+  },
+  "unk_224": {
+    " EOCE": 4,
+    "FEOCE": 5
+  },
+  "unk_4217": {
+    "OLOCE": 6
+  },
+  "unk_3163": {
+    "UNOCE": 6
+  },
+  "unk_1111": {
+    " YPCE": 4,
+    "RYPCE": 5
+  },
+  "unk_1221": {
+    "DPEDE": 5
+  },
+  "unk_1561": {
+    "RPEDE": 5
+  },
+  "unk_2635": {
+    "ISEDE": 6
+  },
+  "unk_82": {
+    " ARDE": 4,
+    "WARDE": 5
+  },
+  "unk_3952": {
+    "XEDEE": 6
+  },
+  "unk_2978": {
+    "OCMEE": 6
+  },
+  "unk_157": {
+    " DNEE": 4
+  },
+  "unk_3807": {
+    " DQEE": 4,
+    "EDQEE": 5
+  },
+  "unk_3976": {
+    "AOCFE": 6
+  },
+  "unk_3361": {
+    "LOCFE": 6
+  },
+  "unk_4201": {
+    "NOCFE": 6
+  },
+  "unk_4158": {
+    "XELFE": 6
+  },
+  "unk_643": {
+    " EPFE": 4,
+    "NEPFE": 5,
+    " NPFE": 4
+  },
+  "unk_2355": {
+    "RTSFE": 6
+  },
+  "unk_3044": {
+    "YTSFE": 6
+  },
+  "unk_721": {
+    " PAGE": 4
+  },
+  "unk_2200": {
+    "DARGE": 6
+  },
+  "unk_328": {
+    " FRGE": 4
+  },
+  "unk_2849": {
+    "HCLIE": 6
+  },
+  "unk_1901": {
+    " ELIE": 4,
+    "NELIE": 5
+  },
+  "unk_4289": {
+    "EELIE": 6
+  },
+  "unk_510": {
+    " LLIE": 4
+  },
+  "unk_2746": {
+    "DLLIE": 6
+  },
+  "unk_2463": {
+    "ERLIE": 6
+  },
+  "unk_3498": {
+    "OTLIE": 6
+  },
+  "unk_1888": {
+    "VTLIE": 6
+  },
+  "unk_4154": {
+    "  NIE": 3,
+    " PNIE": 4,
+    "UPNIE": 5
+  },
+  "unk_692": {
+    " ONIE": 4
+  },
+  "unk_239": {
+    " ERIE": 4,
+    "SERIE": 5
+  },
+  "unk_1851": {
+    "RERIE": 6
+  },
+  "unk_2395": {
+    " SSIE": 4,
+    "USSIE": 5
+  },
+  "unk_3219": {
+    "ELTIE": 6
+  },
+  "unk_1021": {
+    "TIXIE": 5,
+    " TXIE": 4,
+    "YTXIE": 5
+  },
+  "unk_3357": {
+    "LLALE": 6
+  },
+  "unk_3561": {
+    "YTALE": 6
+  },
+  "unk_2299": {
+    "RACLE": 6
+  },
+  "unk_2733": {
+    "TSCLE": 6
+  },
+  "unk_2994": {
+    "OVCLE": 6
+  },
+  "unk_594": {
+    " NELE": 4,
+    "ANELE": 5
+  },
+  "unk_1337": {
+    "GNELE": 5
+  },
+  "unk_2933": {
+    "EVELE": 6
+  },
+  "unk_559": {
+    " MILE": 4,
+    "IMILE": 5
+  },
+  "unk_2305": {
+    "RALLE": 6
+  },
+  "unk_2851": {
+    "HTLLE": 6
+  },
+  "unk_2996": {
+    "OVLLE": 6
+  },
+  "unk_569": {
+    " MNLE": 4,
+    "NLLUE": 5
+  },
+  "unk_628": {
+    " NNLE": 4
+  },
+  "unk_3822": {
+    "FFOLE": 6
+  },
+  "unk_1060": {
+    " WOLE": 4,
+    "DWOLE": 5
+  },
+  "unk_2148": {
+    "OCRLE": 6
+  },
+  "unk_1955": {
+    "CERLE": 6
+  },
+  "unk_4253": {
+    "LERLE": 6
+  },
+  "unk_2250": {
+    "LERLE": 6
+  },
+  "unk_2757": {
+    "EHRLE": 6
+  },
+  "unk_2522": {
+    "FORLE": 6
+  },
+  "unk_3601": {
+    "YTRLE": 6
+  },
+  "unk_3690": {
+    "IDTLE": 6
+  },
+  "unk_878": {
+    " RULE": 4,
+    "ERULE": 5
+  },
+  "unk_150": {
+    " DIME": 4
+  },
+  "unk_545": {
+    " MANE": 4,
+    "EMANE": 5
+  },
+  "unk_1185": {
+    "DCCNE": 5
+  },
+  "unk_4167": {
+    "XTCNE": 6
+  },
+  "unk_65": {
+    " AMNE": 4
+  },
+  "unk_102": {
+    " BMNE": 4
+  },
+  "unk_184": {
+    " DTNE": 4,
+    "IDTNE": 5
+  },
+  "unk_2057": {
+    "EDLOE": 6
+  },
+  "unk_991": {
+    " TNOE": 4
+  },
+  "unk_1347": {
+    "GTNOE": 5
+  },
+  "unk_1480": {
+    "NTNOE": 5
+  },
+  "unk_3421": {
+    "RTOOE": 6
+  },
+  "unk_128": {
+    " CROE": 4,
+    "ECROE": 5
+  },
+  "unk_3965": {
+    "ADROE": 6
+  },
+  "unk_1904": {
+    " EROE": 4,
+    "IEROE": 5
+  },
+  "unk_1357": {
+    "HTAPE": 5
+  },
+  "unk_2281": {
+    "NILPE": 6
+  },
+  "unk_639": {
+    " NOPE": 4,
+    "UNOPE": 5
+  },
+  "unk_1234": {
+    "EDRPE": 5
+  },
+  "unk_1507": {
+    "PORPE": 5
+  },
+  "unk_139": {
+    " DARE": 4,
+    "IDARE": 5
+  },
+  "unk_816": {
+    " RDRE": 4,
+    "ARDRE": 5
+  },
+  "unk_279": {
+    " FERE": 4,
+    "EFERE": 5
+  },
+  "unk_1055": {
+    " VERE": 4,
+    "IVERE": 5
+  },
+  "unk_2908": {
+    "CSMRE": 6
+  },
+  "unk_706": {
+    " OPRE": 4,
+    "SOPRE": 5
+  },
+  "unk_1714": {
+    "WTSRE": 5
+  },
+  "unk_2401": {
+    "WTESE": 6
+  },
+  "unk_4130": {
+    "SOPSE": 6
+  },
+  "unk_2127": {
+    "NATSE": 6
+  },
+  "unk_4089": {
+    "RATSE": 6
+  },
+  "unk_1619": {
+    "TATSE": 5
+  },
+  "unk_3171": {
+    "UNTSE": 6
+  },
+  "unk_2493": {
+    "ERTSE": 6
+  },
+  "unk_2265": {
+    "LYTSE": 6
+  },
+  "unk_3401": {
+    "NYTSE": 6
+  },
+  "unk_1190": {
+    "DDCTE": 5
+  },
+  "unk_1499": {
+    "PDCTE": 5
+  },
+  "unk_822": {
+    " RETE": 4,
+    "MRETE": 5
+  },
+  "unk_2096": {
+    "IRETE": 6
+  },
+  "unk_3013": {
+    "SRETE": 6
+  },
+  "unk_1867": {
+    "SRETE": 6
+  },
+  "unk_2841": {
+    "CIHTE": 6
+  },
+  "unk_2091": {
+    "IPSTE": 6
+  },
+  "unk_511": {
+    " LLUE": 4,
+    "TLLUE": 5
+  },
+  "unk_2081": {
+    "ILLUE": 6
+  },
+  "unk_3957": {
+    "YSLUE": 6
+  },
+  "unk_121": {
+    "  NUE": 3,
+    " CNUE": 4,
+    "TCNUE": 5
+  },
+  "unk_444": {
+    " INUE": 4,
+    "TINUE": 5
+  },
+  "unk_2568": {
+    "RNRUE": 5
+  },
+  "unk_428": {
+    " IEWE": 4,
+    "GIEWE": 5
+  },
+  "unk_2253": {
+    "LGNAF": 6
+  },
+  "unk_2956": {
+    "LAPAF": 6
+  },
+  "unk_322": {
+    " FPAF": 4,
+    "IFPAF": 5
+  },
+  "unk_447": {
+    " IPAF": 4,
+    "NIPAF": 5
+  },
+  "unk_3899": {
+    "OPPAF": 6
+  },
+  "unk_936": {
+    " SPAF": 4
+  },
+  "unk_2113": {
+    "IWPAF": 6
+  },
+  "unk_1133": {
+    "AERAF": 5
+  },
+  "unk_2636": {
+    "ITSAF": 6
+  },
+  "unk_3316": {
+    "CETAF": 6
+  },
+  "unk_2223": {
+    "HETAF": 6
+  },
+  "unk_2815": {
+    "SETAF": 6
+  },
+  "unk_2186": {
+    "WETAF": 6
+  },
+  "unk_1091": {
+    " XOBF": 4
+  },
+  "unk_4354": {
+    "TXOBF": 6
+  },
+  "unk_310": {
+    " FOCF": 4,
+    "GFOCF": 5
+  },
+  "unk_3235": {
+    "IFEDF": 6
+  },
+  "unk_1423": {
+    "MAIDF": 5
+  },
+  "unk_1623": {
+    "TGNEF": 5
+  },
+  "unk_3760": {
+    "TSNEF": 6
+  },
+  "unk_3592": {
+    "YTNEF": 6
+  },
+  "unk_3463": {
+    "EDOEF": 5
+  },
+  "unk_2531": {
+    "IDOEF": 6
+  },
+  "unk_2756": {
+    "EHOEF": 6
+  },
+  "unk_571": {
+    " MOEF": 4
+  },
+  "unk_503": {
+    " LIFF": 4,
+    "ELIFF": 5
+  },
+  "unk_2120": {
+    "LLIFF": 6
+  },
+  "unk_2709": {
+    "GIEHF": 6
+  },
+  "unk_3757": {
+    "TSBLF": 6
+  },
+  "unk_3658": {
+    "EVBLF": 6
+  },
+  "unk_3481": {
+    "KNILF": 6
+  },
+  "unk_1490": {
+    "ONYLF": 5
+  },
+  "unk_3174": {
+    "UNYLF": 6
+  },
+  "unk_2504": {
+    "ERYLF": 6
+  },
+  "unk_314": {
+    " FOMF": 4,
+    "IFOMF": 5
+  },
+  "unk_240": {
+    " ERMF": 4,
+    "FERMF": 5
+  },
+  "unk_2432": {
+    "ERBOF": 6
+  },
+  "unk_1575": {
+    "SFFOF": 5
+  },
+  "unk_1341": {
+    "GNIOF": 5
+  },
+  "unk_119": {
+    " CIPF": 4,
+    "TCIPF": 5
+  },
+  "unk_3955": {
+    "XRPPF": 6
+  },
+  "unk_1286": {
+    "FERPF": 5
+  },
+  "unk_4384": {
+    "TFRPF": 6
+  },
+  "unk_2175": {
+    "RTSPF": 6
+  },
+  "unk_2015": {
+    "RTSPF": 6
+  },
+  "unk_1932": {
+    "RTSPF": 6
+  },
+  "unk_1858": {
+    "RTSPF": 6
+  },
+  "unk_1564": {
+    "RTSPF": 5
+  },
+  "unk_140": {
+    "EDARF": 5
+  },
+  "unk_194": {
+    "IDARF": 5,
+    " EDRF": 4
+  },
+  "unk_1266": {
+    "EXARF": 5
+  },
+  "unk_2405": {
+    "XADRF": 6
+  },
+  "unk_3677": {
+    "IDDRF": 6
+  },
+  "unk_1200": {
+    "DIDRF": 5
+  },
+  "unk_2900": {
+    "BLDRF": 6
+  },
+  "unk_2079": {
+    "ILDRF": 6
+  },
+  "unk_3552": {
+    "XLDRF": 6
+  },
+  "unk_3559": {
+    "YLDRF": 6
+  },
+  "unk_2513": {
+    "FODRF": 6
+  },
+  "unk_3888": {
+    "OPDRF": 6
+  },
+  "unk_2445": {
+    "ERDRF": 6
+  },
+  "unk_3521": {
+    "SXDRF": 6
+  },
+  "unk_3524": {
+    "SYDRF": 6
+  },
+  "unk_4309": {
+    "NDIRF": 6
+  },
+  "unk_3113": {
+    "NDIRF": 6
+  },
+  "unk_3543": {
+    "XDIRF": 6
+  },
+  "unk_1720": {
+    "XDIRF": 5
+  },
+  "unk_3556": {
+    "YDIRF": 6
+  },
+  "unk_1734": {
+    "YDIRF": 5
+  },
+  "unk_1744": {
+    "ZDIRF": 5
+  },
+  "unk_3206": {
+    "ELIRF": 6
+  },
+  "unk_1212": {
+    "DNIRF": 5
+  },
+  "unk_3154": {
+    "UNIRF": 6
+  },
+  "unk_746": {
+    " PIRF": 4
+  },
+  "unk_3913": {
+    "PUORF": 6
+  },
+  "unk_1310": {
+    "FRPRF": 5
+  },
+  "unk_1616": {
+    "SYSRF": 5
+  },
+  "unk_345": {
+    " FRSF": 4,
+    "AFRSF": 5
+  },
+  "unk_875": {
+    " RTSF": 4,
+    "ERTSF": 5
+  },
+  "unk_1762": {
+    "ERATF": 6
+  },
+  "unk_3637": {
+    "AXETF": 6
+  },
+  "unk_4219": {
+    "ORGTF": 6
+  },
+  "unk_3125": {
+    "OORTF": 6
+  },
+  "unk_1026": {
+    " TXTF": 4
+  },
+  "unk_792": {
+    " PYTF": 4,
+    "EPYTF": 5
+  },
+  "unk_521": {
+    " LOVF": 4,
+    "ULOVF": 5
+  },
+  "unk_429": {
+    " IEWF": 4,
+    "GIEWF": 5
+  },
+  "unk_2721": {
+    "TDIWF": 6
+  },
+  "unk_1451": {
+    "NELXF": 5
+  },
+  "unk_2526": {
+    "FOYXF": 6
+  },
+  "unk_1452": {
+    "NELYF": 5
+  },
+  "unk_3546": {
+    "XENAG": 6
+  },
+  "unk_2254": {
+    "LGNAG": 6
+  },
+  "unk_3456": {
+    "CINAG": 6
+  },
+  "unk_3317": {
+    "CINAG": 6
+  },
+  "unk_2520": {
+    "FONAG": 6
+  },
+  "unk_3897": {
+    "OPNAG": 6
+  },
+  "unk_4381": {
+    "TDRAG": 5
+  },
+  "unk_2167": {
+    "RAZAG": 6
+  },
+  "unk_3613": {
+    "YTZAG": 6
+  },
+  "unk_4316": {
+    "OBLBG": 6
+  },
+  "unk_846": {
+    "  OBG": 3,
+    " ROBG": 4,
+    "EROBG": 5
+  },
+  "unk_632": {
+    "  OCG": 3,
+    " NOCG": 4,
+    "NNOCG": 5
+  },
+  "unk_1323": {
+    "GFOCG": 5
+  },
+  "unk_3417": {
+    "RROCG": 6
+  },
+  "unk_1275": {
+    "FERCG": 5
+  },
+  "unk_2431": {
+    "ERBDG": 6
+  },
+  "unk_3254": {
+    "NOCDG": 6
+  },
+  "unk_834": {
+    "  IDG": 3,
+    " RIDG": 4,
+    "ERIDG": 5
+  },
+  "unk_1649": {
+    "TSIDG": 5
+  },
+  "unk_305": {
+    " FMDG": 4,
+    "AFMDG": 5
+  },
+  "unk_987": {
+    " TMDG": 4,
+    "YTMDG": 5
+  },
+  "unk_1279": {
+    "FERDG": 5
+  },
+  "unk_2784": {
+    "LPUDG": 6
+  },
+  "unk_280": {
+    "  AEG": 3,
+    " DAEG": 4,
+    " FERG": 4,
+    "EFERG": 5
+  },
+  "unk_2904": {
+    "CDAEG": 6
+  },
+  "unk_3408": {
+    "RDAEG": 6
+  },
+  "unk_1660": {
+    "TTAEG": 5
+  },
+  "unk_382": {
+    "  IEG": 3,
+    " GIEG": 4,
+    "HGIEG": 5
+  },
+  "unk_3730": {
+    "RAIEG": 6
+  },
+  "unk_149": {
+    " DIEG": 4,
+    "EDIEG": 5
+  },
+  "unk_299": {
+    " FIEG": 4,
+    "AFIEG": 5
+  },
+  "unk_502": {
+    " LIEG": 4,
+    "ILIEG": 5
+  },
+  "unk_900": {
+    " SIEG": 4,
+    "ESIEG": 5
+  },
+  "unk_158": {
+    " DNEG": 4
+  },
+  "unk_979": {
+    " THGG": 4
+  },
+  "unk_2207": {
+    "DISGG": 6
+  },
+  "unk_664": {
+    " OBHG": 4,
+    "ROBHG": 5
+  },
+  "unk_729": {
+    "POBHG": 5,
+    " PBHG": 4
+  },
+  "unk_673": {
+    " OCHG": 4,
+    "NOCHG": 5
+  },
+  "unk_813": {
+    "RIDHG": 5,
+    " RDHG": 4
+  },
+  "unk_827": {
+    " RGHG": 4,
+    "ARGHG": 5
+  },
+  "unk_167": {
+    " DOHG": 4
+  },
+  "unk_702": {
+    " OPHG": 4,
+    "SOPHG": 5
+  },
+  "unk_782": {
+    "POTHG": 5,
+    " PTHG": 4
+  },
+  "unk_819": {
+    " REIG": 4,
+    "AREIG": 5
+  },
+  "unk_1007": {
+    " TSIG": 4,
+    "OTSIG": 5
+  },
+  "unk_3366": {
+    "LOCLG": 6
+  },
+  "unk_901": {
+    " SILG": 4,
+    "TSILG": 5
+  },
+  "unk_2360": {
+    "RTSLG": 6
+  },
+  "unk_3049": {
+    "YTSLG": 6
+  },
+  "unk_1051": {
+    " VAMG": 4,
+    "EVAMG": 5
+  },
+  "unk_63": {
+    " AMMG": 4,
+    "XAMMG": 5
+  },
+  "unk_439": {
+    " IMMG": 4,
+    "NIMMG": 5
+  },
+  "unk_4362": {
+    "EKCNG": 6
+  },
+  "unk_2920": {
+    "EDONG": 6
+  },
+  "unk_2369": {
+    "SFFOG": 6
+  },
+  "unk_2173": {
+    "RGLOG": 6
+  },
+  "unk_3335": {
+    "EGOOG": 6
+  },
+  "unk_3516": {
+    "SPOOG": 6
+  },
+  "unk_3597": {
+    "YTOOG": 6
+  },
+  "unk_3397": {
+    "NTAPG": 6
+  },
+  "unk_930": {
+    "  OPG": 3,
+    " SOPG": 4,
+    "ISOPG": 5
+  },
+  "unk_1258": {
+    "ESOPG": 5,
+    "XSOPG": 5
+  },
+  "unk_1474": {
+    "NSOPG": 5,
+    "YSOPG": 5
+  },
+  "unk_1677": {
+    "USOPG": 5,
+    "ZSOPG": 5
+  },
+  "unk_1287": {
+    "FERPG": 5
+  },
+  "unk_4321": {
+    "RPDRG": 6
+  },
+  "unk_486": {
+    " LERG": 4,
+    "ALERG": 5
+  },
+  "unk_3487": {
+    "MCFRG": 6
+  },
+  "unk_2834": {
+    "BOFRG": 6
+  },
+  "unk_3015": {
+    "SUJRG": 6
+  },
+  "unk_1568": {
+    "SBORG": 5
+  },
+  "unk_1300": {
+    "FFORG": 5
+  },
+  "unk_3831": {
+    "IDSRG": 6
+  },
+  "unk_361": {
+    " FSRG": 4
+  },
+  "unk_3635": {
+    "ATSRG": 6
+  },
+  "unk_1775": {
+    "FRASG": 6
+  },
+  "unk_3627": {
+    "APESG": 6
+  },
+  "unk_1783": {
+    "FRLSG": 6
+  },
+  "unk_227": {
+    " EPSG": 4,
+    "CEPSG": 5
+  },
+  "unk_1143": {
+    "AFRSG": 5
+  },
+  "unk_716": {
+    " ORSG": 4,
+    "DORSG": 5
+  },
+  "unk_1047": {
+    "  TSG": 3,
+    " UTSG": 4,
+    "BUTSG": 5
+  },
+  "unk_1316": {
+    "FYTSG": 5
+  },
+  "unk_1210": {
+    "DLVSG": 5
+  },
+  "unk_670": {
+    " OBTG": 4,
+    "ROBTG": 5
+  },
+  "unk_731": {
+    "POBTG": 5,
+    " PBTG": 4
+  },
+  "unk_681": {
+    " OCTG": 4,
+    "NOCTG": 5
+  },
+  "unk_817": {
+    "RIDTG": 5,
+    " RDTG": 4
+  },
+  "unk_830": {
+    " RGTG": 4,
+    "ARGTG": 5
+  },
+  "unk_173": {
+    " DOTG": 4
+  },
+  "unk_707": {
+    " OPTG": 4,
+    "SOPTG": 5
+  },
+  "unk_2481": {
+    "ERPTG": 6
+  },
+  "unk_786": {
+    "POTTG": 5,
+    " PTTG": 4
+  },
+  "unk_793": {
+    " PYTG": 4,
+    "EPYTG": 5
+  },
+  "unk_1307": {
+    "FRBUG": 5
+  },
+  "unk_3914": {
+    "PXEUG": 6
+  },
+  "unk_3872": {
+    "NEGUG": 6
+  },
+  "unk_3501": {
+    "PALUG": 6
+  },
+  "unk_4055": {
+    "NCLUG": 6
+  },
+  "unk_2209": {
+    "DLLUG": 6
+  },
+  "unk_1928": {
+    "OLLUG": 6
+  },
+  "unk_3724": {
+    "PLLUG": 6
+  },
+  "unk_1172": {
+    "COLUG": 5
+  },
+  "unk_2744": {
+    "DIMUG": 6
+  },
+  "unk_3738": {
+    "RIMUG": 6
+  },
+  "unk_1715": {
+    "WVMUG": 5
+  },
+  "unk_2934": {
+    "FERUG": 6
+  },
+  "unk_3002": {
+    "PERUG": 6
+  },
+  "unk_3112": {
+    "MYSUG": 5
+  },
+  "unk_1669": {
+    "ULOVG": 5
+  },
+  "unk_4044": {
+    "LLAWG": 6
+  },
+  "unk_1326": {
+    "GIEWG": 5
+  },
+  "unk_355": {
+    " FRWG": 4
+  },
+  "unk_4263": {
+    "TCAYG": 6
+  },
+  "unk_3442": {
+    "AEAYG": 6
+  },
+  "unk_4284": {
+    "DIAYG": 6
+  },
+  "unk_4036": {
+    "KLAYG": 6
+  },
+  "unk_3912": {
+    "POAYG": 6
+  },
+  "unk_3978": {
+    "ARAYG": 6
+  },
+  "unk_2377": {
+    "SSAYG": 6
+  },
+  "unk_1808": {
+    "LWAYG": 6
+  },
+  "unk_2191": {
+    "ADBYG": 6
+  },
+  "unk_2219": {
+    "FDBYG": 6
+  },
+  "unk_3380": {
+    "MEBYG": 6
+  },
+  "unk_3972": {
+    "AHBYG": 6
+  },
+  "unk_1968": {
+    "FHBYG": 6
+  },
+  "unk_1403": {
+    "LMBYG": 5
+  },
+  "unk_1630": {
+    "TMBYG": 5
+  },
+  "unk_3128": {
+    "PPBYG": 6
+  },
+  "unk_2949": {
+    "IUBYG": 6
+  },
+  "unk_2890": {
+    "AVBYG": 6
+  },
+  "unk_1419": {
+    "LWBYG": 5
+  },
+  "unk_4102": {
+    "SACYG": 6
+  },
+  "unk_3033": {
+    "WBCYG": 6
+  },
+  "unk_1719": {
+    "XBCYG": 5
+  },
+  "unk_4000": {
+    "ELCYG": 6
+  },
+  "unk_552": {
+    " MCYG": 4
+  },
+  "unk_3036": {
+    "WMCYG": 6
+  },
+  "unk_3703": {
+    "LOCYG": 6
+  },
+  "unk_3492": {
+    "MOCYG": 6
+  },
+  "unk_2140": {
+    "NOCYG": 6
+  },
+  "unk_1924": {
+    "NOCYG": 6
+  },
+  "unk_1833": {
+    "NOCYG": 6
+  },
+  "unk_734": {
+    " PCYG": 4
+  },
+  "unk_1750": {
+    "CPCYG": 6
+  },
+  "unk_3649": {
+    "EPCYG": 6
+  },
+  "unk_2088": {
+    "IPCYG": 6
+  },
+  "unk_1834": {
+    "NPCYG": 6
+  },
+  "unk_3038": {
+    "WPCYG": 6
+  },
+  "unk_1752": {
+    "CRCYG": 6
+  },
+  "unk_1758": {
+    "DRCYG": 6
+  },
+  "unk_4250": {
+    "IRCYG": 6
+  },
+  "unk_4031": {
+    "IRCYG": 6
+  },
+  "unk_1973": {
+    "IRCYG": 6
+  },
+  "unk_2638": {
+    "KRCYG": 6
+  },
+  "unk_4274": {
+    "ORCYG": 6
+  },
+  "unk_3727": {
+    "PRCYG": 6
+  },
+  "unk_3987": {
+    "BTCYG": 6
+  },
+  "unk_3992": {
+    "CTCYG": 6
+  },
+  "unk_3398": {
+    "NTCYG": 6
+  },
+  "unk_1838": {
+    "NTCYG": 6
+  },
+  "unk_3136": {
+    "RTCYG": 6
+  },
+  "unk_4409": {
+    "TTCYG": 6
+  },
+  "unk_3765": {
+    "TTCYG": 6
+  },
+  "unk_2828": {
+    "TTCYG": 6
+  },
+  "unk_3570": {
+    "YTCYG": 6
+  },
+  "unk_2611": {
+    "CVCYG": 6
+  },
+  "unk_2995": {
+    "OVCYG": 6
+  },
+  "unk_1059": {
+    " WCYG": 4
+  },
+  "unk_3040": {
+    "WWCYG": 6
+  },
+  "unk_1494": {
+    "PADYG": 5
+  },
+  "unk_3527": {
+    "TADYG": 6
+  },
+  "unk_2069": {
+    "ICDYG": 6
+  },
+  "unk_3486": {
+    "MCDYG": 6
+  },
+  "unk_2839": {
+    "CEDYG": 6
+  },
+  "unk_4271": {
+    "FEDYG": 6
+  },
+  "unk_3096": {
+    "IEDYG": 6
+  },
+  "unk_3871": {
+    "NEDYG": 6
+  },
+  "unk_4277": {
+    "SEDYG": 6
+  },
+  "unk_2177": {
+    "SEDYG": 6
+  },
+  "unk_2019": {
+    "SEDYG": 6
+  },
+  "unk_1501": {
+    "PFDYG": 5
+  },
+  "unk_4018": {
+    "GHDYG": 6
+  },
+  "unk_4308": {
+    "MHDYG": 6
+  },
+  "unk_4272": {
+    "FIDYG": 6
+  },
+  "unk_4278": {
+    "SIDYG": 6
+  },
+  "unk_3513": {
+    "SIDYG": 6
+  },
+  "unk_2415": {
+    "CLDYG": 6
+  },
+  "unk_2151": {
+    "OLDYG": 6
+  },
+  "unk_1841": {
+    "OLDYG": 6
+  },
+  "unk_4413": {
+    "AMDYG": 6
+  },
+  "unk_4283": {
+    "AMDYG": 6
+  },
+  "unk_1749": {
+    "CMDYG": 6
+  },
+  "unk_4414": {
+    "FMDYG": 6
+  },
+  "unk_4301": {
+    "FMDYG": 6
+  },
+  "unk_3056": {
+    "ANDYG": 6
+  },
+  "unk_4188": {
+    "BODYG": 6
+  },
+  "unk_2807": {
+    "RODYG": 6
+  },
+  "unk_3300": {
+    "WODYG": 6
+  },
+  "unk_1751": {
+    "CPDYG": 6
+  },
+  "unk_2732": {
+    "TPDYG": 6
+  },
+  "unk_3451": {
+    "ARDYG": 6
+  },
+  "unk_3077": {
+    "ARDYG": 6
+  },
+  "unk_2410": {
+    "ARDYG": 6
+  },
+  "unk_2448": {
+    "ERDYG": 6
+  },
+  "unk_3472": {
+    "FRDYG": 6
+  },
+  "unk_3093": {
+    "FRDYG": 6
+  },
+  "unk_889": {
+    " SDYG": 4
+  },
+  "unk_2988": {
+    "OTDYG": 6
+  },
+  "unk_3143": {
+    "TWDYG": 6
+  },
+  "unk_3027": {
+    "UFEYG": 6
+  },
+  "unk_2612": {
+    "CVEYG": 6
+  },
+  "unk_3769": {
+    "TXEYG": 6
+  },
+  "unk_2938": {
+    "GAFYG": 6
+  },
+  "unk_2654": {
+    "NAFYG": 6
+  },
+  "unk_3461": {
+    "DBFYG": 6
+  },
+  "unk_2168": {
+    "RBFYG": 6
+  },
+  "unk_2606": {
+    "ALFYG": 6
+  },
+  "unk_3078": {
+    "ARFYG": 6
+  },
+  "unk_3666": {
+    "FRFYG": 6
+  },
+  "unk_3517": {
+    "SRFYG": 6
+  },
+  "unk_1178": {
+    "CSFYG": 5
+  },
+  "unk_1437": {
+    "MSFYG": 5
+  },
+  "unk_2613": {
+    "CVFYG": 6
+  },
+  "unk_3488": {
+    "MCGYG": 6
+  },
+  "unk_4019": {
+    "GHGYG": 6
+  },
+  "unk_3236": {
+    "IHGYG": 6
+  },
+  "unk_3381": {
+    "MHGYG": 6
+  },
+  "unk_2174": {
+    "RIGYG": 6
+  },
+  "unk_557": {
+    " MGYG": 4
+  },
+  "unk_1632": {
+    "TMGYG": 5
+  },
+  "unk_3186": {
+    "ARGYG": 6
+  },
+  "unk_3272": {
+    "OTGYG": 6
+  },
+  "unk_1123": {
+    " ZGYG": 4
+  },
+  "unk_3638": {
+    "AZGYG": 6
+  },
+  "unk_2126": {
+    "MZGYG": 6
+  },
+  "unk_1820": {
+    "MZGYG": 6
+  },
+  "unk_1859": {
+    "RZGYG": 6
+  },
+  "unk_4234": {
+    "BAHYG": 6
+  },
+  "unk_3660": {
+    "FAHYG": 6
+  },
+  "unk_2125": {
+    "MAHYG": 6
+  },
+  "unk_3425": {
+    "TAHYG": 6
+  },
+  "unk_3085": {
+    "EEHYG": 6
+  },
+  "unk_2924": {
+    "EEHYG": 6
+  },
+  "unk_4025": {
+    "HGHYG": 6
+  },
+  "unk_2727": {
+    "TGHYG": 6
+  },
+  "unk_1984": {
+    "NIHYG": 6
+  },
+  "unk_3122": {
+    "OMHYG": 6
+  },
+  "unk_3081": {
+    "BOHYG": 6
+  },
+  "unk_1861": {
+    "SOHYG": 6
+  },
+  "unk_2263": {
+    "LWHYG": 6
+  },
+  "unk_3094": {
+    "GCIYG": 6
+  },
+  "unk_2637": {
+    "KCIYG": 6
+  },
+  "unk_506": {
+    " LIYG": 4
+  },
+  "unk_1486": {
+    "OMIYG": 5
+  },
+  "unk_4127": {
+    "SMIYG": 6
+  },
+  "unk_3642": {
+    "CSIYG": 6
+  },
+  "unk_3537": {
+    "TSIYG": 6
+  },
+  "unk_983": {
+    " TIYG": 4
+  },
+  "unk_384": {
+    " GKYG": 4
+  },
+  "unk_1301": {
+    "FGKYG": 5
+  },
+  "unk_1404": {
+    "LMKYG": 5
+  },
+  "unk_1633": {
+    "TMKYG": 5
+  },
+  "unk_622": {
+    " NKYG": 4
+  },
+  "unk_2850": {
+    "HTKYG": 6
+  },
+  "unk_3825": {
+    "HBLYG": 6
+  },
+  "unk_1496": {
+    "PBLYG": 5
+  },
+  "unk_1161": {
+    "BCLYG": 5
+  },
+  "unk_1269": {
+    "FCLYG": 5
+  },
+  "unk_1318": {
+    "GCLYG": 5
+  },
+  "unk_2728": {
+    "TGLYG": 6
+  },
+  "unk_2178": {
+    "SILYG": 6
+  },
+  "unk_2082": {
+    "ILLYG": 6
+  },
+  "unk_2885": {
+    "AOLYG": 6
+  },
+  "unk_1150": {
+    "AOLYG": 5
+  },
+  "unk_3468": {
+    "ESLYG": 6
+  },
+  "unk_2639": {
+    "KSLYG": 6
+  },
+  "unk_1713": {
+    "WSLYG": 5
+  },
+  "unk_2193": {
+    "AWLYG": 6
+  },
+  "unk_2220": {
+    "FWLYG": 6
+  },
+  "unk_4023": {
+    "GWLYG": 6
+  },
+  "unk_4035": {
+    "IWLYG": 6
+  },
+  "unk_1421": {
+    "LWLYG": 5
+  },
+  "unk_2600": {
+    "WWLYG": 6
+  },
+  "unk_1890": {
+    "WWLYG": 6
+  },
+  "unk_4431": {
+    "XAMYG": 6
+  },
+  "unk_4411": {
+    "XAMYG": 6
+  },
+  "unk_4356": {
+    "XAMYG": 6
+  },
+  "unk_2787": {
+    "MDMYG": 6
+  },
+  "unk_4422": {
+    "NIMYG": 6
+  },
+  "unk_4368": {
+    "NIMYG": 6
+  },
+  "unk_4310": {
+    "NIMYG": 6
+  },
+  "unk_3748": {
+    "TIMYG": 6
+  },
+  "unk_3671": {
+    "GNMYG": 6
+  },
+  "unk_1181": {
+    "CTMYG": 5
+  },
+  "unk_2614": {
+    "CVMYG": 6
+  },
+  "unk_2999": {
+    "OVMYG": 6
+  },
+  "unk_3273": {
+    "OTNYG": 6
+  },
+  "unk_2592": {
+    "SVNYG": 6
+  },
+  "unk_3443": {
+    "AFOYG": 6
+  },
+  "unk_3706": {
+    "NFOYG": 6
+  },
+  "unk_2628": {
+    "HPOYG": 6
+  },
+  "unk_3875": {
+    "NPOYG": 6
+  },
+  "unk_3923": {
+    "SAPYG": 6
+  },
+  "unk_4155": {
+    "WAPYG": 6
+  },
+  "unk_2596": {
+    "TCPYG": 6
+  },
+  "unk_2838": {
+    "CDPYG": 6
+  },
+  "unk_1797": {
+    "IDPYG": 6
+  },
+  "unk_3132": {
+    "REPYG": 6
+  },
+  "unk_1958": {
+    "DOPYG": 6
+  },
+  "unk_2086": {
+    "IOPYG": 6
+  },
+  "unk_3376": {
+    "LOPYG": 6
+  },
+  "unk_2338": {
+    "ROPYG": 6
+  },
+  "unk_4423": {
+    "SOPYG": 6
+  },
+  "unk_4376": {
+    "SOPYG": 6
+  },
+  "unk_4323": {
+    "SOPYG": 6
+  },
+  "unk_4131": {
+    "SOPYG": 6
+  },
+  "unk_2820": {
+    "SOPYG": 6
+  },
+  "unk_1935": {
+    "SOPYG": 6
+  },
+  "unk_1864": {
+    "SOPYG": 6
+  },
+  "unk_3536": {
+    "TOPYG": 6
+  },
+  "unk_2188": {
+    "XOPYG": 6
+  },
+  "unk_2190": {
+    "YOPYG": 6
+  },
+  "unk_1865": {
+    "SPPYG": 6
+  },
+  "unk_4426": {
+    "TPPYG": 6
+  },
+  "unk_4394": {
+    "TPPYG": 6
+  },
+  "unk_4345": {
+    "TPPYG": 6
+  },
+  "unk_3101": {
+    "IRPYG": 6
+  },
+  "unk_1804": {
+    "LRPYG": 6
+  },
+  "unk_1511": {
+    "PRPYG": 5
+  },
+  "unk_1563": {
+    "RRPYG": 5
+  },
+  "unk_1602": {
+    "SRPYG": 5
+  },
+  "unk_4282": {
+    "VRPYG": 6
+  },
+  "unk_1701": {
+    "VRPYG": 5
+  },
+  "unk_4156": {
+    "WRPYG": 6
+  },
+  "unk_2711": {
+    "HSPYG": 6
+  },
+  "unk_2853": {
+    "HTPYG": 6
+  },
+  "unk_2593": {
+    "SVPYG": 6
+  },
+  "unk_2308": {
+    "RARYG": 6
+  },
+  "unk_2770": {
+    "GERYG": 6
+  },
+  "unk_4285": {
+    "DIRYG": 6
+  },
+  "unk_3080": {
+    "BASYG": 6
+  },
+  "unk_2310": {
+    "RASYG": 6
+  },
+  "unk_2912": {
+    "DBSYG": 6
+  },
+  "unk_3712": {
+    "OCSYG": 6
+  },
+  "unk_2962": {
+    "LDSYG": 6
+  },
+  "unk_2234": {
+    "LDSYG": 6
+  },
+  "unk_2041": {
+    "BFSYG": 6
+  },
+  "unk_3339": {
+    "FHSYG": 6
+  },
+  "unk_1831": {
+    "NHSYG": 6
+  },
+  "unk_3533": {
+    "THSYG": 6
+  },
+  "unk_2609": {
+    "CLSYG": 6
+  },
+  "unk_3496": {
+    "OLSYG": 6
+  },
+  "unk_4077": {
+    "ONSYG": 6
+  },
+  "unk_3296": {
+    "UOSYG": 6
+  },
+  "unk_3651": {
+    "EPSYG": 6
+  },
+  "unk_3129": {
+    "PPSYG": 6
+  },
+  "unk_3984": {
+    "ATSYG": 6
+  },
+  "unk_3453": {
+    "ATSYG": 6
+  },
+  "unk_2610": {
+    "CTSYG": 6
+  },
+  "unk_3475": {
+    "FTSYG": 6
+  },
+  "unk_4415": {
+    "GTSYG": 6
+  },
+  "unk_2122": {
+    "LUSYG": 6
+  },
+  "unk_3440": {
+    "ZUSYG": 6
+  },
+  "unk_2894": {
+    "AVSYG": 6
+  },
+  "unk_2615": {
+    "CVSYG": 6
+  },
+  "unk_2527": {
+    "HBTYG": 6
+  },
+  "unk_1792": {
+    "HBTYG": 6
+  },
+  "unk_1162": {
+    "BCTYG": 5
+  },
+  "unk_1271": {
+    "FCTYG": 5
+  },
+  "unk_1319": {
+    "GCTYG": 5
+  },
+  "unk_3490": {
+    "METYG": 6
+  },
+  "unk_3137": {
+    "SFTYG": 6
+  },
+  "unk_3382": {
+    "MHTYG": 6
+  },
+  "unk_3617": {
+    "ILTYG": 6
+  },
+  "unk_3123": {
+    "OMTYG": 6
+  },
+  "unk_3918": {
+    "ROTYG": 6
+  },
+  "unk_3037": {
+    "WOTYG": 6
+  },
+  "unk_1175": {
+    "CPTYG": 5
+  },
+  "unk_3102": {
+    "IRTYG": 6
+  },
+  "unk_3469": {
+    "ESTYG": 6
+  },
+  "unk_2993": {
+    "OTTYG": 6
+  },
+  "unk_3278": {
+    "RUTYG": 6
+  },
+  "unk_3384": {
+    "MVTYG": 6
+  },
+  "unk_2298": {
+    "PYTYG": 6
+  },
+  "unk_3383": {
+    "MHUYG": 6
+  },
+  "unk_3354": {
+    "KLUYG": 6
+  },
+  "unk_1802": {
+    "LLUYG": 6
+  },
+  "unk_3385": {
+    "MVUYG": 6
+  },
+  "unk_1809": {
+    "LWUYG": 6
+  },
+  "unk_3131": {
+    "RAVYG": 6
+  },
+  "unk_1163": {
+    "BCVYG": 5
+  },
+  "unk_1320": {
+    "GCVYG": 5
+  },
+  "unk_3124": {
+    "OMVYG": 6
+  },
+  "unk_2087": {
+    "IOVYG": 6
+  },
+  "unk_4197": {
+    "LOVYG": 6
+  },
+  "unk_3470": {
+    "ESVYG": 6
+  },
+  "unk_2897": {
+    "AVVYG": 6
+  },
+  "unk_2201": {
+    "DAWYG": 6
+  },
+  "unk_2726": {
+    "TDWYG": 6
+  },
+  "unk_4028": {
+    "IEWYG": 6
+  },
+  "unk_3491": {
+    "MEWYG": 6
+  },
+  "unk_4026": {
+    "HGWYG": 6
+  },
+  "unk_2138": {
+    "NIWYG": 6
+  },
+  "unk_2627": {
+    "HLWYG": 6
+  },
+  "unk_2259": {
+    "LLWYG": 6
+  },
+  "unk_1855": {
+    "RLWYG": 6
+  },
+  "unk_3799": {
+    "DOWYG": 6
+  },
+  "unk_2704": {
+    "DOWYG": 6
+  },
+  "unk_1151": {
+    "APWYG": 5
+  },
+  "unk_1154": {
+    "ASWYG": 5
+  },
+  "unk_4226": {
+    "STWYG": 6
+  },
+  "unk_4011": {
+    "FAYYG": 6
+  },
+  "unk_3386": {
+    "NAYYG": 6
+  },
+  "unk_2187": {
+    "WFYYG": 6
+  },
+  "unk_2284": {
+    "NOZYG": 6
+  },
+  "unk_1735": {
+    "YEKAH": 5
+  },
+  "unk_3232": {
+    "GILAH": 5
+  },
+  "unk_3060": {
+    "ANLBH": 6
+  },
+  "unk_958": {
+    "  ACH": 3,
+    " TACH": 4,
+    "RTACH": 5
+  },
+  "unk_3921": {
+    " ALCH": 4,
+    "SALCH": 5
+  },
+  "unk_1487": {
+    "OMLCH": 5
+  },
+  "unk_633": {
+    " NOCH": 4
+  },
+  "unk_1406": {
+    "LNOCH": 5
+  },
+  "unk_1464": {
+    "NNOCH": 5
+  },
+  "unk_1595": {
+    "SNOCH": 5
+  },
+  "unk_3596": {
+    "YTOCH": 6
+  },
+  "unk_1311": {
+    "FRUCH": 5
+  },
+  "unk_974": {
+    "  EDH": 3,
+    " TEDH": 4,
+    "ATEDH": 5
+  },
+  "unk_1636": {
+    "TNEDH": 5
+  },
+  "unk_1147": {
+    "ALFDH": 5
+  },
+  "unk_2898": {
+    "BALDH": 6
+  },
+  "unk_1940": {
+    "AFLDH": 6
+  },
+  "unk_1322": {
+    "GFLDH": 5
+  },
+  "unk_4240": {
+    "EILDH": 6
+  },
+  "unk_509": {
+    " LLDH": 4
+  },
+  "unk_3209": {
+    "ELLDH": 6
+  },
+  "unk_623": {
+    " NLDH": 4,
+    "ANLDH": 5
+  },
+  "unk_1087": {
+    " XLDH": 4
+  },
+  "unk_567": {
+    " ANDH": 4,
+    "MANDH": 5,
+    " MNDH": 4
+  },
+  "unk_1090": {
+    " XNDH": 4
+  },
+  "unk_3181": {
+    "ALPDH": 6
+  },
+  "unk_2477": {
+    "ERPDH": 6
+  },
+  "unk_999": {
+    " TRDH": 4,
+    "ETRDH": 5
+  },
+  "unk_1675": {
+    "UPSDH": 5
+  },
+  "unk_1003": {
+    " TSDH": 4,
+    "ETSDH": 5
+  },
+  "unk_1742": {
+    "YTSDH": 5
+  },
+  "unk_3704": {
+    "NATDH": 6
+  },
+  "unk_2966": {
+    "NATDH": 6
+  },
+  "unk_1823": {
+    "NATDH": 6
+  },
+  "unk_1443": {
+    "NATDH": 5
+  },
+  "unk_1546": {
+    "RETDH": 5
+  },
+  "unk_1395": {
+    "LFTDH": 5
+  },
+  "unk_1016": {
+    " TTDH": 4,
+    "ETTDH": 5
+  },
+  "unk_1418": {
+    "LUTDH": 5
+  },
+  "unk_1547": {
+    "RETFH": 5
+  },
+  "unk_722": {
+    " PAGH": 4
+  },
+  "unk_2873": {
+    "RBNGH": 6
+  },
+  "unk_3293": {
+    "UDNGH": 6
+  },
+  "unk_1658": {
+    "TSUJH": 5
+  },
+  "unk_1883": {
+    "UBPLH": 6
+  },
+  "unk_1920": {
+    "LDPLH": 6
+  },
+  "unk_2521": {
+    "FOPLH": 6
+  },
+  "unk_2802": {
+    "OPPLH": 6
+  },
+  "unk_2698": {
+    "CSPLH": 6
+  },
+  "unk_1921": {
+    "LUPLH": 6
+  },
+  "unk_1144": {
+    "AHSLH": 5
+  },
+  "unk_1548": {
+    "RETLH": 5
+  },
+  "unk_961": {
+    " TAMH": 4,
+    "RTAMH": 5
+  },
+  "unk_3961": {
+    "ADGMH": 6
+  },
+  "unk_1753": {
+    "CSGMH": 6
+  },
+  "unk_1193": {
+    "DEPMH": 5
+  },
+  "unk_1022": {
+    " TXMH": 4,
+    "ETXMH": 5
+  },
+  "unk_1028": {
+    " TYMH": 4,
+    "ETYMH": 5
+  },
+  "unk_1030": {
+    " TZMH": 4,
+    "ETZMH": 5
+  },
+  "unk_3324": {
+    "CRANH": 6
+  },
+  "unk_1101": {
+    " YBNH": 4
+  },
+  "unk_3710": {
+    "OBCNH": 6
+  },
+  "unk_4196": {
+    "LFCNH": 6
+  },
+  "unk_480": {
+    " LCNH": 4
+  },
+  "unk_676": {
+    " OCNH": 4
+  },
+  "unk_3412": {
+    "RPCNH": 6
+  },
+  "unk_1873": {
+    "TSCNH": 6
+  },
+  "unk_2878": {
+    "RWCNH": 6
+  },
+  "unk_33": {
+    " ADNH": 4,
+    "TADNH": 5
+  },
+  "unk_45": {
+    " AFNH": 4
+  },
+  "unk_100": {
+    " BFNH": 4
+  },
+  "unk_376": {
+    " GFNH": 4,
+    " USNH": 4,
+    "LUSNH": 5
+  },
+  "unk_2391": {
+    "TOFNH": 6
+  },
+  "unk_2891": {
+    "AVINH": 6
+  },
+  "unk_1446": {
+    "NELNH": 5
+  },
+  "unk_2573": {
+    "RTMNH": 6
+  },
+  "unk_4065": {
+    "NIPNH": 6
+  },
+  "unk_2969": {
+    "NIPNH": 6
+  },
+  "unk_2137": {
+    "NIPNH": 6
+  },
+  "unk_3755": {
+    "TRPNH": 6
+  },
+  "unk_241": {
+    " ERNH": 4,
+    "FERNH": 5
+  },
+  "unk_338": {
+    " FRNH": 4,
+    "AFRNH": 5
+  },
+  "unk_2309": {
+    "RASNH": 6
+  },
+  "unk_130": {
+    " CSNH": 4,
+    "HCSNH": 5
+  },
+  "unk_531": {
+    " LSNH": 4
+  },
+  "unk_1986": {
+    "NTSNH": 6
+  },
+  "unk_3499": {
+    "OTSNH": 6
+  },
+  "unk_2366": {
+    "RUSNH": 6
+  },
+  "unk_4410": {
+    "TUSNH": 6
+  },
+  "unk_4140": {
+    "SYSNH": 6
+  },
+  "unk_2686": {
+    "RATNH": 6
+  },
+  "unk_1382": {
+    " HTNH": 4,
+    "IHTNH": 5,
+    "KHTNH": 5
+  },
+  "unk_3228": {
+    "ESTNH": 6
+  },
+  "unk_1117": {
+    " YTNH": 4,
+    "PYTNH": 5
+  },
+  "unk_2689": {
+    "TDUNH": 6
+  },
+  "unk_366": {
+    " FVNH": 4,
+    "AFVNH": 5
+  },
+  "unk_457": {
+    " IVNH": 4,
+    "SIVNH": 5
+  },
+  "unk_3448": {
+    " MVNH": 4,
+    "AMVNH": 5
+  },
+  "unk_2497": {
+    "ERVNH": 6
+  },
+  "unk_1213": {
+    "DOCOH": 5
+  },
+  "unk_807": {
+    " RAPH": 4,
+    "ARAPH": 5
+  },
+  "unk_1837": {
+    "NTAPH": 7
+  },
+  "unk_4136": {
+    "SUJPH": 6
+  },
+  "unk_1216": {
+    " OMPH": 4,
+    "DOMPH": 5
+  },
+  "unk_3245": {
+    "LBRPH": 6
+  },
+  "unk_243": {
+    " ERPH": 4,
+    "SERPH": 5
+  },
+  "unk_1444": {
+    "NATPH": 5
+  },
+  "unk_1214": {
+    "DOCRH": 5
+  },
+  "unk_695": {
+    " ONRH": 4
+  },
+  "unk_3358": {
+    "LLASH": 6
+  },
+  "unk_4371": {
+    "POCSH": 6
+  },
+  "unk_3661": {
+    "FBDSH": 5
+  },
+  "unk_3722": {
+    "PBDSH": 6
+  },
+  "unk_1913": {
+    "DRDSH": 6
+  },
+  "unk_4084": {
+    "PCESH": 6
+  },
+  "unk_1593": {
+    "SNESH": 5
+  },
+  "unk_3454": {
+    "AXESH": 5
+  },
+  "unk_3460": {
+    "CXESH": 5
+  },
+  "unk_3476": {
+    "FXESH": 5
+  },
+  "unk_3494": {
+    "MXESH": 5
+  },
+  "unk_3500": {
+    "OXESH": 5
+  },
+  "unk_3768": {
+    "TXESH": 6
+  },
+  "unk_1559": {
+    "ROFSH": 5
+  },
+  "unk_3805": {
+    "EDISH": 6
+  },
+  "unk_2189": {
+    "YEKSH": 6
+  },
+  "unk_2118": {
+    "KNLSH": 6
+  },
+  "unk_2033": {
+    "AOLSH": 6
+  },
+  "unk_4104": {
+    "SAMSH": 6
+  },
+  "unk_2273": {
+    "MANSH": 6
+  },
+  "unk_399": {
+    " HOSH": 4,
+    "IHOSH": 5
+  },
+  "unk_1629": {
+    "TLOSH": 5
+  },
+  "unk_228": {
+    "  PSH": 3,
+    " EPSH": 4,
+    "CEPSH": 5
+  },
+  "unk_2414": {
+    "CIPSH": 6
+  },
+  "unk_864": {
+    " RPSH": 4,
+    "ERPSH": 5
+  },
+  "unk_3100": {
+    "IRPSH": 6
+  },
+  "unk_4162": {
+    "XESSH": 6
+  },
+  "unk_3229": {
+    "ETSSH": 6
+  },
+  "unk_1265": {
+    " USSH": 4,
+    "EUSSH": 5
+  },
+  "unk_2067": {
+    "GPUSH": 6
+  },
+  "unk_2877": {
+    "ROWSH": 5
+  },
+  "unk_1215": {
+    "DOCTH": 5
+  },
+  "unk_209": {
+    " ELTH": 4,
+    "NELTH": 5
+  },
+  "unk_626": {
+    " NLTH": 4
+  },
+  "unk_2903": {
+    "BTMTH": 5
+  },
+  "unk_1063": {
+    " WOTH": 4,
+    "NWOTH": 5
+  },
+  "unk_176": {
+    " DPTH": 4
+  },
+  "unk_942": {
+    "SOPTH": 5,
+    " SPTH": 4
+  },
+  "unk_248": {
+    " ERTH": 4,
+    "VERTH": 5
+  },
+  "unk_453": {
+    " ISTH": 4,
+    "ZISTH": 5
+  },
+  "unk_776": {
+    " PSTH": 4,
+    "EPSTH": 5
+  },
+  "unk_1120": {
+    " YTTH": 4,
+    "PYTTH": 5
+  },
+  "unk_2777": {
+    "LAXTH": 6
+  },
+  "unk_1527": {
+    "PYTVH": 5
+  },
+  "unk_2570": {
+    "RODWH": 5
+  },
+  "unk_3298": {
+    "WODWH": 5
+  },
+  "unk_237": {
+    " ERFI": 4,
+    "EERFI": 5
+  },
+  "unk_614": {
+    " NILI": 4,
+    "ENILI": 5
+  },
+  "unk_222": {
+    " ENLI": 4,
+    "NENLI": 5
+  },
+  "unk_923": {
+    " SNLI": 4,
+    "TSNLI": 5
+  },
+  "unk_1072": {
+    " XAMI": 4,
+    "IXAMI": 5
+  },
+  "unk_4239": {
+    "EBTNI": 6
+  },
+  "unk_133": {
+    " CTNI": 4,
+    "OCTNI": 5
+  },
+  "unk_3117": {
+    "OCTNI": 6
+  },
+  "unk_3070": {
+    "ANTNI": 6
+  },
+  "unk_3170": {
+    "UNTNI": 5
+  },
+  "unk_2571": {
+    "ROTNI": 5
+  },
+  "unk_3307": {
+    "WOTNI": 5
+  },
+  "unk_2490": {
+    "ERTNI": 5
+  },
+  "unk_2854": {
+    "HTTNI": 6
+  },
+  "unk_3014": {
+    "STTNI": 6
+  },
+  "unk_3039": {
+    "WTTNI": 6
+  },
+  "unk_3609": {
+    "YTTNI": 6
+  },
+  "unk_581": {
+    " MUNI": 4,
+    "BMUNI": 5
+  },
+  "unk_201": {
+    " EIOI": 4,
+    "NEIOI": 5
+  },
+  "unk_745": {
+    " PIOI": 4,
+    "RPIOI": 5
+  },
+  "unk_905": {
+    " SIOI": 4,
+    "TSIOI": 5
+  },
+  "unk_3932": {
+    "SOPSI": 6
+  },
+  "unk_2373": {
+    "SOPSI": 6
+  },
+  "unk_533": {
+    "  SUI": 3,
+    " LSUI": 4,
+    "ILSUI": 5
+  },
+  "unk_1015": {
+    " TSUI": 4,
+    "ITSUI": 5
+  },
+  "unk_2667": {
+    "NAUNJ": 6
+  },
+  "unk_2952": {
+    "KCUNJ": 6
+  },
+  "unk_2423": {
+    "ERAAK": 6
+  },
+  "unk_2507": {
+    "FOBAK": 6
+  },
+  "unk_3882": {
+    "OPBAK": 6
+  },
+  "unk_1646": {
+    "TSBAK": 5
+  },
+  "unk_812": {
+    " RCAK": 4
+  },
+  "unk_4251": {
+    "ITCAK": 6
+  },
+  "unk_3564": {
+    "YTCAK": 6
+  },
+  "unk_2974": {
+    "OCDAK": 6
+  },
+  "unk_3811": {
+    "ERDAK": 6
+  },
+  "unk_4400": {
+    "TSDAK": 6
+  },
+  "unk_1891": {
+    "ACLAK": 6
+  },
+  "unk_3179": {
+    "ALLAK": 6
+  },
+  "unk_3830": {
+    "IDMAK": 6
+  },
+  "unk_1923": {
+    "NIMAK": 6
+  },
+  "unk_1832": {
+    "NIMAK": 6
+  },
+  "unk_2735": {
+    "TWMAK": 6
+  },
+  "unk_1439": {
+    "MTSAK": 5
+  },
+  "unk_4195": {
+    "HTUAK": 6
+  },
+  "unk_2572": {
+    "ROVAK": 6
+  },
+  "unk_261": {
+    " EXAK": 4,
+    "SEXAK": 5
+  },
+  "unk_2552": {
+    "RAYAK": 6
+  },
+  "unk_2556": {
+    "RDYAK": 6
+  },
+  "unk_4153": {
+    "UOYAK": 6
+  },
+  "unk_2413": {
+    "BTYAK": 6
+  },
+  "unk_2329": {
+    "ROBBK": 6
+  },
+  "unk_2644": {
+    "MIGBK": 6
+  },
+  "unk_2656": {
+    "NALBK": 6
+  },
+  "unk_3680": {
+    "IDLBK": 6
+  },
+  "unk_4020": {
+    "GHLBK": 6
+  },
+  "unk_2136": {
+    "NILBK": 6
+  },
+  "unk_3697": {
+    "IMLBK": 6
+  },
+  "unk_3893": {
+    "OPLBK": 6
+  },
+  "unk_4170": {
+    "XTLBK": 6
+  },
+  "unk_847": {
+    "  OBK": 3,
+    " ROBK": 4,
+    "EROBK": 5
+  },
+  "unk_753": {
+    " POBK": 4
+  },
+  "unk_3900": {
+    "OPRBK": 6
+  },
+  "unk_2574": {
+    "RTSBK": 6
+  },
+  "unk_883": {
+    " SACK": 4,
+    "ESACK": 5
+  },
+  "unk_50": {
+    " AHCK": 4,
+    "IAHCK": 5
+  },
+  "unk_3640": {
+    "CRICK": 6
+  },
+  "unk_4279": {
+    "SPKCK": 6
+  },
+  "unk_3095": {
+    "IALCK": 5
+  },
+  "unk_563": {
+    " MLCK": 4
+  },
+  "unk_1355": {
+    "HMLCK": 5
+  },
+  "unk_2372": {
+    "SOLCK": 6
+  },
+  "unk_1136": {
+    "AFNCK": 5
+  },
+  "unk_1462": {
+    "NLNCK": 5
+  },
+  "unk_1148": {
+    "AMNCK": 5
+  },
+  "unk_634": {
+    "  OCK": 3,
+    " NOCK": 4,
+    "NNOCK": 5
+  },
+  "unk_4224": {
+    "SNOCK": 6
+  },
+  "unk_3418": {
+    "RROCK": 6
+  },
+  "unk_4281": {
+    "VOPCK": 6
+  },
+  "unk_2987": {
+    " RTCK": 4,
+    "ORTCK": 5
+  },
+  "unk_2752": {
+    "DTUCK": 6
+  },
+  "unk_3796": {
+    "DLEDK": 5
+  },
+  "unk_1627": {
+    "TLFDK": 5
+  },
+  "unk_835": {
+    "  IDK": 3,
+    " RIDK": 4,
+    "ERIDK": 5
+  },
+  "unk_1512": {
+    "PSIDK": 5
+  },
+  "unk_858": {
+    " RPDK": 4,
+    "RRPDK": 5
+  },
+  "unk_3687": {
+    "IDRDK": 6
+  },
+  "unk_1050": {
+    "  AEK": 3,
+    " VAEK": 4,
+    "EVAEK": 5
+  },
+  "unk_1574": {
+    "SFAEK": 5
+  },
+  "unk_2754": {
+    "EHAEK": 6
+  },
+  "unk_2111": {
+    "IWAEK": 6
+  },
+  "unk_159": {
+    " DNEK": 4
+  },
+  "unk_2823": {
+    "TDNEK": 6
+  },
+  "unk_3873": {
+    "NINEK": 6
+  },
+  "unk_4151": {
+    "UONEK": 6
+  },
+  "unk_2622": {
+    "ESNEK": 6
+  },
+  "unk_3657": {
+    "ETTEK": 6
+  },
+  "unk_258": {
+    "  VEK": 3,
+    " EVEK": 4,
+    "LEVEK": 5
+  },
+  "unk_2967": {
+    "NEVEK": 6
+  },
+  "unk_1789": {
+    "FRVEK": 6
+  },
+  "unk_3803": {
+    "ECXEK": 6
+  },
+  "unk_3878": {
+    "NTXEK": 5
+  },
+  "unk_3674": {
+    "IDAFK": 6
+  },
+  "unk_2506": {
+    "FOAFK": 6
+  },
+  "unk_3675": {
+    "IDBFK": 6
+  },
+  "unk_2508": {
+    "FOBFK": 6
+  },
+  "unk_3362": {
+    "LOCFK": 6
+  },
+  "unk_2641": {
+    "LOCFK": 6
+  },
+  "unk_4202": {
+    "NOCFK": 6
+  },
+  "unk_737": {
+    " PDFK": 4,
+    "RPDFK": 5
+  },
+  "unk_644": {
+    "NEPFK": 5,
+    " NPFK": 4
+  },
+  "unk_8": {
+    " ARFK": 4,
+    "MARFK": 5
+  },
+  "unk_2356": {
+    "RTSFK": 6
+  },
+  "unk_3045": {
+    "YTSFK": 6
+  },
+  "unk_2691": {
+    "YTSFK": 6
+  },
+  "unk_723": {
+    " PAGK": 4
+  },
+  "unk_2673": {
+    "NIOGK": 6
+  },
+  "unk_179": {
+    "DARGK": 5,
+    " DRGK": 4
+  },
+  "unk_2011": {
+    "PYTGK": 6
+  },
+  "unk_2330": {
+    "ROBHK": 6
+  },
+  "unk_35": {
+    "  EHK": 3,
+    " AEHK": 4,
+    "DAEHK": 5
+  },
+  "unk_424": {
+    " IEHK": 4,
+    "GIEHK": 5
+  },
+  "unk_1228": {
+    "EDIHK": 5
+  },
+  "unk_2824": {
+    "THGIK": 6
+  },
+  "unk_3457": {
+    "CTGIK": 6
+  },
+  "unk_1756": {
+    "CTGIK": 6
+  },
+  "unk_438": {
+    "  MIK": 3,
+    " IMIK": 4,
+    "TIMIK": 5
+  },
+  "unk_3159": {
+    "UNMIK": 6
+  },
+  "unk_784": {
+    "TENIK": 5,
+    " PTNK": 4,
+    "IPTNK": 5
+  },
+  "unk_1625": {
+    "TINIK": 5
+  },
+  "unk_1586": {
+    " KNIK": 4,
+    "SKNIK": 5
+  },
+  "unk_2323": {
+    "RKNIK": 6
+  },
+  "unk_3282": {
+    "SKNIK": 6
+  },
+  "unk_3776": {
+    "XKNIK": 6
+  },
+  "unk_1008": {
+    "  SIK": 3,
+    " TSIK": 4,
+    "TTSIK": 5
+  },
+  "unk_947": {
+    " SSIK": 4,
+    "USSIK": 5
+  },
+  "unk_613": {
+    " NIKK": 4
+  },
+  "unk_624": {
+    " NLKK": 4
+  },
+  "unk_1041": {
+    " UOKK": 4,
+    "TUOKK": 5
+  },
+  "unk_451": {
+    " ISKK": 4,
+    "ZISKK": 5
+  },
+  "unk_771": {
+    " PSKK": 4,
+    "EPSKK": 5
+  },
+  "unk_478": {
+    " LCLK": 4,
+    "ELCLK": 5
+  },
+  "unk_4337": {
+    "TLCLK": 6
+  },
+  "unk_3367": {
+    "LOCLK": 6
+  },
+  "unk_2642": {
+    "LOCLK": 6
+  },
+  "unk_4206": {
+    "NOCLK": 6
+  },
+  "unk_2605": {
+    "AIDLK": 6
+  },
+  "unk_36": {
+    " AELK": 4,
+    "DAELK": 5
+  },
+  "unk_1338": {
+    "GNELK": 5
+  },
+  "unk_3752": {
+    "TNELK": 5
+  },
+  "unk_3127": {
+    "ORFLK": 6
+  },
+  "unk_902": {
+    " SILK": 4,
+    "TSILK": 5
+  },
+  "unk_648": {
+    "NEPLK": 5,
+    " NPLK": 4
+  },
+  "unk_2361": {
+    "RTSLK": 6
+  },
+  "unk_3050": {
+    "YTSLK": 6
+  },
+  "unk_2692": {
+    "YTSLK": 6
+  },
+  "unk_1850": {
+    "RBTLK": 5
+  },
+  "unk_719": {
+    " OTLK": 4
+  },
+  "unk_3766": {
+    "TXAMK": 6
+  },
+  "unk_2441": {
+    "ERDMK": 5
+  },
+  "unk_3814": {
+    "ESDMK": 6
+  },
+  "unk_3311": {
+    "YSDMK": 6
+  },
+  "unk_2916": {
+    "DREMK": 6
+  },
+  "unk_1778": {
+    "FREMK": 6
+  },
+  "unk_4225": {
+    "SREMK": 6
+  },
+  "unk_2826": {
+    "TREMK": 6
+  },
+  "unk_1562": {
+    "RRIMK": 5
+  },
+  "unk_1242": {
+    " MANK": 4,
+    "EMANK": 5
+  },
+  "unk_4244": {
+    "ELDNK": 6
+  },
+  "unk_46": {
+    " AFNK": 4,
+    "RAFNK": 5
+  },
+  "unk_2953": {
+    "LAKNK": 6
+  },
+  "unk_2775": {
+    "LAKNK": 6
+  },
+  "unk_3852": {
+    "LCKNK": 6
+  },
+  "unk_1987": {
+    "ODKNK": 6
+  },
+  "unk_2243": {
+    "LEKNK": 6
+  },
+  "unk_1853": {
+    "RIKNK": 6
+  },
+  "unk_2861": {
+    "NLKNK": 6
+  },
+  "unk_3505": {
+    "RPKNK": 6
+  },
+  "unk_2459": {
+    "ERKNK": 6
+  },
+  "unk_1779": {
+    "FRKNK": 6
+  },
+  "unk_1729": {
+    "XRKNK": 5
+  },
+  "unk_1741": {
+    "YRKNK": 5
+  },
+  "unk_3009": {
+    "RUKNK": 6
+  },
+  "unk_2379": {
+    "SUKNK": 6
+  },
+  "unk_1790": {
+    "FVKNK": 6
+  },
+  "unk_1709": {
+    "VWKNK": 5
+  },
+  "unk_1655": {
+    " SLNK": 4,
+    "TSLNK": 5
+  },
+  "unk_2166": {
+    "PUONK": 6
+  },
+  "unk_3954": {
+    "XRPNK": 6
+  },
+  "unk_774": {
+    " PSNK": 4,
+    "CPSNK": 5
+  },
+  "unk_30": {
+    " ACOK": 4,
+    "TACOK": 5
+  },
+  "unk_1198": {
+    "DICOK": 5
+  },
+  "unk_465": {
+    " KCOK": 4
+  },
+  "unk_2077": {
+    "IKCOK": 6
+  },
+  "unk_1560": {
+    "RPCOK": 5
+  },
+  "unk_1308": {
+    "FRCOK": 5
+  },
+  "unk_3569": {
+    "YTCOK": 6
+  },
+  "unk_15": {
+    "  DOK": 3,
+    " IDOK": 4,
+    "AIDOK": 5
+  },
+  "unk_290": {
+    " FFOK": 4,
+    "LFFOK": 5
+  },
+  "unk_1689": {
+    "VEGOK": 5
+  },
+  "unk_1455": {
+    "NFGOK": 5
+  },
+  "unk_1696": {
+    "VLGOK": 5
+  },
+  "unk_1591": {
+    "SMGOK": 5
+  },
+  "unk_1515": {
+    "PXGOK": 5
+  },
+  "unk_199": {
+    " EHOK": 4,
+    "IEHOK": 5
+  },
+  "unk_926": {
+    "  OOK": 3,
+    " SOOK": 4,
+    "ESOOK": 5
+  },
+  "unk_3446": {
+    "AGWOK": 6
+  },
+  "unk_3905": {
+    "OPWOK": 6
+  },
+  "unk_2500": {
+    "ERWOK": 6
+  },
+  "unk_1603": {
+    "SSAPK": 5
+  },
+  "unk_2701": {
+    "CTIPK": 6
+  },
+  "unk_931": {
+    " SOPK": 4,
+    "ISOPK": 5
+  },
+  "unk_1259": {
+    "ESOPK": 5,
+    "XSOPK": 5
+  },
+  "unk_1475": {
+    "NSOPK": 5,
+    "YSOPK": 5
+  },
+  "unk_1678": {
+    "USOPK": 5,
+    "ZSOPK": 5
+  },
+  "unk_2315": {
+    "RCRPK": 6
+  },
+  "unk_2922": {
+    "EDRPK": 6
+  },
+  "unk_4066": {
+    "NIRPK": 6
+  },
+  "unk_2158": {
+    "OMRPK": 6
+  },
+  "unk_1639": {
+    "TORPK": 5
+  },
+  "unk_2646": {
+    "NAAQK": 6
+  },
+  "unk_1333": {
+    "GNAQK": 5
+  },
+  "unk_2332": {
+    "ROBQK": 6
+  },
+  "unk_1467": {
+    "NOCQK": 5
+  },
+  "unk_1298": {
+    "FFOQK": 5
+  },
+  "unk_2334": {
+    "ROBRK": 6
+  },
+  "unk_281": {
+    " FERK": 4,
+    "EFERK": 5
+  },
+  "unk_1483": {
+    "OFERK": 5
+  },
+  "unk_1456": {
+    "NGERK": 5
+  },
+  "unk_1254": {
+    "ESIRK": 5
+  },
+  "unk_1343": {
+    "GNURK": 5
+  },
+  "unk_3861": {
+    "LSCSK": 6
+  },
+  "unk_1961": {
+    "ELESK": 6
+  },
+  "unk_1538": {
+    "RBFSK": 5
+  },
+  "unk_51": {
+    " AHSK": 4,
+    "PAHSK": 5
+  },
+  "unk_78": {
+    " APSK": 4,
+    "CAPSK": 5
+  },
+  "unk_4325": {
+    "TAPSK": 6
+  },
+  "unk_717": {
+    "  RSK": 3,
+    " ORSK": 4,
+    "DORSK": 5
+  },
+  "unk_1048": {
+    "  TSK": 3,
+    " UTSK": 4,
+    "BUTSK": 5
+  },
+  "unk_876": {
+    " RTSK": 4,
+    "ERTSK": 5
+  },
+  "unk_3402": {
+    "NYTSK": 6
+  },
+  "unk_3832": {
+    "IHVSK": 6
+  },
+  "unk_1209": {
+    "DIWSK": 5
+  },
+  "unk_4365": {
+    "EKWSK": 6
+  },
+  "unk_411": {
+    "  ATK": 3,
+    " IATK": 4,
+    "LIATK": 5
+  },
+  "unk_3648": {
+    "EPATK": 6
+  },
+  "unk_2335": {
+    "ROBTK": 6
+  },
+  "unk_3740": {
+    "ROCTK": 6
+  },
+  "unk_823": {
+    " RETK": 4,
+    "MRETK": 5
+  },
+  "unk_2097": {
+    "IRETK": 6
+  },
+  "unk_2842": {
+    "CIHTK": 6
+  },
+  "unk_2760": {
+    "EMITK": 6
+  },
+  "unk_1413": {
+    "LTITK": 5
+  },
+  "unk_210": {
+    " ELTK": 4,
+    "NELTK": 5
+  },
+  "unk_759": {
+    " POTK": 4
+  },
+  "unk_1014": {
+    " TSTK": 4,
+    "LTSTK": 7,
+    "OTSTK": 5
+  },
+  "unk_2960": {
+    "LAWTK": 6
+  },
+  "unk_2502": {
+    "ERWTK": 6
+  },
+  "unk_2061": {
+    "ERNUK": 6
+  },
+  "unk_811": {
+    " RAVK": 4,
+    "IRAVK": 5
+  },
+  "unk_3406": {
+    "PWDVK": 6
+  },
+  "unk_908": {
+    " SIVK": 4,
+    "ISIVK": 5
+  },
+  "unk_522": {
+    " LOVK": 4,
+    "ULOVK": 5
+  },
+  "unk_2889": {
+    "AUQVK": 6
+  },
+  "unk_2182": {
+    "TIAWK": 6
+  },
+  "unk_4045": {
+    "LLAWK": 6
+  },
+  "unk_2722": {
+    "TDIWK": 6
+  },
+  "unk_24": {
+    "  PWK": 3
+  },
+  "unk_1409": {
+    "LOCYK": 5
+  },
+  "unk_3667": {
+    "FVCYK": 6
+  },
+  "unk_1554": {
+    "RIDYK": 5
+  },
+  "unk_2409": {
+    "ZRFYK": 6
+  },
+  "unk_2846": {
+    "COLYK": 6
+  },
+  "unk_3586": {
+    "YTLYK": 6
+  },
+  "unk_1666": {
+    " WLYK": 4,
+    "EWLYK": 5,
+    "TWLYK": 5
+  },
+  "unk_3668": {
+    "FVNYK": 6
+  },
+  "unk_1324": {
+    "GFPYK": 5
+  },
+  "unk_4406": {
+    "TSPYK": 6
+  },
+  "unk_1581": {
+    "SIVYK": 5
+  },
+  "unk_3374": {
+    "LOCZK": 6
+  },
+  "unk_1556": {
+    " IDZK": 4,
+    "RIDZK": 5
+  },
+  "unk_4430": {
+    "TSLZK": 6
+  },
+  "unk_4403": {
+    "TSLZK": 6
+  },
+  "unk_2809": {
+    "RPNZK": 6
+  },
+  "unk_3846": {
+    "IVNZK": 6
+  },
+  "unk_3241": {
+    "IRPZK": 6
+  },
+  "unk_1582": {
+    "SIVZK": 5
+  },
+  "unk_2094": {
+    "IRCAL": 6
+  },
+  "unk_2390": {
+    "TNIAL": 6
+  },
+  "unk_1542": {
+    "REKAL": 5
+  },
+  "unk_2855": {
+    "LBNAL": 6
+  },
+  "unk_2681": {
+    "OCNAL": 6
+  },
+  "unk_3211": {
+    "ELNAL": 6
+  },
+  "unk_3161": {
+    "UNNAL": 6
+  },
+  "unk_3185": {
+    "APNAL": 6
+  },
+  "unk_1856": {
+    "RTNAL": 6
+  },
+  "unk_3591": {
+    "YTNAL": 6
+  },
+  "unk_1035": {
+    " UNAL": 4,
+    "FUNAL": 5
+  },
+  "unk_2710": {
+    "GWNAL": 6
+  },
+  "unk_4262": {
+    "SCPAL": 5
+  },
+  "unk_3953": {
+    "XEPAL": 5
+  },
+  "unk_1058": {
+    " VPAL": 4,
+    "AVPAL": 5
+  },
+  "unk_2562": {
+    "RKRAL": 6
+  },
+  "unk_4395": {
+    "TPRAL": 6
+  },
+  "unk_4145": {
+    "TPRAL": 6
+  },
+  "unk_2664": {
+    "NATAL": 6
+  },
+  "unk_3200": {
+    "EDTAL": 6
+  },
+  "unk_3688": {
+    "IDTAL": 6
+  },
+  "unk_1205": {
+    "DITAL": 5
+  },
+  "unk_3217": {
+    "ELTAL": 6
+  },
+  "unk_656": {
+    " NTAL": 4,
+    "ONTAL": 5
+  },
+  "unk_2398": {
+    "VOTAL": 6
+  },
+  "unk_3306": {
+    "WOTAL": 6
+  },
+  "unk_3771": {
+    "UPTAL": 6
+  },
+  "unk_871": {
+    " RTAL": 4,
+    "ERTAL": 5
+  },
+  "unk_2580": {
+    "RUTAL": 6
+  },
+  "unk_2116": {
+    "IWTAL": 6
+  },
+  "unk_1096": {
+    " XTAL": 4,
+    "TXTAL": 5
+  },
+  "unk_2311": {
+    "RAXAL": 6
+  },
+  "unk_109": {
+    " BXAL": 4,
+    "OBXAL": 5
+  },
+  "unk_188": {
+    " DXAL": 4,
+    "EDXAL": 5
+  },
+  "unk_2945": {
+    "IFXAL": 6
+  },
+  "unk_3145": {
+    "UHXAL": 6
+  },
+  "unk_1503": {
+    "PLXAL": 5
+  },
+  "unk_3240": {
+    "IMXAL": 5
+  },
+  "unk_1220": {
+    "DOXAL": 5
+  },
+  "unk_3249": {
+    "LPXAL": 6
+  },
+  "unk_2346": {
+    "RPXAL": 6
+  },
+  "unk_3467": {
+    "ERXAL": 6
+  },
+  "unk_3379": {
+    "LSXAL": 6
+  },
+  "unk_4374": {
+    " TXAL": 4,
+    "RTXAL": 5
+  },
+  "unk_3092": {
+    "ETXAL": 6
+  },
+  "unk_1049": {
+    " UXAL": 4,
+    "SUXAL": 5
+  },
+  "unk_3986": {
+    "AWXAL": 6
+  },
+  "unk_1379": {
+    "KCABL": 5
+  },
+  "unk_1576": {
+    "SFUBL": 5
+  },
+  "unk_4057": {
+    "NEBCL": 6
+  },
+  "unk_4218": {
+    "OLOCL": 6
+  },
+  "unk_3164": {
+    "UNOCL": 6
+  },
+  "unk_1039": {
+    " UOCL": 4,
+    "NUOCL": 5
+  },
+  "unk_3851": {
+    "LCBDL": 5
+  },
+  "unk_1588": {
+    " LBDL": 4,
+    "SLBDL": 5
+  },
+  "unk_2595": {
+    "SYSDL": 6
+  },
+  "unk_1782": {
+    "FRLEL": 6
+  },
+  "unk_101": {
+    "  MEL": 3,
+    " BMEL": 4,
+    "EBMEL": 5
+  },
+  "unk_1892": {
+    "ADMEL": 6
+  },
+  "unk_512": {
+    " LMEL": 4,
+    "ILMEL": 5
+  },
+  "unk_3063": {
+    "ANMEL": 6
+  },
+  "unk_3588": {
+    "YTMEL": 6
+  },
+  "unk_3167": {
+    "UNSEL": 6
+  },
+  "unk_1887": {
+    "UQSEL": 6
+  },
+  "unk_2487": {
+    "ERSEL": 6
+  },
+  "unk_801": {
+    " RAFL": 4,
+    "RRAFL": 5
+  },
+  "unk_2133": {
+    "NIFFL": 6
+  },
+  "unk_385": {
+    " GLFL": 4
+  },
+  "unk_3295": {
+    "UOCHL": 6
+  },
+  "unk_739": {
+    " PDIL": 4,
+    "OPDIL": 5
+  },
+  "unk_3348": {
+    "HRDIL": 6
+  },
+  "unk_2650": {
+    "NAEIL": 6
+  },
+  "unk_2652": {
+    "NAFIL": 6
+  },
+  "unk_2307": {
+    "RANIL": 6
+  },
+  "unk_3198": {
+    "EBNIL": 6
+  },
+  "unk_2059": {
+    "EFNIL": 6
+  },
+  "unk_2944": {
+    "IFNIL": 6
+  },
+  "unk_3144": {
+    "UHNIL": 6
+  },
+  "unk_1502": {
+    "PLNIL": 5
+  },
+  "unk_1219": {
+    "DONIL": 5
+  },
+  "unk_3248": {
+    "LPNIL": 6
+  },
+  "unk_3898": {
+    "OPNIL": 6
+  },
+  "unk_2342": {
+    "RPNIL": 6
+  },
+  "unk_3378": {
+    "LSNIL": 6
+  },
+  "unk_3091": {
+    "ETNIL": 6
+  },
+  "unk_3659": {
+    "EVNIL": 6
+  },
+  "unk_3000": {
+    "OVNIL": 6
+  },
+  "unk_2049": {
+    "CRRIL": 6
+  },
+  "unk_3720": {
+    "ORRIL": 6
+  },
+  "unk_3191": {
+    "BDSIL": 6
+  },
+  "unk_3309": {
+    "XESIL": 6
+  },
+  "unk_2669": {
+    "NAWIL": 6
+  },
+  "unk_275": {
+    " FELL": 4,
+    "LFELL": 5
+  },
+  "unk_300": {
+    " FILL": 4,
+    "LFILL": 5
+  },
+  "unk_560": {
+    " MILL": 4,
+    "IMILL": 5
+  },
+  "unk_3263": {
+    "OCNLL": 6
+  },
+  "unk_2980": {
+    "OCNLL": 6
+  },
+  "unk_750": {
+    " PNLL": 4,
+    "EPNLL": 5
+  },
+  "unk_4404": {
+    "TSNLL": 6
+  },
+  "unk_3761": {
+    "TSNLL": 6
+  },
+  "unk_2496": {
+    "ERVLL": 6
+  },
+  "unk_1558": {
+    "ROBML": 5
+  },
+  "unk_4141": {
+    "TADOL": 6
+  },
+  "unk_2918": {
+    "EDDOL": 6
+  },
+  "unk_192": {
+    " EDOL": 4,
+    "DEDOL": 5
+  },
+  "unk_3736": {
+    "REDOL": 6
+  },
+  "unk_1199": {
+    "DIDOL": 5
+  },
+  "unk_2443": {
+    "ERDOL": 6
+  },
+  "unk_1034": {
+    " UDOL": 4,
+    "LUDOL": 5
+  },
+  "unk_435": {
+    "  FOL": 3,
+    " IFOL": 4
+  },
+  "unk_219": {
+    " EMOL": 4,
+    "NEMOL": 5
+  },
+  "unk_3222": {
+    "ELUOL": 6
+  },
+  "unk_603": {
+    "    R": 1,
+    "   OR": 2,
+    "  UOR": 3,
+    " TUOR": 4,
+    "HTUOR": 5,
+    "NAME": 1,
+    "DESTEX": 1,
+    "RPTX": 1
+  },
+  "unk_2134": {
+    "NIFPL": 6
+  },
+  "unk_2768": {
+    "FGKPL": 6
+  },
+  "unk_2065": {
+    "FGKPL": 6
+  },
+  "unk_2559": {
+    "RGKPL": 6
+  },
+  "unk_297": {
+    " FGRL": 4,
+    "LFGRL": 5
+  },
+  "unk_501": {
+    "    M": 1,
+    "   OM": 2,
+    "  ROM": 3,
+    " TROM": 4,
+    "HTROM": 5,
+    "    X": 1,
+    "SECOND": 2,
+    "PSNEXT": 2,
+    "CHANGE": 1,
+    "CATGLE": 2,
+    "GRAPH": 2,
+    "HULC": 2,
+    "CATC": 2,
+    "FRMC": 2,
+    "GMTC": 2,
+    "NGMC": 2,
+    "PLNC": 2,
+    "PSKC": 2,
+    "SYNO": 1,
+    "COMP": 2
+  },
+  "unk_3208": {
+    "ELKRL": 6
+  },
+  "unk_841": {
+    " RKRL": 4
+  },
+  "unk_1654": {
+    "TSKRL": 5
+  },
+  "unk_4168": {
+    "XTDSL": 6
+  },
+  "unk_1606": {
+    "SSESL": 5
+  },
+  "unk_1171": {
+    "COLSL": 5
+  },
+  "unk_4059": {
+    "NESSL": 6
+  },
+  "unk_4165": {
+    "XETSL": 6
+  },
+  "unk_2092": {
+    "IPTSL": 6
+  },
+  "unk_4424": {
+    "SPTSL": 6
+  },
+  "unk_2494": {
+    "ERTSL": 6
+  },
+  "unk_2117": {
+    "IYTSL": 6
+  },
+  "unk_2266": {
+    "LYTSL": 6
+  },
+  "unk_2295": {
+    "PYTSL": 6
+  },
+  "unk_4425": {
+    "SYTSL": 6
+  },
+  "unk_189": {
+    " EBTL": 4,
+    "GEBTL": 5
+  },
+  "unk_481": {
+    " LCTL": 4,
+    "ELCTL": 5
+  },
+  "unk_606": {
+    " NETL": 4,
+    "DNETL": 5
+  },
+  "unk_2222": {
+    "HCLTL": 6
+  },
+  "unk_2977": {
+    "OCLTL": 6
+  },
+  "unk_211": {
+    " ELTL": 4,
+    "NELTL": 5
+  },
+  "unk_3270": {
+    "OFLTL": 6
+  },
+  "unk_4120": {
+    "SLLTL": 6
+  },
+  "unk_4429": {
+    "TSLTL": 6
+  },
+  "unk_3331": {
+    "CTLTL": 6
+  },
+  "unk_2702": {
+    "CTLTL": 6
+  },
+  "unk_3845": {
+    "IVLTL": 6
+  },
+  "unk_126": {
+    " COTL": 4,
+    "OCOTL": 5
+  },
+  "unk_400": {
+    " HOTL": 4,
+    "EHOTL": 5
+  },
+  "unk_518": {
+    " LOTL": 4,
+    "ELOTL": 5
+  },
+  "unk_3630": {
+    "APOTL": 5
+  },
+  "unk_800": {
+    " QOTL": 4,
+    "UQOTL": 5
+  },
+  "unk_854": {
+    " ROTL": 4,
+    "EROTL": 5
+  },
+  "unk_997": {
+    " TOTL": 4,
+    "UTOTL": 5
+  },
+  "unk_1093": {
+    " XOTL": 4,
+    "AXOTL": 5
+  },
+  "unk_882": {
+    " RXTL": 4,
+    "ERXTL": 5
+  },
+  "unk_1100": {
+    " XXTL": 4,
+    "TXXTL": 5
+  },
+  "unk_1122": {
+    " YXTL": 4,
+    "TYXTL": 5
+  },
+  "unk_1128": {
+    " ZXTL": 4,
+    "TZXTL": 5
+  },
+  "unk_986": {
+    " TLUL": 4,
+    "ITLUL": 5
+  },
+  "unk_3545": {
+    "XECVL": 6
+  },
+  "unk_824": {
+    " REVL": 4,
+    "TREVL": 5
+  },
+  "unk_2554": {
+    "RDMVL": 6
+  },
+  "unk_2668": {
+    "NAVVL": 6
+  },
+  "unk_1759": {
+    "EBVVL": 6
+  },
+  "unk_3781": {
+    "ACVVL": 6
+  },
+  "unk_3312": {
+    "ACVVL": 6
+  },
+  "unk_3314": {
+    "CCVVL": 6
+  },
+  "unk_3854": {
+    "LCVVL": 6
+  },
+  "unk_3713": {
+    "OCVVL": 6
+  },
+  "unk_3405": {
+    "PCVVL": 6
+  },
+  "unk_3747": {
+    "TCVVL": 6
+  },
+  "unk_3532": {
+    "TCVVL": 6
+  },
+  "unk_3695": {
+    "IDVVL": 6
+  },
+  "unk_4252": {
+    "LDVVL": 6
+  },
+  "unk_4038": {
+    "LDVVL": 6
+  },
+  "unk_3702": {
+    "LDVVL": 6
+  },
+  "unk_2235": {
+    "LDVVL": 6
+  },
+  "unk_1975": {
+    "LDVVL": 6
+  },
+  "unk_3743": {
+    "SDVVL": 6
+  },
+  "unk_2813": {
+    "SDVVL": 6
+  },
+  "unk_3426": {
+    "TDVVL": 6
+  },
+  "unk_4254": {
+    "LEVVL": 6
+  },
+  "unk_3099": {
+    "ILVVL": 6
+  },
+  "unk_2039": {
+    "ARVVL": 6
+  },
+  "unk_3351": {
+    "HRDXL": 6
+  },
+  "unk_2651": {
+    "NAEXL": 6
+  },
+  "unk_2653": {
+    "NAFXL": 6
+  },
+  "unk_2670": {
+    "NAWXL": 6
+  },
+  "unk_2590": {
+    "SNIYL": 6
+  },
+  "unk_2591": {
+    "SUOYL": 6
+  },
+  "unk_4017": {
+    "FRSYL": 6
+  },
+  "unk_4053": {
+    "NCCAM": 6
+  },
+  "unk_1461": {
+    "NKCAM": 5
+  },
+  "unk_217": {
+    "  MAM": 3,
+    " EMAM": 4
+  },
+  "unk_1902": {
+    "DEMAM": 5
+  },
+  "unk_3618": {
+    "SEMAM": 6
+  },
+  "unk_4382": {
+    "TEMAM": 6
+  },
+  "unk_627": {
+    " NMAM": 4
+  },
+  "unk_3587": {
+    " TMAM": 4,
+    "YTMAM": 5
+  },
+  "unk_2991": {
+    "OTMAM": 6
+  },
+  "unk_2255": {
+    "LGNAM": 6
+  },
+  "unk_763": {
+    " PPAM": 4,
+    "FPPAM": 5
+  },
+  "unk_234": {
+    " ERAM": 4,
+    "FERAM": 5
+  },
+  "unk_4034": {
+    "IVEBM": 6
+  },
+  "unk_4184": {
+    "XVEBM": 6
+  },
+  "unk_4185": {
+    "YVEBM": 6
+  },
+  "unk_1252": {
+    "EROBM": 5
+  },
+  "unk_1027": {
+    " TYBM": 4,
+    "ETYBM": 5
+  },
+  "unk_2383": {
+    "TADCM": 6
+  },
+  "unk_1533": {
+    "RAHCM": 5
+  },
+  "unk_311": {
+    " FOCM": 4,
+    "GFOCM": 5
+  },
+  "unk_515": {
+    " LOCM": 4,
+    "SLOCM": 5,
+    "ULOCM": 5
+  },
+  "unk_2282": {
+    "NNOCM": 6
+  },
+  "unk_4076": {
+    "NTUCM": 6
+  },
+  "unk_1615": {
+    "STUCM": 5
+  },
+  "unk_3103": {
+    "ITADM": 6
+  },
+  "unk_1628": {
+    "TLFDM": 5
+  },
+  "unk_4068": {
+    "NITDM": 6
+  },
+  "unk_4177": {
+    "XTTDM": 6
+  },
+  "unk_2601": {
+    "XEWEM": 6
+  },
+  "unk_2109": {
+    " UWEM": 4,
+    "IUWEM": 5
+  },
+  "unk_844": {
+    " RMGM": 4,
+    "ERMGM": 5
+  },
+  "unk_183": {
+    " DSGM": 4
+  },
+  "unk_1240": {
+    "ELOHM": 5
+  },
+  "unk_1895": {
+    "ALDIM": 6
+  },
+  "unk_1626": {
+    "TLDIM": 5
+  },
+  "unk_3368": {
+    "LOCLM": 6
+  },
+  "unk_4207": {
+    "NOCLM": 6
+  },
+  "unk_76": {
+    " AOLM": 4,
+    "DAOLM": 5
+  },
+  "unk_1296": {
+    "FFOLM": 5
+  },
+  "unk_649": {
+    "NEPLM": 5,
+    " NPLM": 4
+  },
+  "unk_4097": {
+    "RTSLM": 6
+  },
+  "unk_2362": {
+    "RTSLM": 6
+  },
+  "unk_3051": {
+    "YTSLM": 6
+  },
+  "unk_315": {
+    " FOMM": 4,
+    "IFOMM": 5
+  },
+  "unk_3479": {
+    "ILCOM": 6
+  },
+  "unk_1408": {
+    "LOCOM": 5
+  },
+  "unk_3866": {
+    "MIDOM": 6
+  },
+  "unk_2444": {
+    "ERDOM": 6
+  },
+  "unk_2027": {
+    "TXEOM": 6
+  },
+  "unk_291": {
+    " FFOM": 4
+  },
+  "unk_377": {
+    " GFOM": 4
+  },
+  "unk_2564": {
+    "RLHOM": 6
+  },
+  "unk_1964": {
+    "ESIOM": 6
+  },
+  "unk_3483": {
+    "KNLOM": 6
+  },
+  "unk_2871": {
+    "RAMOM": 6
+  },
+  "unk_3233": {
+    "IBMOM": 6
+  },
+  "unk_3110": {
+    "MBMOM": 6
+  },
+  "unk_3682": {
+    "IDMOM": 6
+  },
+  "unk_2467": {
+    "ERMOM": 6
+  },
+  "unk_2585": {
+    "RXMOM": 5
+  },
+  "unk_1578": {
+    "SGPOM": 5
+  },
+  "unk_2139": {
+    "NKPOM": 6
+  },
+  "unk_576": {
+    " MROM": 4,
+    "AMROM": 5
+  },
+  "unk_1712": {
+    "WOROM": 5
+  },
+  "unk_2774": {
+    "HTROM": 8
+  },
+  "unk_2523": {
+    "FOSOM": 6
+  },
+  "unk_364": {
+    " FTOM": 4
+  },
+  "unk_4366": {
+    "FITOM": 6
+  },
+  "unk_1766": {
+    "ERTOM": 6
+  },
+  "unk_2018": {
+    "SEDPM": 6
+  },
+  "unk_1402": {
+    "LLIPM": 5
+  },
+  "unk_3709": {
+    "OALPM": 6
+  },
+  "unk_1917": {
+    "FDLPM": 6
+  },
+  "unk_1771": {
+    "FDLPM": 6
+  },
+  "unk_4114": {
+    "SILPM": 6
+  },
+  "unk_3698": {
+    "IMLPM": 6
+  },
+  "unk_3717": {
+    "ONLPM": 6
+  },
+  "unk_4081": {
+    "OTLPM": 6
+  },
+  "unk_932": {
+    " SOPM": 4,
+    "ISOPM": 5
+  },
+  "unk_1260": {
+    "ESOPM": 5,
+    "XSOPM": 5
+  },
+  "unk_1476": {
+    "NSOPM": 5,
+    "YSOPM": 5
+  },
+  "unk_1679": {
+    "USOPM": 5,
+    "ZSOPM": 5
+  },
+  "unk_998": {
+    " TPPM": 4
+  },
+  "unk_2103": {
+    "ISRPM": 6
+  },
+  "unk_1966": {
+    "EVRPM": 6
+  },
+  "unk_2208": {
+    "DISPM": 6
+  },
+  "unk_1528": {
+    "PYXPM": 5
+  },
+  "unk_487": {
+    " LERM": 4,
+    "ELERM": 5
+  },
+  "unk_2837": {
+    "APERM": 6
+  },
+  "unk_4367": {
+    "LPERM": 6
+  },
+  "unk_4373": {
+    "RTERM": 6
+  },
+  "unk_1062": {
+    " WORM": 4,
+    "SWORM": 5
+  },
+  "unk_3130": {
+    "RAPRM": 6
+  },
+  "unk_2218": {
+    "ELURM": 6
+  },
+  "unk_1607": {
+    "SSESM": 5
+  },
+  "unk_1125": {
+    " ZISM": 4,
+    "EZISM": 5
+  },
+  "unk_229": {
+    " EPSM": 4,
+    "CEPSM": 5
+  },
+  "unk_346": {
+    " FRSM": 4,
+    "AFRSM": 5
+  },
+  "unk_4090": {
+    "RATSM": 6
+  },
+  "unk_185": {
+    " DTSM": 4,
+    "BDTSM": 5
+  },
+  "unk_1945": {
+    "AFTSM": 6
+  },
+  "unk_4398": {
+    "TRTSM": 6
+  },
+  "unk_4349": {
+    "TRTSM": 6
+  },
+  "unk_2827": {
+    "TRTSM": 6
+  },
+  "unk_1644": {
+    "TRTSM": 5
+  },
+  "unk_3610": {
+    "YTTSM": 6
+  },
+  "unk_1667": {
+    "TXETM": 5
+  },
+  "unk_3215": {
+    "ELRTM": 6
+  },
+  "unk_3705": {
+    "NDCUM": 6
+  },
+  "unk_2280": {
+    "NDCUM": 6
+  },
+  "unk_1825": {
+    "NDCUM": 6
+  },
+  "unk_2324": {
+    "RLLUM": 6
+  },
+  "unk_103": {
+    "  MUM": 3,
+    " BMUM": 4,
+    "EBMUM": 5
+  },
+  "unk_3711": {
+    "OCMUM": 6
+  },
+  "unk_2519": {
+    "FOMUM": 6
+  },
+  "unk_1194": {
+    "DESUM": 5
+  },
+  "unk_2599": {
+    "WEIVM": 6
+  },
+  "unk_523": {
+    " LOVM": 4,
+    "ULOVM": 5
+  },
+  "unk_430": {
+    " IEWM": 4,
+    "GIEWM": 5
+  },
+  "unk_3798": {
+    "DLEWM": 5
+  },
+  "unk_3007": {
+    "RATXM": 6
+  },
+  "unk_4187": {
+    "BDTXM": 6
+  },
+  "unk_3192": {
+    "BDTXM": 6
+  },
+  "unk_3310": {
+    "XETXM": 6
+  },
+  "unk_1906": {
+    "DFTXM": 6
+  },
+  "unk_3247": {
+    "LFTXM": 6
+  },
+  "unk_1166": {
+    "BHTXM": 5
+  },
+  "unk_4364": {
+    "EKTXM": 6
+  },
+  "unk_1997": {
+    "OLTXM": 6
+  },
+  "unk_389": {
+    " GNAN": 4,
+    "LGNAN": 5
+  },
+  "unk_3359": {
+    "LOCBN": 6
+  },
+  "unk_4199": {
+    "NOCBN": 6
+  },
+  "unk_372": {
+    " GFBN": 4,
+    "FTSBN": 5
+  },
+  "unk_1187": {
+    "DCJBN": 5
+  },
+  "unk_641": {
+    " EPBN": 4,
+    "NEPBN": 5,
+    " NPBN": 4
+  },
+  "unk_1002": {
+    "  SBN": 3,
+    " TSBN": 4,
+    "RTSBN": 5
+  },
+  "unk_3464": {
+    "EDSBN": 6
+  },
+  "unk_2353": {
+    "RTSBN": 6
+  },
+  "unk_3042": {
+    "YTSBN": 6
+  },
+  "unk_2115": {
+    "IWSBN": 6
+  },
+  "unk_3567": {
+    "YTCCN": 6
+  },
+  "unk_1845": {
+    "PUCCN": 6
+  },
+  "unk_162": {
+    " DOCN": 4,
+    "EDOCN": 5
+  },
+  "unk_4294": {
+    "ENOCN": 6
+  },
+  "unk_4002": {
+    "ENOCN": 6
+  },
+  "unk_1245": {
+    "ENOCN": 5
+  },
+  "unk_1493": {
+    "OWTCN": 5
+  },
+  "unk_892": {
+    " SEDN": 4,
+    "PSEDN": 5
+  },
+  "unk_1302": {
+    "FGWDN": 5
+  },
+  "unk_3828": {
+    "IDFFN": 6
+  },
+  "unk_3678": {
+    "IDFFN": 6
+  },
+  "unk_492": {
+    " LFFN": 4,
+    "ILFFN": 5
+  },
+  "unk_4006": {
+    "ESFFN": 6
+  },
+  "unk_2989": {
+    "OTFFN": 6
+  },
+  "unk_3573": {
+    "YTFFN": 6
+  },
+  "unk_3941": {
+    "TSDGN": 6
+  },
+  "unk_2674": {
+    "NIOGN": 6
+  },
+  "unk_2289": {
+    "PYTHN": 6
+  },
+  "unk_1145": {
+    "ALCKN": 5
+  },
+  "unk_1353": {
+    "HLCKN": 5
+  },
+  "unk_3497": {
+    "ORDKN": 6
+  },
+  "unk_2717": {
+    "PRDKN": 6
+  },
+  "unk_1393": {
+    "LERKN": 5
+  },
+  "unk_4293": {
+    "ELRKN": 6
+  },
+  "unk_2707": {
+    "ELRKN": 6
+  },
+  "unk_1354": {
+    "HLRKN": 5
+  },
+  "unk_2066": {
+    "GPUKN": 6
+  },
+  "unk_3369": {
+    "LOCLN": 6
+  },
+  "unk_4208": {
+    "NOCLN": 6
+  },
+  "unk_4363": {
+    "EKDLN": 6
+  },
+  "unk_3005": {
+    "PSDLN": 5
+  },
+  "unk_1339": {
+    "GNELN": 5
+  },
+  "unk_903": {
+    " SILN": 4,
+    "TSILN": 5
+  },
+  "unk_3823": {
+    "FFOLN": 5
+  },
+  "unk_1454": {
+    "NEPLN": 5
+  },
+  "unk_2363": {
+    "RTSLN": 6
+  },
+  "unk_3052": {
+    "YTSLN": 6
+  },
+  "unk_2624": {
+    "FTIMN": 5
+  },
+  "unk_464": {
+    " JPNN": 4,
+    "OJPNN": 5
+  },
+  "unk_705": {
+    " OPNN": 4,
+    "SOPNN": 5
+  },
+  "unk_938": {
+    " SPNN": 4,
+    "ESPNN": 5
+  },
+  "unk_808": {
+    " RAPN": 4,
+    "ARAPN": 5
+  },
+  "unk_1146": {
+    " LCPN": 4,
+    "ALCPN": 5
+  },
+  "unk_1504": {
+    "POCPN": 5
+  },
+  "unk_1251": {
+    " RCPN": 4,
+    "ERCPN": 5
+  },
+  "unk_2436": {
+    "ERCPN": 6
+  },
+  "unk_1392": {
+    " EDPN": 4,
+    "LEDPN": 5
+  },
+  "unk_418": {
+    " IDPN": 4,
+    "RIDPN": 5
+  },
+  "unk_1491": {
+    " RDPN": 4,
+    "ORDPN": 5
+  },
+  "unk_3980": {
+    "AREPN": 6
+  },
+  "unk_1514": {
+    "PXEPN": 5
+  },
+  "unk_2630": {
+    "IEHPN": 6
+  },
+  "unk_1612": {
+    " SIPN": 4,
+    "SSIPN": 5
+  },
+  "unk_2671": {
+    "NELPN": 6
+  },
+  "unk_1217": {
+    " OMPN": 4,
+    "DOMPN": 5
+  },
+  "unk_4419": {
+    "ISNPN": 6
+  },
+  "unk_933": {
+    " SOPN": 4,
+    "ISOPN": 5
+  },
+  "unk_1662": {
+    "TUOPN": 5
+  },
+  "unk_2789": {
+    "MERPN": 6
+  },
+  "unk_1812": {
+    "MERPN": 6
+  },
+  "unk_3982": {
+    "ATSPN": 6
+  },
+  "unk_3355": {
+    "LBTPN": 6
+  },
+  "unk_3489": {
+    "METPN": 6
+  },
+  "unk_3165": {
+    "PYTPN": 6
+  },
+  "unk_3994": {
+    "DIWPN": 6
+  },
+  "unk_2301": {
+    "RADRN": 6
+  },
+  "unk_1044": {
+    "REDRN": 5,
+    "  QER": 3,
+    " UQER": 4,
+    "EUQER": 5
+  },
+  "unk_2446": {
+    "ERDRN": 6
+  },
+  "unk_2762": {
+    "EWDRN": 6
+  },
+  "unk_3107": {
+    "LEGRN": 6
+  },
+  "unk_20": {
+    "  IRN": 3,
+    " EIRN": 4,
+    "NEIRN": 5
+  },
+  "unk_56": {
+    " AIRN": 4,
+    "NAIRN": 5
+  },
+  "unk_504": {
+    " FIRN": 4,
+    "LFIRN": 5
+  },
+  "unk_1991": {
+    "OLIRN": 6
+  },
+  "unk_620": {
+    " NIRN": 4
+  },
+  "unk_1255": {
+    "ESIRN": 5
+  },
+  "unk_73": {
+    " ANRN": 4
+  },
+  "unk_341": {
+    " FRRN": 4
+  },
+  "unk_1350": {
+    "GWDSN": 5
+  },
+  "unk_977": {
+    " TESN": 4
+  },
+  "unk_610": {
+    " NFSN": 4,
+    "ANFSN": 5
+  },
+  "unk_980": {
+    " THSN": 4,
+    "SREVN": 5
+  },
+  "unk_4352": {
+    "TTHSN": 6
+  },
+  "unk_1056": {
+    " VLSN": 4,
+    "IVLSN": 5
+  },
+  "unk_347": {
+    " FRSN": 4
+  },
+  "unk_2296": {
+    "PYTSN": 6
+  },
+  "unk_3205": {
+    "ELHTN": 6
+  },
+  "unk_3152": {
+    "UNHTN": 6
+  },
+  "unk_2795": {
+    "MPMTN": 6
+  },
+  "unk_1816": {
+    "MPMTN": 6
+  },
+  "unk_2677": {
+    "NURTN": 6
+  },
+  "unk_1764": {
+    "ERAUN": 6
+  },
+  "unk_34": {
+    " ADUN": 4,
+    "TADUN": 5
+  },
+  "unk_3756": {
+    "TRPUN": 6
+  },
+  "unk_107": {
+    " BTUN": 4,
+    "YBTUN": 5
+  },
+  "unk_186": {
+    " DTUN": 4,
+    "IDTUN": 5
+  },
+  "unk_2558": {
+    "RFTUN": 6
+  },
+  "unk_1225": {
+    "DSTUN": 5
+  },
+  "unk_1882": {
+    "TSTUN": 6
+  },
+  "unk_2112": {
+    "IWCVN": 6
+  },
+  "unk_1356": {
+    "HSRVN": 5
+  },
+  "unk_1544": {
+    "  NWN": 3,
+    " ENWN": 4,
+    "RENWN": 5
+  },
+  "unk_122": {
+    " CNWN": 4,
+    "OCNWN": 5
+  },
+  "unk_4159": {
+    "XENWN": 6
+  },
+  "unk_3547": {
+    "XENWN": 6
+  },
+  "unk_4121": {
+    "SLNWN": 5
+  },
+  "unk_2472": {
+    "ERNWN": 6
+  },
+  "unk_1067": {
+    " XAAO": 4,
+    "IXAAO": 5
+  },
+  "unk_2750": {
+    "DTCAO": 6
+  },
+  "unk_3542": {
+    "XDDAO": 6
+  },
+  "unk_3325": {
+    "CRFAO": 6
+  },
+  "unk_4016": {
+    "FRFAO": 6
+  },
+  "unk_4049": {
+    "LRFAO": 6
+  },
+  "unk_196": {
+    " EGAO": 4,
+    "AEGAO": 5
+  },
+  "unk_3389": {
+    "NEGAO": 6
+  },
+  "unk_4144": {
+    "TNIAO": 6
+  },
+  "unk_3429": {
+    "TNIAO": 6
+  },
+  "unk_2457": {
+    "ERIAO": 6
+  },
+  "unk_1327": {
+    "GILAO": 5
+  },
+  "unk_3180": {
+    "ALLAO": 6
+  },
+  "unk_2814": {
+    "SENAO": 6
+  },
+  "unk_390": {
+    " GNAO": 4,
+    "LGNAO": 5
+  },
+  "unk_2469": {
+    "ERNAO": 6
+  },
+  "unk_2050": {
+    "CSNAO": 6
+  },
+  "unk_2101": {
+    "ISNAO": 6
+  },
+  "unk_2026": {
+    "TSNAO": 6
+  },
+  "unk_80": {
+    " ARAO": 4,
+    "MARAO": 5
+  },
+  "unk_1384": {
+    "LARAO": 5
+  },
+  "unk_2982": {
+    "OCRAO": 6
+  },
+  "unk_235": {
+    " ERAO": 4,
+    "AERAO": 5
+  },
+  "unk_4058": {
+    "NERAO": 5
+  },
+  "unk_575": {
+    " MRAO": 4
+  },
+  "unk_3067": {
+    "ANRAO": 6
+  },
+  "unk_2483": {
+    "ERRAO": 6
+  },
+  "unk_4214": {
+    "NTRAO": 5
+  },
+  "unk_4161": {
+    "XESAO": 6
+  },
+  "unk_946": {
+    " SSAO": 4,
+    "WSSAO": 5
+  },
+  "unk_1532": {
+    "QSSAO": 5
+  },
+  "unk_4236": {
+    "DATAO": 6
+  },
+  "unk_2420": {
+    "EDTAO": 6
+  },
+  "unk_405": {
+    " HTAO": 4
+  },
+  "unk_3141": {
+    "THTAO": 6
+  },
+  "unk_3069": {
+    "ANTAO": 6
+  },
+  "unk_3323": {
+    "COTAO": 6
+  },
+  "unk_4015": {
+    "FOTAO": 6
+  },
+  "unk_2524": {
+    "FOTAO": 6
+  },
+  "unk_4048": {
+    "LOTAO": 6
+  },
+  "unk_3466": {
+    "ERTAO": 6
+  },
+  "unk_2286": {
+    "PYTAO": 6
+  },
+  "unk_460": {
+    " IXAO": 4,
+    "SIXAO": 5
+  },
+  "unk_1068": {
+    " XABO": 4,
+    "IXABO": 5
+  },
+  "unk_965": {
+    " TBBO": 4,
+    "LTBBO": 5
+  },
+  "unk_413": {
+    " IDBO": 4,
+    "SIDBO": 5
+  },
+  "unk_553": {
+    "AIDBO": 5,
+    " MDBO": 4
+  },
+  "unk_3196": {
+    "DNEBO": 5
+  },
+  "unk_309": {
+    " FOBO": 4,
+    "FFOBO": 5
+  },
+  "unk_754": {
+    " POBO": 4
+  },
+  "unk_848": {
+    " ROBO": 4,
+    "EROBO": 5
+  },
+  "unk_4198": {
+    "MCSBO": 6
+  },
+  "unk_2965": {
+    "MFSBO": 6
+  },
+  "unk_4385": {
+    "TFSBO": 6
+  },
+  "unk_1930": {
+    "RGSBO": 6
+  },
+  "unk_2204": {
+    "DHSBO": 6
+  },
+  "unk_3318": {
+    "CISBO": 6
+  },
+  "unk_3631": {
+    "APSBO": 6
+  },
+  "unk_3394": {
+    "NQSBO": 6
+  },
+  "unk_3641": {
+    "CRSBO": 6
+  },
+  "unk_4096": {
+    "RSSBO": 6
+  },
+  "unk_4175": {
+    "XTSBO": 6
+  },
+  "unk_2892": {
+    "AVSBO": 6
+  },
+  "unk_779": {
+    " PTBO": 4,
+    "LPTBO": 5
+  },
+  "unk_1069": {
+    " XACO": 4,
+    "IXACO": 5
+  },
+  "unk_966": {
+    " TBCO": 4,
+    "LTBCO": 5
+  },
+  "unk_635": {
+    "  OCO": 3,
+    " NOCO": 4,
+    "NNOCO": 5
+  },
+  "unk_1130": {
+    "ADOCO": 5
+  },
+  "unk_1233": {
+    "EDOCO": 5
+  },
+  "unk_1272": {
+    "FDOCO": 5
+  },
+  "unk_1364": {
+    "IDOCO": 5
+  },
+  "unk_1426": {
+    "MDOCO": 5
+  },
+  "unk_312": {
+    " FOCO": 4,
+    "FFOCO": 5
+  },
+  "unk_2210": {
+    "DNOCO": 6
+  },
+  "unk_2602": {
+    "XNOCO": 6
+  },
+  "unk_3419": {
+    "RROCO": 6
+  },
+  "unk_4238": {
+    "DIPCO": 6
+  },
+  "unk_4009": {
+    "ESPCO": 6
+  },
+  "unk_1276": {
+    "FERCO": 5
+  },
+  "unk_1139": {
+    "AFRCO": 5
+  },
+  "unk_781": {
+    " PTCO": 4,
+    "LPTCO": 5
+  },
+  "unk_2958": {
+    "LAWCO": 6
+  },
+  "unk_2425": {
+    "ERADO": 6
+  },
+  "unk_1367": {
+    "IFEDO": 5
+  },
+  "unk_1239": {
+    "ELEDO": 5
+  },
+  "unk_2449": {
+    "EREDO": 6
+  },
+  "unk_54": {
+    " AIDO": 4,
+    "MAIDO": 5
+  },
+  "unk_836": {
+    " RIDO": 4,
+    "ERIDO": 5
+  },
+  "unk_898": {
+    " SIDO": 4,
+    "TSIDO": 5
+  },
+  "unk_2536": {
+    "LSIDO": 6
+  },
+  "unk_2270": {
+    "MANDO": 6
+  },
+  "unk_4069": {
+    "NITDO": 6
+  },
+  "unk_4178": {
+    "XTTDO": 6
+  },
+  "unk_1303": {
+    "FGWDO": 5
+  },
+  "unk_944": {
+    "  REO": 3,
+    " SREO": 4,
+    "PSREO": 5
+  },
+  "unk_2954": {
+    "LALFO": 6
+  },
+  "unk_2517": {
+    "FOLFO": 6
+  },
+  "unk_638": {
+    " NOFO": 4,
+    "TNOFO": 5
+  },
+  "unk_3290": {
+    "TNOFO": 6
+  },
+  "unk_238": {
+    " ERFO": 4,
+    "FERFO": 5
+  },
+  "unk_1530": {
+    "QERFO": 5
+  },
+  "unk_180": {
+    "DARGO": 5,
+    " DRGO": 4
+  },
+  "unk_665": {
+    " OBHO": 4,
+    "ROBHO": 5
+  },
+  "unk_730": {
+    "POBHO": 5,
+    " PBHO": 4
+  },
+  "unk_674": {
+    " OCHO": 4,
+    "NOCHO": 5
+  },
+  "unk_814": {
+    "RIDHO": 5,
+    " RDHO": 4
+  },
+  "unk_425": {
+    " IEHO": 4,
+    "GIEHO": 5
+  },
+  "unk_828": {
+    " RGHO": 4,
+    "ARGHO": 5
+  },
+  "unk_168": {
+    " DOHO": 4
+  },
+  "unk_703": {
+    " OPHO": 4,
+    "SOPHO": 5
+  },
+  "unk_783": {
+    "POTHO": 5,
+    " PTHO": 4
+  },
+  "unk_2973": {
+    "OCCIO": 6
+  },
+  "unk_3864": {
+    "MDCIO": 6
+  },
+  "unk_268": {
+    " FCIO": 4,
+    "IFCIO": 5
+  },
+  "unk_1195": {
+    "DFCIO": 5
+  },
+  "unk_3916": {
+    "RGCIO": 6
+  },
+  "unk_4386": {
+    "THCIO": 6
+  },
+  "unk_3790": {
+    "BLCIO": 6
+  },
+  "unk_2563": {
+    "RLCIO": 6
+  },
+  "unk_4118": {
+    "SLCIO": 6
+  },
+  "unk_2569": {
+    "ROCIO": 6
+  },
+  "unk_4399": {
+    "TSCIO": 6
+  },
+  "unk_3956": {
+    "XTCIO": 6
+  },
+  "unk_3951": {
+    "WVCIO": 6
+  },
+  "unk_815": {
+    " RDIO": 4,
+    "ERDIO": 5
+  },
+  "unk_967": {
+    " TDIO": 4,
+    "ETDIO": 5
+  },
+  "unk_842": {
+    " RLIO": 4,
+    "ERLIO": 5
+  },
+  "unk_3199": {
+    "EDNIO": 6
+  },
+  "unk_3330": {
+    "CSNIO": 6
+  },
+  "unk_3195": {
+    "CSNIO": 6
+  },
+  "unk_4134": {
+    "SSNIO": 6
+  },
+  "unk_3177": {
+    "SEPIO": 7,
+    "YSPIO": 6
+  },
+  "unk_3341": {
+    "HCTIO": 6
+  },
+  "unk_1352": {
+    "HCTIO": 5
+  },
+  "unk_952": {
+    " SUJO": 4,
+    "TSUJO": 5
+  },
+  "unk_414": {
+    " IDKO": 4,
+    "SIDKO": 5
+  },
+  "unk_1107": {
+    " YEKO": 4
+  },
+  "unk_3203": {
+    "ELALO": 6
+  },
+  "unk_1670": {
+    "UNALO": 5
+  },
+  "unk_1698": {
+    "VNALO": 5
+  },
+  "unk_2427": {
+    "ERALO": 6
+  },
+  "unk_1760": {
+    "ERALO": 6
+  },
+  "unk_3562": {
+    "YTALO": 6
+  },
+  "unk_3997": {
+    "DWALO": 6
+  },
+  "unk_1070": {
+    " XALO": 4,
+    "IXALO": 5
+  },
+  "unk_479": {
+    " LCLO": 4,
+    "ELCLO": 5
+  },
+  "unk_2936": {
+    "FLCLO": 6
+  },
+  "unk_4338": {
+    "TLCLO": 6
+  },
+  "unk_588": {
+    " NCLO": 4,
+    "FNCLO": 5
+  },
+  "unk_675": {
+    " OCLO": 4,
+    "NOCLO": 5
+  },
+  "unk_3370": {
+    "LOCLO": 6
+  },
+  "unk_4209": {
+    "NOCLO": 6
+  },
+  "unk_3352": {
+    "HUCLO": 6
+  },
+  "unk_191": {
+    " EDLO": 4,
+    "SEDLO": 5
+  },
+  "unk_415": {
+    " IDLO": 4,
+    "RIDLO": 5
+  },
+  "unk_3349": {
+    "HRDLO": 6
+  },
+  "unk_147": {
+    " DELO": 4,
+    "IDELO": 5
+  },
+  "unk_595": {
+    " NELO": 4,
+    "DNELO": 5
+  },
+  "unk_4189": {
+    "CNELO": 5
+  },
+  "unk_375": {
+    " GFLO": 4,
+    " NILO": 4,
+    "ENILO": 5
+  },
+  "unk_3271": {
+    "ONILO": 6
+  },
+  "unk_912": {
+    "  LLO": 3,
+    " SLLO": 4,
+    "TSLLO": 5
+  },
+  "unk_1388": {
+    "LBLLO": 5
+  },
+  "unk_207": {
+    " ELLO": 4,
+    "VELLO": 5
+  },
+  "unk_71": {
+    " ANLO": 4,
+    "MANLO": 5
+  },
+  "unk_3264": {
+    "OCNLO": 6
+  },
+  "unk_2981": {
+    "OCNLO": 6
+  },
+  "unk_751": {
+    " PNLO": 4,
+    "EPNLO": 5
+  },
+  "unk_4405": {
+    "TSNLO": 6
+  },
+  "unk_3762": {
+    "TSNLO": 6
+  },
+  "unk_1381": {
+    "KCOLO": 5
+  },
+  "unk_852": {
+    " ROLO": 4,
+    "IROLO": 5
+  },
+  "unk_650": {
+    "NEPLO": 5,
+    " NPLO": 4
+  },
+  "unk_574": {
+    " MPLO": 4,
+    "EMPLO": 5
+  },
+  "unk_764": {
+    " PPLO": 4,
+    "OPPLO": 5
+  },
+  "unk_1042": {
+    " UPLO": 4,
+    "RUPLO": 5
+  },
+  "unk_181": {
+    " DRLO": 4,
+    "IDRLO": 5
+  },
+  "unk_3819": {
+    "FERLO": 6
+  },
+  "unk_335": {
+    " FRLO": 4
+  },
+  "unk_3344": {
+    "HISLO": 6
+  },
+  "unk_3346": {
+    "HLSLO": 6
+  },
+  "unk_772": {
+    " PSLO": 4,
+    "APSLO": 5
+  },
+  "unk_4346": {
+    "TPSLO": 6
+  },
+  "unk_1009": {
+    " TSLO": 4,
+    "ATSLO": 5
+  },
+  "unk_4191": {
+    "CTSLO": 5
+  },
+  "unk_2364": {
+    "RTSLO": 6
+  },
+  "unk_3053": {
+    "YTSLO": 6
+  },
+  "unk_3342": {
+    "HHTLO": 6
+  },
+  "unk_1046": {
+    " UTLO": 4,
+    "FUTLO": 5
+  },
+  "unk_1097": {
+    " XTLO": 4,
+    "TXTLO": 5
+  },
+  "unk_456": {
+    " IVLO": 4,
+    "SIVLO": 5
+  },
+  "unk_1304": {
+    "FIVLO": 5
+  },
+  "unk_1066": {
+    " WWLO": 4,
+    "PWWLO": 5
+  },
+  "unk_1073": {
+    " XAMO": 4,
+    "IXAMO": 5
+  },
+  "unk_3294": {
+    "UFLMO": 6
+  },
+  "unk_3061": {
+    "ANLMO": 6
+  },
+  "unk_170": {
+    " DOMO": 4,
+    "EDOMO": 5
+  },
+  "unk_546": {
+    " MANO": 4,
+    "EMANO": 5
+  },
+  "unk_3734": {
+    "RATNO": 6
+  },
+  "unk_1706": {
+    "VUTNO": 5
+  },
+  "unk_4435": {
+    "YXTNO": 6
+  },
+  "unk_667": {
+    " OBOO": 4,
+    "ROBOO": 5
+  },
+  "unk_466": {
+    " KCOO": 4,
+    "EKCOO": 5
+  },
+  "unk_677": {
+    " OCOO": 4,
+    "NOCOO": 5
+  },
+  "unk_16": {
+    "  DOO": 3
+  },
+  "unk_416": {
+    " IDOO": 4,
+    "RIDOO": 5
+  },
+  "unk_276": {
+    " FEOO": 4,
+    "LFEOO": 5
+  },
+  "unk_292": {
+    " FFOO": 4,
+    "SFFOO": 5
+  },
+  "unk_3153": {
+    "UNIOO": 6
+  },
+  "unk_906": {
+    " SIOO": 4,
+    "SSIOO": 5
+  },
+  "unk_3581": {
+    "YTIOO": 6
+  },
+  "unk_72": {
+    " ANOO": 4,
+    "MANOO": 5
+  },
+  "unk_853": {
+    " ROOO": 4,
+    "IROOO": 5
+  },
+  "unk_2146": {
+    "  POO": 3,
+    " CPOO": 4,
+    "OCPOO": 5
+  },
+  "unk_939": {
+    " SPOO": 4
+  },
+  "unk_27": {
+    "  SOO": 3,
+    " ISOO": 4,
+    "TISOO": 5
+  },
+  "unk_2149": {
+    "OCSOO": 6
+  },
+  "unk_253": {
+    " ESOO": 4,
+    "NESOO": 5
+  },
+  "unk_1236": {
+    "EESOO": 5,
+    "XESOO": 5
+  },
+  "unk_1668": {
+    "UESOO": 5,
+    "ZESOO": 5
+  },
+  "unk_1692": {
+    "VESOO": 5
+  },
+  "unk_1737": {
+    "YESOO": 5
+  },
+  "unk_452": {
+    " FSOO": 4,
+    "LFSOO": 5
+  },
+  "unk_3714": {
+    "OFSOO": 6
+  },
+  "unk_532": {
+    " LSOO": 4,
+    "ILSOO": 5
+  },
+  "unk_654": {
+    " NSOO": 4,
+    " YSOO": 4
+  },
+  "unk_1488": {
+    "ONSOO": 5
+  },
+  "unk_1510": {
+    "PPSOO": 5
+  },
+  "unk_2489": {
+    "ERSOO": 6
+  },
+  "unk_948": {
+    " SSOO": 4,
+    "TSSOO": 5
+  },
+  "unk_1263": {
+    "ESSOO": 5,
+    "XSSOO": 5
+  },
+  "unk_1479": {
+    "NSSOO": 5,
+    "YSSOO": 5
+  },
+  "unk_1683": {
+    "USSOO": 5,
+    "ZSSOO": 5
+  },
+  "unk_4299": {
+    "ETSOO": 6
+  },
+  "unk_2551": {
+    "OTSOO": 6
+  },
+  "unk_3518": {
+    "STSOO": 6
+  },
+  "unk_1045": {
+    " USOO": 4,
+    " ZSOO": 4
+  },
+  "unk_1095": {
+    " XSOO": 4
+  },
+  "unk_1518": {
+    "PXSOO": 5
+  },
+  "unk_91": {
+    " ATOO": 4,
+    "RATOO": 5
+  },
+  "unk_1946": {
+    "AFWOO": 6
+  },
+  "unk_3126": {
+    "OOZOO": 6
+  },
+  "unk_2937": {
+    "FNAPO": 6
+  },
+  "unk_2428": {
+    "ERAPO": 6
+  },
+  "unk_669": {
+    " OBPO": 4,
+    "ROBPO": 5
+  },
+  "unk_3979": {
+    "ARBPO": 6
+  },
+  "unk_2035": {
+    "ARBPO": 6
+  },
+  "unk_2042": {
+    "BNCPO": 6
+  },
+  "unk_679": {
+    " OCPO": 4,
+    "NOCPO": 5
+  },
+  "unk_1672": {
+    "UOCPO": 5
+  },
+  "unk_3025": {
+    "TUCPO": 6
+  },
+  "unk_193": {
+    " EDPO": 4,
+    "SEDPO": 5
+  },
+  "unk_419": {
+    " IDPO": 4,
+    "RIDPO": 5
+  },
+  "unk_1551": {
+    "RFEPO": 5
+  },
+  "unk_820": {
+    " REPO": 4,
+    "EREPO": 5
+  },
+  "unk_4139": {
+    "SXEPO": 5
+  },
+  "unk_2968": {
+    "NIFPO": 6
+  },
+  "unk_4235": {
+    "CMFPO": 6
+  },
+  "unk_1365": {
+    "IEHPO": 5
+  },
+  "unk_2465": {
+    "ERLPO": 6
+  },
+  "unk_914": {
+    " SLPO": 4,
+    "TSLPO": 5
+  },
+  "unk_2749": {
+    "DOMPO": 6
+  },
+  "unk_1037": {
+    " UNPO": 4,
+    "MUNPO": 5
+  },
+  "unk_4012": {
+    "FFOPO": 6
+  },
+  "unk_4312": {
+    "NIOPO": 6
+  },
+  "unk_934": {
+    " SOPO": 4,
+    "ISOPO": 5
+  },
+  "unk_1141": {
+    "AFRPO": 5
+  },
+  "unk_713": {
+    " ORPO": 4,
+    "PORPO": 5
+  },
+  "unk_1549": {
+    "RFSPO": 5
+  },
+  "unk_472": {
+    " KSPO": 4,
+    "EKSPO": 5
+  },
+  "unk_869": {
+    " RSPO": 4,
+    "ERSPO": 5
+  },
+  "unk_1684": {
+    "UTSPO": 5
+  },
+  "unk_880": {
+    " RUPO": 4,
+    "PRUPO": 5
+  },
+  "unk_1976": {
+    "MBVPO": 6
+  },
+  "unk_2806": {
+    "REVPO": 6
+  },
+  "unk_459": {
+    " IVPO": 4,
+    "SIVPO": 5
+  },
+  "unk_1305": {
+    "FIVPO": 5
+  },
+  "unk_1979": {
+    "MWVPO": 6
+  },
+  "unk_1208": {
+    "DIWPO": 5
+  },
+  "unk_2647": {
+    "NAAQO": 6
+  },
+  "unk_1334": {
+    "GNAQO": 5
+  },
+  "unk_2333": {
+    "ROBQO": 6
+  },
+  "unk_1468": {
+    "NOCQO": 5
+  },
+  "unk_1299": {
+    "FFOQO": 5
+  },
+  "unk_94": {
+    " AUQO": 4,
+    "LAUQO": 5
+  },
+  "unk_141": {
+    " DARO": 4,
+    "IDARO": 5
+  },
+  "unk_1053": {
+    " VARO": 4,
+    "EVARO": 5
+  },
+  "unk_2857": {
+    "NLBRO": 6
+  },
+  "unk_3626": {
+    "AMBRO": 6
+  },
+  "unk_2716": {
+    "PMBRO": 6
+  },
+  "unk_4341": {
+    "TMBRO": 6
+  },
+  "unk_2214": {
+    "DOCRO": 6
+  },
+  "unk_4255": {
+    "NOCRO": 6
+  },
+  "unk_3353": {
+    "HUCRO": 6
+  },
+  "unk_3433": {
+    "TUCRO": 6
+  },
+  "unk_3279": {
+    "SBDRO": 6
+  },
+  "unk_3960": {
+    "ADDRO": 6
+  },
+  "unk_2411": {
+    "BDDRO": 6
+  },
+  "unk_195": {
+    " EDRO": 4,
+    "FEDRO": 5
+  },
+  "unk_1570": {
+    "SEDRO": 5
+  },
+  "unk_1589": {
+    "SLDRO": 5
+  },
+  "unk_3350": {
+    "HRDRO": 6
+  },
+  "unk_2056": {
+    "ECERO": 6
+  },
+  "unk_4027": {
+    "IDERO": 6
+  },
+  "unk_282": {
+    " FERO": 4,
+    "LFERO": 5
+  },
+  "unk_4302": {
+    "IFERO": 6
+  },
+  "unk_3509": {
+    "SFERO": 6
+  },
+  "unk_1505": {
+    "POERO": 5
+  },
+  "unk_3726": {
+    "PPERO": 6
+  },
+  "unk_1641": {
+    "TPERO": 5
+  },
+  "unk_894": {
+    " SERO": 4,
+    "SSERO": 5
+  },
+  "unk_117": {
+    "CAFRO": 5,
+    " CFRO": 4,
+    "TCFRO": 5
+  },
+  "unk_2239": {
+    "LEFRO": 6
+  },
+  "unk_379": {
+    " GFRO": 4,
+    " FORO": 4,
+    "IFORO": 5
+  },
+  "unk_496": {
+    " LFRO": 4
+  },
+  "unk_3792": {
+    "BOFRO": 6
+  },
+  "unk_2417": {
+    "DLGRO": 6
+  },
+  "unk_2217": {
+    "ECIRO": 6
+  },
+  "unk_1909": {
+    "DMIRO": 5
+  },
+  "unk_3087": {
+    "EMIRO": 6
+  },
+  "unk_4375": {
+    "SMIRO": 6
+  },
+  "unk_4389": {
+    "TMIRO": 5
+  },
+  "unk_3582": {
+    "YTIRO": 6
+  },
+  "unk_155": {
+    " DJRO": 4,
+    "EDJRO": 5
+  },
+  "unk_1202": {
+    "DIJRO": 5
+  },
+  "unk_2844": {
+    " LJRO": 4,
+    "OLJRO": 5
+  },
+  "unk_3182": {
+    "AMJRO": 6
+  },
+  "unk_621": {
+    " NJRO": 4,
+    "UNJRO": 5
+  },
+  "unk_1878": {
+    "TSJRO": 5
+  },
+  "unk_2106": {
+    "IUJRO": 6
+  },
+  "unk_1389": {
+    "LBLRO": 5
+  },
+  "unk_915": {
+    " SLRO": 4,
+    "TSLRO": 5
+  },
+  "unk_2412": {
+    "BDMRO": 6
+  },
+  "unk_3683": {
+    "IDMRO": 6
+  },
+  "unk_441": {
+    " IMRO": 4,
+    "NIMRO": 5
+  },
+  "unk_1993": {
+    "OLMRO": 6
+  },
+  "unk_3089": {
+    "EMMRO": 6
+  },
+  "unk_3302": {
+    "WOMRO": 6
+  },
+  "unk_1309": {
+    "FRMRO": 5
+  },
+  "unk_1383": {
+    "KRMRO": 5
+  },
+  "unk_1057": {
+    " VMRO": 4,
+    "IVMRO": 5
+  },
+  "unk_1638": {
+    "TONRO": 5
+  },
+  "unk_2203": {
+    "DCORO": 6
+  },
+  "unk_2073": {
+    "IDORO": 6
+  },
+  "unk_2555": {
+    "RDORO": 6
+  },
+  "unk_2028": {
+    "UDORO": 6
+  },
+  "unk_462": {
+    "IJORO": 5
+  },
+  "unk_3213": {
+    "ELORO": 6
+  },
+  "unk_4305": {
+    "IMORO": 6
+  },
+  "unk_756": {
+    " PORO": 4,
+    "EPORO": 5
+  },
+  "unk_1346": {
+    "GPORO": 5
+  },
+  "unk_2343": {
+    "RPORO": 6
+  },
+  "unk_2102": {
+    "ISORO": 6
+  },
+  "unk_1663": {
+    "TUORO": 5
+  },
+  "unk_1043": {
+    " UPRO": 4,
+    "RUPRO": 5
+  },
+  "unk_1291": {
+    "FERRO": 5
+  },
+  "unk_3345": {
+    "HISRO": 6
+  },
+  "unk_3347": {
+    "HLSRO": 6
+  },
+  "unk_3343": {
+    "HHTRO": 6
+  },
+  "unk_455": {
+    " ITRO": 4,
+    "TITRO": 5
+  },
+  "unk_3795": {
+    "DITRO": 6
+  },
+  "unk_3083": {
+    "DITRO": 6
+  },
+  "unk_2913": {
+    "DITRO": 6
+  },
+  "unk_4124": {
+    "SLTRO": 6
+  },
+  "unk_2491": {
+    "ERTRO": 6
+  },
+  "unk_4348": {
+    "TRTRO": 6
+  },
+  "unk_4351": {
+    "TSTRO": 6
+  },
+  "unk_4353": {
+    "TTTRO": 6
+  },
+  "unk_2588": {
+    "RXTRO": 5
+  },
+  "unk_1998": {
+    "OLVRO": 6
+  },
+  "unk_1949": {
+    "ANVRO": 6
+  },
+  "unk_1312": {
+    "FRVRO": 5
+  },
+  "unk_3816": {
+    "ESVRO": 6
+  },
+  "unk_1776": {
+    "FRASO": 6
+  },
+  "unk_3944": {
+    "TTASO": 6
+  },
+  "unk_1608": {
+    "SSESO": 5
+  },
+  "unk_380": {
+    " GFSO": 4,
+    "  YSO": 3,
+    " MYSO": 4,
+    "BMYSO": 5
+  },
+  "unk_1268": {
+    "EZISO": 5
+  },
+  "unk_203": {
+    " EKSO": 4,
+    "YEKSO": 5
+  },
+  "unk_3681": {
+    "IDLSO": 6
+  },
+  "unk_1784": {
+    "FRLSO": 6
+  },
+  "unk_230": {
+    " EPSO": 4,
+    "CEPSO": 5
+  },
+  "unk_1460": {
+    "NIPSO": 5
+  },
+  "unk_2480": {
+    "ERPSO": 6
+  },
+  "unk_1620": {
+    "TATSO": 5
+  },
+  "unk_365": {
+    " FTSO": 4
+  },
+  "unk_3221": {
+    "ELTSO": 6
+  },
+  "unk_877": {
+    " RTSO": 4,
+    "ERTSO": 5
+  },
+  "unk_1523": {
+    "PYTSO": 5
+  },
+  "unk_1211": {
+    "DLVSO": 5
+  },
+  "unk_2619": {
+    "EDATO": 6
+  },
+  "unk_3478": {
+    "GDATO": 6
+  },
+  "unk_585": {
+    " NATO": 4,
+    "GNATO": 5
+  },
+  "unk_671": {
+    " OBTO": 4,
+    "ROBTO": 5
+  },
+  "unk_732": {
+    "POBTO": 5,
+    " PBTO": 4
+  },
+  "unk_142": {
+    "IDCTO": 5
+  },
+  "unk_394": {
+    " HCTO": 4,
+    "EHCTO": 5
+  },
+  "unk_4335": {
+    "THCTO": 6
+  },
+  "unk_682": {
+    " OCTO": 4,
+    "NOCTO": 5
+  },
+  "unk_3372": {
+    "LOCTO": 6
+  },
+  "unk_4211": {
+    "NOCTO": 6
+  },
+  "unk_3883": {
+    "OPCTO": 6
+  },
+  "unk_420": {
+    " IDTO": 4,
+    "SIDTO": 5
+  },
+  "unk_554": {
+    "AIDTO": 5,
+    " MDTO": 4,
+    "EMDTO": 5
+  },
+  "unk_818": {
+    "RIDTO": 5,
+    " RDTO": 4
+  },
+  "unk_2349": {
+    "RTDTO": 6
+  },
+  "unk_555": {
+    " METO": 4,
+    "PMETO": 5
+  },
+  "unk_3889": {
+    "OPETO": 6
+  },
+  "unk_49": {
+    " AFTO": 4,
+    "RAFTO": 5
+  },
+  "unk_831": {
+    " RGTO": 4,
+    "ARGTO": 5
+  },
+  "unk_397": {
+    " HLTO": 4,
+    "EHLTO": 5
+  },
+  "unk_104": {
+    " BNTO": 4,
+    "ABNTO": 5
+  },
+  "unk_398": {
+    " HNTO": 4,
+    "EHNTO": 5
+  },
+  "unk_697": {
+    " ONTO": 4
+  },
+  "unk_992": {
+    " TNTO": 4,
+    "UTNTO": 5
+  },
+  "unk_174": {
+    " DOTO": 4
+  },
+  "unk_321": {
+    " FOTO": 4,
+    "FFOTO": 5
+  },
+  "unk_4332": {
+    "TFOTO": 6
+  },
+  "unk_3645": {
+    "ELOTO": 6
+  },
+  "unk_760": {
+    " POTO": 4
+  },
+  "unk_652": {
+    "NEPTO": 5,
+    " NPTO": 4
+  },
+  "unk_708": {
+    " OPTO": 4,
+    "SOPTO": 5
+  },
+  "unk_4174": {
+    "XTPTO": 6
+  },
+  "unk_249": {
+    " ERTO": 4,
+    "FERTO": 5
+  },
+  "unk_350": {
+    " FRTO": 4
+  },
+  "unk_28": {
+    "  STO": 3
+  },
+  "unk_777": {
+    " PSTO": 4,
+    "EPSTO": 5
+  },
+  "unk_3902": {
+    "OPSTO": 6
+  },
+  "unk_787": {
+    "POTTO": 5,
+    " PTTO": 4
+  },
+  "unk_794": {
+    " PYTO": 4,
+    "EPYTO": 5
+  },
+  "unk_144": {
+    " DCUO": 4
+  },
+  "unk_2047": {
+    "CNIUO": 6
+  },
+  "unk_4024": {
+    "HCNUO": 6
+  },
+  "unk_445": {
+    " INUO": 4,
+    "TINUO": 5
+  },
+  "unk_2052": {
+    "CUOUO": 6
+  },
+  "unk_1351": {
+    "HCRUO": 5
+  },
+  "unk_767": {
+    " PRUO": 4,
+    "OPRUO": 5
+  },
+  "unk_301": {
+    " FIVO": 4,
+    "IFIVO": 5
+  },
+  "unk_700": {
+    " ONVO": 4
+  },
+  "unk_4046": {
+    "LLAWO": 6
+  },
+  "unk_885": {
+    " SAWO": 4,
+    "TSAWO": 5
+  },
+  "unk_153": {
+    " DIWO": 4,
+    "TDIWO": 5
+  },
+  "unk_1947": {
+    "AFWWO": 6
+  },
+  "unk_886": {
+    " SBXO": 4,
+    "HSBXO": 5
+  },
+  "unk_214": {
+    " ELXO": 4,
+    "NELXO": 5
+  },
+  "unk_950": {
+    " STXO": 4,
+    "HSTXO": 5
+  },
+  "unk_887": {
+    " SBYO": 4,
+    "HSBYO": 5
+  },
+  "unk_215": {
+    " ELYO": 4,
+    "NELYO": 5
+  },
+  "unk_951": {
+    " STYO": 4,
+    "HSTYO": 5
+  },
+  "unk_1377": {
+    "IXAZO": 5
+  },
+  "unk_1557": {
+    "RIDZO": 5
+  },
+  "unk_216": {
+    " ELZO": 4,
+    "NELZO": 5
+  },
+  "unk_2818": {
+    "SLLAP": 6
+  },
+  "unk_4087": {
+    "PUXMP": 6
+  },
+  "unk_3086": {
+    "ELENP": 6
+  },
+  "unk_2817": {
+    "SJBOP": 6
+  },
+  "unk_1248": {
+    "EPYTP": 5
+  },
+  "unk_1184": {
+    "DCAUP": 5
+  },
+  "unk_475": {
+    " LAUP": 4,
+    "ILAUP": 5
+  },
+  "unk_587": {
+    " NAUP": 4,
+    "TNAUP": 5
+  },
+  "unk_2739": {
+    "APAUP": 6
+  },
+  "unk_4166": {
+    "XTAUP": 6
+  },
+  "unk_895": {
+    " SEUP": 4,
+    "TSEUP": 5
+  },
+  "unk_3549": {
+    "XESUP": 6
+  },
+  "unk_412": {
+    "  DAQ": 3,
+    " IDAQ": 4,
+    "UIDAQ": 5
+  },
+  "unk_145": {
+    " DDAQ": 4,
+    "EDDAQ": 5
+  },
+  "unk_269": {
+    " FDAQ": 4,
+    "AFDAQ": 5
+  },
+  "unk_3003": {
+    "PIDAQ": 6
+  },
+  "unk_3512": {
+    "SIDAQ": 6
+  },
+  "unk_483": {
+    " LDAQ": 4,
+    "ILDAQ": 5
+  },
+  "unk_888": {
+    " SDAQ": 4,
+    "ESDAQ": 5
+  },
+  "unk_2225": {
+    "HLIAQ": 6
+  },
+  "unk_3749": {
+    "TLIAQ": 6
+  },
+  "unk_2661": {
+    "NANAQ": 6
+  },
+  "unk_1529": {
+    "QENAQ": 5
+  },
+  "unk_2037": {
+    "ARNAQ": 6
+  },
+  "unk_1944": {
+    "AFTAQ": 6
+  },
+  "unk_454": {
+    " ITAQ": 4,
+    "NITAQ": 5
+  },
+  "unk_577": {
+    " MTAQ": 4,
+    "AMTAQ": 5
+  },
+  "unk_4079": {
+    "OPTAQ": 6
+  },
+  "unk_2345": {
+    "RPTAQ": 6
+  },
+  "unk_949": {
+    " STAQ": 4,
+    "LSTAQ": 5
+  },
+  "unk_2887": {
+    "ATTAQ": 6
+  },
+  "unk_3075": {
+    "ANWAQ": 6
+  },
+  "unk_1803": {
+    "LPWAQ": 6
+  },
+  "unk_3414": {
+    "RPWAQ": 6
+  },
+  "unk_2499": {
+    "ERWAQ": 6
+  },
+  "unk_3565": {
+    "YTCBQ": 6
+  },
+  "unk_163": {
+    " DOCQ": 4,
+    "EDOCQ": 5
+  },
+  "unk_313": {
+    " FOCQ": 4,
+    "GFOCQ": 5
+  },
+  "unk_1040": {
+    " UOCQ": 4,
+    "NUOCQ": 5
+  },
+  "unk_273": {
+    " FEDQ": 4,
+    "AFEDQ": 5
+  },
+  "unk_742": {
+    " PEDQ": 4,
+    "RPEDQ": 5
+  },
+  "unk_1621": {
+    "TCAEQ": 5
+  },
+  "unk_136": {
+    " DAEQ": 4,
+    "ODAEQ": 5
+  },
+  "unk_4241": {
+    "ELAEQ": 6
+  },
+  "unk_4257": {
+    "OLAEQ": 6
+  },
+  "unk_3551": {
+    "XLAEQ": 6
+  },
+  "unk_2848": {
+    "HCCEQ": 6
+  },
+  "unk_3111": {
+    "MOCEQ": 6
+  },
+  "unk_2384": {
+    "TADEQ": 6
+  },
+  "unk_2438": {
+    "ERDEQ": 6
+  },
+  "unk_3572": {
+    "YTDEQ": 6
+  },
+  "unk_2583": {
+    "RXDEQ": 5
+  },
+  "unk_18": {
+    "  FEQ": 3,
+    " EFEQ": 4,
+    "REFEQ": 5,
+    " NFEQ": 4,
+    "ONFEQ": 5
+  },
+  "unk_40": {
+    " AFEQ": 4,
+    "TAFEQ": 5
+  },
+  "unk_434": {
+    " IFEQ": 4,
+    "NIFEQ": 5
+  },
+  "unk_490": {
+    " LFEQ": 4,
+    "ILFEQ": 5
+  },
+  "unk_2906": {
+    "CLFEQ": 6
+  },
+  "unk_4246": {
+    "ELFEQ": 6
+  },
+  "unk_2155": {
+    "OMFEQ": 6
+  },
+  "unk_4417": {
+    "ISFEQ": 6
+  },
+  "unk_371": {
+    " NGEQ": 4,
+    " GERU": 4,
+    "IGERU": 5
+  },
+  "unk_4039": {
+    "LELEQ": 6
+  },
+  "unk_3855": {
+    "LELEQ": 6
+  },
+  "unk_2538": {
+    "NILEQ": 6
+  },
+  "unk_4248": {
+    "ERLEQ": 6
+  },
+  "unk_4216": {
+    "OCPEQ": 6
+  },
+  "unk_3616": {
+    "ESPEQ": 6
+  },
+  "unk_4173": {
+    "XTPEQ": 6
+  },
+  "unk_3700": {
+    "IUQEQ": 6
+  },
+  "unk_1580": {
+    "SISEQ": 5
+  },
+  "unk_718": {
+    " OSEQ": 4,
+    "LOSEQ": 5
+  },
+  "unk_3981": {
+    "ATSEQ": 6
+  },
+  "unk_3654": {
+    "ESUEQ": 6
+  },
+  "unk_29": {
+    "  VEQ": 3,
+    " IVEQ": 4,
+    "SIVEQ": 5
+  },
+  "unk_972": {
+    " DVEQ": 4,
+    "ADVEQ": 5,
+    " TDVQ": 4
+  },
+  "unk_3693": {
+    "IDVEQ": 6
+  },
+  "unk_579": {
+    " TVEQ": 4,
+    "ITVEQ": 5,
+    " MTVQ": 4
+  },
+  "unk_3993": {
+    "DIWEQ": 6
+  },
+  "unk_1317": {
+    "GALFQ": 5
+  },
+  "unk_304": {
+    " FLFQ": 4,
+    "AFLFQ": 5
+  },
+  "unk_386": {
+    " GLFQ": 4
+  },
+  "unk_2972": {
+    "OCBGQ": 6
+  },
+  "unk_1657": {
+    "TSOHQ": 5
+  },
+  "unk_922": {
+    "  NIQ": 3,
+    " SNIQ": 4,
+    "ISNIQ": 5
+  },
+  "unk_221": {
+    " ENIQ": 4,
+    "RENIQ": 5
+  },
+  "unk_251": {
+    " ESIQ": 4
+  },
+  "unk_112": {
+    " CALQ": 4,
+    "TCALQ": 5
+  },
+  "unk_1077": {
+    " XELQ": 4,
+    "CXELQ": 5
+  },
+  "unk_561": {
+    " MILQ": 4,
+    "IMILQ": 5
+  },
+  "unk_615": {
+    " NILQ": 4,
+    "CNILQ": 5
+  },
+  "unk_904": {
+    " SILQ": 4,
+    "TSILQ": 5
+  },
+  "unk_685": {
+    " OLLQ": 4,
+    "GOLLQ": 5
+  },
+  "unk_125": {
+    " COLQ": 4,
+    "KCOLQ": 5
+  },
+  "unk_252": {
+    " ESLQ": 4,
+    "LESLQ": 5
+  },
+  "unk_1010": {
+    " TSLQ": 4,
+    "OTSLQ": 5
+  },
+  "unk_2575": {
+    "RTSLQ": 6
+  },
+  "unk_495": {
+    " LFMQ": 4,
+    "ELFMQ": 5
+  },
+  "unk_316": {
+    " FOMQ": 4,
+    "IFOMQ": 5
+  },
+  "unk_547": {
+    " MANQ": 4,
+    "EMANQ": 5
+  },
+  "unk_3259": {
+    "OCGNQ": 6
+  },
+  "unk_2515": {
+    "FOGNQ": 6
+  },
+  "unk_2921": {
+    "EDONQ": 6
+  },
+  "unk_1284": {
+    "FERNQ": 5
+  },
+  "unk_2416": {
+    "DIRNQ": 6
+  },
+  "unk_2792": {
+    "MIRNQ": 6
+  },
+  "unk_1814": {
+    "MIRNQ": 6
+  },
+  "unk_2290": {
+    "PYTNQ": 6
+  },
+  "unk_4223": {
+    "RRBOQ": 5
+  },
+  "unk_2464": {
+    "RELOQ": 5
+  },
+  "unk_4391": {
+    "TMOOQ": 6
+  },
+  "unk_3201": {
+    "EIROQ": 6
+  },
+  "unk_2666": {
+    "NATOQ": 6
+  },
+  "unk_657": {
+    " NTOQ": 4
+  },
+  "unk_1019": {
+    "  UOQ": 3,
+    " TUOQ": 4,
+    "STUOQ": 5
+  },
+  "unk_2142": {
+    "NTUOQ": 6
+  },
+  "unk_2365": {
+    "RTUOQ": 6
+  },
+  "unk_3269": {
+    "OCWOQ": 6
+  },
+  "unk_2986": {
+    "OCWOQ": 6
+  },
+  "unk_1207": {
+    "DIWOQ": 5
+  },
+  "unk_1897": {
+    "ALWOQ": 6
+  },
+  "unk_3173": {
+    "UNWOQ": 6
+  },
+  "unk_4407": {
+    "TSWOQ": 6
+  },
+  "unk_3763": {
+    "TSWOQ": 6
+  },
+  "unk_1435": {
+    "MRAPQ": 5
+  },
+  "unk_604": {
+    " NEPQ": 4
+  },
+  "unk_2144": {
+    "OCLPQ": 6
+  },
+  "unk_2314": {
+    "RCLPQ": 6
+  },
+  "unk_3062": {
+    "ANLPQ": 6
+  },
+  "unk_3157": {
+    "UNLPQ": 6
+  },
+  "unk_3894": {
+    "OPLPQ": 6
+  },
+  "unk_4007": {
+    "ESLPQ": 6
+  },
+  "unk_3585": {
+    "YTLPQ": 6
+  },
+  "unk_2179": {
+    "SULPQ": 6
+  },
+  "unk_244": {
+    " ERPQ": 4,
+    "SERPQ": 5
+  },
+  "unk_714": {
+    " ORPQ": 4,
+    "PORPQ": 5
+  },
+  "unk_3968": {
+    "ADTPQ": 6
+  },
+  "unk_1099": {
+    " XTPQ": 4,
+    "TXTPQ": 5
+  },
+  "unk_283": {
+    " FERQ": 4
+  },
+  "unk_362": {
+    " FSRQ": 4
+  },
+  "unk_1727": {
+    "XOBSQ": 5
+  },
+  "unk_1429": {
+    "MIDSQ": 5
+  },
+  "unk_1152": {
+    "AQESQ": 5
+  },
+  "unk_1774": {
+    "FQESQ": 5
+  },
+  "unk_1472": {
+    "NQESQ": 5
+  },
+  "unk_1609": {
+    "SSESQ": 5
+  },
+  "unk_978": {
+    " TESQ": 4,
+    "FTESQ": 5
+  },
+  "unk_1196": {
+    "DFFSQ": 5
+  },
+  "unk_1170": {
+    "CMFSQ": 5
+  },
+  "unk_1590": {
+    "SMFSQ": 5
+  },
+  "unk_1631": {
+    "TMFSQ": 5
+  },
+  "unk_1153": {
+    "ASFSQ": 5
+  },
+  "unk_1223": {
+    "DSFSQ": 5
+  },
+  "unk_1611": {
+    "SSFSQ": 5
+  },
+  "unk_1648": {
+    "TSFSQ": 5
+  },
+  "unk_1665": {
+    "TWFSQ": 5
+  },
+  "unk_4315": {
+    "OBGSQ": 6
+  },
+  "unk_2123": {
+    "LVGSQ": 6
+  },
+  "unk_3535": {
+    "TNISQ": 6
+  },
+  "unk_1848": {
+    "RBLSQ": 6
+  },
+  "unk_2245": {
+    "LELSQ": 6
+  },
+  "unk_2340": {
+    "RPLSQ": 6
+  },
+  "unk_4086": {
+    "PPOSQ": 6
+  },
+  "unk_1509": {
+    "PPOSQ": 5
+  },
+  "unk_1442": {
+    "NAPSQ": 5
+  },
+  "unk_1463": {
+    "NLPSQ": 5
+  },
+  "unk_348": {
+    " FRSQ": 4,
+    "AFRSQ": 5
+  },
+  "unk_1733": {
+    "YBTSQ": 5
+  },
+  "unk_3118": {
+    "OCTSQ": 6
+  },
+  "unk_3969": {
+    "ADTSQ": 6
+  },
+  "unk_3071": {
+    "ANTSQ": 6
+  },
+  "unk_1524": {
+    "PYTSQ": 5
+  },
+  "unk_1081": {
+    "  ETQ": 3,
+    " XETQ": 4,
+    "TXETQ": 5
+  },
+  "unk_556": {
+    " METQ": 4,
+    "PMETQ": 5
+  },
+  "unk_795": {
+    " PYTQ": 4,
+    "EPYTQ": 5
+  },
+  "unk_1267": {
+    "EXAUQ": 5
+  },
+  "unk_2539": {
+    "OALUQ": 6
+  },
+  "unk_2406": {
+    "XALUQ": 6
+  },
+  "unk_2541": {
+    "OBLUQ": 6
+  },
+  "unk_2743": {
+    "DCLUQ": 6
+  },
+  "unk_3644": {
+    "EELUQ": 6
+  },
+  "unk_2156": {
+    "MELUQ": 7
+  },
+  "unk_2002": {
+    "MELUQ": 8
+  },
+  "unk_2914": {
+    "MELUQ": 11
+  },
+  "unk_1956": {
+    "MELUQ": 12,
+    "DMLUQ": 6
+  },
+  "unk_3097": {
+    "ILLUQ": 6
+  },
+  "unk_2545": {
+    "OLLUQ": 5
+  },
+  "unk_3021": {
+    "TLLUQ": 6
+  },
+  "unk_2023": {
+    "TLLUQ": 6
+  },
+  "unk_3022": {
+    "TMLUQ": 6
+  },
+  "unk_2024": {
+    "TMLUQ": 6
+  },
+  "unk_3328": {
+    "CRLUQ": 6
+  },
+  "unk_4008": {
+    "ESLUQ": 6
+  },
+  "unk_3024": {
+    "TSLUQ": 6
+  },
+  "unk_2025": {
+    "TSLUQ": 6
+  },
+  "unk_3459": {
+    "CTLUQ": 6
+  },
+  "unk_2847": {
+    "CTLUQ": 6
+  },
+  "unk_3554": {
+    "XTLUQ": 6
+  },
+  "unk_3511": {
+    "SGNUQ": 6
+  },
+  "unk_1577": {
+    "SGNUQ": 5
+  },
+  "unk_254": {
+    " ESUQ": 4
+  },
+  "unk_1498": {
+    "PCTUQ": 5
+  },
+  "unk_1519": {
+    "PXTUQ": 5
+  },
+  "unk_1032": {
+    " UAVQ": 4,
+    "TUAVQ": 5
+  },
+  "unk_1980": {
+    "NACVQ": 6
+  },
+  "unk_1635": {
+    "TNCVQ": 5
+  },
+  "unk_1470": {
+    "NOCVQ": 5
+  },
+  "unk_3842": {
+    "IRCVQ": 6
+  },
+  "unk_3774": {
+    "WRCVQ": 6
+  },
+  "unk_3742": {
+    "RUCVQ": 6
+  },
+  "unk_3575": {
+    "YTFVQ": 6
+  },
+  "unk_1613": {
+    "SSIVQ": 5
+  },
+  "unk_3939": {
+    "TPNVQ": 6
+  },
+  "unk_1441": {
+    "MUNVQ": 5
+  },
+  "unk_524": {
+    " LOVQ": 4,
+    "ULOVQ": 5
+  },
+  "unk_655": {
+    " NSVQ": 4,
+    "UNSVQ": 5
+  },
+  "unk_1375": {
+    "IRUVQ": 5
+  },
+  "unk_3299": {
+    "WODWQ": 5
+  },
+  "unk_2901": {
+    "BTDWQ": 5
+  },
+  "unk_431": {
+    " IEWQ": 4,
+    "GIEWQ": 5
+  },
+  "unk_2723": {
+    "TDIWQ": 6
+  },
+  "unk_116": {
+    " CFAR": 4,
+    "LCFAR": 5
+  },
+  "unk_3692": {
+    "IDVAR": 6
+  },
+  "unk_3904": {
+    "OPVAR": 6
+  },
+  "unk_3975": {
+    "AOCBR": 6
+  },
+  "unk_81": {
+    " ARBR": 4,
+    "RARBR": 5
+  },
+  "unk_766": {
+    " PRBR": 4
+  },
+  "unk_473": {
+    " LACR": 4,
+    "ELACR": 5
+  },
+  "unk_3238": {
+    "ILACR": 6
+  },
+  "unk_1369": {
+    "ILACR": 5
+  },
+  "unk_2715": {
+    "PLACR": 6
+  },
+  "unk_2424": {
+    "ERACR": 6
+  },
+  "unk_2430": {
+    "ERBCR": 6
+  },
+  "unk_2780": {
+    "LEDCR": 6
+  },
+  "unk_2771": {
+    "GIDCR": 6
+  },
+  "unk_2319": {
+    "RIECR": 6
+  },
+  "unk_3715": {
+    "OLECR": 6
+  },
+  "unk_3576": {
+    "YTGCR": 6
+  },
+  "unk_1192": {
+    "DEHCR": 5
+  },
+  "unk_2074": {
+    "IEHCR": 6
+  },
+  "unk_2242": {
+    "LEHCR": 6
+  },
+  "unk_2275": {
+    "MEHCR": 6
+  },
+  "unk_1295": {
+    "FFHCR": 5
+  },
+  "unk_2860": {
+    "NLHCR": 6
+  },
+  "unk_3580": {
+    "YTHCR": 6
+  },
+  "unk_4091": {
+    "REICR": 6
+  },
+  "unk_4094": {
+    "RIICR": 6
+  },
+  "unk_2320": {
+    "RIICR": 6
+  },
+  "unk_4095": {
+    "RPICR": 6
+  },
+  "unk_2339": {
+    "RPICR": 6
+  },
+  "unk_2927": {
+    "ERICR": 6
+  },
+  "unk_2458": {
+    "ERICR": 6
+  },
+  "unk_4050": {
+    "LRICR": 6
+  },
+  "unk_4396": {
+    "TRICR": 6
+  },
+  "unk_2337": {
+    "ROLCR": 6
+  },
+  "unk_164": {
+    " DOCR": 4,
+    "EDOCR": 5
+  },
+  "unk_2473": {
+    "EPOCR": 5
+  },
+  "unk_2929": {
+    "ESOCR": 5
+  },
+  "unk_4307": {
+    "LSOCR": 6
+  },
+  "unk_1822": {
+    "NAPCR": 6
+  },
+  "unk_4378": {
+    "TAPCR": 6
+  },
+  "unk_3190": {
+    "AUQCR": 6
+  },
+  "unk_4221": {
+    "PARCR": 6
+  },
+  "unk_4083": {
+    "PARCR": 6
+  },
+  "unk_1277": {
+    "FERCR": 5
+  },
+  "unk_3604": {
+    "YTSCR": 6
+  },
+  "unk_2594": {
+    "SYSCR": 6
+  },
+  "unk_2181": {
+    "SYSCR": 6
+  },
+  "unk_3689": {
+    "IDTCR": 6
+  },
+  "unk_2252": {
+    "LETCR": 6
+  },
+  "unk_1876": {
+    "TSIDR": 5
+  },
+  "unk_123": {
+    " CODR": 4
+  },
+  "unk_406": {
+    " HTDR": 4,
+    "IHTDR": 5
+  },
+  "unk_4070": {
+    "NITDR": 6
+  },
+  "unk_4179": {
+    "XTTDR": 6
+  },
+  "unk_4242": {
+    "ELAER": 6
+  },
+  "unk_4005": {
+    "ESCER": 6
+  },
+  "unk_3568": {
+    "YTCER": 6
+  },
+  "unk_1565": {
+    " UCER": 4,
+    "RUCER": 5
+  },
+  "unk_197": {
+    " EGER": 4,
+    "NEGER": 5
+  },
+  "unk_897": {
+    " SGER": 4,
+    "TSGER": 5
+  },
+  "unk_921": {
+    " SNER": 4,
+    "ESNER": 5
+  },
+  "unk_1534": {
+    "RAPER": 5
+  },
+  "unk_3850": {
+    "LBQER": 6
+  },
+  "unk_3812": {
+    "ERQER": 6
+  },
+  "unk_1800": {
+    "LCSER": 6
+  },
+  "unk_2699": {
+    "CSSER": 6
+  },
+  "unk_1755": {
+    "CSSER": 6
+  },
+  "unk_1179": {
+    "CSSER": 5
+  },
+  "unk_1224": {
+    "DSSER": 5
+  },
+  "unk_1438": {
+    "MSSER": 5
+  },
+  "unk_3396": {
+    "NSSER": 6
+  },
+  "unk_1682": {
+    "USSER": 5
+  },
+  "unk_3966": {
+    "ADTER": 6
+  },
+  "unk_2141": {
+    "NPXER": 6
+  },
+  "unk_3977": {
+    "AOCFR": 6
+  },
+  "unk_2212": {
+    "DOCFR": 6
+  },
+  "unk_2790": {
+    "MILFR": 5
+  },
+  "unk_851": {
+    " ROFR": 4,
+    "CROFR": 5
+  },
+  "unk_1280": {
+    "FERFR": 5
+  },
+  "unk_726": {
+    " PAHR": 4,
+    "EPAHR": 5
+  },
+  "unk_666": {
+    " OBHR": 4,
+    "ROBHR": 5
+  },
+  "unk_3884": {
+    "OPDHR": 6
+  },
+  "unk_2640": {
+    "LAFHR": 6
+  },
+  "unk_3504": {
+    "RPFHR": 6
+  },
+  "unk_1769": {
+    "ESFHR": 6
+  },
+  "unk_3393": {
+    "NPIHR": 6
+  },
+  "unk_1728": {
+    "XPIHR": 5
+  },
+  "unk_1740": {
+    "YPIHR": 5
+  },
+  "unk_1745": {
+    "ZPIHR": 5
+  },
+  "unk_755": {
+    "  OHR": 3,
+    " POHR": 4
+  },
+  "unk_124": {
+    " COHR": 4,
+    "KCOHR": 5
+  },
+  "unk_2810": {
+    "RPOHR": 6
+  },
+  "unk_3484": {
+    "KWOHR": 6
+  },
+  "unk_3176": {
+    "YSPHR": 6
+  },
+  "unk_1704": {
+    "VUPHR": 5
+  },
+  "unk_329": {
+    " FRHR": 4
+  },
+  "unk_3168": {
+    "UNTHR": 6
+  },
+  "unk_1640": {
+    "TOTHR": 5
+  },
+  "unk_1707": {
+    "VUVHR": 5
+  },
+  "unk_3915": {
+    "PYXHR": 6
+  },
+  "unk_1569": {
+    "SEDIR": 5
+  },
+  "unk_3885": {
+    "OPDIR": 6
+  },
+  "unk_19": {
+    "  FIR": 3,
+    " AFIR": 4,
+    "CAFIR": 5
+  },
+  "unk_296": {
+    " FGIR": 4,
+    "IFGIR": 5
+  },
+  "unk_2532": {
+    "INGIR": 5
+  },
+  "unk_2452": {
+    "ERGIR": 6
+  },
+  "unk_2032": {
+    "AETIR": 6
+  },
+  "unk_1813": {
+    "METIR": 6
+  },
+  "unk_1427": {
+    "METIR": 5
+  },
+  "unk_263": {
+    " EZIR": 4
+  },
+  "unk_1905": {
+    "DEZIR": 6
+  },
+  "unk_953": {
+    " SUJR": 4,
+    "TSUJR": 5
+  },
+  "unk_1108": {
+    " YEKR": 4
+  },
+  "unk_2022": {
+    "SYEKR": 5
+  },
+  "unk_2090": {
+    "IPIKR": 6
+  },
+  "unk_1340": {
+    "GNELR": 5
+  },
+  "unk_3449": {
+    "ANHLR": 6
+  },
+  "unk_3455": {
+    "BNHLR": 6
+  },
+  "unk_3685": {
+    "IDOLR": 6
+  },
+  "unk_2422": {
+    "EPOLR": 6
+  },
+  "unk_2474": {
+    "EROLR": 6
+  },
+  "unk_1495": {
+    "PARLR": 5
+  },
+  "unk_1497": {
+    "PBRLR": 5
+  },
+  "unk_1074": {
+    " XAMR": 4,
+    "IXAMR": 5
+  },
+  "unk_1167": {
+    "BMEMR": 5
+  },
+  "unk_693": {
+    " ONMR": 4
+  },
+  "unk_171": {
+    " DOMR": 4,
+    "EDOMR": 5
+  },
+  "unk_2072": {
+    "IDOMR": 6
+  },
+  "unk_573": {
+    " MOMR": 4,
+    "EMOMR": 5
+  },
+  "unk_548": {
+    " MANR": 4,
+    "EMANR": 5
+  },
+  "unk_2943": {
+    "IFLOR": 6
+  },
+  "unk_339": {
+    " FROR": 4
+  },
+  "unk_879": {
+    " RUOR": 4,
+    "CRUOR": 5
+  },
+  "unk_3447": {
+    " MAPR": 4,
+    "AMAPR": 5
+  },
+  "unk_2433": {
+    "ERBPR": 6
+  },
+  "unk_2529": {
+    "ICEPR": 6
+  },
+  "unk_619": {
+    " NIPR": 4,
+    "DNIPR": 5
+  },
+  "unk_2327": {
+    "RNIPR": 6
+  },
+  "unk_2872": {
+    " BKPR": 4,
+    "RBKPR": 5
+  },
+  "unk_2625": {
+    "HCKPR": 6
+  },
+  "unk_1363": {
+    "IDKPR": 5
+  },
+  "unk_61": {
+    " ALPR": 4
+  },
+  "unk_2388": {
+    "TALPR": 6
+  },
+  "unk_2626": {
+    "HCLPR": 5
+  },
+  "unk_395": {
+    " HLPR": 4
+  },
+  "unk_3088": {
+    "EMLPR": 5
+  },
+  "unk_625": {
+    " NLPR": 4
+  },
+  "unk_3158": {
+    "UNLPR": 5
+  },
+  "unk_748": {
+    " PLPR": 4,
+    "RPLPR": 5
+  },
+  "unk_3629": {
+    "APLPR": 5
+  },
+  "unk_985": {
+    " TLPR": 4
+  },
+  "unk_2902": {
+    "BTLPR": 5
+  },
+  "unk_2997": {
+    "OVLPR": 5
+  },
+  "unk_66": {
+    " AMPR": 4
+  },
+  "unk_3779": {
+    "AAMPR": 6
+  },
+  "unk_2044": {
+    "CAMPR": 6
+  },
+  "unk_1954": {
+    "CAMPR": 6
+  },
+  "unk_2955": {
+    "LAMPR": 6
+  },
+  "unk_2540": {
+    "OAMPR": 6
+  },
+  "unk_2306": {
+    "RAMPR": 6
+  },
+  "unk_1846": {
+    "RAMPR": 6
+  },
+  "unk_1566": {
+    "SAMPR": 5
+  },
+  "unk_3530": {
+    "TAMPR": 6
+  },
+  "unk_1158": {
+    "BBMPR": 5
+  },
+  "unk_3234": {
+    "IBMPR": 6
+  },
+  "unk_1824": {
+    "NBMPR": 6
+  },
+  "unk_4317": {
+    "OBMPR": 6
+  },
+  "unk_2542": {
+    "OBMPR": 6
+  },
+  "unk_1540": {
+    "RBMPR": 5
+  },
+  "unk_3780": {
+    "ACMPR": 6
+  },
+  "unk_2202": {
+    "DCMPR": 6
+  },
+  "unk_1770": {
+    "FCMPR": 6
+  },
+  "unk_1270": {
+    "FCMPR": 5
+  },
+  "unk_2779": {
+    "LCMPR": 6
+  },
+  "unk_4256": {
+    "OCMPR": 6
+  },
+  "unk_3880": {
+    "OCMPR": 6
+  },
+  "unk_2979": {
+    "OCMPR": 6
+  },
+  "unk_4379": {
+    "TCMPR": 6
+  },
+  "unk_3949": {
+    "WCMPR": 6
+  },
+  "unk_3034": {
+    "WCMPR": 6
+  },
+  "unk_2029": {
+    "WCMPR": 6
+  },
+  "unk_1938": {
+    "WCMPR": 6
+  },
+  "unk_1230": {
+    "EDMPR": 5
+  },
+  "unk_3783": {
+    "AEMPR": 6
+  },
+  "unk_1969": {
+    "HEMPR": 6
+  },
+  "unk_1453": {
+    "NEMPR": 5
+  },
+  "unk_2009": {
+    "PEMPR": 6
+  },
+  "unk_3950": {
+    "WEMPR": 6
+  },
+  "unk_3035": {
+    "WEMPR": 6
+  },
+  "unk_2030": {
+    "WEMPR": 6
+  },
+  "unk_1939": {
+    "WEMPR": 6
+  },
+  "unk_3621": {
+    "AFMPR": 6
+  },
+  "unk_2905": {
+    "CFMPR": 6
+  },
+  "unk_4273": {
+    "LFMPR": 6
+  },
+  "unk_2543": {
+    "OFMPR": 6
+  },
+  "unk_4110": {
+    "SFMPR": 6
+  },
+  "unk_3281": {
+    "SHMPR": 6
+  },
+  "unk_2020": {
+    "SLMPR": 6
+  },
+  "unk_3434": {
+    "VMMPR": 6
+  },
+  "unk_2741": {
+    "BNMPR": 6
+  },
+  "unk_2163": {
+    "ONMPR": 6
+  },
+  "unk_2005": {
+    "ONMPR": 6
+  },
+  "unk_3435": {
+    "VNMPR": 6
+  },
+  "unk_3650": {
+    "EPMPR": 6
+  },
+  "unk_2060": {
+    "EPMPR": 6
+  },
+  "unk_2548": {
+    "OPMPR": 6
+  },
+  "unk_1508": {
+    "PPMPR": 5
+  },
+  "unk_1674": {
+    "UPMPR": 5
+  },
+  "unk_2705": {
+    "DRMPR": 6
+  },
+  "unk_1785": {
+    "FRMPR": 6
+  },
+  "unk_3424": {
+    "SRMPR": 6
+  },
+  "unk_3285": {
+    "SRMPR": 6
+  },
+  "unk_2375": {
+    "SRMPR": 6
+  },
+  "unk_2393": {
+    "TRMPR": 6
+  },
+  "unk_3187": {
+    "ASMPR": 6
+  },
+  "unk_2040": {
+    "ASMPR": 6
+  },
+  "unk_1951": {
+    "ASMPR": 6
+  },
+  "unk_2043": {
+    "BSMPR": 6
+  },
+  "unk_2062": {
+    "ESMPR": 6
+  },
+  "unk_1965": {
+    "ESMPR": 6
+  },
+  "unk_3473": {
+    "FSMPR": 6
+  },
+  "unk_2769": {
+    "FSMPR": 6
+  },
+  "unk_2549": {
+    "OSMPR": 6
+  },
+  "unk_1614": {
+    "SSMPR": 5
+  },
+  "unk_3538": {
+    "TSMPR": 6
+  },
+  "unk_4157": {
+    "WSMPR": 6
+  },
+  "unk_2068": {
+    "HTMPR": 6
+  },
+  "unk_1970": {
+    "HTMPR": 6
+  },
+  "unk_2105": {
+    "ITMPR": 6
+  },
+  "unk_1974": {
+    "ITMPR": 6
+  },
+  "unk_2992": {
+    "OTMPR": 6
+  },
+  "unk_2550": {
+    "OTMPR": 6
+  },
+  "unk_3589": {
+    "YTMPR": 6
+  },
+  "unk_2803": {
+    "OVMPR": 6
+  },
+  "unk_4213": {
+    "NOOPR": 5
+  },
+  "unk_1061": {
+    " WOPR": 4,
+    "NWOPR": 5
+  },
+  "unk_3284": {
+    "SOPPR": 6
+  },
+  "unk_3507": {
+    "RUPPR": 6
+  },
+  "unk_245": {
+    "  RPR": 3,
+    " ERPR": 4,
+    "FERPR": 5
+  },
+  "unk_87": {
+    " ARPR": 4
+  },
+  "unk_2663": {
+    "NARPR": 6
+  },
+  "unk_105": {
+    " BRPR": 4
+  },
+  "unk_359": {
+    " FSPR": 4
+  },
+  "unk_775": {
+    " PSPR": 4
+  },
+  "unk_2292": {
+    "PYTPR": 6
+  },
+  "unk_187": {
+    " DWPR": 4
+  },
+  "unk_3741": {
+    "RUCQR": 6
+  },
+  "unk_1718": {
+    "XAMQR": 5
+  },
+  "unk_2271": {
+    "MANQR": 6
+  },
+  "unk_3471": {
+    "ETSQR": 6
+  },
+  "unk_4098": {
+    "RTSQR": 6
+  },
+  "unk_3452": {
+    "ARWQR": 6
+  },
+  "unk_3827": {
+    "IDCRR": 6
+  },
+  "unk_284": {
+    " FERR": 4,
+    "EFERR": 5
+  },
+  "unk_488": {
+    " LERR": 4,
+    "ELERR": 5
+  },
+  "unk_4360": {
+    "AVERR": 6
+  },
+  "unk_2350": {
+    "RTFRR": 6
+  },
+  "unk_785": {
+    " PTRR": 4,
+    "RPTRR": 5
+  },
+  "unk_200": {
+    " EHSR": 4,
+    "EEHSR": 5
+  },
+  "unk_2672": {
+    "NELSR": 6
+  },
+  "unk_4029": {
+    "ILPSR": 6
+  },
+  "unk_586": {
+    "  ATR": 3,
+    " NATR": 4,
+    "GNATR": 5
+  },
+  "unk_3115": {
+    "OCATR": 6
+  },
+  "unk_3959": {
+    "ADATR": 6
+  },
+  "unk_2236": {
+    "LEATR": 6
+  },
+  "unk_2560": {
+    "RHATR": 6
+  },
+  "unk_728": {
+    "ELATR": 5,
+    " PATR": 4
+  },
+  "unk_2800": {
+    "OPATR": 6
+  },
+  "unk_2429": {
+    "ERATR": 6
+  },
+  "unk_1763": {
+    "ERATR": 6
+  },
+  "unk_4427": {
+    "TRATR": 6
+  },
+  "unk_2825": {
+    "TRATR": 6
+  },
+  "unk_3947": {
+    "USATR": 6
+  },
+  "unk_2378": {
+    "SUATR": 6
+  },
+  "unk_672": {
+    " OBTR": 4,
+    "ROBTR": 5
+  },
+  "unk_143": {
+    " DCTR": 4
+  },
+  "unk_2386": {
+    "TADTR": 6
+  },
+  "unk_3662": {
+    "FEDTR": 6
+  },
+  "unk_2089": {
+    "IPETR": 6
+  },
+  "unk_3515": {
+    "SPETR": 6
+  },
+  "unk_2450": {
+    "ERETR": 6
+  },
+  "unk_1082": {
+    " XETR": 4,
+    "TXETR": 5
+  },
+  "unk_118": {
+    " CFTR": 4,
+    "OCFTR": 5
+  },
+  "unk_743": {
+    " PFTR": 4,
+    "RPFTR": 5
+  },
+  "unk_2868": {
+    "OOHTR": 6
+  },
+  "unk_4291": {
+    "ELITR": 6
+  },
+  "unk_3207": {
+    "ELITR": 6
+  },
+  "unk_2046": {
+    "CNITR": 6
+  },
+  "unk_2567": {
+    "RNITR": 6
+  },
+  "unk_1414": {
+    "LTITR": 5
+  },
+  "unk_212": {
+    " ELTR": 4,
+    "NELTR": 5
+  },
+  "unk_3895": {
+    "OPLTR": 6
+  },
+  "unk_843": {
+    " RLTR": 4,
+    "ERLTR": 5
+  },
+  "unk_1313": {
+    "FSLTR": 5
+  },
+  "unk_308": {
+    " FMTR": 4
+  },
+  "unk_3858": {
+    "LPMTR": 5
+  },
+  "unk_698": {
+    " ONTR": 4
+  },
+  "unk_2951": {
+    "KCOTR": 6
+  },
+  "unk_2051": {
+    "CUOTR": 6
+  },
+  "unk_2579": {
+    "RUOTR": 6
+  },
+  "unk_3789": {
+    "BDPTR": 6
+  },
+  "unk_3933": {
+    "SOPTR": 6
+  },
+  "unk_2374": {
+    "SOPTR": 6
+  },
+  "unk_3815": {
+    "ESPTR": 6
+  },
+  "unk_1705": {
+    "VUPTR": 5
+  },
+  "unk_1189": {
+    "DCRTR": 5
+  },
+  "unk_3266": {
+    "OCRTR": 6
+  },
+  "unk_250": {
+    " ERTR": 4,
+    "SERTR": 5
+  },
+  "unk_3971": {
+    "AERTR": 6
+  },
+  "unk_3820": {
+    "FERTR": 6
+  },
+  "unk_1293": {
+    "FERTR": 5
+  },
+  "unk_1691": {
+    "VERTR": 5
+  },
+  "unk_3945": {
+    "UJRTR": 6
+  },
+  "unk_3098": {
+    "ILRTR": 6
+  },
+  "unk_2485": {
+    "ERRTR": 6
+  },
+  "unk_2183": {
+    "TSRTR": 6
+  },
+  "unk_3996": {
+    "DTRTR": 6
+  },
+  "unk_2910": {
+    "CURTR": 6
+  },
+  "unk_3006": {
+    "PXRTR": 6
+  },
+  "unk_1517": {
+    "PXRTR": 5
+  },
+  "unk_3928": {
+    "SESTR": 6
+  },
+  "unk_778": {
+    " PSTR": 4,
+    "EPSTR": 5
+  },
+  "unk_2054": {
+    "CYTTR": 6
+  },
+  "unk_1526": {
+    "PYTTR": 5
+  },
+  "unk_1826": {
+    "NDUTR": 6
+  },
+  "unk_2176": {
+    "SAVTR": 6
+  },
+  "unk_3119": {
+    "OCVTR": 6
+  },
+  "unk_3970": {
+    "ADVTR": 6
+  },
+  "unk_3084": {
+    "EDVTR": 6
+  },
+  "unk_2016": {
+    "SDVTR": 6
+  },
+  "unk_3833": {
+    "IHVTR": 6
+  },
+  "unk_2865": {
+    "NLVTR": 6
+  },
+  "unk_4125": {
+    "SLVTR": 6
+  },
+  "unk_2879": {
+    "SLVTR": 6
+  },
+  "unk_2162": {
+    " MVTR": 4,
+    "OMVTR": 5
+  },
+  "unk_3074": {
+    "ANVTR": 6
+  },
+  "unk_3172": {
+    "UNVTR": 6
+  },
+  "unk_3413": {
+    "RPVTR": 6
+  },
+  "unk_2498": {
+    "ERVTR": 6
+  },
+  "unk_1767": {
+    "ERVTR": 6
+  },
+  "unk_3948": {
+    "USVTR": 6
+  },
+  "unk_4260": {
+    "RTVTR": 6
+  },
+  "unk_3708": {
+    "NUVTR": 6
+  },
+  "unk_2380": {
+    "SUVTR": 6
+  },
+  "unk_2180": {
+    "SUVTR": 6
+  },
+  "unk_2896": {
+    "AVVTR": 6
+  },
+  "unk_2124": {
+    "LVVTR": 6
+  },
+  "unk_367": {
+    " FYTR": 4
+  },
+  "unk_796": {
+    " PYTR": 4,
+    "EPYTR": 5
+  },
+  "unk_1912": {
+    "DPYTR": 6
+  },
+  "unk_3029": {
+    "URBUR": 6
+  },
+  "unk_4303": {
+    "IFFUR": 6
+  },
+  "unk_2957": {
+    "LAPUR": 6
+  },
+  "unk_2776": {
+    "LAPUR": 6
+  },
+  "unk_1852": {
+    "RFPUR": 6
+  },
+  "unk_1854": {
+    "RIPUR": 6
+  },
+  "unk_4122": {
+    "SLPUR": 6
+  },
+  "unk_765": {
+    " PPUR": 4,
+    "LPPUR": 5
+  },
+  "unk_866": {
+    " RPUR": 4,
+    "ERPUR": 5
+  },
+  "unk_1788": {
+    "FRPUR": 6
+  },
+  "unk_1791": {
+    "FVPUR": 6
+  },
+  "unk_354": {
+    " FRUR": 4,
+    "AFRUR": 5
+  },
+  "unk_2863": {
+    "NLRUR": 6
+  },
+  "unk_3973": {
+    "AMRUR": 6
+  },
+  "unk_3718": {
+    "ONRUR": 6
+  },
+  "unk_4075": {
+    "NPRUR": 6
+  },
+  "unk_2344": {
+    "RPRUR": 6
+  },
+  "unk_3004": {
+    "PSAVR": 6
+  },
+  "unk_2376": {
+    "SSAVR": 6
+  },
+  "unk_3432": {
+    "TUAVR": 6
+  },
+  "unk_4290": {
+    "ELBVR": 6
+  },
+  "unk_1989": {
+    "OLBVR": 6
+  },
+  "unk_1717": {
+    "XACVR": 5
+  },
+  "unk_4051": {
+    "MOCVR": 6
+  },
+  "unk_3251": {
+    "MOCVR": 6
+  },
+  "unk_3908": {
+    "ORCVR": 6
+  },
+  "unk_4261": {
+    "RUCVR": 6
+  },
+  "unk_4100": {
+    "RUCVR": 6
+  },
+  "unk_2706": {
+    "EBDVR": 6
+  },
+  "unk_2418": {
+    "EBDVR": 6
+  },
+  "unk_3450": {
+    "ARDVR": 6
+  },
+  "unk_2740": {
+    "ARDVR": 6
+  },
+  "unk_1950": {
+    "ARDVR": 6
+  },
+  "unk_4269": {
+    "CRDVR": 6
+  },
+  "unk_3614": {
+    "ERDVR": 6
+  },
+  "unk_4259": {
+    "PRDVR": 6
+  },
+  "unk_2805": {
+    "PRDVR": 6
+  },
+  "unk_4132": {
+    "SRDVR": 6
+  },
+  "unk_2399": {
+    "VRDVR": 6
+  },
+  "unk_2084": {
+    "INEVR": 6
+  },
+  "unk_825": {
+    " REVR": 4,
+    "SREVR": 5
+  },
+  "unk_2869": {
+    "OOLVR": 6
+  },
+  "unk_2796": {
+    "MXLVR": 6
+  },
+  "unk_1818": {
+    "MXLVR": 6
+  },
+  "unk_2797": {
+    "MYLVR": 6
+  },
+  "unk_1819": {
+    "MYLVR": 6
+  },
+  "unk_2798": {
+    "MZLVR": 6
+  },
+  "unk_1821": {
+    "MZLVR": 6
+  },
+  "unk_2274": {
+    "MANVR": 6
+  },
+  "unk_2279": {
+    "NAPVR": 6
+  },
+  "unk_4292": {
+    "ELPVR": 6
+  },
+  "unk_4388": {
+    "TLPVR": 6
+  },
+  "unk_4265": {
+    "XLPVR": 6
+  },
+  "unk_4228": {
+    "XLPVR": 6
+  },
+  "unk_3437": {
+    "XLPVR": 6
+  },
+  "unk_4266": {
+    "YLPVR": 6
+  },
+  "unk_4229": {
+    "YLPVR": 6
+  },
+  "unk_3438": {
+    "YLPVR": 6
+  },
+  "unk_4267": {
+    "ZLPVR": 6
+  },
+  "unk_4230": {
+    "ZLPVR": 6
+  },
+  "unk_3439": {
+    "ZLPVR": 6
+  },
+  "unk_3066": {
+    "ANPVR": 6
+  },
+  "unk_2971": {
+    "NOPVR": 6
+  },
+  "unk_2021": {
+    "SOPVR": 6
+  },
+  "unk_3733": {
+    "RARVR": 6
+  },
+  "unk_2935": {
+    "FERVR": 6
+  },
+  "unk_1492": {
+    "OSRVR": 5
+  },
+  "unk_2882": {
+    "ACSVR": 6
+  },
+  "unk_3723": {
+    "PHSVR": 6
+  },
+  "unk_2370": {
+    "SHSVR": 6
+  },
+  "unk_2730": {
+    "THSVR": 6
+  },
+  "unk_2297": {
+    "PYTVR": 6
+  },
+  "unk_1732": {
+    "YAWVR": 5
+  },
+  "unk_1500": {
+    "PEEWR": 5
+  },
+  "unk_1342": {
+    "GNIWR": 5
+  },
+  "unk_1870": {
+    "TBLYR": 6
+  },
+  "unk_2623": {
+    "FBMYR": 5,
+    "OBMYR": 7
+  },
+  "unk_2247": {
+    "LEMYR": 6
+  },
+  "unk_4060": {
+    "NFMYR": 6
+  },
+  "unk_3410": {
+    "RGMYR": 6
+  },
+  "unk_3874": {
+    "NLMYR": 6
+  },
+  "unk_565": {
+    " MMYR": 4
+  },
+  "unk_3064": {
+    "ANMYR": 6
+  },
+  "unk_3590": {
+    "YTMYR": 6
+  },
+  "unk_4434": {
+    "YXMYR": 6
+  },
+  "unk_1127": {
+    "ZISYR": 5,
+    " ZSYR": 4
+  },
+  "unk_1996": {
+    "OLSYR": 6
+  },
+  "unk_2866": {
+    "OBTYR": 6
+  },
+  "unk_422": {
+    " IDZR": 4,
+    "SIDZR": 5
+  },
+  "unk_2822": {
+    "TCAAS": 6
+  },
+  "unk_1871": {
+    "TSAAS": 6
+  },
+  "unk_3991": {
+    "CTAAS": 6
+  },
+  "unk_3800": {
+    "DTAAS": 6
+  },
+  "unk_3847": {
+    "KTAAS": 6
+  },
+  "unk_3877": {
+    "NTAAS": 6
+  },
+  "unk_1925": {
+    "NTAAS": 6
+  },
+  "unk_1836": {
+    "NTAAS": 6
+  },
+  "unk_3287": {
+    "STAAS": 6
+  },
+  "unk_3869": {
+    "NABAS": 6
+  },
+  "unk_1407": {
+    "LOCAS": 5
+  },
+  "unk_3411": {
+    "ROCAS": 6
+  },
+  "unk_4040": {
+    "LIFAS": 6
+  },
+  "unk_4073": {
+    "NOFAS": 6
+  },
+  "unk_3794": {
+    "DCGAS": 6
+  },
+  "unk_1186": {
+    "DCGAS": 5
+  },
+  "unk_3867": {
+    "MNGAS": 6
+  },
+  "unk_3151": {
+    "UNGAS": 6
+  },
+  "unk_2629": {
+    "IEHAS": 6
+  },
+  "unk_285": {
+    "  IAS": 3,
+    " LIAS": 4,
+    " FERS": 4,
+    "EFERS": 5
+  },
+  "unk_3788": {
+    "ASIAS": 6
+  },
+  "unk_2371": {
+    "SOLAS": 6
+  },
+  "unk_2267": {
+    "MANAS": 6
+  },
+  "unk_2256": {
+    "LGNAS": 6
+  },
+  "unk_2544": {
+    "OGNAS": 6
+  },
+  "unk_918": {
+    " SNAS": 4,
+    "WSNAS": 5
+  },
+  "unk_3990": {
+    "CSNAS": 6
+  },
+  "unk_3876": {
+    "NSNAS": 6
+  },
+  "unk_1835": {
+    "NSNAS": 6
+  },
+  "unk_1596": {
+    "SOPAS": 5
+  },
+  "unk_2475": {
+    "ERPAS": 6
+  },
+  "unk_324": {
+    " FRAS": 4,
+    "LFRAS": 5
+  },
+  "unk_2078": {
+    "IKSAS": 6
+  },
+  "unk_4387": {
+    "TKSAS": 6
+  },
+  "unk_3801": {
+    "DTSAS": 6
+  },
+  "unk_1926": {
+    "NTSAS": 6
+  },
+  "unk_1839": {
+    "NTSAS": 6
+  },
+  "unk_1889": {
+    "VTSAS": 6
+  },
+  "unk_2984": {
+    "OCTAS": 6
+  },
+  "unk_3243": {
+    "IYTAS": 6
+  },
+  "unk_4220": {
+    "OYTAS": 6
+  },
+  "unk_2287": {
+    "PYTAS": 6
+  },
+  "unk_3770": {
+    "TYTAS": 6
+  },
+  "unk_1206": {
+    "DIWAS": 5
+  },
+  "unk_148": {
+    " DIBS": 4
+  },
+  "unk_2268": {
+    "MANBS": 6
+  },
+  "unk_849": {
+    "  OBS": 3,
+    " ROBS": 4,
+    "EROBS": 5
+  },
+  "unk_959": {
+    "  ACS": 3,
+    " TACS": 4,
+    "RTACS": 5
+  },
+  "unk_146": {
+    " DDCS": 4,
+    "EDDCS": 5
+  },
+  "unk_735": {
+    " PDCS": 4,
+    "RPDCS": 5
+  },
+  "unk_636": {
+    "  OCS": 3,
+    " NOCS": 4,
+    "NNOCS": 5
+  },
+  "unk_165": {
+    " DOCS": 4,
+    "EDOCS": 5
+  },
+  "unk_3420": {
+    "RROCS": 6
+  },
+  "unk_1278": {
+    "FERCS": 5
+  },
+  "unk_535": {
+    " LTCS": 4,
+    "ELTCS": 5
+  },
+  "unk_3175": {
+    "UTADS": 6
+  },
+  "unk_975": {
+    "  EDS": 3,
+    " TEDS": 4,
+    "ATEDS": 5
+  },
+  "unk_274": {
+    " FEDS": 4,
+    "AFEDS": 5
+  },
+  "unk_837": {
+    "  IDS": 3,
+    " RIDS": 4,
+    "ERIDS": 5
+  },
+  "unk_306": {
+    " FMDS": 4,
+    "AFMDS": 5
+  },
+  "unk_988": {
+    " TMDS": 4,
+    "YTMDS": 5
+  },
+  "unk_859": {
+    " RPDS": 4,
+    "ORPDS": 5
+  },
+  "unk_1000": {
+    " TRDS": 4,
+    "ETRDS": 5
+  },
+  "unk_1004": {
+    " TSDS": 4,
+    "ETSDS": 5
+  },
+  "unk_1017": {
+    " TTDS": 4,
+    "ETTDS": 5
+  },
+  "unk_3856": {
+    "LMAES": 5
+  },
+  "unk_1872": {
+    "TSAES": 5
+  },
+  "unk_749": {
+    "  MES": 3,
+    " PMES": 4,
+    "EPMES": 5
+  },
+  "unk_307": {
+    " FMES": 4
+  },
+  "unk_2926": {
+    "EPMES": 6
+  },
+  "unk_2782": {
+    "LPMES": 6
+  },
+  "unk_160": {
+    " DNES": 4
+  },
+  "unk_3808": {
+    " DQES": 4,
+    "EDQES": 5
+  },
+  "unk_4249": {
+    "ETSES": 6
+  },
+  "unk_3555": {
+    "XTSES": 6
+  },
+  "unk_4117": {
+    "SIXES": 6
+  },
+  "unk_3225": {
+    "ELXES": 6
+  },
+  "unk_738": {
+    " PDFS": 4,
+    "RPDFS": 5
+  },
+  "unk_1433": {
+    "MOEGS": 5
+  },
+  "unk_85": {
+    " ARGS": 4,
+    "DARGS": 5
+  },
+  "unk_1817": {
+    "MREHS": 6
+  },
+  "unk_3244": {
+    "KCIHS": 6
+  },
+  "unk_704": {
+    " OPHS": 4,
+    "SOPHS": 5
+  },
+  "unk_2227": {
+    "HREIS": 6
+  },
+  "unk_1235": {
+    "EEMIS": 5
+  },
+  "unk_1366": {
+    "IEMIS": 5
+  },
+  "unk_1482": {
+    "OEMIS": 5
+  },
+  "unk_1543": {
+    "REMIS": 5
+  },
+  "unk_1571": {
+    "SEMIS": 5
+  },
+  "unk_1941": {
+    "AFMIS": 6
+  },
+  "unk_4003": {
+    "EPMIS": 6
+  },
+  "unk_4078": {
+    "OPMIS": 6
+  },
+  "unk_537": {
+    " LTIS": 4,
+    "ELTIS": 5
+  },
+  "unk_3256": {
+    "NOCLS": 6
+  },
+  "unk_616": {
+    " NILS": 4,
+    "DNILS": 5
+  },
+  "unk_1282": {
+    "FERLS": 5
+  },
+  "unk_727": {
+    " PAMS": 4
+  },
+  "unk_1699": {
+    "VPAMS": 5
+  },
+  "unk_962": {
+    " TAMS": 4,
+    "RTAMS": 5
+  },
+  "unk_1052": {
+    " VAMS": 4,
+    "EVAMS": 5
+  },
+  "unk_1348": {
+    "GWDMS": 5
+  },
+  "unk_64": {
+    " AMMS": 4,
+    "XAMMS": 5
+  },
+  "unk_440": {
+    " IMMS": 4,
+    "NIMMS": 5
+  },
+  "unk_2597": {
+    "TLPMS": 6
+  },
+  "unk_862": {
+    " RPMS": 4,
+    "ERPMS": 5
+  },
+  "unk_337": {
+    " FRMS": 4
+  },
+  "unk_3786": {
+    "AMRMS": 6
+  },
+  "unk_3305": {
+    "WORMS": 6
+  },
+  "unk_2484": {
+    "ERRMS": 6
+  },
+  "unk_3031": {
+    "URRMS": 6
+  },
+  "unk_2367": {
+    "RXRMS": 6
+  },
+  "unk_1023": {
+    " TXMS": 4,
+    "ETXMS": 5
+  },
+  "unk_1029": {
+    " TYMS": 4,
+    "ETYMS": 5
+  },
+  "unk_1031": {
+    " TZMS": 4,
+    "ETZMS": 5
+  },
+  "unk_549": {
+    " MANS": 4,
+    "EMANS": 5
+  },
+  "unk_996": {
+    " TONS": 4,
+    "ETONS": 5
+  },
+  "unk_1411": {
+    "LOVNS": 5
+  },
+  "unk_1869": {
+    "TADOS": 6
+  },
+  "unk_3686": {
+    "IDOOS": 6
+  },
+  "unk_4148": {
+    "UCPOS": 6
+  },
+  "unk_323": {
+    " FPOS": 4
+  },
+  "unk_3375": {
+    "LOPOS": 6
+  },
+  "unk_4037": {
+    "LATOS": 6
+  },
+  "unk_1896": {
+    "ALTOS": 6
+  },
+  "unk_3220": {
+    "ELTOS": 6
+  },
+  "unk_1018": {
+    " TTOS": 4
+  },
+  "unk_1376": {
+    "ITTOS": 5
+  },
+  "unk_1730": {
+    "XTTOS": 5
+  },
+  "unk_1743": {
+    "YTTOS": 5
+  },
+  "unk_809": {
+    " RAPS": 4,
+    "ARAPS": 5
+  },
+  "unk_605": {
+    " NEPS": 4
+  },
+  "unk_4093": {
+    "RFLPS": 6
+  },
+  "unk_3737": {
+    "RFLPS": 6
+  },
+  "unk_4082": {
+    "OTLPS": 6
+  },
+  "unk_3721": {
+    "OTLPS": 6
+  },
+  "unk_935": {
+    "  OPS": 3,
+    " SOPS": 4,
+    "ISOPS": 5
+  },
+  "unk_640": {
+    " NOPS": 4,
+    "UNOPS": 5
+  },
+  "unk_1261": {
+    "ESOPS": 5,
+    "XSOPS": 5
+  },
+  "unk_1477": {
+    "NSOPS": 5,
+    "YSOPS": 5
+  },
+  "unk_3431": {
+    "TSOPS": 6
+  },
+  "unk_1680": {
+    "USOPS": 5,
+    "ZSOPS": 5
+  },
+  "unk_1289": {
+    "FERPS": 5
+  },
+  "unk_3925": {
+    "SERPS": 6
+  },
+  "unk_715": {
+    " ORPS": 4,
+    "JORPS": 5
+  },
+  "unk_1386": {
+    "LAVPS": 5
+  },
+  "unk_1385": {
+    "LAUQS": 5
+  },
+  "unk_1572": {
+    "SEUQS": 5
+  },
+  "unk_1592": {
+    "SNARS": 5
+  },
+  "unk_1761": {
+    "ERARS": 6
+  },
+  "unk_1359": {
+    "HYARS": 5
+  },
+  "unk_4275": {
+    "OYARS": 6
+  },
+  "unk_4276": {
+    "RYARS": 6
+  },
+  "unk_4280": {
+    "SYARS": 6
+  },
+  "unk_1716": {
+    "WYARS": 5
+  },
+  "unk_2685": {
+    "RACRS": 6
+  },
+  "unk_368": {
+    " GCRS": 4
+  },
+  "unk_3239": {
+    "ILCRS": 6
+  },
+  "unk_1953": {
+    "CADRS": 6
+  },
+  "unk_3387": {
+    "NBDRS": 6
+  },
+  "unk_2553": {
+    "RBDRS": 6
+  },
+  "unk_3334": {
+    "DAERS": 6
+  },
+  "unk_2055": {
+    "DAERS": 6
+  },
+  "unk_3528": {
+    "TAERS": 6
+  },
+  "unk_3291": {
+    "TXERS": 6
+  },
+  "unk_3390": {
+    "NIFRS": 6
+  },
+  "unk_3829": {
+    "IDGRS": 6
+  },
+  "unk_1829": {
+    "NEGRS": 6
+  },
+  "unk_2198": {
+    "CMIRS": 6
+  },
+  "unk_4390": {
+    "TMIRS": 6
+  },
+  "unk_1447": {
+    "NELRS": 5
+  },
+  "unk_2907": {
+    "COLRS": 6
+  },
+  "unk_4192": {
+    "DOMRS": 6
+  },
+  "unk_3922": {
+    "SAPRS": 6
+  },
+  "unk_3018": {
+    "TESRS": 6
+  },
+  "unk_363": {
+    " FSRS": 4
+  },
+  "unk_3606": {
+    "YTSRS": 6
+  },
+  "unk_2294": {
+    "PYTRS": 6
+  },
+  "unk_661": {
+    " NURS": 4,
+    "CNURS": 5
+  },
+  "unk_4344": {
+    "TNURS": 6
+  },
+  "unk_2816": {
+    "SIVRS": 6
+  },
+  "unk_1539": {
+    "RBFSS": 5
+  },
+  "unk_1126": {
+    " ZISS": 4,
+    "EZISS": 5
+  },
+  "unk_4355": {
+    "TZISS": 6
+  },
+  "unk_2419": {
+    "EDKSS": 6
+  },
+  "unk_2197": {
+    "CFKSS": 6
+  },
+  "unk_3058": {
+    "ANKSS": 6
+  },
+  "unk_2460": {
+    "ERKSS": 6
+  },
+  "unk_1448": {
+    "NELSS": 5
+  },
+  "unk_231": {
+    "  PSS": 3,
+    " EPSS": 4,
+    "CEPSS": 5
+  },
+  "unk_865": {
+    " RPSS": 4,
+    "ERPSS": 5
+  },
+  "unk_2389": {
+    "TATSS": 6
+  },
+  "unk_2093": {
+    "IPTSS": 6
+  },
+  "unk_956": {
+    " SYSS": 4,
+    "TSYSS": 5
+  },
+  "unk_1083": {
+    " XETS": 4,
+    "TXETS": 5
+  },
+  "unk_2194": {
+    "CAFTS": 6
+  },
+  "unk_3804": {
+    "EDFTS": 6
+  },
+  "unk_1828": {
+    "NEFTS": 6
+  },
+  "unk_2135": {
+    "NIFTS": 6
+  },
+  "unk_2516": {
+    "FOHTS": 6
+  },
+  "unk_699": {
+    " ONTS": 4,
+    "TONTS": 5
+  },
+  "unk_797": {
+    " PYTS": 4,
+    "EPYTS": 5
+  },
+  "unk_381": {
+    "FEBUS": 5,
+    " GFUS": 4
+  },
+  "unk_482": {
+    "  CUS": 3,
+    " LCUS": 4,
+    "LLCUS": 5
+  },
+  "unk_498": {
+    " LFUS": 4,
+    "ALFUS": 5
+  },
+  "unk_213": {
+    " ELUS": 4,
+    "NELUS": 5
+  },
+  "unk_1587": {
+    "SLAVS": 5
+  },
+  "unk_826": {
+    " REVS": 4,
+    "SREVS": 5
+  },
+  "unk_909": {
+    " SIVS": 4,
+    "ISIVS": 5
+  },
+  "unk_525": {
+    " LOVS": 4
+  },
+  "unk_4047": {
+    "LLAWS": 6
+  },
+  "unk_2724": {
+    "TDIWS": 6
+  },
+  "unk_1653": {
+    "TSIWS": 5
+  },
+  "unk_1450": {
+    "NELWS": 5
+  },
+  "unk_356": {
+    " FRWS": 4
+  },
+  "unk_3189": {
+    "ATSWS": 6
+  },
+  "unk_2634": {
+    "ILAXS": 6
+  },
+  "unk_1765": {
+    "ERAXS": 6
+  },
+  "unk_3373": {
+    "LOCXS": 6
+  },
+  "unk_2643": {
+    "LOCXS": 6
+  },
+  "unk_4212": {
+    "NOCXS": 6
+  },
+  "unk_4063": {
+    "NIHXS": 6
+  },
+  "unk_2783": {
+    "LPSXS": 6
+  },
+  "unk_2812": {
+    "RTSXS": 6
+  },
+  "unk_2578": {
+    "RTSXS": 6
+  },
+  "unk_4061": {
+    "NFTXS": 6
+  },
+  "unk_3611": {
+    "YTTXS": 6
+  },
+  "unk_232": {
+    "   YS": 2,
+    "  PYS": 3,
+    " EPYS": 4
+  },
+  "unk_75": {
+    " ANYS": 4,
+    "MANYS": 5
+  },
+  "unk_1038": {
+    " UNYS": 4,
+    "MUNYS": 5
+  },
+  "unk_1131": {
+    "AEPYS": 5
+  },
+  "unk_1165": {
+    "BEPYS": 5
+  },
+  "unk_2196": {
+    "CEPYS": 6
+  },
+  "unk_2045": {
+    "CEPYS": 6
+  },
+  "unk_1903": {
+    "DEPYS": 5
+  },
+  "unk_4160": {
+    "XEPYS": 6
+  },
+  "unk_3548": {
+    "XEPYS": 6
+  },
+  "unk_1721": {
+    "XEPYS": 5
+  },
+  "unk_1985": {
+    "NIPYS": 6
+  },
+  "unk_4222": {
+    "QESYS": 5
+  },
+  "unk_5": {
+    "    T": 1,
+    "   PT": 2,
+    "    Y": 1
+  },
+  "unk_3935": {
+    "SXEAT": 6
+  },
+  "unk_508": {
+    " LLAT": 4
+  },
+  "unk_1134": {
+    "AERAT": 5
+  },
+  "unk_1328": {
+    "GLUBT": 5
+  },
+  "unk_3813": {
+    "ESACT": 6
+  },
+  "unk_960": {
+    " TACT": 4
+  },
+  "unk_166": {
+    " DOCT": 4,
+    "EDOCT": 5
+  },
+  "unk_1164": {
+    "BDOCT": 5
+  },
+  "unk_1191": {
+    "DDOCT": 5
+  },
+  "unk_1465": {
+    "NNOCT": 5
+  },
+  "unk_1222": {
+    "DRUCT": 5
+  },
+  "unk_1645": {
+    "TRUCT": 5
+  },
+  "unk_2753": {
+    "DTUCT": 6
+  },
+  "unk_4369": {
+    " CADT": 4,
+    "PCADT": 5
+  },
+  "unk_1936": {
+    "TFADT": 6
+  },
+  "unk_3834": {
+    "ILADT": 6
+  },
+  "unk_4004": {
+    "ESADT": 6
+  },
+  "unk_1937": {
+    "TSADT": 6
+  },
+  "unk_1898": {
+    "ATADT": 6
+  },
+  "unk_3862": {
+    "LTADT": 6
+  },
+  "unk_2700": {
+    "CTEDT": 6
+  },
+  "unk_3120": {
+    "OEGDT": 6
+  },
+  "unk_3835": {
+    " LHDT": 4,
+    "ILHDT": 5
+  },
+  "unk_838": {
+    " RIDT": 4,
+    "ERIDT": 5
+  },
+  "unk_3838": {
+    " LMDT": 4,
+    "ILMDT": 5
+  },
+  "unk_3839": {
+    " LODT": 4,
+    "ILODT": 5
+  },
+  "unk_2129": {
+    "NEPDT": 6
+  },
+  "unk_3090": {
+    "EMPDT": 6
+  },
+  "unk_3304": {
+    "WOPDT": 6
+  },
+  "unk_2899": {
+    "BATDT": 6
+  },
+  "unk_1722": {
+    "XETDT": 5
+  },
+  "unk_1579": {
+    "SGTDT": 5
+  },
+  "unk_2288": {
+    "PYTDT": 6
+  },
+  "unk_3937": {
+    "SXEET": 6
+  },
+  "unk_3879": {
+    "NTXET": 5
+  },
+  "unk_2675": {
+    "NIOGT": 6
+  },
+  "unk_1229": {
+    "EDIHT": 5
+  },
+  "unk_3652": {
+    "EPYHT": 6
+  },
+  "unk_260": {
+    " EWIT": 4,
+    "IEWIT": 5
+  },
+  "unk_1109": {
+    " YEKT": 4
+  },
+  "unk_596": {
+    " NELT": 4,
+    "GNELT": 5
+  },
+  "unk_4085": {
+    "POVLT": 6
+  },
+  "unk_3612": {
+    "YTVLT": 6
+  },
+  "unk_1075": {
+    " XAMT": 4
+  },
+  "unk_618": {
+    " NIMT": 4
+  },
+  "unk_550": {
+    " MANT": 4,
+    "EMANT": 5
+  },
+  "unk_3008": {
+    "REDNT": 6
+  },
+  "unk_3628": {
+    "APINT": 6
+  },
+  "unk_3423": {
+    "SERNT": 5
+  },
+  "unk_3943": {
+    "TSTNT": 6
+  },
+  "unk_2184": {
+    "TSTNT": 6
+  },
+  "unk_1159": {
+    "TADPT": 9,
+    "BCDPT": 5
+  },
+  "unk_1899": {
+    "DDGPT": 6
+  },
+  "unk_3388": {
+    "NDGPT": 5
+  },
+  "unk_3210": {
+    "ELLPT": 6
+  },
+  "unk_2676": {
+    "NIPPT": 6
+  },
+  "unk_2479": {
+    "ERPPT": 6
+  },
+  "unk_3214": {
+    "ELRPT": 6
+  },
+  "unk_1434": {
+    "MORPT": 5
+  },
+  "unk_2392": {
+    "TORPT": 6
+  },
+  "unk_2185": {
+    "UESPT": 6
+  },
+  "unk_1360": {
+    "IDART": 5
+  },
+  "unk_286": {
+    " FERT": 4,
+    "EFERT": 5
+  },
+  "unk_1256": {
+    "ESIRT": 5
+  },
+  "unk_21": {
+    "  LRT": 3
+  },
+  "unk_2678": {
+    "OCCST": 6
+  },
+  "unk_2772": {
+    "HLCST": 6
+  },
+  "unk_3332": {
+    "CWCST": 6
+  },
+  "unk_2761": {
+    "EWCST": 6
+  },
+  "unk_2403": {
+    "WWCST": 6
+  },
+  "unk_3441": {
+    "ACEST": 6
+  },
+  "unk_287": {
+    " FEST": 4
+  },
+  "unk_2058": {
+    "EFEST": 6
+  },
+  "unk_3643": {
+    "DHEST": 6
+  },
+  "unk_1176": {
+    "CREST": 5
+  },
+  "unk_3859": {
+    "LREST": 5
+  },
+  "unk_1436": {
+    "MREST": 5
+  },
+  "unk_4133": {
+    "SREST": 6
+  },
+  "unk_1610": {
+    "SSEST": 5
+  },
+  "unk_2712": {
+    "LCNST": 6
+  },
+  "unk_2682": {
+    "OCRST": 6
+  },
+  "unk_1371": {
+    "ILRST": 5
+  },
+  "unk_1910": {
+    "DMRST": 6
+  },
+  "unk_3333": {
+    "CWRST": 6
+  },
+  "unk_2765": {
+    "EWRST": 6
+  },
+  "unk_2404": {
+    "WWRST": 6
+  },
+  "unk_2895": {
+    "AVUST": 6
+  },
+  "unk_4408": {
+    "TSYST": 6
+  },
+  "unk_3863": {
+    "MAETT": 6
+  },
+  "unk_798": {
+    " PYTT": 4,
+    "EPYTT": 5
+  },
+  "unk_52": {
+    " AHUT": 4,
+    "SAHUT": 5
+  },
+  "unk_151": {
+    " DIUT": 4
+  },
+  "unk_3619": {
+    "ADIUT": 6
+  },
+  "unk_2318": {
+    "RDIUT": 7
+  },
+  "unk_446": {
+    " INUT": 4,
+    "TINUT": 5
+  },
+  "unk_1387": {
+    "LAVVT": 5
+  },
+  "unk_432": {
+    " IEWT": 4,
+    "GIEWT": 5
+  },
+  "unk_1624": {
+    "THGWT": 5
+  },
+  "unk_2725": {
+    "TDIWT": 6
+  },
+  "unk_4172": {
+    "  MWT": 3,
+    " TMWT": 4,
+    "XTMWT": 5
+  },
+  "unk_3": {
+    "  PWT": 3
+  },
+  "unk_3731": {
+    "RALAU": 6
+  },
+  "unk_2561": {
+    "RHLAU": 6
+  },
+  "unk_4237": {
+    "DILAU": 5
+  },
+  "unk_3059": {
+    "ANLAU": 6
+  },
+  "unk_3155": {
+    "UNLAU": 6
+  },
+  "unk_2461": {
+    "ERLAU": 6
+  },
+  "unk_3030": {
+    "URLAU": 6
+  },
+  "unk_4298": {
+    "ETLAU": 6
+  },
+  "unk_3583": {
+    "YTLAU": 6
+  },
+  "unk_2257": {
+    "LGNAU": 6
+  },
+  "unk_2930": {
+    " VEBU": 4,
+    "EVEBU": 5
+  },
+  "unk_3911": {
+    "PMOCU": 6
+  },
+  "unk_2164": {
+    "PMOCU": 6
+  },
+  "unk_1877": {
+    "TSIDU": 5
+  },
+  "unk_1597": {
+    "SOPDU": 5
+  },
+  "unk_4071": {
+    "NITDU": 6
+  },
+  "unk_4180": {
+    "XTTDU": 6
+  },
+  "unk_1204": {
+    "DINEU": 5
+  },
+  "unk_3964": {
+    "ADREU": 6
+  },
+  "unk_2751": {
+    "DTREU": 6
+  },
+  "unk_3237": {
+    "IILFU": 6
+  },
+  "unk_4428": {
+    "TSLFU": 6
+  },
+  "unk_2983": {
+    "OCRFU": 6
+  },
+  "unk_4123": {
+    "SLRFU": 6
+  },
+  "unk_724": {
+    " PAGU": 4,
+    "LPAGU": 5
+  },
+  "unk_1325": {
+    "GIEHU": 5
+  },
+  "unk_330": {
+    " FRIU": 4,
+    "LFRIU": 5
+  },
+  "unk_357": {
+    " FSIU": 4,
+    "IFSIU": 5
+  },
+  "unk_2589": {
+    "RYALU": 6
+  },
+  "unk_562": {
+    " MILU": 4,
+    "IMILU": 5
+  },
+  "unk_3392": {
+    "NNAMU": 6
+  },
+  "unk_804": {
+    " RAMU": 4,
+    "GRAMU": 5
+  },
+  "unk_3623": {
+    "AICMU": 6
+  },
+  "unk_3633": {
+    "ARCMU": 6
+  },
+  "unk_2165": {
+    "PRDMU": 6
+  },
+  "unk_1916": {
+    "FCFMU": 6
+  },
+  "unk_4357": {
+    "ALFMU": 6
+  },
+  "unk_4358": {
+    "ALGMU": 6
+  },
+  "unk_3508": {
+    "SATMU": 6
+  },
+  "unk_1806": {
+    "LSTMU": 6
+  },
+  "unk_3958": {
+    "YSUMU": 6
+  },
+  "unk_1285": {
+    "FERNU": 5
+  },
+  "unk_1952": {
+    "ATLOU": 6
+  },
+  "unk_1959": {
+    "DTLOU": 6
+  },
+  "unk_1361": {
+    "IDARU": 5
+  },
+  "unk_963": {
+    " TARU": 4,
+    "ITARU": 5
+  },
+  "unk_31": {
+    " ACSU": 4,
+    "LACSU": 5
+  },
+  "unk_2285": {
+    "PAHSU": 6
+  },
+  "unk_3826": {
+    "HCISU": 6
+  },
+  "unk_3321": {
+    "CLISU": 6
+  },
+  "unk_4119": {
+    "SLISU": 6
+  },
+  "unk_2566": {
+    "RNISU": 6
+  },
+  "unk_4033": {
+    "ITISU": 6
+  },
+  "unk_3746": {
+    "STISU": 6
+  },
+  "unk_1415": {
+    "LTITU": 5
+  },
+  "unk_799": {
+    " PYTU": 4,
+    "EPYTU": 5
+  },
+  "unk_526": {
+    " LOVU": 4,
+    "ULOVU": 5
+  },
+  "unk_1622": {
+    "TDIWU": 5
+  },
+  "unk_2791": {
+    "MILWU": 5
+  },
+  "unk_1773": {
+    "FERWU": 5
+  },
+  "unk_2577": {
+    "RTSWU": 6
+  },
+  "unk_1294": {
+    "FERXU": 5
+  },
+  "unk_6": {
+    "    V": 1,
+    "   EV": 2,
+    "  SEV": 3,
+    " TSEV": 4
+  },
+  "unk_3105": {
+    "ITIAV": 6
+  },
+  "unk_2731": {
+    "TLLAV": 6
+  },
+  "unk_62": {
+    " AMAV": 4,
+    "XAMAV": 5
+  },
+  "unk_919": {
+    " SNAV": 4,
+    "WSNAV": 5
+  },
+  "unk_4092": {
+    "RETAV": 6
+  },
+  "unk_3106": {
+    "ITTAV": 6
+  },
+  "unk_1380": {
+    "KCABV": 5
+  },
+  "unk_1253": {
+    "EROBV": 5
+  },
+  "unk_1092": {
+    " XOBV": 4
+  },
+  "unk_1329": {
+    "GNACV": 5
+  },
+  "unk_570": {
+    " MOCV": 4
+  },
+  "unk_1149": {
+    "ANBDV": 5
+  },
+  "unk_893": {
+    " SEDV": 4,
+    "PSEDV": 5
+  },
+  "unk_55": {
+    " AIDV": 4,
+    "MAIDV": 5
+  },
+  "unk_1431": {
+    "MOCEV": 5
+  },
+  "unk_41": {
+    " AFEV": 4,
+    "CAFEV": 5
+  },
+  "unk_2121": {
+    "LOGEV": 6
+  },
+  "unk_383": {
+    "  IEV": 3,
+    " GIEV": 4,
+    "HGIEV": 5
+  },
+  "unk_3261": {
+    "OCLEV": 6
+  },
+  "unk_3462": {
+    "DDLEV": 6
+  },
+  "unk_1977": {
+    "MDLEV": 6
+  },
+  "unk_4380": {
+    "TDLEV": 6
+  },
+  "unk_3183": {
+    "AMLEV": 6
+  },
+  "unk_1948": {
+    "AMLEV": 6
+  },
+  "unk_1931": {
+    "ROLEV": 6
+  },
+  "unk_1424": {
+    "MANEV": 5
+  },
+  "unk_2006": {
+    "ORPEV": 6
+  },
+  "unk_3519": {
+    "SUSEV": 6
+  },
+  "unk_612": {
+    " NIFV": 4
+  },
+  "unk_3108": {
+    "LELFV": 6
+  },
+  "unk_1330": {
+    "GNAGV": 5
+  },
+  "unk_725": {
+    " PAGV": 4
+  },
+  "unk_1962": {
+    "ELOHV": 6
+  },
+  "unk_1331": {
+    "GNAIV": 5
+  },
+  "unk_968": {
+    "  DIV": 3,
+    " TDIV": 4,
+    "HTDIV": 5
+  },
+  "unk_3728": {
+    "RADIV": 6
+  },
+  "unk_43": {
+    " AFIV": 4,
+    "CAFIV": 5
+  },
+  "unk_990": {
+    " TNIV": 4,
+    "ETNIV": 5
+  },
+  "unk_1416": {
+    "LTNIV": 5
+  },
+  "unk_1513": {
+    "PTNIV": 5
+  },
+  "unk_1598": {
+    "SOPJV": 5
+  },
+  "unk_1412": {
+    "LSUJV": 5
+  },
+  "unk_114": {
+    " CDLV": 4,
+    "OCDLV": 5
+  },
+  "unk_1796": {
+    "IDDLV": 6
+  },
+  "unk_589": {
+    " NDLV": 4,
+    "UNDLV": 5
+  },
+  "unk_740": {
+    " PDLV": 4,
+    "RPDLV": 5
+  },
+  "unk_3886": {
+    "OPDLV": 6
+  },
+  "unk_2440": {
+    "ERDLV": 5
+  },
+  "unk_2584": {
+    "RXDLV": 5
+  },
+  "unk_1396": {
+    "LGELV": 5
+  },
+  "unk_597": {
+    " NELV": 4
+  },
+  "unk_1445": {
+    "NELLV": 5
+  },
+  "unk_2729": {
+    "TGNLV": 6
+  },
+  "unk_1076": {
+    " XAMV": 4,
+    "IXAMV": 5
+  },
+  "unk_551": {
+    " MANV": 4
+  },
+  "unk_969": {
+    " TDNV": 4
+  },
+  "unk_1731": {
+    "YALNV": 5
+  },
+  "unk_449": {
+    " IROV": 4,
+    "EIROV": 5
+  },
+  "unk_3901": {
+    "OPROV": 6
+  },
+  "unk_810": {
+    " RAPV": 4,
+    "ARAPV": 5
+  },
+  "unk_246": {
+    " ERPV": 4,
+    "SERPV": 5
+  },
+  "unk_1174": {
+    "CORPV": 5
+  },
+  "unk_1335": {
+    "GNARV": 5
+  },
+  "unk_2875": {
+    "RMKRV": 6
+  },
+  "unk_3673": {
+    "HSKRV": 6
+  },
+  "unk_1506": {
+    " OHSV": 4,
+    "POHSV": 5
+  },
+  "unk_1449": {
+    "NELSV": 5
+  },
+  "unk_2195": {
+    "CAPSV": 6
+  },
+  "unk_1169": {
+    "CEPSV": 5
+  },
+  "unk_2007": {
+    "ORPSV": 6
+  },
+  "unk_3520": {
+    "SUSSV": 6
+  },
+  "unk_2128": {
+    "NATSV": 6
+  },
+  "unk_1688": {
+    "VDTSV": 5
+  },
+  "unk_1432": {
+    "MOCTV": 5
+  },
+  "unk_2451": {
+    "ERETV": 6
+  },
+  "unk_1647": {
+    "TSETV": 5
+  },
+  "unk_2843": {
+    "CIHTV": 6
+  },
+  "unk_2456": {
+    "ERHTV": 6
+  },
+  "unk_519": {
+    " LOTV": 4,
+    "ELOTV": 5
+  },
+  "unk_2696": {
+    "CROTV": 6
+  },
+  "unk_2008": {
+    "ORPTV": 6
+  },
+  "unk_3870": {
+    "NARTV": 5
+  },
+  "unk_3983": {
+    "ATSTV": 6
+  },
+  "unk_1249": {
+    "EPYTV": 5
+  },
+  "unk_527": {
+    " LOVV": 4,
+    "ULOVV": 5
+  },
+  "unk_2659": {
+    "NAMAW": 6
+  },
+  "unk_1135": {
+    "AERAW": 5
+  },
+  "unk_1583": {
+    "SIXAW": 5
+  },
+  "unk_2931": {
+    " VEBW": 4,
+    "EVEBW": 5
+  },
+  "unk_994": {
+    "  OBW": 3,
+    " TOBW": 4,
+    "TTOBW": 5
+  },
+  "unk_401": {
+    "  SBW": 3,
+    " HSBW": 4,
+    "EHSBW": 5
+  },
+  "unk_1643": {
+    "TPTFW": 5
+  },
+  "unk_2466": {
+    "ERMGW": 6
+  },
+  "unk_1390": {
+    "LCNIW": 5
+  },
+  "unk_4287": {
+    "EDNIW": 6
+  },
+  "unk_598": {
+    "  ELW": 3,
+    " NELW": 4,
+    "GNELW": 5
+  },
+  "unk_293": {
+    "  FOW": 3,
+    " FFOW": 4,
+    "SFFOW": 5
+  },
+  "unk_4115": {
+    "SILRW": 6
+  },
+  "unk_4147": {
+    "TSLRW": 6
+  },
+  "unk_3753": {
+    "TNPRW": 6
+  },
+  "unk_4056": {
+    "NCQRW": 6
+  },
+  "unk_2249": {
+    "LEQRW": 6
+  },
+  "unk_4099": {
+    "RTSRW": 6
+  },
+  "unk_1084": {
+    " XETW": 4,
+    "TXETW": 5
+  },
+  "unk_468": {
+    " KHTW": 4
+  },
+  "unk_761": {
+    "  OTW": 3,
+    " POTW": 4
+  },
+  "unk_1642": {
+    "TPPTW": 5
+  },
+  "unk_89": {
+    " ARTW": 4,
+    "LARTW": 5
+  },
+  "unk_403": {
+    "  STW": 3,
+    " HSTW": 4,
+    "EHSTW": 5
+  },
+  "unk_2660": {
+    "NAMXW": 6
+  },
+  "unk_3696": {
+    "IDXXW": 6
+  },
+  "unk_3622": {
+    "AFXXW": 6
+  },
+  "unk_3624": {
+    "AIXXW": 6
+  },
+  "unk_4072": {
+    "NIXXW": 6
+  },
+  "unk_2684": {
+    "OLXXW": 6
+  },
+  "unk_2808": {
+    "ROXXW": 6
+  },
+  "unk_3907": {
+    "OPXXW": 6
+  },
+  "unk_3634": {
+    "ARXXW": 6
+  },
+  "unk_2503": {
+    "ERXXW": 6
+  },
+  "unk_1768": {
+    "ERXXW": 6
+  },
+  "unk_3764": {
+    "TSXXW": 6
+  },
+  "unk_3824": {
+    "FFOYW": 6
+  },
+  "unk_943": {
+    " OPYW": 4,
+    "SOPYW": 5,
+    " SPYW": 4
+  },
+  "unk_131": {
+    " CSYW": 4,
+    "ACSYW": 5
+  },
+  "unk_2932": {
+    " VEBX": 4,
+    "EVEBX": 5
+  },
+  "unk_995": {
+    "  OBX": 3,
+    " TOBX": 4,
+    "TTOBX": 5
+  },
+  "unk_402": {
+    "  SBX": 3,
+    " HSBX": 4,
+    "EHSBX": 5
+  },
+  "unk_839": {
+    " RIDX": 4,
+    "ERIDX": 5
+  },
+  "unk_4288": {
+    "EDNIX": 6
+  },
+  "unk_599": {
+    "  ELX": 3,
+    " NELX": 4,
+    "GNELX": 5
+  },
+  "unk_294": {
+    "  FOX": 3,
+    " FFOX": 4,
+    "SFFOX": 5
+  },
+  "unk_660": {
+    " NUOX": 4,
+    "GNUOX": 5
+  },
+  "unk_1085": {
+    " XETX": 4,
+    "TXETX": 5
+  },
+  "unk_762": {
+    "  OTX": 3,
+    " POTX": 4
+  },
+  "unk_404": {
+    "  STX": 3,
+    " HSTX": 4,
+    "EHSTX": 5
+  },
+  "unk_1584": {
+    "SIXAY": 5
+  },
+  "unk_840": {
+    " RIDY": 4,
+    "ERIDY": 5
+  },
+  "unk_899": {
+    " SIDY": 4,
+    "TSIDY": 5
+  },
+  "unk_600": {
+    "  ELY": 3,
+    " NELY": 4,
+    "GNELY": 5
+  },
+  "unk_295": {
+    " FFOY": 4,
+    "SFFOY": 5
+  },
+  "unk_1086": {
+    " XETY": 4,
+    "TXETY": 5
+  }
+}

@@ -56,9 +56,9 @@ pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
 pub struct TubiInstQuery {
     pub refno: RefnoEnum,
     pub leave: RefnoEnum,
-    pub old_refno: Option<RefnoEnum>,
     pub generic: Option<String>,
-    pub world_aabb: PlantAabb,
+    #[serde(default)]
+    pub world_aabb: Option<PlantAabb>,
     pub world_trans: PlantTransform,
     pub geo_hash: String,
     pub date: Option<surrealdb::types::Datetime>,
@@ -122,10 +122,10 @@ pub async fn query_tubi_insts_by_brans(
                 aabb.d as world_aabb,
                 world_trans.d as world_trans,
                 record::id(geo) as geo_hash,
-                id[0].dt as date,
-                spec_value
+                date: Option<surrealdb::types::Datetime>,
+                spec_value: Option<i64>,
             FROM tubi_relate:[{}, 0]..[{}, 999999]
-            WHERE aabb.d != NONE
+            }}
             "#,
             pe_key, pe_key
         );
@@ -166,7 +166,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
                 id[0].dt as date,
                 spec_value
             FROM tubi_relate
-            WHERE (in = {} OR out = {}) AND aabb.d != NONE
+            WHERE (in = {} OR out = {})
             "#,
             pe_key,
             pe_key
@@ -196,7 +196,6 @@ pub struct ModelHashInst {
 #[derive(Debug)]
 pub struct ModelInstData {
     pub owner: RefnoEnum,
-    pub old_refno: Option<RefnoEnum>,
     pub has_neg: bool,
     pub insts: Vec<ModelHashInst>,
     pub generic: PdmsGenericType,
@@ -214,12 +213,11 @@ pub struct GeomInstQuery {
     /// 构件编号，别名为id
     #[serde(alias = "id")]
     pub refno: RefnoEnum,
-    /// 历史构件编号
-    pub old_refno: Option<RefnoEnum>,
     /// 所属构件编号
     pub owner: RefnoEnum,
-    /// 世界坐标系下的包围盒
-    pub world_aabb: PlantAabb,
+    /// 世界坐标系下的包围盒（可能为空）
+    #[serde(default)]
+    pub world_aabb: Option<PlantAabb>,
     /// 世界坐标系下的变换矩阵
     pub world_trans: PlantTransform,
     /// 几何实例列表
@@ -244,8 +242,9 @@ pub struct GeomPtsQuery {
     pub refno: RefnoEnum,
     /// 世界坐标系下的变换矩阵
     pub world_trans: PlantTransform,
-    /// 世界坐标系下的包围盒
-    pub world_aabb: PlantAabb,
+    /// 世界坐标系下的包围盒（可能为空）
+    #[serde(default)]
+    pub world_aabb: Option<PlantAabb>,
     /// 点集组，每组包含一个变换矩阵和可选的点集数据
     pub pts_group: Vec<(PlantTransform, Option<Vec<RsVec3>>)>,
 }
@@ -282,9 +281,9 @@ pub async fn query_insts(
 pub async fn query_insts_with_negative(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
     enable_holes: bool,
-    include_negative: bool,
+    _include_negative: bool,
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
-    query_insts_ext(refnos, enable_holes, include_negative, None).await
+    query_insts_with_batch(refnos, enable_holes, None).await
 }
 
 /// 批量查询几何实例信息（支持布尔运算结果）
@@ -337,9 +336,9 @@ pub async fn query_insts_with_batch(
     let mut results = Vec::new();
 
     for chunk in refnos.chunks(batch) {
-        // inst_relate 是关系表，需要用 WHERE in IN [...] 来查询
-        let pe_keys: Vec<String> = chunk.iter().map(|r| r.to_pe_key()).collect();
-        let pe_keys_str = pe_keys.join(",");
+        // 直接查询 inst_relate:{id} 列表，比 where in 更高效
+        let inst_relate_keys: Vec<String> = chunk.iter().map(|r| r.to_inst_relate_key()).collect();
+        let inst_relate_keys_str = inst_relate_keys.join(",");
 
         let sql = if enable_holes {
             // enable_holes=true: 优先使用 booled_id（布尔后的 mesh）
@@ -351,8 +350,7 @@ pub async fn query_insts_with_batch(
                 r#"
             select
                 in.id as refno,
-                in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                in.owner ?? in as owner, generic, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
                 if booled_id != none then
                     [{{ "transform": world_trans.d, "geo_hash": booled_id, "is_tubi": false, "unit_flag": false }}]
@@ -362,7 +360,7 @@ pub async fn query_insts_with_batch(
                 booled_id != none as has_neg,
                 <datetime>dt as date,
                 spec_value
-            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
+            from [{inst_relate_keys_str}] where world_trans.d != none
         "#
             )
         } else {
@@ -372,110 +370,26 @@ pub async fn query_insts_with_batch(
                 r#"
             select
                 in.id as refno,
-                in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
+                in.owner ?? in as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
                 (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
-                bool_status = 'Success' as has_neg,
+                bool_status = "Success" as has_neg,
                 <datetime>dt as date,
                 spec_value
-            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
+            from [{inst_relate_keys_str}] where world_trans.d != none "#
             )
         };
 
-        let mut chunk_result: Vec<GeomInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        let mut chunk_result: Vec<GeomInstQuery> = SUL_DB
+            .query_take(&sql, 0)
+            .await
+            .with_context(|| format!("query_insts_with_batch SQL: {}", sql))?;
         results.append(&mut chunk_result);
     }
 
     Ok(results)
 }
 
-/// 扩展的批量查询几何实例信息（支持负实体查询）
-///
-/// # 参数
-///
-/// * `refnos` - 构件编号迭代器
-/// * `enable_holes` - 是否启用孔洞查询
-/// * `include_negative` - 是否包含负实体（Neg 类型几何体）
-/// * `batch_size` - 每批查询的数量
-///
-/// # 返回值
-///
-/// 返回几何实例查询结果的向量
-pub async fn query_insts_ext(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
-    enable_holes: bool,
-    include_negative: bool,
-    batch_size: Option<usize>,
-) -> anyhow::Result<Vec<GeomInstQuery>> {
-    let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
-    if refnos.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    let batch = batch_size.unwrap_or(50).max(1);
-    let mut results = Vec::new();
-
-    // 构建 geo_type 过滤条件
-    // enable_holes=true 时，当 booled_id 缺失会走 geo_relate fallback。
-    // 此时必须包含 DesiPos/CataPos，否则 unit mesh（geo_hash=1/2）可能会被漏掉。
-    let geo_types = if include_negative {
-        "['Pos', 'Compound', 'DesiPos', 'CatePos', 'Neg']"
-    } else {
-        "['Pos', 'Compound', 'DesiPos', 'CatePos']"
-    };
-
-    let geo_types_no_holes = if include_negative {
-        "['Pos', 'DesiPos', 'CatePos', 'Neg']"
-    } else {
-        "['Pos', 'DesiPos', 'CatePos']"
-    };
-
-    for chunk in refnos.chunks(batch) {
-        let pe_keys: Vec<String> = chunk.iter().map(|r| r.to_pe_key()).collect();
-        let pe_keys_str = pe_keys.join(",");
-
-        let sql = if enable_holes {
-            format!(
-                r#"
-            select
-                in.id as refno,
-                in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
-                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                if booled_id != none then
-                    [{{ "transform": world_trans.d, "geo_hash": booled_id, "is_tubi": false, "unit_flag": false }}]
-                else
-                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN {geo_types})
-                end as insts,
-                booled_id != none as has_neg,
-                <datetime>dt as date,
-                spec_value
-            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none
-        "#
-            )
-        } else {
-            format!(
-                r#"
-            select
-                in.id as refno,
-                in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans,
-                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN {geo_types_no_holes}) as insts,
-                bool_status = 'Success' as has_neg,
-                <datetime>dt as date,
-                spec_value
-            from inst_relate where in IN [{pe_keys_str}] && aabb.d != none && world_trans.d != none "#
-            )
-        };
-
-        let mut chunk_result: Vec<GeomInstQuery> = SUL_DB.query_take(&sql, 0).await?;
-        results.append(&mut chunk_result);
-    }
-
-    Ok(results)
-}
 
 // todo 生成一个测试案例
 // pub async fn query_history_insts(
@@ -504,66 +418,6 @@ pub async fn query_insts_ext(
 //     Ok(geom_insts)
 // }
 
-/// 根据区域编号查询几何实例信息
-///
-/// # 参数
-///
-/// * `refnos` - 区域编号迭代器
-/// * `enable_holes` - 是否启用孔洞查询
-///
-/// # 返回值
-///
-/// 返回几何实例查询结果的向量
-pub async fn query_insts_by_zone(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
-    enable_holes: bool,
-) -> anyhow::Result<Vec<GeomInstQuery>> {
-    let zone_refnos = refnos
-        .into_iter()
-        .map(|x| x.to_pe_key())
-        .collect::<Vec<_>>()
-        .join(",");
-
-    // 临时方案：使用 in.dt 替代 fn::ses_date(in.id) 以避免 "Expected any, got record" 错误
-    // TODO: 确认 in.dt 字段是否可用，或者使用其他方案
-    let sql = if enable_holes {
-        format!(
-            r#"
-            select
-                in.id as refno,
-                in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset[*].pt as pts,
-                if booled_id != none {{ [{{ "geo_hash": booled_id }}] }} else {{ (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none)  }} as insts,
-                booled_id != none as has_neg,
-                in.dt as date
-            from inst_relate where zone_refno in [{}] and aabb.d != none
-            "#,
-            zone_refnos
-        )
-    } else {
-        format!(
-            r#"
-            select
-                in.id as refno,
-                in.old_pe as old_refno,
-                in.owner as owner, generic, aabb.d as world_aabb, world_trans.d as world_trans, out.ptset[*].pt as pts,
-                (select trans.d as transform, record::id(out) as geo_hash from out->geo_relate where visible && out.meshed && trans.d != none) as insts,
-                booled_id != none as has_neg,
-                in.dt as date
-            from inst_relate where zone_refno in [{}] and aabb.d != none
-            "#,
-            zone_refnos
-        )
-    };
-
-    println!("Query insts by zone sql: {}", &sql);
-
-    let mut response = SUL_DB.query_response(&sql).await?;
-    let values: Vec<SurlValue> = response.take(0)?;
-    let geom_insts: Vec<GeomInstQuery> = decode_values(values)?;
-
-    Ok(geom_insts)
-}
 
 //=============================================================================
 // inst_relate 数据保存相关函数

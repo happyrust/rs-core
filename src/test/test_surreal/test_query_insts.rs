@@ -60,13 +60,14 @@ async fn query_insts_returns_single_instance_from_mem_db() -> anyhow::Result<()>
 
     assert_eq!(inst.refno, refno);
     assert_eq!(inst.generic, "PIPE");
-    let mins = inst.world_aabb.mins();
+    let aabb = inst.world_aabb.as_ref().expect("world_aabb should exist");
+    let mins = aabb.mins();
     assert!(
         [mins.0.x, mins.0.y, mins.0.z]
             .iter()
             .all(|v| (*v - 0.0).abs() < f32::EPSILON)
     );
-    let maxs = inst.world_aabb.maxs();
+    let maxs = aabb.maxs();
     assert!(
         [maxs.0.x, maxs.0.y, maxs.0.z]
             .iter()

@@ -84,6 +84,63 @@ pub struct AttlibAttribute {
     pub default_value: AttlibDefaultValue,
 }
 
+/// ATGTSX 语法表条目（类型-属性映射）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttlibSyntaxEntry {
+    /// 属性哈希
+    pub attr_hash: u32,
+    /// 类型（Noun）哈希
+    pub noun_hash: u32,
+    /// 额外信息（如数组索引）
+    pub extra_info: u32,
+}
+
+/// Noun -> 属性哈希列表映射
+pub type NounAttrMapping = HashMap<u32, Vec<u32>>;
+
+/// Base27 常量
+const BASE27_OFFSET: u32 = 0x81BF1;
+
+/// 将哈希值解码为属性/类型名称
+pub fn decode_base27(hash: u32) -> String {
+    if hash < MIN_HASH || hash > MAX_HASH {
+        return String::new();
+    }
+
+    let mut k = (hash - BASE27_OFFSET) as i64;
+    let mut chars = Vec::new();
+
+    while k > 0 {
+        let c = (k % 27) as u8;
+        if c == 0 {
+            chars.push(b' ');
+        } else {
+            chars.push(c + 64); // A=65, B=66, ...
+        }
+        k /= 27;
+    }
+
+    String::from_utf8(chars).unwrap_or_default()
+}
+
+/// 将名称编码为哈希值
+pub fn encode_base27(name: &str) -> u32 {
+    let mut hash = BASE27_OFFSET;
+    let mut mul = 1u32;
+
+    for ch in name.chars().take(6) {
+        let v = if ch == ' ' {
+            0
+        } else {
+            (ch.to_ascii_uppercase() as u32).saturating_sub(64)
+        };
+        hash = hash.wrapping_add(mul.wrapping_mul(v));
+        mul = mul.wrapping_mul(27);
+    }
+
+    hash
+}
+
 pub struct AttlibParser {
     file: File,
     attr_index: HashMap<u32, AttlibAttrIndex>,
@@ -284,5 +341,137 @@ impl AttlibParser {
 
     pub fn get_all_attributes(&self) -> Vec<&AttlibAttrDefinition> {
         self.attr_definitions.values().collect()
+    }
+
+    /// 加载 ATGTSX 段（类型-属性语法映射）
+    ///
+    /// ATGTSX 段存储了 NOUN（类型）和 属性 的映射关系，
+    /// 每条记录包含 3 个 u32: [attr_hash, noun_hash, extra_info]
+    pub fn load_atgtsx(&mut self) -> std::io::Result<Vec<AttlibSyntaxEntry>> {
+        // 从段指针表获取 ATGTSX 起始页（索引 3）
+        let start_page = self.segment_pointers[3];
+        if start_page == 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "ATGTSX 段指针为空",
+            ));
+        }
+
+        eprintln!("加载 ATGTSX 段，起始页: {}", start_page);
+
+        let mut cursor = WordCursor::new(self, start_page)?;
+        let mut entries = Vec::new();
+
+        loop {
+            let word = cursor.next_word(self)?;
+
+            // 处理页面切换
+            if word == PAGE_SWITCH_MARK {
+                cursor.advance_page(self)?;
+                continue;
+            }
+
+            // 处理段结束
+            if word == SEGMENT_END_MARK || word == 0 {
+                break;
+            }
+
+            // 跳过无效哈希
+            if word < MIN_HASH || word > MAX_HASH {
+                continue;
+            }
+
+            let attr_hash = word;
+            let noun_hash = cursor.next_word(self)?;
+            let extra_info = cursor.next_word(self)?;
+
+            entries.push(AttlibSyntaxEntry {
+                attr_hash,
+                noun_hash,
+                extra_info,
+            });
+        }
+
+        eprintln!("ATGTSX 加载完成，共 {} 条记录", entries.len());
+        Ok(entries)
+    }
+
+    /// 构建 Noun -> 属性哈希列表映射
+    pub fn build_noun_attr_mapping(&mut self) -> std::io::Result<NounAttrMapping> {
+        let entries = self.load_atgtsx()?;
+        let mut mapping: NounAttrMapping = HashMap::new();
+
+        for entry in entries {
+            mapping
+                .entry(entry.noun_hash)
+                .or_default()
+                .push(entry.attr_hash);
+        }
+
+        eprintln!("构建映射完成，共 {} 个 Noun 类型", mapping.len());
+        Ok(mapping)
+    }
+
+    /// 获取指定 Noun 的所有属性定义
+    ///
+    /// # Arguments
+    /// * `noun_hash` - 类型的哈希值（可通过 encode_base27() 从名称计算）
+    pub fn get_noun_attributes(&mut self, noun_hash: u32) -> std::io::Result<Vec<AttlibAttrDefinition>> {
+        let mapping = self.build_noun_attr_mapping()?;
+
+        let attr_hashes = mapping.get(&noun_hash).cloned().unwrap_or_default();
+        let mut attrs = Vec::new();
+
+        for hash in attr_hashes {
+            if let Some(def) = self.attr_definitions.get(&hash) {
+                attrs.push(def.clone());
+            }
+        }
+
+        Ok(attrs)
+    }
+
+    /// 获取指定 Noun 的属性名称列表
+    pub fn get_noun_attribute_names(&mut self, noun_name: &str) -> std::io::Result<Vec<String>> {
+        let noun_hash = encode_base27(noun_name);
+        let mapping = self.build_noun_attr_mapping()?;
+
+        let attr_hashes = mapping.get(&noun_hash).cloned().unwrap_or_default();
+        let names: Vec<String> = attr_hashes.iter().map(|h| decode_base27(*h)).collect();
+
+        Ok(names)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decode_base27() {
+        // 测试已知值
+        assert_eq!(decode_base27(0xCA439), "ELBO");
+        assert_eq!(decode_base27(639374), "NAME");
+    }
+
+    #[test]
+    fn test_encode_base27() {
+        // 测试编码
+        assert_eq!(encode_base27("ELBO"), 0xCA439);
+        assert_eq!(encode_base27("NAME"), 639374);
+        // PIPE 的正确哈希值
+        let pipe_hash = encode_base27("PIPE");
+        assert!(pipe_hash >= MIN_HASH && pipe_hash <= MAX_HASH);
+    }
+
+    #[test]
+    fn test_encode_decode_roundtrip() {
+        // 往返测试
+        let names = ["ELBO", "PIPE", "NAME", "BORE", "TEMP"];
+        for name in names {
+            let hash = encode_base27(name);
+            let decoded = decode_base27(hash);
+            assert_eq!(decoded, name, "Roundtrip failed for {}", name);
+        }
     }
 }

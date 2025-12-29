@@ -1,0 +1,482 @@
+{
+  "noun_attr_info_map": {
+    "11": {
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "att_type": "UNKNOWN"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 1,
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 2,
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 3,
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 4,
+        "att_type": "UNKNOWN"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 5,
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 5,
+        "att_type": "POSITION"
+      },
+      "89646072": {
+        "name": "unk_89646072",
+        "hash": 89646072,
+        "offset": 11,
+        "att_type": "UNKNOWN"
+      },
+      "361743790": {
+        "name": "unk_361743790",
+        "hash": 361743790,
+        "offset": 12,
+        "att_type": "UNKNOWN"
+      },
+      "215079420": {
+        "name": "unk_215079420",
+        "hash": 215079420,
+        "offset": 13,
+        "att_type": "UNKNOWN"
+      }
+    },
+    "10": {
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 1,
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 2,
+        "att_type": "UNKNOWN"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 3,
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 3,
+        "att_type": "POSITION"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 9,
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 10,
+        "att_type": "STRING"
+      },
+      "788296": {
+        "name": "DIAM",
+        "hash": 788296,
+        "offset": 10,
+        "att_type": "UNKNOWN"
+      },
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 11,
+        "att_type": "UNKNOWN"
+      }
+    },
+    "9": {
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 1,
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 2,
+        "att_type": "UNKNOWN"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 3,
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 3,
+        "att_type": "POSITION"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 9,
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 10,
+        "att_type": "STRING"
+      },
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 10,
+        "att_type": "STRING"
+      }
+    },
+    "3": {
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 0,
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 0,
+        "att_type": "POSITION"
+      }
+    },
+    "8": {
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "att_type": "UNKNOWN"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 1,
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 2,
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 3,
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 4,
+        "att_type": "UNKNOWN"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 5,
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 5,
+        "att_type": "POSITION"
+      }
+    },
+    "12": {
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 0,
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 1,
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 2,
+        "att_type": "UNKNOWN"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 3,
+        "att_type": "STRING"
+      },
+      "538503": {
+        "name": "ORI",
+        "hash": 538503,
+        "offset": 3,
+        "att_type": "POSITION"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 9,
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 10,
+        "att_type": "STRING"
+      },
+      "773119": {
+        "name": "ANGL",
+        "hash": 773119,
+        "offset": 10,
+        "att_type": "STRING"
+      },
+      "675926": {
+        "name": "HEIG",
+        "hash": 675926,
+        "offset": 10,
+        "att_type": "UNKNOWN"
+      },
+      "915885": {
+        "name": "RINS",
+        "hash": 915885,
+        "offset": 11,
+        "att_type": "UNKNOWN"
+      },
+      "940833": {
+        "name": "ROUT",
+        "hash": 940833,
+        "offset": 12,
+        "att_type": "UNKNOWN"
+      }
+    },
+    "7": {
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "att_type": "UNKNOWN"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 1,
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 2,
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 3,
+        "att_type": "UNKNOWN"
+      },
+      "611394": {
+        "name": "FRAD",
+        "hash": 611394,
+        "offset": 4,
+        "att_type": "UNKNOWN"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 5,
+        "att_type": "STRING"
+      }
+    },
+    "25": {
+      "604480": {
+        "name": "DESC",
+        "hash": 604480,
+        "offset": 0,
+        "att_type": "UNKNOWN"
+      },
+      "601269": {
+        "name": "FUNC",
+        "hash": 601269,
+        "offset": 1,
+        "att_type": "UNKNOWN"
+      },
+      "860074": {
+        "name": "PURP",
+        "hash": 860074,
+        "offset": 2,
+        "att_type": "UNKNOWN"
+      },
+      "10206636": {
+        "name": "OWNER",
+        "hash": 10206636,
+        "offset": 3,
+        "att_type": "UNKNOWN"
+      },
+      "750558": {
+        "name": "LOCK",
+        "hash": 750558,
+        "offset": 4,
+        "att_type": "UNKNOWN"
+      },
+      "555256": {
+        "name": "AREA",
+        "hash": 555256,
+        "offset": 5,
+        "att_type": "UNKNOWN"
+      },
+      "580865": {
+        "name": "NUMB",
+        "hash": 580865,
+        "offset": 6,
+        "att_type": "UNKNOWN"
+      },
+      "89667327": {
+        "name": "CLOSEF",
+        "hash": 89667327,
+        "offset": 7,
+        "att_type": "UNKNOWN"
+      },
+      "183236961": {
+        "name": "CWJUSL",
+        "hash": 183236961,
+        "offset": 8,
+        "att_type": "UNKNOWN"
+      },
+      "4432558": {
+        "name": "VHEIG",
+        "hash": 4432558,
+        "offset": 9,
+        "att_type": "UNKNOWN"
+      },
+      "11246197": {
+        "name": "VWIDT",
+        "hash": 11246197,
+        "offset": 10,
+        "att_type": "UNKNOWN"
+      },
+      "80805082": {
+        "name": "VSHAPE",
+        "hash": 80805082,
+        "offset": 11,
+        "att_type": "UNKNOWN"
+      },
+      "3831713": {
+        "name": "HCREF",
+        "hash": 3831713,
+        "offset": 12,
+        "att_type": "UNKNOWN"
+      },
+      "3831725": {
+        "name": "TCREF",
+        "hash": 3831725,
+        "offset": 13,
+        "att_type": "UNKNOWN"
+      },
+      "611390": {
+        "name": "BRAD",
+        "hash": 611390,
+        "offset": 14,
+        "att_type": "UNKNOWN"
+      },
+      "923052": {
+        "name": "CEXS",
+        "hash": 923052,
+        "offset": 15,
+        "att_type": "UNKNOWN"
+      },
+      "177636928": {
+        "name": "MAXFIL",
+        "hash": 177636928,
+        "offset": 16,
+        "att_type": "UNKNOWN"
+      },
+      "283286574": {
+        "name": "ICLASS",
+        "hash": 283286574,
+        "offset": 17,
+        "att_type": "UNKNOWN"
+      },
+      "646041": {
+        "name": "LEVE",
+        "hash": 646041,
+        "offset": 18,
+        "att_type": "UNKNOWN"
+      },
+      "939021": {
+        "name": "OBST",
+        "hash": 939021,
+        "offset": 19,
+        "att_type": "STRING"
+      },
+      "835776": {
+        "name": "RLLO",
+        "hash": 835776,
+        "offset": 19,
+        "att_type": "UNKNOWN"
+      },
+      "914668": {
+        "name": "unk_914668",
+        "hash": 914668,
+        "offset": 20,
+        "att_type": "UNKNOWN"
+      },
+      "545713": {
+        "name": "POS",
+        "hash": 545713,
+        "offset": 21,
+        "att_type": "STRING"
+      },
+      "679457": {
+        "name": "BANG",
+        "hash": 679457,
+        "offset": 21,
+        "att_type": "UNKNOWN"
+      }
+    }
+  }
+}
