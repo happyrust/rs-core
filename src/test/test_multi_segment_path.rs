@@ -496,7 +496,7 @@ fn test_single_line_sweep_solid_creation() {
 
     // 尝试生成CSG mesh
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape_compat() {
+    match sweep_solid.gen_csg_shape() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("  顶点数: {}", csg_mesh.vertices.len());
@@ -575,7 +575,7 @@ fn test_single_arc_sweep_solid_creation() {
 
     // 尝试生成CSG mesh
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape_compat() {
+    match sweep_solid.gen_csg_shape() {
         Ok(csg_mesh) => {
             println!("  ✅ CSG Mesh 生成成功！");
             println!("  顶点数: {}", csg_mesh.vertices.len());
@@ -793,7 +793,7 @@ fn test_gensec_spine_sweep_solid_creation() {
 
     // 尝试生成CSG mesh并导出OBJ
     use crate::shape::pdms_shape::BrepShapeTrait;
-    match sweep_solid.gen_csg_shape_compat() {
+    match sweep_solid.gen_csg_shape() {
         Ok(csg_mesh) => {
             println!("\n  ✅ CSG Mesh 生成成功！");
             println!("  网格信息:");

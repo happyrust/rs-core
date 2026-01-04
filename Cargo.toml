@@ -12,8 +12,8 @@ default = [
     # "sql",
     # "debug_spatial",
 ] #"occ", "gen_model", "sql"
-reflect = ["dep:bevy_reflect"]  # bevy_reflect 反射系统支持 (用于 ORM 框架)
-use_strategy_transform = []  # 新的策略系统变换计算，默认关闭（opt-in 迁移）
+reflect = ["dep:bevy_reflect"] # bevy_reflect 反射系统支持 (用于 ORM 框架)
+use_strategy_transform = [] # 新的策略系统变换计算，默认关闭（opt-in 迁移）
 redb = ["dep:redb"]
 render = ["dep:bevy_render", "dep:bevy_mesh", "dep:bevy_asset"]
 manifold = ["dep:manifold-rs"]
@@ -32,12 +32,12 @@ debug_expr = []
 debug_wire = []
 debug_spatial = []
 web = ["render"]
-web_server = []  # Web UI feature for database management interface
+web_server = [] # Web UI feature for database management interface
 sql = ["dep:sqlx"]
-sqlite = ["dep:rusqlite"]  # SQLite 空间索引功能
-mem-kv-save = []  # 额外保存PE数据到内存KV数据库
+sqlite = ["dep:rusqlite"] # SQLite 空间索引功能
+mem-kv-save = [] # 额外保存PE数据到内存KV数据库
 hh = []
-test = []  # Test module feature
+test = [] # Test module feature
 
 
 [dependencies]
@@ -53,16 +53,9 @@ dashmap = { version = "=7.0.0-rc2", features = ["serde"] }
 hexasphere = "15.0.0"
 anyhow = "1.0.57"
 #lyon = "1.0.0"
-nalgebra = { version = "0.34.1", features = [
-    "serde",
-    "convert-glam030",
-] }
-parry3d = { version = "0.25.0", features = [
-    "serde-serialize",
-] }
-parry2d = { version = "0.25.0", features = [
-    "serde-serialize",
-] }
+nalgebra = { version = "0.34.1", features = ["serde", "convert-glam030"] }
+parry3d = { version = "0.25.0", features = ["serde-serialize"] }
+parry2d = { version = "0.25.0", features = ["serde-serialize"] }
 tracing = "0.1.41"
 approx = "0.5.1"
 memchr = "2.5.0"
@@ -71,7 +64,11 @@ itertools = "0.14.0"
 flate2 = "1.1.1"
 lazy_static = "1.4.0"
 smallvec = "1.8.0"
-derive_more = { version = "1.0.0", features = ["deref", "deref_mut", "display"] }
+derive_more = { version = "1.0.0", features = [
+    "deref",
+    "deref_mut",
+    "display",
+] }
 bitflags = "2.4.0"
 ordered-float = "5.1.0"
 phf = { version = "0.11.2", features = ["macros"] }
@@ -88,6 +85,7 @@ log = "0.4.21"
 simplelog = "0.12.2"
 lru = "0.12"
 num_cpus = "1.16"
+gltf = "1.4"
 
 
 bevy_transform = { git = "https://github.com/happyrust/bevy", package = "bevy_transform", features = [
@@ -130,7 +128,7 @@ chrono = "0.4"
 
 surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "updated", default-features = false, features = [
     "protocol-ws",
-    "kv-mem"
+    "kv-mem",
 ] }
 num-traits = "0.2.17"
 regex = "1.11.3"

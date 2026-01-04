@@ -133,11 +133,11 @@ impl QueryRouter {
 
         match strategy.engine {
             QueryEngine::SurrealDB => {
-                debug!("选择 SurrealDB 查询提供者");
+                // debug!("选择 SurrealDB 查询提供者");
                 (QueryEngine::SurrealDB, self.surreal_provider.clone())
             }
             QueryEngine::Auto => {
-                debug!("自动选择模式，使用 SurrealDB 查询提供者");
+                // debug!("自动选择模式，使用 SurrealDB 查询提供者");
                 (QueryEngine::SurrealDB, self.surreal_provider.clone())
             }
         }

@@ -352,7 +352,7 @@ pub async fn query_insts_with_batch(
             select
                 in.id as refno,
                 in.owner ?? in as owner, generic, world_trans.d as world_trans,
-                type::record('inst_relate_aabb', record::id(in)).aabb.d as world_aabb,
+                (select value out.d from in->inst_relate_aabb limit 1)[0] as world_aabb,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
                 if {bool_mesh} != none then
                     [{{ "transform": world_trans.d, "geo_hash": {bool_mesh}, "is_tubi": false, "unit_flag": false }}]
@@ -372,7 +372,7 @@ pub async fn query_insts_with_batch(
                 r#"
             select
                 in.id as refno,
-                in.owner ?? in as owner, generic, type::record('inst_relate_aabb', record::id(in)).aabb.d as world_aabb, world_trans.d as world_trans,
+                in.owner ?? in as owner, generic, (select value out.d from in->inst_relate_aabb limit 1)[0] as world_aabb, world_trans.d as world_trans,
                 (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
                 (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
                 {bool_mesh} != none as has_neg,
