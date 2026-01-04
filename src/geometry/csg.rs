@@ -1626,19 +1626,26 @@ fn generate_snout_mesh(
     let radial = compute_radial_segments(settings, max_radius, non_scalable, 3);
     let height_segments = compute_height_segments(settings, axial_span, non_scalable, 1);
     let step_theta = std::f32::consts::TAU / radial as f32;
-    let ring_stride = radial + 1;
     let radius_delta = top_radius - bottom_radius;
 
-    let mut vertices = Vec::with_capacity((height_segments + 1) * ring_stride + 2 * (radial + 1));
+    // 流形版本：每圈只有 radial 个顶点（不重复）
+    // 顶点布局：
+    // - [0, radial): 底圈
+    // - [radial, 2*radial): 第二圈
+    // - ...
+    // - [height_segments * radial]: 底面中心（如果有底面）
+    // - [height_segments * radial + 1]: 顶面中心（如果有顶面）
+    let mut vertices = Vec::with_capacity((height_segments + 1) * radial + 2);
     let mut normals = Vec::with_capacity(vertices.capacity());
-    let mut indices = Vec::with_capacity(height_segments * radial * 6 + radial * 6);
+    let mut indices = Vec::new();
     let mut aabb = Aabb::new_invalid();
 
+    // 生成侧面顶点（每圈 radial 个，不重复）
     for segment in 0..=height_segments {
         let t = segment as f32 / height_segments as f32;
         let center = bottom_center + axis_dir * (height_axis * t) + offset_dir * (snout.poff * t);
         let radius = (bottom_radius + radius_delta * t).max(0.0);
-        for slice in 0..=radial {
+        for slice in 0..radial {
             let angle = slice as f32 * step_theta;
             let (sin, cos) = angle.sin_cos();
             let radial_dir = basis_u * cos + basis_v * sin;
@@ -1646,16 +1653,12 @@ fn generate_snout_mesh(
             extend_aabb(&mut aabb, vertex);
             vertices.push(vertex);
 
-            // 计算法向量：使用切向量的叉积
-            // tangent_theta: 圆周方向的切向量
+            // 计算法向量
             let tangent_theta = (-sin) * basis_u + cos * basis_v;
             let tangent_theta = tangent_theta * radius;
-            // tangent_height: 高度方向的切向量（考虑半径变化）
             let tangent_height = center_delta + radial_dir * radius_delta;
-            // 法向量 = tangent_theta × tangent_height
             let mut normal = tangent_theta.cross(tangent_height);
             if normal.length_squared() <= 1e-8 {
-                // 如果法向量太小（退化情况），使用径向方向作为法向量
                 normal = radial_dir;
             } else {
                 normal = normal.normalize();
@@ -1664,43 +1667,53 @@ fn generate_snout_mesh(
         }
     }
 
+    // 生成侧面三角形（流形版本，使用模运算处理闭合）
     for segment in 0..height_segments {
+        let ring_start = segment * radial;
+        let next_ring_start = (segment + 1) * radial;
         for slice in 0..radial {
-            let current = segment * ring_stride + slice;
-            let next = current + ring_stride;
-            indices.extend_from_slice(&[
-                current as u32,
-                (current + 1) as u32,
-                next as u32,
-                (current + 1) as u32,
-                (next + 1) as u32,
-                next as u32,
-            ]);
+            let curr = (ring_start + slice) as u32;
+            let next = (ring_start + (slice + 1) % radial) as u32;
+            let curr_above = (next_ring_start + slice) as u32;
+            let next_above = (next_ring_start + (slice + 1) % radial) as u32;
+
+            // 两个三角形，法向量指向外部
+            indices.extend_from_slice(&[curr, next, curr_above]);
+            indices.extend_from_slice(&[next, next_above, curr_above]);
         }
     }
 
+    // 生成底面（如果有）
     if bottom_radius > MIN_LEN {
         let bottom_center_index = vertices.len() as u32;
         vertices.push(bottom_center);
         normals.push(-axis_dir);
         extend_aabb(&mut aabb, bottom_center);
+
+        // 底面扇形三角形，复用底圈顶点
         for slice in 0..radial {
-            let next = (slice + 1) % (radial + 1);
-            indices.extend_from_slice(&[bottom_center_index, (next) as u32, slice as u32]);
+            let v1 = slice as u32;
+            let v2 = ((slice + 1) % radial) as u32;
+            // 底面法向量指向 -axis_dir
+            indices.extend_from_slice(&[bottom_center_index, v2, v1]);
         }
     }
 
+    // 生成顶面（如果有）
     if top_radius > MIN_LEN {
         let top_center = bottom_center + axis_dir * height_axis + offset_dir * snout.poff;
         let top_center_index = vertices.len() as u32;
         vertices.push(top_center);
         normals.push(axis_dir);
         extend_aabb(&mut aabb, top_center);
-        let top_ring_offset = height_segments * ring_stride;
+
+        // 顶面扇形三角形，复用顶圈顶点
+        let top_ring_start = height_segments * radial;
         for slice in 0..radial {
-            let curr = top_ring_offset + slice;
-            let next = top_ring_offset + ((slice + 1) % (radial + 1));
-            indices.extend_from_slice(&[top_center_index, curr as u32, next as u32]);
+            let v1 = (top_ring_start + slice) as u32;
+            let v2 = (top_ring_start + (slice + 1) % radial) as u32;
+            // 顶面法向量指向 +axis_dir
+            indices.extend_from_slice(&[top_center_index, v1, v2]);
         }
     }
 
@@ -2365,49 +2378,23 @@ fn generate_torus_mesh(
         }
     }
 
-    // 对于部分圆环，需要添加端面
-    // 起始端面（角度=0）
+    // 对于部分圆环，需要添加端面（复用侧面顶点，不生成新顶点）
     if sweep_angle < std::f32::consts::TAU - 1e-3 {
-        let start_offset = vertices.len() as u32;
-        for v in 0..samples_s {
-            let cos_phi = t1_cos[v];
-            let sin_phi = t1_sin[v];
-            let r = tube_radius * cos_phi + major_radius;
-            let vertex = Vec3::new(r, 0.0, tube_radius * sin_phi);
-            extend_aabb(&mut aabb, vertex);
-            vertices.push(vertex);
-            // 法向量指向起始方向
-            normals.push(Vec3::new(-1.0, 0.0, 0.0));
-        }
-        // 扇状三角化起始端面
+        // 起始端面：复用第一圈顶点 [0, samples_s)
+        // 扇状三角化，法向量指向 -X 方向
         for i in 1..(samples_s - 1) {
-            indices.extend_from_slice(&[
-                start_offset,
-                start_offset + i as u32,
-                start_offset + (i + 1) as u32,
-            ]);
+            // 绕序：从外部看逆时针
+            indices.extend_from_slice(&[0, (i + 1) as u32, i as u32]);
         }
 
-        // 结束端面（角度=sweep_angle）
-        let end_offset = vertices.len() as u32;
-        let cos_end = t0_cos[samples_l - 1];
-        let sin_end = t0_sin[samples_l - 1];
-        for v in 0..samples_s {
-            let cos_phi = t1_cos[v];
-            let sin_phi = t1_sin[v];
-            let r = tube_radius * cos_phi + major_radius;
-            let vertex = Vec3::new(r * cos_end, r * sin_end, tube_radius * sin_phi);
-            extend_aabb(&mut aabb, vertex);
-            vertices.push(vertex);
-            // 法向量指向结束方向
-            normals.push(Vec3::new(-cos_end, -sin_end, 0.0));
-        }
-        // 扇状三角化结束端面
+        // 结束端面：复用最后一圈顶点 [(samples_l-1)*samples_s, samples_l*samples_s)
+        let last_ring_start = ((samples_l - 1) * samples_s) as u32;
         for i in 1..(samples_s - 1) {
+            // 绕序：从外部看逆时针
             indices.extend_from_slice(&[
-                end_offset,
-                end_offset + (i + 1) as u32,
-                end_offset + i as u32,
+                last_ring_start,
+                last_ring_start + i as u32,
+                last_ring_start + (i + 1) as u32,
             ]);
         }
     }
