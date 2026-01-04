@@ -439,4 +439,173 @@ fn test_rect_torus_manifold_conversion() {
             Err(e) => panic!("从 GLB 加载失败: {}", e),
         }
     }
+
+    // 部分圆环 (90°)
+    let rtorus_partial = RTorus {
+        rout: 2.0,
+        rins: 1.0,
+        height: 1.0,
+        angle: 90.0,
+    };
+    let param2 = PdmsGeoParam::PrimRTorus(rtorus_partial);
+
+    if let Some(result) = generate_csg_mesh(&param2, &settings, false, None) {
+        let mesh = &result.mesh;
+        let temp_dir = std::env::temp_dir();
+        let glb_path = temp_dir.join("test_rtorus_partial.glb");
+
+        export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
+        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let _ = std::fs::remove_file(&glb_path);
+
+        match manifold_result {
+            Ok(manifold) => {
+                let out_mesh = manifold.get_mesh();
+                let out_tris = out_mesh.indices.len() / 3;
+                println!("部分 RTorus (90°) Manifold: {} -> {}", mesh.indices.len() / 3, out_tris);
+                assert!(out_tris > 0, "部分 RTorus Manifold 转换失败");
+            }
+            Err(e) => panic!("部分 RTorus 从 GLB 加载失败: {}", e),
+        }
+    }
+}
+
+#[test]
+fn test_sphere_mesh_topology() {
+    use crate::fast_model::export_model::export_glb::export_single_mesh_to_glb;
+    use crate::geometry::csg::generate_csg_mesh;
+    use crate::parsed_data::geo_params_data::PdmsGeoParam;
+    use crate::prim_geo::Sphere;
+
+    let sphere = Sphere {
+        center: Vec3::ZERO,
+        radius: 1.0,
+    };
+
+    let settings = LodMeshSettings::default();
+    let param = PdmsGeoParam::PrimSphere(sphere);
+
+    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+        let mesh = &result.mesh;
+        println!("Sphere 网格统计:");
+        println!("  顶点数: {}", mesh.vertices.len());
+        println!("  三角形数: {}", mesh.indices.len() / 3);
+
+        // 检查重复顶点
+        let mut unique = std::collections::HashSet::new();
+        let mut dup = 0;
+        for v in &mesh.vertices {
+            let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
+            if !unique.insert(key) { dup += 1; }
+        }
+        println!("  重复顶点数: {}", dup);
+        assert_eq!(dup, 0, "Sphere 不应有重复顶点");
+
+        // Manifold 转换测试
+        let temp_dir = std::env::temp_dir();
+        let glb_path = temp_dir.join("test_sphere.glb");
+        export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
+        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let _ = std::fs::remove_file(&glb_path);
+
+        match manifold_result {
+            Ok(manifold) => {
+                let out_mesh = manifold.get_mesh();
+                let out_tris = out_mesh.indices.len() / 3;
+                println!("Sphere Manifold: {} -> {}", mesh.indices.len() / 3, out_tris);
+                assert!(out_tris > 0, "Sphere Manifold 转换失败");
+            }
+            Err(e) => panic!("Sphere GLB 加载失败: {}", e),
+        }
+    }
+}
+
+#[test]
+fn test_build_cylinder_mesh_topology() {
+    use crate::fast_model::export_model::export_glb::export_single_mesh_to_glb;
+    use crate::geometry::csg::generate_csg_mesh;
+    use crate::parsed_data::geo_params_data::PdmsGeoParam;
+    use crate::prim_geo::LCylinder;
+
+    let cyl = LCylinder {
+        paxi_pt: Vec3::ZERO,
+        paxi_dir: Vec3::Z,
+        pdia: 2.0,
+        pbdi: 0.0,
+        ptdi: 3.0,
+        ..Default::default()
+    };
+
+    let settings = LodMeshSettings::default();
+    let param = PdmsGeoParam::PrimLCylinder(cyl);
+
+    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+        let mesh = &result.mesh;
+        println!("LCylinder 网格统计:");
+        println!("  顶点数: {}", mesh.vertices.len());
+        println!("  三角形数: {}", mesh.indices.len() / 3);
+
+        // 检查重复顶点
+        let mut unique = std::collections::HashSet::new();
+        let mut dup = 0;
+        for v in &mesh.vertices {
+            let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
+            if !unique.insert(key) { dup += 1; }
+        }
+        println!("  重复顶点数: {}", dup);
+        assert_eq!(dup, 0, "LCylinder 不应有重复顶点");
+    }
+}
+
+#[test]
+fn test_dish_mesh_topology() {
+    use crate::geometry::csg::generate_csg_mesh;
+    use crate::parsed_data::geo_params_data::PdmsGeoParam;
+    use crate::prim_geo::Dish;
+
+    let dish = Dish {
+        paax_pt: Vec3::ZERO,
+        paax_dir: Vec3::Z,
+        pdia: 2.0,
+        pheig: 0.5,
+        pdis: 0.0,
+        prad: 0.0,
+        paax_expr: String::new(),
+    };
+
+    let settings = LodMeshSettings::default();
+    let param = PdmsGeoParam::PrimDish(dish);
+
+    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+        let mesh = &result.mesh;
+        println!("Dish 网格统计:");
+        println!("  顶点数: {}", mesh.vertices.len());
+        println!("  三角形数: {}", mesh.indices.len() / 3);
+
+        // 检查重复顶点
+        let mut unique = std::collections::HashSet::new();
+        let mut dup = 0;
+        for v in &mesh.vertices {
+            let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
+            if !unique.insert(key) { dup += 1; }
+        }
+        println!("  重复顶点数: {}", dup);
+
+        // Manifold 转换测试
+        use crate::fast_model::export_model::export_glb::export_single_mesh_to_glb;
+        let temp_dir = std::env::temp_dir();
+        let glb_path = temp_dir.join("test_dish.glb");
+        export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
+        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let _ = std::fs::remove_file(&glb_path);
+
+        match manifold_result {
+            Ok(manifold) => {
+                let out_mesh = manifold.get_mesh();
+                let out_tris = out_mesh.indices.len() / 3;
+                println!("Dish Manifold: {} -> {}", mesh.indices.len() / 3, out_tris);
+            }
+            Err(e) => println!("Dish Manifold 转换失败: {}", e),
+        }
+    }
 }
