@@ -6,6 +6,8 @@ use crate::utils::{take_option, take_vec};
 use crate::vec3_pool::parse_ptset_auto;
 use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SUL_DB, SurlValue, SurrealQueryExt};
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::SurrealValue;
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{pdms_types::*, to_table_key, to_table_keys};
 use bevy_transform::components::Transform;
@@ -45,25 +47,54 @@ pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
     }
 }
 
-///获得当前参考号对应的loops （例如Panel下的loops，可能有多个）
-pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)> {
+/// 从 LOOP/PLOO 子元素获取顶点数据的响应结构（内部使用）
+#[derive(Serialize, Deserialize, Debug, Default, SurrealValue)]
+struct LoopHeightRaw {
+    loops: Vec<RsVec3>,
+    height: Option<f32>,
+}
+
+/// fetch_loops_and_height 函数的返回结构体
+#[derive(Debug, Default, Clone)]
+pub struct LoopHeightResult {
+    /// 所有 loop 的顶点数据
+    pub loops: Vec<Vec<Vec3>>,
+    /// 高度值
+    pub height: f32,
+}
+
+/// 获得当前参考号对应的loops（例如Panel下的loops，可能有多个）
+/// 
+/// 注意：顶点数据存储在 LOOP/PLOO 的子元素 PAVE/PONT 上，而不是 LOOP/PLOO 本身
+pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeightResult> {
+    // 新查询：从 LOOP/PLOO 的子元素 PAVE/PONT 获取顶点数据
     let sql = format!(
-        r#"
-        select value (select value [refno.POS[0], refno.POS[1], refno.FRAD] from {0}.children[? noun in ["LOOP", "PLOO"]]);
-        array::complement((select value refno.HEIG from [ (select value id from only {0}.children[? noun in ["LOOP", "PLOO"]] limit 1), {0}]), [none])[0];
-        "#,
+        r#"SELECT value {{ 
+            loops: (SELECT value [refno.POS[0], refno.POS[1], refno.FRAD] FROM id.children WHERE noun IN ["PAVE", "PONT"]), 
+            height: refno.HEIG 
+        }} FROM {0}.children WHERE noun IN ["LOOP", "PLOO"]"#,
         refno.to_pe_key()
     );
     // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query_response(&sql).await.unwrap();
-    let raw_points: Vec<Vec<RsVec3>> = response.take(0)?;
-    let points: Vec<Vec<Vec3>> = raw_points
-        .into_iter()
-        .map(|loop_points| loop_points.into_iter().map(|v| v.0).collect())
-        .collect();
-    let height: Option<f32> = response.take(1)?;
+    let results: Vec<LoopHeightRaw> = response.take(0)?;
+    
+    // 提取所有 loop 的顶点和高度
+    let mut all_loops: Vec<Vec<Vec3>> = Vec::new();
+    let mut height: f32 = 0.0;
+    
+    for result in results {
+        let points: Vec<Vec3> = result.loops.into_iter().map(|v| v.0).collect();
+        if !points.is_empty() {
+            all_loops.push(points);
+        }
+        // 使用第一个有效的高度值
+        if height == 0.0 {
+            height = result.height.unwrap_or_default();
+        }
+    }
 
-    Ok((points, height.unwrap_or_default()))
+    Ok(LoopHeightResult { loops: all_loops, height })
 }
 
 ///通过surql查询pe数据
@@ -449,6 +480,46 @@ mod tests {
 
         // You might want to add more specific assertions based on expected data
         // For example, checking for a specific number of points or specific point values
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_fetch_loops_and_height() -> anyhow::Result<()> {
+        // Initialize the test database
+        init_test_surreal().await?;
+
+        // 使用已知的 PANE 元素进行测试: 24381_36716
+        // 结构: PANE(24381_36716) -> PLOO(24381_36717) -> PAVE(多个顶点)
+        let refno: RefnoEnum = "24381_36716".into();
+
+        // 查询 loops 和 height
+        let result = fetch_loops_and_height(refno).await?;
+
+        // 验证返回的 loops 不为空
+        assert!(!result.loops.is_empty(), "Loops should not be empty");
+        
+        // 验证高度值有效（已知该 PANE 的高度为 3050.0）
+        assert!(result.height > 0.0, "Height should be greater than 0");
+        assert!((result.height - 3050.0).abs() < 1.0, "Height should be approximately 3050.0, got {}", result.height);
+
+        // 验证第一个 loop 有多个顶点（已知该 PLOO 有 9 个 PAVE 子元素）
+        let first_loop = &result.loops[0];
+        assert!(first_loop.len() >= 3, "First loop should have at least 3 vertices, got {}", first_loop.len());
+        assert_eq!(first_loop.len(), 9, "First loop should have 9 vertices (PAVE elements)");
+
+        // 验证顶点数据有效
+        for point in first_loop {
+            assert!(
+                point.x.is_finite() && point.y.is_finite() && point.z.is_finite(),
+                "All components of the point should be finite"
+            );
+        }
+
+        println!("fetch_loops_and_height test passed:");
+        println!("  - Number of loops: {}", result.loops.len());
+        println!("  - First loop vertices: {}", first_loop.len());
+        println!("  - Height: {}", result.height);
 
         Ok(())
     }

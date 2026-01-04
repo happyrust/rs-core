@@ -117,6 +117,7 @@ pub mod dblist;
 pub mod expression;
 
 pub mod utils;
+pub mod fast_model;
 
 pub mod debug_macros;
 
@@ -248,16 +249,7 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
             msg: format!("Failed to connect to database: {}", e),
         })?;
 
-    // Set namespace and database
-    SUL_DB
-        .use_ns(&db_option.surreal_ns)
-        .use_db(&db_option.project_name)
-        .await
-        .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to set namespace and database: {}", e),
-        })?;
-
-    // Sign in
+    // Sign in first (before setting namespace/database)
     SUL_DB
         .signin(Root {
             username: db_option.v_user.clone(),
@@ -266,8 +258,13 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to sign in: {}", e),
-        })
-        .unwrap();
+        })?;
+
+    // Set namespace and database
+    let _ = SUL_DB
+        .use_ns(&db_option.surreal_ns)
+        .use_db(&db_option.project_name)
+        .await;
 
     // Define common functions (使用 None 从配置文件自动读取路径)
     define_common_functions(None)
