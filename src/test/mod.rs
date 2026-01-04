@@ -56,6 +56,9 @@ pub mod test_csg_manifold;
 #[cfg(feature = "gen_model")]
 pub mod test_unit_cylinder_manifold;
 
+#[cfg(feature = "gen_model")]
+pub mod test_csg_boolean;
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_svg_standalone;
 
