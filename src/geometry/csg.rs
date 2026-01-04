@@ -68,97 +68,59 @@ pub fn reset_sslc_counter() {
 /// 生成单位盒子网格（用于简单盒子的基础网格）
 ///
 /// 返回一个尺寸为1x1x1的单位盒子，中心在原点
+/// 生成单位盒子网格（流形版本）
+///
+/// 生成无重复顶点的流形网格：
+/// - 只有 8 个角点顶点
+/// - 12 个三角形（6 个面 × 2）
+/// - 所有三角形法向量指向外部
 pub fn unit_box_mesh() -> PlantMesh {
     let half = 0.5;
-    let mut vertices = Vec::with_capacity(24); // 6个面 × 4个顶点 = 24
-    let mut normals = Vec::with_capacity(24);
-    let mut indices = Vec::with_capacity(36); // 6个面 × 2个三角形 × 3个索引 = 36
 
-    // 定义6个面的法向量和4个角点（在单位坐标系中）
-    let faces = [
-        // +Z面（前面）
-        (
-            Vec3::Z,
-            [
-                Vec3::new(-half, -half, half),
-                Vec3::new(half, -half, half),
-                Vec3::new(half, half, half),
-                Vec3::new(-half, half, half),
-            ],
-        ),
-        // -Z面（后面）
-        (
-            Vec3::NEG_Z,
-            [
-                Vec3::new(-half, half, -half),
-                Vec3::new(half, half, -half),
-                Vec3::new(half, -half, -half),
-                Vec3::new(-half, -half, -half),
-            ],
-        ),
-        // +X面（右面）
-        (
-            Vec3::X,
-            [
-                Vec3::new(half, -half, -half),
-                Vec3::new(half, half, -half),
-                Vec3::new(half, half, half),
-                Vec3::new(half, -half, half),
-            ],
-        ),
-        // -X面（左面）
-        (
-            Vec3::NEG_X,
-            [
-                Vec3::new(-half, -half, half),
-                Vec3::new(-half, half, half),
-                Vec3::new(-half, half, -half),
-                Vec3::new(-half, -half, -half),
-            ],
-        ),
-        // +Y面（上面）
-        (
-            Vec3::Y,
-            [
-                Vec3::new(-half, half, -half),
-                Vec3::new(half, half, -half),
-                Vec3::new(half, half, half),
-                Vec3::new(-half, half, half),
-            ],
-        ),
-        // -Y面（下面）
-        (
-            Vec3::NEG_Y,
-            [
-                Vec3::new(-half, -half, half),
-                Vec3::new(half, -half, half),
-                Vec3::new(half, -half, -half),
-                Vec3::new(-half, -half, -half),
-            ],
-        ),
+    // 8 个角点顶点
+    let vertices = vec![
+        Vec3::new(-half, -half, -half), // 0: 左下后
+        Vec3::new(half, -half, -half),  // 1: 右下后
+        Vec3::new(half, half, -half),   // 2: 右上后
+        Vec3::new(-half, half, -half),  // 3: 左上后
+        Vec3::new(-half, -half, half),  // 4: 左下前
+        Vec3::new(half, -half, half),   // 5: 右下前
+        Vec3::new(half, half, half),    // 6: 右上前
+        Vec3::new(-half, half, half),   // 7: 左上前
     ];
 
-    for (normal, corners) in faces {
-        let base_index = vertices.len() as u32;
-        for corner in corners {
-            vertices.push(corner);
-            normals.push(normal);
-        }
-        // 添加两个三角形
-        indices.extend_from_slice(&[
-            base_index,
-            base_index + 1,
-            base_index + 2,
-            base_index,
-            base_index + 2,
-            base_index + 3,
-        ]);
-    }
+    // 法向量（每个顶点取平均，这里简化为指向外部的对角方向）
+    let normals = vec![
+        Vec3::new(-1.0, -1.0, -1.0).normalize(),
+        Vec3::new(1.0, -1.0, -1.0).normalize(),
+        Vec3::new(1.0, 1.0, -1.0).normalize(),
+        Vec3::new(-1.0, 1.0, -1.0).normalize(),
+        Vec3::new(-1.0, -1.0, 1.0).normalize(),
+        Vec3::new(1.0, -1.0, 1.0).normalize(),
+        Vec3::new(1.0, 1.0, 1.0).normalize(),
+        Vec3::new(-1.0, 1.0, 1.0).normalize(),
+    ];
+
+    // 12 个三角形（6 个面，每面 2 个三角形）
+    // 绕序：从外部看逆时针，法向量指向外部
+    let indices = vec![
+        // 前面 (+Z): 4, 5, 6, 7
+        4, 5, 6, 4, 6, 7,
+        // 后面 (-Z): 1, 0, 3, 2
+        1, 0, 3, 1, 3, 2,
+        // 右面 (+X): 5, 1, 2, 6
+        5, 1, 2, 5, 2, 6,
+        // 左面 (-X): 0, 4, 7, 3
+        0, 4, 7, 0, 7, 3,
+        // 上面 (+Y): 7, 6, 2, 3
+        7, 6, 2, 7, 2, 3,
+        // 下面 (-Y): 0, 1, 5, 4
+        0, 1, 5, 0, 5, 4,
+    ];
 
     use nalgebra::Point3;
     use parry3d::bounding_volume::Aabb;
 
-    // 🆕 生成盒子的12条特征边
     let box_edges = generate_box_edges(1.0, 1.0, 1.0);
 
     let mut mesh = PlantMesh {
@@ -181,6 +143,19 @@ pub fn unit_box_mesh() -> PlantMesh {
 /// 生成单位球体网格（用于简单球体的基础网格）
 ///
 /// 返回一个半径为0.5的单位球体，中心在原点
+/// 生成单位球体网格（流形版本）
+///
+/// 参考 Manifold 的球体生成算法，生成无重复顶点的流形网格：
+/// - 极点只有一个顶点（不重复）
+/// - 每个纬度圈的顶点不重复（经度 0 和 2π 共用同一顶点）
+/// - 所有三角形法向量指向外部
+///
+/// 顶点布局：
+/// - [0]: 北极点
+/// - [1, radial]: 第一纬度圈
+/// - ...
+/// - [1 + (height-1)*radial, 1 + height*radial - 1]: 最后一纬度圈
+/// - [1 + height*radial]: 南极点
 pub fn unit_sphere_mesh() -> PlantMesh {
     use nalgebra::Point3;
     use parry3d::bounding_volume::Aabb;
@@ -188,28 +163,32 @@ pub fn unit_sphere_mesh() -> PlantMesh {
     let settings = LodMeshSettings::default();
     let radial = compute_radial_segments(&settings, radius, false, 3);
     let mut height = compute_height_segments(&settings, radius * 2.0, false, 2);
-    // 确保高度分段数为偶数（便于对称分布）
     if height % 2 != 0 {
         height += 1;
     }
 
-    let mut vertices = Vec::with_capacity((radial + 1) * (height + 1));
-    let mut normals = Vec::with_capacity(vertices.capacity());
-    let mut indices = Vec::with_capacity(height * radial * 6);
+    // 顶点数：北极 + (height-1)个纬度圈 * radial + 南极
+    let num_vertices = 2 + (height - 1) * radial;
+    let mut vertices = Vec::with_capacity(num_vertices as usize);
+    let mut normals = Vec::with_capacity(num_vertices as usize);
     let mut aabb = Aabb::new_invalid();
 
-    // 生成球面顶点
-    for lat in 0..=height {
-        // 纬度参数 [0, 1] 映射到 [0, π]
+    // 1. 北极点
+    let north_pole = Vec3::new(0.0, 0.0, radius);
+    extend_aabb(&mut aabb, north_pole);
+    vertices.push(north_pole);
+    normals.push(Vec3::new(0.0, 0.0, 1.0));
+
+    // 2. 中间纬度圈（不包括极点）
+    for lat in 1..height {
         let v = lat as f32 / height as f32;
-        let theta = v * std::f32::consts::PI; // 极角（纬度角）
+        let theta = v * std::f32::consts::PI;
         let sin_theta = theta.sin();
         let cos_theta = theta.cos();
 
-        for lon in 0..=radial {
-            // 经度参数 [0, 1] 映射到 [0, 2π]
+        for lon in 0..radial {
             let u = lon as f32 / radial as f32;
-            let phi = u * std::f32::consts::TAU; // 方位角（经度角）
+            let phi = u * std::f32::consts::TAU;
             let (sin_phi, cos_phi) = phi.sin_cos();
 
             let normal = Vec3::new(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
@@ -220,28 +199,52 @@ pub fn unit_sphere_mesh() -> PlantMesh {
         }
     }
 
-    let stride = radial + 1;
-    for lat in 0..height {
+    // 3. 南极点
+    let south_pole = Vec3::new(0.0, 0.0, -radius);
+    extend_aabb(&mut aabb, south_pole);
+    vertices.push(south_pole);
+    normals.push(Vec3::new(0.0, 0.0, -1.0));
+
+    let south_pole_idx = vertices.len() as u32 - 1;
+
+    // 生成三角形索引
+    let mut indices = Vec::new();
+
+    // 4. 北极扇形三角形
+    for lon in 0..radial {
+        let v1 = 1 + lon as u32;
+        let v2 = 1 + ((lon + 1) % radial) as u32;
+        // 从外部看逆时针：north_pole -> v1 -> v2
+        indices.extend_from_slice(&[0, v1, v2]);
+    }
+
+    // 5. 中间带状三角形
+    for lat in 1..(height - 1) {
+        let ring_start = 1 + (lat - 1) * radial;
+        let next_ring_start = 1 + lat * radial;
+
         for lon in 0..radial {
-            let current = lat * stride + lon;
-            let next = current + stride;
-            indices.extend_from_slice(&[
-                current as u32,
-                (current + 1) as u32,
-                next as u32,
-                (current + 1) as u32,
-                (next + 1) as u32,
-                next as u32,
-            ]);
+            let curr = (ring_start + lon) as u32;
+            let next = (ring_start + (lon + 1) % radial) as u32;
+            let curr_below = (next_ring_start + lon) as u32;
+            let next_below = (next_ring_start + (lon + 1) % radial) as u32;
+
+            // 两个三角形组成四边形，法向量指向外部
+            indices.extend_from_slice(&[curr, curr_below, next]);
+            indices.extend_from_slice(&[next, curr_below, next_below]);
         }
     }
 
-    // 使用特征边生成函数（纬线圈数和经线条数）
-    let sphere_edges = generate_sphere_edges(
-        radius,
-        8,  // 8条经线（子午线）
-        4,  // 4条纬线（平行圈）
-    );
+    // 6. 南极扇形三角形
+    let last_ring_start = 1 + (height - 2) * radial;
+    for lon in 0..radial {
+        let v1 = (last_ring_start + lon) as u32;
+        let v2 = (last_ring_start + (lon + 1) % radial) as u32;
+        // 从外部看逆时针：v1 -> south_pole -> v2
+        indices.extend_from_slice(&[v1, south_pole_idx, v2]);
+    }
+
+    let sphere_edges = generate_sphere_edges(radius, 8, 4);
     let mut mesh = PlantMesh {
         indices,
         vertices,
@@ -263,87 +266,96 @@ pub fn unit_sphere_mesh() -> PlantMesh {
 /// # 参数
 /// - `settings`: LOD网格设置，控制网格的细分程度
 /// - `non_scalable`: 是否不可缩放（固定分段数）
+/// 生成单位圆柱体网格（流形版本）
+///
+/// 参考 Manifold 的 Extrude 算法，生成无重复顶点的流形网格：
+/// - 每个位置的顶点只生成一次
+/// - 端面复用侧面顶点，不生成重复顶点
+/// - 只添加端面中心点作为新顶点
+///
+/// 顶点布局：
+/// - [0, resolution): 底面圆周顶点
+/// - [resolution, 2*resolution): 顶面圆周顶点
+/// - [2*resolution]: 底面中心点
+/// - [2*resolution + 1]: 顶面中心点
 pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> PlantMesh {
     let height = 1.0;
     let radius = 0.5;
 
     // 使用LOD设置计算分段数
     let resolution = compute_radial_segments(settings, radius, non_scalable, 3);
-    let segments = compute_height_segments(settings, height, non_scalable, 1);
 
-    let num_rings = segments + 1;
-    let num_vertices = resolution * 2 + num_rings * (resolution + 1);
-    let num_faces = resolution * (num_rings - 2);
-    let num_indices = (2 * num_faces + 2 * (resolution - 1) * 2) * 3;
+    // 顶点数：底面圆周 + 顶面圆周 + 2个中心点
+    let num_vertices = resolution * 2 + 2;
+    // 三角形数：侧面 2*resolution + 底面 resolution + 顶面 resolution
+    let num_triangles = resolution * 4;
+
     let mut vertices: Vec<Vec3> = Vec::with_capacity(num_vertices as usize);
     let mut normals: Vec<Vec3> = Vec::with_capacity(num_vertices as usize);
-    let mut indices: Vec<u32> = Vec::with_capacity(num_indices as usize);
+    let mut indices: Vec<u32> = Vec::with_capacity(num_triangles as usize * 3);
 
     let step_theta = std::f32::consts::TAU / resolution as f32;
-    let step_z = height / segments as f32;
 
-    for ring in 0..num_rings {
-        let z = ring as f32 * step_z;
-        for segment in 0..=resolution {
-            let theta = segment as f32 * step_theta;
-            let (sin, cos) = theta.sin_cos();
-            vertices.push([radius * cos, radius * sin, z].into());
-            normals.push([cos, sin, 0.0].into());
-        }
+    // 1. 生成底面圆周顶点 [0, resolution)
+    for i in 0..resolution {
+        let theta = i as f32 * step_theta;
+        let (sin, cos) = theta.sin_cos();
+        vertices.push([radius * cos, radius * sin, 0.0].into());
+        // 侧面法向量（指向径向）
+        normals.push([cos, sin, 0.0].into());
     }
 
-    for i in 0..segments {
-        let ring = i * (resolution + 1);
-        let next_ring = (i + 1) * (resolution + 1);
-        for j in 0..resolution {
-            indices.extend_from_slice(&[
-                ((ring + j + 1) as u32),
-                ((next_ring + j) as u32),
-                ((ring + j) as u32),
-                ((ring + j + 1) as u32),
-                ((next_ring + j + 1) as u32),
-                ((next_ring + j) as u32),
-            ]);
-        }
+    // 2. 生成顶面圆周顶点 [resolution, 2*resolution)
+    for i in 0..resolution {
+        let theta = i as f32 * step_theta;
+        let (sin, cos) = theta.sin_cos();
+        vertices.push([radius * cos, radius * sin, height].into());
+        // 侧面法向量（指向径向）
+        normals.push([cos, sin, 0.0].into());
     }
 
-    // 构建端面的闭包函数（顶部或底部）
-    let mut build_cap = |top: bool| {
-        // 根据是顶部还是底部设置不同的z坐标和法向量
-        let (z, normal_z) = if top { (height, 1.0) } else { (0.0, -1.0) };
+    // 3. 添加端面中心点
+    let bottom_center = vertices.len() as u32;
+    vertices.push([0.0, 0.0, 0.0].into());
+    normals.push([0.0, 0.0, -1.0].into());
 
-        // 先插入中心顶点
-        let center_index = vertices.len() as u32;
-        vertices.push([0.0, 0.0, z].into());
-        normals.push([0.0, 0.0, normal_z].into());
+    let top_center = vertices.len() as u32;
+    vertices.push([0.0, 0.0, height].into());
+    normals.push([0.0, 0.0, 1.0].into());
 
-        // 再插入圆周顶点
-        let rim_base = vertices.len() as u32;
-        for i in 0..resolution {
-            let theta = i as f32 * step_theta;
-            let (sin, cos) = theta.sin_cos();
-            vertices.push([cos * radius, sin * radius, z].into());
-            normals.push([0.0, 0.0, normal_z].into());
-        }
+    // 4. 生成侧面三角形（复用底面和顶面圆周顶点）
+    // 绕序：从外部看为逆时针（CCW），法向量指向外部
+    for i in 0..resolution {
+        let bottom_curr = i as u32;
+        let bottom_next = ((i + 1) % resolution) as u32;
+        let top_curr = (resolution + i) as u32;
+        let top_next = (resolution + (i + 1) % resolution) as u32;
 
-        // 使用扇形三角形生成端面索引
-        // 顶面：从外侧看为逆时针，底面：从外侧看为逆时针（法线向外）
-        for i in 0..resolution {
-            let v0 = center_index;
-            let v1 = rim_base + i as u32;
-            let v2 = rim_base + ((i + 1) % resolution) as u32;
-            if top {
-                // 顶部法线指向 +Z
-                indices.extend_from_slice(&[v0, v1, v2]);
-            } else {
-                // 底部法线指向 -Z，反转绕序
-                indices.extend_from_slice(&[v0, v2, v1]);
-            }
-        }
-    };
+        // 两个三角形组成一个四边形
+        // 从外部看，顶点按逆时针排列
+        // 三角形 1: bottom_curr -> bottom_next -> top_curr
+        indices.extend_from_slice(&[bottom_curr, bottom_next, top_curr]);
+        // 三角形 2: top_curr -> bottom_next -> top_next
+        indices.extend_from_slice(&[top_curr, bottom_next, top_next]);
+    }
 
-    build_cap(true);
-    build_cap(false);
+    // 5. 生成底面三角形（扇形，复用底面圆周顶点）
+    // 底面法线指向 -Z，从下方看为逆时针
+    for i in 0..resolution {
+        let v1 = i as u32;
+        let v2 = ((i + 1) % resolution) as u32;
+        // 从下方看：center -> v2 -> v1 为逆时针（法向量指向 -Z）
+        indices.extend_from_slice(&[bottom_center, v2, v1]);
+    }
+
+    // 6. 生成顶面三角形（扇形，复用顶面圆周顶点）
+    // 顶面法线指向 +Z，从上方看为逆时针
+    for i in 0..resolution {
+        let v1 = (resolution + i) as u32;
+        let v2 = (resolution + (i + 1) % resolution) as u32;
+        // 从上方看：center -> v1 -> v2 为逆时针（法向量指向 +Z）
+        indices.extend_from_slice(&[top_center, v1, v2]);
+    }
 
     // 🆕 生成圆柱体的特征边（顶圆 + 底圆 + 4条纵向边）
     let cylinder_edges = generate_cylinder_edges(
@@ -546,7 +558,6 @@ fn create_mesh_with_edges(
     };
     mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
-    weld_vertices_for_manifold(&mut mesh);
     mesh
 }
 
@@ -580,7 +591,6 @@ fn create_mesh_with_custom_edges(
     };
     mesh.generate_auto_uvs();
     mesh.sync_wire_vertices_from_edges();
-    weld_vertices_for_manifold(&mut mesh);
     mesh
 }
 

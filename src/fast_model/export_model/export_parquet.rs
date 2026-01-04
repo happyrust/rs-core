@@ -1,11 +1,18 @@
-use aios_core::types::PlantAabb;
-use aios_core::PlantTransform;
-use aios_core::{RefnoEnum, SUL_DB, SurrealQueryExt};
+// 仅在启用相关 feature 时编译此模块，避免由于 polars 依赖缺失导致的编译错误
+#[cfg(feature = "parquet")]
+use crate::types::PlantAabb;
+#[cfg(feature = "parquet")]
+use crate::PlantTransform;
+#[cfg(feature = "parquet")]
+use crate::{RefnoEnum, SUL_DB, SurrealQueryExt};
+#[cfg(feature = "parquet")]
+use polars::df;
+#[cfg(feature = "parquet")]
 use polars::prelude::*;
 use std::fs;
 use std::path::Path;
-use surrealdb::types::SurrealValue;
 
+#[cfg(feature = "parquet")]
 /// 导出 inst_relate_aabb + world_trans 到 Parquet，用于空间计算
 pub async fn export_inst_aabb_parquet(output_path: &Path) -> anyhow::Result<()> {
     // 查询字段：refno、dbno、noun、world_trans（可选）、aabb（flatten）
@@ -15,13 +22,13 @@ SELECT
   in.noun as noun,
   in.dbno as dbno,
   world_trans.d as world_trans,
-  (SELECT aabb.d FROM inst_relate_aabb WHERE refno = in LIMIT 1)[0] as aabb
+  in->inst_relate_aabb.out[0]
 FROM inst_relate
 WHERE world_trans.d != none
-  AND (SELECT refno FROM inst_relate_aabb WHERE refno = in LIMIT 1) != NONE
+  AND array::len(in->inst_relate_aabb) > 0
 "#;
 
-    let rows: Vec<Row> = SUL_DB.query_take(sql, 0).await.unwrap_or_default();
+    let rows: Vec<Row> = SUL_DB.query_take(sql, 0).await?;
     if rows.is_empty() {
         println!("[parquet] inst_relate_aabb 查询为空，跳过导出");
         return Ok(());
@@ -43,17 +50,32 @@ WHERE world_trans.d != none
     let mut max_y = Vec::with_capacity(rows.len());
     let mut min_z = Vec::with_capacity(rows.len());
     let mut max_z = Vec::with_capacity(rows.len());
+    let mut skipped = 0usize;
 
     for row in rows {
+        let Some(aabb) = row.aabb else {
+            skipped += 1;
+            continue;
+        };
+        let mins = aabb.mins();
+        let maxs = aabb.maxs();
         refnos.push(row.refno);
         dbnos.push(row.dbno as i64);
         nouns.push(row.noun.unwrap_or_default());
-        min_x.push(row.aabb.mins.x as f64);
-        max_x.push(row.aabb.maxs.x as f64);
-        min_y.push(row.aabb.mins.y as f64);
-        max_y.push(row.aabb.maxs.y as f64);
-        min_z.push(row.aabb.mins.z as f64);
-        max_z.push(row.aabb.maxs.z as f64);
+        min_x.push(mins.x as f64);
+        max_x.push(maxs.x as f64);
+        min_y.push(mins.y as f64);
+        max_y.push(maxs.y as f64);
+        min_z.push(mins.z as f64);
+        max_z.push(maxs.z as f64);
+    }
+
+    if refnos.is_empty() {
+        println!("[parquet] inst_relate_aabb 没有可用 aabb，跳过导出");
+        return Ok(());
+    }
+    if skipped > 0 {
+        println!("[parquet] inst_relate_aabb 过滤掉 {} 条空 aabb", skipped);
     }
 
     let df = df![
@@ -80,12 +102,13 @@ WHERE world_trans.d != none
     Ok(())
 }
 
-#[derive(Debug)]
-#[derive(Debug, Clone, serde::Deserialize, SurrealValue)]
+#[cfg(feature = "parquet")]
+#[derive(Debug, Clone, serde::Deserialize)]
 struct Row {
     refno: String,
     dbno: u32,
     noun: Option<String>,
-    world_trans: Option<aios_core::PlantTransform>,
-    aabb: PlantAabb,
+    world_trans: Option<crate::PlantTransform>,
+    #[serde(default)]
+    aabb: Option<PlantAabb>,
 }

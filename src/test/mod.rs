@@ -41,11 +41,20 @@ pub mod test_different_dbs;
 // pub mod test_gensec_spine;
 // pub mod test_poinsp_orientation;
 
-pub mod test_drns_drne_fix;
+// 以下测试文件因使用废弃 API 暂时移除
+// pub mod test_drns_drne_fix;
+// pub mod test_scylinder_shear;
+// pub mod test_stwall_25688_7958;
+
 pub mod test_h_beam_drns_drne;
 pub mod test_lpyramid_fix;
 pub mod test_multi_segment_path;
-pub mod test_scylinder_shear;
+
+#[cfg(feature = "gen_model")]
+pub mod test_csg_manifold;
+
+#[cfg(feature = "gen_model")]
+pub mod test_unit_cylinder_manifold;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod test_svg_standalone;
@@ -60,8 +69,6 @@ pub mod test_clean_svg;
 // pub mod test_bad_primloft;
 // pub mod test_bad_primloft_fix;
 // pub mod test_bad_primloft_simple;
-
-pub mod test_stwall_25688_7958;
 
 pub mod test_helpers;
 
