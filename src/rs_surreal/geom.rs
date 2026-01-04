@@ -1,6 +1,7 @@
 use crate::parsed_data::CateAxisParam;
 use crate::pdms_pluggin::heat_dissipation::InstPointMap;
 use crate::pe::SPdmsElement;
+use crate::shape::pdms_shape::RsVec3;
 use crate::utils::{take_option, take_vec};
 use crate::vec3_pool::parse_ptset_auto;
 use crate::{NamedAttrMap, RefnoEnum};
@@ -48,28 +49,17 @@ pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
 pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<(Vec<Vec<Vec3>>, f32)> {
     let sql = format!(
         r#"
-        select value (select value [in.refno.POS[0], in.refno.POS[1], in.refno.FRAD] from <-pe_owner) from
-            (select value in from {0}<-pe_owner where in.noun in ["LOOP", "PLOO"]);
-        array::complement((select value refno.HEIG from [ (select value in.id from only {0}<-pe_owner where in.noun in ["LOOP", "PLOO"] limit 1), {0}]), [none])[0];
+        select value (select value [refno.POS[0], refno.POS[1], refno.FRAD] from {0}.children[? noun in ["LOOP", "PLOO"]]);
+        array::complement((select value refno.HEIG from [ (select value id from only {0}.children[? noun in ["LOOP", "PLOO"]] limit 1), {0}]), [none])[0];
         "#,
         refno.to_pe_key()
     );
     // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query_response(&sql).await.unwrap();
-    let raw_points: Vec<Vec<Vec<f64>>> = response.take(0)?;
+    let raw_points: Vec<Vec<RsVec3>> = response.take(0)?;
     let points: Vec<Vec<Vec3>> = raw_points
         .into_iter()
-        .map(|outer| {
-            outer
-                .into_iter()
-                .map(|inner| {
-                    let x = inner.get(0).copied().unwrap_or_default() as f32;
-                    let y = inner.get(1).copied().unwrap_or_default() as f32;
-                    let z = inner.get(2).copied().unwrap_or_default() as f32;
-                    Vec3::new(x, y, z)
-                })
-                .collect()
-        })
+        .map(|loop_points| loop_points.into_iter().map(|v| v.0).collect())
         .collect();
     let height: Option<f32> = response.take(1)?;
 

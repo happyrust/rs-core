@@ -27,7 +27,7 @@ pub mod axis_param;
 
 pub mod basic;
 
-pub mod parse;
+// pub mod parse; // 模块已移动或删除
 
 pub mod bevy_types;
 // pub mod cache; // 模块已删除

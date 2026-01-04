@@ -1882,12 +1882,12 @@ fn test_gen_polyline_with_ploop_processor() {
 
     match gen_polyline_from_processed_vertices(&processed_with, None) {
         Ok(polyline) => {
-            println!("✅ 带 FRADIUS 测试成功！");
-            println!(
-                "   生成的 Polyline 有 {} 个顶点",
-                polyline.vertex_data.len()
-            );
-            println!("   Polyline 是否闭合: {}", polyline.is_closed());
+            // println!("✅ 带 FRADIUS 测试成功！");
+            // println!(
+            //     "   生成的 Polyline 有 {} 个顶点",
+            //     polyline.vertex_data.len()
+            // );
+            // println!("   Polyline 是否闭合: {}", polyline.is_closed());
 
             // 检查是否有圆弧段（bulge != 0）
             let arc_count = polyline
@@ -1895,7 +1895,7 @@ fn test_gen_polyline_with_ploop_processor() {
                 .iter()
                 .filter(|v| v.bulge.abs() > 0.001)
                 .count();
-            println!("   包含 {} 个圆弧段", arc_count);
+            // println!("   包含 {} 个圆弧段", arc_count);
         }
         Err(e) => {
             println!("❌ 带 FRADIUS 测试失败: {}", e);

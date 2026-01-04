@@ -356,21 +356,26 @@ impl DbOption {
     }
 
     pub fn get_meshes_path(&self) -> PathBuf {
-        let mut pathbuf = self
+        let pathbuf = self
             .meshes_path
             .as_ref()
             .map(|x| Path::new(x).to_path_buf())
             .unwrap_or("assets/meshes".into());
-        let lod = self.mesh_precision.default_lod;
-        if let Some(subdir) = self.mesh_precision.output_subdir(lod) {
-            pathbuf = pathbuf.join(subdir);
-        } else {
-            pathbuf = pathbuf.join(format!("lod_{:?}", lod));
+
+        // 溯源到不含 lod_ 的基础目录，确保返回的是纯粹的基础路径
+        let mut clean_base = pathbuf;
+        while let Some(last_component) = clean_base.file_name().and_then(|n| n.to_str()) {
+            if last_component.starts_with("lod_") {
+                clean_base.pop();
+            } else {
+                break;
+            }
         }
-        if !pathbuf.exists() {
-            std::fs::create_dir_all(&pathbuf).unwrap();
+
+        if !clean_base.exists() {
+            std::fs::create_dir_all(&clean_base).unwrap();
         }
-        pathbuf
+        clean_base
     }
 
     #[inline]

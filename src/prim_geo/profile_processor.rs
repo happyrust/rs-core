@@ -299,11 +299,11 @@ impl ProfileProcessor {
         let polyline = gen_polyline_from_processed_vertices(&processed_vertices, refno)?;
 
         //todo 实现打印 polyline 的方法, 使用 polyline_to_debug_json_str
-        println!(
-            "   轮廓 {} 的 Polyline: {}",
-            &refno.unwrap_or("unknown"),
-            polyline_to_debug_json_str(&polyline)
-        );
+        // println!(
+        //     "   轮廓 {} 的 Polyline: {}",
+        //     &refno.unwrap_or("unknown"),
+        //     polyline_to_debug_json_str(&polyline)
+        // );
 
         //export the svg of the polyline
         if std::env::var("EXPORT_SVG").is_ok() {

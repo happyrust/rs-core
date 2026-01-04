@@ -986,3 +986,22 @@ DEFINE FUNCTION fn::collect_descendants_filter_inst(
 
     return array::map($filtered, |$node| $node.id);
 };
+
+-- ============================================================================
+-- inst_relate_aabb / inst_relate_bool 表定义
+-- 目的：将 AABB 和布尔结果拆分到独立表，避免频繁 update inst_relate
+-- ============================================================================
+DEFINE TABLE inst_relate_aabb SCHEMALESS;
+DEFINE FIELD refno ON TABLE inst_relate_aabb TYPE record<pe>;
+DEFINE FIELD aabb ON TABLE inst_relate_aabb TYPE record<aabb>;
+DEFINE FIELD source ON TABLE inst_relate_aabb TYPE option<string>;
+DEFINE FIELD updated_at ON TABLE inst_relate_aabb TYPE option<datetime> DEFAULT time::now();
+DEFINE INDEX idx_inst_relate_aabb_refno ON TABLE inst_relate_aabb COLUMNS refno UNIQUE;
+
+DEFINE TABLE inst_relate_bool SCHEMALESS;
+DEFINE FIELD refno ON TABLE inst_relate_bool TYPE record<pe>;
+DEFINE FIELD mesh_id ON TABLE inst_relate_bool TYPE option<string>;
+DEFINE FIELD status ON TABLE inst_relate_bool TYPE option<string>;
+DEFINE FIELD source ON TABLE inst_relate_bool TYPE option<string>;
+DEFINE FIELD updated_at ON TABLE inst_relate_bool TYPE option<datetime> DEFAULT time::now();
+DEFINE INDEX idx_inst_relate_bool_refno ON TABLE inst_relate_bool COLUMNS refno UNIQUE;
