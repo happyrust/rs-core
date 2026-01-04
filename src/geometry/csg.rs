@@ -2743,139 +2743,208 @@ fn generate_rect_torus_mesh(
     );
 
     let half_height = rtorus.height * 0.5;
-    let samples = major_segments + 1; // 对于部分圆环，需要额外的采样点
-    let mut combined = PlantMesh::default();
-    combined.aabb = Some(Aabb::new_invalid());
+    let is_full_circle = sweep_angle >= std::f32::consts::TAU - 1e-3;
 
-    // 生成 toroidal 方向的三角函数值
-    let mut t0_cos = Vec::with_capacity(samples);
-    let mut t0_sin = Vec::with_capacity(samples);
-    for i in 0..samples {
-        let theta = if samples > 1 {
-            (sweep_angle / (samples - 1) as f32) * i as f32
+    // 对于完整圆环，不需要额外的采样点（首尾共享）
+    // 对于部分圆环，需要 major_segments + 1 个采样点
+    let radial = if is_full_circle { major_segments } else { major_segments + 1 };
+    let h_segs = height_segments;
+
+    // 预计算三角函数值
+    let mut cos_vals = Vec::with_capacity(radial);
+    let mut sin_vals = Vec::with_capacity(radial);
+    for i in 0..radial {
+        let theta = if is_full_circle {
+            std::f32::consts::TAU * i as f32 / radial as f32
         } else {
-            0.0
+            sweep_angle * i as f32 / (radial - 1) as f32
         };
-        t0_cos.push(theta.cos());
-        t0_sin.push(theta.sin());
+        cos_vals.push(theta.cos());
+        sin_vals.push(theta.sin());
     }
 
-    // 生成外圆柱面（法向量向外）
-    let (outer_mesh, outer_aabb) = generate_partial_cylinder_surface(
-        outer_radius,
-        half_height,
-        samples,
-        height_segments,
-        &t0_cos,
-        &t0_sin,
-        true, // outward = true
-    );
-    merge_meshes(&mut combined, outer_mesh, outer_aabb);
+    // === 统一顶点布局 ===
+    // 外圆柱面: (h_segs+1) × radial 顶点，索引 0..(h_segs+1)*radial
+    // 内圆柱面: (h_segs+1) × radial 顶点，索引 outer_count..outer_count+inner_count
+    // 顶部/底部环形面复用外/内圆柱面的边缘顶点
+    // 部分圆环的端面需要额外的内部顶点
 
-    // 生成内圆柱面（法向量向内）
-    let (inner_mesh, inner_aabb) = generate_partial_cylinder_surface(
-        inner_radius,
-        half_height,
-        samples,
-        height_segments,
-        &t0_cos,
-        &t0_sin,
-        false, // outward = false
-    );
-    merge_meshes(&mut combined, inner_mesh, inner_aabb);
+    let outer_count = (h_segs + 1) * radial;
+    let inner_count = (h_segs + 1) * radial;
+    let total_base = outer_count + inner_count;
 
-    // 生成顶部环形端面
-    let (top_mesh, top_aabb) = generate_partial_annulus_surface(
-        half_height,
-        inner_radius,
-        outer_radius,
-        samples,
-        radial_segments,
-        &t0_cos,
-        &t0_sin,
-        1.0, // normal_sign = 1.0 (向上)
-    );
-    merge_meshes(&mut combined, top_mesh, top_aabb);
+    let mut vertices = Vec::with_capacity(total_base);
+    let mut normals = Vec::with_capacity(total_base);
+    let mut indices = Vec::new();
+    let mut aabb = Aabb::new_invalid();
 
-    // 生成底部环形端面
-    let (bottom_mesh, bottom_aabb) = generate_partial_annulus_surface(
-        -half_height,
-        inner_radius,
-        outer_radius,
-        samples,
-        radial_segments,
-        &t0_cos,
-        &t0_sin,
-        -1.0, // normal_sign = -1.0 (向下)
-    );
-    merge_meshes(&mut combined, bottom_mesh, bottom_aabb);
-
-    // 对于部分圆环，需要添加起始和结束端面
-    if sweep_angle < std::f32::consts::TAU - 1e-3 {
-        // 起始端面（角度=0）
-        let (start_mesh, start_aabb) = generate_rect_torus_end_face(
-            inner_radius,
-            outer_radius,
-            half_height,
-            radial_segments,
-            height_segments,
-            0.0,  // angle = 0
-            true, // is_start
-        );
-        merge_meshes(&mut combined, start_mesh, start_aabb);
-
-        // 结束端面（角度=sweep_angle）
-        let (end_mesh, end_aabb) = generate_rect_torus_end_face(
-            inner_radius,
-            outer_radius,
-            half_height,
-            radial_segments,
-            height_segments,
-            sweep_angle,
-            false, // is_start
-        );
-        merge_meshes(&mut combined, end_mesh, end_aabb);
+    // --- 生成外圆柱面顶点 ---
+    for h in 0..=h_segs {
+        let t = h as f32 / h_segs as f32;
+        let z = -half_height + t * 2.0 * half_height;
+        for seg in 0..radial {
+            let pos = Vec3::new(outer_radius * cos_vals[seg], outer_radius * sin_vals[seg], z);
+            let normal = Vec3::new(cos_vals[seg], sin_vals[seg], 0.0);
+            extend_aabb(&mut aabb, pos);
+            vertices.push(pos);
+            normals.push(normal);
+        }
     }
 
-    let final_aabb = combined.cal_aabb();
-    combined.aabb = final_aabb;
+    // --- 生成内圆柱面顶点 ---
+    let inner_start = vertices.len();
+    for h in 0..=h_segs {
+        let t = h as f32 / h_segs as f32;
+        let z = -half_height + t * 2.0 * half_height;
+        for seg in 0..radial {
+            let pos = Vec3::new(inner_radius * cos_vals[seg], inner_radius * sin_vals[seg], z);
+            let normal = Vec3::new(-cos_vals[seg], -sin_vals[seg], 0.0); // 内表面法向量向内
+            extend_aabb(&mut aabb, pos);
+            vertices.push(pos);
+            normals.push(normal);
+        }
+    }
+
+    // === 生成外圆柱面三角形 ===
+    for h in 0..h_segs {
+        for seg in 0..radial {
+            let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
+            if !is_full_circle && seg == radial - 1 { continue; } // 部分圆环最后一列不连接
+
+            let curr = h * radial + seg;
+            let next_h = (h + 1) * radial + seg;
+            let curr_next = h * radial + next_seg;
+            let next_h_next = (h + 1) * radial + next_seg;
+
+            // 外表面：从外部看逆时针
+            indices.extend_from_slice(&[curr as u32, next_h as u32, curr_next as u32]);
+            indices.extend_from_slice(&[curr_next as u32, next_h as u32, next_h_next as u32]);
+        }
+    }
+
+    // === 生成内圆柱面三角形 ===
+    for h in 0..h_segs {
+        for seg in 0..radial {
+            let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
+            if !is_full_circle && seg == radial - 1 { continue; }
+
+            let curr = inner_start + h * radial + seg;
+            let next_h = inner_start + (h + 1) * radial + seg;
+            let curr_next = inner_start + h * radial + next_seg;
+            let next_h_next = inner_start + (h + 1) * radial + next_seg;
+
+            // 内表面：从内部看逆时针（即从外部看顺时针）
+            indices.extend_from_slice(&[curr as u32, curr_next as u32, next_h as u32]);
+            indices.extend_from_slice(&[curr_next as u32, next_h_next as u32, next_h as u32]);
+        }
+    }
+
+    // === 生成顶部环形面三角形 ===
+    // 顶部外圈索引: h_segs * radial .. (h_segs+1) * radial
+    // 顶部内圈索引: inner_start + h_segs * radial .. inner_start + (h_segs+1) * radial
+    let top_outer_start = h_segs * radial;
+    let top_inner_start = inner_start + h_segs * radial;
+
+    for seg in 0..radial {
+        let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
+        if !is_full_circle && seg == radial - 1 { continue; }
+
+        let outer_curr = top_outer_start + seg;
+        let outer_next = top_outer_start + next_seg;
+        let inner_curr = top_inner_start + seg;
+        let inner_next = top_inner_start + next_seg;
+
+        // 顶面法向量向上，需要与外圆柱面顶部边缘方向相反
+        // 外圆柱面边: seg -> next_seg，所以顶面边应为: next_seg -> seg
+        indices.extend_from_slice(&[outer_curr as u32, inner_curr as u32, outer_next as u32]);
+        indices.extend_from_slice(&[outer_next as u32, inner_curr as u32, inner_next as u32]);
+    }
+
+    // === 生成底部环形面三角形 ===
+    // 底部外圈索引: 0 .. radial
+    // 底部内圈索引: inner_start .. inner_start + radial
+    let bottom_outer_start = 0;
+    let bottom_inner_start = inner_start;
+
+    for seg in 0..radial {
+        let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
+        if !is_full_circle && seg == radial - 1 { continue; }
+
+        let outer_curr = bottom_outer_start + seg;
+        let outer_next = bottom_outer_start + next_seg;
+        let inner_curr = bottom_inner_start + seg;
+        let inner_next = bottom_inner_start + next_seg;
+
+        // 底面法向量向下，需要与外圆柱面底部边缘方向相反
+        // 外圆柱面边: seg -> next_seg，所以底面边应为: next_seg -> seg
+        indices.extend_from_slice(&[outer_curr as u32, outer_next as u32, inner_curr as u32]);
+        indices.extend_from_slice(&[inner_curr as u32, outer_next as u32, inner_next as u32]);
+    }
+
+    // === 部分圆环的端面 ===
+    if !is_full_circle {
+        // 起始端面 (seg=0)
+        // 四个角点已存在：外底(0), 外顶(h_segs*radial), 内底(inner_start), 内顶(inner_start+h_segs*radial)
+        let start_outer_bottom = 0;
+        let start_outer_top = h_segs * radial;
+        let start_inner_bottom = inner_start;
+        let start_inner_top = inner_start + h_segs * radial;
+
+        // 起始端面法向量：指向负Y方向（角度=0时）
+        // 从外部看，顺序应为：外底->内底->内顶->外顶（逆时针）
+        indices.extend_from_slice(&[start_outer_bottom as u32, start_inner_bottom as u32, start_inner_top as u32]);
+        indices.extend_from_slice(&[start_outer_bottom as u32, start_inner_top as u32, start_outer_top as u32]);
+
+        // 结束端面 (seg=radial-1)
+        let end_outer_bottom = radial - 1;
+        let end_outer_top = h_segs * radial + radial - 1;
+        let end_inner_bottom = inner_start + radial - 1;
+        let end_inner_top = inner_start + h_segs * radial + radial - 1;
+
+        // 结束端面法向量：指向正方向
+        // 从外部看，顺序应为：外底->外顶->内顶->内底（逆时针）
+        indices.extend_from_slice(&[end_outer_bottom as u32, end_outer_top as u32, end_inner_top as u32]);
+        indices.extend_from_slice(&[end_outer_bottom as u32, end_inner_top as u32, end_inner_bottom as u32]);
+    }
+
+    let final_aabb = Some(aabb);
 
     // 生成几何边：内外圆弧（顶部和底部）
     let mut edges = Vec::new();
-    
+
     // 顶部外圆弧
-    let mut top_outer_points = Vec::with_capacity(samples);
-    for i in 0..samples {
-        top_outer_points.push(Vec3::new(outer_radius * t0_cos[i], outer_radius * t0_sin[i], half_height));
+    let mut top_outer_points = Vec::with_capacity(radial);
+    for i in 0..radial {
+        top_outer_points.push(Vec3::new(outer_radius * cos_vals[i], outer_radius * sin_vals[i], half_height));
     }
     edges.push(Edge::new(top_outer_points));
-    
+
     // 顶部内圆弧
-    let mut top_inner_points = Vec::with_capacity(samples);
-    for i in 0..samples {
-        top_inner_points.push(Vec3::new(inner_radius * t0_cos[i], inner_radius * t0_sin[i], half_height));
+    let mut top_inner_points = Vec::with_capacity(radial);
+    for i in 0..radial {
+        top_inner_points.push(Vec3::new(inner_radius * cos_vals[i], inner_radius * sin_vals[i], half_height));
     }
     edges.push(Edge::new(top_inner_points));
-    
+
     // 底部外圆弧
-    let mut bottom_outer_points = Vec::with_capacity(samples);
-    for i in 0..samples {
-        bottom_outer_points.push(Vec3::new(outer_radius * t0_cos[i], outer_radius * t0_sin[i], -half_height));
+    let mut bottom_outer_points = Vec::with_capacity(radial);
+    for i in 0..radial {
+        bottom_outer_points.push(Vec3::new(outer_radius * cos_vals[i], outer_radius * sin_vals[i], -half_height));
     }
     edges.push(Edge::new(bottom_outer_points));
-    
+
     // 底部内圆弧
-    let mut bottom_inner_points = Vec::with_capacity(samples);
-    for i in 0..samples {
-        bottom_inner_points.push(Vec3::new(inner_radius * t0_cos[i], inner_radius * t0_sin[i], -half_height));
+    let mut bottom_inner_points = Vec::with_capacity(radial);
+    for i in 0..radial {
+        bottom_inner_points.push(Vec3::new(inner_radius * cos_vals[i], inner_radius * sin_vals[i], -half_height));
     }
     edges.push(Edge::new(bottom_inner_points));
-    
-    combined.edges = edges;
-    combined.sync_wire_vertices_from_edges();
+
+    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, final_aabb, Some(edges));
+    mesh.sync_wire_vertices_from_edges();
 
     Some(GeneratedMesh {
-        mesh: combined,
+        mesh,
         aabb: final_aabb,
     })
 }

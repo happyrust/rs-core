@@ -287,3 +287,156 @@ fn test_unit_box_manifold_conversion() {
         Err(e) => panic!("从 GLB 加载失败: {}", e),
     }
 }
+
+#[test]
+fn test_rect_torus_topology() {
+    use crate::geometry::csg::generate_csg_mesh;
+    use crate::parsed_data::geo_params_data::PdmsGeoParam;
+    use crate::prim_geo::RTorus;
+
+    // 完整圆环 (360°)
+    let rtorus_full = RTorus {
+        rout: 2.0,
+        rins: 1.0,
+        height: 1.0,
+        angle: 360.0,
+    };
+
+    let settings = LodMeshSettings::default();
+    let param = PdmsGeoParam::PrimRTorus(rtorus_full);
+    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+        let mesh = &result.mesh;
+        println!("完整 RTorus 网格统计:");
+        println!("  顶点数: {}", mesh.vertices.len());
+        println!("  三角形数: {}", mesh.indices.len() / 3);
+
+        // 检查重复顶点
+        let mut unique = std::collections::HashSet::new();
+        let mut dup = 0;
+        for v in &mesh.vertices {
+            let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
+            if !unique.insert(key) { dup += 1; }
+        }
+        println!("  重复顶点数: {}", dup);
+        assert_eq!(dup, 0, "完整 RTorus 不应有重复顶点");
+
+        // 检查法向量一致性
+        let center = Vec3::ZERO;
+        let mut inward = 0;
+        let mut outward = 0;
+        for i in (0..mesh.indices.len()).step_by(3) {
+            let v0 = mesh.vertices[mesh.indices[i] as usize];
+            let v1 = mesh.vertices[mesh.indices[i + 1] as usize];
+            let v2 = mesh.vertices[mesh.indices[i + 2] as usize];
+            let edge1 = v1 - v0;
+            let edge2 = v2 - v0;
+            let normal = edge1.cross(edge2);
+            let tri_center = (v0 + v1 + v2) / 3.0;
+            let to_center = center - tri_center;
+            if normal.dot(to_center) > 0.0 { inward += 1; } else { outward += 1; }
+        }
+        println!("  法向量: 外向={}, 内向={}", outward, inward);
+
+        // 检查边的流形性（每条边应该恰好被 2 个三角形共享）
+        let mut edge_count: std::collections::HashMap<(u32, u32), u32> = std::collections::HashMap::new();
+        for i in (0..mesh.indices.len()).step_by(3) {
+            let i0 = mesh.indices[i];
+            let i1 = mesh.indices[i + 1];
+            let i2 = mesh.indices[i + 2];
+            for (a, b) in [(i0, i1), (i1, i2), (i2, i0)] {
+                let key = if a < b { (a, b) } else { (b, a) };
+                *edge_count.entry(key).or_insert(0) += 1;
+            }
+        }
+        let boundary_edges = edge_count.values().filter(|&&c| c == 1).count();
+        let non_manifold_edges = edge_count.values().filter(|&&c| c > 2).count();
+        println!("  边界边: {}, 非流形边: {}", boundary_edges, non_manifold_edges);
+
+        // 检查边的方向一致性（相邻三角形的共享边应该方向相反）
+        let mut directed_edges: std::collections::HashMap<(u32, u32), usize> = std::collections::HashMap::new();
+        for i in (0..mesh.indices.len()).step_by(3) {
+            let tri_idx = i / 3;
+            let i0 = mesh.indices[i];
+            let i1 = mesh.indices[i + 1];
+            let i2 = mesh.indices[i + 2];
+            directed_edges.insert((i0, i1), tri_idx);
+            directed_edges.insert((i1, i2), tri_idx);
+            directed_edges.insert((i2, i0), tri_idx);
+        }
+        // 检查每条边是否有反向边
+        let mut inconsistent = 0;
+        for &(a, b) in directed_edges.keys() {
+            if directed_edges.contains_key(&(a, b)) && directed_edges.contains_key(&(b, a)) {
+                // 正常：两个三角形共享边，方向相反
+            } else if !directed_edges.contains_key(&(b, a)) {
+                // 边界边或方向不一致
+                inconsistent += 1;
+            }
+        }
+        println!("  方向不一致的边: {}", inconsistent / 2); // 每条边计数两次
+    }
+
+    // 部分圆环 (90°)
+    let rtorus_partial = RTorus {
+        rout: 2.0,
+        rins: 1.0,
+        height: 1.0,
+        angle: 90.0,
+    };
+    let param2 = PdmsGeoParam::PrimRTorus(rtorus_partial);
+    if let Some(result) = generate_csg_mesh(&param2, &settings, false, None) {
+        let mesh = &result.mesh;
+        println!("部分 RTorus (90°) 网格统计:");
+        println!("  顶点数: {}", mesh.vertices.len());
+        println!("  三角形数: {}", mesh.indices.len() / 3);
+
+        let mut unique = std::collections::HashSet::new();
+        let mut dup = 0;
+        for v in &mesh.vertices {
+            let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
+            if !unique.insert(key) { dup += 1; }
+        }
+        println!("  重复顶点数: {}", dup);
+        assert_eq!(dup, 0, "部分 RTorus 不应有重复顶点");
+    }
+}
+
+#[test]
+#[cfg(feature = "gen_model")]
+fn test_rect_torus_manifold_conversion() {
+    use crate::fast_model::export_model::export_glb::export_single_mesh_to_glb;
+    use crate::geometry::csg::generate_csg_mesh;
+    use crate::parsed_data::geo_params_data::PdmsGeoParam;
+    use crate::prim_geo::RTorus;
+
+    let settings = LodMeshSettings::default();
+
+    // 完整圆环
+    let rtorus_full = RTorus {
+        rout: 2.0,
+        rins: 1.0,
+        height: 1.0,
+        angle: 360.0,
+    };
+    let param = PdmsGeoParam::PrimRTorus(rtorus_full);
+
+    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+        let mesh = &result.mesh;
+        let temp_dir = std::env::temp_dir();
+        let glb_path = temp_dir.join("test_rtorus_full.glb");
+
+        export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
+        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let _ = std::fs::remove_file(&glb_path);
+
+        match manifold_result {
+            Ok(manifold) => {
+                let out_mesh = manifold.get_mesh();
+                let out_tris = out_mesh.indices.len() / 3;
+                println!("完整 RTorus Manifold: {} -> {}", mesh.indices.len() / 3, out_tris);
+                assert!(out_tris > 0, "Manifold 转换失败");
+            }
+            Err(e) => panic!("从 GLB 加载失败: {}", e),
+        }
+    }
+}
