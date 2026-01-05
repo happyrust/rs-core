@@ -3,12 +3,12 @@ pub mod sweep_mesh;
 
 use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::vec3_pool::{compress_ptset, CateAxisParamCompact};
 use crate::pdms_types::PdmsGenericType;
 use crate::prim_geo::basic::{BOXI_GEO_HASH, TUBI_GEO_HASH};
 use crate::prim_geo::{SBox, SCylinder};
 use crate::shape::pdms_shape::{PlantMesh, RsVec3};
 use crate::tool::hash_tool::hash_two_str;
+use crate::vec3_pool::{CateAxisParamCompact, compress_ptset};
 use crate::{RefU64, RefnoEnum, gen_bytes_hash};
 #[cfg(feature = "render")]
 use bevy_asset::RenderAssetUsages;
@@ -18,6 +18,7 @@ use bevy_mesh::{Indices, Mesh};
 #[cfg(feature = "render")]
 use bevy_render::render_resource::PrimitiveTopology;
 use bevy_transform::components::Transform;
+use chrono;
 use dashmap::DashSet;
 use glam::{Vec3, bool, i32, u64};
 use nalgebra::Point3;
@@ -29,7 +30,6 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
-use chrono;
 
 /// 几何体的基本类型
 #[derive(
@@ -101,7 +101,6 @@ pub struct EleGeosInfo {
     pub has_cata_neg: bool,
     pub is_solid: bool,
     // pub dt: chrono::NaiveDateTime,
-
     /// 关联的 tubi_info ID (格式: "{cata_hash}_{arrive_num}_{leave_num}")
     /// 用于 BRAN/HANG 下元件的 arrive/leave 点复用
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -143,12 +142,12 @@ impl EleGeosInfo {
     }
 
     /// 生成surreal的json文件（压缩格式）
-    /// 
+    ///
     /// 使用 `CateAxisParamCompact` 压缩 ptset 数据，减少约 70-80% 的存储空间。
-    /// 
+    ///
     /// # 参数
     /// - `include_refno`: 是否在每个点中包含 refno 字段
-    /// 
+    ///
     /// # 压缩优化
     /// - 方向向量使用预定义 ID（常见方向只需 1 字节）
     /// - 省略默认值字段（pwidth=0, pheight=0 等）
@@ -158,7 +157,7 @@ impl EleGeosInfo {
         // 转换为压缩格式
         let ptset_values: Vec<CateAxisParam> = self.ptset_map.values().cloned().collect();
         let ptset_compact = compress_ptset(&ptset_values, include_refno);
-        
+
         let mut json = serde_json::to_string(&serde_json::json!({
             "visible": self.visible,
             "generic_type": self.generic_type,
@@ -168,12 +167,12 @@ impl EleGeosInfo {
 
         // 移除最后的 } 并添加 id 字段
         json.pop();
-        
+
         // 添加 tubi_info 关联（如果有）
         if let Some(ref tubi_id) = self.tubi_info_id {
             json.push_str(&format!(r#","tubi_info":tubi_info:⟨{}⟩"#, tubi_id));
         }
-        
+
         json.push_str(&format!(r#","id":inst_info:⟨{}⟩}}"#, id));
         json
     }
@@ -659,7 +658,7 @@ pub struct EleInstGeo {
     //元件库里的负实体
     #[serde(default)]
     pub cata_neg_refnos: Vec<RefnoEnum>,
-    
+
     /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
     #[serde(default)]
     pub unit_flag: bool,

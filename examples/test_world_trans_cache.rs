@@ -4,11 +4,7 @@
 /// 1. 首次调用 get_world_mat4 时计算并缓存到 PE 表
 /// 2. 第二次调用时从缓存读取（提高性能）
 /// 3. 缓存失效机制正常工作
-
-use aios_core::{
-    init_surreal, pe_key,
-    RefnoEnum, get_pe,
-};
+use aios_core::{RefnoEnum, get_pe, init_surreal, pe_key};
 use anyhow::Result;
 
 #[tokio::main]
@@ -34,7 +30,10 @@ async fn main() -> Result<()> {
     let mat4_1 = aios_core::transform::get_world_mat4(test_refno, false).await?;
     let duration_1 = start.elapsed();
     println!("⏱️  首次调用耗时: {:?}", duration_1);
-    println!("📊 计算结果: {:?}\n", mat4_1.map(|m| m.to_scale_rotation_translation()));
+    println!(
+        "📊 计算结果: {:?}\n",
+        mat4_1.map(|m| m.to_scale_rotation_translation())
+    );
 
     // 等待异步缓存写入完成
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -58,7 +57,10 @@ async fn main() -> Result<()> {
     let mat4_2 = aios_core::transform::get_world_mat4(test_refno, false).await?;
     let duration_2 = start.elapsed();
     println!("⏱️  第二次调用耗时: {:?}", duration_2);
-    println!("📊 读取结果: {:?}\n", mat4_2.map(|m| m.to_scale_rotation_translation()));
+    println!(
+        "📊 读取结果: {:?}\n",
+        mat4_2.map(|m| m.to_scale_rotation_translation())
+    );
 
     // 第五步：对比两次结果
     println!("📝 步骤 5: 对比两次结果");

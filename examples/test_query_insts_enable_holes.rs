@@ -1,6 +1,6 @@
 //! 验证 query_insts_with_batch 在 enable_holes 切换时返回的 insts/has_neg 差异。
 use aios_core::rs_surreal::inst::query_insts_with_batch;
-use aios_core::{init_surreal, RefnoEnum, SurrealQueryExt, SUL_DB};
+use aios_core::{RefnoEnum, SUL_DB, SurrealQueryExt, init_surreal};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -8,17 +8,17 @@ async fn main() -> anyhow::Result<()> {
     init_surreal().await?;
 
     let refno = RefnoEnum::from("pe:17496_106028");
-    
+
     // 检查 ngmr_relate 数据
     let sql_ngmr = r#"SELECT * FROM ngmr_relate WHERE out = pe:17496_106028 LIMIT 3"#;
     let resp_ngmr = SUL_DB.query(sql_ngmr).await?;
     println!("ngmr_relate for 17496_106028:\n{:?}\n", resp_ngmr);
-    
+
     // 检查 neg_relate 数据
     let sql_neg = r#"SELECT * FROM neg_relate WHERE out = pe:17496_106028 LIMIT 3"#;
     let resp_neg = SUL_DB.query(sql_neg).await?;
     println!("neg_relate for 17496_106028:\n{:?}\n", resp_neg);
-    
+
     // 检查新查询是否工作
     let sql_new_query = r#"
         SELECT 
@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
     "#;
     let resp_new = SUL_DB.query(sql_new_query).await?;
     println!("new ngmr_relate query:\n{:?}\n", resp_new);
-    
+
     // 检查负实体 pe:17496_106029 的 geo_relate
     let sql1 = r#"
         SELECT 
@@ -42,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
     let resp1 = SUL_DB.query(sql1).await?;
     println!("geo_relate for 17496_106029 (negative entity):");
     println!("{:?}", resp1);
-    
+
     // 检查负实体有没有 geo_type="Neg"
     let sql2 = r#"
         SELECT 

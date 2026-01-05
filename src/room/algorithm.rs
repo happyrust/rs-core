@@ -54,16 +54,16 @@ pub async fn query_rooms_from_room_relate() -> anyhow::Result<Vec<RoomInfo>> {
         ORDER BY room_num 
         LIMIT 5000;
     "#;
-    
+
     #[derive(Debug, serde::Deserialize, SurrealValue)]
     struct RoomPanelRelateRecord {
         out_id: Option<String>,
         room_num: Option<String>,
     }
-    
+
     let mut response = SUL_DB.query_response(sql).await?;
     let records: Vec<RoomPanelRelateRecord> = response.take(0)?;
-    
+
     // 转换为 RoomInfo，过滤掉无效记录并按 room_num 去重
     let mut seen_rooms = std::collections::HashSet::new();
     let results: Vec<RoomInfo> = records
@@ -88,8 +88,11 @@ pub async fn query_rooms_from_room_relate() -> anyhow::Result<Vec<RoomInfo>> {
             })
         })
         .collect();
-    
-    println!("query_rooms_from_room_relate 查询到 {} 个房间", results.len());
+
+    println!(
+        "query_rooms_from_room_relate 查询到 {} 个房间",
+        results.len()
+    );
     Ok(results)
 }
 

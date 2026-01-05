@@ -221,7 +221,6 @@ impl FromStr for RefU64 {
     }
 }
 
-
 impl From<RecordId> for RefU64 {
     fn from(record: RecordId) -> Self {
         let raw = record.to_raw();

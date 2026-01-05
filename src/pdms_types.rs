@@ -139,8 +139,8 @@ pub const USE_CATE_NOUN_NAMES: [&'static str; 32] = [
     "WALL",   // 墙
     "PALJ",   // 管道对齐
     // "TUBI",   // 管道 - 注释掉，TUBI 数据通过 tubi_relate 关系获取，不是独立表
-    "FLOOR",  // 地板
-    "CMFI",   // 复合安装
+    "FLOOR", // 地板
+    "CMFI",  // 复合安装
     // "PANE",   // 面板
     "PFIT",   // 管道配件
     "GPART",  // 通用零件
@@ -512,11 +512,11 @@ pub const VISBILE_GEO_NOUNS: [&'static str; 39] = [
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy, Eq, PartialEq, Hash)]
 pub enum SiteSpecValue {
     #[default]
-    Unknown = 0,  // 未知或其他
-    Pipe = 1,     // 管道系统
-    Elec = 2,     // 电气系统
-    Inst = 3,     // 仪表系统
-    Hvac = 4,     // 暖通空调系统
+    Unknown = 0, // 未知或其他
+    Pipe = 1, // 管道系统
+    Elec = 2, // 电气系统
+    Inst = 3, // 仪表系统
+    Hvac = 4, // 暖通空调系统
 }
 
 impl SiteSpecValue {
@@ -534,12 +534,12 @@ impl SiteSpecValue {
             SiteSpecValue::Unknown
         }
     }
-    
+
     /// 转换为 i64 值（用于存储到数据库）
     pub fn to_i64(self) -> i64 {
         self as i64
     }
-    
+
     /// 从 i64 值创建枚举
     pub fn from_i64(value: i64) -> Self {
         match value {
@@ -551,7 +551,7 @@ impl SiteSpecValue {
             _ => SiteSpecValue::Unknown,
         }
     }
-    
+
     /// 获取描述文本
     pub fn description(self) -> &'static str {
         match self {
@@ -624,7 +624,8 @@ pub struct DifferenceValue {
 }
 
 ///默认的属性名称哈希值数组
-pub const DEFAULT_NOUNS: [NounHash; 5] = [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH, TAG_NAME_HASH];
+pub const DEFAULT_NOUNS: [NounHash; 5] =
+    [TYPE_HASH, NAME_HASH, REFNO_HASH, OWNER_HASH, TAG_NAME_HASH];
 ///默认的属性名称数组
 pub const DEFAULT_NAMED_NOUNS: [&'static str; 5] = ["TYPE", "NAME", "REFNO", "OWNER", "TAG_NAME"];
 

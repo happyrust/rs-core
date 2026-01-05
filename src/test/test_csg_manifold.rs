@@ -14,7 +14,7 @@ use crate::geometry::csg::build_csg_mesh;
 use crate::mesh_precision::LodMeshSettings;
 use crate::prim_geo::*;
 use crate::types::refno::RefnoEnum;
-use glam::{Vec3, DMat4};
+use glam::{DMat4, Vec3};
 use std::path::Path;
 
 // 直接使用 prim_geo 中的类型构建参数
@@ -63,7 +63,10 @@ impl ManifoldValidationResult {
 /// 1. 将 PlantMesh 导出为 GLB 文件
 /// 2. 从 GLB 文件加载
 /// 3. 转换为 Manifold
-fn validate_mesh_via_glb(mesh: &crate::shape::pdms_shape::PlantMesh, test_name: &str) -> ManifoldValidationResult {
+fn validate_mesh_via_glb(
+    mesh: &crate::shape::pdms_shape::PlantMesh,
+    test_name: &str,
+) -> ManifoldValidationResult {
     use crate::fast_model::export_model::export_glb::export_single_mesh_to_glb;
 
     let input_vertices = mesh.vertices.len();
@@ -127,8 +130,8 @@ fn test_scylinder_manifold() {
 
     // 测试标准圆柱体
     let cyl = SCylinder {
-        pdia: 100.0,  // 直径 100mm
-        phei: 200.0,  // 高度 200mm
+        pdia: 100.0, // 直径 100mm
+        phei: 200.0, // 高度 200mm
         ..Default::default()
     };
 
@@ -157,9 +160,9 @@ fn test_lcylinder_manifold() {
         paxi_expr: String::new(),
         paxi_pt: Vec3::ZERO,
         paxi_dir: Vec3::Z,
-        pbdi: 0.0,      // 底部距离
-        ptdi: 300.0,    // 顶部距离（高度）
-        pdia: 50.0,     // 直径
+        pbdi: 0.0,   // 底部距离
+        ptdi: 300.0, // 顶部距离（高度）
+        pdia: 50.0,  // 直径
         negative: false,
         centre_line_flag: false,
     };
@@ -190,8 +193,8 @@ fn test_snout_manifold() {
 
     // 测试圆台（底部直径 > 顶部直径）
     let snout = LSnout {
-        pbdm: 100.0,  // 底部直径
-        ptdm: 50.0,   // 顶部直径
+        pbdm: 100.0, // 底部直径
+        ptdm: 50.0,  // 顶部直径
         paax_pt: Vec3::ZERO,
         paax_dir: Vec3::Z,
         paax_expr: String::new(),
@@ -226,8 +229,8 @@ fn test_cone_manifold() {
 
     // 测试圆锥（顶部直径为 0）
     let cone = LSnout {
-        pbdm: 100.0,  // 底部直径
-        ptdm: 0.0,    // 顶部直径为 0（圆锥）
+        pbdm: 100.0, // 底部直径
+        ptdm: 0.0,   // 顶部直径为 0（圆锥）
         paax_pt: Vec3::ZERO,
         paax_dir: Vec3::Z,
         paax_expr: String::new(),
@@ -272,7 +275,7 @@ fn test_revolution_manifold() {
             Vec3::new(100.0, 50.0, 0.0), // 高度 100mm
             Vec3::new(100.0, 20.0, 0.0),
         ]],
-        angle: 360.0,  // 完整旋转
+        angle: 360.0, // 完整旋转
         ..Default::default()
     };
 

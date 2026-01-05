@@ -89,7 +89,11 @@ impl ManifoldRust {
     ///
     /// 注意：GLB 文件中的网格应该已经在 CSG 生成阶段通过 weld_vertices_for_manifold
     /// 保证了流形性，这里只需要应用变换矩阵，不再做顶点焊接。
-    pub fn import_glb_to_manifold(path: &Path, mat4: DMat4, more_precision: bool) -> anyhow::Result<Self> {
+    pub fn import_glb_to_manifold(
+        path: &Path,
+        mat4: DMat4,
+        more_precision: bool,
+    ) -> anyhow::Result<Self> {
         let (document, buffers, _) = gltf::import(path)?;
 
         let mut all_vertices: Vec<f32> = Vec::new();
@@ -103,7 +107,11 @@ impl ManifoldRust {
                 // 读取顶点并应用变换矩阵
                 if let Some(iter) = reader.read_positions() {
                     for v in iter {
-                        let pt = mat4.transform_point3(glam::DVec3::new(v[0] as f64, v[1] as f64, v[2] as f64));
+                        let pt = mat4.transform_point3(glam::DVec3::new(
+                            v[0] as f64,
+                            v[1] as f64,
+                            v[2] as f64,
+                        ));
                         all_vertices.push(pt.x as f32);
                         all_vertices.push(pt.y as f32);
                         all_vertices.push(pt.z as f32);
@@ -150,12 +158,12 @@ impl ManifoldRust {
             edges: Vec::new(),
             wire_vertices: Vec::new(),
         };
-        
+
         // 确保父目录存在
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        
+
         crate::fast_model::export_model::export_glb::export_single_mesh_to_glb(&plant_mesh, path)?;
         Ok(())
     }
@@ -183,7 +191,9 @@ impl ManifoldRust {
             std::fs::create_dir_all(parent)?;
         }
 
-        plant_mesh.export_obj(false, path_str).map_err(|e| anyhow::anyhow!(e))
+        plant_mesh
+            .export_obj(false, path_str)
+            .map_err(|e| anyhow::anyhow!(e))
     }
 
     pub fn from_mesh(m: &ManifoldMeshRust) -> Self {
@@ -207,52 +217,54 @@ impl ManifoldRust {
 
         if output_tri_count == 0 && input_tri_count > 0 {
             // Manifold 转换失败，输出诊断信息
-        eprintln!(
+            eprintln!(
                 "[Manifold] ⚠️ 转换后三角形丢失: 输入 {} 顶点 {} 三角形 -> 输出 0 三角形",
-            input_vert_count, input_tri_count
-        );
+                input_vert_count, input_tri_count
+            );
 
             // 检查 mesh 是否有问题（如退化三角形、非流形等）
             // 计算 AABB 来诊断几何范围
-        let mut min_x = f32::MAX;
-        let mut max_x = f32::MIN;
-        let mut min_y = f32::MAX;
-        let mut max_y = f32::MIN;
-        let mut min_z = f32::MAX;
-        let mut max_z = f32::MIN;
+            let mut min_x = f32::MAX;
+            let mut max_x = f32::MIN;
+            let mut min_y = f32::MAX;
+            let mut max_y = f32::MIN;
+            let mut min_z = f32::MAX;
+            let mut max_z = f32::MIN;
 
-        for i in (0..m.vertices.len()).step_by(3) {
-            let x = m.vertices[i];
-            let y = m.vertices[i + 1];
-            let z = m.vertices[i + 2];
-            min_x = min_x.min(x);
-            max_x = max_x.max(x);
-            min_y = min_y.min(y);
-            max_y = max_y.max(y);
-            min_z = min_z.min(z);
-            max_z = max_z.max(z);
-        }
+            for i in (0..m.vertices.len()).step_by(3) {
+                let x = m.vertices[i];
+                let y = m.vertices[i + 1];
+                let z = m.vertices[i + 2];
+                min_x = min_x.min(x);
+                max_x = max_x.max(x);
+                min_y = min_y.min(y);
+                max_y = max_y.max(y);
+                min_z = min_z.min(z);
+                max_z = max_z.max(z);
+            }
 
-        let extent_x = max_x - min_x;
-        let extent_y = max_y - min_y;
-        let extent_z = max_z - min_z;
+            let extent_x = max_x - min_x;
+            let extent_y = max_y - min_y;
+            let extent_z = max_z - min_z;
 
-        eprintln!(
-            "[Manifold] AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2}), 范围: ({:.2}, {:.2}, {:.2})",
-            min_x, min_y, min_z, max_x, max_y, max_z, extent_x, extent_y, extent_z
-        );
-
-        // 检查是否有极端的长宽比
-        let min_extent = extent_x.min(extent_y).min(extent_z);
-        let max_extent = extent_x.max(extent_y).max(extent_z);
-        if min_extent > 0.0 && max_extent / min_extent > 100.0 {
             eprintln!(
-                "[Manifold] ⚠️ 极端长宽比: {:.1} (最小维度 {:.4}, 最大维度 {:.2})",
-                max_extent / min_extent, min_extent, max_extent
+                "[Manifold] AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2}), 范围: ({:.2}, {:.2}, {:.2})",
+                min_x, min_y, min_z, max_x, max_y, max_z, extent_x, extent_y, extent_z
             );
+
+            // 检查是否有极端的长宽比
+            let min_extent = extent_x.min(extent_y).min(extent_z);
+            let max_extent = extent_x.max(extent_y).max(extent_z);
+            if min_extent > 0.0 && max_extent / min_extent > 100.0 {
+                eprintln!(
+                    "[Manifold] ⚠️ 极端长宽比: {:.1} (最小维度 {:.4}, 最大维度 {:.2})",
+                    max_extent / min_extent,
+                    min_extent,
+                    max_extent
+                );
+            }
         }
-        }
-        
+
         result
     }
 
@@ -313,32 +325,32 @@ impl ManifoldMeshRust {
     }
 
     /// 计算适应性精度因子
-    /// 
+    ///
     /// 根据几何体的尺寸范围选择合适的精度：
     /// - 小尺寸几何体（如单位化的扫掠体）使用更高精度
     /// - 大尺寸几何体使用较低精度以避免数值问题
     pub fn compute_adaptive_precision(vertices: &[glam::Vec3], mat4: &glam::DMat4) -> f32 {
         let mut min = glam::DVec3::new(f64::MAX, f64::MAX, f64::MAX);
         let mut max = glam::DVec3::new(f64::MIN, f64::MIN, f64::MIN);
-        
+
         for v in vertices {
             let tv = mat4.transform_point3(v.as_dvec3());
             min = min.min(tv);
             max = max.max(tv);
         }
-        
+
         let extent = max - min;
         let min_extent = extent.x.min(extent.y).min(extent.z);
-        
+
         // Adjust precision based on min_extent
         if min_extent < 0.1 {
             100000.0 // High precision for very small geometries
         } else if min_extent < 1.0 {
-            10000.0  // High precision for small geometries
+            10000.0 // High precision for small geometries
         } else if min_extent < 10.0 {
-            1000.0   // Medium precision
+            1000.0 // Medium precision
         } else if min_extent < 100.0 {
-            100.0    // Lower precision
+            100.0 // Lower precision
         } else {
             10.0
         }
@@ -351,13 +363,13 @@ impl ManifoldMeshRust {
         for chunk in self.vertices.chunks_exact(3) {
             aabb.take_point(parry3d::math::Point::new(chunk[0], chunk[1], chunk[2]));
         }
-        
+
         if glam::Vec3::from(aabb.mins).is_nan() || glam::Vec3::from(aabb.maxs).is_nan() {
             return None;
         }
         Some(aabb)
     }
-    
+
     /// 将顶点坐标量化为整数键（用于顶点焊接）
     fn quantize_vertex(x: f64, y: f64, z: f64, precision: f64) -> (i64, i64, i64) {
         (

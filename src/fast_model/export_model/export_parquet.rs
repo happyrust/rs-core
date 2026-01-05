@@ -1,8 +1,8 @@
 // 仅在启用相关 feature 时编译此模块，避免由于 polars 依赖缺失导致的编译错误
 #[cfg(feature = "parquet")]
-use crate::types::PlantAabb;
-#[cfg(feature = "parquet")]
 use crate::PlantTransform;
+#[cfg(feature = "parquet")]
+use crate::types::PlantAabb;
 #[cfg(feature = "parquet")]
 use crate::{RefnoEnum, SUL_DB, SurrealQueryExt};
 #[cfg(feature = "parquet")]
@@ -90,7 +90,11 @@ WHERE world_trans.d != none
         "max_z" => max_z,
     ]?;
 
-    let file_path = out_dir.join(output_path.file_name().unwrap_or_else(|| "inst_aabb.parquet".as_ref()));
+    let file_path = out_dir.join(
+        output_path
+            .file_name()
+            .unwrap_or_else(|| "inst_aabb.parquet".as_ref()),
+    );
     let file = std::fs::File::create(&file_path)?;
     ParquetWriter::new(file).finish(&df)?;
 

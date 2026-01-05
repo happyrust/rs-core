@@ -1,0 +1,11 @@
+#V2
+SELECT * FROM pe:⟨24381_36716⟩;
+SELECT * FROM inst_relate:⟨24381_36716⟩;
+SELECT value (SELECT value [refno.POS[0], refno.POS[1], refno.FRAD] FROM id.children WHERE noun IN ["PAVE","PONT"]) FROM pe:`24381_36717`;
+SELECT world_trans FROM pe:`24381_36716`;
+SELECT id, param, unit_flag FROM inst_geo LIMIT 1;
+SELECT id, aabb FROM inst_geo:`1`;
+SELECT id, in, out, trans, geo_type FROM geo_relate LIMIT 1;
+SELECT id, in, out, generic, world_trans, dt FROM inst_relate LIMIT 1;
+SELECT * FROM trans:`6511760115506763562`;
+SELECT * FROM inst_geo:`2`;

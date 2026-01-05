@@ -303,14 +303,11 @@ mod tests {
             RsVec3(Vec3::new(1.0, 1.0, 1.0)),
         ];
 
-        let measurement = Measurement::new(
-            "Test Distance".to_string(),
-            "Distance".to_string(),
-            points,
-        )
-        .with_value(1.414)
-        .with_unit("mm".to_string())
-        .with_project("proj_001".to_string());
+        let measurement =
+            Measurement::new("Test Distance".to_string(), "Distance".to_string(), points)
+                .with_value(1.414)
+                .with_unit("mm".to_string())
+                .with_project("proj_001".to_string());
 
         let sql = measurement.to_surql();
 
@@ -326,12 +323,8 @@ mod tests {
     fn test_measurement_gen_sur_json() {
         let points = vec![RsVec3(Vec3::new(0.0, 0.0, 0.0))];
 
-        let measurement = Measurement::new(
-            "Angle Test".to_string(),
-            "Angle".to_string(),
-            points,
-        )
-        .with_status("Approved".to_string());
+        let measurement = Measurement::new("Angle Test".to_string(), "Angle".to_string(), points)
+            .with_status("Approved".to_string());
 
         let json_str = measurement.gen_sur_json();
         let json: serde_json::Value = serde_json::from_str(&json_str).unwrap();

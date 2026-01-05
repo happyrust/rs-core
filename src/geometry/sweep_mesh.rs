@@ -1,14 +1,14 @@
 use crate::debug_macros::is_debug_model_enabled;
 use crate::mesh_precision::LodMeshSettings;
-use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::parsed_data::CateProfileParam;
-use crate::types::refno::RefnoEnum;
+use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::profile_processor::ProfileProcessor;
-use crate::prim_geo::wire::CurveType;
-use crate::prim_geo::spine::{SweepPath3D, Spine3D};
 use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath};
+use crate::prim_geo::spine::{Spine3D, SweepPath3D};
 use crate::prim_geo::sweep_solid::SweepSolid;
+use crate::prim_geo::wire::CurveType;
 use crate::shape::pdms_shape::PlantMesh;
+use crate::types::refno::RefnoEnum;
 use bevy_transform::prelude::Transform;
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec2, Vec3};
 use i_triangle::float::triangulatable::Triangulatable;

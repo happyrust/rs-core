@@ -98,7 +98,10 @@ fn test_unit_cylinder_topology() {
             outward_count += 1;
         }
     }
-    println!("  法向量指向外部: {}, 指向内部: {}", outward_count, inward_count);
+    println!(
+        "  法向量指向外部: {}, 指向内部: {}",
+        outward_count, inward_count
+    );
 }
 
 #[test]
@@ -129,7 +132,11 @@ fn test_unit_cylinder_manifold_conversion() {
             let output_triangles = result_mesh.indices.len() / 3;
 
             println!("单位圆柱体 Manifold 转换结果:");
-            println!("  输入: {} 顶点, {} 三角形", mesh.vertices.len(), mesh.indices.len() / 3);
+            println!(
+                "  输入: {} 顶点, {} 三角形",
+                mesh.vertices.len(),
+                mesh.indices.len() / 3
+            );
             println!("  输出: {} 三角形", output_triangles);
 
             if output_triangles == 0 {
@@ -188,7 +195,10 @@ fn test_unit_sphere_topology() {
             outward_count += 1;
         }
     }
-    println!("  法向量指向外部: {}, 指向内部: {}", outward_count, inward_count);
+    println!(
+        "  法向量指向外部: {}, 指向内部: {}",
+        outward_count, inward_count
+    );
 }
 
 #[test]
@@ -237,7 +247,10 @@ fn test_unit_box_topology() {
             outward_count += 1;
         }
     }
-    println!("  法向量指向外部: {}, 指向内部: {}", outward_count, inward_count);
+    println!(
+        "  法向量指向外部: {}, 指向内部: {}",
+        outward_count, inward_count
+    );
 }
 
 #[test]
@@ -257,7 +270,11 @@ fn test_unit_sphere_manifold_conversion() {
         Ok(manifold) => {
             let result_mesh = manifold.get_mesh();
             let output_triangles = result_mesh.indices.len() / 3;
-            println!("单位球体 Manifold: {} -> {}", mesh.indices.len() / 3, output_triangles);
+            println!(
+                "单位球体 Manifold: {} -> {}",
+                mesh.indices.len() / 3,
+                output_triangles
+            );
             assert!(output_triangles > 0, "Manifold 转换失败");
         }
         Err(e) => panic!("从 GLB 加载失败: {}", e),
@@ -281,7 +298,11 @@ fn test_unit_box_manifold_conversion() {
         Ok(manifold) => {
             let result_mesh = manifold.get_mesh();
             let output_triangles = result_mesh.indices.len() / 3;
-            println!("单位盒子 Manifold: {} -> {}", mesh.indices.len() / 3, output_triangles);
+            println!(
+                "单位盒子 Manifold: {} -> {}",
+                mesh.indices.len() / 3,
+                output_triangles
+            );
             assert!(output_triangles > 0, "Manifold 转换失败");
         }
         Err(e) => panic!("从 GLB 加载失败: {}", e),
@@ -315,7 +336,9 @@ fn test_rect_torus_topology() {
         let mut dup = 0;
         for v in &mesh.vertices {
             let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
-            if !unique.insert(key) { dup += 1; }
+            if !unique.insert(key) {
+                dup += 1;
+            }
         }
         println!("  重复顶点数: {}", dup);
         assert_eq!(dup, 0, "完整 RTorus 不应有重复顶点");
@@ -333,12 +356,17 @@ fn test_rect_torus_topology() {
             let normal = edge1.cross(edge2);
             let tri_center = (v0 + v1 + v2) / 3.0;
             let to_center = center - tri_center;
-            if normal.dot(to_center) > 0.0 { inward += 1; } else { outward += 1; }
+            if normal.dot(to_center) > 0.0 {
+                inward += 1;
+            } else {
+                outward += 1;
+            }
         }
         println!("  法向量: 外向={}, 内向={}", outward, inward);
 
         // 检查边的流形性（每条边应该恰好被 2 个三角形共享）
-        let mut edge_count: std::collections::HashMap<(u32, u32), u32> = std::collections::HashMap::new();
+        let mut edge_count: std::collections::HashMap<(u32, u32), u32> =
+            std::collections::HashMap::new();
         for i in (0..mesh.indices.len()).step_by(3) {
             let i0 = mesh.indices[i];
             let i1 = mesh.indices[i + 1];
@@ -350,10 +378,14 @@ fn test_rect_torus_topology() {
         }
         let boundary_edges = edge_count.values().filter(|&&c| c == 1).count();
         let non_manifold_edges = edge_count.values().filter(|&&c| c > 2).count();
-        println!("  边界边: {}, 非流形边: {}", boundary_edges, non_manifold_edges);
+        println!(
+            "  边界边: {}, 非流形边: {}",
+            boundary_edges, non_manifold_edges
+        );
 
         // 检查边的方向一致性（相邻三角形的共享边应该方向相反）
-        let mut directed_edges: std::collections::HashMap<(u32, u32), usize> = std::collections::HashMap::new();
+        let mut directed_edges: std::collections::HashMap<(u32, u32), usize> =
+            std::collections::HashMap::new();
         for i in (0..mesh.indices.len()).step_by(3) {
             let tri_idx = i / 3;
             let i0 = mesh.indices[i];
@@ -394,7 +426,9 @@ fn test_rect_torus_topology() {
         let mut dup = 0;
         for v in &mesh.vertices {
             let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
-            if !unique.insert(key) { dup += 1; }
+            if !unique.insert(key) {
+                dup += 1;
+            }
         }
         println!("  重复顶点数: {}", dup);
         assert_eq!(dup, 0, "部分 RTorus 不应有重复顶点");
@@ -426,14 +460,19 @@ fn test_rect_torus_manifold_conversion() {
         let glb_path = temp_dir.join("test_rtorus_full.glb");
 
         export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
-        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let manifold_result =
+            ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
         let _ = std::fs::remove_file(&glb_path);
 
         match manifold_result {
             Ok(manifold) => {
                 let out_mesh = manifold.get_mesh();
                 let out_tris = out_mesh.indices.len() / 3;
-                println!("完整 RTorus Manifold: {} -> {}", mesh.indices.len() / 3, out_tris);
+                println!(
+                    "完整 RTorus Manifold: {} -> {}",
+                    mesh.indices.len() / 3,
+                    out_tris
+                );
                 assert!(out_tris > 0, "Manifold 转换失败");
             }
             Err(e) => panic!("从 GLB 加载失败: {}", e),
@@ -455,14 +494,19 @@ fn test_rect_torus_manifold_conversion() {
         let glb_path = temp_dir.join("test_rtorus_partial.glb");
 
         export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
-        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let manifold_result =
+            ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
         let _ = std::fs::remove_file(&glb_path);
 
         match manifold_result {
             Ok(manifold) => {
                 let out_mesh = manifold.get_mesh();
                 let out_tris = out_mesh.indices.len() / 3;
-                println!("部分 RTorus (90°) Manifold: {} -> {}", mesh.indices.len() / 3, out_tris);
+                println!(
+                    "部分 RTorus (90°) Manifold: {} -> {}",
+                    mesh.indices.len() / 3,
+                    out_tris
+                );
                 assert!(out_tris > 0, "部分 RTorus Manifold 转换失败");
             }
             Err(e) => panic!("部分 RTorus 从 GLB 加载失败: {}", e),
@@ -496,7 +540,9 @@ fn test_sphere_mesh_topology() {
         let mut dup = 0;
         for v in &mesh.vertices {
             let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
-            if !unique.insert(key) { dup += 1; }
+            if !unique.insert(key) {
+                dup += 1;
+            }
         }
         println!("  重复顶点数: {}", dup);
         assert_eq!(dup, 0, "Sphere 不应有重复顶点");
@@ -505,14 +551,19 @@ fn test_sphere_mesh_topology() {
         let temp_dir = std::env::temp_dir();
         let glb_path = temp_dir.join("test_sphere.glb");
         export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
-        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let manifold_result =
+            ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
         let _ = std::fs::remove_file(&glb_path);
 
         match manifold_result {
             Ok(manifold) => {
                 let out_mesh = manifold.get_mesh();
                 let out_tris = out_mesh.indices.len() / 3;
-                println!("Sphere Manifold: {} -> {}", mesh.indices.len() / 3, out_tris);
+                println!(
+                    "Sphere Manifold: {} -> {}",
+                    mesh.indices.len() / 3,
+                    out_tris
+                );
                 assert!(out_tris > 0, "Sphere Manifold 转换失败");
             }
             Err(e) => panic!("Sphere GLB 加载失败: {}", e),
@@ -550,7 +601,9 @@ fn test_build_cylinder_mesh_topology() {
         let mut dup = 0;
         for v in &mesh.vertices {
             let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
-            if !unique.insert(key) { dup += 1; }
+            if !unique.insert(key) {
+                dup += 1;
+            }
         }
         println!("  重复顶点数: {}", dup);
         assert_eq!(dup, 0, "LCylinder 不应有重复顶点");
@@ -587,7 +640,9 @@ fn test_dish_mesh_topology() {
         let mut dup = 0;
         for v in &mesh.vertices {
             let key = ((v.x * 1e6) as i64, (v.y * 1e6) as i64, (v.z * 1e6) as i64);
-            if !unique.insert(key) { dup += 1; }
+            if !unique.insert(key) {
+                dup += 1;
+            }
         }
         println!("  重复顶点数: {}", dup);
 
@@ -596,7 +651,8 @@ fn test_dish_mesh_topology() {
         let temp_dir = std::env::temp_dir();
         let glb_path = temp_dir.join("test_dish.glb");
         export_single_mesh_to_glb(mesh, &glb_path).expect("导出 GLB 失败");
-        let manifold_result = ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
+        let manifold_result =
+            ManifoldRust::import_glb_to_manifold(&glb_path, DMat4::IDENTITY, false);
         let _ = std::fs::remove_file(&glb_path);
 
         match manifold_result {

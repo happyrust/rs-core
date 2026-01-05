@@ -261,11 +261,14 @@ pub(crate) fn export_polyline_svg_for_debug(polyline: &Polyline, refno: Option<&
         svg_width,
         svg_height
     );
-    
+
     // 添加样式以改善显示效果
     let _ = writeln!(file, r#"  <style>"#);
     let _ = writeln!(file, r#"    svg {{ background-color: #f0f0f0; }}"#);
-    let _ = writeln!(file, r#"    path {{ stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; }}"#);
+    let _ = writeln!(
+        file,
+        r#"    path {{ stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; }}"#
+    );
     let _ = writeln!(file, r#"  </style>"#);
 
     let _ = write!(file, r#"  <path d="M"#);

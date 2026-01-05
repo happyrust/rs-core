@@ -65,7 +65,7 @@ impl SCTorus {
             ctorus.angle = torus_info.angle;
             ctorus.rins = torus_info.radius - self.pdia / 2.0;
             ctorus.rout = torus_info.radius + self.pdia / 2.0;
-            
+
             let z_axis = torus_info.rot_axis.normalize();
             let mut x_axis = (self.pbax_pt - torus_info.center).normalize();
             let translation = torus_info.center;

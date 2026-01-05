@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
-use surrealdb::{Surreal, engine::any::Any};
 use surrealdb::opt::auth::Root;
+use surrealdb::{Surreal, engine::any::Any};
 use tokio::sync::Mutex;
 
 /// 数据库连接配置信息
@@ -37,7 +37,8 @@ impl ConnectionConfig {
 
     /// 检查是否只需要切换 NS/DB（同主机但不同 NS/DB）
     pub fn needs_switch(&self, other: &ConnectionConfig) -> bool {
-        self.host == other.host && (self.namespace != other.namespace || self.database != other.database)
+        self.host == other.host
+            && (self.namespace != other.namespace || self.database != other.database)
     }
 }
 
@@ -93,7 +94,9 @@ impl SurrealConnectionManager {
                 *state = ConnectionState::Connected { config: new_config };
                 Ok(())
             }
-            ConnectionState::Connected { config: current_config } => {
+            ConnectionState::Connected {
+                config: current_config,
+            } => {
                 if new_config.needs_reconnect(current_config) {
                     // 主机变更，需要强制重连
                     println!(
@@ -114,7 +117,9 @@ impl SurrealConnectionManager {
                             // 这可能失败，但是我们要处理 "Already connected" 错误
                             match self.do_switch_ns_db(db, &new_config).await {
                                 Ok(_) => {
-                                    println!("✅ 成功切换到新配置（虽然主机不同，但 SurrealDB 允许）");
+                                    println!(
+                                        "✅ 成功切换到新配置（虽然主机不同，但 SurrealDB 允许）"
+                                    );
                                     *state = ConnectionState::Connected { config: new_config };
                                     return Ok(());
                                 }

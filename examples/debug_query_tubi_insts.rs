@@ -1,8 +1,8 @@
 //! 调试 query_tubi_insts_by_brans 函数的查询逻辑
-//! 
+//!
 //! 这个示例程序将生成完整的查询语句并执行它，以便分析为什么查询返回空结果
 
-use aios_core::rs_surreal::inst::{query_tubi_insts_by_brans, TubiInstQuery};
+use aios_core::rs_surreal::inst::{TubiInstQuery, query_tubi_insts_by_brans};
 use aios_core::{RefnoEnum, SUL_DB, SurrealQueryExt, init_surreal};
 
 #[tokio::main]
@@ -77,7 +77,10 @@ async fn main() -> anyhow::Result<()> {
     );
     let count_result: Vec<i64> = SUL_DB.query_take(&check_sql, 0).await.unwrap_or_default();
     if !count_result.is_empty() {
-        println!("tubi_relate 表中有 {} 条以 '{}' 开头的记录", count_result[0], pe_key);
+        println!(
+            "tubi_relate 表中有 {} 条以 '{}' 开头的记录",
+            count_result[0], pe_key
+        );
     } else {
         println!("⚠️ 无法获取 tubi_relate 表记录计数");
     }
@@ -90,7 +93,10 @@ async fn main() -> anyhow::Result<()> {
         "#,
         test_refno.to_string()
     );
-    let pe_results: Vec<serde_json::Value> = SUL_DB.query_take(&pe_check_sql, 0).await.unwrap_or_default();
+    let pe_results: Vec<serde_json::Value> = SUL_DB
+        .query_take(&pe_check_sql, 0)
+        .await
+        .unwrap_or_default();
     if !pe_results.is_empty() {
         println!("pe 表记录:");
         for (i, result) in pe_results.iter().enumerate() {
@@ -105,7 +111,10 @@ async fn main() -> anyhow::Result<()> {
     let structure_sql = r#"
         SELECT * FROM tubi_relate LIMIT 5
         "#;
-    let structure_results: Vec<serde_json::Value> = SUL_DB.query_take(structure_sql, 0).await.unwrap_or_default();
+    let structure_results: Vec<serde_json::Value> = SUL_DB
+        .query_take(structure_sql, 0)
+        .await
+        .unwrap_or_default();
     println!("tubi_relate 表结构（前5条）:");
     for (i, result) in structure_results.iter().enumerate() {
         println!("  [{}] {:?}", i + 1, result);

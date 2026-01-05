@@ -39,3 +39,4 @@ rs-plant.exe
 dist/
 assets/mesh/
 .ace-tool/
+.ace-sidebar/

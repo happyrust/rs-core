@@ -2,6 +2,7 @@ pub mod adapter;
 pub mod attr_cache;
 pub mod boolean_query;
 pub mod boolean_query_optimized;
+pub mod connection_manager;
 pub mod datacenter_query;
 pub mod geom;
 pub mod geometry_query;
@@ -12,7 +13,6 @@ pub mod query;
 pub mod query_ext;
 pub mod query_methods;
 pub mod query_structs;
-pub mod connection_manager;
 
 pub mod cate;
 pub mod resolve;
@@ -49,6 +49,7 @@ pub mod annotation_query;
 // Tag name mapping 表相关查询
 pub mod tag_name_mapping;
 
+pub use annotation_query::*;
 pub use attr_cache::*;
 pub use boolean_query::*;
 pub use cate::*;
@@ -59,10 +60,8 @@ pub use graph::*;
 pub use index::*;
 pub use inst::*;
 pub use inst_structs::*;
-pub use measurement_query::*;
-pub use annotation_query::*;
-pub use tag_name_mapping::*;
 pub use mdb::*;
+pub use measurement_query::*;
 pub use pbs::*;
 pub use point::*;
 pub use query::*;
@@ -71,6 +70,7 @@ pub use query_methods::*;
 pub use query_structs::*;
 pub use resolve::*;
 pub use spatial::*;
+pub use tag_name_mapping::*;
 pub use topology::*;
 pub use type_hierarchy::*;
 pub use uda::*;
@@ -117,7 +117,9 @@ pub async fn connect_surdb(
     let config = ConnectionConfig::new(conn_str, ns, db, username, password);
 
     // 使用连接管理器执行智能连接
-    CONNECTION_MANAGER.connect_or_reconnect(&SUL_DB, config).await
+    CONNECTION_MANAGER
+        .connect_or_reconnect(&SUL_DB, config)
+        .await
 }
 
 pub async fn connect_kvdb(

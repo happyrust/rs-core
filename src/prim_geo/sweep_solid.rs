@@ -19,10 +19,10 @@ use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::types::refno::RefnoEnum;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 use crate::prim_geo::wire::polyline_to_debug_json_str;
+use crate::types::refno::RefnoEnum;
 #[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
 #[cfg(feature = "occ")]
@@ -76,36 +76,35 @@ impl SweepSolid {
     }
 
     /// 根据 DRNS/DRNE 方向向量计算截面端面的旋转四元数
-    /// 
+    ///
     /// 与 core.dll 中 D3_Transform::setRotation 的处理一致：
     /// 1. 从方向向量计算旋转（类似 mthNormalToEulerAngles）
     /// 2. 返回将默认法线旋转到目标方向的四元数
-    /// 
+    ///
     /// # 参数
     /// - `is_start`: true 表示起始端 (DRNS)，false 表示结束端 (DRNE)
-    /// 
+    ///
     /// # 返回
     /// - `Some(DQuat)`: 需要应用的旋转
     /// - `None`: 无需旋转（方向向量为空或接近默认方向）
     pub fn calculate_face_rotation(&self, is_start: bool) -> Option<DQuat> {
         let dir = if is_start { self.drns? } else { self.drne? };
-        
+
         // 标准化方向向量
         let dir_normalized = dir.normalize();
-        
+
         // 默认法线方向：起始端为 +Z，结束端为 -Z
         let default_normal = if is_start { DVec3::Z } else { DVec3::NEG_Z };
-        
+
         // 如果方向向量接近默认方向，不需要旋转
         if dir_normalized.dot(default_normal).abs() > 0.999 {
             return None;
         }
-        
+
         // 使用旋转弧计算从默认法线到目标方向的旋转
         // 这与 core.dll 中 mthNormalToEulerAngles + D3_Matrix 的效果一致
         Some(DQuat::from_rotation_arc(default_normal, dir_normalized))
     }
-
 }
 
 impl Default for SweepSolid {

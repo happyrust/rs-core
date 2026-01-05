@@ -1,10 +1,10 @@
 //! 分析 geo_relate 复用问题
-use aios_core::{init_surreal, SUL_DB};
+use aios_core::{SUL_DB, init_surreal};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_surreal().await?;
-    
+
     // 1. 查看 ELBO 24383_73967 的 geo_relate 详情
     println!("=== 1. ELBO 24383_73967 的 geo_relate ===");
     let sql = r#"
@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     "#;
     let resp = SUL_DB.query(sql).await?;
     println!("{:?}\n", resp);
-    
+
     // 2. 查看同一个 inst_geo 被多少 geo_relate 引用
     println!("=== 2. inst_geo:2 被哪些 geo_relate 引用 ===");
     let sql = r#"
@@ -32,7 +32,7 @@ async fn main() -> anyhow::Result<()> {
     "#;
     let resp = SUL_DB.query(sql).await?;
     println!("{:?}\n", resp);
-    
+
     // 3. 查看这些元素的 inst_relate 状态
     println!("=== 3. 引用 inst_geo:2 的元素的 inst_relate 状态 ===");
     let sql = r#"

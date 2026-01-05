@@ -416,7 +416,10 @@ impl AttlibParser {
     ///
     /// # Arguments
     /// * `noun_hash` - 类型的哈希值（可通过 encode_base27() 从名称计算）
-    pub fn get_noun_attributes(&mut self, noun_hash: u32) -> std::io::Result<Vec<AttlibAttrDefinition>> {
+    pub fn get_noun_attributes(
+        &mut self,
+        noun_hash: u32,
+    ) -> std::io::Result<Vec<AttlibAttrDefinition>> {
         let mapping = self.build_noun_attr_mapping()?;
 
         let attr_hashes = mapping.get(&noun_hash).cloned().unwrap_or_default();

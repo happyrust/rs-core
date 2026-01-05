@@ -73,7 +73,7 @@ mod hashed_u64_as_string {
             String(String),
             Number(u64),
         }
-        
+
         match StringOrNumber::deserialize(deserializer)? {
             StringOrNumber::String(s) => s.parse().map_err(serde::de::Error::custom),
             StringOrNumber::Number(n) => Ok(n),
@@ -127,12 +127,12 @@ static DIRECTION_TO_ID: Lazy<HashMap<QuantizedVec3, u8>> = Lazy::new(|| {
     }
 
     // === 1. 主轴方向 (6个) ===
-    insert_dir!(Vec3::X);           // (1, 0, 0)
-    insert_dir!(Vec3::NEG_X);       // (-1, 0, 0)
-    insert_dir!(Vec3::Y);           // (0, 1, 0)
-    insert_dir!(Vec3::NEG_Y);       // (0, -1, 0)
-    insert_dir!(Vec3::Z);           // (0, 0, 1)
-    insert_dir!(Vec3::NEG_Z);       // (0, 0, -1)
+    insert_dir!(Vec3::X); // (1, 0, 0)
+    insert_dir!(Vec3::NEG_X); // (-1, 0, 0)
+    insert_dir!(Vec3::Y); // (0, 1, 0)
+    insert_dir!(Vec3::NEG_Y); // (0, -1, 0)
+    insert_dir!(Vec3::Z); // (0, 0, 1)
+    insert_dir!(Vec3::NEG_Z); // (0, 0, -1)
 
     // === 2. 面对角线 45° (12个) ===
     let d45 = FRAC_1_SQRT_2; // 0.7071...
@@ -165,14 +165,16 @@ static DIRECTION_TO_ID: Lazy<HashMap<QuantizedVec3, u8>> = Lazy::new(|| {
 
     // === 4. 常见角度：15° 增量 (XY, XZ, YZ 平面) ===
     // 角度值: 0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180...
-    let angles_deg: [f32; 24] = [0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0, 105.0, 120.0, 135.0, 150.0, 165.0, 180.0,
-                      195.0, 210.0, 225.0, 240.0, 255.0, 270.0, 285.0, 300.0, 315.0, 330.0, 345.0];
-    
+    let angles_deg: [f32; 24] = [
+        0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0, 105.0, 120.0, 135.0, 150.0, 165.0, 180.0, 195.0,
+        210.0, 225.0, 240.0, 255.0, 270.0, 285.0, 300.0, 315.0, 330.0, 345.0,
+    ];
+
     for &deg in &angles_deg {
         let rad = deg.to_radians();
         let c = rad.cos();
         let s = rad.sin();
-        
+
         // XY 平面旋转
         if c.abs() > 0.001 || s.abs() > 0.001 {
             insert_dir!(Vec3::new(c, s, 0.0).normalize());
@@ -359,11 +361,10 @@ impl EncodedVec3 {
         match self.id {
             Vec3Id::Zero => Vec3::ZERO,
             Vec3Id::Common(n) => ID_TO_DIRECTION.get(&n).copied().unwrap_or(Vec3::ZERO),
-            Vec3Id::Hashed(_) => {
-                self.raw
-                    .map(|r| Vec3::new(r[0], r[1], r[2]))
-                    .unwrap_or(Vec3::ZERO)
-            }
+            Vec3Id::Hashed(_) => self
+                .raw
+                .map(|r| Vec3::new(r[0], r[1], r[2]))
+                .unwrap_or(Vec3::ZERO),
         }
     }
 }
@@ -372,9 +373,9 @@ impl EncodedVec3 {
 // CateAxisParam 压缩存储
 // ============================================================================
 
+use crate::RefnoEnum;
 use crate::parsed_data::CateAxisParam;
 use crate::shape::pdms_shape::RsVec3;
-use crate::RefnoEnum;
 
 /// 压缩版的 CateAxisParam，用于数据库存储
 ///
@@ -426,7 +427,9 @@ fn is_zero_f32(v: &Option<f32>) -> bool {
 
 /// 检测位置是否为 ZERO（用于序列化时省略）
 fn is_zero_position(v: &Option<[f32; 3]>) -> bool {
-    v.map_or(true, |p| p[0].abs() < 0.001 && p[1].abs() < 0.001 && p[2].abs() < 0.001)
+    v.map_or(true, |p| {
+        p[0].abs() < 0.001 && p[1].abs() < 0.001 && p[2].abs() < 0.001
+    })
 }
 
 impl CateAxisParamCompact {
@@ -482,7 +485,9 @@ impl CateAxisParamCompact {
         // None 视为 ZERO
         let pt = self.p.map_or(Vec3::ZERO, |p| Vec3::new(p[0], p[1], p[2]));
         CateAxisParam {
-            refno: self.r.as_ref()
+            refno: self
+                .r
+                .as_ref()
                 .and_then(|s| s.parse().ok())
                 .unwrap_or_default(),
             number: self.n,
@@ -500,7 +505,10 @@ impl CateAxisParamCompact {
 
 /// 批量压缩 CateAxisParam 列表
 pub fn compress_ptset(params: &[CateAxisParam], include_refno: bool) -> Vec<CateAxisParamCompact> {
-    params.iter().map(|p| CateAxisParamCompact::from_full(p, include_refno)).collect()
+    params
+        .iter()
+        .map(|p| CateAxisParamCompact::from_full(p, include_refno))
+        .collect()
 }
 
 /// 批量还原 CateAxisParam 列表
@@ -523,14 +531,28 @@ pub fn estimate_compressed_size(params: &[CateAxisParam]) -> usize {
         if let Some(dir) = p.dir.as_ref() {
             size += if is_common_direction(dir.0) { 1 } else { 13 };
         }
-        if (p.dir_flag - 1.0).abs() > 0.001 { size += 4; }
-        if let Some(ref_dir) = p.ref_dir.as_ref() {
-            size += if is_common_direction(ref_dir.0) { 1 } else { 13 };
+        if (p.dir_flag - 1.0).abs() > 0.001 {
+            size += 4;
         }
-        if p.pbore.abs() > 0.001 { size += 4; }
-        if !p.pconnect.is_empty() && p.pconnect != "0" { size += p.pconnect.len() + 2; }
-        if p.pwidth.abs() > 0.001 { size += 4; }
-        if p.pheight.abs() > 0.001 { size += 4; }
+        if let Some(ref_dir) = p.ref_dir.as_ref() {
+            size += if is_common_direction(ref_dir.0) {
+                1
+            } else {
+                13
+            };
+        }
+        if p.pbore.abs() > 0.001 {
+            size += 4;
+        }
+        if !p.pconnect.is_empty() && p.pconnect != "0" {
+            size += p.pconnect.len() + 2;
+        }
+        if p.pwidth.abs() > 0.001 {
+            size += 4;
+        }
+        if p.pheight.abs() > 0.001 {
+            size += 4;
+        }
     }
     size
 }
@@ -542,7 +564,7 @@ pub fn estimate_original_size(params: &[CateAxisParam]) -> usize {
 }
 
 /// 从 JSON Value 解析 ptset（自动检测格式并解压）
-/// 
+///
 /// 支持两种格式：
 /// 1. 压缩格式：`[{n: 1, p: [...], d: {...}}, ...]`
 /// 2. 原始格式：`[{number: 1, pt: [...], dir: [...], ...}, ...]`
@@ -551,7 +573,7 @@ pub fn parse_ptset_auto(value: &serde_json::Value) -> Option<Vec<CateAxisParam>>
     if arr.is_empty() {
         return Some(Vec::new());
     }
-    
+
     // 检测格式：压缩格式使用 "n" 字段，原始格式使用 "number" 字段
     let first = arr.first()?;
     if first.get("n").is_some() {
@@ -568,7 +590,8 @@ pub fn parse_ptset_auto(value: &serde_json::Value) -> Option<Vec<CateAxisParam>>
 
 /// 检测 ptset 数据是否为压缩格式
 pub fn is_compressed_ptset(value: &serde_json::Value) -> bool {
-    value.as_array()
+    value
+        .as_array()
         .and_then(|arr| arr.first())
         .map(|first| first.get("n").is_some())
         .unwrap_or(false)
@@ -684,7 +707,7 @@ mod tests {
 
         // 压缩
         let compact = CateAxisParamCompact::from_full(&param, false);
-        
+
         // 验证压缩格式
         assert_eq!(compact.n, 1);
         assert!(compact.d.is_some());
@@ -698,7 +721,7 @@ mod tests {
 
         // 解压缩
         let restored = compact.to_full();
-        
+
         // 验证还原
         assert_eq!(restored.number, param.number);
         assert!((restored.pt.0 - param.pt.0).length() < 0.001);
@@ -738,11 +761,14 @@ mod tests {
 
         let original_size = estimate_original_size(&params);
         let compressed_size = estimate_compressed_size(&params);
-        
+
         println!("原始大小: {} bytes", original_size);
         println!("压缩大小: {} bytes", compressed_size);
-        println!("压缩率: {:.1}%", (1.0 - compressed_size as f64 / original_size as f64) * 100.0);
-        
+        println!(
+            "压缩率: {:.1}%",
+            (1.0 - compressed_size as f64 / original_size as f64) * 100.0
+        );
+
         assert!(compressed_size < original_size);
     }
 
@@ -792,7 +818,7 @@ mod tests {
             {"n": 1, "p": [0.0, 0.0, 0.0], "d": {"id": {"Common": 3}}, "b": 50.0, "c": "BOXI"},
             {"n": 2, "p": [0.0, 2400.0, 0.0], "d": {"id": {"Common": 4}}, "b": 50.0, "c": "BOXI"}
         ]);
-        
+
         assert!(is_compressed_ptset(&compressed_json));
         let result = parse_ptset_auto(&compressed_json);
         assert!(result.is_some());
@@ -818,7 +844,7 @@ mod tests {
                 "pheight": 0.0
             }
         ]);
-        
+
         assert!(!is_compressed_ptset(&original_json));
         let result = parse_ptset_auto(&original_json);
         assert!(result.is_some());
@@ -844,15 +870,15 @@ mod tests {
         };
 
         let compact = CateAxisParamCompact::from_full(&param, false);
-        
+
         // ZERO 位置应该被设为 None
         assert!(compact.p.is_none());
-        
+
         // 序列化后不应包含 p 字段
         let json = serde_json::to_string(&compact).unwrap();
         println!("ZERO 位置序列化结果: {}", json);
         assert!(!json.contains("\"p\":"));
-        
+
         // 还原后位置应该是 ZERO
         let restored = compact.to_full();
         assert!(restored.pt.0.length() < 0.001);
@@ -875,15 +901,15 @@ mod tests {
         };
 
         let compact = CateAxisParamCompact::from_full(&param, false);
-        
+
         // 非 ZERO 位置应该被保留
         assert!(compact.p.is_some());
-        
+
         // 序列化后应包含 p 字段
         let json = serde_json::to_string(&compact).unwrap();
         println!("非 ZERO 位置序列化结果: {}", json);
         assert!(json.contains("\"p\":"));
-        
+
         // 还原后位置应该正确
         let restored = compact.to_full();
         assert!((restored.pt.0.x - 100.0).abs() < 0.001);
@@ -897,12 +923,12 @@ mod tests {
             {"n": 1, "d": {"id": {"Common": 3}}, "b": 50.0, "c": "BOXI"},
             {"n": 2, "p": [0.0, 2400.0, 0.0], "d": {"id": {"Common": 4}}, "b": 50.0, "c": "BOXI"}
         ]);
-        
+
         let result = parse_ptset_auto(&compressed_json);
         assert!(result.is_some());
         let params = result.unwrap();
         assert_eq!(params.len(), 2);
-        
+
         // 第一个点位置为 ZERO
         assert!(params[0].pt.0.length() < 0.001);
         // 第二个点位置为 [0, 2400, 0]

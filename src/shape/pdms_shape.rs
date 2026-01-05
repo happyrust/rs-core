@@ -1,5 +1,5 @@
-use anyhow::anyhow;
 use anyhow::Context;
+use anyhow::anyhow;
 #[cfg(feature = "render")]
 use bevy_asset::RenderAssetUsages;
 use bevy_ecs::component::Component;
@@ -34,11 +34,11 @@ use truck_meshalgo::prelude::{MeshableShape, MeshedShape};
 #[cfg(feature = "truck")]
 use truck_modeling::{Curve, Shell};
 
+use crate::geometry::PlantGeoData;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::tool::float_tool::f32_round_3;
-use parry3d::bounding_volume::BoundingVolume;
-use crate::geometry::PlantGeoData;
 use crate::types::refno::RefnoEnum;
+use parry3d::bounding_volume::BoundingVolume;
 
 pub const TRIANGLE_TOL: f64 = 0.01;
 

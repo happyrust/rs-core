@@ -1,8 +1,8 @@
 use bevy_transform::prelude::Transform;
+use chrono;
 use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::Write;
-use chrono;
 
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::shape::pdms_shape::RsVec3;
@@ -132,7 +132,7 @@ impl Default for CateAxisParam {
 }
 
 /// Tubi 信息数据结构
-/// 
+///
 /// 按 `{cata_hash}_{arrive_num}_{leave_num}` 组合键存储，
 /// 用于 BRAN/HANG 元件的 arrive/leave 点复用。
 /// 存储 local 坐标，运行时结合 world_transform 计算 world 坐标。
@@ -173,7 +173,9 @@ fn is_zero_f32(v: &f32) -> bool {
 }
 
 fn is_zero_position(v: &Option<[f32; 3]>) -> bool {
-    v.map_or(true, |p| p[0].abs() < 0.001 && p[1].abs() < 0.001 && p[2].abs() < 0.001)
+    v.map_or(true, |p| {
+        p[0].abs() < 0.001 && p[1].abs() < 0.001 && p[2].abs() < 0.001
+    })
 }
 
 impl TubiPointData {
@@ -186,7 +188,7 @@ impl TubiPointData {
         } else {
             Some(pos)
         };
-        
+
         Self {
             n: param.number,
             p,
@@ -201,7 +203,7 @@ impl TubiPointData {
     pub fn to_axis_param(&self, refno: RefnoEnum) -> CateAxisParam {
         // None 视为 ZERO
         let pt = self.p.map_or(Vec3::ZERO, |p| Vec3::new(p[0], p[1], p[2]));
-        
+
         CateAxisParam {
             refno,
             number: self.n,
@@ -220,11 +222,15 @@ impl TubiPointData {
 impl TubiInfoData {
     /// 生成组合键 ID
     pub fn make_id(cata_hash: &str, arrive_num: i32, leave_num: i32) -> String {
-        format!("{}_{}_{}",cata_hash, arrive_num, leave_num)
+        format!("{}_{}_{}", cata_hash, arrive_num, leave_num)
     }
 
     /// 从 CateAxisParam 对创建
-    pub fn from_axis_params(cata_hash: &str, arrive: &CateAxisParam, leave: &CateAxisParam) -> Self {
+    pub fn from_axis_params(
+        cata_hash: &str,
+        arrive: &CateAxisParam,
+        leave: &CateAxisParam,
+    ) -> Self {
         Self {
             id: Self::make_id(cata_hash, arrive.number, leave.number),
             arrive: TubiPointData::from_axis_param(arrive),
@@ -259,11 +265,11 @@ pub mod geo_params_data {
     use crate::rvm_types::RvmShapeTypeData;
     use crate::shape::pdms_shape::{BrepShapeTrait, RsVec3, VerifiedShape};
     use crate::types::refno::RefnoEnum;
-    use anyhow::{anyhow, Context};
-    use std::io::Write;
+    use anyhow::{Context, anyhow};
     #[cfg(feature = "occ")]
     use opencascade::primitives::*;
     use serde_derive::{Deserialize, Serialize};
+    use std::io::Write;
     use surrealdb::types as surrealdb_types;
     use surrealdb::types::SurrealValue;
 
@@ -516,28 +522,43 @@ pub mod geo_params_data {
         }
 
         /// 生成 CSG 形状（带 refno 上下文便于调试）
-        pub fn build_csg_shape(&self, refno: RefnoEnum) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        pub fn build_csg_shape(
+            &self,
+            refno: RefnoEnum,
+        ) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             if !self.check_valid() {
                 return Err(anyhow!("Invalid shape for refno: {}", refno.to_string()));
             }
             let type_name = self.type_name();
-            self.gen_csg_shape_internal()
-                .with_context(|| format!("Failed to generate CSG shape for refno: {} (type: {})", refno.to_string(), type_name))
+            self.gen_csg_shape_internal().with_context(|| {
+                format!(
+                    "Failed to generate CSG shape for refno: {} (type: {})",
+                    refno.to_string(),
+                    type_name
+                )
+            })
         }
 
-        pub fn gen_csg_shape(&self, refno: RefnoEnum) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        pub fn gen_csg_shape(
+            &self,
+            refno: RefnoEnum,
+        ) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             self.build_csg_shape(refno)
         }
 
         /// 兼容性包装：不带 refno 的生成方法（保留给旧调用点）
-        pub fn build_csg_shape_compat(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        pub fn build_csg_shape_compat(
+            &self,
+        ) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             if !self.check_valid() {
                 return Err(anyhow!("Invalid shape"));
             }
             self.gen_csg_shape_internal()
         }
 
-        pub fn gen_csg_shape_compat(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
+        pub fn gen_csg_shape_compat(
+            &self,
+        ) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             self.build_csg_shape_compat()
         }
 

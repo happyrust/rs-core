@@ -2,6 +2,7 @@ use crate::{CataContext, eval_str_to_f64};
 use anyhow::anyhow;
 use glam::{DVec3, Vec3};
 use nom::IResult;
+use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::space0;
@@ -9,7 +10,6 @@ use nom::combinator::{map_res, opt, recognize};
 use nom::error::Error;
 use nom::number::complete::{double, float};
 use nom::sequence::{delimited, preceded, tuple};
-use nom::Parser;
 
 #[derive(Debug, PartialEq)]
 pub struct Coordinate {
@@ -40,7 +40,9 @@ pub struct Direction {
     coordinate: Coordinate,
 }
 
-pub fn ws<'a, F: 'a, O>(inner: F) -> impl Parser<&'a str, Output = O, Error = nom::error::Error<&'a str>>
+pub fn ws<'a, F: 'a, O>(
+    inner: F,
+) -> impl Parser<&'a str, Output = O, Error = nom::error::Error<&'a str>>
 where
     F: Parser<&'a str, Output = O, Error = nom::error::Error<&'a str>>,
 {
@@ -68,14 +70,16 @@ fn parse_neg_pos_expr(input: &str) -> IResult<&str, (String, bool)> {
             delimited(ws(tag("(")), ws(parse_pos_expr), ws(tag(")"))),
         ),
         |n| Ok::<_, ()>((n.0, true)),
-    ).parse(input)
+    )
+    .parse(input)
 }
 
 fn parse_coordinate_value(input: &str) -> IResult<&str, (String, bool)> {
     alt((
         delimited(opt(ws(tag("("))), parse_neg_pos_expr, opt(ws(tag(")")))),
         delimited(opt(ws(tag("("))), ws(parse_pos_expr), opt(ws(tag(")")))),
-    )).parse(input)
+    ))
+    .parse(input)
 }
 
 fn parse_axis_value(axis: &'static str) -> impl Fn(&str) -> IResult<&str, (String, String, bool)> {
@@ -91,7 +95,8 @@ pub fn parse_coordinate(input: &str) -> IResult<&str, Coordinate> {
         parse_axis_value("X"),
         parse_axis_value("Y"),
         parse_axis_value("Z"),
-    ))).parse(input)?;
+    )))
+    .parse(input)?;
 
     let mut coord = Coordinate {
         x: None,
@@ -129,7 +134,8 @@ pub fn parse_str_to_vec3(input: &str) -> Option<DVec3> {
             map_res(parse_component('X'), |v| Ok::<_, ()>((0, v))),
             map_res(parse_component('Y'), |v| Ok::<_, ()>((1, v))),
             map_res(parse_component('Z'), |v| Ok::<_, ()>((2, v))),
-        ))).parse(input)?;
+        )))
+        .parse(input)?;
 
         let mut values = [0.0, 0.0, 0.0];
         for (idx, val) in coords {
@@ -206,7 +212,9 @@ pub fn parse_to_direction(
     input: &str,
     context: Option<&CataContext>,
 ) -> anyhow::Result<Option<DVec3>> {
-    let (remaining_input, _) = ws(tag("TO")).parse(input).map_err(|_| anyhow!("Parsing failed!"))?;
+    let (remaining_input, _) = ws(tag("TO"))
+        .parse(input)
+        .map_err(|_| anyhow!("Parsing failed!"))?;
     // dbg!(input);
     let (remaining_input, coordinate) =
         parse_coordinate(remaining_input).map_err(|_| anyhow!("Parsing failed!"))?;

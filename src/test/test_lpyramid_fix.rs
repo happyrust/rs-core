@@ -52,8 +52,8 @@ fn test_lpyramid_with_offset() {
         pcbt: 80.0,
         ptdi: 50.0,
         pbdi: -50.0,
-        pbof: 20.0,  // B 方向偏移 20
-        pcof: 10.0,  // C 方向偏移 10
+        pbof: 20.0, // B 方向偏移 20
+        pcof: 10.0, // C 方向偏移 10
     };
 
     assert!(pyramid.check_valid(), "带偏移的 LPyramid 应该有效");
@@ -70,13 +70,13 @@ fn test_lpyramid_apex() {
         pcax_dir: Vec3::Y,
         paax_pt: Vec3::ZERO,
         paax_dir: Vec3::Z,
-        pbtp: 0.0,   // 顶面退化为点
+        pbtp: 0.0, // 顶面退化为点
         pctp: 0.0,
         pbbt: 60.0,
         pcbt: 60.0,
         ptdi: 100.0,
         pbdi: 0.0,
-        pbof: 15.0,  // 顶点偏移
+        pbof: 15.0, // 顶点偏移
         pcof: 15.0,
     };
 
@@ -94,7 +94,7 @@ fn test_lpyramid_rotated() {
 
     let pyramid = LPyramid {
         pbax_pt: Vec3::ZERO,
-        pbax_dir: Vec3::new(cos_a, sin_a, 0.0),  // 旋转后的 X
+        pbax_dir: Vec3::new(cos_a, sin_a, 0.0), // 旋转后的 X
         pcax_pt: Vec3::ZERO,
         pcax_dir: Vec3::new(-sin_a, cos_a, 0.0), // 旋转后的 Y
         paax_pt: Vec3::ZERO,
@@ -178,12 +178,7 @@ fn test_lpyramid_mesh_export() {
     };
 
     let geo_param = PdmsGeoParam::PrimLPyramid(pyramid);
-    let mesh_result = generate_csg_mesh(
-        &geo_param,
-        &Default::default(),
-        false,
-        None,
-    );
+    let mesh_result = generate_csg_mesh(&geo_param, &Default::default(), false, None);
 
     if let Some(generated) = mesh_result {
         let mesh = &generated.mesh;
@@ -192,11 +187,11 @@ fn test_lpyramid_mesh_export() {
 
         // 写入 OBJ 文件
         writeln!(file, "# LPyramid 偏移测试 - PBOF=20, PCOF=10").unwrap();
-        
+
         for pos in &mesh.vertices {
             writeln!(file, "v {:.3} {:.3} {:.3}", pos.x, pos.y, pos.z).unwrap();
         }
-        
+
         for n in &mesh.normals {
             writeln!(file, "vn {:.3} {:.3} {:.3}", n.x, n.y, n.z).unwrap();
         }
@@ -206,7 +201,11 @@ fn test_lpyramid_mesh_export() {
         }
 
         println!("✅ 导出 OBJ 到: {:?}", output_path);
-        println!("   顶点数: {}, 面数: {}", mesh.vertices.len(), mesh.indices.len() / 3);
+        println!(
+            "   顶点数: {}, 面数: {}",
+            mesh.vertices.len(),
+            mesh.indices.len() / 3
+        );
     } else {
         println!("⚠️ 网格生成返回 None");
     }

@@ -220,7 +220,10 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
         .collect::<Vec<_>>()
         .join(", ");
 
-    let sql = format!("select id, param, unit_flag ?? false as unit_flag from [{}] where param != NONE", thing_ids);
+    let sql = format!(
+        "select id, param, unit_flag ?? false as unit_flag from [{}] where param != NONE",
+        thing_ids
+    );
 
     let mut result = SUL_DB.query_take(&sql, 0).await?;
 
@@ -236,7 +239,7 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
 /// * `inst_keys` - inst_relate 的键集合字符串（SurrealDB 查询范围）
 /// * `replace_exist` - 是否替换已存在的 AABB
 ///   - true: 查询所有实例
-///   - false: 仅查询 aabb 为空的实例（增量回填）
+///   - false: 仅查询尚未写入 inst_relate_aabb 的实例（增量回填）
 ///
 /// # 返回值
 ///
@@ -254,7 +257,7 @@ pub async fn query_aabb_params(
     );
 
     if !replace_exist {
-        sql.push_str(" and aabb=none");
+        sql.push_str(" and array::len(in->inst_relate_aabb) = 0");
     }
 
     // println!("Executing SQL: {}", sql);
@@ -327,14 +330,14 @@ pub async fn save_pts_to_surreal(vec3_map: &DashMap<u64, String>) {
 
 /// 更新实例关联的包围盒数据
 ///
-/// 根据参考号批量计算并更新 inst_relate 的 AABB
+/// 根据参考号批量计算并写入 inst_relate_aabb（不再更新 inst_relate.aabb）
 ///
 /// # 参数
 ///
 /// * `refnos` - 参考号数组
 /// * `replace_exist` - 是否替换已存在的包围盒数据
 ///   - true: 替换所有 AABB
-///   - false: 仅回填 aabb 为空的实例（增量更新）
+///   - false: 仅回填尚未写入 inst_relate_aabb 的实例（增量写入）
 ///
 /// # 返回值
 ///
@@ -352,7 +355,7 @@ pub async fn save_pts_to_surreal(vec3_map: &DashMap<u64, String>) {
 ///
 /// - world_trans.d != none：仅处理拥有世界变换的实例
 /// - 子查询 out->geo_relate 仅保留 out.aabb.d != none 且 trans.d != none 的几何（有局部AABB且有变换）
-/// - 若 !replace_exist 则追加条件 and aabb=none，避免覆盖已存在的实例 AABB（增量回填）
+/// - 若 !replace_exist 则追加条件 and array::len(in->inst_relate_aabb)=0，避免覆盖已存在的实例 AABB（增量回填）
 pub async fn update_inst_relate_aabbs_by_refnos(
     refnos: &[RefnoEnum],
     replace_exist: bool,
@@ -369,7 +372,7 @@ pub async fn update_inst_relate_aabbs_by_refnos(
         // 查询 AABB 参数
         let result = query_aabb_params(&inst_keys, replace_exist).await?;
 
-        let mut update_sql = String::new();
+        let mut relate_sql = String::new();
         for r in result {
             // 计算合并后的 AABB
             let mut aabb = Aabb::new_invalid();
@@ -393,14 +396,23 @@ pub async fn update_inst_relate_aabbs_by_refnos(
             let aabb_hash = gen_bytes_hash(&aabb).to_string();
             aabb_map.entry(aabb_hash.clone()).or_insert(aabb);
 
-            let inst_key = r.refno().to_inst_relate_key();
-            // 生成更新 SQL
-            let sql = format!("update {} set aabb = aabb:⟨{}⟩;", inst_key, aabb_hash,);
-            update_sql.push_str(&sql);
+            let refno = r.refno();
+            let edge_id = refno.to_table_key("inst_relate_aabb");
+            let pe_key = refno.to_pe_key();
+
+            if replace_exist {
+                relate_sql.push_str(&format!("DELETE {};", edge_id));
+            }
+
+            let sql = format!(
+                "INSERT IGNORE INTO inst_relate_aabb {{ id: {}, in: {}, out: aabb:⟨{}⟩ }};",
+                edge_id, pe_key, aabb_hash
+            );
+            relate_sql.push_str(&sql);
         }
 
-        if !update_sql.is_empty() {
-            SUL_DB.query_response(&update_sql).await?;
+        if !relate_sql.is_empty() {
+            SUL_DB.query_response(&relate_sql).await?;
         }
     }
 

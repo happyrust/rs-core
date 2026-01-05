@@ -124,7 +124,7 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             };
             // dbg!(&pyramid);
             //需要偏移到 btm
-            let translation =  pa.pt.0;  //z_axis * d.dist_to_btm +
+            let translation = pa.pt.0; //z_axis * d.dist_to_btm +
             let csg_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateCsgShape {
                 refno: d.refno,

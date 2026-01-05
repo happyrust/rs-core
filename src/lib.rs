@@ -116,8 +116,8 @@ pub mod dblist;
 
 pub mod expression;
 
-pub mod utils;
 pub mod fast_model;
+pub mod utils;
 
 pub mod debug_macros;
 

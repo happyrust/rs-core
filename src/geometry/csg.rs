@@ -14,31 +14,30 @@
 //! 自动调整网格分辨率，以平衡渲染质量和性能。
 
 use crate::debug_macros::is_debug_model_enabled;
+use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::prim_geo::basic::CsgSharedMesh;
 use crate::prim_geo::ctorus::CTorus;
 use crate::prim_geo::cylinder::{LCylinder, SCylinder};
-use crate::prim_geo::basic::CsgSharedMesh;
-use crate::prim_geo::{
-    sbox::SBox, snout::LSnout, sphere::Sphere, rtorus::RTorus, pyramid::Pyramid,
-    lpyramid::LPyramid, dish::Dish, extrusion::Extrusion, polyhedron::Polyhedron,
-    revolution::Revolution,
-};
-use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
-use crate::types::refno::RefnoEnum;
 use crate::prim_geo::profile_processor::{ProfileProcessor, extrude_profile};
 use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::prim_geo::wire::CurveType;
+use crate::prim_geo::{
+    dish::Dish, extrusion::Extrusion, lpyramid::LPyramid, polyhedron::Polyhedron, pyramid::Pyramid,
+    revolution::Revolution, rtorus::RTorus, sbox::SBox, snout::LSnout, sphere::Sphere,
+};
 use crate::shape::pdms_shape::{Edge, Edges, PlantMesh, VerifiedShape};
 use crate::types::refno::RefU64;
+use crate::types::refno::RefnoEnum;
 use crate::utils::svg_generator::SpineSvgGenerator;
+use chrono;
 use glam::{Mat3, Quat, Vec2, Vec3};
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use std::collections::HashSet;
-use std::sync::Mutex;
 use std::io::Write;
-use chrono;
+use std::sync::Mutex;
 
 /// 最小长度阈值，用于判断几何形状是否有效
 const MIN_LEN: f32 = 1e-6;
@@ -105,16 +104,11 @@ pub fn unit_box_mesh() -> PlantMesh {
     // 绕序：从外部看逆时针，法向量指向外部
     let indices = vec![
         // 前面 (+Z): 4, 5, 6, 7
-        4, 5, 6, 4, 6, 7,
-        // 后面 (-Z): 1, 0, 3, 2
-        1, 0, 3, 1, 3, 2,
-        // 右面 (+X): 5, 1, 2, 6
-        5, 1, 2, 5, 2, 6,
-        // 左面 (-X): 0, 4, 7, 3
-        0, 4, 7, 0, 7, 3,
-        // 上面 (+Y): 7, 6, 2, 3
-        7, 6, 2, 7, 2, 3,
-        // 下面 (-Y): 0, 1, 5, 4
+        4, 5, 6, 4, 6, 7, // 后面 (-Z): 1, 0, 3, 2
+        1, 0, 3, 1, 3, 2, // 右面 (+X): 5, 1, 2, 6
+        5, 1, 2, 5, 2, 6, // 左面 (-X): 0, 4, 7, 3
+        0, 4, 7, 0, 7, 3, // 上面 (+Y): 7, 6, 2, 3
+        7, 6, 2, 7, 2, 3, // 下面 (-Y): 0, 1, 5, 4
         0, 1, 5, 0, 5, 4,
     ];
 
@@ -359,10 +353,7 @@ pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> Pla
 
     // 🆕 生成圆柱体的特征边（顶圆 + 底圆 + 4条纵向边）
     let cylinder_edges = generate_cylinder_edges(
-        radius,
-        height,
-        resolution,
-        4, // 生成 4 条纵向边，均匀分布
+        radius, height, resolution, 4, // 生成 4 条纵向边，均匀分布
     );
 
     let mut mesh = PlantMesh {
@@ -696,8 +687,10 @@ pub fn generate_revolution_profile_edges(
             let p1 = profile[j];
 
             // 计算旋转后的位置
-            let rotated_p0 = rotate_point_around_axis(p0, rot_pt, rot_dir, u_axis, v_axis, sin_theta, cos_theta);
-            let rotated_p1 = rotate_point_around_axis(p1, rot_pt, rot_dir, u_axis, v_axis, sin_theta, cos_theta);
+            let rotated_p0 =
+                rotate_point_around_axis(p0, rot_pt, rot_dir, u_axis, v_axis, sin_theta, cos_theta);
+            let rotated_p1 =
+                rotate_point_around_axis(p1, rot_pt, rot_dir, u_axis, v_axis, sin_theta, cos_theta);
 
             edges.push(Edge::new(vec![rotated_p0, rotated_p1]));
         }
@@ -860,12 +853,7 @@ pub fn generate_sscyl_edges(bottom_rim: &[Vec3], top_rim: &[Vec3]) -> Edges {
     }
 
     // 3. 4 条母线，取四等分角对应的索引
-    let meridian_indices = [
-        0,
-        n / 4,
-        n / 2,
-        (n * 3) / 4,
-    ];
+    let meridian_indices = [0, n / 4, n / 2, (n * 3) / 4];
     for idx in meridian_indices {
         let clamped = idx % n;
         edges.push(Edge::new(vec![bottom_rim[clamped], top_rim[clamped]]));
@@ -883,11 +871,7 @@ pub fn generate_sscyl_edges(bottom_rim: &[Vec3], top_rim: &[Vec3]) -> Edges {
 ///
 /// # 返回
 /// 特征边集合
-pub fn generate_sphere_edges(
-    radius: f32,
-    num_meridians: usize,
-    num_parallels: usize,
-) -> Edges {
+pub fn generate_sphere_edges(radius: f32, num_meridians: usize, num_parallels: usize) -> Edges {
     let mut edges = Vec::new();
     let theta_step = std::f32::consts::TAU / num_meridians as f32;
     let phi_step = std::f32::consts::PI / (num_parallels + 1) as f32;
@@ -1095,13 +1079,23 @@ pub fn build_csg_mesh(
     refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
     match param {
-        PdmsGeoParam::PrimLCylinder(cyl) => generate_lcylinder_mesh(cyl, settings, non_scalable, refno),
-        PdmsGeoParam::PrimSCylinder(cyl) => generate_scylinder_mesh(cyl, settings, non_scalable, refno),
-        PdmsGeoParam::PrimSphere(sphere) => generate_sphere_mesh(sphere, settings, non_scalable, refno),
-        PdmsGeoParam::PrimLSnout(snout) => generate_snout_mesh(snout, settings, non_scalable, refno),
+        PdmsGeoParam::PrimLCylinder(cyl) => {
+            generate_lcylinder_mesh(cyl, settings, non_scalable, refno)
+        }
+        PdmsGeoParam::PrimSCylinder(cyl) => {
+            generate_scylinder_mesh(cyl, settings, non_scalable, refno)
+        }
+        PdmsGeoParam::PrimSphere(sphere) => {
+            generate_sphere_mesh(sphere, settings, non_scalable, refno)
+        }
+        PdmsGeoParam::PrimLSnout(snout) => {
+            generate_snout_mesh(snout, settings, non_scalable, refno)
+        }
         PdmsGeoParam::PrimBox(sbox) => generate_box_mesh(sbox, refno),
         PdmsGeoParam::PrimDish(dish) => generate_dish_mesh(dish, settings, non_scalable, refno),
-        PdmsGeoParam::PrimCTorus(torus) => generate_torus_mesh(torus, settings, non_scalable, refno),
+        PdmsGeoParam::PrimCTorus(torus) => {
+            generate_torus_mesh(torus, settings, non_scalable, refno)
+        }
         PdmsGeoParam::PrimRTorus(rtorus) => {
             generate_rect_torus_mesh(rtorus, settings, non_scalable, refno)
         }
@@ -1109,7 +1103,9 @@ pub fn build_csg_mesh(
         PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr, refno),
         PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly, refno),
-        PdmsGeoParam::PrimRevolution(rev) => generate_revolution_mesh(rev, settings, non_scalable, refno),
+        PdmsGeoParam::PrimRevolution(rev) => {
+            generate_revolution_mesh(rev, settings, non_scalable, refno)
+        }
         PdmsGeoParam::PrimLoft(sweep) => {
             generate_prim_loft_mesh(sweep, settings, non_scalable, refno)
         }
@@ -1188,20 +1184,19 @@ fn generate_sscl_mesh(
     // *counter += 1;
     // let current_count = *counter;
     // drop(counter);
-    
+
     // if current_count != 5 {
     //     println!("⏭️  跳过 SSLC #{} (refno: {})", current_count, refno);
     //     return None;
     // }
-    
+
     // println!("🔧 生成 SSLC #{} (refno: {})", current_count, refno);
-    
+
     // 在标准局部坐标系中生成：Z 轴朝上，X/Y 是剪切方向
     let dir = cyl.paxi_dir;
     let (x_axis, y_axis) = orthonormal_basis(dir);
     dbg!(&cyl);
     dbg!(dir, x_axis, y_axis);
-
 
     let radius = (cyl.pdia * 0.5).abs();
     let height = cyl.phei;
@@ -1212,17 +1207,17 @@ fn generate_sscl_mesh(
     // 剪切角规范化到 (-90°, 90°)
     let x_sign = if x_axis.y < 0.0 { -1.0 } else { 1.0 };
     let y_sign = if y_axis.x < 0.0 { -1.0 } else { 1.0 };
-    let btm_x_deg =  x_sign* normalize_shear_angle(cyl.btm_shear_angles[0]);
-    let btm_y_deg =  y_sign * normalize_shear_angle(cyl.btm_shear_angles[1]);
-    let top_x_deg =  x_sign * normalize_shear_angle(cyl.top_shear_angles[0]);
-    let top_y_deg =  y_sign * normalize_shear_angle(cyl.top_shear_angles[1]);
+    let btm_x_deg = x_sign * normalize_shear_angle(cyl.btm_shear_angles[0]);
+    let btm_y_deg = y_sign * normalize_shear_angle(cyl.btm_shear_angles[1]);
+    let top_x_deg = x_sign * normalize_shear_angle(cyl.top_shear_angles[0]);
+    let top_y_deg = y_sign * normalize_shear_angle(cyl.top_shear_angles[1]);
     for a in [btm_x_deg, btm_y_deg, top_x_deg, top_y_deg] {
         if a <= -90.0 || a >= 90.0 {
             return None;
         }
     }
 
-    dbg!(btm_x_deg, btm_y_deg, top_x_deg, top_y_deg );
+    dbg!(btm_x_deg, btm_y_deg, top_x_deg, top_y_deg);
 
     // libgm 斜率：直接使用 tan(angle)
     let btm_tan_x = btm_x_deg.to_radians().tan();
@@ -1770,12 +1765,18 @@ fn generate_snout_mesh(
         bottom_radius,
         top_radius,
         axis_dir,
-        radial,        // 圆周分段数
-        4,             // 4条竖直边
+        radial, // 圆周分段数
+        4,      // 4条竖直边
     );
 
     Some(GeneratedMesh {
-        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(snout_edges)),
+        mesh: create_mesh_with_custom_edges(
+            indices,
+            vertices,
+            normals,
+            Some(aabb),
+            Some(snout_edges),
+        ),
         aabb: Some(aabb),
     })
 }
@@ -1943,12 +1944,13 @@ fn generate_box_mesh(sbox: &SBox, refno: RefnoEnum) -> Option<GeneratedMesh> {
     let min = sbox.center - half;
     let max = sbox.center + half;
     let aabb = Aabb::new(Point3::from(min), Point3::from(max));
-    
+
     // 生成几何边：12条边
     let base_edges = generate_box_edges(sbox.size.x, sbox.size.y, sbox.size.z);
     let edges = transform_edges(base_edges, sbox.center, Vec3::Z);
-    
-    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+
+    let mut mesh =
+        create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
     mesh.uvs = uvs; // 使用手动计算的 UV 覆盖默认的空 UV
 
     Some(GeneratedMesh {
@@ -1975,10 +1977,10 @@ fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
         min_pt = min_pt.min(*v);
         max_pt = max_pt.max(*v);
     }
-    
+
     let extent = max_pt - min_pt;
     let min_extent = extent.x.min(extent.y).min(extent.z);
-    
+
     // 根据最小维度选择量化精度
     // 确保每个维度至少有 100 个离散点
     let precision: f32 = if min_extent < 0.1 {
@@ -2591,31 +2593,43 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum) -> Option<GeneratedMes
 
     // 生成几何边
     let mut edges = Vec::new();
-    
+
     // 底部4条边
     if let Some(bottom) = bottom_corners {
         for i in 0..4 {
             let next = (i + 1) % 4;
-            edges.push(Edge::new(vec![vertices[bottom[i] as usize], vertices[bottom[next] as usize]]));
+            edges.push(Edge::new(vec![
+                vertices[bottom[i] as usize],
+                vertices[bottom[next] as usize],
+            ]));
         }
     }
-    
+
     // 顶部边或斜边
     if let Some(top) = top_vertices {
         // 截锥：顶部4条边 + 4条竖边
         for i in 0..4 {
             let next = (i + 1) % 4;
-            edges.push(Edge::new(vec![vertices[top[i] as usize], vertices[top[next] as usize]]));
+            edges.push(Edge::new(vec![
+                vertices[top[i] as usize],
+                vertices[top[next] as usize],
+            ]));
         }
         if let Some(bottom) = bottom_corners {
             for i in 0..4 {
-                edges.push(Edge::new(vec![vertices[bottom[i] as usize], vertices[top[i] as usize]]));
+                edges.push(Edge::new(vec![
+                    vertices[bottom[i] as usize],
+                    vertices[top[i] as usize],
+                ]));
             }
         }
     } else if let (Some(bottom), Some(apex)) = (bottom_corners, apex_index) {
         // 尖锥：4条斜边到顶点
         for i in 0..4 {
-            edges.push(Edge::new(vec![vertices[bottom[i] as usize], vertices[apex as usize]]));
+            edges.push(Edge::new(vec![
+                vertices[bottom[i] as usize],
+                vertices[apex as usize],
+            ]));
         }
     }
 
@@ -2626,7 +2640,7 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum) -> Option<GeneratedMes
 }
 
 /// 生成线性棱锥（LPyramid）网格 - 与 OCC/core.dll 实现一致
-/// 
+///
 /// LPYRA 几何体定义：
 /// - PAAX: A轴方向（高度方向）
 /// - PBAX: B轴方向（宽度方向）  
@@ -2650,24 +2664,32 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<Generated
     let (fallback_u, fallback_v) = orthonormal_basis(axis_dir);
     let mut pb_dir = safe_normalize(lpyr.pbax_dir).unwrap_or(fallback_u);
     pb_dir = (pb_dir - axis_dir * pb_dir.dot(axis_dir)).normalize_or_zero();
-    if pb_dir.length_squared() <= MIN_LEN * MIN_LEN { pb_dir = fallback_u; }
+    if pb_dir.length_squared() <= MIN_LEN * MIN_LEN {
+        pb_dir = fallback_u;
+    }
     let mut pc_dir = safe_normalize(lpyr.pcax_dir).unwrap_or(fallback_v);
-    pc_dir = (pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir)).normalize_or_zero();
-    if pc_dir.length_squared() <= MIN_LEN * MIN_LEN { pc_dir = fallback_v; }
+    pc_dir = (pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir))
+        .normalize_or_zero();
+    if pc_dir.length_squared() <= MIN_LEN * MIN_LEN {
+        pc_dir = fallback_v;
+    }
 
     // 偏移使用正交化后的方向计算（与 core.dll 一致）
     let offset_3d = pb_dir * lpyr.pbof + pc_dir * lpyr.pcof;
 
     // 以底面中心为参考点（与 geo_relate transform 一致）
     let center = lpyr.paax_pt + axis_dir * lpyr.pbdi;
-    let height = lpyr.ptdi - lpyr.pbdi;  // 总高度
+    let height = lpyr.ptdi - lpyr.pbdi; // 总高度
     let mut vertices = Vec::new();
     let mut normals = Vec::new();
     let mut indices = Vec::new();
     let mut aabb = Aabb::new_invalid();
 
     let add_vert = |p: Vec3, v: &mut Vec<Vec3>, n: &mut Vec<Vec3>, a: &mut Aabb| -> u32 {
-        extend_aabb(a, p); v.push(p); n.push(Vec3::ZERO); (v.len() - 1) as u32
+        extend_aabb(a, p);
+        v.push(p);
+        n.push(Vec3::ZERO);
+        (v.len() - 1) as u32
     };
 
     let offsets = [(-1.0f32, -1.0f32), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)];
@@ -2677,11 +2699,14 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<Generated
     let top = if tx > MIN_LEN && ty > MIN_LEN {
         let mut idxs = [0u32; 4];
         for (i, (ox, oy)) in offsets.iter().enumerate() {
-            let pos = center + pb_dir * (ox * tx) + pc_dir * (oy * ty) + axis_dir * height + offset_3d;
+            let pos =
+                center + pb_dir * (ox * tx) + pc_dir * (oy * ty) + axis_dir * height + offset_3d;
             idxs[i] = add_vert(pos, &mut vertices, &mut normals, &mut aabb);
         }
         Some(idxs)
-    } else { None };
+    } else {
+        None
+    };
 
     // 底面：z=0，无偏移
     let bot = if bx > MIN_LEN && by > MIN_LEN {
@@ -2691,29 +2716,44 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<Generated
             idxs[i] = add_vert(pos, &mut vertices, &mut normals, &mut aabb);
         }
         Some(idxs)
-    } else { None };
+    } else {
+        None
+    };
 
     // 顶点（当顶面退化为点时）
     let apex = if top.is_none() {
         let pos = center + axis_dir * height + offset_3d;
         Some(add_vert(pos, &mut vertices, &mut normals, &mut aabb))
-    } else { None };
+    } else {
+        None
+    };
 
     // 底面三角形
-    if let Some(b) = bot { indices.extend([b[0], b[1], b[2], b[0], b[2], b[3]]); }
-    if bot.is_none() && top.is_some() { return None; }
+    if let Some(b) = bot {
+        indices.extend([b[0], b[1], b[2], b[0], b[2], b[3]]);
+    }
+    if bot.is_none() && top.is_some() {
+        return None;
+    }
 
     // 顶面和侧面
     if let Some(t) = top {
         indices.extend([t[2], t[1], t[0], t[3], t[2], t[0]]);
         if let Some(b) = bot {
-            for i in 0..4 { let n = (i + 1) % 4; indices.extend([b[i], b[n], t[n], b[i], t[n], t[i]]); }
+            for i in 0..4 {
+                let n = (i + 1) % 4;
+                indices.extend([b[i], b[n], t[n], b[i], t[n], t[i]]);
+            }
         }
     } else if let (Some(b), Some(a)) = (bot, apex) {
-        for i in 0..4 { indices.extend([b[(i + 1) % 4], b[i], a]); }
+        for i in 0..4 {
+            indices.extend([b[(i + 1) % 4], b[i], a]);
+        }
     }
 
-    if indices.is_empty() { return None; }
+    if indices.is_empty() {
+        return None;
+    }
 
     // 计算法向量
     for tri in indices.chunks_exact(3) {
@@ -2726,19 +2766,52 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<Generated
             normals[tri[2] as usize] += norm;
         }
     }
-    for n in &mut normals { *n = if n.length_squared() > MIN_LEN * MIN_LEN { n.normalize() } else { axis_dir }; }
+    for n in &mut normals {
+        *n = if n.length_squared() > MIN_LEN * MIN_LEN {
+            n.normalize()
+        } else {
+            axis_dir
+        };
+    }
 
     // 边
     let mut edges = Vec::new();
-    if let Some(b) = bot { for i in 0..4 { edges.push(Edge::new(vec![vertices[b[i] as usize], vertices[b[(i+1)%4] as usize]])); } }
+    if let Some(b) = bot {
+        for i in 0..4 {
+            edges.push(Edge::new(vec![
+                vertices[b[i] as usize],
+                vertices[b[(i + 1) % 4] as usize],
+            ]));
+        }
+    }
     if let Some(t) = top {
-        for i in 0..4 { edges.push(Edge::new(vec![vertices[t[i] as usize], vertices[t[(i+1)%4] as usize]])); }
-        if let Some(b) = bot { for i in 0..4 { edges.push(Edge::new(vec![vertices[b[i] as usize], vertices[t[i] as usize]])); } }
+        for i in 0..4 {
+            edges.push(Edge::new(vec![
+                vertices[t[i] as usize],
+                vertices[t[(i + 1) % 4] as usize],
+            ]));
+        }
+        if let Some(b) = bot {
+            for i in 0..4 {
+                edges.push(Edge::new(vec![
+                    vertices[b[i] as usize],
+                    vertices[t[i] as usize],
+                ]));
+            }
+        }
     } else if let (Some(b), Some(a)) = (bot, apex) {
-        for i in 0..4 { edges.push(Edge::new(vec![vertices[b[i] as usize], vertices[a as usize]])); }
+        for i in 0..4 {
+            edges.push(Edge::new(vec![
+                vertices[b[i] as usize],
+                vertices[a as usize],
+            ]));
+        }
     }
 
-    Some(GeneratedMesh { mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)), aabb: Some(aabb) })
+    Some(GeneratedMesh {
+        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
+        aabb: Some(aabb),
+    })
 }
 
 /// 生成矩形圆环（RTorus）网格
@@ -2790,7 +2863,11 @@ fn generate_rect_torus_mesh(
 
     // 对于完整圆环，不需要额外的采样点（首尾共享）
     // 对于部分圆环，需要 major_segments + 1 个采样点
-    let radial = if is_full_circle { major_segments } else { major_segments + 1 };
+    let radial = if is_full_circle {
+        major_segments
+    } else {
+        major_segments + 1
+    };
     let h_segs = height_segments;
 
     // 预计算三角函数值
@@ -2826,7 +2903,11 @@ fn generate_rect_torus_mesh(
         let t = h as f32 / h_segs as f32;
         let z = -half_height + t * 2.0 * half_height;
         for seg in 0..radial {
-            let pos = Vec3::new(outer_radius * cos_vals[seg], outer_radius * sin_vals[seg], z);
+            let pos = Vec3::new(
+                outer_radius * cos_vals[seg],
+                outer_radius * sin_vals[seg],
+                z,
+            );
             let normal = Vec3::new(cos_vals[seg], sin_vals[seg], 0.0);
             extend_aabb(&mut aabb, pos);
             vertices.push(pos);
@@ -2840,7 +2921,11 @@ fn generate_rect_torus_mesh(
         let t = h as f32 / h_segs as f32;
         let z = -half_height + t * 2.0 * half_height;
         for seg in 0..radial {
-            let pos = Vec3::new(inner_radius * cos_vals[seg], inner_radius * sin_vals[seg], z);
+            let pos = Vec3::new(
+                inner_radius * cos_vals[seg],
+                inner_radius * sin_vals[seg],
+                z,
+            );
             let normal = Vec3::new(-cos_vals[seg], -sin_vals[seg], 0.0); // 内表面法向量向内
             extend_aabb(&mut aabb, pos);
             vertices.push(pos);
@@ -2851,8 +2936,14 @@ fn generate_rect_torus_mesh(
     // === 生成外圆柱面三角形 ===
     for h in 0..h_segs {
         for seg in 0..radial {
-            let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
-            if !is_full_circle && seg == radial - 1 { continue; } // 部分圆环最后一列不连接
+            let next_seg = if is_full_circle {
+                (seg + 1) % radial
+            } else {
+                seg + 1
+            };
+            if !is_full_circle && seg == radial - 1 {
+                continue;
+            } // 部分圆环最后一列不连接
 
             let curr = h * radial + seg;
             let next_h = (h + 1) * radial + seg;
@@ -2868,8 +2959,14 @@ fn generate_rect_torus_mesh(
     // === 生成内圆柱面三角形 ===
     for h in 0..h_segs {
         for seg in 0..radial {
-            let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
-            if !is_full_circle && seg == radial - 1 { continue; }
+            let next_seg = if is_full_circle {
+                (seg + 1) % radial
+            } else {
+                seg + 1
+            };
+            if !is_full_circle && seg == radial - 1 {
+                continue;
+            }
 
             let curr = inner_start + h * radial + seg;
             let next_h = inner_start + (h + 1) * radial + seg;
@@ -2889,8 +2986,14 @@ fn generate_rect_torus_mesh(
     let top_inner_start = inner_start + h_segs * radial;
 
     for seg in 0..radial {
-        let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
-        if !is_full_circle && seg == radial - 1 { continue; }
+        let next_seg = if is_full_circle {
+            (seg + 1) % radial
+        } else {
+            seg + 1
+        };
+        if !is_full_circle && seg == radial - 1 {
+            continue;
+        }
 
         let outer_curr = top_outer_start + seg;
         let outer_next = top_outer_start + next_seg;
@@ -2910,8 +3013,14 @@ fn generate_rect_torus_mesh(
     let bottom_inner_start = inner_start;
 
     for seg in 0..radial {
-        let next_seg = if is_full_circle { (seg + 1) % radial } else { seg + 1 };
-        if !is_full_circle && seg == radial - 1 { continue; }
+        let next_seg = if is_full_circle {
+            (seg + 1) % radial
+        } else {
+            seg + 1
+        };
+        if !is_full_circle && seg == radial - 1 {
+            continue;
+        }
 
         let outer_curr = bottom_outer_start + seg;
         let outer_next = bottom_outer_start + next_seg;
@@ -2935,8 +3044,16 @@ fn generate_rect_torus_mesh(
 
         // 起始端面法向量：指向负Y方向（角度=0时）
         // 从外部看，顺序应为：外底->内底->内顶->外顶（逆时针）
-        indices.extend_from_slice(&[start_outer_bottom as u32, start_inner_bottom as u32, start_inner_top as u32]);
-        indices.extend_from_slice(&[start_outer_bottom as u32, start_inner_top as u32, start_outer_top as u32]);
+        indices.extend_from_slice(&[
+            start_outer_bottom as u32,
+            start_inner_bottom as u32,
+            start_inner_top as u32,
+        ]);
+        indices.extend_from_slice(&[
+            start_outer_bottom as u32,
+            start_inner_top as u32,
+            start_outer_top as u32,
+        ]);
 
         // 结束端面 (seg=radial-1)
         let end_outer_bottom = radial - 1;
@@ -2946,8 +3063,16 @@ fn generate_rect_torus_mesh(
 
         // 结束端面法向量：指向正方向
         // 从外部看，顺序应为：外底->外顶->内顶->内底（逆时针）
-        indices.extend_from_slice(&[end_outer_bottom as u32, end_outer_top as u32, end_inner_top as u32]);
-        indices.extend_from_slice(&[end_outer_bottom as u32, end_inner_top as u32, end_inner_bottom as u32]);
+        indices.extend_from_slice(&[
+            end_outer_bottom as u32,
+            end_outer_top as u32,
+            end_inner_top as u32,
+        ]);
+        indices.extend_from_slice(&[
+            end_outer_bottom as u32,
+            end_inner_top as u32,
+            end_inner_bottom as u32,
+        ]);
     }
 
     let final_aabb = Some(aabb);
@@ -2958,32 +3083,49 @@ fn generate_rect_torus_mesh(
     // 顶部外圆弧
     let mut top_outer_points = Vec::with_capacity(radial);
     for i in 0..radial {
-        top_outer_points.push(Vec3::new(outer_radius * cos_vals[i], outer_radius * sin_vals[i], half_height));
+        top_outer_points.push(Vec3::new(
+            outer_radius * cos_vals[i],
+            outer_radius * sin_vals[i],
+            half_height,
+        ));
     }
     edges.push(Edge::new(top_outer_points));
 
     // 顶部内圆弧
     let mut top_inner_points = Vec::with_capacity(radial);
     for i in 0..radial {
-        top_inner_points.push(Vec3::new(inner_radius * cos_vals[i], inner_radius * sin_vals[i], half_height));
+        top_inner_points.push(Vec3::new(
+            inner_radius * cos_vals[i],
+            inner_radius * sin_vals[i],
+            half_height,
+        ));
     }
     edges.push(Edge::new(top_inner_points));
 
     // 底部外圆弧
     let mut bottom_outer_points = Vec::with_capacity(radial);
     for i in 0..radial {
-        bottom_outer_points.push(Vec3::new(outer_radius * cos_vals[i], outer_radius * sin_vals[i], -half_height));
+        bottom_outer_points.push(Vec3::new(
+            outer_radius * cos_vals[i],
+            outer_radius * sin_vals[i],
+            -half_height,
+        ));
     }
     edges.push(Edge::new(bottom_outer_points));
 
     // 底部内圆弧
     let mut bottom_inner_points = Vec::with_capacity(radial);
     for i in 0..radial {
-        bottom_inner_points.push(Vec3::new(inner_radius * cos_vals[i], inner_radius * sin_vals[i], -half_height));
+        bottom_inner_points.push(Vec3::new(
+            inner_radius * cos_vals[i],
+            inner_radius * sin_vals[i],
+            -half_height,
+        ));
     }
     edges.push(Edge::new(bottom_inner_points));
 
-    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, final_aabb, Some(edges));
+    let mut mesh =
+        create_mesh_with_custom_edges(indices, vertices, normals, final_aabb, Some(edges));
     mesh.sync_wire_vertices_from_edges();
 
     Some(GeneratedMesh {
@@ -3753,8 +3895,8 @@ mod tests {
             height_segments: 4,
             ..Default::default()
         };
-        let csg =
-            generate_csg_mesh(&param, &settings, false, Some(RefnoEnum::default())).expect("CSG snout generation failed");
+        let csg = generate_csg_mesh(&param, &settings, false, Some(RefnoEnum::default()))
+            .expect("CSG snout generation failed");
         #[cfg(feature = "occ")]
         let occ_mesh = {
             // 对于测试，如果启用 OCC feature，可以转换为 OCC 进行比较
@@ -4058,7 +4200,10 @@ mod tests {
 ///
 /// Polyhedron 由多个多边形面组成，每个面可能有多个环（外环和内环）
 /// 如果已经有预生成的 mesh，直接使用；否则需要三角化多边形
-pub(crate) fn generate_polyhedron_mesh(poly: &Polyhedron, refno: RefnoEnum) -> Option<GeneratedMesh> {
+pub(crate) fn generate_polyhedron_mesh(
+    poly: &Polyhedron,
+    refno: RefnoEnum,
+) -> Option<GeneratedMesh> {
     // 如果已经有预生成的 mesh，直接使用
     if let Some(ref mesh) = poly.mesh {
         let aabb = mesh.aabb.or_else(|| mesh.cal_aabb());

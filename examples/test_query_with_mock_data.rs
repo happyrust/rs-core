@@ -1,9 +1,9 @@
 //! 使用模拟数据测试 query_tubi_insts_by_brans 函数
-//! 
+//!
 //! 这个程序将使用用户提供的数据来验证函数的查询逻辑是否正确
 
-use aios_core::{RefnoEnum, SUL_DB, SurrealQueryExt, query_tubi_insts_by_brans, init_surreal};
 use aios_core::rs_surreal::inst::TubiInstQuery;
+use aios_core::{RefnoEnum, SUL_DB, SurrealQueryExt, init_surreal, query_tubi_insts_by_brans};
 use serde_json::json;
 
 #[tokio::main]
@@ -55,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("1. 分析用户提供的测试数据...");
     println!("   数据记录数: {}", test_data.as_array().unwrap().len());
-    
+
     // 分析数据结构
     if let Some(first_record) = test_data.as_array().unwrap().first() {
         println!("   第一条记录的字段:");
@@ -70,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
     println!("\n2. 分析 query_tubi_insts_by_brans 函数的查询逻辑...");
     let test_refno = RefnoEnum::from("pe:21491_10000");
     println!("   测试查询: {:?}", test_refno);
-    
+
     // 生成函数会使用的 SQL 查询
     let pe_key = test_refno.to_pe_key();
     let expected_sql = format!(
@@ -89,13 +89,13 @@ async fn main() -> anyhow::Result<()> {
         "#,
         pe_key, pe_key
     );
-    
+
     println!("   函数生成的 SQL 查询:");
     println!("   {}", expected_sql);
 
     // 3. 尝试在当前数据库中创建测试数据
     println!("\n3. 尝试在当前数据库中创建测试数据...");
-    
+
     // 创建 pe 表记录
     let pe_create_sql = r#"
         CREATE pe:21491_10000 CONTENT {
@@ -103,12 +103,12 @@ async fn main() -> anyhow::Result<()> {
             dt: time::now()
         };
     "#;
-    
+
     match SUL_DB.query_response(pe_create_sql).await {
         Ok(_) => println!("   ✓ 成功创建 pe 记录"),
         Err(e) => println!("   ✗ 创建 pe 记录失败: {}", e),
     }
-    
+
     // 创建 tubi_relate 表记录
     let tubi_create_sql = r#"
         CREATE tubi_relate:[pe:21491_10000, 0] CONTENT {
@@ -125,7 +125,7 @@ async fn main() -> anyhow::Result<()> {
             geo: "2"
         };
     "#;
-    
+
     match SUL_DB.query_response(tubi_create_sql).await {
         Ok(_) => println!("   ✓ 成功创建 tubi_relate 记录"),
         Err(e) => println!("   ✗ 创建 tubi_relate 记录失败: {}", e),
@@ -135,7 +135,7 @@ async fn main() -> anyhow::Result<()> {
     println!("\n4. 测试查询函数...");
     let results: Vec<TubiInstQuery> = query_tubi_insts_by_brans(&[test_refno]).await?;
     println!("   query_tubi_insts_by_brans 返回 {} 条记录", results.len());
-    
+
     if !results.is_empty() {
         println!("   ✓ 查询成功！记录详情:");
         for (i, result) in results.iter().enumerate() {
@@ -147,10 +147,13 @@ async fn main() -> anyhow::Result<()> {
         }
     } else {
         println!("   ✗ 查询返回空结果");
-        
+
         // 尝试直接执行 SQL 查询
         println!("\n   尝试直接执行 SQL 查询...");
-        match SUL_DB.query_take::<Vec<serde_json::Value>>(&expected_sql, 0).await {
+        match SUL_DB
+            .query_take::<Vec<serde_json::Value>>(&expected_sql, 0)
+            .await
+        {
             Ok(direct_results) => {
                 println!("   直接 SQL 查询返回 {} 条记录", direct_results.len());
                 for (i, result) in direct_results.iter().enumerate() {
@@ -168,8 +171,10 @@ async fn main() -> anyhow::Result<()> {
     println!("   函数查询逻辑分析:");
     println!("   - 使用范围查询: tubi_relate:[pe_key, 0]..[pe_key, ..]");
     println!("   - 过滤条件: aabb.d != NONE");
-    println!("   - 返回字段: refno, leave, old_refno, generic, world_aabb, world_trans, geo_hash, date");
-    
+    println!(
+        "   - 返回字段: refno, leave, old_refno, generic, world_aabb, world_trans, geo_hash, date"
+    );
+
     println!("\n=== 测试完成 ===");
     println!("\n结论:");
     println!("1. query_tubi_insts_by_brans 函数的查询逻辑是正确的");
@@ -177,6 +182,6 @@ async fn main() -> anyhow::Result<()> {
     println!("3. 当前测试环境中的数据库是空的，所以查询返回空结果");
     println!("4. 用户提供的查询结果来自一个包含数据的数据库");
     println!("5. 要验证函数在实际数据上的行为，需要连接到包含数据的数据库");
-    
+
     Ok(())
 }

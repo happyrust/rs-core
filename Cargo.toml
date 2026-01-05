@@ -33,6 +33,7 @@ debug_wire = []
 debug_spatial = []
 web = ["render"]
 web_server = [] # Web UI feature for database management interface
+web_server_api = ["dep:axum"] # 简易 HTTP API：触发单 refno 模型/mesh 生成
 sql = ["dep:sqlx"]
 sqlite = ["dep:rusqlite"] # SQLite 空间索引功能
 mem-kv-save = [] # 额外保存PE数据到内存KV数据库
@@ -144,6 +145,7 @@ evalexpr = "13.0.0"
 serde_repr = "0.1.19"
 ploop-rs = { git = "https://gitee.com/happydpc/rust-ploop-processor.git", branch = "1.0", package = "ploop-rs" }
 parking_lot = "0.12"
+axum = { version = "0.8.7", optional = true, features = ["json"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }

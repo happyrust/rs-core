@@ -6,8 +6,6 @@ use crate::utils::{take_option, take_vec};
 use crate::vec3_pool::parse_ptset_auto;
 use crate::{NamedAttrMap, RefnoEnum};
 use crate::{SUL_DB, SurlValue, SurrealQueryExt};
-use surrealdb::types as surrealdb_types;
-use surrealdb::types::SurrealValue;
 use crate::{init_test_surreal, query_filter_deep_children, types::*};
 use crate::{pdms_types::*, to_table_key, to_table_keys};
 use bevy_transform::components::Transform;
@@ -20,6 +18,8 @@ use smol_str::ToSmolStr;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::Mutex;
+use surrealdb::types as surrealdb_types;
+use surrealdb::types::SurrealValue;
 
 /// 将 ptset JSON（原始或压缩）解码为按 number 组织的映射
 #[inline]
@@ -64,7 +64,7 @@ pub struct LoopHeightResult {
 }
 
 /// 获得当前参考号对应的loops（例如Panel下的loops，可能有多个）
-/// 
+///
 /// 注意：顶点数据存储在 LOOP/PLOO 的子元素 PAVE/PONT 上，而不是 LOOP/PLOO 本身
 pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeightResult> {
     // 新查询：从 LOOP/PLOO 的子元素 PAVE/PONT 获取顶点数据
@@ -78,11 +78,11 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeig
     // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query_response(&sql).await.unwrap();
     let results: Vec<LoopHeightRaw> = response.take(0)?;
-    
+
     // 提取所有 loop 的顶点和高度
     let mut all_loops: Vec<Vec<Vec3>> = Vec::new();
     let mut height: f32 = 0.0;
-    
+
     for result in results {
         let points: Vec<Vec3> = result.loops.into_iter().map(|v| v.0).collect();
         if !points.is_empty() {
@@ -94,7 +94,10 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeig
         }
     }
 
-    Ok(LoopHeightResult { loops: all_loops, height })
+    Ok(LoopHeightResult {
+        loops: all_loops,
+        height,
+    })
 }
 
 ///通过surql查询pe数据
@@ -284,8 +287,7 @@ pub async fn query_refnos_point_map(
         refnos.join(",")
     );
     let mut response = SUL_DB.query_response(&sql).await?;
-    let Ok(result) =
-        take_vec::<(RefnoEnum, Option<serde_json::Value>, String)>(&mut response, 0)
+    let Ok(result) = take_vec::<(RefnoEnum, Option<serde_json::Value>, String)>(&mut response, 0)
     else {
         dbg!(format!("sql 查询出错: {}", sql));
         return Ok(HashMap::default());
@@ -498,15 +500,27 @@ mod tests {
 
         // 验证返回的 loops 不为空
         assert!(!result.loops.is_empty(), "Loops should not be empty");
-        
+
         // 验证高度值有效（已知该 PANE 的高度为 3050.0）
         assert!(result.height > 0.0, "Height should be greater than 0");
-        assert!((result.height - 3050.0).abs() < 1.0, "Height should be approximately 3050.0, got {}", result.height);
+        assert!(
+            (result.height - 3050.0).abs() < 1.0,
+            "Height should be approximately 3050.0, got {}",
+            result.height
+        );
 
         // 验证第一个 loop 有多个顶点（已知该 PLOO 有 9 个 PAVE 子元素）
         let first_loop = &result.loops[0];
-        assert!(first_loop.len() >= 3, "First loop should have at least 3 vertices, got {}", first_loop.len());
-        assert_eq!(first_loop.len(), 9, "First loop should have 9 vertices (PAVE elements)");
+        assert!(
+            first_loop.len() >= 3,
+            "First loop should have at least 3 vertices, got {}",
+            first_loop.len()
+        );
+        assert_eq!(
+            first_loop.len(),
+            9,
+            "First loop should have 9 vertices (PAVE elements)"
+        );
 
         // 验证顶点数据有效
         for point in first_loop {

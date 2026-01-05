@@ -11,13 +11,13 @@ use std::hash::Hasher;
 use std::sync::Arc;
 
 use crate::mesh_precision::LodMeshSettings;
-use crate::prim_geo::basic::{CsgSharedMesh, CYLINDER_GEO_HASH, CYLINDER_SHAPE};
-use crate::types::refno::RefnoEnum;
+use crate::prim_geo::basic::{CYLINDER_GEO_HASH, CYLINDER_SHAPE, CsgSharedMesh};
 use crate::prim_geo::helper::cal_ref_axis;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 use crate::types::attmap::AttrMap;
+use crate::types::refno::RefnoEnum;
 
 use crate::NamedAttrMap;
 #[cfg(feature = "truck")]
@@ -365,9 +365,12 @@ impl BrepShapeTrait for SCylinder {
             // 对于斜切圆柱，使用 CSG 生成
             use crate::geometry::csg::generate_scylinder_mesh;
             use crate::mesh_precision::LodMeshSettings;
-            if let Some(generated) =
-                generate_scylinder_mesh(self, &LodMeshSettings::default(), false, RefnoEnum::default())
-            {
+            if let Some(generated) = generate_scylinder_mesh(
+                self,
+                &LodMeshSettings::default(),
+                false,
+                RefnoEnum::default(),
+            ) {
                 Ok(crate::prim_geo::basic::CsgSharedMesh::new(generated.mesh))
             } else {
                 Err(anyhow::anyhow!("Failed to generate CSG mesh for SSCL"))
@@ -510,8 +513,8 @@ impl BrepShapeTrait for SCylinder {
                 let angle = (i as f32) * std::f32::consts::TAU / 8.0;
                 let base_offset = (u * angle.cos() + v * angle.sin()) * radius;
                 // 剪切面上的点需要沿轴向调整
-                let shear_z = base_offset.dot(u) * btm_shear_x.tan()
-                    + base_offset.dot(v) * btm_shear_y.tan();
+                let shear_z =
+                    base_offset.dot(u) * btm_shear_x.tan() + base_offset.dot(v) * btm_shear_y.tan();
                 let local_pos = bottom_center + base_offset + dir * shear_z;
                 points.push((
                     transform.transform_point(local_pos),
@@ -524,8 +527,8 @@ impl BrepShapeTrait for SCylinder {
             for i in 0..8 {
                 let angle = (i as f32) * std::f32::consts::TAU / 8.0;
                 let base_offset = (u * angle.cos() + v * angle.sin()) * radius;
-                let shear_z = base_offset.dot(u) * top_shear_x.tan()
-                    + base_offset.dot(v) * top_shear_y.tan();
+                let shear_z =
+                    base_offset.dot(u) * top_shear_x.tan() + base_offset.dot(v) * top_shear_y.tan();
                 let local_pos = top_center + base_offset + dir * shear_z;
                 points.push((
                     transform.transform_point(local_pos),

@@ -47,7 +47,6 @@ impl BrepShapeTrait for Revolution {
         Box::new(self.clone())
     }
 
-
     fn hash_unit_mesh_params(&self) -> u64 {
         let mut hasher = DefaultHasher::new();
         self.verts.iter().flatten().for_each(|v| {
@@ -261,11 +260,11 @@ mod tests {
     }
 
     /// 测试: 实际案例 24381_36946 - 带 FRAD 圆角
-    /// 
+    ///
     /// 原始数据:
     /// [{ FRAD: 0, x: 38864, y: 23400 }, { FRAD: 0, x: 15464, y: 23400 },
     ///  { FRAD: 23400, x: 38864, y: 23400 }, { FRAD: 0, x: 38864, y: 0 }]
-    /// 
+    ///
     /// 在 PDMS REVO 中：
     /// - x = 沿旋转轴的位置（高度）
     /// - y = 径向距离
@@ -293,7 +292,7 @@ mod tests {
         // 使用 ProfileProcessor 处理 FRAD 圆角
         let processor = ProfileProcessor::new_single(vertices.clone());
         let profile = processor.process("case_24381_36946", Some("24381_36946"));
-        
+
         match profile {
             Ok(processed) => {
                 println!("   FRAD处理后轮廓点数: {}", processed.contour_points.len());
@@ -301,7 +300,9 @@ mod tests {
                 // 将处理后的轮廓转换为 Revolution 的 verts 格式
                 // ProfileProcessor 输出: (x=原x, y=原y)
                 // Revolution.verts: Vec3(x, y, 0) 其中 x=高度, y=径向
-                let processed_verts: Vec<Vec3> = processed.contour_points.iter()
+                let processed_verts: Vec<Vec3> = processed
+                    .contour_points
+                    .iter()
                     .map(|p| Vec3::new(p.x, p.y, 0.0))
                     .collect();
 
@@ -320,10 +321,12 @@ mod tests {
                 // 生成网格
                 if let Some(mesh) = revolution.gen_csg_mesh() {
                     // libgm 内部绕 Y 轴生成，轴上顶点是 x=0 且 z=0 的点
-                    let axis_points: Vec<_> = mesh.vertices.iter()
+                    let axis_points: Vec<_> = mesh
+                        .vertices
+                        .iter()
                         .filter(|v| (v.x * v.x + v.z * v.z).sqrt() < 1.0)
                         .collect();
-                    
+
                     export_mesh_to_obj(&mesh, "case_24381_36946_with_frad.obj");
                     println!("   顶点数: {}", mesh.vertices.len());
                     println!("   三角形数: {}", mesh.indices.len() / 3);
@@ -358,10 +361,12 @@ mod tests {
         println!("📊 简单圆柱测试:");
         if let Some(mesh) = revolution.gen_csg_mesh() {
             // libgm 内部绕 Y 轴生成，轴上顶点是 x=0 且 z=0 的点
-            let axis_points: Vec<_> = mesh.vertices.iter()
+            let axis_points: Vec<_> = mesh
+                .vertices
+                .iter()
                 .filter(|v| (v.x * v.x + v.z * v.z).sqrt() < 1.0)
                 .collect();
-            
+
             export_mesh_to_obj(&mesh, "simple_cylinder.obj");
             println!("   顶点数: {}", mesh.vertices.len());
             println!("   三角形数: {}", mesh.indices.len() / 3);
@@ -381,9 +386,9 @@ mod tests {
         // PDMS 格式：x=轴向(高度), y=径向
         let revolution = Revolution {
             verts: vec![vec![
-                Vec3::new(0.0, 80.0, 0.0),   // 底部外边缘 (轴向=0, 径向=80)
-                Vec3::new(150.0, 0.0, 0.0),  // 顶点（在轴上）(轴向=150, 径向=0)
-                Vec3::new(0.0, 0.0, 0.0),    // 底部轴上 (轴向=0, 径向=0)
+                Vec3::new(0.0, 80.0, 0.0),  // 底部外边缘 (轴向=0, 径向=80)
+                Vec3::new(150.0, 0.0, 0.0), // 顶点（在轴上）(轴向=150, 径向=0)
+                Vec3::new(0.0, 0.0, 0.0),   // 底部轴上 (轴向=0, 径向=0)
             ]],
             angle: 360.0,
         };
@@ -391,10 +396,12 @@ mod tests {
         println!("📊 圆锥测试:");
         if let Some(mesh) = revolution.gen_csg_mesh() {
             // libgm 内部绕 Y 轴生成，轴上顶点是 x=0 且 z=0 的点
-            let axis_points: Vec<_> = mesh.vertices.iter()
+            let axis_points: Vec<_> = mesh
+                .vertices
+                .iter()
                 .filter(|v| (v.x * v.x + v.z * v.z).sqrt() < 1.0)
                 .collect();
-            
+
             export_mesh_to_obj(&mesh, "cone.obj");
             println!("   顶点数: {}", mesh.vertices.len());
             println!("   三角形数: {}", mesh.indices.len() / 3);
@@ -414,19 +421,21 @@ mod tests {
         // 三个点形成直角，FRAD 在角点处生成 1/4 圆弧
         let radius = 50.0f32;
         let vertices = vec![
-            Vec3::new(0.0, 0.0, 0.0),           // 底部中心（轴上）
-            Vec3::new(0.0, radius, radius),     // 角点，带圆角
-            Vec3::new(radius, 0.0, 0.0),        // 顶部（轴上）
+            Vec3::new(0.0, 0.0, 0.0),       // 底部中心（轴上）
+            Vec3::new(0.0, radius, radius), // 角点，带圆角
+            Vec3::new(radius, 0.0, 0.0),    // 顶部（轴上）
         ];
 
         println!("📊 半球测试 (FRAD 圆弧):");
         let processor = ProfileProcessor::new_single(vertices);
-        
+
         match processor.process("hemisphere", Some("hemisphere")) {
             Ok(processed) => {
                 println!("   处理后轮廓点数: {}", processed.contour_points.len());
 
-                let processed_verts: Vec<Vec3> = processed.contour_points.iter()
+                let processed_verts: Vec<Vec3> = processed
+                    .contour_points
+                    .iter()
                     .map(|p| Vec3::new(p.x, p.y, 0.0))
                     .collect();
 
@@ -444,7 +453,10 @@ mod tests {
                 }
             }
             Err(e) => {
-                println!("⚠️ ProfileProcessor.process 失败: {} (可能FRAD参数不合适)", e);
+                println!(
+                    "⚠️ ProfileProcessor.process 失败: {} (可能FRAD参数不合适)",
+                    e
+                );
             }
         }
         println!("✅ 半球测试完成");

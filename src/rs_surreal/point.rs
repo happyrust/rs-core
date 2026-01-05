@@ -147,7 +147,7 @@ pub async fn query_arrive_leave_points_of_branch(
 // ============================================================================
 
 /// 查询 BRAN/HANG 下所有子元件的 tubi_info 和 world_transform
-/// 
+///
 /// 返回: Vec<(元件 refno, tubi_info_id, world_transform)>
 #[derive(Serialize, Deserialize, Debug, Clone, SurrealValue)]
 pub struct BranchChildTubiQuery {
@@ -163,12 +163,9 @@ pub async fn query_branch_children_tubi_info(
     if branch_refnos.is_empty() {
         return Ok(vec![]);
     }
-    
-    let branch_keys = branch_refnos
-        .iter()
-        .map(|r| r.to_pe_key())
-        .join(",");
-    
+
+    let branch_keys = branch_refnos.iter().map(|r| r.to_pe_key()).join(",");
+
     let sql = format!(
         r#"
         SELECT 
@@ -180,7 +177,7 @@ pub async fn query_branch_children_tubi_info(
         "#,
         branch_keys
     );
-    
+
     let rows: Vec<BranchChildTubiQuery> = SUL_DB.query_take(&sql, 0).await.unwrap_or_default();
     Ok(rows)
 }
@@ -192,32 +189,29 @@ pub async fn query_tubi_info_by_ids(
     if ids.is_empty() {
         return Ok(HashMap::new());
     }
-    
+
     const BATCH_SIZE: usize = 500;
     let mut result = HashMap::new();
-    
+
     for chunk in ids.chunks(BATCH_SIZE) {
         let id_list: String = chunk
             .iter()
             .map(|id| format!("tubi_info:⟨{}⟩", id))
             .join(",");
-        
-        let sql = format!(
-            "SELECT * FROM tubi_info WHERE id IN [{}];",
-            id_list
-        );
-        
+
+        let sql = format!("SELECT * FROM tubi_info WHERE id IN [{}];", id_list);
+
         let rows: Vec<TubiInfoData> = SUL_DB.query_take(&sql, 0).await.unwrap_or_default();
         for row in rows {
             result.insert(row.id.clone(), row);
         }
     }
-    
+
     Ok(result)
 }
 
 /// 查询 branch 下元件的 arrive/leave 点（基于 tubi_info 表）
-/// 
+///
 /// 返回: DashMap<元件 refno, [arrive CateAxisParam, leave CateAxisParam]>
 /// 注意：返回的是 world 坐标（已应用 world_transform）
 pub async fn query_arrive_leave_from_tubi_info(
@@ -225,20 +219,20 @@ pub async fn query_arrive_leave_from_tubi_info(
 ) -> anyhow::Result<DashMap<RefnoEnum, [CateAxisParam; 2]>> {
     // 1. 查询子元件的 tubi_info_id 和 world_trans
     let children = query_branch_children_tubi_info(branch_refnos).await?;
-    
+
     if children.is_empty() {
         return Ok(DashMap::new());
     }
-    
+
     // 2. 收集所有 tubi_info_id
     let tubi_info_ids: Vec<String> = children
         .iter()
         .filter_map(|c| c.tubi_info_id.clone())
         .collect();
-    
+
     // 3. 批量查询 tubi_info
     let tubi_info_map = query_tubi_info_by_ids(&tubi_info_ids).await?;
-    
+
     // 4. 组装结果（应用 world_transform）
     let result = DashMap::new();
     for child in children {
@@ -248,20 +242,20 @@ pub async fn query_arrive_leave_from_tubi_info(
         let Some(tubi_info) = tubi_info_map.get(&tubi_id) else {
             continue;
         };
-        
+
         // 转换为 CateAxisParam
         let mut arrive = tubi_info.arrive.to_axis_param(child.refno);
         let mut leave = tubi_info.leave.to_axis_param(child.refno);
-        
+
         // 应用 world_transform
         if let Some(trans) = child.world_trans {
             let t: Transform = *trans;
             arrive.transform(&t);
             leave.transform(&t);
         }
-        
+
         result.insert(child.refno, [arrive, leave]);
     }
-    
+
     Ok(result)
 }

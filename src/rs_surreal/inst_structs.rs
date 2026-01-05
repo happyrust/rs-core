@@ -8,7 +8,6 @@ use crate::shape::pdms_shape::RsVec3;
 use bevy_transform::components::Transform;
 use chrono::NaiveDateTime;
 use glam::Vec3;
-use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
 use surrealdb::types as surrealdb_types;
@@ -30,8 +29,6 @@ pub struct InstRelate {
     pub owner: RefnoEnum,
     /// 构件类型 (PIPE, ELBO, VALVE等)
     pub generic: String,
-    /// 包围盒数据
-    pub aabb: Option<AabbData>,
     /// 世界坐标变换矩阵
     pub world_trans: Option<TransformData>,
     /// 布尔运算ID (用于孔洞等负实体)
@@ -92,13 +89,6 @@ pub struct GeoRelate {
     pub geom_refno: Option<String>,
 }
 
-/// 包围盒数据结构
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AabbData {
-    /// 包围盒数据
-    pub d: Aabb,
-}
-
 /// 变换矩阵数据结构
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TransformData {
@@ -135,19 +125,12 @@ impl InstRelate {
             out,
             owner,
             generic,
-            aabb: None,
             world_trans: None,
             booled_id: None,
             dt: None,
             zone_refno: None,
             ptset: None,
         }
-    }
-
-    /// 设置包围盒数据
-    pub fn with_aabb(mut self, aabb: Aabb) -> Self {
-        self.aabb = Some(AabbData { d: aabb });
-        self
     }
 
     /// 设置世界变换矩阵
@@ -185,14 +168,6 @@ impl InstRelate {
     /// 生成 SurrealDB 插入语句
     /// 参考现有的 gen_sur_json 模式
     pub fn to_surql(&self) -> String {
-        let aabb_str = match &self.aabb {
-            Some(aabb) => format!(
-                "{{ d: {} }}",
-                serde_json::to_string(&aabb.d).unwrap_or_default()
-            ),
-            None => "NONE".to_string(),
-        };
-
         let world_trans_str = match &self.world_trans {
             Some(trans) => format!(
                 "{{ d: {} }}",
@@ -230,7 +205,6 @@ impl InstRelate {
                 out = {},
                 owner = pe:{},
                 generic = '{}',
-                aabb = {},
                 world_trans = {},
                 booled_id = {},
                 dt = {},
@@ -242,7 +216,6 @@ UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             self.out,
             self.owner,
             self.generic,
-            aabb_str,
             world_trans_str,
             booled_id_str,
             dt_str,
@@ -261,7 +234,6 @@ UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             "out": self.out,
             "owner": format!("pe:{}", self.owner),
             "generic": self.generic,
-            "aabb": self.aabb,
             "world_trans": self.world_trans,
             "booled_id": self.booled_id,
             "dt": self.dt,
@@ -699,20 +671,46 @@ impl Measurement {
 
     /// 生成 SurrealDB 插入语句
     pub fn to_surql(&self) -> String {
-        let points_json = self.points.iter()
+        let points_json = self
+            .points
+            .iter()
             .map(|pt| format!("{{ x: {}, y: {}, z: {} }}", pt.0.x, pt.0.y, pt.0.z))
             .collect::<Vec<_>>()
             .join(", ");
 
         let value_str = self.value.map_or("NONE".to_string(), |v| v.to_string());
-        let unit_str = self.unit.as_ref().map_or("NONE".to_string(), |u| format!("'{}'", u));
-        let priority_str = self.priority.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
-        let status_str = self.status.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
-        let project_id_str = self.project_id.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
-        let scene_id_str = self.scene_id.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
-        let created_by_str = self.created_by.as_ref().map_or("NONE".to_string(), |c| format!("'{}'", c));
-        let notes_str = self.notes.as_ref().map_or("NONE".to_string(), |n| format!("'{}'", n));
-        let metadata_str = self.metadata.as_ref().map_or("NONE".to_string(), |m| m.to_string());
+        let unit_str = self
+            .unit
+            .as_ref()
+            .map_or("NONE".to_string(), |u| format!("'{}'", u));
+        let priority_str = self
+            .priority
+            .as_ref()
+            .map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let status_str = self
+            .status
+            .as_ref()
+            .map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let project_id_str = self
+            .project_id
+            .as_ref()
+            .map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let scene_id_str = self
+            .scene_id
+            .as_ref()
+            .map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let created_by_str = self
+            .created_by
+            .as_ref()
+            .map_or("NONE".to_string(), |c| format!("'{}'", c));
+        let notes_str = self
+            .notes
+            .as_ref()
+            .map_or("NONE".to_string(), |n| format!("'{}'", n));
+        let metadata_str = self
+            .metadata
+            .as_ref()
+            .map_or("NONE".to_string(), |m| m.to_string());
 
         let created_at_str = match &self.created_at {
             Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
@@ -833,7 +831,7 @@ impl Annotation {
             description,
             annotation_type,
             position: None,
-            color: Some("#1E90FF".to_string()),  // 默认蓝色
+            color: Some("#1E90FF".to_string()), // 默认蓝色
             priority: Some("Medium".to_string()),
             status: Some("Draft".to_string()),
             style: None,
@@ -921,19 +919,49 @@ impl Annotation {
             format!("{{ x: {}, y: {}, z: {} }}", pos.0.x, pos.0.y, pos.0.z)
         });
 
-        let color_str = self.color.as_ref().map_or("NONE".to_string(), |c| format!("'{}'", c));
-        let priority_str = self.priority.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
-        let status_str = self.status.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
-        let style_str = self.style.as_ref().map_or("NONE".to_string(), |s| s.to_string());
-        let associated_refnos_str = self.associated_refnos.as_ref().map_or("NONE".to_string(), |refnos| {
-            let items: Vec<String> = refnos.iter().map(|r| r.to_string()).collect();
-            format!("[{}]", items.join(", "))
-        });
-        let project_id_str = self.project_id.as_ref().map_or("NONE".to_string(), |p| format!("'{}'", p));
-        let scene_id_str = self.scene_id.as_ref().map_or("NONE".to_string(), |s| format!("'{}'", s));
-        let created_by_str = self.created_by.as_ref().map_or("NONE".to_string(), |c| format!("'{}'", c));
-        let assigned_to_str = self.assigned_to.as_ref().map_or("NONE".to_string(), |a| format!("'{}'", a));
-        let metadata_str = self.metadata.as_ref().map_or("NONE".to_string(), |m| m.to_string());
+        let color_str = self
+            .color
+            .as_ref()
+            .map_or("NONE".to_string(), |c| format!("'{}'", c));
+        let priority_str = self
+            .priority
+            .as_ref()
+            .map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let status_str = self
+            .status
+            .as_ref()
+            .map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let style_str = self
+            .style
+            .as_ref()
+            .map_or("NONE".to_string(), |s| s.to_string());
+        let associated_refnos_str =
+            self.associated_refnos
+                .as_ref()
+                .map_or("NONE".to_string(), |refnos| {
+                    let items: Vec<String> = refnos.iter().map(|r| r.to_string()).collect();
+                    format!("[{}]", items.join(", "))
+                });
+        let project_id_str = self
+            .project_id
+            .as_ref()
+            .map_or("NONE".to_string(), |p| format!("'{}'", p));
+        let scene_id_str = self
+            .scene_id
+            .as_ref()
+            .map_or("NONE".to_string(), |s| format!("'{}'", s));
+        let created_by_str = self
+            .created_by
+            .as_ref()
+            .map_or("NONE".to_string(), |c| format!("'{}'", c));
+        let assigned_to_str = self
+            .assigned_to
+            .as_ref()
+            .map_or("NONE".to_string(), |a| format!("'{}'", a));
+        let metadata_str = self
+            .metadata
+            .as_ref()
+            .map_or("NONE".to_string(), |m| m.to_string());
 
         let created_at_str = match &self.created_at {
             Some(dt) => format!("d'{}'", dt.format("%Y-%m-%dT%H:%M:%S")),
@@ -1023,7 +1051,6 @@ mod tests {
     use bevy_transform::components::Transform;
     use chrono::Utc;
     use glam::{Quat, Vec3};
-    use parry3d::bounding_volume::Aabb;
     use serde_json::json;
 
     #[test]
@@ -1041,25 +1068,6 @@ mod tests {
         assert_eq!(inst_relate.out, "geo_instance_1");
         assert_eq!(inst_relate.owner, RefnoEnum::from("67890"));
         assert_eq!(inst_relate.generic, "PIPE");
-    }
-
-    #[test]
-    fn test_inst_relate_with_aabb() {
-        let aabb = Aabb::new(
-            Vec3::new(-1.0, -1.0, -1.0).into(),
-            Vec3::new(1.0, 1.0, 1.0).into(),
-        );
-
-        let inst_relate = InstRelate::new(
-            "test_id".to_string(),
-            RefnoEnum::from("12345"),
-            "geo_instance_1".to_string(),
-            RefnoEnum::from("67890"),
-            "PIPE".to_string(),
-        )
-        .with_aabb(aabb);
-
-        assert!(inst_relate.aabb.is_some());
     }
 
     #[test]
@@ -1138,7 +1146,14 @@ mod tests {
             "height": 2.0
         });
 
-        let inst_geo = InstGeo::new("geo_123".to_string(), param, true, true, "Pos".to_string(), true); // 单位 mesh
+        let inst_geo = InstGeo::new(
+            "geo_123".to_string(),
+            param,
+            true,
+            true,
+            "Pos".to_string(),
+            true,
+        ); // 单位 mesh
 
         let sql = inst_geo.to_surql();
         assert!(sql.contains("CREATE inst_geo:geo_123"));

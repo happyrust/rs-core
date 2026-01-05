@@ -1,8 +1,8 @@
 //! 测试 query_tubi_insts_by_brans 函数的示例程序
-//! 
+//!
 //! 这个示例程序演示如何使用 query_tubi_insts_by_brans 函数查询 Tubi 实例数据
 
-use aios_core::rs_surreal::inst::{query_tubi_insts_by_brans, TubiInstQuery};
+use aios_core::rs_surreal::inst::{TubiInstQuery, query_tubi_insts_by_brans};
 use aios_core::{RefnoEnum, init_surreal};
 
 #[tokio::main]

@@ -1,7 +1,7 @@
-use std::path::Path;
-use serde_json::json;
-use anyhow::Result;
 use crate::shape::pdms_shape::PlantMesh;
+use anyhow::Result;
+use serde_json::json;
+use std::path::Path;
 
 /// 导出单个 PlantMesh 到 GLB 文件
 pub fn export_single_mesh_to_glb(mesh: &PlantMesh, output_path: &Path) -> Result<()> {
@@ -89,7 +89,11 @@ pub fn export_single_mesh_to_glb(mesh: &PlantMesh, output_path: &Path) -> Result
     write_glb_binary(&gltf, &buffer_data, output_path)
 }
 
-fn write_glb_binary(gltf: &serde_json::Value, buffer_data: &[u8], output_path: &Path) -> Result<()> {
+fn write_glb_binary(
+    gltf: &serde_json::Value,
+    buffer_data: &[u8],
+    output_path: &Path,
+) -> Result<()> {
     let mut json_bytes = serde_json::to_vec(gltf)?;
     while json_bytes.len() % 4 != 0 {
         json_bytes.push(b' ');

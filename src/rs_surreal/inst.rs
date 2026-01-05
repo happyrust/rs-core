@@ -130,7 +130,7 @@ pub async fn query_tubi_insts_by_brans(
             pe_key, pe_key
         );
         let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
-        
+
         all_results.append(&mut results);
     }
     Ok(all_results)
@@ -168,8 +168,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
             FROM tubi_relate
             WHERE (in = {} OR out = {})
             "#,
-            pe_key,
-            pe_key
+            pe_key, pe_key
         );
 
         let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
@@ -363,8 +362,10 @@ pub async fn query_insts_with_batch(
                 <datetime>dt as date,
                 spec_value
             from [{inst_relate_keys_str}] where world_trans.d != none
-        "#
-            , inst_relate_keys_str=inst_relate_keys_str, bool_mesh=bool_mesh_expr)
+        "#,
+                inst_relate_keys_str = inst_relate_keys_str,
+                bool_mesh = bool_mesh_expr
+            )
         } else {
             // enable_holes=false: 返回原始几何（不考虑布尔结果）
             // 包括：Pos（未布尔）、CataPos/DesiPos（布尔后被替换的原始）
@@ -378,8 +379,10 @@ pub async fn query_insts_with_batch(
                 {bool_mesh} != none as has_neg,
                 <datetime>dt as date,
                 spec_value
-            from [{inst_relate_keys_str}] where world_trans.d != none "#
-            , inst_relate_keys_str=inst_relate_keys_str, bool_mesh=bool_mesh_expr)
+            from [{inst_relate_keys_str}] where world_trans.d != none "#,
+                inst_relate_keys_str = inst_relate_keys_str,
+                bool_mesh = bool_mesh_expr
+            )
         };
 
         let mut chunk_result: Vec<GeomInstQuery> = SUL_DB
@@ -391,7 +394,6 @@ pub async fn query_insts_with_batch(
 
     Ok(results)
 }
-
 
 // todo 生成一个测试案例
 // pub async fn query_history_insts(
@@ -419,7 +421,6 @@ pub async fn query_insts_with_batch(
 
 //     Ok(geom_insts)
 // }
-
 
 //=============================================================================
 // inst_relate 数据保存相关函数

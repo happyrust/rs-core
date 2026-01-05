@@ -4,11 +4,11 @@ use nom::*;
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
+use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::*;
 use nom::combinator::{complete, opt, recognize};
 use nom::sequence::{delimited, pair};
-use nom::Parser;
 
 lazy_static! {
     pub static ref AXISES_MAP: HashMap<&'static str, Vec3> = {
@@ -56,7 +56,8 @@ pub fn signed_axis(input: &str) -> IResult<&str, (Option<&str>, &str)> {
             tag("S"),
             tag("D"),
         )),
-    ).parse(input)
+    )
+    .parse(input)
 }
 
 use crate::tool::math_tool::convert_to_xyz;

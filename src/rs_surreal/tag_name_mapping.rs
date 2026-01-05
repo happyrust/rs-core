@@ -5,9 +5,9 @@
 use crate::types::RefnoEnum;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use surrealdb::types::Value;
-use surrealdb::Surreal;
 
 /// 位号映射表结构
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -201,10 +201,7 @@ pub async fn get_refno_by_full_name(
 }
 
 /// 创建或更新位号映射
-pub async fn upsert_tag_name_mapping(
-    conn: &Surreal<Any>,
-    mapping: &TagNameMapping,
-) -> Result<()> {
+pub async fn upsert_tag_name_mapping(conn: &Surreal<Any>, mapping: &TagNameMapping) -> Result<()> {
     let sql = mapping.to_surql();
     conn.query(&sql).await?;
     Ok(())

@@ -2,7 +2,7 @@ use surrealdb::types::{self as surrealdb_types, SurrealValue};
 
 use crate::rs_surreal::query_structs::{CataNegGroup, GmGeoData};
 use crate::types::RefnoEnum;
-use crate::{get_inst_relate_keys, SurrealQueryExt, SUL_DB};
+use crate::{SUL_DB, SurrealQueryExt, get_inst_relate_keys};
 
 /// Boolean operation query functions
 ///
@@ -116,8 +116,8 @@ pub async fn query_negative_entities(refno: RefnoEnum) -> anyhow::Result<Vec<Ref
 pub async fn query_negative_entities_batch(
     refnos: &[RefnoEnum],
 ) -> anyhow::Result<std::collections::HashMap<RefnoEnum, Vec<RefnoEnum>>> {
-    use std::collections::HashMap;
     use serde::{Deserialize, Serialize};
+    use std::collections::HashMap;
 
     #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
     struct PosNegRelation {
@@ -186,4 +186,3 @@ pub async fn query_boolean_targets(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<R
 
     SUL_DB.query_take(&sql, 0).await
 }
-

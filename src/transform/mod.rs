@@ -220,9 +220,7 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
                     "UPDATE {} SET world_trans = $trans",
                     refno_clone.to_pe_key()
                 );
-                let _ = SUL_DB.query(&sql)
-                    .bind(("trans", plant_trans))
-                    .await;
+                let _ = SUL_DB.query(&sql).bind(("trans", plant_trans)).await;
                 #[cfg(feature = "debug_spatial")]
                 println!("💾 Cached world_trans for: {}", refno_clone);
             });
@@ -304,7 +302,10 @@ async fn get_world_mat4_with_strategies_impl(
                 mat4 = bevy_transform_to_dmat4(&world_trans.0);
                 start_index = i;
                 #[cfg(feature = "debug_spatial")]
-                println!("🎯 Found cached world_trans at ancestor[{}]: {}", i, ancestor_refno);
+                println!(
+                    "🎯 Found cached world_trans at ancestor[{}]: {}",
+                    i, ancestor_refno
+                );
                 break;
             }
         }
@@ -313,7 +314,10 @@ async fn get_world_mat4_with_strategies_impl(
     #[cfg(feature = "profile")]
     {
         let cache_search_elapsed = cache_search_start.elapsed();
-        println!("Cache search took {:?}, start_index={}", cache_search_elapsed, start_index);
+        println!(
+            "Cache search took {:?}, start_index={}",
+            cache_search_elapsed, start_index
+        );
     }
 
     // 从找到的缓存点（或根节点）开始，累加到目标节点的局部变换
@@ -391,10 +395,7 @@ fn dmat4_to_bevy_transform(mat4: &DMat4) -> Transform {
 /// * `Ok(())` - 成功清除缓存
 /// * `Err` - 如果清除过程中发生错误
 pub async fn invalidate_world_trans_cache(refno: RefnoEnum) -> anyhow::Result<()> {
-    let sql = format!(
-        "UPDATE {} SET world_trans = NONE",
-        refno.to_pe_key()
-    );
+    let sql = format!("UPDATE {} SET world_trans = NONE", refno.to_pe_key());
     SUL_DB.query(&sql).await?;
     #[cfg(feature = "debug_spatial")]
     println!("🗑️  Invalidated world_trans cache for: {}", refno);

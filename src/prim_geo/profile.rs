@@ -10,7 +10,9 @@ use crate::prim_geo::spine::{
 };
 use crate::prim_geo::{CateCsgShapeMap, SweepSolid};
 use crate::rs_surreal::query::{get_owner_refno_by_type, get_owner_type_name};
-use crate::rs_surreal::spatial::{construct_basis_z_default, construct_basis_z_y_hint, get_spline_pts};
+use crate::rs_surreal::spatial::{
+    construct_basis_z_default, construct_basis_z_y_hint, get_spline_pts,
+};
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
@@ -98,7 +100,8 @@ async fn normalize_spine_segments(
 
                 // 使用 YDIR (spine.preferred_dir) 计算方位，与 SpineStrategy.initialize_rotation 保持一致
                 let ydir = spine.preferred_dir.as_dvec3();
-                let base_rotation = construct_basis_z_y_hint(direction.as_dvec3(), Some(ydir), false);
+                let base_rotation =
+                    construct_basis_z_y_hint(direction.as_dvec3(), Some(ydir), false);
 
                 // 计算 bangle 旋转（绕路径方向）
                 let bangle_rotation = Quat::from_axis_angle(direction, bangle.to_radians());
@@ -108,8 +111,8 @@ async fn normalize_spine_segments(
 
                 // 完整变换：包含位置、方位 + bangle 旋转和缩放
                 transforms.push(Transform {
-                    translation: spine.pt0,                    // 起点位置
-                    rotation: final_rotation,                  // 方位 × bangle 旋转
+                    translation: spine.pt0,                     // 起点位置
+                    rotation: final_rotation,                   // 方位 × bangle 旋转
                     scale: Vec3::new(1.0, 1.0, length / 100.0), // Z 方向缩放：实际长度/100.0
                 });
             }
@@ -338,8 +341,8 @@ pub async fn create_profile_geos(
                     let pt1_world = att2.get_position().unwrap_or_default();
                     paths.push(Spine3D {
                         refno: att1.get_refno().unwrap(), // 起点 POINSP 的 refno
-                        pt0: pt0_world - origin,  // 相对坐标
-                        pt1: pt1_world - origin,  // 相对坐标
+                        pt0: pt0_world - origin,          // 相对坐标
+                        pt1: pt1_world - origin,          // 相对坐标
                         curve_type: SpineCurveType::LINE,
                         preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
                         ..Default::default()
@@ -358,10 +361,10 @@ pub async fn create_profile_geos(
                     };
                     paths.push(Spine3D {
                         refno: att1.get_refno().unwrap(), // 修正：使用起点 POINSP 的 refno，而不是 CURVE 的 refno
-                        pt0: pt0_world - origin,      // 相对坐标
-                        pt1: pt1_world - origin,      // 相对坐标
-                        thru_pt: mid_pt_world - origin,    // 相对坐标
-                        center_pt: mid_pt_world - origin,  // 相对坐标
+                        pt0: pt0_world - origin,          // 相对坐标
+                        pt1: pt1_world - origin,          // 相对坐标
+                        thru_pt: mid_pt_world - origin,   // 相对坐标
+                        center_pt: mid_pt_world - origin, // 相对坐标
                         cond_pos: att2.get_vec3("CPOS").unwrap_or_default(),
                         curve_type,
                         preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
@@ -395,8 +398,8 @@ pub async fn create_profile_geos(
             // pt1 = pose - poss = delta (相对偏移)
             spine_paths.push(Spine3D {
                 refno,
-                pt0: Vec3::ZERO,  // 相对坐标：起点为原点
-                pt1: delta,       // 相对坐标：终点为相对偏移
+                pt0: Vec3::ZERO, // 相对坐标：起点为原点
+                pt1: delta,      // 相对坐标：终点为相对偏移
                 curve_type: SpineCurveType::LINE,
                 preferred_dir: Vec3::Y, // 使用默认参考方向，后续会用 plax 覆盖
                 ..Default::default()
@@ -408,7 +411,8 @@ pub async fn create_profile_geos(
     if spine_paths.len() > 0 {
         // 将所有 Spine3D 段连接成一条连续路径
         // 提前获取第一个 profile 的 plax 和元素的 bangle
-        let first_plax = geos.iter()
+        let first_plax = geos
+            .iter()
             .find_map(|g| {
                 if let CateGeoParam::Profile(profile) = g {
                     Some(profile.get_plax())
@@ -478,10 +482,8 @@ pub async fn create_profile_geos(
                         // let hash = profile_refno.hash_with_another_refno(first_spine_refno);
 
                         // 获取第一段的完整变换用于实例化
-                        let first_transform = segment_transforms
-                            .first()
-                            .cloned()
-                            .unwrap_or_else(|| {
+                        let first_transform =
+                            segment_transforms.first().cloned().unwrap_or_else(|| {
                                 tracing::warn!("segment_transforms 为空，使用 Transform::IDENTITY");
                                 Transform::IDENTITY
                             });
@@ -530,7 +532,10 @@ pub async fn create_profile_geos(
         }
     } else {
         // 既没有 SPINE 也没有 POSS/POSE，无法生成几何
-        tracing::debug!("元素 {:?} 既没有 SPINE 子元素也没有 POSS/POSE 属性，跳过几何生成", refno);
+        tracing::debug!(
+            "元素 {:?} 既没有 SPINE 子元素也没有 POSS/POSE 属性，跳过几何生成",
+            refno
+        );
         return Ok(false);
     }
     Ok(true)

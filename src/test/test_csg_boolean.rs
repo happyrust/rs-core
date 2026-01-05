@@ -54,9 +54,11 @@ fn test_wall_subtract_cylinder() {
     let wall = wall_section.extrude(3.0, 1);
 
     let wall_mesh = wall.get_mesh();
-    println!("墙体: {} 顶点, {} 三角形",
+    println!(
+        "墙体: {} 顶点, {} 三角形",
         wall_mesh.vertices.len() / 3,
-        wall_mesh.indices.len() / 3);
+        wall_mesh.indices.len() / 3
+    );
 
     // 创建圆柱体 (使用 unit_cylinder 然后缩放)
     let settings = LodMeshSettings::default();
@@ -76,34 +78,41 @@ fn test_wall_subtract_cylinder() {
     // 变换顺序：先缩放，再旋转，最后平移 (从右到左读)
     let transform = translate * rotate * scale;
 
-    let cylinder = ManifoldRust::import_glb_to_manifold(&cyl_path, transform, false)
-        .expect("导入圆柱体失败");
+    let cylinder =
+        ManifoldRust::import_glb_to_manifold(&cyl_path, transform, false).expect("导入圆柱体失败");
     let _ = std::fs::remove_file(&cyl_path);
 
     let cyl_mesh = cylinder.get_mesh();
-    println!("圆柱体: {} 顶点, {} 三角形",
+    println!(
+        "圆柱体: {} 顶点, {} 三角形",
         cyl_mesh.vertices.len() / 3,
-        cyl_mesh.indices.len() / 3);
+        cyl_mesh.indices.len() / 3
+    );
     if let Some(aabb) = cyl_mesh.cal_aabb() {
-        println!("圆柱体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
-            aabb.mins.x, aabb.mins.y, aabb.mins.z,
-            aabb.maxs.x, aabb.maxs.y, aabb.maxs.z);
+        println!(
+            "圆柱体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
+            aabb.mins.x, aabb.mins.y, aabb.mins.z, aabb.maxs.x, aabb.maxs.y, aabb.maxs.z
+        );
     }
 
     // 布尔减法
     let result = wall.batch_boolean_subtract(&[cylinder]);
     let result_mesh = result.get_mesh();
 
-    println!("结果: {} 顶点, {} 三角形",
+    println!(
+        "结果: {} 顶点, {} 三角形",
         result_mesh.vertices.len() / 3,
-        result_mesh.indices.len() / 3);
+        result_mesh.indices.len() / 3
+    );
 
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     // 导出结果到 GLB
     ensure_output_dir();
     let output_path = Path::new(OUTPUT_DIR).join("wall_subtract_cylinder.glb");
-    result.export_to_glb(&output_path).expect("导出布尔运算结果失败");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
     println!("已导出: {:?}", output_path);
 
     println!("✅ 墙体 - 圆柱体 测试通过");
@@ -118,13 +127,16 @@ fn test_wall_subtract_sphere() {
     let wall = wall_section.extrude(3.0, 1);
 
     let wall_mesh = wall.get_mesh();
-    println!("墙体: {} 顶点, {} 三角形",
+    println!(
+        "墙体: {} 顶点, {} 三角形",
         wall_mesh.vertices.len() / 3,
-        wall_mesh.indices.len() / 3);
+        wall_mesh.indices.len() / 3
+    );
     if let Some(aabb) = wall_mesh.cal_aabb() {
-        println!("墙体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
-            aabb.mins.x, aabb.mins.y, aabb.mins.z,
-            aabb.maxs.x, aabb.maxs.y, aabb.maxs.z);
+        println!(
+            "墙体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
+            aabb.mins.x, aabb.mins.y, aabb.mins.z, aabb.maxs.x, aabb.maxs.y, aabb.maxs.z
+        );
     }
 
     // 创建球体
@@ -142,34 +154,41 @@ fn test_wall_subtract_sphere() {
         glam::DVec3::new(0.0, 0.0, 1.5),
     );
 
-    let sphere = ManifoldRust::import_glb_to_manifold(&sphere_path, transform, false)
-        .expect("导入球体失败");
+    let sphere =
+        ManifoldRust::import_glb_to_manifold(&sphere_path, transform, false).expect("导入球体失败");
     let _ = std::fs::remove_file(&sphere_path);
 
     let sphere_mesh_out = sphere.get_mesh();
-    println!("球体: {} 顶点, {} 三角形",
+    println!(
+        "球体: {} 顶点, {} 三角形",
         sphere_mesh_out.vertices.len() / 3,
-        sphere_mesh_out.indices.len() / 3);
+        sphere_mesh_out.indices.len() / 3
+    );
     if let Some(aabb) = sphere_mesh_out.cal_aabb() {
-        println!("球体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
-            aabb.mins.x, aabb.mins.y, aabb.mins.z,
-            aabb.maxs.x, aabb.maxs.y, aabb.maxs.z);
+        println!(
+            "球体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
+            aabb.mins.x, aabb.mins.y, aabb.mins.z, aabb.maxs.x, aabb.maxs.y, aabb.maxs.z
+        );
     }
 
     // 布尔减法
     let result = wall.batch_boolean_subtract(&[sphere]);
     let result_mesh = result.get_mesh();
 
-    println!("结果: {} 顶点, {} 三角形",
+    println!(
+        "结果: {} 顶点, {} 三角形",
         result_mesh.vertices.len() / 3,
-        result_mesh.indices.len() / 3);
+        result_mesh.indices.len() / 3
+    );
 
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     // 导出结果到 GLB
     ensure_output_dir();
     let output_path = Path::new(OUTPUT_DIR).join("wall_subtract_sphere.glb");
-    result.export_to_glb(&output_path).expect("导出布尔运算结果失败");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
     println!("已导出: {:?}", output_path);
 
     println!("✅ 墙体 - 球体 测试通过");
@@ -184,13 +203,16 @@ fn test_wall_subtract_box() {
     let wall = wall_section.extrude(3.0, 1);
 
     let wall_mesh = wall.get_mesh();
-    println!("墙体: {} 顶点, {} 三角形",
+    println!(
+        "墙体: {} 顶点, {} 三角形",
         wall_mesh.vertices.len() / 3,
-        wall_mesh.indices.len() / 3);
+        wall_mesh.indices.len() / 3
+    );
     if let Some(aabb) = wall_mesh.cal_aabb() {
-        println!("墙体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
-            aabb.mins.x, aabb.mins.y, aabb.mins.z,
-            aabb.maxs.x, aabb.maxs.y, aabb.maxs.z);
+        println!(
+            "墙体 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
+            aabb.mins.x, aabb.mins.y, aabb.mins.z, aabb.maxs.x, aabb.maxs.y, aabb.maxs.z
+        );
     }
 
     // 创建盒子
@@ -207,34 +229,41 @@ fn test_wall_subtract_box() {
         glam::DVec3::new(0.0, 0.0, 1.5),
     );
 
-    let box_manifold = ManifoldRust::import_glb_to_manifold(&box_path, transform, false)
-        .expect("导入盒子失败");
+    let box_manifold =
+        ManifoldRust::import_glb_to_manifold(&box_path, transform, false).expect("导入盒子失败");
     let _ = std::fs::remove_file(&box_path);
 
     let box_mesh_out = box_manifold.get_mesh();
-    println!("盒子: {} 顶点, {} 三角形",
+    println!(
+        "盒子: {} 顶点, {} 三角形",
         box_mesh_out.vertices.len() / 3,
-        box_mesh_out.indices.len() / 3);
+        box_mesh_out.indices.len() / 3
+    );
     if let Some(aabb) = box_mesh_out.cal_aabb() {
-        println!("盒子 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
-            aabb.mins.x, aabb.mins.y, aabb.mins.z,
-            aabb.maxs.x, aabb.maxs.y, aabb.maxs.z);
+        println!(
+            "盒子 AABB: ({:.2}, {:.2}, {:.2}) -> ({:.2}, {:.2}, {:.2})",
+            aabb.mins.x, aabb.mins.y, aabb.mins.z, aabb.maxs.x, aabb.maxs.y, aabb.maxs.z
+        );
     }
 
     // 布尔减法
     let result = wall.batch_boolean_subtract(&[box_manifold]);
     let result_mesh = result.get_mesh();
 
-    println!("结果: {} 顶点, {} 三角形",
+    println!(
+        "结果: {} 顶点, {} 三角形",
         result_mesh.vertices.len() / 3,
-        result_mesh.indices.len() / 3);
+        result_mesh.indices.len() / 3
+    );
 
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     // 导出结果到 GLB
     ensure_output_dir();
     let output_path = Path::new(OUTPUT_DIR).join("wall_subtract_box.glb");
-    result.export_to_glb(&output_path).expect("导出布尔运算结果失败");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
     println!("已导出: {:?}", output_path);
 
     println!("✅ 墙体 - 盒子 测试通过");
@@ -278,16 +307,20 @@ fn test_wall_subtract_multiple() {
     let result = wall.batch_boolean_subtract(&holes);
     let result_mesh = result.get_mesh();
 
-    println!("结果: {} 顶点, {} 三角形",
+    println!(
+        "结果: {} 顶点, {} 三角形",
         result_mesh.vertices.len() / 3,
-        result_mesh.indices.len() / 3);
+        result_mesh.indices.len() / 3
+    );
 
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     // 导出结果到 GLB
     ensure_output_dir();
     let output_path = Path::new(OUTPUT_DIR).join("wall_subtract_multiple.glb");
-    result.export_to_glb(&output_path).expect("导出布尔运算结果失败");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
     println!("已导出: {:?}", output_path);
 
     println!("✅ 墙体 - 多个基本体 测试通过");

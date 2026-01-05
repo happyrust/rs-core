@@ -11,7 +11,6 @@
 use super::query_mdb_db_nums;
 use crate::consts::{MAX_INSERT_LENGTH, WORD_HASH};
 use crate::parsed_data::CateAxisParam;
-use crate::vec3_pool::parse_ptset_auto;
 use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::ssc_setting::PbsElement;
@@ -19,6 +18,7 @@ use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
 use crate::utils::{take_option, take_single, take_vec};
+use crate::vec3_pool::parse_ptset_auto;
 use crate::{DBType, get_db_option, to_table_keys};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SUL_DB, SurlValue, SurrealQueryExt};
@@ -49,7 +49,7 @@ struct KV<K: SurrealValue, V: SurrealValue> {
 /// CataHash 分组查询结果
 /// k 是一个元组：(cata_hash, exist_inst, ptset)
 /// v 是分组的 refnos
-/// 
+///
 /// 注意：ptset 使用 serde_json::Value 接收，支持原始格式和压缩格式
 /// 使用 parse_ptset_auto 解析
 #[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
@@ -298,7 +298,11 @@ pub async fn get_ancestor_attmaps(refno: RefnoEnum) -> anyhow::Result<Vec<NamedA
 ///   - usize: 缓存的索引位置（在完整祖先链中的位置）
 pub async fn get_ancestor_attmaps_from_cached(
     refno: RefnoEnum,
-) -> anyhow::Result<(Vec<NamedAttrMap>, Option<crate::rs_surreal::PlantTransform>, usize)> {
+) -> anyhow::Result<(
+    Vec<NamedAttrMap>,
+    Option<crate::rs_surreal::PlantTransform>,
+    usize,
+)> {
     let sql = format!(
         r#"
         LET $ancestors = fn::ancestor({});
@@ -330,7 +334,7 @@ pub async fn get_ancestor_attmaps_from_cached(
     }
 
     let result: Option<AttmapResult> = SUL_DB.query_take(&sql, 0).await?;
-    
+
     let result = result.unwrap_or(AttmapResult {
         attmaps: vec![],
         cached_transform: None,
@@ -1073,10 +1077,15 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
     attmap.remove("SESNO");
 
     // 查询并添加位号 (TAG_NAME)
-    if let Ok(Some(tag_name)) = crate::rs_surreal::tag_name_mapping::get_tag_name_by_refno(&SUL_DB, refno_enum).await {
+    if let Ok(Some(tag_name)) =
+        crate::rs_surreal::tag_name_mapping::get_tag_name_by_refno(&SUL_DB, refno_enum).await
+    {
         attmap.insert("TAG_NAME".to_string(), NamedAttrValue::StringType(tag_name));
     } else {
-        attmap.insert("TAG_NAME".to_string(), NamedAttrValue::StringType("unset".to_owned()));
+        attmap.insert(
+            "TAG_NAME".to_string(),
+            NamedAttrValue::StringType("unset".to_owned()),
+        );
     }
 
     // 获取世界坐标位置和方向 (WPOS, WORI)
@@ -1440,7 +1449,10 @@ pub async fn query_group_by_cata_hash(
                                 // 使用 parse_ptset_auto 自动检测格式并解析
                                 // 支持原始格式和压缩格式
                                 parse_ptset_auto(&json).map(|params| {
-                                    params.into_iter().map(|param| (param.number, param)).collect()
+                                    params
+                                        .into_iter()
+                                        .map(|param| (param.number, param))
+                                        .collect()
                                 })
                             }),
                         },

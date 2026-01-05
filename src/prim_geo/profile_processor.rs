@@ -423,14 +423,14 @@ impl ProfileProcessor {
 
         // 计算圆弧参数
         let angle = (4.0 * bulge.atan()).abs();
-        
+
         // 计算圆弧中心和半径
         use cavalier_contours::polyline::seg_arc_radius_and_center;
         let (radius, center) = seg_arc_radius_and_center(*start, *end);
-        
+
         // 计算弧长
         let arc_length = radius.abs() * angle;
-        
+
         // 采样策略：同时考虑角度和弧长
         // 1. 基于角度：每5度一个点
         let segments_by_angle = (angle.to_degrees() / 5.0).ceil() as usize;
@@ -497,7 +497,7 @@ impl ProfileProcessor {
 pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh {
     let n_contour = profile.contour_points.len();
     let n_tri = profile.tri_vertices.len();
-    
+
     if n_contour < 3 || n_tri < 3 {
         return ExtrudedMesh {
             vertices: Vec::new(),
@@ -516,28 +516,28 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
     // 底面顶点：索引 0..n_tri-1 (使用 tri_vertices)
     // 顶面顶点：索引 n_tri..2*n_tri-1 (使用 tri_vertices)
     // 侧面顶点：索引 2*n_tri..2*n_tri+2*n_contour-1（每个轮廓点对应两个侧面顶点）
-    
+
     // 底面顶点（使用 tri_vertices）
     for point in &profile.tri_vertices {
         vertices.push(Vec3::new(point.x, point.y, 0.0));
         normals.push(Vec3::NEG_Z); // 底面法线朝下
         uvs.push([point.x / 100.0, point.y / 100.0]);
     }
-    
+
     // 顶面顶点（使用 tri_vertices）
     for point in &profile.tri_vertices {
         vertices.push(Vec3::new(point.x, point.y, height));
         normals.push(Vec3::Z); // 顶面法线朝上
         uvs.push([point.x / 100.0, point.y / 100.0]);
     }
-    
+
     // 侧面顶点（使用 contour_points，每个轮廓点创建两个）
     for point in &profile.contour_points {
         // 底部侧面顶点
         vertices.push(Vec3::new(point.x, point.y, 0.0));
         normals.push(Vec3::ZERO); // 稍后计算侧面法线
         uvs.push([point.x / 100.0, point.y / 100.0]);
-        
+
         // 顶部侧面顶点
         vertices.push(Vec3::new(point.x, point.y, height));
         normals.push(Vec3::ZERO); // 稍后计算侧面法线
@@ -549,24 +549,24 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
     let side_base = (2 * n_tri) as u32;
     for i in 0..n_contour {
         let next = (i + 1) % n_contour;
-        
+
         // 侧面顶点索引
         let sb0 = side_base + (2 * i) as u32; // 当前点的底部侧面顶点
         let sb1 = side_base + (2 * next) as u32; // 下一个点的底部侧面顶点
         let st0 = side_base + (2 * i + 1) as u32; // 当前点的顶部侧面顶点
         let st1 = side_base + (2 * next + 1) as u32; // 下一个点的顶部侧面顶点
-        
+
         // 三角形1: sb0 -> sb1 -> st1 (逆时针，法线朝外)
         indices.push(sb0);
         indices.push(sb1);
         indices.push(st1);
-        
+
         // 三角形2: sb0 -> st1 -> st0
         indices.push(sb0);
         indices.push(st1);
         indices.push(st0);
     }
-    
+
     // ========== 3. 生成底面三角形（使用 i_triangle 结果）==========
     // 底面法线朝下，需要反转三角形绕向
     for chunk in profile.tri_indices.chunks(3) {
@@ -577,7 +577,7 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
             indices.push(chunk[1]);
         }
     }
-    
+
     // ========== 4. 生成顶面三角形（使用 i_triangle 结果）==========
     // 顶面法线朝上，保持原始绕向
     let top_base = n_tri as u32;
@@ -591,43 +591,43 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
 
     // ========== 5. 计算侧面顶点法线 ==========
     let mut side_normals = vec![Vec3::ZERO; 2 * n_contour];
-    
+
     for i in 0..n_contour {
         let next = (i + 1) % n_contour;
-        
+
         // 三角形1的法线
         let sb0_idx = 2 * i;
         let sb1_idx = 2 * next;
         let st1_idx = 2 * next + 1;
-        
+
         let v0 = vertices[2 * n_tri + sb0_idx];
         let v1 = vertices[2 * n_tri + sb1_idx];
         let v2 = vertices[2 * n_tri + st1_idx];
-        
+
         let edge1 = v1 - v0;
         let edge2 = v2 - v0;
         let face_normal = edge1.cross(edge2).normalize_or_zero();
-        
+
         side_normals[sb0_idx] += face_normal;
         side_normals[sb1_idx] += face_normal;
         side_normals[st1_idx] += face_normal;
-        
+
         // 三角形2的法线
         let st0_idx = 2 * i + 1;
-        
+
         let v0 = vertices[2 * n_tri + sb0_idx];
         let v1 = vertices[2 * n_tri + st1_idx];
         let v2 = vertices[2 * n_tri + st0_idx];
-        
+
         let edge1 = v1 - v0;
         let edge2 = v2 - v0;
         let face_normal = edge1.cross(edge2).normalize_or_zero();
-        
+
         side_normals[sb0_idx] += face_normal;
         side_normals[st1_idx] += face_normal;
         side_normals[st0_idx] += face_normal;
     }
-    
+
     // 将侧面法线写入 normals 数组
     for (i, normal) in side_normals.into_iter().enumerate() {
         normals[2 * n_tri + i] = normal.normalize_or_zero();
@@ -792,19 +792,29 @@ pub fn revolve_profile(
 
     // 判断是否为完整旋转（360°）
     let is_full_rotation = (angle.abs() - 360.0).abs() < 0.01;
-    
+
     // 检测 profile 是否闭合（首尾点重合）
     let first_point = profile.contour_points.first().cloned().unwrap_or_default();
     let last_point = profile.contour_points.last().cloned().unwrap_or_default();
     let profile_is_closed = (first_point - last_point).length() < 0.01;
-    
-    println!("🔍 [REVOLVE] n_profile={}, is_full_rotation={}, profile_is_closed={}", 
-        n_profile, is_full_rotation, profile_is_closed);
-    println!("   first_point={:?}, last_point={:?}, distance={}", 
-        first_point, last_point, (first_point - last_point).length());
-    
+
+    println!(
+        "🔍 [REVOLVE] n_profile={}, is_full_rotation={}, profile_is_closed={}",
+        n_profile, is_full_rotation, profile_is_closed
+    );
+    println!(
+        "   first_point={:?}, last_point={:?}, distance={}",
+        first_point,
+        last_point,
+        (first_point - last_point).length()
+    );
+
     // 对于开放 profile，侧面不连接最后一点到第一点
-    let n_profile_edges = if profile_is_closed { n_profile } else { n_profile - 1 };
+    let n_profile_edges = if profile_is_closed {
+        n_profile
+    } else {
+        n_profile - 1
+    };
 
     // 4. 生成侧面索引
     for i in 0..n_segments {
@@ -834,14 +844,21 @@ pub fn revolve_profile(
         let first_pt = first_point; // 使用已计算的变量
         let last_pt = last_point;
         let axis_tolerance = 0.1;
-        
-        println!("🔍 [REVOLVE 端面] first_pt={:?}, last_pt={:?}", first_pt, last_pt);
-        println!("   first_on_axis={}, last_on_axis={}", first_pt.x.abs() < axis_tolerance, last_pt.x.abs() < axis_tolerance);
-        
+
+        println!(
+            "🔍 [REVOLVE 端面] first_pt={:?}, last_pt={:?}",
+            first_pt, last_pt
+        );
+        println!(
+            "   first_on_axis={}, last_on_axis={}",
+            first_pt.x.abs() < axis_tolerance,
+            last_pt.x.abs() < axis_tolerance
+        );
+
         // 检查首尾点是否在旋转轴上（径向距离=0）
         let first_on_axis = first_pt.x.abs() < axis_tolerance;
         let last_on_axis = last_pt.x.abs() < axis_tolerance;
-        
+
         if first_on_axis && last_on_axis {
             // 首尾都在轴上，不需要端面（旋转体自然闭合）
         } else if first_on_axis {
@@ -875,8 +892,16 @@ pub fn revolve_profile(
             for i in 0..n_segments {
                 let curr_first = (i * n_profile) as u32;
                 let curr_last = (i * n_profile + n_profile - 1) as u32;
-                let next_first = if i == n_segments - 1 { 0 } else { ((i + 1) * n_profile) as u32 };
-                let next_last = if i == n_segments - 1 { (n_profile - 1) as u32 } else { ((i + 1) * n_profile + n_profile - 1) as u32 };
+                let next_first = if i == n_segments - 1 {
+                    0
+                } else {
+                    ((i + 1) * n_profile) as u32
+                };
+                let next_last = if i == n_segments - 1 {
+                    (n_profile - 1) as u32
+                } else {
+                    ((i + 1) * n_profile + n_profile - 1) as u32
+                };
                 indices.extend_from_slice(&[curr_first, next_first, next_last]);
                 indices.extend_from_slice(&[curr_first, next_last, curr_last]);
             }
@@ -1008,7 +1033,7 @@ fn compute_max_radius(polygons: &[Vec<Vec2>]) -> f32 {
 pub fn compute_adaptive_segments(radius: f32, angle: f32, min_segments: usize) -> usize {
     // 最大分段数限制，避免大半径导致顶点数爆炸
     const MAX_SEGMENTS: usize = 100;
-    
+
     // 基于半径的分段数：每 10mm 周长约 1 个分段，最小 8 段（对于完整圆）
     let full_circle_segments = ((2.0 * std::f32::consts::PI * radius) / 10.0)
         .ceil()
@@ -1178,10 +1203,10 @@ pub fn revolve_polygons_manifold(
 
         // Step 4: 生成三角形索引
         // 关键：确保所有三角形的绕序一致（从外侧看是逆时针）
-        // 
+        //
         // 对于旋转体，从轴外侧看，轮廓点沿 profile 方向移动，
         // 旋转方向是 theta 增加的方向（从 +X 向 +Y）。
-        // 
+        //
         // 为了保证流形，需要确保：
         // 1. 相邻边共享相同的顶点（不是位置相同的不同顶点）
         // 2. 每条边恰好被两个三角形共享
@@ -1242,11 +1267,7 @@ pub fn revolve_polygons_manifold(
             }
             // 扇形三角化起始端面
             for i in 1..n_profile - 1 {
-                indices.extend_from_slice(&[
-                    start_verts[0],
-                    start_verts[i + 1],
-                    start_verts[i],
-                ]);
+                indices.extend_from_slice(&[start_verts[0], start_verts[i + 1], start_verts[i]]);
             }
 
             // 结束端面（seg=n_segments）
@@ -1260,11 +1281,7 @@ pub fn revolve_polygons_manifold(
             }
             // 扇形三角化结束端面（反向绕序）
             for i in 1..n_profile - 1 {
-                indices.extend_from_slice(&[
-                    end_verts[0],
-                    end_verts[i],
-                    end_verts[i + 1],
-                ]);
+                indices.extend_from_slice(&[end_verts[0], end_verts[i], end_verts[i + 1]]);
             }
         }
     }
@@ -2050,9 +2067,9 @@ mod tests {
     fn test_revolve_manifold_cross_axis() {
         // 轮廓跨越 Y 轴：从 x=-20 到 x=50
         let polygon = vec![
-            Vec2::new(-20.0, 0.0),  // 负侧，应被裁剪
-            Vec2::new(50.0, 0.0),   // 正侧
-            Vec2::new(50.0, 100.0), // 正侧
+            Vec2::new(-20.0, 0.0),   // 负侧，应被裁剪
+            Vec2::new(50.0, 0.0),    // 正侧
+            Vec2::new(50.0, 100.0),  // 正侧
             Vec2::new(-20.0, 100.0), // 负侧，应被裁剪
         ];
 
@@ -2138,9 +2155,9 @@ mod tests {
     fn test_revolve_manifold_cone() {
         // 圆锥体：底部半径 80，顶部半径 0（尖顶），高度 150
         let polygon = vec![
-            Vec2::new(80.0, 0.0),   // 底部
-            Vec2::new(0.0, 150.0),  // 顶点（在轴上）
-            Vec2::new(0.0, 0.0),    // 底部中心（在轴上）
+            Vec2::new(80.0, 0.0),  // 底部
+            Vec2::new(0.0, 150.0), // 顶点（在轴上）
+            Vec2::new(0.0, 0.0),   // 底部中心（在轴上）
         ];
 
         let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
@@ -2262,10 +2279,7 @@ mod tests {
 
         // 大半径应该有更多分段
         // 根据算法：周长 2π*100 ≈ 628，每 10mm 一段 ≈ 63 段
-        assert!(
-            mesh.vertices.len() > 100,
-            "自适应分段应该生成足够多的顶点"
-        );
+        assert!(mesh.vertices.len() > 100, "自适应分段应该生成足够多的顶点");
 
         // 导出 OBJ
         let plant_mesh: crate::shape::pdms_shape::PlantMesh = mesh.into();
@@ -2323,11 +2337,13 @@ mod tests {
         let mesh_manifold = mesh_manifold.unwrap();
 
         println!("\n🔍 对比结果:");
-        println!("   原有实现 - 顶点数: {}, 三角形数: {}",
+        println!(
+            "   原有实现 - 顶点数: {}, 三角形数: {}",
             mesh_original.vertices.len(),
             mesh_original.indices.len() / 3
         );
-        println!("   Manifold  - 顶点数: {}, 三角形数: {}",
+        println!(
+            "   Manifold  - 顶点数: {}, 三角形数: {}",
             mesh_manifold.vertices.len(),
             mesh_manifold.indices.len() / 3
         );
@@ -2370,7 +2386,11 @@ mod tests {
         export_mesh_to_obj(&plant_mesh, "special_duplicate_points.obj");
 
         println!("✅ 2A.1 点重合检测测试通过");
-        println!("   顶点数: {}, 三角形数: {}", plant_mesh.vertices.len(), plant_mesh.indices.len() / 3);
+        println!(
+            "   顶点数: {}, 三角形数: {}",
+            plant_mesh.vertices.len(),
+            plant_mesh.indices.len() / 3
+        );
     }
 
     /// 测试 2A.4: 退化情况 - 扫掠角度为0
@@ -2409,7 +2429,10 @@ mod tests {
         if let Some(m) = mesh {
             let plant_mesh: crate::shape::pdms_shape::PlantMesh = m.into();
             export_mesh_to_obj(&plant_mesh, "special_tiny_angle.obj");
-            println!("✅ 2A.4 极小角度测试：生成了 {} 个顶点", plant_mesh.vertices.len());
+            println!(
+                "✅ 2A.4 极小角度测试：生成了 {} 个顶点",
+                plant_mesh.vertices.len()
+            );
         } else {
             println!("✅ 2A.4 极小角度测试通过（返回None）");
         }
@@ -2421,9 +2444,9 @@ mod tests {
         // 轮廓：一个三角形，其中一条边完全在轴上
         // 这条轴上边应该不生成任何面（退化边跳过）
         let polygon = vec![
-            Vec2::new(50.0, 50.0),  // 外部点
-            Vec2::new(0.0, 100.0),  // 轴上点（顶部）
-            Vec2::new(0.0, 0.0),    // 轴上点（底部）
+            Vec2::new(50.0, 50.0), // 外部点
+            Vec2::new(0.0, 100.0), // 轴上点（顶部）
+            Vec2::new(0.0, 0.0),   // 轴上点（底部）
         ];
 
         let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
@@ -2438,7 +2461,9 @@ mod tests {
         println!("   三角形数: {} (预期约24，即扇形)", mesh.indices.len() / 3);
 
         // 检查轴上点是否正确共享
-        let axis_points: Vec<_> = mesh.vertices.iter()
+        let axis_points: Vec<_> = mesh
+            .vertices
+            .iter()
             .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
             .collect();
         println!("   轴上顶点数: {} (预期2)", axis_points.len());
@@ -2455,9 +2480,9 @@ mod tests {
     fn test_revolve_special_start_on_axis() {
         // 圆锥：顶点在轴上，底边在外
         let polygon = vec![
-            Vec2::new(0.0, 100.0),  // 轴上顶点
-            Vec2::new(50.0, 0.0),   // 外部底部
-            Vec2::new(0.0, 0.0),    // 轴上底部中心
+            Vec2::new(0.0, 100.0), // 轴上顶点
+            Vec2::new(50.0, 0.0),  // 外部底部
+            Vec2::new(0.0, 0.0),   // 轴上底部中心
         ];
 
         let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
@@ -2465,10 +2490,12 @@ mod tests {
         let mesh = mesh.unwrap();
 
         // 验证轴上点数量
-        let axis_points: Vec<_> = mesh.vertices.iter()
+        let axis_points: Vec<_> = mesh
+            .vertices
+            .iter()
             .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
             .collect();
-        
+
         println!("📊 起点在轴上测试:");
         println!("   轴上顶点数: {} (预期2)", axis_points.len());
         println!("   总顶点数: {}", mesh.vertices.len());
@@ -2494,7 +2521,9 @@ mod tests {
         assert!(mesh.is_some());
         let mesh = mesh.unwrap();
 
-        let axis_points: Vec<_> = mesh.vertices.iter()
+        let axis_points: Vec<_> = mesh
+            .vertices
+            .iter()
             .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
             .collect();
 
@@ -2514,10 +2543,10 @@ mod tests {
     fn test_revolve_special_xmin_positive_torus() {
         // 圆环截面：所有点都在 x > 0，中心有孔
         let polygon = vec![
-            Vec2::new(80.0, 0.0),   // 外部底
-            Vec2::new(80.0, 50.0),  // 外部顶
-            Vec2::new(40.0, 50.0),  // 内部顶
-            Vec2::new(40.0, 0.0),   // 内部底
+            Vec2::new(80.0, 0.0),  // 外部底
+            Vec2::new(80.0, 50.0), // 外部顶
+            Vec2::new(40.0, 50.0), // 内部顶
+            Vec2::new(40.0, 0.0),  // 内部底
         ];
 
         let mesh = revolve_polygons_manifold(&[polygon], 32, 360.0);
@@ -2525,10 +2554,12 @@ mod tests {
         let mesh = mesh.unwrap();
 
         // 检查所有点都不在轴上
-        let axis_points: Vec<_> = mesh.vertices.iter()
+        let axis_points: Vec<_> = mesh
+            .vertices
+            .iter()
             .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
             .collect();
-        
+
         println!("📊 xMin > 0 测试 (圆环):");
         println!("   轴上顶点数: {} (预期0)", axis_points.len());
         println!("   总顶点数: {}", mesh.vertices.len());
@@ -2557,7 +2588,9 @@ mod tests {
         let mesh = mesh.unwrap();
 
         // 应该有2个轴上共享顶点
-        let axis_points: Vec<_> = mesh.vertices.iter()
+        let axis_points: Vec<_> = mesh
+            .vertices
+            .iter()
             .filter(|v| (v.x * v.x + v.y * v.y).sqrt() < 0.01)
             .collect();
 
@@ -2578,10 +2611,10 @@ mod tests {
     fn test_revolve_special_xmin_negative_clipped() {
         // 轮廓越过 Y 轴
         let polygon = vec![
-            Vec2::new(-30.0, 0.0),  // 负侧
-            Vec2::new(50.0, 0.0),   // 正侧
-            Vec2::new(50.0, 100.0), // 正侧
-            Vec2::new(-30.0, 100.0),// 负侧
+            Vec2::new(-30.0, 0.0),   // 负侧
+            Vec2::new(50.0, 0.0),    // 正侧
+            Vec2::new(50.0, 100.0),  // 正侧
+            Vec2::new(-30.0, 100.0), // 负侧
         ];
 
         let mesh = revolve_polygons_manifold(&[polygon], 24, 360.0);
@@ -2598,6 +2631,10 @@ mod tests {
         export_mesh_to_obj(&plant_mesh, "special_xmin_negative_clipped.obj");
 
         println!("✅ 2A.7 xMin < 0 (裁剪) 测试通过");
-        println!("   顶点数: {}, 三角形数: {}", plant_mesh.vertices.len(), plant_mesh.indices.len() / 3);
+        println!(
+            "   顶点数: {}, 三角形数: {}",
+            plant_mesh.vertices.len(),
+            plant_mesh.indices.len() / 3
+        );
     }
 }
