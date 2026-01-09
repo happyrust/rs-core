@@ -1,4 +1,3 @@
-use crate::basic::aabb::ParryAabb;
 use crate::pdms_types::PdmsGenericType;
 use crate::rs_surreal::geometry_query::PlantTransform;
 use crate::shape::pdms_shape::RsVec3;
@@ -122,8 +121,8 @@ pub async fn query_tubi_insts_by_brans(
                 aabb.d as world_aabb,
                 world_trans.d as world_trans,
                 record::id(geo) as geo_hash,
-                date: Option<surrealdb::types::Datetime>,
-                spec_value: Option<i64>,
+                date,
+                spec_value
             FROM tubi_relate:[{}, 0]..[{}, 999999]
             }}
             "#,
@@ -199,7 +198,7 @@ pub struct ModelInstData {
     pub insts: Vec<ModelHashInst>,
     pub generic: PdmsGenericType,
     pub world_trans: Transform,
-    pub world_aabb: ParryAabb,
+    pub world_aabb: PlantAabb,
     pub ptset: Vec<Vec3>,
     pub is_bran_tubi: bool,
     pub date: NaiveDateTime,

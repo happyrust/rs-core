@@ -1,4 +1,4 @@
-use crate::basic::aabb::ParryAabb;
+use crate::types::PlantAabb;
 use crate::parsed_data::{CateAxisParam, TubiInfoData};
 use crate::pdms_types::PdmsGenericType;
 use crate::rs_surreal::geometry_query::PlantTransform;
@@ -19,7 +19,8 @@ use surrealdb::types::SurrealValue;
 pub struct TubiInstQuery {
     #[serde(alias = "id")]
     pub refno: RefU64,
-    pub world_aabb: Aabb,
+    #[serde(default)]
+    pub world_aabb: Option<PlantAabb>,
     pub world_trans: Transform,
     pub geo_hash: String,
 }
