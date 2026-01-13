@@ -42,6 +42,13 @@ use std::sync::Mutex;
 /// 最小长度阈值，用于判断几何形状是否有效
 const MIN_LEN: f32 = 1e-6;
 
+/// 单位网格的基准尺寸
+/// 使用 100 而非 1，以获得更好的数值精度：
+/// - 统一精度等级（从 10000.0 降到 100.0）
+/// - 提升 CSG 布尔运算稳定性
+/// - 减少浮点误差
+pub const UNIT_MESH_SCALE: f32 = 100.0;
+
 /// 跟踪已经生成过PLOOP调试文件的refno，避免重复生成
 static PLOOP_DEBUG_GENERATED: std::sync::LazyLock<Mutex<HashSet<String>>> =
     std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));
@@ -66,7 +73,7 @@ pub fn reset_sslc_counter() {
 
 /// 生成单位盒子网格（用于简单盒子的基础网格）
 ///
-/// 返回一个尺寸为1x1x1的单位盒子，中心在原点
+/// 返回一个尺寸为 UNIT_MESH_SCALE x UNIT_MESH_SCALE x UNIT_MESH_SCALE 的单位盒子，中心在原点
 /// 生成单位盒子网格（流形版本）
 ///
 /// 生成无重复顶点的流形网格：
@@ -74,7 +81,7 @@ pub fn reset_sslc_counter() {
 /// - 12 个三角形（6 个面 × 2）
 /// - 所有三角形法向量指向外部
 pub fn unit_box_mesh() -> PlantMesh {
-    let half = 0.5;
+    let half = UNIT_MESH_SCALE / 2.0;
 
     // 8 个角点顶点
     let vertices = vec![
@@ -115,7 +122,7 @@ pub fn unit_box_mesh() -> PlantMesh {
     use nalgebra::Point3;
     use parry3d::bounding_volume::Aabb;
 
-    let box_edges = generate_box_edges(1.0, 1.0, 1.0);
+    let box_edges = generate_box_edges(UNIT_MESH_SCALE, UNIT_MESH_SCALE, UNIT_MESH_SCALE);
 
     let mut mesh = PlantMesh {
         indices,
@@ -136,7 +143,7 @@ pub fn unit_box_mesh() -> PlantMesh {
 
 /// 生成单位球体网格（用于简单球体的基础网格）
 ///
-/// 返回一个半径为0.5的单位球体，中心在原点
+/// 返回一个半径为 UNIT_MESH_SCALE/2 的单位球体，中心在原点
 /// 生成单位球体网格（流形版本）
 ///
 /// 参考 Manifold 的球体生成算法，生成无重复顶点的流形网格：
@@ -153,7 +160,7 @@ pub fn unit_box_mesh() -> PlantMesh {
 pub fn unit_sphere_mesh() -> PlantMesh {
     use nalgebra::Point3;
     use parry3d::bounding_volume::Aabb;
-    let radius = 0.5;
+    let radius = UNIT_MESH_SCALE / 2.0;
     let settings = LodMeshSettings::default();
     let radial = compute_radial_segments(&settings, radius, false, 3);
     let mut height = compute_height_segments(&settings, radius * 2.0, false, 2);
@@ -273,8 +280,8 @@ pub fn unit_sphere_mesh() -> PlantMesh {
 /// - [2*resolution]: 底面中心点
 /// - [2*resolution + 1]: 顶面中心点
 pub fn unit_cylinder_mesh(settings: &LodMeshSettings, non_scalable: bool) -> PlantMesh {
-    let height = 1.0;
-    let radius = 0.5;
+    let height = UNIT_MESH_SCALE;
+    let radius = UNIT_MESH_SCALE / 2.0;
 
     // 使用LOD设置计算分段数
     let resolution = compute_radial_segments(settings, radius, non_scalable, 3);
@@ -1970,6 +1977,8 @@ fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
         return;
     }
 
+    let original_triangles = mesh.indices.len() / 3;
+
     // 计算 AABB 来确定自适应精度
     let mut min_pt = Vec3::splat(f32::MAX);
     let mut max_pt = Vec3::splat(f32::MIN);
@@ -2001,55 +2010,66 @@ fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
     };
 
     // 量化函数：将浮点坐标转换为整数键
-    let quantize = |v: Vec3| -> (i64, i64, i64) {
-        (
-            (v.x * precision).round() as i64,
-            (v.y * precision).round() as i64,
-            (v.z * precision).round() as i64,
-        )
+    let build_welded = |precision: f32| -> (Vec<Vec3>, Vec<Vec3>, Vec<[f32; 2]>, Vec<u32>) {
+        let quantize = |v: Vec3| -> (i64, i64, i64) {
+            (
+                (v.x * precision).round() as i64,
+                (v.y * precision).round() as i64,
+                (v.z * precision).round() as i64,
+            )
+        };
+
+        let mut map: HashMap<(i64, i64, i64), u32> = HashMap::new();
+        let mut remap: Vec<u32> = Vec::with_capacity(mesh.vertices.len());
+        let mut new_vertices: Vec<Vec3> = Vec::new();
+        let mut new_normals: Vec<Vec3> = Vec::new();
+        let mut new_uvs: Vec<[f32; 2]> = Vec::new();
+
+        for (i, v) in mesh.vertices.iter().copied().enumerate() {
+            let key = quantize(v);
+            if let Some(&idx) = map.get(&key) {
+                remap.push(idx);
+                continue;
+            }
+            let idx = new_vertices.len() as u32;
+            map.insert(key, idx);
+            remap.push(idx);
+            new_vertices.push(v);
+            if i < mesh.normals.len() {
+                new_normals.push(mesh.normals[i]);
+            } else {
+                new_normals.push(Vec3::ZERO);
+            }
+            if i < mesh.uvs.len() {
+                new_uvs.push(mesh.uvs[i]);
+            }
+        }
+
+        let mut new_indices: Vec<u32> = Vec::with_capacity(mesh.indices.len());
+        for tri in mesh.indices.chunks(3) {
+            if tri.len() != 3 {
+                continue;
+            }
+            let a = remap[tri[0] as usize];
+            let b = remap[tri[1] as usize];
+            let c = remap[tri[2] as usize];
+            if a == b || b == c || a == c {
+                continue;
+            }
+            new_indices.push(a);
+            new_indices.push(b);
+            new_indices.push(c);
+        }
+
+        (new_vertices, new_normals, new_uvs, new_indices)
     };
 
-    let mut map: HashMap<(i64, i64, i64), u32> = HashMap::new();
-    let mut remap: Vec<u32> = Vec::with_capacity(mesh.vertices.len());
-    let mut new_vertices: Vec<Vec3> = Vec::new();
-    let mut new_normals: Vec<Vec3> = Vec::new();
-    let mut new_uvs: Vec<[f32; 2]> = Vec::new();
-
-    for (i, v) in mesh.vertices.iter().copied().enumerate() {
-        let key = quantize(v);
-        if let Some(&idx) = map.get(&key) {
-            remap.push(idx);
-            continue;
-        }
-        let idx = new_vertices.len() as u32;
-        map.insert(key, idx);
-        remap.push(idx);
-        new_vertices.push(v);
-        if i < mesh.normals.len() {
-            new_normals.push(mesh.normals[i]);
-        } else {
-            new_normals.push(Vec3::ZERO);
-        }
-        if i < mesh.uvs.len() {
-            new_uvs.push(mesh.uvs[i]);
-        }
-    }
-
-    let mut new_indices: Vec<u32> = Vec::with_capacity(mesh.indices.len());
-    for tri in mesh.indices.chunks(3) {
-        if tri.len() != 3 {
-            continue;
-        }
-        let a = remap[tri[0] as usize];
-        let b = remap[tri[1] as usize];
-        let c = remap[tri[2] as usize];
-        // 跳过退化三角形（顶点重合）
-        if a == b || b == c || a == c {
-            continue;
-        }
-        new_indices.push(a);
-        new_indices.push(b);
-        new_indices.push(c);
+    let (mut new_vertices, mut new_normals, mut new_uvs, mut new_indices) = build_welded(precision);
+    if original_triangles > 0 && new_indices.is_empty() {
+        // 退化保护：如果量化过粗导致所有三角形都被过滤掉，则提高精度重试。
+        // 经验上放大 1000 倍（例如 0.1 -> 0.0001）能避免“薄壁/细小三角形”被合并塌陷。
+        let retry_precision = (precision * 1000.0).min(1_000_000_000.0);
+        (new_vertices, new_normals, new_uvs, new_indices) = build_welded(retry_precision);
     }
 
     mesh.vertices = new_vertices;
@@ -4351,9 +4371,9 @@ mod closure_tests {
         // 生成 mesh
         let mesh = unit_cylinder_mesh(&settings, false);
 
-        // 获取 resolution (根据 radius=0.5 计算)
-        let resolution = compute_radial_segments(&settings, 0.5, false, 3);
-        let height_segments = compute_height_segments(&settings, 1.0, false, 1);
+        // 获取 resolution (根据 UNIT_MESH_SCALE/2.0 计算)
+        let resolution = compute_radial_segments(&settings, UNIT_MESH_SCALE / 2.0, false, 3);
+        let height_segments = compute_height_segments(&settings, UNIT_MESH_SCALE, false, 1);
 
         // 验证索引数量
         // 侧面三角形数 = height_segments * resolution * 2 (每个quad 2个三角形)

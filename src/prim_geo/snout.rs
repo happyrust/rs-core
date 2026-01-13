@@ -1,3 +1,4 @@
+use crate::geometry::csg::UNIT_MESH_SCALE;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
@@ -234,10 +235,19 @@ impl BrepShapeTrait for LSnout {
         if self.poff.abs() > f32::EPSILON {
             Vec3::ONE
         } else {
+            // 除以 UNIT_MESH_SCALE 以补偿单位网格的放大
             if self.pbdm < 0.001 {
-                Vec3::new(self.ptdm, self.ptdm, pheight)
+                Vec3::new(
+                    self.ptdm / UNIT_MESH_SCALE,
+                    self.ptdm / UNIT_MESH_SCALE,
+                    pheight / UNIT_MESH_SCALE,
+                )
             } else {
-                Vec3::new(self.pbdm, self.pbdm, pheight)
+                Vec3::new(
+                    self.pbdm / UNIT_MESH_SCALE,
+                    self.pbdm / UNIT_MESH_SCALE,
+                    pheight / UNIT_MESH_SCALE,
+                )
             }
         }
     }

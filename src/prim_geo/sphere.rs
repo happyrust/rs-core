@@ -1,3 +1,4 @@
+use crate::geometry::csg::UNIT_MESH_SCALE;
 use glam::Vec3;
 use hexasphere::shapes::IcoSphere;
 use std::f64::consts::PI;
@@ -84,7 +85,7 @@ impl BrepShapeTrait for Sphere {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::splat(self.radius)
+        Vec3::splat(self.radius / UNIT_MESH_SCALE)
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

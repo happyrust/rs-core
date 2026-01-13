@@ -1,3 +1,4 @@
+use crate::geometry::csg::UNIT_MESH_SCALE;
 use bevy_ecs::prelude::*;
 use bevy_transform::prelude::Transform;
 use glam::{DVec2, DVec3, Quat, Vec3};
@@ -267,7 +268,7 @@ impl BrepShapeTrait for CTorus {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        Vec3::splat(self.rout)
+        Vec3::splat(self.rout / UNIT_MESH_SCALE)
     }
 
     fn tol(&self) -> f32 {

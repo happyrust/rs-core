@@ -1,3 +1,4 @@
+use crate::geometry::csg::UNIT_MESH_SCALE;
 use crate::NamedAttrMap;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::basic::*;
@@ -80,7 +81,7 @@ impl BrepShapeTrait for SBox {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        self.size
+        self.size / UNIT_MESH_SCALE
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

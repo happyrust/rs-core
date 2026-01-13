@@ -1,3 +1,4 @@
+use crate::geometry::csg::UNIT_MESH_SCALE;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use bevy_ecs::prelude::*;
 use bevy_transform::prelude::Transform;
@@ -404,7 +405,12 @@ impl BrepShapeTrait for SCylinder {
         if self.is_sscl() {
             Vec3::new(1.0, 1.0, 1.0)
         } else {
-            Vec3::new(self.pdia, self.pdia, self.phei.abs())
+            // 除以 UNIT_MESH_SCALE 以补偿单位网格的放大
+            Vec3::new(
+                self.pdia / UNIT_MESH_SCALE,
+                self.pdia / UNIT_MESH_SCALE,
+                self.phei.abs() / UNIT_MESH_SCALE,
+            )
         }
     }
 
