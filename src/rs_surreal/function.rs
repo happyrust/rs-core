@@ -40,7 +40,16 @@ pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result
             entry.path()
         })
         .collect::<Vec<PathBuf>>();
-    for file in target_dir {
+
+    // 只加载 SurrealQL 脚本，避免把 .bat/.sh/.md 等文件当成查询执行导致解析失败
+    let mut surql_files: Vec<PathBuf> = target_dir
+        .into_iter()
+        .filter(|p| p.is_file())
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("surql"))
+        .collect();
+    surql_files.sort();
+
+    for file in surql_files {
         println!(
             "载入surreal {}",
             file.file_name().unwrap().to_str().unwrap().to_string()
