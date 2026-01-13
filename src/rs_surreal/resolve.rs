@@ -428,12 +428,14 @@ pub fn eval_str_to_f64(
         .unwrap();
     // 将NEXT PREV 的值统一换成参考号，然后 context_params 要存储 参考号对应的 attr，要是它这个值没有求解，
     // 相当于要递归去求值
-    let rpro_re = Regex::new(r"(RPRO)\s+([a-zA-Z0-9]+)").unwrap();
+    // 匹配 "RPRO GANG" 或 "RPRO_GANG" 两种格式，修复单位验证被绕过的问题
+    let rpro_re = Regex::new(r"(RPRO)[_\s]+([a-zA-Z0-9]+)").unwrap();
     if new_exp.contains("RPRO") {
         new_exp = replace_all_result(&rpro_re, &new_exp, |caps: &Captures| {
-            let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
-            let default_key: String = format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
-            let key_type: String = format!("{}_{}_default_type", &caps[1], &caps[2]).into();
+            // 无论匹配到的是空格还是下划线，都统一生成 RPRO_KEY 格式
+            let key: String = format!("RPRO_{}", &caps[2]).into();
+            let default_key: String = format!("RPRO_{}_default_expr", &caps[2]).into();
+            let key_type: String = format!("RPRO_{}_default_type", &caps[2]).into();
             let unit_type = context.get(&key_type).unwrap_or_default();
             if (!unit_type.is_empty() && unit_type != dtse_unit)
                 && !check_unit_compatible(dtse_unit, &unit_type)
@@ -490,7 +492,8 @@ pub fn eval_str_to_f64(
         crate::debug_model_debug!("   🔁 开始替换循环，初始表达式: {}", result_exp);
     }
 
-    for loop_idx in 0..30 {
+    const MAX_SUBSTITUTION_LOOPS: usize = 30;
+    for loop_idx in 0..MAX_SUBSTITUTION_LOOPS {
         for caps in re.captures_iter(&new_exp) {
             let s = caps[0].trim();
             if INTERNAL_PDMS_EXPRESS.contains(&s) {
@@ -622,9 +625,9 @@ pub fn eval_str_to_f64(
             crate::debug_model_debug!("   🔄 开始替换 RPRO 引用");
             result_exp = rpro_re
                 .replace_all(&result_exp, |caps: &Captures| {
-                    let key: String = format!("{}_{}", &caps[1], &caps[2]).into();
-                    let default_key: String =
-                        format!("{}_{}_default_expr", &caps[1], &caps[2]).into();
+                    // 统一使用 RPRO_KEY 格式
+                    let key: String = format!("RPRO_{}", &caps[2]).into();
+                    let default_key: String = format!("RPRO_{}_default_expr", &caps[2]).into();
 
                     let value = context.get(&key).map(|x| x.to_string()).unwrap_or(
                         context

@@ -38,7 +38,8 @@ pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
     if !refnos.is_empty() {
         refnos
             .iter()
-            .map(|x| x.to_inst_relate_key())
+            // 统一使用尖括号形式，避免生成 `inst_relate:17496_106028` 这类在 SurrealQL 中不稳定/不可解析的 key
+            .map(|x| format!("inst_relate:⟨{}⟩", x))
             .collect::<Vec<_>>()
             .join(",")
         // format!("array::flatten([{pes}]->inst_relate)")

@@ -36,7 +36,8 @@ pub async fn query_manifold_boolean_operations_optimized(
         sesno: u32,
         noun: String,
         wt: crate::rs_surreal::geometry_query::PlantTransform,
-        aabb: crate::types::PlantAabb,
+        #[serde(default)]
+        aabb: Option<crate::types::PlantAabb>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
@@ -44,6 +45,8 @@ pub async fn query_manifold_boolean_operations_optimized(
         id: crate::types::RecordId,
         trans: crate::rs_surreal::geometry_query::PlantTransform,
     }
+
+    use anyhow::Context as _;
 
     let pe_key = refno.to_pe_key();
 
@@ -56,20 +59,33 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             world_trans.d AS wt,
-            (select value out.d from in->inst_relate_aabb limit 1)[0] AS aabb
+            ((select value out.d from ->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
         FROM inst_relate:{refno}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
-            AND array::len(in->inst_relate_aabb) > 0
+            AND array::len(->inst_relate_aabb) > 0
         LIMIT 1
         "#
     );
 
-    let base_info: Vec<PosEntityBase> = SUL_DB.query_take(&sql_base, 0).await?;
+    let base_info: Vec<PosEntityBase> = SUL_DB
+        .query_take(&sql_base, 0)
+        .await
+        .with_context(|| format!("sql_base 查询失败，SQL={}", sql_base))?;
     if base_info.is_empty() {
         return Ok(Vec::new());
     }
     let base = base_info.into_iter().next().unwrap();
+    let PosEntityBase {
+        refno,
+        sesno,
+        noun,
+        wt,
+        aabb,
+    } = base;
+    let Some(aabb) = aabb else {
+        return Ok(Vec::new());
+    };
 
     // 步骤2：获取正几何（Compound/Pos类型）
     let sql_pos_geos = format!(
@@ -79,7 +95,10 @@ pub async fn query_manifold_boolean_operations_optimized(
         WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE
         "#
     );
-    let pos_geos: Vec<PosGeometry> = SUL_DB.query_take(&sql_pos_geos, 0).await?;
+    let pos_geos: Vec<PosGeometry> = SUL_DB
+        .query_take(&sql_pos_geos, 0)
+        .await
+        .with_context(|| format!("sql_pos_geos 查询失败，SQL={}", sql_pos_geos))?;
     let ts = pos_geos.into_iter().map(|g| (g.id, g.trans)).collect();
 
     // 步骤3：直接从 neg_relate 和 ngmr_relate 获取切割几何（新结构简化版）
@@ -137,11 +156,11 @@ pub async fn query_manifold_boolean_operations_optimized(
 
     // 步骤6：组装最终结果
     let result = ManiGeoTransQuery {
-        refno: base.refno,
-        sesno: base.sesno,
-        noun: base.noun,
-        inst_world_trans: base.wt,
-        aabb: base.aabb,
+        refno,
+        sesno,
+        noun,
+        inst_world_trans: wt,
+        aabb,
         pos_geos: ts,
         neg_ts,
     };
@@ -182,7 +201,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         sesno: u32,
         noun: String,
         wt: crate::rs_surreal::geometry_query::PlantTransform,
-        aabb: crate::types::PlantAabb,
+        #[serde(default)]
+        aabb: Option<crate::types::PlantAabb>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
@@ -190,6 +210,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         id: crate::types::RecordId,
         trans: crate::rs_surreal::geometry_query::PlantTransform,
     }
+
+    use anyhow::Context as _;
 
     // 步骤1：批量获取所有正实体基础信息
     // 查询尚未成功布尔运算的实体（bool_status != 'Success'）
@@ -203,15 +225,18 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             world_trans.d AS wt,
-            (select value out.d from in->inst_relate_aabb limit 1)[0] AS aabb
+            ((select value out.d from ->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
         FROM {inst_keys}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
-            AND array::len(in->inst_relate_aabb) > 0
+            AND array::len(->inst_relate_aabb) > 0
         "#
     );
 
-    let base_infos: Vec<PosEntityBase> = SUL_DB.query_take(&sql_bases, 0).await?;
+    let base_infos: Vec<PosEntityBase> = SUL_DB
+        .query_take(&sql_bases, 0)
+        .await
+        .with_context(|| format!("sql_bases 查询失败，SQL={}", sql_bases))?;
     let mut base_map: HashMap<RefnoEnum, PosEntityBase> = HashMap::new();
     for base in base_infos {
         base_map.insert(base.refno, base);
@@ -235,7 +260,10 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         geos: Vec<PosGeometry>,
     }
 
-    let pos_geo_results: Vec<PosGeosResult> = SUL_DB.query_take(&sql_all_pos_geos, 0).await?;
+    let pos_geo_results: Vec<PosGeosResult> = SUL_DB
+        .query_take(&sql_all_pos_geos, 0)
+        .await
+        .with_context(|| format!("sql_all_pos_geos 查询失败，SQL={}", sql_all_pos_geos))?;
     let mut pos_geo_map: HashMap<
         RefnoEnum,
         Vec<(
@@ -375,7 +403,10 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 sesno: base.sesno,
                 noun: base.noun,
                 inst_world_trans: base.wt,
-                aabb: base.aabb,
+                aabb: match base.aabb {
+                    Some(aabb) => aabb,
+                    None => continue,
+                },
                 pos_geos: ts,
                 neg_ts,
             });

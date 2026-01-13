@@ -1,4 +1,5 @@
 -- DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
+DEFINE TABLE IF NOT EXISTS inst_info;
 
 REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
@@ -993,9 +994,6 @@ DEFINE FUNCTION fn::collect_descendants_filter_inst(
 -- ============================================================================
 DEFINE TABLE inst_relate_aabb SCHEMALESS;
 DEFINE FIELD refno ON TABLE inst_relate_aabb TYPE record<pe>;
-DEFINE FIELD aabb ON TABLE inst_relate_aabb TYPE record<aabb>;
-DEFINE FIELD source ON TABLE inst_relate_aabb TYPE option<string>;
-DEFINE FIELD updated_at ON TABLE inst_relate_aabb TYPE option<datetime> DEFAULT time::now();
 DEFINE INDEX idx_inst_relate_aabb_refno ON TABLE inst_relate_aabb COLUMNS refno UNIQUE;
 
 DEFINE TABLE inst_relate_bool SCHEMALESS;

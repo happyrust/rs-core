@@ -136,10 +136,93 @@ impl ManifoldRust {
             return Ok(Self::new());
         }
 
-        Ok(Self::from_mesh(&ManifoldMeshRust {
-            vertices: all_vertices,
-            indices: all_indices,
-        }))
+        // 关键：GLB 中的网格不保证是“共享顶点拓扑”，需要在这里做顶点焊接，
+        // 否则 Manifold::to_manifold 可能输出 0 三角形（典型：BOX 类 24 顶点/12 三角形的 per-face mesh）。
+        let build_welded = |precision: f64| -> (Vec<f32>, Vec<u32>) {
+            let mut map: HashMap<(i64, i64, i64), u32> = HashMap::new();
+            let mut remap: Vec<u32> = Vec::with_capacity(all_vertices.len() / 3);
+            let mut welded_vertices: Vec<f32> = Vec::new();
+
+            for i in (0..all_vertices.len()).step_by(3) {
+                let x = all_vertices[i] as f64;
+                let y = all_vertices[i + 1] as f64;
+                let z = all_vertices[i + 2] as f64;
+                let key = ManifoldMeshRust::quantize_vertex(x, y, z, precision);
+                if let Some(&idx) = map.get(&key) {
+                    remap.push(idx);
+                    continue;
+                }
+                let idx = (welded_vertices.len() / 3) as u32;
+                map.insert(key, idx);
+                remap.push(idx);
+                welded_vertices.push(x as f32);
+                welded_vertices.push(y as f32);
+                welded_vertices.push(z as f32);
+            }
+
+            let mut welded_indices: Vec<u32> = Vec::with_capacity(all_indices.len());
+            for tri in all_indices.chunks(3) {
+                if tri.len() != 3 {
+                    continue;
+                }
+                let a = remap[tri[0] as usize];
+                let b = remap[tri[1] as usize];
+                let c = remap[tri[2] as usize];
+                if a == b || b == c || a == c {
+                    continue;
+                }
+                welded_indices.extend_from_slice(&[a, b, c]);
+            }
+
+            (welded_vertices, welded_indices)
+        };
+
+        // 估算自适应精度（基于当前已应用 mat4 的坐标）
+        let mut min_x = f32::MAX;
+        let mut max_x = f32::MIN;
+        let mut min_y = f32::MAX;
+        let mut max_y = f32::MIN;
+        let mut min_z = f32::MAX;
+        let mut max_z = f32::MIN;
+        for i in (0..all_vertices.len()).step_by(3) {
+            let x = all_vertices[i];
+            let y = all_vertices[i + 1];
+            let z = all_vertices[i + 2];
+            min_x = min_x.min(x);
+            max_x = max_x.max(x);
+            min_y = min_y.min(y);
+            max_y = max_y.max(y);
+            min_z = min_z.min(z);
+            max_z = max_z.max(z);
+        }
+        let extent_x = (max_x - min_x).abs();
+        let extent_y = (max_y - min_y).abs();
+        let extent_z = (max_z - min_z).abs();
+        let min_extent = extent_x.min(extent_y).min(extent_z);
+
+        let mut precision: f64 = if min_extent < 0.1 {
+            100000.0
+        } else if min_extent < 1.0 {
+            10000.0
+        } else if min_extent < 10.0 {
+            1000.0
+        } else if min_extent < 100.0 {
+            100.0
+        } else {
+            10.0
+        };
+        if more_precision {
+            precision = (precision * 1000.0).min(1_000_000_000.0);
+        }
+
+        let input_triangles = all_indices.len() / 3;
+        let (mut vertices, mut indices) = build_welded(precision);
+        if input_triangles > 0 && indices.is_empty() {
+            let retry_precision = (precision * 1000.0).min(1_000_000_000.0);
+            (vertices, indices) = build_welded(retry_precision);
+        }
+
+        Ok(Self::from_mesh(&ManifoldMeshRust { vertices, indices }))
     }
 
     /// 导出到 GLB 文件
@@ -395,18 +478,62 @@ impl ManifoldMeshRust {
             return Self::new();
         }
 
-        // 应用变换矩阵到所有顶点
-        let mut transformed_vertices: Vec<f32> = Vec::with_capacity(vertices.len() * 3);
-        for v in &vertices {
-            let pt = mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
-            transformed_vertices.push(pt.x as f32);
-            transformed_vertices.push(pt.y as f32);
-            transformed_vertices.push(pt.z as f32);
+        let _ = ceil_or_trunc;
+
+        // 关键：对“非共享顶点”网格做顶点焊接（Manifold 需要共享拓扑）。
+        // 使用自适应量化精度，避免因坐标尺度不同导致过度/不足合并。
+        let base_precision = Self::compute_adaptive_precision(&vertices, &mat4) as f64;
+
+        let build = |precision: f64| -> (Vec<f32>, Vec<u32>) {
+            let mut map: HashMap<(i64, i64, i64), u32> = HashMap::new();
+            let mut remap: Vec<u32> = Vec::with_capacity(vertices.len());
+            let mut welded_vertices: Vec<f32> = Vec::new();
+
+            for v in &vertices {
+                let pt =
+                    mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
+                let key = Self::quantize_vertex(pt.x, pt.y, pt.z, precision);
+                if let Some(&idx) = map.get(&key) {
+                    remap.push(idx);
+                    continue;
+                }
+                let idx = (welded_vertices.len() / 3) as u32;
+                map.insert(key, idx);
+                remap.push(idx);
+                welded_vertices.push(pt.x as f32);
+                welded_vertices.push(pt.y as f32);
+                welded_vertices.push(pt.z as f32);
+            }
+
+            let mut welded_indices: Vec<u32> = Vec::with_capacity(indices.len());
+            for tri in indices.chunks(3) {
+                if tri.len() != 3 {
+                    continue;
+                }
+                let a = remap[tri[0] as usize];
+                let b = remap[tri[1] as usize];
+                let c = remap[tri[2] as usize];
+                if a == b || b == c || a == c {
+                    continue;
+                }
+                welded_indices.extend_from_slice(&[a, b, c]);
+            }
+
+            (welded_vertices, welded_indices)
+        };
+
+        let input_triangles = indices.len() / 3;
+        let (mut transformed_vertices, mut welded_indices) = build(base_precision);
+        if input_triangles > 0 && welded_indices.is_empty() {
+            // 退化保护：量化过粗时会把“薄壁/小三角形”合并塌陷成退化三角形，导致全被过滤。
+            // 这里提高精度重试（更细的网格单位）。
+            let retry_precision = (base_precision * 1000.0).min(1_000_000_000.0);
+            (transformed_vertices, welded_indices) = build(retry_precision);
         }
 
         Self {
             vertices: transformed_vertices,
-            indices,
+            indices: welded_indices,
         }
     }
 }

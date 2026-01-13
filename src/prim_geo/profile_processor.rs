@@ -240,8 +240,8 @@ impl ProfileProcessor {
             self.apply_boolean_operations(outer_polyline)?
         };
 
-        // 3. 提取 2D 轮廓点
-        let contour_points = self.polyline_to_2d_points(&final_polyline);
+        // 3. 提取 2D 轮廓点（用于三角化输入）
+        let contour_points_raw = self.polyline_to_2d_points(&final_polyline);
         // println!(
         //     "   最终轮廓点数: {} (原始: {})",
         //     contour_points.len(),
@@ -249,7 +249,11 @@ impl ProfileProcessor {
         // );
 
         // 4. 使用 i_triangle 进行三角化
-        let (tri_vertices, tri_indices) = self.triangulate_polyline(&contour_points)?;
+        let (tri_vertices, tri_indices) = self.triangulate_polyline(&contour_points_raw)?;
+
+        // 关键：后续拉伸体侧面/端面必须共用同一套顶点索引体系。
+        // 这里直接使用 i_triangle 输出的 points 作为最终轮廓点，保证 tri_indices 可直接复用。
+        let contour_points = tri_vertices.clone();
 
         // println!(
         //     "✅ [ProfileProcessor] 截面处理完成: {} 个三角形",
@@ -365,6 +369,9 @@ impl ProfileProcessor {
         // 去掉连续重复点，避免生成零长度边导致法线 NaN
         let mut points = Self::dedup_consecutive_points(points, 0.001);
 
+        // 去掉连续共线点，避免三角化产生细长/异常三角形（导致端面出现微小孔洞）
+        points = Self::dedup_collinear_points(points, 1e-2);
+
         // 统一外轮廓为逆时针，保证侧面法线指向外侧
         if points.len() > 2 && Self::signed_area_2d(&points) < 0.0 {
             points.reverse();
@@ -409,6 +416,45 @@ impl ProfileProcessor {
         }
 
         cleaned
+    }
+
+    /// 移除“连续共线且同向”的点（保留拐点）
+    fn dedup_collinear_points(points: Vec<Vec2>, area_eps: f32) -> Vec<Vec2> {
+        if points.len() < 3 {
+            return points;
+        }
+
+        // 最多迭代几轮，直到稳定（避免一次删除后引入新的共线）
+        let mut pts = points;
+        for _ in 0..4 {
+            if pts.len() < 3 {
+                break;
+            }
+            let n = pts.len();
+            let mut out: Vec<Vec2> = Vec::with_capacity(n);
+            for i in 0..n {
+                let prev = pts[(i + n - 1) % n];
+                let curr = pts[i];
+                let next = pts[(i + 1) % n];
+
+                let v1 = curr - prev;
+                let v2 = next - curr;
+                let cross = v1.x * v2.y - v1.y * v2.x;
+                let dot = v1.dot(v2);
+
+                // dot > 0 表示同向（避免删除 180° 反向折返的点）
+                if cross.abs() < area_eps && dot > 0.0 {
+                    continue;
+                }
+                out.push(curr);
+            }
+            if out.len() == pts.len() {
+                break;
+            }
+            pts = out;
+        }
+
+        pts
     }
 
     fn sample_arc_segment(
@@ -476,13 +522,69 @@ impl ProfileProcessor {
             return Err(anyhow!("i_triangle 三角化返回空结果"));
         }
 
-        let vertices: Vec<Vec2> = triangulation
+        // 关键：i_triangle 可能会对 points 做清理/重排，导致 triangulation.points 的顺序不一定等于输入顺序。
+        // 为了让拉伸体侧面保持“轮廓顺序”，这里固定使用输入 points 作为端面/侧面的共享顶点，
+        // 并将 i_triangle 的索引映射回输入 points 的索引。
+        use std::collections::HashMap;
+
+        let mut map: HashMap<(u32, u32), u32> = HashMap::with_capacity(points.len() * 2);
+        for (i, p) in points.iter().enumerate() {
+            let key = (p.x.to_bits(), p.y.to_bits());
+            map.entry(key).or_insert(i as u32);
+        }
+
+        let tri_points: Vec<Vec2> = triangulation
             .points
             .into_iter()
             .map(|p| Vec2::new(p[0], p[1]))
             .collect();
 
-        Ok((vertices, triangulation.indices))
+        // 快路径：如果 i_triangle 输出点集与输入点集顺序一致（仅存在浮点微小误差），直接复用 indices。
+        if tri_points.len() == points.len()
+            && tri_points
+                .iter()
+                .zip(points.iter())
+                .all(|(a, b)| a.distance(*b) < 1e-6)
+        {
+            return Ok((points.to_vec(), triangulation.indices));
+        }
+
+        let mut mapped = Vec::with_capacity(triangulation.indices.len());
+        for &idx in &triangulation.indices {
+            let p = tri_points
+                .get(idx as usize)
+                .ok_or_else(|| anyhow!("三角化索引越界: idx={}", idx))?;
+            let key = (p.x.to_bits(), p.y.to_bits());
+            if let Some(&orig) = map.get(&key) {
+                mapped.push(orig);
+                continue;
+            }
+
+            // 量化未命中时，做一次小范围最近邻兜底（避免极端浮点误差）
+            let mut best: Option<(u32, f32)> = None;
+            for (i, op) in points.iter().enumerate() {
+                let d = op.distance(*p);
+                match best {
+                    None => best = Some((i as u32, d)),
+                    Some((_, bd)) if d < bd => best = Some((i as u32, d)),
+                    _ => {}
+                }
+            }
+            let Some((best_i, best_d)) = best else {
+                return Err(anyhow!("三角化索引映射失败: idx={}", idx));
+            };
+            if best_d > 1e-4 {
+                return Err(anyhow!(
+                    "三角化索引映射失败: idx={}, best_d={} (points.len={})",
+                    idx,
+                    best_d,
+                    points.len()
+                ));
+            }
+            mapped.push(best_i);
+        }
+
+        Ok((points.to_vec(), mapped))
     }
 }
 
@@ -495,10 +597,8 @@ impl ProfileProcessor {
 /// - 所有面共享边缘顶点
 /// - 底面/顶面使用 i_triangle 三角化结果（支持凹多边形）
 pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh {
-    let n_contour = profile.contour_points.len();
-    let n_tri = profile.tri_vertices.len();
-
-    if n_contour < 3 || n_tri < 3 {
+    let n = profile.contour_points.len();
+    if n < 3 {
         return ExtrudedMesh {
             vertices: Vec::new(),
             normals: Vec::new(),
@@ -507,130 +607,85 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
         };
     }
 
-    let mut vertices = Vec::new();
-    let mut normals = Vec::new();
+    let mut vertices = Vec::with_capacity(2 * n);
+    let mut normals = vec![Vec3::ZERO; 2 * n];
     let mut indices = Vec::new();
-    let mut uvs = Vec::new();
+    let mut uvs = Vec::with_capacity(2 * n);
 
-    // ========== 1. 生成独立的顶点集（不共享）==========
-    // 底面顶点：索引 0..n_tri-1 (使用 tri_vertices)
-    // 顶面顶点：索引 n_tri..2*n_tri-1 (使用 tri_vertices)
-    // 侧面顶点：索引 2*n_tri..2*n_tri+2*n_contour-1（每个轮廓点对应两个侧面顶点）
-
-    // 底面顶点（使用 tri_vertices）
-    for point in &profile.tri_vertices {
-        vertices.push(Vec3::new(point.x, point.y, 0.0));
-        normals.push(Vec3::NEG_Z); // 底面法线朝下
-        uvs.push([point.x / 100.0, point.y / 100.0]);
-    }
-
-    // 顶面顶点（使用 tri_vertices）
-    for point in &profile.tri_vertices {
-        vertices.push(Vec3::new(point.x, point.y, height));
-        normals.push(Vec3::Z); // 顶面法线朝上
-        uvs.push([point.x / 100.0, point.y / 100.0]);
-    }
-
-    // 侧面顶点（使用 contour_points，每个轮廓点创建两个）
+    // ========== 1. 生成共享顶点集（保证 watertight）==========
+    // 底环: [0..n)
+    // 顶环: [n..2n)
     for point in &profile.contour_points {
-        // 底部侧面顶点
         vertices.push(Vec3::new(point.x, point.y, 0.0));
-        normals.push(Vec3::ZERO); // 稍后计算侧面法线
-        uvs.push([point.x / 100.0, point.y / 100.0]);
-
-        // 顶部侧面顶点
-        vertices.push(Vec3::new(point.x, point.y, height));
-        normals.push(Vec3::ZERO); // 稍后计算侧面法线
         uvs.push([point.x / 100.0, point.y / 100.0]);
     }
+    for point in &profile.contour_points {
+        vertices.push(Vec3::new(point.x, point.y, height));
+        uvs.push([point.x / 100.0, point.y / 100.0]);
+    }
+
+    // 轮廓绕向（用于统一三角形绕序）
+    let mut signed_area2 = 0.0f32;
+    for i in 0..n {
+        let p0 = profile.contour_points[i];
+        let p1 = profile.contour_points[(i + 1) % n];
+        signed_area2 += p0.x * p1.y - p1.x * p0.y;
+    }
+    let flip_winding = signed_area2 < 0.0;
+
+    let mut push_tri = |a: u32, b: u32, c: u32, vertices: &[Vec3], normals: &mut [Vec3], indices: &mut Vec<u32>| {
+        let (b, c) = if flip_winding { (c, b) } else { (b, c) };
+        indices.extend_from_slice(&[a, b, c]);
+        let v0 = vertices[a as usize];
+        let v1 = vertices[b as usize];
+        let v2 = vertices[c as usize];
+        let nrm = (v1 - v0).cross(v2 - v0).normalize_or_zero();
+        normals[a as usize] += nrm;
+        normals[b as usize] += nrm;
+        normals[c as usize] += nrm;
+    };
 
     // ========== 2. 生成侧面三角形 ==========
-    // 使用独立的侧面顶点
-    let side_base = (2 * n_tri) as u32;
-    for i in 0..n_contour {
-        let next = (i + 1) % n_contour;
-
-        // 侧面顶点索引
-        let sb0 = side_base + (2 * i) as u32; // 当前点的底部侧面顶点
-        let sb1 = side_base + (2 * next) as u32; // 下一个点的底部侧面顶点
-        let st0 = side_base + (2 * i + 1) as u32; // 当前点的顶部侧面顶点
-        let st1 = side_base + (2 * next + 1) as u32; // 下一个点的顶部侧面顶点
-
-        // 三角形1: sb0 -> sb1 -> st1 (逆时针，法线朝外)
-        indices.push(sb0);
-        indices.push(sb1);
-        indices.push(st1);
-
-        // 三角形2: sb0 -> st1 -> st0
-        indices.push(sb0);
-        indices.push(st1);
-        indices.push(st0);
+    for i in 0..n {
+        let next = (i + 1) % n;
+        let b0 = i as u32;
+        let b1 = next as u32;
+        let t0 = (n + i) as u32;
+        let t1 = (n + next) as u32;
+        push_tri(b0, b1, t1, &vertices, &mut normals, &mut indices);
+        push_tri(b0, t1, t0, &vertices, &mut normals, &mut indices);
     }
 
-    // ========== 3. 生成底面三角形（使用 i_triangle 结果）==========
-    // 底面法线朝下，需要反转三角形绕向
-    for chunk in profile.tri_indices.chunks(3) {
-        if chunk.len() == 3 {
-            // 反转绕向：0 -> 2 -> 1
-            indices.push(chunk[0]);
-            indices.push(chunk[2]);
-            indices.push(chunk[1]);
+    // ========== 3. 生成端面三角形（与侧面共享轮廓顶点）==========
+    for tri in profile.tri_indices.chunks(3) {
+        if tri.len() != 3 {
+            continue;
         }
-    }
-
-    // ========== 4. 生成顶面三角形（使用 i_triangle 结果）==========
-    // 顶面法线朝上，保持原始绕向
-    let top_base = n_tri as u32;
-    for chunk in profile.tri_indices.chunks(3) {
-        if chunk.len() == 3 {
-            indices.push(top_base + chunk[0]);
-            indices.push(top_base + chunk[1]);
-            indices.push(top_base + chunk[2]);
+        let a = tri[0];
+        let b = tri[1];
+        let c = tri[2];
+        if (a as usize) >= n || (b as usize) >= n || (c as usize) >= n {
+            continue;
         }
+
+        // 过滤几何退化三角形（共线/零面积），避免生成“孤岛三角形”导致开口或非流形
+        let p0 = profile.contour_points[a as usize];
+        let p1 = profile.contour_points[b as usize];
+        let p2 = profile.contour_points[c as usize];
+        let area2 = (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x);
+        if area2.abs() < 1e-1 {
+            continue;
+        }
+
+        // 顶面（+Z）
+        push_tri((n as u32) + a, (n as u32) + b, (n as u32) + c, &vertices, &mut normals, &mut indices);
+        // 底面（-Z），反向
+        push_tri(a, c, b, &vertices, &mut normals, &mut indices);
     }
 
-    // ========== 5. 计算侧面顶点法线 ==========
-    let mut side_normals = vec![Vec3::ZERO; 2 * n_contour];
-
-    for i in 0..n_contour {
-        let next = (i + 1) % n_contour;
-
-        // 三角形1的法线
-        let sb0_idx = 2 * i;
-        let sb1_idx = 2 * next;
-        let st1_idx = 2 * next + 1;
-
-        let v0 = vertices[2 * n_tri + sb0_idx];
-        let v1 = vertices[2 * n_tri + sb1_idx];
-        let v2 = vertices[2 * n_tri + st1_idx];
-
-        let edge1 = v1 - v0;
-        let edge2 = v2 - v0;
-        let face_normal = edge1.cross(edge2).normalize_or_zero();
-
-        side_normals[sb0_idx] += face_normal;
-        side_normals[sb1_idx] += face_normal;
-        side_normals[st1_idx] += face_normal;
-
-        // 三角形2的法线
-        let st0_idx = 2 * i + 1;
-
-        let v0 = vertices[2 * n_tri + sb0_idx];
-        let v1 = vertices[2 * n_tri + st1_idx];
-        let v2 = vertices[2 * n_tri + st0_idx];
-
-        let edge1 = v1 - v0;
-        let edge2 = v2 - v0;
-        let face_normal = edge1.cross(edge2).normalize_or_zero();
-
-        side_normals[sb0_idx] += face_normal;
-        side_normals[st1_idx] += face_normal;
-        side_normals[st0_idx] += face_normal;
-    }
-
-    // 将侧面法线写入 normals 数组
-    for (i, normal) in side_normals.into_iter().enumerate() {
-        normals[2 * n_tri + i] = normal.normalize_or_zero();
+    // ========== 4. 归一化顶点法线 ==========
+    for nrm in &mut normals {
+        *nrm = nrm.normalize_or_zero();
     }
 
     ExtrudedMesh {

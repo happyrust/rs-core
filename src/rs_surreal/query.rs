@@ -1416,7 +1416,7 @@ pub async fn query_group_by_cata_hash(
         .map(|x| x.to_pe_key())
         .collect::<Vec<_>>();
     let mut result_map: DashMap<String, CataHashRefnoKV> = DashMap::new();
-    for chunk in keys.chunks(20) {
+    for chunk in keys.chunks(540) {
         let sql = format!(
             r#"
             let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}])[? noun!=NONE && !deleted];
@@ -1427,7 +1427,6 @@ pub async fn query_group_by_cata_hash(
         "#,
             chunk.join(",")
         );
-        println!("query_group_by_cata_hash sql is {}", &sql);
         let mut response: Response = SUL_DB.query_response(sql).await?;
         // dbg!(&response);
         // 使用专门的结构体接收查询结果

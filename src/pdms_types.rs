@@ -111,6 +111,14 @@ pub const GNERAL_LOOP_OWNER_NOUN_NAMES: [&'static str; 9] = [
     "REVO",   // 旋转体
 ];
 
+/// BRAN 下属的组件类型名称
+pub const BRAN_COMPONENT_NOUN_NAMES: [&'static str; 45] = [
+    "AHU", "ATTA", "BATT", "BEND", "BRCO", "CAP", "CLOS", "COUP", "CROS", "DAMP", "DUCT", "ELBO",
+    "FBLI", "FILT", "FLAN", "FLEX", "FTUB", "GASK", "GRIL", "HACC", "HFAN", "IDAM", "INST", "MESH",
+    "OFST", "OLET", "PCOM", "PIPCA", "PLAT", "PTAP", "REDU", "SILE", "SPLR", "STIF", "STRT",
+    "TAPE", "TEE", "THRE", "TP", "TRAP", "TRNS", "UNIO", "VALV", "VTWA", "WELD",
+];
+
 ///使用元件库的实体类型名称
 pub const USE_CATE_NOUN_NAMES: [&'static str; 32] = [
     "FIXING", // 固定件
@@ -968,7 +976,17 @@ pub struct ChildrenNode {
 
 ///元件库哈希值与参考号的键值对结构体
 #[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
+#[derive(
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Default,
+    Component,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct CataHashRefnoKV {
     ///元件库哈希值
     #[serde(default)]

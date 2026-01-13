@@ -424,6 +424,52 @@ pub async fn collect_descendant_with_expr<T: SurrealValue>(
     Ok(result)
 }
 
+/// 批量查询多个节点的深层子孙节点 ID（更轻量的 ID-only 版本）
+///
+/// # 功能说明
+/// - 从多个起始节点出发，批量查询其所有子孙节点的 ID（`RefnoEnum`）
+/// - 可按指定类型（nouns）过滤结果，如果 nouns 为空则返回所有类型
+/// - 支持层级范围控制（range_str）
+/// - 自动去重并过滤掉无效的 none
+///
+/// # 设计说明
+/// 相比 `collect_descendant_with_expr(..., "VALUE id")`：
+/// - 该函数直接返回 `$ids`（record 数组），避免额外的 `SELECT VALUE id FROM $ids` 一次查询开销
+/// - 更适合“只要 ID 列表”的高频场景
+pub async fn collect_descendant_ids_batch(
+    refnos: &[RefnoEnum],
+    nouns: &[&str],
+    range_str: Option<&str>,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
+    let types_expr = if nouns.is_empty() {
+        "[]".to_string()
+    } else {
+        format!("[{}]", nouns_str)
+    };
+
+    let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
+    let refno_list = refno_keys.join(", ");
+
+    let range = range_str.unwrap_or("..");
+
+    let sql = format!(
+        r#"
+        array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
+            fn::collect_descendant_ids_by_types($refno, {}, none, "{}")
+        )), |$v| $v != none));
+        "#,
+        refno_list, types_expr, range
+    );
+
+    let result: Vec<RefnoEnum> = SUL_DB.query_take(&sql, 0).await?;
+    Ok(result)
+}
+
 /// 批量查询多个节点的深层子孙节点（按类型过滤）
 ///
 /// # 功能说明
@@ -451,8 +497,7 @@ pub async fn collect_descendant_filter_ids(
     nouns: &[&str],
     range_str: Option<&str>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    // 使用泛型函数，传入 "VALUE id" 表达式来获取 ID 列表
-    collect_descendant_with_expr(refnos, nouns, range_str, "VALUE id").await
+    collect_descendant_ids_batch(refnos, nouns, range_str).await
 }
 
 /// 批量查询多个节点的深层子孙节点（返回完整的 SPdmsElement）

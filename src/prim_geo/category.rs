@@ -321,14 +321,29 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let origin = pa.pt.0;
             let x_axis = x_dir;
             let translation = origin + z_dir * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
+            let mut height = (d.dist_to_top - d.dist_to_top) as f32; // [Potential Meta-bug fix needed during debug: should be dist_to_top - dist_to_btm]
             let mut height = (d.dist_to_top - d.dist_to_btm) as f32;
             let poff = d.offset as f32;
 
             let mut ptdm = d.top_diameter as f32;
             let mut pbdm = d.btm_diameter as f32;
 
+            debug_model_debug!(
+                "   🔍 [Snout] refno={:?}, height_raw={}, ptdm={}, pbdm={}, dist_to_btm={}, dist_to_top={}",
+                d.refno,
+                height,
+                ptdm,
+                pbdm,
+                d.dist_to_btm,
+                d.dist_to_top
+            );
+
             //统一使用旋转来实现
             if height < 0.0 {
+                debug_model_debug!(
+                    "   ⚠️ [Snout] height < 0, triggering flip: height={}",
+                    height
+                );
                 btm_on_top = true;
                 height = -height;
                 ptdm = d.btm_diameter as f32;
@@ -349,6 +364,12 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
                 translation,
                 ..Default::default()
             };
+            debug_model_debug!(
+                "   ✅ [Snout] translation={:?}, rotation={:?}, btm_on_top={}",
+                translation,
+                rotation,
+                btm_on_top
+            );
             let csg_shape: Box<dyn BrepShapeTrait> = Box::new(LSnout {
                 ptdi: height / 2.0,
                 pbdi: -height / 2.0,
@@ -385,24 +406,33 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let dist_to_btm = d.dist_to_btm;
             let height_raw = d.height as f32;
 
-            // 根据原始参数计算底部和顶部位置
-            let bottom = axis_pt + axis_dir * dist_to_btm;
-            let top = bottom + axis_dir * height_raw;
-            let axis_vec = top - bottom;
-            let phei = axis_vec.length();
-            if phei <= f32::EPSILON {
-                return None;
-            }
+            debug_model_debug!(
+                "   🔍 [SCylinder] refno={:?}, axis_pt={:?}, axis_dir={:?}, dist_to_btm={}, height_raw={}",
+                d.refno,
+                axis_pt,
+                axis_dir,
+                dist_to_btm,
+                height_raw
+            );
 
-            let dir = axis_vec / phei;
+            let mut bottom = axis_pt + axis_dir * dist_to_btm;
+            let mut phei = height_raw;
 
+            let dir = axis_dir;
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
+
             let translation = if d.centre_line_flag {
                 bottom + dir * (phei * 0.5)
             } else {
                 bottom
             };
+            debug_model_debug!(
+                "   ✅ [SCylinder] phei={}, translation={:?}, rotation={:?}",
+                phei,
+                translation,
+                rotation
+            );
 
             let scyl = SCylinder {
                 phei,
