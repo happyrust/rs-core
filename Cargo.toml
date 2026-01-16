@@ -131,6 +131,9 @@ surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "updated", 
     "protocol-ws",
     "kv-mem",
 ] }
+# surrealdb-types 必须作为独立依赖引入，因为 SurrealValue derive 宏生成的代码
+# 会引用 ::surrealdb_types 这个 crate 路径
+surrealdb-types = { git = "https://gitee.com/happydpc/surrealdb", branch = "updated" }
 num-traits = "0.2.17"
 regex = "1.11.3"
 petgraph = { version = "0.8.2", features = ["serde-1"] }
