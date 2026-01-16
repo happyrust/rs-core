@@ -101,3 +101,91 @@ async fn query_insts_returns_single_instance_from_mem_db() -> anyhow::Result<()>
 
     Ok(())
 }
+
+/// 验证 inst_relate_bool=Success 时，enable_holes=true 会优先返回 booled mesh。
+#[tokio::test]
+async fn query_insts_prefers_bool_mesh_when_inst_relate_bool_success() -> anyhow::Result<()> {
+    init_sul_db_with_memory().await?;
+
+    let setup_sql = r#"
+        CREATE pe:17496_1 CONTENT { noun: "BRAN" };
+        CREATE pe:17496_100 CONTENT {
+            owner: pe:17496_1,
+            noun: "PIPE"
+        };
+
+        CREATE vec3:1 CONTENT { d: [0.0, 0.0, 0.0] };
+        CREATE vec3:2 CONTENT { d: [1.0, 0.0, 0.0] };
+
+        CREATE inst_geo:demo_inst CONTENT {
+            meshed: true,
+            visible: true,
+            pts: [vec3:1, vec3:2],
+            unit_flag: false
+        };
+
+        CREATE inst_info:demo_info CONTENT {};
+
+        CREATE geo_relate:demo_gr CONTENT {
+            in: inst_info:demo_info,
+            out: inst_geo:demo_inst,
+            trans: {
+                d: {
+                    translation: [0.0, 0.0, 0.0],
+                    rotation: [0.0, 0.0, 0.0, 1.0],
+                    scale: [1.0, 1.0, 1.0]
+                }
+            },
+            visible: true,
+            meshed: true,
+            geo_type: "Pos"
+        };
+
+        CREATE aabb:demo_aabb CONTENT {
+            d: {
+                mins: [0.0, 0.0, 0.0],
+                maxs: [1.0, 1.0, 1.0]
+            }
+        };
+
+        CREATE inst_relate_aabb:17496_100 CONTENT {
+            in: pe:17496_100,
+            out: aabb:demo_aabb
+        };
+
+        CREATE inst_relate:17496_100 CONTENT {
+            in: pe:17496_100,
+            out: inst_info:demo_info,
+            generic: "PIPE",
+            world_trans: {
+                d: {
+                    translation: [0.0, 0.0, 0.0],
+                    rotation: [0.0, 0.0, 0.0, 1.0],
+                    scale: [1.0, 1.0, 1.0]
+                }
+            },
+            dt: time::now()
+        };
+
+        CREATE inst_relate_bool:17496_100 CONTENT {
+            refno: pe:17496_100,
+            mesh_id: "bool_mesh_17496_100",
+            status: "Success",
+            source: "test",
+            updated_at: time::now()
+        };
+    "#;
+
+    SUL_DB.query_response(setup_sql).await?;
+
+    let refno: RefnoEnum = "17496/100".into();
+    let insts = query_insts(&[refno.clone()], true).await?;
+
+    assert_eq!(insts.len(), 1);
+    let inst = &insts[0];
+    assert!(inst.has_neg, "写入 inst_relate_bool=Success 后应标记 has_neg=true");
+    assert_eq!(inst.insts.len(), 1, "booled mesh 应以单实例形式返回");
+    assert_eq!(inst.insts[0].geo_hash, "bool_mesh_17496_100");
+
+    Ok(())
+}

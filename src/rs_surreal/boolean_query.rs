@@ -39,8 +39,10 @@ pub async fn query_cata_neg_boolean_groups(
     );
 
     if !replace_exist {
-        // 仅处理尚未成功布尔运算的实体
-        sql.push_str("and (bool_status != 'Success' or bool_status = none)");
+        // 仅处理尚未成功的 catalog 布尔结果（使用独立表，避免与实例级布尔互相覆盖）
+        sql.push_str(
+            "and (SELECT status FROM inst_relate_cata_bool WHERE refno = in AND status = 'Success' LIMIT 1) = NONE",
+        );
     }
 
     SUL_DB.query_take(&sql, 0).await

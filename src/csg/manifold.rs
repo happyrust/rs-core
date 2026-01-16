@@ -353,10 +353,25 @@ impl ManifoldRust {
 
     pub fn get_mesh(&self) -> ManifoldMeshRust {
         let mesh = self.inner.to_mesh();
-        ManifoldMeshRust {
-            vertices: mesh.vertices(),
-            indices: mesh.indices(),
+        let prop_num = mesh.num_props() as usize;
+        let raw_vertices = mesh.vertices();
+        let indices = mesh.indices();
+
+        // manifold-rs 的 mesh 顶点可能包含额外属性（num_props > 3），这里统一压缩为 xyz 三分量，
+        // 避免下游（AABB/导出）误把属性当作位置坐标。
+        let mut vertices: Vec<f32> = Vec::new();
+        if prop_num >= 3 && !raw_vertices.is_empty() {
+            let vert_num = raw_vertices.len() / prop_num;
+            vertices.reserve(vert_num * 3);
+            for i in 0..vert_num {
+                let base = prop_num * i;
+                vertices.push(raw_vertices[base + 0]);
+                vertices.push(raw_vertices[base + 1]);
+                vertices.push(raw_vertices[base + 2]);
+            }
         }
+
+        ManifoldMeshRust { vertices, indices }
     }
 
     /// 不支持 subtract
@@ -442,12 +457,21 @@ impl ManifoldMeshRust {
     /// 计算网格的 AABB
     pub fn cal_aabb(&self) -> Option<parry3d::bounding_volume::Aabb> {
         use parry3d::bounding_volume::BoundingVolume;
+        if self.vertices.is_empty() {
+            return None;
+        }
         let mut aabb = parry3d::bounding_volume::Aabb::new_invalid();
         for chunk in self.vertices.chunks_exact(3) {
             aabb.take_point(parry3d::math::Point::new(chunk[0], chunk[1], chunk[2]));
         }
 
-        if glam::Vec3::from(aabb.mins).is_nan() || glam::Vec3::from(aabb.maxs).is_nan() {
+        let mins = glam::Vec3::from(aabb.mins);
+        let maxs = glam::Vec3::from(aabb.maxs);
+        if !mins.is_finite() || !maxs.is_finite() {
+            return None;
+        }
+        let ext_mag = aabb.extents().magnitude();
+        if !ext_mag.is_finite() || ext_mag <= 0.0 {
             return None;
         }
         Some(aabb)

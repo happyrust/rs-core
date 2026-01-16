@@ -17,8 +17,17 @@ DEFINE FUNCTION fn::query_sites_of_db($world_refno: record) {
     };
     
     -- 查询 WORLD 下的所有 SITE 子节点
-     let $sites = SELECT VALUE in FROM $world_refno<-pe_owner WHERE !deleted;
-    return $sites;
+    if !record::exists($world_refno) {
+        return [];
+    };
+
+    let $kids = $world_refno.children ?: [];
+    return array::filter($kids, |$c: any|
+        $c != NONE
+        && record::exists($c)
+        && !$c.deleted
+        && $c.noun == 'SITE'
+    );
 };
 
 -- 通过数据库编号直接获取所有 SITE 节点

@@ -834,7 +834,7 @@ pub async fn query_children_full_names_map(
 ) -> anyhow::Result<IndexMap<RefnoEnum, String>> {
     let mut response = SUL_DB
         .query(format!(
-            "select value [in, fn::default_full_name(in)] from {}<-pe_owner where record::exists(in)",
+            "select value [id, fn::default_full_name(id)] from {}.children where id!=none and record::exists(id) and !deleted",
             refno.to_pe_key()
         ))
         .await?;
@@ -1382,7 +1382,7 @@ pub async fn get_children_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEn
     }
 
     let sql = format!(
-        r#"select value in from {}<-pe_owner where in.id!=none and record::exists(in.id) and !in.deleted"#,
+        r#"select value id from {}.children where id!=none and record::exists(id) and !deleted"#,
         refno.to_pe_key()
     );
     SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await

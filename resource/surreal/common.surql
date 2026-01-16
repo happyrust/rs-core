@@ -531,7 +531,15 @@ DEFINE FUNCTION fn::next_type($pe:record) {
 REMOVE FUNCTION fn::children;
 -- 获取所有子节点（去重且排除已删除节点）
 DEFINE FUNCTION fn::children($pe:record) {
-    return array::distinct(select value in from $pe<-pe_owner where record::exists(in.id) and !in.deleted);
+    if !record::exists($pe) {
+        return [];
+    };
+    let $kids = $pe.children ?: [];
+    return array::distinct(array::filter($kids, |$c: any|
+        $c != NONE
+        && record::exists($c)
+        && !$c.deleted
+    ));
 };
 
 

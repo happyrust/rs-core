@@ -405,11 +405,20 @@ impl PlantMesh {
 
     ///计算aabb
     pub fn cal_aabb(&self) -> Option<Aabb> {
+        if self.vertices.is_empty() {
+            return None;
+        }
         let mut aabb = Aabb::new_invalid();
         self.vertices.iter().for_each(|v| {
             aabb.take_point(nalgebra::Point3::new(v.x, v.y, v.z));
         });
-        if Vec3::from(aabb.mins).is_nan() || Vec3::from(aabb.maxs).is_nan() {
+        let mins = Vec3::from(aabb.mins);
+        let maxs = Vec3::from(aabb.maxs);
+        if !mins.is_finite() || !maxs.is_finite() {
+            return None;
+        }
+        let ext_mag = aabb.extents().magnitude();
+        if !ext_mag.is_finite() || ext_mag <= 0.0 {
             return None;
         }
         Some(aabb)
@@ -566,7 +575,7 @@ impl PlantMesh {
     pub fn export_obj(&self, reverse: bool, file_path: &str) -> std::io::Result<()> {
         let mut buffer = BufWriter::new(File::create(file_path)?);
         buffer.write_all(b"# List of geometric vertices, with (x, y, z [,w]) coordinates, w is optional and defaults to 1.0.\n")?;
-        for (vd, n) in self.vertices.iter().zip(self.normals.iter()) {
+        for vd in &self.vertices {
             buffer.write_all(
                 format!(
                     "v {:.3} {:.3} {:.3}\n",
@@ -574,6 +583,8 @@ impl PlantMesh {
                 )
                 .as_ref(),
             )?;
+        }
+        for n in &self.normals {
             buffer.write_all(
                 format!(
                     "vn {:.3} {:.3} {:.3}\n",

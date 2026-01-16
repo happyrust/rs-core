@@ -112,14 +112,9 @@ pub async fn query_deep_visible_inst_refnos(refno: RefnoEnum) -> anyhow::Result<
         let children_refnos = super::get_children_refnos(refno).await?;
         return Ok(children_refnos);
     }
-    //TODO，这里可以采用ZONE作为中间层去加速这个过程
-    //按照所允许的层级关系去遍历？
-    let branch_refnos = super::query_filter_deep_children(refno, &["BRAN", "HANG"]).await?;
-
-    let mut target_refnos = super::query_multi_children_refnos(&branch_refnos).await?;
-
-    let visible_refnos = super::query_filter_deep_children(refno, &VISBILE_GEO_NOUNS).await?;
-    target_refnos.extend(visible_refnos);
+    let mut target_refnos = super::query_visible_geo_descendants(refno, true, None).await?;
+    target_refnos.sort();
+    target_refnos.dedup();
     Ok(target_refnos)
 }
 

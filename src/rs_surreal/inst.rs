@@ -338,7 +338,10 @@ pub async fn query_insts_with_batch(
         let inst_relate_keys: Vec<String> = chunk.iter().map(|r| r.to_inst_relate_key()).collect();
         let inst_relate_keys_str = inst_relate_keys.join(",");
 
-        let bool_mesh_expr = "(select mesh_id from inst_relate_bool where refno = in and status = 'Success' limit 1)[0]";
+        // ⚠️ SurrealQL 子查询中无法可靠引用外层 `in`（作用域/绑定问题），
+        // 这里改为通过 record id 直接定位 inst_relate_bool 记录：inst_relate_bool:⟨record::id(in)⟩
+        // 只有 status='Success' 时才返回 mesh_id。
+        let bool_mesh_expr = "if type::record(\"inst_relate_bool\", record::id(in)).status = 'Success' then type::record(\"inst_relate_bool\", record::id(in)).mesh_id else NONE end";
         let sql = if enable_holes {
             // enable_holes=true: 优先使用 booled_id（布尔后的 mesh）
             // - 如果 booled_id 存在：直接使用 booled_id 作为 geo_hash
@@ -350,17 +353,17 @@ pub async fn query_insts_with_batch(
             select
                 in.id as refno,
                 in.owner ?? in as owner, generic, world_trans.d as world_trans,
-                (select value out.d from in->inst_relate_aabb limit 1)[0] as world_aabb,
-                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                if {bool_mesh} != none then
+                (select value (out.d ?? NONE) from in->inst_relate_aabb limit 1)[0] as world_aabb,
+                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && (out.pts ?? NONE) != NONE limit 1)[0] as pts,
+                if ({bool_mesh} ?? NONE) != NONE then
                     [{{ "transform": world_trans.d, "geo_hash": {bool_mesh}, "is_tubi": false, "unit_flag": false }}]
                 else
-                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none &&  geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos'])
+                    (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && (trans.d ?? NONE) != NONE &&  geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos'])
                 end as insts,
-                {bool_mesh} != none as has_neg,
+                ({bool_mesh} ?? NONE) != NONE as has_neg,
                 <datetime>dt as date,
                 spec_value
-            from [{inst_relate_keys_str}] where world_trans.d != none
+            from [{inst_relate_keys_str}] where (world_trans.d ?? NONE) != NONE
         "#,
                 inst_relate_keys_str = inst_relate_keys_str,
                 bool_mesh = bool_mesh_expr
@@ -372,13 +375,13 @@ pub async fn query_insts_with_batch(
                 r#"
             select
                 in.id as refno,
-                in.owner ?? in as owner, generic, (select value out.d from in->inst_relate_aabb limit 1)[0] as world_aabb, world_trans.d as world_trans,
-                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && out.pts != none limit 1)[0] as pts,
-                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && trans.d != none && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
-                {bool_mesh} != none as has_neg,
+                in.owner ?? in as owner, generic, (select value (out.d ?? NONE) from in->inst_relate_aabb limit 1)[0] as world_aabb, world_trans.d as world_trans,
+                (select value out.pts.*.d from out->geo_relate where visible && out.meshed && (out.pts ?? NONE) != NONE limit 1)[0] as pts,
+                (select trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag from out->geo_relate where visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3']) && (trans.d ?? NONE) != NONE && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
+                ({bool_mesh} ?? NONE) != NONE as has_neg,
                 <datetime>dt as date,
                 spec_value
-            from [{inst_relate_keys_str}] where world_trans.d != none "#,
+            from [{inst_relate_keys_str}] where (world_trans.d ?? NONE) != NONE "#,
                 inst_relate_keys_str = inst_relate_keys_str,
                 bool_mesh = bool_mesh_expr
             )

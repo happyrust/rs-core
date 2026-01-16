@@ -48,7 +48,9 @@ pub async fn query_manifold_boolean_operations_optimized(
 
     use anyhow::Context as _;
 
-    let pe_key = refno.to_pe_key();
+    // 注意：inst_relate 的 record id 在 SurrealQL 中必须使用尖括号形式，
+    // 否则像 `17496_106028` 这类包含下划线的 key 可能不可解析。
+    let inst_key = format!("inst_relate:⟨{}⟩", refno);
 
     // 步骤1：获取正实体基础信息（使用索引优化）
     // 查询尚未成功布尔运算的实体（bool_status != 'Success'）
@@ -59,11 +61,11 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             world_trans.d AS wt,
-            ((select value out.d from ->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
-        FROM inst_relate:{refno}
+            ((select value (out.d ?? NONE) from in->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
+        FROM {inst_key}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
-            AND array::len(->inst_relate_aabb) > 0
+            AND array::len(in->inst_relate_aabb) > 0
         LIMIT 1
         "#
     );
@@ -105,7 +107,9 @@ pub async fn query_manifold_boolean_operations_optimized(
     // neg_relate/ngmr_relate 结构：in = geo_relate (切割几何), out = pe (被切割的正实体)
     // geo_relate 结构：in = pe (负载体), out = geo
     // 所以负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
-    let sql_neg = format!(
+    // 兼容两种 out：pe 与 inst_relate（历史/兼容写入）
+    let pe_key = refno.to_pe_key();
+    let sql_neg_pe = format!(
         r#"
         SELECT 
             in.out AS id,
@@ -118,9 +122,25 @@ pub async fn query_manifold_boolean_operations_optimized(
         WHERE in.trans.d != NONE
         "#
     );
-    let neg_results: Vec<NegInfo> = SUL_DB.query_take(&sql_neg, 0).await.unwrap_or_default();
+    let mut neg_results: Vec<NegInfo> = SUL_DB.query_take(&sql_neg_pe, 0).await.unwrap_or_default();
+    if neg_results.is_empty() {
+        let sql_neg_inst = format!(
+            r#"
+            SELECT 
+                in.out AS id,
+                in.geo_type AS geo_type,
+                in.para_type ?? "" AS para_type,
+                in.trans.d AS trans,
+                in.out.aabb.d AS aabb,
+                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+            FROM {inst_key}<-neg_relate
+            WHERE in.trans.d != NONE
+            "#
+        );
+        neg_results = SUL_DB.query_take(&sql_neg_inst, 0).await.unwrap_or_default();
+    }
 
-    let sql_ngmr = format!(
+    let sql_ngmr_pe = format!(
         r#"
         SELECT 
             in.out AS id,
@@ -133,7 +153,23 @@ pub async fn query_manifold_boolean_operations_optimized(
         WHERE in.trans.d != NONE
         "#
     );
-    let ngmr_results: Vec<NegInfo> = SUL_DB.query_take(&sql_ngmr, 0).await.unwrap_or_default();
+    let mut ngmr_results: Vec<NegInfo> = SUL_DB.query_take(&sql_ngmr_pe, 0).await.unwrap_or_default();
+    if ngmr_results.is_empty() {
+        let sql_ngmr_inst = format!(
+            r#"
+            SELECT 
+                in.out AS id,
+                in.geo_type AS geo_type,
+                in.para_type ?? "" AS para_type,
+                in.trans.d AS trans,
+                in.out.aabb.d AS aabb,
+                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+            FROM {inst_key}<-ngmr_relate
+            WHERE in.trans.d != NONE
+            "#
+        );
+        ngmr_results = SUL_DB.query_take(&sql_ngmr_inst, 0).await.unwrap_or_default();
+    }
 
     // 合并切割几何
     let mut neg_infos: Vec<NegInfo> = neg_results;
@@ -215,9 +251,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
 
     // 步骤1：批量获取所有正实体基础信息
     // 查询尚未成功布尔运算的实体（bool_status != 'Success'）
-    // 注意：需要使用 inst_relate 表的 key（inst_relate:17496_106028 格式）
+    // 注意：需要使用 inst_relate 表的 key（inst_relate:⟨17496_106028⟩ 形式）
     let inst_keys = get_inst_relate_keys(refnos);
-    let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
     let sql_bases = format!(
         r#"
         SELECT 
@@ -225,11 +260,11 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             world_trans.d AS wt,
-            ((select value out.d from ->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
+            ((select value (out.d ?? NONE) from in->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
         FROM {inst_keys}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
-            AND array::len(->inst_relate_aabb) > 0
+            AND array::len(in->inst_relate_aabb) > 0
         "#
     );
 
@@ -303,12 +338,13 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
 
     for refno in refnos {
         let pe_key = refno.to_pe_key();
+        let inst_key = format!("inst_relate:⟨{}⟩", refno);
 
         // 查询 neg_relate: in = geo_relate (Neg类型切割几何)
         // neg_relate 结构: in = geo_relate, out = 被切割的正实体
         // geo_relate 结构: in = 负载体 pe, out = geo
         // 所以负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
-        let sql_neg = format!(
+        let sql_neg_pe = format!(
             r#"
             SELECT 
                 in.out AS id,
@@ -321,13 +357,29 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             WHERE in.trans.d != NONE
             "#
         );
-        let neg_results: Vec<NegGeoResult> =
-            SUL_DB.query_take(&sql_neg, 0).await.unwrap_or_default();
+        let mut neg_results: Vec<NegGeoResult> =
+            SUL_DB.query_take(&sql_neg_pe, 0).await.unwrap_or_default();
+        if neg_results.is_empty() {
+            let sql_neg_inst = format!(
+                r#"
+                SELECT 
+                    in.out AS id,
+                    in.geo_type AS geo_type, 
+                    in.para_type ?? "" AS para_type,
+                    in.trans.d AS trans,
+                    in.out.aabb.d AS aabb,
+                    array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                FROM {inst_key}<-neg_relate
+                WHERE in.trans.d != NONE
+                "#
+            );
+            neg_results = SUL_DB.query_take(&sql_neg_inst, 0).await.unwrap_or_default();
+        }
 
         // 查询 ngmr_relate: in = geo_relate (CataCrossNeg类型切割几何)
         // ngmr_relate 结构同 neg_relate: in = geo_relate, out = 被切割的正实体
         // 负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
-        let sql_ngmr = format!(
+        let sql_ngmr_pe = format!(
             r#"
             SELECT 
                 in.out AS id,
@@ -340,17 +392,29 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             WHERE in.trans.d != NONE
             "#
         );
-        let ngmr_results: Vec<NegGeoResult> = match SUL_DB.query_take(&sql_ngmr, 0).await {
+        let mut ngmr_results: Vec<NegGeoResult> = match SUL_DB.query_take(&sql_ngmr_pe, 0).await {
             Ok(results) => results,
             Err(e) => {
                 eprintln!("[DEBUG] ngmr_relate 查询失败 for {}: {}", pe_key, e);
-                // 打印原始查询结果以便调试
-                if let Ok(raw) = SUL_DB.query(&sql_ngmr).await {
-                    eprintln!("[DEBUG] 原始查询结果: {:?}", raw);
-                }
                 Vec::new()
             }
         };
+        if ngmr_results.is_empty() {
+            let sql_ngmr_inst = format!(
+                r#"
+                SELECT 
+                    in.out AS id,
+                    in.geo_type AS geo_type,
+                    in.para_type ?? "" AS para_type,
+                    in.trans.d AS trans,
+                    in.out.aabb.d AS aabb,
+                    array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                FROM {inst_key}<-ngmr_relate
+                WHERE in.trans.d != NONE
+                "#
+            );
+            ngmr_results = SUL_DB.query_take(&sql_ngmr_inst, 0).await.unwrap_or_default();
+        }
 
         // 合并结果
         let mut neg_infos = Vec::new();
