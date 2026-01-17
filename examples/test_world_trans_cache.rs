@@ -1,16 +1,16 @@
 /// 测试世界变换矩阵缓存机制
 ///
 /// 此示例验证：
-/// 1. 首次调用 get_world_mat4 时计算并缓存到 PE 表
+/// 1. 首次调用 get_world_mat4 时计算并缓存到 pe_transform 表
 /// 2. 第二次调用时从缓存读取（提高性能）
 /// 3. 缓存失效机制正常工作
-use aios_core::{RefnoEnum, get_pe, init_surreal, pe_key};
+use aios_core::{init_surreal, pe_key, query_pe_transform};
 use anyhow::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // 初始化数据库连接
-    init_surreal().await;
+    init_surreal().await?;
 
     // 使用一个测试 refno (请根据实际数据库修改)
     let test_refno = pe_key!("17496_172825");
@@ -40,9 +40,9 @@ async fn main() -> Result<()> {
 
     // 第三步：验证缓存已写入数据库
     println!("📝 步骤 3: 验证缓存已写入数据库");
-    if let Some(pe) = get_pe(test_refno).await? {
-        if let Some(world_trans) = &pe.world_trans {
-            println!("✅ 缓存已写入 PE 表");
+    if let Some(cache) = query_pe_transform(test_refno).await? {
+        if let Some(world_trans) = &cache.world {
+            println!("✅ 缓存已写入 pe_transform 表");
             println!("   Translation: {:?}", world_trans.translation);
             println!("   Rotation: {:?}", world_trans.rotation);
             println!("   Scale: {:?}\n", world_trans.scale);

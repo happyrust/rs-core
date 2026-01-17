@@ -5,9 +5,15 @@
 //! to calculate only the local transform of each node relative to its parent, which can then
 //! be combined to get the world transform without recalculating from the root each time.
 
-use crate::rs_surreal::spatial::*;
+use crate::rs_surreal::pe_transform::{
+    PeTransformEntry, clear_pe_transform, ensure_pe_transform_schema, query_pe_transform,
+    save_pe_transform, save_pe_transform_entries,
+};
+use crate::rs_surreal::spatial::is_virtual_node;
 use crate::{
-    NamedAttrMap, RefnoEnum, SUL_DB, get_named_attmap,
+    DBType, NamedAttrMap, RefnoEnum, SUL_DB, SurrealQueryExt,
+    get_children_refnos, get_db_option,
+    get_mdb_world_site_ele_nodes, get_named_attmap,
     pdms_data::{PlinParam, PlinParamData},
     tool::{direction_parse::parse_expr_to_dir, math_tool::*},
 };
@@ -17,6 +23,7 @@ use cached::proc_macro::cached;
 use glam::{DMat3, DMat4, DQuat, DVec3};
 
 use glam::{Quat, Vec3};
+use std::collections::VecDeque;
 
 /// Compute a Transform that rotates from a standard up axis to the target PLAX.
 /// This should be applied in geo_relate.trans (orientation layer), not at mesh time.
@@ -70,7 +77,7 @@ pub fn calculate_plax_transform(plax: Vec3, standard_up: Vec3) -> Transform {
 /// * `Err` - If an error occurs during calculation
 #[cached(result = true)]
 pub async fn get_local_transform(refno: RefnoEnum) -> anyhow::Result<Option<Transform>> {
-    get_local_mat4(refno)
+    get_transform_mat4(refno, true)
         .await
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
@@ -159,21 +166,10 @@ pub async fn get_local_mat4(refno: RefnoEnum) -> anyhow::Result<Option<DMat4>> {
     strategy.get_local_transform().await
 }
 
-/// 使用策略模式重构的世界矩阵计算函数
+/// 获取变换矩阵（统一入口）
 ///
-/// 这是 `get_world_mat4` 的重构版本，使用新的策略系统（TransformStrategy）
+/// 此函数是获取本地变换和世界变换的统一入口点，使用策略系统（TransformStrategy）
 /// 来计算变换矩阵，提供更好的可维护性和扩展性。
-///
-/// # 特性标志
-///
-/// 此函数的行为受 `use_strategy_transform` 特性标志控制：
-/// - **启用时**：使用新的策略系统
-/// - **禁用时**：回退到旧的 `get_world_mat4` 实现
-///
-/// 默认情况下该特性是关闭的（opt-in 迁移策略），需要显式启用：
-/// ```bash
-/// cargo run --features use_strategy_transform
-/// ```
 ///
 /// # Arguments
 /// * `refno` - 目标构件的参考号
@@ -187,57 +183,101 @@ pub async fn get_local_mat4(refno: RefnoEnum) -> anyhow::Result<Option<DMat4>> {
 /// # 特性
 /// - 使用策略模式支持不同构件类型的专门计算逻辑
 /// - 与重构后的 `get_local_mat4` 函数集成
-/// - 保持与原函数相同的 API 接口
-/// - 支持缓存优化（从 PE 表的 world_trans 字段读取/写入缓存）
-/// - 生产安全的特性标志回退机制
-pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
-    // 如果不是 local 模式，先尝试从数据库缓存读取
-    if !is_local {
-        if let Ok(Some(pe)) = crate::get_pe(refno).await {
-            if let Some(world_trans) = pe.world_trans {
-                // 从 PlantTransform 转换为 DMat4
-                let mat4 = bevy_transform_to_dmat4(&world_trans.0);
-                #[cfg(feature = "debug_spatial")]
-                println!("🎯 Cache hit for world_trans: {}", refno);
-                return Ok(Some(mat4));
-            }
+/// - 支持缓存优化（从 pe_transform 表读取/写入缓存）
+pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
+    let cache = query_pe_transform(refno).await?;
+    let cached_local = cache.as_ref().and_then(|c| c.local.clone());
+    let cached_world = cache.as_ref().and_then(|c| c.world.clone());
+
+    if is_local {
+        if let Some(local) = cached_local {
+            let mat4 = bevy_transform_to_dmat4(&local);
+            #[cfg(feature = "debug_spatial")]
+            println!("🎯 Cache hit for pe_transform.local: {}", refno);
+            return Ok(Some(mat4));
         }
+    } else if let Some(world) = cached_world {
+        let mat4 = bevy_transform_to_dmat4(&world);
+        #[cfg(feature = "debug_spatial")]
+        println!("🎯 Cache hit for pe_transform.world: {}", refno);
+        return Ok(Some(mat4));
     }
 
-    // 缓存未命中，计算世界变换矩阵
-    let result = get_world_mat4_with_strategies_impl(refno, is_local).await?;
+    let local_mat = match cached_local {
+        Some(local) => Some(bevy_transform_to_dmat4(&local)),
+        None => get_local_mat4(refno).await?,
+    };
+    let world_mat = if is_local {
+        None
+    } else if let Some(world) = compute_world_from_parent(refno, local_mat).await? {
+        Some(world)
+    } else {
+        get_world_mat4_impl(refno, false).await?
+    };
 
-    // 如果计算成功且不是 local 模式，缓存结果到数据库
-    if !is_local {
-        if let Some(mat4) = result {
-            let transform = dmat4_to_bevy_transform(&mat4);
-            let plant_trans = crate::rs_surreal::PlantTransform(transform);
+    let local_trans = dmat4_to_transform_option(local_mat);
+    let world_trans = dmat4_to_transform_option(world_mat);
 
-            // 异步更新 PE 表的 world_trans 字段（不阻塞返回）
-            let refno_clone = refno;
-            tokio::spawn(async move {
-                let sql = format!(
-                    "UPDATE {} SET world_trans = $trans",
-                    refno_clone.to_pe_key()
-                );
-                let _ = SUL_DB.query(&sql).bind(("trans", plant_trans)).await;
-                #[cfg(feature = "debug_spatial")]
-                println!("💾 Cached world_trans for: {}", refno_clone);
-            });
-        }
+    if local_trans.is_some() || world_trans.is_some() {
+        let refno_clone = refno;
+        tokio::spawn(async move {
+            let _ = save_pe_transform(refno_clone, local_trans, world_trans).await;
+            #[cfg(feature = "debug_spatial")]
+            println!("💾 Cached pe_transform for: {}", refno_clone);
+        });
     }
 
-    Ok(result)
+    Ok(if is_local { local_mat } else { world_mat })
 }
 
-/// 新策略系统的具体实现
+async fn compute_world_from_parent(
+    refno: RefnoEnum,
+    local_mat: Option<DMat4>,
+) -> anyhow::Result<Option<DMat4>> {
+    let att = get_named_attmap(refno).await?;
+    let parent_refno = att.get_owner();
+    if parent_refno.is_unset() {
+        return Ok(Some(local_mat.unwrap_or(DMat4::IDENTITY)));
+    }
+
+    if let Ok(Some(parent_cache)) = query_pe_transform(parent_refno).await {
+        if let Some(parent_world) = parent_cache.world {
+            let parent_mat = bevy_transform_to_dmat4(&parent_world);
+            return Ok(Some(match local_mat {
+                Some(local) => parent_mat * local,
+                None => parent_mat,
+            }));
+        }
+    }
+
+    let parent_world = get_world_mat4_impl(parent_refno, false).await?;
+    Ok(parent_world.map(|parent_mat| match local_mat {
+        Some(local) => parent_mat * local,
+        None => parent_mat,
+    }))
+}
+
+/// 获取世界变换矩阵（向后兼容别名）
+///
+/// 此函数是 `get_transform_mat4` 的别名，为了保持向后兼容性而保留。
+/// 新代码建议直接使用 `get_transform_mat4`。
+///
+/// # Arguments
+/// * `refno` - 目标构件的参考号
+/// * `is_local` - 如果为 true，返回相对于父节点的局部变换；否则返回世界变换
+#[inline]
+pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
+    get_transform_mat4(refno, is_local).await
+}
+
+/// 世界矩阵计算的具体实现
 ///
 /// 此函数包含使用策略模式的世界矩阵计算逻辑
 ///
 /// # 优化策略
-/// - 在遍历祖先链时，检查是否有祖先节点已缓存 world_trans
+/// - 在遍历祖先链时，检查是否有祖先节点已缓存 pe_transform.world_trans
 /// - 如果找到缓存的祖先，从该点开始计算，避免重复计算
-async fn get_world_mat4_with_strategies_impl(
+async fn get_world_mat4_impl(
     refno: RefnoEnum,
     is_local: bool,
 ) -> anyhow::Result<Option<DMat4>> {
@@ -284,7 +324,7 @@ async fn get_world_mat4_with_strategies_impl(
         return Ok(Some(DMat4::IDENTITY));
     }
 
-    // 优化：查找祖先链中最近的有缓存 world_trans 的节点
+    // 优化：查找祖先链中最近的有缓存 pe_transform.world_trans 的节点
     let mut start_index = 0;
     let mut mat4 = DMat4::IDENTITY;
 
@@ -296,14 +336,14 @@ async fn get_world_mat4_with_strategies_impl(
         let ancestor_refno = ancestors[i].get_refno_or_default();
 
         // 尝试从数据库读取该祖先的缓存
-        if let Ok(Some(pe)) = crate::get_pe(ancestor_refno).await {
-            if let Some(world_trans) = pe.world_trans {
+        if let Ok(Some(cache)) = query_pe_transform(ancestor_refno).await {
+            if let Some(world_trans) = cache.world {
                 // 找到缓存！使用这个作为起点
-                mat4 = bevy_transform_to_dmat4(&world_trans.0);
+                mat4 = bevy_transform_to_dmat4(&world_trans);
                 start_index = i;
                 #[cfg(feature = "debug_spatial")]
                 println!(
-                    "🎯 Found cached world_trans at ancestor[{}]: {}",
+                    "🎯 Found cached pe_transform.world_trans at ancestor[{}]: {}",
                     i, ancestor_refno
                 );
                 break;
@@ -384,6 +424,16 @@ fn dmat4_to_bevy_transform(mat4: &DMat4) -> Transform {
     }
 }
 
+fn dmat4_to_transform_option(mat4: Option<DMat4>) -> Option<Transform> {
+    mat4.and_then(|m| {
+        if m.is_nan() {
+            None
+        } else {
+            Some(dmat4_to_bevy_transform(&m))
+        }
+    })
+}
+
 /// 清除指定 refno 的世界变换缓存
 ///
 /// 当元件的位置或方向属性（POS、ORI等）发生变化时，需要调用此函数清除缓存
@@ -395,9 +445,289 @@ fn dmat4_to_bevy_transform(mat4: &DMat4) -> Transform {
 /// * `Ok(())` - 成功清除缓存
 /// * `Err` - 如果清除过程中发生错误
 pub async fn invalidate_world_trans_cache(refno: RefnoEnum) -> anyhow::Result<()> {
-    let sql = format!("UPDATE {} SET world_trans = NONE", refno.to_pe_key());
-    SUL_DB.query(&sql).await?;
+    clear_pe_transform(refno).await?;
     #[cfg(feature = "debug_spatial")]
-    println!("🗑️  Invalidated world_trans cache for: {}", refno);
+    println!("🗑️  Invalidated pe_transform cache for: {}", refno);
     Ok(())
 }
+
+/// 刷新 MDB(DESI) 下的 pe_transform 缓存（包含 SITE）
+///
+/// # 参数
+/// * `mdb` - 可选 MDB 名称（None 则使用 DbOption.toml）
+///
+/// # 返回值
+/// * 处理的节点数量
+pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result<usize> {
+    ensure_pe_transform_schema().await?;
+    let mdb_name = mdb.unwrap_or_else(|| get_db_option().mdb_name.clone());
+    
+    // 查询该 MDB 下的总节点数
+    let count_sql = format!("SELECT VALUE count() FROM pe WHERE mdb = '{}' GROUP ALL", mdb_name);
+    let mut count_response = SUL_DB.query_response(&count_sql).await?;
+    let total_nodes: Vec<i64> = count_response.take(0)?;
+    let total_nodes = total_nodes.first().copied().unwrap_or(0) as usize;
+    
+    println!("📊 MDB {} 总节点数: {}", mdb_name, total_nodes);
+    
+    let sites = get_mdb_world_site_ele_nodes(mdb_name, DBType::DESI).await?;
+    if sites.is_empty() {
+        return Ok(0);
+    }
+
+    const BATCH_SIZE: usize = 500;
+    let mut entries: Vec<PeTransformEntry> = Vec::with_capacity(BATCH_SIZE);
+    let mut total = 0usize;
+    let mut last_print_count = 0usize;
+
+    fn push_entry(
+        entries: &mut Vec<PeTransformEntry>,
+        total: &mut usize,
+        refno: RefnoEnum,
+        local_mat: Option<DMat4>,
+        world_mat: Option<DMat4>,
+    ) {
+        let local = dmat4_to_transform_option(local_mat);
+        let world = dmat4_to_transform_option(world_mat);
+        if local.is_none() && world.is_none() {
+            return;
+        }
+        entries.push(PeTransformEntry { refno, local, world });
+        *total += 1;
+    }
+
+    for site in sites {
+
+        let site_refno = site.refno;
+        let mut queue: VecDeque<(RefnoEnum, DMat4)> = VecDeque::new();
+
+        let local_mat = match get_local_mat4(site_refno).await {
+            Ok(mat) => mat.filter(|m| !m.is_nan()),
+            Err(e) => {
+                #[cfg(feature = "debug_spatial")]
+                eprintln!("刷新 SITE 本地变换失败: {} -> {}", site_refno, e);
+                None
+            }
+        };
+        let world_mat = local_mat.unwrap_or(DMat4::IDENTITY);
+        push_entry(&mut entries, &mut total, site_refno, local_mat, Some(world_mat));
+        queue.push_back((site_refno, world_mat));
+
+        while let Some((parent_refno, parent_world)) = queue.pop_front() {
+            let children = match get_children_refnos(parent_refno).await {
+                Ok(children) => children,
+                Err(e) => {
+                    #[cfg(feature = "debug_spatial")]
+                    eprintln!("获取子节点失败: {} -> {}", parent_refno, e);
+                    continue;
+                }
+            };
+
+            for child in children {
+                let local_mat = match get_local_mat4(child).await {
+                    Ok(mat) => mat.filter(|m| !m.is_nan()),
+                    Err(e) => {
+                        #[cfg(feature = "debug_spatial")]
+                        eprintln!("刷新本地变换失败: {} -> {}", child, e);
+                        None
+                    }
+                };
+                let world_mat = match local_mat {
+                    Some(local) => parent_world * local,
+                    None => parent_world,
+                };
+                push_entry(&mut entries, &mut total, child, local_mat, Some(world_mat));
+                queue.push_back((child, world_mat));
+
+                // 每处理 10 个节点更新一次进度
+                if total - last_print_count >= 10 {
+                    let percentage = if total_nodes > 0 {
+                        (total as f64 / total_nodes as f64 * 100.0) as usize
+                    } else {
+                        0
+                    };
+                    print!("\r📊 进度: {}/{} ({:3}%)...", total, total_nodes, percentage);
+                    use std::io::Write;
+                    std::io::stdout().flush().ok();
+                    last_print_count = total;
+                }
+
+                if entries.len() >= BATCH_SIZE {
+                    save_pe_transform_entries(&entries).await?;
+                    entries.clear();
+                    // 批量保存时也更新进度
+                    let percentage = if total_nodes > 0 {
+                        (total as f64 / total_nodes as f64 * 100.0) as usize
+                    } else {
+                        0
+                    };
+                    print!("\r📊 进度: {}/{} ({:3}%) [已保存批次]...", total, total_nodes, percentage);
+                    use std::io::Write;
+                    std::io::stdout().flush().ok();
+                    last_print_count = total;
+                }
+            }
+        }
+    }
+
+    if !entries.is_empty() {
+        save_pe_transform_entries(&entries).await?;
+    }
+
+    // 打印最终完成信息（带换行）
+    println!("\r✅ 完成！共处理 {} 个节点                    ", total);
+
+    Ok(total)
+}
+
+/// 刷新指定 dbnum 列表的 pe_transform 缓存
+///
+/// # 参数
+/// * `dbnums` - 数据库编号列表 (如 &[1112, 7999, 8000])
+///
+/// # 返回值
+/// * 处理的节点数量
+///
+/// # 示例
+/// ```
+/// let count = refresh_pe_transform_for_dbnums(&[1112]).await?;
+/// ```
+pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<usize> {
+    ensure_pe_transform_schema().await?;
+    
+    const BATCH_SIZE: usize = 500;
+    let mut entries: Vec<PeTransformEntry> = Vec::with_capacity(BATCH_SIZE);
+    let mut total = 0usize;
+    let mut last_print_count = 0usize;
+
+    fn push_entry(
+        entries: &mut Vec<PeTransformEntry>,
+        total: &mut usize,
+        refno: RefnoEnum,
+        local_mat: Option<DMat4>,
+        world_mat: Option<DMat4>,
+    ) {
+        let local = dmat4_to_transform_option(local_mat);
+        let world = dmat4_to_transform_option(world_mat);
+        if local.is_none() && world.is_none() {
+            return;
+        }
+        entries.push(PeTransformEntry { refno, local, world });
+        *total += 1;
+    }
+
+
+    // 对每个 dbnum，查询其根节点并处理子树
+    for &dbnum in dbnums {
+        // 先查询该 dbnum 下的总节点数
+        let count_sql = format!("SELECT VALUE count() FROM pe WHERE dbnum = {} GROUP ALL", dbnum);
+        let mut count_response = SUL_DB.query_response(&count_sql).await?;
+        let total_nodes: Vec<i64> = count_response.take(0)?;
+        let total_nodes = total_nodes.first().copied().unwrap_or(0) as usize;
+        
+        println!("📊 dbnum {} 总节点数: {}", dbnum, total_nodes);
+        
+        // 查询该 dbnum 下的所有根节点（通常是 SITE 或 WORL）
+        // 使用 SELECT VALUE 直接返回 refno 值列表
+        let sql = format!(
+            "SELECT VALUE refno FROM pe WHERE dbnum = {} AND (noun = 'SITE' OR noun = 'WORL') AND owner.refno = NONE",
+            dbnum
+        );
+        
+        let mut response = SUL_DB.query_response(&sql).await?;
+        let roots: Vec<RefnoEnum> = response.take(0)?;
+        
+        if roots.is_empty() {
+            println!("⚠️  dbnum {} 没有找到根节点", dbnum);
+            continue;
+        }
+        
+        println!("🔍 处理 dbnum {}, 找到 {} 个根节点", dbnum, roots.len());
+        
+        
+        for root_refno in roots {
+
+            let mut queue: VecDeque<(RefnoEnum, DMat4)> = VecDeque::new();
+
+
+            let local_mat = match get_local_mat4(root_refno).await {
+                Ok(mat) => mat.filter(|m| !m.is_nan()),
+                Err(e) => {
+                    #[cfg(feature = "debug_spatial")]
+                    eprintln!("刷新根节点本地变换失败: {} -> {}", root_refno, e);
+                    None
+                }
+            };
+            let world_mat = local_mat.unwrap_or(DMat4::IDENTITY);
+            push_entry(&mut entries, &mut total, root_refno, local_mat, Some(world_mat));
+            queue.push_back((root_refno, world_mat));
+
+            while let Some((parent_refno, parent_world)) = queue.pop_front() {
+                let children = match get_children_refnos(parent_refno).await {
+                    Ok(children) => children,
+                    Err(e) => {
+                        #[cfg(feature = "debug_spatial")]
+                        eprintln!("获取子节点失败: {} -> {}", parent_refno, e);
+                        continue;
+                    }
+                };
+
+                for child in children {
+                    let local_mat = match get_local_mat4(child).await {
+                        Ok(mat) => mat.filter(|m| !m.is_nan()),
+                        Err(e) => {
+                            #[cfg(feature = "debug_spatial")]
+                            eprintln!("刷新本地变换失败: {} -> {}", child, e);
+                            None
+                        }
+                    };
+                    let world_mat = match local_mat {
+                        Some(local) => parent_world * local,
+                        None => parent_world,
+                    };
+                    push_entry(&mut entries, &mut total, child, local_mat, Some(world_mat));
+                    queue.push_back((child, world_mat));
+
+                    // 每处理 10 个节点更新一次进度
+                    if total - last_print_count >= 10 {
+                        let percentage = if total_nodes > 0 {
+                            (total as f64 / total_nodes as f64 * 100.0) as usize
+                        } else {
+                            0
+                        };
+                        print!("\r📊 进度: {}/{} ({:3}%)...", total, total_nodes, percentage);
+                        use std::io::Write;
+                        std::io::stdout().flush().ok();
+                        last_print_count = total;
+                    }
+
+                    if entries.len() >= BATCH_SIZE {
+                        save_pe_transform_entries(&entries).await?;
+                        entries.clear();
+                        // 批量保存时也更新进度
+                        let percentage = if total_nodes > 0 {
+                            (total as f64 / total_nodes as f64 * 100.0) as usize
+                        } else {
+                            0
+                        };
+                        print!("\r📊 进度: {}/{} ({:3}%) [已保存批次]...", total, total_nodes, percentage);
+                        use std::io::Write;
+                        std::io::stdout().flush().ok();
+                        last_print_count = total;
+                    }
+
+                }
+            }
+        }
+    }
+
+    if !entries.is_empty() {
+        save_pe_transform_entries(&entries).await?;
+    }
+
+    // 打印最终完成信息（带换行）
+    println!("\r✅ 完成！共处理 {} 个节点                    ", total);
+
+    Ok(total)
+}
+

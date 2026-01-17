@@ -135,7 +135,7 @@ pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>
 /// * 如果查询失败会返回错误
 #[cached(result = true, size = 5000)]
 pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    let sql = format!("return fn::ancestor({}).refno;", refno.to_pe_key());
+    let sql = format!("return (fn::ancestor({}).refno)?:[];", refno.to_pe_key());
     SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }
 

@@ -7,7 +7,7 @@ use crate::tool::math_tool;
 use crate::tool::math_tool::{
     construct_basis_z_xref, dquat_to_pdms_ori_xyz_str, to_pdms_dvec_str, to_pdms_vec_str,
 };
-pub use crate::transform::{get_local_mat4, get_world_mat4};
+pub use crate::transform::{get_local_mat4, get_transform_mat4, get_world_mat4};
 use crate::utils::take_vec;
 use crate::{
     NamedAttrMap, RefU64, SUL_DB, SurrealQueryExt,

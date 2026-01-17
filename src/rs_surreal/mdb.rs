@@ -14,20 +14,98 @@ use std::collections::{BTreeMap, HashMap};
 use std::f32::consts::E;
 use std::sync::Mutex;
 
-/// 数据库类型枚举
+/// 数据库子类型枚举 (STYP 属性值)
 /// 用于区分不同类型的数据库模块
-#[derive(IntoPrimitive, TryFromPrimitive, Clone, Copy, Hash, Eq, PartialEq, Debug)]
+/// 
+/// 映射关系来源于 PDMS 原始定义：
+/// - 1 = DESI (设计数据库)
+/// - 2 = CATA (目录数据库)  
+/// - 4 = PROP (属性数据库)
+/// - 6 = ISOD (ISO图纸数据库)
+/// - 7 = PADD (填充数据库)
+/// - 8 = DICT (字典数据库)
+/// - 9 = ENGI (工程数据库)
+/// - 10 = MANU (制造数据库)
+/// - 14 = SCHE (示意图数据库)
+#[derive(IntoPrimitive, TryFromPrimitive, Clone, Copy, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum DBType {
-    DESI = 1,  // 设计数据库
-    CATA = 2,  // 目录数据库
-    PROP = 3,  // 属性数据库
-    ISOD = 4,  // ISO图数据库
-    PADD = 5,  // 管道数据库
-    DICT = 6,  // 字典数据库
-    ENGI = 7,  // 工程数据库
-    SCHE = 14, // 图纸数据库
-    UNSET,     // 未设置类型
+    /// 设计数据库 (Design)
+    DESI = 1,
+    /// 目录数据库 (Catalog)
+    CATA = 2,
+    /// 属性数据库 (Property)
+    PROP = 4,
+    /// ISO图纸数据库 (Isometric Drawing)
+    ISOD = 6,
+    /// 填充数据库 (Padding)
+    PADD = 7,
+    /// 字典数据库 (Dictionary)
+    DICT = 8,
+    /// 工程数据库 (Engineering)
+    ENGI = 9,
+    /// 制造数据库 (Manufacturing)
+    MANU = 10,
+    /// 示意图数据库 (Schematic)
+    SCHE = 14,
+    /// 未设置类型
+    #[num_enum(default)]
+    UNSET = 0,
+}
+
+impl DBType {
+    /// 从字符串名称创建 DBType
+    pub fn from_name(name: &str) -> Self {
+        match name.to_ascii_uppercase().as_str() {
+            "DESI" => DBType::DESI,
+            "CATA" => DBType::CATA,
+            "PROP" => DBType::PROP,
+            "ISOD" => DBType::ISOD,
+            "PADD" => DBType::PADD,
+            "DICT" => DBType::DICT,
+            "ENGI" => DBType::ENGI,
+            "MANU" => DBType::MANU,
+            "SCHE" => DBType::SCHE,
+            _ => DBType::UNSET,
+        }
+    }
+
+    /// 转换为4字符的类型名称
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DBType::DESI => "DESI",
+            DBType::CATA => "CATA",
+            DBType::PROP => "PROP",
+            DBType::ISOD => "ISOD",
+            DBType::PADD => "PADD",
+            DBType::DICT => "DICT",
+            DBType::ENGI => "ENGI",
+            DBType::MANU => "MANU",
+            DBType::SCHE => "SCHE",
+            DBType::UNSET => "UNSET",
+        }
+    }
+
+    /// 获取中文描述
+    pub fn description(&self) -> &'static str {
+        match self {
+            DBType::DESI => "设计数据库",
+            DBType::CATA => "目录数据库",
+            DBType::PROP => "属性数据库",
+            DBType::ISOD => "ISO图纸数据库",
+            DBType::PADD => "填充数据库",
+            DBType::DICT => "字典数据库",
+            DBType::ENGI => "工程数据库",
+            DBType::MANU => "制造数据库",
+            DBType::SCHE => "示意图数据库",
+            DBType::UNSET => "未设置",
+        }
+    }
+    
+    /// 是否为有效类型
+    pub fn is_valid(&self) -> bool {
+        !matches!(self, DBType::UNSET)
+    }
 }
 
 /// 名称过滤条件
