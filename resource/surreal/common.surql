@@ -552,7 +552,7 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
     let $ispe = $pe.refno.ISPE?:$pe.owner.refno.ISPE;
     return if $ispe == none {
         // 如果没有 ISPE 引用，返回默认参数 [0]
-        return [0];
+        return [0.0];
     } else {
         //温度在 BRAN 上，也就是它的 owner
         let $temp = $pe.owner.refno.TEMP;
@@ -561,7 +561,7 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
         return (select value (children[0].refno.CATR.refno.PARA)
              from only $ispe.{2}.children.refno.{children: REFNO.children, MAXA, ANSW, TYPE}
              where TYPE = 'SELE' and $temp >= ANSW && $temp <= MAXA
-             limit 1)??[]; 
+             limit 1)??[0.0]; 
         --         // 孔径条件：父节点孔径在 ANSW 和 MAXA 范围内
         --         where $parent.owner.refno.HBOR >=$answ and $parent.owner.refno.HBOR <= $maxa limit 1)
     };

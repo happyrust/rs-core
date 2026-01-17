@@ -43,10 +43,10 @@ pub struct FullPtsetPoint {
 /// 初始化数据库的 inst_relate 表的索引
 pub async fn init_inst_relate_indices() -> anyhow::Result<()> {
     // 创建 zone_refno 字段的索引
-    let create_index_sql = "
-        DEFINE INDEX idx_inst_relate_zone_refno ON TABLE inst_relate COLUMNS zone_refno TYPE BTREE;
-    ";
-    let _ = SUL_DB.query_response(create_index_sql).await;
+    // let create_index_sql = "
+    //     DEFINE INDEX idx_inst_relate_zone_refno ON TABLE inst_relate COLUMNS zone_refno;
+    // ";
+    // let _ = SUL_DB.query_response(create_index_sql).await;
     Ok(())
 }
 
