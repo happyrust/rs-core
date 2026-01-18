@@ -30,8 +30,10 @@ pub mod error;
 pub mod router;
 pub mod surreal_provider;
 pub mod traits;
+pub mod tree_index_provider;
 
 pub use error::{QueryError, QueryResult};
 pub use router::{QueryEngine, QueryRouter, QueryStrategy};
 pub use surreal_provider::SurrealQueryProvider;
 pub use traits::{BatchQuery, GraphQuery, HierarchyQuery, QueryProvider, TypeQuery};
+pub use tree_index_provider::TreeIndexQueryProvider;

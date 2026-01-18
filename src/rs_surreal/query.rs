@@ -1178,7 +1178,7 @@ pub(crate) async fn get_named_attmap_with_uda(
 
         -- 2. 查询默认的UDA（用户定义属性）
         -- 如果UDNA为空，则使用DYUDNA作为属性名
-        select string::concat(':', if UDNA==none || string::len(UDNA)==0 {{ DYUDNA }} else {{ UDNA }}) as u,
+        select string::concat('UDA_', if UDNA==none || string::len(UDNA)==0 {{ DYUDNA }} else {{ UDNA }}) as u,
                DFLT as v,
                UTYP as t
         from UDA
@@ -1186,7 +1186,7 @@ pub(crate) async fn get_named_attmap_with_uda(
 
         -- 3. 查询覆盖的UDA值
         -- 从ATT_UDA表中获取覆盖的UDA值
-        select string::concat(':', if u.UDNA==none || string::len(u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u,
+        select string::concat('UDA_', if u.UDNA==none || string::len(u.UDNA)==0 {{ u.DYUDNA }} else {{ u.UDNA }}) as u,
                u.UTYP as t,
                v
         from (ATT_UDA:{1}).udas
@@ -1212,7 +1212,7 @@ pub(crate) async fn get_named_attmap_with_uda(
 
     let mut apply_uda_entries = |entries: Vec<UdaKv>| {
         for UdaKv { u: uname, t, v } in entries {
-            if uname == ":NONE" || uname == ":unset" || uname.is_empty() {
+            if uname == "UDA_NONE" || uname == "UDA_unset" || uname.is_empty() {
                 continue;
             }
             let type_name = t.as_deref().unwrap_or("TEXT");

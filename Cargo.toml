@@ -50,6 +50,7 @@ glam = { version = "0.30.8", features = ["serde", "rkyv"] }
 id_tree = { git = "https://gitee.com/happydpc/id_tree", features = [
     "serde_support",
 ] }
+indextree = { path = "../indextree/indextree", features = ["rkyv"] }
 dashmap = { version = "=7.0.0-rc2", features = ["serde"] }
 hexasphere = "15.0.0"
 anyhow = "1.0.57"

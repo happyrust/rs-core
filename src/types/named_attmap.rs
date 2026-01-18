@@ -690,7 +690,7 @@ impl NamedAttrMap {
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
-            if key.starts_with("UDA:") || key.as_str() == "REFNO" {
+            if key.starts_with("UDA_") || key.as_str() == "REFNO" {
                 continue;
             }
             if matches!(val, NamedAttrValue::RefU64Type(_))
@@ -788,7 +788,7 @@ impl NamedAttrMap {
 
         for (key, val) in self.map.clone().into_iter() {
             //refno 单独处理
-            if key.starts_with("UDA:") || key.as_str() == "REFNO" {
+            if key.starts_with("UDA_") || key.as_str() == "REFNO" {
                 continue;
             }
             if matches!(val, NamedAttrValue::RefU64Type(_))
@@ -849,7 +849,7 @@ impl NamedAttrMap {
             if key.as_str() == "REFNO" {
                 continue;
             }
-            if key.starts_with("UDA:") {
+            if key.starts_with("UDA_") {
                 let json = if matches!(val, NamedAttrValue::RefU64Type(_))
                     || matches!(val, NamedAttrValue::ElementType(_))
                 {

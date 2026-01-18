@@ -96,6 +96,7 @@ pub mod query_provider;
 pub mod rs_surreal;
 pub mod schema;
 pub mod sync;
+pub mod tree_query;
 pub mod types;
 
 pub mod material;
