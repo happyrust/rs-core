@@ -252,6 +252,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     // 注意：使用 LET 预先计算 aabb 并在 WHERE 中过滤，确保 aabb 不为 null
     use anyhow::Context as _;
     let inst_keys = get_inst_relate_keys(refnos);
+    // 使用 in->inst_relate_aabb->out.d 的 relate 方式访问 aabb
     let sql_bases = format!(
         r#"
         SELECT 
@@ -259,12 +260,12 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             type::record("pe_transform", record::id(in)).world_trans.d AS wt,
-            type::record("inst_relate_aabb", record::id(in)).out.d AS aabb
+            in->inst_relate_aabb[0].out.d AS aabb
         FROM {inst_keys}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
             AND type::record("pe_transform", record::id(in)).world_trans != NONE
-            AND type::record("inst_relate_aabb", record::id(in)).out.d != NONE
+            AND in->inst_relate_aabb[0].out.d != NONE
         "#
     );
     let base_infos: Vec<PosEntityBase> = SUL_DB
@@ -281,11 +282,13 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     // 步骤2：批量获取所有正几何
     // 使用子查询模式：从 inst_relate.out (inst_info) 遍历到 geo_relate
     // 注意：直接使用 inst_relate->out->geo_relate 语法不工作，需要用子查询
+    // 添加 mesh 完备性检查：out.meshed = true，确保只查询已生成 mesh 的几何
     let sql_all_pos_geos = format!(
         r#"
         SELECT 
             in as refno,
-            (SELECT out AS id, trans.d AS trans FROM out->geo_relate WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE) AS geos
+            (SELECT out AS id, trans.d AS trans FROM out->geo_relate 
+             WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE AND out.meshed = true) AS geos
         FROM {inst_keys}
         "#
     );
@@ -345,6 +348,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         // neg_relate 结构: in = geo_relate, out = 被切割的正实体
         // geo_relate 结构: in = 负载体 pe, out = geo
         // 所以负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
+        // 添加 mesh 完备性检查：in.out.meshed = true，确保负几何的 mesh 已生成
         let sql_neg_pe = format!(
             r#"
             SELECT 
@@ -355,7 +359,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 in.out.aabb.d AS aabb,
                 array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
             FROM {pe_key}<-neg_relate
-            WHERE in.trans.d != NONE
+            WHERE in.trans.d != NONE AND in.out.meshed = true
             "#
         );
         let mut neg_results: Vec<NegGeoResult> =
@@ -371,7 +375,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                     in.out.aabb.d AS aabb,
                     array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
                 FROM {inst_key}<-neg_relate
-                WHERE in.trans.d != NONE
+                WHERE in.trans.d != NONE AND in.out.meshed = true
                 "#
             );
             neg_results = SUL_DB.query_take(&sql_neg_inst, 0).await.unwrap_or_default();
@@ -380,6 +384,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         // 查询 ngmr_relate: in = geo_relate (CataCrossNeg类型切割几何)
         // ngmr_relate 结构同 neg_relate: in = geo_relate, out = 被切割的正实体
         // 负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
+        // 添加 mesh 完备性检查：in.out.meshed = true
         let sql_ngmr_pe = format!(
             r#"
             SELECT 
@@ -390,7 +395,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 in.out.aabb.d AS aabb,
                 array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
             FROM {pe_key}<-ngmr_relate
-            WHERE in.trans.d != NONE
+            WHERE in.trans.d != NONE AND in.out.meshed = true
             "#
         );
         let mut ngmr_results: Vec<NegGeoResult> = match SUL_DB.query_take(&sql_ngmr_pe, 0).await {
@@ -411,7 +416,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                     in.out.aabb.d AS aabb,
                     array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
                 FROM {inst_key}<-ngmr_relate
-                WHERE in.trans.d != NONE
+                WHERE in.trans.d != NONE AND in.out.meshed = true
                 "#
             );
             ngmr_results = SUL_DB.query_take(&sql_ngmr_inst, 0).await.unwrap_or_default();

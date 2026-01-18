@@ -43,11 +43,8 @@ use std::sync::Mutex;
 const MIN_LEN: f32 = 1e-6;
 
 /// 单位网格的基准尺寸
-/// 使用 100 而非 1，以获得更好的数值精度：
-/// - 统一精度等级（从 10000.0 降到 100.0）
-/// - 提升 CSG 布尔运算稳定性
-/// - 减少浮点误差
-pub const UNIT_MESH_SCALE: f32 = 100.0;
+/// 使用 1.0 作为基础尺寸，基本体直接使用实际尺寸缩放
+pub const UNIT_MESH_SCALE: f32 = 1.0;
 
 /// 跟踪已经生成过PLOOP调试文件的refno，避免重复生成
 static PLOOP_DEBUG_GENERATED: std::sync::LazyLock<Mutex<HashSet<String>>> =

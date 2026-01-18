@@ -1,7 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 
-use crate::geometry::csg::UNIT_MESH_SCALE;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::helper::cal_ref_axis;
 #[cfg(feature = "truck")]
@@ -268,13 +267,8 @@ impl BrepShapeTrait for Dish {
     }
 
     fn get_scaled_vec3(&self) -> Vec3 {
-        // Unit Dish 的高度已经按直径归一化，因此统一使用直径缩放即可还原真实尺寸。
-        // 除以 UNIT_MESH_SCALE 以补偿单位网格的放大
-        Vec3::new(
-            self.pdia / UNIT_MESH_SCALE,
-            self.pdia / UNIT_MESH_SCALE,
-            self.pdia / UNIT_MESH_SCALE,
-        )
+        // Unit Dish 的高度已经按直径归一化，因此统一使用直径缩放即可还原真实尺寸
+        Vec3::new(self.pdia, self.pdia, self.pdia)
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {
