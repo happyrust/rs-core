@@ -5,13 +5,14 @@ use crate::error::init_save_database_error;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::{PlantAabb, RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
-use crate::{SUL_DB, SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys};
+use crate::{SUL_DB, SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys, get_world_transform};
 use anyhow::anyhow;
 use bevy_transform::prelude::Transform;
 use dashmap::DashMap;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use parry3d::math::Isometry;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut, Mul};
 use surrealdb::types::{self as surrealdb_types, RecordId, RecordIdKey};
 use surrealdb::types::{Kind, SurrealValue, Value};
@@ -253,7 +254,7 @@ pub async fn query_aabb_params(
     // 从 pe_transform 获取 world_trans（允许为 None，由调用方过滤）
     let mut sql = format!(
         r#"select id, in as refno,
-        type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
+        in.world_trans as world_trans,
         in.noun as noun,
         (select out.aabb.d as aabb, trans.d as trans from out->geo_relate where out.aabb.d != none and trans.d != none)
         as geo_aabbs from {inst_keys}"#,
@@ -287,12 +288,13 @@ pub async fn save_aabb_to_surreal(aabb_map: &DashMap<String, Aabb>) {
             let mut sql = String::new();
             for k in chunk {
                 let v = aabb_map.get(k).unwrap();
-                let json = format!(
-                    "{{'id':aabb:⟨{}⟩, 'd':{}}}",
-                    k,
-                    serde_json::to_string(v.value()).unwrap()
-                );
-                sql.push_str(&format!("INSERT IGNORE INTO aabb {};", json));
+                let d = serde_json::to_string(v.value()).unwrap();
+                let id_key = if k.starts_with("aabb:") {
+                    k.to_string()
+                } else {
+                    format!("aabb:⟨{}⟩", k)
+                };
+                sql.push_str(&format!("UPSERT {id_key} SET d = {d};"));
             }
             match SUL_DB.query_response(&sql).await {
                 Ok(_) => {}
@@ -376,13 +378,15 @@ pub async fn update_inst_relate_aabbs_by_refnos(
         let result = query_aabb_params(&inst_keys, replace_exist).await?;
 
         let mut relate_sql = String::new();
-        for r in result {
-            // 过滤 world_trans 为 None 的记录
-            let Some(world_trans) = r.world_trans else { continue };
-            
-            // 计算合并后的 AABB
+        let mut in_keys: Vec<String> = Vec::new();
+        let mut processed: HashSet<RefnoEnum> = HashSet::new();
+
+        let compute_aabb = |world_trans: PlantTransform, geo_aabbs: &[GeoAabbTrans]| -> Option<Aabb> {
+            if geo_aabbs.is_empty() {
+                return None;
+            }
             let mut aabb = Aabb::new_invalid();
-            for g in &r.geo_aabbs {
+            for g in geo_aabbs {
                 let t = world_trans * &g.trans;
                 let tmp_aabb = g.aabb.scaled(&t.scale.into());
                 let tmp_aabb = tmp_aabb.transform_by(&Isometry {
@@ -391,31 +395,41 @@ pub async fn update_inst_relate_aabbs_by_refnos(
                 });
                 aabb.merge(&tmp_aabb);
             }
-
-            // 过滤无效 AABB
             if aabb.extents().magnitude().is_nan() || aabb.extents().magnitude().is_infinite() {
+                return None;
+            }
+            Some(aabb)
+        };
+
+        for r in &result {
+            // 过滤 world_trans 为 None 的记录
+            let Some(world_trans) = r.world_trans else { continue };
+
+            let Some(aabb) = compute_aabb(world_trans, &r.geo_aabbs) else {
                 #[cfg(feature = "debug_model")]
                 eprintln!("发现无效 AABB for refno: {:?}", r.refno);
                 continue;
-            }
+            };
 
             let aabb_hash = gen_aabb_hash(&aabb).to_string();
             aabb_map.entry(aabb_hash.clone()).or_insert(aabb);
 
             let refno = r.refno();
-            let edge_id = refno.to_table_key("inst_relate_aabb");
+            processed.insert(refno.clone());
             let pe_key = refno.to_pe_key();
+            in_keys.push(pe_key.clone());
+            let aabb_key = format!("aabb:⟨{}⟩", aabb_hash);
 
-            if replace_exist {
-                relate_sql.push_str(&format!("DELETE {};", edge_id));
-            }
-
-            let sql = format!(
-                "INSERT IGNORE INTO inst_relate_aabb {{ id: {}, in: {}, out: aabb:⟨{}⟩ }};",
-                edge_id, pe_key, aabb_hash
-            );
-            relate_sql.push_str(&sql);
+            relate_sql.push_str(&format!(
+                "RELATE {pe_key}->inst_relate_aabb->{aabb_key};"
+            ));
         }
+
+        let candidate_refnos: Vec<RefnoEnum> = if replace_exist {
+            chunk.to_vec()
+        } else {
+            result.iter().map(|r| r.refno()).collect()
+        };
 
         if !relate_sql.is_empty() {
             SUL_DB.query_response(&relate_sql).await?;

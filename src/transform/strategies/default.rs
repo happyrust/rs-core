@@ -13,6 +13,7 @@ use crate::{
 use async_trait::async_trait;
 use glam::{DMat3, DMat4, DQuat, DVec3};
 use std::sync::Arc;
+use crate::tool::math_tool;
 
 /// POSL/PLIN 属性处理器  
 pub struct PoslHandler;
@@ -86,28 +87,31 @@ impl PoslHandler {
                 eff_ydir
             };
 
-            let mut new_quat = if cur_type == "SCOJ" {
+            let mut local_quat = if cur_type == "SCOJ" {
                 construct_basis_z_ref_x(z_axis)
             } else {
                 construct_basis_z_y_exact(final_ydir, z_axis)
             };
 
             // 应用 BANG
-            BangHandler::apply_bang(&mut new_quat, att);
+            BangHandler::apply_bang(&mut local_quat, att);
 
-            // 处理 DELP 和 ZDIS 属性：在 POSL 局部坐标系中累加，再按当前方位旋转到世界
+            // 处理 DELP 和 ZDIS 属性：
             let mut local_offset = att.get_dvec3("DELP").unwrap_or(DVec3::ZERO);
+            let mut offset = local_quat.mul_vec3(local_offset);
             if let Some(zdis) = att.get_f64("ZDIS") {
-                local_offset.z += zdis;
+                offset.z += zdis;
             }
-            let world_offset = new_quat.mul_vec3(local_offset);
+            // #[cfg(feature = "debug_spatial")]
+            println!("  local_quat PDMS ORI: {}, offset is  {:?}", math_tool::dquat_to_pdms_ori_str(&local_quat, true), offset);
+
 
             // 最终位置 = PLINE 位置 + 旋转后的局部偏移 + 原始位置
-            let final_pos = plin_pos + world_offset + *pos;
+            let final_pos = plin_pos + offset + *pos;
 
             // 更新传入的位置和朝向
             *pos = final_pos;
-            *quat = new_quat;
+            *quat = local_quat;
         }
 
         Ok(())

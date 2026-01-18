@@ -51,6 +51,20 @@ pub async fn query_pe_transform(refno: RefnoEnum) -> Result<Option<PeTransformCa
     }))
 }
 
+/// 从 pe_transform 表查询 Transform
+/// 
+/// # Arguments
+/// * `refno` - 参考号
+/// * `is_local` - true 返回 local_trans，false 返回 world_trans
+/// 
+/// # Returns
+/// * `Ok(Some(Transform))` - 查询成功
+/// * `Ok(None)` - 未找到或字段为空
+pub async fn query_transform(refno: RefnoEnum, is_local: bool) -> Result<Option<Transform>> {
+    let cache = query_pe_transform(refno).await?;
+    Ok(cache.and_then(|c| if is_local { c.local } else { c.world }))
+}
+
 pub async fn save_pe_transform(refno: RefnoEnum, local: Option<Transform>, world: Option<Transform>) -> Result<()> {
     let entry = PeTransformEntry { refno, local, world };
     save_pe_transform_entries(&[entry]).await

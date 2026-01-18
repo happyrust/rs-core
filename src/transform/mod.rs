@@ -228,26 +228,107 @@ pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Res
     Ok(if is_local { local_mat } else { world_mat })
 }
 
+/// 惰性计算世界变换矩阵
+/// 
+/// 当父节点没有缓存时，向上查找最近有 world_trans 缓存的祖先，
+/// 然后从该祖先开始逐层累乘 local_mat 得到世界变换。
 async fn compute_world_from_parent(
     refno: RefnoEnum,
     local_mat: Option<DMat4>,
 ) -> anyhow::Result<Option<DMat4>> {
+    use crate::rs_surreal::{find_nearest_cached_ancestor, query_ancestor_refnos};
+    
     let att = get_named_attmap(refno).await?;
     let parent_refno = att.get_owner();
     if parent_refno.is_unset() {
+        // 根节点，直接返回 local_mat
         return Ok(Some(local_mat.unwrap_or(DMat4::IDENTITY)));
     }
 
+    // 尝试直接从父节点缓存获取（快速路径）
     let parent_cache = query_pe_transform(parent_refno).await?;
-    let parent_world = parent_cache.and_then(|c| c.world);
-    
-    Ok(parent_world.map(|parent_trans| {
-        let parent_mat = bevy_transform_to_dmat4(&parent_trans);
-        match local_mat {
+    if let Some(parent_world) = parent_cache.and_then(|c| c.world) {
+        let parent_mat = bevy_transform_to_dmat4(&parent_world);
+        return Ok(Some(match local_mat {
             Some(local) => parent_mat * local,
             None => parent_mat,
+        }));
+    }
+
+    // 父节点无缓存，启用惰性计算：查找最近有缓存的祖先
+    #[cfg(feature = "debug_spatial")]
+    println!("🔄 惰性计算 world_mat for {}: 父节点 {} 无缓存", refno, parent_refno);
+
+    // 获取祖先链并反转（query_ancestor_refnos 返回从当前到根，需要反转为从根到父）
+    // 注意：query_ancestor_refnos 包含当前节点自己，需要排除
+    let mut ancestors = query_ancestor_refnos(refno).await?;
+    ancestors.retain(|r| *r != refno);  // 排除当前节点
+    ancestors.reverse();  // 反转为从根到父的顺序
+    if ancestors.is_empty() {
+        return Ok(Some(local_mat.unwrap_or(DMat4::IDENTITY)));
+    }
+
+    // 查找最近有 world_trans 缓存的祖先
+    let cached_ancestor = find_nearest_cached_ancestor(refno).await?;
+    let ancestors_len = ancestors.len();
+    
+    // 确定计算起点（注意：find_nearest_cached_ancestor 返回的索引是原始顺序，需要转换为反转后的索引）
+    let (start_idx, mut world_mat) = match cached_ancestor {
+        Some((orig_idx, ancestor_refno)) => {
+            let cache = query_pe_transform(ancestor_refno).await?;
+            let world = cache
+                .and_then(|c| c.world)
+                .map(|t| bevy_transform_to_dmat4(&t))
+                .unwrap_or(DMat4::IDENTITY);
+            // 原始索引是从当前到根，反转后索引 = len - 1 - orig_idx
+            let reversed_idx = ancestors_len - 1 - orig_idx;
+            #[cfg(feature = "debug_spatial")]
+            println!("  ✅ 找到缓存祖先: {} (orig_idx={}, reversed_idx={})", ancestor_refno, orig_idx, reversed_idx);
+            (reversed_idx + 1, world)  // 从缓存祖先的下一个开始计算
         }
-    }))
+        None => {
+            #[cfg(feature = "debug_spatial")]
+            println!("  ⚠️ 无缓存祖先，从根节点开始计算");
+            (0, DMat4::IDENTITY)  // 从根节点开始
+        }
+    };
+
+    // 收集需要写入缓存的中间节点
+    let mut entries_to_save: Vec<PeTransformEntry> = Vec::new();
+
+    // 从起点逐层累乘 local_mat
+    for (i, ancestor) in ancestors.iter().enumerate().skip(start_idx) {
+        let ancestor_local = get_local_mat4(*ancestor).await?.unwrap_or(DMat4::IDENTITY);
+        world_mat = world_mat * ancestor_local;
+        
+        // 沿途缓存（提升后续命中率）
+        let world_trans = dmat4_to_transform_option(Some(world_mat));
+        let local_trans = dmat4_to_transform_option(Some(ancestor_local));
+        if world_trans.is_some() {
+            entries_to_save.push(PeTransformEntry {
+                refno: *ancestor,
+                local: local_trans,
+                world: world_trans,
+            });
+        }
+    }
+
+    // 最后乘上当前节点的 local_mat
+    let result = match local_mat {
+        Some(local) => world_mat * local,
+        None => world_mat,
+    };
+
+    // 异步保存沿途缓存
+    if !entries_to_save.is_empty() {
+        tokio::spawn(async move {
+            let _ = save_pe_transform_entries(&entries_to_save).await;
+            #[cfg(feature = "debug_spatial")]
+            println!("💾 惰性计算：已缓存 {} 个中间节点", entries_to_save.len());
+        });
+    }
+
+    Ok(Some(result))
 }
 
 /// 获取世界变换矩阵（向后兼容别名）
@@ -454,16 +535,16 @@ pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result
 /// 刷新指定 dbnum 列表的 pe_transform 缓存
 ///
 /// # 参数
-/// * `dbnums` - 数据库编号列表 (如 &[1112, 7999, 8000])
+/// * `ref0s` - ref_0 列表 (如 &[17496, 9304])，通过 ref0_to_dbnum 映射获取对应 dbnum
 ///
 /// # 返回值
 /// * 处理的节点数量
 ///
 /// # 示例
 /// ```
-/// let count = refresh_pe_transform_for_dbnums(&[1112]).await?;
+/// let count = refresh_pe_transform_for_dbnums(&[17496]).await?;
 /// ```
-pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<usize> {
+pub async fn refresh_pe_transform_for_dbnums(ref0s: &[u32]) -> anyhow::Result<usize> {
     ensure_pe_transform_schema().await?;
     
     const BATCH_SIZE: usize = 500;
@@ -487,9 +568,23 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
         *total += 1;
     }
 
+    // 通过 ref0 查找对应的 dbnum，去重
+    let dbnums: Vec<u32> = ref0s
+        .iter()
+        .filter_map(|&ref0| crate::tree_query::get_dbnum_by_ref0(ref0))
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+    
+    if dbnums.is_empty() {
+        println!("⚠️  未找到 ref0s {:?} 对应的 dbnum，请检查 ref0_to_dbnum 映射是否已加载", ref0s);
+        return Ok(0);
+    }
+    
+    println!("📋 ref0s: {:?} -> dbnums: {:?}", ref0s, dbnums);
 
     // 对每个 dbnum，查询其根节点并处理子树
-    for &dbnum in dbnums {
+    for dbnum in dbnums {
         // 先查询该 dbnum 下的总节点数
         let count_sql = format!("SELECT VALUE count() FROM pe WHERE dbnum = {} GROUP ALL", dbnum);
         let mut count_response = SUL_DB.query_response(&count_sql).await?;

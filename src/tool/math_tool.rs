@@ -229,6 +229,19 @@ pub fn quat_to_pdms_ori_str(rot: &Quat, convert_xyz: bool) -> String {
 }
 
 #[inline]
+pub fn dquat_to_pdms_ori_str(rot: &DQuat, convert_xyz: bool) -> String {
+    let rot = DMat3::from_quat(*rot);
+    let y_axis = rot.y_axis.as_vec3();
+    let z_axis = rot.z_axis.as_vec3();
+
+    format!(
+        "Y is {} and Z is {}",
+        to_pdms_vec_str(&y_axis, convert_xyz),
+        to_pdms_vec_str(&z_axis, convert_xyz)
+    )
+}
+
+#[inline]
 fn format_f32(num: f32) -> String {
     if num.fract() == 0.0 {
         // 如果是整数，只显示整数部分
