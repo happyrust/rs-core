@@ -259,12 +259,12 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             type::record("pe_transform", record::id(in)).world_trans.d AS wt,
-            (in->inst_relate_aabb[0].out.d) AS aabb
+            type::record("inst_relate_aabb", record::id(in)).out.d AS aabb
         FROM {inst_keys}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
             AND type::record("pe_transform", record::id(in)).world_trans != NONE
-            AND aabb != NONE
+            AND type::record("inst_relate_aabb", record::id(in)).out.d != NONE
         "#
     );
     let base_infos: Vec<PosEntityBase> = SUL_DB

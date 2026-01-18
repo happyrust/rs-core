@@ -5,7 +5,7 @@ use crate::error::init_save_database_error;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::{PlantAabb, RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
-use crate::{SUL_DB, SurrealQueryExt, gen_bytes_hash, get_inst_relate_keys};
+use crate::{SUL_DB, SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys};
 use anyhow::anyhow;
 use bevy_transform::prelude::Transform;
 use dashmap::DashMap;
@@ -399,7 +399,7 @@ pub async fn update_inst_relate_aabbs_by_refnos(
                 continue;
             }
 
-            let aabb_hash = gen_bytes_hash(&aabb).to_string();
+            let aabb_hash = gen_aabb_hash(&aabb).to_string();
             aabb_map.entry(aabb_hash.clone()).or_insert(aabb);
 
             let refno = r.refno();

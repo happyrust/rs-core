@@ -9,3 +9,8 @@ SELECT id, in, out, trans, geo_type FROM geo_relate LIMIT 1;
 SELECT id, in, out, generic, world_trans, dt FROM inst_relate LIMIT 1;
 SELECT * FROM trans:`6511760115506763562`;
 SELECT * FROM inst_geo:`2`;
+SELECT * FROM aabb LIMIT 3; 
+SELECT * FROM inst_relate_aabb LIMIT 5; 
+SELECT * FROM aabb:7541581120933061747; 
+SELECT id FROM aabb LIMIT 10; 
+SELECT count() FROM aabb; 
