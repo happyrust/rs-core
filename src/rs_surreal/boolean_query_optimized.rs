@@ -332,7 +332,10 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         trans: crate::rs_surreal::geometry_query::PlantTransform,
         #[serde(default)]
         aabb: Option<crate::types::PlantAabb>,
-        /// 负载体的世界变换矩阵（从 inst_relate 获取）
+        /// 负载体 pe（调试用）
+        #[serde(default)]
+        carrier_pe: Option<crate::types::RecordId>,
+        /// 负载体的世界变换矩阵（从 pe_transform 获取）
         #[serde(default)]
         carrier_wt: Option<crate::rs_surreal::geometry_query::PlantTransform>,
     }
@@ -345,9 +348,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         let inst_key = format!("inst_relate:⟨{}⟩", refno);
 
         // 查询 neg_relate: in = geo_relate (Neg类型切割几何)
-        // neg_relate 结构: in = geo_relate, out = 被切割的正实体
-        // geo_relate 结构: in = 负载体 pe, out = geo
-        // 所以负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
+        // neg_relate 结构: in = geo_relate, out = 被切割的正实体, pe = 负载体 PE
+        // 直接使用 neg_relate.pe 字段获取负载体的 world_trans
         // 添加 mesh 完备性检查：in.out.meshed = true，确保负几何的 mesh 已生成
         let sql_neg_pe = format!(
             r#"
@@ -357,7 +359,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                pe AS carrier_pe,
+                type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
             FROM {pe_key}<-neg_relate
             WHERE in.trans.d != NONE AND in.out.meshed = true
             "#
@@ -373,7 +376,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                     in.para_type ?? "" AS para_type,
                     in.trans.d AS trans,
                     in.out.aabb.d AS aabb,
-                    array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                    pe AS carrier_pe,
+                    type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
                 FROM {inst_key}<-neg_relate
                 WHERE in.trans.d != NONE AND in.out.meshed = true
                 "#
@@ -382,8 +386,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         }
 
         // 查询 ngmr_relate: in = geo_relate (CataCrossNeg类型切割几何)
-        // ngmr_relate 结构同 neg_relate: in = geo_relate, out = 被切割的正实体
-        // 负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
+        // ngmr_relate 结构: in = geo_relate, out = 被切割的正实体, pe = 负载体 PE
+        // 直接使用 ngmr_relate.pe 字段获取负载体的 world_trans
         // 添加 mesh 完备性检查：in.out.meshed = true
         let sql_ngmr_pe = format!(
             r#"
@@ -393,7 +397,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                pe AS carrier_pe,
+                type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
             FROM {pe_key}<-ngmr_relate
             WHERE in.trans.d != NONE AND in.out.meshed = true
             "#
@@ -414,7 +419,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                     in.para_type ?? "" AS para_type,
                     in.trans.d AS trans,
                     in.out.aabb.d AS aabb,
-                    array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                    pe AS carrier_pe,
+                    type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
                 FROM {inst_key}<-ngmr_relate
                 WHERE in.trans.d != NONE AND in.out.meshed = true
                 "#
