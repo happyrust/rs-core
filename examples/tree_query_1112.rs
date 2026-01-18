@@ -15,13 +15,13 @@ fn resolve_tree_path() -> Result<(PathBuf, u32)> {
             .get(pos + 1)
             .map(PathBuf::from)
             .context("缺少 --path 的路径参数")?;
-        let dbno = extract_dbno_from_path(&path).unwrap_or(DEFAULT_DBNO);
-        return Ok((path, dbno));
+        let dbnum = extract_dbno_from_path(&path).unwrap_or(DEFAULT_DBNO);
+        return Ok((path, dbnum));
     }
 
-    let dbno = args
+    let dbnum = args
         .iter()
-        .position(|x| x == "--dbno")
+        .position(|x| x == "--dbnum")
         .and_then(|pos| args.get(pos + 1))
         .and_then(|v| v.parse::<u32>().ok())
         .unwrap_or(DEFAULT_DBNO);
@@ -33,8 +33,8 @@ fn resolve_tree_path() -> Result<(PathBuf, u32)> {
         .map(PathBuf::from)
         .unwrap_or_else(default_tree_dir);
 
-    let path = dir.join(format!("{dbno}.tree"));
-    Ok((path, dbno))
+    let path = dir.join(format!("{dbnum}.tree"));
+    Ok((path, dbnum))
 }
 
 fn extract_dbno_from_path(path: &Path) -> Option<u32> {
@@ -53,25 +53,25 @@ fn default_tree_dir() -> PathBuf {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let (path, dbno) = resolve_tree_path()?;
+    let (path, dbnum) = resolve_tree_path()?;
     if !path.exists() {
         anyhow::bail!(
-            "未找到 tree 文件: {} (dbno={})",
+            "未找到 tree 文件: {} (dbnum={})",
             path.display(),
-            dbno
+            dbnum
         );
     }
 
     let index = if let Some(parent) = path.parent() {
-        load_tree_index_from_dir(dbno, parent)?
+        load_tree_index_from_dir(dbnum, parent)?
     } else {
         load_tree_index_from_path(&path)?
     };
 
     println!("✅ tree 文件: {}", path.display());
     println!(
-        "dbno={}, root={}, nodes={}",
-        index.dbno(),
+        "dbnum={}, root={}, nodes={}",
+        index.dbnum(),
         index.root_refno(),
         index.node_count()
     );

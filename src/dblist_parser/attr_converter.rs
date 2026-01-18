@@ -208,9 +208,9 @@ impl AttrConverter {
         // 引用号格式: "dbno_elno" 或纯数字
         if let Ok(refno_val) = value.parse::<u64>() {
             Ok(NamedAttrValue::RefU64Type(crate::RefU64(refno_val)))
-        } else if let Some((dbno, elno)) = value.split_once('_') {
-            if let (Ok(dbno_val), Ok(elno_val)) = (dbno.parse::<i32>(), elno.parse::<i32>()) {
-                // 构造 refno: (dbno << 32) | elno as u64
+        } else if let Some((dbnum, elno)) = value.split_once('_') {
+            if let (Ok(dbno_val), Ok(elno_val)) = (dbnum.parse::<i32>(), elno.parse::<i32>()) {
+                // 构造 refno: (dbnum << 32) | elno as u64
                 let refno_val = ((dbno_val as u64) << 32) | (elno_val as u64);
                 Ok(NamedAttrValue::RefU64Type(crate::RefU64(refno_val)))
             } else {

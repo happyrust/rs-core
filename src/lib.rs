@@ -128,6 +128,11 @@ pub mod color_scheme;
 pub mod web_server;
 pub use crate::types::*;
 pub use rs_surreal::*;
+pub use tree_query::{
+    DbMetaInfo, TreeIndex, TreeQuery, TreeQueryFilter, TreeQueryOptions,
+    get_cached_tree_index, get_dbnum_by_ref0, get_dbnum_by_refno, get_tree_index_by_refno,
+    load_db_meta_info, load_tree_index_from_dir, load_tree_index_from_path,
+};
 pub use runtime::{
     DbOptionSurrealExt, connect_local_rocksdb, init_surreal_with_retry, initialize_databases,
     try_connect_database,

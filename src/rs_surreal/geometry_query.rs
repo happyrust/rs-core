@@ -151,7 +151,7 @@ pub struct QueryAabbParam {
     pub refno: RefnoEnum,
     pub noun: String,
     pub geo_aabbs: Vec<GeoAabbTrans>,
-    pub world_trans: PlantTransform,
+    pub world_trans: Option<PlantTransform>,
 }
 
 impl QueryAabbParam {
@@ -250,14 +250,17 @@ pub async fn query_aabb_params(
 ) -> anyhow::Result<Vec<QueryAabbParam>> {
     use crate::SUL_DB;
 
+    // 从 pe_transform 获取 world_trans（允许为 None，由调用方过滤）
     let mut sql = format!(
-        r#"select id, in as refno, world_trans.d as world_trans, in.noun as noun,
+        r#"select id, in as refno,
+        type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
+        in.noun as noun,
         (select out.aabb.d as aabb, trans.d as trans from out->geo_relate where out.aabb.d != none and trans.d != none)
-        as geo_aabbs from {inst_keys} where world_trans.d != none"#,
+        as geo_aabbs from {inst_keys}"#,
     );
 
     if !replace_exist {
-        sql.push_str(" and array::len(in->inst_relate_aabb) = 0");
+        sql.push_str(" where array::len(in->inst_relate_aabb) = 0");
     }
 
     // println!("Executing SQL: {}", sql);
@@ -374,10 +377,13 @@ pub async fn update_inst_relate_aabbs_by_refnos(
 
         let mut relate_sql = String::new();
         for r in result {
+            // 过滤 world_trans 为 None 的记录
+            let Some(world_trans) = r.world_trans else { continue };
+            
             // 计算合并后的 AABB
             let mut aabb = Aabb::new_invalid();
             for g in &r.geo_aabbs {
-                let t = r.world_trans * &g.trans;
+                let t = world_trans * &g.trans;
                 let tmp_aabb = g.aabb.scaled(&t.scale.into());
                 let tmp_aabb = tmp_aabb.transform_by(&Isometry {
                     rotation: t.rotation.into(),

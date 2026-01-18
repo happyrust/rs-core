@@ -315,6 +315,8 @@ impl NamedAttrMap {
         let owner = self.get_refno_by_att_or_default("OWNER").into();
         let noun = self.get_type();
         let name = self.get_string("NAME").unwrap_or_default();
+        // 解析阶段若已注入 DBNUM（来自文件头），优先使用它，避免误用 refno.get_0() 等推断值。
+        let dbnum = self.get_i32("DBNUM").unwrap_or(dbnum);
 
         let ele = SPdmsElement {
             refno,
@@ -682,7 +684,11 @@ impl NamedAttrMap {
         let mut records_map: IndexMap<String, Vec<RefnoEnum>> = IndexMap::new();
         let type_name = self.get_type();
         let refno = self.get_refno_or_default();
-        let dbnum = refno.refno().get_0();
+        // 优先使用解析器注入的 DBNUM（来自 db 文件头），回退到 refno.get_0() 兼容旧数据。
+        let dbnum = self
+            .get_u32("DBNUM")
+            .or_else(|| self.get_u32("dbnum"))
+            .unwrap_or(refno.refno().get_0());
         // map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
         let id_str = format!("['{}',{}]", refno.refno(), sesno);
         map.insert("TYPE".into(), type_name.into());
@@ -781,7 +787,11 @@ impl NamedAttrMap {
         let mut records_map: IndexMap<String, Vec<RefU64>> = IndexMap::new();
         let type_name = self.get_type();
         let refno = self.get_refno_or_default();
-        let dbnum = refno.refno().get_0();
+        // 优先使用解析器注入的 DBNUM（来自 db 文件头），回退到 refno.get_0() 兼容旧数据。
+        let dbnum = self
+            .get_u32("DBNUM")
+            .or_else(|| self.get_u32("dbnum"))
+            .unwrap_or(refno.refno().get_0());
         map.insert("id".into(), id.unwrap_or(refno.to_string()).into());
         map.insert("TYPE".into(), type_name.into());
         map.insert("dbnum".into(), serde_json::Value::from(dbnum));
@@ -866,7 +876,11 @@ impl NamedAttrMap {
 
         let type_name = self.get_type();
         let refno = self.get_refno_by_att("REFNO").unwrap_or_default();
-        let dbnum = refno.refno().get_0();
+        // 优先使用解析器注入的 DBNUM（来自 db 文件头），回退到 refno.get_0() 兼容旧数据。
+        let dbnum = self
+            .get_u32("DBNUM")
+            .or_else(|| self.get_u32("dbnum"))
+            .unwrap_or(refno.refno().get_0());
         let mut map: IndexMap<String, serde_json::Value> = IndexMap::new();
         map.insert("id".into(), refno.to_string().into());
         map.insert("TYPE".into(), type_name.clone().into());

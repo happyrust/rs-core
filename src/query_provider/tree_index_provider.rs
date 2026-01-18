@@ -4,26 +4,42 @@ use super::error::{QueryError, QueryResult};
 use super::surreal_provider::SurrealQueryProvider;
 use super::traits::*;
 use crate::tool::db_tool::db1_hash;
-use crate::tree_query::{TreeIndex, TreeQuery, TreeQueryFilter, TreeQueryOptions};
+use crate::tree_query::{
+    get_cached_tree_index, get_dbnum_by_refno, load_db_meta_info, TreeIndex, TreeQuery,
+    TreeQueryFilter, TreeQueryOptions,
+};
 use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use crate::{RefU64, RefnoEnum};
 use async_trait::async_trait;
-use log::{debug, warn};
-use std::collections::HashSet;
+use log::{debug, info, warn};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// TreeIndex 查询提供者（层级查询走 TreeIndex，其它查询委托 SurrealDB）
 pub struct TreeIndexQueryProvider {
     name: String,
-    indexes: Vec<Arc<TreeIndex>>,
+    /// dbnum -> TreeIndex 映射（用于快速查找）
+    index_map: HashMap<u32, Arc<TreeIndex>>,
     surreal_provider: SurrealQueryProvider,
 }
 
 impl TreeIndexQueryProvider {
-    /// 从目录中加载所有 .tree 文件
+    /// 从目录中加载所有 .tree 文件和 db_meta_info.json
     pub fn from_tree_dir(tree_dir: impl Into<PathBuf>) -> QueryResult<Self> {
         let tree_dir = tree_dir.into();
+        
+        // 加载 db_meta_info.json（如果存在）
+        let meta_path = tree_dir.join("db_meta_info.json");
+        if meta_path.exists() {
+            if let Err(e) = load_db_meta_info(&meta_path) {
+                warn!("加载 db_meta_info.json 失败: {}", e);
+            } else {
+                info!("已加载 db_meta_info.json: {}", meta_path.display());
+            }
+        }
+        
+        // 加载所有 .tree 文件
         let indexes = load_tree_indexes_from_dir(&tree_dir)?;
         if indexes.is_empty() {
             return Err(QueryError::NotFound(format!(
@@ -31,15 +47,31 @@ impl TreeIndexQueryProvider {
                 tree_dir.display()
             )));
         }
+        
+        // 构建 dbnum -> TreeIndex 映射
+        let mut index_map = HashMap::new();
+        for index in &indexes {
+            index_map.insert(index.dbnum(), index.clone());
+        }
+        
         Ok(Self {
             name: "TreeIndex".to_string(),
-            indexes,
+            index_map,
             surreal_provider: SurrealQueryProvider::new()?,
         })
     }
 
+    /// 根据 refno 查找对应的 TreeIndex（优先使用 ref0 -> dbnum 映射）
     fn find_index(&self, refno: RefU64) -> Option<Arc<TreeIndex>> {
-        for index in &self.indexes {
+        // 优先使用 ref0 -> dbnum 缓存（O(1) 查找）
+        if let Some(dbnum) = get_dbnum_by_refno(refno) {
+            if let Some(index) = self.index_map.get(&dbnum) {
+                return Some(index.clone());
+            }
+        }
+        
+        // 回退：遍历所有 index 查找（兼容未加载 db_meta_info 的情况）
+        for index in self.index_map.values() {
             if index.contains_refno(refno) {
                 return Some(index.clone());
             }
@@ -283,7 +315,9 @@ impl GraphQuery for TreeIndexQueryProvider {
         if refnos.is_empty() {
             return Ok(Vec::new());
         }
-        let mut out = HashSet::new();
+        // 模型生成路径约定：refnos 不会互相重叠（不会产生重复节点），因此这里不做去重，
+        // 直接按 refnos 输入顺序拼接每个 root 的 BFS 结果，保证顺序稳定。
+        let mut out: Vec<RefU64> = Vec::new();
         let options = Self::build_descendants_options(nouns, None, false);
         for refno in refnos {
             let Some(index) = self.find_index(refno.refno()) else {

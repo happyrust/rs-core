@@ -111,8 +111,8 @@ impl DblistParser {
     /// 设置数据库编号
     fn set_database_number(&mut self, line: &str) -> Result<()> {
         if let Some(number_str) = line.split_whitespace().nth(1) {
-            if let Ok(dbno) = number_str.parse::<i32>() {
-                self.current_dbno = dbno;
+            if let Ok(dbnum) = number_str.parse::<i32>() {
+                self.current_dbno = dbnum;
                 self.next_elno = 1;
             }
         }

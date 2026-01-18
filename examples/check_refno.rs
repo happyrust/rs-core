@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
 
     // 查找 24383 开头的 ELBO
     println!("--- 查找 24383 开头的 ELBO ---");
-    let sql = r#"SELECT id, noun FROM pe WHERE noun = 'ELBO' AND string::starts_with(meta::id(id), '24383') LIMIT 5"#;
+    let sql = r#"SELECT id, noun FROM pe WHERE noun = 'ELBO' AND string::starts_with(record::id(id), '24383') LIMIT 5"#;
     let resp = SUL_DB.query(sql).await?;
     println!("{:?}\n", resp);
 

@@ -127,6 +127,15 @@ function initHooks() {
     // Hook GFITMD
     hookGFITMD();
     
+    // Hook SetCE (setce 命令)
+    hookSetCE();
+    
+    // Hook elGoto
+    hookElGoto();
+    
+    // Hook DGOTO
+    hookDGOTO();
+    
     log(`All hooks installed successfully`, 'INFO');
     return true;
 }
@@ -335,6 +344,115 @@ function hookGATTRO() {
     });
     
     hooks.push({ name: 'GATTRO', addr: funcAddr });
+}
+
+// Hook DLL_UserCE::SetCE - 设置当前元素 (setce 命令)
+// __cdecl: 参数在栈上, [esp+4] = DB_Element*
+function hookSetCE() {
+    const offset = 0x000332a0;
+    const funcAddr = coreBase.add(offset);
+    
+    Interceptor.attach(funcAddr, {
+        onEnter: function(args) {
+            // __cdecl 调用约定：从栈读取参数
+            const esp = this.context.esp;
+            const elementPtrAddr = esp.add(4).readPointer();  // [esp+4] = DB_Element*
+            
+            log(`[SetCE] Called, ESP=${esp}, ElementPtr=${elementPtrAddr}`);
+            
+            // 读取 DB_Element 的 REFNO (前两个 DWORD)
+            if (!elementPtrAddr.isNull()) {
+                try {
+                    const refno1 = elementPtrAddr.readU32();
+                    const refno2 = elementPtrAddr.add(4).readU32();
+                    
+                    log(`[SetCE] *** Element selected: =${refno1}/${refno2} ***`);
+                    
+                    // 保存当前元素信息用于后续 hook
+                    this.refno = `=${refno1}/${refno2}`;
+                    this.elementPtr = elementPtrAddr;
+                    
+                    // 如果是目标元素，启用详细跟踪
+                    if (refno1 === 17496 && refno2 === 106028) {
+                        log(`[SetCE] >>>>>>> TARGET ELEMENT FOUND: =17496/106028 <<<<<<<`, 'HIGHLIGHT');
+                        CONFIG.targetElement = elementPtrAddr;
+                    }
+                } catch (e) {
+                    log(`[SetCE] Error reading element: ${e.message}`, 'ERROR');
+                }
+            }
+        },
+        onLeave: function(retval) {
+            if (this.refno) {
+                log(`[SetCE] Completed for ${this.refno}`);
+            }
+        }
+    });
+    
+    hooks.push({ name: 'SetCE', addr: funcAddr });
+    log(`Hooked SetCE at ${funcAddr}`, 'DEBUG');
+}
+
+// Hook DB_Element::elGoto - 元素跳转
+function hookElGoto() {
+    const offset = 0x0004a58b0 - 0x00010000;  // 调整偏移
+    const funcAddr = coreBase.add(0x0004a58b0);
+    
+    Interceptor.attach(funcAddr, {
+        onEnter: function(args) {
+            const thisPtr = args[0];  // this (DB_Element*)
+            
+            if (!thisPtr.isNull()) {
+                try {
+                    const refno1 = thisPtr.readU32();
+                    const refno2 = thisPtr.add(4).readU32();
+                    
+                    if (CONFIG.verbose) {
+                        log(`[elGoto] =${refno1}/${refno2}`);
+                    }
+                    
+                    // 检测目标元素
+                    if (refno1 === 17496 && refno2 === 106028) {
+                        log(`[elGoto] *** TARGET: =17496/106028 ***`, 'HIGHLIGHT');
+                        
+                        if (CONFIG.logBacktrace) {
+                            log('Backtrace:\n' + Thread.backtrace(this.context, Backtracer.ACCURATE)
+                                .map(DebugSymbol.fromAddress).join('\n'));
+                        }
+                    }
+                } catch (e) {
+                    // 忽略读取错误
+                }
+            }
+        }
+    });
+    
+    hooks.push({ name: 'elGoto', addr: funcAddr });
+    log(`Hooked elGoto at ${funcAddr}`, 'DEBUG');
+}
+
+// Hook DGOTO - Fortran 数据库跳转
+function hookDGOTO() {
+    const offset = 0x005eb160;
+    const funcAddr = coreBase.add(offset);
+    
+    Interceptor.attach(funcAddr, {
+        onEnter: function(args) {
+            const elementArg = args[0];  // 元素参数
+            
+            if (CONFIG.verbose) {
+                log(`[DGOTO] Called with arg: ${elementArg}`);
+            }
+        },
+        onLeave: function(retval) {
+            if (CONFIG.verbose) {
+                log(`[DGOTO] Returned: ${retval}`);
+            }
+        }
+    });
+    
+    hooks.push({ name: 'DGOTO', addr: funcAddr });
+    log(`Hooked DGOTO at ${funcAddr}`, 'DEBUG');
 }
 
 // 主入口

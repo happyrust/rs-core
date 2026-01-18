@@ -106,7 +106,7 @@ pub trait TreeQuery: Send + Sync {
 
 #[derive(Debug, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct TreeFile {
-    pub dbno: u32,
+    pub dbnum: u32,
     pub root_refno: RefU64,
     pub arena: Arena<TreeNodeMeta>,
 }
@@ -144,7 +144,7 @@ impl TreeFile {
 
 #[derive(Debug)]
 pub struct TreeIndex {
-    dbno: u32,
+    dbnum: u32,
     root_refno: RefU64,
     roots: Vec<RefU64>,
     arena: Arena<TreeNodeMeta>,
@@ -184,7 +184,7 @@ impl TreeIndex {
         }
 
         Self {
-            dbno: file.dbno,
+            dbnum: file.dbnum,
             root_refno: file.root_refno,
             roots,
             arena,
@@ -192,8 +192,8 @@ impl TreeIndex {
         }
     }
 
-    pub fn dbno(&self) -> u32 {
-        self.dbno
+    pub fn dbnum(&self) -> u32 {
+        self.dbnum
     }
 
     pub fn root_refno(&self) -> RefU64 {
@@ -433,28 +433,28 @@ impl TreeQuery for SurrealTreeQuery {
 static TREE_INDEX_CACHE: Lazy<RwLock<HashMap<u32, Arc<TreeIndex>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
-pub fn get_cached_tree_index(dbno: u32) -> Option<Arc<TreeIndex>> {
-    TREE_INDEX_CACHE.read().get(&dbno).cloned()
+pub fn get_cached_tree_index(dbnum: u32) -> Option<Arc<TreeIndex>> {
+    TREE_INDEX_CACHE.read().get(&dbnum).cloned()
 }
 
-pub fn load_tree_index_from_dir(dbno: u32, dir: impl AsRef<Path>) -> anyhow::Result<Arc<TreeIndex>> {
-    if let Some(index) = get_cached_tree_index(dbno) {
+pub fn load_tree_index_from_dir(dbnum: u32, dir: impl AsRef<Path>) -> anyhow::Result<Arc<TreeIndex>> {
+    if let Some(index) = get_cached_tree_index(dbnum) {
         return Ok(index);
     }
-    let path = dir.as_ref().join(format!("{}.tree", dbno));
+    let path = dir.as_ref().join(format!("{}.tree", dbnum));
     let index = Arc::new(TreeIndex::load_from_path(&path)?);
-    TREE_INDEX_CACHE.write().insert(dbno, index.clone());
+    TREE_INDEX_CACHE.write().insert(dbnum, index.clone());
     Ok(index)
 }
 
 pub fn load_tree_index_from_path(path: impl AsRef<Path>) -> anyhow::Result<Arc<TreeIndex>> {
     let index = Arc::new(TreeIndex::load_from_path(path.as_ref())?);
-    TREE_INDEX_CACHE.write().insert(index.dbno(), index.clone());
+    TREE_INDEX_CACHE.write().insert(index.dbnum(), index.clone());
     Ok(index)
 }
 
-pub fn remove_tree_index(dbno: u32) {
-    TREE_INDEX_CACHE.write().remove(&dbno);
+pub fn remove_tree_index(dbnum: u32) {
+    TREE_INDEX_CACHE.write().remove(&dbnum);
 }
 
 pub fn clear_tree_index_cache() {
@@ -495,4 +495,71 @@ fn noun_hashes_to_names(hashes: &Option<Vec<u32>>) -> Vec<String> {
             }
         })
         .collect()
+}
+
+// ============================================================================
+// DbMetaInfo: ref0 -> dbnum 映射
+// ============================================================================
+
+use serde::{Deserialize, Serialize};
+
+/// 数据库元信息（从 db_meta_info.json 加载）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbMetaInfo {
+    pub version: u32,
+    pub updated_at: String,
+    pub ref0_to_dbnum: HashMap<String, u32>,
+    #[serde(default)]
+    pub db_files: HashMap<String, serde_json::Value>,
+}
+
+impl DbMetaInfo {
+    /// 从文件加载
+    pub fn load(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        let content = std::fs::read_to_string(path)?;
+        let meta: DbMetaInfo = serde_json::from_str(&content)?;
+        Ok(meta)
+    }
+
+    /// 根据 ref0 获取 dbnum
+    pub fn get_dbnum(&self, ref0: u32) -> Option<u32> {
+        self.ref0_to_dbnum.get(&ref0.to_string()).copied()
+    }
+
+    /// 根据 RefU64 获取 dbnum
+    pub fn get_dbnum_by_refno(&self, refno: RefU64) -> Option<u32> {
+        self.get_dbnum(refno.get_0())
+    }
+}
+
+/// 全局 ref0 -> dbnum 映射缓存
+static REF0_TO_DBNUM_CACHE: Lazy<RwLock<HashMap<u32, u32>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+/// 加载 db_meta_info.json 并缓存 ref0 -> dbnum 映射
+pub fn load_db_meta_info(path: impl AsRef<Path>) -> anyhow::Result<DbMetaInfo> {
+    let meta = DbMetaInfo::load(path)?;
+    let mut cache = REF0_TO_DBNUM_CACHE.write();
+    for (ref0_str, dbnum) in &meta.ref0_to_dbnum {
+        if let Ok(ref0) = ref0_str.parse::<u32>() {
+            cache.insert(ref0, *dbnum);
+        }
+    }
+    Ok(meta)
+}
+
+/// 根据 ref0 获取 dbnum（从缓存）
+pub fn get_dbnum_by_ref0(ref0: u32) -> Option<u32> {
+    REF0_TO_DBNUM_CACHE.read().get(&ref0).copied()
+}
+
+/// 根据 RefU64 获取 dbnum（从缓存）
+pub fn get_dbnum_by_refno(refno: RefU64) -> Option<u32> {
+    get_dbnum_by_ref0(refno.get_0())
+}
+
+/// 根据 refno 自动获取对应的 TreeIndex
+pub fn get_tree_index_by_refno(refno: RefU64) -> Option<Arc<TreeIndex>> {
+    let dbnum = get_dbnum_by_refno(refno)?;
+    get_cached_tree_index(dbnum)
 }

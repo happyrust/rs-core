@@ -209,10 +209,8 @@ pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Res
     };
     let world_mat = if is_local {
         None
-    } else if let Some(world) = compute_world_from_parent(refno, local_mat).await? {
-        Some(world)
     } else {
-        get_world_mat4_impl(refno, false).await?
+        compute_world_from_parent(refno, local_mat).await?
     };
 
     let local_trans = dmat4_to_transform_option(local_mat);
@@ -240,20 +238,15 @@ async fn compute_world_from_parent(
         return Ok(Some(local_mat.unwrap_or(DMat4::IDENTITY)));
     }
 
-    if let Ok(Some(parent_cache)) = query_pe_transform(parent_refno).await {
-        if let Some(parent_world) = parent_cache.world {
-            let parent_mat = bevy_transform_to_dmat4(&parent_world);
-            return Ok(Some(match local_mat {
-                Some(local) => parent_mat * local,
-                None => parent_mat,
-            }));
+    let parent_cache = query_pe_transform(parent_refno).await?;
+    let parent_world = parent_cache.and_then(|c| c.world);
+    
+    Ok(parent_world.map(|parent_trans| {
+        let parent_mat = bevy_transform_to_dmat4(&parent_trans);
+        match local_mat {
+            Some(local) => parent_mat * local,
+            None => parent_mat,
         }
-    }
-
-    let parent_world = get_world_mat4_impl(parent_refno, false).await?;
-    Ok(parent_world.map(|parent_mat| match local_mat {
-        Some(local) => parent_mat * local,
-        None => parent_mat,
     }))
 }
 
@@ -270,128 +263,6 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
     get_transform_mat4(refno, is_local).await
 }
 
-/// 世界矩阵计算的具体实现
-///
-/// 此函数包含使用策略模式的世界矩阵计算逻辑
-///
-/// # 优化策略
-/// - 在遍历祖先链时，检查是否有祖先节点已缓存 pe_transform.world_trans
-/// - 如果找到缓存的祖先，从该点开始计算，避免重复计算
-async fn get_world_mat4_impl(
-    refno: RefnoEnum,
-    is_local: bool,
-) -> anyhow::Result<Option<DMat4>> {
-    #[cfg(feature = "profile")]
-    let start_ancestors = std::time::Instant::now();
-
-    let mut ancestors: Vec<NamedAttrMap> = super::get_ancestor_attmaps(refno).await?;
-
-    #[cfg(feature = "profile")]
-    let elapsed_ancestors = start_ancestors.elapsed();
-    #[cfg(feature = "profile")]
-    println!("get_ancestor_attmaps took {:?}", elapsed_ancestors);
-
-    #[cfg(feature = "profile")]
-    let start_refnos = std::time::Instant::now();
-    let ancestor_refnos = crate::query_ancestor_refnos(refno).await?;
-    #[cfg(feature = "profile")]
-    let elapsed_refnos = start_refnos.elapsed();
-    #[cfg(feature = "profile")]
-    println!("query_ancestor_refnos took {:?}", elapsed_refnos);
-
-    // 检查 ancestors 是否包含 self，如果不包含则添加
-    // get_ancestor_attmaps 通常返回 [Parent, GrandParent, ... Root]
-    // 我们需要将其补充为 [Self, Parent, ... Root]
-    let has_self = ancestors.iter().any(|a| a.get_refno_or_default() == refno);
-    if !has_self {
-        let self_att = get_named_attmap(refno).await?;
-        ancestors.insert(0, self_att);
-    }
-
-    if ancestor_refnos.len() <= 1 {
-        return Ok(Some(DMat4::IDENTITY));
-    }
-
-    ancestors.reverse();
-
-    // 如果只需要局部变换，直接调用 get_local_mat4
-    if is_local {
-        if ancestors.len() >= 2 {
-            let parent_refno = ancestors[ancestors.len() - 2].get_refno_or_default();
-            let cur_refno = ancestors.last().unwrap().get_refno_or_default();
-            return get_local_mat4(cur_refno).await;
-        }
-        return Ok(Some(DMat4::IDENTITY));
-    }
-
-    // 优化：查找祖先链中最近的有缓存 pe_transform.world_trans 的节点
-    let mut start_index = 0;
-    let mut mat4 = DMat4::IDENTITY;
-
-    #[cfg(feature = "profile")]
-    let cache_search_start = std::time::Instant::now();
-
-    // 从最接近目标节点的祖先开始查找（逆序遍历，从后往前）
-    for i in (1..ancestors.len()).rev() {
-        let ancestor_refno = ancestors[i].get_refno_or_default();
-
-        // 尝试从数据库读取该祖先的缓存
-        if let Ok(Some(cache)) = query_pe_transform(ancestor_refno).await {
-            if let Some(world_trans) = cache.world {
-                // 找到缓存！使用这个作为起点
-                mat4 = bevy_transform_to_dmat4(&world_trans);
-                start_index = i;
-                #[cfg(feature = "debug_spatial")]
-                println!(
-                    "🎯 Found cached pe_transform.world_trans at ancestor[{}]: {}",
-                    i, ancestor_refno
-                );
-                break;
-            }
-        }
-    }
-
-    #[cfg(feature = "profile")]
-    {
-        let cache_search_elapsed = cache_search_start.elapsed();
-        println!(
-            "Cache search took {:?}, start_index={}",
-            cache_search_elapsed, start_index
-        );
-    }
-
-    // 从找到的缓存点（或根节点）开始，累加到目标节点的局部变换
-    for i in (start_index + 1)..ancestors.len() {
-        let cur_refno = ancestors[i].get_refno_or_default();
-        let parent_refno = ancestors[i - 1].get_refno_or_default();
-
-        match get_local_mat4(cur_refno).await {
-            Ok(Some(local_mat)) => {
-                mat4 = mat4 * local_mat;
-            }
-            Ok(None) => {
-                #[cfg(feature = "debug_spatial")]
-                println!(
-                    "DEBUG: No transform calculated for {} -> {}",
-                    parent_refno, cur_refno
-                );
-            }
-            Err(e) => {
-                #[cfg(feature = "debug_spatial")]
-                println!(
-                    "DEBUG: Error calculating transform for {} -> {}: {}",
-                    parent_refno, cur_refno, e
-                );
-            }
-        }
-    }
-
-    if mat4.is_nan() {
-        return Ok(None);
-    }
-
-    Ok(Some(mat4))
-}
 
 /// 将 Bevy Transform 转换为 DMat4
 ///

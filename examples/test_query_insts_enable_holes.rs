@@ -59,9 +59,8 @@ async fn main() -> anyhow::Result<()> {
     println!("enable_holes=true: 返回 {} 条", with_holes.len());
     for inst in &with_holes {
         println!(
-            "[holes] refno={} has_neg={} insts={:?}",
+            "[holes] refno={} insts={:?}",
             inst.refno.to_pe_key(),
-            inst.has_neg,
             inst.insts
         );
     }
@@ -71,9 +70,8 @@ async fn main() -> anyhow::Result<()> {
     println!("enable_holes=false: 返回 {} 条", without_holes.len());
     for inst in &without_holes {
         println!(
-            "[plain] refno={} has_neg={} insts={:?}",
+            "[plain] refno={} insts={:?}",
             inst.refno.to_pe_key(),
-            inst.has_neg,
             inst.insts
         );
     }

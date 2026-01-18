@@ -15,12 +15,12 @@ use std::path::Path;
 #[cfg(feature = "parquet")]
 /// 导出 inst_relate_aabb + world_trans 到 Parquet，用于空间计算
 pub async fn export_inst_aabb_parquet(output_path: &Path) -> anyhow::Result<()> {
-    // 查询字段：refno、dbno、noun、world_trans（可选）、aabb（flatten）
+    // 查询字段：refno、dbnum、noun、world_trans（可选）、aabb（flatten）
     let sql = r#"
 SELECT
   in.id as refno,
   in.noun as noun,
-  in.dbno as dbno,
+  in.dbnum as dbnum,
   world_trans.d as world_trans,
   in->inst_relate_aabb.out[0]
 FROM inst_relate
@@ -60,7 +60,7 @@ WHERE world_trans.d != none
         let mins = aabb.mins();
         let maxs = aabb.maxs();
         refnos.push(row.refno);
-        dbnos.push(row.dbno as i64);
+        dbnos.push(row.dbnum as i64);
         nouns.push(row.noun.unwrap_or_default());
         min_x.push(mins.x as f64);
         max_x.push(maxs.x as f64);
@@ -80,7 +80,7 @@ WHERE world_trans.d != none
 
     let df = df![
         "refno" => refnos,
-        "dbno" => dbnos,
+        "dbnum" => dbnos,
         "noun" => nouns,
         "min_x" => min_x,
         "max_x" => max_x,
@@ -110,7 +110,7 @@ WHERE world_trans.d != none
 #[derive(Debug, Clone, serde::Deserialize)]
 struct Row {
     refno: String,
-    dbno: u32,
+    dbnum: u32,
     noun: Option<String>,
     world_trans: Option<crate::PlantTransform>,
     #[serde(default)]

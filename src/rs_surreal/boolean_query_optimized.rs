@@ -247,11 +247,10 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         trans: crate::rs_surreal::geometry_query::PlantTransform,
     }
 
-    use anyhow::Context as _;
-
     // 步骤1：批量获取所有正实体基础信息
-    // 查询尚未成功布尔运算的实体（bool_status != 'Success'）
-    // 注意：需要使用 inst_relate 表的 key（inst_relate:⟨17496_106028⟩ 形式）
+    // 从 pe_transform 获取 world_trans，从 inst_relate_aabb 关系获取 aabb
+    // 注意：使用 LET 预先计算 aabb 并在 WHERE 中过滤，确保 aabb 不为 null
+    use anyhow::Context as _;
     let inst_keys = get_inst_relate_keys(refnos);
     let sql_bases = format!(
         r#"
@@ -259,24 +258,26 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in AS refno,
             in.sesno AS sesno,
             in.noun AS noun,
-            world_trans.d AS wt,
-            ((select value (out.d ?? NONE) from in->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
+            type::record("pe_transform", record::id(in)).world_trans.d AS wt,
+            (in->inst_relate_aabb[0].out.d) AS aabb
         FROM {inst_keys}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
-            AND array::len(in->inst_relate_aabb) > 0
+            AND type::record("pe_transform", record::id(in)).world_trans != NONE
+            AND aabb != NONE
         "#
     );
-
     let base_infos: Vec<PosEntityBase> = SUL_DB
         .query_take(&sql_bases, 0)
         .await
-        .with_context(|| format!("sql_bases 查询失败，SQL={}", sql_bases))?;
+        .unwrap_or_default();  // 反序列化失败时返回空列表
     let mut base_map: HashMap<RefnoEnum, PosEntityBase> = HashMap::new();
     for base in base_infos {
-        base_map.insert(base.refno, base);
+        // 过滤掉 aabb 为 None 的记录
+        if base.aabb.is_some() {
+            base_map.insert(base.refno, base);
+        }
     }
-
     // 步骤2：批量获取所有正几何
     // 使用子查询模式：从 inst_relate.out (inst_info) 遍历到 geo_relate
     // 注意：直接使用 inst_relate->out->geo_relate 语法不工作，需要用子查询

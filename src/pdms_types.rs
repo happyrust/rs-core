@@ -1135,7 +1135,7 @@ pub struct PdmsNodeId(pub NodeId);
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DbnoVersion {
     ///数据库编号
-    pub dbno: u32,
+    pub dbnum: u32,
     ///版本号
     pub version: u32,
 }
@@ -1222,7 +1222,7 @@ pub struct PDMSDBInfo {
     ///数据库名称
     pub name: String,
     ///数据库编号
-    pub db_no: i32,
+    pub dbnum: i32,
     ///数据库类型
     pub db_type: String,
     ///版本号

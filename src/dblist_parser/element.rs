@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 pub struct PdmsElement {
     /// 元素类型
     pub element_type: ElementType,
-    /// 元素编号 (dbno, elno)
+    /// 元素编号 (dbnum, elno)
     pub refno: (i32, i32),
     /// 属性映射（使用 NamedAttrMap）
     pub attributes: NamedAttrMap,

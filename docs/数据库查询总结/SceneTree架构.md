@@ -176,7 +176,7 @@ pub struct SceneTreeInitResult {
 
 ```sql
 -- 批量查询节点状态
-SELECT VALUE { id: meta::id(id), has_geo: has_geo, generated: generated } 
+SELECT VALUE { id: record::id(id), has_geo: has_geo, generated: generated } 
 FROM [scene_node:104679055498, scene_node:104679055499]
 ```
 
@@ -184,7 +184,7 @@ FROM [scene_node:104679055498, scene_node:104679055499]
 
 ```sql
 -- 从列表中筛选未生成的几何节点
-SELECT VALUE meta::id(id) 
+SELECT VALUE record::id(id) 
 FROM [scene_node:104679055498, scene_node:104679055499] 
 WHERE has_geo = true AND generated = false
 ```
@@ -193,7 +193,7 @@ WHERE has_geo = true AND generated = false
 
 ```sql
 -- 查询直属子节点
-SELECT VALUE meta::id(out) 
+SELECT VALUE record::id(out) 
 FROM contains 
 WHERE in = scene_node:104679055498 
 LIMIT 1000
