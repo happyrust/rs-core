@@ -60,7 +60,10 @@ pub async fn query_pe_transform(refno: RefnoEnum) -> Result<Option<PeTransformCa
 /// # Returns
 /// * `Ok(Some(Transform))` - 查询成功
 /// * `Ok(None)` - 未找到或字段为空
-pub async fn query_transform(refno: RefnoEnum, is_local: bool) -> Result<Option<Transform>> {
+/// 
+/// # Note
+/// 此函数仅查询缓存，不会惰性计算。外部应使用 `get_world_mat4` 代替。
+pub(crate) async fn query_transform(refno: RefnoEnum, is_local: bool) -> Result<Option<Transform>> {
     let cache = query_pe_transform(refno).await?;
     Ok(cache.and_then(|c| if is_local { c.local } else { c.world }))
 }

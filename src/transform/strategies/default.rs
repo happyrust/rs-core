@@ -13,7 +13,6 @@ use crate::{
 use async_trait::async_trait;
 use glam::{DMat3, DMat4, DQuat, DVec3};
 use std::sync::Arc;
-use crate::tool::math_tool;
 
 /// POSL/PLIN 属性处理器  
 pub struct PoslHandler;
@@ -102,9 +101,6 @@ impl PoslHandler {
             if let Some(zdis) = att.get_f64("ZDIS") {
                 offset.z += zdis;
             }
-            // #[cfg(feature = "debug_spatial")]
-            println!("  local_quat PDMS ORI: {}, offset is  {:?}", math_tool::dquat_to_pdms_ori_str(&local_quat, true), offset);
-
 
             // 最终位置 = PLINE 位置 + 旋转后的局部偏移 + 原始位置
             let final_pos = plin_pos + offset + *pos;

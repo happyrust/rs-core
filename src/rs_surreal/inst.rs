@@ -357,14 +357,12 @@ pub async fn query_insts_with_batch(
     let mut results = Vec::new();
 
     for chunk in refnos.chunks(batch) {
-        // 构建 pe:xxx 格式的 keys 用于查询
-        let pe_keys: Vec<String> = chunk.iter().map(|r| r.to_pe_key()).collect();
-        let pe_keys_str = pe_keys.join(",");
-
         if enable_holes {
             // ========== 路径 A：布尔结果查询 ==========
-            // 直接从 inst_relate_bool 获取有成功布尔结果的记录
-            // 利用 pe 表的计算字段：refno.world_trans / refno.world_aabb
+            // 直接从 inst_relate_bool:{refno} 获取有成功布尔结果的记录
+            let bool_keys: Vec<String> = chunk.iter().map(|r| format!("inst_relate_bool:{}", r)).collect();
+            let bool_keys_str = bool_keys.join(",");
+            
             let bool_sql = format!(
                 r#"
                 SELECT
@@ -373,11 +371,10 @@ pub async fn query_insts_with_batch(
                     refno.world_trans as world_trans,
                     refno.world_aabb as world_aabb,
                     [{{ "transform": refno.world_trans, "geo_hash": mesh_id, "is_tubi": false, "unit_flag": false }}] as insts
-                FROM inst_relate_bool
-                WHERE status = 'Success' AND refno IN [{pe_keys}]
-                  AND refno.world_trans != NONE
+                FROM [{bool_keys}]
+                WHERE status = 'Success' AND refno.world_trans != NONE
                 "#,
-                pe_keys = pe_keys_str
+                bool_keys = bool_keys_str
             );
 
             let mut bool_results: Vec<GeomInstQuery> = SUL_DB
@@ -400,11 +397,11 @@ pub async fn query_insts_with_batch(
 
             if !non_bool_keys.is_empty() {
                 let non_bool_keys_str = non_bool_keys.join(",");
-                // 利用 pe 表的计算字段：in.world_trans / in.world_aabb
+                // 直接从 inst_relate:{refno} 查询
                 let geo_sql = format!(
                     r#"
                     SELECT
-                        in.id as refno,
+                        in as refno,
                         in.owner ?? in as owner,
                         in.world_trans as world_trans,
                         in.world_aabb as world_aabb,
@@ -431,12 +428,11 @@ pub async fn query_insts_with_batch(
                 chunk.iter().map(|r| r.to_inst_relate_key()).collect();
             let inst_relate_keys_str = inst_relate_keys.join(",");
 
-            // 利用 pe 表的计算字段简化查询
-            // 仍然需要检查 inst_relate_bool 来设置 has_neg 标志
+            // 直接从 inst_relate:{refno} 查询
             let sql = format!(
                 r#"
                 SELECT
-                    in.id as refno,
+                    in as refno,
                     in.owner ?? in as owner,
                     in.world_trans as world_trans,
                     in.world_aabb as world_aabb,
