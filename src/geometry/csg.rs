@@ -1785,8 +1785,16 @@ fn generate_sphere_mesh(
     // 生成几何边：赤道 + 2条子午线
     let base_edges = generate_sphere_edges(radius, radial, 1);
     let edges = transform_edges(base_edges, sphere.center, Vec3::Z);
+    
+    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+    
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
+    
     Some(GeneratedMesh {
-        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
+        mesh,
         aabb: Some(aabb),
     })
 }
@@ -1837,92 +1845,176 @@ fn generate_snout_mesh(
     let step_theta = std::f32::consts::TAU / radial as f32;
     let radius_delta = top_radius - bottom_radius;
 
-    // 流形版本：每圈只有 radial 个顶点（不重复）
-    // 顶点布局：
-    // - [0, radial): 底圈
-    // - [radial, 2*radial): 第二圈
-    // - ...
-    // - [height_segments * radial]: 底面中心（如果有底面）
-    // - [height_segments * radial + 1]: 顶面中心（如果有顶面）
-    let mut vertices = Vec::with_capacity((height_segments + 1) * radial + 2);
-    let mut normals = Vec::with_capacity(vertices.capacity());
+    let mut vertices = Vec::new();
+    let mut normals = Vec::new();
     let mut indices = Vec::new();
     let mut aabb = Aabb::new_invalid();
 
-    // 生成侧面顶点（每圈 radial 个，不重复）
-    for segment in 0..=height_segments {
-        let t = segment as f32 / height_segments as f32;
-        let center = bottom_center + axis_dir * (height_axis * t) + offset_dir * (snout.poff * t);
-        let radius = (bottom_radius + radius_delta * t).max(0.0);
-        for slice in 0..radial {
-            let angle = slice as f32 * step_theta;
-            let (sin, cos) = angle.sin_cos();
-            let radial_dir = basis_u * cos + basis_v * sin;
-            let vertex = center + radial_dir * radius;
-            extend_aabb(&mut aabb, vertex);
-            vertices.push(vertex);
+    if manifold {
+        // ========== Manifold 版本：顶点共享 ==========
+        // 每圈只有 radial 个顶点（不重复）
+        vertices.reserve((height_segments + 1) * radial + 2);
+        normals.reserve(vertices.capacity());
 
-            // 计算法向量
-            let tangent_theta = (-sin) * basis_u + cos * basis_v;
-            let tangent_theta = tangent_theta * radius;
-            let tangent_height = center_delta + radial_dir * radius_delta;
-            let mut normal = tangent_theta.cross(tangent_height);
-            if normal.length_squared() <= 1e-8 {
-                normal = radial_dir;
-            } else {
-                normal = normal.normalize();
+        // 生成侧面顶点
+        for segment in 0..=height_segments {
+            let t = segment as f32 / height_segments as f32;
+            let center = bottom_center + axis_dir * (height_axis * t) + offset_dir * (snout.poff * t);
+            let radius = (bottom_radius + radius_delta * t).max(0.0);
+            for slice in 0..radial {
+                let angle = slice as f32 * step_theta;
+                let (sin, cos) = angle.sin_cos();
+                let radial_dir = basis_u * cos + basis_v * sin;
+                let vertex = center + radial_dir * radius;
+                extend_aabb(&mut aabb, vertex);
+                vertices.push(vertex);
+
+                let tangent_theta = (-sin) * basis_u + cos * basis_v;
+                let tangent_theta = tangent_theta * radius;
+                let tangent_height = center_delta + radial_dir * radius_delta;
+                let mut normal = tangent_theta.cross(tangent_height);
+                if normal.length_squared() <= 1e-8 {
+                    normal = radial_dir;
+                } else {
+                    normal = normal.normalize();
+                }
+                normals.push(normal);
             }
-            normals.push(normal);
         }
-    }
 
-    // 生成侧面三角形（流形版本，使用模运算处理闭合）
-    for segment in 0..height_segments {
-        let ring_start = segment * radial;
-        let next_ring_start = (segment + 1) * radial;
-        for slice in 0..radial {
-            let curr = (ring_start + slice) as u32;
-            let next = (ring_start + (slice + 1) % radial) as u32;
-            let curr_above = (next_ring_start + slice) as u32;
-            let next_above = (next_ring_start + (slice + 1) % radial) as u32;
-
-            // 两个三角形，法向量指向外部
-            indices.extend_from_slice(&[curr, next, curr_above]);
-            indices.extend_from_slice(&[next, next_above, curr_above]);
+        // 侧面三角形（使用模运算处理闭合）
+        for segment in 0..height_segments {
+            let ring_start = segment * radial;
+            let next_ring_start = (segment + 1) * radial;
+            for slice in 0..radial {
+                let curr = (ring_start + slice) as u32;
+                let next = (ring_start + (slice + 1) % radial) as u32;
+                let curr_above = (next_ring_start + slice) as u32;
+                let next_above = (next_ring_start + (slice + 1) % radial) as u32;
+                indices.extend_from_slice(&[curr, next, curr_above]);
+                indices.extend_from_slice(&[next, next_above, curr_above]);
+            }
         }
-    }
 
-    // 生成底面（如果有）
-    if bottom_radius > MIN_LEN {
-        let bottom_center_index = vertices.len() as u32;
-        vertices.push(bottom_center);
-        normals.push(-axis_dir);
-        extend_aabb(&mut aabb, bottom_center);
-
-        // 底面扇形三角形，复用底圈顶点
-        for slice in 0..radial {
-            let v1 = slice as u32;
-            let v2 = ((slice + 1) % radial) as u32;
-            // 底面法向量指向 -axis_dir
-            indices.extend_from_slice(&[bottom_center_index, v2, v1]);
+        // 底面（复用底圈顶点）
+        if bottom_radius > MIN_LEN {
+            let bottom_center_index = vertices.len() as u32;
+            vertices.push(bottom_center);
+            normals.push(-axis_dir);
+            extend_aabb(&mut aabb, bottom_center);
+            for slice in 0..radial {
+                let v1 = slice as u32;
+                let v2 = ((slice + 1) % radial) as u32;
+                indices.extend_from_slice(&[bottom_center_index, v2, v1]);
+            }
         }
-    }
 
-    // 生成顶面（如果有）
-    if top_radius > MIN_LEN {
-        let top_center = bottom_center + axis_dir * height_axis + offset_dir * snout.poff;
-        let top_center_index = vertices.len() as u32;
-        vertices.push(top_center);
-        normals.push(axis_dir);
-        extend_aabb(&mut aabb, top_center);
+        // 顶面（复用顶圈顶点）
+        if top_radius > MIN_LEN {
+            let top_center = bottom_center + axis_dir * height_axis + offset_dir * snout.poff;
+            let top_center_index = vertices.len() as u32;
+            vertices.push(top_center);
+            normals.push(axis_dir);
+            extend_aabb(&mut aabb, top_center);
+            let top_ring_start = height_segments * radial;
+            for slice in 0..radial {
+                let v1 = (top_ring_start + slice) as u32;
+                let v2 = (top_ring_start + (slice + 1) % radial) as u32;
+                indices.extend_from_slice(&[top_center_index, v1, v2]);
+            }
+        }
+    } else {
+        // ========== 普通版本：每个面独立顶点 ==========
+        // 侧面顶点（每个四边形有独立的 4 个顶点）
+        for segment in 0..height_segments {
+            let t0 = segment as f32 / height_segments as f32;
+            let t1 = (segment + 1) as f32 / height_segments as f32;
+            let center0 = bottom_center + axis_dir * (height_axis * t0) + offset_dir * (snout.poff * t0);
+            let center1 = bottom_center + axis_dir * (height_axis * t1) + offset_dir * (snout.poff * t1);
+            let radius0 = (bottom_radius + radius_delta * t0).max(0.0);
+            let radius1 = (bottom_radius + radius_delta * t1).max(0.0);
 
-        // 顶面扇形三角形，复用顶圈顶点
-        let top_ring_start = height_segments * radial;
-        for slice in 0..radial {
-            let v1 = (top_ring_start + slice) as u32;
-            let v2 = (top_ring_start + (slice + 1) % radial) as u32;
-            // 顶面法向量指向 +axis_dir
-            indices.extend_from_slice(&[top_center_index, v1, v2]);
+            for slice in 0..radial {
+                let angle0 = slice as f32 * step_theta;
+                let angle1 = ((slice + 1) % radial) as f32 * step_theta;
+                let (sin0, cos0) = angle0.sin_cos();
+                let (sin1, cos1) = angle1.sin_cos();
+                let radial_dir0 = basis_u * cos0 + basis_v * sin0;
+                let radial_dir1 = basis_u * cos1 + basis_v * sin1;
+
+                // 四个顶点
+                let v00 = center0 + radial_dir0 * radius0;
+                let v01 = center0 + radial_dir1 * radius0;
+                let v10 = center1 + radial_dir0 * radius1;
+                let v11 = center1 + radial_dir1 * radius1;
+
+                // 法向量（使用中点的径向方向）
+                let mid_radial = (radial_dir0 + radial_dir1).normalize();
+                let tangent_theta = (-sin0) * basis_u + cos0 * basis_v;
+                let tangent_theta = tangent_theta * (radius0 + radius1) * 0.5;
+                let tangent_height = center_delta + mid_radial * radius_delta;
+                let mut normal = tangent_theta.cross(tangent_height);
+                if normal.length_squared() <= 1e-8 {
+                    normal = mid_radial;
+                } else {
+                    normal = normal.normalize();
+                }
+
+                let base_idx = vertices.len() as u32;
+                vertices.extend_from_slice(&[v00, v01, v10, v11]);
+                normals.extend_from_slice(&[normal, normal, normal, normal]);
+                extend_aabb(&mut aabb, v00);
+                extend_aabb(&mut aabb, v01);
+                extend_aabb(&mut aabb, v10);
+                extend_aabb(&mut aabb, v11);
+
+                // 两个三角形
+                indices.extend_from_slice(&[base_idx, base_idx + 1, base_idx + 2]);
+                indices.extend_from_slice(&[base_idx + 1, base_idx + 3, base_idx + 2]);
+            }
+        }
+
+        // 底面（独立顶点）
+        if bottom_radius > MIN_LEN {
+            let bottom_normal = -axis_dir;
+            for slice in 0..radial {
+                let angle0 = slice as f32 * step_theta;
+                let angle1 = ((slice + 1) % radial) as f32 * step_theta;
+                let (sin0, cos0) = angle0.sin_cos();
+                let (sin1, cos1) = angle1.sin_cos();
+                let radial_dir0 = basis_u * cos0 + basis_v * sin0;
+                let radial_dir1 = basis_u * cos1 + basis_v * sin1;
+
+                let v0 = bottom_center + radial_dir0 * bottom_radius;
+                let v1 = bottom_center + radial_dir1 * bottom_radius;
+
+                let base_idx = vertices.len() as u32;
+                vertices.extend_from_slice(&[bottom_center, v1, v0]);
+                normals.extend_from_slice(&[bottom_normal, bottom_normal, bottom_normal]);
+                indices.extend_from_slice(&[base_idx, base_idx + 1, base_idx + 2]);
+            }
+        }
+
+        // 顶面（独立顶点）
+        if top_radius > MIN_LEN {
+            let top_center_pt = bottom_center + axis_dir * height_axis + offset_dir * snout.poff;
+            let top_normal = axis_dir;
+            for slice in 0..radial {
+                let angle0 = slice as f32 * step_theta;
+                let angle1 = ((slice + 1) % radial) as f32 * step_theta;
+                let (sin0, cos0) = angle0.sin_cos();
+                let (sin1, cos1) = angle1.sin_cos();
+                let radial_dir0 = basis_u * cos0 + basis_v * sin0;
+                let radial_dir1 = basis_u * cos1 + basis_v * sin1;
+
+                let v0 = top_center_pt + radial_dir0 * top_radius;
+                let v1 = top_center_pt + radial_dir1 * top_radius;
+
+                let base_idx = vertices.len() as u32;
+                vertices.extend_from_slice(&[top_center_pt, v0, v1]);
+                normals.extend_from_slice(&[top_normal, top_normal, top_normal]);
+                indices.extend_from_slice(&[base_idx, base_idx + 1, base_idx + 2]);
+            }
         }
     }
 
@@ -2128,6 +2220,59 @@ fn generate_box_mesh(sbox: &SBox, refno: RefnoEnum) -> Option<GeneratedMesh> {
         mesh,
         aabb: Some(aabb),
     })
+}
+
+/// 展开顶点以生成普通版本网格
+///
+/// 将共享顶点的 manifold 网格转换为每个三角形独立顶点的普通网格。
+/// 这样每个面可以有独立的法线，适合渲染使用。
+fn expand_vertices_for_standard(mesh: &mut PlantMesh) {
+    if mesh.vertices.is_empty() || mesh.indices.len() < 3 {
+        return;
+    }
+
+    let mut new_vertices = Vec::with_capacity(mesh.indices.len());
+    let mut new_normals = Vec::with_capacity(mesh.indices.len());
+    let mut new_indices = Vec::with_capacity(mesh.indices.len());
+
+    for tri in mesh.indices.chunks(3) {
+        if tri.len() != 3 {
+            continue;
+        }
+
+        let base_idx = new_vertices.len() as u32;
+
+        // 获取三角形的三个顶点
+        let v0 = mesh.vertices[tri[0] as usize];
+        let v1 = mesh.vertices[tri[1] as usize];
+        let v2 = mesh.vertices[tri[2] as usize];
+
+        // 计算面法线
+        let edge1 = v1 - v0;
+        let edge2 = v2 - v0;
+        let face_normal = edge1.cross(edge2).normalize_or_zero();
+
+        // 添加三个独立顶点
+        new_vertices.push(v0);
+        new_vertices.push(v1);
+        new_vertices.push(v2);
+
+        // 使用面法线
+        new_normals.push(face_normal);
+        new_normals.push(face_normal);
+        new_normals.push(face_normal);
+
+        // 新索引
+        new_indices.push(base_idx);
+        new_indices.push(base_idx + 1);
+        new_indices.push(base_idx + 2);
+    }
+
+    mesh.vertices = new_vertices;
+    mesh.normals = new_normals;
+    mesh.indices = new_indices;
+    mesh.uvs.clear();
+    mesh.generate_auto_uvs();
 }
 
 /// 焊接重合顶点以生成 Manifold 兼容的网格
@@ -2492,8 +2637,16 @@ fn generate_dish_mesh(
     let radial = compute_radial_segments(settings, radius_rim, non_scalable, 3);
     let base_edges = generate_cylinder_edges(radius_rim, 0.0, radial, 0);
     let edges = transform_edges(base_edges, base_center, axis);
+    
+    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+    
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
+    
     Some(GeneratedMesh {
-        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
+        mesh,
         aabb: Some(aabb),
     })
 }
@@ -2639,8 +2792,16 @@ fn generate_torus_mesh(
     // 生成几何边：主圆弧（torus 中心线，在原点，Z轴方向）
     let base_edges = generate_cylinder_edges(major_radius, 0.0, samples_l, 0);
     let edges = transform_edges(base_edges, Vec3::ZERO, Vec3::Z);
+    
+    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+    
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
+    
     Some(GeneratedMesh {
-        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
+        mesh,
         aabb: Some(aabb),
     })
 }
@@ -3323,6 +3484,11 @@ fn generate_rect_torus_mesh(
     let mut mesh =
         create_mesh_with_custom_edges(indices, vertices, normals, final_aabb, Some(edges));
     mesh.sync_wire_vertices_from_edges();
+
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
 
     Some(GeneratedMesh {
         mesh,
@@ -4497,7 +4663,7 @@ pub(crate) fn generate_revolution_mesh(
     use crate::shape::pdms_shape::BrepShapeTrait;
 
     // 使用 Revolution::gen_csg_mesh，它会自动处理 FRAD
-    let mesh = rev.gen_csg_mesh()?;
+    let mut mesh = rev.gen_csg_mesh()?;
 
     // 计算 AABB
     let aabb = if mesh.vertices.is_empty() {
@@ -4509,6 +4675,11 @@ pub(crate) fn generate_revolution_mesh(
         }
         aabb
     };
+
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
 
     Some(GeneratedMesh {
         mesh,
@@ -4533,7 +4704,7 @@ fn generate_prim_loft_mesh(
     use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
 
     // 使用sweep mesh生成器创建网格
-    let mesh = generate_sweep_solid_mesh(sweep, settings, refno)?;
+    let mut mesh = generate_sweep_solid_mesh(sweep, settings, refno)?;
 
     // 计算AABB
     let aabb = if mesh.vertices.is_empty() {
@@ -4545,6 +4716,11 @@ fn generate_prim_loft_mesh(
         }
         aabb
     };
+
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
 
     Some(GeneratedMesh {
         mesh,
