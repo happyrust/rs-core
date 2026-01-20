@@ -259,6 +259,9 @@ pub struct GeomInstQuery {
     pub world_trans: PlantTransform,
     /// 几何实例列表
     pub insts: Vec<ModelHashInst>,
+    /// 是否有负实体布尔运算结果
+    #[serde(default)]
+    pub has_neg: bool,
 }
 
 /// 几何点集查询结构体

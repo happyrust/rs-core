@@ -9,7 +9,7 @@ use crate::prim_geo::{SBox, SCylinder};
 use crate::shape::pdms_shape::{PlantMesh, RsVec3};
 use crate::tool::hash_tool::hash_two_str;
 use crate::vec3_pool::{CateAxisParamCompact, compress_ptset};
-use crate::{RefU64, RefnoEnum, gen_bytes_hash};
+use crate::{RefU64, RefnoEnum};
 #[cfg(feature = "render")]
 use bevy_asset::RenderAssetUsages;
 use bevy_ecs::prelude::Resource;
@@ -691,7 +691,6 @@ impl EleInstGeo {
         json_string.push_str(&format!(
             "{{'id': inst_geo:⟨{}⟩, 'param': {}, 'unit_flag': {} }}",
             self.geo_hash,
-            /* gen_bytes_hash::<_, 64>(&self.aabb),*/
             serde_json::to_string(&param).unwrap(),
             self.unit_flag
         ));

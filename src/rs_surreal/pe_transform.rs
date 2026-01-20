@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use surrealdb::types::SurrealValue;
 
-use crate::{RefnoEnum, SUL_DB, SurrealQueryExt, gen_bytes_hash};
+use crate::{RefnoEnum, SUL_DB, SurrealQueryExt, gen_bevy_transform_hash};
 use crate::rs_surreal::PlantTransform;
 
 #[derive(Debug, Clone, Default)]
@@ -152,7 +152,7 @@ fn to_trans_ref(
         return Ok(("NONE".to_string(), None));
     }
 
-    let hash = gen_bytes_hash(transform);
+    let hash = gen_bevy_transform_hash(transform);
     trans_map
         .entry(hash)
         .or_insert(serde_json::to_string(transform)?);
