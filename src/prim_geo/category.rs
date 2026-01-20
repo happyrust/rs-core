@@ -416,14 +416,13 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             );
 
             let mut bottom = axis_pt + axis_dir * dist_to_btm;
-            // 使用绝对值处理负高度，确保尺寸和位置一致
-            let phei = height_raw.abs();
+            let phei = height_raw;
 
             let dir = axis_dir;
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
 
-            // 中心点始终在底部之上 (phei/2 方向)
+            // height 为负时，translation 往 dir 反方向偏移（正确行为）
             let translation = bottom + dir * (phei * 0.5);
             debug_model_debug!(
                 "   ✅ [SCylinder] phei={}, translation={:?}, rotation={:?}",
