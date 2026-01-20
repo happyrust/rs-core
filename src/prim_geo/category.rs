@@ -416,17 +416,15 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             );
 
             let mut bottom = axis_pt + axis_dir * dist_to_btm;
-            let mut phei = height_raw;
+            // 使用绝对值处理负高度，确保尺寸和位置一致
+            let phei = height_raw.abs();
 
             let dir = axis_dir;
             let pdia = d.diameter as f32;
             let rotation = Quat::from_rotation_arc(Vec3::Z, dir);
 
-            let translation = if d.centre_line_flag {
-                bottom + dir * (phei * 0.5)
-            } else {
-                bottom
-            };
+            // 中心点始终在底部之上 (phei/2 方向)
+            let translation = bottom + dir * (phei * 0.5);
             debug_model_debug!(
                 "   ✅ [SCylinder] phei={}, translation={:?}, rotation={:?}",
                 phei,
@@ -437,7 +435,7 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let scyl = SCylinder {
                 phei,
                 pdia,
-                center_in_mid: d.centre_line_flag,
+                // SCylinder 始终以中心点为基准，忽略 centre_line_flag
                 ..Default::default()
             };
             let transform = Transform {

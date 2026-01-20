@@ -415,6 +415,7 @@ impl BrepShapeTrait for SCylinder {
             rotation: Default::default(),
             // SCylinder 始终以中心点为基准，paxi_pt 是中心点
             translation: Vec3::ZERO,
+            // translation: Vec3::new(0.0, 0.0, -self.phei / 2.0),
             scale: self.get_scaled_vec3(),
         }
     }
