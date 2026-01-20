@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **修复布尔运算后 `inst_relate_aabb` 无法被正确查询的问题**
+  
+  #### 问题描述
+  布尔运算完成后，AABB 数据成功保存到 `inst_relate_aabb` 关系表中，但导出时 `world_aabb` 始终为 `None`，导致 JSON 中 `aabb_hash` 为 `null`。
+  
+  #### 根因分析
+  原有代码在 `pe` 表上定义了计算字段：
+  ```sql
+  DEFINE FIELD world_aabb ON TABLE pe 
+      VALUE <future> { RETURN type::record("inst_relate_aabb", id).out.d };
+  ```
+  
+  问题在于 `inst_relate_aabb` 是 **RELATION 表**，其记录 ID 是自动生成的随机值（如 `inst_relate_aabb:⟨xyz123⟩`），而不是 `inst_relate_aabb:{pe_id}` 的格式。因此 `type::record("inst_relate_aabb", id)` 永远无法匹配到正确的记录。
+  
+  #### 修复方案
+  弃用 `<future>` 计算字段，改为在 `query_insts_with_batch` 查询中直接使用 **graph traversal** 语法：
+  
+  ```sql
+  -- 旧: refno.world_aabb (依赖错误的计算字段)
+  -- 新: (refno->inst_relate_aabb[0].out).d (直接 graph traversal)
+  ```
+  
+  #### 修改文件
+  - `src/rs_surreal/inst.rs`：
+    - 移除 `pe.world_aabb` 计算字段定义（第 79-86 行）
+    - `query_insts_with_batch` 中 3 处查询改用 graph traversal（第 379-464 行）
+  
+  #### 验证结果
+  - 布尔运算后的实例 `world_aabb` 正确返回 `Some(...)`
+  - 导出 JSON 中 `aabb_hash` 从 `null` 变为有效值（如 `"13646891808564331510"`）
+
 - **修复旋转体CSG生成中的轴上边处理问题**
   
   #### 问题描述

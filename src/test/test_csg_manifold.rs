@@ -136,7 +136,7 @@ fn test_scylinder_manifold() {
     };
 
     let param = PdmsGeoParam::PrimSCylinder(cyl);
-    let result = build_csg_mesh(&param, &settings, false, RefnoEnum::default());
+    let result = build_csg_mesh(&param, &settings, false, true, RefnoEnum::default());
 
     assert!(result.is_some(), "圆柱体网格生成失败");
     let mesh = result.unwrap().mesh;
@@ -168,7 +168,7 @@ fn test_lcylinder_manifold() {
     };
 
     let param = PdmsGeoParam::PrimLCylinder(cyl);
-    let result = build_csg_mesh(&param, &settings, false, RefnoEnum::default());
+    let result = build_csg_mesh(&param, &settings, false, true, RefnoEnum::default());
 
     assert!(result.is_some(), "长圆柱体网格生成失败");
     let mesh = result.unwrap().mesh;
@@ -208,7 +208,7 @@ fn test_snout_manifold() {
     };
 
     let param = PdmsGeoParam::PrimLSnout(snout);
-    let result = build_csg_mesh(&param, &settings, false, RefnoEnum::default());
+    let result = build_csg_mesh(&param, &settings, false, true, RefnoEnum::default());
 
     assert!(result.is_some(), "圆台网格生成失败");
     let mesh = result.unwrap().mesh;
@@ -244,7 +244,7 @@ fn test_cone_manifold() {
     };
 
     let param = PdmsGeoParam::PrimLSnout(cone);
-    let result = build_csg_mesh(&param, &settings, false, RefnoEnum::default());
+    let result = build_csg_mesh(&param, &settings, false, true, RefnoEnum::default());
 
     assert!(result.is_some(), "圆锥网格生成失败");
     let mesh = result.unwrap().mesh;
@@ -280,7 +280,7 @@ fn test_revolution_manifold() {
     };
 
     let param = PdmsGeoParam::PrimRevolution(rev);
-    let result = build_csg_mesh(&param, &settings, false, RefnoEnum::default());
+    let result = build_csg_mesh(&param, &settings, false, true, RefnoEnum::default());
 
     assert!(result.is_some(), "旋转体网格生成失败");
     let mesh = result.unwrap().mesh;
@@ -316,7 +316,7 @@ fn test_extrusion_manifold() {
     };
 
     let param = PdmsGeoParam::PrimExtrusion(extrusion);
-    let result = build_csg_mesh(&param, &settings, false, RefnoEnum::default());
+    let result = build_csg_mesh(&param, &settings, false, true, RefnoEnum::default());
 
     assert!(result.is_some(), "拉伸体网格生成失败");
     let mesh = result.unwrap().mesh;

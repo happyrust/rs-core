@@ -423,8 +423,9 @@ pub fn eval_str_to_f64(
     #[cfg(feature = "debug_expr")]
     dbg!(&new_exp);
 
-    //说明：匹配带小数的情况 PARA[1.1]
-    let re = Regex::new(r"(:?[A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]\s*))\s*\]?)?")
+    //说明：匹配带小数的情况 PARA[1.1]，支持 UDA 属性名（以冒号开头，如 :HXYS[1]）
+    // 修复：原 (:? 是非捕获组语法，改为 (:)? 匹配可选冒号
+    let re = Regex::new(r"(:)?([A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]\s*))\s*\]?)?")
         .unwrap();
     // 将NEXT PREV 的值统一换成参考号，然后 context_params 要存储 参考号对应的 attr，要是它这个值没有求解，
     // 相当于要递归去求值
@@ -499,9 +500,11 @@ pub fn eval_str_to_f64(
             if INTERNAL_PDMS_EXPRESS.contains(&s) {
                 continue;
             }
-            let mut para_name = caps.get(1).map_or("", |m| m.as_str());
-            let c2 = caps.get(2).map_or("", |m| m.as_str());
+            // 捕获组: (1)冒号前缀 (2)属性名 (3)数组部分 (4)索引值
+            let colon_prefix = caps.get(1).map_or("", |m| m.as_str());
+            let mut para_name = caps.get(2).map_or("", |m| m.as_str());
             let c3 = caps.get(3).map_or("", |m| m.as_str());
+            let c4 = caps.get(4).map_or("", |m| m.as_str());
             //处理掉PARA 和 PARAM的区别
             let is_some_param = para_name_re.is_match(para_name);
             if is_some_param {
@@ -509,11 +512,12 @@ pub fn eval_str_to_f64(
                     para_name = &para_name[0..para_name.len() - 1];
                 }
             }
-            // 小数向下取整
+            // 小数向下取整，构造完整 key（包含可选的冒号前缀）
             let k: String = format!(
-                "{}{}",
+                "{}{}{}",
+                colon_prefix,
                 para_name,
-                c3.parse::<f32>()
+                c4.parse::<f32>()
                     .map(|x| x.floor().to_string())
                     .unwrap_or_default()
             )
@@ -831,4 +835,64 @@ pub fn eval_str_to_f32_or_default(
     dtse_unit: &str,
 ) -> f32 {
     eval_str_to_f32(input_expr, context, dtse_unit).unwrap_or(0.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    /// 测试 UDA 属性正则表达式匹配（RUS-116 修复）
+    #[test]
+    fn test_uda_attribute_regex() {
+        // 修复后的正则：支持可选冒号前缀
+        let re = Regex::new(
+            r"(:)?([A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]\s*))\s*\]?)?",
+        )
+        .unwrap();
+
+        // 测试用例：普通属性
+        let caps = re.captures("DESP[1]").unwrap();
+        assert_eq!(caps.get(1).map(|m| m.as_str()), None); // 无冒号
+        assert_eq!(caps.get(2).map(|m| m.as_str()), Some("DESP"));
+        assert_eq!(caps.get(4).map(|m| m.as_str()), Some("1"));
+
+        // 测试用例：UDA 属性（以冒号开头）- RUS-116 核心场景
+        let caps = re.captures(":HXYS[1]").unwrap();
+        assert_eq!(caps.get(1).map(|m| m.as_str()), Some(":")); // 有冒号
+        assert_eq!(caps.get(2).map(|m| m.as_str()), Some("HXYS"));
+        assert_eq!(caps.get(4).map(|m| m.as_str()), Some("1"));
+
+        // 测试用例：UDA 属性索引 2
+        let caps = re.captures(":HXYS[2]").unwrap();
+        assert_eq!(caps.get(1).map(|m| m.as_str()), Some(":"));
+        assert_eq!(caps.get(2).map(|m| m.as_str()), Some("HXYS"));
+        assert_eq!(caps.get(4).map(|m| m.as_str()), Some("2"));
+
+        // 测试用例：无数组索引的属性
+        let caps = re.captures("PARA").unwrap();
+        assert_eq!(caps.get(1).map(|m| m.as_str()), None);
+        assert_eq!(caps.get(2).map(|m| m.as_str()), Some("PARA"));
+        assert_eq!(caps.get(4).map(|m| m.as_str()), None);
+
+        // 测试用例：无数组索引的 UDA 属性
+        let caps = re.captures(":HXYS").unwrap();
+        assert_eq!(caps.get(1).map(|m| m.as_str()), Some(":"));
+        assert_eq!(caps.get(2).map(|m| m.as_str()), Some("HXYS"));
+    }
+
+    /// 测试 prepare_eval_str 处理 ATTRIB 关键字
+    #[test]
+    fn test_prepare_eval_str_attrib() {
+        // ATTRIB :HXYS[1] -> :HXYS[1]
+        let result = prepare_eval_str("ATTRIB :HXYS[1]");
+        assert!(result.contains(":HXYS[1]"));
+        assert!(!result.contains("ATTRIB"));
+
+        // ( ATTRIB :HXYS[1] + ATTRIB :HXYS[2] ) -> ( :HXYS[1] + :HXYS[2] )
+        let result = prepare_eval_str("( ATTRIB :HXYS[1] + ATTRIB :HXYS[2] )");
+        assert!(result.contains(":HXYS[1]"));
+        assert!(result.contains(":HXYS[2]"));
+        assert!(!result.contains("ATTRIB"));
+    }
 }

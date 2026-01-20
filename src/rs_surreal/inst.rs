@@ -42,6 +42,7 @@ pub struct FullPtsetPoint {
 
 /// 初始化数据库的所有模型相关表结构和索引
 pub async fn init_model_tables() -> anyhow::Result<()> {
+    return Ok(());
     // 1. 定义关系表 (RELATION)
     // 这些表必须显式定义为 TYPE RELATION，否则如果第一条插入不是 relate 语句可能会创建为普通表
     let relation_tables = [
@@ -76,15 +77,13 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     ";
     let _ = SUL_DB.query(create_index_sql).await?;
 
-    // 4. 在 pe 表上定义计算字段（虚拟字段）
-    // 这样可以通过 pe.world_trans / pe.world_aabb 直接获取数据，简化查询
-    let computed_fields_sql = r#"
-        DEFINE FIELD IF NOT EXISTS world_trans ON TABLE pe 
-            VALUE <future> { RETURN type::record("pe_transform", id).world_trans.d };
-        DEFINE FIELD IF NOT EXISTS world_aabb ON TABLE pe 
-            VALUE <future> { RETURN type::record("inst_relate_aabb", id).out.d };
+    // 4. 清理旧的计算字段定义（已弃用，改为在查询中直接使用 graph traversal）
+    // world_trans 和 world_aabb 不再使用 <future> 计算字段，避免性能问题和定义不一致
+    let remove_old_fields_sql = r#"
+        REMOVE FIELD IF EXISTS world_trans ON TABLE pe;
+        REMOVE FIELD IF EXISTS world_aabb ON TABLE pe;
     "#;
-    let _ = SUL_DB.query(computed_fields_sql).await;
+    let _ = SUL_DB.query(remove_old_fields_sql).await;
 
     Ok(())
 }
@@ -259,7 +258,9 @@ pub struct GeomInstQuery {
     pub world_trans: PlantTransform,
     /// 几何实例列表
     pub insts: Vec<ModelHashInst>,
-    /// 是否有负实体布尔运算结果
+    /// 是否为布尔运算结果
+    /// true: 几何体变换已包含世界变换，导出时直接使用 local_transform
+    /// false: 普通几何体，导出时需要 world_transform × local_transform
     #[serde(default)]
     pub has_neg: bool,
 }
@@ -277,6 +278,168 @@ pub struct GeomPtsQuery {
     pub world_aabb: Option<PlantAabb>,
     /// 点集组，每组包含一个变换矩阵和可选的点集数据
     pub pts_group: Vec<(PlantTransform, Option<Vec<RsVec3>>)>,
+}
+
+//=============================================================================
+// 导出专用查询结构体和函数
+//=============================================================================
+
+/// 导出专用：几何实例的 hash 引用（不含实际数据值）
+#[derive(Serialize, Deserialize, Debug, Clone, Default, SurrealValue)]
+pub struct ExportInstHash {
+    /// 几何体 hash（geo 表的 record ID）
+    pub geo_hash: String,
+    /// 几何体变换 hash（trans 表的 record ID）
+    #[serde(default)]
+    pub trans_hash: Option<String>,
+    /// 是否为单位 mesh
+    #[serde(default)]
+    pub unit_flag: bool,
+}
+
+/// 导出专用：构件几何实例查询结果（只含 hash 引用）
+#[derive(Serialize, Deserialize, Debug, SurrealValue)]
+pub struct ExportInstQuery {
+    /// 构件编号
+    #[serde(alias = "id")]
+    pub refno: RefnoEnum,
+    /// 所属构件编号
+    pub owner: RefnoEnum,
+    /// 世界包围盒 hash（aabb 表的 record ID）
+    #[serde(default)]
+    pub world_aabb_hash: Option<String>,
+    /// 世界变换 hash（trans 表的 record ID）
+    #[serde(default)]
+    pub world_trans_hash: Option<String>,
+    /// 几何实例列表（只含 hash 引用）
+    pub insts: Vec<ExportInstHash>,
+    /// 是否为布尔运算结果
+    #[serde(default)]
+    pub has_neg: bool,
+}
+
+/// 导出专用：查询几何实例的 hash 引用（不查询实际数据值）
+///
+/// # 参数
+/// * `refnos` - 构件编号迭代器
+/// * `enable_holes` - 是否启用布尔运算结果查询
+///
+/// # 返回值
+/// 返回只包含 hash 引用的查询结果，用于导出时直接引用 trans.json 和 aabb.json
+pub async fn query_insts_for_export(
+    refnos: impl IntoIterator<Item = &RefnoEnum>,
+    enable_holes: bool,
+) -> anyhow::Result<Vec<ExportInstQuery>> {
+    let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
+    if refnos.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let batch_size = 50;
+    let mut results = Vec::new();
+
+    for chunk in refnos.chunks(batch_size) {
+        if enable_holes {
+            // ========== 路径 A：布尔结果查询 ==========
+            let bool_keys: Vec<String> = chunk.iter().map(|r| format!("inst_relate_bool:{}", r)).collect();
+            let bool_keys_str = bool_keys.join(",");
+            
+            // 只查询 hash ID，不查询实际数据
+            let bool_sql = format!(
+                r#"
+                SELECT
+                    refno,
+                    refno.owner ?? refno as owner,
+                    record::id((refno->inst_relate_aabb[0].out)) as world_aabb_hash,
+                    record::id(type::record("pe_transform", record::id(refno)).world_trans) as world_trans_hash,
+                    [{{ "geo_hash": mesh_id, "trans_hash": record::id(type::record("pe_transform", record::id(refno)).world_trans), "unit_flag": false }}] as insts,
+                    true as has_neg
+                FROM [{bool_keys}]
+                WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
+                "#,
+                bool_keys = bool_keys_str
+            );
+
+            let mut bool_results: Vec<ExportInstQuery> = SUL_DB
+                .query_take(&bool_sql, 0)
+                .await
+                .with_context(|| format!("query_insts_for_export bool SQL: {}", bool_sql))?;
+
+            let bool_refnos: std::collections::HashSet<_> =
+                bool_results.iter().map(|r| r.refno.clone()).collect();
+
+            results.append(&mut bool_results);
+
+            // ========== 路径 B：原始几何查询（排除已有布尔结果的） ==========
+            let non_bool_keys: Vec<String> = chunk
+                .iter()
+                .filter(|r| !bool_refnos.contains(*r))
+                .map(|r| r.to_inst_relate_key())
+                .collect();
+
+            if !non_bool_keys.is_empty() {
+                let non_bool_keys_str = non_bool_keys.join(",");
+                // 只查询 hash ID，不查询实际数据
+                let geo_sql = format!(
+                    r#"
+                    SELECT
+                        in as refno,
+                        in.owner ?? in as owner,
+                        record::id((in->inst_relate_aabb[0].out)) as world_aabb_hash,
+                        record::id(type::record("pe_transform", record::id(in)).world_trans) as world_trans_hash,
+                        (SELECT record::id(trans) as trans_hash, record::id(out) as geo_hash, out.unit_flag ?? false as unit_flag
+                         FROM out->geo_relate
+                         WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                           && (trans.d ?? NONE) != NONE
+                           && geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos']) as insts,
+                        false as has_neg
+                    FROM [{non_bool_keys}]
+                    WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
+                    "#,
+                    non_bool_keys = non_bool_keys_str
+                );
+
+                let mut geo_results: Vec<ExportInstQuery> = SUL_DB
+                    .query_take(&geo_sql, 0)
+                    .await
+                    .with_context(|| format!("query_insts_for_export geo SQL: {}", geo_sql))?;
+                results.append(&mut geo_results);
+            }
+        } else {
+            // ========== enable_holes=false：始终返回原始几何 ==========
+            let inst_relate_keys: Vec<String> =
+                chunk.iter().map(|r| r.to_inst_relate_key()).collect();
+            let inst_relate_keys_str = inst_relate_keys.join(",");
+
+            // 只查询 hash ID，不查询实际数据
+            let sql = format!(
+                r#"
+                SELECT
+                    in as refno,
+                    in.owner ?? in as owner,
+                    record::id((in->inst_relate_aabb[0].out)) as world_aabb_hash,
+                    record::id(type::record("pe_transform", record::id(in)).world_trans) as world_trans_hash,
+                    (SELECT record::id(trans) as trans_hash, record::id(out) as geo_hash, out.unit_flag ?? false as unit_flag
+                     FROM out->geo_relate
+                     WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                       && (trans.d ?? NONE) != NONE
+                       && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
+                    false as has_neg
+                FROM [{inst_relate_keys}]
+                WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
+                "#,
+                inst_relate_keys = inst_relate_keys_str
+            );
+
+            let mut chunk_result: Vec<ExportInstQuery> = SUL_DB
+                .query_take(&sql, 0)
+                .await
+                .with_context(|| format!("query_insts_for_export SQL: {}", sql))?;
+            results.append(&mut chunk_result);
+        }
+    }
+
+    Ok(results)
 }
 
 /// 根据最新refno查询最新insts
@@ -366,16 +529,18 @@ pub async fn query_insts_with_batch(
             let bool_keys: Vec<String> = chunk.iter().map(|r| format!("inst_relate_bool:{}", r)).collect();
             let bool_keys_str = bool_keys.join(",");
             
+            // 使用 graph traversal 获取 world_aabb，不依赖计算字段
             let bool_sql = format!(
                 r#"
                 SELECT
                     refno,
                     refno.owner ?? refno as owner,
-                    refno.world_trans as world_trans,
-                    refno.world_aabb as world_aabb,
-                    [{{ "transform": refno.world_trans, "geo_hash": mesh_id, "is_tubi": false, "unit_flag": false }}] as insts
+                    type::record("pe_transform", record::id(refno)).world_trans.d as world_trans,
+                    (refno->inst_relate_aabb[0].out).d as world_aabb,
+                    [{{ "transform": type::record("pe_transform", record::id(refno)).world_trans.d, "geo_hash": mesh_id, "is_tubi": false, "unit_flag": false }}] as insts,
+                    true as has_neg
                 FROM [{bool_keys}]
-                WHERE status = 'Success' AND refno.world_trans != NONE
+                WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
                 "#,
                 bool_keys = bool_keys_str
             );
@@ -401,20 +566,22 @@ pub async fn query_insts_with_batch(
             if !non_bool_keys.is_empty() {
                 let non_bool_keys_str = non_bool_keys.join(",");
                 // 直接从 inst_relate:{refno} 查询
+                // 使用 graph traversal 获取 world_aabb
                 let geo_sql = format!(
                     r#"
                     SELECT
                         in as refno,
                         in.owner ?? in as owner,
-                        in.world_trans as world_trans,
-                        in.world_aabb as world_aabb,
+                        type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
+                        (in->inst_relate_aabb[0].out).d as world_aabb,
                         (SELECT trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
                          FROM out->geo_relate
                          WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                            && (trans.d ?? NONE) != NONE
-                           && geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos']) as insts
+                           && geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos']) as insts,
+                        false as has_neg
                     FROM [{non_bool_keys}]
-                    WHERE in.world_trans != NONE
+                    WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
                     "#,
                     non_bool_keys = non_bool_keys_str
                 );
@@ -432,20 +599,22 @@ pub async fn query_insts_with_batch(
             let inst_relate_keys_str = inst_relate_keys.join(",");
 
             // 直接从 inst_relate:{refno} 查询
+            // 使用 graph traversal 获取 world_aabb
             let sql = format!(
                 r#"
                 SELECT
                     in as refno,
                     in.owner ?? in as owner,
-                    in.world_trans as world_trans,
-                    in.world_aabb as world_aabb,
+                    type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
+                    (in->inst_relate_aabb[0].out).d as world_aabb,
                     (SELECT trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
                      FROM out->geo_relate
                      WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                        && (trans.d ?? NONE) != NONE
-                       && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts
+                       && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
+                    false as has_neg
                 FROM [{inst_relate_keys}]
-                WHERE in.world_trans != NONE
+                WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
                 "#,
                 inst_relate_keys = inst_relate_keys_str
             );

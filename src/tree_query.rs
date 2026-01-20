@@ -216,7 +216,7 @@ impl TreeIndex {
         self.id_map.keys().copied().collect()
     }
 
-    fn node_meta(&self, refno: RefU64) -> Option<TreeNodeMeta> {
+    pub fn node_meta(&self, refno: RefU64) -> Option<TreeNodeMeta> {
         self.id_map.get(&refno).map(|id| *self.arena[*id].get())
     }
 
@@ -237,7 +237,7 @@ impl TreeIndex {
             .collect()
     }
 
-    fn collect_descendants_bfs(
+    pub fn collect_descendants_bfs(
         &self,
         root: RefU64,
         options: &TreeQueryOptions,
@@ -266,7 +266,7 @@ impl TreeIndex {
         out
     }
 
-    fn collect_ancestors_root_to_parent(
+    pub fn collect_ancestors_root_to_parent(
         &self,
         node: RefU64,
         options: &TreeQueryOptions,

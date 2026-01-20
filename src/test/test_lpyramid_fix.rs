@@ -178,7 +178,7 @@ fn test_lpyramid_mesh_export() {
     };
 
     let geo_param = PdmsGeoParam::PrimLPyramid(pyramid);
-    let mesh_result = generate_csg_mesh(&geo_param, &Default::default(), false, None);
+    let mesh_result = generate_csg_mesh(&geo_param, &Default::default(), false, false, None);
 
     if let Some(generated) = mesh_result {
         let mesh = &generated.mesh;

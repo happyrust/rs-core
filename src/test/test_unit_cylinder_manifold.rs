@@ -325,7 +325,7 @@ fn test_rect_torus_topology() {
 
     let settings = LodMeshSettings::default();
     let param = PdmsGeoParam::PrimRTorus(rtorus_full);
-    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+if let Some(result) = generate_csg_mesh(&param, &settings, false, false, None) {
         let mesh = &result.mesh;
         println!("完整 RTorus 网格统计:");
         println!("  顶点数: {}", mesh.vertices.len());
@@ -416,7 +416,7 @@ fn test_rect_torus_topology() {
         angle: 90.0,
     };
     let param2 = PdmsGeoParam::PrimRTorus(rtorus_partial);
-    if let Some(result) = generate_csg_mesh(&param2, &settings, false, None) {
+if let Some(result) = generate_csg_mesh(&param2, &settings, false, false, None) {
         let mesh = &result.mesh;
         println!("部分 RTorus (90°) 网格统计:");
         println!("  顶点数: {}", mesh.vertices.len());
@@ -454,7 +454,7 @@ fn test_rect_torus_manifold_conversion() {
     };
     let param = PdmsGeoParam::PrimRTorus(rtorus_full);
 
-    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+if let Some(result) = generate_csg_mesh(&param, &settings, false, false, None) {
         let mesh = &result.mesh;
         let temp_dir = std::env::temp_dir();
         let glb_path = temp_dir.join("test_rtorus_full.glb");
@@ -488,7 +488,7 @@ fn test_rect_torus_manifold_conversion() {
     };
     let param2 = PdmsGeoParam::PrimRTorus(rtorus_partial);
 
-    if let Some(result) = generate_csg_mesh(&param2, &settings, false, None) {
+if let Some(result) = generate_csg_mesh(&param2, &settings, false, false, None) {
         let mesh = &result.mesh;
         let temp_dir = std::env::temp_dir();
         let glb_path = temp_dir.join("test_rtorus_partial.glb");
@@ -529,7 +529,7 @@ fn test_sphere_mesh_topology() {
     let settings = LodMeshSettings::default();
     let param = PdmsGeoParam::PrimSphere(sphere);
 
-    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+if let Some(result) = generate_csg_mesh(&param, &settings, false, false, None) {
         let mesh = &result.mesh;
         println!("Sphere 网格统计:");
         println!("  顶点数: {}", mesh.vertices.len());
@@ -590,7 +590,7 @@ fn test_build_cylinder_mesh_topology() {
     let settings = LodMeshSettings::default();
     let param = PdmsGeoParam::PrimLCylinder(cyl);
 
-    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+if let Some(result) = generate_csg_mesh(&param, &settings, false, false, None) {
         let mesh = &result.mesh;
         println!("LCylinder 网格统计:");
         println!("  顶点数: {}", mesh.vertices.len());
@@ -629,7 +629,7 @@ fn test_dish_mesh_topology() {
     let settings = LodMeshSettings::default();
     let param = PdmsGeoParam::PrimDish(dish);
 
-    if let Some(result) = generate_csg_mesh(&param, &settings, false, None) {
+if let Some(result) = generate_csg_mesh(&param, &settings, false, false, None) {
         let mesh = &result.mesh;
         println!("Dish 网格统计:");
         println!("  顶点数: {}", mesh.vertices.len());

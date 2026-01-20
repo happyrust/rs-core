@@ -133,6 +133,8 @@ pub struct QueryInstGeoResult {
     #[serde(default)]
     pub refno: Option<RefnoEnum>,
     pub has_neg_relate: bool,
+    #[serde(default)]
+    pub has_cata_neg: bool,
 }
 
 /// AABB 查询参数结构体
@@ -190,7 +192,10 @@ pub async fn query_inst_geo_ids(
     let sql = format!(
         r#"
             array::group(
-                select value (select  out as geo_id, ($parent<-neg_relate)[0] != none as has_neg_relate from out->geo_relate {})
+                select value (select out as geo_id,
+                    ($parent<-neg_relate)[0] != none as has_neg_relate,
+                    $parent.has_cata_neg ?? false as has_cata_neg
+                from out->geo_relate {})
                 from {}
             );
         "#,

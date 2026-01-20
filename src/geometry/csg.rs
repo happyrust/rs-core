@@ -159,8 +159,9 @@ pub fn unit_sphere_mesh() -> PlantMesh {
     use parry3d::bounding_volume::Aabb;
     let radius = UNIT_MESH_SCALE / 2.0;
     let settings = LodMeshSettings::default();
-    let radial = compute_radial_segments(&settings, radius, false, 3);
-    let mut height = compute_height_segments(&settings, radius * 2.0, false, 2);
+    // 球体需要足够的分段才能呈现球形，最小 radial=8, height=8
+    let radial = compute_radial_segments(&settings, radius, false, 8);
+    let mut height = compute_height_segments(&settings, radius * 2.0, false, 8);
     if height % 2 != 0 {
         height += 1;
     }
@@ -1074,15 +1075,17 @@ pub struct GeneratedMesh {
 /// - `settings`: LOD网格设置，控制网格的细分程度
 /// - `non_scalable`: 是否不可缩放（对于固定细节级别的对象）
 /// - `refno`: 可选的参考号，用于调试输出文件名
+/// - `manifold`: 是否输出满足流形拓扑的网格（用于布尔运算）
 ///
 /// # 返回
 pub fn build_csg_mesh(
     param: &PdmsGeoParam,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    manifold: bool,
     refno: RefnoEnum,
 ) -> Option<GeneratedMesh> {
-    match param {
+    let mut generated = match param {
         PdmsGeoParam::PrimLCylinder(cyl) => {
             generate_lcylinder_mesh(cyl, settings, non_scalable, refno)
         }
@@ -1114,16 +1117,34 @@ pub fn build_csg_mesh(
             generate_prim_loft_mesh(sweep, settings, non_scalable, refno)
         }
         _ => None,
+    }?;
+
+    if manifold {
+        weld_vertices_for_manifold(&mut generated.mesh);
+        let aabb = generated.mesh.aabb.clone().or_else(|| generated.mesh.cal_aabb());
+        if generated.mesh.aabb.is_none() {
+            generated.mesh.aabb = aabb.clone();
+        }
+        generated.aabb = aabb;
     }
+
+    Some(generated)
 }
 
 pub fn generate_csg_mesh(
     param: &PdmsGeoParam,
     settings: &LodMeshSettings,
     non_scalable: bool,
+    manifold: bool,
     refno: Option<RefnoEnum>,
 ) -> Option<GeneratedMesh> {
-    build_csg_mesh(param, settings, non_scalable, refno.unwrap_or_default())
+    build_csg_mesh(
+        param,
+        settings,
+        non_scalable,
+        manifold,
+        refno.unwrap_or_default(),
+    )
 }
 
 /// 生成线性圆柱体（LCylinder）网格
@@ -1199,8 +1220,6 @@ fn generate_sscl_mesh(
     // 在标准局部坐标系中生成：Z 轴朝上，X/Y 是剪切方向
     let dir = cyl.paxi_dir;
     let (x_axis, y_axis) = orthonormal_basis(dir);
-    dbg!(&cyl);
-    dbg!(dir, x_axis, y_axis);
 
     let radius = (cyl.pdia * 0.5).abs();
     let height = cyl.phei;
@@ -1533,8 +1552,9 @@ fn generate_sphere_mesh(
     }
 
     // 计算径向和高度分段数
-    let radial = compute_radial_segments(settings, radius, non_scalable, 3);
-    let mut height = compute_height_segments(settings, radius * 2.0, non_scalable, 2);
+    // 球体需要足够的分段才能呈现球形，最小 radial=8, height=8
+    let radial = compute_radial_segments(settings, radius, non_scalable, 8);
+    let mut height = compute_height_segments(settings, radius * 2.0, non_scalable, 8);
     // 确保高度分段数为偶数（便于对称分布）
     if height % 2 != 0 {
         height += 1;
@@ -1585,15 +1605,16 @@ fn generate_sphere_mesh(
     let first_ring_start = 1usize; // 第一个纬度环的起始索引
 
     // 北极扇形三角形 (连接北极点到第一个纬度环)
+    // 从外部看逆时针: north_pole -> curr -> next
     for lon in 0..radial {
         let next_lon = (lon + 1) % radial;
         let curr = (first_ring_start + lon) as u32;
         let next = (first_ring_start + next_lon) as u32;
-        // 从外部看逆时针
-        indices.extend_from_slice(&[north_pole_idx, next, curr]);
+        indices.extend_from_slice(&[north_pole_idx, curr, next]);
     }
 
     // 中间纬度带的四边形（两个三角形）
+    // 从外部看逆时针: 上层顶点在左，下层顶点在右
     for lat in 0..(height - 2) {
         let ring_start = first_ring_start + lat * radial;
         let next_ring_start = ring_start + radial;
@@ -1603,20 +1624,21 @@ fn generate_sphere_mesh(
             let curr_next = (ring_start + next_lon) as u32;
             let below = (next_ring_start + lon) as u32;
             let below_next = (next_ring_start + next_lon) as u32;
-            // 从外部看逆时针
-            indices.extend_from_slice(&[curr, curr_next, below]);
-            indices.extend_from_slice(&[below, curr_next, below_next]);
+            // 第一个三角形: curr -> below -> curr_next
+            indices.extend_from_slice(&[curr, below, curr_next]);
+            // 第二个三角形: curr_next -> below -> below_next
+            indices.extend_from_slice(&[curr_next, below, below_next]);
         }
     }
 
     // 南极扇形三角形 (连接最后一个纬度环到南极点)
+    // 从外部看逆时针: curr -> south_pole -> next
     let last_ring_start = first_ring_start + (height - 2) * radial;
     for lon in 0..radial {
         let next_lon = (lon + 1) % radial;
         let curr = (last_ring_start + lon) as u32;
         let next = (last_ring_start + next_lon) as u32;
-        // 从外部看逆时针
-        indices.extend_from_slice(&[curr, next, south_pole_idx]);
+        indices.extend_from_slice(&[curr, south_pole_idx, next]);
     }
 
     // 生成几何边：赤道 + 2条子午线
@@ -3861,7 +3883,7 @@ mod tests {
         };
         let param = PdmsGeoParam::PrimLCylinder(cyl.clone());
         let settings = LodMeshSettings::default();
-        let csg = generate_csg_mesh(&param, &settings, false, Some(RefnoEnum::default()))
+        let csg = generate_csg_mesh(&param, &settings, false, false, Some(RefnoEnum::default()))
             .expect("CSG cylinder generation failed");
         #[cfg(feature = "occ")]
         let occ_mesh = {
@@ -3912,7 +3934,7 @@ mod tests {
             height_segments: 4,
             ..Default::default()
         };
-        let csg = generate_csg_mesh(&param, &settings, false, Some(RefnoEnum::default()))
+        let csg = generate_csg_mesh(&param, &settings, false, false, Some(RefnoEnum::default()))
             .expect("CSG snout generation failed");
         #[cfg(feature = "occ")]
         let occ_mesh = {
@@ -3957,6 +3979,7 @@ mod tests {
                 ..Default::default()
             },
             false,
+            false,
             None,
         )
         .expect("SSCL CSG generation failed");
@@ -3981,6 +4004,7 @@ mod tests {
                 ..Default::default()
             },
             false,
+            false,
             None,
         )
         .expect("Regular SCylinder CSG generation failed");
@@ -4001,6 +4025,7 @@ mod tests {
         let generated = generate_csg_mesh(
             &PdmsGeoParam::PrimBox(sbox.clone()),
             &LodMeshSettings::default(),
+            false,
             false,
             None,
         )
@@ -4057,6 +4082,7 @@ mod tests {
                 ..Default::default()
             },
             false,
+            false,
             None,
         )
         .expect("Dish CSG generation failed");
@@ -4090,6 +4116,7 @@ mod tests {
                 height_segments: 16,
                 ..Default::default()
             },
+            false,
             false,
             None,
         )
@@ -4127,6 +4154,7 @@ mod tests {
             &PdmsGeoParam::PrimPyramid(pyramid.clone()),
             &LodMeshSettings::default(),
             false,
+            false,
             None,
         )
         .expect("Pyramid CSG generation failed");
@@ -4156,6 +4184,7 @@ mod tests {
         let generated = generate_csg_mesh(
             &PdmsGeoParam::PrimExtrusion(extrusion),
             &LodMeshSettings::default(),
+            false,
             false,
             None,
         )
@@ -4189,6 +4218,7 @@ mod tests {
         let generated = generate_csg_mesh(
             &PdmsGeoParam::PrimExtrusion(extrusion),
             &LodMeshSettings::default(),
+            false,
             false,
             None,
         )

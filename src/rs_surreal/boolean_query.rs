@@ -63,8 +63,8 @@ pub async fn query_cata_neg_boolean_groups(
 ///
 /// Selects geometry data from inst_relate->inst_info->geo_relate:
 /// - Filters by geom_refno in the provided list
-/// - Requires aabb and param to be non-null
-/// - Returns record ID, geom_refno, transform, param, and aabb_id
+/// - Requires param to be non-null
+/// - Returns record ID, geom_refno, transform, param, and aabb_id (缺省时使用占位)
 pub async fn query_geom_mesh_data(
     refno: RefnoEnum,
     geom_refnos: &[RefnoEnum],
@@ -77,9 +77,10 @@ pub async fn query_geom_mesh_data(
 
     let sql = format!(
         r#"
-        select out as id, geom_refno, trans.d as trans, out.param as param, out.aabb as aabb_id
+        select out as id, geom_refno, trans.d as trans, out.param as param,
+               (out.aabb ?? aabb:⟨0⟩) as aabb_id
         from {}->inst_relate->inst_info->geo_relate
-        where !out.bad and geom_refno in [{}]  and out.aabb!=none and out.param!=none"#,
+        where !out.bad and geom_refno in [{}] and out.param!=none"#,
         refno.to_pe_key(),
         pes
     );

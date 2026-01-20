@@ -99,20 +99,6 @@ pub fn gen_bevy_transform_hash(trans: &bevy_transform::prelude::Transform) -> u6
     hasher.finish()
 }
 
-/// 生成 f32 数组（如 Mat4 列主序）的稳定 hash（基于保留3位有效数字的字符串拼接）
-pub fn gen_f32_array_hash(arr: &[f32]) -> u64 {
-    use core::hash::Hasher;
-    
-    let s = arr.iter()
-        .map(|&v| format_f32_3digits(v))
-        .collect::<Vec<_>>()
-        .join("_");
-    
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    std::hash::Hash::hash(&s, &mut hasher);
-    hasher.finish()
-}
-
 /// 生成字符串的 hash
 pub fn gen_string_hash(s: &str) -> u64 {
     use core::hash::Hasher;
