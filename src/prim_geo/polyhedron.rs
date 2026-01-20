@@ -128,7 +128,7 @@ impl BrepShapeTrait for Polyhedron {
     ///直接通过基本体的参数，生成模型
     fn gen_csg_mesh(&self) -> Option<PlantMesh> {
         use crate::geometry::csg::generate_polyhedron_mesh;
-        generate_polyhedron_mesh(self, RefnoEnum::default()).map(|g| g.mesh)
+        generate_polyhedron_mesh(self, RefnoEnum::default(), false).map(|g| g.mesh)
     }
 
     fn gen_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {

@@ -1216,7 +1216,7 @@ pub fn build_csg_mesh(
         PdmsGeoParam::PrimLSnout(snout) => {
             generate_snout_mesh(snout, settings, non_scalable, refno, manifold)
         }
-        PdmsGeoParam::PrimBox(sbox) => generate_box_mesh(sbox, refno),
+        PdmsGeoParam::PrimBox(sbox) => generate_box_mesh(sbox, refno, manifold),
         PdmsGeoParam::PrimDish(dish) => generate_dish_mesh(dish, settings, non_scalable, refno, manifold),
         PdmsGeoParam::PrimCTorus(torus) => {
             generate_torus_mesh(torus, settings, non_scalable, refno, manifold)
@@ -1224,10 +1224,10 @@ pub fn build_csg_mesh(
         PdmsGeoParam::PrimRTorus(rtorus) => {
             generate_rect_torus_mesh(rtorus, settings, non_scalable, refno, manifold)
         }
-        PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr, refno),
-        PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr, refno),
+        PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr, refno, manifold),
+        PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr, refno, manifold),
         PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno, manifold),
-        PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly, refno),
+        PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly, refno, manifold),
         PdmsGeoParam::PrimRevolution(rev) => {
             generate_revolution_mesh(rev, settings, non_scalable, refno, manifold)
         }
@@ -2047,7 +2047,10 @@ fn generate_snout_mesh(
 /// 生成盒子（SBox）网格
 ///
 /// 盒子由中心点和尺寸定义，包含6个面（每个面由2个三角形组成）
-fn generate_box_mesh(sbox: &SBox, refno: RefnoEnum) -> Option<GeneratedMesh> {
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
+fn generate_box_mesh(sbox: &SBox, refno: RefnoEnum, manifold: bool) -> Option<GeneratedMesh> {
     if !sbox.check_valid() {
         return None;
     }
@@ -2215,6 +2218,10 @@ fn generate_box_mesh(sbox: &SBox, refno: RefnoEnum) -> Option<GeneratedMesh> {
     let mut mesh =
         create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
     mesh.uvs = uvs; // 使用手动计算的 UV 覆盖默认的空 UV
+
+    // Box 本身已经是每面独立顶点，无需 expand_vertices_for_standard
+    // manifold 版本会在 build_csg_mesh 中通过 weld_vertices_for_manifold 处理
+    let _ = manifold;
 
     Some(GeneratedMesh {
         mesh,
@@ -2812,7 +2819,10 @@ fn generate_torus_mesh(
 /// - 底部矩形（由pbbt和pcbt定义）
 /// - 顶部矩形或点（由pbtp和pctp定义）
 /// - 如果顶部尺寸为0，则顶部为顶点
-fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum) -> Option<GeneratedMesh> {
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
+fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum, manifold: bool) -> Option<GeneratedMesh> {
     if !pyr.check_valid() {
         return None;
     }
@@ -2986,8 +2996,15 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum) -> Option<GeneratedMes
         }
     }
 
+    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
+
     Some(GeneratedMesh {
-        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
+        mesh,
         aabb: Some(aabb),
     })
 }
@@ -3002,7 +3019,10 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum) -> Option<GeneratedMes
 /// - PBBT/PCBT: 底面 B/C 方向半尺寸
 /// - PTDI/PBDI: 到顶面/底面的距离
 /// - PBOF/PCOF: B/C 方向偏移（仅应用于顶面）
-fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<GeneratedMesh> {
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
+fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum, manifold: bool) -> Option<GeneratedMesh> {
     if !lpyr.check_valid() {
         return None;
     }
@@ -3161,8 +3181,15 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<Generated
         }
     }
 
+    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
+
     Some(GeneratedMesh {
-        mesh: create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges)),
+        mesh,
         aabb: Some(aabb),
     })
 }
@@ -4576,9 +4603,13 @@ mod tests {
 ///
 /// Polyhedron 由多个多边形面组成，每个面可能有多个环（外环和内环）
 /// 如果已经有预生成的 mesh，直接使用；否则需要三角化多边形
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 pub(crate) fn generate_polyhedron_mesh(
     poly: &Polyhedron,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     // 如果已经有预生成的 mesh，直接使用
     if let Some(ref mesh) = poly.mesh {
@@ -4647,8 +4678,15 @@ pub(crate) fn generate_polyhedron_mesh(
         return None;
     }
 
+    let mut mesh = create_mesh_with_edges(all_indices, all_vertices, all_normals, Some(aabb));
+
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
+    }
+
     Some(GeneratedMesh {
-        mesh: create_mesh_with_edges(all_indices, all_vertices, all_normals, Some(aabb)),
+        mesh,
         aabb: Some(aabb),
     })
 }
