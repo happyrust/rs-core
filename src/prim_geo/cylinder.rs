@@ -370,6 +370,7 @@ impl BrepShapeTrait for SCylinder {
                 &LodMeshSettings::default(),
                 false,
                 RefnoEnum::default(),
+                false, // 普通 mesh，不需要 manifold 格式
             ) {
                 Ok(crate::prim_geo::basic::CsgSharedMesh::new(generated.mesh))
             } else {

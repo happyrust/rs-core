@@ -258,6 +258,124 @@ pub fn unit_sphere_mesh() -> PlantMesh {
     mesh
 }
 
+/// 生成单位圆柱体网格（普通版本，顶点重复）
+///
+/// 返回一个高度为1、半径为0.5的单位圆柱体，包含侧面和两个端面
+/// 每个面有独立的顶点，适合渲染时使用不同的法线
+///
+/// # 参数
+/// - `settings`: LOD网格设置，控制网格的细分程度
+/// - `non_scalable`: 是否不可缩放（固定分段数）
+///
+/// # 顶点布局（每个面独立）
+/// - 侧面：2 * resolution 个顶点（底圆周 + 顶圆周）
+/// - 底面：resolution + 1 个顶点（圆周 + 中心）
+/// - 顶面：resolution + 1 个顶点（圆周 + 中心）
+pub fn unit_cylinder_mesh_standard(settings: &LodMeshSettings, non_scalable: bool) -> PlantMesh {
+    let height = UNIT_MESH_SCALE;
+    let radius = UNIT_MESH_SCALE / 2.0;
+
+    let resolution = compute_radial_segments(settings, radius, non_scalable, 3);
+    let step_theta = std::f32::consts::TAU / resolution as f32;
+
+    // 顶点数：侧面 2*n + 底面 n+1 + 顶面 n+1 = 4*n + 2
+    let num_vertices = resolution * 4 + 2;
+    let num_triangles = resolution * 4; // 侧面 2*n + 底面 n + 顶面 n
+
+    let mut vertices: Vec<Vec3> = Vec::with_capacity(num_vertices);
+    let mut normals: Vec<Vec3> = Vec::with_capacity(num_vertices);
+    let mut indices: Vec<u32> = Vec::with_capacity(num_triangles * 3);
+
+    // ========== 1. 侧面顶点 [0, 2*resolution) ==========
+    // 侧面法线指向径向
+    for i in 0..resolution {
+        let theta = i as f32 * step_theta;
+        let (sin, cos) = theta.sin_cos();
+        let normal = Vec3::new(cos, sin, 0.0);
+        // 底部圆周
+        vertices.push(Vec3::new(radius * cos, radius * sin, 0.0));
+        normals.push(normal);
+        // 顶部圆周
+        vertices.push(Vec3::new(radius * cos, radius * sin, height));
+        normals.push(normal);
+    }
+
+    // 侧面三角形
+    for i in 0..resolution {
+        let curr_bottom = (i * 2) as u32;
+        let curr_top = (i * 2 + 1) as u32;
+        let next_bottom = (((i + 1) % resolution) * 2) as u32;
+        let next_top = (((i + 1) % resolution) * 2 + 1) as u32;
+
+        // 两个三角形组成一个四边形
+        indices.extend_from_slice(&[curr_bottom, next_bottom, curr_top]);
+        indices.extend_from_slice(&[curr_top, next_bottom, next_top]);
+    }
+
+    // ========== 2. 底面顶点 [2*resolution, 3*resolution + 1) ==========
+    let bottom_start = vertices.len() as u32;
+    // 底面法线指向 -Z
+    let bottom_normal = Vec3::new(0.0, 0.0, -1.0);
+    for i in 0..resolution {
+        let theta = i as f32 * step_theta;
+        let (sin, cos) = theta.sin_cos();
+        vertices.push(Vec3::new(radius * cos, radius * sin, 0.0));
+        normals.push(bottom_normal);
+    }
+    // 底面中心点
+    let bottom_center = vertices.len() as u32;
+    vertices.push(Vec3::new(0.0, 0.0, 0.0));
+    normals.push(bottom_normal);
+
+    // 底面三角形（从下方看逆时针）
+    for i in 0..resolution {
+        let v1 = bottom_start + i as u32;
+        let v2 = bottom_start + ((i + 1) % resolution) as u32;
+        indices.extend_from_slice(&[bottom_center, v2, v1]);
+    }
+
+    // ========== 3. 顶面顶点 [3*resolution + 1, 4*resolution + 2) ==========
+    let top_start = vertices.len() as u32;
+    // 顶面法线指向 +Z
+    let top_normal = Vec3::new(0.0, 0.0, 1.0);
+    for i in 0..resolution {
+        let theta = i as f32 * step_theta;
+        let (sin, cos) = theta.sin_cos();
+        vertices.push(Vec3::new(radius * cos, radius * sin, height));
+        normals.push(top_normal);
+    }
+    // 顶面中心点
+    let top_center = vertices.len() as u32;
+    vertices.push(Vec3::new(0.0, 0.0, height));
+    normals.push(top_normal);
+
+    // 顶面三角形（从上方看逆时针）
+    for i in 0..resolution {
+        let v1 = top_start + i as u32;
+        let v2 = top_start + ((i + 1) % resolution) as u32;
+        indices.extend_from_slice(&[top_center, v1, v2]);
+    }
+
+    // 生成圆柱体的特征边
+    let cylinder_edges = generate_cylinder_edges(radius, height, resolution, 4);
+
+    let mut mesh = PlantMesh {
+        indices,
+        vertices,
+        normals,
+        uvs: Vec::new(),
+        wire_vertices: Vec::new(),
+        edges: cylinder_edges,
+        aabb: Some(Aabb::new(
+            Point3::new(-0.5, -0.5, 0.0),
+            Point3::new(0.5, 0.5, 1.0),
+        )),
+    };
+    mesh.generate_auto_uvs();
+    mesh.sync_wire_vertices_from_edges();
+    mesh
+}
+
 /// 生成单位圆柱体网格（用于简单圆柱体的基础网格）
 ///
 /// 返回一个高度为1、半径为0.5的单位圆柱体，包含侧面和两个端面
@@ -1087,34 +1205,34 @@ pub fn build_csg_mesh(
 ) -> Option<GeneratedMesh> {
     let mut generated = match param {
         PdmsGeoParam::PrimLCylinder(cyl) => {
-            generate_lcylinder_mesh(cyl, settings, non_scalable, refno)
+            generate_lcylinder_mesh(cyl, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimSCylinder(cyl) => {
-            generate_scylinder_mesh(cyl, settings, non_scalable, refno)
+            generate_scylinder_mesh(cyl, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimSphere(sphere) => {
-            generate_sphere_mesh(sphere, settings, non_scalable, refno)
+            generate_sphere_mesh(sphere, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimLSnout(snout) => {
-            generate_snout_mesh(snout, settings, non_scalable, refno)
+            generate_snout_mesh(snout, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimBox(sbox) => generate_box_mesh(sbox, refno),
-        PdmsGeoParam::PrimDish(dish) => generate_dish_mesh(dish, settings, non_scalable, refno),
+        PdmsGeoParam::PrimDish(dish) => generate_dish_mesh(dish, settings, non_scalable, refno, manifold),
         PdmsGeoParam::PrimCTorus(torus) => {
-            generate_torus_mesh(torus, settings, non_scalable, refno)
+            generate_torus_mesh(torus, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimRTorus(rtorus) => {
-            generate_rect_torus_mesh(rtorus, settings, non_scalable, refno)
+            generate_rect_torus_mesh(rtorus, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr, refno),
         PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr, refno),
         PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly, refno),
         PdmsGeoParam::PrimRevolution(rev) => {
-            generate_revolution_mesh(rev, settings, non_scalable, refno)
+            generate_revolution_mesh(rev, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimLoft(sweep) => {
-            generate_prim_loft_mesh(sweep, settings, non_scalable, refno)
+            generate_prim_loft_mesh(sweep, settings, non_scalable, refno, manifold)
         }
         _ => None,
     }?;
@@ -1151,11 +1269,15 @@ pub fn generate_csg_mesh(
 ///
 /// LCylinder由轴向方向、直径和两个端面的偏移距离定义
 /// 与 SCylinder 一致，使用单位圆柱体，通过 transform 的 scale 来缩放
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 fn generate_lcylinder_mesh(
     cyl: &LCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     // 验证参数有效性
     let height = (cyl.ptdi - cyl.pbdi).abs();
@@ -1163,9 +1285,14 @@ fn generate_lcylinder_mesh(
         return None;
     }
 
-    // 使用单位圆柱体，通过 get_trans() 返回的 scale 来缩放
+    let mesh = if manifold {
+        unit_cylinder_mesh(settings, non_scalable)
+    } else {
+        unit_cylinder_mesh_standard(settings, non_scalable)
+    };
+
     Some(GeneratedMesh {
-        mesh: unit_cylinder_mesh(settings, non_scalable),
+        mesh,
         aabb: None,
     })
 }
@@ -1411,11 +1538,15 @@ fn generate_sscl_mesh(
 ///
 /// SCylinder由轴向方向、直径和高度定义
 /// 如果检测到剪切参数，则委托给`generate_sscl_mesh`处理
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 pub(crate) fn generate_scylinder_mesh(
     cyl: &SCylinder,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     // 如果是剪切圆柱体，使用专门的生成函数
     if cyl.is_sscl() {
@@ -1425,8 +1556,14 @@ pub(crate) fn generate_scylinder_mesh(
         return None;
     }
 
+    let mesh = if manifold {
+        unit_cylinder_mesh(settings, non_scalable)
+    } else {
+        unit_cylinder_mesh_standard(settings, non_scalable)
+    };
+
     Some(GeneratedMesh {
-        mesh: unit_cylinder_mesh(settings, non_scalable),
+        mesh,
         aabb: None,
     })
 }
@@ -1540,11 +1677,15 @@ fn build_cylinder_mesh(
 /// 生成球体网格
 ///
 /// 使用球坐标系生成球面网格，沿纬度（高度）和经度（径向）方向细分
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 fn generate_sphere_mesh(
     sphere: &Sphere,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     let radius = sphere.radius.abs();
     if radius <= MIN_LEN {
@@ -1656,11 +1797,15 @@ fn generate_sphere_mesh(
 /// - 底部半径（pbdm）和顶部半径（ptdm）
 /// - 底部和顶部的中心点可以沿轴向偏移
 /// - 中心偏移方向由pbax_dir定义
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 fn generate_snout_mesh(
     snout: &LSnout,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     // 归一化轴向方向
     let axis_dir = safe_normalize(snout.paax_dir)?;
@@ -2114,11 +2259,15 @@ fn weld_vertices_for_manifold(mesh: &mut PlantMesh) {
 /// 支持两种类型：
 /// - prad=0: 球形圆盘（Spherical Dish）
 /// - prad>0: 椭圆圆盘（Elliptical Dish），z轴缩放形成椭球面
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 fn generate_dish_mesh(
     dish: &Dish,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     let axis = safe_normalize(dish.paax_dir)?;
     let radius_rim = dish.pdia * 0.5; // 边缘半径
@@ -2353,11 +2502,15 @@ fn generate_dish_mesh(
 ///
 /// 圆环由外半径（rout）和内半径（rins）定义
 /// 支持任意角度（包括部分圆环）
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 fn generate_torus_mesh(
     torus: &CTorus,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     if !torus.check_valid() {
         return None;
@@ -2862,11 +3015,15 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum) -> Option<Generated
 /// - 外圆柱面
 /// - 内圆柱面
 /// - 顶部和底部环形端面（如果角度 < 360度，还有起始和结束端面）
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 fn generate_rect_torus_mesh(
     rtorus: &RTorus,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     if !rtorus.check_valid() {
         return None;
@@ -4327,11 +4484,15 @@ pub(crate) fn generate_polyhedron_mesh(
 /// 生成旋转体（Revolution）网格
 ///
 /// 直接使用 Revolution::gen_csg_mesh，自动处理 FRAD 圆角
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 pub(crate) fn generate_revolution_mesh(
     rev: &Revolution,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     use crate::shape::pdms_shape::BrepShapeTrait;
 
@@ -4359,11 +4520,15 @@ pub(crate) fn generate_revolution_mesh(
 ///
 /// PrimLoft是一个通用的扫掠实体，通过将截面轮廓沿着路径扫掠来生成实体
 /// 支持多种路径类型：直线、圆弧、多段路径等
+///
+/// # 参数
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
 fn generate_prim_loft_mesh(
     sweep: &SweepSolid,
     settings: &LodMeshSettings,
     non_scalable: bool,
     refno: RefnoEnum,
+    manifold: bool,
 ) -> Option<GeneratedMesh> {
     use crate::geometry::sweep_mesh::generate_sweep_solid_mesh;
 

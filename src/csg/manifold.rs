@@ -226,21 +226,17 @@ impl ManifoldRust {
     }
 
     /// 导出到 GLB 文件
+    ///
+    /// 注意：导出时会将 manifold mesh（共享顶点）转换为普通 mesh（重复顶点），
+    /// 以保证渲染时边缘轮廓清晰（每个面有独立的法线）
     pub fn export_to_glb(&self, path: &Path) -> anyhow::Result<()> {
-        let mesh = self.get_mesh();
-        let plant_mesh = PlantMesh {
-            vertices: mesh
-                .vertices
-                .chunks_exact(3)
-                .map(|v| glam::Vec3::new(v[0], v[1], v[2]))
-                .collect(),
-            indices: mesh.indices,
-            normals: Vec::new(),
-            uvs: Vec::new(),
-            aabb: None,
-            edges: Vec::new(),
-            wire_vertices: Vec::new(),
-        };
+        // 使用 From<&ManifoldRust> for PlantMesh 转换，
+        // 该转换会将共享顶点的 manifold mesh 转为每个三角形独立顶点的普通 mesh
+        let plant_mesh: PlantMesh = self.into();
+
+        if plant_mesh.vertices.is_empty() || plant_mesh.indices.is_empty() {
+            return Err(anyhow::anyhow!("布尔运算结果为空，无法导出"));
+        }
 
         // 确保父目录存在
         if let Some(parent) = path.parent() {
@@ -252,21 +248,16 @@ impl ManifoldRust {
     }
 
     /// 导出到 OBJ 文件（用于调试）
+    ///
+    /// 注意：导出时会将 manifold mesh（共享顶点）转换为普通 mesh（重复顶点），
+    /// 以保证渲染时边缘轮廓清晰（每个面有独立的法线）
     pub fn export_to_obj(&self, path_str: &str) -> anyhow::Result<()> {
-        let mesh = self.get_mesh();
-        let plant_mesh = PlantMesh {
-            vertices: mesh
-                .vertices
-                .chunks_exact(3)
-                .map(|v| glam::Vec3::new(v[0], v[1], v[2]))
-                .collect(),
-            indices: mesh.indices,
-            normals: Vec::new(),
-            uvs: Vec::new(),
-            aabb: None,
-            edges: Vec::new(),
-            wire_vertices: Vec::new(),
-        };
+        // 使用 From<&ManifoldRust> for PlantMesh 转换
+        let plant_mesh: PlantMesh = self.into();
+
+        if plant_mesh.vertices.is_empty() || plant_mesh.indices.is_empty() {
+            return Err(anyhow::anyhow!("布尔运算结果为空，无法导出"));
+        }
 
         // 确保父目录存在
         let path = Path::new(path_str);
