@@ -1,0 +1,6 @@
+feat: 添加 has_neg 字段到 GeomInstQuery 结构体
+
+添加 has_neg 字段用于标识布尔运算结果，帮助导出时正确处理变换矩阵。
+
+- has_neg=true: 布尔运算结果，几何体变换已包含世界变换
+- has_neg=false: 普通几何体，需要 world_transform × local_transform
