@@ -349,7 +349,7 @@ pub async fn query_insts_for_export(
                 r#"
                 SELECT
                     refno,
-                    refno.owner ?? refno as owner,
+                    refno.owner as owner,
                     record::id((refno->inst_relate_aabb[0].out)) as world_aabb_hash,
                     record::id(type::record("pe_transform", record::id(refno)).world_trans) as world_trans_hash,
                     [{{ "geo_hash": mesh_id, "trans_hash": record::id(type::record("pe_transform", record::id(refno)).world_trans), "unit_flag": false }}] as insts,
