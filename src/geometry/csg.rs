@@ -1226,7 +1226,7 @@ pub fn build_csg_mesh(
         }
         PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr, refno),
         PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr, refno),
-        PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno),
+        PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno, manifold),
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly, refno),
         PdmsGeoParam::PrimRevolution(rev) => {
             generate_revolution_mesh(rev, settings, non_scalable, refno, manifold)
@@ -3854,7 +3854,8 @@ fn generate_ploop_comparison_svg(
 /// # 参数
 /// - `extrusion`: 拉伸体参数
 /// - `refno`: 可选的参考号，用于调试输出文件名
-fn generate_extrusion_mesh(extrusion: &Extrusion, refno: RefnoEnum) -> Option<GeneratedMesh> {
+/// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
+fn generate_extrusion_mesh(extrusion: &Extrusion, refno: RefnoEnum, manifold: bool) -> Option<GeneratedMesh> {
     if extrusion.height.abs() <= MIN_LEN {
         return None;
     }
@@ -3926,6 +3927,11 @@ fn generate_extrusion_mesh(extrusion: &Extrusion, refno: RefnoEnum) -> Option<Ge
     let aabb = mesh.aabb.clone().or_else(|| mesh.cal_aabb());
     if mesh.aabb.is_none() {
         mesh.aabb = aabb.clone();
+    }
+
+    // 普通版本：展开顶点使每个面独立
+    if !manifold {
+        expand_vertices_for_standard(&mut mesh);
     }
 
     Some(GeneratedMesh { mesh, aabb })
