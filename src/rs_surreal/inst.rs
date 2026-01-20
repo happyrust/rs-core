@@ -345,6 +345,7 @@ pub async fn query_insts_for_export(
             let bool_keys_str = bool_keys.join(",");
             
             // 只查询 hash ID，不查询实际数据
+            // 布尔运算结果的 mesh 已经在世界坐标系下，geo_instances 的 trans_hash 应该是单位矩阵 "0"
             let bool_sql = format!(
                 r#"
                 SELECT
@@ -352,7 +353,7 @@ pub async fn query_insts_for_export(
                     refno.owner as owner,
                     record::id((refno->inst_relate_aabb[0].out)) as world_aabb_hash,
                     record::id(type::record("pe_transform", record::id(refno)).world_trans) as world_trans_hash,
-                    [{{ "geo_hash": mesh_id, "trans_hash": record::id(type::record("pe_transform", record::id(refno)).world_trans), "unit_flag": false }}] as insts,
+                    [{{ "geo_hash": mesh_id, "trans_hash": "0", "unit_flag": false }}] as insts,
                     true as has_neg
                 FROM [{bool_keys}]
                 WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
