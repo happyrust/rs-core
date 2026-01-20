@@ -260,7 +260,7 @@ impl Default for SCylinder {
             btm_shear_angles: [0.0f32; 2],
             top_shear_angles: [0.0f32; 2],
             negative: false,
-            center_in_mid: false,
+            center_in_mid: true,
             unit_flag: false,
             basis_hint: None,
         }
