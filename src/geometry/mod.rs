@@ -180,20 +180,46 @@ impl EleGeosInfo {
     /// 生成surreal的json文件（完整格式，不压缩）
     ///
     /// ptset 使用原始 CateAxisParam 格式，方向向量为完整的 [x, y, z] 数组。
+    /// refno 字段输出为 SurrealDB 记录 ID 格式（如 `pe:⟨15194_2089⟩`）。
     /// 适用于需要人工可读或调试的场景。
     pub fn gen_sur_json_full(&self) -> String {
+        use crate::types::HasPeKey;
+        
         let id = self.id_str();
-        let ptset_values: Vec<&CateAxisParam> = self.ptset_map.values().collect();
+        
+        // 手动构建 ptset JSON，使 refno 输出为记录 ID 格式
+        let ptset_items: Vec<String> = self.ptset_map.values().map(|p| {
+            let dir_str = match &p.dir {
+                Some(d) => format!("[{},{},{}]", d.0.x, d.0.y, d.0.z),
+                None => "null".to_string(),
+            };
+            let ref_dir_str = match &p.ref_dir {
+                Some(d) => format!("[{},{},{}]", d.0.x, d.0.y, d.0.z),
+                None => "null".to_string(),
+            };
+            format!(
+                r#"{{refno:{},number:{},pt:[{},{},{}],dir:{},dir_flag:{},ref_dir:{},pbore:{},pwidth:{},pheight:{},pconnect:"{}"}}"#,
+                p.refno.to_pe_key(),
+                p.number,
+                p.pt.0.x, p.pt.0.y, p.pt.0.z,
+                dir_str,
+                p.dir_flag,
+                ref_dir_str,
+                p.pbore,
+                p.pwidth,
+                p.pheight,
+                p.pconnect
+            )
+        }).collect();
+        
+        let ptset_json = format!("[{}]", ptset_items.join(","));
 
-        let mut json = serde_json::to_string(&serde_json::json!({
-            "visible": self.visible,
-            "generic_type": self.generic_type,
-            "ptset": ptset_values,
-        }))
-        .unwrap();
-
-        // 移除最后的 } 并添加 id 字段
-        json.pop();
+        let mut json = format!(
+            r#"{{"visible":{},"generic_type":"{}","ptset":{}"#,
+            self.visible,
+            self.generic_type,
+            ptset_json
+        );
 
         // 添加 tubi_info 关联（如果有）
         if let Some(ref tubi_id) = self.tubi_info_id {
