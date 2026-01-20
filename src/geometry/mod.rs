@@ -177,6 +177,33 @@ impl EleGeosInfo {
         json
     }
 
+    /// 生成surreal的json文件（完整格式，不压缩）
+    ///
+    /// ptset 使用原始 CateAxisParam 格式，方向向量为完整的 [x, y, z] 数组。
+    /// 适用于需要人工可读或调试的场景。
+    pub fn gen_sur_json_full(&self) -> String {
+        let id = self.id_str();
+        let ptset_values: Vec<&CateAxisParam> = self.ptset_map.values().collect();
+
+        let mut json = serde_json::to_string(&serde_json::json!({
+            "visible": self.visible,
+            "generic_type": self.generic_type,
+            "ptset": ptset_values,
+        }))
+        .unwrap();
+
+        // 移除最后的 } 并添加 id 字段
+        json.pop();
+
+        // 添加 tubi_info 关联（如果有）
+        if let Some(ref tubi_id) = self.tubi_info_id {
+            json.push_str(&format!(r#","tubi_info":tubi_info:⟨{}⟩"#, tubi_id));
+        }
+
+        json.push_str(&format!(r#","id":inst_info:⟨{}⟩}}"#, id));
+        json
+    }
+
     ///获取几何体数据的string key
     #[inline]
     pub fn get_inst_key(&self) -> String {
