@@ -99,3 +99,22 @@ let zones = aios_core::query_filter_ancestors(equip, &["ZONE"]).await?;
   - 批量查询优于循环查询
   - 合理限制层级范围，避免无限深度的大范围查询
   - 充分利用带有 #[cached] 的查询函数缓存
+
+## geo_relate geo_type 语义约定
+
+在 `geo_relate` 表中，`geo_type` 字段用于区分不同类型的几何体记录：
+
+| geo_type | 含义 | 是否导出 |
+|----------|------|----------|
+| Pos | 原始几何（未布尔运算） | 导出 |
+| DesiPos | 设计位置 | 导出 |
+| CatePos | 布尔运算后的结果 | 导出 |
+| Compound | 组合几何体（包含负实体引用） | 不导出 |
+| CateNeg | 负实体 | 不导出 |
+| CataCrossNeg | 交叉负实体 | 不导出 |
+
+**查询条件**：`geo_type IN ['Pos', 'DesiPos', 'CatePos']`
+
+**注意**：实例级布尔运算完成后，需要更新 `geo_relate` 表：
+1. 将原始几何的 `geo_type` 从 `Pos` 改为 `Compound`
+2. 创建新的布尔结果记录，`geo_type = 'CatePos'`

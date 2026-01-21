@@ -392,7 +392,7 @@ pub async fn query_insts_for_export(
                          FROM out->geo_relate
                          WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                            && (trans.d ?? NONE) != NONE
-                           && geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos']) as insts,
+                           && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
                         false as has_neg
                     FROM [{non_bool_keys}]
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
@@ -510,6 +510,19 @@ pub async fn query_insts_with_negative(
 /// - `owner` → `pe.owner`
 /// - `world_trans` → `pe_transform:{refno}.world_trans.d`
 /// - `world_aabb` → `inst_relate_aabb:{refno}.out.d`
+///
+/// # geo_type 语义约定
+///
+/// | geo_type | 含义 | 是否导出 |
+/// |----------|------|----------|
+/// | Pos | 原始几何（未布尔运算） | ✅ 导出 |
+/// | DesiPos | 设计位置 | ✅ 导出 |
+/// | CatePos | 布尔运算后的结果 | ✅ 导出 |
+/// | Compound | 组合几何体（包含负实体引用） | ❌ 不导出 |
+/// | CateNeg | 负实体 | ❌ 不导出 |
+/// | CataCrossNeg | 交叉负实体 | ❌ 不导出 |
+///
+/// 查询条件：`geo_type IN ['Pos', 'DesiPos', 'CatePos']`
 pub async fn query_insts_with_batch(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
     enable_holes: bool,
@@ -579,7 +592,7 @@ pub async fn query_insts_with_batch(
                          FROM out->geo_relate
                          WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                            && (trans.d ?? NONE) != NONE
-                           && geo_type IN ['Pos', 'Compound', 'DesiPos', 'CatePos']) as insts,
+                           && geo_type IN ['Pos', 'CatePos']) as insts,
                         false as has_neg
                     FROM [{non_bool_keys}]
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE

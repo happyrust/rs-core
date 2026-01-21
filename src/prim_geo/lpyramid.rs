@@ -108,42 +108,50 @@ impl BrepShapeTrait for LPyramid {
         &self,
         transform: &bevy_transform::prelude::Transform,
     ) -> Vec<(Vec3, String, u8)> {
-        use crate::geometry::csg::{orthonormal_basis, safe_normalize};
-
+        // 关键点（key points）之算式，须与 CSG `generate_lpyramid_mesh` 同步：
+        // - 彼处生成网格之顶点集合，乃后续布尔/碰撞/选取等之“几何真相”。
+        // - 此处若用另一套轴系/偏移/中心定义，则关键点与网格不合，易致拾取点漂移。
+        //
+        // CSG 约定（见 `geometry::csg::generate_lpyramid_mesh`）：
+        // - 局部坐标系固定：A轴(高度) = +Z，B轴(宽) = +X，C轴(深) = +Y
+        // - 底面中心固定为原点：bottom_center = (0,0,0)
+        // - 高度仅取差值：height = PTDI - PBDI（注意：PBDI 本身不直接体现在局部 Z）
+        // - 顶面偏移仅作用于顶面：offset_3d = (PBOF * X) + (PCOF * Y)
+        // - 顶点顺序固定：(-1,-1),(+1,-1),(+1,+1),(-1,+1)
+        //
+        // 此函数只负责“点集”，不负责三角形/法线；最终通过 `transform` 映射至世界坐标。
+        const MIN_LEN: f32 = 0.001;
         let mut points = Vec::new();
 
-        // 正交化轴方向（与 mesh 生成保持一致）
-        let axis_dir = match safe_normalize(self.paax_dir) {
-            Some(d) => d,
-            None => return points,
-        };
-        let (fallback_u, fallback_v) = orthonormal_basis(axis_dir);
+        // 局部轴：与 CSG 完全一致（此处不使用 paax_dir/pbax_dir/pcax_dir 做正交化）。
+        let axis_dir = Vec3::Z;
+        let pb_dir = Vec3::X;
+        let pc_dir = Vec3::Y;
 
-        // 正交化 B 轴方向
-        let mut pb_dir = safe_normalize(self.pbax_dir).unwrap_or(fallback_u);
-        pb_dir = (pb_dir - axis_dir * pb_dir.dot(axis_dir)).normalize_or_zero();
-        if pb_dir.length_squared() <= 0.0001 {
-            pb_dir = fallback_u;
-        }
+        // 半尺寸：与 CSG 中 tx/ty/bx/by 语义一致。
+        let tx = self.pbtp * 0.5;
+        let ty = self.pctp * 0.5;
+        let bx = self.pbbt * 0.5;
+        let by = self.pcbt * 0.5;
 
-        // 正交化 C 轴方向
-        let mut pc_dir = safe_normalize(self.pcax_dir).unwrap_or(fallback_v);
-        pc_dir = (pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir))
-            .normalize_or_zero();
-        if pc_dir.length_squared() <= 0.0001 {
-            pc_dir = fallback_v;
-        }
-
-        // 偏移使用正交化后的方向（与 mesh 生成一致）
+        // 顶面偏移：仅顶面带 offset，底面无 offset。
         let offset_3d = pb_dir * self.pbof + pc_dir * self.pcof;
 
-        // 底面中心（参考点）
-        let bottom_center = self.paax_pt + axis_dir * self.pbdi;
-        // 顶面中心（带偏移）
+        // CSG 以底面中心为原点（center 恒为 ZERO）。
+        // 若未来 CSG 改为使用 `paax_pt` 或 `pbdi` 参与局部原点，此处亦须同改。
+        let center = Vec3::ZERO;
         let height = self.ptdi - self.pbdi;
-        let top_center = bottom_center + axis_dir * height + offset_3d;
 
-        // 1. 顶面和底面中心（优先级100）
+        // 顶点顺序：与 CSG `offsets` 数组一致；保持顺序可使调试对比更直观。
+        let offsets: [(f32, f32); 4] = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)];
+
+        // 顶/底中心：
+        // - bottom_center = (0,0,0)
+        // - top_center.z = height，且额外叠加 offset_3d
+        let top_center = center + axis_dir * height + offset_3d;
+        let bottom_center = center;
+
+        // 中心点（优先级 100）：用于整体定位与快速选择。
         points.push((
             transform.transform_point(top_center),
             "Center".to_string(),
@@ -155,38 +163,25 @@ impl BrepShapeTrait for LPyramid {
             100,
         ));
 
-        // 2. 顶面的4个顶点（如果不是退化为点）
-        let tx = self.pbtp / 2.0;
-        let ty = self.pctp / 2.0;
-        if tx > 0.001 && ty > 0.001 {
-            let top_corners = [
-                top_center + pb_dir * tx + pc_dir * ty,
-                top_center + pb_dir * tx - pc_dir * ty,
-                top_center - pb_dir * tx + pc_dir * ty,
-                top_center - pb_dir * tx - pc_dir * ty,
-            ];
-            for corner in &top_corners {
+        // 顶面四角：当顶面退化（tx 或 ty 太小）时，CSG 会走 apex 分支；
+        // 关键点此处亦同步：顶面退化则不输出顶面四角。
+        if tx > MIN_LEN && ty > MIN_LEN {
+            for (ox, oy) in offsets.iter() {
+                let pos = center + pb_dir * (ox * tx) + pc_dir * (oy * ty) + axis_dir * height + offset_3d;
                 points.push((
-                    transform.transform_point(*corner),
+                    transform.transform_point(pos),
                     "Endpoint".to_string(),
                     90,
                 ));
             }
         }
 
-        // 3. 底面的4个顶点
-        let bx = self.pbbt / 2.0;
-        let by = self.pcbt / 2.0;
-        if bx > 0.001 && by > 0.001 {
-            let bottom_corners = [
-                bottom_center + pb_dir * bx + pc_dir * by,
-                bottom_center + pb_dir * bx - pc_dir * by,
-                bottom_center - pb_dir * bx + pc_dir * by,
-                bottom_center - pb_dir * bx - pc_dir * by,
-            ];
-            for corner in &bottom_corners {
+        // 底面四角：底面不带 offset；底面退化则不输出底面四角。
+        if bx > MIN_LEN && by > MIN_LEN {
+            for (ox, oy) in offsets.iter() {
+                let pos = center + pb_dir * (ox * bx) + pc_dir * (oy * by);
                 points.push((
-                    transform.transform_point(*corner),
+                    transform.transform_point(pos),
                     "Endpoint".to_string(),
                     90,
                 ));
@@ -585,13 +580,9 @@ mod tests {
             .collect();
         assert_eq!(centers.len(), 2);
 
-        // 验证底部中心位置（考虑pbdi）
-        let bottom_center = centers[1].0;
-        assert!(bottom_center.z > 1.5); // 底部在z=2.0附近
-
-        // 验证顶部中心位置（考虑高度和偏移）
+        // 验证顶部中心位置（CSG 坐标：bottom_center = 0, top_center.z = ptdi - pbdi）
         let top_center = centers[0].0;
-        assert!(top_center.z > 15.0); // 顶部在z=17.0附近
+        assert!(top_center.z > 12.0); // height = 15.0 - 2.0 = 13.0
         assert!(top_center.x > 2.0); // X偏移
         assert!(top_center.y < -2.0); // Y负偏移
     }

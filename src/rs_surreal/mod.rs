@@ -35,7 +35,7 @@ pub mod version;
 pub mod e3d_db;
 pub mod topology;
 
-pub mod operation;
+// pub mod operation;
 pub mod pipeline;
 
 // XKT 生成相关查询
