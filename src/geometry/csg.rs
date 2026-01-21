@@ -3032,27 +3032,18 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum, manifold: bool) -> 
     let bx = (lpyr.pbbt * 0.5).max(MIN_LEN);
     let by = (lpyr.pcbt * 0.5).max(MIN_LEN);
 
-    // 计算正交化的轴方向
-    let axis_dir = safe_normalize(lpyr.paax_dir)?;
-    let (fallback_u, fallback_v) = orthonormal_basis(axis_dir);
-    let mut pb_dir = safe_normalize(lpyr.pbax_dir).unwrap_or(fallback_u);
-    pb_dir = (pb_dir - axis_dir * pb_dir.dot(axis_dir)).normalize_or_zero();
-    if pb_dir.length_squared() <= MIN_LEN * MIN_LEN {
-        pb_dir = fallback_u;
-    }
-    let mut pc_dir = safe_normalize(lpyr.pcax_dir).unwrap_or(fallback_v);
-    pc_dir = (pc_dir - axis_dir * pc_dir.dot(axis_dir) - pb_dir * pc_dir.dot(pb_dir))
-        .normalize_or_zero();
-    if pc_dir.length_squared() <= MIN_LEN * MIN_LEN {
-        pc_dir = fallback_v;
-    }
+    // 使用标准坐标系：paax_dir=Z, pbax_dir=X, pcax_dir=Y
+    let axis_dir = Vec3::Z;
+    let pb_dir = Vec3::X;
+    let pc_dir = Vec3::Y;
 
-    // 偏移使用正交化后的方向计算（与 core.dll 一致）
+    // 偏移计算
     let offset_3d = pb_dir * lpyr.pbof + pc_dir * lpyr.pcof;
 
-    // 以底面中心为参考点（与 geo_relate transform 一致）
-    let center = lpyr.paax_pt + axis_dir * lpyr.pbdi;
-    let height = lpyr.ptdi - lpyr.pbdi; // 总高度
+    // 以底面中心为参考点
+    // let center = lpyr.paax_pt + axis_dir * lpyr.pbdi;
+    let center = Vec3::ZERO;
+    let height = lpyr.ptdi - lpyr.pbdi;
     let mut vertices = Vec::new();
     let mut normals = Vec::new();
     let mut indices = Vec::new();
@@ -3068,7 +3059,6 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum, manifold: bool) -> 
     let offsets = [(-1.0f32, -1.0f32), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)];
 
     // 顶面：z=height，带偏移
-    // 偏移 offset_3d 已经是世界坐标，直接添加到最终位置
     let top = if tx > MIN_LEN && ty > MIN_LEN {
         let mut idxs = [0u32; 4];
         for (i, (ox, oy)) in offsets.iter().enumerate() {

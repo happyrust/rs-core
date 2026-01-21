@@ -104,14 +104,20 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
                 rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             }
             // dbg!((x_axis, y_axis, z_axis));
+            // 应用 rotation 到轴方向，使 LPyramid 使用标准化坐标系
+            // paax_dir -> Z, pbax_dir -> X, pcax_dir -> Y
+            let standardized_paax_dir = Vec3::Z;
+            let standardized_pbax_dir = Vec3::X;
+            let standardized_pcax_dir = Vec3::Y;
+
             //需要转换成CTorus
             let pyramid = LPyramid {
                 pbax_pt: pb.pt.0,
-                pbax_dir,
+                pbax_dir: standardized_pbax_dir,
                 pcax_pt: pc.pt.0,
-                pcax_dir,
+                pcax_dir: standardized_pcax_dir,
                 paax_pt: pa.pt.0,
-                paax_dir,
+                paax_dir: standardized_paax_dir,
 
                 pbtp: d.x_top,
                 pctp: d.y_top,
@@ -124,7 +130,7 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             };
             // dbg!(&pyramid);
             //需要偏移到 btm
-            let translation = pa.pt.0; //z_axis * d.dist_to_btm +
+            let translation = z_axis * d.dist_to_btm + pa.pt.0; //
             let csg_shape: Box<dyn BrepShapeTrait> = Box::new(pyramid);
             return Some(CateCsgShape {
                 refno: d.refno,
