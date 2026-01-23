@@ -288,32 +288,14 @@ impl GraphQuery for SurrealQueryProvider {
             include_self
         );
 
-        let mut result = rs_surreal::graph::collect_descendant_filter_ids(refnos, nouns, None)
+        let result = rs_surreal::graph::collect_descendant_filter_ids_with_self(
+            refnos,
+            nouns,
+            None,
+            include_self
+        )
             .await
-            .map(|set| set.into_iter().collect::<Vec<_>>())
             .map_err(|e| QueryError::ExecutionError(e.to_string()))?;
-
-        // 如果需要包含自身，检查 refnos 是否符合类型过滤
-        if include_self && !nouns.is_empty() {
-            let noun_hashes: std::collections::HashSet<u32> = nouns
-                .iter()
-                .map(|n| aios_core::tool::db_tool::db1_hash(n))
-                .collect();
-
-            let mut self_refnos = Vec::new();
-            for refno in refnos {
-                if let Ok(Some(pe)) = aios_core::get_pe(*refno).await {
-                    let noun_hash = aios_core::tool::db_tool::db1_hash(&pe.noun);
-                    if noun_hashes.contains(&noun_hash) && !result.contains(refno) {
-                        self_refnos.push(*refno);
-                    }
-                }
-            }
-
-            // 将符合条件的自身节点添加到开头
-            self_refnos.extend(result);
-            result = self_refnos;
-        }
 
         Ok(result)
     }

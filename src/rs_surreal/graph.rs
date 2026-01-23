@@ -440,6 +440,7 @@ pub async fn collect_descendant_ids_batch(
     refnos: &[RefnoEnum],
     nouns: &[&str],
     range_str: Option<&str>,
+    include_self: bool,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
     if refnos.is_empty() {
         return Ok(Vec::new());
@@ -456,14 +457,15 @@ pub async fn collect_descendant_ids_batch(
     let refno_list = refno_keys.join(", ");
 
     let range = range_str.unwrap_or("..");
+    let include_self_expr = if include_self { "true" } else { "none" };
 
     let sql = format!(
         r#"
         array::distinct(array::filter(array::flatten(array::map([{}], |$refno|
-            fn::collect_descendant_ids_by_types($refno, {}, none, "{}")
+            fn::collect_descendant_ids_by_types($refno, {}, {}, "{}")
         )), |$v| $v != none));
         "#,
-        refno_list, types_expr, range
+        refno_list, types_expr, include_self_expr, range
     );
 
     let result: Vec<RefnoEnum> = SUL_DB.query_take(&sql, 0).await?;
@@ -484,7 +486,7 @@ pub async fn collect_descendant_ids_batch(
 /// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）, Some("3")（固定3层）
 ///
 /// # 返回
-/// - 返回所有符合条件的子孙节点 RefnoEnum 列表（已去重）
+/// - 返回所有符合条件的子孙节点 RefnoEnum 列表（已去重，不包含起始节点）
 ///
 /// # 示例
 /// ```ignore
@@ -497,7 +499,40 @@ pub async fn collect_descendant_filter_ids(
     nouns: &[&str],
     range_str: Option<&str>,
 ) -> anyhow::Result<Vec<RefnoEnum>> {
-    collect_descendant_ids_batch(refnos, nouns, range_str).await
+    collect_descendant_ids_batch(refnos, nouns, range_str, false).await
+}
+
+/// 批量查询多个节点的深层子孙节点（支持 include_self）
+///
+/// # 功能说明
+/// - 从多个起始节点出发，批量查询其所有子孙节点的 ID
+/// - 可按指定类型（nouns）过滤结果，如果 nouns 为空则返回所有类型
+/// - 支持包含起始节点自身（如果符合类型过滤条件）
+///
+/// # 参数
+/// - `refnos`: 起始节点的 RefnoEnum 列表
+/// - `nouns`: 要筛选的节点类型列表（如 ["BOX", "CYLI"]），为空则不过滤
+/// - `range_str`: 递归范围字符串，如 None（默认".."无限递归）, Some("1..5")（1到5层）
+/// - `include_self`: 是否包含起始节点自身（如果符合类型过滤条件）
+///
+/// # 返回
+/// - 返回所有符合条件的节点 RefnoEnum 列表（已去重）
+///
+/// # 示例
+/// ```ignore
+/// // 不包含起始节点
+/// let children = collect_descendant_filter_ids_with_self(&[refno1, refno2], &["BOX"], None, false).await?;
+///
+/// // 包含起始节点
+/// let all_nodes = collect_descendant_filter_ids_with_self(&[refno1, refno2], &["BOX"], None, true).await?;
+/// ```
+pub async fn collect_descendant_filter_ids_with_self(
+    refnos: &[RefnoEnum],
+    nouns: &[&str],
+    range_str: Option<&str>,
+    include_self: bool,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    collect_descendant_ids_batch(refnos, nouns, range_str, include_self).await
 }
 
 /// 批量查询多个节点的深层子孙节点（返回完整的 SPdmsElement）
