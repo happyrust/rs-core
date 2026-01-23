@@ -382,8 +382,8 @@ pub async fn update_inst_relate_aabbs_by_refnos(
         // 查询 AABB 参数
         let result = query_aabb_params(&inst_keys, replace_exist).await?;
 
-        let mut relate_sql = String::new();
-        let mut in_keys: Vec<String> = Vec::new();
+        let mut relation_records: Vec<String> = Vec::new();
+        let mut relation_ids: Vec<String> = Vec::new();
         let mut processed: HashSet<RefnoEnum> = HashSet::new();
 
         let compute_aabb = |world_trans: PlantTransform, geo_aabbs: &[GeoAabbTrans]| -> Option<Aabb> {
@@ -422,11 +422,15 @@ pub async fn update_inst_relate_aabbs_by_refnos(
             let refno = r.refno();
             processed.insert(refno.clone());
             let pe_key = refno.to_pe_key();
-            in_keys.push(pe_key.clone());
             let aabb_key = format!("aabb:⟨{}⟩", aabb_hash);
 
-            relate_sql.push_str(&format!(
-                "RELATE {pe_key}->inst_relate_aabb->{aabb_key};"
+            // 使用批量插入语法，指定 ID 为 refno，这样导出代码可以通过 inst_relate_aabb:refno 查询
+            let refno_str = refno.to_string();
+            let relation_id = format!("inst_relate_aabb:⟨{}⟩", refno_str);
+            relation_ids.push(relation_id.clone());
+            relation_records.push(format!(
+                "{{ id: {}, in: {}, out: {} }}",
+                relation_id, pe_key, aabb_key
             ));
         }
 
@@ -436,8 +440,20 @@ pub async fn update_inst_relate_aabbs_by_refnos(
             result.iter().map(|r| r.refno()).collect()
         };
 
-        if !relate_sql.is_empty() {
-            SUL_DB.query_response(&relate_sql).await?;
+        if !relation_records.is_empty() {
+            // 先删除旧记录（通过 ID），再批量插入新记录
+            let mut sql = String::new();
+            if !relation_ids.is_empty() {
+                sql.push_str(&format!(
+                    "DELETE [{}];",
+                    relation_ids.join(",")
+                ));
+            }
+            sql.push_str(&format!(
+                "INSERT RELATION INTO inst_relate_aabb [{}];",
+                relation_records.join(",")
+            ));
+            SUL_DB.query_response(&sql).await?;
         }
     }
 
