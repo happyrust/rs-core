@@ -403,7 +403,8 @@ impl RefU64 {
     }
 
     pub fn to_type_key(&self, noun: &str) -> String {
-        format!("{}:{}", noun, &self.to_string())
+        // noun 本质也是 SurrealDB 的 table 名，复用统一的 record id 生成逻辑
+        self.to_table_key(noun)
     }
 
     #[inline]
@@ -418,7 +419,8 @@ impl RefU64 {
 
     #[inline]
     pub fn to_table_key(&self, tbl: &str) -> String {
-        format!("{tbl}:{}", &self.to_string())
+        // 用 ToSql 生成 SurrealQL 兼容的 record id（避免 pe:23399_839 这类裸拼接导致解析失败）
+        (tbl.to_string(), self.to_string()).into_record_id().to_raw()
     }
 
     #[inline]
