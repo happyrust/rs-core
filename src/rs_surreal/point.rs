@@ -80,10 +80,10 @@ pub async fn query_arrive_leave_points_of_component(
     }
     let sql = format!(
         r#"
-             select value [id,
-                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.ARRI)[0],
-                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.LEAV)[0]
-            ] from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']])
+             select value [in,
+                (select * from out.ptset where number=$parent.in.refno.ARRI)[0],
+                (select * from out.ptset where number=$parent.in.refno.LEAV)[0]
+            ] from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']]->inst_relate)
              "#,
         pes
     );
@@ -111,8 +111,8 @@ pub async fn query_arrive_leave_points_of_branch(
         r#"
              select value [id,
                 (->inst_relate.world_trans.d ?? ->tubi_relate.world_trans.d)[0],
-                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.ARRI)[0],
-                (select * from type::record("inst_info", cata_hash).ptset where number=$parent.refno.LEAV)[0]
+                (select * from (->inst_relate.out.ptset)[0] where number=$parent.refno.ARRI)[0],
+                (select * from (->inst_relate.out.ptset)[0] where number=$parent.refno.LEAV)[0]
             ] from {}.children
              "#,
         branch_refno.to_pe_key()

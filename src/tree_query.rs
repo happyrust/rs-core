@@ -3,7 +3,7 @@ use crate::pdms_types::{
     USE_CATE_NOUN_NAMES,
 };
 use crate::tool::db_tool::{db1_dehash, db1_hash};
-use crate::{RefU64, RefnoEnum};
+use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use async_trait::async_trait;
 use indextree::{Arena, NodeId};
 use once_cell::sync::Lazy;
@@ -17,13 +17,9 @@ use std::sync::Arc;
 use flate2::write::{DeflateDecoder, DeflateEncoder};
 use flate2::Compression;
 
-const TREE_FLAG_HAS_GEO: u32 = 1 << 0;
-const TREE_FLAG_IS_LEAF: u32 = 1 << 1;
-
 #[derive(
     Debug,
     Clone,
-    Copy,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -32,8 +28,7 @@ pub struct TreeNodeMeta {
     pub refno: RefU64,
     pub owner: RefU64,
     pub noun: u32,
-    pub has_geo: bool,
-    pub is_leaf: bool,
+    pub cata_hash: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -44,14 +39,14 @@ pub struct TreeQueryFilter {
 }
 
 impl TreeQueryFilter {
-    fn matches(&self, node: &TreeNodeMeta) -> bool {
-        if let Some(has_geo) = self.has_geo {
-            if node.has_geo != has_geo {
+    fn matches(&self, node: &TreeNodeMeta, node_has_geo: bool, node_is_leaf: bool) -> bool {
+        if let Some(filter_has_geo) = self.has_geo {
+            if node_has_geo != filter_has_geo {
                 return false;
             }
         }
-        if let Some(is_leaf) = self.is_leaf {
-            if node.is_leaf != is_leaf {
+        if let Some(filter_is_leaf) = self.is_leaf {
+            if node_is_leaf != filter_is_leaf {
                 return false;
             }
         }
@@ -217,7 +212,9 @@ impl TreeIndex {
     }
 
     pub fn node_meta(&self, refno: RefU64) -> Option<TreeNodeMeta> {
-        self.id_map.get(&refno).map(|id| *self.arena[*id].get())
+        self.id_map
+            .get(&refno)
+            .map(|id| self.arena[*id].get().clone())
     }
 
     fn collect_children(&self, parent: RefU64, filter: &TreeQueryFilter) -> Vec<RefU64> {
@@ -228,7 +225,9 @@ impl TreeIndex {
             .children(&self.arena)
             .filter_map(|child_id| {
                 let meta = self.arena[child_id].get();
-                if filter.matches(meta) {
+                let has_geo = is_geo_noun_hash(meta.noun);
+                let is_leaf = child_id.children(&self.arena).next().is_none();
+                if filter.matches(meta, has_geo, is_leaf) {
                     Some(meta.refno)
                 } else {
                     None
@@ -251,7 +250,11 @@ impl TreeIndex {
         while let Some((node_id, depth)) = queue.pop_front() {
             let node = self.arena[node_id].get();
             let is_root = depth == 0;
-            if !(is_root && !options.include_self) && options.filter.matches(node) {
+            let has_geo = is_geo_noun_hash(node.noun);
+            let is_leaf = node_id.children(&self.arena).next().is_none();
+            if !(is_root && !options.include_self)
+                && options.filter.matches(node, has_geo, is_leaf)
+            {
                 out.push(node.refno);
             }
             if let Some(max_depth) = options.max_depth {
@@ -281,7 +284,13 @@ impl TreeIndex {
             }
             if !(current == node && !options.include_self) {
                 if let Some(meta) = self.node_meta(current) {
-                    if options.filter.matches(&meta) {
+                    let is_leaf = self
+                        .id_map
+                        .get(&current)
+                        .map(|id| id.children(&self.arena).next().is_none())
+                        .unwrap_or(false);
+                    let has_geo = is_geo_noun_hash(meta.noun);
+                    if options.filter.matches(&meta, has_geo, is_leaf) {
                         chain.push(current);
                     }
                     current = meta.owner;
@@ -344,20 +353,29 @@ pub struct SurrealTreeQuery;
 
 #[async_trait]
 impl TreeQuery for SurrealTreeQuery {
+
+    //todo 使用 IndexTree里已有的信息
     async fn get_node_meta(&self, refno: RefU64) -> anyhow::Result<Option<TreeNodeMeta>> {
         let Some(pe) = crate::rs_surreal::get_pe(RefnoEnum::from(refno)).await? else {
             return Ok(None);
         };
         let noun_hash = db1_hash(pe.noun.as_str());
-        let has_geo = is_geo_noun_hash(noun_hash);
-        let children = crate::rs_surreal::get_children_refnos(RefnoEnum::from(refno)).await?;
-        let is_leaf = children.is_empty();
+        let inst_info_id = {
+            let sql = format!(
+                "select value record::id(out) from {}->inst_relate limit 1;",
+                RefnoEnum::from(refno).to_pe_key()
+            );
+            SUL_DB
+                .query_take::<Option<String>>(&sql, 0)
+                .await
+                .unwrap_or(None)
+        };
+        let cata_hash = inst_info_id.as_deref().and_then(|s| s.parse::<u64>().ok());
         Ok(Some(TreeNodeMeta {
             refno,
             owner: pe.owner.refno(),
             noun: noun_hash,
-            has_geo,
-            is_leaf,
+            cata_hash,
         }))
     }
 
@@ -562,4 +580,83 @@ pub fn get_dbnum_by_refno(refno: RefU64) -> Option<u32> {
 pub fn get_tree_index_by_refno(refno: RefU64) -> Option<Arc<TreeIndex>> {
     let dbnum = get_dbnum_by_refno(refno)?;
     get_cached_tree_index(dbnum)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use indextree::Arena;
+
+    #[test]
+    fn test_tree_file_roundtrip_with_cata_hash() {
+        let mut arena = Arena::new();
+        let root_refno = RefU64(1);
+        let root_id = arena.new_node(TreeNodeMeta {
+            refno: root_refno,
+            owner: root_refno,
+            noun: db1_hash("SITE"),
+            cata_hash: None,
+        });
+        let child_refno = RefU64(2);
+        let child_id = arena.new_node(TreeNodeMeta {
+            refno: child_refno,
+            owner: root_refno,
+            noun: db1_hash("BRAN"),
+            cata_hash: Some("123456".to_string()),
+        });
+        root_id.append(child_id, &mut arena);
+
+        let tree = TreeFile {
+            dbnum: 1,
+            root_refno,
+            arena,
+        };
+
+        let mut path = std::env::temp_dir();
+        path.push(format!("tree_query_test_{}.tree", std::process::id()));
+        tree.save(&path).expect("save tree file");
+        let loaded = TreeFile::load(&path).expect("load tree file");
+        let index = TreeIndex::from_tree_file(loaded);
+        let meta = index.node_meta(child_refno).expect("child meta");
+        assert_eq!(meta.cata_hash.as_deref(), Some("123456"));
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn test_tree_filter_dynamic_flags() {
+        let mut arena = Arena::new();
+        let root_refno = RefU64(10);
+        let root_id = arena.new_node(TreeNodeMeta {
+            refno: root_refno,
+            owner: root_refno,
+            noun: db1_hash("SITE"),
+            cata_hash: None,
+        });
+        let child_refno = RefU64(11);
+        let child_id = arena.new_node(TreeNodeMeta {
+            refno: child_refno,
+            owner: root_refno,
+            noun: db1_hash("BRAN"),
+            cata_hash: Some("234567".to_string()),
+        });
+        root_id.append(child_id, &mut arena);
+
+        let tree = TreeFile {
+            dbnum: 1,
+            root_refno,
+            arena,
+        };
+        let index = TreeIndex::from_tree_file(tree);
+        let options = TreeQueryOptions {
+            include_self: false,
+            max_depth: None,
+            filter: TreeQueryFilter {
+                has_geo: Some(true),
+                is_leaf: Some(true),
+                noun_hashes: None,
+            },
+        };
+        let descendants = index.collect_descendants_bfs(root_refno, &options);
+        assert_eq!(descendants, vec![child_refno]);
+    }
 }

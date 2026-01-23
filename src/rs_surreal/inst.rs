@@ -351,8 +351,10 @@ pub async fn query_insts_for_export(
                 SELECT
                     refno,
                     refno.owner as owner,
-                    record::id((refno->inst_relate_aabb[0].out)) as world_aabb_hash,
-                    record::id(type::record("pe_transform", record::id(refno)).world_trans) as world_trans_hash,
+                    (if refno->inst_relate_aabb[0].out {{ record::id(refno->inst_relate_aabb[0].out) }} else {{ None }}) as world_aabb_hash,
+                    (if type::record("pe_transform", record::id(refno)).world_trans != NONE {{
+                        record::id(type::record("pe_transform", record::id(refno)).world_trans)
+                    }} else {{ None }}) as world_trans_hash,
                     [{{ "geo_hash": mesh_id, "trans_hash": "0", "unit_flag": false }}] as insts,
                     true as has_neg
                 FROM [{bool_keys}]
@@ -386,13 +388,15 @@ pub async fn query_insts_for_export(
                     SELECT
                         in as refno,
                         in.owner ?? in as owner,
-                        record::id((in->inst_relate_aabb[0].out)) as world_aabb_hash,
-                        record::id(type::record("pe_transform", record::id(in)).world_trans) as world_trans_hash,
+                        (if in->inst_relate_aabb[0].out {{ record::id(in->inst_relate_aabb[0].out) }} else {{ None }}) as world_aabb_hash,
+                        (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
+                            record::id(type::record("pe_transform", record::id(in)).world_trans)
+                        }} else {{ None }}) as world_trans_hash,
                         (SELECT record::id(trans) as trans_hash, record::id(out) as geo_hash, out.unit_flag ?? false as unit_flag
                          FROM out->geo_relate
-                         WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                         WHERE visible && out.meshed
                            && (trans.d ?? NONE) != NONE
-                           && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
+                           && geo_type IN ['Pos', 'CatePos']) as insts,
                         false as has_neg
                     FROM [{non_bool_keys}]
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
@@ -418,13 +422,15 @@ pub async fn query_insts_for_export(
                 SELECT
                     in as refno,
                     in.owner ?? in as owner,
-                    record::id((in->inst_relate_aabb[0].out)) as world_aabb_hash,
-                    record::id(type::record("pe_transform", record::id(in)).world_trans) as world_trans_hash,
+                    (if in->inst_relate_aabb[0].out {{ record::id(in->inst_relate_aabb[0].out) }} else {{ None }}) as world_aabb_hash,
+                    (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
+                        record::id(type::record("pe_transform", record::id(in)).world_trans)
+                    }} else {{ None }}) as world_trans_hash,
                     (SELECT record::id(trans) as trans_hash, record::id(out) as geo_hash, out.unit_flag ?? false as unit_flag
                      FROM out->geo_relate
-                     WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                     WHERE visible && out.meshed
                        && (trans.d ?? NONE) != NONE
-                       && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
+                       && geo_type IN ['Pos']) as insts,
                     false as has_neg
                 FROM [{inst_relate_keys}]
                 WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE

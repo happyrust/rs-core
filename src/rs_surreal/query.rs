@@ -11,14 +11,13 @@
 use super::query_mdb_db_nums;
 use crate::consts::{MAX_INSERT_LENGTH, WORD_HASH};
 use crate::parsed_data::CateAxisParam;
-use crate::pdms_types::{CataHashRefnoKV, EleTreeNode, PdmsElement};
+use crate::pdms_types::{EleTreeNode, PdmsElement};
 use crate::pe::SPdmsElement;
 use crate::ssc_setting::PbsElement;
 use crate::table::ToTable;
 use crate::tool::db_tool::db1_dehash;
 use crate::tool::math_tool::*;
 use crate::utils::{take_option, take_single, take_vec};
-use crate::vec3_pool::parse_ptset_auto;
 use crate::{DBType, get_db_option, to_table_keys};
 use crate::{NamedAttrMap, RefU64};
 use crate::{SUL_DB, SurlValue, SurrealQueryExt};
@@ -44,18 +43,6 @@ use surrealdb::types::{Datetime, SurrealValue, Value};
 struct KV<K: SurrealValue, V: SurrealValue> {
     k: K,
     v: V,
-}
-
-/// CataHash 分组查询结果
-/// k 是一个元组：(cata_hash, exist_inst, ptset)
-/// v 是分组的 refnos
-///
-/// 注意：ptset 使用 serde_json::Value 接收，支持原始格式和压缩格式
-/// 使用 parse_ptset_auto 解析
-#[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
-pub struct CataHashGroupQueryResult {
-    pub k: (String, bool, Option<serde_json::Value>),
-    pub v: Vec<RefnoEnum>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
@@ -1404,74 +1391,6 @@ pub async fn query_multi_children_refnos(refnos: &[RefnoEnum]) -> anyhow::Result
         };
     }
     Ok(final_refnos)
-}
-
-///按cata_hash 分组获得不同的参考号类型
-// #[cached(result = true)]
-pub async fn query_group_by_cata_hash(
-    refnos: impl IntoIterator<Item = &RefnoEnum>,
-) -> anyhow::Result<DashMap<String, CataHashRefnoKV>> {
-    let keys = refnos
-        .into_iter()
-        .map(|x| x.to_pe_key())
-        .collect::<Vec<_>>();
-    let mut result_map: DashMap<String, CataHashRefnoKV> = DashMap::new();
-    for chunk in keys.chunks(540) {
-        let sql = format!(
-            r#"
-            let $a = array::flatten(select value array::flatten([id, <-pe_owner.in]) from [{}])[? noun!=NONE && !deleted];
-            select [cata_hash, type::record('inst_info', cata_hash).id!=none,
-                    type::record('inst_info', cata_hash).ptset] as k,
-                 array::group(id) as v
-            from $a where noun not in ["BRAN", "HANG"]  group by k;
-        "#,
-            chunk.join(",")
-        );
-        let mut response: Response = SUL_DB.query_response(sql).await?;
-        // dbg!(&response);
-        // 使用专门的结构体接收查询结果
-        let d: Vec<CataHashGroupQueryResult> = take_vec(&mut response, 1).unwrap();
-        let map = d
-            .into_iter()
-            .map(
-                |CataHashGroupQueryResult {
-                     k: (cata_hash, exist_inst, ptset_json),
-                     v: group_refnos,
-                 }| {
-                    (
-                        cata_hash.clone(),
-                        CataHashRefnoKV {
-                            cata_hash,
-                            group_refnos,
-                            exist_inst,
-                            ptset: ptset_json.and_then(|json| {
-                                // 使用 parse_ptset_auto 自动检测格式并解析
-                                // 支持原始格式和压缩格式
-                                parse_ptset_auto(&json).map(|params| {
-                                    params
-                                        .into_iter()
-                                        .map(|param| (param.number, param))
-                                        .collect()
-                                })
-                            }),
-                        },
-                    )
-                },
-            )
-            .collect::<DashMap<String, CataHashRefnoKV>>();
-        for (k, v) in map {
-            if result_map.contains_key(&k) {
-                result_map
-                    .get_mut(&k)
-                    .unwrap()
-                    .group_refnos
-                    .extend(v.group_refnos);
-            } else {
-                result_map.insert(k, v);
-            }
-        }
-    }
-    Ok(result_map)
 }
 
 #[serde_as]

@@ -324,7 +324,6 @@ impl NamedAttrMap {
             name,
             noun,
             dbnum,
-            cata_hash: self.cal_cata_hash(),
             sesno: self.sesno(),
             ..Default::default()
         };
@@ -931,6 +930,7 @@ impl NamedAttrMap {
         return match val {
             NamedAttrValue::F32VecType(data) => Some(data.clone()),
             NamedAttrValue::Vec3Type(data) => Some(vec![data.x, data.y, data.z]),
+            NamedAttrValue::IntArrayType(data) => Some(data.iter().map(|&i| i as f32).collect()),
             _ => None,
         };
     }
@@ -1341,9 +1341,15 @@ impl NamedAttrMap {
 
 impl NamedAttrMap {
     //计算使用元件库的design 元件 hash
-    pub fn cal_cata_hash(&self) -> String {
+    pub fn cal_cata_hash(&self) -> Option<u64> {
         //todo 先只处理spref有值的情况，还需要处理 self.get_as_string("CATA")
         let type_name = self.get_type_str();
+
+        // 🔧 新增：CATA_HAS_TUBI_GEO_NAMES 检查（与 AttrMap 对齐）
+        if CATA_HAS_TUBI_GEO_NAMES.contains(&type_name) {
+            return Some(*self.get_refno_lossy().unwrap_or_default());
+        }
+
         //由于有ODESP这种，会导致复用出现问题，怎么解决这个问题
         //1、主动去判断是否CataRef是这个类型，即有ODESP这种字段，然后从复用的逻辑排除出来
         //2、解析的时候发现表达式有这些字段，主动去给catref加一个标记位，表示是不能复用的构件
@@ -1355,12 +1361,37 @@ impl NamedAttrMap {
         } else {
             "SPRE"
         };
-        if let Some(spref) = self.get_as_string(ref_name)
-            && !CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name)
-        {
+
+        if let Some(spref) = self.get_as_string(ref_name) {
+            // 🔍 调试：输出 SPRE/CATR 值
+            // eprintln!("🔍 [cal_cata_hash] refno={:?}, type={}, ref_name={}, spref={}",
+            //          self.get_refno_lossy(), type_name, ref_name, spref);
+
+            // 🔧 新增：spref.starts_with('0') 检查（与 AttrMap 对齐）
+            if spref.starts_with('0') {
+                return None;
+            }
+
+            // 🔧 修改：CATA_WITHOUT_REUSE_GEO_NAMES 返回 Some(refno)
+            if CATA_WITHOUT_REUSE_GEO_NAMES.contains(&type_name) {
+                return Some(*self.get_refno_lossy().unwrap_or_default());
+            }
+
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             std::hash::Hash::hash(&spref, &mut hasher);
-            if let Some(des_para) = self.get_f32_vec("DESP") {
+
+            // 🔍 调试：检查 DESP 原始值和类型
+            if let Some(desp_val) = self.get_val("DESP") {
+                eprintln!("🔍 [DESP_RAW] refno={:?}, DESP exists, type={:?}",
+                    self.get_refno_lossy(), std::mem::discriminant(desp_val));
+            } else {
+                eprintln!("🔍 [DESP_RAW] refno={:?}, DESP field not found", self.get_refno_lossy());
+            }
+
+            let des_para = self.get_f32_vec("DESP");
+            eprintln!("🔍 [DESP] refno={:?}, get_f32_vec result={:?}", self.get_refno_lossy(), des_para);
+
+            if let Some(des_para) = des_para {
                 hash_f32_slice(&des_para, &mut hasher);
             }
             let ref_strs = ["ANGL", "HEIG", "RADI"];
@@ -1387,8 +1418,15 @@ impl NamedAttrMap {
 
             let val = std::hash::Hasher::finish(&hasher);
 
-            return val.to_string();
+            // 🔍 调试：输出最终的 cata_hash 值
+            // eprintln!("✅ [cal_cata_hash] refno={:?}, type={}, cata_hash={}",
+            //          self.get_refno_lossy(), type_name, val);
+
+            // 🔧 修改：返回 Option<u64> 而不是 String
+            return Some(val);
         }
-        return self.get_refno().unwrap_or_default().to_string();
+
+        // 🔧 修改：返回 None 而不是 refno.to_string()
+        return None;
     }
 }

@@ -206,6 +206,7 @@ pub trait GraphQuery: Send + Sync {
     /// # 参数
     /// - `refnos`: 起点节点列表
     /// - `nouns`: 要过滤的类型列表
+    /// - `include_self`: 是否包含起点节点本身（如果符合类型过滤条件）
     ///
     /// # 返回
     /// 匹配条件的 refno 列表
@@ -213,6 +214,7 @@ pub trait GraphQuery: Send + Sync {
         &self,
         refnos: &[RefnoEnum],
         nouns: &[&str],
+        include_self: bool,
     ) -> QueryResult<Vec<RefnoEnum>>;
 
     /// 查询两个节点之间的最短路径

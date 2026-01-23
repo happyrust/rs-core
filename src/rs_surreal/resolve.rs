@@ -5,8 +5,8 @@ use std::{collections::HashMap, str::FromStr};
 use crate::RefnoEnum;
 use crate::pdms_types::PdmsGenericType;
 use crate::{
-    NamedAttrMap, NamedAttrValue, RefU64, math::polish_notation::Stack,
-    tiny_expr::expr_eval::interp, tool::float_tool::f64_round_3,
+    NamedAttrMap, NamedAttrValue, RefU64, SUL_DB, SurrealQueryExt,
+    math::polish_notation::Stack, tiny_expr::expr_eval::interp, tool::float_tool::f64_round_3,
 };
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
@@ -398,18 +398,25 @@ pub fn eval_str_to_f64(
                             _ => c2.into(),
                         };
                         // dbg!(target_refno);
-                        let pe = crate::get_pe(target_refno)
-                            .await
-                            .unwrap_or_default()
-                            .unwrap_or_default();
-                        // dbg!(&pe);
+                        let inst_info_key = {
+                            let sql = format!(
+                                "select value record::id(out) from {}->inst_relate limit 1;",
+                                target_refno.to_pe_key()
+                            );
+                            SUL_DB
+                                .query_take::<Option<String>>(&sql, 0)
+                                .await
+                                .unwrap_or(None)
+                        };
                         let pseudo_map = HASH_PSEUDO_ATT_MAPS.read().await;
                         // #[cfg(feature = "debug_expr")]
                         // dbg!(&pseudo_map);
                         //判断target_refno是否在pseudo_map，如果有，取出这里的值
-                        if let Some(am) = pseudo_map.get(&pe.cata_hash) {
-                            if let Some(v) = am.map.get(c1) {
-                                return v.get_val_as_string();
+                        if let Some(inst_info_key) = inst_info_key.as_deref() {
+                            if let Some(am) = pseudo_map.get(inst_info_key) {
+                                if let Some(v) = am.map.get(c1) {
+                                    return v.get_val_as_string();
+                                }
                             }
                         }
                         "0".to_owned()
@@ -538,7 +545,10 @@ pub fn eval_str_to_f64(
                     })
                 });
                 for (kk, vv) in uda_map.map {
-                    let kk = kk.to_uppercase();
+                    let mut kk = kk.to_uppercase();
+                    if let Some(stripped) = kk.strip_prefix("UDA_") {
+                        kk = format!(":{}", stripped);
+                    }
                     if kk.starts_with({ ":" }) {
                         match vv {
                             NamedAttrValue::F32Type(d) => {

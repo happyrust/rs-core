@@ -30,7 +30,6 @@ pub struct SPdmsElement {
     pub children: Option<Vec<RecordId>>,
 
     pub status_code: String,
-    pub cata_hash: String,
     ///锁定模型
     pub lock: bool,
     //todo 可以改为使用 op 来表达是否删除
@@ -76,7 +75,6 @@ impl SPdmsElement {
             "dbnum": self.dbnum,
             "sesno": self.sesno,
             "status_code": self.status_code,
-            "cata_hash": self.cata_hash,
             "lock": self.lock,
             "deleted": self.deleted,
         }))
@@ -103,7 +101,6 @@ impl SPdmsElement {
             "dbnum": self.dbnum,
             "sesno": self.sesno,
             "status_code": self.status_code,
-            "cata_hash": self.cata_hash,
             "lock": self.lock,
             "deleted": self.deleted,
         }))

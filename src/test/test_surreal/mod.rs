@@ -15,8 +15,6 @@ pub mod test_helpers;
 pub mod test_memory_db;
 pub mod test_simple_refno;
 
-pub mod test_query_group;
-
 pub mod test_graph;
 
 pub mod test_collect_children;

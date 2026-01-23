@@ -311,14 +311,15 @@ impl GraphQuery for TreeIndexQueryProvider {
         &self,
         refnos: &[RefnoEnum],
         nouns: &[&str],
+        include_self: bool,
     ) -> QueryResult<Vec<RefnoEnum>> {
         if refnos.is_empty() {
             return Ok(Vec::new());
         }
         // 模型生成路径约定：refnos 不会互相重叠（不会产生重复节点），因此这里不做去重，
         // 直接按 refnos 输入顺序拼接每个 root 的 BFS 结果，保证顺序稳定。
-        let mut out: Vec<RefU64> = Vec::new();
-        let options = Self::build_descendants_options(nouns, None, false);
+        let options = Self::build_descendants_options(nouns, None, include_self);
+        let mut result = Vec::new();
         for refno in refnos {
             let Some(index) = self.find_index(refno.refno()) else {
                 continue;
@@ -327,9 +328,9 @@ impl GraphQuery for TreeIndexQueryProvider {
                 .query_descendants_bfs(refno.refno(), options.clone())
                 .await
                 .map_err(|e| QueryError::ExecutionError(e.to_string()))?;
-            out.extend(descendants);
+            result.extend(descendants);
         }
-        Ok(out.into_iter().map(RefnoEnum::from).collect())
+        Ok(result.into_iter().map(RefnoEnum::from).collect())
     }
 
     async fn find_shortest_path(
