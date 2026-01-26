@@ -316,7 +316,7 @@ pub async fn query_aabb_params(
 
         result.push(QueryAabbParam {
             refno: r.refno,
-            noun: r.noun,
+            noun: Some(r.noun),
             geo_aabbs,
             world_trans,
         });
