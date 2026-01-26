@@ -535,18 +535,18 @@ pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result
 /// 刷新指定 dbnum 列表的 pe_transform 缓存
 ///
 /// # 参数
-/// * `ref0s` - ref_0 列表 (如 &[17496, 9304])，通过 ref0_to_dbnum 映射获取对应 dbnum
+/// * `dbnums` - 数据库编号列表 (如 &[1112, 7997])
 ///
 /// # 返回值
 /// * 处理的节点数量
 ///
 /// # 示例
 /// ```
-/// let count = refresh_pe_transform_for_dbnums(&[17496]).await?;
+/// let count = refresh_pe_transform_for_dbnums(&[1112]).await?;
 /// ```
-pub async fn refresh_pe_transform_for_dbnums(ref0s: &[u32]) -> anyhow::Result<usize> {
+pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<usize> {
     ensure_pe_transform_schema().await?;
-    
+
     const BATCH_SIZE: usize = 500;
     let mut entries: Vec<PeTransformEntry> = Vec::with_capacity(BATCH_SIZE);
     let mut total = 0usize;
@@ -568,20 +568,12 @@ pub async fn refresh_pe_transform_for_dbnums(ref0s: &[u32]) -> anyhow::Result<us
         *total += 1;
     }
 
-    // 通过 ref0 查找对应的 dbnum，去重
-    let dbnums: Vec<u32> = ref0s
-        .iter()
-        .filter_map(|&ref0| crate::tree_query::get_dbnum_by_ref0(ref0))
-        .collect::<std::collections::HashSet<_>>()
-        .into_iter()
-        .collect();
-    
     if dbnums.is_empty() {
-        println!("⚠️  未找到 ref0s {:?} 对应的 dbnum，请检查 ref0_to_dbnum 映射是否已加载", ref0s);
+        println!("⚠️  未提供 dbnum 列表");
         return Ok(0);
     }
-    
-    println!("📋 ref0s: {:?} -> dbnums: {:?}", ref0s, dbnums);
+
+    println!("📋 刷新 dbnums: {:?}", dbnums);
 
     // 对每个 dbnum，查询其根节点并处理子树
     for dbnum in dbnums {

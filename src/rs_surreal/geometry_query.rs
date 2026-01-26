@@ -145,14 +145,14 @@ pub struct QueryInstGeoResult {
 ///
 /// * `id` - inst_relate 的 RecordId
 /// * `refno` - 实例的参考号
-/// * `noun` - 实例的类型名称
+/// * `noun` - 实例的类型名称（可选，某些节点可能没有 noun）
 /// * `geo_aabbs` - 关联的几何 AABB 和变换列表
 /// * `world_trans` - 实例的世界坐标变换
 #[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
 pub struct QueryAabbParam {
     // pub id: RecordId,
     pub refno: RefnoEnum,
-    pub noun: String,
+    pub noun: Option<String>,
     pub geo_aabbs: Vec<GeoAabbTrans>,
     pub world_trans: Option<PlantTransform>,
 }
