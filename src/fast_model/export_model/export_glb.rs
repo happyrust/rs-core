@@ -62,11 +62,12 @@ pub fn export_single_mesh_to_glb(mesh: &PlantMesh, output_path: &Path) -> Result
     let positions: Vec<f32> = mesh.vertices.iter().flat_map(|v| [v.x, v.y, v.z]).collect();
 
     // 获取或计算法线
-    let normals: Vec<Vec3> = if mesh.normals.len() == mesh.vertices.len() && !mesh.normals.is_empty() {
-        mesh.normals.clone()
-    } else {
-        compute_vertex_normals(&mesh.vertices, &mesh.indices)
-    };
+    let normals: Vec<Vec3> =
+        if mesh.normals.len() == mesh.vertices.len() && !mesh.normals.is_empty() {
+            mesh.normals.clone()
+        } else {
+            compute_vertex_normals(&mesh.vertices, &mesh.indices)
+        };
     let normals_f32: Vec<f32> = normals.iter().flat_map(|n| [n.x, n.y, n.z]).collect();
 
     // 构建 buffer 数据

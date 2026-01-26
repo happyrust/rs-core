@@ -1217,7 +1217,9 @@ pub fn build_csg_mesh(
             generate_snout_mesh(snout, settings, non_scalable, refno, manifold)
         }
         PdmsGeoParam::PrimBox(sbox) => generate_box_mesh(sbox, refno, manifold),
-        PdmsGeoParam::PrimDish(dish) => generate_dish_mesh(dish, settings, non_scalable, refno, manifold),
+        PdmsGeoParam::PrimDish(dish) => {
+            generate_dish_mesh(dish, settings, non_scalable, refno, manifold)
+        }
         PdmsGeoParam::PrimCTorus(torus) => {
             generate_torus_mesh(torus, settings, non_scalable, refno, manifold)
         }
@@ -1226,7 +1228,9 @@ pub fn build_csg_mesh(
         }
         PdmsGeoParam::PrimPyramid(pyr) => generate_pyramid_mesh(pyr, refno, manifold),
         PdmsGeoParam::PrimLPyramid(lpyr) => generate_lpyramid_mesh(lpyr, refno, manifold),
-        PdmsGeoParam::PrimExtrusion(extrusion) => generate_extrusion_mesh(extrusion, refno, manifold),
+        PdmsGeoParam::PrimExtrusion(extrusion) => {
+            generate_extrusion_mesh(extrusion, refno, manifold)
+        }
         PdmsGeoParam::PrimPolyhedron(poly) => generate_polyhedron_mesh(poly, refno, manifold),
         PdmsGeoParam::PrimRevolution(rev) => {
             generate_revolution_mesh(rev, settings, non_scalable, refno, manifold)
@@ -1239,7 +1243,11 @@ pub fn build_csg_mesh(
 
     if manifold {
         weld_vertices_for_manifold(&mut generated.mesh);
-        let aabb = generated.mesh.aabb.clone().or_else(|| generated.mesh.cal_aabb());
+        let aabb = generated
+            .mesh
+            .aabb
+            .clone()
+            .or_else(|| generated.mesh.cal_aabb());
         if generated.mesh.aabb.is_none() {
             generated.mesh.aabb = aabb.clone();
         }
@@ -1291,10 +1299,7 @@ fn generate_lcylinder_mesh(
         unit_cylinder_mesh_standard(settings, non_scalable)
     };
 
-    Some(GeneratedMesh {
-        mesh,
-        aabb: None,
-    })
+    Some(GeneratedMesh { mesh, aabb: None })
 }
 
 /// 将角度规范化到 [-90, 90] 度范围
@@ -1562,10 +1567,7 @@ pub(crate) fn generate_scylinder_mesh(
         unit_cylinder_mesh_standard(settings, non_scalable)
     };
 
-    Some(GeneratedMesh {
-        mesh,
-        aabb: None,
-    })
+    Some(GeneratedMesh { mesh, aabb: None })
 }
 
 /// 构建圆柱体网格的通用函数
@@ -1785,14 +1787,15 @@ fn generate_sphere_mesh(
     // 生成几何边：赤道 + 2条子午线
     let base_edges = generate_sphere_edges(radius, radial, 1);
     let edges = transform_edges(base_edges, sphere.center, Vec3::Z);
-    
-    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
-    
+
+    let mut mesh =
+        create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+
     // 普通版本：展开顶点使每个面独立
     if !manifold {
         expand_vertices_for_standard(&mut mesh);
     }
-    
+
     Some(GeneratedMesh {
         mesh,
         aabb: Some(aabb),
@@ -1859,7 +1862,8 @@ fn generate_snout_mesh(
         // 生成侧面顶点
         for segment in 0..=height_segments {
             let t = segment as f32 / height_segments as f32;
-            let center = bottom_center + axis_dir * (height_axis * t) + offset_dir * (snout.poff * t);
+            let center =
+                bottom_center + axis_dir * (height_axis * t) + offset_dir * (snout.poff * t);
             let radius = (bottom_radius + radius_delta * t).max(0.0);
             for slice in 0..radial {
                 let angle = slice as f32 * step_theta;
@@ -1929,8 +1933,10 @@ fn generate_snout_mesh(
         for segment in 0..height_segments {
             let t0 = segment as f32 / height_segments as f32;
             let t1 = (segment + 1) as f32 / height_segments as f32;
-            let center0 = bottom_center + axis_dir * (height_axis * t0) + offset_dir * (snout.poff * t0);
-            let center1 = bottom_center + axis_dir * (height_axis * t1) + offset_dir * (snout.poff * t1);
+            let center0 =
+                bottom_center + axis_dir * (height_axis * t0) + offset_dir * (snout.poff * t0);
+            let center1 =
+                bottom_center + axis_dir * (height_axis * t1) + offset_dir * (snout.poff * t1);
             let radius0 = (bottom_radius + radius_delta * t0).max(0.0);
             let radius1 = (bottom_radius + radius_delta * t1).max(0.0);
 
@@ -2644,14 +2650,15 @@ fn generate_dish_mesh(
     let radial = compute_radial_segments(settings, radius_rim, non_scalable, 3);
     let base_edges = generate_cylinder_edges(radius_rim, 0.0, radial, 0);
     let edges = transform_edges(base_edges, base_center, axis);
-    
-    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
-    
+
+    let mut mesh =
+        create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+
     // 普通版本：展开顶点使每个面独立
     if !manifold {
         expand_vertices_for_standard(&mut mesh);
     }
-    
+
     Some(GeneratedMesh {
         mesh,
         aabb: Some(aabb),
@@ -2799,14 +2806,15 @@ fn generate_torus_mesh(
     // 生成几何边：主圆弧（torus 中心线，在原点，Z轴方向）
     let base_edges = generate_cylinder_edges(major_radius, 0.0, samples_l, 0);
     let edges = transform_edges(base_edges, Vec3::ZERO, Vec3::Z);
-    
-    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
-    
+
+    let mut mesh =
+        create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+
     // 普通版本：展开顶点使每个面独立
     if !manifold {
         expand_vertices_for_standard(&mut mesh);
     }
-    
+
     Some(GeneratedMesh {
         mesh,
         aabb: Some(aabb),
@@ -2996,7 +3004,8 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum, manifold: bool) -> Opt
         }
     }
 
-    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+    let mut mesh =
+        create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
 
     // 普通版本：展开顶点使每个面独立
     if !manifold {
@@ -3022,7 +3031,11 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum, manifold: bool) -> Opt
 ///
 /// # 参数
 /// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
-fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum, manifold: bool) -> Option<GeneratedMesh> {
+fn generate_lpyramid_mesh(
+    lpyr: &LPyramid,
+    refno: RefnoEnum,
+    manifold: bool,
+) -> Option<GeneratedMesh> {
     if !lpyr.check_valid() {
         return None;
     }
@@ -3171,7 +3184,8 @@ fn generate_lpyramid_mesh(lpyr: &LPyramid, refno: RefnoEnum, manifold: bool) -> 
         }
     }
 
-    let mut mesh = create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
+    let mut mesh =
+        create_mesh_with_custom_edges(indices, vertices, normals, Some(aabb), Some(edges));
 
     // 普通版本：展开顶点使每个面独立
     if !manifold {
@@ -3872,7 +3886,11 @@ fn generate_ploop_comparison_svg(
 /// - `extrusion`: 拉伸体参数
 /// - `refno`: 可选的参考号，用于调试输出文件名
 /// - `manifold`: 是否生成 manifold 格式（顶点共享，用于布尔运算）
-fn generate_extrusion_mesh(extrusion: &Extrusion, refno: RefnoEnum, manifold: bool) -> Option<GeneratedMesh> {
+fn generate_extrusion_mesh(
+    extrusion: &Extrusion,
+    refno: RefnoEnum,
+    manifold: bool,
+) -> Option<GeneratedMesh> {
     if extrusion.height.abs() <= MIN_LEN {
         return None;
     }

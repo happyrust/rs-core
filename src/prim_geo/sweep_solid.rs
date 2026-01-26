@@ -136,7 +136,9 @@ impl VerifiedShape for SweepSolid {
 
 impl BrepShapeTrait for SweepSolid {
     fn is_reuse_unit(&self) -> bool {
-        true
+        // 仅对“简单直线且无倾斜”的 PrimLoft 做单位化复用；
+        // 含 CURVE（Arc）/多段路径的放样直接用真实几何，避免 unit arc + segment_transforms 的复杂度。
+        self.path.as_single_line().is_some() && !self.is_sloped()
     }
 
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
@@ -145,7 +147,9 @@ impl BrepShapeTrait for SweepSolid {
 
     fn hash_unit_mesh_params(&self) -> u64 {
         // 仅对影响几何的参数取哈希：截面 + 归一化路径 + 端面倾斜/镜像，避免位置/缩放导致的缓存失效
-        // bangle 不参与哈希，因为它在 Transform 中应用，不影响单位几何体
+        // 说明：
+        // - 简单直线（单位化）路径：bangle 由实例/方位链路表达，不参与单位几何体哈希
+        // - 曲线/多段（非单位化）路径：bangle 会改变几何（截面旋转），应纳入哈希
         #[derive(Serialize)]
         struct Hashable<'a> {
             profile: &'a CateProfileParam,
@@ -154,32 +158,48 @@ impl BrepShapeTrait for SweepSolid {
             drne: &'a Option<DVec3>,
             lmirror: bool,
             plax: Vec3,
+            bangle: f32,
+            /// 圆弧/多段路径的几何由 segment_transforms 共同决定（用于把单位段还原到真实半径/长度/段位置）
+            /// 单段直线复用单位几何时，为避免长度进入 hash，这里传空 slice。
+            segment_transforms: &'a [Transform],
         }
 
         let mut hasher = DefaultHasher::default();
         "SweepSolid".hash(&mut hasher);
 
-        let target =
-            if self.is_drns_sloped() || self.is_drne_sloped() || !self.path.is_single_segment() {
-                Hashable {
-                    profile: &self.profile,
-                    path: &self.path,
-                    drns: &self.drns,
-                    drne: &self.drne,
-                    lmirror: self.lmirror,
-                    plax: self.plax,
-                }
-            } else {
-                // 单段直线且无倾斜：只需截面与镜像标记
-                Hashable {
-                    profile: &self.profile,
-                    path: &SweepPath3D::default(),
-                    drns: &None,
-                    drne: &None,
-                    lmirror: self.lmirror,
-                    plax: self.plax,
-                }
-            };
+        let is_simple_line = self.path.as_single_line().is_some() && !self.is_sloped();
+        let seg_tfs: &[Transform] = if is_simple_line {
+            &[]
+        } else {
+            &self.segment_transforms
+        };
+        let bangle = if is_simple_line { 0.0 } else { self.bangle };
+
+        let target = if is_simple_line {
+            // 单段直线且无倾斜：复用单位几何，长度/方向由实例 transform 处理，不进入 hash
+            Hashable {
+                profile: &self.profile,
+                path: &SweepPath3D::default(),
+                drns: &None,
+                drne: &None,
+                lmirror: self.lmirror,
+                plax: self.plax,
+                bangle,
+                segment_transforms: seg_tfs,
+            }
+        } else {
+            // 圆弧/多段/倾斜：必须把完整路径与段变换纳入 hash，避免不同半径/段位置误复用
+            Hashable {
+                profile: &self.profile,
+                path: &self.path,
+                drns: &self.drns,
+                drne: &self.drne,
+                lmirror: self.lmirror,
+                plax: self.plax,
+                bangle,
+                segment_transforms: seg_tfs,
+            }
+        };
 
         if let Ok(bytes) = bincode::serialize(&target) {
             bytes.hash(&mut hasher);

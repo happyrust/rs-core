@@ -134,7 +134,10 @@ pub async fn query_manifold_boolean_operations_optimized(
             WHERE in.trans.d != NONE
             "#
         );
-        neg_results = SUL_DB.query_take(&sql_neg_inst, 0).await.unwrap_or_default();
+        neg_results = SUL_DB
+            .query_take(&sql_neg_inst, 0)
+            .await
+            .unwrap_or_default();
     }
 
     let sql_ngmr_pe = format!(
@@ -150,7 +153,8 @@ pub async fn query_manifold_boolean_operations_optimized(
         WHERE in.trans.d != NONE
         "#
     );
-    let mut ngmr_results: Vec<NegInfo> = SUL_DB.query_take(&sql_ngmr_pe, 0).await.unwrap_or_default();
+    let mut ngmr_results: Vec<NegInfo> =
+        SUL_DB.query_take(&sql_ngmr_pe, 0).await.unwrap_or_default();
     if ngmr_results.is_empty() {
         let sql_ngmr_inst = format!(
             r#"
@@ -165,7 +169,10 @@ pub async fn query_manifold_boolean_operations_optimized(
             WHERE in.trans.d != NONE
             "#
         );
-        ngmr_results = SUL_DB.query_take(&sql_ngmr_inst, 0).await.unwrap_or_default();
+        ngmr_results = SUL_DB
+            .query_take(&sql_ngmr_inst, 0)
+            .await
+            .unwrap_or_default();
     }
 
     // 合并切割几何
@@ -263,10 +270,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             AND type::record("pe_transform", record::id(in)).world_trans != NONE
         "#
     );
-    let base_infos: Vec<PosEntityBase> = SUL_DB
-        .query_take(&sql_bases, 0)
-        .await
-        .unwrap_or_default();  // 反序列化失败时返回空列表
+    let base_infos: Vec<PosEntityBase> = SUL_DB.query_take(&sql_bases, 0).await.unwrap_or_default(); // 反序列化失败时返回空列表
     let mut base_map: HashMap<RefnoEnum, PosEntityBase> = HashMap::new();
     for base in base_infos {
         base_map.insert(base.refno, base);
@@ -372,7 +376,10 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 WHERE in.trans.d != NONE
                 "#
             );
-            neg_results = SUL_DB.query_take(&sql_neg_inst, 0).await.unwrap_or_default();
+            neg_results = SUL_DB
+                .query_take(&sql_neg_inst, 0)
+                .await
+                .unwrap_or_default();
         }
 
         // 查询 ngmr_relate: in = geo_relate (CataCrossNeg类型切割几何)
@@ -414,7 +421,10 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 WHERE in.trans.d != NONE
                 "#
             );
-            ngmr_results = SUL_DB.query_take(&sql_ngmr_inst, 0).await.unwrap_or_default();
+            ngmr_results = SUL_DB
+                .query_take(&sql_ngmr_inst, 0)
+                .await
+                .unwrap_or_default();
         }
 
         // 合并结果

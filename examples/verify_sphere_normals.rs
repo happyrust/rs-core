@@ -42,7 +42,11 @@ fn main() {
 
     println!("顶点数: {}", vertices.len());
     println!("北极点: {:?}, 法向量: {:?}", vertices[0], normals[0]);
-    println!("南极点: {:?}, 法向量: {:?}", vertices[vertices.len()-1], normals[vertices.len()-1]);
+    println!(
+        "南极点: {:?}, 法向量: {:?}",
+        vertices[vertices.len() - 1],
+        normals[vertices.len() - 1]
+    );
 
     // 验证北极扇形三角形
     println!("\n=== 北极扇形三角形验证 ===");
@@ -51,7 +55,7 @@ fn main() {
         let next_lon = (lon + 1) % radial;
         let idx0 = 0; // north_pole
         let idx1 = first_ring_start + next_lon; // next
-        let idx2 = first_ring_start + lon;      // curr
+        let idx2 = first_ring_start + lon; // curr
 
         let v0 = vertices[idx0];
         let v1 = vertices[idx1];
@@ -70,12 +74,19 @@ fn main() {
         // 点积判断方向是否一致
         let dot = geo_normal.dot(expected_normal);
 
-        println!("三角形[{},{},{}]: 几何法向量={:?}, 期望法向量={:?}, dot={:.3} {}",
-            idx0, idx1, idx2,
+        println!(
+            "三角形[{},{},{}]: 几何法向量={:?}, 期望法向量={:?}, dot={:.3} {}",
+            idx0,
+            idx1,
+            idx2,
             geo_normal,
             expected_normal,
             dot,
-            if dot > 0.0 { "✓ 正确" } else { "✗ 反向!" }
+            if dot > 0.0 {
+                "✓ 正确"
+            } else {
+                "✗ 反向!"
+            }
         );
     }
 
@@ -102,8 +113,12 @@ fn main() {
             let tri_center = (v0 + v1 + v2) / 3.0;
             let expected_normal = (tri_center - center).normalize();
             let dot = geo_normal.dot(expected_normal);
-            println!("三角形[{},{},{}]: dot={:.3} {}",
-                curr, curr_next, below, dot,
+            println!(
+                "三角形[{},{},{}]: dot={:.3} {}",
+                curr,
+                curr_next,
+                below,
+                dot,
                 if dot > 0.0 { "✓" } else { "✗ 反向!" }
             );
         }
@@ -119,8 +134,12 @@ fn main() {
             let tri_center = (v0 + v1 + v2) / 3.0;
             let expected_normal = (tri_center - center).normalize();
             let dot = geo_normal.dot(expected_normal);
-            println!("三角形[{},{},{}]: dot={:.3} {}",
-                below, curr_next, below_next, dot,
+            println!(
+                "三角形[{},{},{}]: dot={:.3} {}",
+                below,
+                curr_next,
+                below_next,
+                dot,
                 if dot > 0.0 { "✓" } else { "✗ 反向!" }
             );
         }
@@ -132,7 +151,7 @@ fn main() {
     let south_pole_idx = vertices.len() - 1;
     for lon in 0..2 {
         let next_lon = (lon + 1) % radial;
-        let idx0 = last_ring_start + lon;  // curr
+        let idx0 = last_ring_start + lon; // curr
         let idx1 = last_ring_start + next_lon; // next
         let idx2 = south_pole_idx;
 
@@ -147,8 +166,12 @@ fn main() {
         let expected_normal = (tri_center - center).normalize();
         let dot = geo_normal.dot(expected_normal);
 
-        println!("三角形[{},{},{}]: dot={:.3} {}",
-            idx0, idx1, idx2, dot,
+        println!(
+            "三角形[{},{},{}]: dot={:.3} {}",
+            idx0,
+            idx1,
+            idx2,
+            dot,
             if dot > 0.0 { "✓" } else { "✗ 反向!" }
         );
     }

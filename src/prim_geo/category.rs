@@ -425,8 +425,8 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let rotation = construct_basis_from_z_axis(axis_dir * height_raw.signum());
             let phei = height_raw.abs();
             let pdia = d.diameter as f32;
-        
-            let translation = bottom ;
+
+            let translation = bottom;
             debug_model_debug!(
                 "   ✅ [SCylinder] phei={}, translation={:?}, rotation={:?}",
                 phei,

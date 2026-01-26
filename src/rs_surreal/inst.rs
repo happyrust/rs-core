@@ -341,9 +341,12 @@ pub async fn query_insts_for_export(
     for chunk in refnos.chunks(batch_size) {
         if enable_holes {
             // ========== 路径 A：布尔结果查询 ==========
-            let bool_keys: Vec<String> = chunk.iter().map(|r| format!("inst_relate_bool:{}", r)).collect();
+            let bool_keys: Vec<String> = chunk
+                .iter()
+                .map(|r| format!("inst_relate_bool:{}", r))
+                .collect();
             let bool_keys_str = bool_keys.join(",");
-            
+
             // 只查询 hash ID，不查询实际数据
             // 布尔运算结果的 mesh 已经在世界坐标系下，geo_instances 的 trans_hash 应该是单位矩阵 "0"
             let bool_sql = format!(
@@ -546,9 +549,12 @@ pub async fn query_insts_with_batch(
         if enable_holes {
             // ========== 路径 A：布尔结果查询 ==========
             // 直接从 inst_relate_bool:{refno} 获取有成功布尔结果的记录
-            let bool_keys: Vec<String> = chunk.iter().map(|r| format!("inst_relate_bool:{}", r)).collect();
+            let bool_keys: Vec<String> = chunk
+                .iter()
+                .map(|r| format!("inst_relate_bool:{}", r))
+                .collect();
             let bool_keys_str = bool_keys.join(",");
-            
+
             // 使用 graph traversal 获取 world_aabb，不依赖计算字段
             let bool_sql = format!(
                 r#"

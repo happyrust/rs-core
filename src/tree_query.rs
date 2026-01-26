@@ -5,6 +5,8 @@ use crate::pdms_types::{
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use async_trait::async_trait;
+use flate2::Compression;
+use flate2::write::{DeflateDecoder, DeflateEncoder};
 use indextree::{Arena, NodeId};
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
@@ -14,16 +16,8 @@ use std::io::Write;
 use std::num::NonZeroUsize;
 use std::path::Path;
 use std::sync::Arc;
-use flate2::write::{DeflateDecoder, DeflateEncoder};
-use flate2::Compression;
 
-#[derive(
-    Debug,
-    Clone,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-)]
+#[derive(Debug, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct TreeNodeMeta {
     pub refno: RefU64,
     pub owner: RefU64,
@@ -236,11 +230,7 @@ impl TreeIndex {
             .collect()
     }
 
-    pub fn collect_descendants_bfs(
-        &self,
-        root: RefU64,
-        options: &TreeQueryOptions,
-    ) -> Vec<RefU64> {
+    pub fn collect_descendants_bfs(&self, root: RefU64, options: &TreeQueryOptions) -> Vec<RefU64> {
         let Some(&root_id) = self.id_map.get(&root) else {
             return Vec::new();
         };
@@ -252,8 +242,7 @@ impl TreeIndex {
             let is_root = depth == 0;
             let has_geo = is_geo_noun_hash(node.noun);
             let is_leaf = node_id.children(&self.arena).next().is_none();
-            if !(is_root && !options.include_self)
-                && options.filter.matches(node, has_geo, is_leaf)
+            if !(is_root && !options.include_self) && options.filter.matches(node, has_geo, is_leaf)
             {
                 out.push(node.refno);
             }
@@ -353,7 +342,6 @@ pub struct SurrealTreeQuery;
 
 #[async_trait]
 impl TreeQuery for SurrealTreeQuery {
-
     //todo 使用 IndexTree里已有的信息
     async fn get_node_meta(&self, refno: RefU64) -> anyhow::Result<Option<TreeNodeMeta>> {
         let Some(pe) = crate::rs_surreal::get_pe(RefnoEnum::from(refno)).await? else {
@@ -455,7 +443,10 @@ pub fn get_cached_tree_index(dbnum: u32) -> Option<Arc<TreeIndex>> {
     TREE_INDEX_CACHE.read().get(&dbnum).cloned()
 }
 
-pub fn load_tree_index_from_dir(dbnum: u32, dir: impl AsRef<Path>) -> anyhow::Result<Arc<TreeIndex>> {
+pub fn load_tree_index_from_dir(
+    dbnum: u32,
+    dir: impl AsRef<Path>,
+) -> anyhow::Result<Arc<TreeIndex>> {
     if let Some(index) = get_cached_tree_index(dbnum) {
         return Ok(index);
     }
@@ -467,7 +458,9 @@ pub fn load_tree_index_from_dir(dbnum: u32, dir: impl AsRef<Path>) -> anyhow::Re
 
 pub fn load_tree_index_from_path(path: impl AsRef<Path>) -> anyhow::Result<Arc<TreeIndex>> {
     let index = Arc::new(TreeIndex::load_from_path(path.as_ref())?);
-    TREE_INDEX_CACHE.write().insert(index.dbnum(), index.clone());
+    TREE_INDEX_CACHE
+        .write()
+        .insert(index.dbnum(), index.clone());
     Ok(index)
 }
 
@@ -506,11 +499,7 @@ fn noun_hashes_to_names(hashes: &Option<Vec<u32>>) -> Vec<String> {
         .iter()
         .filter_map(|hash| {
             let name = db1_dehash(*hash);
-            if name.is_empty() {
-                None
-            } else {
-                Some(name)
-            }
+            if name.is_empty() { None } else { Some(name) }
         })
         .collect()
 }

@@ -5,8 +5,8 @@ use super::surreal_provider::SurrealQueryProvider;
 use super::traits::*;
 use crate::tool::db_tool::db1_hash;
 use crate::tree_query::{
-    get_cached_tree_index, get_dbnum_by_refno, load_db_meta_info, TreeIndex, TreeQuery,
-    TreeQueryFilter, TreeQueryOptions,
+    TreeIndex, TreeQuery, TreeQueryFilter, TreeQueryOptions, get_cached_tree_index,
+    get_dbnum_by_refno, load_db_meta_info,
 };
 use crate::types::{NamedAttrMap as NamedAttMap, SPdmsElement as PE};
 use crate::{RefU64, RefnoEnum};
@@ -28,7 +28,7 @@ impl TreeIndexQueryProvider {
     /// 从目录中加载所有 .tree 文件和 db_meta_info.json
     pub fn from_tree_dir(tree_dir: impl Into<PathBuf>) -> QueryResult<Self> {
         let tree_dir = tree_dir.into();
-        
+
         // 加载 db_meta_info.json（如果存在）
         let meta_path = tree_dir.join("db_meta_info.json");
         if meta_path.exists() {
@@ -38,7 +38,7 @@ impl TreeIndexQueryProvider {
                 info!("已加载 db_meta_info.json: {}", meta_path.display());
             }
         }
-        
+
         // 加载所有 .tree 文件
         let indexes = load_tree_indexes_from_dir(&tree_dir)?;
         if indexes.is_empty() {
@@ -47,13 +47,13 @@ impl TreeIndexQueryProvider {
                 tree_dir.display()
             )));
         }
-        
+
         // 构建 dbnum -> TreeIndex 映射
         let mut index_map = HashMap::new();
         for index in &indexes {
             index_map.insert(index.dbnum(), index.clone());
         }
-        
+
         Ok(Self {
             name: "TreeIndex".to_string(),
             index_map,
@@ -69,7 +69,7 @@ impl TreeIndexQueryProvider {
                 return Some(index.clone());
             }
         }
-        
+
         // 回退：遍历所有 index 查找（兼容未加载 db_meta_info 的情况）
         for index in self.index_map.values() {
             if index.contains_refno(refno) {
@@ -109,8 +109,8 @@ fn load_tree_indexes_from_dir(dir: &Path) -> QueryResult<Vec<Arc<TreeIndex>>> {
     let entries = std::fs::read_dir(dir)
         .map_err(|e| QueryError::ExecutionError(format!("读取 tree 目录失败: {e}")))?;
     for entry in entries {
-        let entry = entry
-            .map_err(|e| QueryError::ExecutionError(format!("读取目录条目失败: {e}")))?;
+        let entry =
+            entry.map_err(|e| QueryError::ExecutionError(format!("读取目录条目失败: {e}")))?;
         let path = entry.path();
         let is_tree = path
             .extension()

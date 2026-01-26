@@ -292,10 +292,10 @@ impl GraphQuery for SurrealQueryProvider {
             refnos,
             nouns,
             None,
-            include_self
+            include_self,
         )
-            .await
-            .map_err(|e| QueryError::ExecutionError(e.to_string()))?;
+        .await
+        .map_err(|e| QueryError::ExecutionError(e.to_string()))?;
 
         Ok(result)
     }

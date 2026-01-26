@@ -11,8 +11,7 @@ use crate::rs_surreal::pe_transform::{
 };
 use crate::rs_surreal::spatial::is_virtual_node;
 use crate::{
-    DBType, NamedAttrMap, RefnoEnum, SUL_DB, SurrealQueryExt,
-    get_children_refnos, get_db_option,
+    DBType, NamedAttrMap, RefnoEnum, SUL_DB, SurrealQueryExt, get_children_refnos, get_db_option,
     get_mdb_world_site_ele_nodes, get_named_attmap,
     pdms_data::{PlinParam, PlinParamData},
     tool::{direction_parse::parse_expr_to_dir, math_tool::*},
@@ -229,7 +228,7 @@ pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Res
 }
 
 /// 惰性计算世界变换矩阵
-/// 
+///
 /// 当父节点没有缓存时，向上查找最近有 world_trans 缓存的祖先，
 /// 然后从该祖先开始逐层累乘 local_mat 得到世界变换。
 async fn compute_world_from_parent(
@@ -237,7 +236,7 @@ async fn compute_world_from_parent(
     local_mat: Option<DMat4>,
 ) -> anyhow::Result<Option<DMat4>> {
     use crate::rs_surreal::{find_nearest_cached_ancestor, query_ancestor_refnos};
-    
+
     let att = get_named_attmap(refno).await?;
     let parent_refno = att.get_owner();
     if parent_refno.is_unset() {
@@ -257,13 +256,16 @@ async fn compute_world_from_parent(
 
     // 父节点无缓存，启用惰性计算：查找最近有缓存的祖先
     #[cfg(feature = "debug_spatial")]
-    println!("🔄 惰性计算 world_mat for {}: 父节点 {} 无缓存", refno, parent_refno);
+    println!(
+        "🔄 惰性计算 world_mat for {}: 父节点 {} 无缓存",
+        refno, parent_refno
+    );
 
     // 获取祖先链并反转（query_ancestor_refnos 返回从当前到根，需要反转为从根到父）
     // 注意：query_ancestor_refnos 包含当前节点自己，需要排除
     let mut ancestors = query_ancestor_refnos(refno).await?;
-    ancestors.retain(|r| *r != refno);  // 排除当前节点
-    ancestors.reverse();  // 反转为从根到父的顺序
+    ancestors.retain(|r| *r != refno); // 排除当前节点
+    ancestors.reverse(); // 反转为从根到父的顺序
     if ancestors.is_empty() {
         return Ok(Some(local_mat.unwrap_or(DMat4::IDENTITY)));
     }
@@ -271,7 +273,7 @@ async fn compute_world_from_parent(
     // 查找最近有 world_trans 缓存的祖先
     let cached_ancestor = find_nearest_cached_ancestor(refno).await?;
     let ancestors_len = ancestors.len();
-    
+
     // 确定计算起点（注意：find_nearest_cached_ancestor 返回的索引是原始顺序，需要转换为反转后的索引）
     let (start_idx, mut world_mat) = match cached_ancestor {
         Some((orig_idx, ancestor_refno)) => {
@@ -283,13 +285,16 @@ async fn compute_world_from_parent(
             // 原始索引是从当前到根，反转后索引 = len - 1 - orig_idx
             let reversed_idx = ancestors_len - 1 - orig_idx;
             #[cfg(feature = "debug_spatial")]
-            println!("  ✅ 找到缓存祖先: {} (orig_idx={}, reversed_idx={})", ancestor_refno, orig_idx, reversed_idx);
-            (reversed_idx + 1, world)  // 从缓存祖先的下一个开始计算
+            println!(
+                "  ✅ 找到缓存祖先: {} (orig_idx={}, reversed_idx={})",
+                ancestor_refno, orig_idx, reversed_idx
+            );
+            (reversed_idx + 1, world) // 从缓存祖先的下一个开始计算
         }
         None => {
             #[cfg(feature = "debug_spatial")]
             println!("  ⚠️ 无缓存祖先，从根节点开始计算");
-            (0, DMat4::IDENTITY)  // 从根节点开始
+            (0, DMat4::IDENTITY) // 从根节点开始
         }
     };
 
@@ -300,7 +305,7 @@ async fn compute_world_from_parent(
     for (i, ancestor) in ancestors.iter().enumerate().skip(start_idx) {
         let ancestor_local = get_local_mat4(*ancestor).await?.unwrap_or(DMat4::IDENTITY);
         world_mat = world_mat * ancestor_local;
-        
+
         // 沿途缓存（提升后续命中率）
         let world_trans = dmat4_to_transform_option(Some(world_mat));
         let local_trans = dmat4_to_transform_option(Some(ancestor_local));
@@ -343,7 +348,6 @@ async fn compute_world_from_parent(
 pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
     get_transform_mat4(refno, is_local).await
 }
-
 
 /// 将 Bevy Transform 转换为 DMat4
 ///
@@ -413,15 +417,18 @@ pub async fn invalidate_world_trans_cache(refno: RefnoEnum) -> anyhow::Result<()
 pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result<usize> {
     ensure_pe_transform_schema().await?;
     let mdb_name = mdb.unwrap_or_else(|| get_db_option().mdb_name.clone());
-    
+
     // 查询该 MDB 下的总节点数
-    let count_sql = format!("SELECT VALUE count() FROM pe WHERE mdb = '{}' GROUP ALL", mdb_name);
+    let count_sql = format!(
+        "SELECT VALUE count() FROM pe WHERE mdb = '{}' GROUP ALL",
+        mdb_name
+    );
     let mut count_response = SUL_DB.query_response(&count_sql).await?;
     let total_nodes: Vec<i64> = count_response.take(0)?;
     let total_nodes = total_nodes.first().copied().unwrap_or(0) as usize;
-    
+
     println!("📊 MDB {} 总节点数: {}", mdb_name, total_nodes);
-    
+
     let sites = get_mdb_world_site_ele_nodes(mdb_name, DBType::DESI).await?;
     if sites.is_empty() {
         return Ok(0);
@@ -444,12 +451,15 @@ pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result
         if local.is_none() && world.is_none() {
             return;
         }
-        entries.push(PeTransformEntry { refno, local, world });
+        entries.push(PeTransformEntry {
+            refno,
+            local,
+            world,
+        });
         *total += 1;
     }
 
     for site in sites {
-
         let site_refno = site.refno;
         let mut queue: VecDeque<(RefnoEnum, DMat4)> = VecDeque::new();
 
@@ -462,7 +472,13 @@ pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result
             }
         };
         let world_mat = local_mat.unwrap_or(DMat4::IDENTITY);
-        push_entry(&mut entries, &mut total, site_refno, local_mat, Some(world_mat));
+        push_entry(
+            &mut entries,
+            &mut total,
+            site_refno,
+            local_mat,
+            Some(world_mat),
+        );
         queue.push_back((site_refno, world_mat));
 
         while let Some((parent_refno, parent_world)) = queue.pop_front() {
@@ -498,7 +514,10 @@ pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result
                     } else {
                         0
                     };
-                    print!("\r📊 进度: {}/{} ({:3}%)...", total, total_nodes, percentage);
+                    print!(
+                        "\r📊 进度: {}/{} ({:3}%)...",
+                        total, total_nodes, percentage
+                    );
                     use std::io::Write;
                     std::io::stdout().flush().ok();
                     last_print_count = total;
@@ -513,7 +532,10 @@ pub async fn refresh_pe_transform_for_mdb(mdb: Option<String>) -> anyhow::Result
                     } else {
                         0
                     };
-                    print!("\r📊 进度: {}/{} ({:3}%) [已保存批次]...", total, total_nodes, percentage);
+                    print!(
+                        "\r📊 进度: {}/{} ({:3}%) [已保存批次]...",
+                        total, total_nodes, percentage
+                    );
                     use std::io::Write;
                     std::io::stdout().flush().ok();
                     last_print_count = total;
@@ -564,7 +586,11 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
         if local.is_none() && world.is_none() {
             return;
         }
-        entries.push(PeTransformEntry { refno, local, world });
+        entries.push(PeTransformEntry {
+            refno,
+            local,
+            world,
+        });
         *total += 1;
     }
 
@@ -578,35 +604,35 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
     // 对每个 dbnum，查询其根节点并处理子树
     for dbnum in dbnums {
         // 先查询该 dbnum 下的总节点数
-        let count_sql = format!("SELECT VALUE count() FROM pe WHERE dbnum = {} GROUP ALL", dbnum);
+        let count_sql = format!(
+            "SELECT VALUE count() FROM pe WHERE dbnum = {} GROUP ALL",
+            dbnum
+        );
         let mut count_response = SUL_DB.query_response(&count_sql).await?;
         let total_nodes: Vec<i64> = count_response.take(0)?;
         let total_nodes = total_nodes.first().copied().unwrap_or(0) as usize;
-        
+
         println!("📊 dbnum {} 总节点数: {}", dbnum, total_nodes);
-        
+
         // 查询该 dbnum 下的所有根节点（通常是 SITE 或 WORL）
         // 使用 SELECT VALUE 直接返回 refno 值列表
         let sql = format!(
             "SELECT VALUE refno FROM pe WHERE dbnum = {} AND (noun = 'SITE' OR noun = 'WORL') AND owner.refno = NONE",
             dbnum
         );
-        
+
         let mut response = SUL_DB.query_response(&sql).await?;
         let roots: Vec<RefnoEnum> = response.take(0)?;
-        
+
         if roots.is_empty() {
             println!("⚠️  dbnum {} 没有找到根节点", dbnum);
             continue;
         }
-        
+
         println!("🔍 处理 dbnum {}, 找到 {} 个根节点", dbnum, roots.len());
-        
-        
+
         for root_refno in roots {
-
             let mut queue: VecDeque<(RefnoEnum, DMat4)> = VecDeque::new();
-
 
             let local_mat = match get_local_mat4(root_refno).await {
                 Ok(mat) => mat.filter(|m| !m.is_nan()),
@@ -617,7 +643,13 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
                 }
             };
             let world_mat = local_mat.unwrap_or(DMat4::IDENTITY);
-            push_entry(&mut entries, &mut total, root_refno, local_mat, Some(world_mat));
+            push_entry(
+                &mut entries,
+                &mut total,
+                root_refno,
+                local_mat,
+                Some(world_mat),
+            );
             queue.push_back((root_refno, world_mat));
 
             while let Some((parent_refno, parent_world)) = queue.pop_front() {
@@ -653,7 +685,10 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
                         } else {
                             0
                         };
-                        print!("\r📊 进度: {}/{} ({:3}%)...", total, total_nodes, percentage);
+                        print!(
+                            "\r📊 进度: {}/{} ({:3}%)...",
+                            total, total_nodes, percentage
+                        );
                         use std::io::Write;
                         std::io::stdout().flush().ok();
                         last_print_count = total;
@@ -668,12 +703,14 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
                         } else {
                             0
                         };
-                        print!("\r📊 进度: {}/{} ({:3}%) [已保存批次]...", total, total_nodes, percentage);
+                        print!(
+                            "\r📊 进度: {}/{} ({:3}%) [已保存批次]...",
+                            total, total_nodes, percentage
+                        );
                         use std::io::Write;
                         std::io::stdout().flush().ok();
                         last_print_count = total;
                     }
-
                 }
             }
         }
@@ -688,4 +725,3 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
 
     Ok(total)
 }
-

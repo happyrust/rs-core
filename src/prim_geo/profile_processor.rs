@@ -633,7 +633,12 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
     }
     let flip_winding = signed_area2 < 0.0;
 
-    let mut push_tri = |a: u32, b: u32, c: u32, vertices: &[Vec3], normals: &mut [Vec3], indices: &mut Vec<u32>| {
+    let mut push_tri = |a: u32,
+                        b: u32,
+                        c: u32,
+                        vertices: &[Vec3],
+                        normals: &mut [Vec3],
+                        indices: &mut Vec<u32>| {
         let (b, c) = if flip_winding { (c, b) } else { (b, c) };
         indices.extend_from_slice(&[a, b, c]);
         let v0 = vertices[a as usize];
@@ -678,7 +683,14 @@ pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh 
         }
 
         // 顶面（+Z）
-        push_tri((n as u32) + a, (n as u32) + b, (n as u32) + c, &vertices, &mut normals, &mut indices);
+        push_tri(
+            (n as u32) + a,
+            (n as u32) + b,
+            (n as u32) + c,
+            &vertices,
+            &mut normals,
+            &mut indices,
+        );
         // 底面（-Z），反向
         push_tri(a, c, b, &vertices, &mut normals, &mut indices);
     }

@@ -126,7 +126,9 @@ impl LodMeshSettings {
             if non_scalable {
                 target_len *= self.non_scalable_factor.max(0.1);
             }
-            target_len = target_len.max(1.0);
+            // 允许 < 1mm 的段长：单位网格（unit mesh）会在实例侧被大倍率缩放，
+            // 需要把目标段长映射到单位空间后继续生效。
+            target_len = target_len.max(0.001);
             let circumference =
                 circumference.unwrap_or(2.0 * std::f32::consts::PI * effective_radius);
             if circumference <= Self::EPS {
@@ -157,7 +159,7 @@ impl LodMeshSettings {
             if non_scalable {
                 target_len *= self.non_scalable_factor.max(0.1);
             }
-            target_len = target_len.max(1.0);
+            target_len = target_len.max(0.001);
             let ideal = (span / target_len).ceil() as u16;
             ideal
                 .max(self.min_height_segments.max(1))

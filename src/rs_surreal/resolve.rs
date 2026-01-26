@@ -5,8 +5,8 @@ use std::{collections::HashMap, str::FromStr};
 use crate::RefnoEnum;
 use crate::pdms_types::PdmsGenericType;
 use crate::{
-    NamedAttrMap, NamedAttrValue, RefU64, SUL_DB, SurrealQueryExt,
-    math::polish_notation::Stack, tiny_expr::expr_eval::interp, tool::float_tool::f64_round_3,
+    NamedAttrMap, NamedAttrValue, RefU64, SUL_DB, SurrealQueryExt, math::polish_notation::Stack,
+    tiny_expr::expr_eval::interp, tool::float_tool::f64_round_3,
 };
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
@@ -432,8 +432,9 @@ pub fn eval_str_to_f64(
 
     //说明：匹配带小数的情况 PARA[1.1]，支持 UDA 属性名（以冒号开头，如 :HXYS[1]）
     // 修复：原 (:? 是非捕获组语法，改为 (:)? 匹配可选冒号
-    let re = Regex::new(r"(:)?([A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]\s*))\s*\]?)?")
-        .unwrap();
+    let re =
+        Regex::new(r"(:)?([A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]\s*))\s*\]?)?")
+            .unwrap();
     // 将NEXT PREV 的值统一换成参考号，然后 context_params 要存储 参考号对应的 attr，要是它这个值没有求解，
     // 相当于要递归去求值
     // 匹配 "RPRO GANG" 或 "RPRO_GANG" 两种格式，修复单位验证被绕过的问题
@@ -856,10 +857,9 @@ mod tests {
     #[test]
     fn test_uda_attribute_regex() {
         // 修复后的正则：支持可选冒号前缀
-        let re = Regex::new(
-            r"(:)?([A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]\s*))\s*\]?)?",
-        )
-        .unwrap();
+        let re =
+            Regex::new(r"(:)?([A-Z_]+[0-9]*)(\s*\[?\s*(([1-9]\d*\.?\d*)|(0\.\d*[1-9]\s*))\s*\]?)?")
+                .unwrap();
 
         // 测试用例：普通属性
         let caps = re.captures("DESP[1]").unwrap();

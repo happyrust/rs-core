@@ -166,20 +166,21 @@ fn get_profile_data(profile: &CateProfileParam, _refno: RefnoEnum) -> Option<Pro
         curr_len += curr.distance(next);
     }
 
-    // 添加闭合点（如果首尾不重合）
-    if !vertices.is_empty() && vertices[0].pos.distance(vertices.last().unwrap().pos) > 1e-6 {
-        let first = vertices[0].clone();
-        vertices.push(ProfileVertex {
-            pos: first.pos,
-            normal: first.normal,
-            u: 1.0,
-        });
+    // SweepSolid/PrimLoft 的截面通常应视为“闭合轮廓”（例如 SPRO 矩形/圆角矩形）。
+    // 历史上这里为了便于某些“条带”逻辑会额外追加一个闭合点并将 is_closed=false，
+    // 但这会在闭合路径 sweep 时引入明显的侧面接缝（last->first 未连接）。
+    //
+    // 统一策略：
+    // - 若 ProfileProcessor 输出已首尾重合，则去掉末尾重复点；
+    // - 设 is_closed=true，让 mesh 生成阶段自动连接 last->first。
+    if vertices.len() >= 2 && vertices[0].pos.distance(vertices.last().unwrap().pos) <= 1e-6 {
+        vertices.pop();
     }
 
     Some(ProfileData {
         vertices,
         is_smooth: false, // ProfileProcessor 处理后的轮廓通常是硬表面
-        is_closed: false, // 已包含闭合点，视为 Strip
+        is_closed: true,  // 闭合轮廓，自动连接 last->first
     })
 }
 
@@ -214,10 +215,16 @@ fn build_profile_transform_matrix(plin_pos: Vec2, bangle: f32, lmirror: bool) ->
 }
 
 /// 对截面应用 plin_pos/lmirror 变换（BANG 已在 segment_transforms 的 Frenet 标架旋转中应用，此处不再重复旋转）
-fn apply_profile_transform(mut profile: ProfileData, plin_pos: Vec2, lmirror: bool) -> ProfileData {
-    // bangle 已在 normalize_spine_segments() 中通过 Frenet 标架计算并存储在 segment_transforms 中
-    // 截面阶段只做平移和镜像，不应用 bangle
-    let mat = build_profile_transform_matrix(plin_pos, 0.0, lmirror);
+fn apply_profile_transform(
+    mut profile: ProfileData,
+    plin_pos: Vec2,
+    bangle: f32,
+    lmirror: bool,
+) -> ProfileData {
+    // 说明：
+    // - 直线（单位化）路径：bangle 仍由旧流程在 segment_transforms/方位链路中处理，这里传 0 避免重复旋转。
+    // - 曲线（非单位化）路径：不再使用 segment_transforms 还原/扭转，bangle 需在截面阶段应用。
+    let mat = build_profile_transform_matrix(plin_pos, bangle, lmirror);
 
     for v in &mut profile.vertices {
         let p = mat.transform_point3(DVec3::new(v.pos.x as f64, v.pos.y as f64, 0.0));
@@ -233,6 +240,7 @@ fn apply_profile_transform(mut profile: ProfileData, plin_pos: Vec2, lmirror: bo
 }
 
 /// 路径采样点
+#[derive(Clone, Copy)]
 struct PathSample {
     pos: Vec3,
     tangent: Vec3,
@@ -262,24 +270,22 @@ fn sample_arc_frames(arc: &Arc3D, arc_segments: usize, plax: Vec3) -> Option<Vec
         profile_normal = -profile_normal;
     }
 
-    // 检查 pref_axis 和 plax 是否平行（避免零向量叉积导致 NaN）
-    let dot = profile_up.dot(profile_normal).abs();
-    let (profile_right, profile_up_ortho) = if dot > 0.999 {
-        // pref_axis 和 plax 几乎平行,使用 arc.axis 来构建坐标系
-        eprintln!(
-            "警告: pref_axis ({:?}) 和 plax ({:?}) 平行, 使用 arc.axis ({:?})",
-            arc.pref_axis, plax, arc.axis
-        );
-        let right = arc.axis.cross(profile_normal).normalize();
-        let up = profile_normal.cross(right).normalize();
-        (right, up)
-    } else {
-        // 正常情况：pref_axis 和 plax 不平行
-        let right = profile_up.cross(profile_normal).normalize();
-        // 重新正交化 up 向量,确保坐标系是正交的
-        let up = profile_normal.cross(right).normalize();
-        (right, up)
+    // 若 pref_axis 与 plax 平行，叉积将退化为零向量，normalize(0) -> NaN。
+    // 这里做兜底：当 right 退化时，改用任意不平行于 profile_normal 的轴构造 right。
+    let profile_right = {
+        let mut r = profile_up.cross(profile_normal);
+        if r.length_squared() < 1e-6 {
+            let perp = if profile_normal.dot(Vec3::X).abs() < 0.9 {
+                Vec3::X
+            } else {
+                Vec3::Y
+            };
+            r = perp.cross(profile_normal);
+        }
+        r.normalize()
     };
+    // 重新正交化 up 向量,确保坐标系是正交的
+    let profile_up_ortho = profile_normal.cross(profile_right).normalize();
 
     for i in 0..=samples {
         let t = i as f32 / samples as f32;
@@ -380,6 +386,8 @@ fn sample_path_frames_sync(
                 _ => return None,
             };
 
+            // plax 也需要跟随段变换旋转到同一坐标系，否则 ref_up/plax 与切线可能退化为平行，产生 NaN。
+            let plax = (transform.rotation * plax).normalize_or_zero();
             return sample_arc_frames(&transformed_arc, arc_segments_per_segment, plax);
         }
     }
@@ -395,6 +403,37 @@ fn sample_path_frames_sync(
             SegmentPath::Arc(arc) => transform_arc(arc, transform),
         };
         transformed_segments.push(transformed_segment);
+    }
+
+    if is_debug_model_enabled() {
+        for (i, seg) in transformed_segments.iter().enumerate() {
+            match seg {
+                SegmentPath::Line(line) => {
+                    println!(
+                        "[SweepSolid] seg#{i} LINE start={:?} end={:?} dir={:?} len={:.3}",
+                        line.start,
+                        line.end,
+                        (line.end - line.start).normalize_or_zero(),
+                        line.length()
+                    );
+                }
+                SegmentPath::Arc(arc) => {
+                    let end = SegmentPath::Arc(arc.clone()).end_point();
+                    println!(
+                        "[SweepSolid] seg#{i} ARC center={:?} r={:.3} angle={:.6} axis={:?} cw={} start={:?} end={:?} t0={:?} t1={:?}",
+                        arc.center,
+                        arc.radius,
+                        arc.angle,
+                        arc.axis,
+                        arc.clock_wise,
+                        arc.start_pt,
+                        end,
+                        SegmentPath::Arc(arc.clone()).tangent_at(0.0),
+                        SegmentPath::Arc(arc.clone()).tangent_at(1.0),
+                    );
+                }
+            }
+        }
     }
 
     // 2. 从变换后的段收集采样点和切线
@@ -446,71 +485,95 @@ fn sample_path_frames_sync(
         return None;
     }
 
+    if is_debug_model_enabled() {
+        // 打印关键采样点，便于判断“是否走了完整一圈”还是“沿同一半圈往返”。
+        let n = raw_samples.len();
+        let pick = |k: usize| -> Option<(Vec3, Vec3, f32)> { raw_samples.get(k).copied() };
+        let idxs = [
+            0usize,
+            n.saturating_sub(1),
+            n / 4,
+            n / 2,
+            (n * 3) / 4,
+        ];
+        for &k in &idxs {
+            if let Some((p, t, d)) = pick(k) {
+                println!(
+                    "[SweepSolid] raw_sample[{k}/{n}] p={:?} t={:?} dist={:.3}",
+                    p, t, d
+                );
+            }
+        }
+
+        let mut min = raw_samples[0].0;
+        let mut max = raw_samples[0].0;
+        for (p, _, _) in &raw_samples {
+            min = min.min(*p);
+            max = max.max(*p);
+        }
+        println!(
+            "[SweepSolid] raw_samples_aabb min={:?} max={:?}",
+            min, max
+        );
+    }
+
     // 2. 计算第一点的坐标系
     let first_tan = raw_samples[0].1;
 
-    // 修复：根据路径类型选择合适的参考方向（与 OCC 和 core.dll 保持一致）
-    // - 对于圆弧路径：使用 arc.pref_axis (YDIR) 作为 Y 轴
-    // - 对于 SPINE 直线路径：从 segments 中查找 pref_axis（参考 OCC 做法）
-    // - 对于普通直线路径：使用 plax 作为参考方向
-    let ref_up = match segments.first() {
-        Some(SegmentPath::Arc(arc)) => {
-            // 圆弧路径：使用 pref_axis 作为 Y 轴（对应 PDMS 的 YDIR 属性）
-            // 这与 OCC 代码中的 `let y_axis = arc.pref_axis.as_dvec3()` 一致
-            arc.pref_axis
-        }
-        Some(SegmentPath::Line(line)) if line.is_spine => {
-            // SPINE 直线路径：参考 OCC 版本，从所有 segments 中查找 pref_axis
-            // 遍历所有 segments，找到第一个 Arc 的 pref_axis；如果没有 Arc，使用默认值
-            segments
-                .iter()
-                .find_map(|seg| {
-                    if let SegmentPath::Arc(arc) = seg {
-                        Some(arc.pref_axis)
+    // 修复：参考方向必须与 raw_samples 的坐标系一致。
+    // raw_samples 来自 transformed_segments（已应用 segment_transforms），因此 ref_up 也应从
+    // transformed_segments 推导；否则在圆弧/多段路径中，ref_up 可能与切线退化为平行，产生 NaN。
+    let ref_up = match transformed_segments.first() {
+        Some(SegmentPath::Arc(arc)) => arc.pref_axis,
+        Some(SegmentPath::Line(line)) if line.is_spine => transformed_segments
+            .iter()
+            .find_map(|seg| match seg {
+                SegmentPath::Arc(arc) => Some(arc.pref_axis),
+                _ => None,
+            })
+            .unwrap_or_else(|| {
+                if first_tan.dot(plax).abs() > 0.9 {
+                    let perp = if first_tan.dot(Vec3::X).abs() < 0.9 {
+                        Vec3::X
                     } else {
-                        None
-                    }
-                })
-                .unwrap_or_else(|| {
-                    // 如果没有找到 Arc，使用 plax 作为参考方向（与 OCC 版本保持一致）
-                    // 如果 plax 与切线几乎平行，选择垂直方向
-                    if first_tan.dot(plax).abs() > 0.9 {
-                        // plax 与切线平行，选择一个垂直于切线的方向
-                        let perp = if first_tan.dot(Vec3::X).abs() < 0.9 {
-                            Vec3::X
-                        } else {
-                            Vec3::Y
-                        };
-                        // 使用叉积构建垂直于切线的 up 向量
-                        let temp_right = perp.cross(first_tan).normalize();
-                        first_tan.cross(temp_right).normalize()
-                    } else {
-                        // 使用 plax 作为 up 方向的参考
-                        plax
-                    }
-                })
-        }
+                        Vec3::Y
+                    };
+                    let temp_right = perp.cross(first_tan).normalize();
+                    first_tan.cross(temp_right).normalize()
+                } else {
+                    plax
+                }
+            }),
         _ => {
-            // 普通直线路径：使用 plax 作为参考方向
-            // 如果 plax 与切线几乎平行，选择垂直方向
             if first_tan.dot(plax).abs() > 0.9 {
-                // plax 与切线平行，选择一个垂直于切线的方向
                 let perp = if first_tan.dot(Vec3::X).abs() < 0.9 {
                     Vec3::X
                 } else {
                     Vec3::Y
                 };
-                // 使用叉积构建垂直于切线的 up 向量
                 let temp_right = perp.cross(first_tan).normalize();
                 first_tan.cross(temp_right).normalize()
             } else {
-                // 使用 plax 作为 up 方向的参考
                 plax
             }
         }
     };
 
-    let first_right = ref_up.cross(first_tan).normalize();
+    // 若 ref_up 与切线平行，将导致 normalize(0) -> NaN
+    let first_right = {
+        let r = ref_up.cross(first_tan);
+        if r.length_squared() < 1e-6 {
+            // 选取一个与切线不平行的向量作为兜底
+            let perp = if first_tan.dot(Vec3::X).abs() < 0.9 {
+                Vec3::X
+            } else {
+                Vec3::Y
+            };
+            perp.cross(first_tan).normalize()
+        } else {
+            r.normalize()
+        }
+    };
     let first_up = first_tan.cross(first_right).normalize();
 
     let mut samples = Vec::with_capacity(raw_samples.len());
@@ -528,35 +591,119 @@ fn sample_path_frames_sync(
         let curr = &samples[i];
         let next_raw = &raw_samples[i + 1];
 
-        let t1 = curr.tangent;
-        let t2 = next_raw.1;
-
-        let mut next_rot = curr.rot;
-
-        let dot = t1.dot(t2).clamp(-1.0, 1.0);
-        if dot < 0.9999 {
-            let axis = t1.cross(t2);
-            if axis.length_squared() > 0.0001 {
-                let angle = dot.acos();
-                let rot_quat = Quat::from_axis_angle(axis.normalize(), angle);
-
-                let new_right = rot_quat * curr.rot.x_axis;
-                let new_up = rot_quat * curr.rot.y_axis;
-
-                // 重新正交化
-                let final_right = new_up.cross(t2).normalize();
-                let final_up = t2.cross(final_right).normalize();
-
-                next_rot = Mat3::from_cols(final_right, final_up, t2);
-            }
+        // rotation-minimizing frame：将上一帧的 right 投影到新切线 t2 的法平面上，
+        // 以最小旋转方式更新坐标系，且确保 rot.z_axis 始终与 tangent 一致。
+        let mut t2 = next_raw.1.normalize_or_zero();
+        if t2.length_squared() < 1e-6 {
+            t2 = curr.rot.z_axis.normalize_or_zero();
         }
+
+        let mut right = curr.rot.x_axis;
+        // 投影到 t2 的法平面
+        let mut proj = right - t2 * right.dot(t2);
+        if proj.length_squared() < 1e-6 {
+            // 退化：right 与 t2 近似平行，改用 up 构造
+            proj = curr.rot.y_axis.cross(t2);
+        }
+        if proj.length_squared() < 1e-6 {
+            // 仍退化：最后兜底用固定轴
+            let perp = if t2.dot(Vec3::X).abs() < 0.9 { Vec3::X } else { Vec3::Y };
+            proj = perp.cross(t2);
+        }
+
+        let final_right = proj.normalize_or_zero();
+        let final_up = t2.cross(final_right).normalize_or_zero();
+        let next_rot = Mat3::from_cols(final_right, final_up, t2);
 
         samples.push(PathSample {
             pos: next_raw.0,
-            tangent: next_raw.1,
+            tangent: t2,
             rot: next_rot,
             dist: next_raw.2,
         });
+    }
+
+    // === 闭环 twist 校正 ===
+    // RMF(平行传输)在闭合曲线下可能产生净 twist（holonomy），导致首尾截面朝向不一致，
+    // 在闭环接缝处出现明显 shading seam（看起来像“缺口/断口”）。
+    //
+    // 这里按最小修改原则：仅对闭环且首尾切线同向的情况，将首尾 right 轴的夹角
+    // 以线性比例分摊到每一帧，使末帧与首帧朝向对齐。
+    if samples.len() >= 3 {
+        let start_end_dist = samples[0].pos.distance(samples.last().unwrap().pos);
+        let path_closed = start_end_dist < 1e-2;
+        if path_closed {
+            let t0 = samples[0].rot.z_axis.normalize_or_zero();
+            let tn = samples.last().unwrap().rot.z_axis.normalize_or_zero();
+            let tan_dot = t0.dot(tn);
+            if tan_dot > 0.99 && t0.length_squared() > 1e-6 {
+                // 计算首尾 right 轴在法平面内的相对角度（绕切线的 signed angle）
+                let x0 = samples[0].rot.x_axis;
+                let xn = samples.last().unwrap().rot.x_axis;
+                let p0 = (x0 - t0 * x0.dot(t0)).normalize_or_zero();
+                let pn = (xn - t0 * xn.dot(t0)).normalize_or_zero();
+                if p0.length_squared() > 1e-6 && pn.length_squared() > 1e-6 {
+                    let sin = t0.dot(p0.cross(pn));
+                    let cos = p0.dot(pn).clamp(-1.0, 1.0);
+                    let delta = sin.atan2(cos); // [-pi, pi]
+                    if delta.abs() > 1e-4 {
+                        let n = samples.len();
+                        for (i, s) in samples.iter_mut().enumerate() {
+                            let frac = i as f32 / (n - 1) as f32;
+                            let q = Quat::from_axis_angle(t0, -delta * frac);
+                            s.rot = Mat3::from_quat(q) * s.rot;
+                        }
+                        if is_debug_model_enabled() {
+                            println!(
+                                "[SweepSolid] closed_twist_fix: start_end_dist={:.6} tan_dot={:.6} delta_deg={:.6}",
+                                start_end_dist,
+                                tan_dot,
+                                delta.to_degrees()
+                            );
+                        }
+                    } else if is_debug_model_enabled() {
+                        println!(
+                            "[SweepSolid] closed_twist_fix: delta too small ({:.6} deg), skip",
+                            delta.to_degrees()
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    if is_debug_model_enabled() && !samples.is_empty() {
+        let mut min_dot = 1.0f32;
+        let mut min_i = 0usize;
+        let mut first_neg: Option<(usize, f32)> = None;
+        let mut neg_cnt = 0usize;
+        for (i, s) in samples.iter().enumerate() {
+            let d = s
+                .tangent
+                .normalize_or_zero()
+                .dot(s.rot.z_axis.normalize_or_zero());
+            if d < 0.0 {
+                neg_cnt += 1;
+                if first_neg.is_none() {
+                    first_neg = Some((i, d));
+                }
+            }
+            if d < min_dot {
+                min_dot = d;
+                min_i = i;
+            }
+        }
+        let s = &samples[min_i];
+        println!(
+            "[SweepSolid] frame_tan_alignment: min_dot={:.6} min_i={} len={} neg_cnt={} first_neg={:?} tan={:?} rot_z={:?}",
+            min_dot,
+            min_i,
+            samples.len(),
+            neg_cnt,
+            first_neg,
+            s.tangent,
+            s.rot.z_axis
+        );
     }
 
     Some(samples)
@@ -583,6 +730,54 @@ fn generate_mesh_from_frames(
     let mut normals = Vec::new();
     let mut uvs: Vec<[f32; 2]> = Vec::new();
     let mut indices = Vec::new();
+
+    // 闭合路径：
+    // - 首尾点接近时，path_samples 往往“附加一个与起点近似重合的末尾 ring”，用来表达闭合。
+    // - 但若仅依赖“位置重合”而不在拓扑上环向连接 ring，则仍会留下边界；
+    //   边界重合/近似重合会表现为截面收口/缝隙，并降低布尔/Manifold 的稳定性。
+    // 因此：判定闭合时，丢弃末尾重复 ring，并以 modulo 方式环向连接 ring。
+    let start_end_dist = if path_samples.len() >= 2 {
+        path_samples
+            .first()
+            .unwrap()
+            .pos
+            .distance(path_samples.last().unwrap().pos)
+    } else {
+        f32::INFINITY
+    };
+    // 端点闭合判定：允许一定的浮点误差（单位 mm）
+    let path_closed = path_samples.len() >= 3 && start_end_dist < 1e-2;
+    if is_debug_model_enabled() {
+        // debug-model 下优先用 stdout，避免 logger 配置差异导致信息缺失
+        println!(
+            "[SweepSolid] path_closed={} start_end_dist={:.6} rings={}",
+            path_closed,
+            start_end_dist,
+            path_samples.len()
+        );
+    }
+
+    if is_debug_model_enabled() && !path_samples.is_empty() {
+        let first = path_samples.first().unwrap();
+        let last = path_samples.last().unwrap();
+        let chk = |label: &str, s: &PathSample| {
+            let x = s.rot.x_axis;
+            let y = s.rot.y_axis;
+            let t = s.rot.z_axis;
+            println!(
+                "[SweepSolid] frame_check[{label}] |x|={:.6} |y|={:.6} |t|={:.6} x·y={:.6} x·t={:.6} y·t={:.6} tan·t={:.6}",
+                x.length(),
+                y.length(),
+                t.length(),
+                x.dot(y),
+                x.dot(t),
+                y.dot(t),
+                s.tangent.normalize_or_zero().dot(t.normalize_or_zero())
+            );
+        };
+        chk("first", first);
+        chk("last", last);
+    }
 
     // 解析 Start/End 法线 (用于斜切)
     let start_tan = path_samples.first().unwrap().tangent;
@@ -618,14 +813,34 @@ fn generate_mesh_from_frames(
     let start_plane_normal = resolve_cap_normal(drns, start_tan, -start_tan);
     let end_plane_normal = resolve_cap_normal(drne, end_tan, end_tan);
 
-    let num_rings = path_samples.len();
+    if is_debug_model_enabled() && !path_closed {
+        // 端面法线应与路径切线近似平行（start: 反向；end: 同向），否则 compute_offset 会产生非预期的倾斜截面。
+        println!(
+            "[SweepSolid] cap_normals: start_dot={:.6} end_dot={:.6} start_n={:?} end_n={:?} start_tan={:?} end_tan={:?}",
+            start_plane_normal.normalize_or_zero().dot(start_tan.normalize_or_zero()),
+            end_plane_normal.normalize_or_zero().dot(end_tan.normalize_or_zero()),
+            start_plane_normal,
+            end_plane_normal,
+            start_tan,
+            end_tan
+        );
+    }
+
+    // 对闭合路径：丢弃末尾重复 ring（通常与起点重合/近似重合）
+    // 对非闭合路径：保留全部 ring，用于生成两端封口。
+    let ring_samples: &[PathSample] = if path_closed && path_samples.len() > 1 {
+        &path_samples[..(path_samples.len() - 1)]
+    } else {
+        path_samples
+    };
+    let num_rings = ring_samples.len();
     let num_prof_verts = profile.vertices.len();
 
     if profile.is_smooth {
         // === 平滑模式 (Shared Vertices) ===
-        for (i, sample) in path_samples.iter().enumerate() {
-            let is_first = i == 0;
-            let is_last = i == num_rings - 1;
+        for (i, sample) in ring_samples.iter().enumerate() {
+            let is_first = !path_closed && i == 0;
+            let is_last = !path_closed && i == num_rings - 1;
 
             for pv in &profile.vertices {
                 let local = sample.rot.x_axis * pv.pos.x + sample.rot.y_axis * pv.pos.y;
@@ -647,7 +862,14 @@ fn generate_mesh_from_frames(
             }
         }
 
-        for i in 0..num_rings - 1 {
+        // 侧面连接：闭合路径需环向连接
+        let ring_steps = if path_closed {
+            num_rings
+        } else {
+            num_rings.saturating_sub(1)
+        };
+        for i in 0..ring_steps {
+            let next_i = if path_closed { (i + 1) % num_rings } else { i + 1 };
             for j in 0..num_prof_verts {
                 if !profile.is_closed && j == num_prof_verts - 1 {
                     continue;
@@ -658,8 +880,8 @@ fn generate_mesh_from_frames(
 
                 let base_curr = (i * num_prof_verts + curr) as u32;
                 let base_next = (i * num_prof_verts + next) as u32;
-                let next_ring_curr = ((i + 1) * num_prof_verts + curr) as u32;
-                let next_ring_next = ((i + 1) * num_prof_verts + next) as u32;
+                let next_ring_curr = (next_i * num_prof_verts + curr) as u32;
+                let next_ring_next = (next_i * num_prof_verts + next) as u32;
 
                 indices.extend_from_slice(&[
                     base_curr,
@@ -673,12 +895,18 @@ fn generate_mesh_from_frames(
         }
     } else {
         // === 硬表面模式 (Faceted) ===
-        for i in 0..num_rings - 1 {
-            let s1 = &path_samples[i];
-            let s2 = &path_samples[i + 1];
+        let ring_steps = if path_closed {
+            num_rings
+        } else {
+            num_rings.saturating_sub(1)
+        };
+        for i in 0..ring_steps {
+            let next_i = if path_closed { (i + 1) % num_rings } else { i + 1 };
+            let s1 = &ring_samples[i];
+            let s2 = &ring_samples[next_i];
 
-            let is_first_ring = i == 0;
-            let is_last_ring = i == num_rings - 2;
+            let is_first_ring = !path_closed && i == 0;
+            let is_last_ring = !path_closed && i == num_rings - 2;
 
             for j in 0..num_prof_verts {
                 if !profile.is_closed && j == num_prof_verts - 1 {
@@ -731,45 +959,48 @@ fn generate_mesh_from_frames(
         }
     }
 
-    // === 生成封口 (Caps) ===
-    // 去除末尾重复点进行三角化
-    let cap_points: Vec<Vec2> = profile
-        .vertices
-        .iter()
-        .take(if profile.vertices.len() > 0 {
-            profile.vertices.len() - 1
-        } else {
-            0
-        })
-        .map(|v| v.pos)
-        .collect();
+    if !path_closed {
+        // === 生成封口 (Caps) ===
+        // 去除末尾重复点进行三角化
+        let cap_points: Vec<Vec2> = profile
+            .vertices
+            .iter()
+            .take(if profile.vertices.is_empty() {
+                0
+            } else {
+                profile.vertices.len() - 1
+            })
+            .map(|v| v.pos)
+            .collect();
 
-    if let Some(cap_mesh) = triangulate_polygon(&cap_points) {
-        add_cap(
-            &mut vertices,
-            &mut normals,
-            &mut uvs,
-            &mut indices,
-            &cap_mesh,
-            &path_samples[0],
-            start_plane_normal,
-            true,
-        );
+        if let Some(cap_mesh) = triangulate_polygon(&cap_points) {
+            add_cap(
+                &mut vertices,
+                &mut normals,
+                &mut uvs,
+                &mut indices,
+                &cap_mesh,
+                &path_samples[0],
+                start_plane_normal,
+                true,
+            );
 
-        add_cap(
-            &mut vertices,
-            &mut normals,
-            &mut uvs,
-            &mut indices,
-            &cap_mesh,
-            path_samples.last().unwrap(),
-            end_plane_normal,
-            false,
-        );
+            add_cap(
+                &mut vertices,
+                &mut normals,
+                &mut uvs,
+                &mut indices,
+                &cap_mesh,
+                path_samples.last().unwrap(),
+                end_plane_normal,
+                false,
+            );
+        }
     }
 
     // 🆕 从 Profile 生成扫掠体的轮廓边
-    let sweep_edges = generate_sweep_profile_edges(profile, path_samples);
+    // 闭合路径下 path_samples 末尾常为重复 ring，这里统一用 ring_samples，避免重复边。
+    let sweep_edges = generate_sweep_profile_edges(profile, ring_samples);
 
     let mut mesh = PlantMesh {
         indices,
@@ -919,19 +1150,49 @@ fn add_cap(
 
 fn compute_arc_segments(settings: &LodMeshSettings, arc_length: f32, radius: f32) -> usize {
     let base_segments = settings.radial_segments as usize;
+    // sweep 路径的弧线采样与“圆周方向细分”不同：长半径/长弧长时需要更多段数，
+    // 不宜直接受 max_radial_segments（通常配置为 60 左右）限制，否则会明显折线化。
+    // 但上限必须可配置：由 csg_settings.max_radial_segments 控制（默认 512），并做硬上限保护。
+    let max_arc_segments = settings.max_radial_segments.unwrap_or(512) as usize;
+    let max_arc_segments = max_arc_segments
+        .max(settings.min_radial_segments as usize)
+        .min(512);
     if let Some(target_len) = settings.target_segment_length {
         let computed = (arc_length / target_len).ceil() as usize;
-        return computed.clamp(
-            settings.min_radial_segments as usize,
-            settings.max_radial_segments.unwrap_or(64) as usize,
-        );
+        return computed.clamp(settings.min_radial_segments as usize, max_arc_segments);
     }
     let length_factor = (arc_length / 100.0).clamp(0.5, 3.0);
     let radius_factor = (radius / 50.0).clamp(0.5, 2.0);
-    ((base_segments as f32 * length_factor * radius_factor) as usize).clamp(
-        settings.min_radial_segments as usize,
-        settings.max_radial_segments.unwrap_or(64) as usize,
-    )
+    ((base_segments as f32 * length_factor * radius_factor) as usize)
+        .clamp(settings.min_radial_segments as usize, max_arc_segments)
+}
+
+/// 估算圆弧所在平面上的“有效缩放”（考虑非均匀缩放/镜像），用于把归一化半径/弧长映射到真实尺寸。
+///
+/// 说明：
+/// - Bevy 的 `Transform` 是先 scale 再 rotation，rotation 不改变长度；故本函数只需考虑 scale。
+/// - 若出现退化（axis/pref_axis 不可用），退回使用最大轴向缩放，保证细分不会偏小。
+fn arc_plane_max_scale(arc: &Arc3D, tf: &Transform) -> f32 {
+    let axis = arc.axis.normalize_or_zero();
+    if axis.length_squared() < 1e-8 {
+        return tf.scale.abs().max_element().max(1e-6);
+    }
+
+    let mut u = arc.pref_axis.normalize_or_zero();
+    if u.length_squared() < 1e-8 || u.dot(axis).abs() > 0.99 {
+        // 选取一个与 axis 不平行的向量构造正交基
+        let seed = if axis.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
+        u = axis.cross(seed).normalize_or_zero();
+    }
+    let v = axis.cross(u).normalize_or_zero();
+    if u.length_squared() < 1e-8 || v.length_squared() < 1e-8 {
+        return tf.scale.abs().max_element().max(1e-6);
+    }
+
+    let s = tf.scale.abs();
+    let su = (u * s).length();
+    let sv = (v * s).length();
+    su.max(sv).max(1e-6)
 }
 
 pub fn generate_sweep_solid_mesh(
@@ -941,7 +1202,10 @@ pub fn generate_sweep_solid_mesh(
 ) -> Option<PlantMesh> {
     // 正常生成截面数据并应用截面自身变换（plin_pos/bangle/lmirror）
     let profile = get_profile_data(&sweep.profile, refno)?;
-    let profile = apply_profile_transform(profile, sweep.profile.get_plin_pos(), sweep.lmirror);
+    // 仅对“非简单直线”路径在截面阶段应用 bangle，避免与旧的单位化直线链路重复旋转。
+    let is_simple_line = sweep.path.as_single_line().is_some() && !sweep.is_sloped();
+    let bangle = if is_simple_line { 0.0 } else { sweep.bangle };
+    let profile = apply_profile_transform(profile, sweep.profile.get_plin_pos(), bangle, sweep.lmirror);
 
     let arc_segments = if sweep.path.is_single_segment() {
         if let Some(arc) = sweep.path.as_single_arc() {
@@ -950,7 +1214,30 @@ pub fn generate_sweep_solid_mesh(
             1
         }
     } else {
-        (settings.radial_segments as usize / 2).clamp(settings.min_radial_segments as usize, 32)
+        // 多段路径：不能用固定 32 上限，否则当路径半径/缩放很大时会严重折线化。
+        // 这里按每个圆弧段的“真实弧长/半径(含 segment_transforms scale)”计算需要的细分数，取最大值。
+        let mut max_segs = 1usize;
+        for (i, seg) in sweep.path.segments.iter().enumerate() {
+            let SegmentPath::Arc(arc) = seg else { continue };
+            let tf = sweep
+                .segment_transforms
+                .get(i)
+                .unwrap_or(&Transform::IDENTITY);
+            let plane_scale = arc_plane_max_scale(arc, tf);
+
+            let radius = arc.radius.abs() * plane_scale;
+            let arc_len = arc.angle.abs() * arc.radius.abs() * plane_scale;
+            let segs = compute_arc_segments(settings, arc_len, radius);
+
+            if is_debug_model_enabled() {
+                println!(
+                    "[SweepSolid] multi-path arc seg#{i}: radius_raw={:.6} angle={:.6} plane_scale={:.6} -> radius={:.3} arc_len={:.3} segs={}",
+                    arc.radius, arc.angle, plane_scale, radius, arc_len, segs
+                );
+            }
+            max_segs = max_segs.max(segs);
+        }
+        max_segs
     };
 
     // 使用预计算的变换进行路径采样

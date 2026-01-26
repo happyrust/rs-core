@@ -18,7 +18,10 @@ pub fn build_mesh_path(geo_hash: &str, lod_level: &str, manifold: bool) -> Strin
     if lod_level.is_empty() {
         format!("meshes/{}{}.mesh", geo_hash, m_suffix)
     } else {
-        format!("meshes/lod_{}/{}_{}{}.mesh", lod_level, geo_hash, lod_level, m_suffix)
+        format!(
+            "meshes/lod_{}/{}_{}{}.mesh",
+            lod_level, geo_hash, lod_level, m_suffix
+        )
     }
 }
 

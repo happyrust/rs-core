@@ -16,7 +16,7 @@ use std::sync::Mutex;
 
 /// 数据库子类型枚举 (STYP 属性值)
 /// 用于区分不同类型的数据库模块
-/// 
+///
 /// 映射关系来源于 PDMS 原始定义：
 /// - 1 = DESI (设计数据库)
 /// - 2 = CATA (目录数据库)  
@@ -27,7 +27,9 @@ use std::sync::Mutex;
 /// - 9 = ENGI (工程数据库)
 /// - 10 = MANU (制造数据库)
 /// - 14 = SCHE (示意图数据库)
-#[derive(IntoPrimitive, TryFromPrimitive, Clone, Copy, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(
+    IntoPrimitive, TryFromPrimitive, Clone, Copy, Hash, Eq, PartialEq, Debug, Serialize, Deserialize,
+)]
 #[repr(u8)]
 pub enum DBType {
     /// 设计数据库 (Design)
@@ -101,7 +103,7 @@ impl DBType {
             DBType::UNSET => "未设置",
         }
     }
-    
+
     /// 是否为有效类型
     pub fn is_valid(&self) -> bool {
         !matches!(self, DBType::UNSET)
