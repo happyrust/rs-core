@@ -961,17 +961,15 @@ fn generate_mesh_from_frames(
 
     if !path_closed {
         // === 生成封口 (Caps) ===
-        // 去除末尾重复点进行三角化
-        let cap_points: Vec<Vec2> = profile
-            .vertices
-            .iter()
-            .take(if profile.vertices.is_empty() {
-                0
-            } else {
-                profile.vertices.len() - 1
-            })
-            .map(|v| v.pos)
-            .collect();
+        // 三角化需要“闭合多边形点集”。
+        // ProfileProcessor 分支下，我们已将“首尾重合点”在 get_profile_data() 处 pop 掉，且 is_closed=true；
+        // 因此这里不能再无条件 `len()-1`，否则会把矩形/多边形少掉一个点，端面变成三角形，形成开口非流形，
+        // 进而导致 Manifold 转换输出 0 三角形（布尔失败）。
+        let mut cap_points: Vec<Vec2> = profile.vertices.iter().map(|v| v.pos).collect();
+        // 对 SANN 等条带模式（首尾可能重合）做兜底去重
+        if cap_points.len() >= 2 && cap_points[0].distance(*cap_points.last().unwrap()) <= 1e-6 {
+            cap_points.pop();
+        }
 
         if let Some(cap_mesh) = triangulate_polygon(&cap_points) {
             add_cap(

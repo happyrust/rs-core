@@ -64,14 +64,29 @@ impl SweepSolid {
     #[inline]
     pub fn is_drns_sloped(&self) -> bool {
         self.drns
-            .map(|v| abs_diff_ne!(v.z, 1.0, epsilon = 0.001))
+            // 端面方向若与 Z 轴共线（±Z），不视为“倾斜”。
+            // 过去用 v.z≈1 判定会把 (0,0,-1) 误判为 sloped，从而禁用直线路径的单位化复用。
+            .map(|v| {
+                let len = v.length();
+                if len <= 1e-12 {
+                    return false;
+                }
+                abs_diff_ne!((v.z / len).abs(), 1.0, epsilon = 0.001)
+            })
             .unwrap_or(false)
     }
 
     #[inline]
     pub fn is_drne_sloped(&self) -> bool {
         self.drne
-            .map(|v| abs_diff_ne!(v.z, 1.0, epsilon = 0.001))
+            // 同 is_drns_sloped：±Z 不算倾斜
+            .map(|v| {
+                let len = v.length();
+                if len <= 1e-12 {
+                    return false;
+                }
+                abs_diff_ne!((v.z / len).abs(), 1.0, epsilon = 0.001)
+            })
             .unwrap_or(false)
     }
 
@@ -217,6 +232,10 @@ impl BrepShapeTrait for SweepSolid {
                 end: Vec3::Z * 100.0,
                 is_spine: false,
             });
+            // 单段直线（非倾斜）视为“标准端面”（与路径正交），避免 drns/drne 的符号差异导致误判/误复用。
+            // 端面倾斜（非 ±Z）仍会走 sloped 分支，不会进入此处。
+            unit.drns = None;
+            unit.drne = None;
         }
         // 单位体不应携带原始的段变换，避免重复应用位移/缩放
         unit.segment_transforms = vec![Transform::IDENTITY];
