@@ -303,6 +303,143 @@ pub fn prepare_eval_str(input: &str) -> String {
         .replace("DESIGN PARA", "DESP")
 }
 
+fn rewrite_mat_trim_str_iftrue(input: &str) -> String {
+    fn is_ws(ch: char) -> bool {
+        ch.is_whitespace()
+    }
+
+    fn starts_with_keyword(chars: &[char], pos: usize, keyword: &str) -> bool {
+        let end = pos + keyword.len();
+        if end > chars.len() {
+            return false;
+        }
+        chars[pos..end]
+            .iter()
+            .zip(keyword.chars())
+            .all(|(c, k)| c.to_ascii_uppercase() == k)
+    }
+
+    fn skip_ws(chars: &[char], pos: &mut usize) {
+        while *pos < chars.len() && is_ws(chars[*pos]) {
+            *pos += 1;
+        }
+    }
+
+    fn consume_keyword(chars: &[char], pos: &mut usize, keyword: &str) -> bool {
+        skip_ws(chars, pos);
+        if starts_with_keyword(chars, *pos, keyword) {
+            *pos += keyword.len();
+            true
+        } else {
+            false
+        }
+    }
+
+    fn consume_char(chars: &[char], pos: &mut usize, expected: char) -> bool {
+        skip_ws(chars, pos);
+        if *pos < chars.len() && chars[*pos] == expected {
+            *pos += 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn consume_quoted_true(chars: &[char], pos: &mut usize) -> bool {
+        skip_ws(chars, pos);
+        if *pos >= chars.len() || chars[*pos] != '\'' {
+            return false;
+        }
+        *pos += 1;
+        let start = *pos;
+        while *pos < chars.len() && chars[*pos] != '\'' {
+            *pos += 1;
+        }
+        if *pos >= chars.len() {
+            return false;
+        }
+        let value: String = chars[start..*pos].iter().collect();
+        *pos += 1;
+        value.eq_ignore_ascii_case("TRUE")
+    }
+
+    fn parse_mat_trim_str(chars: &[char], start: usize) -> Option<(String, usize)> {
+        let mut pos = start;
+        if !consume_keyword(chars, &mut pos, "MAT") {
+            return None;
+        }
+        if !consume_char(chars, &mut pos, '(') {
+            return None;
+        }
+        if !consume_keyword(chars, &mut pos, "TRIM") {
+            return None;
+        }
+        if !consume_char(chars, &mut pos, '(') {
+            return None;
+        }
+        if !consume_keyword(chars, &mut pos, "STR") {
+            return None;
+        }
+        if !consume_char(chars, &mut pos, '(') {
+            return None;
+        }
+
+        let inner_start = pos;
+        let mut depth = 1usize;
+        while pos < chars.len() {
+            match chars[pos] {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        break;
+                    }
+                }
+                _ => {}
+            }
+            pos += 1;
+        }
+        if depth != 0 {
+            return None;
+        }
+
+        let inner_expr: String = chars[inner_start..pos].iter().collect();
+        pos += 1;
+
+        if !consume_char(chars, &mut pos, ')') {
+            return None;
+        }
+        if !consume_char(chars, &mut pos, ',') {
+            return None;
+        }
+        if !consume_quoted_true(chars, &mut pos) {
+            return None;
+        }
+        if !consume_char(chars, &mut pos, ')') {
+            return None;
+        }
+
+        Some((format!("IFTRUE({},1,0)", inner_expr), pos))
+    }
+
+    let chars: Vec<char> = input.chars().collect();
+    let mut out = String::with_capacity(input.len());
+    let mut pos = 0usize;
+    while pos < chars.len() {
+        if starts_with_keyword(&chars, pos, "MAT") {
+            if let Some((replacement, next_pos)) = parse_mat_trim_str(&chars, pos) {
+                out.push_str(&replacement);
+                pos = next_pos;
+                continue;
+            }
+        }
+        out.push(chars[pos]);
+        pos += 1;
+    }
+
+    out
+}
+
 ///评估表达式的值
 pub fn eval_str_to_f64(
     input_expr: &str,
@@ -363,7 +500,15 @@ pub fn eval_str_to_f64(
         .and_then(|x| Some(RefnoEnum::from(x.as_str())))
         .unwrap_or_default();
     //处理引用的情况 OF 的情况, 如果需要获取 att value，还是需要用数据库去获取值
-    let mut new_exp = prepare_eval_str(input_expr);
+    let rewritten_expr = rewrite_mat_trim_str_iftrue(input_expr);
+    if crate::debug_macros::is_debug_model_enabled() && rewritten_expr != input_expr {
+        crate::debug_model_debug!(
+            "   MAT/TRIM/STR rewrite: {} -> {}",
+            input_expr,
+            rewritten_expr
+        );
+    }
+    let mut new_exp = prepare_eval_str(&rewritten_expr);
 
     // 🔍 调试：记录 prepare_eval_str 后的表达式
     if crate::debug_macros::is_debug_model_enabled()
@@ -904,5 +1049,21 @@ mod tests {
         assert!(result.contains(":HXYS[1]"));
         assert!(result.contains(":HXYS[2]"));
         assert!(!result.contains("ATTRIB"));
+    }
+
+    #[test]
+    fn test_rewrite_mat_trim_str_iftrue() {
+        let input = "( 2 * MAT( TRIM( STR( ( ATTRIB DESP[6 ] / 1 ) GT ( 50 * 1 ) ) ), 'TRUE' ) )";
+        let output = rewrite_mat_trim_str_iftrue(input);
+        assert!(output.contains("IFTRUE("));
+        assert!(!output.contains("MAT("));
+        assert!(!output.contains("TRIM("));
+        assert!(!output.contains("STR("));
+        assert!(output.contains("ATTRIB DESP[6 ]"));
+        assert!(output.contains("GT"));
+
+        let non_match = "MAT( STR( 1 ), 'TRUE' )";
+        let unchanged = rewrite_mat_trim_str_iftrue(non_match);
+        assert_eq!(unchanged, non_match);
     }
 }
