@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **支持 MAT(TRIM(STR(...)), 'TRUE') 表达式改写为 IFTRUE**
+
+  #### 问题描述
+  PDMS 元件库中常见 `MAT(TRIM(STR(<cond>)), 'TRUE')` 形态的表达式，用于条件匹配。tiny_expr 库不支持这些函数，导致 RefNo 24381_56661 等模型生成时表达式求值失败。
+
+  #### 修复方案
+  - 新增 `rewrite_mat_trim_str_iftrue` 函数，将 `MAT(TRIM(STR(...)), 'TRUE')` 改写为 `IFTRUE(...,1,0)`
+  - 修复 `consume_keyword` 中的空白跳过问题，确保带空格的表达式（如 `MAT( TRIM( STR(...) ) )`）也能正确匹配
+  - 在 `eval_str_to_f64` 中加入改写前后调试日志（debug_model 模式下）
+  - 新增单元测试 `test_rewrite_mat_trim_str_iftrue`
+
+  #### 修改文件
+  - `src/rs_surreal/resolve.rs`：
+    - 新增 `rewrite_mat_trim_str_iftrue` 函数（第 306-439 行）
+    - 在 `eval_str_to_f64` 中调用改写并打印日志（第 502-510 行）
+    - 修复 `consume_keyword` 空白跳过（第 328-335 行）
+    - 新增单元测试（第 1053-1067 行）
+
+  #### 验证结果
+  - debug-model 24381_56661 运行后，日志中出现 `MAT/TRIM/STR rewrite: ... -> ...` 日志
+  - 原先报错的表达式（如 `( 2 * MAT( TRIM( STR( ( ATTRIB DESP[6 ] / 1 ) GT ( 50 * 1 ) ) ), 'TRUE' ) )`）成功求值
+
 - **修复布尔运算后 `inst_relate_aabb` 无法被正确查询的问题**
   
   #### 问题描述
