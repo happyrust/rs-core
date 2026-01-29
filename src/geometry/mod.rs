@@ -184,9 +184,9 @@ impl EleGeosInfo {
     /// 适用于需要人工可读或调试的场景。
     pub fn gen_sur_json_full(&self) -> String {
         use crate::types::HasPeKey;
-        
+
         let id = self.id_str();
-        
+
         // 手动构建 ptset JSON，使 refno 输出为记录 ID 格式
         let ptset_items: Vec<String> = self.ptset_map.values().map(|p| {
             let dir_str = match &p.dir {
@@ -211,14 +211,12 @@ impl EleGeosInfo {
                 p.pconnect
             )
         }).collect();
-        
+
         let ptset_json = format!("[{}]", ptset_items.join(","));
 
         let mut json = format!(
             r#"{{"visible":{},"generic_type":"{}","ptset":{}"#,
-            self.visible,
-            self.generic_type,
-            ptset_json
+            self.visible, self.generic_type, ptset_json
         );
 
         // 添加 tubi_info 关联（如果有）
@@ -740,7 +738,21 @@ impl EleInstGeo {
     ///fix 生成surreal的geo json数据，其他数据放在边上
     pub fn gen_unit_geo_sur_json(&self) -> String {
         let mut json_string = "".to_string();
-        let param = self.geo_param.convert_to_unit_param();
+        // PrimLoft(SweepSolid) 有两类：
+        // 1) 单段直线且无倾斜：可安全 unit 化，并用实例 transform（scale.z/rotation）表达长度与方向（不影响截面）。
+        // 2) 圆弧/多段/倾斜：必须保留 segment_transforms 参与路径采样，否则半径/段位置无法还原；
+        //    若把这类缩放塞进 geo_relate.trans（整体缩放），会把截面也一起放大，导致 WALL 等错形。
+        let param = match &self.geo_param {
+            crate::parsed_data::geo_params_data::PdmsGeoParam::PrimLoft(s) => {
+                let is_simple_line = s.path.as_single_line().is_some() && !s.is_sloped();
+                if is_simple_line {
+                    self.geo_param.convert_to_unit_param()
+                } else {
+                    self.geo_param.clone()
+                }
+            }
+            _ => self.geo_param.convert_to_unit_param(),
+        };
         json_string.push_str(&format!(
             "{{'id': inst_geo:⟨{}⟩, 'param': {}, 'unit_flag': {} }}",
             self.geo_hash,

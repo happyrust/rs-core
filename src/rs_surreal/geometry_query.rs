@@ -271,7 +271,56 @@ pub async fn query_aabb_params(
 
     // println!("Executing SQL: {}", sql);
     let mut response = SUL_DB.query_response(&sql).await?;
-    let result: Vec<QueryAabbParam> = response.take(0)?;
+    // 注意：历史数据里可能存在 out.aabb.d 的内部字段为 null（mins/maxs 某一维为 null）。
+    // 若直接反序列化为 PlantAabb / QueryAabbParam，会导致整批查询失败。
+    #[derive(Debug, Clone, Deserialize, SurrealValue)]
+    struct RawGeoAabbTrans {
+        pub trans: serde_json::Value,
+        pub aabb: serde_json::Value,
+    }
+
+    #[derive(Debug, Clone, Deserialize, SurrealValue)]
+    struct RawQueryAabbParam {
+        pub refno: RefnoEnum,
+        pub noun: String,
+        pub geo_aabbs: Vec<RawGeoAabbTrans>,
+        pub world_trans: Option<serde_json::Value>,
+    }
+
+    let raw: Vec<RawQueryAabbParam> = response.take(0)?;
+
+    let mut result = Vec::with_capacity(raw.len());
+    for r in raw {
+        // world_trans 允许为 None；若为脏数据则置 None，让调用方跳过该实例
+        let world_trans = match r.world_trans {
+            Some(v) => match serde_json::from_value::<Transform>(v) {
+                Ok(t) => Some(PlantTransform(t)),
+                Err(_) => None,
+            },
+            None => None,
+        };
+
+        let mut geo_aabbs = Vec::with_capacity(r.geo_aabbs.len());
+        for g in r.geo_aabbs {
+            let Ok(trans) = serde_json::from_value::<Transform>(g.trans) else {
+                continue;
+            };
+            let Ok(aabb) = serde_json::from_value::<PlantAabb>(g.aabb) else {
+                continue;
+            };
+            geo_aabbs.push(GeoAabbTrans {
+                trans: PlantTransform(trans),
+                aabb,
+            });
+        }
+
+        result.push(QueryAabbParam {
+            refno: r.refno,
+            noun: Some(r.noun),
+            geo_aabbs,
+            world_trans,
+        });
+    }
 
     Ok(result)
 }
@@ -386,29 +435,32 @@ pub async fn update_inst_relate_aabbs_by_refnos(
         let mut relation_ids: Vec<String> = Vec::new();
         let mut processed: HashSet<RefnoEnum> = HashSet::new();
 
-        let compute_aabb = |world_trans: PlantTransform, geo_aabbs: &[GeoAabbTrans]| -> Option<Aabb> {
-            if geo_aabbs.is_empty() {
-                return None;
-            }
-            let mut aabb = Aabb::new_invalid();
-            for g in geo_aabbs {
-                let t = world_trans * &g.trans;
-                let tmp_aabb = g.aabb.scaled(&t.scale.into());
-                let tmp_aabb = tmp_aabb.transform_by(&Isometry {
-                    rotation: t.rotation.into(),
-                    translation: t.translation.into(),
-                });
-                aabb.merge(&tmp_aabb);
-            }
-            if aabb.extents().magnitude().is_nan() || aabb.extents().magnitude().is_infinite() {
-                return None;
-            }
-            Some(aabb)
-        };
+        let compute_aabb =
+            |world_trans: PlantTransform, geo_aabbs: &[GeoAabbTrans]| -> Option<Aabb> {
+                if geo_aabbs.is_empty() {
+                    return None;
+                }
+                let mut aabb = Aabb::new_invalid();
+                for g in geo_aabbs {
+                    let t = world_trans * &g.trans;
+                    let tmp_aabb = g.aabb.scaled(&t.scale.into());
+                    let tmp_aabb = tmp_aabb.transform_by(&Isometry {
+                        rotation: t.rotation.into(),
+                        translation: t.translation.into(),
+                    });
+                    aabb.merge(&tmp_aabb);
+                }
+                if aabb.extents().magnitude().is_nan() || aabb.extents().magnitude().is_infinite() {
+                    return None;
+                }
+                Some(aabb)
+            };
 
         for r in &result {
             // 过滤 world_trans 为 None 的记录
-            let Some(world_trans) = r.world_trans else { continue };
+            let Some(world_trans) = r.world_trans else {
+                continue;
+            };
 
             let Some(aabb) = compute_aabb(world_trans, &r.geo_aabbs) else {
                 #[cfg(feature = "debug_model")]
@@ -444,10 +496,7 @@ pub async fn update_inst_relate_aabbs_by_refnos(
             // 先删除旧记录（通过 ID），再批量插入新记录
             let mut sql = String::new();
             if !relation_ids.is_empty() {
-                sql.push_str(&format!(
-                    "DELETE [{}];",
-                    relation_ids.join(",")
-                ));
+                sql.push_str(&format!("DELETE [{}];", relation_ids.join(",")));
             }
             sql.push_str(&format!(
                 "INSERT RELATION INTO inst_relate_aabb [{}];",

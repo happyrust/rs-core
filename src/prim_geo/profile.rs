@@ -61,6 +61,114 @@ async fn normalize_spine_segments(
         return Ok((normalized_segments, transforms));
     }
 
+    // 若路径包含 CURVE（THRU/CENT），则不做“单位化路径 + segment_transforms 还原”：
+    // - 直接用真实几何（相对坐标）构建 SegmentPath，避免圆弧单位化带来的中心/起点/扭转复杂度。
+    // - segment_transforms 置空（或 identity），真实尺度由 SegmentPath 自身携带。
+    //
+    // 仍保留：仅当全为 LINE 时才走旧的单位化逻辑（便于复用与缩放）。
+    let has_curve = segments.iter().any(|s| {
+        matches!(s.curve_type, SpineCurveType::THRU | SpineCurveType::CENT)
+    });
+
+    if has_curve {
+        // 连续性检查（可选）：维持原行为，仅 warning，不中断
+        for i in 1..segments.len() {
+            let prev_end = segments[i - 1].pt1;
+            let curr_start = segments[i].pt0;
+            let distance = prev_end.distance(curr_start);
+            if distance > EPSILON {
+                tracing::warn!(
+                    "Spine 段不连续(非单位化分支): 段 {} 到段 {} 的距离为 {:.6}",
+                    i - 1,
+                    i,
+                    distance
+                );
+            }
+        }
+
+        for spine in segments.iter() {
+            match spine.curve_type {
+                SpineCurveType::LINE => {
+                    normalized_segments.push(SegmentPath::Line(Line3D {
+                        start: spine.pt0,
+                        end: spine.pt1,
+                        is_spine: true,
+                    }));
+                }
+                SpineCurveType::THRU => {
+                    // 与旧的单位化逻辑保持一致：用 THRU 三点推导 arc.angle 与 arc.axis，
+                    // 以避免 180°（起终点对径）时 v0×v1 退化为 0 带来的不稳定。
+                    let center = circum_center(spine.pt0, spine.pt1, spine.thru_pt);
+                    let radius = center.distance(spine.pt0);
+                    let vec0 = spine.pt0 - spine.thru_pt;
+                    let vec1 = spine.pt1 - spine.thru_pt;
+                    let angle = (PI - vec0.angle_between(vec1)) * 2.0;
+                    let mut axis = vec1.cross(vec0).normalize_or_zero();
+                    if axis.length_squared() < 1e-6 {
+                        // 兜底：用圆心->起点 与 圆心->thru 构造法向（180° 也不退化）
+                        axis = (spine.pt0 - center)
+                            .cross(spine.thru_pt - center)
+                            .normalize_or_zero();
+                    }
+                    if axis.length_squared() < 1e-6 {
+                        axis = Vec3::Z;
+                    }
+
+                    normalized_segments.push(SegmentPath::Arc(Arc3D {
+                        center,
+                        radius,
+                        angle,
+                        start_pt: spine.pt0,    // 实际起点
+                        clock_wise: false,      // 方向由 axis（符号）决定，避免与 angle 符号耦合
+                        axis,
+                        pref_axis: spine.preferred_dir,
+                    }));
+                }
+                SpineCurveType::CENT => {
+                    let center = spine.center_pt;
+                    let radius = center.distance(spine.pt0);
+
+                    // 兼容旧逻辑：center 已知但 angle/axis 仍按“反向补角×2”推导（与历史数据/行为对齐）
+                    let vec0 = spine.pt0 - center;
+                    let vec1 = spine.pt1 - center;
+                    let angle = (PI - vec0.angle_between(vec1)) * 2.0;
+                    let mut axis = vec1.cross(vec0).normalize_or_zero();
+                    if axis.length_squared() < 1e-6 {
+                        // 若 pt0/pt1 近似对径，用 center->pt0 与 center->thru 兜底
+                        axis = (spine.pt0 - center)
+                            .cross(spine.thru_pt - center)
+                            .normalize_or_zero();
+                    }
+                    if axis.length_squared() < 1e-6 {
+                        axis = Vec3::Z;
+                    }
+
+                    normalized_segments.push(SegmentPath::Arc(Arc3D {
+                        center,
+                        radius,
+                        angle,
+                        start_pt: spine.pt0,
+                        clock_wise: false,
+                        axis,
+                        pref_axis: spine.preferred_dir,
+                    }));
+                }
+                SpineCurveType::UNKNOWN => {
+                    let refno = spine.refno;
+                    let error_msg = format!(
+                        "Spine 段 {} 的曲线类型为 UNKNOWN，无法生成路径。",
+                        refno
+                    );
+                    tracing::error!("{}", error_msg);
+                    return Err(anyhow::anyhow!(error_msg));
+                }
+            }
+        }
+
+        // 曲线路径不再依赖 segment_transforms（bangle 将在截面阶段处理），返回空 transforms
+        return Ok((normalized_segments, transforms));
+    }
+
     for (i, spine) in segments.iter().enumerate() {
         // 验证连续性（除了第一段）
         if i > 0 {
@@ -215,7 +323,13 @@ async fn normalize_spine_segments(
                 });
             }
             SpineCurveType::UNKNOWN => {
-                tracing::warn!("遇到 UNKNOWN 类型的 Spine 曲线，跳过");
+                let refno = spine.refno;
+                let error_msg = format!(
+                    "Spine 段 {} 的曲线类型为 UNKNOWN，无法生成归一化路径。请检查 CURVE 元素的 CURTYP 属性是否有效（应为 CENT 或 THRU）",
+                    refno
+                );
+                tracing::error!("{}", error_msg);
+                return Err(anyhow::anyhow!(error_msg));
             }
         }
     }
@@ -493,14 +607,23 @@ pub async fn create_profile_geos(
                         //     false,
                         // );
 
+                        // 实例 transform 的使用策略（与 inst_geo.param 的 unit 化策略必须配套）：
+                        // - 单段直线且无倾斜：可复用单位几何（inst_geo.param 会 unit 化），实例 transform 负责方向与长度缩放；
+                        // - 圆弧/多段/倾斜：inst_geo.param 必须保留 segment_transforms 参与路径采样，实例 transform 必须为 identity，
+                        //   否则整体缩放会把截面一起放大（典型：WALL 的 radius=28000）。
+                        let is_simple_line =
+                            loft.path.as_single_line().is_some() && !loft.is_sloped();
+
                         // 根据元素类型决定是否使用 rotation
-                        // - GENSEC/WALL（有 SPINE）：使用第一个点的方位
+                        // - GENSEC/WALL（有 SPINE）：单段直线时使用第一个点的方位；否则使用 identity
                         // - SCTN/STWALL（POSS/POSE）：只有偏移，不旋转
                         let transform = if type_name == "GENSEC" || type_name == "WALL" {
-                            // 有 SPINE：使用完整的 transform（包含 rotation）
-                            first_transform
+                            if is_simple_line {
+                                first_transform
+                            } else {
+                                Transform::IDENTITY
+                            }
                         } else {
-                            // SCTN/STWALL：只使用 translation，不使用 rotation
                             Transform {
                                 translation: first_transform.translation,
                                 rotation: Quat::IDENTITY,

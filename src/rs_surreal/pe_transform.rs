@@ -4,8 +4,8 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use surrealdb::types::SurrealValue;
 
-use crate::{RefnoEnum, SUL_DB, SurrealQueryExt, gen_bevy_transform_hash};
 use crate::rs_surreal::PlantTransform;
+use crate::{RefnoEnum, SUL_DB, SurrealQueryExt, gen_bevy_transform_hash};
 
 #[derive(Debug, Clone, Default)]
 pub struct PeTransformCache {
@@ -52,15 +52,15 @@ pub async fn query_pe_transform(refno: RefnoEnum) -> Result<Option<PeTransformCa
 }
 
 /// 从 pe_transform 表查询 Transform
-/// 
+///
 /// # Arguments
 /// * `refno` - 参考号
 /// * `is_local` - true 返回 local_trans，false 返回 world_trans
-/// 
+///
 /// # Returns
 /// * `Ok(Some(Transform))` - 查询成功
 /// * `Ok(None)` - 未找到或字段为空
-/// 
+///
 /// # Note
 /// 此函数仅查询缓存，不会惰性计算。外部应使用 `get_world_mat4` 代替。
 pub(crate) async fn query_transform(refno: RefnoEnum, is_local: bool) -> Result<Option<Transform>> {
@@ -68,8 +68,16 @@ pub(crate) async fn query_transform(refno: RefnoEnum, is_local: bool) -> Result<
     Ok(cache.and_then(|c| if is_local { c.local } else { c.world }))
 }
 
-pub async fn save_pe_transform(refno: RefnoEnum, local: Option<Transform>, world: Option<Transform>) -> Result<()> {
-    let entry = PeTransformEntry { refno, local, world };
+pub async fn save_pe_transform(
+    refno: RefnoEnum,
+    local: Option<Transform>,
+    world: Option<Transform>,
+) -> Result<()> {
+    let entry = PeTransformEntry {
+        refno,
+        local,
+        world,
+    };
     save_pe_transform_entries(&[entry]).await
 }
 
@@ -145,10 +153,7 @@ fn to_trans_ref(
         return Ok(("NONE".to_string(), None));
     };
 
-    if transform.translation.is_nan()
-        || transform.rotation.is_nan()
-        || transform.scale.is_nan()
-    {
+    if transform.translation.is_nan() || transform.rotation.is_nan() || transform.scale.is_nan() {
         return Ok(("NONE".to_string(), None));
     }
 

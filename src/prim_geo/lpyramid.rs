@@ -167,12 +167,12 @@ impl BrepShapeTrait for LPyramid {
         // 关键点此处亦同步：顶面退化则不输出顶面四角。
         if tx > MIN_LEN && ty > MIN_LEN {
             for (ox, oy) in offsets.iter() {
-                let pos = center + pb_dir * (ox * tx) + pc_dir * (oy * ty) + axis_dir * height + offset_3d;
-                points.push((
-                    transform.transform_point(pos),
-                    "Endpoint".to_string(),
-                    90,
-                ));
+                let pos = center
+                    + pb_dir * (ox * tx)
+                    + pc_dir * (oy * ty)
+                    + axis_dir * height
+                    + offset_3d;
+                points.push((transform.transform_point(pos), "Endpoint".to_string(), 90));
             }
         }
 
@@ -180,11 +180,7 @@ impl BrepShapeTrait for LPyramid {
         if bx > MIN_LEN && by > MIN_LEN {
             for (ox, oy) in offsets.iter() {
                 let pos = center + pb_dir * (ox * bx) + pc_dir * (oy * by);
-                points.push((
-                    transform.transform_point(pos),
-                    "Endpoint".to_string(),
-                    90,
-                ));
+                points.push((transform.transform_point(pos), "Endpoint".to_string(), 90));
             }
         }
 

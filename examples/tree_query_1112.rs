@@ -1,8 +1,8 @@
-use aios_core::tree_query::{
-    load_tree_index_from_dir, load_tree_index_from_path, TreeQuery, TreeQueryFilter,
-    TreeQueryOptions,
-};
 use aios_core::RefU64;
+use aios_core::tree_query::{
+    TreeQuery, TreeQueryFilter, TreeQueryOptions, load_tree_index_from_dir,
+    load_tree_index_from_path,
+};
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 
@@ -55,11 +55,7 @@ fn default_tree_dir() -> PathBuf {
 async fn main() -> Result<()> {
     let (path, dbnum) = resolve_tree_path()?;
     if !path.exists() {
-        anyhow::bail!(
-            "未找到 tree 文件: {} (dbnum={})",
-            path.display(),
-            dbnum
-        );
+        anyhow::bail!("未找到 tree 文件: {} (dbnum={})", path.display(), dbnum);
     }
 
     let index = if let Some(parent) = path.parent() {
@@ -136,5 +132,10 @@ fn pick_sample_refno(index: &aios_core::tree_query::TreeIndex, root: RefU64) -> 
 
 fn print_samples(label: &str, items: &[RefU64], limit: usize) {
     let show = items.len().min(limit);
-    println!("{}: count={}, sample={:?}", label, items.len(), &items[..show]);
+    println!(
+        "{}: count={}, sample={:?}",
+        label,
+        items.len(),
+        &items[..show]
+    );
 }

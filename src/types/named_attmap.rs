@@ -1382,14 +1382,24 @@ impl NamedAttrMap {
 
             // 🔍 调试：检查 DESP 原始值和类型
             if let Some(desp_val) = self.get_val("DESP") {
-                eprintln!("🔍 [DESP_RAW] refno={:?}, DESP exists, type={:?}",
-                    self.get_refno_lossy(), std::mem::discriminant(desp_val));
+                eprintln!(
+                    "🔍 [DESP_RAW] refno={:?}, DESP exists, type={:?}",
+                    self.get_refno_lossy(),
+                    std::mem::discriminant(desp_val)
+                );
             } else {
-                eprintln!("🔍 [DESP_RAW] refno={:?}, DESP field not found", self.get_refno_lossy());
+                eprintln!(
+                    "🔍 [DESP_RAW] refno={:?}, DESP field not found",
+                    self.get_refno_lossy()
+                );
             }
 
             let des_para = self.get_f32_vec("DESP");
-            eprintln!("🔍 [DESP] refno={:?}, get_f32_vec result={:?}", self.get_refno_lossy(), des_para);
+            eprintln!(
+                "🔍 [DESP] refno={:?}, get_f32_vec result={:?}",
+                self.get_refno_lossy(),
+                des_para
+            );
 
             if let Some(des_para) = des_para {
                 hash_f32_slice(&des_para, &mut hasher);

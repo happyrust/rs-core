@@ -420,7 +420,9 @@ impl RefU64 {
     #[inline]
     pub fn to_table_key(&self, tbl: &str) -> String {
         // 用 ToSql 生成 SurrealQL 兼容的 record id（避免 pe:23399_839 这类裸拼接导致解析失败）
-        (tbl.to_string(), self.to_string()).into_record_id().to_raw()
+        (tbl.to_string(), self.to_string())
+            .into_record_id()
+            .to_raw()
     }
 
     #[inline]
