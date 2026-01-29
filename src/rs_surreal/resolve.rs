@@ -762,6 +762,56 @@ pub fn eval_str_to_f64(
                         &k
                     )));
                 }
+            } else if !is_uda {
+                // ⚠️ DTSE/RPRO 表达式里常出现裸属性名（如 HEIG），其实际来源仍可能在 RPRO 表中。
+                // 若 context 无该裸属性，则尝试用 RPRO_{ATTR} 递归求值；否则统一回退 0，避免表达式残留未定义符号。
+                //
+                // 例：RPRO_TLEN = MIN(HEIG, PARA[3])，当 HEIG 缺失但存在 RPRO_HEIG 时，应继续展开并求值。
+                let mut rpro_keys = Vec::new();
+                rpro_keys.push(format!("RPRO_{}", para_name));
+                if k != para_name {
+                    rpro_keys.push(format!("RPRO_{}", &k));
+                }
+
+                let mut resolved: Option<String> = None;
+                for rpro_key in rpro_keys {
+                    if !context.contains_key(&rpro_key) {
+                        continue;
+                    }
+
+                    let guard_key = format!("__RPRO_GUARD__{}", &rpro_key);
+                    if context.contains_key(&guard_key) {
+                        resolved = Some("0".to_string());
+                        break;
+                    }
+                    context.insert(&guard_key, "1");
+
+                    let default_key = format!("{}_default_expr", &rpro_key);
+                    let expr = context
+                        .get(&rpro_key)
+                        .or_else(|| context.get(&default_key))
+                        .unwrap_or_else(|| "0".to_string());
+
+                    let val = match eval_str_to_f64(&expr, &context, dtse_unit) {
+                        Ok(v) => v,
+                        Err(_) => context
+                            .get(&default_key)
+                            .and_then(|d| eval_str_to_f64(&d, &context, dtse_unit).ok())
+                            .unwrap_or(0.0),
+                    };
+
+                    context.context.remove(&guard_key);
+                    resolved = Some(val.to_string());
+                    break;
+                }
+
+                if let Some(v) = resolved {
+                    result_exp = result_exp.replace(s, &v);
+                    found_replaced = true;
+                } else if dtse_unit == "DIST" {
+                    result_exp = result_exp.replace(s, "0");
+                    found_replaced = true;
+                }
             }
         }
 
@@ -1065,5 +1115,18 @@ mod tests {
         let non_match = "MAT( STR( 1 ), 'TRUE' )";
         let unchanged = rewrite_mat_trim_str_iftrue(non_match);
         assert_eq!(unchanged, non_match);
+    }
+
+    #[test]
+    fn test_rpro_nested_bare_attr_resolves_via_rpro_key() {
+        let context = CataContext::default();
+        context.insert("RPRO_TLEN", "( MIN ( HEIG , PARA[3 ] ) )");
+        context.insert("RPRO_TLEN_default_expr", "0");
+        context.insert("RPRO_HEIG", "100");
+        context.insert("RPRO_HEIG_default_expr", "0");
+        context.insert("PARA3", "50");
+
+        let v = eval_str_to_f64("RPRO TLEN", &context, "DIST").unwrap();
+        assert_eq!(v, 50.0);
     }
 }
