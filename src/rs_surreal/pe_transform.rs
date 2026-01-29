@@ -44,7 +44,17 @@ pub async fn query_pe_transform(refno: RefnoEnum) -> Result<Option<PeTransformCa
         "SELECT local_trans.d as local_trans, world_trans.d as world_trans FROM {} LIMIT 1",
         refno.to_table_key("pe_transform")
     );
-    let row: Option<PeTransformRow> = SUL_DB.query_take(&sql, 0).await?;
+    // pe_transform 是一个“可选缓存层”：缺表/缺字段不应阻断惰性计算 world_mat4。
+    // 典型场景：首次运行未创建 pe_transform schema，此时直接查询会报错。
+    // 这里做一次“失败后补建 schema 并重试”，确保上层可以继续走计算路径。
+    let row: Option<PeTransformRow> = match SUL_DB.query_take(&sql, 0).await {
+        Ok(row) => row,
+        Err(_) => {
+            // best-effort：schema 创建失败也不影响后续（重试仍会返回 Err，我们再向上抛）
+            let _ = ensure_pe_transform_schema().await;
+            SUL_DB.query_take(&sql, 0).await?
+        }
+    };
     Ok(row.map(|r| PeTransformCache {
         local: r.local_trans.map(|t| t.0),
         world: r.world_trans.map(|t| t.0),

@@ -184,7 +184,8 @@ pub async fn get_local_mat4(refno: RefnoEnum) -> anyhow::Result<Option<DMat4>> {
 /// - 与重构后的 `get_local_mat4` 函数集成
 /// - 支持缓存优化（从 pe_transform 表读取/写入缓存）
 pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<Option<DMat4>> {
-    let cache = query_pe_transform(refno).await?;
+    // 尝试从缓存获取，如果查询失败则继续惰性计算
+    let cache = query_pe_transform(refno).await.ok().flatten();
     let cached_local = cache.as_ref().and_then(|c| c.local.clone());
     let cached_world = cache.as_ref().and_then(|c| c.world.clone());
 
